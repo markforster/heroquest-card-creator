@@ -1,0 +1,33 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript", "prettier"],
+  "plugins": ["import"],
+  "settings": {
+    "import/resolver": {
+      "typescript": { "project": "./tsconfig.json" },
+      "node": { "extensions": [".js", ".jsx", ".ts", ".tsx"] }
+    }
+  },
+  "rules": {
+    "import/order": [
+      "error",
+      {
+        "groups": [
+          "builtin",
+          "external",
+          "internal",
+          "parent",
+          "sibling",
+          "index",
+          "object",
+          "type"
+        ],
+        "pathGroups": [{ "pattern": "@/**", "group": "internal", "position": "after" }],
+        "pathGroupsExcludedImportTypes": ["builtin"],
+        "alphabetize": { "order": "asc", "caseInsensitive": true },
+        "newlines-between": "always"
+      }
+    ],
+    "import/no-duplicates": "error",
+    "import/newline-after-import": ["error", { "count": 1 }]
+  }
+}

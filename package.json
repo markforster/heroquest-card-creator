@@ -1,0 +1,59 @@
+{
+  "name": "heroquest.card-creator",
+  "version": "0.4.0",
+  "private": true,
+  "packageManager": "npm@10.8.1",
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3000",
+    "build": "NODE_ENV=production npm run verify:env && NODE_ENV=production next build",
+    "build:download": "npm run build && node scripts/package-download.js",
+    "start": "next start",
+    "lint": "next lint",
+    "verify:env": "node scripts/verify-env.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:report": "jest --coverage --reporters=default --reporters=jest-html-reporter",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@next/third-parties": "^16.1.0",
+    "@svgr/webpack": "^8.1.0",
+    "bootstrap": "^5.3.3",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.561.0",
+    "next": "14.2.15",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-hook-form": "^7.68.0",
+    "react-snowfall": "^2.2.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.2.1",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.15",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-node": "^0.3.9",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jest-html-reporter": "^3.10.2",
+    "prettier": "^3.6.2",
+    "typescript": "^5"
+  },
+  "jest-html-reporter": {
+    "outputPath": "artefacts/reports/test-report.html",
+    "pageTitle": "Test Report",
+    "includeConsoleLog": true,
+    "includeFailureMsg": true
+  }
+}

@@ -1,0 +1,52 @@
+@import "../variables.css";
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--hq-bg);
+  color: var(--hq-text);
+  font-family: var(--hq-font-body);
+}
+
+/* Themed Bootstrap overrides */
+
+.btn {
+  border-radius: 999px;
+  font-family: var(--hq-font-inline);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  min-height: 32px;
+  padding: 0.35rem 0.9rem;
+}
+
+.btn-primary {
+  background-color: var(--hq-accent-soft) !important;
+  border-color: transparent !important;
+  color: var(--hq-accent) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:focus-visible,
+.btn-primary:active,
+.btn-primary.active,
+.show > .btn-primary.dropdown-toggle {
+  background-color: var(--hq-accent-soft-hover) !important;
+  border-color: transparent !important;
+  color: var(--hq-accent) !important;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+.btn-primary.disabled,
+.btn-primary:disabled {
+  background-color: var(--hq-accent-soft) !important;
+  border-color: transparent !important;
+  color: var(--hq-accent) !important;
+  opacity: 0.65;
+  box-shadow: none !important;
+}

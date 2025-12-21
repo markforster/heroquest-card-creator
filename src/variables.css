@@ -1,0 +1,38 @@
+:root {
+  /* Core HeroQuest-inspired theme, shared with other tools */
+  --hq-bg: radial-gradient(circle at top, #343434, #090909);
+  --hq-panel-bg: #202020;
+  --hq-header-bg: linear-gradient(135deg, #1f1b15, #0c0c0c);
+  --hq-toolbar-bg: linear-gradient(135deg, #1e1b16, #111111);
+  --hq-accent: #e6b35a;
+  --hq-accent-soft: #4a3718;
+  --hq-accent-soft-hover: #5a431f;
+  --hq-border-color: #333333;
+  --hq-text: #f5f5f5;
+  --hq-text-muted: #b0b0b0;
+
+  /* Feedback / status tokens */
+  --hq-focus-ring: #f97316;
+  --hq-error-text: #fecaca;
+  --hq-error-soft: #fca5a5;
+  --hq-stat-minus: #7f1d1d;
+  --hq-stat-minus-hover: #991b1b;
+  --hq-stat-plus: #14532d;
+  --hq-stat-plus-hover: #166534;
+
+  /* Surface tokens for lists/grids */
+  --hq-surface-sunken: #111827;
+  --hq-surface-card: #1f2933;
+
+  /* Font tokens, mirroring treasure tracker */
+  --hq-font-body: "Carter Sans W01", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --hq-font-display: "HeroQuest", "Cinzel", "Trajan Pro", serif;
+  --hq-font-inline: "IM Fell English", "Caslon Antique", serif;
+  --hq-font-copy: "Caslon Antique HQ2", "Caslon Antique", serif;
+  --hq-font-form: "Calibri Light", "Calibri", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+
+  /* Fallback / legacy variable */
+  --main-bg-color: #ffffffdd;
+}
