@@ -92,6 +92,7 @@ export default function HeroCardTemplate({
       {imageUrl ? (
         <image
           href={imageUrl}
+          data-user-asset-id={heroData.imageAssetId}
           x={imageX}
           y={imageY}
           width={scaledWidth}

@@ -5,6 +5,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import { templateComponentsById } from "@/data/card-templates";
+import { getAssetBlob } from "@/lib/assets-db";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -36,42 +37,53 @@ async function getEmbeddedFontCss(): Promise<string | null> {
     return cachedEmbeddedFontCss;
   }
 
-  const fontConfigs = [
-    { path: "fonts/Carter Sans W01 Regular.ttf", weight: 400 },
-    { path: "fonts/Carter Sans W01 Medium.ttf", weight: 550 },
-    { path: "fonts/Carter Sans W01 Bold.ttf", weight: 700 },
-  ];
-
   try {
-    const rules = await Promise.all(
-      fontConfigs.map(async ({ path, weight }) => {
-        const baseUrl = new URL(".", window.location.href).toString();
-        const response = await fetch(new URL(path, baseUrl).toString());
-        const blob = await response.blob();
-
-        const dataUrl: string = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error("Failed to read font blob"));
-          reader.readAsDataURL(blob);
-        });
-
-        return `
-@font-face {
-  font-family: "Carter Sans W01";
-  src: url("${dataUrl}") format("truetype");
-  font-style: normal;
-  font-weight: ${weight};
-  font-display: swap;
-}`;
-      }),
-    );
-
-    cachedEmbeddedFontCss = rules.join("\n");
+    const { embeddedFontFaceCss } = await import("@/generated/embeddedAssets");
+    cachedEmbeddedFontCss = embeddedFontFaceCss;
     return cachedEmbeddedFontCss;
   } catch {
     return null;
   }
+}
+
+function extractFileName(href: string): string | null {
+  const trimmed = href.split("#")[0]?.split("?")[0];
+  if (!trimmed) return null;
+
+  const parts = trimmed.split("/");
+  const last = parts[parts.length - 1];
+  return last || null;
+}
+
+function guessOriginalFileName(fileName: string): string[] {
+  const candidates = new Set([fileName]);
+
+  const dotParts = fileName.split(".");
+  if (dotParts.length >= 3) {
+    const ext = dotParts[dotParts.length - 1];
+    const base = dotParts.slice(0, -2).join(".");
+    candidates.add(`${base}.${ext}`);
+  }
+
+  if (dotParts.length === 2) {
+    const ext = dotParts[1];
+    const base = dotParts[0];
+    const withoutDashHash = base.replace(/-[0-9a-f]{8,}$/i, "");
+    if (withoutDashHash !== base) {
+      candidates.add(`${withoutDashHash}.${ext}`);
+    }
+  }
+
+  return Array.from(candidates);
+}
+
+function readBlobAsDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("Failed to read blob"));
+    reader.readAsDataURL(blob);
+  });
 }
 
 const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
@@ -103,7 +115,16 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
       const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
 
       const origin = window.location.origin;
+      const isFileProtocol = window.location.protocol === "file:";
       const images = Array.from(clonedSvg.querySelectorAll("image"));
+
+      let embeddedImagesByFileName: Record<string, string> | null = null;
+      try {
+        const embedded = await import("@/generated/embeddedAssets");
+        embeddedImagesByFileName = embedded.embeddedImagesByFileName;
+      } catch {
+        embeddedImagesByFileName = null;
+      }
 
       await Promise.all(
         images.map(async (imgEl) => {
@@ -111,6 +132,43 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             imgEl.getAttribute("href") ??
             imgEl.getAttributeNS("http://www.w3.org/1999/xlink", "href");
           if (!hrefAttr || hrefAttr.startsWith("data:")) return;
+
+          const userAssetId = imgEl.getAttribute("data-user-asset-id");
+          if (userAssetId) {
+            try {
+              const blob = await getAssetBlob(userAssetId);
+              if (blob) {
+                const dataUrl = await readBlobAsDataUrl(blob);
+                imgEl.setAttribute("href", dataUrl);
+                imgEl.setAttributeNS("http://www.w3.org/1999/xlink", "href", dataUrl);
+              }
+            } catch {
+              // Fall through to the normal handling.
+            }
+            return;
+          }
+
+          if (embeddedImagesByFileName) {
+            const fileName = extractFileName(hrefAttr);
+            if (fileName) {
+              const candidates = guessOriginalFileName(fileName);
+              for (const candidate of candidates) {
+                const embedded = embeddedImagesByFileName[candidate];
+                if (embedded) {
+                  imgEl.setAttribute("href", embedded);
+                  imgEl.setAttributeNS("http://www.w3.org/1999/xlink", "href", embedded);
+                  return;
+                }
+              }
+            }
+          }
+
+          // When opened via file:// in Chrome/Edge, fetch() is blocked from origin "null" for file
+          // resources. At this point we only attempt fetch for blob: URLs (user assets), or for
+          // non-file protocols.
+          if (isFileProtocol && !hrefAttr.startsWith("blob:")) {
+            return;
+          }
 
           let url = hrefAttr;
           if (hrefAttr.startsWith("/")) {

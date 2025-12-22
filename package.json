@@ -1,10 +1,14 @@
 {
   "name": "heroquest.card-creator",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "private": true,
   "packageManager": "npm@10.8.1",
   "scripts": {
+    "generate:embedded-assets": "node scripts/generate-embedded-assets.cjs",
     "dev": "next dev -H 0.0.0.0 -p 3000",
+    "predev": "npm run generate:embedded-assets",
+    "postinstall": "npm run generate:embedded-assets",
+    "prebuild": "npm run generate:embedded-assets",
     "build": "NODE_ENV=production npm run verify:env && NODE_ENV=production next build",
     "build:download": "npm run build && node scripts/package-download.js",
     "start": "next start",
@@ -17,7 +21,8 @@
     "typecheck": "tsc --noEmit",
     "typecheck:watch": "tsc --noEmit --watch",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "serve:out": " npx serve ./out -l 3000"
   },
   "dependencies": {
     "@next/third-parties": "^16.1.0",
