@@ -73,6 +73,7 @@ export default function LargeTreasureTemplate({
         <Layer>
           <image
             href={imageUrl}
+            data-user-asset-id={data.imageAssetId}
             x={imageX}
             y={imageY}
             width={scaledWidth}

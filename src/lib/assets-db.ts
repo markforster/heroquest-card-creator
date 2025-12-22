@@ -109,6 +109,31 @@ export async function getAssetObjectUrl(id: string): Promise<string | null> {
   });
 }
 
+export async function getAssetBlob(id: string): Promise<Blob | null> {
+  const db = await openHqccDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const store = tx.objectStore(STORE_NAME);
+    const request = store.get(id);
+
+    request.onsuccess = () => {
+      const record = request.result as (AssetRecord & { blob?: Blob }) | undefined;
+      if (!record || !record.blob) {
+        resolve(null);
+        return;
+      }
+      resolve(record.blob);
+    };
+
+    request.onerror = () => {
+      // eslint-disable-next-line no-console
+      console.error("[assets-db] getAssetBlob error", request.error);
+      reject(request.error ?? new Error("Failed to load asset blob"));
+    };
+  });
+}
+
 export async function deleteAssets(ids: string[]): Promise<void> {
   if (!ids.length) return;
 

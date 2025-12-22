@@ -102,6 +102,7 @@ export default function MonsterCardTemplate({
       {imageUrl ? (
         <image
           href={imageUrl}
+          data-user-asset-id={monsterData.imageAssetId}
           x={imageX}
           y={imageY}
           width={scaledWidth}
@@ -112,6 +113,7 @@ export default function MonsterCardTemplate({
       {iconUrl ? (
         <image
           href={iconUrl}
+          data-user-asset-id={monsterData.iconAssetId}
           x={iconX}
           y={iconY}
           width={MONSTER_ICON_SIZE}

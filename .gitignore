@@ -40,3 +40,8 @@ next-env.d.ts
 
 
 docs/**/*
+!docs/issues/
+!docs/issues/**
+
+# generated (build-time)
+/src/generated/
