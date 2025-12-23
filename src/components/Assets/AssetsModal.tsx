@@ -122,7 +122,7 @@ export default function AssetsModal({
   };
 
   return (
-    <ModalShell isOpen={isOpen} onClose={onClose} title="Assets">
+    <ModalShell isOpen={isOpen} onClose={onClose} title="Assets" contentClassName={styles.assetsPopover}>
       <div className={styles.assetsToolbar}>
         <div className="input-group input-group-sm" style={{ maxWidth: 260 }}>
           <span className="input-group-text">
