@@ -82,6 +82,7 @@ export default function HeroCardTemplate({
     <Layer>
       <image
         href={background.src}
+        data-card-background="true"
         x={0}
         y={0}
         width={CARD_WIDTH}

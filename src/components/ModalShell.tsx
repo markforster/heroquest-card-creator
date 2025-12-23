@@ -13,6 +13,7 @@ type ModalShellProps = {
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  headerActions?: ReactNode;
   /** Optional extra class for the inner panel (e.g. cardsPopover). */
   contentClassName?: string;
 };
@@ -23,6 +24,7 @@ export default function ModalShell({
   onClose,
   children,
   footer,
+  headerActions,
   contentClassName,
 }: ModalShellProps) {
   useEffect(() => {
@@ -57,10 +59,13 @@ export default function ModalShell({
       >
         <div className={`${styles.templatePopoverHeader} modal-header`}>
           <h2 className={styles.templatePopoverTitle}>{title}</h2>
-          <button type="button" className={styles.modalCloseButton} onClick={onClose}>
-            <X className={styles.icon} aria-hidden="true" />
-            <span className="visually-hidden">Close</span>
-          </button>
+          <div className={styles.modalHeaderActions}>
+            {headerActions}
+            <button type="button" className={styles.modalCloseButton} onClick={onClose}>
+              <X className={styles.icon} aria-hidden="true" />
+              <span className="visually-hidden">Close</span>
+            </button>
+          </div>
         </div>
         <div className="modal-body">{children}</div>
         {footer ? <div className="modal-footer">{footer}</div> : null}

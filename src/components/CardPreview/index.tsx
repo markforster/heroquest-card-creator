@@ -23,6 +23,7 @@ type CardPreviewProps = {
 export type CardPreviewHandle = {
   exportAsPng: () => Promise<void>;
   renderToPngBlob: (options?: { width?: number; height?: number }) => Promise<Blob | null>;
+  getSvgElement: () => SVGSVGElement | null;
 };
 
 const CARD_WIDTH = 750;
@@ -117,6 +118,14 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
       const origin = window.location.origin;
       const isFileProtocol = window.location.protocol === "file:";
       const images = Array.from(clonedSvg.querySelectorAll("image"));
+      const backgroundImages = Array.from(
+        clonedSvg.querySelectorAll('image[data-card-background="true"]'),
+      );
+
+      backgroundImages.forEach((imgEl) => {
+        imgEl.setAttribute("style", "opacity:1");
+        imgEl.setAttribute("opacity", "1");
+      });
 
       let embeddedImagesByFileName: Record<string, string> | null = null;
       try {
@@ -306,6 +315,9 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           if (!pngBlob) return null;
 
           return pngBlob;
+        },
+        getSvgElement() {
+          return svgRef.current;
         },
       }),
       [cardData, templateName],

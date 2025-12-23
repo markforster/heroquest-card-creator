@@ -442,6 +442,12 @@
   gap: 0.5rem;
 }
 
+.modalHeaderActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .modalCloseButton {
   border-radius: 999px;
   width: 30px;
@@ -765,6 +771,17 @@
   margin-top: 0.75rem;
 }
 
+.bulkExportPreview {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
 .assetsEmptyState {
   height: 100%;
   display: flex;
@@ -777,6 +794,29 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 0.5rem;
+}
+
+.selectAllLabel {
+  white-space: nowrap;
+}
+
+.exportProgressTrack {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.exportProgressFill {
+  height: 100%;
+  background: var(--hq-accent);
+  transition: width 0.2s ease;
+}
+
+.exportProgressLabel {
+  font-size: 0.9rem;
+  color: var(--hq-text-muted);
 }
 
 .assetsItem {
@@ -859,8 +899,9 @@
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.35rem;
   font-size: 0.85rem;
+  margin-top: 0.15rem;
 }
 
 .cardsItemName {

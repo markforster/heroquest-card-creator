@@ -1,11 +1,15 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import JSZip from "jszip";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
+import CardPreview, { type CardPreviewHandle } from "@/components/CardPreview";
 import ModalShell from "@/components/ModalShell";
+import { cardTemplatesById } from "@/data/card-templates";
 import { deleteCards, listCards } from "@/lib/cards-db";
+import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
   createCollection,
   deleteCollection,
@@ -48,6 +52,14 @@ export default function StockpileModal({
   const [collectionDescription, setCollectionDescription] = useState("");
   const [storedCollectionId, setStoredCollectionId] = useState<string | null>(null);
   const [collectionNameError, setCollectionNameError] = useState<string | null>(null);
+  const [exportTarget, setExportTarget] = useState<CardRecord | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportTotal, setExportTotal] = useState(0);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportCancelled, setExportCancelled] = useState(false);
+  const previewRef = useRef<CardPreviewHandle | null>(null);
+  const selectAllRef = useRef<HTMLInputElement | null>(null);
+  const cancelExportRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -215,7 +227,213 @@ export default function StockpileModal({
 
   const selectedCard =
     selectedIds.length === 1 ? cards.find((card) => card.id === selectedIds[0]) : undefined;
+  const visibleSelectedIds = useMemo(() => {
+    if (!filteredCards.length || !selectedIds.length) return [];
+    const visibleIds = new Set(filteredCards.map((card) => card.id));
+    return selectedIds.filter((id) => visibleIds.has(id));
+  }, [filteredCards, selectedIds]);
   const hasMultiSelection = selectedIds.length > 1;
+  const templateFilterLabelMap: Record<string, string> = {
+    hero: "Hero",
+    monster: "Monster",
+    "large-treasure": "Large treasure",
+    "small-treasure": "Small treasure",
+    "hero-back": "Hero back",
+    "labelled-back": "Labelled back",
+  };
+  const exportTemplate =
+    exportTarget && cardTemplatesById[exportTarget.templateId]
+      ? cardTemplatesById[exportTarget.templateId]
+      : null;
+  const exportCardData = exportTarget ? cardRecordToCardData(exportTarget) : undefined;
+  const selectedCards = cards.filter((card) => selectedIds.includes(card.id));
+  const activeCollection =
+    activeFilter.type === "collection"
+      ? collections.find((collection) => collection.id === activeFilter.id)
+      : null;
+  const activeCollectionCards = activeCollection
+    ? cards.filter((card) => activeCollection.cardIds.includes(card.id))
+    : [];
+  const exportCards =
+    activeFilter.type === "collection" && selectedCards.length === 0
+      ? activeCollectionCards
+      : selectedCards;
+  const canExport =
+    !isExporting &&
+    exportCards.length > 0 &&
+    (activeFilter.type === "collection" ||
+      ((activeFilter.type === "all" || activeFilter.type === "unfiled") &&
+        selectedIds.length > 0));
+  const exportCount = exportCards.length;
+  const exportLabel = isExporting
+    ? "Exporting…"
+    : activeFilter.type === "collection" && selectedCards.length === 0
+      ? "Export all from this collection"
+      : activeFilter.type === "collection"
+        ? `Export (${exportCount}) from this collection`
+        : `Export (${exportCount})`;
+  const exportCollectionName = activeCollection?.name;
+  const exportPercent =
+    exportTotal > 0 ? Math.round((exportProgress / exportTotal) * 100) : 0;
+  const exportTitle = exportCollectionName
+    ? `Exporting (${exportTotal}) images from ${exportCollectionName}`
+    : `Exporting (${exportTotal}) images`;
+
+  useEffect(() => {
+    const checkbox = selectAllRef.current;
+    if (!checkbox) return;
+    if (filteredCards.length === 0) {
+      checkbox.indeterminate = false;
+      checkbox.checked = false;
+      return;
+    }
+    const visibleIds = new Set(filteredCards.map((card) => card.id));
+    const selectedVisible = selectedIds.filter((id) => visibleIds.has(id)).length;
+    checkbox.checked = selectedVisible === visibleIds.size;
+    checkbox.indeterminate = selectedVisible > 0 && selectedVisible < visibleIds.size;
+  }, [filteredCards, selectedIds]);
+
+  const resolveExportBaseName = (rawName?: string) => {
+    const trimmed = (rawName || "").trim();
+    const lower = trimmed.toLowerCase();
+    const replacedSpaces = lower.replace(/\s+/g, "-");
+    const safe = replacedSpaces.replace(/[^a-z0-9\-_.]+/g, "");
+    return safe || "card";
+  };
+
+  const resolveExportFileName = (rawName: string, usedNames: Map<string, number>) => {
+    const baseName = resolveExportBaseName(rawName);
+    const withExtension = baseName.endsWith(".png") ? baseName : `${baseName}.png`;
+    const currentCount = usedNames.get(withExtension) ?? 0;
+    usedNames.set(withExtension, currentCount + 1);
+    if (currentCount === 0) {
+      return withExtension;
+    }
+    const dotIndex = withExtension.lastIndexOf(".");
+    const stem = dotIndex >= 0 ? withExtension.slice(0, dotIndex) : withExtension;
+    const ext = dotIndex >= 0 ? withExtension.slice(dotIndex) : "";
+    return `${stem}-${currentCount + 1}${ext}`;
+  };
+
+  const waitForFrame = () =>
+    new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+
+  const waitForAssetElements = async (assetIds: string[], timeoutMs = 4000) => {
+    if (!assetIds.length) return;
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const svg = previewRef.current?.getSvgElement();
+      if (svg) {
+        const hasAllAssets = assetIds.every((id) =>
+          svg.querySelector(`image[data-user-asset-id="${id}"]`),
+        );
+        if (hasAllAssets) {
+          return;
+        }
+      }
+      await waitForFrame();
+    }
+  };
+
+  const resolveZipFileName = () => {
+    const now = new Date();
+    const pad = (value: number) => (value < 10 ? `0${value}` : `${value}`);
+    const timestamp = [
+      now.getFullYear(),
+      pad(now.getMonth() + 1),
+      pad(now.getDate()),
+    ].join("") +
+      "-" +
+      [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join("");
+    const collectionName =
+      activeFilter.type === "collection"
+        ? collections.find((collection) => collection.id === activeFilter.id)?.name
+        : null;
+    const base = collectionName ? resolveExportBaseName(collectionName) : "heroquest-cards";
+    return `${base}-${timestamp}.zip`;
+  };
+
+  const handleBulkExport = async () => {
+    if (!canExport) return;
+
+    setIsExporting(true);
+    setExportTotal(exportCards.length);
+    setExportProgress(0);
+    setExportCancelled(false);
+    cancelExportRef.current = false;
+    const usedNames = new Map<string, number>();
+    const zip = new JSZip();
+    let exportedCount = 0;
+
+    try {
+      if (!exportCards.length) {
+        window.alert("Select at least one card to export.");
+        return;
+      }
+
+      for (const card of exportCards) {
+        if (cancelExportRef.current) {
+          break;
+        }
+        setExportTarget(card);
+        await waitForFrame();
+        await waitForFrame();
+
+        const assetIds = [card.imageAssetId, card.monsterIconAssetId].filter(
+          (id): id is string => Boolean(id),
+        );
+        await waitForAssetElements(assetIds);
+
+        const pngBlob = await previewRef.current?.renderToPngBlob();
+        if (!pngBlob) {
+          if (cancelExportRef.current) {
+            break;
+          }
+          continue;
+        }
+
+        const fileName = resolveExportFileName(
+          card.name || card.title || card.templateId,
+          usedNames,
+        );
+        zip.file(fileName, pngBlob);
+        exportedCount += 1;
+        setExportProgress(exportedCount);
+      }
+
+      if (cancelExportRef.current) {
+        return;
+      }
+
+      if (!exportedCount) {
+        window.alert("No images were exported. Please try again.");
+        return;
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = resolveZipFileName();
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[StockpileModal] Bulk export failed", error);
+      window.alert("Could not export images. Please try again.");
+    } finally {
+      setIsExporting(false);
+      setExportTarget(null);
+      setExportTotal(0);
+      setExportProgress(0);
+      setExportCancelled(false);
+      cancelExportRef.current = false;
+    }
+  };
 
   if (!isOpen) {
     return null;
@@ -261,16 +479,24 @@ export default function StockpileModal({
               ) : null}
             </div>
             <div className="flex-grow-1 flex-shrink-0" />
-            <div className="d-flex flex-shrink-1 flex-grow-0">
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              disabled={!selectedCard || hasMultiSelection}
-              onClick={() => {
-                if (!selectedCard || !onLoadCard) return;
-                onLoadCard(selectedCard);
-                onClose();
-              }}
+            <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">
+              <button
+                type="button"
+                className="btn btn-outline-light btn-sm"
+                onClick={handleBulkExport}
+                disabled={!canExport}
+              >
+                {exportLabel}
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                disabled={!selectedCard || hasMultiSelection}
+                onClick={() => {
+                  if (!selectedCard || !onLoadCard) return;
+                  onLoadCard(selectedCard);
+                  onClose();
+                }}
               >
                 Load
               </button>
@@ -313,6 +539,30 @@ export default function StockpileModal({
                 Labelled back ({typeCounts.get("labelled-back") ?? 0})
               </option>
             </select>
+            <label className="form-check form-check-inline mb-0 ms-2" title="Select all cards">
+              <input
+                ref={selectAllRef}
+                className="form-check-input"
+                type="checkbox"
+                disabled={filteredCards.length === 0}
+                onChange={(event) => {
+                  const visibleIds = filteredCards.map((card) => card.id);
+                  if (!visibleIds.length) return;
+                  setSelectedIds((prev) => {
+                    const prevSet = new Set(prev);
+                    const allSelected = visibleIds.every((id) => prevSet.has(id));
+                    if (allSelected) {
+                      return prev.filter((id) => !visibleIds.includes(id));
+                    }
+                    const merged = new Set(prev);
+                    visibleIds.forEach((id) => merged.add(id));
+                    return Array.from(merged);
+                  });
+                  event.currentTarget.checked = false;
+                }}
+              />
+              <span className={`form-check-label ${styles.selectAllLabel}`}>Select all</span>
+            </label>
           </div>
           <div className={styles.assetsToolbarSpacer} />
           <div className={`${styles.assetsActions} gap-2`}>
@@ -323,7 +573,7 @@ export default function StockpileModal({
               <button
                 type="button"
                 className="btn btn-outline-light btn-sm"
-                disabled={!selectedIds.length}
+                disabled={!visibleSelectedIds.length}
                 onClick={() => {
                   const available = collections.filter(
                     (collection) =>
@@ -459,7 +709,9 @@ export default function StockpileModal({
                   {search.trim()
                     ? "No cards found."
                     : activeFilter.type === "collection"
-                      ? "This collection is empty."
+                      ? templateFilter !== "all" && totalCount > 0
+                        ? `Collection filtered by type ${templateFilterLabelMap[templateFilter] ?? templateFilter}.`
+                        : "This collection is empty."
                       : activeFilter.type === "unfiled"
                         ? "Nothing unfiled."
                         : "No saved cards yet."}
@@ -544,6 +796,50 @@ export default function StockpileModal({
           </div>
         </div>
       </ModalShell>
+      {isOpen && exportTarget && exportTemplate ? (
+        <div className={styles.bulkExportPreview} aria-hidden="true">
+          <CardPreview
+            ref={previewRef}
+            templateId={exportTemplate.id}
+            templateName={exportTemplate.name}
+            backgroundSrc={exportTemplate.background}
+            cardData={exportCardData}
+          />
+        </div>
+      ) : null}
+      {isExporting ? (
+        <div className={styles.stockpileOverlayBackdrop}>
+          <div className={styles.stockpileOverlayPanel}>
+            <div className={styles.stockpileOverlayHeader}>
+              <h3 className={styles.stockpileOverlayTitle}>{exportTitle}</h3>
+            </div>
+            <div className="d-flex flex-column gap-2">
+              <div className={styles.exportProgressTrack} aria-hidden="true">
+                <div
+                  className={styles.exportProgressFill}
+                  style={{ width: `${exportPercent}%` }}
+                />
+              </div>
+              <div className={styles.exportProgressLabel}>
+                {exportProgress} / {exportTotal}
+              </div>
+            </div>
+            <div className={styles.stockpileOverlayActions}>
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                disabled={exportCancelled}
+                onClick={() => {
+                  cancelExportRef.current = true;
+                  setExportCancelled(true);
+                }}
+              >
+                {exportCancelled ? "Cancelling…" : "Cancel"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {isCollectionModalOpen ? (
         <div
           className={styles.stockpileOverlayBackdrop}
@@ -719,7 +1015,7 @@ export default function StockpileModal({
                 if (!target) return;
                 try {
                   const merged = new Set<string>(target.cardIds);
-                  selectedIds.forEach((id) => merged.add(id));
+                  visibleSelectedIds.forEach((id) => merged.add(id));
                   await updateCollection(target.id, { cardIds: Array.from(merged) });
                   const refreshed = await listCollections();
                   setCollections(refreshed);
