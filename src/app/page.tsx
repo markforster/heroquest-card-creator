@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 
+import { AssetHashIndexProvider } from "@/components/Assets/AssetHashIndexProvider";
 import { CardEditorProvider, useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import CardPreviewContainer from "@/components/CardEditor/CardPreviewContainer";
 import CardInspector from "@/components/CardInspector/CardInspector";
@@ -140,7 +141,9 @@ function IndexPageInner() {
 export default function IndexPage() {
   return (
     <CardEditorProvider>
-      <IndexPageInner />
+      <AssetHashIndexProvider>
+        <IndexPageInner />
+      </AssetHashIndexProvider>
     </CardEditorProvider>
   );
 }
