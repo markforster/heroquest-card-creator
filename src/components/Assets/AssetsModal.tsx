@@ -7,9 +7,13 @@ import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import IconButton from "@/components/IconButton";
 import ModalShell from "@/components/ModalShell";
+import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
 import { generateId } from "@/lib";
+import { getNextAvailableFilename } from "@/lib/asset-filename";
+import { hashArrayBufferSha256 } from "@/lib/asset-hash";
 import type { AssetRecord } from "@/lib/assets-db";
 import { addAsset, deleteAssets, getAllAssets, getAssetObjectUrl } from "@/lib/assets-db";
+import type { UploadScanReportItem } from "@/types/asset-duplicates";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -29,6 +33,11 @@ type ConfirmState = {
   isDeleting: boolean;
 };
 
+type UploadNotice = {
+  duplicates: UploadScanReportItem[];
+  renames: Array<{ original: string; renamed: string }>;
+};
+
 export default function AssetsModal({
   isOpen,
   onClose,
@@ -40,7 +49,9 @@ export default function AssetsModal({
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+  const [uploadNotice, setUploadNotice] = useState<UploadNotice | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { scanFiles, addToIndex, removeFromIndex, existingNames } = useAssetHashIndex();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -113,6 +124,7 @@ export default function AssetsModal({
   const handleConfirmDelete = async (ids: string[]) => {
     try {
       await deleteAssets(ids);
+      removeFromIndex(ids);
       const records = await getAllAssets();
       setAssets(records);
     } catch {
@@ -178,7 +190,77 @@ export default function AssetsModal({
               if (files.length === 0) return;
 
               try {
-                for (const file of files) {
+                setUploadNotice(null);
+                let scanByIndex: Map<number, string> | null = null;
+                let reportByIndex: Map<
+                  number,
+                  "unique" | "duplicate-existing" | "duplicate-batch" | "name-collision" | "error"
+                > | null = null;
+                let scanItems: UploadScanReportItem[] | null = null;
+
+                try {
+                  const report = await scanFiles(files);
+                  const issueCount = report.items.filter((item) => item.status !== "unique").length;
+                  scanByIndex = new Map(
+                    report.items
+                      .filter((item) => item.hash)
+                      .map((item) => [item.fileIndex, item.hash as string]),
+                  );
+                  reportByIndex = new Map(
+                    report.items.map((item) => [item.fileIndex, item.status]),
+                  );
+                  scanItems = report.items;
+                  if (issueCount > 0) {
+                    // noop - surfaced via modal
+                  }
+                } catch (scanError) {
+                  // eslint-disable-next-line no-console
+                  console.warn("[AssetsModal] Upload scan failed", scanError);
+                }
+
+                const claimedNames = new Set(existingNames);
+                assets.forEach((asset) => {
+                  claimedNames.add(asset.name);
+                });
+                const finalNameByIndex = new Map<number, string>();
+                const skipIndices = new Set<number>();
+
+                for (const [index, file] of files.entries()) {
+                  const status = reportByIndex?.get(index);
+                  if (status === "duplicate-existing" || status === "duplicate-batch") {
+                    skipIndices.add(index);
+                    continue;
+                  }
+
+                  let nextName = file.name;
+                  if (claimedNames.has(nextName)) {
+                    nextName = getNextAvailableFilename(claimedNames, nextName);
+                  }
+                  claimedNames.add(nextName);
+                  finalNameByIndex.set(index, nextName);
+                }
+
+                const duplicateItems = (scanItems ?? []).filter(
+                  (item) =>
+                    item.status === "duplicate-existing" || item.status === "duplicate-batch",
+                );
+                const renameItems = Array.from(finalNameByIndex.entries())
+                  .filter(([index, name]) => files[index]?.name && files[index].name !== name)
+                  .map(([index, name]) => ({
+                    original: files[index].name,
+                    renamed: name,
+                  }));
+                if (duplicateItems.length > 0 || renameItems.length > 0) {
+                  setUploadNotice({
+                    duplicates: duplicateItems,
+                    renames: renameItems,
+                  });
+                }
+
+                for (const [index, file] of files.entries()) {
+                  if (skipIndices.has(index)) {
+                    continue;
+                  }
                   if (!file.type.startsWith("image/")) {
                     // Basic type guard; more detailed validation can be added later.
                     // eslint-disable-next-line no-console
@@ -203,15 +285,37 @@ export default function AssetsModal({
                     URL.revokeObjectURL(url);
 
                     const id = generateId();
-                    // eslint-disable-next-line no-console
-                    console.debug("[AssetsModal] Adding asset", { id, name: file.name });
+                    const resolvedName = finalNameByIndex.get(index) ?? file.name;
 
                     await addAsset(id, file, {
-                      name: file.name,
+                      name: resolvedName,
                       mimeType: file.type,
                       width,
                       height,
                     });
+
+                    let hash = scanByIndex?.get(index);
+                    if (!hash) {
+                      try {
+                        const buffer = await file.arrayBuffer();
+                        hash = await hashArrayBufferSha256(buffer);
+                      } catch (hashError) {
+                        // eslint-disable-next-line no-console
+                        console.warn("[AssetsModal] Failed to hash uploaded file", hashError);
+                      }
+                    }
+
+                    if (hash) {
+                      addToIndex(hash, {
+                        id,
+                        name: resolvedName,
+                        mimeType: file.type,
+                        width,
+                        height,
+                        createdAt: Date.now(),
+                        size: file.size,
+                      });
+                    }
                   } catch (fileError) {
                     // eslint-disable-next-line no-console
                     console.error("[AssetsModal] Upload failed for file", file.name, fileError);
@@ -303,6 +407,72 @@ export default function AssetsModal({
           />
         </div>
       )}
+      <ModalShell
+        isOpen={Boolean(
+          uploadNotice && (uploadNotice.duplicates.length > 0 || uploadNotice.renames.length > 0),
+        )}
+        onClose={() => setUploadNotice(null)}
+        title="Upload review"
+        footer={
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={() => setUploadNotice(null)}
+          >
+            Ok
+          </button>
+        }
+        contentClassName={styles.assetsReportPopover}
+      >
+        {uploadNotice ? (
+          <div>
+            {uploadNotice.duplicates.length > 0 ? (
+              <>
+                <div className={styles.assetsReportIntro}>
+                  {uploadNotice.duplicates.length} file
+                  {uploadNotice.duplicates.length === 1 ? "" : "s"} matched existing uploads or
+                  duplicates in this batch and were skipped.
+                </div>
+                <div className={styles.assetsReportList}>
+                  {uploadNotice.duplicates.map((item) => (
+                    <div
+                      key={`${item.fileIndex}-${item.file.name}`}
+                      className={styles.assetsReportItem}
+                    >
+                      <div className={styles.assetsReportName}>{item.file.name}</div>
+                      <div className={styles.assetsReportStatus}>
+                        {item.status === "duplicate-existing"
+                          ? "Already in library"
+                          : "Duplicate in batch"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : null}
+            {uploadNotice.renames.length > 0 ? (
+              <>
+                <div className={styles.assetsReportIntro}>
+                  {uploadNotice.renames.length} file
+                  {uploadNotice.renames.length === 1 ? "" : "s"} were renamed to avoid filename
+                  collisions.
+                </div>
+                <div className={styles.assetsReportList}>
+                  {uploadNotice.renames.map((item) => (
+                    <div
+                      key={`${item.original}-${item.renamed}`}
+                      className={styles.assetsReportItem}
+                    >
+                      <div className={styles.assetsReportName}>{item.original}</div>
+                      <div className={styles.assetsReportRename}>{item.renamed}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </div>
+        ) : null}
+      </ModalShell>
     </ModalShell>
   );
 }
