@@ -288,11 +288,13 @@ export default function StockpileModal({
                 type="search"
                 placeholder="Search cards..."
                 className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch}`}
-                title="Search saved cards by name"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </div>
+              title="Search saved cards by name"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <span>Filter</span>
             <select
               className={`form-select form-select-sm ${styles.cardsFilterSelect}`}
               title="Filter cards by template type"
@@ -314,6 +316,7 @@ export default function StockpileModal({
               </option>
             </select>
           </div>
+        </div>
           <div className={styles.assetsToolbarSpacer} />
           <div className={`${styles.assetsActions} gap-2`}>
             {collections.filter(
