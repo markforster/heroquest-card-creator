@@ -1,7 +1,7 @@
 "use client";
 
 const DB_NAME = "hqcc";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export type HqccDb = IDBDatabase;
 
@@ -33,6 +33,10 @@ export async function openHqccDb(): Promise<HqccDb> {
           assetsStore.createIndex("createdAt", "createdAt", { unique: false });
         }
       }
+
+      if (!db.objectStoreNames.contains("collections")) {
+        db.createObjectStore("collections", { keyPath: "id" });
+      }
     };
 
     request.onsuccess = () => {
@@ -48,4 +52,3 @@ export async function openHqccDb(): Promise<HqccDb> {
     };
   });
 }
-

@@ -6,7 +6,14 @@ import { useEffect, useMemo, useState } from "react";
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/ModalShell";
 import { deleteCards, listCards } from "@/lib/cards-db";
+import {
+  createCollection,
+  deleteCollection,
+  listCollections,
+  updateCollection,
+} from "@/lib/collections-db";
 import type { CardRecord } from "@/types/cards-db";
+import type { CollectionRecord } from "@/types/collections-db";
 
 type StockpileModalProps = {
   isOpen: boolean;
@@ -24,9 +31,23 @@ export default function StockpileModal({
   activeCardId,
 }: StockpileModalProps) {
   const [cards, setCards] = useState<CardRecord[]>([]);
+  const [collections, setCollections] = useState<CollectionRecord[]>([]);
   const [search, setSearch] = useState("");
   const [templateFilter, setTemplateFilter] = useState<string>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [activeFilter, setActiveFilter] = useState<
+    | { type: "all" }
+    | { type: "unfiled" }
+    | { type: "collection"; id: string }
+  >({ type: "all" });
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
+  const [collectionFormMode, setCollectionFormMode] = useState<"create" | "edit">("create");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addTargetCollectionId, setAddTargetCollectionId] = useState("");
+  const [collectionName, setCollectionName] = useState("");
+  const [collectionDescription, setCollectionDescription] = useState("");
+  const [storedCollectionId, setStoredCollectionId] = useState<string | null>(null);
+  const [collectionNameError, setCollectionNameError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -50,184 +71,702 @@ export default function StockpileModal({
     };
   }, [isOpen, refreshToken]);
 
-  const filteredCards = useMemo(() => {
-    let next = cards;
-
-    if (templateFilter !== "all") {
-      next = next.filter((card) => card.templateId === templateFilter);
+  useEffect(() => {
+    if (!collections.length || !storedCollectionId) {
+      return;
     }
+
+    const exists = collections.some((collection) => collection.id === storedCollectionId);
+    if (exists) {
+      setActiveFilter({ type: "collection", id: storedCollectionId });
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("hqcc.selectedCollectionId");
+    }
+    setStoredCollectionId(null);
+  }, [collections, storedCollectionId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (activeFilter.type === "collection") {
+      window.localStorage.setItem("hqcc.selectedCollectionId", activeFilter.id);
+      setStoredCollectionId(activeFilter.id);
+      return;
+    }
+
+    window.localStorage.removeItem("hqcc.selectedCollectionId");
+    setStoredCollectionId(null);
+  }, [activeFilter]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setIsCollectionModalOpen(false);
+    setCollectionName("");
+    setCollectionDescription("");
+    if (typeof window !== "undefined") {
+      setStoredCollectionId(window.localStorage.getItem("hqcc.selectedCollectionId"));
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let cancelled = false;
+
+    listCollections()
+      .then((results) => {
+        if (!cancelled) {
+          setCollections(results);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCollections([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, refreshToken]);
+
+  const { filteredCards, collectionCounts, unfiledCount, typeCounts, totalCount } = useMemo(() => {
+    let base = cards;
 
     if (search.trim()) {
       const q = search.toLocaleLowerCase();
-      next = next.filter((card) => card.nameLower.includes(q));
+      base = base.filter((card) => card.nameLower.includes(q));
     }
 
-    return next;
-  }, [cards, search, templateFilter]);
+    if (activeFilter.type === "collection") {
+      const collection = collections.find((item) => item.id === activeFilter.id);
+      if (!collection) {
+        return {
+          filteredCards: base,
+          collectionCounts: new Map<string, number>(),
+          unfiledCount: 0,
+          typeCounts: new Map<string, number>(),
+          totalCount: base.length,
+        };
+      }
+      const allowed = new Set(collection.cardIds);
+      base = base.filter((card) => allowed.has(card.id));
+    }
+
+    if (activeFilter.type === "unfiled") {
+      const membershipIndex = new Map<string, number>();
+      collections.forEach((collection) => {
+        collection.cardIds.forEach((cardId) => {
+          membershipIndex.set(cardId, (membershipIndex.get(cardId) ?? 0) + 1);
+        });
+      });
+      base = base.filter((card) => !membershipIndex.has(card.id));
+    }
+
+    const cardIdSet = new Set(cards.map((card) => card.id));
+    const counts = new Map<string, number>();
+    const membershipIndex = new Map<string, number>();
+
+    collections.forEach((collection) => {
+      let count = 0;
+      collection.cardIds.forEach((cardId) => {
+        if (cardIdSet.has(cardId)) {
+          count += 1;
+          membershipIndex.set(cardId, (membershipIndex.get(cardId) ?? 0) + 1);
+        }
+      });
+      counts.set(collection.id, count);
+    });
+
+    const unfiled = cards.reduce((total, card) => {
+      return membershipIndex.has(card.id) ? total : total + 1;
+    }, 0);
+
+    const templateCounts = new Map<string, number>();
+    base.forEach((card) => {
+      templateCounts.set(card.templateId, (templateCounts.get(card.templateId) ?? 0) + 1);
+    });
+
+    let filtered = base;
+    if (templateFilter !== "all") {
+      filtered = filtered.filter((card) => card.templateId === templateFilter);
+    }
+
+    return {
+      filteredCards: filtered,
+      collectionCounts: counts,
+      unfiledCount: unfiled,
+      typeCounts: templateCounts,
+      totalCount: base.length,
+    };
+  }, [cards, search, templateFilter, activeFilter, collections]);
 
   useEffect(() => {
     if (!isOpen) {
-      setSelectedId(null);
+      setSelectedIds([]);
       return;
     }
-    setSelectedId((prev) => prev ?? activeCardId ?? null);
+    setSelectedIds((prev) => (prev.length ? prev : activeCardId ? [activeCardId] : []));
   }, [isOpen, activeCardId]);
 
-  const selectedCard = selectedId ? cards.find((card) => card.id === selectedId) : undefined;
+  const selectedCard =
+    selectedIds.length === 1 ? cards.find((card) => card.id === selectedIds[0]) : undefined;
+  const hasMultiSelection = selectedIds.length > 1;
 
   if (!isOpen) {
     return null;
   }
 
   return (
-    <ModalShell
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Cards"
-      contentClassName={styles.cardsPopover}
-      footer={
-        <button
-          type="button"
-          className="btn btn-primary btn-sm"
-          disabled={!selectedCard}
-          onClick={() => {
-            if (!selectedCard || !onLoadCard) return;
-            onLoadCard(selectedCard);
-            onClose();
-          }}
-        >
-          Load
-        </button>
-      }
-    >
-      <div className={styles.assetsToolbar}>
-        <div className={styles.cardsFilters}>
-          <div className="input-group input-group-sm" style={{ maxWidth: 260 }}>
-            <span className="input-group-text">
-              <Search className={styles.icon} aria-hidden="true" />
-            </span>
-            <input
-              type="search"
-              placeholder="Search cards..."
-              className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch}`}
-              title="Search saved cards by name"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </div>
-          <select
-            className={`form-select form-select-sm ${styles.cardsFilterSelect}`}
-            title="Filter cards by template type"
-            value={templateFilter}
-            onChange={(event) => setTemplateFilter(event.target.value)}
-          >
-            <option value="all">All types</option>
-            <option value="hero">Hero</option>
-            <option value="monster">Monster</option>
-            <option value="large-treasure">Large treasure</option>
-            <option value="small-treasure">Small treasure</option>
-            <option value="hero-back">Hero back</option>
-            <option value="labelled-back">Labelled back</option>
-          </select>
-        </div>
-        <div className={styles.assetsToolbarSpacer} />
-        <div className={styles.assetsActions}>
-          <button
-            type="button"
-            className="btn btn-outline-danger btn-sm"
-            disabled={!selectedCard}
-            onClick={async () => {
-              if (!selectedCard) return;
-              const confirmDelete = window.confirm(
-                "Delete this card from your library? This cannot be undone.",
-              );
-              if (!confirmDelete) return;
-
-              try {
-                await deleteCards([selectedCard.id]);
-                const refreshed = await listCards({ status: "saved" });
-                setCards(refreshed);
-                setSelectedId(null);
-              } catch (error) {
-                // eslint-disable-next-line no-console
-                console.error("[StockpileModal] Failed to delete card", error);
-              }
-            }}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-      <div className={styles.assetsGridContainer}>
-        {filteredCards.length === 0 ? (
-          <div className={styles.assetsEmptyState}>No saved cards yet.</div>
-        ) : (
-          <div className={styles.assetsGrid}>
-            {filteredCards.map((card) => {
-              const updated = new Date(card.updatedAt);
-              const updatedLabel = updated.toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "short",
-                day: "2-digit",
-              });
-              const timeLabel = updated.toLocaleTimeString(undefined, {
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-
-              const thumbUrl =
-                typeof window !== "undefined" && card.thumbnailBlob
-                  ? URL.createObjectURL(card.thumbnailBlob)
-                  : null;
-              const isSelected = selectedId === card.id;
-
-              return (
+    <>
+      <ModalShell
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Cards"
+        contentClassName={styles.cardsPopover}
+        footer={
+          <div className={`d-flex w-100 align-items-center ${styles.stockpileFooter}`}>
+            <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">
+              <button
+                type="button"
+                className="btn btn-outline-light btn-sm"
+                onClick={() => {
+                  setCollectionFormMode("create");
+                  setCollectionName("");
+                  setCollectionDescription("");
+                  setIsCollectionModalOpen(true);
+                }}
+              >
+                + New collection
+              </button>
+              {activeFilter.type === "collection" ? (
                 <button
-                  key={card.id}
                   type="button"
-                  className={`${styles.assetsItem} ${isSelected ? styles.assetsItemSelected : ""}`}
+                  className="btn btn-outline-light btn-sm"
                   onClick={() => {
-                    setSelectedId((prev) => (prev === card.id ? prev : card.id));
-                  }}
-                  onDoubleClick={() => {
-                    if (!onLoadCard) return;
-                    onLoadCard(card);
-                    onClose();
+                    const target = collections.find((item) => item.id === activeFilter.id);
+                    if (!target) return;
+                    setCollectionFormMode("edit");
+                    setCollectionName(target.name);
+                    setCollectionDescription(target.description ?? "");
+                    setIsCollectionModalOpen(true);
                   }}
                 >
-                  <div className={styles.cardsItemHeader}>
-                    <div className={styles.cardsItemName}>{card.name}</div>
-                  </div>
-                  <div className={styles.cardsItemBody}>
-                    <div className={styles.cardsThumbWrapper}>
-                      {thumbUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={thumbUrl}
-                          alt={card.name}
-                          className={styles.cardsThumbImage}
-                          onLoad={() => {
-                            URL.revokeObjectURL(thumbUrl);
-                          }}
-                        />
-                      ) : null}
-                    </div>
-                    <div className={styles.cardsItemMeta}>
-                      <div className={styles.cardsItemDetails}>
-                        <span className={styles.cardsItemTemplate}>{card.templateId}</span>
-                        <span>·</span>
-                        <span>
-                          {updatedLabel} {timeLabel}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  Edit collection
                 </button>
-              );
-            })}
+              ) : null}
+            </div>
+            <div className="flex-grow-1 flex-shrink-0" />
+            <div className="d-flex flex-shrink-1 flex-grow-0">
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              disabled={!selectedCard || hasMultiSelection}
+              onClick={() => {
+                if (!selectedCard || !onLoadCard) return;
+                onLoadCard(selectedCard);
+                onClose();
+              }}
+              >
+                Load
+              </button>
+            </div>
           </div>
-        )}
-      </div>
-    </ModalShell>
+        }
+      >
+        <div className={styles.assetsToolbar}>
+          <div className={styles.cardsFilters}>
+            <div className="input-group input-group-sm" style={{ maxWidth: 260 }}>
+              <span className="input-group-text">
+                <Search className={styles.icon} aria-hidden="true" />
+              </span>
+              <input
+                type="search"
+                placeholder="Search cards..."
+                className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch}`}
+                title="Search saved cards by name"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+            <select
+              className={`form-select form-select-sm ${styles.cardsFilterSelect}`}
+              title="Filter cards by template type"
+              value={templateFilter}
+              onChange={(event) => setTemplateFilter(event.target.value)}
+            >
+              <option value="all">All types ({totalCount})</option>
+              <option value="hero">Hero ({typeCounts.get("hero") ?? 0})</option>
+              <option value="monster">Monster ({typeCounts.get("monster") ?? 0})</option>
+              <option value="large-treasure">
+                Large treasure ({typeCounts.get("large-treasure") ?? 0})
+              </option>
+              <option value="small-treasure">
+                Small treasure ({typeCounts.get("small-treasure") ?? 0})
+              </option>
+              <option value="hero-back">Hero back ({typeCounts.get("hero-back") ?? 0})</option>
+              <option value="labelled-back">
+                Labelled back ({typeCounts.get("labelled-back") ?? 0})
+              </option>
+            </select>
+          </div>
+          <div className={styles.assetsToolbarSpacer} />
+          <div className={`${styles.assetsActions} gap-2`}>
+            {collections.filter(
+              (collection) =>
+                activeFilter.type !== "collection" || collection.id !== activeFilter.id,
+            ).length ? (
+              <button
+                type="button"
+                className="btn btn-outline-light btn-sm"
+                disabled={!selectedIds.length}
+                onClick={() => {
+                  const available = collections.filter(
+                    (collection) =>
+                      activeFilter.type !== "collection" ||
+                      collection.id !== activeFilter.id,
+                  );
+                  if (!available.length) return;
+                  setAddTargetCollectionId((prev) => prev || available[0]?.id || "");
+                  setIsAddModalOpen(true);
+                }}
+              >
+                Add to collection…
+              </button>
+            ) : null}
+            {activeFilter.type === "collection" ? (
+              <button
+                type="button"
+                className="btn btn-outline-light btn-sm"
+                disabled={!selectedIds.length}
+                onClick={async () => {
+                  const target = collections.find((item) => item.id === activeFilter.id);
+                  if (!target) return;
+                  try {
+                    const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
+                    await updateCollection(target.id, { cardIds: remaining });
+                    const refreshed = await listCollections();
+                    setCollections(refreshed);
+                    setSelectedIds([]);
+                  } catch (error) {
+                    // eslint-disable-next-line no-console
+                    console.error("[StockpileModal] Failed to remove from collection", error);
+                  }
+                }}
+              >
+                Remove from collection
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="btn btn-outline-danger btn-sm"
+              disabled={!selectedIds.length}
+              onClick={async () => {
+                if (!selectedIds.length) return;
+                const confirmDelete = window.confirm(
+                  `Delete ${selectedIds.length} card(s) from your library? This cannot be undone.`,
+                );
+                if (!confirmDelete) return;
+
+                try {
+                  await deleteCards(selectedIds);
+                  const idSet = new Set(selectedIds);
+                  const updates = collections
+                    .map((collection) => {
+                      const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
+                      return nextCardIds.length === collection.cardIds.length
+                        ? null
+                        : { id: collection.id, cardIds: nextCardIds };
+                    })
+                    .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
+                  await Promise.all(
+                    updates.map((update) =>
+                      updateCollection(update.id, { cardIds: update.cardIds }),
+                    ),
+                  );
+                  const refreshed = await listCards({ status: "saved" });
+                  setCards(refreshed);
+                  const refreshedCollections = await listCollections();
+                  setCollections(refreshedCollections);
+                  setSelectedIds([]);
+                } catch (error) {
+                  // eslint-disable-next-line no-console
+                  console.error("[StockpileModal] Failed to delete card", error);
+                }
+              }}
+            >
+              {selectedIds.length > 1 ? `Delete (${selectedIds.length})` : "Delete"}
+            </button>
+          </div>
+        </div>
+        <div className={styles.stockpileLayout}>
+          <aside className={styles.stockpileSidebar} aria-label="Collections">
+            <div className={styles.stockpileSidebarHeader}>Collections</div>
+            <div className={styles.stockpileSidebarList}>
+            <button
+              type="button"
+              className={`${styles.stockpileSidebarItem} ${activeFilter.type === "all" ? styles.stockpileSidebarItemActive : ""}`}
+              onClick={() => {
+                setActiveFilter({ type: "all" });
+                setSelectedIds([]);
+              }}
+            >
+              All cards
+            </button>
+              <button
+                type="button"
+                className={`${styles.stockpileSidebarItem} ${activeFilter.type === "unfiled" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
+                onClick={() => {
+                  setActiveFilter({ type: "unfiled" });
+                  setSelectedIds([]);
+                }}
+              >
+                <span className="flex-grow-1 text-truncate fs-6">Unfiled</span>
+                <span className="badge rounded-pill bg-warning text-dark fs-6 px-2 py-1">
+                  {unfiledCount}
+                </span>
+              </button>
+              <div className={styles.stockpileSidebarDivider} />
+            </div>
+            <div className={styles.stockpileSidebarMiddle}>
+              {collections.map((collection) => (
+                <button
+                  key={collection.id}
+                  type="button"
+                  className={`${styles.stockpileSidebarItem} ${activeFilter.type === "collection" && activeFilter.id === collection.id ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
+                  onClick={() => {
+                    setActiveFilter({ type: "collection", id: collection.id });
+                    setSelectedIds([]);
+                  }}
+                  title={collection.description || collection.name}
+                >
+                  <span className="flex-grow-1 text-truncate fs-6">{collection.name}</span>
+                  <span className="badge rounded-pill bg-warning text-dark fs-6 px-2 py-1">
+                    {collectionCounts.get(collection.id) ?? 0}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </aside>
+          <div className={styles.stockpileContentPane}>
+            <div className={styles.assetsGridContainer}>
+              {filteredCards.length === 0 ? (
+                <div className={styles.assetsEmptyState}>
+                  {search.trim()
+                    ? "No cards found."
+                    : activeFilter.type === "collection"
+                      ? "This collection is empty."
+                      : activeFilter.type === "unfiled"
+                        ? "Nothing unfiled."
+                        : "No saved cards yet."}
+                </div>
+              ) : (
+                <div className={styles.assetsGrid}>
+                  {filteredCards.map((card) => {
+                    const updated = new Date(card.updatedAt);
+                    const updatedLabel = updated.toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "2-digit",
+                    });
+                    const timeLabel = updated.toLocaleTimeString(undefined, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
+
+                    const thumbUrl =
+                      typeof window !== "undefined" && card.thumbnailBlob
+                        ? URL.createObjectURL(card.thumbnailBlob)
+                        : null;
+                    const isSelected = selectedIds.includes(card.id);
+
+                    return (
+                      <button
+                        key={card.id}
+                        type="button"
+                        className={`${styles.assetsItem} ${isSelected ? styles.assetsItemSelected : ""}`}
+                        onClick={(event) => {
+                          const allowMulti = event.metaKey || event.ctrlKey;
+                          if (allowMulti) {
+                            setSelectedIds((prev) =>
+                              prev.includes(card.id)
+                                ? prev.filter((id) => id !== card.id)
+                                : [...prev, card.id],
+                            );
+                            return;
+                          }
+                          setSelectedIds([card.id]);
+                        }}
+                        onDoubleClick={() => {
+                          if (!onLoadCard) return;
+                          onLoadCard(card);
+                          onClose();
+                        }}
+                      >
+                        <div className={styles.cardsItemHeader}>
+                          <div className={styles.cardsItemName} title={card.name}>
+                            {card.name}
+                          </div>
+                        </div>
+                        <div className={styles.cardsThumbWrapper}>
+                          {thumbUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={thumbUrl}
+                              alt={card.name}
+                              className={styles.cardsThumbImage}
+                              onLoad={() => {
+                                URL.revokeObjectURL(thumbUrl);
+                              }}
+                            />
+                          ) : null}
+                        </div>
+                        <div className={styles.cardsItemMeta}>
+                          <div
+                            className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}
+                          >
+                            {card.templateId}
+                          </div>
+                          <div className={styles.cardsItemDetails}>
+                            {updatedLabel} {timeLabel}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </ModalShell>
+      {isCollectionModalOpen ? (
+        <div
+          className={styles.stockpileOverlayBackdrop}
+          onClick={() => setIsCollectionModalOpen(false)}
+        >
+          <div
+            className={styles.stockpileOverlayPanel}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className={styles.stockpileOverlayHeader}>
+              <h3 className={styles.stockpileOverlayTitle}>
+                {collectionFormMode === "edit" ? "Edit collection" : "New collection"}
+              </h3>
+              <button
+                type="button"
+                className={styles.modalCloseButton}
+                onClick={() => setIsCollectionModalOpen(false)}
+              >
+                <span className="visually-hidden">Close</span>
+                ✕
+              </button>
+            </div>
+            <form
+              onSubmit={async (event) => {
+                event.preventDefault();
+                const trimmedName = collectionName.trim();
+                if (!trimmedName) {
+                  setCollectionNameError("Name is required.");
+                  return;
+                }
+                const normalized = trimmedName.toLocaleLowerCase();
+                const conflict = collections.some((collection) => {
+                  if (collectionFormMode === "edit" && activeFilter.type === "collection") {
+                    if (collection.id === activeFilter.id) return false;
+                  }
+                  return collection.name.toLocaleLowerCase() === normalized;
+                });
+                if (conflict) {
+                  setCollectionNameError("Name already exists.");
+                  return;
+                }
+                setCollectionNameError(null);
+                try {
+                  if (collectionFormMode === "edit") {
+                    if (activeFilter.type !== "collection") return;
+                    await updateCollection(activeFilter.id, {
+                      name: trimmedName,
+                      description: collectionDescription.trim() || undefined,
+                    });
+                  } else {
+                    const created = await createCollection({
+                      name: trimmedName,
+                      description: collectionDescription.trim() || undefined,
+                    });
+                    setActiveFilter({ type: "collection", id: created.id });
+                    setAddTargetCollectionId(created.id);
+                  }
+                  const refreshed = await listCollections();
+                  setCollections(refreshed);
+                  setIsCollectionModalOpen(false);
+                  setCollectionName("");
+                  setCollectionDescription("");
+                } catch (error) {
+                  // eslint-disable-next-line no-console
+                  console.error("[StockpileModal] Failed to create collection", error);
+                }
+              }}
+            >
+              <div className="d-flex flex-column gap-2">
+                <label className="d-flex flex-column gap-1">
+                  <span>Collection name</span>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    placeholder="Name"
+                    value={collectionName}
+                    onChange={(event) => {
+                      setCollectionName(event.target.value);
+                      if (collectionNameError) {
+                        setCollectionNameError(null);
+                      }
+                    }}
+                    autoFocus
+                    required
+                  />
+                  {collectionNameError ? (
+                    <span className="text-danger small">{collectionNameError}</span>
+                  ) : null}
+                </label>
+                <label className="d-flex flex-column gap-1">
+                  <span>Description</span>
+                  <textarea
+                    className="form-control form-control-sm"
+                    placeholder="Description (optional)"
+                    value={collectionDescription}
+                    onChange={(event) => setCollectionDescription(event.target.value)}
+                    rows={3}
+                  />
+                </label>
+              </div>
+              <div className={styles.stockpileOverlayActions}>
+                {collectionFormMode === "edit" ? (
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={async () => {
+                      if (activeFilter.type !== "collection") return;
+                      const confirmDelete = window.confirm(
+                        `Delete collection "${collectionName}"? Cards in this collection will not be deleted.`,
+                      );
+                      if (!confirmDelete) return;
+                      try {
+                        await deleteCollection(activeFilter.id);
+                        const refreshed = await listCollections();
+                        setCollections(refreshed);
+                        setActiveFilter({ type: "all" });
+                        if (typeof window !== "undefined") {
+                          window.localStorage.removeItem("hqcc.selectedCollectionId");
+                        }
+                        setStoredCollectionId(null);
+                        setIsCollectionModalOpen(false);
+                        setCollectionName("");
+                        setCollectionDescription("");
+                      } catch (error) {
+                        // eslint-disable-next-line no-console
+                        console.error("[StockpileModal] Failed to delete collection", error);
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                ) : null}
+                <button type="submit" className="btn btn-primary btn-sm">
+                  {collectionFormMode === "edit" ? "Save" : "Create"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => setIsCollectionModalOpen(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+      {isAddModalOpen ? (
+        <div
+          className={styles.stockpileOverlayBackdrop}
+          onClick={() => setIsAddModalOpen(false)}
+        >
+          <div
+            className={styles.stockpileOverlayPanel}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className={styles.stockpileOverlayHeader}>
+              <h3 className={styles.stockpileOverlayTitle}>Add to collection</h3>
+              <button
+                type="button"
+                className={styles.modalCloseButton}
+                onClick={() => setIsAddModalOpen(false)}
+              >
+                <span className="visually-hidden">Close</span>
+                ✕
+              </button>
+            </div>
+            <form
+              onSubmit={async (event) => {
+                event.preventDefault();
+                if (!addTargetCollectionId) return;
+                const target = collections.find((item) => item.id === addTargetCollectionId);
+                if (!target) return;
+                try {
+                  const merged = new Set<string>(target.cardIds);
+                  selectedIds.forEach((id) => merged.add(id));
+                  await updateCollection(target.id, { cardIds: Array.from(merged) });
+                  const refreshed = await listCollections();
+                  setCollections(refreshed);
+                  setIsAddModalOpen(false);
+                } catch (error) {
+                  // eslint-disable-next-line no-console
+                  console.error("[StockpileModal] Failed to add to collection", error);
+                }
+              }}
+            >
+              <label>
+                <span className="visually-hidden">Target collection</span>
+                <select
+                  className="form-select form-select-sm"
+                  value={addTargetCollectionId}
+                  onChange={(event) => setAddTargetCollectionId(event.target.value)}
+                  required
+                >
+                  {collections
+                    .filter(
+                      (collection) =>
+                        activeFilter.type !== "collection" ||
+                        collection.id !== activeFilter.id,
+                    )
+                    .map((collection) => (
+                      <option key={collection.id} value={collection.id}>
+                        {collection.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <div className={styles.stockpileOverlayActions}>
+                <button type="submit" className="btn btn-primary btn-sm">
+                  Add
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => setIsAddModalOpen(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
