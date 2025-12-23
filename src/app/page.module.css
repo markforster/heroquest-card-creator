@@ -753,6 +753,58 @@
   color: var(--hq-text-muted);
 }
 
+.assetsReportPopover {
+  width: min(560px, 100% - 2rem);
+}
+
+.assetsReportIntro {
+  font-size: 0.85rem;
+  color: var(--hq-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.assetsReportList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.assetsReportItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #2f2f2f;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.assetsReportName {
+  font-size: 0.85rem;
+  color: #e5e7eb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assetsReportStatus {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  color: var(--hq-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.assetsReportRename {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  color: #e5e7eb;
+}
+
 /* Image field controls */
 
 .imageControlGroup {
