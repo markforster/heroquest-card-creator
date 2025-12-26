@@ -1,6 +1,6 @@
 "use client";
 
-import { Images, LayoutTemplate, SquareStack } from "lucide-react";
+import { Images, LayoutTemplate, Settings, SquareStack } from "lucide-react";
 import Image from "next/image";
 
 import styles from "@/app/page.module.css";
@@ -15,6 +15,7 @@ type MainHeaderProps = {
   onOpenTemplatePicker: () => void;
   onOpenAssets: () => void;
   onOpenStockpile: () => void;
+  onOpenSettings: () => void;
 };
 
 export default function MainHeader({
@@ -23,6 +24,7 @@ export default function MainHeader({
   onOpenTemplatePicker,
   onOpenAssets,
   onOpenStockpile,
+  onOpenSettings,
 }: MainHeaderProps) {
   const { t } = useI18n();
 
@@ -66,6 +68,14 @@ export default function MainHeader({
           title="Browse and load saved cards"
         >
           Cards
+        </IconButton>
+        <IconButton
+          className="btn btn-outline-light btn-sm"
+          icon={Settings}
+          onClick={onOpenSettings}
+          title="Open global settings"
+        >
+          Settings
         </IconButton>
       </div>
     </header>

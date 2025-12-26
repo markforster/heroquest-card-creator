@@ -16,6 +16,13 @@ const baseMessages = {
     "stats.mindPoints": "Mind Points",
     "stats.mind": "Mind",
     "stats.movementSquares": "Movement Squares",
+
+    "statsLabelAttack": "Attack",
+    "statsLabelDefend": "Defend",
+    "statsLabelBody": "Body",
+    "statsLabelMind": "Mind",
+    "statsLabelMove": "Move",
+    "statsLabelStartingPoints": "Starting Points",
   },
 
   fr: {
@@ -30,6 +37,13 @@ const baseMessages = {
     "stats.mindPoints": "Points d'esprit",
     "stats.mind": "Esprit",
     "stats.movementSquares": "Cases de mouvement",
+
+    "statsLabelAttack": "Attaque",
+    "statsLabelDefend": "Défense",
+    "statsLabelBody": "Corps",
+    "statsLabelMind": "Esprit",
+    "statsLabelMove": "Mouvement",
+    "statsLabelStartingPoints": "Points de départ",
   },
 
   de: {
@@ -44,6 +58,13 @@ const baseMessages = {
     "stats.mindPoints": "Geistpunkte",
     "stats.mind": "Geist",
     "stats.movementSquares": "Bewegungsfelder",
+
+    "statsLabelAttack": "Angriff",
+    "statsLabelDefend": "Verteidigung",
+    "statsLabelBody": "Körper",
+    "statsLabelMind": "Geist",
+    "statsLabelMove": "Bewegung",
+    "statsLabelStartingPoints": "Startpunkte",
   },
 
   es: {
@@ -58,6 +79,13 @@ const baseMessages = {
     "stats.mindPoints": "Puntos de mente",
     "stats.mind": "Mente",
     "stats.movementSquares": "Casillas de movimiento",
+
+    "statsLabelAttack": "Ataque",
+    "statsLabelDefend": "Defensa",
+    "statsLabelBody": "Cuerpo",
+    "statsLabelMind": "Mente",
+    "statsLabelMove": "Movimiento",
+    "statsLabelStartingPoints": "Puntos iniciales",
   },
 
   it: {
@@ -72,6 +100,13 @@ const baseMessages = {
     "stats.mindPoints": "Punti mente",
     "stats.mind": "Mente",
     "stats.movementSquares": "Caselle di movimento",
+
+    "statsLabelAttack": "Attacco",
+    "statsLabelDefend": "Difesa",
+    "statsLabelBody": "Corpo",
+    "statsLabelMind": "Mente",
+    "statsLabelMove": "Movimento",
+    "statsLabelStartingPoints": "Punti iniziali",
   },
 
   pt: {
@@ -86,6 +121,13 @@ const baseMessages = {
     "stats.mindPoints": "Pontos de mente",
     "stats.mind": "Mente",
     "stats.movementSquares": "Casas de movimento",
+
+    "statsLabelAttack": "Ataque",
+    "statsLabelDefend": "Defesa",
+    "statsLabelBody": "Corpo",
+    "statsLabelMind": "Mente",
+    "statsLabelMove": "Movimento",
+    "statsLabelStartingPoints": "Pontos iniciais",
   },
 
   nl: {
@@ -100,6 +142,13 @@ const baseMessages = {
     "stats.mindPoints": "Geestpunten",
     "stats.mind": "Geest",
     "stats.movementSquares": "Bewegingsvakken",
+
+    "statsLabelAttack": "Aanval",
+    "statsLabelDefend": "Verdediging",
+    "statsLabelBody": "Lichaam",
+    "statsLabelMind": "Geest",
+    "statsLabelMove": "Beweging",
+    "statsLabelStartingPoints": "Startpunten",
   },
 } satisfies Record<SupportedLanguage, Messages>;
 

@@ -5,6 +5,7 @@ import { useState } from "react";
 import AssetsModal from "@/components/Assets/AssetsModal";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import MainHeader from "@/components/MainHeader";
+import StatLabelOverridesModal from "@/components/StatLabelOverridesModal";
 import { StockpileModal } from "@/components/Stockpile";
 import TemplatePicker from "@/components/TemplatePicker";
 import { cardTemplatesById } from "@/data/card-templates";
@@ -22,6 +23,7 @@ export default function HeaderWithTemplatePicker() {
   const templatePicker = usePopupState(false);
   const assetsModal = usePopupState(false);
   const stockpileModal = usePopupState(false);
+  const settingsModal = usePopupState(false);
   const [stockpileRefreshToken, setStockpileRefreshToken] = useState(0);
 
   const selectedTemplate = selectedTemplateId ? cardTemplatesById[selectedTemplateId] : undefined;
@@ -40,6 +42,7 @@ export default function HeaderWithTemplatePicker() {
         }}
         onOpenAssets={assetsModal.open}
         onOpenStockpile={stockpileModal.open}
+        onOpenSettings={settingsModal.open}
       />
       <TemplatePicker
         isOpen={templatePicker.isOpen}
@@ -50,6 +53,10 @@ export default function HeaderWithTemplatePicker() {
         onClose={templatePicker.close}
       />
       <AssetsModal isOpen={assetsModal.isOpen} onClose={assetsModal.close} mode="manage" />
+      <StatLabelOverridesModal
+        isOpen={settingsModal.isOpen}
+        onClose={settingsModal.close}
+      />
       <StockpileModal
         isOpen={stockpileModal.isOpen}
         onClose={stockpileModal.close}

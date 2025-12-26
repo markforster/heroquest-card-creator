@@ -1,6 +1,8 @@
 import monsterStatsBg from "@/assets/card-parts/monster-stats.png";
 import Layer from "@/components/CardPreview/Layer";
+import { useStatLabelOverrides } from "@/components/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getStatLabel } from "@/lib/stat-labels";
 
 import StatsPair from "./StatsPair";
 
@@ -35,6 +37,7 @@ export const MONSTER_STATS_HEIGHT = STATS_HEIGHT;
 
 export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterStatsBlockProps) {
   const { t } = useI18n();
+  const { overrides } = useStatLabelOverrides();
 
   return (
     <Layer>
@@ -59,7 +62,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           preserveAspectRatio="none"
         />
         <StatsPair
-          header={t("stats.movementSquares")}
+          header={getStatLabel("statsLabelMove", t, overrides)}
           value={stats.movementSquares}
           x={14}
           y={14}
@@ -68,7 +71,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           // headerHeight={headerHeight}
         />
         <StatsPair
-          header={t("stats.attackDice")}
+          header={getStatLabel("statsLabelAttack", t, overrides)}
           value={stats.attackDice}
           x={194}
           y={14}
@@ -76,7 +79,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           height={138}
         />
         <StatsPair
-          header={t("stats.defendDice")}
+          header={getStatLabel("statsLabelDefend", t, overrides)}
           value={stats.defendDice}
           x={310}
           y={14}
@@ -84,7 +87,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           height={138}
         />
         <StatsPair
-          header={t("stats.bodyPoints")}
+          header={getStatLabel("statsLabelBody", t, overrides)}
           value={stats.bodyPoints}
           x={430}
           y={14}
@@ -92,7 +95,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           height={138}
         />
         <StatsPair
-          header={t("stats.mindPoints")}
+          header={getStatLabel("statsLabelMind", t, overrides)}
           value={stats.mindPoints}
           x={545}
           y={14}

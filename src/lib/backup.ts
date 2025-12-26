@@ -36,6 +36,7 @@ export interface CollectionRecordExportV1 {
 export interface HqccExportLocalStorageV1 {
   cardDraftsV1?: string | null;
   activeCardsV1?: string | null;
+  statLabels?: string | null;
 }
 
 export interface HqccExportFileV1 {
@@ -261,6 +262,7 @@ async function buildExportObject(): Promise<HqccExportFileV1> {
 
   let cardDraftsV1: string | null | undefined;
   let activeCardsV1: string | null | undefined;
+  let statLabels: string | null | undefined;
 
   try {
     cardDraftsV1 = window.localStorage.getItem("hqcc.cardDrafts.v1");
@@ -274,9 +276,16 @@ async function buildExportObject(): Promise<HqccExportFileV1> {
     activeCardsV1 = undefined;
   }
 
+  try {
+    statLabels = window.localStorage.getItem("hqcc.statLabels");
+  } catch {
+    statLabels = undefined;
+  }
+
   const localStorage: HqccExportLocalStorageV1 = {
     cardDraftsV1,
     activeCardsV1,
+    statLabels,
   };
 
   const exportObject: HqccExportFileV1 = {
@@ -432,12 +441,15 @@ async function applyBackupObject(exportData: HqccExportFileV1): Promise<ImportRe
   }
 
   try {
-    const { cardDraftsV1, activeCardsV1 } = exportData.localStorage;
+    const { cardDraftsV1, activeCardsV1, statLabels } = exportData.localStorage;
     if (typeof cardDraftsV1 === "string") {
       window.localStorage.setItem("hqcc.cardDrafts.v1", cardDraftsV1);
     }
     if (typeof activeCardsV1 === "string") {
       window.localStorage.setItem("hqcc.activeCards.v1", activeCardsV1);
+    }
+    if (typeof statLabels === "string") {
+      window.localStorage.setItem("hqcc.statLabels", statLabels);
     }
   } catch {
     // Ignore localStorage restore errors

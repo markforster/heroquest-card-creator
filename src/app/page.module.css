@@ -416,6 +416,10 @@
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.65);
 }
 
+.statLabelsPopover {
+  width: min(675px, 100% - 2rem);
+}
+
 .cardsPopover {
   width: min(1125px, 100% - 2rem);
   min-height: 25rem;
