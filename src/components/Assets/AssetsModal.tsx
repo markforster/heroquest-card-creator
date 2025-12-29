@@ -225,7 +225,8 @@ export default function AssetsModal({
                 const finalNameByIndex = new Map<number, string>();
                 const skipIndices = new Set<number>();
 
-                for (const [index, file] of files.entries()) {
+                for (let index = 0; index < files.length; index += 1) {
+                  const file = files[index];
                   const status = reportByIndex?.get(index);
                   if (status === "duplicate-existing" || status === "duplicate-batch") {
                     skipIndices.add(index);
@@ -257,7 +258,8 @@ export default function AssetsModal({
                   });
                 }
 
-                for (const [index, file] of files.entries()) {
+                for (let index = 0; index < files.length; index += 1) {
+                  const file = files[index];
                   if (skipIndices.has(index)) {
                     continue;
                   }

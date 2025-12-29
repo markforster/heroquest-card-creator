@@ -7,6 +7,31 @@ type ReleaseNotesModalProps = {
   onClose: () => void;
 };
 
+const screenshotBaseUrl =
+  "https://public.markforster.info/Heroquest/Tools/card-maker.releases/card-maker.0.5.0/screenshots/";
+const screenshotFilenames = [
+  "Editing Card - Barbarian.png",
+  "Editing Card - Cave Troll.png",
+  "Assets Browser.png",
+  "Editing Card - Ghoul.png",
+  "Choosing a Template.png",
+  "Card Browser & Collections - 12 Monsters.png",
+  "Card Browser & Collections - Multi Select.png",
+  "Card Browser & Collections - Export in Progress (6).png",
+  "Download in Bulk as Zip - Extracted.png",
+  "Download in Bulk as Zip - Final Output.png",
+  "Card Browser & Collections - Barbarian Skills.png",
+  "Card Browser & Collections - Base Monsters.png",
+  "Barbarian Skill Card - Relentless Advance.png",
+  "Card Browser & Collections - Filter by Type.png",
+  "Card Browser & Collections - Custom Treasure.png",
+  "Card Browser & Collections - Export Bulk (4) Selected.png",
+  "Card Browser & Collections - Inventory Set.png",
+  "Card Browser & Collections - Select All.png",
+  "Card Browser & Collections - Spell and Skill.png",
+  // "Download in Bulk as Zip.png",
+] as const;
+
 export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModalProps) {
   return (
     <ModalShell isOpen={isOpen} onClose={onClose} title="About this tool">
@@ -24,9 +49,9 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </h3>
           <p style={{ margin: 0, lineHeight: 1.4 }}>
             HeroQuest Card Creator is a small passion project for building custom HeroQuest-style
-            cards in your browser. It runs completely on the client, works from static files, and
-            is designed to feel like sitting down with the original cards and a very friendly
-            layout tool.
+            cards in your browser. It runs completely on the client, works from static files, and is
+            designed to feel like sitting down with the original cards and a very friendly layout
+            tool.
           </p>
         </section>
 
@@ -84,8 +109,8 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             <li>
               Position card art with pixel-like precision using sliders and small step buttons that
               nudge left, right, up or down. Scaling feels consistent regardless of the underlying
-              image size, so once you&apos;re happy with a look it&apos;s easy to repeat it on
-              other cards.
+              image size, so once you&apos;re happy with a look it&apos;s easy to repeat it on other
+              cards.
             </li>
             <li>
               Add rules text using a simple markdown-style syntax for bold and italic, with
@@ -95,13 +120,13 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             </li>
             <li>
               On hero and monster cards, the body text grows upward from the bottom of the card
-              while the stats strip moves up to make space, mirroring how the printed cards
-              actually look.
+              while the stats strip moves up to make space, mirroring how the printed cards actually
+              look.
             </li>
             <li>
               Edit stats with compact plus/minus controls instead of dropdowns. The layout mirrors
-              the stats strip on the card so what you type on the right closely matches what you
-              see on the left.
+              the stats strip on the card so what you type on the right closely matches what you see
+              on the left.
             </li>
             <li>
               Save your work automatically in the browser. Each template keeps its own draft, and
@@ -119,8 +144,8 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
               machines or keep a local safety copy.
             </li>
             <li>
-              Browse example cards and screenshots to see what&apos;s possible. A growing gallery
-              of cards I&apos;ve built with this tool lives at{" "}
+              Browse example cards and screenshots to see what&apos;s possible. A growing gallery of
+              cards I&apos;ve built with this tool lives at{" "}
               <a
                 href="https://public.markforster.info/Heroquest/cards/"
                 target="_blank"
@@ -162,9 +187,9 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </p>
           <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
             At the moment the tool has been primarily developed and tested in Chrome on desktop. It
-            should also work in Safari and Firefox, though some visual glitches or layout quirks
-            are likely. Mobile phones are not supported yet, and iPad currently has known CSS
-            issues that will be addressed in a future pass on responsive layouts.
+            should also work in Safari and Firefox, though some visual glitches or layout quirks are
+            likely. Mobile phones are not supported yet, and iPad currently has known CSS issues
+            that will be addressed in a future pass on responsive layouts.
           </p>
           <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
             The plan is to keep iterating, publish the code on GitHub, and provide a self-contained
@@ -198,11 +223,11 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             glance.
           </p>
           <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
-            The Assets and Cards browsers have also had a clean-up: toolbars are aligned, search
-            and filter controls are clearer, destructive actions are more obviously marked, and
+            The Assets and Cards browsers have also had a clean-up: toolbars are aligned, search and
+            filter controls are clearer, destructive actions are more obviously marked, and
             selection behaves more predictably. Image-related controls in the inspector now read
-            more like a proper form, with labels, grouped controls, tooltips, and better spacing,
-            so nudging and scaling artwork should feel less fussy.
+            more like a proper form, with labels, grouped controls, tooltips, and better spacing, so
+            nudging and scaling artwork should feel less fussy.
           </p>
           <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
             Under the surface, a few rough edges have been smoothed out as well: modals can be
@@ -213,75 +238,76 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </p>
         </section>
 
-	        <section style={{ marginTop: "0.9rem" }}>
-	          <h3
-	            style={{
-	              margin: 0,
-	              marginBottom: "0.35rem",
-	              fontSize: "1.2rem",
-	              color: "#e6b35a",
-	            }}
-	          >
-	            Update 18/12/2025 – Backup &amp; restore
-	          </h3>
-	          <p style={{ margin: 0, lineHeight: 1.4 }}>
-	            You can now back up and restore your work using the new &quot;Export data&quot; and
-	            &quot;Import data&quot; links in the footer. Export creates a single <code>.hqcc</code>{" "}
-	            file (a zipped JSON backup) that contains your saved cards, image assets, and key
-	            editor state; import lets you load that file in the same or another browser and
-	            continue where you left off.
-	          </p>
-	          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
-	            Backups are created entirely in your browser and never leave your device unless you
-	            choose to move or share them. Importing a backup will replace the existing cards and
-	            assets in this browser profile, so if you&apos;ve already started new work here it&apos;s
-	            worth exporting a fresh backup first. The format is designed to be forwards-compatible,
-	            so future versions of the tool can continue to read today&apos;s backups, and older
-	            <code>.hqcc.json</code> backups from earlier versions will still import correctly.
-	          </p>
-	        </section>
+        <section style={{ marginTop: "0.9rem" }}>
+          <h3
+            style={{
+              margin: 0,
+              marginBottom: "0.35rem",
+              fontSize: "1.2rem",
+              color: "#e6b35a",
+            }}
+          >
+            Update 18/12/2025 – Backup &amp; restore
+          </h3>
+          <p style={{ margin: 0, lineHeight: 1.4 }}>
+            You can now back up and restore your work using the new &quot;Export data&quot; and
+            &quot;Import data&quot; links in the footer. Export creates a single <code>.hqcc</code>{" "}
+            file (a zipped JSON backup) that contains your saved cards, image assets, and key editor
+            state; import lets you load that file in the same or another browser and continue where
+            you left off.
+          </p>
+          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
+            Backups are created entirely in your browser and never leave your device unless you
+            choose to move or share them. Importing a backup will replace the existing cards and
+            assets in this browser profile, so if you&apos;ve already started new work here
+            it&apos;s worth exporting a fresh backup first. The format is designed to be
+            forwards-compatible, so future versions of the tool can continue to read today&apos;s
+            backups, and older
+            <code>.hqcc.json</code> backups from earlier versions will still import correctly.
+          </p>
+        </section>
 
-	        <section style={{ marginTop: "0.9rem" }}>
-	          <h3
-	            style={{
-	              margin: 0,
-	              marginBottom: "0.35rem",
-	              fontSize: "1.2rem",
-	              color: "#e6b35a",
-	            }}
-	          >
-	            Update 29/12/2025 – Organise, export, and customise
-	          </h3>
-	          <p style={{ margin: 0, lineHeight: 1.4 }}>
-	            This update focuses on making it easier to manage a growing library of cards and get
-	            them out of the app when you&apos;re ready to share, print, or play. The Cards browser is
-	            now more powerful, and a few common workflow annoyances have been smoothed away.
-	          </p>
-	          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
-	            Collections are now available in the Cards browser, with a Finder-style sidebar that
-	            lets you quickly switch between All cards, Unfiled, and your own named collections.
-	            You can create and manage collections, see what&apos;s inside at a glance with live
-	            counts, and add or remove multiple cards in one go to keep your decks and sets tidy.
-	          </p>
-	          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
-	            Bulk export is here too: select the cards you want (or export everything in the
-	            current view) and download a single ZIP containing all the card images. The export
-	            flow shows progress as it runs and can be cancelled if you started the wrong batch,
-	            making larger exports much less of a waiting game.
-	          </p>
-	          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
-	            Uploading images should also feel cleaner: duplicate uploads are detected and skipped
-	            automatically, and filename collisions are handled so your library stays readable.
-	            Finally, a new Settings panel lets you customise the stat heading labels on your cards
-	            (optional and off by default), which is handy if your group uses different terminology.
-	          </p>
-	        </section>
+        <section style={{ marginTop: "0.9rem" }}>
+          <h3
+            style={{
+              margin: 0,
+              marginBottom: "0.35rem",
+              fontSize: "1.2rem",
+              color: "#e6b35a",
+            }}
+          >
+            Update 29/12/2025 – Organise, export, and customise
+          </h3>
+          <p style={{ margin: 0, lineHeight: 1.4 }}>
+            This update focuses on making it easier to manage a growing library of cards and get
+            them out of the app when you&apos;re ready to share, print, or play. The Cards browser
+            is now more powerful, and a few common workflow annoyances have been smoothed away.
+          </p>
+          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
+            Collections are now available in the Cards browser, with a Finder-style sidebar that
+            lets you quickly switch between All cards, Unfiled, and your own named collections. You
+            can create and manage collections, see what&apos;s inside at a glance with live counts,
+            and add or remove multiple cards in one go to keep your decks and sets tidy.
+          </p>
+          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
+            Bulk export is here too: select the cards you want (or export everything in the current
+            view) and download a single ZIP containing all the card images. The export flow shows
+            progress as it runs and can be cancelled if you started the wrong batch, making larger
+            exports much less of a waiting game.
+          </p>
+          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
+            Uploading images should also feel cleaner: duplicate uploads are detected and skipped
+            automatically, and filename collisions are handled so your library stays readable.
+            Finally, a new Settings panel lets you customise the stat heading labels on your cards
+            (optional and off by default), which is handy if your group uses different terminology.
+          </p>
+        </section>
 
-	        <section style={{ marginTop: "0.9rem" }}>
-	          <h3
-	            style={{
-	              margin: 0,
-	              marginBottom: "0.35rem",
+        <section style={{ marginTop: "0.9rem" }}>
+          <h3
+            style={{
+              margin: 0,
+              marginBottom: "0.35rem",
               fontSize: "1.2rem",
               color: "#e6b35a",
             }}
@@ -299,46 +325,31 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
               gap: "0.5rem",
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://public.markforster.info/Heroquest/Tools/card-maker-sample-screenshots/Assets%20Manager.png"
-              alt="Assets manager screenshot"
-              style={{
-                width: "100%",
-                borderRadius: 6,
-                border: "1px solid rgba(0,0,0,0.6)",
-              }}
-            />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://public.markforster.info/Heroquest/Tools/card-maker-sample-screenshots/Hero%20Card%20Creation.png"
-              alt="Hero card creation screenshot"
-              style={{
-                width: "100%",
-                borderRadius: 6,
-                border: "1px solid rgba(0,0,0,0.6)",
-              }}
-            />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://public.markforster.info/Heroquest/Tools/card-maker-sample-screenshots/Monster%20Card%20Creation.png"
-              alt="Monster card creation screenshot"
-              style={{
-                width: "100%",
-                borderRadius: 6,
-                border: "1px solid rgba(0,0,0,0.6)",
-              }}
-            />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://public.markforster.info/Heroquest/Tools/card-maker-sample-screenshots/Small%20Artwork%20Card%20Creation.png"
-              alt="Small artwork treasure card creation screenshot"
-              style={{
-                width: "100%",
-                borderRadius: 6,
-                border: "1px solid rgba(0,0,0,0.6)",
-              }}
-            />
+            {/* eslint-disable @next/next/no-img-element */}
+            {screenshotFilenames.map((filename) => {
+              const url = `${screenshotBaseUrl}/${encodeURIComponent(filename)}`;
+              const label = filename.replace(/\.[^.]+$/, "");
+              return (
+                <a
+                  key={filename}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  style={{ display: "block" }}
+                >
+                  <img
+                    src={url}
+                    alt={`${label} screenshot`}
+                    style={{
+                      width: "100%",
+                      borderRadius: 6,
+                      border: "1px solid rgba(0,0,0,0.6)",
+                    }}
+                  />
+                </a>
+              );
+            })}
+            {/* eslint-enable @next/next/no-img-element */}
           </div>
           <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
             For the full set of screenshots, visit{" "}

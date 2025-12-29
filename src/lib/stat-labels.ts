@@ -109,7 +109,7 @@ export function saveStatLabelOverrides(value: StatLabelOverrides): void {
 
 export function getStatLabel(
   key: StatLabelKey,
-  t: (key: string) => string,
+  t: (key: StatLabelKey) => string,
   overrides: StatLabelOverrides,
 ): string {
   if (!overrides.statLabelsEnabled) {
