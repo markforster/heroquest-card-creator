@@ -213,39 +213,75 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </p>
         </section>
 
-        <section style={{ marginTop: "0.9rem" }}>
-          <h3
-            style={{
-              margin: 0,
-              marginBottom: "0.35rem",
-              fontSize: "1.2rem",
-              color: "#e6b35a",
-            }}
-          >
-            Update 18/12/2025 – Backup &amp; restore
-          </h3>
-          <p style={{ margin: 0, lineHeight: 1.4 }}>
-            You can now back up and restore your work using the new &quot;Export data&quot; and
-            &quot;Import data&quot; links in the footer. Export creates a single <code>.hqcc</code>{" "}
-            file (a zipped JSON backup) that contains your saved cards, image assets, and key
-            editor state; import lets you load that file in the same or another browser and
-            continue where you left off.
-          </p>
-          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
-            Backups are created entirely in your browser and never leave your device unless you
-            choose to move or share them. Importing a backup will replace the existing cards and
-            assets in this browser profile, so if you&apos;ve already started new work here it&apos;s
-            worth exporting a fresh backup first. The format is designed to be forwards-compatible,
-            so future versions of the tool can continue to read today&apos;s backups, and older
-            <code>.hqcc.json</code> backups from earlier versions will still import correctly.
-          </p>
-        </section>
+	        <section style={{ marginTop: "0.9rem" }}>
+	          <h3
+	            style={{
+	              margin: 0,
+	              marginBottom: "0.35rem",
+	              fontSize: "1.2rem",
+	              color: "#e6b35a",
+	            }}
+	          >
+	            Update 18/12/2025 – Backup &amp; restore
+	          </h3>
+	          <p style={{ margin: 0, lineHeight: 1.4 }}>
+	            You can now back up and restore your work using the new &quot;Export data&quot; and
+	            &quot;Import data&quot; links in the footer. Export creates a single <code>.hqcc</code>{" "}
+	            file (a zipped JSON backup) that contains your saved cards, image assets, and key
+	            editor state; import lets you load that file in the same or another browser and
+	            continue where you left off.
+	          </p>
+	          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
+	            Backups are created entirely in your browser and never leave your device unless you
+	            choose to move or share them. Importing a backup will replace the existing cards and
+	            assets in this browser profile, so if you&apos;ve already started new work here it&apos;s
+	            worth exporting a fresh backup first. The format is designed to be forwards-compatible,
+	            so future versions of the tool can continue to read today&apos;s backups, and older
+	            <code>.hqcc.json</code> backups from earlier versions will still import correctly.
+	          </p>
+	        </section>
 
-        <section style={{ marginTop: "0.9rem" }}>
-          <h3
-            style={{
-              margin: 0,
-              marginBottom: "0.35rem",
+	        <section style={{ marginTop: "0.9rem" }}>
+	          <h3
+	            style={{
+	              margin: 0,
+	              marginBottom: "0.35rem",
+	              fontSize: "1.2rem",
+	              color: "#e6b35a",
+	            }}
+	          >
+	            Update 29/12/2025 – Organise, export, and customise
+	          </h3>
+	          <p style={{ margin: 0, lineHeight: 1.4 }}>
+	            This update focuses on making it easier to manage a growing library of cards and get
+	            them out of the app when you&apos;re ready to share, print, or play. The Cards browser is
+	            now more powerful, and a few common workflow annoyances have been smoothed away.
+	          </p>
+	          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
+	            Collections are now available in the Cards browser, with a Finder-style sidebar that
+	            lets you quickly switch between All cards, Unfiled, and your own named collections.
+	            You can create and manage collections, see what&apos;s inside at a glance with live
+	            counts, and add or remove multiple cards in one go to keep your decks and sets tidy.
+	          </p>
+	          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
+	            Bulk export is here too: select the cards you want (or export everything in the
+	            current view) and download a single ZIP containing all the card images. The export
+	            flow shows progress as it runs and can be cancelled if you started the wrong batch,
+	            making larger exports much less of a waiting game.
+	          </p>
+	          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
+	            Uploading images should also feel cleaner: duplicate uploads are detected and skipped
+	            automatically, and filename collisions are handled so your library stays readable.
+	            Finally, a new Settings panel lets you customise the stat heading labels on your cards
+	            (optional and off by default), which is handy if your group uses different terminology.
+	          </p>
+	        </section>
+
+	        <section style={{ marginTop: "0.9rem" }}>
+	          <h3
+	            style={{
+	              margin: 0,
+	              marginBottom: "0.35rem",
               fontSize: "1.2rem",
               color: "#e6b35a",
             }}
@@ -321,4 +357,3 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
     </ModalShell>
   );
 }
-
