@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
+import BackupProgressOverlay from "@/components/BackupProgressOverlay";
 import HelpModal from "@/components/HelpModal";
 import ReleaseNotesModal from "@/components/ReleaseNotesModal";
 import { usePopupState } from "@/hooks/usePopupState";
@@ -14,13 +15,53 @@ export default function MainFooter() {
   const releaseNotesModal = usePopupState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [backupProgressCurrent, setBackupProgressCurrent] = useState(0);
+  const [backupProgressTotal, setBackupProgressTotal] = useState(0);
+  const [backupProgressMode, setBackupProgressMode] = useState<"export" | "import" | null>(null);
+  const [backupProgressStatus, setBackupProgressStatus] = useState<string | null>(null);
+  const [backupSecondaryLabel, setBackupSecondaryLabel] = useState<string | null>(null);
+  const [backupSecondaryPercent, setBackupSecondaryPercent] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleExport = async () => {
     if (isExporting || isImporting) return;
     setIsExporting(true);
+    setBackupProgressMode("export");
+    setBackupProgressCurrent(0);
+    setBackupProgressTotal(0);
+    setBackupProgressStatus("Preparing...");
+    setBackupSecondaryLabel(null);
+    setBackupSecondaryPercent(null);
     try {
-      const { blob, fileName } = await createBackupHqcc();
+      const { blob, fileName } = await createBackupHqcc({
+        onProgress: (current, total) => {
+          setBackupProgressCurrent(current);
+          setBackupProgressTotal(total);
+          setBackupProgressStatus("Exporting data...");
+          setBackupSecondaryLabel(null);
+          setBackupSecondaryPercent(null);
+        },
+        onStatus: (phase) => {
+          if (phase === "finalizing") {
+            setBackupProgressStatus("Finalizing...");
+            setBackupSecondaryLabel("Finalizing...");
+            setBackupSecondaryPercent(0);
+          } else if (phase === "processing") {
+            setBackupProgressStatus("Exporting data...");
+            setBackupSecondaryLabel(null);
+            setBackupSecondaryPercent(null);
+          } else {
+            setBackupProgressStatus("Preparing...");
+            setBackupSecondaryLabel("Preparing...");
+          }
+        },
+        onSecondaryProgress: (percent, phase) => {
+          if (phase === "finalizing") {
+            setBackupSecondaryLabel("Finalizing...");
+            setBackupSecondaryPercent(percent);
+          }
+        },
+      });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -35,6 +76,10 @@ export default function MainFooter() {
       window.alert("Could not export data. Please check your browser settings and try again.");
     } finally {
       setIsExporting(false);
+      setBackupProgressMode(null);
+      setBackupProgressStatus(null);
+      setBackupSecondaryLabel(null);
+      setBackupSecondaryPercent(null);
     }
   };
 
@@ -56,18 +101,65 @@ export default function MainFooter() {
     if (!file) return;
 
     setIsImporting(true);
+    setBackupProgressMode("import");
+    setBackupProgressCurrent(0);
+    setBackupProgressTotal(0);
+    setBackupProgressStatus("Preparing...");
+    setBackupSecondaryLabel("Preparing...");
+    setBackupSecondaryPercent(null);
     try {
       const lowerName = file.name.toLowerCase();
       const useZip = lowerName.endsWith(".hqcc");
       const useJson = !useZip && lowerName.endsWith(".hqcc.json");
 
       const result = useZip
-        ? await importBackupHqcc(file)
+        ? await importBackupHqcc(file, {
+            onProgress: (current, total) => {
+              setBackupProgressCurrent(current);
+              setBackupProgressTotal(total);
+              setBackupProgressStatus("Importing data...");
+              setBackupSecondaryLabel(null);
+              setBackupSecondaryPercent(null);
+            },
+            onStatus: (phase) => {
+              setBackupProgressStatus(
+                phase === "processing" ? "Importing data..." : "Preparing...",
+              );
+              if (phase === "processing") {
+                setBackupSecondaryLabel(null);
+                setBackupSecondaryPercent(null);
+              } else {
+                setBackupSecondaryLabel("Preparing...");
+                setBackupSecondaryPercent(null);
+              }
+            },
+          })
         : useJson
-          ? await importBackupJson(file)
+          ? await importBackupJson(file, {
+              onProgress: (current, total) => {
+                setBackupProgressCurrent(current);
+                setBackupProgressTotal(total);
+                setBackupProgressStatus("Importing data...");
+                setBackupSecondaryLabel(null);
+                setBackupSecondaryPercent(null);
+              },
+              onStatus: (phase) => {
+                setBackupProgressStatus(
+                  phase === "processing" ? "Importing data..." : "Preparing...",
+                );
+                if (phase === "processing") {
+                  setBackupSecondaryLabel(null);
+                  setBackupSecondaryPercent(null);
+                } else {
+                  setBackupSecondaryLabel("Preparing...");
+                  setBackupSecondaryPercent(null);
+                }
+              },
+            })
           : await (async () => {
               throw new Error("Unsupported backup file type. Please choose a .hqcc backup file.");
             })();
+      await new Promise((resolve) => setTimeout(resolve, 250));
       window.alert(
         `Import complete.\nCards: ${result.cardsCount}\nAssets: ${result.assetsCount}\nCollections: ${result.collectionsCount}`,
       );
@@ -82,6 +174,10 @@ export default function MainFooter() {
       );
     } finally {
       setIsImporting(false);
+      setBackupProgressMode(null);
+      setBackupProgressStatus(null);
+      setBackupSecondaryLabel(null);
+      setBackupSecondaryPercent(null);
     }
   };
 
@@ -170,6 +266,15 @@ export default function MainFooter() {
       />
       <HelpModal isOpen={helpModal.isOpen} onClose={helpModal.close} />
       <ReleaseNotesModal isOpen={releaseNotesModal.isOpen} onClose={releaseNotesModal.close} />
+      <BackupProgressOverlay
+        isOpen={Boolean(backupProgressMode)}
+        title={backupProgressMode === "import" ? "Importing data..." : "Exporting data..."}
+        statusLabel={backupProgressStatus}
+        secondaryLabel={backupSecondaryLabel}
+        secondaryPercent={backupSecondaryPercent}
+        current={backupProgressCurrent}
+        total={backupProgressTotal}
+      />
     </>
   );
 }

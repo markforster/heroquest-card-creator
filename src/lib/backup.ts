@@ -66,6 +66,12 @@ export type ImportResult = {
   collectionsCount: number;
 };
 
+export type BackupProgressPhase = "export" | "import";
+export type BackupProgressCallback = (current: number, total: number, phase: BackupProgressPhase) => void;
+export type BackupStatusPhase = "preparing" | "processing" | "finalizing";
+export type BackupStatusCallback = (phase: BackupStatusPhase) => void;
+export type BackupSecondaryProgressCallback = (percent: number, phase: BackupStatusPhase) => void;
+
 async function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -157,7 +163,9 @@ function parseBackupJson(text: string): HqccExportFileV1 {
   return candidate as HqccExportFileV1;
 }
 
-async function buildExportObject(): Promise<HqccExportFileV1> {
+async function buildExportObject(
+  onProgress?: BackupProgressCallback,
+): Promise<HqccExportFileV1> {
   if (typeof window === "undefined") {
     throw new Error("Backup export is only available in the browser");
   }
@@ -178,24 +186,6 @@ async function buildExportObject(): Promise<HqccExportFileV1> {
     };
   });
 
-  const cards: CardRecordExportV1[] = [];
-  for (const value of rawCards) {
-    const { thumbnailBlob, ...rest } = value;
-    const exportRecord: CardRecordExportV1 = {
-      ...rest,
-    };
-
-    if (thumbnailBlob instanceof Blob) {
-      try {
-        exportRecord.thumbnailDataUrl = await blobToDataUrl(thumbnailBlob);
-      } catch {
-        // Ignore thumbnail encoding errors; continue without thumbnail
-      }
-    }
-
-    cards.push(exportRecord);
-  }
-
   const assetsTx = db.transaction("assets", "readonly");
   const assetsStore = assetsTx.objectStore("assets");
   const rawAssets: (AssetRecord & { blob?: Blob })[] = await new Promise<
@@ -211,31 +201,54 @@ async function buildExportObject(): Promise<HqccExportFileV1> {
     };
   });
 
+  const cards: CardRecordExportV1[] = [];
+  const totalProgressCount = rawCards.length + rawAssets.length;
+  let processedCount = 0;
+  for (const value of rawCards) {
+    const { thumbnailBlob, ...rest } = value;
+    const exportRecord: CardRecordExportV1 = {
+      ...rest,
+    };
+
+    if (thumbnailBlob instanceof Blob) {
+      try {
+        exportRecord.thumbnailDataUrl = await blobToDataUrl(thumbnailBlob);
+      } catch {
+        // Ignore thumbnail encoding errors; continue without thumbnail
+      }
+    }
+
+    cards.push(exportRecord);
+    processedCount += 1;
+    onProgress?.(processedCount, totalProgressCount, "export");
+  }
+
   const assets: AssetRecordExportV1[] = [];
   for (const value of rawAssets) {
     const { id, name, mimeType, width, height, createdAt, blob } = value;
 
-    if (!(blob instanceof Blob)) {
-      // Skip assets without blobs; they are unusable for export.
-      // This should not normally happen, but we avoid throwing here.
-      // eslint-disable-next-line no-continue
-      continue;
+    if (blob instanceof Blob) {
+      try {
+        const dataUrl = await blobToDataUrl(blob);
+        assets.push({
+          id,
+          name,
+          mimeType,
+          width,
+          height,
+          createdAt,
+          dataUrl,
+        });
+      } catch {
+        // Ignore individual asset encoding errors; continue with others
+      }
     }
+    processedCount += 1;
+    onProgress?.(processedCount, totalProgressCount, "export");
+  }
 
-    try {
-      const dataUrl = await blobToDataUrl(blob);
-      assets.push({
-        id,
-        name,
-        mimeType,
-        width,
-        height,
-        createdAt,
-        dataUrl,
-      });
-    } catch {
-      // Ignore individual asset encoding errors; continue with others
-    }
+  if (totalProgressCount > 0) {
+    onProgress?.(totalProgressCount, totalProgressCount, "export");
   }
 
   const collections: CollectionRecordExportV1[] = [];
@@ -300,7 +313,10 @@ async function buildExportObject(): Promise<HqccExportFileV1> {
   return exportObject;
 }
 
-async function applyBackupObject(exportData: HqccExportFileV1): Promise<ImportResult> {
+async function applyBackupObject(
+  exportData: HqccExportFileV1,
+  onProgress?: BackupProgressCallback,
+): Promise<ImportResult> {
   if (exportData.schemaVersion !== BACKUP_SCHEMA_VERSION) {
     throw new Error("Incompatible backup version");
   }
@@ -347,6 +363,10 @@ async function applyBackupObject(exportData: HqccExportFileV1): Promise<ImportRe
   let cardsCount = 0;
   let assetsCount = 0;
   let collectionsCount = 0;
+  const total =
+    exportData.assets.length +
+    exportData.cards.length +
+    (Array.isArray(exportData.collections) ? exportData.collections.length : 0);
 
   if (hasAssetsStore && exportData.assets.length > 0) {
     await new Promise<void>((resolve, reject) => {
@@ -368,6 +388,7 @@ async function applyBackupObject(exportData: HqccExportFileV1): Promise<ImportRe
             };
             store.put(record);
             assetsCount += 1;
+            onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
           } catch {
             // Skip invalid asset entries
           }
@@ -407,6 +428,7 @@ async function applyBackupObject(exportData: HqccExportFileV1): Promise<ImportRe
           };
           store.put(record);
           cardsCount += 1;
+          onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
         });
       } catch (error) {
         reject(error instanceof Error ? error : new Error("Failed to import cards"));
@@ -428,6 +450,7 @@ async function applyBackupObject(exportData: HqccExportFileV1): Promise<ImportRe
         exportData.collections?.forEach((collection) => {
           store.put(collection);
           collectionsCount += 1;
+          onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
         });
       } catch (error) {
         reject(error instanceof Error ? error : new Error("Failed to import collections"));
@@ -462,8 +485,15 @@ async function applyBackupObject(exportData: HqccExportFileV1): Promise<ImportRe
   };
 }
 
-export async function createBackupJson(): Promise<ExportResult> {
-  const exportObject = await buildExportObject();
+export async function createBackupJson(
+  options?: {
+    onProgress?: BackupProgressCallback;
+    onStatus?: BackupStatusCallback;
+    onSecondaryProgress?: BackupSecondaryProgressCallback;
+  },
+): Promise<ExportResult> {
+  options?.onStatus?.("processing");
+  const exportObject = await buildExportObject(options?.onProgress);
 
   const json = JSON.stringify(exportObject, null, 2);
   const blob = new Blob([json], { type: "application/json" });
@@ -493,7 +523,15 @@ export async function createBackupJson(): Promise<ExportResult> {
   };
 }
 
-export async function importBackupJson(file: File): Promise<ImportResult> {
+export async function importBackupJson(
+  file: File,
+  options?: {
+    onProgress?: BackupProgressCallback;
+    onStatus?: BackupStatusCallback;
+    onSecondaryProgress?: BackupSecondaryProgressCallback;
+  },
+): Promise<ImportResult> {
+  options?.onStatus?.("preparing");
   let text: string;
   try {
     text = await file.text();
@@ -503,17 +541,32 @@ export async function importBackupJson(file: File): Promise<ImportResult> {
 
   const exportData = parseBackupJson(text);
 
-  return applyBackupObject(exportData);
+  options?.onStatus?.("processing");
+  return applyBackupObject(exportData, options?.onProgress);
 }
 
-export async function createBackupHqcc(): Promise<ExportResult> {
-  const exportObject = await buildExportObject();
+export async function createBackupHqcc(
+  options?: {
+    onProgress?: BackupProgressCallback;
+    onStatus?: BackupStatusCallback;
+    onSecondaryProgress?: BackupSecondaryProgressCallback;
+  },
+): Promise<ExportResult> {
+  options?.onStatus?.("processing");
+  const exportObject = await buildExportObject(options?.onProgress);
   const json = JSON.stringify(exportObject, null, 2);
 
   const zip = new JSZip();
   zip.file("backup.json", json);
 
-  const blob = await zip.generateAsync({ type: "blob" });
+  options?.onStatus?.("finalizing");
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  const blob = await zip.generateAsync(
+    { type: "blob" },
+    (metadata) => {
+      options?.onSecondaryProgress?.(metadata.percent ?? 0, "finalizing");
+    },
+  );
 
   const now = new Date();
   const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
@@ -540,10 +593,24 @@ export async function createBackupHqcc(): Promise<ExportResult> {
   };
 }
 
-export async function importBackupHqcc(file: File): Promise<ImportResult> {
+export async function importBackupHqcc(
+  file: File,
+  options?: {
+    onProgress?: BackupProgressCallback;
+    onStatus?: BackupStatusCallback;
+    onSecondaryProgress?: BackupSecondaryProgressCallback;
+  },
+): Promise<ImportResult> {
+  options?.onStatus?.("preparing");
   let zip: JSZip;
   try {
-    zip = await JSZip.loadAsync(file);
+    zip = await JSZip.loadAsync(
+      file,
+      undefined,
+      (metadata) => {
+        options?.onSecondaryProgress?.(metadata.percent ?? 0, "preparing");
+      },
+    );
   } catch {
     throw new Error("This file is not a valid HeroQuest Card Maker backup");
   }
@@ -562,5 +629,6 @@ export async function importBackupHqcc(file: File): Promise<ImportResult> {
 
   const exportData = parseBackupJson(text);
 
-  return applyBackupObject(exportData);
+  options?.onStatus?.("processing");
+  return applyBackupObject(exportData, options?.onProgress);
 }
