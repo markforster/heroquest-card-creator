@@ -774,6 +774,21 @@
   text-overflow: ellipsis;
 }
 
+.spinner {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--hq-accent);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .stockpileOverlayHeader {
   display: flex;
   align-items: center;
