@@ -23,7 +23,9 @@ export default function BackupProgressOverlay({
 }: BackupProgressOverlayProps) {
   if (!isOpen) return null;
 
-  const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+  const percent =
+    total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+  const mainPercentValue = current >= total && total > 0 ? 100 : percent;
   const secondaryPercentValue =
     typeof secondaryPercent === "number" ? secondaryPercent : 0;
   const showSecondary = Boolean(secondaryLabel);
@@ -41,7 +43,7 @@ export default function BackupProgressOverlay({
               <div className={styles.exportProgressTrack} aria-hidden="true">
                 <div
                   className={styles.exportProgressFill}
-                  style={{ width: `${percent}%`, transition: "none" }}
+                  style={{ width: `${mainPercentValue}%`, transition: "none" }}
                 />
               </div>
               <div className={styles.exportProgressLabel}>
