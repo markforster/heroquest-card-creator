@@ -604,13 +604,7 @@ export async function importBackupHqcc(
   options?.onStatus?.("preparing");
   let zip: JSZip;
   try {
-    zip = await JSZip.loadAsync(
-      file,
-      undefined,
-      (metadata) => {
-        options?.onSecondaryProgress?.(metadata.percent ?? 0, "preparing");
-      },
-    );
+    zip = await JSZip.loadAsync(file);
   } catch {
     throw new Error("This file is not a valid HeroQuest Card Maker backup");
   }
