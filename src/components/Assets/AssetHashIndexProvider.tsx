@@ -31,7 +31,10 @@ export type AssetHashIndexContextValue = {
   progress: AssetHashIndexProgress;
   existingByHash: Map<string, ExistingAssetRef[]>;
   existingNames: Set<string>;
-  scanFiles: (files: File[]) => Promise<UploadScanReport>;
+  scanFiles: (
+    files: File[],
+    onProgress?: (hashedCount: number, total: number, file: File) => void,
+  ) => Promise<UploadScanReport>;
   addToIndex: (hash: string, asset: ExistingAssetRef) => void;
   removeFromIndex: (assetIds: string[]) => void;
 };
@@ -167,7 +170,10 @@ export function AssetHashIndexProvider({ children }: { children: ReactNode }) {
       progress,
       existingByHash,
       existingNames,
-      scanFiles: async (files: File[]) => {
+      scanFiles: async (
+        files: File[],
+        onProgress?: (hashedCount: number, total: number, file: File) => void,
+      ) => {
         const items: UploadScanReportItem[] = [];
         const newByHash = new Map<string, number[]>();
         const hashedFiles: Array<{ file: File; hash: string; index: number }> = [];
@@ -181,6 +187,7 @@ export function AssetHashIndexProvider({ children }: { children: ReactNode }) {
             const bucket = newByHash.get(hash) ?? [];
             bucket.push(index);
             newByHash.set(hash, bucket);
+            onProgress?.(index + 1, files.length, file);
           } catch (error) {
             items.push({
               fileIndex: index,
@@ -190,6 +197,7 @@ export function AssetHashIndexProvider({ children }: { children: ReactNode }) {
               recommendedAction: "skip",
               error: error instanceof Error ? error.message : "Failed to hash file",
             });
+            onProgress?.(index + 1, files.length, file);
           }
         }
 

@@ -7,6 +7,7 @@ import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import IconButton from "@/components/IconButton";
 import ModalShell from "@/components/ModalShell";
+import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
@@ -38,6 +39,37 @@ type UploadNotice = {
   renames: Array<{ original: string; renamed: string }>;
 };
 
+type UploadProgressPhase =
+  | "scanning"
+  | "review"
+  | "processing"
+  | "saving"
+  | "refreshing"
+  | "cancelled"
+  | "done";
+
+type UploadProgressState = {
+  phase: UploadProgressPhase;
+  total: number;
+  completed: number;
+  currentFileName: string | null;
+  isIndeterminate: boolean;
+  skippedCount: number;
+  errorCount: number;
+  renamedCount: number;
+  uploadedCount: number;
+  duplicateCount: number;
+};
+
+const ENABLE_UPLOAD_PROGRESS = true;
+const ENABLE_UPLOAD_DEBUG_DELAY = true;
+const UPLOAD_DEBUG_DELAY_MS = 1;
+
+async function maybeDelayUploadStep(): Promise<void> {
+  if (!ENABLE_UPLOAD_DEBUG_DELAY) return;
+  await new Promise((resolve) => setTimeout(resolve, UPLOAD_DEBUG_DELAY_MS));
+}
+
 export default function AssetsModal({
   isOpen,
   onClose,
@@ -50,6 +82,9 @@ export default function AssetsModal({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [uploadNotice, setUploadNotice] = useState<UploadNotice | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgressState | null>(null);
+  const [uploadReview, setUploadReview] = useState<UploadNotice | null>(null);
+  const reviewResolverRef = useRef<((shouldContinue: boolean) => void) | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { scanFiles, addToIndex, removeFromIndex, existingNames } = useAssetHashIndex();
 
@@ -133,8 +168,355 @@ export default function AssetsModal({
     }
   };
 
+  const handleUpload = async (files: File[], input: HTMLInputElement) => {
+    if (files.length === 0) return;
+    let completedCount = 0;
+    let keepProgressOpen = false;
+
+    try {
+      setUploadNotice(null);
+      setUploadReview(null);
+      if (ENABLE_UPLOAD_PROGRESS) {
+        setUploadProgress({
+          phase: "scanning",
+          total: files.length,
+          completed: 0,
+          currentFileName: null,
+          isIndeterminate: true,
+          skippedCount: 0,
+          errorCount: 0,
+          renamedCount: 0,
+          uploadedCount: 0,
+          duplicateCount: 0,
+        });
+      }
+      let scanByIndex: Map<number, string> | null = null;
+      let reportByIndex: Map<
+        number,
+        "unique" | "duplicate-existing" | "duplicate-batch" | "name-collision" | "error"
+      > | null = null;
+      let scanItems: UploadScanReportItem[] | null = null;
+
+      try {
+        const report = await scanFiles(files, (hashedCount, total, file) => {
+          if (!ENABLE_UPLOAD_PROGRESS) return;
+          setUploadProgress((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  completed: hashedCount,
+                  total,
+                  currentFileName: file.name,
+                  isIndeterminate: false,
+                }
+              : prev,
+          );
+        });
+        const issueCount = report.items.filter((item) => item.status !== "unique").length;
+        scanByIndex = new Map(
+          report.items
+            .filter((item) => item.hash)
+            .map((item) => [item.fileIndex, item.hash as string]),
+        );
+        reportByIndex = new Map(report.items.map((item) => [item.fileIndex, item.status]));
+        scanItems = report.items;
+        if (issueCount > 0) {
+          // noop - surfaced via modal
+        }
+      } catch (scanError) {
+        // eslint-disable-next-line no-console
+        console.warn("[AssetsModal] Upload scan failed", scanError);
+      }
+
+      const claimedNames = new Set(existingNames);
+      assets.forEach((asset) => {
+        claimedNames.add(asset.name);
+      });
+      const finalNameByIndex = new Map<number, string>();
+      const skipIndices = new Set<number>();
+
+      for (let index = 0; index < files.length; index += 1) {
+        const file = files[index];
+        const status = reportByIndex?.get(index);
+        if (status === "duplicate-existing" || status === "duplicate-batch") {
+          skipIndices.add(index);
+          continue;
+        }
+
+        let nextName = file.name;
+        if (claimedNames.has(nextName)) {
+          nextName = getNextAvailableFilename(claimedNames, nextName);
+        }
+        claimedNames.add(nextName);
+        finalNameByIndex.set(index, nextName);
+      }
+
+      const duplicateItems = (scanItems ?? []).filter(
+        (item) => item.status === "duplicate-existing" || item.status === "duplicate-batch",
+      );
+      const renameItems = Array.from(finalNameByIndex.entries())
+        .filter(([index, name]) => files[index]?.name && files[index].name !== name)
+        .map(([index, name]) => ({
+          original: files[index].name,
+          renamed: name,
+        }));
+      if (duplicateItems.length > 0 || renameItems.length > 0) {
+        if (ENABLE_UPLOAD_PROGRESS) {
+          setUploadReview({
+            duplicates: duplicateItems,
+            renames: renameItems,
+          });
+          setUploadProgress((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  phase: "review",
+                  isIndeterminate: true,
+                  currentFileName: null,
+                  renamedCount: renameItems.length,
+                  duplicateCount: duplicateItems.length,
+                }
+              : prev,
+          );
+          const shouldContinue = await new Promise<boolean>((resolve) => {
+            reviewResolverRef.current = resolve;
+          });
+          reviewResolverRef.current = null;
+          if (!shouldContinue) {
+            setUploadProgress((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    phase: "cancelled",
+                    isIndeterminate: true,
+                    currentFileName: null,
+                  }
+                : prev,
+            );
+            return;
+          }
+          setUploadReview(null);
+        } else {
+          setUploadNotice({
+            duplicates: duplicateItems,
+            renames: renameItems,
+          });
+        }
+      }
+
+      if (ENABLE_UPLOAD_PROGRESS) {
+        setUploadProgress((prev) =>
+          prev
+            ? {
+                ...prev,
+                phase: "processing",
+                isIndeterminate: false,
+                completed: completedCount,
+                renamedCount: renameItems.length,
+                duplicateCount: duplicateItems.length,
+              }
+            : prev,
+        );
+      }
+
+      for (let index = 0; index < files.length; index += 1) {
+        const file = files[index];
+        if (skipIndices.has(index)) {
+          completedCount += 1;
+          if (ENABLE_UPLOAD_PROGRESS) {
+            setUploadProgress((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    completed: completedCount,
+                    currentFileName: file.name,
+                    skippedCount: prev.skippedCount + 1,
+                  }
+                : prev,
+            );
+          }
+          continue;
+        }
+        if (!file.type.startsWith("image/")) {
+          // Basic type guard; more detailed validation can be added later.
+          // eslint-disable-next-line no-console
+          console.warn("[AssetsModal] Unsupported file type", file.type);
+          // Continue with the next file instead of aborting the whole batch.
+          // eslint-disable-next-line no-continue
+          completedCount += 1;
+          if (ENABLE_UPLOAD_PROGRESS) {
+            setUploadProgress((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    completed: completedCount,
+                    currentFileName: file.name,
+                    skippedCount: prev.skippedCount + 1,
+                  }
+                : prev,
+            );
+          }
+          continue;
+        }
+
+        try {
+          if (ENABLE_UPLOAD_PROGRESS) {
+            setUploadProgress((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    currentFileName: file.name,
+                  }
+                : prev,
+            );
+          }
+          const url = URL.createObjectURL(file);
+          const probe = new Image();
+          probe.src = url;
+
+          await new Promise<void>((resolve, reject) => {
+            probe.onload = () => resolve();
+            probe.onerror = () => reject(new Error("Failed to load image"));
+          });
+
+          const width = probe.naturalWidth;
+          const height = probe.naturalHeight;
+          URL.revokeObjectURL(url);
+
+          const id = generateId();
+          const resolvedName = finalNameByIndex.get(index) ?? file.name;
+
+          await addAsset(id, file, {
+            name: resolvedName,
+            mimeType: file.type,
+            width,
+            height,
+          });
+          if (ENABLE_UPLOAD_PROGRESS) {
+            setUploadProgress((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    uploadedCount: prev.uploadedCount + 1,
+                  }
+                : prev,
+            );
+          }
+
+          let hash = scanByIndex?.get(index);
+          if (!hash) {
+            try {
+              const buffer = await file.arrayBuffer();
+              hash = await hashArrayBufferSha256(buffer);
+            } catch (hashError) {
+              // eslint-disable-next-line no-console
+              console.warn("[AssetsModal] Failed to hash uploaded file", hashError);
+            }
+          }
+
+          if (hash) {
+            addToIndex(hash, {
+              id,
+              name: resolvedName,
+              mimeType: file.type,
+              width,
+              height,
+              createdAt: Date.now(),
+              size: file.size,
+            });
+          }
+          completedCount += 1;
+          if (ENABLE_UPLOAD_PROGRESS) {
+            setUploadProgress((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    completed: completedCount,
+                  }
+                : prev,
+            );
+          }
+        } catch (fileError) {
+          // eslint-disable-next-line no-console
+          console.error("[AssetsModal] Upload failed for file", file.name, fileError);
+          completedCount += 1;
+          if (ENABLE_UPLOAD_PROGRESS) {
+            setUploadProgress((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    completed: completedCount,
+                    errorCount: prev.errorCount + 1,
+                  }
+                : prev,
+            );
+          }
+        } finally {
+          await maybeDelayUploadStep();
+        }
+      }
+
+      if (ENABLE_UPLOAD_PROGRESS) {
+        setUploadProgress((prev) =>
+          prev
+            ? {
+                ...prev,
+                phase: "refreshing",
+                isIndeterminate: true,
+                currentFileName: null,
+              }
+            : prev,
+        );
+      }
+
+      const records = await getAllAssets();
+      setAssets(records);
+      if (ENABLE_UPLOAD_PROGRESS) {
+        setUploadProgress((prev) =>
+          prev
+            ? {
+                ...prev,
+                phase: "done",
+                isIndeterminate: false,
+                currentFileName: null,
+              }
+            : prev,
+        );
+        keepProgressOpen = true;
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[AssetsModal] Upload failed", error);
+    } finally {
+      if (ENABLE_UPLOAD_PROGRESS && !keepProgressOpen) {
+        setUploadProgress(null);
+      }
+      input.value = "";
+    }
+  };
+
+  const handleUploadReviewContinue = () => {
+    reviewResolverRef.current?.(true);
+    reviewResolverRef.current = null;
+  };
+
+  const handleUploadReviewCancel = () => {
+    reviewResolverRef.current?.(false);
+    reviewResolverRef.current = null;
+    setUploadReview(null);
+  };
+
+  const handleUploadSummaryClose = () => {
+    setUploadProgress(null);
+  };
+
   return (
-    <ModalShell isOpen={isOpen} onClose={onClose} title="Assets" contentClassName={styles.assetsPopover}>
+    <ModalShell
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Assets"
+      contentClassName={styles.assetsPopover}
+    >
       <div className={styles.assetsToolbar}>
         <div className="input-group input-group-sm" style={{ maxWidth: 260 }}>
           <span className="input-group-text">
@@ -188,150 +570,7 @@ export default function AssetsModal({
             onChange={async (event) => {
               const files = Array.from(event.target.files ?? []);
               if (files.length === 0) return;
-
-              try {
-                setUploadNotice(null);
-                let scanByIndex: Map<number, string> | null = null;
-                let reportByIndex: Map<
-                  number,
-                  "unique" | "duplicate-existing" | "duplicate-batch" | "name-collision" | "error"
-                > | null = null;
-                let scanItems: UploadScanReportItem[] | null = null;
-
-                try {
-                  const report = await scanFiles(files);
-                  const issueCount = report.items.filter((item) => item.status !== "unique").length;
-                  scanByIndex = new Map(
-                    report.items
-                      .filter((item) => item.hash)
-                      .map((item) => [item.fileIndex, item.hash as string]),
-                  );
-                  reportByIndex = new Map(
-                    report.items.map((item) => [item.fileIndex, item.status]),
-                  );
-                  scanItems = report.items;
-                  if (issueCount > 0) {
-                    // noop - surfaced via modal
-                  }
-                } catch (scanError) {
-                  // eslint-disable-next-line no-console
-                  console.warn("[AssetsModal] Upload scan failed", scanError);
-                }
-
-                const claimedNames = new Set(existingNames);
-                assets.forEach((asset) => {
-                  claimedNames.add(asset.name);
-                });
-                const finalNameByIndex = new Map<number, string>();
-                const skipIndices = new Set<number>();
-
-                for (let index = 0; index < files.length; index += 1) {
-                  const file = files[index];
-                  const status = reportByIndex?.get(index);
-                  if (status === "duplicate-existing" || status === "duplicate-batch") {
-                    skipIndices.add(index);
-                    continue;
-                  }
-
-                  let nextName = file.name;
-                  if (claimedNames.has(nextName)) {
-                    nextName = getNextAvailableFilename(claimedNames, nextName);
-                  }
-                  claimedNames.add(nextName);
-                  finalNameByIndex.set(index, nextName);
-                }
-
-                const duplicateItems = (scanItems ?? []).filter(
-                  (item) =>
-                    item.status === "duplicate-existing" || item.status === "duplicate-batch",
-                );
-                const renameItems = Array.from(finalNameByIndex.entries())
-                  .filter(([index, name]) => files[index]?.name && files[index].name !== name)
-                  .map(([index, name]) => ({
-                    original: files[index].name,
-                    renamed: name,
-                  }));
-                if (duplicateItems.length > 0 || renameItems.length > 0) {
-                  setUploadNotice({
-                    duplicates: duplicateItems,
-                    renames: renameItems,
-                  });
-                }
-
-                for (let index = 0; index < files.length; index += 1) {
-                  const file = files[index];
-                  if (skipIndices.has(index)) {
-                    continue;
-                  }
-                  if (!file.type.startsWith("image/")) {
-                    // Basic type guard; more detailed validation can be added later.
-                    // eslint-disable-next-line no-console
-                    console.warn("[AssetsModal] Unsupported file type", file.type);
-                    // Continue with the next file instead of aborting the whole batch.
-                    // eslint-disable-next-line no-continue
-                    continue;
-                  }
-
-                  try {
-                    const url = URL.createObjectURL(file);
-                    const probe = new Image();
-                    probe.src = url;
-
-                    await new Promise<void>((resolve, reject) => {
-                      probe.onload = () => resolve();
-                      probe.onerror = () => reject(new Error("Failed to load image"));
-                    });
-
-                    const width = probe.naturalWidth;
-                    const height = probe.naturalHeight;
-                    URL.revokeObjectURL(url);
-
-                    const id = generateId();
-                    const resolvedName = finalNameByIndex.get(index) ?? file.name;
-
-                    await addAsset(id, file, {
-                      name: resolvedName,
-                      mimeType: file.type,
-                      width,
-                      height,
-                    });
-
-                    let hash = scanByIndex?.get(index);
-                    if (!hash) {
-                      try {
-                        const buffer = await file.arrayBuffer();
-                        hash = await hashArrayBufferSha256(buffer);
-                      } catch (hashError) {
-                        // eslint-disable-next-line no-console
-                        console.warn("[AssetsModal] Failed to hash uploaded file", hashError);
-                      }
-                    }
-
-                    if (hash) {
-                      addToIndex(hash, {
-                        id,
-                        name: resolvedName,
-                        mimeType: file.type,
-                        width,
-                        height,
-                        createdAt: Date.now(),
-                        size: file.size,
-                      });
-                    }
-                  } catch (fileError) {
-                    // eslint-disable-next-line no-console
-                    console.error("[AssetsModal] Upload failed for file", file.name, fileError);
-                  }
-                }
-
-                const records = await getAllAssets();
-                setAssets(records);
-              } catch (error) {
-                // eslint-disable-next-line no-console
-                console.error("[AssetsModal] Upload failed", error);
-              } finally {
-                event.target.value = "";
-              }
+              await handleUpload(files, event.target);
             }}
           />
         </div>
@@ -409,72 +648,108 @@ export default function AssetsModal({
           />
         </div>
       )}
-      <ModalShell
-        isOpen={Boolean(
-          uploadNotice && (uploadNotice.duplicates.length > 0 || uploadNotice.renames.length > 0),
-        )}
-        onClose={() => setUploadNotice(null)}
-        title="Upload review"
-        footer={
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={() => setUploadNotice(null)}
-          >
-            Ok
-          </button>
-        }
-        contentClassName={styles.assetsReportPopover}
-      >
-        {uploadNotice ? (
-          <div>
-            {uploadNotice.duplicates.length > 0 ? (
-              <>
-                <div className={styles.assetsReportIntro}>
-                  {uploadNotice.duplicates.length} file
-                  {uploadNotice.duplicates.length === 1 ? "" : "s"} matched existing uploads or
-                  duplicates in this batch and were skipped.
-                </div>
-                <div className={styles.assetsReportList}>
-                  {uploadNotice.duplicates.map((item) => (
-                    <div
-                      key={`${item.fileIndex}-${item.file.name}`}
-                      className={styles.assetsReportItem}
-                    >
-                      <div className={styles.assetsReportName}>{item.file.name}</div>
-                      <div className={styles.assetsReportStatus}>
-                        {item.status === "duplicate-existing"
-                          ? "Already in library"
-                          : "Duplicate in batch"}
+      {!ENABLE_UPLOAD_PROGRESS ? (
+        <ModalShell
+          isOpen={Boolean(
+            uploadNotice && (uploadNotice.duplicates.length > 0 || uploadNotice.renames.length > 0),
+          )}
+          onClose={() => setUploadNotice(null)}
+          title="Upload review"
+          footer={
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => setUploadNotice(null)}
+            >
+              Ok
+            </button>
+          }
+          contentClassName={styles.assetsReportPopover}
+        >
+          {uploadNotice ? (
+            <div>
+              {uploadNotice.duplicates.length > 0 ? (
+                <>
+                  <div className={styles.assetsReportIntro}>
+                    {uploadNotice.duplicates.length} file
+                    {uploadNotice.duplicates.length === 1 ? "" : "s"} matched existing uploads or
+                    duplicates in this batch and were skipped.
+                  </div>
+                  <div className={styles.assetsReportList}>
+                    {uploadNotice.duplicates.map((item) => (
+                      <div
+                        key={`${item.fileIndex}-${item.file.name}`}
+                        className={styles.assetsReportItem}
+                      >
+                        <div className={styles.assetsReportName}>{item.file.name}</div>
+                        <div className={styles.assetsReportStatus}>
+                          {item.status === "duplicate-existing"
+                            ? "Already in library"
+                            : "Duplicate in batch"}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : null}
-            {uploadNotice.renames.length > 0 ? (
-              <>
-                <div className={styles.assetsReportIntro}>
-                  {uploadNotice.renames.length} file
-                  {uploadNotice.renames.length === 1 ? "" : "s"} were renamed to avoid filename
-                  collisions.
-                </div>
-                <div className={styles.assetsReportList}>
-                  {uploadNotice.renames.map((item) => (
-                    <div
-                      key={`${item.original}-${item.renamed}`}
-                      className={styles.assetsReportItem}
-                    >
-                      <div className={styles.assetsReportName}>{item.original}</div>
-                      <div className={styles.assetsReportRename}>{item.renamed}</div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : null}
-          </div>
-        ) : null}
-      </ModalShell>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+              {uploadNotice.renames.length > 0 ? (
+                <>
+                  <div className={styles.assetsReportIntro}>
+                    {uploadNotice.renames.length} file
+                    {uploadNotice.renames.length === 1 ? "" : "s"} were renamed to avoid filename
+                    collisions.
+                  </div>
+                  <div className={styles.assetsReportList}>
+                    {uploadNotice.renames.map((item) => (
+                      <div
+                        key={`${item.original}-${item.renamed}`}
+                        className={styles.assetsReportItem}
+                      >
+                        <div className={styles.assetsReportName}>{item.original}</div>
+                        <div className={styles.assetsReportRename}>{item.renamed}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+            </div>
+          ) : null}
+        </ModalShell>
+      ) : null}
+      <UploadProgressOverlay
+        isOpen={Boolean(ENABLE_UPLOAD_PROGRESS && uploadProgress)}
+        phaseLabel={
+          uploadProgress?.phase === "scanning"
+            ? "Scanning for duplicates..."
+            : uploadProgress?.phase === "processing"
+              ? "Processing images..."
+              : uploadProgress?.phase === "saving"
+                ? "Saving to library..."
+                : uploadProgress?.phase === "refreshing"
+                  ? "Refreshing library..."
+                  : uploadProgress?.phase === "review"
+                    ? "Review uploads..."
+                    : uploadProgress?.phase === "cancelled"
+                      ? "Cancelling..."
+                      : uploadProgress?.phase === "done"
+                        ? "Upload complete"
+                      : ""
+        }
+        currentFileName={uploadProgress?.currentFileName}
+        completed={uploadProgress?.completed ?? 0}
+        total={uploadProgress?.total ?? 0}
+        isIndeterminate={uploadProgress?.isIndeterminate ?? true}
+        skippedCount={uploadProgress?.skippedCount ?? 0}
+        errorCount={uploadProgress?.errorCount ?? 0}
+        renamedCount={uploadProgress?.renamedCount ?? 0}
+        uploadedCount={uploadProgress?.uploadedCount ?? 0}
+        duplicateCount={uploadProgress?.duplicateCount ?? 0}
+        isComplete={uploadProgress?.phase === "done"}
+        review={uploadReview}
+        onReviewContinue={handleUploadReviewContinue}
+        onReviewCancel={handleUploadReviewCancel}
+        onClose={handleUploadSummaryClose}
+      />
     </ModalShell>
   );
 }
