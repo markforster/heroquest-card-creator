@@ -8,7 +8,7 @@ import styles from "@/app/page.module.css";
 import CardPreview, { type CardPreviewHandle } from "@/components/CardPreview";
 import ConfirmModal from "@/components/ConfirmModal";
 import ModalShell from "@/components/ModalShell";
-import { cardTemplatesById } from "@/data/card-templates";
+import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { deleteCards, listCards } from "@/lib/cards-db";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
@@ -240,14 +240,13 @@ export default function StockpileModal({
     return selectedIds.filter((id) => visibleIds.has(id));
   }, [filteredCards, selectedIds]);
   const hasMultiSelection = selectedIds.length > 1;
-  const templateFilterLabelMap: Record<string, string> = {
-    hero: "Hero",
-    monster: "Monster",
-    "large-treasure": "Large treasure",
-    "small-treasure": "Small treasure",
-    "hero-back": "Hero back",
-    "labelled-back": "Labelled back",
-  };
+  const templateFilterLabelMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    cardTemplates.forEach((template) => {
+      map[template.id] = template.name;
+    });
+    return map;
+  }, []);
   const exportTemplate =
     exportTarget && cardTemplatesById[exportTarget.templateId]
       ? cardTemplatesById[exportTarget.templateId]
@@ -402,7 +401,7 @@ export default function StockpileModal({
         }
 
         const fileName = resolveExportFileName(
-          card.name || card.title || card.templateId,
+          card.name || card.title || templateFilterLabelMap[card.templateId] || card.templateId,
           usedNames,
         );
         zip.file(fileName, pngBlob);
@@ -535,18 +534,11 @@ export default function StockpileModal({
               onChange={(event) => setTemplateFilter(event.target.value)}
             >
               <option value="all">All types ({totalCount})</option>
-              <option value="hero">Hero ({typeCounts.get("hero") ?? 0})</option>
-              <option value="monster">Monster ({typeCounts.get("monster") ?? 0})</option>
-              <option value="large-treasure">
-                Large treasure ({typeCounts.get("large-treasure") ?? 0})
-              </option>
-              <option value="small-treasure">
-                Small treasure ({typeCounts.get("small-treasure") ?? 0})
-              </option>
-              <option value="hero-back">Hero back ({typeCounts.get("hero-back") ?? 0})</option>
-              <option value="labelled-back">
-                Labelled back ({typeCounts.get("labelled-back") ?? 0})
-              </option>
+              {cardTemplates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name} ({typeCounts.get(template.id) ?? 0})
+                </option>
+              ))}
             </select>
             <label className="form-check form-check-inline mb-0 ms-2" title="Select all cards">
               <input
@@ -796,7 +788,7 @@ export default function StockpileModal({
                           <div
                             className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}
                           >
-                            {card.templateId}
+                            {templateFilterLabelMap[card.templateId] ?? card.templateId}
                           </div>
                           <div className={styles.cardsItemDetails}>
                             {updatedLabel} {timeLabel}
