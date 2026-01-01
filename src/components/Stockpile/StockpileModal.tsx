@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import CardPreview, { type CardPreviewHandle } from "@/components/CardPreview";
+import ConfirmModal from "@/components/ConfirmModal";
 import ModalShell from "@/components/ModalShell";
 import { cardTemplatesById } from "@/data/card-templates";
 import { deleteCards, listCards } from "@/lib/cards-db";
@@ -34,6 +35,12 @@ export default function StockpileModal({
   refreshToken,
   activeCardId,
 }: StockpileModalProps) {
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    body: string;
+    confirmLabel?: string;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
   const [cards, setCards] = useState<CardRecord[]>([]);
   const [collections, setCollections] = useState<CollectionRecord[]>([]);
   const [search, setSearch] = useState("");
@@ -620,36 +627,41 @@ export default function StockpileModal({
               disabled={!selectedIds.length}
               onClick={async () => {
                 if (!selectedIds.length) return;
-                const confirmDelete = window.confirm(
-                  `Delete ${selectedIds.length} card(s) from your library? This cannot be undone.`,
-                );
-                if (!confirmDelete) return;
-
-                try {
-                  await deleteCards(selectedIds);
-                  const idSet = new Set(selectedIds);
-                  const updates = collections
-                    .map((collection) => {
-                      const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
-                      return nextCardIds.length === collection.cardIds.length
-                        ? null
-                        : { id: collection.id, cardIds: nextCardIds };
-                    })
-                    .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
-                  await Promise.all(
-                    updates.map((update) =>
-                      updateCollection(update.id, { cardIds: update.cardIds }),
-                    ),
-                  );
-                  const refreshed = await listCards({ status: "saved" });
-                  setCards(refreshed);
-                  const refreshedCollections = await listCollections();
-                  setCollections(refreshedCollections);
-                  setSelectedIds([]);
-                } catch (error) {
-                  // eslint-disable-next-line no-console
-                  console.error("[StockpileModal] Failed to delete card", error);
-                }
+                const ids = [...selectedIds];
+                setConfirmDialog({
+                  title: "Delete cards?",
+                  body: `Delete ${ids.length} card(s) from your library? This cannot be undone.`,
+                  confirmLabel: ids.length > 1 ? `Delete (${ids.length})` : "Delete",
+                  onConfirm: async () => {
+                    try {
+                      await deleteCards(ids);
+                      const idSet = new Set(ids);
+                      const updates = collections
+                        .map((collection) => {
+                          const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
+                          return nextCardIds.length === collection.cardIds.length
+                            ? null
+                            : { id: collection.id, cardIds: nextCardIds };
+                        })
+                        .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
+                      await Promise.all(
+                        updates.map((update) =>
+                          updateCollection(update.id, { cardIds: update.cardIds }),
+                        ),
+                      );
+                      const refreshed = await listCards({ status: "saved" });
+                      setCards(refreshed);
+                      const refreshedCollections = await listCollections();
+                      setCollections(refreshedCollections);
+                      setSelectedIds([]);
+                    } catch (error) {
+                      // eslint-disable-next-line no-console
+                      console.error("[StockpileModal] Failed to delete card", error);
+                    } finally {
+                      setConfirmDialog(null);
+                    }
+                  },
+                });
               }}
             >
               {selectedIds.length > 1 ? `Delete (${selectedIds.length})` : "Delete"}
@@ -950,26 +962,31 @@ export default function StockpileModal({
                     className="btn btn-outline-danger btn-sm"
                     onClick={async () => {
                       if (activeFilter.type !== "collection") return;
-                      const confirmDelete = window.confirm(
-                        `Delete collection "${collectionName}"? Cards in this collection will not be deleted.`,
-                      );
-                      if (!confirmDelete) return;
-                      try {
-                        await deleteCollection(activeFilter.id);
-                        const refreshed = await listCollections();
-                        setCollections(refreshed);
-                        setActiveFilter({ type: "all" });
-                        if (typeof window !== "undefined") {
-                          window.localStorage.removeItem("hqcc.selectedCollectionId");
-                        }
-                        setStoredCollectionId(null);
-                        setIsCollectionModalOpen(false);
-                        setCollectionName("");
-                        setCollectionDescription("");
-                      } catch (error) {
-                        // eslint-disable-next-line no-console
-                        console.error("[StockpileModal] Failed to delete collection", error);
-                      }
+                      setConfirmDialog({
+                        title: "Delete collection?",
+                        body: `Delete collection "${collectionName}"? Cards in this collection will not be deleted.`,
+                        confirmLabel: "Delete",
+                        onConfirm: async () => {
+                          try {
+                            await deleteCollection(activeFilter.id);
+                            const refreshed = await listCollections();
+                            setCollections(refreshed);
+                            setActiveFilter({ type: "all" });
+                            if (typeof window !== "undefined") {
+                              window.localStorage.removeItem("hqcc.selectedCollectionId");
+                            }
+                            setStoredCollectionId(null);
+                            setIsCollectionModalOpen(false);
+                            setCollectionName("");
+                            setCollectionDescription("");
+                          } catch (error) {
+                            // eslint-disable-next-line no-console
+                            console.error("[StockpileModal] Failed to delete collection", error);
+                          } finally {
+                            setConfirmDialog(null);
+                          }
+                        },
+                      });
                     }}
                   >
                     Delete
@@ -1066,6 +1083,15 @@ export default function StockpileModal({
           </div>
         </div>
       ) : null}
+      <ConfirmModal
+        isOpen={Boolean(confirmDialog)}
+        title={confirmDialog?.title ?? ""}
+        confirmLabel={confirmDialog?.confirmLabel}
+        onConfirm={() => confirmDialog?.onConfirm()}
+        onCancel={() => setConfirmDialog(null)}
+      >
+        {confirmDialog?.body ?? ""}
+      </ConfirmModal>
     </>
   );
 }

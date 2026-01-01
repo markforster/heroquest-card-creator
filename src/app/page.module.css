@@ -420,6 +420,14 @@
   width: min(675px, 100% - 2rem);
 }
 
+.confirmPopover {
+  width: min(450px, 100% - 2rem);
+}
+
+.confirmPopover :global(.modal-footer) {
+  margin-top: 0.75rem;
+}
+
 .cardsPopover {
   width: min(1125px, 100% - 2rem);
   min-height: 25rem;

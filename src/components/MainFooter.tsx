@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import BackupProgressOverlay from "@/components/BackupProgressOverlay";
+import ConfirmModal from "@/components/ConfirmModal";
 import HelpModal from "@/components/HelpModal";
 import ReleaseNotesModal from "@/components/ReleaseNotesModal";
 import { usePopupState } from "@/hooks/usePopupState";
@@ -21,6 +22,7 @@ export default function MainFooter() {
   const [backupProgressStatus, setBackupProgressStatus] = useState<string | null>(null);
   const [backupSecondaryLabel, setBackupSecondaryLabel] = useState<string | null>(null);
   const [backupSecondaryPercent, setBackupSecondaryPercent] = useState<number | null>(null);
+  const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleExport = async () => {
@@ -85,10 +87,11 @@ export default function MainFooter() {
 
   const handleImportClick = () => {
     if (isExporting || isImporting) return;
-    const confirmed = window.confirm(
-      "Importing data will replace all existing cards, assets, and related data in this browser. Continue?",
-    );
-    if (!confirmed) return;
+    setIsImportConfirmOpen(true);
+  };
+
+  const handleImportConfirm = () => {
+    setIsImportConfirmOpen(false);
     const input = fileInputRef.current;
     if (input) {
       input.value = "";
@@ -275,6 +278,16 @@ export default function MainFooter() {
         current={backupProgressCurrent}
         total={backupProgressTotal}
       />
+      <ConfirmModal
+        isOpen={isImportConfirmOpen}
+        title="Import data"
+        confirmLabel="Import"
+        onConfirm={handleImportConfirm}
+        onCancel={() => setIsImportConfirmOpen(false)}
+      >
+        Importing data will replace all existing cards, assets, and related data in this browser.
+        Continue?
+      </ConfirmModal>
     </>
   );
 }
