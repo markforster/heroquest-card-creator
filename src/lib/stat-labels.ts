@@ -3,10 +3,14 @@ const STORAGE_KEY = "hqcc.statLabels";
 export const STAT_LABEL_KEYS = [
   "statsLabelAttack",
   "statsLabelDefend",
-  "statsLabelBody",
-  "statsLabelMind",
   "statsLabelMove",
   "statsLabelStartingPoints",
+  "statsLabelHeroBody",
+  "statsLabelHeroMind",
+  "statsLabelMonsterBodyPoints",
+  "statsLabelMonsterMindPoints",
+  "statsLabelBody",
+  "statsLabelMind",
 ] as const;
 
 export type StatLabelKey = (typeof STAT_LABEL_KEYS)[number];
@@ -19,10 +23,14 @@ export const DEFAULT_STAT_LABELS: StatLabelOverrides = {
   statLabelsEnabled: false,
   statsLabelAttack: "",
   statsLabelDefend: "",
-  statsLabelBody: "",
-  statsLabelMind: "",
   statsLabelMove: "",
   statsLabelStartingPoints: "",
+  statsLabelHeroBody: "",
+  statsLabelHeroMind: "",
+  statsLabelMonsterBodyPoints: "",
+  statsLabelMonsterMindPoints: "",
+  statsLabelBody: "",
+  statsLabelMind: "",
 };
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -63,6 +71,26 @@ export function normalizeStatLabelOverrides(
     } else {
       changed = true;
     }
+  }
+
+  const legacyBody = normalized.statsLabelBody;
+  if (!normalized.statsLabelHeroBody && legacyBody) {
+    normalized.statsLabelHeroBody = legacyBody;
+    changed = true;
+  }
+  if (!normalized.statsLabelMonsterBodyPoints && legacyBody) {
+    normalized.statsLabelMonsterBodyPoints = legacyBody;
+    changed = true;
+  }
+
+  const legacyMind = normalized.statsLabelMind;
+  if (!normalized.statsLabelHeroMind && legacyMind) {
+    normalized.statsLabelHeroMind = legacyMind;
+    changed = true;
+  }
+  if (!normalized.statsLabelMonsterMindPoints && legacyMind) {
+    normalized.statsLabelMonsterMindPoints = legacyMind;
+    changed = true;
   }
 
   return { value: normalized, changed };
@@ -109,15 +137,15 @@ export function saveStatLabelOverrides(value: StatLabelOverrides): void {
 
 export function getStatLabel(
   key: StatLabelKey,
-  t: (key: StatLabelKey) => string,
+  baseLabel: string,
   overrides: StatLabelOverrides,
 ): string {
   if (!overrides.statLabelsEnabled) {
-    return t(key);
+    return baseLabel;
   }
   const overrideValue = overrides[key];
   if (overrideValue && overrideValue.trim().length > 0) {
     return overrideValue;
   }
-  return t(key);
+  return baseLabel;
 }

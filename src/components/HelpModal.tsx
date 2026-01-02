@@ -1,6 +1,7 @@
 "use client";
 
 import ModalShell from "@/components/ModalShell";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type HelpModalProps = {
   isOpen: boolean;
@@ -8,8 +9,9 @@ type HelpModalProps = {
 };
 
 export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
+  const { t } = useI18n();
   return (
-    <ModalShell isOpen={isOpen} onClose={onClose} title="Help">
+    <ModalShell isOpen={isOpen} onClose={onClose} title={t("heading.help")}>
       <div style={{ maxHeight: "60vh", overflowY: "auto", fontSize: "1.1rem" }}>
         <section style={{ marginBottom: "0.75rem" }}>
           <h3

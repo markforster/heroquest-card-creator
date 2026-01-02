@@ -1,6 +1,7 @@
 import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
 import RibbonTitle from "@/components/CardParts/RibbonTitle";
 import Layer from "@/components/CardPreview/Layer";
+import { useI18n } from "@/i18n/I18nProvider";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import type { LabelledBackCardData } from "@/types/card-data";
 import type { TemplateRenderProps } from "@/types/templates";
@@ -25,8 +26,9 @@ export default function LabelledBackTemplate({
   templateName,
   cardData,
 }: TemplateRenderProps) {
+  const { t } = useI18n();
   const data = (cardData as LabelledBackCardData | undefined) ?? {};
-  const label = data.title || templateName || "Card Back";
+  const label = data.title || templateName || t("ui.cardBack");
 
   const imageUrl = useAssetImageUrl(data.imageAssetId);
   const imageScale = data.imageScale ?? 1;

@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useEffect } from "react";
 
 import styles from "@/app/page.module.css";
+import { useI18n } from "@/i18n/I18nProvider";
 
 import type { ReactNode, MouseEvent } from "react";
 
@@ -27,6 +28,7 @@ export default function ModalShell({
   headerActions,
   contentClassName,
 }: ModalShellProps) {
+  const { t } = useI18n();
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -63,7 +65,7 @@ export default function ModalShell({
             {headerActions}
             <button type="button" className={styles.modalCloseButton} onClick={onClose}>
               <X className={styles.icon} aria-hidden="true" />
-              <span className="visually-hidden">Close</span>
+              <span className="visually-hidden">{t("actions.close")}</span>
             </button>
           </div>
         </div>

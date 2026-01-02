@@ -9,6 +9,7 @@ import CardPreview, { type CardPreviewHandle } from "@/components/CardPreview";
 import ConfirmModal from "@/components/ConfirmModal";
 import ModalShell from "@/components/ModalShell";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
+import { useI18n } from "@/i18n/I18nProvider";
 import { deleteCards, listCards } from "@/lib/cards-db";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
@@ -35,6 +36,7 @@ export default function StockpileModal({
   refreshToken,
   activeCardId,
 }: StockpileModalProps) {
+  const { t } = useI18n();
   const [confirmDialog, setConfirmDialog] = useState<{
     title: string;
     body: string;
@@ -272,18 +274,18 @@ export default function StockpileModal({
         selectedIds.length > 0));
   const exportCount = exportCards.length;
   const exportLabel = isExporting
-    ? "Exporting…"
+    ? t("actions.exporting")
     : activeFilter.type === "collection" && selectedCards.length === 0
-      ? "Export all from this collection"
+      ? `${t("actions.exportAll")} ${t("actions.fromThisCollection")}`
       : activeFilter.type === "collection"
-        ? `Export (${exportCount}) from this collection`
-        : `Export (${exportCount})`;
+        ? `${t("actions.export")} (${exportCount}) ${t("actions.fromThisCollection")}`
+        : `${t("actions.export")} (${exportCount})`;
   const exportCollectionName = activeCollection?.name;
   const exportPercent =
     exportTotal > 0 ? Math.round((exportProgress / exportTotal) * 100) : 0;
   const exportTitle = exportCollectionName
-    ? `Exporting (${exportTotal}) images from ${exportCollectionName}`
-    : `Exporting (${exportTotal}) images`;
+    ? `${t("status.exportingImagesFrom")} ${exportCollectionName} (${exportTotal})`
+    : `${t("status.exportingImages")} (${exportTotal})`;
 
   useEffect(() => {
     const checkbox = selectAllRef.current;
@@ -375,8 +377,8 @@ export default function StockpileModal({
 
     try {
       if (!exportCards.length) {
-        window.alert("Select at least one card to export.");
-        return;
+      window.alert(t("alert.selectCardToExport"));
+      return;
       }
 
       for (const card of exportCards) {
@@ -414,7 +416,7 @@ export default function StockpileModal({
       }
 
       if (!exportedCount) {
-        window.alert("No images were exported. Please try again.");
+        window.alert(t("alert.noImagesExported"));
         return;
       }
 
@@ -430,7 +432,7 @@ export default function StockpileModal({
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("[StockpileModal] Bulk export failed", error);
-      window.alert("Could not export images. Please try again.");
+      window.alert(t("alert.exportImagesFailed"));
     } finally {
       setIsExporting(false);
       setExportTarget(null);
@@ -450,7 +452,7 @@ export default function StockpileModal({
       <ModalShell
         isOpen={isOpen}
         onClose={onClose}
-        title="Cards"
+        title={t("heading.cards")}
         contentClassName={styles.cardsPopover}
         footer={
           <div className={`d-flex w-100 align-items-center ${styles.stockpileFooter}`}>
@@ -465,7 +467,7 @@ export default function StockpileModal({
                   setIsCollectionModalOpen(true);
                 }}
               >
-                + New collection
+                + {t("actions.newCollection")}
               </button>
               {activeFilter.type === "collection" ? (
                 <button
@@ -480,7 +482,7 @@ export default function StockpileModal({
                     setIsCollectionModalOpen(true);
                   }}
                 >
-                  Edit collection
+                  {t("actions.editCollection")}
                 </button>
               ) : null}
             </div>
@@ -504,7 +506,7 @@ export default function StockpileModal({
                   onClose();
                 }}
               >
-                Load
+                {t("actions.load")}
               </button>
             </div>
           </div>
@@ -518,29 +520,34 @@ export default function StockpileModal({
               </span>
               <input
                 type="search"
-                placeholder="Search cards..."
+                placeholder={t("placeholders.searchCards")}
                 className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch}`}
-              title="Search saved cards by name"
+              title={t("tooltip.searchCards")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>
           <div className="d-flex align-items-center gap-2">
-            <span>Filter</span>
+            <span>{t("form.filter")}</span>
             <select
               className={`form-select form-select-sm ${styles.cardsFilterSelect}`}
-              title="Filter cards by template type"
+              title={t("tooltip.filterCards")}
               value={templateFilter}
               onChange={(event) => setTemplateFilter(event.target.value)}
             >
-              <option value="all">All types ({totalCount})</option>
+              <option value="all">
+                {t("ui.allTypes")} ({totalCount})
+              </option>
               {cardTemplates.map((template) => (
                 <option key={template.id} value={template.id}>
                   {template.name} ({typeCounts.get(template.id) ?? 0})
                 </option>
               ))}
             </select>
-            <label className="form-check form-check-inline mb-0 ms-2" title="Select all cards">
+            <label
+              className="form-check form-check-inline mb-0 ms-2"
+              title={t("tooltip.selectAllCards")}
+            >
               <input
                 ref={selectAllRef}
                 className="form-check-input"
@@ -562,7 +569,9 @@ export default function StockpileModal({
                   event.currentTarget.checked = false;
                 }}
               />
-              <span className={`form-check-label ${styles.selectAllLabel}`}>Select all</span>
+              <span className={`form-check-label ${styles.selectAllLabel}`}>
+                {t("form.selectAll")}
+              </span>
             </label>
           </div>
         </div>
@@ -587,7 +596,7 @@ export default function StockpileModal({
                   setIsAddModalOpen(true);
                 }}
               >
-                Add to collection…
+                {t("actions.addToCollection")}
               </button>
             ) : null}
             {activeFilter.type === "collection" ? (
@@ -610,7 +619,7 @@ export default function StockpileModal({
                   }
                 }}
               >
-                Remove from collection
+                {t("actions.removeFromCollection")}
               </button>
             ) : null}
             <button
@@ -621,9 +630,12 @@ export default function StockpileModal({
                 if (!selectedIds.length) return;
                 const ids = [...selectedIds];
                 setConfirmDialog({
-                  title: "Delete cards?",
-                  body: `Delete ${ids.length} card(s) from your library? This cannot be undone.`,
-                  confirmLabel: ids.length > 1 ? `Delete (${ids.length})` : "Delete",
+                  title: t("confirm.deleteCardsTitle"),
+                  body: `${t("confirm.deleteCardsBodyPrefix")} ${ids.length} ${
+                    ids.length === 1 ? t("label.card") : t("label.cards")
+                  } ${t("confirm.deleteCardsBodySuffix")}`,
+                  confirmLabel:
+                    ids.length > 1 ? `${t("actions.delete")} (${ids.length})` : t("actions.delete"),
                   onConfirm: async () => {
                     try {
                       await deleteCards(ids);
@@ -656,13 +668,15 @@ export default function StockpileModal({
                 });
               }}
             >
-              {selectedIds.length > 1 ? `Delete (${selectedIds.length})` : "Delete"}
+              {selectedIds.length > 1
+                ? `${t("actions.delete")} (${selectedIds.length})`
+                : t("actions.delete")}
             </button>
           </div>
         </div>
         <div className={styles.stockpileLayout}>
-          <aside className={styles.stockpileSidebar} aria-label="Collections">
-            <div className={styles.stockpileSidebarHeader}>Collections</div>
+          <aside className={styles.stockpileSidebar} aria-label={t("heading.collections")}>
+            <div className={styles.stockpileSidebarHeader}>{t("heading.collections")}</div>
             <div className={styles.stockpileSidebarList}>
             <button
               type="button"
@@ -672,17 +686,17 @@ export default function StockpileModal({
                 setSelectedIds([]);
               }}
             >
-              All cards
+              {t("actions.allCards")}
             </button>
-              <button
-                type="button"
-                className={`${styles.stockpileSidebarItem} ${activeFilter.type === "unfiled" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
-                onClick={() => {
-                  setActiveFilter({ type: "unfiled" });
-                  setSelectedIds([]);
-                }}
-              >
-                <span className="flex-grow-1 text-truncate fs-6">Unfiled</span>
+            <button
+              type="button"
+              className={`${styles.stockpileSidebarItem} ${activeFilter.type === "unfiled" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
+              onClick={() => {
+                setActiveFilter({ type: "unfiled" });
+                setSelectedIds([]);
+              }}
+            >
+              <span className="flex-grow-1 text-truncate fs-6">{t("actions.unfiled")}</span>
                 <span className="badge rounded-pill bg-warning text-dark fs-6 px-2 py-1">
                   {unfiledCount}
                 </span>
@@ -714,14 +728,16 @@ export default function StockpileModal({
               {filteredCards.length === 0 ? (
                 <div className={styles.assetsEmptyState}>
                   {search.trim()
-                    ? "No cards found."
+                    ? t("empty.noCardsFound")
                     : activeFilter.type === "collection"
                       ? templateFilter !== "all" && totalCount > 0
-                        ? `Collection filtered by type ${templateFilterLabelMap[templateFilter] ?? templateFilter}.`
-                        : "This collection is empty."
+                        ? `${t("empty.collectionFilteredByType")} ${
+                            templateFilterLabelMap[templateFilter] ?? templateFilter
+                          }.`
+                        : t("empty.collectionEmpty")
                       : activeFilter.type === "unfiled"
-                        ? "Nothing unfiled."
-                        : "No saved cards yet."}
+                        ? t("empty.nothingUnfiled")
+                        : t("empty.noSavedCards")}
                 </div>
               ) : (
                 <div className={styles.assetsGrid}>
@@ -841,7 +857,7 @@ export default function StockpileModal({
                   setExportCancelled(true);
                 }}
               >
-                {exportCancelled ? "Cancelling…" : "Cancel"}
+                {exportCancelled ? t("actions.cancelling") : t("actions.cancel")}
               </button>
             </div>
           </div>
@@ -858,14 +874,16 @@ export default function StockpileModal({
           >
             <div className={styles.stockpileOverlayHeader}>
               <h3 className={styles.stockpileOverlayTitle}>
-                {collectionFormMode === "edit" ? "Edit collection" : "New collection"}
+                {collectionFormMode === "edit"
+                  ? t("heading.editCollection")
+                  : t("heading.newCollection")}
               </h3>
               <button
                 type="button"
                 className={styles.modalCloseButton}
                 onClick={() => setIsCollectionModalOpen(false)}
               >
-                <span className="visually-hidden">Close</span>
+                <span className="visually-hidden">{t("actions.close")}</span>
                 ✕
               </button>
             </div>
@@ -874,7 +892,7 @@ export default function StockpileModal({
                 event.preventDefault();
                 const trimmedName = collectionName.trim();
                 if (!trimmedName) {
-                  setCollectionNameError("Name is required.");
+                  setCollectionNameError(t("errors.collectionNameRequired"));
                   return;
                 }
                 const normalized = trimmedName.toLocaleLowerCase();
@@ -885,7 +903,7 @@ export default function StockpileModal({
                   return collection.name.toLocaleLowerCase() === normalized;
                 });
                 if (conflict) {
-                  setCollectionNameError("Name already exists.");
+                  setCollectionNameError(t("errors.collectionNameExists"));
                   return;
                 }
                 setCollectionNameError(null);
@@ -917,11 +935,11 @@ export default function StockpileModal({
             >
               <div className="d-flex flex-column gap-2">
                 <label className="d-flex flex-column gap-1">
-                  <span>Collection name</span>
+                  <span>{t("form.collectionName")}</span>
                   <input
                     type="text"
                     className="form-control form-control-sm"
-                    placeholder="Name"
+                    placeholder={t("placeholders.collectionName")}
                     value={collectionName}
                     onChange={(event) => {
                       setCollectionName(event.target.value);
@@ -937,10 +955,10 @@ export default function StockpileModal({
                   ) : null}
                 </label>
                 <label className="d-flex flex-column gap-1">
-                  <span>Description</span>
+                  <span>{t("form.collectionDescription")}</span>
                   <textarea
                     className="form-control form-control-sm"
-                    placeholder="Description (optional)"
+                    placeholder={t("placeholders.collectionDescription")}
                     value={collectionDescription}
                     onChange={(event) => setCollectionDescription(event.target.value)}
                     rows={3}
@@ -955,9 +973,11 @@ export default function StockpileModal({
                     onClick={async () => {
                       if (activeFilter.type !== "collection") return;
                       setConfirmDialog({
-                        title: "Delete collection?",
-                        body: `Delete collection "${collectionName}"? Cards in this collection will not be deleted.`,
-                        confirmLabel: "Delete",
+                        title: t("confirm.deleteCollectionTitle"),
+                        body: `${t("confirm.deleteCollectionBodyPrefix")} "${collectionName}"? ${t(
+                          "confirm.deleteCollectionBodySuffix",
+                        )}`,
+                        confirmLabel: t("actions.delete"),
                         onConfirm: async () => {
                           try {
                             await deleteCollection(activeFilter.id);
@@ -981,18 +1001,18 @@ export default function StockpileModal({
                       });
                     }}
                   >
-                    Delete
+                    {t("actions.delete")}
                   </button>
                 ) : null}
                 <button type="submit" className="btn btn-primary btn-sm">
-                  {collectionFormMode === "edit" ? "Save" : "Create"}
+                  {collectionFormMode === "edit" ? t("actions.save") : t("actions.create")}
                 </button>
                 <button
                   type="button"
                   className="btn btn-outline-secondary btn-sm"
                   onClick={() => setIsCollectionModalOpen(false)}
                 >
-                  Cancel
+                  {t("actions.cancel")}
                 </button>
               </div>
             </form>
@@ -1009,13 +1029,13 @@ export default function StockpileModal({
             onClick={(event) => event.stopPropagation()}
           >
             <div className={styles.stockpileOverlayHeader}>
-              <h3 className={styles.stockpileOverlayTitle}>Add to collection</h3>
+              <h3 className={styles.stockpileOverlayTitle}>{t("heading.addToCollection")}</h3>
               <button
                 type="button"
                 className={styles.modalCloseButton}
                 onClick={() => setIsAddModalOpen(false)}
               >
-                <span className="visually-hidden">Close</span>
+                <span className="visually-hidden">{t("actions.close")}</span>
                 ✕
               </button>
             </div>
@@ -1039,7 +1059,7 @@ export default function StockpileModal({
               }}
             >
               <label>
-                <span className="visually-hidden">Target collection</span>
+                <span className="visually-hidden">{t("form.targetCollection")}</span>
                 <select
                   className="form-select form-select-sm"
                   value={addTargetCollectionId}
@@ -1061,14 +1081,14 @@ export default function StockpileModal({
               </label>
               <div className={styles.stockpileOverlayActions}>
                 <button type="submit" className="btn btn-primary btn-sm">
-                  Add
+                  {t("actions.add")}
                 </button>
                 <button
                   type="button"
                   className="btn btn-outline-secondary btn-sm"
                   onClick={() => setIsAddModalOpen(false)}
                 >
-                  Cancel
+                  {t("actions.cancel")}
                 </button>
               </div>
             </form>

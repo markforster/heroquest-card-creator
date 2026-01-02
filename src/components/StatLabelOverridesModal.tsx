@@ -28,12 +28,20 @@ type FieldConfig = {
 const sharedFields: FieldConfig[] = [
   { key: "statsLabelAttack", labelKey: "statsLabelAttack", placeholderKey: "statsLabelAttack" },
   { key: "statsLabelDefend", labelKey: "statsLabelDefend", placeholderKey: "statsLabelDefend" },
-  { key: "statsLabelBody", labelKey: "statsLabelBody", placeholderKey: "statsLabelBody" },
-  { key: "statsLabelMind", labelKey: "statsLabelMind", placeholderKey: "statsLabelMind" },
 ];
 
 const monsterFields: FieldConfig[] = [
   { key: "statsLabelMove", labelKey: "statsLabelMove", placeholderKey: "statsLabelMove" },
+  {
+    key: "statsLabelMonsterBodyPoints",
+    labelKey: "statsLabelMonsterBodyPoints",
+    placeholderKey: "statsLabelMonsterBodyPoints",
+  },
+  {
+    key: "statsLabelMonsterMindPoints",
+    labelKey: "statsLabelMonsterMindPoints",
+    placeholderKey: "statsLabelMonsterMindPoints",
+  },
 ];
 
 const heroFields: FieldConfig[] = [
@@ -42,7 +50,30 @@ const heroFields: FieldConfig[] = [
     labelKey: "statsLabelStartingPoints",
     placeholderKey: "statsLabelStartingPoints",
   },
+  {
+    key: "statsLabelHeroBody",
+    labelKey: "statsLabelHeroBody",
+    placeholderKey: "statsLabelHeroBody",
+  },
+  {
+    key: "statsLabelHeroMind",
+    labelKey: "statsLabelHeroMind",
+    placeholderKey: "statsLabelHeroMind",
+  },
 ];
+
+const STAT_LABEL_DISPLAY_KEYS: Record<StatLabelKey, MessageKey> = {
+  statsLabelAttack: "statsLabelAttack",
+  statsLabelDefend: "statsLabelDefend",
+  statsLabelMove: "statsLabelMove",
+  statsLabelStartingPoints: "statsLabelStartingPoints",
+  statsLabelHeroBody: "statsLabelHeroBody",
+  statsLabelHeroMind: "statsLabelHeroMind",
+  statsLabelMonsterBodyPoints: "statsLabelMonsterBodyPoints",
+  statsLabelMonsterMindPoints: "statsLabelMonsterMindPoints",
+  statsLabelBody: "statsLabelBody",
+  statsLabelMind: "statsLabelMind",
+};
 
 export default function StatLabelOverridesModal({
   isOpen,
@@ -77,10 +108,14 @@ export default function StatLabelOverridesModal({
       statLabelsEnabled: Boolean(formState.statLabelsEnabled),
       statsLabelAttack: sanitizeStatLabelValue(formState.statsLabelAttack),
       statsLabelDefend: sanitizeStatLabelValue(formState.statsLabelDefend),
-      statsLabelBody: sanitizeStatLabelValue(formState.statsLabelBody),
-      statsLabelMind: sanitizeStatLabelValue(formState.statsLabelMind),
       statsLabelMove: sanitizeStatLabelValue(formState.statsLabelMove),
       statsLabelStartingPoints: sanitizeStatLabelValue(formState.statsLabelStartingPoints),
+      statsLabelHeroBody: sanitizeStatLabelValue(formState.statsLabelHeroBody),
+      statsLabelHeroMind: sanitizeStatLabelValue(formState.statsLabelHeroMind),
+      statsLabelMonsterBodyPoints: sanitizeStatLabelValue(formState.statsLabelMonsterBodyPoints),
+      statsLabelMonsterMindPoints: sanitizeStatLabelValue(formState.statsLabelMonsterMindPoints),
+      statsLabelBody: sanitizeStatLabelValue(formState.statsLabelBody),
+      statsLabelMind: sanitizeStatLabelValue(formState.statsLabelMind),
     };
 
     setOverrides(next);
@@ -91,10 +126,10 @@ export default function StatLabelOverridesModal({
     () => (
       <div className="d-flex justify-content-end gap-2">
         <button type="button" className="btn btn-outline-light btn-sm" onClick={onClose}>
-          Cancel
+          {t("actions.cancel")}
         </button>
         <button type="button" className="btn btn-primary btn-sm" onClick={handleSave}>
-          Save
+          {t("actions.save")}
         </button>
       </div>
     ),
@@ -105,14 +140,14 @@ export default function StatLabelOverridesModal({
     <div key={field.key} className="mb-2 d-flex align-items-end gap-2">
       <div className="flex-grow-1">
         <label htmlFor={field.key} className="form-label">
-          {t(field.labelKey as MessageKey)}
+          {t(STAT_LABEL_DISPLAY_KEYS[field.labelKey])}
         </label>
         <input
           id={field.key}
           type="text"
           className="form-control form-control-sm"
           value={formState[field.key] as string}
-          placeholder={t(field.placeholderKey as MessageKey)}
+          placeholder={t(STAT_LABEL_DISPLAY_KEYS[field.placeholderKey])}
           onChange={(event) => handleChange(field.key, event.target.value)}
         />
       </div>
@@ -121,7 +156,7 @@ export default function StatLabelOverridesModal({
         className="btn btn-outline-light btn-sm"
         onClick={() => handleClear(field.key)}
       >
-        Clear
+        {t("actions.clear")}
       </button>
     </div>
   );
@@ -130,33 +165,35 @@ export default function StatLabelOverridesModal({
     <ModalShell
       isOpen={isOpen}
       onClose={onClose}
-      title="Stat Label Overrides"
+      title={t("heading.statLabelOverrides")}
       footer={footer}
       contentClassName={styles.statLabelsPopover}
     >
-      <div className="mb-3">
-        <h3 className="h6 text-uppercase text-muted">Shared Stat Text</h3>
-        {sharedFields.map(renderField)}
-      </div>
-      <div className="mb-3">
-        <h3 className="h6 text-uppercase text-muted">Monster Card Stat Text</h3>
-        {monsterFields.map(renderField)}
-      </div>
-      <div className="mb-3">
-        <h3 className="h6 text-uppercase text-muted">Hero Card Stat Text</h3>
-        {heroFields.map(renderField)}
-      </div>
-      <div className="form-check">
-        <input
-          id="statLabelsEnabled"
-          className="form-check-input"
-          type="checkbox"
-          checked={formState.statLabelsEnabled}
-          onChange={(event) => handleChange("statLabelsEnabled", event.target.checked)}
-        />
-        <label className="form-check-label" htmlFor="statLabelsEnabled">
-          Enable stat label overrides
-        </label>
+      <div className={styles.statLabelsScroll}>
+        <div className="mb-3">
+          <h3 className={styles.statLabelsSectionTitle}>{t("heading.sharedStatText")}</h3>
+          {sharedFields.map(renderField)}
+        </div>
+        <div className="mb-3">
+          <h3 className={styles.statLabelsSectionTitle}>{t("heading.monsterStatText")}</h3>
+          {monsterFields.map(renderField)}
+        </div>
+        <div className="mb-3">
+          <h3 className={styles.statLabelsSectionTitle}>{t("heading.heroStatText")}</h3>
+          {heroFields.map(renderField)}
+        </div>
+        <div className="form-check">
+          <input
+            id="statLabelsEnabled"
+            className="form-check-input"
+            type="checkbox"
+            checked={formState.statLabelsEnabled}
+            onChange={(event) => handleChange("statLabelsEnabled", event.target.checked)}
+          />
+          <label className="form-check-label" htmlFor="statLabelsEnabled">
+            {t("form.enableStatLabelOverrides")}
+          </label>
+        </div>
       </div>
     </ModalShell>
   );

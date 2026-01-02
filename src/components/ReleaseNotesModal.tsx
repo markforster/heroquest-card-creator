@@ -1,6 +1,7 @@
 "use client";
 
 import ModalShell from "@/components/ModalShell";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type ReleaseNotesModalProps = {
   isOpen: boolean;
@@ -33,8 +34,9 @@ const screenshotFilenames = [
 ] as const;
 
 export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModalProps) {
+  const { t } = useI18n();
   return (
-    <ModalShell isOpen={isOpen} onClose={onClose} title="About this tool">
+    <ModalShell isOpen={isOpen} onClose={onClose} title={t("heading.aboutTool")}>
       <div style={{ maxHeight: "60vh", overflowY: "auto", fontSize: "1.1rem" }}>
         <section style={{ marginBottom: "0.75rem" }}>
           <h3

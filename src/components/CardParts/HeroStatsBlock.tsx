@@ -59,7 +59,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           preserveAspectRatio="none"
         />
         <StatsPair
-          header={getStatLabel("statsLabelAttack", t, overrides)}
+          header={getStatLabel("statsLabelAttack", t("stats.attackDice"), overrides)}
           value={stats.attackDice}
           x={14}
           y={12}
@@ -67,7 +67,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           height={134}
         />
         <StatsPair
-          header={getStatLabel("statsLabelDefend", t, overrides)}
+          header={getStatLabel("statsLabelDefend", t("stats.defendDice"), overrides)}
           value={stats.defendDice}
           x={174}
           y={12}
@@ -75,7 +75,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           height={134}
         />
         <StatsPair
-          header={getStatLabel("statsLabelStartingPoints", t, overrides)}
+          header={getStatLabel("statsLabelStartingPoints", t("statsLabelStartingPoints"), overrides)}
           x={174 + 160}
           width={320}
           y={12}
@@ -83,7 +83,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           headerHeight={35}
         />
         <StatsPair
-          header={getStatLabel("statsLabelBody", t, overrides)}
+          header={getStatLabel("statsLabelHeroBody", t("stats.body"), overrides)}
           value={stats.bodyPoints}
           x={174 + 160}
           width={160}
@@ -92,7 +92,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           headerHeight={35}
         />
         <StatsPair
-          header={getStatLabel("statsLabelMind", t, overrides)}
+          header={getStatLabel("statsLabelHeroMind", t("stats.mind"), overrides)}
           value={stats.mindPoints}
           x={174 + 160 + 160}
           // y={12}

@@ -8,6 +8,7 @@ import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import IconButton from "@/components/IconButton";
 import ModalShell from "@/components/ModalShell";
 import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
+import { useI18n } from "@/i18n/I18nProvider";
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
@@ -76,6 +77,7 @@ export default function AssetsModal({
   mode = "manage",
   onSelect,
 }: AssetsModalProps) {
+  const { t } = useI18n();
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [search, setSearch] = useState("");
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
@@ -514,7 +516,7 @@ export default function AssetsModal({
     <ModalShell
       isOpen={isOpen}
       onClose={onClose}
-      title="Assets"
+      title={t("heading.assets")}
       contentClassName={styles.assetsPopover}
     >
       <div className={styles.assetsToolbar}>
@@ -524,9 +526,9 @@ export default function AssetsModal({
           </span>
           <input
             type="search"
-            placeholder="Search assets..."
+            placeholder={t("placeholders.searchAssets")}
             className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch}`}
-            title="Search assets by name"
+            title={t("tooltip.searchAssets")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -539,9 +541,9 @@ export default function AssetsModal({
             onClick={() => {
               fileInputRef.current?.click();
             }}
-            title="Upload new images into your asset library"
+            title={t("tooltip.uploadImages")}
           >
-            Upload
+            {t("actions.upload")}
           </IconButton>
           {mode === "manage" && (
             <IconButton
@@ -556,9 +558,9 @@ export default function AssetsModal({
                   isDeleting: false,
                 });
               }}
-              title="Delete selected assets"
+              title={t("tooltip.deleteAssets")}
             >
-              Delete
+              {t("actions.delete")}
             </IconButton>
           )}
           <input
@@ -577,7 +579,7 @@ export default function AssetsModal({
       </div>
       <div className={styles.assetsGridContainer}>
         {filteredAssets.length === 0 ? (
-          <div className={styles.assetsEmptyState}>No assets</div>
+          <div className={styles.assetsEmptyState}>{t("empty.noAssets")}</div>
         ) : (
           <div className={styles.assetsGrid}>
             {filteredAssets.map((asset) => {
@@ -654,14 +656,14 @@ export default function AssetsModal({
             uploadNotice && (uploadNotice.duplicates.length > 0 || uploadNotice.renames.length > 0),
           )}
           onClose={() => setUploadNotice(null)}
-          title="Upload review"
+          title={t("heading.uploadReview")}
           footer={
             <button
               type="button"
               className="btn btn-primary btn-sm"
               onClick={() => setUploadNotice(null)}
             >
-              Ok
+              {t("actions.ok")}
             </button>
           }
           contentClassName={styles.assetsReportPopover}
@@ -671,9 +673,9 @@ export default function AssetsModal({
               {uploadNotice.duplicates.length > 0 ? (
                 <>
                   <div className={styles.assetsReportIntro}>
-                    {uploadNotice.duplicates.length} file
-                    {uploadNotice.duplicates.length === 1 ? "" : "s"} matched existing uploads or
-                    duplicates in this batch and were skipped.
+                    {uploadNotice.duplicates.length}{" "}
+                    {uploadNotice.duplicates.length === 1 ? t("label.file") : t("label.files")}{" "}
+                    {t("status.filesWereSkipped")}
                   </div>
                   <div className={styles.assetsReportList}>
                     {uploadNotice.duplicates.map((item) => (
@@ -684,8 +686,8 @@ export default function AssetsModal({
                         <div className={styles.assetsReportName}>{item.file.name}</div>
                         <div className={styles.assetsReportStatus}>
                           {item.status === "duplicate-existing"
-                            ? "Already in library"
-                            : "Duplicate in batch"}
+                            ? t("status.alreadyInLibrary")
+                            : t("status.duplicateInBatch")}
                         </div>
                       </div>
                     ))}
@@ -695,9 +697,9 @@ export default function AssetsModal({
               {uploadNotice.renames.length > 0 ? (
                 <>
                   <div className={styles.assetsReportIntro}>
-                    {uploadNotice.renames.length} file
-                    {uploadNotice.renames.length === 1 ? "" : "s"} were renamed to avoid filename
-                    collisions.
+                    {uploadNotice.renames.length}{" "}
+                    {uploadNotice.renames.length === 1 ? t("label.file") : t("label.files")}{" "}
+                    {t("status.filesWereRenamed")}
                   </div>
                   <div className={styles.assetsReportList}>
                     {uploadNotice.renames.map((item) => (
@@ -716,25 +718,25 @@ export default function AssetsModal({
           ) : null}
         </ModalShell>
       ) : null}
-      <UploadProgressOverlay
-        isOpen={Boolean(ENABLE_UPLOAD_PROGRESS && uploadProgress)}
-        phaseLabel={
-          uploadProgress?.phase === "scanning"
-            ? "Scanning for duplicates..."
+        <UploadProgressOverlay
+          isOpen={Boolean(ENABLE_UPLOAD_PROGRESS && uploadProgress)}
+          phaseLabel={
+            uploadProgress?.phase === "scanning"
+            ? t("status.scanning")
             : uploadProgress?.phase === "processing"
-              ? "Processing images..."
+              ? t("status.processing")
               : uploadProgress?.phase === "saving"
-                ? "Saving to library..."
+                ? t("status.saving")
                 : uploadProgress?.phase === "refreshing"
-                  ? "Refreshing library..."
+                  ? t("status.refreshing")
                   : uploadProgress?.phase === "review"
-                    ? "Review uploads..."
+                    ? t("status.review")
                     : uploadProgress?.phase === "cancelled"
-                      ? "Cancelling..."
+                      ? t("status.cancelling")
                       : uploadProgress?.phase === "done"
-                        ? "Upload complete"
+                        ? t("status.uploadComplete")
                       : ""
-        }
+          }
         currentFileName={uploadProgress?.currentFileName}
         completed={uploadProgress?.completed ?? 0}
         total={uploadProgress?.total ?? 0}
@@ -776,6 +778,7 @@ function AssetsModalFooter({
   confirmState: ConfirmState | null;
   setConfirmState: Dispatch<SetStateAction<ConfirmState | null>>;
 }) {
+  const { t } = useI18n();
   const {
     state: { cardDrafts },
     setCardDraft,
@@ -791,7 +794,7 @@ function AssetsModalFooter({
           className="btn btn-outline-secondary btn-sm"
           onClick={() => onClose()}
         >
-          Cancel
+          {t("actions.cancel")}
         </button>
         <button
           type="button"
@@ -803,7 +806,7 @@ function AssetsModalFooter({
             onClose();
           }}
         >
-          Select
+          {t("actions.select")}
         </button>
       </>
     );
@@ -824,8 +827,11 @@ function AssetsModalFooter({
     return (
       <>
         <div className={styles.assetsConfirmMessage}>
-          Deleting {assetCount} asset{assetCount === 1 ? "" : "s"} will clear images on{" "}
-          {affectedDraftCount} card draft{affectedDraftCount === 1 ? "" : "s"}. Continue?
+          {t("confirm.deleteAssetsBody")} {assetCount}{" "}
+          {assetCount === 1 ? t("label.asset") : t("label.assets")}{" "}
+          {t("status.willClearImagesOn")} {affectedDraftCount}{" "}
+          {affectedDraftCount === 1 ? t("label.draft") : t("label.drafts")}.{" "}
+          {t("actions.continue")}?
         </div>
         <button
           type="button"
@@ -833,7 +839,7 @@ function AssetsModalFooter({
           disabled={isDeleting}
           onClick={() => setConfirmState(null)}
         >
-          Cancel
+          {t("actions.cancel")}
         </button>
         <IconButton
           className="btn btn-danger btn-sm"
@@ -875,9 +881,9 @@ function AssetsModalFooter({
             await onConfirmDelete(ids);
             setConfirmState(null);
           }}
-          title="Confirm deletion of selected assets"
+          title={t("tooltip.confirmDeleteAssets")}
         >
-          Delete
+          {t("actions.delete")}
         </IconButton>
       </>
     );

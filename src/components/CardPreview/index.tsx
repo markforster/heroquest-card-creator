@@ -5,6 +5,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import { templateComponentsById } from "@/data/card-templates";
+import { useI18n } from "@/i18n/I18nProvider";
 import { getAssetBlob } from "@/lib/assets-db";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
@@ -89,6 +90,7 @@ function readBlobAsDataUrl(blob: Blob): Promise<string> {
 
 const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
   ({ templateId, templateName, backgroundSrc, cardData }, ref) => {
+    const { t } = useI18n();
     const background = backgroundSrc ?? parchmentBackground;
     const [backgroundLoaded, setBackgroundLoaded] = useState(false);
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -336,7 +338,11 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             onContextMenu={(event) => {
               event.preventDefault();
             }}
-            aria-label={templateName ? `Preview of ${templateName} card` : "Card preview"}
+            aria-label={
+              templateName
+                ? `${t("aria.previewOf")} ${templateName} ${t("aria.card")}`
+                : t("aria.cardPreview")
+            }
           >
             <defs>
               <clipPath id="cardClip">

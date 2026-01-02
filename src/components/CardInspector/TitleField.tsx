@@ -2,12 +2,15 @@
 
 import { useFormContext } from "react-hook-form";
 
+import { useI18n } from "@/i18n/I18nProvider";
+
 type TitleFieldProps = {
   label: string;
   required?: boolean;
 };
 
 export default function TitleField({ label, required = true }: TitleFieldProps) {
+  const { t } = useI18n();
   const {
     register,
     formState: { errors },
@@ -24,18 +27,18 @@ export default function TitleField({ label, required = true }: TitleFieldProps) 
         id="title"
         type="text"
         className="form-control form-control-sm"
-        title="Title shown on the card ribbon"
+        title={t("tooltip.titleShownOnRibbon")}
         {...register("title", {
-          required: required ? `${label} is required` : false,
+          required: required ? `${label} ${t("errors.required")}` : false,
           maxLength: {
             value: 40,
-            message: "Title must be at most 40 characters",
+            message: t("errors.titleMaxLength"),
           },
         })}
       />
       {fieldError ? (
         <div className="form-text text-danger">
-          {String(fieldError.message ?? "Invalid value")}
+          {String(fieldError.message ?? t("errors.invalidValue"))}
         </div>
       ) : null}
     </div>

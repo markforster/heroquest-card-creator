@@ -62,7 +62,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           preserveAspectRatio="none"
         />
         <StatsPair
-          header={getStatLabel("statsLabelMove", t, overrides)}
+          header={getStatLabel("statsLabelMove", t("stats.movementSquares"), overrides)}
           value={stats.movementSquares}
           x={14}
           y={14}
@@ -71,7 +71,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           // headerHeight={headerHeight}
         />
         <StatsPair
-          header={getStatLabel("statsLabelAttack", t, overrides)}
+          header={getStatLabel("statsLabelAttack", t("stats.attackDice"), overrides)}
           value={stats.attackDice}
           x={194}
           y={14}
@@ -79,7 +79,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           height={138}
         />
         <StatsPair
-          header={getStatLabel("statsLabelDefend", t, overrides)}
+          header={getStatLabel("statsLabelDefend", t("stats.defendDice"), overrides)}
           value={stats.defendDice}
           x={310}
           y={14}
@@ -87,7 +87,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           height={138}
         />
         <StatsPair
-          header={getStatLabel("statsLabelBody", t, overrides)}
+          header={getStatLabel("statsLabelMonsterBodyPoints", t("stats.bodyPoints"), overrides)}
           value={stats.bodyPoints}
           x={430}
           y={14}
@@ -95,7 +95,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           height={138}
         />
         <StatsPair
-          header={getStatLabel("statsLabelMind", t, overrides)}
+          header={getStatLabel("statsLabelMonsterMindPoints", t("stats.mindPoints"), overrides)}
           value={stats.mindPoints}
           x={545}
           y={14}

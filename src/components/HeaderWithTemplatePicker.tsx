@@ -8,6 +8,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import MainHeader from "@/components/MainHeader";
 import StatLabelOverridesModal from "@/components/StatLabelOverridesModal";
 import { StockpileModal } from "@/components/Stockpile";
+import { useI18n } from "@/i18n/I18nProvider";
 import TemplatePicker from "@/components/TemplatePicker";
 import { cardTemplatesById } from "@/data/card-templates";
 import { usePopupState } from "@/hooks/usePopupState";
@@ -15,6 +16,7 @@ import { getCard } from "@/lib/cards-db";
 import type { TemplateId } from "@/types/templates";
 
 export default function HeaderWithTemplatePicker() {
+  const { t } = useI18n();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate, isDirtyByTemplate },
     setSelectedTemplateId,
@@ -93,8 +95,9 @@ export default function HeaderWithTemplatePicker() {
       />
       <ConfirmModal
         isOpen={isDiscardConfirmOpen}
-        title="Discard changes?"
-        confirmLabel="Discard"
+        title={t("heading.discardChanges")}
+        confirmLabel={t("actions.discard")}
+        cancelLabel={t("actions.cancel")}
         onConfirm={async () => {
           setIsDiscardConfirmOpen(false);
           const card = pendingCard;
@@ -106,7 +109,7 @@ export default function HeaderWithTemplatePicker() {
           setPendingCard(null);
         }}
       >
-        You have unsaved changes on the current card. Load another card and discard these changes?
+        {t("confirm.discardChangesBody")}
       </ConfirmModal>
     </>
   );

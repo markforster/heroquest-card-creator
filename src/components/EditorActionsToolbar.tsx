@@ -37,7 +37,7 @@ export default function EditorActionsToolbar({
           icon={Download}
           disabled={isBusy}
           onClick={onExportPng}
-          title={t("actions.exportPng")}
+          title={t("tooltip.exportPng")}
         >
           {t("actions.exportPng")}
         </IconButton>
@@ -48,18 +48,18 @@ export default function EditorActionsToolbar({
           icon={CheckCircle2}
           disabled={!canSaveChanges || isBusy}
           onClick={onSaveChanges}
-          title="Save changes to current card"
+          title={t("tooltip.saveChanges")}
         >
-          {savingMode === "update" ? "Saving…" : "Save changes"}
+          {savingMode === "update" ? t("actions.saving") : t("actions.save")}
         </IconButton>
         <IconButton
           className="btn btn-outline-secondary btn-sm"
           icon={CopyPlus}
           disabled={!canSaveAsNew || isBusy}
           onClick={onSaveAsNew}
-          title="Save current card as a new copy"
+          title={t("tooltip.saveAsNew")}
         >
-          {savingMode === "new" ? "Saving…" : "Save as new"}
+          {savingMode === "new" ? t("actions.saving") : t("actions.saveAsNew")}
         </IconButton>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { Minus, Plus } from "lucide-react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
+import { useI18n } from "@/i18n/I18nProvider";
 
 import type { FieldValues, Path } from "react-hook-form";
 
@@ -20,6 +21,7 @@ export default function StatStepper<TFormValues extends FieldValues>({
   min = 0,
   max,
 }: StatStepperProps<TFormValues>) {
+  const { t } = useI18n();
   const { control, setValue } = useFormContext<TFormValues>();
   const valueWatch = useWatch({ control, name }) as number | undefined;
   const value = typeof valueWatch === "number" && !Number.isNaN(valueWatch) ? valueWatch : 0;
@@ -41,13 +43,13 @@ export default function StatStepper<TFormValues extends FieldValues>({
       <div className={layoutStyles.statControlRow}>
         <div className={layoutStyles.statSubLabel}>{label}</div>
         <div className={layoutStyles.statField}>
-          <div className={layoutStyles.statValueBox} title={`${label} value`}>
+          <div className={layoutStyles.statValueBox} title={`${t("tooltip.valueFor")} ${label}`}>
             {value}
           </div>
           <button
             type="button"
             className={`${layoutStyles.statIconButton} ${layoutStyles.statIconButtonMinus} btn btn-sm`}
-            title={`Decrease ${label}`}
+            title={`${t("tooltip.decrease")} ${label}`}
             onClick={() => handleChange(-1)}
             disabled={!canDecrement}
           >
@@ -56,7 +58,7 @@ export default function StatStepper<TFormValues extends FieldValues>({
           <button
             type="button"
             className={`${layoutStyles.statIconButton} ${layoutStyles.statIconButtonPlus} btn btn-sm`}
-            title={`Increase ${label}`}
+            title={`${t("tooltip.increase")} ${label}`}
             onClick={() => handleChange(1)}
             disabled={!canIncrement}
           >

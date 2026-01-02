@@ -5,6 +5,7 @@ import Image from "next/image";
 
 import styles from "@/app/page.module.css";
 import IconButton from "@/components/IconButton";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
 
 import appLogo from "../../public/assets/apple-touch-icon.png";
@@ -34,7 +35,7 @@ export default function MainHeader({
         <div className={styles.headerTitleRow}>
           <Image
             src={appLogo}
-            alt="HeroQuest Card Creator"
+            alt={t("app.title")}
             className={styles.headerLogo}
             width={32}
             height={32}
@@ -49,34 +50,35 @@ export default function MainHeader({
           icon={LayoutTemplate}
           disabled={!hasTemplate}
           onClick={onOpenTemplatePicker}
-          title="Choose a different card template"
+          title={t("tooltip.chooseTemplate")}
         >
-          {t("actions.template")}: {currentTemplateName ?? "Loading..."}
+          {t("actions.template")}: {currentTemplateName ?? t("ui.loading")}
         </IconButton>
         <IconButton
           className="btn btn-outline-light btn-sm"
           icon={Images}
           onClick={onOpenAssets}
-          title="Open the assets manager"
+          title={t("tooltip.openAssets")}
         >
-          Assets
+          {t("actions.assets")}
         </IconButton>
         <IconButton
           className="btn btn-outline-light btn-sm"
           icon={SquareStack}
           onClick={onOpenStockpile}
-          title="Browse and load saved cards"
+          title={t("tooltip.openCards")}
         >
-          Cards
+          {t("actions.cards")}
         </IconButton>
         <IconButton
           className="btn btn-outline-light btn-sm"
           icon={Settings}
           onClick={onOpenSettings}
-          title="Open global settings"
+          title={t("tooltip.openSettings")}
         >
-          Settings
+          {t("actions.settings")}
         </IconButton>
+        <LanguageSwitcher className={`btn btn-outline-light btn-sm ${styles.languageSwitcher}`} />
       </div>
     </header>
   );

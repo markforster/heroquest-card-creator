@@ -85,6 +85,28 @@
   gap: 0.5rem;
 }
 
+.languageSwitcher {
+  appearance: none;
+  background: transparent;
+  padding-right: 1.4rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  position: relative;
+}
+
+.languageSwitcher {
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 0.6rem) 50%,
+    calc(100% - 0.45rem) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
 .icon {
   width: 14px;
   height: 14px;
@@ -418,6 +440,31 @@
 
 .statLabelsPopover {
   width: min(675px, 100% - 2rem);
+  min-height: 24rem;
+  height: min(760px, calc(100vh - 6rem));
+  max-height: calc(100vh - 6rem);
+}
+
+.statLabelsPopover :global(.modal-body) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.statLabelsScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.statLabelsSectionTitle {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hq-accent);
 }
 
 .confirmPopover {

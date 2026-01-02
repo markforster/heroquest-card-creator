@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import { useI18n } from "@/i18n/I18nProvider";
 import type { SmallTreasureCardData } from "@/types/card-data";
 
 import ContentField from "./ContentField";
@@ -11,6 +12,7 @@ import ImageField from "./ImageField";
 import TitleField from "./TitleField";
 
 export default function SmallTreasureInspectorForm() {
+  const { t } = useI18n();
   const {
     state: { cardDrafts },
     setCardDraft,
@@ -38,9 +40,9 @@ export default function SmallTreasureInspectorForm() {
   return (
     <FormProvider {...methods}>
       <form>
-        <TitleField label="Card Title" required />
-        <ImageField label="Card Image" boundsWidth={500} boundsHeight={180} />
-        <ContentField label="Card Text" />
+        <TitleField label={t("form.cardTitle")} required />
+        <ImageField label={t("form.cardImage")} boundsWidth={500} boundsHeight={180} />
+        <ContentField label={t("form.cardText")} />
       </form>
     </FormProvider>
   );

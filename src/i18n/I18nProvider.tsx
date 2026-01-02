@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 
-import { messages } from "./messages";
+import { messages, supportedLanguages } from "./messages";
 
 import type { MessageKey, SupportedLanguage } from "./messages";
 
@@ -21,16 +21,33 @@ type Props = {
 const STORAGE_KEY = "hqcc.language";
 
 function getInitialLanguage(): SupportedLanguage {
-  // For now we always use English regardless of browser/LS.
+  if (typeof window === "undefined") {
+    return "en";
+  }
+
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored && isSupportedLanguage(stored)) {
+      return stored;
+    }
+  } catch {
+    // ignore
+  }
+
+  const browserLanguage = typeof navigator !== "undefined" ? navigator.language : "";
+  const [primary] = browserLanguage.split("-");
+  if (primary && isSupportedLanguage(primary)) {
+    return primary;
+  }
+
   return "en";
 }
 
 export function I18nProvider({ children }: Props) {
   const [language, setLanguageState] = useState<SupportedLanguage>(() => getInitialLanguage());
 
-  const setLanguage = useCallback(() => {
-    // Language switching is currently disabled; always clamp to English.
-    const next = "en" satisfies SupportedLanguage;
+  const setLanguage = useCallback((lang: SupportedLanguage) => {
+    const next = isSupportedLanguage(lang) ? lang : ("en" satisfies SupportedLanguage);
     setLanguageState(next);
     try {
       window.localStorage.setItem(STORAGE_KEY, next);
@@ -57,6 +74,10 @@ export function I18nProvider({ children }: Props) {
   );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}
+
+function isSupportedLanguage(value: string): value is SupportedLanguage {
+  return supportedLanguages.includes(value as SupportedLanguage);
 }
 
 export function useI18n(): I18nContextValue {

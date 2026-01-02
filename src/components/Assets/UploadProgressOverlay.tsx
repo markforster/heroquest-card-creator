@@ -1,6 +1,7 @@
 "use client";
 
 import styles from "@/app/page.module.css";
+import { useI18n } from "@/i18n/I18nProvider";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
 
 type UploadProgressOverlayProps = {
@@ -43,6 +44,7 @@ export default function UploadProgressOverlay({
   onReviewCancel,
   onClose,
 }: UploadProgressOverlayProps) {
+  const { t } = useI18n();
   if (!isOpen) return null;
 
   const percent =
@@ -50,29 +52,29 @@ export default function UploadProgressOverlay({
   const hasReview =
     Boolean(review && (review.duplicates.length > 0 || review.renames.length > 0));
   const summaryParts = [
-    renamedCount > 0 ? `Renamed: ${renamedCount}` : null,
-    skippedCount > 0 ? `Skipped: ${skippedCount}` : null,
-    errorCount > 0 ? `Errors: ${errorCount}` : null,
+    renamedCount > 0 ? `${t("status.renamed")}: ${renamedCount}` : null,
+    skippedCount > 0 ? `${t("status.skipped")}: ${skippedCount}` : null,
+    errorCount > 0 ? `${t("status.errors")}: ${errorCount}` : null,
   ].filter(Boolean);
   const summaryRows = [
-    { label: "Total files", value: total },
-    { label: "Uploaded", value: uploadedCount },
-    { label: "Duplicates skipped", value: duplicateCount },
-    { label: "Renamed", value: renamedCount },
-    ...(errorCount > 0 ? [{ label: "Errors", value: errorCount }] : []),
+    { label: t("label.totalFiles"), value: total },
+    { label: t("label.uploaded"), value: uploadedCount },
+    { label: t("label.duplicatesSkipped"), value: duplicateCount },
+    { label: t("label.renamed"), value: renamedCount },
+    ...(errorCount > 0 ? [{ label: t("label.errors"), value: errorCount }] : []),
   ];
 
   return (
     <div className={styles.stockpileOverlayBackdrop}>
       <div className={`${styles.stockpileOverlayPanel} ${styles.uploadProgressPanel}`}>
         <div className={styles.stockpileOverlayHeader}>
-          <h3 className={styles.stockpileOverlayTitle}>Upload Progress</h3>
+          <h3 className={styles.stockpileOverlayTitle}>{t("heading.uploadProgress")}</h3>
         </div>
         <div className="d-flex flex-column gap-2">
           <div>{phaseLabel}</div>
           {currentFileName ? (
             <div className={styles.uploadProgressFilename} title={currentFileName}>
-              Current file: {currentFileName}
+              {t("status.currentFile")}: {currentFileName}
             </div>
           ) : null}
           {isComplete ? (
@@ -88,16 +90,16 @@ export default function UploadProgressOverlay({
             <>
               {review.duplicates.length > 0 ? (
                 <div className={styles.assetsReportIntro}>
-                  {review.duplicates.length} file
-                  {review.duplicates.length === 1 ? "" : "s"} matched existing uploads or
-                  duplicates in this batch and will be skipped.
+                  {review.duplicates.length}{" "}
+                  {review.duplicates.length === 1 ? t("label.file") : t("label.files")}{" "}
+                  {t("status.filesWillBeSkipped")}
                 </div>
               ) : null}
               {review.renames.length > 0 ? (
                 <div className={styles.assetsReportIntro}>
-                  {review.renames.length} file
-                  {review.renames.length === 1 ? "" : "s"} will be renamed to avoid filename
-                  collisions.
+                  {review.renames.length}{" "}
+                  {review.renames.length === 1 ? t("label.file") : t("label.files")}{" "}
+                  {t("status.filesWillBeRenamed")}
                 </div>
               ) : null}
               <div className={styles.assetsReportList}>
@@ -111,8 +113,8 @@ export default function UploadProgressOverlay({
                         <div className={styles.assetsReportName}>{item.file.name}</div>
                         <div className={styles.assetsReportStatus}>
                           {item.status === "duplicate-existing"
-                            ? "Already in library"
-                            : "Duplicate in batch"}
+                            ? t("status.alreadyInLibrary")
+                            : t("status.duplicateInBatch")}
                         </div>
                       </div>
                     ))}
@@ -143,7 +145,7 @@ export default function UploadProgressOverlay({
                 />
               </div>
               <div className={styles.exportProgressLabel}>
-                {isIndeterminate ? "Working..." : `${completed} / ${total}`}
+                {isIndeterminate ? t("status.working") : `${completed} / ${total}`}
               </div>
               {summaryParts.length > 0 ? <div>{summaryParts.join(" · ")}</div> : null}
             </>
@@ -156,7 +158,7 @@ export default function UploadProgressOverlay({
               className="btn btn-primary btn-sm"
               onClick={onClose}
             >
-              Close
+              {t("actions.close")}
             </button>
           </div>
         ) : review && onReviewContinue && onReviewCancel ? (
@@ -166,14 +168,14 @@ export default function UploadProgressOverlay({
               className="btn btn-outline-secondary btn-sm"
               onClick={onReviewCancel}
             >
-              Cancel
+              {t("actions.cancel")}
             </button>
             <button
               type="button"
               className="btn btn-primary btn-sm"
               onClick={onReviewContinue}
             >
-              Continue
+              {t("actions.continue")}
             </button>
           </div>
         ) : null}

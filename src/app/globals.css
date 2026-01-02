@@ -12,6 +12,31 @@ body {
   font-family: var(--hq-font-body);
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(230, 179, 90, 0.85) rgba(15, 15, 15, 0.8);
+}
+
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(15, 15, 15, 0.8);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(230, 179, 90, 0.85);
+  border: 3px solid rgba(15, 15, 15, 0.8);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(230, 179, 90, 0.95);
+}
+
 /* Themed Bootstrap overrides */
 
 .btn {
