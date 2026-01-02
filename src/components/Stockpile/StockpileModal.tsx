@@ -514,7 +514,7 @@ export default function StockpileModal({
       >
         <div className={styles.assetsToolbar}>
           <div className={styles.cardsFilters}>
-            <div className="input-group input-group-sm" style={{ maxWidth: 260 }}>
+            <div className="input-group input-group-sm" style={{ width: 325 }}>
               <span className="input-group-text">
                 <Search className={styles.icon} aria-hidden="true" />
               </span>
@@ -522,61 +522,62 @@ export default function StockpileModal({
                 type="search"
                 placeholder={t("placeholders.searchCards")}
                 className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch}`}
-              title={t("tooltip.searchCards")}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </div>
-          <div className="d-flex align-items-center gap-2">
-            <span>{t("form.filter")}</span>
-            <select
-              className={`form-select form-select-sm ${styles.cardsFilterSelect}`}
-              title={t("tooltip.filterCards")}
-              value={templateFilter}
-              onChange={(event) => setTemplateFilter(event.target.value)}
-            >
-              <option value="all">
-                {t("ui.allTypes")} ({totalCount})
-              </option>
-              {cardTemplates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.name} ({typeCounts.get(template.id) ?? 0})
-                </option>
-              ))}
-            </select>
-            <label
-              className="form-check form-check-inline mb-0 ms-2"
-              title={t("tooltip.selectAllCards")}
-            >
-              <input
-                ref={selectAllRef}
-                className="form-check-input"
-                type="checkbox"
-                disabled={filteredCards.length === 0}
-                onChange={(event) => {
-                  const visibleIds = filteredCards.map((card) => card.id);
-                  if (!visibleIds.length) return;
-                  setSelectedIds((prev) => {
-                    const prevSet = new Set(prev);
-                    const allSelected = visibleIds.every((id) => prevSet.has(id));
-                    if (allSelected) {
-                      return prev.filter((id) => !visibleIds.includes(id));
-                    }
-                    const merged = new Set(prev);
-                    visibleIds.forEach((id) => merged.add(id));
-                    return Array.from(merged);
-                  });
-                  event.currentTarget.checked = false;
-                }}
+                title={t("tooltip.searchCards")}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
               />
-              <span className={`form-check-label ${styles.selectAllLabel}`}>
-                {t("form.selectAll")}
-              </span>
-            </label>
+            </div>
+            <div className="d-flex align-items-center gap-2">
+              <span>{t("form.filter")}</span>
+              <select
+                className={`form-select form-select-sm ${styles.cardsFilterSelect}`}
+                title={t("tooltip.filterCards")}
+                value={templateFilter}
+                onChange={(event) => setTemplateFilter(event.target.value)}
+              >
+                <option value="all">
+                  {t("ui.allTypes")} ({totalCount})
+                </option>
+                {cardTemplates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name} ({typeCounts.get(template.id) ?? 0})
+                  </option>
+                ))}
+              </select>
+              <label
+                className="form-check form-check-inline mb-0 ms-2"
+                title={t("tooltip.selectAllCards")}
+              >
+                <input
+                  ref={selectAllRef}
+                  className="form-check-input"
+                  type="checkbox"
+                  disabled={filteredCards.length === 0}
+                  onChange={(event) => {
+                    const visibleIds = filteredCards.map((card) => card.id);
+                    if (!visibleIds.length) return;
+                    setSelectedIds((prev) => {
+                      const prevSet = new Set(prev);
+                      const allSelected = visibleIds.every((id) => prevSet.has(id));
+                      if (allSelected) {
+                        return prev.filter((id) => !visibleIds.includes(id));
+                      }
+                      const merged = new Set(prev);
+                      visibleIds.forEach((id) => merged.add(id));
+                      return Array.from(merged);
+                    });
+                    event.currentTarget.checked = false;
+                  }}
+                />
+                <span className={`form-check-label ${styles.selectAllLabel}`}>
+                  {t("form.selectAll")}
+                </span>
+              </label>
+            </div>
           </div>
         </div>
-          <div className={styles.assetsToolbarSpacer} />
-          <div className={`${styles.assetsActions} gap-2`}>
+        <div className={styles.assetsToolbar}>
+          <div className={`${styles.assetsActions} ms-auto gap-2`}>
             {collections.filter(
               (collection) =>
                 activeFilter.type !== "collection" || collection.id !== activeFilter.id,

@@ -124,16 +124,30 @@ export default function StatLabelOverridesModal({
 
   const footer = useMemo(
     () => (
-      <div className="d-flex justify-content-end gap-2">
-        <button type="button" className="btn btn-outline-light btn-sm" onClick={onClose}>
-          {t("actions.cancel")}
-        </button>
-        <button type="button" className="btn btn-primary btn-sm" onClick={handleSave}>
-          {t("actions.save")}
-        </button>
+      <div className="d-flex align-items-center w-100 mt-2">
+        <div className="form-check">
+          <input
+            id="statLabelsEnabled"
+            className="form-check-input"
+            type="checkbox"
+            checked={formState.statLabelsEnabled}
+            onChange={(event) => handleChange("statLabelsEnabled", event.target.checked)}
+          />
+          <label className="form-check-label" htmlFor="statLabelsEnabled">
+            {t("form.enableStatLabelOverrides")}
+          </label>
+        </div>
+        <div className="ms-auto d-flex gap-2">
+          <button type="button" className="btn btn-outline-light btn-sm" onClick={onClose}>
+            {t("actions.cancel")}
+          </button>
+          <button type="button" className="btn btn-primary btn-sm" onClick={handleSave}>
+            {t("actions.save")}
+          </button>
+        </div>
       </div>
     ),
-    [handleSave, onClose],
+    [formState.statLabelsEnabled, handleSave, onClose],
   );
 
   const renderField = (field: FieldConfig) => (
@@ -181,18 +195,6 @@ export default function StatLabelOverridesModal({
         <div className="mb-3">
           <h3 className={styles.statLabelsSectionTitle}>{t("heading.heroStatText")}</h3>
           {heroFields.map(renderField)}
-        </div>
-        <div className="form-check">
-          <input
-            id="statLabelsEnabled"
-            className="form-check-input"
-            type="checkbox"
-            checked={formState.statLabelsEnabled}
-            onChange={(event) => handleChange("statLabelsEnabled", event.target.checked)}
-          />
-          <label className="form-check-label" htmlFor="statLabelsEnabled">
-            {t("form.enableStatLabelOverrides")}
-          </label>
         </div>
       </div>
     </ModalShell>
