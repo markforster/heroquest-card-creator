@@ -7,7 +7,7 @@ const { execSync } = require("child_process");
 const rootDir = path.join(__dirname, "..");
 const outDir = path.join(rootDir, "out");
 const artefactsDir = path.join(rootDir, "artefacts");
-const docsReadme = path.join(rootDir, "docs", "download-bundle.README.md");
+const docsReadme = path.join(rootDir, "download-bundle.README.md");
 const bundleReadme = path.join(outDir, "README.md");
 const outputZip = path.join(artefactsDir, "heroquest-card-maker.zip");
 
@@ -18,7 +18,7 @@ function main() {
   }
 
   if (!fs.existsSync(docsReadme)) {
-    console.error("[package-download] docs/download-bundle.README.md not found.");
+    console.error("[package-download] download-bundle.README.md not found.");
     process.exit(1);
   }
 
