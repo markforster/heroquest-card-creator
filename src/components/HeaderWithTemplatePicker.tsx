@@ -9,6 +9,7 @@ import MainHeader from "@/components/MainHeader";
 import StatLabelOverridesModal from "@/components/StatLabelOverridesModal";
 import { StockpileModal } from "@/components/Stockpile";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getTemplateNameLabel } from "@/i18n/messages";
 import TemplatePicker from "@/components/TemplatePicker";
 import { cardTemplatesById } from "@/data/card-templates";
 import { usePopupState } from "@/hooks/usePopupState";
@@ -16,7 +17,7 @@ import { getCard } from "@/lib/cards-db";
 import type { TemplateId } from "@/types/templates";
 
 export default function HeaderWithTemplatePicker() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate, isDirtyByTemplate },
     setSelectedTemplateId,
@@ -32,6 +33,9 @@ export default function HeaderWithTemplatePicker() {
   const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
 
   const selectedTemplate = selectedTemplateId ? cardTemplatesById[selectedTemplateId] : undefined;
+  const currentTemplateName = selectedTemplate
+    ? getTemplateNameLabel(language, selectedTemplate)
+    : undefined;
   const currentTemplateId = selectedTemplateId ?? null;
   const activeCardId =
     currentTemplateId != null ? activeCardIdByTemplate[currentTemplateId] : undefined;
@@ -54,7 +58,7 @@ export default function HeaderWithTemplatePicker() {
     <>
       <MainHeader
         hasTemplate={Boolean(selectedTemplateId)}
-        currentTemplateName={selectedTemplate?.name}
+        currentTemplateName={currentTemplateName}
         onOpenTemplatePicker={() => {
           if (!selectedTemplateId) return;
           templatePicker.open();

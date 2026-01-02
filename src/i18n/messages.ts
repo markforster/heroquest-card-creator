@@ -1,3 +1,5 @@
+import type { TemplateId } from "@/types/templates";
+
 export type SupportedLanguage = "en" | "fr" | "de" | "es" | "it" | "pt" | "nl";
 
 type Messages = Record<string, string>;
@@ -1733,3 +1735,69 @@ export const languageLabels: Record<SupportedLanguage, string> = {
   pt: "🇵🇹 PT",
   nl: "🇳🇱 NL",
 };
+
+export const templateNameLabels: Record<SupportedLanguage, Partial<Record<TemplateId, string>>> = {
+  en: {
+    hero: "Hero Card",
+    monster: "Monster Card",
+    "small-treasure": "Small Artwork Card",
+    "large-treasure": "Large Artwork Card",
+    "hero-back": "Hero Back",
+    "labelled-back": "Labelled Back",
+  },
+  fr: {
+    hero: "Carte Héros",
+    monster: "Carte Monstre",
+    "small-treasure": "Carte à petite illustration",
+    "large-treasure": "Carte à grande illustration",
+    "hero-back": "Dos de héros",
+    "labelled-back": "Dos étiqueté",
+  },
+  de: {
+    hero: "Heldenkarte",
+    monster: "Monsterkarte",
+    "small-treasure": "Karte mit kleinem Bild",
+    "large-treasure": "Karte mit großem Bild",
+    "hero-back": "Heldenrückseite",
+    "labelled-back": "Beschriftete Rückseite",
+  },
+  es: {
+    hero: "Carta de héroe",
+    monster: "Carta de monstruo",
+    "small-treasure": "Carta con arte pequeño",
+    "large-treasure": "Carta con arte grande",
+    "hero-back": "Reverso de héroe",
+    "labelled-back": "Reverso con etiqueta",
+  },
+  it: {
+    hero: "Carta eroe",
+    monster: "Carta mostro",
+    "small-treasure": "Carta con illustrazione piccola",
+    "large-treasure": "Carta con illustrazione grande",
+    "hero-back": "Retro eroe",
+    "labelled-back": "Retro etichettato",
+  },
+  pt: {
+    hero: "Carta de herói",
+    monster: "Carta de monstro",
+    "small-treasure": "Carta com arte pequena",
+    "large-treasure": "Carta com arte grande",
+    "hero-back": "Verso de herói",
+    "labelled-back": "Verso com etiqueta",
+  },
+  nl: {
+    hero: "Heldenkaart",
+    monster: "Monsterkaart",
+    "small-treasure": "Kaart met kleine illustratie",
+    "large-treasure": "Kaart met grote illustratie",
+    "hero-back": "Held achterkant",
+    "labelled-back": "Gelabelde achterkant",
+  },
+};
+
+export function getTemplateNameLabel(
+  language: SupportedLanguage,
+  template: { id: TemplateId; name: string },
+): string {
+  return templateNameLabels[language]?.[template.id] ?? template.name;
+}

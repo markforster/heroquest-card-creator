@@ -10,6 +10,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import ModalShell from "@/components/ModalShell";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getTemplateNameLabel } from "@/i18n/messages";
 import { deleteCards, listCards } from "@/lib/cards-db";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
@@ -36,7 +37,7 @@ export default function StockpileModal({
   refreshToken,
   activeCardId,
 }: StockpileModalProps) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [confirmDialog, setConfirmDialog] = useState<{
     title: string;
     body: string;
@@ -245,10 +246,10 @@ export default function StockpileModal({
   const templateFilterLabelMap = useMemo(() => {
     const map: Record<string, string> = {};
     cardTemplates.forEach((template) => {
-      map[template.id] = template.name;
+      map[template.id] = getTemplateNameLabel(language, template);
     });
     return map;
-  }, []);
+  }, [language]);
   const exportTemplate =
     exportTarget && cardTemplatesById[exportTarget.templateId]
       ? cardTemplatesById[exportTarget.templateId]
@@ -540,7 +541,7 @@ export default function StockpileModal({
                 </option>
                 {cardTemplates.map((template) => (
                   <option key={template.id} value={template.id}>
-                    {template.name} ({typeCounts.get(template.id) ?? 0})
+                    {getTemplateNameLabel(language, template)} ({typeCounts.get(template.id) ?? 0})
                   </option>
                 ))}
               </select>

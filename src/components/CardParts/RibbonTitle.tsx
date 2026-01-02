@@ -22,6 +22,7 @@ export default function RibbonTitle({ title, y = DEFAULT_Y, showRibbon = true }:
   const centerX = x + RIBBON_WIDTH / 2;
   const centerY = y + RIBBON_HEIGHT / 2 + 6;
   const TcenterX = centerX + 6;
+  const textYOffset = showRibbon ? 0 : 14;
 
   return (
     <Layer>
@@ -37,7 +38,7 @@ export default function RibbonTitle({ title, y = DEFAULT_Y, showRibbon = true }:
           />
           <text
             x={TcenterX}
-            y={centerY - TEXT_Y_OFFSET}
+            y={centerY - TEXT_Y_OFFSET + textYOffset}
             textAnchor="middle"
             dominantBaseline="middle"
             fill="#ffffff"
@@ -56,7 +57,7 @@ export default function RibbonTitle({ title, y = DEFAULT_Y, showRibbon = true }:
 
       <text
         x={TcenterX}
-        y={centerY - TEXT_Y_OFFSET}
+        y={centerY - TEXT_Y_OFFSET + textYOffset}
         textAnchor="middle"
         dominantBaseline="middle"
         // fill="#1a130c"
