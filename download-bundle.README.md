@@ -1,6 +1,6 @@
-# HeroQuest Card Creator – Downloaded Bundle
+# HeroQuest Card Creator {version} – Downloaded Bundle
 
-Thanks for downloading the HeroQuest Card Creator bundle.
+Thanks for downloading the HeroQuest Card Creator {version} bundle.
 
 This folder contains a **fully static build** of the app. You can use it in two main ways:
 
@@ -50,4 +50,3 @@ If you download a newer version of the bundle in future:
 2. Open the new folder’s `index.html` or re‑point your HTTP server to the new folder.
 
 Existing data in your browser will usually remain available, as it is keyed by the app’s origin (file location or server URL).
-

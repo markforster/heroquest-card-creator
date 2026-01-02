@@ -9,7 +9,9 @@ const outDir = path.join(rootDir, "out");
 const artefactsDir = path.join(rootDir, "artefacts");
 const docsReadme = path.join(rootDir, "download-bundle.README.md");
 const bundleReadme = path.join(outDir, "README.md");
-const outputZip = path.join(artefactsDir, "heroquest-card-maker.zip");
+const packageJson = require(path.join(rootDir, "package.json"));
+const version = packageJson.version || "0.0.0";
+const outputZip = path.join(artefactsDir, `heroquest-card-maker.${version}.zip`);
 
 function main() {
   if (!fs.existsSync(outDir)) {
@@ -27,7 +29,9 @@ function main() {
   }
 
   // Copy the distribution README into the out/ folder so it lands in the zip root.
-  fs.copyFileSync(docsReadme, bundleReadme);
+  const readmeTemplate = fs.readFileSync(docsReadme, "utf8");
+  const readmeText = readmeTemplate.replace(/\{version\}/g, version);
+  fs.writeFileSync(bundleReadme, readmeText, "utf8");
   console.log("[package-download] Copied bundle README into out/ as README.md");
 
   if (fs.existsSync(outputZip)) {
