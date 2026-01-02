@@ -1725,11 +1725,11 @@ export const messages = baseMessages;
 export const supportedLanguages = Object.keys(baseMessages) as SupportedLanguage[];
 
 export const languageLabels: Record<SupportedLanguage, string> = {
-  en: "EN",
-  fr: "FR",
-  de: "DE",
-  es: "ES",
-  it: "IT",
-  pt: "PT",
-  nl: "NL",
+  en: "🇬🇧 EN",
+  fr: "🇫🇷 FR",
+  de: "🇩🇪 DE",
+  es: "🇪🇸 ES",
+  it: "🇮🇹 IT",
+  pt: "🇵🇹 PT",
+  nl: "🇳🇱 NL",
 };
