@@ -5,6 +5,7 @@ import { FormProvider, useForm } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import { useI18n } from "@/i18n/I18nProvider";
 import type { MonsterCardData } from "@/types/card-data";
 
 import ContentField from "./ContentField";
@@ -14,6 +15,7 @@ import StatStepper from "./StatStepper";
 import TitleField from "./TitleField";
 
 export default function MonsterInspectorForm() {
+  const { t } = useI18n();
   const {
     state: { cardDrafts },
     setCardDraft,
@@ -41,22 +43,24 @@ export default function MonsterInspectorForm() {
   return (
     <FormProvider {...methods}>
       <form>
-        <TitleField label="Monster Name" required />
-        <ImageField label="Monster Image" boundsWidth={730} boundsHeight={730} />
-        <MonsterIconField label="Monster Icon" />
+        <TitleField label={t("form.monsterName")} required />
+        <ImageField label={t("form.monsterImage")} boundsWidth={730} boundsHeight={730} />
+        <MonsterIconField label={t("form.monsterIcon")} />
         <div className={layoutStyles.statGroup}>
-          <label>Stats</label>
+          <label>{t("form.stats")}</label>
           <div className={layoutStyles.statRows}>
             <div className={layoutStyles.statRow}>
               <StatStepper<MonsterCardData>
                 name="movementSquares"
-                label="Movement"
+                label={t("stats.movementSquares")}
                 min={0}
                 max={12}
               />
+            </div>
+            <div className={layoutStyles.statRow}>
               <StatStepper<MonsterCardData>
                 name="attackDice"
-                label="Attack Dice"
+                label={t("stats.attackDice")}
                 min={0}
                 max={12}
               />
@@ -64,13 +68,15 @@ export default function MonsterInspectorForm() {
             <div className={layoutStyles.statRow}>
               <StatStepper<MonsterCardData>
                 name="defendDice"
-                label="Defend Dice"
+                label={t("stats.defendDice")}
                 min={0}
                 max={12}
               />
+            </div>
+            <div className={layoutStyles.statRow}>
               <StatStepper<MonsterCardData>
                 name="bodyPoints"
-                label="Body Points"
+                label={t("stats.bodyPoints")}
                 min={0}
                 max={12}
               />
@@ -78,15 +84,14 @@ export default function MonsterInspectorForm() {
             <div className={layoutStyles.statRow}>
               <StatStepper<MonsterCardData>
                 name="mindPoints"
-                label="Mind Points"
+                label={t("stats.mindPoints")}
                 min={0}
                 max={12}
               />
-              <div className={layoutStyles.statSpacer} />
             </div>
           </div>
         </div>
-        <ContentField label="Card Text" />
+        <ContentField label={t("form.cardText")} />
       </form>
     </FormProvider>
   );

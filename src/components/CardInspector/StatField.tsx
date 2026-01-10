@@ -2,6 +2,8 @@
 
 import { useFormContext } from "react-hook-form";
 
+import { useI18n } from "@/i18n/I18nProvider";
+
 import type { FieldValues, Path } from "react-hook-form";
 
 type StatFieldProps<TFormValues extends FieldValues> = {
@@ -17,6 +19,7 @@ export default function StatField<TFormValues extends FieldValues>({
   min = 0,
   max = 10,
 }: StatFieldProps<TFormValues>) {
+  const { t } = useI18n();
   const {
     register,
     formState: { errors },
@@ -41,23 +44,25 @@ export default function StatField<TFormValues extends FieldValues>({
       <select
         id={String(name)}
         className="form-select form-select-sm"
-        title={`Select a value for ${label}`}
+        title={`${t("tooltip.selectValueFor")} ${label}`}
         {...register(name, {
           valueAsNumber: true,
           min: {
             value: min,
-            message: `Must be at least ${min}`,
+            message: `${t("errors.minValue")} ${min}`,
           },
           max: {
             value: max,
-            message: `Must be at most ${max}`,
+            message: `${t("errors.maxValue")} ${max}`,
           },
         })}
       >
         {options}
       </select>
       {fieldError ? (
-        <div className="form-text text-danger">{String(fieldError.message ?? "Invalid value")}</div>
+        <div className="form-text text-danger">
+          {String(fieldError.message ?? t("errors.invalidValue"))}
+        </div>
       ) : null}
     </div>
   );

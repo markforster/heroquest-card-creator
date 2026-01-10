@@ -1,7 +1,9 @@
 import heroStatsBg from "@/assets/card-parts/hero-stats.png";
 import StatsPair from "@/components/CardParts/StatsPair";
 import Layer from "@/components/CardPreview/Layer";
+import { useStatLabelOverrides } from "@/components/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getStatLabel } from "@/lib/stat-labels";
 
 export type HeroStats = {
   attackDice: number;
@@ -32,6 +34,7 @@ export const HERO_STATS_HEIGHT = STATS_HEIGHT;
 
 export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlockProps) {
   const { t } = useI18n();
+  const { overrides } = useStatLabelOverrides();
 
   return (
     <Layer>
@@ -56,7 +59,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           preserveAspectRatio="none"
         />
         <StatsPair
-          header={t("stats.attackDice")}
+          header={getStatLabel("statsLabelAttack", t("stats.attackDice"), overrides)}
           value={stats.attackDice}
           x={14}
           y={12}
@@ -64,7 +67,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           height={134}
         />
         <StatsPair
-          header={t("stats.defendDice")}
+          header={getStatLabel("statsLabelDefend", t("stats.defendDice"), overrides)}
           value={stats.defendDice}
           x={174}
           y={12}
@@ -72,7 +75,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           height={134}
         />
         <StatsPair
-          header={"Starting Points"}
+          header={getStatLabel("statsLabelStartingPoints", t("statsLabelStartingPoints"), overrides)}
           x={174 + 160}
           width={320}
           y={12}
@@ -80,7 +83,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           headerHeight={35}
         />
         <StatsPair
-          header={t("stats.body")}
+          header={getStatLabel("statsLabelHeroBody", t("stats.body"), overrides)}
           value={stats.bodyPoints}
           x={174 + 160}
           width={160}
@@ -89,7 +92,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           headerHeight={35}
         />
         <StatsPair
-          header={t("stats.mind")}
+          header={getStatLabel("statsLabelHeroMind", t("stats.mind"), overrides)}
           value={stats.mindPoints}
           x={174 + 160 + 160}
           // y={12}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import { useI18n } from "@/i18n/I18nProvider";
 
 import HeroBackInspectorForm from "./HeroBackInspectorForm";
 import HeroInspectorForm from "./HeroInspectorForm";
@@ -10,13 +11,14 @@ import MonsterInspectorForm from "./MonsterInspectorForm";
 import SmallTreasureInspectorForm from "./SmallTreasureInspectorForm";
 
 export default function CardInspector() {
+  const { t } = useI18n();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
 
   // TODO: Implement a more scalable way to map templates to inspector forms.
   if (!selectedTemplateId) {
-    return <div>Select a template to start editing.</div>;
+    return <div>{t("empty.selectTemplate")}</div>;
   }
 
   if (selectedTemplateId === "hero") {
@@ -49,5 +51,5 @@ export default function CardInspector() {
     return <LabelledBackInspectorForm key={key} />;
   }
 
-  return <div>Inspector for this template is not available yet.</div>;
+  return <div>{t("empty.inspectorUnavailable")}</div>;
 }

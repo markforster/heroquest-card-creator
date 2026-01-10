@@ -5,6 +5,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import { templateComponentsById } from "@/data/card-templates";
+import { useI18n } from "@/i18n/I18nProvider";
 import { getAssetBlob } from "@/lib/assets-db";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
@@ -23,6 +24,7 @@ type CardPreviewProps = {
 export type CardPreviewHandle = {
   exportAsPng: () => Promise<void>;
   renderToPngBlob: (options?: { width?: number; height?: number }) => Promise<Blob | null>;
+  getSvgElement: () => SVGSVGElement | null;
 };
 
 const CARD_WIDTH = 750;
@@ -88,6 +90,7 @@ function readBlobAsDataUrl(blob: Blob): Promise<string> {
 
 const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
   ({ templateId, templateName, backgroundSrc, cardData }, ref) => {
+    const { t } = useI18n();
     const background = backgroundSrc ?? parchmentBackground;
     const [backgroundLoaded, setBackgroundLoaded] = useState(false);
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -117,6 +120,14 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
       const origin = window.location.origin;
       const isFileProtocol = window.location.protocol === "file:";
       const images = Array.from(clonedSvg.querySelectorAll("image"));
+      const backgroundImages = Array.from(
+        clonedSvg.querySelectorAll('image[data-card-background="true"]'),
+      );
+
+      backgroundImages.forEach((imgEl) => {
+        imgEl.setAttribute("style", "opacity:1");
+        imgEl.setAttribute("opacity", "1");
+      });
 
       let embeddedImagesByFileName: Record<string, string> | null = null;
       try {
@@ -307,6 +318,9 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 
           return pngBlob;
         },
+        getSvgElement() {
+          return svgRef.current;
+        },
       }),
       [cardData, templateName],
     );
@@ -324,7 +338,11 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             onContextMenu={(event) => {
               event.preventDefault();
             }}
-            aria-label={templateName ? `Preview of ${templateName} card` : "Card preview"}
+            aria-label={
+              templateName
+                ? `${t("aria.previewOf")} ${templateName} ${t("aria.card")}`
+                : t("aria.cardPreview")
+            }
           >
             <defs>
               <clipPath id="cardClip">

@@ -4,6 +4,8 @@ import Image from "next/image";
 
 import styles from "@/app/page.module.css";
 import { cardTemplates } from "@/data/card-templates";
+import { useI18n } from "@/i18n/I18nProvider";
+import { getTemplateNameLabel } from "@/i18n/messages";
 import type { TemplateId } from "@/types/templates";
 
 type TemplatesListProps = {
@@ -17,6 +19,7 @@ export default function TemplatesList({
   onSelect,
   variant = "grid",
 }: TemplatesListProps) {
+  const { language } = useI18n();
   const isSidebar = variant === "sidebar";
 
   if (isSidebar) {
@@ -24,6 +27,7 @@ export default function TemplatesList({
       <div className={styles.templateSidebarList}>
         {cardTemplates.map((template) => {
           const isSelected = template.id === selectedId;
+          const templateLabel = getTemplateNameLabel(language, template);
           return (
             <button
               key={template.id}
@@ -36,7 +40,7 @@ export default function TemplatesList({
               <div className={styles.templateSidebarThumbWrapper}>
                 <Image
                   src={template.thumbnail}
-                  alt={template.name}
+                  alt={templateLabel}
                   className={styles.templateSidebarThumb}
                   fill
                   sizes="(max-width: 900px) 37.5px, 75px"
@@ -53,6 +57,7 @@ export default function TemplatesList({
     <div className={styles.templateGrid}>
       {cardTemplates.map((template) => {
         const isSelected = template.id === selectedId;
+        const templateLabel = getTemplateNameLabel(language, template);
         return (
           <button
             key={template.id}
@@ -63,7 +68,7 @@ export default function TemplatesList({
             <div className={styles.templateCardThumbWrapper}>
               <Image
                 src={template.thumbnail}
-                alt={template.name}
+                alt={templateLabel}
                 className={styles.templateCardThumb}
                 width={75}
                 height={105}

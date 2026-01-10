@@ -3,14 +3,22 @@
 import { useI18n } from "@/i18n/I18nProvider";
 import { languageLabels, supportedLanguages } from "@/i18n/messages";
 
-export default function LanguageSwitcher() {
-  const { language, setLanguage } = useI18n();
+type LanguageSwitcherProps = {
+  className?: string;
+};
+
+export default function LanguageSwitcher({ className }: LanguageSwitcherProps) {
+  const { language, setLanguage, t } = useI18n();
 
   return (
     <select
-      aria-label="Language"
+      aria-label={t("aria.language")}
+      className={className}
       value={language}
-      onChange={(event) => setLanguage(event.target.value as typeof language)}
+      onChange={(event) => {
+        setLanguage(event.target.value as typeof language);
+        event.currentTarget.blur();
+      }}
     >
       {supportedLanguages.map((code) => (
         <option key={code} value={code}>

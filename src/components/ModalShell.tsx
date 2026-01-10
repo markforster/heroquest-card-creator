@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useEffect } from "react";
 
 import styles from "@/app/page.module.css";
+import { useI18n } from "@/i18n/I18nProvider";
 
 import type { ReactNode, MouseEvent } from "react";
 
@@ -13,6 +14,7 @@ type ModalShellProps = {
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  headerActions?: ReactNode;
   /** Optional extra class for the inner panel (e.g. cardsPopover). */
   contentClassName?: string;
 };
@@ -23,8 +25,10 @@ export default function ModalShell({
   onClose,
   children,
   footer,
+  headerActions,
   contentClassName,
 }: ModalShellProps) {
+  const { t } = useI18n();
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -57,10 +61,13 @@ export default function ModalShell({
       >
         <div className={`${styles.templatePopoverHeader} modal-header`}>
           <h2 className={styles.templatePopoverTitle}>{title}</h2>
-          <button type="button" className={styles.modalCloseButton} onClick={onClose}>
-            <X className={styles.icon} aria-hidden="true" />
-            <span className="visually-hidden">Close</span>
-          </button>
+          <div className={styles.modalHeaderActions}>
+            {headerActions}
+            <button type="button" className={styles.modalCloseButton} onClick={onClose}>
+              <X className={styles.icon} aria-hidden="true" />
+              <span className="visually-hidden">{t("actions.close")}</span>
+            </button>
+          </div>
         </div>
         <div className="modal-body">{children}</div>
         {footer ? <div className="modal-footer">{footer}</div> : null}

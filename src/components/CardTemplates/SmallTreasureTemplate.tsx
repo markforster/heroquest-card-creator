@@ -2,6 +2,7 @@ import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
 import CardTextBlock from "@/components/CardParts/CardTextBlock";
 import RibbonTitle from "@/components/CardParts/RibbonTitle";
 import Layer from "@/components/CardPreview/Layer";
+import { useI18n } from "@/i18n/I18nProvider";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import type { SmallTreasureCardData } from "@/types/card-data";
 import type { TemplateRenderProps } from "@/types/templates";
@@ -38,8 +39,9 @@ export default function SmallTreasureTemplate({
   templateName,
   cardData,
 }: TemplateRenderProps) {
+  const { t } = useI18n();
   const data = (cardData as SmallTreasureCardData | undefined) ?? {};
-  const title = data.title || templateName || "Small Artwork Card";
+  const title = data.title || templateName || t("ui.smallArtworkCard");
   const imageUrl = useAssetImageUrl(data.imageAssetId);
   const imageScale = data.imageScale ?? 1;
   const offsetX = data.imageOffsetX ?? 0;
@@ -61,6 +63,7 @@ export default function SmallTreasureTemplate({
       <Layer>
         <image
           href={whitePaperBackground.src}
+          data-card-background="true"
           x={0}
           y={0}
           width={CARD_WIDTH}
@@ -85,6 +88,7 @@ export default function SmallTreasureTemplate({
       <Layer>
         <image
           href={background.src}
+          data-card-background="true"
           x={0}
           y={0}
           width={CARD_WIDTH}

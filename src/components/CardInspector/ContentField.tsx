@@ -2,11 +2,14 @@
 
 import { useFormContext } from "react-hook-form";
 
+import { useI18n } from "@/i18n/I18nProvider";
+
 type ContentFieldProps = {
   label: string;
 };
 
 export default function ContentField({ label }: ContentFieldProps) {
+  const { t } = useI18n();
   const {
     register,
     formState: { errors },
@@ -24,17 +27,17 @@ export default function ContentField({ label }: ContentFieldProps) {
         className="form-control form-control-sm"
         rows={6}
         style={{ backgroundColor: "#333", color: "#f5f5f5" }}
-        title="Rules and flavour text shown in the body of the card"
+        title={t("tooltip.rulesAndFlavour")}
         {...register("description", {
           maxLength: {
             value: 2000,
-            message: "Content must be at most 2000 characters",
+            message: t("errors.contentMaxLength"),
           },
         })}
       />
       {fieldError ? (
         <div className="form-text text-danger">
-          {String(fieldError.message ?? "Invalid value")}
+          {String(fieldError.message ?? t("errors.invalidValue"))}
         </div>
       ) : null}
     </div>

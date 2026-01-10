@@ -18,6 +18,7 @@ import layoutStyles from "@/app/page.module.css";
 import { AssetsModal } from "@/components/Assets";
 import IconButton from "@/components/IconButton";
 import { usePopupState } from "@/hooks/usePopupState";
+import { useI18n } from "@/i18n/I18nProvider";
 import type { AssetRecord } from "@/lib/assets-db";
 
 type ImageFieldProps = {
@@ -27,6 +28,7 @@ type ImageFieldProps = {
 };
 
 export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFieldProps) {
+  const { t } = useI18n();
   const {
     setValue,
     formState: { errors },
@@ -114,24 +116,28 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             imageAssetId ? "" : layoutStyles.imageHeaderStatusMissing
           }`}
           readOnly
-          value={imageAssetId ? (imageAssetName ?? "Image selected") : "No image selected"}
+          value={
+            imageAssetId
+              ? (imageAssetName ?? t("status.imageSelected"))
+              : t("status.noImageSelected")
+          }
           title={imageAssetId ? (imageAssetName ?? imageAssetId) : undefined}
         />
         <IconButton
           className="btn btn-outline-secondary btn-sm"
           icon={ImagePlus}
-          title="Open the asset picker to choose an image"
+          title={t("tooltip.openImagePicker")}
           onClick={() => {
             picker.open();
           }}
         >
-          Choose image
+          {t("actions.chooseImage")}
         </IconButton>
         {imageAssetId ? (
           <IconButton
             className="btn btn-outline-secondary btn-sm"
             icon={XCircle}
-            title="Clear the selected image from this card"
+            title={t("tooltip.clearSelectedImage")}
             onClick={() => {
               setValue("imageAssetId", undefined, { shouldDirty: true, shouldTouch: true });
               setValue("imageAssetName", undefined, { shouldDirty: true, shouldTouch: true });
@@ -142,17 +148,19 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
               setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
             }}
           >
-            <span className="visually-hidden">Clear</span>
+            <span className="visually-hidden">{t("actions.clear")}</span>
           </IconButton>
         ) : null}
       </div>
       {fieldError ? (
-        <div className="form-text text-danger">{String(fieldError.message ?? "Invalid value")}</div>
+        <div className="form-text text-danger">
+          {String(fieldError.message ?? t("errors.invalidValue"))}
+        </div>
       ) : null}
       {imageAssetId ? (
         <div className={layoutStyles.imageControlGroup}>
           <div className={layoutStyles.imageControlLabelRow}>
-            <label className="form-label mb-1">Horizontal position</label>
+            <label className="form-label mb-1">{t("form.horizontalPosition")}</label>
           </div>
           <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
             <input
@@ -162,7 +170,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
               max={maxOffsetX}
               step={1}
               value={imageOffsetX}
-              title="Adjust horizontal position of the image"
+              title={t("tooltip.adjustHorizontal")}
               onChange={(event) => {
                 const next = Number(event.target.value);
                 if (!Number.isNaN(next)) {
@@ -176,7 +184,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             <button
               type="button"
               className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-              title="Nudge image left"
+              title={t("tooltip.nudgeLeft")}
               onClick={() => {
                 setValue("imageOffsetX", imageOffsetX - 1, {
                   shouldDirty: true,
@@ -189,7 +197,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             <button
               type="button"
               className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-              title="Nudge image right"
+              title={t("tooltip.nudgeRight")}
               onClick={() => {
                 setValue("imageOffsetX", imageOffsetX + 1, {
                   shouldDirty: true,
@@ -202,7 +210,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             <button
               type="button"
               className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-              title="Center image horizontally"
+              title={t("tooltip.centerHorizontal")}
               onClick={() => {
                 setValue("imageOffsetX", 0, {
                   shouldDirty: true,
@@ -214,7 +222,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             </button>
           </div>
           <div className={layoutStyles.imageControlLabelRow}>
-            <label className="form-label mb-1">Vertical position</label>
+            <label className="form-label mb-1">{t("form.verticalPosition")}</label>
           </div>
           <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
             <input
@@ -224,7 +232,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
               max={maxOffsetY}
               step={1}
               value={imageOffsetY}
-              title="Adjust vertical position of the image"
+              title={t("tooltip.adjustVertical")}
               onChange={(event) => {
                 const next = Number(event.target.value);
                 if (!Number.isNaN(next)) {
@@ -238,7 +246,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             <button
               type="button"
               className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-              title="Nudge image up"
+              title={t("tooltip.nudgeUp")}
               onClick={() => {
                 setValue("imageOffsetY", imageOffsetY - 1, {
                   shouldDirty: true,
@@ -251,7 +259,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             <button
               type="button"
               className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-              title="Nudge image down"
+              title={t("tooltip.nudgeDown")}
               onClick={() => {
                 setValue("imageOffsetY", imageOffsetY + 1, {
                   shouldDirty: true,
@@ -264,7 +272,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             <button
               type="button"
               className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-              title="Center image vertically"
+              title={t("tooltip.centerVertical")}
               onClick={() => {
                 setValue("imageOffsetY", 0, {
                   shouldDirty: true,
@@ -276,7 +284,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             </button>
           </div>
           <div className={layoutStyles.imageControlLabelRow}>
-            <label className="form-label mb-1">Scale</label>
+            <label className="form-label mb-1">{t("form.scale")}</label>
           </div>
           <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
             <input
@@ -286,7 +294,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
               max={MAX_SCALE}
               step={SCALE_STEP}
               value={imageScale}
-              title="Adjust image scale"
+              title={t("tooltip.adjustScale")}
               onChange={(event) => {
                 const next = Number(event.target.value);
                 if (!Number.isNaN(next)) {
@@ -300,7 +308,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             <button
               type="button"
               className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-              title="Zoom image out"
+              title={t("tooltip.zoomOut")}
               onClick={() => {
                 const next = clamp(imageScale - SCALE_STEP, MIN_SCALE, MAX_SCALE);
                 setValue("imageScale", next, {
@@ -314,7 +322,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             <button
               type="button"
               className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-              title="Zoom image in"
+              title={t("tooltip.zoomIn")}
               onClick={() => {
                 const next = clamp(imageScale + SCALE_STEP, MIN_SCALE, MAX_SCALE);
                 setValue("imageScale", next, {
@@ -328,7 +336,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             <button
               type="button"
               className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-              title="Auto-scale image to fit bounds"
+              title={t("tooltip.autoScale")}
               onClick={() => {
                 const auto = computeAutoScale();
                 const next = clamp(auto, MIN_SCALE, MAX_SCALE);

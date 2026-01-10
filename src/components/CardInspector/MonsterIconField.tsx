@@ -7,12 +7,14 @@ import layoutStyles from "@/app/page.module.css";
 import { AssetsModal } from "@/components/Assets";
 import IconButton from "@/components/IconButton";
 import { usePopupState } from "@/hooks/usePopupState";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type MonsterIconFieldProps = {
   label: string;
 };
 
 export default function MonsterIconField({ label }: MonsterIconFieldProps) {
+  const { t } = useI18n();
   const {
     setValue,
     formState: { errors },
@@ -35,35 +37,41 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
             iconAssetId ? "" : layoutStyles.imageHeaderStatusMissing
           }`}
           readOnly
-          value={iconAssetId ? (iconAssetName ?? "Image selected") : "No image selected"}
-          title={iconAssetId ? (iconAssetName ?? iconAssetId) : "No icon selected"}
+          value={
+            iconAssetId
+              ? (iconAssetName ?? t("status.imageSelected"))
+              : t("status.noImageSelected")
+          }
+          title={iconAssetId ? (iconAssetName ?? iconAssetId) : t("status.noIconSelected")}
         />
         <IconButton
           className="btn btn-outline-secondary btn-sm"
           icon={ImagePlus}
-          title="Open the asset picker to choose an icon"
+          title={t("tooltip.openIconPicker")}
           onClick={() => {
             picker.open();
           }}
         >
-          Choose image
+          {t("actions.chooseImage")}
         </IconButton>
         {iconAssetId ? (
           <IconButton
             className="btn btn-outline-secondary btn-sm"
             icon={XCircle}
-            title="Clear the selected icon from this card"
+            title={t("tooltip.clearSelectedIcon")}
             onClick={() => {
               setValue("iconAssetId", undefined, { shouldDirty: true, shouldTouch: true });
               setValue("iconAssetName", undefined, { shouldDirty: true, shouldTouch: true });
             }}
           >
-            <span className="visually-hidden">Clear</span>
+            <span className="visually-hidden">{t("actions.clear")}</span>
           </IconButton>
         ) : null}
       </div>
       {fieldError ? (
-        <div className="form-text text-danger">{String(fieldError.message ?? "Invalid value")}</div>
+        <div className="form-text text-danger">
+          {String(fieldError.message ?? t("errors.invalidValue"))}
+        </div>
       ) : null}
       <AssetsModal
         isOpen={picker.isOpen}

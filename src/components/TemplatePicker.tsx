@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import ModalShell from "@/components/ModalShell";
 import TemplatesList from "@/components/TemplatesList";
+import { useI18n } from "@/i18n/I18nProvider";
 import { TemplateId } from "@/types/templates";
 
 type TemplatePickerProps = {
@@ -19,6 +20,7 @@ export default function TemplatePicker({
   onApply,
   onClose,
 }: TemplatePickerProps) {
+  const { t } = useI18n();
   const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(currentTemplateId);
 
   // Keep local selection in sync when the current template changes while open.
@@ -31,7 +33,7 @@ export default function TemplatePicker({
   }
 
   return (
-    <ModalShell isOpen={isOpen} onClose={onClose} title="Choose a template">
+    <ModalShell isOpen={isOpen} onClose={onClose} title={t("heading.chooseTemplate")}>
       <TemplatesList
         selectedId={pendingTemplateId as TemplateId | null}
         onSelect={(id) => {

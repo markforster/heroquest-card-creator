@@ -11,6 +11,10 @@ export type AssetRecord = {
   createdAt: number;
 };
 
+export type AssetRecordWithBlob = AssetRecord & {
+  blob: Blob;
+};
+
 const STORE_NAME = "assets";
 
 export async function addAsset(
@@ -79,6 +83,40 @@ export async function getAllAssets(): Promise<AssetRecord[]> {
       // eslint-disable-next-line no-console
       console.error("[assets-db] getAllAssets error", request.error);
       reject(request.error ?? new Error("Failed to load assets"));
+    };
+  });
+}
+
+export async function getAllAssetsWithBlobs(): Promise<AssetRecordWithBlob[]> {
+  const db = await openHqccDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const store = tx.objectStore(STORE_NAME);
+    let request: IDBRequest;
+
+    if (store.indexNames.contains("createdAt")) {
+      const index = store.index("createdAt");
+      request = index.getAll();
+    } else {
+      request = store.getAll();
+    }
+
+    request.onsuccess = () => {
+      const results = (request.result as AssetRecordWithBlob[]) ?? [];
+      // eslint-disable-next-line no-console
+      console.debug("[assets-db] getAllAssetsWithBlobs success", results.length);
+      resolve(
+        results.map((record) => ({
+          ...record,
+        })),
+      );
+    };
+
+    request.onerror = () => {
+      // eslint-disable-next-line no-console
+      console.error("[assets-db] getAllAssetsWithBlobs error", request.error);
+      reject(request.error ?? new Error("Failed to load asset blobs"));
     };
   });
 }

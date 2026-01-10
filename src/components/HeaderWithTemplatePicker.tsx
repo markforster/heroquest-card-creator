@@ -4,8 +4,12 @@ import { useState } from "react";
 
 import AssetsModal from "@/components/Assets/AssetsModal";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import ConfirmModal from "@/components/ConfirmModal";
 import MainHeader from "@/components/MainHeader";
+import StatLabelOverridesModal from "@/components/StatLabelOverridesModal";
 import { StockpileModal } from "@/components/Stockpile";
+import { useI18n } from "@/i18n/I18nProvider";
+import { getTemplateNameLabel } from "@/i18n/messages";
 import TemplatePicker from "@/components/TemplatePicker";
 import { cardTemplatesById } from "@/data/card-templates";
 import { usePopupState } from "@/hooks/usePopupState";
@@ -13,6 +17,7 @@ import { getCard } from "@/lib/cards-db";
 import type { TemplateId } from "@/types/templates";
 
 export default function HeaderWithTemplatePicker() {
+  const { t, language } = useI18n();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate, isDirtyByTemplate },
     setSelectedTemplateId,
@@ -22,24 +27,45 @@ export default function HeaderWithTemplatePicker() {
   const templatePicker = usePopupState(false);
   const assetsModal = usePopupState(false);
   const stockpileModal = usePopupState(false);
+  const settingsModal = usePopupState(false);
   const [stockpileRefreshToken, setStockpileRefreshToken] = useState(0);
+  const [pendingCard, setPendingCard] = useState<Awaited<ReturnType<typeof getCard>> | null>(null);
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
 
   const selectedTemplate = selectedTemplateId ? cardTemplatesById[selectedTemplateId] : undefined;
+  const currentTemplateName = selectedTemplate
+    ? getTemplateNameLabel(language, selectedTemplate)
+    : undefined;
   const currentTemplateId = selectedTemplateId ?? null;
   const activeCardId =
     currentTemplateId != null ? activeCardIdByTemplate[currentTemplateId] : undefined;
+
+  const handleLoadCard = async (card: Awaited<ReturnType<typeof getCard>> | null) => {
+    if (!card) return;
+    try {
+      const fresh = await getCard(card.id);
+      const record = fresh ?? card;
+      setSelectedTemplateId(record.templateId as TemplateId);
+      loadCardIntoEditor(record.templateId as TemplateId, record);
+      setStockpileRefreshToken((prev) => prev + 1);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[HeaderWithTemplatePicker] Failed to load card", error);
+    }
+  };
 
   return (
     <>
       <MainHeader
         hasTemplate={Boolean(selectedTemplateId)}
-        currentTemplateName={selectedTemplate?.name}
+        currentTemplateName={currentTemplateName}
         onOpenTemplatePicker={() => {
           if (!selectedTemplateId) return;
           templatePicker.open();
         }}
         onOpenAssets={assetsModal.open}
         onOpenStockpile={stockpileModal.open}
+        onOpenSettings={settingsModal.open}
       />
       <TemplatePicker
         isOpen={templatePicker.isOpen}
@@ -50,6 +76,10 @@ export default function HeaderWithTemplatePicker() {
         onClose={templatePicker.close}
       />
       <AssetsModal isOpen={assetsModal.isOpen} onClose={assetsModal.close} mode="manage" />
+      <StatLabelOverridesModal
+        isOpen={settingsModal.isOpen}
+        onClose={settingsModal.close}
+      />
       <StockpileModal
         isOpen={stockpileModal.isOpen}
         onClose={stockpileModal.close}
@@ -60,26 +90,31 @@ export default function HeaderWithTemplatePicker() {
           const dirty =
             currentTemplate != null && Boolean(isDirtyByTemplate[currentTemplate as TemplateId]);
           if (dirty) {
-            const confirmDiscard = window.confirm(
-              "You have unsaved changes on the current card. Load another card and discard these changes?",
-            );
-            if (!confirmDiscard) {
-              return;
-            }
+            setPendingCard(card);
+            setIsDiscardConfirmOpen(true);
+            return;
           }
-
-          try {
-            const fresh = await getCard(card.id);
-            const record = fresh ?? card;
-            setSelectedTemplateId(record.templateId as TemplateId);
-            loadCardIntoEditor(record.templateId as TemplateId, record);
-            setStockpileRefreshToken((prev) => prev + 1);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error("[HeaderWithTemplatePicker] Failed to load card", error);
-          }
+          await handleLoadCard(card);
         }}
       />
+      <ConfirmModal
+        isOpen={isDiscardConfirmOpen}
+        title={t("heading.discardChanges")}
+        confirmLabel={t("actions.discard")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={async () => {
+          setIsDiscardConfirmOpen(false);
+          const card = pendingCard;
+          setPendingCard(null);
+          await handleLoadCard(card);
+        }}
+        onCancel={() => {
+          setIsDiscardConfirmOpen(false);
+          setPendingCard(null);
+        }}
+      >
+        {t("confirm.discardChangesBody")}
+      </ConfirmModal>
     </>
   );
 }

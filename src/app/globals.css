@@ -12,6 +12,31 @@ body {
   font-family: var(--hq-font-body);
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(230, 179, 90, 0.85) rgba(15, 15, 15, 0.8);
+}
+
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(15, 15, 15, 0.8);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(230, 179, 90, 0.85);
+  border: 3px solid rgba(15, 15, 15, 0.8);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(230, 179, 90, 0.95);
+}
+
 /* Themed Bootstrap overrides */
 
 .btn {
@@ -48,5 +73,18 @@ body {
   border-color: transparent !important;
   color: var(--hq-accent) !important;
   opacity: 0.65;
+  box-shadow: none !important;
+}
+
+.btn-outline-light.disabled,
+.btn-outline-light:disabled,
+.btn-outline-secondary.disabled,
+.btn-outline-secondary:disabled,
+.btn-outline-danger.disabled,
+.btn-outline-danger:disabled {
+  color: rgba(229, 231, 235, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  opacity: 0.6;
   box-shadow: none !important;
 }
