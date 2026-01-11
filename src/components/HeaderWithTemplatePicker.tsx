@@ -9,7 +9,7 @@ import MainHeader from "@/components/MainHeader";
 import StatLabelOverridesModal from "@/components/StatLabelOverridesModal";
 import { StockpileModal } from "@/components/Stockpile";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getTemplateNameLabel } from "@/i18n/messages";
+import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import TemplatePicker from "@/components/TemplatePicker";
 import { cardTemplatesById } from "@/data/card-templates";
 import { usePopupState } from "@/hooks/usePopupState";

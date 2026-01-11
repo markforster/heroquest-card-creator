@@ -3,7 +3,7 @@
 import CardPreview, { CardPreviewHandle } from "@/components/CardPreview";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getTemplateNameLabel } from "@/i18n/messages";
+import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import type { TemplateId } from "@/types/templates";
 
 import { useCardEditor } from "./CardEditorContext";

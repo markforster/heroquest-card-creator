@@ -7,7 +7,7 @@ type ParsedName = {
 
 const SUFFIX_PATTERN = /^(.*) \((\d+)\)$/;
 
-function splitFilename(name: string): ParsedName {
+export function splitFilename(name: string): ParsedName {
   const lastDot = name.lastIndexOf(".");
   if (lastDot > 0) {
     return {
@@ -22,13 +22,13 @@ function splitFilename(name: string): ParsedName {
   };
 }
 
-function parseSuffix(base: string): { root: string; suffix: number | null } {
+export function parseSuffix(base: string): { root: string; suffix: number | null } {
   const match = SUFFIX_PATTERN.exec(base);
   if (!match) {
     return { root: base, suffix: null };
   }
 
-  const suffix = Number.parseInt(match[2] ?? "", 10);
+  const suffix = Number.parseInt(match[2], 10);
   if (!Number.isFinite(suffix) || suffix <= 0) {
     return { root: base, suffix: null };
   }

@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import type { TemplateId } from "@/types/templates";
 
 export type SupportedLanguage = "en" | "fr" | "de" | "es" | "it" | "pt" | "nl";
@@ -1794,10 +1795,3 @@ export const templateNameLabels: Record<SupportedLanguage, Partial<Record<Templa
     "labelled-back": "Gelabelde achterkant",
   },
 };
-
-export function getTemplateNameLabel(
-  language: SupportedLanguage,
-  template: { id: TemplateId; name: string },
-): string {
-  return templateNameLabels[language]?.[template.id] ?? template.name;
-}

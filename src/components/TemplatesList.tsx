@@ -5,7 +5,7 @@ import Image from "next/image";
 import styles from "@/app/page.module.css";
 import { cardTemplates } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getTemplateNameLabel } from "@/i18n/messages";
+import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import type { TemplateId } from "@/types/templates";
 
 type TemplatesListProps = {

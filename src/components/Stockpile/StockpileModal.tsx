@@ -10,7 +10,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import ModalShell from "@/components/ModalShell";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getTemplateNameLabel } from "@/i18n/messages";
+import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { deleteCards, listCards } from "@/lib/cards-db";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
