@@ -99,6 +99,17 @@ Because fonts and assets are referenced relatively and IndexedDB/localStorage ar
 - `npm run test` / `test:*` – Jest test commands (see `jest.config.js`).
 - `npm run format` / `format:check` – Prettier formatting.
 
+### Testing
+
+- Run the full Jest suite:
+  - `npm run test`
+- Generate coverage:
+  - `npm run test:coverage`
+  - Output is written to `artefacts/coverage/`
+- Generate the HTML test report (includes coverage):
+  - `npm run test:report`
+  - Report is written to `artefacts/reports/test-report.html`
+
 ---
 
 ## Environment variables
@@ -134,3 +145,5 @@ The codebase is deliberately small and component‑driven. If you’re exploring
 - `src/components/CardTemplates/*` and `src/components/CardParts/*` – how the SVG cards are built.
 
 Prettier + ESLint are configured; running `npm run lint` and `npm run format` before committing will keep things consistent.
+
+If you intend to contribute, please work on a fork and ensure `npm run test` (and ideally `npm run typecheck`) pass before opening a pull request — PRs with failing tests will be refused.
