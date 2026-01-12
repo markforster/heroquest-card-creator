@@ -43,8 +43,6 @@ Core feature areas:
   - `backup.ts` – full import/export for cards/assets/settings (`.hqcc`).
   - `card-record-mapper.ts` – mapping between editor data and `CardRecord`s.
 
-Docs for internals and roadmap live under `docs/` (see `docs/README.md`).
-
 ---
 
 ## Static single‑page build (important)
