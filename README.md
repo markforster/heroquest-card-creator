@@ -4,6 +4,13 @@ HeroQuest Card Creator is a modern, browser‑based tool that lets you design He
 
 The app is built with Next.js 14 (App Router), React 18 and TypeScript, and is designed from the ground up to ship as a static bundle that you can drop into any folder on a server or even open directly from the filesystem.
 
+Key features:
+
+- SVG preview + per-card PNG export (fonts/images inlined).
+- Asset library (IndexedDB-backed) for uploading/using images.
+- Saved cards (“Stockpile”), including collections + bulk export to a ZIP.
+- Full backup import/export (`.hqcc`) of cards/assets (and related settings).
+
 ---
 
 ## Project shape
@@ -33,9 +40,10 @@ Core feature areas:
 - `src/lib/*` – browser‑side helpers:
   - `cards-db.ts` / `hqcc-db.ts` – IndexedDB wrapper for saved cards.
   - `assets-db.ts` – assets store (consolidated into the shared `hqcc` DB).
+  - `backup.ts` – full import/export for cards/assets/settings (`.hqcc`).
   - `card-record-mapper.ts` – mapping between editor data and `CardRecord`s.
 
-Docs for internals and roadmap live under `docs/` (e.g. `progress.v1.md`, `card-stockpile.v1.md`, `user-experience.md`).
+Docs for internals and roadmap live under `docs/` (see `docs/README.md`).
 
 ---
 
@@ -46,6 +54,7 @@ This project is configured to always emit a **fully static** build that can be o
 - `next.config.mjs`:
   - `output: "export"` – Next.js generates static HTML/JS/CSS into `out/`.
   - `assetPrefix: "./"` – assets are loaded relative to the current page, so the bundle works under any subfolder.
+  - `trailingSlash: true` – output uses directory-style routes (e.g. `out/some-page/index.html`).
   - `images.unoptimized: true` – disables the Next image optimizer so images are just plain files.
 - `src/app/layout.tsx` inlines `@font-face` rules with **relative** font URLs (e.g. `./fonts/Carter Sans W01 Regular.ttf`).
 - `src/components/CardPreview` embeds fonts and images into the exported PNG so exports are self‑contained.
@@ -59,6 +68,8 @@ What this means in practice:
 - No Node server or runtime is required once built.
 
 The only place `NEXT_PUBLIC_SITE_URL` matters is for `robots.ts` and `sitemap.ts` (to generate absolute URLs). It does **not** affect how the static bundle runs.
+
+If you need a fixed `basePath`/`assetPrefix` for a specific deployment target, see `static.next.config.mjs`.
 
 ---
 
@@ -81,6 +92,9 @@ The dev server behaves like a normal Next.js SPA, but all logic still runs on th
 - Production build (static export):
   - `npm run build`
   - Output is written to `out/`.
+- Optional: generate a downloadable zip bundle:
+  - `npm run build:download`
+  - Writes `artefacts/heroquest-card-maker.<version>.zip` (requires a `zip` binary).
 - To preview locally, you can:
   - Serve `out/` with any static file server, or
   - Open `out/index.html` directly in a modern browser (Chrome is the primary target).
@@ -91,9 +105,12 @@ Because fonts and assets are referenced relatively and IndexedDB/localStorage ar
 
 ## Scripts
 
+- `npm run generate:embedded-assets` – generate embedded asset manifests (run automatically on install/build/dev).
 - `npm run dev` – start local dev server.
 - `npm run build` – static production build into `out/`.
-- `npm run start` – start Next server (mainly useful before the static export setup; not needed for static hosting).
+- `npm run build:download` – build + package `out/` as a downloadable zip bundle in `artefacts/`.
+- `npm run serve:out` – serve `out/` locally for quick testing.
+- `npm run start` – start Next server (not used for static hosting).
 - `npm run lint` – run ESLint.
 - `npm run typecheck` – TypeScript type checking.
 - `npm run test` / `test:*` – Jest test commands (see `jest.config.js`).
@@ -116,9 +133,14 @@ Because fonts and assets are referenced relatively and IndexedDB/localStorage ar
 
 - `NEXT_PUBLIC_SITE_URL`
   - Used only by `robots.ts` and `sitemap.ts` to generate absolute URLs.
-  - Local example: set in `.env.local` to `http://localhost:3000`.
+  - For `npm run build`, this must be set to a **non-localhost** URL (enforced by `scripts/verify-env.js`).
+    - Recommended: set it in `.env.production` (and keep `.env.local` for dev).
+    - Example: `NEXT_PUBLIC_SITE_URL=https://cards.example.com npm run build`
+  - Dev example: set in `.env.local` to `http://localhost:3000` (or omit it entirely).
   - Production: set to your public site URL (e.g. `https://cards.example.com`).
   - As with any `NEXT_PUBLIC_*` var, do not put secrets here.
+- `NEXT_PUBLIC_GTM_ID`
+  - Optional Google Tag Manager id (enables GTM in `src/app/layout.tsx`).
 
 The core editor itself does **not** depend on any backend credentials or secret env vars.
 
