@@ -75,7 +75,7 @@ describe("useAssetImageUrl", () => {
     const deferred = createDeferred<string | null>();
     (getAssetObjectUrl as jest.Mock).mockReturnValueOnce(deferred.promise);
 
-    const { result, rerender } = renderHook(
+    const { result, rerender } = renderHook<ReturnType<typeof useAssetImageUrl>, { assetId?: string }>(
       ({ assetId }: { assetId?: string }) => {
         return useAssetImageUrl(assetId);
       },

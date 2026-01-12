@@ -35,6 +35,22 @@ describe("MainHeader", () => {
     expect(screen.getByRole("button", { name: /Template: Hero Card/i })).toBeInTheDocument();
   });
 
+  it("falls back to loading label when currentTemplateName is missing", () => {
+    render(
+      <I18nProvider>
+        <MainHeader
+          hasTemplate
+          onOpenTemplatePicker={() => {}}
+          onOpenAssets={() => {}}
+          onOpenStockpile={() => {}}
+          onOpenSettings={() => {}}
+        />
+      </I18nProvider>,
+    );
+
+    expect(screen.getByRole("button", { name: /Template: Loading/i })).toBeInTheDocument();
+  });
+
   it("disables the template button when hasTemplate is false", () => {
     render(
       <I18nProvider>
@@ -52,4 +68,3 @@ describe("MainHeader", () => {
     expect(screen.getByRole("button", { name: /Template:/i })).toBeDisabled();
   });
 });
-
