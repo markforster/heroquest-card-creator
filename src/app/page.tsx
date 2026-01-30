@@ -3,12 +3,16 @@
 import { useRef, useState } from "react";
 
 import { AssetHashIndexProvider } from "@/components/Assets/AssetHashIndexProvider";
+import { AppActionsProvider } from "@/components/AppActionsContext";
 import { CardEditorProvider, useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import CardPreviewContainer from "@/components/CardEditor/CardPreviewContainer";
 import CardInspector from "@/components/CardInspector/CardInspector";
+import TemplateChooser from "@/components/CardInspector/TemplateChooser";
 import type { CardPreviewHandle } from "@/components/CardPreview";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
 import HeaderWithTemplatePicker from "@/components/HeaderWithTemplatePicker";
+import { LibraryTransferProvider } from "@/components/LibraryTransferContext";
+import LeftNav from "@/components/LeftNav";
 import MainFooter from "@/components/MainFooter";
 import { cardTemplatesById } from "@/data/card-templates";
 import { cardDataToCardRecordPatch } from "@/lib/card-record-mapper";
@@ -17,6 +21,8 @@ import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
 import styles from "./page.module.css";
+
+const SHOW_HEADER = true;
 
 function IndexPageInner() {
   const {
@@ -103,37 +109,45 @@ function IndexPageInner() {
 
   return (
     <div className={styles.page}>
-      <HeaderWithTemplatePicker />
-      <main className={styles.main}>
-        <section className={styles.leftPanel}>
-          {/* <div className={styles.templateSidebar}>
-            <TemplatesList
-              selectedId={selectedTemplateId}
-              onSelect={(id) => setSelectedTemplateId(id as TemplateId)}
-              variant="sidebar"
-            />
-          </div> */}
-          <div className={styles.previewContainer}>
-            {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
-          </div>
-        </section>
-        <aside className={styles.rightPanel}>
-          <div className={styles.inspectorBody}>
-            <CardInspector />
-          </div>
-          <EditorActionsToolbar
-            canSaveChanges={canSaveChanges}
-            canSaveAsNew={canSaveAsNew}
-            savingMode={savingMode}
-            onExportPng={() => {
-              previewRef.current?.exportAsPng();
-            }}
-            onSaveChanges={() => handleSave("update")}
-            onSaveAsNew={() => handleSave("new")}
-          />
-        </aside>
-      </main>
-      <MainFooter />
+      <LibraryTransferProvider>
+        <AppActionsProvider>
+          {SHOW_HEADER ? <HeaderWithTemplatePicker /> : null}
+          <main className={styles.main}>
+            <LeftNav />
+            <section className={styles.leftPanel}>
+              {/* <div className={styles.templateSidebar}>
+                <TemplatesList
+                  selectedId={selectedTemplateId}
+                  onSelect={(id) => setSelectedTemplateId(id as TemplateId)}
+                  variant="sidebar"
+                />
+              </div> */}
+              <div className={styles.previewContainer}>
+                {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
+              </div>
+            </section>
+            <aside className={styles.rightPanel}>
+              <div className={styles.inspectorTop}>
+                <TemplateChooser />
+              </div>
+              <div className={styles.inspectorBody}>
+                <CardInspector />
+              </div>
+              <EditorActionsToolbar
+                canSaveChanges={canSaveChanges}
+                canSaveAsNew={canSaveAsNew}
+                savingMode={savingMode}
+                onExportPng={() => {
+                  previewRef.current?.exportAsPng();
+                }}
+                onSaveChanges={() => handleSave("update")}
+                onSaveAsNew={() => handleSave("new")}
+              />
+            </aside>
+          </main>
+        </AppActionsProvider>
+        <MainFooter />
+      </LibraryTransferProvider>
     </div>
   );
 }

@@ -37,11 +37,11 @@
 }
 
 .header {
-  flex: 0 0 72px;
+  flex: 0 0 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1.25rem;
+  padding: 0 0.85rem;
   background: var(--hq-header-bg);
   color: var(--hq-text);
   border-bottom: 1px solid #000;
@@ -58,9 +58,9 @@
 .headerTitleRow {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   font-family: var(--hq-font-display);
-  font-size: 1.1rem;
+  font-size: 0.92rem;
   font-weight: 400;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -69,7 +69,7 @@
 
 .headerLogo {
   width: auto;
-  height: 32px;
+  height: 24px;
   flex-shrink: 0;
 }
 
@@ -83,6 +83,71 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.headerMenu {
+  position: relative;
+}
+
+.headerMenuButton {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--hq-text);
+  border-radius: 6px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.headerMenuButton:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.headerMenuPopover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  min-width: 180px;
+  background: linear-gradient(135deg, #1e1b16, #111111);
+  border: 1px solid #000;
+  border-radius: 8px;
+  padding: 0.4rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.headerMenuItem {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--hq-text);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.headerMenuItem:hover:enabled {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.headerMenuItem:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.headerMenuItemIcon {
+  font-size: 0.95rem;
 }
 
 .languageSwitcher {
@@ -125,6 +190,249 @@
 }
 
 /* Main panels */
+
+.leftNav {
+  flex: 0 0 auto;
+  width: clamp(140px, 14vw, 200px);
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 1rem 0.75rem;
+  background: linear-gradient(135deg, #1b1916, #141414);
+  border-right: 1px solid #000;
+  color: var(--hq-text);
+  font-size: 0.9rem;
+  transition: width 0.2s ease;
+}
+
+.leftNavCollapsed {
+  width: 72px;
+}
+
+.leftNavInner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  gap: 0.75rem;
+}
+
+.leftNavTop {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  height: 0;
+  overflow: hidden;
+}
+
+.leftNavBrand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--hq-font-display);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hq-accent);
+}
+
+.leftNavLogo {
+  width: auto;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.leftNavTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leftNavToggle {
+  flex: 0 0 auto;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  background: #1b1916;
+  color: inherit;
+  border-radius: 999px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: absolute;
+  top: 0.75rem;
+  right: -11px;
+  z-index: 5;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+.leftNavToggle:hover {
+  background: #23211e;
+}
+
+.leftNavToggleIcon {
+  width: 12px;
+  height: 12px;
+}
+
+.leftNavMiddle {
+  flex: 1 0 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.leftNavBottom {
+  flex: 0 1 auto;
+}
+
+.leftNavList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.leftNavItem {
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.leftNavItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.leftNavItem:focus,
+.leftNavItem:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.leftNavGlyph {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.leftNavGlyph svg {
+  width: 16px;
+  height: 16px;
+}
+
+.leftNavLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leftNavCollapsed .leftNavLabel {
+  display: none;
+}
+
+.leftNavCollapsed .leftNavItem {
+  justify-content: center;
+}
+
+/* Left nav language menu */
+.leftNavMenu {
+  position: relative;
+}
+
+.leftNavMenuButton {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.leftNavMenuButton:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.leftNavMenuFlag {
+  font-size: 1rem;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.leftNavMenuLabel {
+  margin-left: auto;
+}
+
+.leftNavMenuPopover {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 0.4rem);
+  min-width: 180px;
+  background: linear-gradient(135deg, #1e1b16, #111111);
+  border: 1px solid #000;
+  border-radius: 8px;
+  padding: 0.4rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.leftNavMenuItem {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--hq-text);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.leftNavMenuItem:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.leftNavMenuText {
+  flex: 1 1 auto;
+}
+
+.leftNavCollapsed .leftNavMenuButton {
+  justify-content: center;
+}
 
 .leftPanel {
   flex: 1 1 auto;
@@ -209,13 +517,21 @@
   flex: 0 0 auto;
   width: 520px;
   background: linear-gradient(135deg, #1e1b16, #111111);
-  padding: 1rem;
+  padding: 0;
   border-left: 1px solid #000;
   display: flex;
   flex-direction: column;
   color: var(--hq-text);
   font-size: 0.9rem;
   overflow-y: hidden;
+}
+
+.inspectorTop {
+  flex: 0 0 auto;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(to bottom, rgba(17, 17, 17, 0.85), rgba(12, 10, 8, 0.95));
+  border-bottom: 1px solid rgba(0, 0, 0, 0.8);
 }
 
 .rightPanel > div {
@@ -285,12 +601,34 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 0.25rem;
+  padding: 0 1rem 0.5rem;
+}
+
+.inspectorHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.8);
+}
+
+.inspectorSectionTitle {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hq-accent);
+}
+
+.inspectorTemplateButton {
+  justify-content: space-between;
+  width: 100%;
+  text-transform: none;
+  letter-spacing: 0.02em;
 }
 
 .editorActions {
-  margin-top: 0.75rem;
-  padding: 0.5rem 0.75rem 0.4rem;
+  margin: 0;
+  padding: 0.5rem 1rem 0.4rem;
   border-top: 1px solid rgba(0, 0, 0, 0.8);
   background: linear-gradient(to bottom, rgba(17, 17, 17, 0.85), rgba(12, 10, 8, 0.95));
 }

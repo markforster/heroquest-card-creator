@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import MainHeader from "@/components/MainHeader";
+import { LibraryTransferProvider } from "@/components/LibraryTransferContext";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
 jest.mock("next/image", () => ({
@@ -18,53 +19,30 @@ jest.mock("next/image", () => ({
 }));
 
 describe("MainHeader", () => {
-  it("renders the template button label from props", () => {
+  it("renders the library menu button", () => {
     render(
       <I18nProvider>
-        <MainHeader
-          hasTemplate
-          currentTemplateName="Hero Card"
-          onOpenTemplatePicker={() => {}}
-          onOpenAssets={() => {}}
-          onOpenStockpile={() => {}}
-          onOpenSettings={() => {}}
-        />
+        <LibraryTransferProvider>
+          <MainHeader />
+        </LibraryTransferProvider>
       </I18nProvider>,
     );
 
-    expect(screen.getByRole("button", { name: /Template: Hero Card/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Library menu/i })).toBeInTheDocument();
   });
 
-  it("falls back to loading label when currentTemplateName is missing", () => {
+  it("opens the library menu with export/import actions", () => {
     render(
       <I18nProvider>
-        <MainHeader
-          hasTemplate
-          onOpenTemplatePicker={() => {}}
-          onOpenAssets={() => {}}
-          onOpenStockpile={() => {}}
-          onOpenSettings={() => {}}
-        />
+        <LibraryTransferProvider>
+          <MainHeader />
+        </LibraryTransferProvider>
       </I18nProvider>,
     );
 
-    expect(screen.getByRole("button", { name: /Template: Loading/i })).toBeInTheDocument();
-  });
+    fireEvent.click(screen.getByRole("button", { name: /Library menu/i }));
 
-  it("disables the template button when hasTemplate is false", () => {
-    render(
-      <I18nProvider>
-        <MainHeader
-          hasTemplate={false}
-          currentTemplateName="Hero Card"
-          onOpenTemplatePicker={() => {}}
-          onOpenAssets={() => {}}
-          onOpenStockpile={() => {}}
-          onOpenSettings={() => {}}
-        />
-      </I18nProvider>,
-    );
-
-    expect(screen.getByRole("button", { name: /Template:/i })).toBeDisabled();
+    expect(screen.getByRole("menuitem", { name: /Export library/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /Import library/i })).toBeInTheDocument();
   });
 });

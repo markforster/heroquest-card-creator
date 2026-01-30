@@ -1,33 +1,32 @@
 "use client";
 
-import { Images, LayoutTemplate, Settings, SquareStack } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import { Download, Menu, Upload } from "lucide-react";
 import Image from "next/image";
 
 import styles from "@/app/page.module.css";
-import IconButton from "@/components/IconButton";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useLibraryTransfer } from "@/components/LibraryTransferContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
 import appLogo from "../../public/assets/apple-touch-icon.png";
 
-type MainHeaderProps = {
-  hasTemplate: boolean;
-  currentTemplateName?: string;
-  onOpenTemplatePicker: () => void;
-  onOpenAssets: () => void;
-  onOpenStockpile: () => void;
-  onOpenSettings: () => void;
-};
-
-export default function MainHeader({
-  hasTemplate,
-  currentTemplateName,
-  onOpenTemplatePicker,
-  onOpenAssets,
-  onOpenStockpile,
-  onOpenSettings,
-}: MainHeaderProps) {
+export default function MainHeader() {
   const { t } = useI18n();
+  const { isBusy, isExporting, isImporting, openExport, openImport } = useLibraryTransfer();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className={styles.header}>
@@ -45,40 +44,49 @@ export default function MainHeader({
         </div>
       </div>
       <div className={styles.headerRight}>
-        <IconButton
-          className="btn btn-outline-light btn-sm"
-          icon={LayoutTemplate}
-          disabled={!hasTemplate}
-          onClick={onOpenTemplatePicker}
-          title={t("tooltip.chooseTemplate")}
-        >
-          {t("actions.template")}: {currentTemplateName ?? t("ui.loading")}
-        </IconButton>
-        <IconButton
-          className="btn btn-outline-light btn-sm"
-          icon={Images}
-          onClick={onOpenAssets}
-          title={t("tooltip.openAssets")}
-        >
-          {t("actions.assets")}
-        </IconButton>
-        <IconButton
-          className="btn btn-outline-light btn-sm"
-          icon={SquareStack}
-          onClick={onOpenStockpile}
-          title={t("tooltip.openCards")}
-        >
-          {t("actions.cards")}
-        </IconButton>
-        <IconButton
-          className="btn btn-outline-light btn-sm"
-          icon={Settings}
-          onClick={onOpenSettings}
-          title={t("tooltip.openSettings")}
-        >
-          {t("actions.settings")}
-        </IconButton>
-        <LanguageSwitcher className={`btn btn-outline-light btn-sm ${styles.languageSwitcher}`} />
+        <div className={styles.headerMenu} ref={menuRef}>
+          <button
+            type="button"
+            className={styles.headerMenuButton}
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+            aria-label={t("aria.libraryMenu")}
+            aria-expanded={isMenuOpen}
+          >
+            <Menu className={styles.icon} aria-hidden="true" />
+          </button>
+          {isMenuOpen ? (
+            <div className={styles.headerMenuPopover} role="menu">
+              <button
+                type="button"
+                className={styles.headerMenuItem}
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  openExport();
+                }}
+                disabled={isBusy}
+                title={t("tooltip.exportBackup")}
+                role="menuitem"
+              >
+                <Download className={styles.headerMenuItemIcon} aria-hidden="true" />
+                {isExporting ? t("actions.exporting") : t("actions.exportLibrary")}
+              </button>
+              <button
+                type="button"
+                className={styles.headerMenuItem}
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  openImport();
+                }}
+                disabled={isBusy}
+                title={t("tooltip.importBackup")}
+                role="menuitem"
+              >
+                <Upload className={styles.headerMenuItemIcon} aria-hidden="true" />
+                {isImporting ? t("actions.importing") : t("actions.importLibrary")}
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </header>
   );
