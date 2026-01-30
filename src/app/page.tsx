@@ -9,6 +9,7 @@ import CardPreviewContainer from "@/components/CardEditor/CardPreviewContainer";
 import CardInspector from "@/components/CardInspector/CardInspector";
 import TemplateChooser from "@/components/CardInspector/TemplateChooser";
 import type { CardPreviewHandle } from "@/components/CardPreview";
+import DatabaseVersionGate from "@/components/DatabaseVersionGate";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
 import HeaderWithTemplatePicker from "@/components/HeaderWithTemplatePicker";
 import { InspectorModeProvider } from "@/components/InspectorModeContext";
@@ -178,14 +179,16 @@ function IndexPageInner() {
 
 export default function IndexPage() {
   return (
-    <CardEditorProvider>
-      <AssetHashIndexProvider>
-        <PreviewModeProvider>
-          <InspectorModeProvider>
-            <IndexPageInner />
-          </InspectorModeProvider>
-        </PreviewModeProvider>
-      </AssetHashIndexProvider>
-    </CardEditorProvider>
+    <DatabaseVersionGate>
+      <CardEditorProvider>
+        <AssetHashIndexProvider>
+          <PreviewModeProvider>
+            <InspectorModeProvider>
+              <IndexPageInner />
+            </InspectorModeProvider>
+          </PreviewModeProvider>
+        </AssetHashIndexProvider>
+      </CardEditorProvider>
+    </DatabaseVersionGate>
   );
 }

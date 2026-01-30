@@ -3,16 +3,23 @@ import { openHqccDb } from "@/lib/hqcc-db";
 type MockStore = {
   indexNames: { contains: (name: string) => boolean };
   createIndex: jest.Mock;
+  put: jest.Mock;
 };
 
 type MockDb = {
   objectStoreNames: { contains: (name: string) => boolean };
   createObjectStore: jest.Mock;
+  transaction?: {
+    objectStore: (name: string) => MockStore;
+  };
 };
 
 type OpenRequest = {
   result: MockDb;
   error?: unknown;
+  transaction?: {
+    objectStore: (name: string) => MockStore;
+  };
   onupgradeneeded: null | (() => void);
   onsuccess: null | (() => void);
   onerror: null | (() => void);
@@ -24,13 +31,20 @@ function createDb({
 }: {
   existingStores?: string[];
   existingAssetIndexes?: string[];
-}): { db: MockDb; assetsStore: MockStore } {
+}): { db: MockDb; assetsStore: MockStore; metaStore: MockStore } {
   const storeSet = new Set(existingStores);
   const assetsIndexSet = new Set(existingAssetIndexes);
 
   const assetsStore: MockStore = {
     indexNames: { contains: (name) => assetsIndexSet.has(name) },
     createIndex: jest.fn(),
+    put: jest.fn(),
+  };
+
+  const metaStore: MockStore = {
+    indexNames: { contains: () => false },
+    createIndex: jest.fn(),
+    put: jest.fn(),
   };
 
   const db: MockDb = {
@@ -38,16 +52,24 @@ function createDb({
     createObjectStore: jest.fn((name: string) => {
       storeSet.add(name);
       if (name === "assets") return assetsStore;
+      if (name === "meta") return metaStore;
       return undefined;
     }),
+    transaction: {
+      objectStore: (name: string) => {
+        if (name === "meta") return metaStore;
+        return assetsStore;
+      },
+    },
   };
 
-  return { db, assetsStore };
+  return { db, assetsStore, metaStore };
 }
 
 function createOpenRequest(db: MockDb): OpenRequest {
   return {
     result: db,
+    transaction: db.transaction,
     onupgradeneeded: null,
     onsuccess: null,
     onerror: null,
@@ -91,14 +113,14 @@ describe("openHqccDb", () => {
 
     const promise = openHqccDb();
 
-    expect(open).toHaveBeenCalledWith("hqcc", 2);
+    expect(open).toHaveBeenCalledWith("hqcc", 3);
 
     request.onsuccess?.();
     await expect(promise).resolves.toBe(db);
   });
 
   it("creates missing stores and indexes during upgrade", async () => {
-    const { db, assetsStore } = createDb({ existingStores: [] });
+    const { db, assetsStore, metaStore } = createDb({ existingStores: [] });
     const request = createOpenRequest(db);
     const open = jest.fn(() => request);
 
@@ -112,14 +134,21 @@ describe("openHqccDb", () => {
     expect(db.createObjectStore).toHaveBeenCalledWith("assets", { keyPath: "id" });
     expect(assetsStore.createIndex).toHaveBeenCalledWith("createdAt", "createdAt", { unique: false });
     expect(db.createObjectStore).toHaveBeenCalledWith("collections", { keyPath: "id" });
+    expect(db.createObjectStore).toHaveBeenCalledWith("meta", { keyPath: "id" });
+    expect(metaStore.put).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "appVersion",
+        dbVersion: 3,
+      }),
+    );
 
     request.onsuccess?.();
     await expect(promise).resolves.toBe(db);
   });
 
   it("does not recreate existing stores or indexes during upgrade", async () => {
-    const { db, assetsStore } = createDb({
-      existingStores: ["cards", "assets", "collections"],
+    const { db, assetsStore, metaStore } = createDb({
+      existingStores: ["cards", "assets", "collections", "meta"],
       existingAssetIndexes: ["createdAt"],
     });
     const request = createOpenRequest(db);
@@ -133,6 +162,12 @@ describe("openHqccDb", () => {
 
     expect(db.createObjectStore).not.toHaveBeenCalled();
     expect(assetsStore.createIndex).not.toHaveBeenCalled();
+    expect(metaStore.put).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "appVersion",
+        dbVersion: 3,
+      }),
+    );
 
     request.onsuccess?.();
     await expect(promise).resolves.toBe(db);
@@ -166,4 +201,3 @@ describe("openHqccDb", () => {
     await expect(promise).rejects.toThrow("Failed to open hqcc DB");
   });
 });
-

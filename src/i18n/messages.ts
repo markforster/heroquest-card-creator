@@ -264,6 +264,14 @@ const baseMessages = {
     statsLabelHeroMind: "Mind",
     statsLabelMonsterBodyPoints: "Body Points",
     statsLabelMonsterMindPoints: "Mind Points",
+    "heading.databaseVersionMismatch": "Database is newer than this app",
+    "message.databaseVersionMismatch":
+      "Your browser data was created by a newer version of HeroQuest Card Creator. This version can't open it. Update to the latest version or clear the browser database to continue.",
+    "label.appVersion": "App version",
+    "label.databaseVersion": "Database version",
+    "label.expectedDatabaseVersion": "Expected database version",
+    "label.databaseAppVersion": "Database created by app version",
+    "label.unknownVersion": "Unknown",
   },
 
   fr: {
@@ -524,6 +532,14 @@ const baseMessages = {
     statsLabelHeroMind: "Esprit",
     statsLabelMonsterBodyPoints: "Points de corps",
     statsLabelMonsterMindPoints: "Points d'esprit",
+    "heading.databaseVersionMismatch": "La base de données est plus récente que l’application",
+    "message.databaseVersionMismatch":
+      "Les données du navigateur ont été créées par une version plus récente de HeroQuest Card Creator. Cette version ne peut pas les ouvrir. Mettez à jour l’application ou effacez la base de données du navigateur pour continuer.",
+    "label.appVersion": "Version de l’application",
+    "label.databaseVersion": "Version de la base de données",
+    "label.expectedDatabaseVersion": "Version de base attendue",
+    "label.databaseAppVersion": "Version de l’app ayant créé la base",
+    "label.unknownVersion": "Inconnue",
   },
 
   de: {
@@ -783,6 +799,14 @@ const baseMessages = {
     statsLabelHeroMind: "Geist",
     statsLabelMonsterBodyPoints: "Körperpunkte",
     statsLabelMonsterMindPoints: "Geistpunkte",
+    "heading.databaseVersionMismatch": "Datenbank ist neuer als die App",
+    "message.databaseVersionMismatch":
+      "Die Browserdaten wurden von einer neueren Version des HeroQuest Card Creator erstellt. Diese Version kann sie nicht öffnen. Bitte aktualisiere die App oder lösche die Browserdatenbank, um fortzufahren.",
+    "label.appVersion": "App-Version",
+    "label.databaseVersion": "Datenbankversion",
+    "label.expectedDatabaseVersion": "Erwartete Datenbankversion",
+    "label.databaseAppVersion": "Datenbank erstellt mit App-Version",
+    "label.unknownVersion": "Unbekannt",
   },
 
   es: {
@@ -1037,6 +1061,14 @@ const baseMessages = {
     statsLabelHeroMind: "Mente",
     statsLabelMonsterBodyPoints: "Puntos de cuerpo",
     statsLabelMonsterMindPoints: "Puntos de mente",
+    "heading.databaseVersionMismatch": "La base de datos es más nueva que la app",
+    "message.databaseVersionMismatch":
+      "Los datos del navegador fueron creados por una versión más nueva de HeroQuest Card Creator. Esta versión no puede abrirlos. Actualiza la app o borra la base de datos del navegador para continuar.",
+    "label.appVersion": "Versión de la app",
+    "label.databaseVersion": "Versión de la base de datos",
+    "label.expectedDatabaseVersion": "Versión de base de datos esperada",
+    "label.databaseAppVersion": "Base creada con versión de la app",
+    "label.unknownVersion": "Desconocida",
   },
 
   it: {
@@ -1292,6 +1324,14 @@ const baseMessages = {
     statsLabelHeroMind: "Mente",
     statsLabelMonsterBodyPoints: "Punti corpo",
     statsLabelMonsterMindPoints: "Punti mente",
+    "heading.databaseVersionMismatch": "Il database è più recente dell'app",
+    "message.databaseVersionMismatch":
+      "I dati del browser sono stati creati da una versione più recente di HeroQuest Card Creator. Questa versione non può aprirli. Aggiorna l'app o elimina il database del browser per continuare.",
+    "label.appVersion": "Versione dell'app",
+    "label.databaseVersion": "Versione del database",
+    "label.expectedDatabaseVersion": "Versione del database prevista",
+    "label.databaseAppVersion": "Database creato con versione dell'app",
+    "label.unknownVersion": "Sconosciuta",
   },
 
   pt: {
@@ -1548,6 +1588,14 @@ const baseMessages = {
     statsLabelHeroMind: "Mente",
     statsLabelMonsterBodyPoints: "Pontos de corpo",
     statsLabelMonsterMindPoints: "Pontos de mente",
+    "heading.databaseVersionMismatch": "O banco de dados é mais recente que o app",
+    "message.databaseVersionMismatch":
+      "Os dados do navegador foram criados por uma versão mais recente do HeroQuest Card Creator. Esta versão não consegue abri-los. Atualize o app ou apague o banco de dados do navegador para continuar.",
+    "label.appVersion": "Versão do app",
+    "label.databaseVersion": "Versão do banco de dados",
+    "label.expectedDatabaseVersion": "Versão esperada do banco de dados",
+    "label.databaseAppVersion": "Banco criado pela versão do app",
+    "label.unknownVersion": "Desconhecida",
   },
 
   nl: {
@@ -1804,6 +1852,14 @@ const baseMessages = {
     statsLabelHeroMind: "Geest",
     statsLabelMonsterBodyPoints: "Lichaamspunten",
     statsLabelMonsterMindPoints: "Geestpunten",
+    "heading.databaseVersionMismatch": "Database is nieuwer dan de app",
+    "message.databaseVersionMismatch":
+      "De browsergegevens zijn gemaakt door een nieuwere versie van HeroQuest Card Creator. Deze versie kan ze niet openen. Werk de app bij of wis de browserdatabase om door te gaan.",
+    "label.appVersion": "App-versie",
+    "label.databaseVersion": "Databaseversie",
+    "label.expectedDatabaseVersion": "Verwachte databaseversie",
+    "label.databaseAppVersion": "Database gemaakt met app-versie",
+    "label.unknownVersion": "Onbekend",
   },
 } satisfies Record<SupportedLanguage, Messages>;
 

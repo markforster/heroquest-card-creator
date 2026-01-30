@@ -20,6 +20,30 @@ jest.mock("@/components/LanguageMenu", () => ({
   default: () => <div data-testid="language-menu" />,
 }));
 
+jest.mock("@/components/PreviewModeContext", () => ({
+  __esModule: true,
+  usePreviewMode: () => ({
+    previewMode: "legacy",
+    togglePreviewMode: jest.fn(),
+  }),
+  previewModeFlags: {
+    SHOW_BLUEPRINTS_TOGGLE: false,
+    USE_BLUEPRINTS: false,
+  },
+}));
+
+jest.mock("@/components/InspectorModeContext", () => ({
+  __esModule: true,
+  useInspectorMode: () => ({
+    inspectorMode: "legacy",
+    toggleInspectorMode: jest.fn(),
+  }),
+  inspectorModeFlags: {
+    SHOW_INSPECTOR_TOGGLE: false,
+    USE_GENERIC_INSPECTOR: false,
+  },
+}));
+
 jest.mock("@/i18n/I18nProvider", () => ({
   __esModule: true,
   useI18n: () => ({
