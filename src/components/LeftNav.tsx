@@ -1,14 +1,15 @@
 "use client";
 
+import { ChevronLeft, ChevronRight, Images, Settings, SquareStack } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { ChevronLeft, ChevronRight, Images, Settings, SquareStack } from "lucide-react";
+import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
 import LanguageMenu from "@/components/LanguageMenu";
-import styles from "@/app/page.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
 
 const COLLAPSE_MEDIA_QUERY = "(max-width: 1280px)";
+const NAV_COLLAPSE_STORAGE_KEY = "hqcc.leftNavCollapsed";
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(false);
@@ -35,8 +36,36 @@ export default function LeftNav() {
   const { openAssets, openStockpile, openSettings } = useAppActions();
   const autoCollapsed = useMediaQuery(COLLAPSE_MEDIA_QUERY);
   const [manualCollapsed, setManualCollapsed] = useState(false);
+  const [isCollapsedReady, setIsCollapsedReady] = useState(false);
   const isCollapsed = autoCollapsed || manualCollapsed;
   const collapseStateLabel = isCollapsed ? "Expand navigation" : "Collapse navigation";
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem(NAV_COLLAPSE_STORAGE_KEY);
+      if (stored === "true") {
+        setManualCollapsed(true);
+      }
+      setIsCollapsedReady(true);
+    } catch {
+      // Ignore localStorage errors.
+      setIsCollapsedReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(NAV_COLLAPSE_STORAGE_KEY, String(manualCollapsed));
+    } catch {
+      // Ignore localStorage errors.
+    }
+  }, [manualCollapsed]);
+
+  if (!isCollapsedReady) {
+    return null;
+  }
 
   return (
     <nav
