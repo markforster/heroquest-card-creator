@@ -1,16 +1,17 @@
+import type { MessageKey } from "@/i18n/messages";
 import type { TemplateId } from "@/types/templates";
 
 export type InspectorTitleField = {
   fieldType: "title";
   bind: "title";
-  labelKey: string;
+  labelKey: MessageKey;
   required?: boolean;
 };
 
 export type InspectorTextField = {
   fieldType: "text";
   bind: "description";
-  labelKey: string;
+  labelKey: MessageKey;
   props?: {
     rows?: number;
   };
@@ -19,13 +20,13 @@ export type InspectorTextField = {
 export type InspectorStatsField = {
   fieldType: "stats";
   statsType: "hero" | "monster";
-  labelKey: string;
+  labelKey: MessageKey;
 };
 
 export type InspectorImageField = {
   fieldType: "image";
   bind: "imageAssetId";
-  labelKey: string;
+  labelKey: MessageKey;
   props: {
     boundsWidth: number;
     boundsHeight: number;
@@ -35,7 +36,7 @@ export type InspectorImageField = {
 export type InspectorMonsterIconField = {
   fieldType: "monsterIcon";
   bind: "iconAssetId";
-  labelKey: string;
+  labelKey: MessageKey;
 };
 
 export type InspectorField =
