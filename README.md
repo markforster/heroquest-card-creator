@@ -101,6 +101,31 @@ Because fonts and assets are referenced relatively and IndexedDB/localStorage ar
 
 ---
 
+## Optional: Tauri desktop build
+
+This repo includes a thin Tauri wrapper so you can ship a native desktop app around the static build.
+
+Setup notes:
+
+- Tauri uses the static Next.js export (`out/`) as its frontend bundle.
+- App icons are generated from `public/assets/web-app-manifest-512x512.png` via the Tauri icon generator.
+- You’ll need a Rust toolchain installed to build desktop bundles.
+
+Build flow:
+
+- `npm run tauri:icons` – generate native icons into `src-tauri/icons/`.
+- `npm run tauri:build` – build the static export and bundle the desktop app.
+
+Docs:
+
+- Tauri distribute/build guide. https://v2.tauri.app/
+- Plugin docs (used by this project):
+  - Opener (open paths / reveal in file explorer).
+  - File system (read/write files).
+  - Dialog (open/save dialogs).
+
+---
+
 ## Scripts
 
 - `npm run generate:embedded-assets` – generate embedded asset manifests (run automatically on install/build/dev).
@@ -108,6 +133,8 @@ Because fonts and assets are referenced relatively and IndexedDB/localStorage ar
 - `npm run build` – static production build into `out/`.
 - `npm run build:download` – build + package `out/` as a downloadable zip bundle in `artefacts/`.
 - `npm run serve:out` – serve `out/` locally for quick testing.
+- `npm run tauri:icons` – generate native app icons from `public/assets/web-app-manifest-512x512.png`.
+- `npm run tauri:build` – build the static export and bundle the Tauri desktop app.
 - `npm run start` – start Next server (not used for static hosting).
 - `npm run lint` – run ESLint.
 - `npm run typecheck` – TypeScript type checking.
