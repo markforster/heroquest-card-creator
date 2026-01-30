@@ -22,7 +22,10 @@
     "typecheck:watch": "tsc --noEmit --watch",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "serve:out": " npx serve ./out -l 3000"
+    "serve:out": " npx serve ./out -l 3000",
+    "tauri": "tauri",
+    "tauri:icons": "tauri icon public/assets/web-app-manifest-512x512.png",
+    "tauri:build": "npm run build && npm run tauri:icons && tauri build"
   },
   "dependencies": {
     "@next/third-parties": "^16.1.0",
@@ -31,6 +34,8 @@
     "jszip": "^3.10.1",
     "lucide-react": "^0.561.0",
     "next": "14.2.15",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-opener": "^2",
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.68.0",
@@ -53,7 +58,8 @@
     "jest-environment-jsdom": "^29.7.0",
     "jest-html-reporter": "^3.10.2",
     "prettier": "^3.6.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@tauri-apps/cli": "^2"
   },
   "jest-html-reporter": {
     "outputPath": "artefacts/reports/test-report.html",

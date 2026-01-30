@@ -17,6 +17,11 @@ jest.mock("@/components/ReleaseNotesModal", () => ({
   default: () => null,
 }));
 
+jest.mock("@/hooks/useIsTauriApp", () => ({
+  __esModule: true,
+  default: () => false,
+}));
+
 
 function renderMainFooter() {
   return render(
@@ -37,5 +42,10 @@ describe("MainFooter (UI)", () => {
     expect(screen.getByRole("button", { name: "Help" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "About" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Download" })).toBeInTheDocument();
+  });
+
+  it("shows the web/tauri indicator", () => {
+    renderMainFooter();
+    expect(screen.getByText("App: Web")).toBeInTheDocument();
   });
 });

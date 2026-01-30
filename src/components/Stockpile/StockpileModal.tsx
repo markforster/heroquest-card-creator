@@ -20,6 +20,7 @@ import {
   listCollections,
   updateCollection,
 } from "@/lib/collections-db";
+import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 import type { CardRecord } from "@/types/cards-db";
 import type { CollectionRecord } from "@/types/collections-db";
 
@@ -436,6 +437,7 @@ export default function StockpileModal({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      void openDownloadsFolderIfTauri();
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("[StockpileModal] Bulk export failed", error);

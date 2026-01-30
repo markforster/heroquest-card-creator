@@ -8,6 +8,7 @@ import BlueprintRenderer from "@/components/BlueprintRenderer";
 import { templateComponentsById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getAssetBlob } from "@/lib/assets-db";
+import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 import { usePreviewMode } from "@/components/PreviewModeContext";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
@@ -308,6 +309,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           link.click();
           document.body.removeChild(link);
           URL.revokeObjectURL(pngUrl);
+          void openDownloadsFolderIfTauri();
         },
         async renderToPngBlob(options) {
           const svgElement = svgRef.current;

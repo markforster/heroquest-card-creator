@@ -5,12 +5,14 @@ import HelpModal from "@/components/HelpModal";
 import ReleaseNotesModal from "@/components/ReleaseNotesModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { usePopupState } from "@/hooks/usePopupState";
+import useIsTauriApp from "@/hooks/useIsTauriApp";
 import { APP_VERSION } from "@/version";
 
 export default function MainFooter() {
   const { t } = useI18n();
   const helpModal = usePopupState(false);
   const releaseNotesModal = usePopupState(false);
+  const isTauriApp = useIsTauriApp();
 
   return (
     <>
@@ -47,6 +49,8 @@ export default function MainFooter() {
           <div className="ms-auto d-flex align-items-center gap-1">
             <span>·</span>
             <span title={t("tooltip.appVersion")}>v{APP_VERSION}</span>
+            <span>·</span>
+            <span>App: {isTauriApp ? "Tauri" : "Web"}</span>
             <span>·</span>
             <span>{t("ui.madeWith")}</span>
             <span className={styles.footerHeart} aria-hidden="true">

@@ -7,6 +7,7 @@ import BackupProgressOverlay from "@/components/BackupProgressOverlay";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { createBackupHqcc, importBackupHqcc, importBackupJson } from "@/lib/backup";
+import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 
 type LibraryTransferContextValue = {
   isBusy: boolean;
@@ -111,6 +112,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      void openDownloadsFolderIfTauri();
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("[LibraryTransferProvider] Failed to export backup", error);
