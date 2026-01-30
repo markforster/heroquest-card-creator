@@ -1,10 +1,11 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Images, Settings, SquareStack } from "lucide-react";
+import { ChevronLeft, ChevronRight, Images, Layers, Settings, SquareStack } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
+import { previewModeFlags, usePreviewMode } from "@/components/PreviewModeContext";
 import LanguageMenu from "@/components/LanguageMenu";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -34,11 +35,15 @@ function useMediaQuery(query: string) {
 export default function LeftNav() {
   const { t } = useI18n();
   const { openAssets, openStockpile, openSettings } = useAppActions();
+  const { previewMode, togglePreviewMode } = usePreviewMode();
+  const { SHOW_BLUEPRINTS_TOGGLE } = previewModeFlags;
   const autoCollapsed = useMediaQuery(COLLAPSE_MEDIA_QUERY);
   const [manualCollapsed, setManualCollapsed] = useState(false);
   const [isCollapsedReady, setIsCollapsedReady] = useState(false);
   const isCollapsed = autoCollapsed || manualCollapsed;
   const collapseStateLabel = isCollapsed ? "Expand navigation" : "Collapse navigation";
+  const previewModeLabel =
+    previewMode === "blueprint" ? t("label.previewBlueprint") : t("label.previewLegacy");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -130,6 +135,23 @@ export default function LeftNav() {
               </span>
               <span className={styles.leftNavLabel}>{t("actions.settings")}</span>
             </button>
+            {SHOW_BLUEPRINTS_TOGGLE ? (
+              <button
+                className={styles.leftNavItem}
+                type="button"
+                onClick={togglePreviewMode}
+                title={t("tooltip.previewMode")}
+                aria-pressed={previewMode === "blueprint"}
+                aria-label={`${t("label.previewMode")}: ${previewModeLabel}`}
+              >
+                <span className={styles.leftNavGlyph} aria-hidden="true">
+                  <Layers />
+                </span>
+                <span className={styles.leftNavLabel}>
+                  {t("label.previewMode")}: {previewModeLabel}
+                </span>
+              </button>
+            ) : null}
             <LanguageMenu isCollapsed={isCollapsed} />
           </div>
         </div>

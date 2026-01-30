@@ -4,9 +4,11 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
+import BlueprintRenderer from "@/components/BlueprintRenderer";
 import { templateComponentsById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getAssetBlob } from "@/lib/assets-db";
+import { usePreviewMode } from "@/components/PreviewModeContext";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -91,6 +93,7 @@ function readBlobAsDataUrl(blob: Blob): Promise<string> {
 const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
   ({ templateId, templateName, backgroundSrc, cardData }, ref) => {
     const { t } = useI18n();
+    const { previewMode } = usePreviewMode();
     const background = backgroundSrc ?? parchmentBackground;
     const [backgroundLoaded, setBackgroundLoaded] = useState(false);
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -326,6 +329,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
     );
 
     const TemplateComponent = templateId ? templateComponentsById[templateId] : undefined;
+    const showBlueprint = previewMode === "blueprint";
 
     return (
       <div className={styles.root}>
@@ -356,7 +360,17 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                 />
               </clipPath>
             </defs>
-            {TemplateComponent ? (
+            {showBlueprint ? (
+              <g clipPath="url(#cardClip)">
+                <BlueprintRenderer
+                  templateId={templateId}
+                  templateName={templateName}
+                  background={background}
+                  backgroundLoaded={backgroundLoaded}
+                  cardData={cardData}
+                />
+              </g>
+            ) : TemplateComponent ? (
               <g clipPath="url(#cardClip)">
                 <TemplateComponent
                   templateName={templateName}

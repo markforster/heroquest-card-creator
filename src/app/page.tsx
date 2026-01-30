@@ -14,7 +14,10 @@ import HeaderWithTemplatePicker from "@/components/HeaderWithTemplatePicker";
 import { LibraryTransferProvider } from "@/components/LibraryTransferContext";
 import LeftNav from "@/components/LeftNav";
 import MainFooter from "@/components/MainFooter";
+import { PreviewModeProvider } from "@/components/PreviewModeContext";
 import { cardTemplatesById } from "@/data/card-templates";
+import { usePreviewMode } from "@/components/PreviewModeContext";
+import { useI18n } from "@/i18n/I18nProvider";
 import { cardDataToCardRecordPatch } from "@/lib/card-record-mapper";
 import { createCard, updateCard } from "@/lib/cards-db";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -25,6 +28,8 @@ import styles from "./page.module.css";
 const SHOW_HEADER = true;
 
 function IndexPageInner() {
+  const { t } = useI18n();
+  const { previewMode } = usePreviewMode();
   const {
     state: { selectedTemplateId, cardDrafts, activeCardIdByTemplate, activeCardStatusByTemplate },
     setActiveCard,
@@ -44,6 +49,8 @@ function IndexPageInner() {
   const canSaveChanges = Boolean(currentTemplateId && activeCardId && activeStatus === "saved");
 
   const [savingMode, setSavingMode] = useState<"new" | "update" | null>(null);
+  const previewModeLabel =
+    previewMode === "blueprint" ? t("label.previewBlueprint") : t("label.previewLegacy");
 
   const handleSave = async (mode: "new" | "update") => {
     if (!currentTemplateId) return;
@@ -112,6 +119,9 @@ function IndexPageInner() {
       <LibraryTransferProvider>
         <AppActionsProvider>
           {SHOW_HEADER ? <HeaderWithTemplatePicker /> : null}
+          <div className={styles.previewModeFixed}>
+            {t("label.previewMode")}: {previewModeLabel}
+          </div>
           <main className={styles.main}>
             <LeftNav />
             <section className={styles.leftPanel}>
@@ -156,7 +166,9 @@ export default function IndexPage() {
   return (
     <CardEditorProvider>
       <AssetHashIndexProvider>
-        <IndexPageInner />
+        <PreviewModeProvider>
+          <IndexPageInner />
+        </PreviewModeProvider>
       </AssetHashIndexProvider>
     </CardEditorProvider>
   );
