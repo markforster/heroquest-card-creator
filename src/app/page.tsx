@@ -18,6 +18,7 @@ import { PreviewModeProvider } from "@/components/PreviewModeContext";
 import { cardTemplatesById } from "@/data/card-templates";
 import { usePreviewMode } from "@/components/PreviewModeContext";
 import { useI18n } from "@/i18n/I18nProvider";
+import { previewModeFlags } from "@/components/PreviewModeContext";
 import { cardDataToCardRecordPatch } from "@/lib/card-record-mapper";
 import { createCard, updateCard } from "@/lib/cards-db";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -30,6 +31,7 @@ const SHOW_HEADER = true;
 function IndexPageInner() {
   const { t } = useI18n();
   const { previewMode } = usePreviewMode();
+  const { USE_BLUEPRINTS } = previewModeFlags;
   const {
     state: { selectedTemplateId, cardDrafts, activeCardIdByTemplate, activeCardStatusByTemplate },
     setActiveCard,
@@ -119,9 +121,11 @@ function IndexPageInner() {
       <LibraryTransferProvider>
         <AppActionsProvider>
           {SHOW_HEADER ? <HeaderWithTemplatePicker /> : null}
-          <div className={styles.previewModeFixed}>
-            {t("label.previewMode")}: {previewModeLabel}
-          </div>
+          {!USE_BLUEPRINTS ? (
+            <div className={styles.previewModeFixed}>
+              {t("label.previewMode")}: {previewModeLabel}
+            </div>
+          ) : null}
           <main className={styles.main}>
             <LeftNav />
             <section className={styles.leftPanel}>
