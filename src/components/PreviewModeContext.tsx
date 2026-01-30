@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-import { SHOW_BLUEPRINTS_TOGGLE, USE_BLUEPRINTS } from "@/config/preview";
+import { SHOW_BLUEPRINTS_TOGGLE, USE_BLUEPRINTS } from "@/config/flags";
 
 export type PreviewMode = "legacy" | "blueprint";
 

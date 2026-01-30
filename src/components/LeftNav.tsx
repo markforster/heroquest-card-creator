@@ -1,10 +1,19 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Images, Layers, Settings, SquareStack } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Images,
+  Layers,
+  LayoutPanelTop,
+  Settings,
+  SquareStack,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
+import { inspectorModeFlags, useInspectorMode } from "@/components/InspectorModeContext";
 import { previewModeFlags, usePreviewMode } from "@/components/PreviewModeContext";
 import LanguageMenu from "@/components/LanguageMenu";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -37,6 +46,8 @@ export default function LeftNav() {
   const { openAssets, openStockpile, openSettings } = useAppActions();
   const { previewMode, togglePreviewMode } = usePreviewMode();
   const { SHOW_BLUEPRINTS_TOGGLE } = previewModeFlags;
+  const { inspectorMode, toggleInspectorMode } = useInspectorMode();
+  const { SHOW_INSPECTOR_TOGGLE } = inspectorModeFlags;
   const autoCollapsed = useMediaQuery(COLLAPSE_MEDIA_QUERY);
   const [manualCollapsed, setManualCollapsed] = useState(false);
   const [isCollapsedReady, setIsCollapsedReady] = useState(false);
@@ -44,6 +55,8 @@ export default function LeftNav() {
   const collapseStateLabel = isCollapsed ? "Expand navigation" : "Collapse navigation";
   const previewModeLabel =
     previewMode === "blueprint" ? t("label.previewBlueprint") : t("label.previewLegacy");
+  const inspectorModeLabel =
+    inspectorMode === "generic" ? t("label.inspectorGeneric") : t("label.inspectorLegacy");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -149,6 +162,23 @@ export default function LeftNav() {
                 </span>
                 <span className={styles.leftNavLabel}>
                   {t("label.previewMode")}: {previewModeLabel}
+                </span>
+              </button>
+            ) : null}
+            {SHOW_INSPECTOR_TOGGLE ? (
+              <button
+                className={styles.leftNavItem}
+                type="button"
+                onClick={toggleInspectorMode}
+                title={t("tooltip.inspectorMode")}
+                aria-pressed={inspectorMode === "generic"}
+                aria-label={`${t("label.inspectorMode")}: ${inspectorModeLabel}`}
+              >
+                <span className={styles.leftNavGlyph} aria-hidden="true">
+                  <LayoutPanelTop />
+                </span>
+                <span className={styles.leftNavLabel}>
+                  {t("label.inspectorMode")}: {inspectorModeLabel}
                 </span>
               </button>
             ) : null}

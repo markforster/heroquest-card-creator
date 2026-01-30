@@ -11,6 +11,7 @@ import TemplateChooser from "@/components/CardInspector/TemplateChooser";
 import type { CardPreviewHandle } from "@/components/CardPreview";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
 import HeaderWithTemplatePicker from "@/components/HeaderWithTemplatePicker";
+import { InspectorModeProvider } from "@/components/InspectorModeContext";
 import { LibraryTransferProvider } from "@/components/LibraryTransferContext";
 import LeftNav from "@/components/LeftNav";
 import MainFooter from "@/components/MainFooter";
@@ -19,6 +20,8 @@ import { cardTemplatesById } from "@/data/card-templates";
 import { usePreviewMode } from "@/components/PreviewModeContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { previewModeFlags } from "@/components/PreviewModeContext";
+import { inspectorModeFlags, useInspectorMode } from "@/components/InspectorModeContext";
+import { SHOW_HEADER } from "@/config/flags";
 import { cardDataToCardRecordPatch } from "@/lib/card-record-mapper";
 import { createCard, updateCard } from "@/lib/cards-db";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -26,12 +29,12 @@ import type { TemplateId } from "@/types/templates";
 
 import styles from "./page.module.css";
 
-const SHOW_HEADER = true;
-
 function IndexPageInner() {
   const { t } = useI18n();
   const { previewMode } = usePreviewMode();
   const { USE_BLUEPRINTS } = previewModeFlags;
+  const { inspectorMode } = useInspectorMode();
+  const { SHOW_INSPECTOR_TOGGLE } = inspectorModeFlags;
   const {
     state: { selectedTemplateId, cardDrafts, activeCardIdByTemplate, activeCardStatusByTemplate },
     setActiveCard,
@@ -53,6 +56,8 @@ function IndexPageInner() {
   const [savingMode, setSavingMode] = useState<"new" | "update" | null>(null);
   const previewModeLabel =
     previewMode === "blueprint" ? t("label.previewBlueprint") : t("label.previewLegacy");
+  const inspectorModeLabel =
+    inspectorMode === "generic" ? t("label.inspectorGeneric") : t("label.inspectorLegacy");
 
   const handleSave = async (mode: "new" | "update") => {
     if (!currentTemplateId) return;
@@ -126,6 +131,11 @@ function IndexPageInner() {
               {t("label.previewMode")}: {previewModeLabel}
             </div>
           ) : null}
+          {SHOW_INSPECTOR_TOGGLE ? (
+            <div className={styles.inspectorModeFixed}>
+              {t("label.inspectorMode")}: {inspectorModeLabel}
+            </div>
+          ) : null}
           <main className={styles.main}>
             <LeftNav />
             <section className={styles.leftPanel}>
@@ -171,7 +181,9 @@ export default function IndexPage() {
     <CardEditorProvider>
       <AssetHashIndexProvider>
         <PreviewModeProvider>
-          <IndexPageInner />
+          <InspectorModeProvider>
+            <IndexPageInner />
+          </InspectorModeProvider>
         </PreviewModeProvider>
       </AssetHashIndexProvider>
     </CardEditorProvider>
