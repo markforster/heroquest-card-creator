@@ -2,6 +2,7 @@
 
 import { Search } from "lucide-react";
 import JSZip from "jszip";
+import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
@@ -421,7 +422,12 @@ export default function StockpileModal({
         return;
       }
 
-      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const zipBlob = await zip.generateAsync({
+        type: "blob",
+        ...(USE_ZIP_COMPRESSION
+          ? { compression: "DEFLATE", compressionOptions: { level: 6 } }
+          : {}),
+      });
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement("a");
       link.href = url;

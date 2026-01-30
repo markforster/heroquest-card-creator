@@ -4,6 +4,7 @@ import type { CardRecord } from "@/types/cards-db";
 
 import type { AssetRecord } from "./assets-db";
 import JSZip from "jszip";
+import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import { openHqccDb } from "./hqcc-db";
 import type { HqccDb } from "./hqcc-db";
 
@@ -562,7 +563,12 @@ export async function createBackupHqcc(
   options?.onStatus?.("finalizing");
   await new Promise((resolve) => setTimeout(resolve, 250));
   const blob = await zip.generateAsync(
-    { type: "blob" },
+    {
+      type: "blob",
+      ...(USE_ZIP_COMPRESSION
+        ? { compression: "DEFLATE", compressionOptions: { level: 6 } }
+        : {}),
+    },
     (metadata) => {
       options?.onSecondaryProgress?.(metadata.percent ?? 0, "finalizing");
     },
