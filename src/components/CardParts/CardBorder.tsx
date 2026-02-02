@@ -41,7 +41,6 @@ export default function CardBorder({
           id={maskId}
           maskUnits="userSpaceOnUse"
           maskContentUnits="userSpaceOnUse"
-          maskType="alpha"
         >
           <image
             href={mask.src}
