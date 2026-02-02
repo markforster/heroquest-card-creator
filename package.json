@@ -30,12 +30,12 @@
   "dependencies": {
     "@next/third-parties": "^16.1.0",
     "@svgr/webpack": "^8.1.0",
+    "@tauri-apps/api": "^2.9.1",
+    "@tauri-apps/plugin-opener": "^2",
     "bootstrap": "^5.3.3",
     "jszip": "^3.10.1",
     "lucide-react": "^0.561.0",
     "next": "14.2.15",
-    "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-opener": "^2",
     "react": "^18",
     "react-colorful": "^5.6.1",
     "react-dom": "^18",
@@ -43,6 +43,7 @@
     "react-snowfall": "^2.2.0"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
     "@types/jest": "^29.5.12",
@@ -59,8 +60,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "jest-html-reporter": "^3.10.2",
     "prettier": "^3.6.2",
-    "typescript": "^5",
-    "@tauri-apps/cli": "^2"
+    "typescript": "^5"
   },
   "jest-html-reporter": {
     "outputPath": "artefacts/reports/test-report.html",
