@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
@@ -104,30 +104,29 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
 
   const renderStatField = (value: number, which: "primary" | "secondary") => (
     <div className={layoutStyles.statField}>
-      <div
-        className={layoutStyles.statValueBox}
-        title={`${t("tooltip.valueFor")} ${label}`}
-      >
+      <div className={layoutStyles.statValueBox} title={`${t("tooltip.valueFor")} ${label}`}>
         {formatBoxValue(value)}
       </div>
-      <button
-        type="button"
-        className={`${layoutStyles.statIconButton} ${layoutStyles.statIconButtonMinus} btn btn-sm`}
-        title={`${t("tooltip.decrease")} ${label}`}
-        onClick={() => handleChange(-1, which)}
-        disabled={!canDecrement(value)}
-      >
-        <Minus className={layoutStyles.icon} aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        className={`${layoutStyles.statIconButton} ${layoutStyles.statIconButtonPlus} btn btn-sm`}
-        title={`${t("tooltip.increase")} ${label}`}
-        onClick={() => handleChange(1, which)}
-        disabled={!canIncrement(value)}
-      >
-        <Plus className={layoutStyles.icon} aria-hidden="true" />
-      </button>
+      <div className={layoutStyles.statButtons}>
+        <button
+          type="button"
+          className={`${layoutStyles.statIconButton} ${layoutStyles.statIconButtonMinus}`}
+          title={`${t("tooltip.decrease")} ${label}`}
+          onClick={() => handleChange(-1, which)}
+          disabled={!canDecrement(value)}
+        >
+          -
+        </button>
+        <button
+          type="button"
+          className={`${layoutStyles.statIconButton} ${layoutStyles.statIconButtonPlus}`}
+          title={`${t("tooltip.increase")} ${label}`}
+          onClick={() => handleChange(1, which)}
+          disabled={!canIncrement(value)}
+        >
+          +
+        </button>
+      </div>
     </div>
   );
 
@@ -139,15 +138,15 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
           {renderStatField(primaryValue, "primary")}
           <button
             type="button"
-            className={`${layoutStyles.statIconButton} ${layoutStyles.statChevronButton} btn btn-sm`}
+            className={`${layoutStyles.statIconButton} ${layoutStyles.statChevronButton}`}
             title={isSplit ? t("tooltip.removeSecondValue") : t("tooltip.addSecondValue")}
             aria-label={isSplit ? t("tooltip.removeSecondValue") : t("tooltip.addSecondValue")}
             onClick={toggleSplit}
           >
             {isSplit ? (
-              <ChevronLeft className={layoutStyles.icon} aria-hidden="true" />
-            ) : (
               <ChevronRight className={layoutStyles.icon} aria-hidden="true" />
+            ) : (
+              <ChevronLeft className={layoutStyles.icon} aria-hidden="true" />
             )}
           </button>
           {isSplit ? renderStatField(secondaryValue, "secondary") : null}

@@ -723,22 +723,33 @@
 .statField {
   display: flex;
   flex-direction: row;
-  align-items: stretch;
-  border-radius: 4px;
-  border: 1px solid #555;
-  background: #111;
-  min-width: 6.5rem;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #444;
+  background: #333;
+  padding: 0.16rem 0.22rem;
+  gap: 0.4rem;
+  min-width: 6.6rem;
 }
 
 .statSplitFields {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: 0.35rem;
 }
+
 
 .statChevronButton {
   background: #1a1a1a;
   border: 1px solid #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.statChevronButton .icon {
+  transform: translateY(1px);
 }
 
 .statChevronButton:hover:enabled {
@@ -747,19 +758,22 @@
 
 .statIconButton {
   flex: 0 0 auto;
-  min-width: 2rem;
-  padding: 0.15rem 0.4rem;
-  border-radius: 0;
-  border: none;
+  width: 1.32rem;
+  height: 1.32rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #2b2b2b;
   color: #f5f5f5;
   font-size: 0.8rem;
   cursor: pointer;
+  display: flex;
   align-items: center;
   justify-content: center;
   -webkit-appearance: none;
   appearance: none;
   flex-shrink: 1;
   flex-grow: 0;
+  box-sizing: border-box;
 }
 
 .statIconButton:disabled {
@@ -768,22 +782,25 @@
 }
 
 .statValueBox {
-  padding: 0.25rem 0.4rem;
+  padding: 0.22rem 0.62rem;
   border-radius: 0;
   border: none;
   color: #f5f5f5;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   flex-grow: 1;
-  min-width: 3rem;
+  min-width: 2.98rem;
+  height: 1.32rem;
+  line-height: 1.32rem;
+  box-sizing: border-box;
 }
 
 .statIconButtonMinus {
   background: var(--hq-stat-minus);
-  border-left: 1px solid #444;
 }
 
 .statIconButtonMinus:hover:enabled {
@@ -792,8 +809,21 @@
 
 .statIconButtonPlus {
   background: var(--hq-stat-plus);
-  border-left: 1px solid #444;
 }
+
+.statButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.29rem;
+  padding: 0.22rem 0.34rem;
+  margin-left: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid #444;
+  background: #0f0f0f;
+  height: auto;
+  box-sizing: border-box;
+}
+
 
 .statIconButtonPlus:hover:enabled {
   background: var(--hq-stat-plus-hover);
