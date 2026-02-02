@@ -34,7 +34,7 @@ function renderMainFooter() {
 describe("MainFooter (UI)", () => {
   it("shows the app version", () => {
     renderMainFooter();
-    expect(screen.getByText("v0.0.0-test")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "v 0.0.0-test" })).toBeInTheDocument();
   });
 
   it("renders help, about, and download links", () => {

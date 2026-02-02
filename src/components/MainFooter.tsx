@@ -48,7 +48,15 @@ export default function MainFooter() {
           </div>
           <div className="ms-auto d-flex align-items-center gap-1">
             <span>·</span>
-            <span title={t("tooltip.appVersion")}>v{APP_VERSION}</span>
+            <a
+              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.1"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={styles.footerLink}
+              title={t("tooltip.appVersion")}
+            >
+              v {APP_VERSION}
+            </a>
             <span>·</span>
             <span>App: {isTauriApp ? "Tauri" : "Web"}</span>
             <span>·</span>

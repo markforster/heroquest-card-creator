@@ -15,6 +15,7 @@ import { getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
 import type { AssetRecord } from "@/lib/assets-db";
 import { addAsset, deleteAssets, getAllAssets, getAssetObjectUrl } from "@/lib/assets-db";
+import { listCards } from "@/lib/cards-db";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
@@ -153,6 +154,26 @@ export default function AssetsModal({
       setSelectedIds(new Set());
     }
   }, [isOpen, selectedIds]);
+
+  useEffect(() => {
+    if (!confirmState || confirmState.isDeleting) return;
+
+    const nextIds = Array.from(selectedIds);
+    if (nextIds.length === 0) {
+      setConfirmState(null);
+      return;
+    }
+
+    setConfirmState((prev) => {
+      if (!prev || prev.isDeleting) return prev;
+      if (prev.assetIds.length === nextIds.length) {
+        const prevSet = new Set(prev.assetIds);
+        const isSame = nextIds.every((id) => prevSet.has(id));
+        if (isSame) return prev;
+      }
+      return { ...prev, assetIds: nextIds };
+    });
+  }, [confirmState, selectedIds, setConfirmState]);
 
   const filteredAssets = search
     ? assets.filter((asset) => asset.name.toLowerCase().includes(search.toLowerCase()))
@@ -561,6 +582,7 @@ export default function AssetsModal({
               title={t("tooltip.deleteAssets")}
             >
               {t("actions.delete")}
+              {selectedIds.size > 1 ? ` (${selectedIds.size})` : ""}
             </IconButton>
           )}
           <input
@@ -780,9 +802,48 @@ function AssetsModalFooter({
 }) {
   const { t } = useI18n();
   const {
-    state: { cardDrafts },
+    state: { cardDrafts, activeCardIdByTemplate },
     setCardDraft,
   } = useCardEditor();
+  const [affectedCardCount, setAffectedCardCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!confirmState) {
+      setAffectedCardCount(null);
+      return;
+    }
+
+    let cancelled = false;
+    const idSet = new Set(confirmState.assetIds);
+
+    (async () => {
+      try {
+        const cards = await listCards();
+        if (cancelled) return;
+        const affectedCards = new Set<string>();
+
+        cards.forEach((card) => {
+          if (card.imageAssetId && idSet.has(card.imageAssetId)) {
+            affectedCards.add(card.id);
+            return;
+          }
+          if (card.monsterIconAssetId && idSet.has(card.monsterIconAssetId)) {
+            affectedCards.add(card.id);
+          }
+        });
+
+        setAffectedCardCount(affectedCards.size);
+      } catch {
+        if (!cancelled) {
+          setAffectedCardCount(0);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [confirmState]);
 
   if (mode === "select") {
     const firstId = selectedIds.values().next().value as string | undefined;
@@ -817,20 +878,35 @@ function AssetsModalFooter({
     const assetCount = assetIds.length;
     const idSet = new Set(assetIds);
 
-    let affectedDraftCount = 0;
-    (Object.values(cardDrafts) as CardDataByTemplate[TemplateId][]).forEach((draft) => {
-      if (draft && draft.imageAssetId && idSet.has(draft.imageAssetId)) {
-        affectedDraftCount += 1;
+    const affectedDrafts = new Set<TemplateId>();
+    (
+      Object.entries(cardDrafts) as [
+        TemplateId,
+        CardDataByTemplate[TemplateId] | undefined,
+      ][]
+    ).forEach(([templateId, draft]) => {
+      if (!draft) return;
+      if (activeCardIdByTemplate[templateId]) return;
+      const imageMatch = draft.imageAssetId && idSet.has(draft.imageAssetId);
+      const iconMatch = "iconAssetId" in draft && draft.iconAssetId && idSet.has(draft.iconAssetId);
+
+      if (imageMatch || iconMatch) {
+        affectedDrafts.add(templateId);
       }
     });
+
+    const affectedDraftCount = affectedDrafts.size;
+    const cardCountLabel = affectedCardCount === 1 ? t("label.card") : t("label.cards");
+    const cardCountValue = affectedCardCount ?? "...";
+    const draftLabel = affectedDraftCount === 1 ? t("label.draft") : t("label.drafts");
 
     return (
       <>
         <div className={styles.assetsConfirmMessage}>
           {t("confirm.deleteAssetsBody")} {assetCount}{" "}
           {assetCount === 1 ? t("label.asset") : t("label.assets")}{" "}
-          {t("status.willClearImagesOn")} {affectedDraftCount}{" "}
-          {affectedDraftCount === 1 ? t("label.draft") : t("label.drafts")}.{" "}
+          {t("status.willClearImagesOn")} {cardCountValue} {cardCountLabel}
+          {affectedDraftCount > 0 ? `, ${affectedDraftCount} ${draftLabel}` : ""}.{" "}
           {t("actions.continue")}?
         </div>
         <button
@@ -860,21 +936,34 @@ function AssetsModalFooter({
                 CardDataByTemplate[TemplateId] | undefined,
               ][]
             ).forEach(([templateId, draft]) => {
-              if (!draft || !("imageAssetId" in draft) || !draft.imageAssetId) return;
-              if (!idSet.has(draft.imageAssetId)) return;
+              if (!draft) return;
+              const imageMatch = draft.imageAssetId && idSet.has(draft.imageAssetId);
+              const iconMatch =
+                "iconAssetId" in draft && draft.iconAssetId && idSet.has(draft.iconAssetId);
+              if (!imageMatch && !iconMatch) return;
+
+              const nextDraft = {
+                ...draft,
+              } as CardDataByTemplate[TemplateId];
+
+              if (imageMatch) {
+                nextDraft.imageAssetId = undefined;
+                nextDraft.imageAssetName = undefined;
+                nextDraft.imageScale = undefined;
+                nextDraft.imageOriginalWidth = undefined;
+                nextDraft.imageOriginalHeight = undefined;
+                nextDraft.imageOffsetX = undefined;
+                nextDraft.imageOffsetY = undefined;
+              }
+
+              if (iconMatch && "iconAssetId" in nextDraft) {
+                nextDraft.iconAssetId = undefined;
+                nextDraft.iconAssetName = undefined;
+              }
 
               setCardDraft(
                 templateId as TemplateId,
-                {
-                  ...draft,
-                  imageAssetId: undefined,
-                  imageAssetName: undefined,
-                  imageScale: undefined,
-                  imageOriginalWidth: undefined,
-                  imageOriginalHeight: undefined,
-                  imageOffsetX: undefined,
-                  imageOffsetY: undefined,
-                } as never,
+                nextDraft as never,
               );
             });
 
