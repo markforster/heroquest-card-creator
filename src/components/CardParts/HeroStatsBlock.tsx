@@ -4,12 +4,13 @@ import Layer from "@/components/CardPreview/Layer";
 import { useStatLabelOverrides } from "@/components/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getStatLabel } from "@/lib/stat-labels";
+import type { StatValue } from "@/types/stats";
 
 export type HeroStats = {
-  attackDice: number;
-  defendDice: number;
-  bodyPoints: number;
-  mindPoints: number;
+  attackDice: StatValue;
+  defendDice: StatValue;
+  bodyPoints: StatValue;
+  mindPoints: StatValue;
 };
 
 type HeroStatsBlockProps = {

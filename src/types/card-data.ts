@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { TemplateId } from "./templates";
+import type { StatValue } from "./stats";
 
 export interface BaseCardFields {
   title?: string;
@@ -16,18 +17,18 @@ export interface BaseCardFields {
 }
 
 export interface HeroCardData extends BaseCardFields {
-  attackDice?: number;
-  defendDice?: number;
-  bodyPoints?: number;
-  mindPoints?: number;
+  attackDice?: StatValue;
+  defendDice?: StatValue;
+  bodyPoints?: StatValue;
+  mindPoints?: StatValue;
 }
 
 export interface MonsterCardData extends BaseCardFields {
-  movementSquares?: number;
-  attackDice?: number;
-  defendDice?: number;
-  bodyPoints?: number;
-  mindPoints?: number;
+  movementSquares?: StatValue;
+  attackDice?: StatValue;
+  defendDice?: StatValue;
+  bodyPoints?: StatValue;
+  mindPoints?: StatValue;
   iconAssetId?: string;
   iconAssetName?: string;
 }

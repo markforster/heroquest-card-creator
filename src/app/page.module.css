@@ -730,6 +730,21 @@
   min-width: 6.5rem;
 }
 
+.statSplitFields {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.statChevronButton {
+  background: #1a1a1a;
+  border: 1px solid #444;
+}
+
+.statChevronButton:hover:enabled {
+  background: #242424;
+}
+
 .statIconButton {
   flex: 0 0 auto;
   min-width: 2rem;

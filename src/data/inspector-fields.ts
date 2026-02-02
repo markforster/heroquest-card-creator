@@ -18,6 +18,9 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "stats",
       statsType: "hero",
       labelKey: "form.stats",
+      allowSplit: true,
+      allowWildcard: true,
+      splitSecondaryDefault: 0,
     },
     {
       fieldType: "text",
@@ -47,6 +50,9 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "stats",
       statsType: "monster",
       labelKey: "form.stats",
+      allowSplit: true,
+      allowWildcard: true,
+      splitSecondaryDefault: 0,
     },
     {
       fieldType: "text",

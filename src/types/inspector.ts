@@ -21,6 +21,9 @@ export type InspectorStatsField = {
   fieldType: "stats";
   statsType: "hero" | "monster";
   labelKey: MessageKey;
+  allowSplit?: boolean;
+  allowWildcard?: boolean;
+  splitSecondaryDefault?: number;
 };
 
 export type InspectorImageField = {

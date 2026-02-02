@@ -75,10 +75,24 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
           }
           if (field.fieldType === "stats") {
             if (field.statsType === "hero") {
-              return <HeroStatsInspector key={`stats-${index}`} />;
+              return (
+                <HeroStatsInspector
+                  key={`stats-${index}`}
+                  allowSplit={field.allowSplit}
+                  allowWildcard={field.allowWildcard}
+                  splitSecondaryDefault={field.splitSecondaryDefault}
+                />
+              );
             }
             if (field.statsType === "monster") {
-              return <MonsterStatsInspector key={`stats-${index}`} />;
+              return (
+                <MonsterStatsInspector
+                  key={`stats-${index}`}
+                  allowSplit={field.allowSplit}
+                  allowWildcard={field.allowWildcard}
+                  splitSecondaryDefault={field.splitSecondaryDefault}
+                />
+              );
             }
             return null;
           }

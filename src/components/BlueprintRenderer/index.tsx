@@ -247,10 +247,10 @@ function TitleLayer({
 function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | undefined {
   if (!cardData) return undefined;
   const data = cardData as {
-    attackDice?: number;
-    defendDice?: number;
-    bodyPoints?: number;
-    mindPoints?: number;
+    attackDice?: HeroStats["attackDice"];
+    defendDice?: HeroStats["defendDice"];
+    bodyPoints?: HeroStats["bodyPoints"];
+    mindPoints?: HeroStats["mindPoints"];
   };
 
   const hasCustomStats =
@@ -272,11 +272,11 @@ function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | un
 function getMonsterStats(cardData?: CardDataByTemplate[TemplateId]): MonsterStats | undefined {
   if (!cardData) return undefined;
   const data = cardData as {
-    movementSquares?: number;
-    attackDice?: number;
-    defendDice?: number;
-    bodyPoints?: number;
-    mindPoints?: number;
+    movementSquares?: MonsterStats["movementSquares"];
+    attackDice?: MonsterStats["attackDice"];
+    defendDice?: MonsterStats["defendDice"];
+    bodyPoints?: MonsterStats["bodyPoints"];
+    mindPoints?: MonsterStats["mindPoints"];
   };
 
   const hasCustomStats =

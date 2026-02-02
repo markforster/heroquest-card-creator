@@ -1,10 +1,12 @@
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
+import { formatStatValue } from "@/lib/stat-values";
+import type { StatValue } from "@/types/stats";
 
 import Layer from "../CardPreview/Layer";
 
 type StatsPairProps = {
   header: string;
-  value?: number;
+  value?: StatValue;
   x: number;
   y: number;
   width: number;
@@ -72,6 +74,7 @@ export default function StatsPair({
   const lineCount = headerLines.length || 1;
   const totalHeaderTextHeight = HEADER_LINE_HEIGHT * lineCount;
   const firstLineY = headerCenterY - (totalHeaderTextHeight - HEADER_LINE_HEIGHT) / 2;
+  const formattedValue = formatStatValue(value);
 
   return (
     <Layer>
@@ -114,7 +117,7 @@ export default function StatsPair({
           </tspan>
         ))}
       </text>
-      {value != undefined && (
+      {formattedValue != null && (
         <text
           x={centerX}
           y={valueCenterY}
@@ -125,7 +128,7 @@ export default function StatsPair({
           fontWeight={700}
           fontFamily={CARD_TEXT_FONT_FAMILY}
         >
-          {value}
+          {formattedValue}
         </text>
       )}
     </Layer>

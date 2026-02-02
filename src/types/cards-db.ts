@@ -1,4 +1,5 @@
 import type { TemplateId } from "./templates";
+import type { StatValue } from "./stats";
 
 export type CardStatus = "draft" | "saved" | "archived";
 
@@ -27,16 +28,16 @@ export interface CardRecord {
   imageOriginalHeight?: number;
   borderColor?: string;
 
-  heroAttackDice?: number;
-  heroDefendDice?: number;
-  heroBodyPoints?: number;
-  heroMindPoints?: number;
+  heroAttackDice?: StatValue;
+  heroDefendDice?: StatValue;
+  heroBodyPoints?: StatValue;
+  heroMindPoints?: StatValue;
 
-  monsterMovementSquares?: number;
-  monsterAttackDice?: number;
-  monsterDefendDice?: number;
-  monsterBodyPoints?: number;
-  monsterMindPoints?: number;
+  monsterMovementSquares?: StatValue;
+  monsterAttackDice?: StatValue;
+  monsterDefendDice?: StatValue;
+  monsterBodyPoints?: StatValue;
+  monsterMindPoints?: StatValue;
   monsterIconAssetId?: string;
   monsterIconAssetName?: string;
 
