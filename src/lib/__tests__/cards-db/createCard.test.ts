@@ -43,6 +43,7 @@ describe("createCard", () => {
       imageOffsetY: undefined,
       imageOriginalWidth: undefined,
       imageOriginalHeight: undefined,
+      borderColor: undefined,
       heroAttackDice: undefined,
       heroDefendDice: undefined,
       heroBodyPoints: undefined,
@@ -88,4 +89,3 @@ describe("createCard", () => {
     harness.cleanup();
   });
 });
-

@@ -39,11 +39,18 @@ export type InspectorMonsterIconField = {
   labelKey: MessageKey;
 };
 
+export type InspectorBorderColorField = {
+  fieldType: "borderColor";
+  bind: "borderColor";
+  labelKey: MessageKey;
+};
+
 export type InspectorField =
   | InspectorTitleField
   | InspectorTextField
   | InspectorStatsField
   | InspectorImageField
-  | InspectorMonsterIconField;
+  | InspectorMonsterIconField
+  | InspectorBorderColorField;
 
 export type InspectorFieldsByTemplate = Record<TemplateId, InspectorField[]>;

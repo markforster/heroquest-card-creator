@@ -12,7 +12,7 @@ import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { usePopupState } from "@/hooks/usePopupState";
-import { getCard } from "@/lib/cards-db";
+import { getCard, touchCardLastViewed } from "@/lib/cards-db";
 import type { TemplateId } from "@/types/templates";
 
 type AppActionsContextValue = {
@@ -67,8 +67,10 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
     try {
       const fresh = await getCard(card.id);
       const record = fresh ?? card;
-      setSelectedTemplateId(record.templateId as TemplateId);
-      loadCardIntoEditor(record.templateId as TemplateId, record);
+      const viewed = await touchCardLastViewed(record.id);
+      const nextRecord = viewed ?? record;
+      setSelectedTemplateId(nextRecord.templateId as TemplateId);
+      loadCardIntoEditor(nextRecord.templateId as TemplateId, nextRecord);
       setStockpileRefreshToken((prev) => prev + 1);
     } catch (error) {
       // eslint-disable-next-line no-console

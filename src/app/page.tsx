@@ -86,6 +86,7 @@ function IndexPageInner() {
     const derivedName = (rawTitle ?? "").toString().trim() || `${templateId} card`;
 
     const patch = cardDataToCardRecordPatch(templateId, derivedName, draft as never);
+    const viewedAt = Date.now();
 
     try {
       if (mode === "new") {
@@ -95,6 +96,7 @@ function IndexPageInner() {
           status: "saved",
           thumbnailBlob,
           name: derivedName,
+          lastViewedAt: viewedAt,
         });
         setActiveCard(templateId, record.id, record.status);
         setTemplateDirty(templateId, false);
@@ -103,6 +105,7 @@ function IndexPageInner() {
         const record = await updateCard(activeCardId, {
           ...patch,
           thumbnailBlob,
+          lastViewedAt: viewedAt,
         });
         if (record) {
           setActiveCard(templateId, record.id, record.status);

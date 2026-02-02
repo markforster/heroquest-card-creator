@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { listCards } from "@/lib/cards-db";
+import { listCards, touchCardLastViewed } from "@/lib/cards-db";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardStatus, CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
@@ -204,6 +204,23 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
       // Ignore localStorage errors
     }
   }, [activeCardIdByTemplate, activeCardStatusByTemplate]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (!selectedTemplateId) return;
+    const activeId = activeCardIdByTemplate[selectedTemplateId];
+    const activeStatus = activeCardStatusByTemplate[selectedTemplateId];
+    if (!activeId || activeStatus !== "saved") return;
+
+    touchCardLastViewed(activeId).catch(() => {
+      // Ignore view updates; draft visibility should not fail the editor.
+    });
+  }, [
+    activeCardIdByTemplate,
+    activeCardStatusByTemplate,
+    isHydrated,
+    selectedTemplateId,
+  ]);
 
   const value = useMemo<CardEditorContextValue>(
     () => ({

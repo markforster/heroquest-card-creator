@@ -125,8 +125,7 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
     },
     {
       id: "background-frame",
-      type: "background",
-      source: "template",
+      type: "border",
     },
     {
       id: "title",

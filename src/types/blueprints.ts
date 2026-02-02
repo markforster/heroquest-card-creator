@@ -41,12 +41,18 @@ export type BlueprintLayerBackground = BlueprintLayerBase & {
   asset?: StaticImageData;
 };
 
+export type BlueprintLayerBorder = BlueprintLayerBase & {
+  type: "border";
+};
+
 export type BlueprintLayer =
   | BlueprintLayerBackground
+  | BlueprintLayerBorder
   | BlueprintLayerBase;
 
 export type BlueprintLayerType =
   | "background"
+  | "border"
   | "image"
   | "text"
   | "title"

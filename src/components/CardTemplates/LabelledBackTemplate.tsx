@@ -1,4 +1,6 @@
 import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
+import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
+import CardBorder from "@/components/CardParts/CardBorder";
 import RibbonTitle from "@/components/CardParts/RibbonTitle";
 import Layer from "@/components/CardPreview/Layer";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -71,18 +73,13 @@ export default function LabelledBackTemplate({
           />
         </Layer>
       ) : null}
-      <Layer>
-        <image
-          href={background.src}
-          data-card-background="true"
-          x={0}
-          y={0}
-          width={CARD_WIDTH}
-          height={CARD_HEIGHT}
-          preserveAspectRatio="xMidYMid meet"
-          style={{ opacity: backgroundLoaded ? 1 : 0 }}
-        />
-      </Layer>
+      <CardBorder
+        mask={borderedMask}
+        backgroundLoaded={backgroundLoaded}
+        color={data.borderColor}
+        width={CARD_WIDTH}
+        height={CARD_HEIGHT}
+      />
       {DRAW_IMAGE_BOUNDS ? (
         <Layer>
           <rect

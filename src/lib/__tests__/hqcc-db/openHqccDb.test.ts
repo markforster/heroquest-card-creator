@@ -31,7 +31,7 @@ function createDb({
 }: {
   existingStores?: string[];
   existingAssetIndexes?: string[];
-}): { db: MockDb; assetsStore: MockStore; metaStore: MockStore } {
+}): { db: MockDb; assetsStore: MockStore; metaStore: MockStore; settingsStore: MockStore } {
   const storeSet = new Set(existingStores);
   const assetsIndexSet = new Set(existingAssetIndexes);
 
@@ -47,23 +47,31 @@ function createDb({
     put: jest.fn(),
   };
 
+  const settingsStore: MockStore = {
+    indexNames: { contains: () => false },
+    createIndex: jest.fn(),
+    put: jest.fn(),
+  };
+
   const db: MockDb = {
     objectStoreNames: { contains: (name) => storeSet.has(name) },
     createObjectStore: jest.fn((name: string) => {
       storeSet.add(name);
       if (name === "assets") return assetsStore;
       if (name === "meta") return metaStore;
+      if (name === "settings") return settingsStore;
       return undefined;
     }),
     transaction: {
       objectStore: (name: string) => {
         if (name === "meta") return metaStore;
+        if (name === "settings") return settingsStore;
         return assetsStore;
       },
     },
   };
 
-  return { db, assetsStore, metaStore };
+  return { db, assetsStore, metaStore, settingsStore };
 }
 
 function createOpenRequest(db: MockDb): OpenRequest {
@@ -113,7 +121,7 @@ describe("openHqccDb", () => {
 
     const promise = openHqccDb();
 
-    expect(open).toHaveBeenCalledWith("hqcc", 3);
+    expect(open).toHaveBeenCalledWith("hqcc", 4);
 
     request.onsuccess?.();
     await expect(promise).resolves.toBe(db);
@@ -134,11 +142,12 @@ describe("openHqccDb", () => {
     expect(db.createObjectStore).toHaveBeenCalledWith("assets", { keyPath: "id" });
     expect(assetsStore.createIndex).toHaveBeenCalledWith("createdAt", "createdAt", { unique: false });
     expect(db.createObjectStore).toHaveBeenCalledWith("collections", { keyPath: "id" });
+    expect(db.createObjectStore).toHaveBeenCalledWith("settings", { keyPath: "id" });
     expect(db.createObjectStore).toHaveBeenCalledWith("meta", { keyPath: "id" });
     expect(metaStore.put).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "appVersion",
-        dbVersion: 3,
+        dbVersion: 4,
       }),
     );
 
@@ -148,7 +157,7 @@ describe("openHqccDb", () => {
 
   it("does not recreate existing stores or indexes during upgrade", async () => {
     const { db, assetsStore, metaStore } = createDb({
-      existingStores: ["cards", "assets", "collections", "meta"],
+      existingStores: ["cards", "assets", "collections", "settings", "meta"],
       existingAssetIndexes: ["createdAt"],
     });
     const request = createOpenRequest(db);
@@ -165,7 +174,7 @@ describe("openHqccDb", () => {
     expect(metaStore.put).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "appVersion",
-        dbVersion: 3,
+        dbVersion: 4,
       }),
     );
 

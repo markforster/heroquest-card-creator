@@ -101,6 +101,23 @@ Because fonts and assets are referenced relatively and IndexedDB/localStorage ar
 
 ---
 
+## Optional: Tauri desktop build
+
+This repo includes a thin Tauri wrapper so you can ship a native desktop app around the static build.
+
+Platform prerequisites (local builds):
+- macOS: Xcode Command Line Tools (`xcode-select --install`).
+- Windows: Microsoft Visual Studio C++ Build Tools.
+- Linux: distro build dependencies (GTK/WebKit libs; varies by distro).
+
+Build on your own OS:
+- `npm run build` (generates `out/` for the Tauri frontend bundle).
+- `npx tauri build` (bundles a native installer for the host OS).
+
+Outputs are written under `src-tauri/target/release/bundle/`.
+
+---
+
 ## Scripts
 
 - `npm run generate:embedded-assets` – generate embedded asset manifests (run automatically on install/build/dev).
