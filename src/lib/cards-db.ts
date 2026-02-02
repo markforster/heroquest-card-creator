@@ -94,6 +94,40 @@ export async function getCard(id: string): Promise<CardRecord | null> {
   });
 }
 
+export async function touchCardLastViewed(
+  id: string,
+  viewedAt: number = Date.now(),
+): Promise<CardRecord | null> {
+  const store = await getCardsStore("readwrite");
+
+  const existing = await new Promise<CardRecord | null>((resolve, reject) => {
+    const getRequest = store.get(id);
+    getRequest.onsuccess = () => {
+      resolve((getRequest.result as CardRecord | undefined) ?? null);
+    };
+    getRequest.onerror = () => {
+      reject(getRequest.error ?? new Error("Failed to load card for lastViewed update"));
+    };
+  });
+
+  if (!existing) {
+    return null;
+  }
+
+  const next: CardRecord = {
+    ...existing,
+    lastViewedAt: viewedAt,
+  };
+
+  await new Promise<void>((resolve, reject) => {
+    const putRequest = store.put(next);
+    putRequest.onsuccess = () => resolve();
+    putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update card view"));
+  });
+
+  return next;
+}
+
 export type ListCardsFilter = {
   templateId?: TemplateId;
   status?: CardStatus;

@@ -10,6 +10,7 @@ import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
 import ContentField from "./ContentField";
+import BorderColorField from "./BorderColorField";
 import HeroStatsInspector from "./HeroStatsInspector";
 import ImageField from "./ImageField";
 import MonsterStatsInspector from "./MonsterStatsInspector";
@@ -88,6 +89,15 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
                 label={t(field.labelKey)}
                 boundsWidth={field.props.boundsWidth}
                 boundsHeight={field.props.boundsHeight}
+              />
+            );
+          }
+          if (field.fieldType === "borderColor") {
+            return (
+              <BorderColorField
+                key={`${field.bind}-${index}`}
+                label={t(field.labelKey)}
+                templateId={templateId}
               />
             );
           }

@@ -3,7 +3,7 @@
 import { APP_VERSION } from "@/version";
 
 export const DB_NAME = "hqcc";
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 const META_STORE = "meta";
 const META_APP_VERSION_KEY = "appVersion";
 
@@ -40,6 +40,10 @@ export async function openHqccDb(): Promise<HqccDb> {
 
       if (!db.objectStoreNames.contains("collections")) {
         db.createObjectStore("collections", { keyPath: "id" });
+      }
+
+      if (!db.objectStoreNames.contains("settings")) {
+        db.createObjectStore("settings", { keyPath: "id" });
       }
 
       const metaStore = db.objectStoreNames.contains(META_STORE)

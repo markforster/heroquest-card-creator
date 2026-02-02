@@ -118,5 +118,10 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       labelKey: "form.backImage",
       props: { boundsWidth: 750, boundsHeight: 1050 },
     },
+    {
+      fieldType: "borderColor",
+      bind: "borderColor",
+      labelKey: "form.borderColor",
+    },
   ],
 };

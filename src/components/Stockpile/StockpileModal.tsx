@@ -53,6 +53,7 @@ export default function StockpileModal({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<
     | { type: "all" }
+    | { type: "recent" }
     | { type: "unfiled" }
     | { type: "collection"; id: string }
   >({ type: "all" });
@@ -158,8 +159,25 @@ export default function StockpileModal({
     };
   }, [isOpen, refreshToken]);
 
+  const recentCards = useMemo(() => {
+    return cards
+      .filter((card) => typeof card.lastViewedAt === "number")
+      .sort((a, b) => {
+        const aViewed = a.lastViewedAt ?? 0;
+        const bViewed = b.lastViewedAt ?? 0;
+        if (bViewed !== aViewed) {
+          return bViewed - aViewed;
+        }
+        return b.updatedAt - a.updatedAt;
+      });
+  }, [cards]);
+
   const { filteredCards, collectionCounts, unfiledCount, typeCounts, totalCount } = useMemo(() => {
     let base = cards;
+
+    if (activeFilter.type === "recent") {
+      base = recentCards;
+    }
 
     if (search.trim()) {
       const q = search.toLocaleLowerCase();
@@ -227,7 +245,7 @@ export default function StockpileModal({
       typeCounts: templateCounts,
       totalCount: base.length,
     };
-  }, [cards, search, templateFilter, activeFilter, collections]);
+  }, [cards, recentCards, search, templateFilter, activeFilter, collections]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -690,6 +708,19 @@ export default function StockpileModal({
             <div className={styles.stockpileSidebarList}>
             <button
               type="button"
+              className={`${styles.stockpileSidebarItem} ${activeFilter.type === "recent" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
+              onClick={() => {
+                setActiveFilter({ type: "recent" });
+                setSelectedIds([]);
+              }}
+            >
+              <span className="flex-grow-1 text-truncate fs-6">{t("actions.recentCards")}</span>
+              <span className="badge rounded-pill bg-warning text-dark fs-6 px-2 py-1">
+                {recentCards.length}
+              </span>
+            </button>
+            <button
+              type="button"
               className={`${styles.stockpileSidebarItem} ${activeFilter.type === "all" ? styles.stockpileSidebarItemActive : ""}`}
               onClick={() => {
                 setActiveFilter({ type: "all" });
@@ -739,6 +770,8 @@ export default function StockpileModal({
                 <div className={styles.assetsEmptyState}>
                   {search.trim()
                     ? t("empty.noCardsFound")
+                    : activeFilter.type === "recent"
+                      ? t("empty.noRecentCards")
                     : activeFilter.type === "collection"
                       ? templateFilter !== "all" && totalCount > 0
                         ? `${t("empty.collectionFilteredByType")} ${

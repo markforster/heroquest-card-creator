@@ -1,6 +1,8 @@
 "use client";
 
+import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
 import CardTextBlock, { layoutCardText } from "@/components/CardParts/CardTextBlock";
+import CardBorder from "@/components/CardParts/CardBorder";
 import HeroStatsBlock, {
   HERO_STATS_HEIGHT,
   type HeroStats,
@@ -74,6 +76,37 @@ function renderBackgroundLayer({
         style={{ opacity }}
       />
     </Layer>
+  );
+}
+
+function renderBorderLayer({
+  blueprint,
+  layer,
+  backgroundLoaded,
+  cardData,
+}: {
+  blueprint: Blueprint;
+  layer: BlueprintLayer;
+  backgroundLoaded?: boolean;
+  cardData?: CardDataByTemplate[TemplateId];
+}) {
+  if (layer.type !== "border") return null;
+
+  const bounds = getLayerBounds(blueprint, layer);
+  const borderColor =
+    cardData && typeof (cardData as { borderColor?: string }).borderColor === "string"
+      ? (cardData as { borderColor?: string }).borderColor
+      : undefined;
+
+  return (
+    <CardBorder
+      key={layer.id}
+      mask={blueprint.templateId === "labelled-back" ? borderedMask : undefined}
+      backgroundLoaded={backgroundLoaded}
+      color={borderColor}
+      width={bounds.width}
+      height={bounds.height}
+    />
   );
 }
 
@@ -506,6 +539,14 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
       {blueprint.layers.map((layer) => {
         if (layer.type === "background") {
           return renderBackgroundLayer({ blueprint, layer, background, backgroundLoaded });
+        }
+        if (layer.type === "border") {
+          return renderBorderLayer({
+            blueprint,
+            layer,
+            backgroundLoaded,
+            cardData: props.cardData,
+          });
         }
         if (layer.type === "image") {
           return (

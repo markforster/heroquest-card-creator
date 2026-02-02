@@ -124,6 +124,19 @@ Docs:
   - File system (read/write files).
   - Dialog (open/save dialogs).
 
+Platform prerequisites (local builds):
+
+- macOS: Xcode Command Line Tools (`xcode-select --install`).
+- Windows: Microsoft Visual Studio C++ Build Tools.
+- Linux: distro build dependencies (GTK/WebKit libs; varies by distro).
+
+Build on your own OS:
+
+- `npm run build` (generates `out/` for the Tauri frontend bundle).
+- `npx tauri build` (bundles a native installer for the host OS).
+
+Outputs are written under `src-tauri/target/release/bundle/`.
+
 ---
 
 ## Scripts

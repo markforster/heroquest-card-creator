@@ -11,6 +11,7 @@ export interface CardRecord {
   nameLower: string;
   createdAt: number;
   updatedAt: number;
+  lastViewedAt?: number;
 
   schemaVersion: 1;
 
@@ -24,6 +25,7 @@ export interface CardRecord {
   imageOffsetY?: number;
   imageOriginalWidth?: number;
   imageOriginalHeight?: number;
+  borderColor?: string;
 
   heroAttackDice?: number;
   heroDefendDice?: number;
@@ -40,4 +42,3 @@ export interface CardRecord {
 
   thumbnailBlob?: Blob | null;
 }
-

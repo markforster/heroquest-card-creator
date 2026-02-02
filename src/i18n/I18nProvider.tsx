@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { messages, supportedLanguages } from "./messages";
 import { getInitialLanguage, LANGUAGE_STORAGE_KEY } from "./getInitialLanguage";
@@ -20,9 +20,11 @@ type Props = {
 };
 
 export function I18nProvider({ children }: Props) {
-  const [language, setLanguageState] = useState<SupportedLanguage>(() =>
-    getInitialLanguage(LANGUAGE_STORAGE_KEY),
-  );
+  const [language, setLanguageState] = useState<SupportedLanguage>("en");
+
+  useEffect(() => {
+    setLanguageState(getInitialLanguage(LANGUAGE_STORAGE_KEY));
+  }, []);
 
   const setLanguage = useCallback((lang: SupportedLanguage) => {
     const next = isSupportedLanguage(lang) ? lang : ("en" satisfies SupportedLanguage);
