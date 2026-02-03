@@ -25,6 +25,8 @@
     "serve:out": " npx serve ./out -l 3000",
     "tauri": "tauri",
     "tauri:icons": "tauri icon public/assets/web-app-manifest-512x512.png",
+    "sync:tauri-version": "node scripts/sync-tauri-version.cjs",
+    "pretauri:build": "npm run sync:tauri-version",
     "tauri:build": "npm run build && npm run tauri:icons && tauri build"
   },
   "dependencies": {

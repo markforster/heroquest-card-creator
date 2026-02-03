@@ -50,6 +50,20 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage
+        .persisted()
+        .then((isPersisted) => {
+          if (!isPersisted) {
+            return navigator.storage.persist();
+          }
+          return undefined;
+        })
+        .catch(() => {
+          // Ignore storage persistence errors.
+        });
+    }
+
     let initialId: TemplateId | null = cardTemplates[0]?.id ?? null;
     let initialDrafts: CardDrafts = {};
     const initialActiveIds: Partial<Record<TemplateId, string>> = {};
