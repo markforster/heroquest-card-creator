@@ -30,7 +30,7 @@ export default function HeroStatsInspector({
             name="attackDice"
             label={t("stats.attackDice")}
             min={0}
-            max={12}
+            max={999}
             allowWildcard={allowWildcard}
             splitSecondaryDefault={splitSecondaryDefault}
           />
@@ -40,7 +40,7 @@ export default function HeroStatsInspector({
             name="defendDice"
             label={t("stats.defendDice")}
             min={0}
-            max={12}
+            max={999}
             allowWildcard={allowWildcard}
             splitSecondaryDefault={splitSecondaryDefault}
           />
@@ -50,7 +50,7 @@ export default function HeroStatsInspector({
             name="bodyPoints"
             label={t("stats.bodyPoints")}
             min={0}
-            max={12}
+            max={999}
             allowWildcard={allowWildcard}
             splitSecondaryDefault={splitSecondaryDefault}
           />
@@ -60,7 +60,7 @@ export default function HeroStatsInspector({
             name="mindPoints"
             label={t("stats.mindPoints")}
             min={0}
-            max={12}
+            max={999}
             allowWildcard={allowWildcard}
             splitSecondaryDefault={splitSecondaryDefault}
           />

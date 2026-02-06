@@ -20,6 +20,24 @@ const MARGIN = 10;
 const HEADER_FONT_SIZE = 22;
 const HEADER_LINE_HEIGHT = HEADER_FONT_SIZE * 1.05;
 const VALUE_FONT_SIZE = 56;
+const MIN_VALUE_FONT_SIZE = 24;
+
+function estimateTextWidth(text: string, fontSize: number): number {
+  const approxCharWidth = fontSize * 0.6;
+  return text.length * approxCharWidth;
+}
+
+function resolveValueFontSize(value: string, maxWidth: number, maxHeight: number): number {
+  const baseSize = VALUE_FONT_SIZE;
+  if (!value) return baseSize;
+
+  const widthAtBase = estimateTextWidth(value, baseSize);
+  const widthScale = maxWidth / widthAtBase;
+  const heightScale = maxHeight / baseSize;
+  const scale = Math.min(1, widthScale, heightScale);
+  const nextSize = Math.floor(baseSize * scale);
+  return Math.max(MIN_VALUE_FONT_SIZE, nextSize);
+}
 
 function wrapHeaderLines(text: string, maxWidth: number): string[] {
   const approxCharWidth = HEADER_FONT_SIZE * 0.6;
@@ -75,6 +93,10 @@ export default function StatsPair({
   const totalHeaderTextHeight = HEADER_LINE_HEIGHT * lineCount;
   const firstLineY = headerCenterY - (totalHeaderTextHeight - HEADER_LINE_HEIGHT) / 2;
   const formattedValue = formatStatValue(value);
+  const valueFontSize =
+    formattedValue != null
+      ? resolveValueFontSize(formattedValue, innerWidth, valueHeight)
+      : VALUE_FONT_SIZE;
 
   return (
     <Layer>
@@ -124,7 +146,7 @@ export default function StatsPair({
           textAnchor="middle"
           dominantBaseline="middle"
           fill="#452304"
-          fontSize={VALUE_FONT_SIZE}
+          fontSize={valueFontSize}
           fontWeight={700}
           fontFamily={CARD_TEXT_FONT_FAMILY}
         >
