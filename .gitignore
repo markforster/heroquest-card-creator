@@ -45,3 +45,8 @@ docs/issues/**
 
 # generated (build-time)
 /src/generated/
+
+# tauri
+/src-tauri/target/
+/src-tauri/icons/
+/src-tauri/gen/

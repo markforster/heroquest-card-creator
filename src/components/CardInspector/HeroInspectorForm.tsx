@@ -53,7 +53,8 @@ export default function HeroInspectorForm() {
                 name="attackDice"
                 label={t("stats.attackDice")}
                 min={0}
-                max={12}
+                max={999}
+                allowWildcard
               />
             </div>
             <div className={layoutStyles.statRow}>
@@ -61,7 +62,8 @@ export default function HeroInspectorForm() {
                 name="defendDice"
                 label={t("stats.defendDice")}
                 min={0}
-                max={12}
+                max={999}
+                allowWildcard
               />
             </div>
             {/* <div className={layoutStyles.statRow}>
@@ -73,7 +75,8 @@ export default function HeroInspectorForm() {
                 name="bodyPoints"
                 label={t("stats.bodyPoints")}
                 min={0}
-                max={12}
+                max={999}
+                allowWildcard
               />
             </div>
             <div className={layoutStyles.statRow}>
@@ -81,7 +84,8 @@ export default function HeroInspectorForm() {
                 name="mindPoints"
                 label={t("stats.mindPoints")}
                 min={0}
-                max={12}
+                max={999}
+                allowWildcard
               />
             </div>
           </div>

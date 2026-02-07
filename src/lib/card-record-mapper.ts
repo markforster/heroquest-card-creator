@@ -1,6 +1,7 @@
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
+import type { StatValue } from "@/types/stats";
 
 export function cardRecordToCardData<T extends TemplateId>(
   record: CardRecord & { templateId: T },
@@ -15,6 +16,7 @@ export function cardRecordToCardData<T extends TemplateId>(
     imageOffsetY: record.imageOffsetY,
     imageOriginalWidth: record.imageOriginalWidth,
     imageOriginalHeight: record.imageOriginalHeight,
+    borderColor: record.borderColor,
   };
 
   switch (record.templateId) {
@@ -89,6 +91,7 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     imageOffsetY: data.imageOffsetY,
     imageOriginalWidth: data.imageOriginalWidth,
     imageOriginalHeight: data.imageOriginalHeight,
+    borderColor: data.borderColor,
   };
 
   switch (templateId) {
@@ -96,21 +99,21 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
       const hero = data as CardDataByTemplate["hero"];
       return {
         ...basePatch,
-        heroAttackDice: hero.attackDice,
-        heroDefendDice: hero.defendDice,
-        heroBodyPoints: hero.bodyPoints,
-        heroMindPoints: hero.mindPoints,
+        heroAttackDice: normalizeStatValueForSave(hero.attackDice),
+        heroDefendDice: normalizeStatValueForSave(hero.defendDice),
+        heroBodyPoints: normalizeStatValueForSave(hero.bodyPoints),
+        heroMindPoints: normalizeStatValueForSave(hero.mindPoints),
       };
     }
     case "monster": {
       const monster = data as CardDataByTemplate["monster"];
       return {
         ...basePatch,
-        monsterMovementSquares: monster.movementSquares,
-        monsterAttackDice: monster.attackDice,
-        monsterDefendDice: monster.defendDice,
-        monsterBodyPoints: monster.bodyPoints,
-        monsterMindPoints: monster.mindPoints,
+        monsterMovementSquares: normalizeStatValueForSave(monster.movementSquares),
+        monsterAttackDice: normalizeStatValueForSave(monster.attackDice),
+        monsterDefendDice: normalizeStatValueForSave(monster.defendDice),
+        monsterBodyPoints: normalizeStatValueForSave(monster.bodyPoints),
+        monsterMindPoints: normalizeStatValueForSave(monster.mindPoints),
         monsterIconAssetId: monster.iconAssetId,
         monsterIconAssetName: monster.iconAssetName,
       };
@@ -122,4 +125,19 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     default:
       return basePatch;
   }
+}
+
+function normalizeStatValueForSave(value?: StatValue): StatValue | undefined {
+  if (value == null) return value;
+  if (Array.isArray(value)) {
+    if (value.length === 2) {
+      const [primary, secondary] = value;
+      return [primary, secondary, 1];
+    }
+    if (value.length >= 3) {
+      const [primary, secondary, splitFlag] = value as [number, number, 0 | 1];
+      return [primary, secondary, splitFlag];
+    }
+  }
+  return [value as number, 0, 0];
 }

@@ -163,4 +163,3 @@ export const embeddedManifest = {
 }
 
 main();
-

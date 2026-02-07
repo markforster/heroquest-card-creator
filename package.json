@@ -1,6 +1,6 @@
 {
   "name": "heroquest.card-creator",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "packageManager": "npm@10.8.1",
   "scripts": {
@@ -22,21 +22,30 @@
     "typecheck:watch": "tsc --noEmit --watch",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "serve:out": " npx serve ./out -l 3000"
+    "serve:out": " npx serve ./out -l 3000",
+    "tauri": "tauri",
+    "tauri:icons": "tauri icon public/assets/web-app-manifest-512x512.png",
+    "sync:tauri-version": "node scripts/sync-tauri-version.cjs",
+    "pretauri:build": "npm run sync:tauri-version",
+    "tauri:build": "npm run build && npm run tauri:icons && tauri build"
   },
   "dependencies": {
     "@next/third-parties": "^16.1.0",
     "@svgr/webpack": "^8.1.0",
+    "@tauri-apps/api": "^2.9.1",
+    "@tauri-apps/plugin-opener": "^2",
     "bootstrap": "^5.3.3",
     "jszip": "^3.10.1",
     "lucide-react": "^0.561.0",
     "next": "14.2.15",
     "react": "^18",
+    "react-colorful": "^5.6.1",
     "react-dom": "^18",
     "react-hook-form": "^7.68.0",
     "react-snowfall": "^2.2.0"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
     "@types/jest": "^29.5.12",

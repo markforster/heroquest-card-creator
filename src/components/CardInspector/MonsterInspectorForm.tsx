@@ -54,7 +54,8 @@ export default function MonsterInspectorForm() {
                 name="movementSquares"
                 label={t("stats.movementSquares")}
                 min={0}
-                max={12}
+                max={999}
+                allowWildcard
               />
             </div>
             <div className={layoutStyles.statRow}>
@@ -62,7 +63,8 @@ export default function MonsterInspectorForm() {
                 name="attackDice"
                 label={t("stats.attackDice")}
                 min={0}
-                max={12}
+                max={999}
+                allowWildcard
               />
             </div>
             <div className={layoutStyles.statRow}>
@@ -70,7 +72,8 @@ export default function MonsterInspectorForm() {
                 name="defendDice"
                 label={t("stats.defendDice")}
                 min={0}
-                max={12}
+                max={999}
+                allowWildcard
               />
             </div>
             <div className={layoutStyles.statRow}>
@@ -78,7 +81,8 @@ export default function MonsterInspectorForm() {
                 name="bodyPoints"
                 label={t("stats.bodyPoints")}
                 min={0}
-                max={12}
+                max={999}
+                allowWildcard
               />
             </div>
             <div className={layoutStyles.statRow}>
@@ -86,7 +90,8 @@ export default function MonsterInspectorForm() {
                 name="mindPoints"
                 label={t("stats.mindPoints")}
                 min={0}
-                max={12}
+                max={999}
+                allowWildcard
               />
             </div>
           </div>

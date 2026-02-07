@@ -2,6 +2,7 @@
 
 import { Search } from "lucide-react";
 import JSZip from "jszip";
+import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
@@ -10,7 +11,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import ModalShell from "@/components/ModalShell";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getTemplateNameLabel } from "@/i18n/messages";
+import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { deleteCards, listCards } from "@/lib/cards-db";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
@@ -19,6 +20,7 @@ import {
   listCollections,
   updateCollection,
 } from "@/lib/collections-db";
+import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 import type { CardRecord } from "@/types/cards-db";
 import type { CollectionRecord } from "@/types/collections-db";
 
@@ -51,6 +53,7 @@ export default function StockpileModal({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<
     | { type: "all" }
+    | { type: "recent" }
     | { type: "unfiled" }
     | { type: "collection"; id: string }
   >({ type: "all" });
@@ -156,8 +159,25 @@ export default function StockpileModal({
     };
   }, [isOpen, refreshToken]);
 
+  const recentCards = useMemo(() => {
+    return cards
+      .filter((card) => typeof card.lastViewedAt === "number")
+      .sort((a, b) => {
+        const aViewed = a.lastViewedAt ?? 0;
+        const bViewed = b.lastViewedAt ?? 0;
+        if (bViewed !== aViewed) {
+          return bViewed - aViewed;
+        }
+        return b.updatedAt - a.updatedAt;
+      });
+  }, [cards]);
+
   const { filteredCards, collectionCounts, unfiledCount, typeCounts, totalCount } = useMemo(() => {
     let base = cards;
+
+    if (activeFilter.type === "recent") {
+      base = recentCards;
+    }
 
     if (search.trim()) {
       const q = search.toLocaleLowerCase();
@@ -225,7 +245,7 @@ export default function StockpileModal({
       typeCounts: templateCounts,
       totalCount: base.length,
     };
-  }, [cards, search, templateFilter, activeFilter, collections]);
+  }, [cards, recentCards, search, templateFilter, activeFilter, collections]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -421,7 +441,12 @@ export default function StockpileModal({
         return;
       }
 
-      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const zipBlob = await zip.generateAsync({
+        type: "blob",
+        ...(USE_ZIP_COMPRESSION
+          ? { compression: "DEFLATE", compressionOptions: { level: 6 } }
+          : {}),
+      });
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement("a");
       link.href = url;
@@ -430,6 +455,7 @@ export default function StockpileModal({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      void openDownloadsFolderIfTauri();
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("[StockpileModal] Bulk export failed", error);
@@ -682,6 +708,19 @@ export default function StockpileModal({
             <div className={styles.stockpileSidebarList}>
             <button
               type="button"
+              className={`${styles.stockpileSidebarItem} ${activeFilter.type === "recent" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
+              onClick={() => {
+                setActiveFilter({ type: "recent" });
+                setSelectedIds([]);
+              }}
+            >
+              <span className="flex-grow-1 text-truncate fs-6">{t("actions.recentCards")}</span>
+              <span className="badge rounded-pill bg-warning text-dark fs-6 px-2 py-1">
+                {recentCards.length}
+              </span>
+            </button>
+            <button
+              type="button"
               className={`${styles.stockpileSidebarItem} ${activeFilter.type === "all" ? styles.stockpileSidebarItemActive : ""}`}
               onClick={() => {
                 setActiveFilter({ type: "all" });
@@ -731,6 +770,8 @@ export default function StockpileModal({
                 <div className={styles.assetsEmptyState}>
                   {search.trim()
                     ? t("empty.noCardsFound")
+                    : activeFilter.type === "recent"
+                      ? t("empty.noRecentCards")
                     : activeFilter.type === "collection"
                       ? templateFilter !== "all" && totalCount > 0
                         ? `${t("empty.collectionFilteredByType")} ${

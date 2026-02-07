@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { messages, supportedLanguages } from "./messages";
+import { getInitialLanguage, LANGUAGE_STORAGE_KEY } from "./getInitialLanguage";
 
 import type { MessageKey, SupportedLanguage } from "./messages";
 
@@ -18,39 +19,18 @@ type Props = {
   children: React.ReactNode;
 };
 
-const STORAGE_KEY = "hqcc.language";
-
-function getInitialLanguage(): SupportedLanguage {
-  if (typeof window === "undefined") {
-    return "en";
-  }
-
-  try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored && isSupportedLanguage(stored)) {
-      return stored;
-    }
-  } catch {
-    // ignore
-  }
-
-  const browserLanguage = typeof navigator !== "undefined" ? navigator.language : "";
-  const [primary] = browserLanguage.split("-");
-  if (primary && isSupportedLanguage(primary)) {
-    return primary;
-  }
-
-  return "en";
-}
-
 export function I18nProvider({ children }: Props) {
-  const [language, setLanguageState] = useState<SupportedLanguage>(() => getInitialLanguage());
+  const [language, setLanguageState] = useState<SupportedLanguage>("en");
+
+  useEffect(() => {
+    setLanguageState(getInitialLanguage(LANGUAGE_STORAGE_KEY));
+  }, []);
 
   const setLanguage = useCallback((lang: SupportedLanguage) => {
     const next = isSupportedLanguage(lang) ? lang : ("en" satisfies SupportedLanguage);
     setLanguageState(next);
     try {
-      window.localStorage.setItem(STORAGE_KEY, next);
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, next);
     } catch {
       // ignore
     }

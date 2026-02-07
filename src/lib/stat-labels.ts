@@ -1,6 +1,6 @@
 const STORAGE_KEY = "hqcc.statLabels";
 
-export const STAT_LABEL_KEYS = [
+const STAT_LABEL_KEYS = [
   "statsLabelAttack",
   "statsLabelDefend",
   "statsLabelMove",
@@ -41,9 +41,10 @@ export function sanitizeStatLabelValue(value: string): string {
   return value.trim();
 }
 
-export function normalizeStatLabelOverrides(
-  raw: unknown,
-): { value: StatLabelOverrides; changed: boolean } {
+export function normalizeStatLabelOverrides(raw: unknown): {
+  value: StatLabelOverrides;
+  changed: boolean;
+} {
   const normalized: StatLabelOverrides = { ...DEFAULT_STAT_LABELS };
   let changed = false;
 

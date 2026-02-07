@@ -1,7 +1,11 @@
 "use client";
 
-const DB_NAME = "hqcc";
-const DB_VERSION = 2;
+import { APP_VERSION } from "@/version";
+
+export const DB_NAME = "hqcc";
+export const DB_VERSION = 4;
+const META_STORE = "meta";
+const META_APP_VERSION_KEY = "appVersion";
 
 export type HqccDb = IDBDatabase;
 
@@ -37,6 +41,21 @@ export async function openHqccDb(): Promise<HqccDb> {
       if (!db.objectStoreNames.contains("collections")) {
         db.createObjectStore("collections", { keyPath: "id" });
       }
+
+      if (!db.objectStoreNames.contains("settings")) {
+        db.createObjectStore("settings", { keyPath: "id" });
+      }
+
+      const metaStore = db.objectStoreNames.contains(META_STORE)
+        ? request.transaction?.objectStore(META_STORE)
+        : db.createObjectStore(META_STORE, { keyPath: "id" });
+
+      metaStore?.put({
+        id: META_APP_VERSION_KEY,
+        value: APP_VERSION,
+        dbVersion: DB_VERSION,
+        updatedAt: Date.now(),
+      });
     };
 
     request.onsuccess = () => {
@@ -48,6 +67,67 @@ export async function openHqccDb(): Promise<HqccDb> {
     request.onerror = () => {
       // eslint-disable-next-line no-console
       console.error("[hqcc-db] openHqccDb error", request.error);
+      reject(request.error ?? new Error("Failed to open hqcc DB"));
+    };
+  });
+}
+
+export async function readExistingHqccDbVersion(): Promise<number | null> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || !("indexedDB" in window)) {
+      reject(new Error("IndexedDB not available"));
+      return;
+    }
+
+    const request = window.indexedDB.open(DB_NAME);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const version = Number.isFinite(db.version) ? db.version : null;
+      db.close();
+      resolve(version);
+    };
+
+    request.onerror = () => {
+      reject(request.error ?? new Error("Failed to open hqcc DB"));
+    };
+  });
+}
+
+export async function readExistingHqccDbAppVersion(): Promise<string | null> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || !("indexedDB" in window)) {
+      reject(new Error("IndexedDB not available"));
+      return;
+    }
+
+    const request = window.indexedDB.open(DB_NAME);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(META_STORE)) {
+        db.close();
+        resolve(null);
+        return;
+      }
+
+      const tx = db.transaction(META_STORE, "readonly");
+      const store = tx.objectStore(META_STORE);
+      const getRequest = store.get(META_APP_VERSION_KEY);
+
+      getRequest.onsuccess = () => {
+        const record = getRequest.result as { value?: string } | undefined;
+        db.close();
+        resolve(record?.value ?? null);
+      };
+
+      getRequest.onerror = () => {
+        db.close();
+        reject(getRequest.error ?? new Error("Failed to read hqcc meta store"));
+      };
+    };
+
+    request.onerror = () => {
       reject(request.error ?? new Error("Failed to open hqcc DB"));
     };
   });

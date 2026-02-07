@@ -3,14 +3,26 @@
 import { useRef, useState } from "react";
 
 import { AssetHashIndexProvider } from "@/components/Assets/AssetHashIndexProvider";
+import { AppActionsProvider } from "@/components/AppActionsContext";
 import { CardEditorProvider, useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import CardPreviewContainer from "@/components/CardEditor/CardPreviewContainer";
 import CardInspector from "@/components/CardInspector/CardInspector";
+import TemplateChooser from "@/components/CardInspector/TemplateChooser";
 import type { CardPreviewHandle } from "@/components/CardPreview";
+import DatabaseVersionGate from "@/components/DatabaseVersionGate";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
 import HeaderWithTemplatePicker from "@/components/HeaderWithTemplatePicker";
+import { InspectorModeProvider } from "@/components/InspectorModeContext";
+import { LibraryTransferProvider } from "@/components/LibraryTransferContext";
+import LeftNav from "@/components/LeftNav";
 import MainFooter from "@/components/MainFooter";
+import { PreviewModeProvider } from "@/components/PreviewModeContext";
 import { cardTemplatesById } from "@/data/card-templates";
+import { usePreviewMode } from "@/components/PreviewModeContext";
+import { useI18n } from "@/i18n/I18nProvider";
+import { previewModeFlags } from "@/components/PreviewModeContext";
+import { inspectorModeFlags, useInspectorMode } from "@/components/InspectorModeContext";
+import { SHOW_HEADER } from "@/config/flags";
 import { cardDataToCardRecordPatch } from "@/lib/card-record-mapper";
 import { createCard, updateCard } from "@/lib/cards-db";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -19,6 +31,11 @@ import type { TemplateId } from "@/types/templates";
 import styles from "./page.module.css";
 
 function IndexPageInner() {
+  const { t } = useI18n();
+  const { previewMode } = usePreviewMode();
+  const { USE_BLUEPRINTS } = previewModeFlags;
+  const { inspectorMode } = useInspectorMode();
+  const { SHOW_INSPECTOR_TOGGLE } = inspectorModeFlags;
   const {
     state: { selectedTemplateId, cardDrafts, activeCardIdByTemplate, activeCardStatusByTemplate },
     setActiveCard,
@@ -38,6 +55,10 @@ function IndexPageInner() {
   const canSaveChanges = Boolean(currentTemplateId && activeCardId && activeStatus === "saved");
 
   const [savingMode, setSavingMode] = useState<"new" | "update" | null>(null);
+  const previewModeLabel =
+    previewMode === "blueprint" ? t("label.previewBlueprint") : t("label.previewLegacy");
+  const inspectorModeLabel =
+    inspectorMode === "generic" ? t("label.inspectorGeneric") : t("label.inspectorLegacy");
 
   const handleSave = async (mode: "new" | "update") => {
     if (!currentTemplateId) return;
@@ -65,6 +86,7 @@ function IndexPageInner() {
     const derivedName = (rawTitle ?? "").toString().trim() || `${templateId} card`;
 
     const patch = cardDataToCardRecordPatch(templateId, derivedName, draft as never);
+    const viewedAt = Date.now();
 
     try {
       if (mode === "new") {
@@ -74,6 +96,7 @@ function IndexPageInner() {
           status: "saved",
           thumbnailBlob,
           name: derivedName,
+          lastViewedAt: viewedAt,
         });
         setActiveCard(templateId, record.id, record.status);
         setTemplateDirty(templateId, false);
@@ -82,6 +105,7 @@ function IndexPageInner() {
         const record = await updateCard(activeCardId, {
           ...patch,
           thumbnailBlob,
+          lastViewedAt: viewedAt,
         });
         if (record) {
           setActiveCard(templateId, record.id, record.status);
@@ -103,47 +127,71 @@ function IndexPageInner() {
 
   return (
     <div className={styles.page}>
-      <HeaderWithTemplatePicker />
-      <main className={styles.main}>
-        <section className={styles.leftPanel}>
-          {/* <div className={styles.templateSidebar}>
-            <TemplatesList
-              selectedId={selectedTemplateId}
-              onSelect={(id) => setSelectedTemplateId(id as TemplateId)}
-              variant="sidebar"
-            />
-          </div> */}
-          <div className={styles.previewContainer}>
-            {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
-          </div>
-        </section>
-        <aside className={styles.rightPanel}>
-          <div className={styles.inspectorBody}>
-            <CardInspector />
-          </div>
-          <EditorActionsToolbar
-            canSaveChanges={canSaveChanges}
-            canSaveAsNew={canSaveAsNew}
-            savingMode={savingMode}
-            onExportPng={() => {
-              previewRef.current?.exportAsPng();
-            }}
-            onSaveChanges={() => handleSave("update")}
-            onSaveAsNew={() => handleSave("new")}
-          />
-        </aside>
-      </main>
-      <MainFooter />
+      <LibraryTransferProvider>
+        <AppActionsProvider>
+          {SHOW_HEADER ? <HeaderWithTemplatePicker /> : null}
+          {!USE_BLUEPRINTS ? (
+            <div className={styles.previewModeFixed}>
+              {t("label.previewMode")}: {previewModeLabel}
+            </div>
+          ) : null}
+          {SHOW_INSPECTOR_TOGGLE ? (
+            <div className={styles.inspectorModeFixed}>
+              {t("label.inspectorMode")}: {inspectorModeLabel}
+            </div>
+          ) : null}
+          <main className={styles.main}>
+            <LeftNav />
+            <section className={styles.leftPanel}>
+              {/* <div className={styles.templateSidebar}>
+                <TemplatesList
+                  selectedId={selectedTemplateId}
+                  onSelect={(id) => setSelectedTemplateId(id as TemplateId)}
+                  variant="sidebar"
+                />
+              </div> */}
+              <div className={styles.previewContainer}>
+                {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
+              </div>
+            </section>
+            <aside className={styles.rightPanel}>
+              <div className={styles.inspectorTop}>
+                <TemplateChooser />
+              </div>
+              <div className={styles.inspectorBody}>
+                <CardInspector />
+              </div>
+              <EditorActionsToolbar
+                canSaveChanges={canSaveChanges}
+                canSaveAsNew={canSaveAsNew}
+                savingMode={savingMode}
+                onExportPng={() => {
+                  previewRef.current?.exportAsPng();
+                }}
+                onSaveChanges={() => handleSave("update")}
+                onSaveAsNew={() => handleSave("new")}
+              />
+            </aside>
+          </main>
+        </AppActionsProvider>
+        <MainFooter />
+      </LibraryTransferProvider>
     </div>
   );
 }
 
 export default function IndexPage() {
   return (
-    <CardEditorProvider>
-      <AssetHashIndexProvider>
-        <IndexPageInner />
-      </AssetHashIndexProvider>
-    </CardEditorProvider>
+    <DatabaseVersionGate>
+      <CardEditorProvider>
+        <AssetHashIndexProvider>
+          <PreviewModeProvider>
+            <InspectorModeProvider>
+              <IndexPageInner />
+            </InspectorModeProvider>
+          </PreviewModeProvider>
+        </AssetHashIndexProvider>
+      </CardEditorProvider>
+    </DatabaseVersionGate>
   );
 }

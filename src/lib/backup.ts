@@ -4,6 +4,7 @@ import type { CardRecord } from "@/types/cards-db";
 
 import type { AssetRecord } from "./assets-db";
 import JSZip from "jszip";
+import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import { openHqccDb } from "./hqcc-db";
 import type { HqccDb } from "./hqcc-db";
 
@@ -39,6 +40,10 @@ export interface HqccExportLocalStorageV1 {
   statLabels?: string | null;
 }
 
+export interface HqccExportSettingsV1 {
+  borderSwatches?: string[];
+}
+
 export interface HqccExportFileV1 {
   schemaVersion: HqccExportSchemaVersion;
   createdAt: string;
@@ -47,6 +52,7 @@ export interface HqccExportFileV1 {
   cards: CardRecordExportV1[];
   assets: AssetRecordExportV1[];
   collections?: CollectionRecordExportV1[];
+  settings?: HqccExportSettingsV1;
   localStorage: HqccExportLocalStorageV1;
 }
 
@@ -273,6 +279,29 @@ async function buildExportObject(
     collections.push(...rawCollections);
   }
 
+  let settings: HqccExportSettingsV1 | undefined;
+
+  if (db.objectStoreNames.contains("settings")) {
+    const settingsTx = db.transaction("settings", "readonly");
+    const settingsStore = settingsTx.objectStore("settings");
+    const record = await new Promise<{ value?: unknown } | undefined>((resolve, reject) => {
+      const request = settingsStore.get("borderSwatches");
+      request.onsuccess = () => {
+        resolve(request.result as { value?: unknown } | undefined);
+      };
+      request.onerror = () => {
+        reject(request.error ?? new Error("Failed to read settings for backup"));
+      };
+    });
+
+    const swatches = record?.value;
+    if (Array.isArray(swatches)) {
+      settings = {
+        borderSwatches: swatches.filter((value) => typeof value === "string") as string[],
+      };
+    }
+  }
+
   let cardDraftsV1: string | null | undefined;
   let activeCardsV1: string | null | undefined;
   let statLabels: string | null | undefined;
@@ -307,6 +336,7 @@ async function buildExportObject(
     cards,
     assets,
     collections,
+    settings,
     localStorage,
   };
 
@@ -338,6 +368,7 @@ async function applyBackupObject(
   const hasCardsStore = db.objectStoreNames.contains("cards");
   const hasAssetsStore = db.objectStoreNames.contains("assets");
   const hasCollectionsStore = db.objectStoreNames.contains("collections");
+  const hasSettingsStore = db.objectStoreNames.contains("settings");
 
   async function clearStore(name: string): Promise<void> {
     if (!db.objectStoreNames.contains(name)) return;
@@ -358,6 +389,9 @@ async function applyBackupObject(
   }
   if (hasCollectionsStore) {
     await clearStore("collections");
+  }
+  if (hasSettingsStore) {
+    await clearStore("settings");
   }
 
   let cardsCount = 0;
@@ -463,6 +497,27 @@ async function applyBackupObject(
     });
   }
 
+  if (hasSettingsStore && exportData.settings?.borderSwatches) {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction("settings", "readwrite");
+      const store = tx.objectStore("settings");
+      try {
+        store.put({
+          id: "borderSwatches",
+          value: exportData.settings?.borderSwatches,
+          updatedAt: Date.now(),
+          schemaVersion: 1,
+        });
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error("Failed to import settings"));
+        return;
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () =>
+        reject(tx.error ?? new Error("Failed to write settings during backup import"));
+    });
+  }
+
   try {
     const { cardDraftsV1, activeCardsV1, statLabels } = exportData.localStorage;
     if (typeof cardDraftsV1 === "string") {
@@ -562,7 +617,12 @@ export async function createBackupHqcc(
   options?.onStatus?.("finalizing");
   await new Promise((resolve) => setTimeout(resolve, 250));
   const blob = await zip.generateAsync(
-    { type: "blob" },
+    {
+      type: "blob",
+      ...(USE_ZIP_COMPRESSION
+        ? { compression: "DEFLATE", compressionOptions: { level: 6 } }
+        : {}),
+    },
     (metadata) => {
       options?.onSecondaryProgress?.(metadata.percent ?? 0, "finalizing");
     },

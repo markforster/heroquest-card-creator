@@ -94,7 +94,8 @@ function sha256Fallback(bytes: Uint8Array): string {
   }
 
   let hex = "";
-  for (const value of h) {
+  for (let i = 0; i < h.length; i += 1) {
+    const value = h[i];
     hex += value.toString(16).padStart(8, "0");
   }
   return hex;
@@ -105,8 +106,8 @@ export async function hashArrayBufferSha256(buffer: ArrayBuffer): Promise<string
     const digest = await crypto.subtle.digest("SHA-256", buffer);
     const bytes = new Uint8Array(digest);
     let hex = "";
-    for (const byte of bytes) {
-      hex += byte.toString(16).padStart(2, "0");
+    for (let i = 0; i < bytes.length; i += 1) {
+      hex += bytes[i].toString(16).padStart(2, "0");
     }
     return hex;
   }

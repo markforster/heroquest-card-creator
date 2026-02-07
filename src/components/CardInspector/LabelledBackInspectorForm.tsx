@@ -7,6 +7,7 @@ import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { LabelledBackCardData } from "@/types/card-data";
 
+import BorderColorField from "./BorderColorField";
 import ImageField from "./ImageField";
 import TitleField from "./TitleField";
 
@@ -41,6 +42,7 @@ export default function LabelledBackInspectorForm() {
       <form>
         <TitleField label={t("form.backLabel")} required />
         <ImageField label={t("form.backImage")} boundsWidth={750} boundsHeight={1050} />
+        <BorderColorField label={t("form.borderColor")} templateId="labelled-back" />
       </form>
     </FormProvider>
   );

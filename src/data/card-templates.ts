@@ -1,4 +1,4 @@
-import borderedBackground from "@/assets/card-backgrounds/bordered.png";
+import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
 import heroBackBackground from "@/assets/card-backgrounds/hero-back.png";
 import largeWindowBackground from "@/assets/card-backgrounds/large-window.png";
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
@@ -64,7 +64,7 @@ export const cardTemplates: CardTemplateMeta[] = [
     kind: "back",
     description: "Back design with a label/banner, e.g. 'Card Back'.",
     thumbnail: labelledBackThumbnail,
-    background: borderedBackground,
+    background: borderedMask,
   },
 ];
 
