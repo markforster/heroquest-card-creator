@@ -80,7 +80,8 @@ export default function StatStepper<TFormValues extends FieldValues>({
 
   const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
     const pasted = event.clipboardData.getData("text");
-    const { selectionStart = 0, selectionEnd = 0 } = event.currentTarget;
+    const selectionStart = event.currentTarget.selectionStart ?? 0;
+    const selectionEnd = event.currentTarget.selectionEnd ?? 0;
     const nextText = `${inputValue.slice(0, selectionStart)}${pasted}${inputValue.slice(selectionEnd)}`;
     const nextValue = parseStatInputValue(nextText, { min, max, allowWildcard });
     if (nextValue == null) {
