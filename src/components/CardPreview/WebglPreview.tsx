@@ -11,6 +11,7 @@ import {
   LinearFilter,
   MultiplyBlending,
   NoToneMapping,
+  NoColorSpace,
   PlaneGeometry,
   RepeatWrapping,
   SRGBColorSpace,
@@ -22,6 +23,7 @@ import {
 import styles from "./WebglPreview.module.css";
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
+import linenNormal from "@/assets/linen-2.png";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
 
 type WebglPreviewProps = {
@@ -32,6 +34,7 @@ type WebglPreviewProps = {
 const CARD_ASPECT = 1050 / 750;
 const MAX_ROTATION_DEG = 60;
 const ROTATION_SMOOTHING = 0.12;
+const USE_DEBUG_NORMAL_MAP = false;
 
 function CardPlane({
   textureUrl,
@@ -47,43 +50,41 @@ function CardPlane({
   const texture = useLoader(TextureLoader, textureSource);
   texture.colorSpace = SRGBColorSpace;
   texture.premultiplyAlpha = true;
-  const linenRoughnessMap = useMemo(() => {
-    const size = 512;
+  const linenNormalTexture = useLoader(TextureLoader, linenNormal.src);
+  linenNormalTexture.colorSpace = NoColorSpace;
+  linenNormalTexture.wrapS = RepeatWrapping;
+  linenNormalTexture.wrapT = RepeatWrapping;
+  linenNormalTexture.repeat.set(2.2, 3);
+  linenNormalTexture.needsUpdate = true;
+
+  const debugNormalTexture = useMemo(() => {
+    if (!USE_DEBUG_NORMAL_MAP) return null;
+    const size = 128;
+    const cell = 8;
     const canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    ctx.fillStyle = "rgb(128,128,128)";
-    ctx.fillRect(0, 0, size, size);
-
-    ctx.strokeStyle = "rgba(70,70,70,0.9)";
-    ctx.lineWidth = 1.2;
-    for (let i = -size; i < size * 2; i += 3) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i - size, size);
-      ctx.stroke();
+    for (let y = 0; y < size; y += cell) {
+      for (let x = 0; x < size; x += cell) {
+        const isEven = ((x + y) / cell) % 2 === 0;
+        // Encode strong normals in RGB (0-255).
+        const color = isEven ? "rgb(255,128,255)" : "rgb(128,255,255)";
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, cell, cell);
+      }
     }
-
-    ctx.strokeStyle = "rgba(190,190,190,0.9)";
-    for (let i = -size; i < size * 2; i += 3) {
-      ctx.beginPath();
-      ctx.moveTo(i, size);
-      ctx.lineTo(i + size, 0);
-      ctx.stroke();
-    }
-
     const tex = new CanvasTexture(canvas);
+    tex.colorSpace = NoColorSpace;
     tex.wrapS = RepeatWrapping;
     tex.wrapT = RepeatWrapping;
-    tex.repeat.set(24, 32);
-    tex.minFilter = LinearFilter;
-    tex.magFilter = LinearFilter;
+    tex.repeat.set(4, 4);
     tex.needsUpdate = true;
     return tex;
   }, []);
-  const linenOverlayTexture = linenRoughnessMap;
+
+  const activeNormalTexture = USE_DEBUG_NORMAL_MAP ? debugNormalTexture : linenNormalTexture;
   const glintMaterial = useMemo(() => {
     const material = new ShaderMaterial({
       transparent: true,
@@ -167,9 +168,23 @@ function CardPlane({
   return (
     <group scale={[scale, scale, 1]}>
       <mesh geometry={geometry}>
-        <meshBasicMaterial map={texture} side={DoubleSide} transparent alphaTest={0.5} />
+        <meshPhysicalMaterial
+          map={texture}
+          emissiveMap={texture}
+          emissive="#ffffff"
+          emissiveIntensity={0.45}
+          normalMap={activeNormalTexture ?? undefined}
+          normalScale={[1.2, 1.2]}
+          roughness={0.6}
+          metalness={0.02}
+          clearcoat={0.3}
+          clearcoatRoughness={0.25}
+          side={DoubleSide}
+          transparent
+          alphaTest={0.5}
+        />
       </mesh>
-      {linenRoughnessMap ? (
+      {activeNormalTexture ? (
         <mesh geometry={geometry} position={[0, 0, 0.001]} renderOrder={1}>
           <meshPhysicalMaterial
             color="#ffffff"
@@ -177,8 +192,9 @@ function CardPlane({
             opacity={0.45}
             blending={AdditiveBlending}
             depthWrite={false}
-            roughness={0.5}
-            roughnessMap={linenRoughnessMap}
+            roughness={0.45}
+            normalMap={activeNormalTexture}
+            normalScale={[0.6, 0.6]}
             metalness={0}
             clearcoat={1}
             clearcoatRoughness={0.2}
@@ -188,21 +204,10 @@ function CardPlane({
           />
         </mesh>
       ) : null}
-      {linenOverlayTexture ? (
-        <mesh geometry={geometry} position={[0, 0, 0.0018]} renderOrder={2}>
-          <meshBasicMaterial
-            map={linenOverlayTexture}
-            blending={MultiplyBlending}
-            opacity={0.22}
-            transparent
-            depthWrite={false}
-            side={DoubleSide}
-            alphaMap={texture}
-            alphaTest={0.5}
-          />
-        </mesh>
-      ) : null}
-      {/* Glint layer temporarily disabled. */}
+      {/* Linen overlay removed; using normal map for visible grain response. */}
+      <mesh geometry={geometry} position={[0, 0, 0.0022]} renderOrder={3}>
+        <primitive object={glintMaterial} attach="material" />
+      </mesh>
       {grainTexture ? (
         <mesh geometry={geometry} position={[0, 0, 0.0032]} renderOrder={4}>
           <meshBasicMaterial
@@ -338,9 +343,9 @@ export default function WebglPreview({ className, textureUrl }: WebglPreviewProp
         <ambientLight intensity={0.4} />
         <spotLight
           position={[2.5, 3.2, 4]}
-          intensity={sheenIntensity}
-          angle={sheenAngle}
-          penumbra={0.45}
+          intensity={sheenIntensity * 2.4}
+          angle={Math.max(0.2, sheenAngle * 0.65)}
+          penumbra={0.25}
         />
         <directionalLight position={[-2.5, -1.5, 3.5]} intensity={0.4} />
         <WebglScene
