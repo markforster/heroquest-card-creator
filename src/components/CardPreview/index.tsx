@@ -27,6 +27,7 @@ type CardPreviewProps = {
 export type CardPreviewHandle = {
   exportAsPng: () => Promise<void>;
   renderToPngBlob: (options?: { width?: number; height?: number }) => Promise<Blob | null>;
+  renderToCanvas: (options?: { width?: number; height?: number }) => Promise<HTMLCanvasElement | null>;
   getSvgElement: () => SVGSVGElement | null;
 };
 
@@ -98,6 +99,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
     const background = backgroundSrc ?? parchmentBackground;
     const [backgroundLoaded, setBackgroundLoaded] = useState(false);
     const svgRef = useRef<SVGSVGElement | null>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     useEffect(() => {
       setBackgroundLoaded(false);
@@ -114,11 +116,11 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
       };
     }, [background.src]);
 
-    async function renderSvgToPngBlob(
+    async function renderSvgToCanvas(
       svgElement: SVGSVGElement,
       width: number,
       height: number,
-    ): Promise<Blob | null> {
+    ): Promise<HTMLCanvasElement | null> {
       const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
 
       const origin = window.location.origin;
@@ -238,15 +240,43 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
       const svgUrl = URL.createObjectURL(svgBlob);
 
       try {
-        const img = new Image();
-        img.src = svgUrl;
+        let imageBitmap: ImageBitmap | null = null;
+        if (typeof createImageBitmap === "function") {
+          try {
+            imageBitmap = await createImageBitmap(svgBlob);
+          } catch {
+            imageBitmap = null;
+          }
+        }
 
-        await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject(new Error("Failed to load SVG image"));
-        });
+        if (!imageBitmap) {
+          const img = new Image();
+          img.src = svgUrl;
 
-        const canvas = document.createElement("canvas");
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error("Failed to load SVG image"));
+          });
+
+          if (!canvasRef.current) {
+            canvasRef.current = document.createElement("canvas");
+          }
+          const canvas = canvasRef.current;
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            throw new Error("Unable to get 2D context");
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+          return canvas;
+        }
+
+        if (!canvasRef.current) {
+          canvasRef.current = document.createElement("canvas");
+        }
+        const canvas = canvasRef.current;
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext("2d");
@@ -254,23 +284,9 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           throw new Error("Unable to get 2D context");
         }
 
-        ctx.drawImage(img, 0, 0, width, height);
-
-        const pngBlob: Blob | null = await new Promise((resolve, reject) => {
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                reject(new Error("Failed to create PNG blob"));
-              } else {
-                resolve(blob);
-              }
-            },
-            "image/png",
-            1,
-          );
-        });
-
-        return pngBlob;
+        ctx.drawImage(imageBitmap, 0, 0, width, height);
+        imageBitmap.close();
+        return canvas;
       } finally {
         URL.revokeObjectURL(svgUrl);
       }
@@ -283,7 +299,11 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           const svgElement = svgRef.current;
           if (!svgElement) return;
 
-          const pngBlob = await renderSvgToPngBlob(svgElement, CARD_WIDTH, CARD_HEIGHT);
+          const canvas = await renderSvgToCanvas(svgElement, CARD_WIDTH, CARD_HEIGHT);
+          if (!canvas) return;
+          const pngBlob: Blob | null = await new Promise((resolve) =>
+            canvas.toBlob((blob) => resolve(blob), "image/png", 1),
+          );
           if (!pngBlob) return;
 
           const pngUrl = URL.createObjectURL(pngBlob);
@@ -318,10 +338,21 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           const width = options?.width ?? CARD_WIDTH;
           const height = options?.height ?? CARD_HEIGHT;
 
-          const pngBlob = await renderSvgToPngBlob(svgElement, width, height);
-          if (!pngBlob) return null;
+          const canvas = await renderSvgToCanvas(svgElement, width, height);
+          if (!canvas) return null;
+          const pngBlob: Blob | null = await new Promise((resolve) =>
+            canvas.toBlob((blob) => resolve(blob), "image/png", 1),
+          );
+          return pngBlob ?? null;
+        },
+        async renderToCanvas(options) {
+          const svgElement = svgRef.current;
+          if (!svgElement) return null;
 
-          return pngBlob;
+          const width = options?.width ?? CARD_WIDTH;
+          const height = options?.height ?? CARD_HEIGHT;
+
+          return await renderSvgToCanvas(svgElement, width, height);
         },
         getSvgElement() {
           return svgRef.current;

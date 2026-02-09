@@ -22,9 +22,11 @@ type CardPreviewContainerProps = {
 export default function CardPreviewContainer({ previewRef }: CardPreviewContainerProps) {
   const { language } = useI18n();
   const { previewRenderer } = usePreviewRenderer();
-  const [textureUrl, setTextureUrl] = useState<string | null>(null);
-  const revokeTimeoutRef = useRef<number | null>(null);
-  const textureUrlRef = useRef<string | null>(null);
+  const [textureCanvas, setTextureCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [textureVersion, setTextureVersion] = useState(0);
+  const renderInFlightRef = useRef(false);
+  const renderRequestIdRef = useRef(0);
+  const debounceTimeoutRef = useRef<number | null>(null);
   const {
     state: { selectedTemplateId, cardDrafts },
   } = useCardEditor();
@@ -49,52 +51,48 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
     const width = 1463;
     const height = 2048;
 
-    const scheduleRevoke = (url: string) => {
-      if (revokeTimeoutRef.current) {
-        window.clearTimeout(revokeTimeoutRef.current);
-      }
-      revokeTimeoutRef.current = window.setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 2000);
-    };
-
     const renderTexture = async () => {
       const handle = previewRef.current;
       if (!handle) return;
+      if (renderInFlightRef.current) return;
+      renderInFlightRef.current = true;
+
       try {
-        const blob = await handle.renderToPngBlob({ width, height });
-        if (!blob || cancelled) return;
-        const url = URL.createObjectURL(blob);
-        setTextureUrl((prev) => {
-          if (prev) scheduleRevoke(prev);
-          textureUrlRef.current = url;
-          return url;
-        });
+        while (!cancelled) {
+          const currentRequestId = renderRequestIdRef.current;
+          await new Promise<void>((resolve) => {
+            window.requestAnimationFrame(() => resolve());
+          });
+          const canvas = await handle.renderToCanvas({ width, height });
+          if (!canvas || cancelled) return;
+          setTextureCanvas(canvas);
+          setTextureVersion((prev) => prev + 1);
+          if (currentRequestId === renderRequestIdRef.current) {
+            break;
+          }
+        }
       } catch {
         // Ignore texture render errors for now.
+      } finally {
+        renderInFlightRef.current = false;
       }
     };
 
-    const raf = window.requestAnimationFrame(() => {
+    if (debounceTimeoutRef.current) {
+      window.clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = window.setTimeout(() => {
+      renderRequestIdRef.current += 1;
       void renderTexture();
-    });
+    }, 33);
 
     return () => {
       cancelled = true;
-      window.cancelAnimationFrame(raf);
+      if (debounceTimeoutRef.current) {
+        window.clearTimeout(debounceTimeoutRef.current);
+      }
     };
   }, [showWebgl, cardData, template.id, templateName, previewRef]);
-
-  useEffect(() => {
-    return () => {
-      if (revokeTimeoutRef.current) {
-        window.clearTimeout(revokeTimeoutRef.current);
-      }
-      if (textureUrlRef.current) {
-        URL.revokeObjectURL(textureUrlRef.current);
-      }
-    };
-  }, []);
 
   return (
     <div className={styles.previewSwap}>
@@ -107,7 +105,13 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           cardData={cardData}
         />
       </div>
-      {showWebgl ? <WebglPreview className={styles.webglLayer} textureUrl={textureUrl} /> : null}
+      {showWebgl ? (
+        <WebglPreview
+          className={styles.webglLayer}
+          textureCanvas={textureCanvas}
+          textureVersion={textureVersion}
+        />
+      ) : null}
     </div>
   );
 }

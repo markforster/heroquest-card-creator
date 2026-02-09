@@ -16,6 +16,7 @@ import {
   RepeatWrapping,
   SRGBColorSpace,
   ShaderMaterial,
+  Texture,
   TextureLoader,
   Vector3,
 } from "three";
@@ -23,38 +24,40 @@ import {
 import styles from "./WebglPreview.module.css";
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
-import linenNormal from "@/assets/linen-2.png";
+import linenNormal2 from "@/assets/linen-2.png";
+import linenNormal3 from "@/assets/linen-3.png";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
 
 type WebglPreviewProps = {
   className?: string;
-  textureUrl?: string | null;
+  textureCanvas?: HTMLCanvasElement | null;
+  textureVersion?: number;
 };
 
 const CARD_ASPECT = 1050 / 750;
-const MAX_ROTATION_DEG = 60;
+const MAX_ROTATION_X_DEG = 25;
+const MAX_ROTATION_Y_DEG = 60;
 const ROTATION_SMOOTHING = 0.12;
+const LINEN_NORMAL_MAP = linenNormal3;
 const USE_DEBUG_NORMAL_MAP = false;
 
 function CardPlane({
-  textureUrl,
+  texture,
   sheenPower,
   sheenIntensity,
 }: {
-  textureUrl?: string | null;
+  texture: Texture;
   sheenPower: number;
   sheenIntensity: number;
 }) {
   const geometry = useMemo(() => new PlaneGeometry(1, CARD_ASPECT), []);
-  const textureSource = textureUrl ?? parchmentBackground.src;
-  const texture = useLoader(TextureLoader, textureSource);
   texture.colorSpace = SRGBColorSpace;
   texture.premultiplyAlpha = true;
-  const linenNormalTexture = useLoader(TextureLoader, linenNormal.src);
+  const linenNormalTexture = useLoader(TextureLoader, LINEN_NORMAL_MAP.src);
   linenNormalTexture.colorSpace = NoColorSpace;
   linenNormalTexture.wrapS = RepeatWrapping;
   linenNormalTexture.wrapT = RepeatWrapping;
-  linenNormalTexture.repeat.set(2.2, 3);
+  linenNormalTexture.repeat.set(1.6, 2.2);
   linenNormalTexture.needsUpdate = true;
 
   const debugNormalTexture = useMemo(() => {
@@ -174,7 +177,7 @@ function CardPlane({
           emissive="#ffffff"
           emissiveIntensity={0.45}
           normalMap={activeNormalTexture ?? undefined}
-          normalScale={[1.2, 1.2]}
+          normalScale={[2.0, 2.0]}
           roughness={0.6}
           metalness={0.02}
           clearcoat={0.3}
@@ -192,9 +195,9 @@ function CardPlane({
             opacity={0.45}
             blending={AdditiveBlending}
             depthWrite={false}
-            roughness={0.45}
+            roughness={0.3}
             normalMap={activeNormalTexture}
-            normalScale={[0.6, 0.6]}
+            normalScale={[1.1, 1.1]}
             metalness={0}
             clearcoat={1}
             clearcoatRoughness={0.2}
@@ -227,42 +230,66 @@ function CardPlane({
 }
 
 function WebglScene({
-  textureUrl,
-  cardGroupRef,
+  texture,
+  yawGroupRef,
+  pitchGroupRef,
   targetRotationRef,
   sheenPower,
   sheenIntensity,
 }: {
-  textureUrl?: string | null;
-  cardGroupRef: RefObject<Group>;
+  texture: Texture;
+  yawGroupRef: RefObject<Group>;
+  pitchGroupRef: RefObject<Group>;
   targetRotationRef: MutableRefObject<{ x: number; y: number }>;
   sheenPower: number;
   sheenIntensity: number;
 }) {
   useFrame(() => {
-    const group = cardGroupRef.current;
-    if (!group) return;
-    group.rotation.x += (targetRotationRef.current.x - group.rotation.x) * ROTATION_SMOOTHING;
-    group.rotation.y += (targetRotationRef.current.y - group.rotation.y) * ROTATION_SMOOTHING;
+    const yawGroup = yawGroupRef.current;
+    const pitchGroup = pitchGroupRef.current;
+    if (!yawGroup || !pitchGroup) return;
+    pitchGroup.rotation.x +=
+      (targetRotationRef.current.x - pitchGroup.rotation.x) * ROTATION_SMOOTHING;
+    yawGroup.rotation.y +=
+      (targetRotationRef.current.y - yawGroup.rotation.y) * ROTATION_SMOOTHING;
   });
 
   return (
-    <group ref={cardGroupRef}>
-      <CardPlane
-        textureUrl={textureUrl}
-        sheenPower={sheenPower}
-        sheenIntensity={sheenIntensity}
-      />
+    <group ref={yawGroupRef}>
+      <group ref={pitchGroupRef}>
+        <CardPlane texture={texture} sheenPower={sheenPower} sheenIntensity={sheenIntensity} />
+      </group>
     </group>
   );
 }
 
-export default function WebglPreview({ className, textureUrl }: WebglPreviewProps) {
+export default function WebglPreview({
+  className,
+  textureCanvas,
+  textureVersion = 0,
+}: WebglPreviewProps) {
   const rootClassName = className ? `${styles.root} ${className}` : styles.root;
   const { sheenAngle, sheenIntensity } = useWebglPreviewSettings();
   const glintPower = Math.max(0.06, Math.min(0.45, 0.55 - sheenAngle * 0.35));
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const cardGroupRef = useRef<Group | null>(null);
+  const yawGroupRef = useRef<Group | null>(null);
+  const pitchGroupRef = useRef<Group | null>(null);
+  const fallbackTexture = useLoader(TextureLoader, parchmentBackground.src);
+  fallbackTexture.colorSpace = SRGBColorSpace;
+  fallbackTexture.premultiplyAlpha = true;
+  const canvasTexture = useMemo(() => {
+    if (!textureCanvas) return null;
+    const tex = new CanvasTexture(textureCanvas);
+    tex.colorSpace = SRGBColorSpace;
+    tex.premultiplyAlpha = true;
+    return tex;
+  }, [textureCanvas]);
+  useEffect(() => {
+    if (canvasTexture) {
+      canvasTexture.needsUpdate = true;
+    }
+  }, [canvasTexture, textureVersion]);
+  const activeTexture = canvasTexture ?? fallbackTexture;
   const dragStateRef = useRef<{
     active: boolean;
     startX: number;
@@ -279,21 +306,29 @@ export default function WebglPreview({ className, textureUrl }: WebglPreviewProp
   const targetRotationRef = useRef({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
-  const clampRotation = (value: number) => {
-    const max = (MAX_ROTATION_DEG * Math.PI) / 180;
+  const clampRotation = (value: number, maxDeg: number) => {
+    const max = (maxDeg * Math.PI) / 180;
     return Math.max(-max, Math.min(max, value));
+  };
+
+  const applyResistance = (value: number, maxDeg: number) => {
+    const max = (maxDeg * Math.PI) / 180;
+    const normalized = Math.min(1, Math.abs(value) / max);
+    const eased = Math.pow(normalized, 0.7);
+    return Math.sign(value) * max * eased;
   };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
     containerRef.current.setPointerCapture(event.pointerId);
-    const current = cardGroupRef.current;
+    const currentYaw = yawGroupRef.current;
+    const currentPitch = pitchGroupRef.current;
     dragStateRef.current = {
       active: true,
       startX: event.clientX,
       startY: event.clientY,
-      startRotX: current?.rotation.x ?? 0,
-      startRotY: current?.rotation.y ?? 0,
+      startRotX: currentPitch?.rotation.x ?? 0,
+      startRotY: currentYaw?.rotation.y ?? 0,
     };
     setIsDragging(true);
   };
@@ -302,14 +337,15 @@ export default function WebglPreview({ className, textureUrl }: WebglPreviewProp
     const drag = dragStateRef.current;
     if (!drag.active || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const max = (MAX_ROTATION_DEG * Math.PI) / 180;
+    const maxY = (MAX_ROTATION_Y_DEG * Math.PI) / 180;
+    const maxX = (MAX_ROTATION_X_DEG * Math.PI) / 180;
     const dx = (event.clientX - drag.startX) / Math.max(rect.width, 1);
     const dy = (event.clientY - drag.startY) / Math.max(rect.height, 1);
-    const nextY = drag.startRotY + dx * max * 2;
-    const nextX = drag.startRotX + dy * max * 2;
+    const nextY = drag.startRotY + dx * maxY * 2;
+    const nextX = drag.startRotX + dy * maxX * 2;
     targetRotationRef.current = {
-      x: clampRotation(nextX),
-      y: clampRotation(nextY),
+      x: clampRotation(applyResistance(nextX, MAX_ROTATION_X_DEG), MAX_ROTATION_X_DEG),
+      y: clampRotation(applyResistance(nextY, MAX_ROTATION_Y_DEG), MAX_ROTATION_Y_DEG),
     };
   };
 
@@ -318,6 +354,7 @@ export default function WebglPreview({ className, textureUrl }: WebglPreviewProp
     containerRef.current.releasePointerCapture(event.pointerId);
     dragStateRef.current.active = false;
     setIsDragging(false);
+    targetRotationRef.current = { x: 0, y: 0 };
   };
 
   return (
@@ -349,8 +386,9 @@ export default function WebglPreview({ className, textureUrl }: WebglPreviewProp
         />
         <directionalLight position={[-2.5, -1.5, 3.5]} intensity={0.4} />
         <WebglScene
-          textureUrl={textureUrl}
-          cardGroupRef={cardGroupRef}
+          texture={activeTexture}
+          yawGroupRef={yawGroupRef}
+          pitchGroupRef={pitchGroupRef}
           targetRotationRef={targetRotationRef}
           sheenPower={glintPower}
           sheenIntensity={sheenIntensity}
