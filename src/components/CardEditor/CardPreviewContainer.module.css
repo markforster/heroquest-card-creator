@@ -1,0 +1,25 @@
+.previewSwap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewLayer {
+  width: 100%;
+  height: 100%;
+}
+
+.previewHidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.webglLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}

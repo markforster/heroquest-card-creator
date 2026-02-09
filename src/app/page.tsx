@@ -17,6 +17,7 @@ import { LibraryTransferProvider } from "@/components/LibraryTransferContext";
 import LeftNav from "@/components/LeftNav";
 import MainFooter from "@/components/MainFooter";
 import { PreviewModeProvider } from "@/components/PreviewModeContext";
+import { PreviewRendererProvider } from "@/components/PreviewRendererContext";
 import { cardTemplatesById } from "@/data/card-templates";
 import { usePreviewMode } from "@/components/PreviewModeContext";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -186,9 +187,11 @@ export default function IndexPage() {
       <CardEditorProvider>
         <AssetHashIndexProvider>
           <PreviewModeProvider>
-            <InspectorModeProvider>
-              <IndexPageInner />
-            </InspectorModeProvider>
+            <PreviewRendererProvider>
+              <InspectorModeProvider>
+                <IndexPageInner />
+              </InspectorModeProvider>
+            </PreviewRendererProvider>
           </PreviewModeProvider>
         </AssetHashIndexProvider>
       </CardEditorProvider>

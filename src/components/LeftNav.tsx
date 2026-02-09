@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Box,
   ChevronLeft,
   ChevronRight,
   Images,
@@ -15,6 +16,7 @@ import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
 import { inspectorModeFlags, useInspectorMode } from "@/components/InspectorModeContext";
 import { previewModeFlags, usePreviewMode } from "@/components/PreviewModeContext";
+import { previewRendererFlags, usePreviewRenderer } from "@/components/PreviewRendererContext";
 import LanguageMenu from "@/components/LanguageMenu";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -46,6 +48,8 @@ export default function LeftNav() {
   const { openAssets, openStockpile, openSettings } = useAppActions();
   const { previewMode, togglePreviewMode } = usePreviewMode();
   const { SHOW_BLUEPRINTS_TOGGLE } = previewModeFlags;
+  const { previewRenderer, togglePreviewRenderer } = usePreviewRenderer();
+  const { SHOW_WEBGL_TOGGLE } = previewRendererFlags;
   const { inspectorMode, toggleInspectorMode } = useInspectorMode();
   const { SHOW_INSPECTOR_TOGGLE } = inspectorModeFlags;
   const autoCollapsed = useMediaQuery(COLLAPSE_MEDIA_QUERY);
@@ -55,6 +59,10 @@ export default function LeftNav() {
   const collapseStateLabel = isCollapsed ? "Expand navigation" : "Collapse navigation";
   const previewModeLabel =
     previewMode === "blueprint" ? t("label.previewBlueprint") : t("label.previewLegacy");
+  const previewRendererLabel =
+    previewRenderer === "webgl"
+      ? t("label.previewRendererWebgl")
+      : t("label.previewRendererSvg");
   const inspectorModeLabel =
     inspectorMode === "generic" ? t("label.inspectorGeneric") : t("label.inspectorLegacy");
 
@@ -162,6 +170,23 @@ export default function LeftNav() {
                 </span>
                 <span className={styles.leftNavLabel}>
                   {t("label.previewMode")}: {previewModeLabel}
+                </span>
+              </button>
+            ) : null}
+            {SHOW_WEBGL_TOGGLE ? (
+              <button
+                className={styles.leftNavItem}
+                type="button"
+                onClick={togglePreviewRenderer}
+                title={t("tooltip.previewRenderer")}
+                aria-pressed={previewRenderer === "webgl"}
+                aria-label={`${t("label.previewRenderer")}: ${previewRendererLabel}`}
+              >
+                <span className={styles.leftNavGlyph} aria-hidden="true">
+                  <Box />
+                </span>
+                <span className={styles.leftNavLabel}>
+                  {t("label.previewRenderer")}: {previewRendererLabel}
                 </span>
               </button>
             ) : null}
