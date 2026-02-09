@@ -17,6 +17,7 @@ export interface CardRecord {
   schemaVersion: 1;
 
   title?: string;
+  showTitle?: boolean;
   description?: string;
 
   imageAssetId?: string;

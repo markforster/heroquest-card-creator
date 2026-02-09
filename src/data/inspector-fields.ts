@@ -117,6 +117,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "title",
       labelKey: "form.backLabel",
       required: true,
+      showToggle: true,
     },
     {
       fieldType: "image",

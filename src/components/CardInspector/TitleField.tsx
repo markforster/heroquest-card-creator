@@ -7,9 +7,14 @@ import { useI18n } from "@/i18n/I18nProvider";
 type TitleFieldProps = {
   label: string;
   required?: boolean;
+  showToggle?: boolean;
 };
 
-export default function TitleField({ label, required = true }: TitleFieldProps) {
+export default function TitleField({
+  label,
+  required = true,
+  showToggle = false,
+}: TitleFieldProps) {
   const { t } = useI18n();
   const {
     register,
@@ -20,9 +25,26 @@ export default function TitleField({ label, required = true }: TitleFieldProps) 
 
   return (
     <div className="mb-2">
-      <label htmlFor="title" className="form-label">
-        {label}
-      </label>
+      <div className="d-flex align-items-center gap-2 mb-1">
+        <div className="flex-grow-1 flex-shrink-0">
+          <label htmlFor="title" className="form-label mb-0">
+            {label}
+          </label>
+        </div>
+        {showToggle ? (
+          <div className="flex-grow-0 flex-shrink-1 form-check form-switch m-0">
+            <input
+              id="showTitle"
+              type="checkbox"
+              className="form-check-input hq-toggle"
+              title={t("tooltip.titleShownOnRibbon")}
+              aria-label={t("aria.showTitle")}
+              role="switch"
+              {...register("showTitle")}
+            />
+          </div>
+        ) : null}
+      </div>
       <input
         id="title"
         type="text"

@@ -107,6 +107,7 @@ const baseMessages = {
     "aria.cardPreview": "Card preview",
     "aria.previewOf": "Preview of",
     "aria.card": "card",
+    "aria.showTitle": "Show title",
     "tooltip.chooseTemplate": "Choose a different card template",
     "tooltip.openAssets": "Open the assets manager",
     "tooltip.openCards": "Browse and load saved cards",

@@ -8,6 +8,7 @@ export function cardRecordToCardData<T extends TemplateId>(
 ): CardDataByTemplate[T] {
   const base = {
     title: record.title,
+    showTitle: record.showTitle ?? true,
     description: record.description,
     imageAssetId: record.imageAssetId,
     imageAssetName: record.imageAssetName,
@@ -83,6 +84,7 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     templateId,
     name,
     title: data.title,
+    showTitle: data.showTitle,
     description: data.description,
     imageAssetId: data.imageAssetId,
     imageAssetName: data.imageAssetName,

@@ -31,6 +31,7 @@ export default function LabelledBackTemplate({
   const { t } = useI18n();
   const data = (cardData as LabelledBackCardData | undefined) ?? {};
   const label = data.title || templateName || t("ui.cardBack");
+  const showTitle = data.showTitle ?? true;
 
   const imageUrl = useAssetImageUrl(data.imageAssetId);
   const imageScale = data.imageScale ?? 1;
@@ -94,9 +95,11 @@ export default function LabelledBackTemplate({
           />
         </Layer>
       ) : null}
-      <Layer>
-        <RibbonTitle title={label} y={850} />
-      </Layer>
+      {showTitle ? (
+        <Layer>
+          <RibbonTitle title={label} y={850} />
+        </Layer>
+      ) : null}
     </>
   );
 }
