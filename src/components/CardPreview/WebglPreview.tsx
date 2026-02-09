@@ -14,7 +14,9 @@ import {
   PlaneGeometry,
   RepeatWrapping,
   SRGBColorSpace,
+  ShaderMaterial,
   TextureLoader,
+  Vector3,
 } from "three";
 
 import styles from "./WebglPreview.module.css";
@@ -46,7 +48,7 @@ function CardPlane({ textureUrl }: { textureUrl?: string | null }) {
     ctx.fillStyle = "rgb(128,128,128)";
     ctx.fillRect(0, 0, size, size);
 
-    ctx.strokeStyle = "rgba(90,90,90,0.55)";
+    ctx.strokeStyle = "rgba(80,80,80,0.7)";
     ctx.lineWidth = 1;
     for (let i = -size; i < size * 2; i += 4) {
       ctx.beginPath();
@@ -55,7 +57,7 @@ function CardPlane({ textureUrl }: { textureUrl?: string | null }) {
       ctx.stroke();
     }
 
-    ctx.strokeStyle = "rgba(175,175,175,0.55)";
+    ctx.strokeStyle = "rgba(185,185,185,0.7)";
     for (let i = -size; i < size * 2; i += 4) {
       ctx.beginPath();
       ctx.moveTo(i, size);
@@ -66,11 +68,49 @@ function CardPlane({ textureUrl }: { textureUrl?: string | null }) {
     const tex = new CanvasTexture(canvas);
     tex.wrapS = RepeatWrapping;
     tex.wrapT = RepeatWrapping;
-    tex.repeat.set(18, 24);
+    tex.repeat.set(20, 26);
     tex.minFilter = LinearFilter;
     tex.magFilter = LinearFilter;
     tex.needsUpdate = true;
     return tex;
+  }, []);
+  const glintMaterial = useMemo(() => {
+    const material = new ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: AdditiveBlending,
+      uniforms: {
+        uPower: { value: 1.6 },
+        uIntensity: { value: 2.0 },
+        uColor: { value: new Vector3(1, 1, 1) },
+        uDir: { value: new Vector3(0.2, 0.4, 1.0).normalize() },
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vViewDir;
+        void main() {
+          vec4 worldPos = modelMatrix * vec4(position, 1.0);
+          vNormal = normalize(mat3(modelMatrix) * normal);
+          vViewDir = normalize(cameraPosition - worldPos.xyz);
+          gl_Position = projectionMatrix * viewMatrix * worldPos;
+        }
+      `,
+      fragmentShader: `
+        uniform float uPower;
+        uniform float uIntensity;
+        uniform vec3 uColor;
+        uniform vec3 uDir;
+        varying vec3 vNormal;
+        varying vec3 vViewDir;
+        void main() {
+          float fresnel = pow(1.0 - max(dot(vNormal, vViewDir), 0.0), uPower);
+          float dirTerm = pow(max(dot(vNormal, uDir), 0.0), 2.2);
+          float alpha = fresnel * dirTerm * uIntensity;
+          gl_FragColor = vec4(uColor, alpha);
+        }
+      `,
+    });
+    return material;
   }, []);
   const grainTexture = useMemo(() => {
     const size = 256;
@@ -99,24 +139,20 @@ function CardPlane({ textureUrl }: { textureUrl?: string | null }) {
     return tex;
   }, []);
   const { width, height } = useThree((state) => state.viewport);
-  const scale = Math.min(width, height / CARD_ASPECT) * 0.9;
+  // const scale = Math.min(width, height / CARD_ASPECT) * 0.98;
+  const scale = Math.min(width, height / CARD_ASPECT) * 1.0;
 
   return (
     <group scale={[scale, scale, 1]}>
       <mesh geometry={geometry}>
-        <meshBasicMaterial
-          map={texture}
-          side={DoubleSide}
-          transparent
-          alphaTest={0.5}
-        />
+        <meshBasicMaterial map={texture} side={DoubleSide} transparent alphaTest={0.5} />
       </mesh>
       {linenRoughnessMap ? (
         <mesh geometry={geometry} position={[0, 0, 0.001]} renderOrder={1}>
           <meshPhysicalMaterial
             color="#ffffff"
             transparent
-            opacity={0.3}
+            opacity={0.45}
             blending={AdditiveBlending}
             depthWrite={false}
             roughness={0.5}
@@ -130,8 +166,11 @@ function CardPlane({ textureUrl }: { textureUrl?: string | null }) {
           />
         </mesh>
       ) : null}
+      <mesh geometry={geometry} position={[0, 0, 0.0015]} renderOrder={2}>
+        <primitive object={glintMaterial} attach="material" />
+      </mesh>
       {grainTexture ? (
-        <mesh geometry={geometry} position={[0, 0, 0.002]} renderOrder={2}>
+        <mesh geometry={geometry} position={[0, 0, 0.0025]} renderOrder={3}>
           <meshBasicMaterial
             map={grainTexture}
             blending={MultiplyBlending}
@@ -244,7 +283,7 @@ export default function WebglPreview({ className, textureUrl }: WebglPreviewProp
     >
       <Canvas
         className={styles.canvas}
-        camera={{ position: [0, 0, 1.8], fov: 30 }}
+        camera={{ position: [0, 0, 1.3], fov: 30 }}
         gl={{
           alpha: true,
           outputColorSpace: SRGBColorSpace,
@@ -253,8 +292,8 @@ export default function WebglPreview({ className, textureUrl }: WebglPreviewProp
         }}
       >
         <ambientLight intensity={0.4} />
-        <directionalLight position={[2.5, 3.2, 4]} intensity={0.6} />
-        <directionalLight position={[-2.5, -1.5, 3.5]} intensity={0.3} />
+        <directionalLight position={[2.5, 3.2, 4]} intensity={1.0} />
+        <directionalLight position={[-2.5, -1.5, 3.5]} intensity={0.5} />
         <WebglScene
           textureUrl={textureUrl}
           cardGroupRef={cardGroupRef}
