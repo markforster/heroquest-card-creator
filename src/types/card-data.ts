@@ -4,6 +4,7 @@ import type { StatValue } from "./stats";
 
 export interface BaseCardFields {
   title?: string;
+  showTitle?: boolean;
   imageUrl?: string;
   imageAssetId?: string;
   imageAssetName?: string;

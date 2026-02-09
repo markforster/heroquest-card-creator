@@ -20,7 +20,11 @@ export default function LabelledBackInspectorForm() {
   } = useCardEditor();
 
   const methods = useForm<LabelledBackCardData>({
-    defaultValues: (cardDrafts["labelled-back"] as LabelledBackCardData | undefined) ?? {},
+    defaultValues: {
+      ...(cardDrafts["labelled-back"] as LabelledBackCardData | undefined),
+      showTitle:
+        (cardDrafts["labelled-back"] as LabelledBackCardData | undefined)?.showTitle ?? true,
+    },
     mode: "onBlur",
   });
 
@@ -40,7 +44,7 @@ export default function LabelledBackInspectorForm() {
   return (
     <FormProvider {...methods}>
       <form>
-        <TitleField label={t("form.backLabel")} required />
+        <TitleField label={t("form.backLabel")} required showToggle />
         <ImageField label={t("form.backImage")} boundsWidth={750} boundsHeight={1050} />
         <BorderColorField label={t("form.borderColor")} templateId="labelled-back" />
       </form>

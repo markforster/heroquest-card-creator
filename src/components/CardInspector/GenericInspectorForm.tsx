@@ -29,8 +29,13 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
     setTemplateDirty,
   } = useCardEditor();
 
+  const draft = cardDrafts[templateId] as CardDataByTemplate[TemplateId] | undefined;
+  const fields = inspectorFieldsByTemplate[templateId];
+  const showTitleToggle = Boolean(
+    fields?.some((field) => field.fieldType === "title" && field.showToggle),
+  );
   const methods = useForm<CardDataByTemplate[TemplateId]>({
-    defaultValues: (cardDrafts[templateId] as CardDataByTemplate[TemplateId] | undefined) ?? {},
+    defaultValues: showTitleToggle ? { ...draft, showTitle: draft?.showTitle ?? true } : draft ?? {},
     mode: "onBlur",
   });
 
@@ -47,7 +52,6 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
     return () => subscription.unsubscribe();
   }, [methods, setCardDraft, setTemplateDirty, templateId]);
 
-  const fields = inspectorFieldsByTemplate[templateId];
   if (!fields || fields.length === 0) {
     return <div>{t("ui.inspectorGenericWip")}</div>;
   }
@@ -62,6 +66,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
                 key={`${field.bind}-${index}`}
                 label={t(field.labelKey)}
                 required={field.required}
+                showToggle={field.showToggle}
               />
             );
           }

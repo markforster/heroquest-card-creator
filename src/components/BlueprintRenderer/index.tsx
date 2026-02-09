@@ -223,12 +223,23 @@ function TitleLayer({
   layer,
   cardData,
   templateName,
+  templateId,
 }: {
   layer: BlueprintLayer;
   cardData?: CardDataByTemplate[TemplateId];
   templateName?: string;
+  templateId?: TemplateId;
 }) {
   if (layer.type !== "title") return null;
+
+  const showTitle =
+    templateId === "labelled-back"
+      ? cardData && typeof (cardData as { showTitle?: boolean }).showTitle === "boolean"
+        ? (cardData as { showTitle?: boolean }).showTitle
+        : true
+      : true;
+
+  if (!showTitle) return null;
 
   const titleKey = layer.bind?.titleKey;
   const titleValue =
@@ -575,6 +586,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
               layer={layer}
               cardData={props.cardData}
               templateName={templateName}
+              templateId={blueprint.templateId}
             />
           );
         }
