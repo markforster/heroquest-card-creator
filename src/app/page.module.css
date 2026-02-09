@@ -536,9 +536,81 @@
 
 .previewContainer {
   flex: 1 1 auto;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.toolsToolbar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 15;
+}
+
+.toolsToolbarGroup {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0;
+  background: #151515;
+  border: 1px solid rgba(0, 0, 0, 0.75);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.toolsToolbarGroup .toolsToolbarButton {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  background: #0f0f0f;
+  color: #f2f2f2;
+  border: 0;
+}
+
+.toolsToolbarGroup .toolsToolbarButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.toolsToolbarGroup .toolsToolbarButton:hover {
+  background: #1b1b1b;
+  color: #ffffff;
+}
+
+.toolsToolbarGroup .toolsToolbarButton.active,
+.toolsToolbarGroup .toolsToolbarButton:active,
+.toolsToolbarGroup .toolsToolbarButton:focus {
+  background: #3b3b3b;
+  color: var(--hq-accent);
+  box-shadow: none;
+}
+
+.toolsToolbarGroup .toolsToolbarButton.active {
+  box-shadow: inset 0 0 0 2px var(--hq-accent);
+}
+
+.toolsToolbarGroup .toolsToolbarButton[aria-pressed="true"] {
+  background: #3b3b3b;
+  color: var(--hq-accent);
+  box-shadow: inset 0 0 0 2px var(--hq-accent);
+}
+
+.toolsToolbarGroup .toolsToolbarButton:first-child {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.toolsToolbarGroup .toolsToolbarButton:last-child {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 .previewModeFixed {

@@ -18,6 +18,7 @@ import LeftNav from "@/components/LeftNav";
 import MainFooter from "@/components/MainFooter";
 import { PreviewModeProvider } from "@/components/PreviewModeContext";
 import { PreviewRendererProvider } from "@/components/PreviewRendererContext";
+import ToolsToolbar from "@/components/ToolsToolbar";
 import { WebglPreviewSettingsProvider } from "@/components/WebglPreviewSettingsContext";
 import { cardTemplatesById } from "@/data/card-templates";
 import { usePreviewMode } from "@/components/PreviewModeContext";
@@ -153,6 +154,7 @@ function IndexPageInner() {
                 />
               </div> */}
               <div className={styles.previewContainer}>
+                <ToolsToolbar />
                 {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
               </div>
             </section>

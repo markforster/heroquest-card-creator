@@ -1,26 +1,14 @@
 "use client";
 
-import {
-  Box,
-  ChevronLeft,
-  ChevronRight,
-  Images,
-  Layers,
-  LayoutPanelTop,
-  Settings,
-  SquareStack,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Images, Layers, LayoutPanelTop, Settings, SquareStack } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
 import { inspectorModeFlags, useInspectorMode } from "@/components/InspectorModeContext";
 import { previewModeFlags, usePreviewMode } from "@/components/PreviewModeContext";
-import { previewRendererFlags, usePreviewRenderer } from "@/components/PreviewRendererContext";
-import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
 import LanguageMenu from "@/components/LanguageMenu";
 import { useI18n } from "@/i18n/I18nProvider";
-import { SHOW_WEBGL_SHEEN_CONTROLS } from "@/config/flags";
 
 const COLLAPSE_MEDIA_QUERY = "(max-width: 1280px)";
 const NAV_COLLAPSE_STORAGE_KEY = "hqcc.leftNavCollapsed";
@@ -50,10 +38,6 @@ export default function LeftNav() {
   const { openAssets, openStockpile, openSettings } = useAppActions();
   const { previewMode, togglePreviewMode } = usePreviewMode();
   const { SHOW_BLUEPRINTS_TOGGLE } = previewModeFlags;
-  const { previewRenderer, togglePreviewRenderer } = usePreviewRenderer();
-  const { SHOW_WEBGL_TOGGLE } = previewRendererFlags;
-  const { sheenAngle, setSheenAngle, sheenIntensity, setSheenIntensity } =
-    useWebglPreviewSettings();
   const { inspectorMode, toggleInspectorMode } = useInspectorMode();
   const { SHOW_INSPECTOR_TOGGLE } = inspectorModeFlags;
   const autoCollapsed = useMediaQuery(COLLAPSE_MEDIA_QUERY);
@@ -63,10 +47,6 @@ export default function LeftNav() {
   const collapseStateLabel = isCollapsed ? "Expand navigation" : "Collapse navigation";
   const previewModeLabel =
     previewMode === "blueprint" ? t("label.previewBlueprint") : t("label.previewLegacy");
-  const previewRendererLabel =
-    previewRenderer === "webgl"
-      ? t("label.previewRendererWebgl")
-      : t("label.previewRendererSvg");
   const inspectorModeLabel =
     inspectorMode === "generic" ? t("label.inspectorGeneric") : t("label.inspectorLegacy");
 
@@ -177,23 +157,6 @@ export default function LeftNav() {
                 </span>
               </button>
             ) : null}
-            {SHOW_WEBGL_TOGGLE ? (
-              <button
-                className={styles.leftNavItem}
-                type="button"
-                onClick={togglePreviewRenderer}
-                title={t("tooltip.previewRenderer")}
-                aria-pressed={previewRenderer === "webgl"}
-                aria-label={`${t("label.previewRenderer")}: ${previewRendererLabel}`}
-              >
-                <span className={styles.leftNavGlyph} aria-hidden="true">
-                  <Box />
-                </span>
-                <span className={styles.leftNavLabel}>
-                  {t("label.previewRenderer")}: {previewRendererLabel}
-                </span>
-              </button>
-            ) : null}
             {SHOW_INSPECTOR_TOGGLE ? (
               <button
                 className={styles.leftNavItem}
@@ -210,37 +173,6 @@ export default function LeftNav() {
                   {t("label.inspectorMode")}: {inspectorModeLabel}
                 </span>
               </button>
-            ) : null}
-            {previewRenderer === "webgl" && SHOW_WEBGL_SHEEN_CONTROLS ? (
-              <div className={styles.leftNavControl}>
-                <div className={styles.leftNavControlTitle}>WebGL Sheen</div>
-                <label className={styles.leftNavControlLabel} htmlFor="webgl-sheen-angle">
-                  Width
-                </label>
-                <input
-                  id="webgl-sheen-angle"
-                  className={styles.leftNavControlInput}
-                  type="range"
-                  min={0.2}
-                  max={1.2}
-                  step={0.02}
-                  value={sheenAngle}
-                  onChange={(event) => setSheenAngle(Number(event.target.value))}
-                />
-                <label className={styles.leftNavControlLabel} htmlFor="webgl-sheen-intensity">
-                  Intensity
-                </label>
-                <input
-                  id="webgl-sheen-intensity"
-                  className={styles.leftNavControlInput}
-                  type="range"
-                  min={0}
-                  max={2.5}
-                  step={0.05}
-                  value={sheenIntensity}
-                  onChange={(event) => setSheenIntensity(Number(event.target.value))}
-                />
-              </div>
             ) : null}
             <LanguageMenu isCollapsed={isCollapsed} />
           </div>
