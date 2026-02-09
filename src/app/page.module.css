@@ -434,6 +434,36 @@
   justify-content: center;
 }
 
+.leftNavControl {
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.leftNavControlTitle {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--hq-accent);
+}
+
+.leftNavControlLabel {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.leftNavControlInput {
+  width: 100%;
+  accent-color: var(--hq-accent);
+}
+
 .leftPanel {
   flex: 1 1 auto;
   min-width: 0;

@@ -17,8 +17,10 @@ import { useAppActions } from "@/components/AppActionsContext";
 import { inspectorModeFlags, useInspectorMode } from "@/components/InspectorModeContext";
 import { previewModeFlags, usePreviewMode } from "@/components/PreviewModeContext";
 import { previewRendererFlags, usePreviewRenderer } from "@/components/PreviewRendererContext";
+import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
 import LanguageMenu from "@/components/LanguageMenu";
 import { useI18n } from "@/i18n/I18nProvider";
+import { SHOW_WEBGL_SHEEN_CONTROLS } from "@/config/flags";
 
 const COLLAPSE_MEDIA_QUERY = "(max-width: 1280px)";
 const NAV_COLLAPSE_STORAGE_KEY = "hqcc.leftNavCollapsed";
@@ -50,6 +52,8 @@ export default function LeftNav() {
   const { SHOW_BLUEPRINTS_TOGGLE } = previewModeFlags;
   const { previewRenderer, togglePreviewRenderer } = usePreviewRenderer();
   const { SHOW_WEBGL_TOGGLE } = previewRendererFlags;
+  const { sheenAngle, setSheenAngle, sheenIntensity, setSheenIntensity } =
+    useWebglPreviewSettings();
   const { inspectorMode, toggleInspectorMode } = useInspectorMode();
   const { SHOW_INSPECTOR_TOGGLE } = inspectorModeFlags;
   const autoCollapsed = useMediaQuery(COLLAPSE_MEDIA_QUERY);
@@ -206,6 +210,37 @@ export default function LeftNav() {
                   {t("label.inspectorMode")}: {inspectorModeLabel}
                 </span>
               </button>
+            ) : null}
+            {previewRenderer === "webgl" && SHOW_WEBGL_SHEEN_CONTROLS ? (
+              <div className={styles.leftNavControl}>
+                <div className={styles.leftNavControlTitle}>WebGL Sheen</div>
+                <label className={styles.leftNavControlLabel} htmlFor="webgl-sheen-angle">
+                  Width
+                </label>
+                <input
+                  id="webgl-sheen-angle"
+                  className={styles.leftNavControlInput}
+                  type="range"
+                  min={0.2}
+                  max={1.2}
+                  step={0.02}
+                  value={sheenAngle}
+                  onChange={(event) => setSheenAngle(Number(event.target.value))}
+                />
+                <label className={styles.leftNavControlLabel} htmlFor="webgl-sheen-intensity">
+                  Intensity
+                </label>
+                <input
+                  id="webgl-sheen-intensity"
+                  className={styles.leftNavControlInput}
+                  type="range"
+                  min={0}
+                  max={2.5}
+                  step={0.05}
+                  value={sheenIntensity}
+                  onChange={(event) => setSheenIntensity(Number(event.target.value))}
+                />
+              </div>
             ) : null}
             <LanguageMenu isCollapsed={isCollapsed} />
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { MutableRefObject, RefObject } from "react";
 import type { Group } from "three";
 import {
@@ -22,6 +22,7 @@ import {
 import styles from "./WebglPreview.module.css";
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
+import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
 
 type WebglPreviewProps = {
   className?: string;
@@ -32,14 +33,22 @@ const CARD_ASPECT = 1050 / 750;
 const MAX_ROTATION_DEG = 60;
 const ROTATION_SMOOTHING = 0.12;
 
-function CardPlane({ textureUrl }: { textureUrl?: string | null }) {
+function CardPlane({
+  textureUrl,
+  sheenPower,
+  sheenIntensity,
+}: {
+  textureUrl?: string | null;
+  sheenPower: number;
+  sheenIntensity: number;
+}) {
   const geometry = useMemo(() => new PlaneGeometry(1, CARD_ASPECT), []);
   const textureSource = textureUrl ?? parchmentBackground.src;
   const texture = useLoader(TextureLoader, textureSource);
   texture.colorSpace = SRGBColorSpace;
   texture.premultiplyAlpha = true;
   const linenRoughnessMap = useMemo(() => {
-    const size = 256;
+    const size = 512;
     const canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size;
@@ -48,17 +57,17 @@ function CardPlane({ textureUrl }: { textureUrl?: string | null }) {
     ctx.fillStyle = "rgb(128,128,128)";
     ctx.fillRect(0, 0, size, size);
 
-    ctx.strokeStyle = "rgba(80,80,80,0.7)";
-    ctx.lineWidth = 1;
-    for (let i = -size; i < size * 2; i += 4) {
+    ctx.strokeStyle = "rgba(70,70,70,0.9)";
+    ctx.lineWidth = 1.2;
+    for (let i = -size; i < size * 2; i += 3) {
       ctx.beginPath();
       ctx.moveTo(i, 0);
       ctx.lineTo(i - size, size);
       ctx.stroke();
     }
 
-    ctx.strokeStyle = "rgba(185,185,185,0.7)";
-    for (let i = -size; i < size * 2; i += 4) {
+    ctx.strokeStyle = "rgba(190,190,190,0.9)";
+    for (let i = -size; i < size * 2; i += 3) {
       ctx.beginPath();
       ctx.moveTo(i, size);
       ctx.lineTo(i + size, 0);
@@ -68,50 +77,63 @@ function CardPlane({ textureUrl }: { textureUrl?: string | null }) {
     const tex = new CanvasTexture(canvas);
     tex.wrapS = RepeatWrapping;
     tex.wrapT = RepeatWrapping;
-    tex.repeat.set(20, 26);
+    tex.repeat.set(24, 32);
     tex.minFilter = LinearFilter;
     tex.magFilter = LinearFilter;
     tex.needsUpdate = true;
     return tex;
   }, []);
+  const linenOverlayTexture = linenRoughnessMap;
   const glintMaterial = useMemo(() => {
     const material = new ShaderMaterial({
       transparent: true,
       depthWrite: false,
       blending: AdditiveBlending,
       uniforms: {
-        uPower: { value: 1.6 },
-        uIntensity: { value: 2.0 },
+        uWidth: { value: 0.18 },
+        uIntensity: { value: 1.6 },
         uColor: { value: new Vector3(1, 1, 1) },
-        uDir: { value: new Vector3(0.2, 0.4, 1.0).normalize() },
+        uAlpha: { value: texture },
       },
       vertexShader: `
+        varying vec2 vUv;
         varying vec3 vNormal;
         varying vec3 vViewDir;
         void main() {
           vec4 worldPos = modelMatrix * vec4(position, 1.0);
+          vUv = uv;
           vNormal = normalize(mat3(modelMatrix) * normal);
           vViewDir = normalize(cameraPosition - worldPos.xyz);
           gl_Position = projectionMatrix * viewMatrix * worldPos;
         }
       `,
       fragmentShader: `
-        uniform float uPower;
+        uniform float uWidth;
         uniform float uIntensity;
         uniform vec3 uColor;
-        uniform vec3 uDir;
+        uniform sampler2D uAlpha;
+        varying vec2 vUv;
         varying vec3 vNormal;
         varying vec3 vViewDir;
         void main() {
-          float fresnel = pow(1.0 - max(dot(vNormal, vViewDir), 0.0), uPower);
-          float dirTerm = pow(max(dot(vNormal, uDir), 0.0), 2.2);
-          float alpha = fresnel * dirTerm * uIntensity;
+          float alphaMask = texture2D(uAlpha, vUv).a;
+          float viewTilt = (vViewDir.x + vViewDir.y) * 0.5;
+          float bandPos = (vUv.x * 0.65 + vUv.y * 0.65) + viewTilt * 0.6;
+          float center = 0.55;
+          float halfWidth = uWidth * 0.5;
+          float band = 1.0 - smoothstep(center - halfWidth, center + halfWidth, bandPos);
+          float fresnel = pow(1.0 - max(dot(vNormal, vViewDir), 0.0), 1.8);
+          float alpha = band * fresnel * uIntensity * alphaMask;
           gl_FragColor = vec4(uColor, alpha);
         }
       `,
     });
     return material;
-  }, []);
+  }, [texture]);
+  useEffect(() => {
+    glintMaterial.uniforms.uWidth.value = Math.max(0.05, Math.min(0.5, sheenPower));
+    glintMaterial.uniforms.uIntensity.value = sheenIntensity;
+  }, [glintMaterial, sheenPower, sheenIntensity]);
   const grainTexture = useMemo(() => {
     const size = 256;
     const canvas = document.createElement("canvas");
@@ -166,15 +188,27 @@ function CardPlane({ textureUrl }: { textureUrl?: string | null }) {
           />
         </mesh>
       ) : null}
-      <mesh geometry={geometry} position={[0, 0, 0.0015]} renderOrder={2}>
-        <primitive object={glintMaterial} attach="material" />
-      </mesh>
+      {linenOverlayTexture ? (
+        <mesh geometry={geometry} position={[0, 0, 0.0018]} renderOrder={2}>
+          <meshBasicMaterial
+            map={linenOverlayTexture}
+            blending={MultiplyBlending}
+            opacity={0.22}
+            transparent
+            depthWrite={false}
+            side={DoubleSide}
+            alphaMap={texture}
+            alphaTest={0.5}
+          />
+        </mesh>
+      ) : null}
+      {/* Glint layer temporarily disabled. */}
       {grainTexture ? (
-        <mesh geometry={geometry} position={[0, 0, 0.0025]} renderOrder={3}>
+        <mesh geometry={geometry} position={[0, 0, 0.0032]} renderOrder={4}>
           <meshBasicMaterial
             map={grainTexture}
             blending={MultiplyBlending}
-            opacity={0.16}
+            opacity={0.22}
             transparent
             depthWrite={false}
             side={DoubleSide}
@@ -191,10 +225,14 @@ function WebglScene({
   textureUrl,
   cardGroupRef,
   targetRotationRef,
+  sheenPower,
+  sheenIntensity,
 }: {
   textureUrl?: string | null;
   cardGroupRef: RefObject<Group>;
   targetRotationRef: MutableRefObject<{ x: number; y: number }>;
+  sheenPower: number;
+  sheenIntensity: number;
 }) {
   useFrame(() => {
     const group = cardGroupRef.current;
@@ -205,13 +243,19 @@ function WebglScene({
 
   return (
     <group ref={cardGroupRef}>
-      <CardPlane textureUrl={textureUrl} />
+      <CardPlane
+        textureUrl={textureUrl}
+        sheenPower={sheenPower}
+        sheenIntensity={sheenIntensity}
+      />
     </group>
   );
 }
 
 export default function WebglPreview({ className, textureUrl }: WebglPreviewProps) {
   const rootClassName = className ? `${styles.root} ${className}` : styles.root;
+  const { sheenAngle, sheenIntensity } = useWebglPreviewSettings();
+  const glintPower = Math.max(0.06, Math.min(0.45, 0.55 - sheenAngle * 0.35));
   const containerRef = useRef<HTMLDivElement | null>(null);
   const cardGroupRef = useRef<Group | null>(null);
   const dragStateRef = useRef<{
@@ -292,12 +336,19 @@ export default function WebglPreview({ className, textureUrl }: WebglPreviewProp
         }}
       >
         <ambientLight intensity={0.4} />
-        <directionalLight position={[2.5, 3.2, 4]} intensity={1.0} />
-        <directionalLight position={[-2.5, -1.5, 3.5]} intensity={0.5} />
+        <spotLight
+          position={[2.5, 3.2, 4]}
+          intensity={sheenIntensity}
+          angle={sheenAngle}
+          penumbra={0.45}
+        />
+        <directionalLight position={[-2.5, -1.5, 3.5]} intensity={0.4} />
         <WebglScene
           textureUrl={textureUrl}
           cardGroupRef={cardGroupRef}
           targetRotationRef={targetRotationRef}
+          sheenPower={glintPower}
+          sheenIntensity={sheenIntensity}
         />
       </Canvas>
     </div>

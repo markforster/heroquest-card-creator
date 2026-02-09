@@ -10,3 +10,4 @@ export const USE_ZIP_COMPRESSION = true;
 
 export const USE_WEBGL_PREVIEW = false;
 export const SHOW_WEBGL_TOGGLE = true;
+export const SHOW_WEBGL_SHEEN_CONTROLS = false;
