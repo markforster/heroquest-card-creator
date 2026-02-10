@@ -51,7 +51,7 @@ const BLUEPRINT_DELAY_MS = 20;
 const ENABLE_SHEEN = true;
 const SHEEN_INTENSITY_SCALE = 0.25;
 const ENABLE_DEPTH = true;
-const INVERT_VERTICAL_DRAG = true;
+const INVERT_VERTICAL_DRAG = false;
 const CARD_THICKNESS = 0.0012;
 const CARD_CORNER_RADIUS = 28 / 750;
 const CARD_EDGE_INSET = 0.0085;
@@ -368,8 +368,7 @@ function WebglScene({
     if (!yawGroup || !pitchGroup) return;
     pitchGroup.rotation.x +=
       (targetRotationRef.current.x - pitchGroup.rotation.x) * ROTATION_SMOOTHING;
-    yawGroup.rotation.y +=
-      (targetRotationRef.current.y - yawGroup.rotation.y) * ROTATION_SMOOTHING;
+    yawGroup.rotation.y += (targetRotationRef.current.y - yawGroup.rotation.y) * ROTATION_SMOOTHING;
   });
 
   return (
@@ -524,7 +523,7 @@ export default function WebglPreview({
 
   const normalizeAngle = (value: number) => {
     const twoPi = Math.PI * 2;
-    return ((value + Math.PI) % twoPi + twoPi) % twoPi - Math.PI;
+    return ((((value + Math.PI) % twoPi) + twoPi) % twoPi) - Math.PI;
   };
 
   const applyResistance = (value: number, maxDeg: number) => {
