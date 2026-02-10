@@ -8,8 +8,10 @@ import {
   AdditiveBlending,
   BackSide,
   CanvasTexture,
+  ExtrudeGeometry,
   FrontSide,
   LinearFilter,
+  LinearMipmapLinearFilter,
   MultiplyBlending,
   NoToneMapping,
   NoColorSpace,
@@ -17,6 +19,7 @@ import {
   RepeatWrapping,
   SRGBColorSpace,
   ShaderMaterial,
+  Shape,
   Texture,
   TextureLoader,
   Vector3,
@@ -45,7 +48,16 @@ const ROTATION_SMOOTHING = 0.12;
 const LINEN_NORMAL_MAP = linenNormal3;
 const USE_DEBUG_NORMAL_MAP = false;
 const BLUEPRINT_DELAY_MS = 20;
-const ENABLE_SHEEN = false;
+const ENABLE_SHEEN = true;
+const SHEEN_INTENSITY_SCALE = 0.25;
+const ENABLE_DEPTH = true;
+const CARD_THICKNESS = 0.0012;
+const CARD_CORNER_RADIUS = 28 / 750;
+const CARD_EDGE_INSET = 0.0085;
+const EDGE_COLOR = "#310101";
+const EDGE_ROUGHNESS = 0.72;
+const EDGE_METALNESS = 0.05;
+const EDGE_CLEARCOAT = 0.15;
 
 function CardPlane({
   texture,
@@ -53,12 +65,14 @@ function CardPlane({
   sheenIntensity,
   side,
   depthSign,
+  depthOffset,
 }: {
   texture: Texture;
   sheenPower: number;
   sheenIntensity: number;
   side: typeof FrontSide | typeof BackSide;
   depthSign: 1 | -1;
+  depthOffset: number;
 }) {
   const geometry = useMemo(() => new PlaneGeometry(1, CARD_ASPECT), []);
   const linenNormalTexture = useLoader(TextureLoader, LINEN_NORMAL_MAP.src);
@@ -101,6 +115,7 @@ function CardPlane({
       transparent: true,
       depthWrite: false,
       blending: AdditiveBlending,
+      side,
       uniforms: {
         uWidth: { value: 0.18 },
         uIntensity: { value: 1.6 },
@@ -141,10 +156,10 @@ function CardPlane({
       `,
     });
     return material;
-  }, [texture]);
+  }, [side, texture]);
   useEffect(() => {
     glintMaterial.uniforms.uWidth.value = Math.max(0.05, Math.min(0.5, sheenPower));
-    glintMaterial.uniforms.uIntensity.value = sheenIntensity;
+    glintMaterial.uniforms.uIntensity.value = sheenIntensity * SHEEN_INTENSITY_SCALE;
   }, [glintMaterial, sheenPower, sheenIntensity]);
   const grainTexture = useMemo(() => {
     const size = 256;
@@ -178,7 +193,7 @@ function CardPlane({
 
   return (
     <group scale={[scale, scale, 1]}>
-      <mesh geometry={geometry}>
+      <mesh geometry={geometry} position={[0, 0, depthOffset]}>
         <meshPhysicalMaterial
           map={texture}
           emissiveMap={texture}
@@ -196,7 +211,11 @@ function CardPlane({
         />
       </mesh>
       {activeNormalTexture ? (
-        <mesh geometry={geometry} position={[0, 0, 0.001 * depthSign]} renderOrder={1}>
+        <mesh
+          geometry={geometry}
+          position={[0, 0, depthOffset + 0.001 * depthSign]}
+          renderOrder={1}
+        >
           <meshPhysicalMaterial
             color="#ffffff"
             transparent
@@ -217,12 +236,20 @@ function CardPlane({
       ) : null}
       {/* Linen overlay removed; using normal map for visible grain response. */}
       {ENABLE_SHEEN ? (
-        <mesh geometry={geometry} position={[0, 0, 0.0022 * depthSign]} renderOrder={3}>
+        <mesh
+          geometry={geometry}
+          position={[0, 0, depthOffset + 0.0022 * depthSign]}
+          renderOrder={3}
+        >
           <primitive object={glintMaterial} attach="material" />
         </mesh>
       ) : null}
       {grainTexture ? (
-        <mesh geometry={geometry} position={[0, 0, 0.0032 * depthSign]} renderOrder={4}>
+        <mesh
+          geometry={geometry}
+          position={[0, 0, depthOffset + 0.0032 * depthSign]}
+          renderOrder={4}
+        >
           <meshBasicMaterial
             map={grainTexture}
             blending={MultiplyBlending}
@@ -256,6 +283,84 @@ function WebglScene({
   sheenPower: number;
   sheenIntensity: number;
 }) {
+  const { width, height, gl } = useThree((state) => ({
+    width: state.viewport.width,
+    height: state.viewport.height,
+    gl: state.gl,
+  }));
+  const scale = Math.min(width, height / CARD_ASPECT) * 1.0;
+  const depthGeometry = useMemo(() => {
+    if (!ENABLE_DEPTH) return null;
+    const width = Math.max(0.1, 1 - CARD_EDGE_INSET * 2);
+    const height = Math.max(0.1, CARD_ASPECT - CARD_EDGE_INSET * 2);
+    const radius = Math.max(
+      0.001,
+      Math.min(CARD_CORNER_RADIUS - CARD_EDGE_INSET, Math.min(width, height) * 0.5),
+    );
+    const shape = new Shape();
+    const left = -width / 2;
+    const right = width / 2;
+    const top = height / 2;
+    const bottom = -height / 2;
+    shape.moveTo(left + radius, bottom);
+    shape.lineTo(right - radius, bottom);
+    shape.quadraticCurveTo(right, bottom, right, bottom + radius);
+    shape.lineTo(right, top - radius);
+    shape.quadraticCurveTo(right, top, right - radius, top);
+    shape.lineTo(left + radius, top);
+    shape.quadraticCurveTo(left, top, left, top - radius);
+    shape.lineTo(left, bottom + radius);
+    shape.quadraticCurveTo(left, bottom, left + radius, bottom);
+    const geometry = new ExtrudeGeometry(shape, {
+      depth: CARD_THICKNESS,
+      bevelEnabled: false,
+      steps: 1,
+      curveSegments: 8,
+    });
+    geometry.translate(0, 0, -CARD_THICKNESS / 2);
+    return geometry;
+  }, []);
+
+  const depthMaterial = useMemo(
+    () => ({
+      color: EDGE_COLOR,
+      roughness: EDGE_ROUGHNESS,
+      metalness: EDGE_METALNESS,
+      clearcoat: EDGE_CLEARCOAT,
+      clearcoatRoughness: 0.4,
+    }),
+    [],
+  );
+  const capMaterial = useMemo(
+    () => ({
+      visible: false,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      depthTest: false,
+    }),
+    [],
+  );
+
+  useEffect(() => {
+    const configureTexture = (texture: Texture, flipX: boolean) => {
+      texture.colorSpace = SRGBColorSpace;
+      texture.premultiplyAlpha = true;
+      texture.wrapS = RepeatWrapping;
+      texture.wrapT = RepeatWrapping;
+      const repeatX = Math.abs(texture.repeat.x || 1) || 1;
+      texture.repeat.set(flipX ? -repeatX : repeatX, texture.repeat.y || 1);
+      texture.offset.set(flipX ? 1 : 0, texture.offset.y || 0);
+      texture.generateMipmaps = true;
+      texture.minFilter = LinearMipmapLinearFilter;
+      texture.magFilter = LinearFilter;
+      texture.anisotropy = Math.min(gl.capabilities.getMaxAnisotropy?.() ?? 1, 8);
+      texture.needsUpdate = true;
+    };
+    configureTexture(frontTexture, false);
+    configureTexture(backTexture, true);
+  }, [backTexture, frontTexture, gl]);
+
   useFrame(() => {
     const yawGroup = yawGroupRef.current;
     const pitchGroup = pitchGroupRef.current;
@@ -269,12 +374,21 @@ function WebglScene({
   return (
     <group ref={yawGroupRef}>
       <group ref={pitchGroupRef}>
+        {depthGeometry ? (
+          <group scale={[scale, scale, 1]}>
+            <mesh geometry={depthGeometry} renderOrder={0}>
+              <meshBasicMaterial {...capMaterial} />
+              <meshPhysicalMaterial {...depthMaterial} />
+            </mesh>
+          </group>
+        ) : null}
         <CardPlane
           texture={frontTexture}
           sheenPower={sheenPower}
           sheenIntensity={sheenIntensity}
           side={FrontSide}
           depthSign={1}
+          depthOffset={CARD_THICKNESS / 2 + 0.002}
         />
         <CardPlane
           texture={backTexture}
@@ -282,6 +396,7 @@ function WebglScene({
           sheenIntensity={sheenIntensity}
           side={BackSide}
           depthSign={-1}
+          depthOffset={-(CARD_THICKNESS / 2 + 0.002)}
         />
       </group>
     </group>
@@ -375,20 +490,6 @@ export default function WebglPreview({
     frontCanvasTexture && isReadyForFrontCanvas ? frontCanvasTexture : fallbackFrontTexture;
   const activeBackTexture =
     backCanvasTexture && isReadyForBackCanvas ? backCanvasTexture : fallbackBackTexture;
-  useEffect(() => {
-    const configureTexture = (texture: Texture, flipX: boolean) => {
-      texture.colorSpace = SRGBColorSpace;
-      texture.premultiplyAlpha = true;
-      texture.wrapS = RepeatWrapping;
-      texture.wrapT = RepeatWrapping;
-      const repeatX = Math.abs(texture.repeat.x || 1) || 1;
-      texture.repeat.set(flipX ? -repeatX : repeatX, texture.repeat.y || 1);
-      texture.offset.set(flipX ? 1 : 0, texture.offset.y || 0);
-      texture.needsUpdate = true;
-    };
-    configureTexture(activeFrontTexture, false);
-    configureTexture(activeBackTexture, true);
-  }, [activeFrontTexture, activeBackTexture]);
   const dragStateRef = useRef<{
     active: boolean;
     startX: number;

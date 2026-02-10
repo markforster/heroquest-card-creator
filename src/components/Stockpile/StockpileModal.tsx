@@ -254,6 +254,7 @@ export default function StockpileModal({
     faceCounts,
     visibleCollectionIds,
     eligibleIdSet,
+    overallCount,
   } = useMemo(() => {
     const isFrontCard = (card: CardRecord) => {
       const template = cardTemplatesById[card.templateId];
@@ -287,35 +288,8 @@ export default function StockpileModal({
       base = base.filter((card) => card.nameLower.includes(q));
     }
 
-    if (activeFilter.type === "collection") {
-      const collection = collections.find((item) => item.id === activeFilter.id);
-      if (!collection) {
-        return {
-          filteredCards: base,
-          collectionCounts: new Map<string, number>(),
-          unfiledCount: 0,
-          typeCounts: new Map<string, number>(),
-          totalCount: base.length,
-          faceCounts: { front: 0, back: 0 },
-          visibleCollectionIds: new Set<string>(),
-          eligibleIdSet: new Set<string>(),
-        };
-      }
-      const allowed = new Set(collection.cardIds);
-      base = base.filter((card) => allowed.has(card.id));
-    }
-
-    if (activeFilter.type === "unfiled") {
-      const membershipIndex = new Map<string, number>();
-      collections.forEach((collection) => {
-        collection.cardIds.forEach((cardId) => {
-          membershipIndex.set(cardId, (membershipIndex.get(cardId) ?? 0) + 1);
-        });
-      });
-      base = base.filter((card) => !membershipIndex.has(card.id));
-    }
-
-    const cardIdSet = new Set(base.map((card) => card.id));
+    const countsBase = base;
+    const cardIdSet = new Set(countsBase.map((card) => card.id));
     const counts = new Map<string, number>();
     const membershipIndex = new Map<string, number>();
     const eligibleBase = isPairMode
@@ -340,19 +314,43 @@ export default function StockpileModal({
       }
     });
 
-    const unfiled = base.reduce((total, card) => {
+    const unfiled = countsBase.reduce((total, card) => {
       return membershipIndex.has(card.id) ? total : total + 1;
     }, 0);
 
+    let filteredBase = base;
+    if (activeFilter.type === "collection") {
+      const collection = collections.find((item) => item.id === activeFilter.id);
+      if (!collection) {
+        return {
+          filteredCards: filteredBase,
+          collectionCounts: counts,
+          unfiledCount: unfiled,
+          typeCounts: new Map<string, number>(),
+          totalCount: filteredBase.length,
+          faceCounts: { front: 0, back: 0 },
+          visibleCollectionIds,
+          eligibleIdSet,
+          overallCount: countsBase.length,
+        };
+      }
+      const allowed = new Set(collection.cardIds);
+      filteredBase = filteredBase.filter((card) => allowed.has(card.id));
+    }
+
+    if (activeFilter.type === "unfiled") {
+      filteredBase = filteredBase.filter((card) => !membershipIndex.has(card.id));
+    }
+
     const templateCounts = new Map<string, number>();
-    base.forEach((card) => {
+    filteredBase.forEach((card) => {
       templateCounts.set(card.templateId, (templateCounts.get(card.templateId) ?? 0) + 1);
     });
     const nextFaceCounts = {
       front: 0,
       back: 0,
     };
-    base.forEach((card) => {
+    filteredBase.forEach((card) => {
       const template = cardTemplatesById[card.templateId];
       if (!template) return;
       const effectiveFace = card.face ?? template.defaultFace;
@@ -363,7 +361,7 @@ export default function StockpileModal({
       }
     });
 
-    let filtered = base;
+    let filtered = filteredBase;
     if (templateFilter === "front") {
       filtered = filtered.filter((card) => {
         const template = cardTemplatesById[card.templateId];
@@ -399,10 +397,11 @@ export default function StockpileModal({
       collectionCounts: counts,
       unfiledCount: unfiled,
       typeCounts: templateCounts,
-      totalCount: base.length,
+      totalCount: filteredBase.length,
       faceCounts: nextFaceCounts,
       visibleCollectionIds,
       eligibleIdSet,
+      overallCount: countsBase.length,
     };
   }, [
     cards,
@@ -1132,7 +1131,7 @@ export default function StockpileModal({
                 <span
                   className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}
                 >
-                  {totalCount}
+                  {overallCount}
                 </span>
               ) : selectedIds.length > 0 ? (
                 <span className={styles.stockpileSelectedDot} aria-hidden="true" />

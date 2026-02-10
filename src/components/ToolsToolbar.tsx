@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Move, RotateCw, Square } from "lucide-react";
+import { Box, Move, Rotate3d, Square } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
@@ -92,7 +92,7 @@ export default function ToolsToolbar() {
             title={t("label.webglRotate")}
             onClick={() => setInteractionMode("orbit")}
           >
-            <RotateCw aria-hidden="true" />
+            <Rotate3d aria-hidden="true" />
           </button>
         </div>
       ) : null}
