@@ -51,6 +51,7 @@ const BLUEPRINT_DELAY_MS = 20;
 const ENABLE_SHEEN = true;
 const SHEEN_INTENSITY_SCALE = 0.25;
 const ENABLE_DEPTH = true;
+const INVERT_VERTICAL_DRAG = true;
 const CARD_THICKNESS = 0.0012;
 const CARD_CORNER_RADIUS = 28 / 750;
 const CARD_EDGE_INSET = 0.0085;
@@ -509,6 +510,9 @@ export default function WebglPreview({
 
   useEffect(() => {
     if (interactionMode === "pan") {
+      if (yawGroupRef.current) {
+        yawGroupRef.current.rotation.y = normalizeAngle(yawGroupRef.current.rotation.y);
+      }
       targetRotationRef.current = { x: 0, y: 0 };
     }
   }, [interactionMode]);
@@ -516,6 +520,11 @@ export default function WebglPreview({
   const clampRotation = (value: number, maxDeg: number) => {
     const max = (maxDeg * Math.PI) / 180;
     return Math.max(-max, Math.min(max, value));
+  };
+
+  const normalizeAngle = (value: number) => {
+    const twoPi = Math.PI * 2;
+    return ((value + Math.PI) % twoPi + twoPi) % twoPi - Math.PI;
   };
 
   const applyResistance = (value: number, maxDeg: number) => {
@@ -549,8 +558,9 @@ export default function WebglPreview({
     const yawRange = isPanMode ? maxY : Math.PI;
     const dx = (event.clientX - drag.startX) / Math.max(rect.width, 1);
     const dy = (event.clientY - drag.startY) / Math.max(rect.height, 1);
+    const verticalSign = INVERT_VERTICAL_DRAG ? -1 : 1;
     const nextY = drag.startRotY + dx * yawRange * 2;
-    const nextX = drag.startRotX + dy * maxX * 2;
+    const nextX = drag.startRotX + dy * maxX * 2 * verticalSign;
     if (isPanMode) {
       targetRotationRef.current = {
         x: clampRotation(applyResistance(nextX, MAX_ROTATION_X_DEG), MAX_ROTATION_X_DEG),
