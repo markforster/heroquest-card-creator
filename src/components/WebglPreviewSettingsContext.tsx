@@ -2,11 +2,15 @@
 
 import { createContext, useContext, useMemo, useState } from "react";
 
+export type WebglInteractionMode = "pan" | "orbit";
+
 type WebglPreviewSettingsValue = {
   sheenAngle: number;
   setSheenAngle: (value: number) => void;
   sheenIntensity: number;
   setSheenIntensity: (value: number) => void;
+  interactionMode: WebglInteractionMode;
+  setInteractionMode: (value: WebglInteractionMode) => void;
 };
 
 const WebglPreviewSettingsContext = createContext<WebglPreviewSettingsValue | null>(null);
@@ -14,6 +18,7 @@ const WebglPreviewSettingsContext = createContext<WebglPreviewSettingsValue | nu
 export function WebglPreviewSettingsProvider({ children }: { children: React.ReactNode }) {
   const [sheenAngle, setSheenAngle] = useState(0.45);
   const [sheenIntensity, setSheenIntensity] = useState(1.1);
+  const [interactionMode, setInteractionMode] = useState<WebglInteractionMode>("pan");
 
   const value = useMemo(
     () => ({
@@ -21,8 +26,10 @@ export function WebglPreviewSettingsProvider({ children }: { children: React.Rea
       setSheenAngle,
       sheenIntensity,
       setSheenIntensity,
+      interactionMode,
+      setInteractionMode,
     }),
-    [sheenAngle, sheenIntensity],
+    [sheenAngle, sheenIntensity, interactionMode],
   );
 
   return (

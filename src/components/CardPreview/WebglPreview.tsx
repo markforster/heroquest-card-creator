@@ -6,8 +6,9 @@ import type { MutableRefObject, RefObject } from "react";
 import type { Group } from "three";
 import {
   AdditiveBlending,
+  BackSide,
   CanvasTexture,
-  DoubleSide,
+  FrontSide,
   LinearFilter,
   MultiplyBlending,
   NoToneMapping,
@@ -30,8 +31,10 @@ import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContex
 
 type WebglPreviewProps = {
   className?: string;
-  textureCanvas?: HTMLCanvasElement | null;
-  textureVersion?: number;
+  frontTextureCanvas?: HTMLCanvasElement | null;
+  frontTextureVersion?: number;
+  backTextureCanvas?: HTMLCanvasElement | null;
+  backTextureVersion?: number;
   fallbackTextureSrc?: string;
 };
 
@@ -42,19 +45,22 @@ const ROTATION_SMOOTHING = 0.12;
 const LINEN_NORMAL_MAP = linenNormal3;
 const USE_DEBUG_NORMAL_MAP = false;
 const BLUEPRINT_DELAY_MS = 20;
+const ENABLE_SHEEN = false;
 
 function CardPlane({
   texture,
   sheenPower,
   sheenIntensity,
+  side,
+  depthSign,
 }: {
   texture: Texture;
   sheenPower: number;
   sheenIntensity: number;
+  side: typeof FrontSide | typeof BackSide;
+  depthSign: 1 | -1;
 }) {
   const geometry = useMemo(() => new PlaneGeometry(1, CARD_ASPECT), []);
-  texture.colorSpace = SRGBColorSpace;
-  texture.premultiplyAlpha = true;
   const linenNormalTexture = useLoader(TextureLoader, LINEN_NORMAL_MAP.src);
   linenNormalTexture.colorSpace = NoColorSpace;
   linenNormalTexture.wrapS = RepeatWrapping;
@@ -184,13 +190,13 @@ function CardPlane({
           metalness={0.02}
           clearcoat={0.3}
           clearcoatRoughness={0.25}
-          side={DoubleSide}
+          side={side}
           transparent
           alphaTest={0.5}
         />
       </mesh>
       {activeNormalTexture ? (
-        <mesh geometry={geometry} position={[0, 0, 0.001]} renderOrder={1}>
+        <mesh geometry={geometry} position={[0, 0, 0.001 * depthSign]} renderOrder={1}>
           <meshPhysicalMaterial
             color="#ffffff"
             transparent
@@ -203,25 +209,27 @@ function CardPlane({
             metalness={0}
             clearcoat={1}
             clearcoatRoughness={0.2}
-            side={DoubleSide}
+            side={side}
             alphaMap={texture}
             alphaTest={0.5}
           />
         </mesh>
       ) : null}
       {/* Linen overlay removed; using normal map for visible grain response. */}
-      <mesh geometry={geometry} position={[0, 0, 0.0022]} renderOrder={3}>
-        <primitive object={glintMaterial} attach="material" />
-      </mesh>
+      {ENABLE_SHEEN ? (
+        <mesh geometry={geometry} position={[0, 0, 0.0022 * depthSign]} renderOrder={3}>
+          <primitive object={glintMaterial} attach="material" />
+        </mesh>
+      ) : null}
       {grainTexture ? (
-        <mesh geometry={geometry} position={[0, 0, 0.0032]} renderOrder={4}>
+        <mesh geometry={geometry} position={[0, 0, 0.0032 * depthSign]} renderOrder={4}>
           <meshBasicMaterial
             map={grainTexture}
             blending={MultiplyBlending}
             opacity={0.22}
             transparent
             depthWrite={false}
-            side={DoubleSide}
+            side={side}
             alphaMap={texture}
             alphaTest={0.5}
           />
@@ -232,14 +240,16 @@ function CardPlane({
 }
 
 function WebglScene({
-  texture,
+  frontTexture,
+  backTexture,
   yawGroupRef,
   pitchGroupRef,
   targetRotationRef,
   sheenPower,
   sheenIntensity,
 }: {
-  texture: Texture;
+  frontTexture: Texture;
+  backTexture: Texture;
   yawGroupRef: RefObject<Group>;
   pitchGroupRef: RefObject<Group>;
   targetRotationRef: MutableRefObject<{ x: number; y: number }>;
@@ -259,7 +269,20 @@ function WebglScene({
   return (
     <group ref={yawGroupRef}>
       <group ref={pitchGroupRef}>
-        <CardPlane texture={texture} sheenPower={sheenPower} sheenIntensity={sheenIntensity} />
+        <CardPlane
+          texture={frontTexture}
+          sheenPower={sheenPower}
+          sheenIntensity={sheenIntensity}
+          side={FrontSide}
+          depthSign={1}
+        />
+        <CardPlane
+          texture={backTexture}
+          sheenPower={sheenPower}
+          sheenIntensity={sheenIntensity}
+          side={BackSide}
+          depthSign={-1}
+        />
       </group>
     </group>
   );
@@ -267,56 +290,105 @@ function WebglScene({
 
 export default function WebglPreview({
   className,
-  textureCanvas,
-  textureVersion = 0,
+  frontTextureCanvas,
+  frontTextureVersion = 0,
+  backTextureCanvas,
+  backTextureVersion = 0,
   fallbackTextureSrc,
 }: WebglPreviewProps) {
   const rootClassName = className ? `${styles.root} ${className}` : styles.root;
-  const { sheenAngle, sheenIntensity } = useWebglPreviewSettings();
+  const { sheenAngle, sheenIntensity, interactionMode } = useWebglPreviewSettings();
   const glintPower = Math.max(0.06, Math.min(0.45, 0.55 - sheenAngle * 0.35));
   const containerRef = useRef<HTMLDivElement | null>(null);
   const yawGroupRef = useRef<Group | null>(null);
   const pitchGroupRef = useRef<Group | null>(null);
   const fallbackTexture = useLoader(TextureLoader, fallbackTextureSrc ?? blueprintFallback.src);
-  fallbackTexture.colorSpace = SRGBColorSpace;
-  fallbackTexture.premultiplyAlpha = true;
-  const [isReadyForCanvas, setIsReadyForCanvas] = useState(false);
-  const [hasRenderedOnce, setHasRenderedOnce] = useState(false);
-  const canvasTexture = useMemo(() => {
-    if (!textureCanvas) return null;
-    const tex = new CanvasTexture(textureCanvas);
-    tex.colorSpace = SRGBColorSpace;
-    tex.premultiplyAlpha = true;
-    return tex;
-  }, [textureCanvas]);
+  const fallbackFrontTexture = useMemo(() => fallbackTexture.clone(), [fallbackTexture]);
+  const fallbackBackTexture = useMemo(() => fallbackTexture.clone(), [fallbackTexture]);
+  const [isReadyForFrontCanvas, setIsReadyForFrontCanvas] = useState(false);
+  const [hasFrontRenderedOnce, setHasFrontRenderedOnce] = useState(false);
+  const [isReadyForBackCanvas, setIsReadyForBackCanvas] = useState(false);
+  const [hasBackRenderedOnce, setHasBackRenderedOnce] = useState(false);
+  const frontCanvasTexture = useMemo(() => {
+    if (!frontTextureCanvas) return null;
+    return new CanvasTexture(frontTextureCanvas);
+  }, [frontTextureCanvas]);
+  const backCanvasTexture = useMemo(() => {
+    if (!backTextureCanvas) return null;
+    return new CanvasTexture(backTextureCanvas);
+  }, [backTextureCanvas]);
   useEffect(() => {
-    if (canvasTexture) {
-      canvasTexture.needsUpdate = true;
+    if (frontCanvasTexture) {
+      frontCanvasTexture.needsUpdate = true;
     }
-  }, [canvasTexture, textureVersion]);
+  }, [frontCanvasTexture, frontTextureVersion]);
   useEffect(() => {
-    if (!textureCanvas) {
-      setIsReadyForCanvas(false);
+    if (backCanvasTexture) {
+      backCanvasTexture.needsUpdate = true;
+    }
+  }, [backCanvasTexture, backTextureVersion]);
+  useEffect(() => {
+    if (!frontTextureCanvas) {
+      setIsReadyForFrontCanvas(false);
       return;
     }
-    if (hasRenderedOnce) {
-      setIsReadyForCanvas(true);
+    if (hasFrontRenderedOnce) {
+      setIsReadyForFrontCanvas(true);
       return;
     }
-    setIsReadyForCanvas(false);
+    setIsReadyForFrontCanvas(false);
     const timeoutId = window.setTimeout(() => {
-      setIsReadyForCanvas(true);
+      setIsReadyForFrontCanvas(true);
     }, BLUEPRINT_DELAY_MS);
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [textureCanvas, textureVersion, hasRenderedOnce]);
+  }, [frontTextureCanvas, frontTextureVersion, hasFrontRenderedOnce]);
   useEffect(() => {
-    if (!hasRenderedOnce && canvasTexture && isReadyForCanvas) {
-      setHasRenderedOnce(true);
+    if (!backTextureCanvas) {
+      setIsReadyForBackCanvas(false);
+      return;
     }
-  }, [canvasTexture, hasRenderedOnce, isReadyForCanvas]);
-  const activeTexture = canvasTexture && isReadyForCanvas ? canvasTexture : fallbackTexture;
+    if (hasBackRenderedOnce) {
+      setIsReadyForBackCanvas(true);
+      return;
+    }
+    setIsReadyForBackCanvas(false);
+    const timeoutId = window.setTimeout(() => {
+      setIsReadyForBackCanvas(true);
+    }, BLUEPRINT_DELAY_MS);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [backTextureCanvas, backTextureVersion, hasBackRenderedOnce]);
+  useEffect(() => {
+    if (!hasFrontRenderedOnce && frontCanvasTexture && isReadyForFrontCanvas) {
+      setHasFrontRenderedOnce(true);
+    }
+  }, [frontCanvasTexture, hasFrontRenderedOnce, isReadyForFrontCanvas]);
+  useEffect(() => {
+    if (!hasBackRenderedOnce && backCanvasTexture && isReadyForBackCanvas) {
+      setHasBackRenderedOnce(true);
+    }
+  }, [backCanvasTexture, hasBackRenderedOnce, isReadyForBackCanvas]);
+  const activeFrontTexture =
+    frontCanvasTexture && isReadyForFrontCanvas ? frontCanvasTexture : fallbackFrontTexture;
+  const activeBackTexture =
+    backCanvasTexture && isReadyForBackCanvas ? backCanvasTexture : fallbackBackTexture;
+  useEffect(() => {
+    const configureTexture = (texture: Texture, flipX: boolean) => {
+      texture.colorSpace = SRGBColorSpace;
+      texture.premultiplyAlpha = true;
+      texture.wrapS = RepeatWrapping;
+      texture.wrapT = RepeatWrapping;
+      const repeatX = Math.abs(texture.repeat.x || 1) || 1;
+      texture.repeat.set(flipX ? -repeatX : repeatX, texture.repeat.y || 1);
+      texture.offset.set(flipX ? 1 : 0, texture.offset.y || 0);
+      texture.needsUpdate = true;
+    };
+    configureTexture(activeFrontTexture, false);
+    configureTexture(activeBackTexture, true);
+  }, [activeFrontTexture, activeBackTexture]);
   const dragStateRef = useRef<{
     active: boolean;
     startX: number;
@@ -332,6 +404,13 @@ export default function WebglPreview({
   });
   const targetRotationRef = useRef({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const isPanMode = interactionMode === "pan";
+
+  useEffect(() => {
+    if (interactionMode === "pan") {
+      targetRotationRef.current = { x: 0, y: 0 };
+    }
+  }, [interactionMode]);
 
   const clampRotation = (value: number, maxDeg: number) => {
     const max = (maxDeg * Math.PI) / 180;
@@ -366,13 +445,21 @@ export default function WebglPreview({
     const rect = containerRef.current.getBoundingClientRect();
     const maxY = (MAX_ROTATION_Y_DEG * Math.PI) / 180;
     const maxX = (MAX_ROTATION_X_DEG * Math.PI) / 180;
+    const yawRange = isPanMode ? maxY : Math.PI;
     const dx = (event.clientX - drag.startX) / Math.max(rect.width, 1);
     const dy = (event.clientY - drag.startY) / Math.max(rect.height, 1);
-    const nextY = drag.startRotY + dx * maxY * 2;
+    const nextY = drag.startRotY + dx * yawRange * 2;
     const nextX = drag.startRotX + dy * maxX * 2;
+    if (isPanMode) {
+      targetRotationRef.current = {
+        x: clampRotation(applyResistance(nextX, MAX_ROTATION_X_DEG), MAX_ROTATION_X_DEG),
+        y: clampRotation(applyResistance(nextY, MAX_ROTATION_Y_DEG), MAX_ROTATION_Y_DEG),
+      };
+      return;
+    }
     targetRotationRef.current = {
-      x: clampRotation(applyResistance(nextX, MAX_ROTATION_X_DEG), MAX_ROTATION_X_DEG),
-      y: clampRotation(applyResistance(nextY, MAX_ROTATION_Y_DEG), MAX_ROTATION_Y_DEG),
+      x: clampRotation(nextX, MAX_ROTATION_X_DEG),
+      y: nextY,
     };
   };
 
@@ -381,7 +468,9 @@ export default function WebglPreview({
     containerRef.current.releasePointerCapture(event.pointerId);
     dragStateRef.current.active = false;
     setIsDragging(false);
-    targetRotationRef.current = { x: 0, y: 0 };
+    if (isPanMode) {
+      targetRotationRef.current = { x: 0, y: 0 };
+    }
   };
 
   return (
@@ -413,7 +502,8 @@ export default function WebglPreview({
         />
         <directionalLight position={[-2.5, -1.5, 3.5]} intensity={0.4} />
         <WebglScene
-          texture={activeTexture}
+          frontTexture={activeFrontTexture}
+          backTexture={activeBackTexture}
           yawGroupRef={yawGroupRef}
           pitchGroupRef={pitchGroupRef}
           targetRotationRef={targetRotationRef}

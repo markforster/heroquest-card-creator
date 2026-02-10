@@ -1,10 +1,11 @@
 "use client";
 
-import { Box, Square } from "lucide-react";
+import { Box, Move, RotateCw, Square } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { previewRendererFlags, usePreviewRenderer } from "@/components/PreviewRendererContext";
+import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
 function supportsWebgl(): boolean {
@@ -24,6 +25,8 @@ export default function ToolsToolbar() {
   const { previewRenderer, setPreviewRenderer } = usePreviewRenderer();
   const { SHOW_WEBGL_TOGGLE } = previewRendererFlags;
   const [isWebglSupported, setIsWebglSupported] = useState(false);
+  const { interactionMode, setInteractionMode } = useWebglPreviewSettings();
+  const showWebglControls = previewRenderer === "webgl";
 
   useEffect(() => {
     const supported = supportsWebgl();
@@ -65,6 +68,34 @@ export default function ToolsToolbar() {
           <Box aria-hidden="true" />
         </button>
       </div>
+      {showWebglControls ? (
+        <div className={`btn-group-vertical ${styles.toolsToolbarGroup}`} role="group">
+          <button
+            type="button"
+            className={`btn btn-sm btn-outline-light ${styles.toolsToolbarButton} ${
+              interactionMode === "pan" ? "active" : ""
+            }`}
+            aria-pressed={interactionMode === "pan"}
+            aria-label={t("label.webglPan")}
+            title={t("label.webglPan")}
+            onClick={() => setInteractionMode("pan")}
+          >
+            <Move aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm btn-outline-light ${styles.toolsToolbarButton} ${
+              interactionMode === "orbit" ? "active" : ""
+            }`}
+            aria-pressed={interactionMode === "orbit"}
+            aria-label={t("label.webglRotate")}
+            title={t("label.webglRotate")}
+            onClick={() => setInteractionMode("orbit")}
+          >
+            <RotateCw aria-hidden="true" />
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
