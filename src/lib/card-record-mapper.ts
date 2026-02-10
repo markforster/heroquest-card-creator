@@ -9,6 +9,8 @@ export function cardRecordToCardData<T extends TemplateId>(
   const base = {
     title: record.title,
     showTitle: record.showTitle ?? true,
+    face: record.face,
+    pairedWith: record.pairedWith,
     description: record.description,
     imageAssetId: record.imageAssetId,
     imageAssetName: record.imageAssetName,
@@ -80,11 +82,22 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
   name: string,
   data: CardDataByTemplate[T],
 ): Partial<CardRecord> {
+  const face = data.face;
+  let pairedWith = data.pairedWith;
+  if (face === "back") {
+    pairedWith = null;
+  }
+  if (pairedWith && face !== "front") {
+    pairedWith = null;
+  }
+
   const basePatch: Partial<CardRecord> = {
     templateId,
     name,
     title: data.title,
     showTitle: data.showTitle,
+    face,
+    pairedWith,
     description: data.description,
     imageAssetId: data.imageAssetId,
     imageAssetName: data.imageAssetName,

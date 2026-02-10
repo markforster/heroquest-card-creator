@@ -20,7 +20,12 @@ type AppActionsContextValue = {
   currentTemplateName?: string;
   openTemplatePicker: () => void;
   openAssets: () => void;
-  openStockpile: () => void;
+  openStockpile: (options?: {
+    mode?: "manage" | "pair-fronts" | "pair-backs";
+    onConfirmSelection?: (cardIds: string[]) => void;
+    initialSelectedIds?: string[];
+    titleOverride?: string;
+  }) => void;
   openSettings: () => void;
 };
 
@@ -49,6 +54,14 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
   const templatePicker = usePopupState(false);
   const assetsModal = usePopupState(false);
   const stockpileModal = usePopupState(false);
+  const [stockpileMode, setStockpileMode] = useState<
+    "manage" | "pair-fronts" | "pair-backs"
+  >("manage");
+  const [stockpileConfirmHandler, setStockpileConfirmHandler] = useState<
+    ((cardIds: string[]) => void) | null
+  >(null);
+  const [stockpileInitialSelectedIds, setStockpileInitialSelectedIds] = useState<string[]>([]);
+  const [stockpileTitleOverride, setStockpileTitleOverride] = useState<string | null>(null);
   const settingsModal = usePopupState(false);
   const [stockpileRefreshToken, setStockpileRefreshToken] = useState(0);
   const [pendingCard, setPendingCard] = useState<Awaited<ReturnType<typeof getCard>> | null>(null);
@@ -87,7 +100,17 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
         templatePicker.open();
       },
       openAssets: assetsModal.open,
-      openStockpile: stockpileModal.open,
+      openStockpile: (options) => {
+        if (options?.mode) {
+          setStockpileMode(options.mode);
+        } else {
+          setStockpileMode("manage");
+        }
+        setStockpileConfirmHandler(() => options?.onConfirmSelection ?? null);
+        setStockpileInitialSelectedIds(options?.initialSelectedIds ?? []);
+        setStockpileTitleOverride(options?.titleOverride ?? null);
+        stockpileModal.open();
+      },
       openSettings: settingsModal.open,
     }),
     [
@@ -118,9 +141,23 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
       />
       <StockpileModal
         isOpen={stockpileModal.isOpen}
-        onClose={stockpileModal.close}
+        onClose={() => {
+          stockpileModal.close();
+          setStockpileMode("manage");
+          setStockpileConfirmHandler(null);
+          setStockpileInitialSelectedIds([]);
+          setStockpileTitleOverride(null);
+        }}
         refreshToken={stockpileRefreshToken}
         activeCardId={activeCardId ?? null}
+        mode={stockpileMode}
+        initialSelectedIds={stockpileInitialSelectedIds}
+        titleOverride={stockpileTitleOverride ?? undefined}
+        onConfirmSelection={
+          stockpileMode === "pair-fronts" || stockpileMode === "pair-backs"
+            ? stockpileConfirmHandler ?? undefined
+            : undefined
+        }
         onLoadCard={async (card) => {
           const currentTemplate = selectedTemplateId;
           const dirty =

@@ -17,6 +17,7 @@ type ModalShellProps = {
   headerActions?: ReactNode;
   /** Optional extra class for the inner panel (e.g. cardsPopover). */
   contentClassName?: string;
+  keepMounted?: boolean;
 };
 
 export default function ModalShell({
@@ -27,9 +28,11 @@ export default function ModalShell({
   footer,
   headerActions,
   contentClassName,
+  keepMounted = false,
 }: ModalShellProps) {
   const { t } = useI18n();
   useEffect(() => {
+    if (!isOpen) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -43,7 +46,7 @@ export default function ModalShell({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen && !keepMounted) return null;
 
   const handleBackdropClick = () => {
     onClose();
@@ -54,7 +57,16 @@ export default function ModalShell({
   };
 
   return (
-    <div className={styles.templatePopoverBackdrop} onClick={handleBackdropClick}>
+    <div
+      className={styles.templatePopoverBackdrop}
+      onClick={handleBackdropClick}
+      aria-hidden={!isOpen}
+      style={
+        !isOpen
+          ? { visibility: "hidden", pointerEvents: "none", opacity: 0 }
+          : undefined
+      }
+    >
       <div
         className={`${styles.templatePopover} modal-content${contentClassName ? ` ${contentClassName}` : ""}`}
         onClick={handleContentClick}

@@ -1,13 +1,24 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Images, Layers, LayoutPanelTop, Settings, SquareStack } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Images,
+  Layers,
+  LayoutPanelTop,
+  LayoutTemplate,
+  Settings,
+  SquareStack,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
+import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import { inspectorModeFlags, useInspectorMode } from "@/components/InspectorModeContext";
 import { previewModeFlags, usePreviewMode } from "@/components/PreviewModeContext";
 import LanguageMenu from "@/components/LanguageMenu";
+import KeyBinding from "@/components/KeyBinding";
 import { useI18n } from "@/i18n/I18nProvider";
 
 const COLLAPSE_MEDIA_QUERY = "(max-width: 1280px)";
@@ -35,7 +46,11 @@ function useMediaQuery(query: string) {
 
 export default function LeftNav() {
   const { t } = useI18n();
-  const { openAssets, openStockpile, openSettings } = useAppActions();
+  const { openAssets, openStockpile, openSettings, openTemplatePicker, hasTemplate } =
+    useAppActions();
+  const {
+    state: { selectedTemplateId, activeCardIdByTemplate },
+  } = useCardEditor();
   const { previewMode, togglePreviewMode } = usePreviewMode();
   const { SHOW_BLUEPRINTS_TOGGLE } = previewModeFlags;
   const { inspectorMode, toggleInspectorMode } = useInspectorMode();
@@ -49,6 +64,8 @@ export default function LeftNav() {
     previewMode === "blueprint" ? t("label.previewBlueprint") : t("label.previewLegacy");
   const inspectorModeLabel =
     inspectorMode === "generic" ? t("label.inspectorGeneric") : t("label.inspectorLegacy");
+  const activeCardId =
+    selectedTemplateId != null ? activeCardIdByTemplate[selectedTemplateId] : undefined;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -100,10 +117,38 @@ export default function LeftNav() {
         </div>
         <div className={styles.leftNavMiddle}>
           <div className={styles.leftNavList}>
+            <KeyBinding
+              combo={{ key: "y", shift: true, meta: true }}
+              onTrigger={() => openTemplatePicker()}
+              label={t("tooltip.chooseTemplate")}
+            >
+              <KeyBinding
+                combo={{ key: "y", shift: true, ctrl: true }}
+                onTrigger={() => openTemplatePicker()}
+                label={t("tooltip.chooseTemplate")}
+              >
+                <button
+                  className={styles.leftNavItem}
+                  type="button"
+                  onClick={openTemplatePicker}
+                  aria-label={t("tooltip.chooseTemplate")}
+                  disabled={!hasTemplate}
+                >
+                  <span className={styles.leftNavGlyph} aria-hidden="true">
+                    <LayoutTemplate />
+                  </span>
+                  <span className={styles.leftNavLabel}>{t("actions.templates")}</span>
+                </button>
+              </KeyBinding>
+            </KeyBinding>
             <button
               className={styles.leftNavItem}
               type="button"
-              onClick={openStockpile}
+              onClick={() =>
+                openStockpile({
+                  initialSelectedIds: activeCardId ? [activeCardId] : [],
+                })
+              }
               title={t("tooltip.openCards")}
               aria-label={t("tooltip.openCards")}
             >

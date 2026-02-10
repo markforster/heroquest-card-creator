@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
@@ -21,6 +21,11 @@ export default function HeroInspectorForm() {
     setTemplateDirty,
   } = useCardEditor();
 
+  const draftRef = useRef<HeroCardData | undefined>(cardDrafts.hero as HeroCardData | undefined);
+  useEffect(() => {
+    draftRef.current = cardDrafts.hero as HeroCardData | undefined;
+  }, [cardDrafts.hero]);
+
   const methods = useForm<HeroCardData>({
     defaultValues: (cardDrafts.hero as HeroCardData | undefined) ?? {},
     mode: "onBlur",
@@ -29,7 +34,8 @@ export default function HeroInspectorForm() {
   useEffect(() => {
     let isInitial = true;
     const subscription = methods.watch((value) => {
-      setCardDraft("hero", value as HeroCardData);
+      const currentDraft = draftRef.current ?? {};
+      setCardDraft("hero", { ...currentDraft, ...(value as HeroCardData) });
       if (isInitial) {
         isInitial = false;
         return;

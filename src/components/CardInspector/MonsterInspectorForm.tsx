@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
@@ -22,6 +22,13 @@ export default function MonsterInspectorForm() {
     setTemplateDirty,
   } = useCardEditor();
 
+  const draftRef = useRef<MonsterCardData | undefined>(
+    cardDrafts.monster as MonsterCardData | undefined,
+  );
+  useEffect(() => {
+    draftRef.current = cardDrafts.monster as MonsterCardData | undefined;
+  }, [cardDrafts.monster]);
+
   const methods = useForm<MonsterCardData>({
     defaultValues: (cardDrafts.monster as MonsterCardData | undefined) ?? {},
     mode: "onBlur",
@@ -30,7 +37,8 @@ export default function MonsterInspectorForm() {
   useEffect(() => {
     let isInitial = true;
     const subscription = methods.watch((value) => {
-      setCardDraft("monster", value as MonsterCardData);
+      const currentDraft = draftRef.current ?? {};
+      setCardDraft("monster", { ...currentDraft, ...(value as MonsterCardData) });
       if (isInitial) {
         isInitial = false;
         return;

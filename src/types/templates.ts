@@ -1,4 +1,5 @@
 import type { CardDataByTemplate } from "./card-data";
+import type { CardFace } from "./card-face";
 import type { StaticImageData } from "next/image";
 import type { ComponentType } from "react";
 
@@ -28,5 +29,6 @@ export type CardTemplateMeta = {
   description: string;
   thumbnail: StaticImageData;
   background: StaticImageData;
+  defaultFace: CardFace;
   isExperimental?: boolean;
 };

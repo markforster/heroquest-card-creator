@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
@@ -19,6 +19,13 @@ export default function LabelledBackInspectorForm() {
     setTemplateDirty,
   } = useCardEditor();
 
+  const draftRef = useRef<LabelledBackCardData | undefined>(
+    cardDrafts["labelled-back"] as LabelledBackCardData | undefined,
+  );
+  useEffect(() => {
+    draftRef.current = cardDrafts["labelled-back"] as LabelledBackCardData | undefined;
+  }, [cardDrafts["labelled-back"]]);
+
   const methods = useForm<LabelledBackCardData>({
     defaultValues: {
       ...(cardDrafts["labelled-back"] as LabelledBackCardData | undefined),
@@ -31,7 +38,11 @@ export default function LabelledBackInspectorForm() {
   useEffect(() => {
     let isInitial = true;
     const subscription = methods.watch((value) => {
-      setCardDraft("labelled-back", value as LabelledBackCardData);
+      const currentDraft = draftRef.current ?? {};
+      setCardDraft("labelled-back", {
+        ...currentDraft,
+        ...(value as LabelledBackCardData),
+      });
       if (isInitial) {
         isInitial = false;
         return;

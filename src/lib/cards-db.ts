@@ -80,6 +80,55 @@ export async function updateCard(
   return next;
 }
 
+export async function updateCards(
+  ids: string[],
+  patch: Partial<Omit<CardRecord, "id" | "createdAt" | "schemaVersion">>,
+): Promise<void> {
+  if (!ids.length) return;
+  const store = await getCardsStore("readwrite");
+
+  await new Promise<void>((resolve, reject) => {
+    let remaining = ids.length;
+    let failed = false;
+
+    ids.forEach((id) => {
+      const getRequest = store.get(id);
+      getRequest.onsuccess = () => {
+        if (failed) return;
+        const existing = getRequest.result as CardRecord | undefined;
+        if (!existing) {
+          remaining -= 1;
+          if (remaining === 0) resolve();
+          return;
+        }
+        const next: CardRecord = {
+          ...existing,
+          ...patch,
+          updatedAt: Date.now(),
+        };
+        if (patch.name) {
+          next.nameLower = patch.name.toLocaleLowerCase();
+        }
+        const putRequest = store.put(next);
+        putRequest.onerror = () => {
+          if (failed) return;
+          failed = true;
+          reject(putRequest.error ?? new Error("Failed to update card"));
+        };
+        putRequest.onsuccess = () => {
+          remaining -= 1;
+          if (remaining === 0) resolve();
+        };
+      };
+      getRequest.onerror = () => {
+        if (failed) return;
+        failed = true;
+        reject(getRequest.error ?? new Error("Failed to load card for update"));
+      };
+    });
+  });
+}
+
 export async function getCard(id: string): Promise<CardRecord | null> {
   const store = await getCardsStore("readonly");
 

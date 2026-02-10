@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
@@ -19,6 +19,13 @@ export default function LargeTreasureInspectorForm() {
     setTemplateDirty,
   } = useCardEditor();
 
+  const draftRef = useRef<LargeTreasureCardData | undefined>(
+    cardDrafts["large-treasure"] as LargeTreasureCardData | undefined,
+  );
+  useEffect(() => {
+    draftRef.current = cardDrafts["large-treasure"] as LargeTreasureCardData | undefined;
+  }, [cardDrafts["large-treasure"]]);
+
   const methods = useForm<LargeTreasureCardData>({
     defaultValues: (cardDrafts["large-treasure"] as LargeTreasureCardData | undefined) ?? {},
     mode: "onBlur",
@@ -27,7 +34,11 @@ export default function LargeTreasureInspectorForm() {
   useEffect(() => {
     let isInitial = true;
     const subscription = methods.watch((value) => {
-      setCardDraft("large-treasure", value as LargeTreasureCardData);
+      const currentDraft = draftRef.current ?? {};
+      setCardDraft("large-treasure", {
+        ...currentDraft,
+        ...(value as LargeTreasureCardData),
+      });
       if (isInitial) {
         isInitial = false;
         return;

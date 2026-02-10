@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { TemplateId } from "./templates";
 import type { StatValue } from "./stats";
+import type { CardFace } from "./card-face";
 
 export interface BaseCardFields {
   title?: string;
   showTitle?: boolean;
+  face?: CardFace;
+  pairedWith?: string | null;
   imageUrl?: string;
   imageAssetId?: string;
   imageAssetName?: string;

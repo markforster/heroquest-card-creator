@@ -10,6 +10,7 @@ import CardInspector from "@/components/CardInspector/CardInspector";
 import TemplateChooser from "@/components/CardInspector/TemplateChooser";
 import type { CardPreviewHandle } from "@/components/CardPreview";
 import DatabaseVersionGate from "@/components/DatabaseVersionGate";
+import { EditorSaveProvider } from "@/components/EditorSaveContext";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
 import HeaderWithTemplatePicker from "@/components/HeaderWithTemplatePicker";
 import { InspectorModeProvider } from "@/components/InspectorModeContext";
@@ -128,10 +129,18 @@ function IndexPageInner() {
     }
   };
 
+  const saveCurrentCard = async () => {
+    const mode = canSaveChanges ? "update" : canSaveAsNew ? "new" : null;
+    if (!mode) return false;
+    await handleSave(mode);
+    return true;
+  };
+
   return (
     <div className={styles.page}>
       <LibraryTransferProvider>
-        <AppActionsProvider>
+        <EditorSaveProvider value={{ saveCurrentCard }}>
+          <AppActionsProvider>
           {SHOW_HEADER ? <HeaderWithTemplatePicker /> : null}
           {!USE_BLUEPRINTS ? (
             <div className={styles.previewModeFixed}>
@@ -177,7 +186,8 @@ function IndexPageInner() {
               />
             </aside>
           </main>
-        </AppActionsProvider>
+          </AppActionsProvider>
+        </EditorSaveProvider>
         <MainFooter />
       </LibraryTransferProvider>
     </div>

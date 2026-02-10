@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
@@ -30,6 +30,10 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
   } = useCardEditor();
 
   const draft = cardDrafts[templateId] as CardDataByTemplate[TemplateId] | undefined;
+  const draftRef = useRef<CardDataByTemplate[TemplateId] | undefined>(draft);
+  useEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
   const fields = inspectorFieldsByTemplate[templateId];
   const showTitleToggle = Boolean(
     fields?.some((field) => field.fieldType === "title" && field.showToggle),
@@ -42,7 +46,11 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
   useEffect(() => {
     let isInitial = true;
     const subscription = methods.watch((value) => {
-      setCardDraft(templateId, value as CardDataByTemplate[TemplateId]);
+      const currentDraft = (draftRef.current ?? {}) as CardDataByTemplate[TemplateId];
+      setCardDraft(templateId, {
+        ...currentDraft,
+        ...(value as CardDataByTemplate[TemplateId]),
+      });
       if (isInitial) {
         isInitial = false;
         return;

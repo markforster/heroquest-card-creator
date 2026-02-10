@@ -23,7 +23,7 @@ import {
 
 import styles from "./WebglPreview.module.css";
 
-import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
+import blueprintFallback from "@/assets/blueprint.png";
 import linenNormal2 from "@/assets/linen-2.png";
 import linenNormal3 from "@/assets/linen-3.png";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
@@ -32,6 +32,7 @@ type WebglPreviewProps = {
   className?: string;
   textureCanvas?: HTMLCanvasElement | null;
   textureVersion?: number;
+  fallbackTextureSrc?: string;
 };
 
 const CARD_ASPECT = 1050 / 750;
@@ -40,6 +41,7 @@ const MAX_ROTATION_Y_DEG = 60;
 const ROTATION_SMOOTHING = 0.12;
 const LINEN_NORMAL_MAP = linenNormal3;
 const USE_DEBUG_NORMAL_MAP = false;
+const BLUEPRINT_DELAY_MS = 20;
 
 function CardPlane({
   texture,
@@ -267,6 +269,7 @@ export default function WebglPreview({
   className,
   textureCanvas,
   textureVersion = 0,
+  fallbackTextureSrc,
 }: WebglPreviewProps) {
   const rootClassName = className ? `${styles.root} ${className}` : styles.root;
   const { sheenAngle, sheenIntensity } = useWebglPreviewSettings();
@@ -274,9 +277,11 @@ export default function WebglPreview({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const yawGroupRef = useRef<Group | null>(null);
   const pitchGroupRef = useRef<Group | null>(null);
-  const fallbackTexture = useLoader(TextureLoader, parchmentBackground.src);
+  const fallbackTexture = useLoader(TextureLoader, fallbackTextureSrc ?? blueprintFallback.src);
   fallbackTexture.colorSpace = SRGBColorSpace;
   fallbackTexture.premultiplyAlpha = true;
+  const [isReadyForCanvas, setIsReadyForCanvas] = useState(false);
+  const [hasRenderedOnce, setHasRenderedOnce] = useState(false);
   const canvasTexture = useMemo(() => {
     if (!textureCanvas) return null;
     const tex = new CanvasTexture(textureCanvas);
@@ -289,7 +294,29 @@ export default function WebglPreview({
       canvasTexture.needsUpdate = true;
     }
   }, [canvasTexture, textureVersion]);
-  const activeTexture = canvasTexture ?? fallbackTexture;
+  useEffect(() => {
+    if (!textureCanvas) {
+      setIsReadyForCanvas(false);
+      return;
+    }
+    if (hasRenderedOnce) {
+      setIsReadyForCanvas(true);
+      return;
+    }
+    setIsReadyForCanvas(false);
+    const timeoutId = window.setTimeout(() => {
+      setIsReadyForCanvas(true);
+    }, BLUEPRINT_DELAY_MS);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [textureCanvas, textureVersion, hasRenderedOnce]);
+  useEffect(() => {
+    if (!hasRenderedOnce && canvasTexture && isReadyForCanvas) {
+      setHasRenderedOnce(true);
+    }
+  }, [canvasTexture, hasRenderedOnce, isReadyForCanvas]);
+  const activeTexture = canvasTexture && isReadyForCanvas ? canvasTexture : fallbackTexture;
   const dragStateRef = useRef<{
     active: boolean;
     startX: number;

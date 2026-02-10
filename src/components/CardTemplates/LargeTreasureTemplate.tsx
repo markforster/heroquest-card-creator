@@ -2,6 +2,7 @@ import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
 import CardTextBlock from "@/components/CardParts/CardTextBlock";
 import RibbonTitle from "@/components/CardParts/RibbonTitle";
 import Layer from "@/components/CardPreview/Layer";
+import { useI18n } from "@/i18n/I18nProvider";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import type { LargeTreasureCardData } from "@/types/card-data";
 import type { TemplateRenderProps } from "@/types/templates";
@@ -38,8 +39,9 @@ export default function LargeTreasureTemplate({
   templateName,
   cardData,
 }: TemplateRenderProps) {
+  const { t } = useI18n();
   const data = (cardData as LargeTreasureCardData | undefined) ?? {};
-  const title = data.title || templateName || "Large Artwork Card";
+  const title = data.title || templateName || t("ui.largeArtworkCard");
   const imageUrl = useAssetImageUrl(data.imageAssetId);
   const imageScale = data.imageScale ?? 1;
   const offsetX = data.imageOffsetX ?? 0;

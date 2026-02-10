@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
@@ -18,6 +18,13 @@ export default function HeroBackInspectorForm() {
     setTemplateDirty,
   } = useCardEditor();
 
+  const draftRef = useRef<HeroBackCardData | undefined>(
+    cardDrafts["hero-back"] as HeroBackCardData | undefined,
+  );
+  useEffect(() => {
+    draftRef.current = cardDrafts["hero-back"] as HeroBackCardData | undefined;
+  }, [cardDrafts["hero-back"]]);
+
   const methods = useForm<HeroBackCardData>({
     defaultValues: (cardDrafts["hero-back"] as HeroBackCardData | undefined) ?? {},
     mode: "onBlur",
@@ -26,7 +33,8 @@ export default function HeroBackInspectorForm() {
   useEffect(() => {
     let isInitial = true;
     const subscription = methods.watch((value) => {
-      setCardDraft("hero-back", value as HeroBackCardData);
+      const currentDraft = draftRef.current ?? {};
+      setCardDraft("hero-back", { ...currentDraft, ...(value as HeroBackCardData) });
       if (isInitial) {
         isInitial = false;
         return;

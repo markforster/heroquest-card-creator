@@ -658,7 +658,7 @@
   flex-direction: column;
   color: var(--hq-text);
   font-size: 0.9rem;
-  overflow-y: hidden;
+  overflow: visible;
 }
 
 .inspectorTop {
@@ -771,6 +771,12 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.8);
 }
 
+.inspectorTemplateRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .inspectorSectionTitle {
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -780,9 +786,316 @@
 
 .inspectorTemplateButton {
   justify-content: space-between;
-  width: 100%;
+  width: auto;
+  flex: 1 0 auto;
   text-transform: none;
   letter-spacing: 0.02em;
+}
+
+.inspectorFaceSelect {
+  flex: 0 1 auto;
+  width: auto;
+}
+
+.rightPanel .inspectorFaceSelectInferred {
+  color: #8a8a8a !important;
+}
+
+.inspectorFaceMenu {
+  position: relative;
+  flex: 0 1 auto;
+}
+
+.inspectorFaceButton {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--hq-text);
+  border-radius: 6px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0 0.6rem;
+  cursor: pointer;
+}
+
+.inspectorFaceButton:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.rightPanel .inspectorFaceButtonInferred {
+  color: #8a8a8a;
+}
+
+.inspectorFacePopover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  min-width: 160px;
+  background: linear-gradient(135deg, #1e1b16, #111111);
+  border: 1px solid #000;
+  border-radius: 8px;
+  padding: 0.4rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.inspectorFaceItem {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--hq-text);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.inspectorFaceItem:hover:enabled {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.inspectorFaceItemIcon {
+  font-size: 0.95rem;
+}
+
+.inspectorPairRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.inspectorPairIcon {
+  color: #a3a3a3;
+  flex: 0 1 auto;
+}
+
+.inspectorPairThumb {
+  width: 22.5px;
+  height: 31.5px;
+  border: 1px solid #2b2b2b;
+  background: #151515;
+  border-radius: 4px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.inspectorPairThumbInner {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inspectorPairThumbInner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.inspectorPairThumbPlaceholder {
+  width: 100%;
+  height: 100%;
+  background: #1a1a1a;
+}
+
+.inspectorPairThumbPopover {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  width: 150px;
+  height: 210px;
+  border: 1px solid #2b2b2b;
+  border-radius: 6px;
+  background: #151515;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  padding: 2px;
+  display: none;
+  z-index: 30;
+}
+
+.inspectorPairThumbPopover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.inspectorPairThumb:hover .inspectorPairThumbPopover {
+  display: block;
+}
+
+.inspectorPairTitle {
+  flex: 1 1 auto;
+  font-size: 0.85rem;
+  color: #f5f5f5;
+}
+
+.inspectorPairActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 1 auto;
+}
+
+.inspectorPairActionButton {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--hq-text);
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.inspectorPairActionButton:hover:enabled {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.inspectorStack {
+  display: flex;
+  align-items: center;
+  flex: 1 0 auto;
+  height: 31.5px;
+  min-width: 22.5px;
+}
+
+.inspectorStackItem {
+  position: relative;
+  width: 22.5px;
+  height: 31.5px;
+}
+
+.inspectorStackItem + .inspectorStackItem {
+  margin-left: -11.25px;
+}
+
+.inspectorStackItem.inspectorStackOverflowItem {
+  margin-left: 6px;
+}
+
+.inspectorStackThumbInner {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  border: 1px solid #2b2b2b;
+  background: #151515;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inspectorStackThumbInner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.inspectorStackPlaceholder {
+  width: 100%;
+  height: 100%;
+  background: #1a1a1a;
+}
+
+.inspectorStackOverflow {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  border: 1px dashed #444;
+  background: rgba(255, 255, 255, 0.04);
+  color: #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inspectorStackOverflowPopover {
+  position: fixed;
+  border: 1px solid #2b2b2b;
+  border-radius: 6px;
+  background: #151515;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  padding: 8px;
+  z-index: 200;
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.inspectorStackOverflowGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 100px);
+  grid-auto-rows: 140px;
+  gap: 8px;
+}
+
+.inspectorStackOverflowGridItem {
+  width: 100px;
+  height: 140px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2b2b2b;
+  background: #151515;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.inspectorStackOverflowGridItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.inspectorStackPopover {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  width: 150px;
+  height: 210px;
+  border: 1px solid #2b2b2b;
+  border-radius: 6px;
+  background: #151515;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  padding: 2px;
+  display: none;
+  z-index: 30;
+}
+
+.inspectorStackPopover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.inspectorStackItem:hover .inspectorStackPopover {
+  display: block;
 }
 
 .editorActions {
@@ -988,7 +1301,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 10;
+  z-index: 60;
 }
 
 .templatePopover {
@@ -1034,11 +1347,41 @@
 }
 
 .confirmPopover {
-  width: min(450px, 100% - 2rem);
+  width: min(560px, 100% - 2rem);
 }
 
 .confirmPopover :global(.modal-footer) {
   margin-top: 0.75rem;
+}
+
+.pairingConflictGrid {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 72px);
+  grid-auto-rows: 100px;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.pairingConflictItem {
+  width: 72px;
+  height: 100px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2b2b2b;
+  background: #151515;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pairingConflictItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .cardsPopover {
@@ -1249,6 +1592,36 @@
   gap: 0.5rem;
 }
 
+.cardsFiltersRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.cardsFiltersLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 0 1 auto;
+}
+
+.cardsFiltersSpacer {
+  flex: 1 0 auto;
+}
+
+.cardsFiltersRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 0 1 auto;
+}
+
+.cardsSelectionLabel {
+  font-size: 0.85rem;
+  color: #cbd5f5;
+}
+
 .cardsFilterSelect {
   flex: 0 0 30%;
   min-width: 140px;
@@ -1259,6 +1632,251 @@
   background: #111;
   color: #f5f5f5;
   font-size: 0.85rem;
+}
+
+.cardsFilterMenu {
+  position: relative;
+  flex: 0 0 30%;
+  min-width: 160px;
+  max-width: 240px;
+}
+
+.cardsFilterButton {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background: #111;
+  color: #f5f5f5;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.cardsFilterButton:hover {
+  border-color: rgba(230, 179, 90, 0.7);
+}
+
+.cardsFilterPopover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  background: rgba(18, 18, 18, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.35rem;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.cardsFilterItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #f5f5f5;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cardsFilterItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cardsFilterItemActive {
+  border-color: rgba(230, 179, 90, 0.6);
+  background: rgba(230, 179, 90, 0.12);
+}
+
+.cardsFilterCount {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+}
+
+.cardsPairIndicator {
+  width: 22.5px;
+  height: 31.5px;
+  border: 1px solid #2b2b2b;
+  background: #151515;
+  border-radius: 4px;
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.cardsPairIndicatorInner {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardsPairIndicatorInner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cardsPairIndicatorPlaceholder {
+  width: 100%;
+  height: 100%;
+  background: #1a1a1a;
+}
+
+.cardsPairIndicatorPopover {
+  position: fixed;
+  width: 150px;
+  height: 210px;
+  border: 1px solid #2b2b2b;
+  border-radius: 6px;
+  background: #151515;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  padding: 2px;
+  display: block;
+  z-index: 200;
+}
+
+.cardsPairIndicatorPopover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cardsPairIndicatorEmpty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: #d1d5db;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.cardsPairStack {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.cardsPairStackItem {
+  width: 22.5px;
+  height: 31.5px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-left: -11px;
+  border: 1px solid #2b2b2b;
+  background: #151515;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.cardsPairStackItem:first-child {
+  margin-left: 0;
+}
+
+.cardsPairStackOverflow {
+  width: 100%;
+  height: 100%;
+  background: #1a1a1a;
+  color: #d1d5db;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardsPairStackPopoverGrid {
+  position: fixed;
+  border: 1px solid #2b2b2b;
+  border-radius: 6px;
+  background: #151515;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  padding: 6px;
+  z-index: 200;
+  overflow: auto;
+  width: 474px;
+  max-height: 320px;
+}
+
+.cardsPairStackPopoverSingle {
+  position: fixed;
+  border: 1px solid #2b2b2b;
+  border-radius: 6px;
+  background: #151515;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  padding: 6px;
+  z-index: 200;
+  overflow: auto;
+  width: 84px;
+  height: 112px;
+}
+
+.cardsPairStackGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 72px);
+  grid-auto-rows: 100px;
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.cardsPairStackGridItem {
+  width: 72px;
+  height: 100px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2b2b2b;
+  background: #151515;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardsPairStackGridItemEmpty {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: #121212;
+}
+
+.cardsPairStackGridSingle {
+  width: 72px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardsPairStackGridItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .assetsGridContainer {
@@ -1338,9 +1956,26 @@
   cursor: pointer;
 }
 
+.stockpileCountBadge {
+  font-size: 0.64rem;
+  line-height: 1;
+  color: #f8fafc;
+  border: 1px solid var(--hq-accent);
+  background: transparent;
+}
+
 .stockpileSidebarItemActive {
   border-color: rgba(230, 179, 90, 0.6);
   background: rgba(230, 179, 90, 0.08);
+}
+
+.stockpileSelectedDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--hq-accent);
+  box-shadow: 0 0 6px rgba(230, 179, 90, 0.6);
+  flex: 0 0 auto;
 }
 
 .stockpileSidebarDivider {
@@ -1492,6 +2127,7 @@
   flex-direction: column;
   gap: 0.35rem;
   cursor: pointer;
+  position: relative;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease,
@@ -1536,6 +2172,12 @@
   box-shadow: 0 0 0 1px rgba(230, 179, 90, 0.9);
   transform: translateY(-1px);
 }
+
+.assetsItemConflict {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.85);
+  transform: translateY(-1px);
+}
 .cardsThumbWrapper {
   width: 100%;
   aspect-ratio: 750 / 1050;
@@ -1555,7 +2197,94 @@
 }
 
 .cardsItemHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   margin-bottom: 0.25rem;
+  padding-left: 0.2rem;
+}
+
+.cardsConflictIndicator {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  background: rgba(10, 10, 10, 0.7);
+  border-radius: 999px;
+  border: 1px solid rgba(239, 68, 68, 0.9);
+  z-index: 6;
+  pointer-events: none;
+}
+
+.cardsConflictIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.cardsConflictPopover {
+  position: absolute;
+  width: calc(100% - 16px);
+  height: 64px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #141414;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  padding: 8px;
+  z-index: 4;
+  left: 8px;
+  bottom: 8px;
+}
+
+.cardsConflictPopoverContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardsConflictPopoverThumb {
+  width: 36px;
+  height: 50px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2b2b2b;
+  background: #151515;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.cardsConflictPopoverThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cardsConflictPopoverText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: #e5e7eb;
+}
+
+.cardsConflictPopoverText span {
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.cardsConflictOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
 }
 
 .cardsItemMeta {
@@ -1568,6 +2297,8 @@
 }
 
 .cardsItemName {
+  flex: 1 0 auto;
+  min-width: 0;
   font-weight: 600;
   color: #e5e7eb;
   white-space: nowrap;
