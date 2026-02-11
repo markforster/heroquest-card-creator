@@ -4,8 +4,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Images,
-  Layers,
-  LayoutPanelTop,
   LayoutTemplate,
   Settings,
   SquareStack,
@@ -15,10 +13,8 @@ import { useEffect, useState } from "react";
 import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
-import { inspectorModeFlags, useInspectorMode } from "@/components/InspectorModeContext";
 import KeyBinding from "@/components/KeyBinding";
 import LanguageMenu from "@/components/LanguageMenu";
-import { previewModeFlags, usePreviewMode } from "@/components/PreviewModeContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
 const COLLAPSE_MEDIA_QUERY = "(max-width: 1280px)";
@@ -51,19 +47,11 @@ export default function LeftNav() {
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
-  const { previewMode, togglePreviewMode } = usePreviewMode();
-  const { SHOW_BLUEPRINTS_TOGGLE } = previewModeFlags;
-  const { inspectorMode, toggleInspectorMode } = useInspectorMode();
-  const { SHOW_INSPECTOR_TOGGLE } = inspectorModeFlags;
   const autoCollapsed = useMediaQuery(COLLAPSE_MEDIA_QUERY);
   const [manualCollapsed, setManualCollapsed] = useState(false);
   const [isCollapsedReady, setIsCollapsedReady] = useState(false);
   const isCollapsed = autoCollapsed || manualCollapsed;
   const collapseStateLabel = isCollapsed ? "Expand navigation" : "Collapse navigation";
-  const previewModeLabel =
-    previewMode === "blueprint" ? t("label.previewBlueprint") : t("label.previewLegacy");
-  const inspectorModeLabel =
-    inspectorMode === "generic" ? t("label.inspectorGeneric") : t("label.inspectorLegacy");
   const activeCardId =
     selectedTemplateId != null ? activeCardIdByTemplate[selectedTemplateId] : undefined;
 
@@ -185,40 +173,6 @@ export default function LeftNav() {
               </span>
               <span className={styles.leftNavLabel}>{t("actions.settings")}</span>
             </button>
-            {SHOW_BLUEPRINTS_TOGGLE ? (
-              <button
-                className={styles.leftNavItem}
-                type="button"
-                onClick={togglePreviewMode}
-                title={t("tooltip.previewMode")}
-                aria-pressed={previewMode === "blueprint"}
-                aria-label={`${t("label.previewMode")}: ${previewModeLabel}`}
-              >
-                <span className={styles.leftNavGlyph} aria-hidden="true">
-                  <Layers />
-                </span>
-                <span className={styles.leftNavLabel}>
-                  {t("label.previewMode")}: {previewModeLabel}
-                </span>
-              </button>
-            ) : null}
-            {SHOW_INSPECTOR_TOGGLE ? (
-              <button
-                className={styles.leftNavItem}
-                type="button"
-                onClick={toggleInspectorMode}
-                title={t("tooltip.inspectorMode")}
-                aria-pressed={inspectorMode === "generic"}
-                aria-label={`${t("label.inspectorMode")}: ${inspectorModeLabel}`}
-              >
-                <span className={styles.leftNavGlyph} aria-hidden="true">
-                  <LayoutPanelTop />
-                </span>
-                <span className={styles.leftNavLabel}>
-                  {t("label.inspectorMode")}: {inspectorModeLabel}
-                </span>
-              </button>
-            ) : null}
             <LanguageMenu isCollapsed={isCollapsed} />
           </div>
         </div>

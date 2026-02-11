@@ -703,39 +703,6 @@
   }
 }
 
-.previewModeFixed {
-  position: fixed;
-  top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 30;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--hq-accent);
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(0, 0, 0, 0.6);
-  padding: 0.2rem 0.7rem;
-  border-radius: 999px;
-  pointer-events: none;
-}
-
-.inspectorModeFixed {
-  position: fixed;
-  top: 14px;
-  right: 20px;
-  z-index: 30;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--hq-accent);
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(0, 0, 0, 0.6);
-  padding: 0.2rem 0.7rem;
-  border-radius: 999px;
-  pointer-events: none;
-}
-
 /* Right panel & inspector */
 
 .rightPanel {

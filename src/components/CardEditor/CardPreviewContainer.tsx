@@ -6,6 +6,7 @@ import CardPreview, { CardPreviewHandle } from "@/components/CardPreview";
 import WebglPreview from "@/components/CardPreview/WebglPreview";
 import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
+import { KEEP_WEBGL_MOUNTED } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -281,9 +282,19 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           />
         </div>
       ) : null}
-      {showWebgl ? (
+      {KEEP_WEBGL_MOUNTED ? (
+        <WebglPreview
+          className={`${styles.webglLayer} ${showWebgl ? "" : styles.previewHidden}`}
+          isVisible={showWebgl}
+          frontTextureCanvas={textureCanvas}
+          frontTextureVersion={textureVersion}
+          backTextureCanvas={reverseTextureCanvas}
+          backTextureVersion={reverseTextureVersion}
+        />
+      ) : showWebgl ? (
         <WebglPreview
           className={styles.webglLayer}
+          isVisible
           frontTextureCanvas={textureCanvas}
           frontTextureVersion={textureVersion}
           backTextureCanvas={reverseTextureCanvas}

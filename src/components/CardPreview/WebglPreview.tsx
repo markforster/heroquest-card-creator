@@ -34,6 +34,7 @@ import type { Group } from "three";
 
 type WebglPreviewProps = {
   className?: string;
+  isVisible?: boolean;
   frontTextureCanvas?: HTMLCanvasElement | null;
   frontTextureVersion?: number;
   backTextureCanvas?: HTMLCanvasElement | null;
@@ -405,6 +406,7 @@ function WebglScene({
 
 export default function WebglPreview({
   className,
+  isVisible = true,
   frontTextureCanvas,
   frontTextureVersion = 0,
   backTextureCanvas,
@@ -602,6 +604,7 @@ export default function WebglPreview({
           toneMapping: NoToneMapping,
           toneMappingExposure: 1,
         }}
+        frameloop={isVisible ? "always" : "never"}
       >
         <ambientLight intensity={0.4} />
         <spotLight
