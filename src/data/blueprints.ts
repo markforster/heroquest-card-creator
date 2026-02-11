@@ -58,7 +58,7 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
         textWidth: 588,
         textHeight: 150.15,
         textNoRibbonX: 81,
-        textNoRibbonY: 96,
+        textNoRibbonY: 82,
         textNoRibbonWidth: 588,
         textNoRibbonHeight: 60.15,
         // Trial values (multiline experiment)
@@ -94,13 +94,14 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       id: "artwork",
       type: "image",
       bounds: {
-        x: 125,
-        y: 165,
-        width: 500,
-        height: 370,
+        x: 135,
+        y: 158,
+        width: 480,
+        height: 352,
       },
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
+      props: { offsetX: 0, offsetY: 14 },
     },
     {
       id: "background-frame",
@@ -135,7 +136,7 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
         textWidth: 588,
         textHeight: 150.15,
         textNoRibbonX: 81,
-        textNoRibbonY: 96,
+        textNoRibbonY: 82,
         textNoRibbonWidth: 588,
         textNoRibbonHeight: 60.15,
         // Trial values (multiline experiment)
@@ -188,14 +189,14 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
       type: "title",
       bind: { titleKey: "title" },
       props: {
-        y: 850,
+        y: 866,
         // Known working values (previous)
         ribbonX: 81,
-        ribbonY: 850,
+        ribbonY: 866,
         ribbonWidth: 588,
         ribbonHeight: 150.15,
         textX: 171,
-        textY: 872,
+        textY: 888,
         textWidth: 428,
         textHeight: 58.15,
         // Trial values (multiline experiment)
@@ -385,7 +386,7 @@ const MONSTER_BLUEPRINT: Blueprint = {
           type: "icon",
           bind: { iconKey: "iconAssetId" },
           when: { hasImage: "iconAssetId" },
-          props: { size: 140, offsetX: 11 },
+          props: { size: 126, offsetX: -4, offsetY: -10 },
         },
       ],
     },

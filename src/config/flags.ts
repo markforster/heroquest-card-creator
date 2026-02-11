@@ -28,3 +28,54 @@ export const SHOW_WEBGL_SHEEN_CONTROLS = false;
  * of unmounting. Used in CardPreviewContainer to reduce flicker when switching renderers.
  */
 export const KEEP_WEBGL_MOUNTED = true;
+
+/**
+ * Applies tighter letter-spacing to title and stat header text to better match
+ * printed card ink density.
+ */
+export const USE_TIGHTER_TITLE_TRACKING = true;
+
+/**
+ * Uses bold weight for the ribbon title text to better match printed cards.
+ */
+export const USE_BOLD_TITLE_WEIGHT = true;
+
+/**
+ * Applies a subtle vertical scale to title text to mimic printed compression.
+ */
+export const USE_TITLE_VERTICAL_COMPRESSION = true;
+
+/**
+ * Vertical scale factor when USE_TITLE_VERTICAL_COMPRESSION is enabled.
+ */
+export const TITLE_VERTICAL_SCALE_Y = 0.98;
+
+/**
+ * Toggles the dark title stroke that was used to boost perceived weight.
+ */
+export const USE_TITLE_STROKE = true;
+
+/**
+ * When the ribbon is hidden, use a lighter title weight for A/B testing.
+ */
+export const USE_LIGHTER_NONRIBBON_TITLE_WEIGHT = false;
+
+/**
+ * Lighter weight to use when USE_LIGHTER_NONRIBBON_TITLE_WEIGHT is enabled.
+ */
+export const NONRIBBON_TITLE_WEIGHT = 550;
+
+/**
+ * Applies tighter letter-spacing to stat headers.
+ */
+export const USE_TIGHTER_STATS_TRACKING = false;
+
+/**
+ * Applies a subtle vertical scale to stats text to mimic printed compression.
+ */
+export const USE_STATS_VERTICAL_COMPRESSION = false;
+
+/**
+ * Vertical scale factor when USE_STATS_VERTICAL_COMPRESSION is enabled.
+ */
+export const STATS_VERTICAL_SCALE_Y = 0.985;

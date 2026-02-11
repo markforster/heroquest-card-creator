@@ -1,4 +1,9 @@
 import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
+import {
+  STATS_VERTICAL_SCALE_Y,
+  USE_STATS_VERTICAL_COMPRESSION,
+  USE_TIGHTER_STATS_TRACKING,
+} from "@/config/flags";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { formatStatValue } from "@/lib/stat-values";
 import fitText from "@/lib/text-fitting/fitText";
@@ -24,6 +29,7 @@ const HEADER_FONT_SIZE = 22;
 const HEADER_LINE_HEIGHT = HEADER_FONT_SIZE * 1.05;
 const VALUE_FONT_SIZE = 56;
 const MIN_VALUE_FONT_SIZE = 24;
+const HEADER_LETTER_SPACING = -0.4;
 
 export default function StatsPair({
   header,
@@ -66,6 +72,16 @@ export default function StatsPair({
   const totalHeaderTextHeight = headerLineHeight * lineCount;
   const firstLineY = headerCenterY - (totalHeaderTextHeight - headerLineHeight) / 2;
   const formattedValue = formatStatValue(value);
+  const headerLetterSpacing = USE_TIGHTER_STATS_TRACKING ? HEADER_LETTER_SPACING : undefined;
+  const statsScaleY = USE_STATS_VERTICAL_COMPRESSION ? STATS_VERTICAL_SCALE_Y : 1;
+  const statsTransform =
+    statsScaleY === 1
+      ? undefined
+      : `translate(${centerX} ${headerCenterY}) scale(1 ${statsScaleY}) translate(${-centerX} ${-headerCenterY})`;
+  const valueTransform =
+    statsScaleY === 1
+      ? undefined
+      : `translate(${centerX} ${valueCenterY}) scale(1 ${statsScaleY}) translate(${-centerX} ${-valueCenterY})`;
   const valueFontSize =
     formattedValue != null
       ? shrinkToFitSingleLine(
@@ -79,34 +95,39 @@ export default function StatsPair({
 
   return (
     <Layer>
-      <text
-        textAnchor="middle"
-        dominantBaseline="middle"
-        // fill="#ffffff"
-        fill="#452304"
-        fontSize={headerFontSize}
-        fontWeight={700}
-        fontFamily={CARD_TEXT_FONT_FAMILY}
-      >
-        {headerLines.map((line, index) => (
-          <tspan key={`${line}-${index}`} x={centerX} y={firstLineY + index * headerLineHeight}>
-            {line}
-          </tspan>
-        ))}
-      </text>
-      {formattedValue != null && (
+      <g transform={statsTransform}>
         <text
-          x={centerX}
-          y={valueCenterY}
           textAnchor="middle"
           dominantBaseline="middle"
+          // fill="#ffffff"
           fill="#452304"
-          fontSize={valueFontSize}
+          fontSize={headerFontSize}
           fontWeight={700}
+          letterSpacing={headerLetterSpacing}
           fontFamily={CARD_TEXT_FONT_FAMILY}
         >
-          {formattedValue}
+          {headerLines.map((line, index) => (
+            <tspan key={`${line}-${index}`} x={centerX} y={firstLineY + index * headerLineHeight}>
+              {line}
+            </tspan>
+          ))}
         </text>
+      </g>
+      {formattedValue != null && (
+        <g transform={valueTransform}>
+          <text
+            x={centerX}
+            y={valueCenterY}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fill="#452304"
+            fontSize={valueFontSize}
+            fontWeight={700}
+            fontFamily={CARD_TEXT_FONT_FAMILY}
+          >
+            {formattedValue}
+          </text>
+        </g>
       )}
       {/* Header bounds (debug) */}
       {debug && (

@@ -1225,7 +1225,7 @@
   background: #333;
   padding: 0.22rem 0.3rem;
   gap: 0.35rem;
-  min-width: 6.6rem;
+  min-width: 5.3rem;
 }
 
 .statSplitFields {
@@ -1234,6 +1234,99 @@
   gap: 0.35rem;
 }
 
+.statSplitButtons {
+  display: flex;
+  align-items: center;
+}
+
+.statSplitButtonsStacked {
+  flex-direction: column;
+  gap: 0.32rem;
+}
+
+.statSplitButtonsSingle {
+  flex-direction: column;
+  justify-content: center;
+}
+
+.statFormatWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statFormatButton {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  font-size: 0.75rem;
+}
+
+.statFormatLabel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transform: translateY(1px);
+  font-size: 0.4rem;
+}
+
+.statFormatPopover {
+  position: absolute;
+  bottom: calc(100% + 0.35rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  min-width: 2rem;
+  background: #0f0f0f;
+  border: 1px solid #2b2b2b;
+  border-radius: 0.7rem;
+  padding: 0.25rem 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  z-index: 10;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.statFormatHoverPopover {
+  position: absolute;
+  bottom: calc(100% + 0.35rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f0f0f;
+  border: 1px solid #2b2b2b;
+  border-radius: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  color: #f5f5f5;
+  font-size: 0.7rem;
+  line-height: 1;
+  white-space: nowrap;
+  z-index: 9;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.statFormatOption {
+  width: 100%;
+  height: 1.6rem;
+  border-radius: 999px;
+  border: 1px solid #2b2b2b;
+  background: #1a1a1a;
+  color: #f5f5f5;
+  font-size: 0.7rem;
+  padding: 0 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.statFormatOption:hover:enabled {
+  background: #242424;
+}
 
 .statChevronButton {
   background: #1a1a1a;
@@ -1296,7 +1389,7 @@
 }
 
 .statValueInput {
-  padding: 0.22rem 0.34rem;
+  padding: 0.22rem 0.28rem;
   border-radius: 999px;
   border: 1px solid #2b2b2b;
   background: #111;
@@ -1304,9 +1397,9 @@
   font-size: 0.92rem;
   font-weight: 700;
   text-align: center;
-  width: 9ch;
-  min-width: 9ch;
-  max-width: 9ch;
+  width: 5.5ch;
+  min-width: 5.5ch;
+  max-width: 5.5ch;
   height: 1.76rem;
   line-height: 1.32rem;
   box-sizing: border-box;

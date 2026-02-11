@@ -5,8 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
+import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { StatValue } from "@/types/stats";
+import type { StatSplitFormat, StatValue } from "@/types/stats";
 
 import { formatStatInputValue, parseStatInputValue } from "./stat-stepper-input";
 
@@ -21,8 +22,20 @@ type SplitStatStepperProps<TFormValues extends FieldValues> = {
   splitSecondaryDefault?: number;
 };
 
+const DEFAULT_SPLIT_FORMAT: StatSplitFormat = "slash";
+
 function readNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && !Number.isNaN(value) ? value : fallback;
+}
+
+function readSplitFormat(value: StatValue | undefined): StatSplitFormat {
+  if (Array.isArray(value) && value.length >= 4) {
+    const format = value[3];
+    if (format === "paren" || format === "paren-leading" || format === "slash") {
+      return format;
+    }
+  }
+  return DEFAULT_SPLIT_FORMAT;
 }
 
 export default function SplitStatStepper<TFormValues extends FieldValues>({
@@ -44,13 +57,20 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
   const secondaryValue = isArrayValue
     ? readNumber(valueWatch[1], splitSecondaryDefault)
     : splitSecondaryDefault;
+  const splitFormat = readSplitFormat(valueWatch);
 
   const resolvedMin = allowWildcard ? Math.min(min, -1) : min;
   const [primaryInput, setPrimaryInput] = useState(formatStatInputValue(primaryValue));
   const [secondaryInput, setSecondaryInput] = useState(formatStatInputValue(secondaryValue));
   const [focusedField, setFocusedField] = useState<"primary" | "secondary" | null>(null);
+  const [formatOpen, setFormatOpen] = useState(false);
+  const [formatHover, setFormatHover] = useState(false);
   const primaryLastValidRef = useRef(primaryValue);
   const secondaryLastValidRef = useRef(secondaryValue);
+  const formatButtonRef = useRef<HTMLButtonElement | null>(null);
+  const formatPopoverRef = useRef<HTMLDivElement | null>(null);
+
+  useOutsideClick([formatPopoverRef, formatButtonRef], () => setFormatOpen(false), formatOpen);
 
   const clampValue = (raw: number) => {
     return Math.min(max, Math.max(resolvedMin, raw));
@@ -63,13 +83,19 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
     });
   };
 
-  const setSplitValue = (nextPrimary: number, nextSecondary: number, nextFlag: 0 | 1) => {
+  const setSplitValue = (
+    nextPrimary: number,
+    nextSecondary: number,
+    nextFlag: 0 | 1,
+    nextFormat: StatSplitFormat = splitFormat,
+  ) => {
     setValue(
       name,
       [
         clampValue(nextPrimary),
         clampValue(nextSecondary),
         nextFlag,
+        nextFormat,
       ] as unknown as TFormValues[keyof TFormValues],
       {
         shouldDirty: true,
@@ -227,6 +253,27 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
     }
   }, [secondaryValue, focusedField]);
 
+  useEffect(() => {
+    if (!isSplit) {
+      setFormatOpen(false);
+    }
+  }, [isSplit]);
+
+  const handleFormatChange = (nextFormat: StatSplitFormat) => {
+    setSplitValue(primaryValue, secondaryValue, 1, nextFormat);
+    setFormatOpen(false);
+  };
+
+  const optionSlashLabel = "x / y";
+  const optionParenLabel = "x ( y )";
+  const optionParenLeadingLabel = "( x ) y";
+  const formatButtonLabel =
+    splitFormat === "paren-leading"
+      ? optionParenLeadingLabel
+      : splitFormat === "paren"
+        ? optionParenLabel
+        : optionSlashLabel;
+
   const renderStatField = (value: number, which: "primary" | "secondary") => (
     <div className={layoutStyles.statField}>
       <input
@@ -271,19 +318,80 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
         <div className={layoutStyles.statSubLabel}>{label}</div>
         <div className={layoutStyles.statSplitFields}>
           {renderStatField(primaryValue, "primary")}
-          <button
-            type="button"
-            className={`${layoutStyles.statIconButton} ${layoutStyles.statChevronButton}`}
-            title={isSplit ? t("tooltip.removeSecondValue") : t("tooltip.addSecondValue")}
-            aria-label={isSplit ? t("tooltip.removeSecondValue") : t("tooltip.addSecondValue")}
-            onClick={toggleSplit}
+          <div
+            className={`${layoutStyles.statSplitButtons} ${
+              isSplit ? layoutStyles.statSplitButtonsStacked : layoutStyles.statSplitButtonsSingle
+            }`}
           >
             {isSplit ? (
-              <ChevronRight className={layoutStyles.icon} aria-hidden="true" />
-            ) : (
-              <ChevronLeft className={layoutStyles.icon} aria-hidden="true" />
-            )}
-          </button>
+              <div className={layoutStyles.statFormatWrapper}>
+                <button
+                  ref={formatButtonRef}
+                  type="button"
+                  className={`${layoutStyles.statIconButton} ${layoutStyles.statFormatButton}`}
+                  title={t("tooltip.statFormat")}
+                  aria-label={t("tooltip.statFormat")}
+                  aria-haspopup="menu"
+                  aria-expanded={formatOpen}
+                  onClick={() => setFormatOpen((current) => !current)}
+                  onMouseEnter={() => setFormatHover(true)}
+                  onMouseLeave={() => setFormatHover(false)}
+                >
+                  <span className={layoutStyles.statFormatLabel}>{formatButtonLabel}</span>
+                </button>
+                {formatHover && !formatOpen ? (
+                  <div className={layoutStyles.statFormatHoverPopover} role="status">
+                    {formatButtonLabel}
+                  </div>
+                ) : null}
+                {formatOpen ? (
+                  <div
+                    ref={formatPopoverRef}
+                    className={layoutStyles.statFormatPopover}
+                    role="menu"
+                  >
+                    <button
+                      type="button"
+                      className={layoutStyles.statFormatOption}
+                      onClick={() => handleFormatChange("slash")}
+                      role="menuitem"
+                    >
+                      {optionSlashLabel}
+                    </button>
+                    <button
+                      type="button"
+                      className={layoutStyles.statFormatOption}
+                      onClick={() => handleFormatChange("paren")}
+                      role="menuitem"
+                    >
+                      {optionParenLabel}
+                    </button>
+                    <button
+                      type="button"
+                      className={layoutStyles.statFormatOption}
+                      onClick={() => handleFormatChange("paren-leading")}
+                      role="menuitem"
+                    >
+                      {optionParenLeadingLabel}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className={`${layoutStyles.statIconButton} ${layoutStyles.statChevronButton}`}
+              title={isSplit ? t("tooltip.removeSecondValue") : t("tooltip.addSecondValue")}
+              aria-label={isSplit ? t("tooltip.removeSecondValue") : t("tooltip.addSecondValue")}
+              onClick={toggleSplit}
+            >
+              {isSplit ? (
+                <ChevronRight className={layoutStyles.icon} aria-hidden="true" />
+              ) : (
+                <ChevronLeft className={layoutStyles.icon} aria-hidden="true" />
+              )}
+            </button>
+          </div>
           {isSplit ? renderStatField(secondaryValue, "secondary") : null}
         </div>
       </div>

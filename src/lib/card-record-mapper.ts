@@ -152,7 +152,20 @@ function normalizeStatValueForSave(value?: StatValue): StatValue | undefined {
       return [primary, secondary, 1];
     }
     if (value.length >= 3) {
-      const [primary, secondary, splitFlag] = value as [number, number, 0 | 1];
+      const [primary, secondary, splitFlag, splitFormat] = value as [
+        number,
+        number,
+        0 | 1,
+        string | undefined,
+      ];
+      if (splitFormat) {
+        return [
+          primary,
+          secondary,
+          splitFlag,
+          splitFormat as "slash" | "paren" | "paren-leading",
+        ];
+      }
       return [primary, secondary, splitFlag];
     }
   }
