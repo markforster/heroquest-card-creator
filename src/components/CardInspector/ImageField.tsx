@@ -44,6 +44,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const imageScaleWatch = useWatch({ name: "imageScale" }) as number | undefined;
   const imageOffsetXWatch = useWatch({ name: "imageOffsetX" }) as number | undefined;
   const imageOffsetYWatch = useWatch({ name: "imageOffsetY" }) as number | undefined;
+  const imageRotationWatch = useWatch({ name: "imageRotation" }) as number | undefined;
   const picker = usePopupState(false);
 
   const fieldError = (errors as Record<string, { message?: string }>).imageAssetId;
@@ -52,6 +53,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const imageScale = imageScaleWatch ?? 1;
   const imageOffsetX = imageOffsetXWatch ?? 0;
   const imageOffsetY = imageOffsetYWatch ?? 0;
+  const imageRotation = imageRotationWatch ?? 0;
   const imageOriginalWidth = imageOriginalWidthWatch;
   const imageOriginalHeight = imageOriginalHeightWatch;
 
@@ -61,6 +63,9 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const MIN_SCALE = 0.2;
   const MAX_SCALE = 3;
   const SCALE_STEP = 0.05;
+  const MIN_ROTATION = -180;
+  const MAX_ROTATION = 180;
+  const ROTATION_STEP = 1;
 
   const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -86,6 +91,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const handleSelect = (asset: AssetRecord) => {
     setValue("imageAssetId", asset.id, { shouldDirty: true, shouldTouch: true });
     setValue("imageAssetName", asset.name, { shouldDirty: true, shouldTouch: true });
+    setValue("imageRotation", 0, { shouldDirty: true, shouldTouch: true });
 
     if (boundsWidth && boundsHeight && asset.width && asset.height) {
       const bw = boundsWidth;
@@ -146,6 +152,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
               setValue("imageOriginalHeight", undefined, { shouldDirty: true, shouldTouch: true });
               setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
               setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
             }}
           >
             <span className="visually-hidden">{t("actions.clear")}</span>
@@ -341,6 +348,70 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                 const auto = computeAutoScale();
                 const next = clamp(auto, MIN_SCALE, MAX_SCALE);
                 setValue("imageScale", next, {
+                  shouldDirty: true,
+                  shouldTouch: true,
+                });
+              }}
+            >
+              <RotateCcw className={layoutStyles.icon} aria-hidden="true" />
+            </button>
+          </div>
+          <div className={layoutStyles.imageControlLabelRow}>
+            <label className="form-label mb-1">{t("form.rotation")}</label>
+          </div>
+          <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
+            <input
+              type="range"
+              className={`${layoutStyles.imageControlRange} flex-grow-1`}
+              min={MIN_ROTATION}
+              max={MAX_ROTATION}
+              step={ROTATION_STEP}
+              value={imageRotation}
+              title={t("tooltip.adjustRotation")}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                if (!Number.isNaN(next)) {
+                  setValue("imageRotation", next, {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                  });
+                }
+              }}
+            />
+            <button
+              type="button"
+              className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+              title={t("tooltip.rotateLeft")}
+              onClick={() => {
+                const next = clamp(imageRotation - ROTATION_STEP, MIN_ROTATION, MAX_ROTATION);
+                setValue("imageRotation", next, {
+                  shouldDirty: true,
+                  shouldTouch: true,
+                });
+              }}
+            >
+              <ChevronLeft className={layoutStyles.icon} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+              title={t("tooltip.rotateRight")}
+              onClick={() => {
+                const next = clamp(imageRotation + ROTATION_STEP, MIN_ROTATION, MAX_ROTATION);
+                setValue("imageRotation", next, {
+                  shouldDirty: true,
+                  shouldTouch: true,
+                });
+              }}
+            >
+              <ChevronRight className={layoutStyles.icon} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+              title={t("tooltip.resetRotation")}
+              onClick={() => {
+                setValue("imageRotation", 0, {
                   shouldDirty: true,
                   shouldTouch: true,
                 });

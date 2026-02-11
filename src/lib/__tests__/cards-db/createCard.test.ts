@@ -41,6 +41,7 @@ describe("createCard", () => {
       imageScale: undefined,
       imageOffsetX: undefined,
       imageOffsetY: undefined,
+      imageRotation: undefined,
       imageOriginalWidth: undefined,
       imageOriginalHeight: undefined,
       borderColor: undefined,

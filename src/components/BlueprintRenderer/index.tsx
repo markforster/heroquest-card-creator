@@ -134,6 +134,7 @@ function ImageLayer({
   const scale = (cardData as { imageScale?: number }).imageScale ?? 1;
   const offsetX = (cardData as { imageOffsetX?: number }).imageOffsetX ?? 0;
   const offsetY = (cardData as { imageOffsetY?: number }).imageOffsetY ?? 0;
+  const rotation = (cardData as { imageRotation?: number }).imageRotation ?? 0;
 
   const baseWidth =
     (cardData as { imageOriginalWidth?: number }).imageOriginalWidth ?? bounds.width;
@@ -145,6 +146,9 @@ function ImageLayer({
 
   const x = bounds.x + (bounds.width - scaledWidth) / 2 + offsetX;
   const y = bounds.y + (bounds.height - scaledHeight) / 2 + offsetY;
+  const cx = x + scaledWidth / 2;
+  const cy = y + scaledHeight / 2;
+  const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
 
   return (
     <Layer key={layer.id}>
@@ -155,6 +159,7 @@ function ImageLayer({
         y={y}
         width={scaledWidth}
         height={scaledHeight}
+        transform={transform}
         preserveAspectRatio="xMidYMid slice"
       />
     </Layer>

@@ -954,6 +954,7 @@ function AssetsModalFooter({
                 nextDraft.imageOriginalHeight = undefined;
                 nextDraft.imageOffsetX = undefined;
                 nextDraft.imageOffsetY = undefined;
+                nextDraft.imageRotation = undefined;
               }
 
               if (iconMatch && "iconAssetId" in nextDraft) {

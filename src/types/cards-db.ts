@@ -28,6 +28,7 @@ export interface CardRecord {
   imageScale?: number;
   imageOffsetX?: number;
   imageOffsetY?: number;
+  imageRotation?: number;
   imageOriginalWidth?: number;
   imageOriginalHeight?: number;
   borderColor?: string;
