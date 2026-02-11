@@ -1,7 +1,16 @@
 import "@testing-library/jest-dom";
 
 const originalEmitWarning = process.emitWarning.bind(process);
-process.emitWarning = ((warning, type, code, ...args) => {
+type EmitWarningParams = Parameters<typeof process.emitWarning>;
+type EmitWarningRest = EmitWarningParams extends [unknown, unknown?, unknown?, ...infer Rest]
+  ? Rest
+  : [];
+process.emitWarning = ((
+  warning: EmitWarningParams[0],
+  type?: EmitWarningParams[1],
+  code?: EmitWarningParams[2],
+  ...args: EmitWarningRest
+) => {
   const message = typeof warning === "string" ? warning : warning?.message;
   if (
     type === "DeprecationWarning" &&

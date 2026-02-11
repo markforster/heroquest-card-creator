@@ -15,17 +15,19 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { getCard, touchCardLastViewed } from "@/lib/cards-db";
 import type { TemplateId } from "@/types/templates";
 
+type StockpileOpenOptions = {
+  mode?: "manage" | "pair-fronts" | "pair-backs";
+  onConfirmSelection?: (cardIds: string[]) => void;
+  initialSelectedIds?: string[];
+  titleOverride?: string;
+};
+
 type AppActionsContextValue = {
   hasTemplate: boolean;
   currentTemplateName?: string;
   openTemplatePicker: () => void;
   openAssets: () => void;
-  openStockpile: (options?: {
-    mode?: "manage" | "pair-fronts" | "pair-backs";
-    onConfirmSelection?: (cardIds: string[]) => void;
-    initialSelectedIds?: string[];
-    titleOverride?: string;
-  }) => void;
+  openStockpile: (options?: StockpileOpenOptions) => void;
   openSettings: () => void;
 };
 
@@ -100,7 +102,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
         templatePicker.open();
       },
       openAssets: assetsModal.open,
-      openStockpile: (options) => {
+      openStockpile: (options?: StockpileOpenOptions) => {
         if (options?.mode) {
           setStockpileMode(options.mode);
         } else {

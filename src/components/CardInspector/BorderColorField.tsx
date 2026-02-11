@@ -1,19 +1,26 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Sparkles, X } from "lucide-react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode, RefObject } from "react";
 import { HexColorInput, HexColorPicker } from "react-colorful";
 import { useController, useFormContext } from "react-hook-form";
 
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import { usePreviewCanvas } from "@/components/CardPreview/PreviewCanvasContext";
 import { DEFAULT_BORDER_COLOR } from "@/components/CardParts/CardBorder";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getPaletteGroups } from "@/lib/palette";
 import { getBorderSwatches, setBorderSwatches } from "@/lib/settings-db";
+import { useOutsideClick } from "@/hooks/useOutsideClick";
 import type { TemplateId } from "@/types/templates";
 
 import styles from "./BorderColorField.module.css";
 
 const MAX_SWATCHES = 10;
+const SMART_SWATCHES = 5;
+const SMART_CANVAS_WIDTH = 300;
+const SMART_CANVAS_HEIGHT = 420;
 
 type BorderColorFieldProps = {
   label: string;
@@ -23,11 +30,24 @@ type BorderColorFieldProps = {
 export default function BorderColorField({ label, templateId }: BorderColorFieldProps) {
   const { t } = useI18n();
   const { control, setValue } = useFormContext();
+  const { renderPreviewCanvas } = usePreviewCanvas();
   const {
     state: { cardDrafts, isDirtyByTemplate },
     setCardDraft,
   } = useCardEditor();
   const [swatches, setSwatches] = useState<string[]>([]);
+  const [smartGroups, setSmartGroups] = useState<
+    { id: "dominant" | "vibrant" | "muted" | "dark" | "light" | "complementary"; colors: string[] }[]
+  >([]);
+  const [isSmartOpen, setIsSmartOpen] = useState(false);
+  const [isSmartBusy, setIsSmartBusy] = useState(false);
+  const [smartPopoverStyle, setSmartPopoverStyle] = useState<{
+    left: number;
+    top: number;
+  } | null>(null);
+  const smartRequestRef = useRef(0);
+  const smartPopoverRef = useRef<HTMLDivElement | null>(null);
+  const smartButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const { field } = useController({ name: "borderColor", control });
   const borderColor = typeof field.value === "string" ? field.value : "";
@@ -46,6 +66,54 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     () => swatches.filter((swatch) => swatch.toUpperCase() !== DEFAULT_BORDER_COLOR.toUpperCase()),
     [swatches],
   );
+
+  useOutsideClick([smartPopoverRef, smartButtonRef], () => setIsSmartOpen(false), isSmartOpen);
+
+  useLayoutEffect(() => {
+    if (!isSmartOpen) return;
+    if (typeof window === "undefined") return;
+
+    const updatePosition = () => {
+      const anchor = smartButtonRef.current;
+      const popover = smartPopoverRef.current;
+      if (!anchor || !popover) return;
+
+      const anchorRect = anchor.getBoundingClientRect();
+      const popoverRect = popover.getBoundingClientRect();
+      const padding = 12;
+      const preferredTop = anchorRect.bottom + 8;
+      const preferredLeft = anchorRect.left;
+
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      let left = Math.min(
+        Math.max(preferredLeft, padding),
+        viewportWidth - popoverRect.width - padding,
+      );
+
+      let top = preferredTop;
+      const wouldOverflowBottom = preferredTop + popoverRect.height + padding > viewportHeight;
+      if (wouldOverflowBottom) {
+        const aboveTop = anchorRect.top - popoverRect.height - 8;
+        top = aboveTop;
+      }
+      top = Math.min(
+        Math.max(top, padding),
+        viewportHeight - popoverRect.height - padding,
+      );
+
+      setSmartPopoverStyle({ left, top });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isSmartOpen, smartGroups, isSmartBusy]);
 
   useEffect(() => {
     let active = true;
@@ -106,6 +174,43 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     setCardDraft(templateId, { ...currentDraft, borderColor: nextColor } as never);
   };
 
+  const handleGenerateSmartSwatches = async () => {
+    const requestId = smartRequestRef.current + 1;
+    smartRequestRef.current = requestId;
+    setIsSmartBusy(true);
+
+    try {
+      const canvas = await renderPreviewCanvas({
+        width: SMART_CANVAS_WIDTH,
+        height: SMART_CANVAS_HEIGHT,
+      });
+      if (!canvas || smartRequestRef.current !== requestId) return;
+
+      const palette = await getPaletteGroups(canvas, {
+        width: SMART_CANVAS_WIDTH,
+        height: SMART_CANVAS_HEIGHT,
+      });
+      if (smartRequestRef.current !== requestId) return;
+      setSmartGroups(palette);
+    } catch {
+      if (smartRequestRef.current !== requestId) return;
+      setSmartGroups([]);
+    } finally {
+      if (smartRequestRef.current === requestId) {
+        setIsSmartBusy(false);
+      }
+    }
+  };
+
+  const handleToggleSmart = async () => {
+    if (isSmartOpen) {
+      setIsSmartOpen(false);
+      return;
+    }
+    setIsSmartOpen(true);
+    await handleGenerateSmartSwatches();
+  };
+
   return (
     <div className="mb-2">
       <label className="form-label">{label}</label>
@@ -139,6 +244,62 @@ export default function BorderColorField({ label, templateId }: BorderColorField
             >
               ↺
             </SwatchActionButton>
+            <div className={styles.smartSwatchAnchor}>
+              <SwatchActionButton
+                label={t("form.smartSwatch")}
+                title={t("form.smartSwatch")}
+                onClick={handleToggleSmart}
+                buttonRef={smartButtonRef}
+                isActive={isSmartOpen}
+              >
+                <Sparkles aria-hidden size={14} />
+              </SwatchActionButton>
+              {isSmartOpen ? (
+                <div
+                  ref={smartPopoverRef}
+                  className={styles.smartPopover}
+                  role="menu"
+                  style={
+                    smartPopoverStyle
+                      ? { left: smartPopoverStyle.left, top: smartPopoverStyle.top }
+                      : undefined
+                  }
+                >
+                  <div className={styles.smartPopoverHeader}>{t("form.smartSuggestions")}</div>
+                  {isSmartBusy ? (
+                    <div className={styles.smartPopoverHint}>{t("form.smartSwatchLoading")}</div>
+                  ) : smartGroups.length > 0 ? (
+                    <div className={styles.smartPopoverGroups}>
+                      {smartGroups.map((group) => (
+                        <div key={group.id} className={styles.smartPopoverGroup}>
+                          <div className={styles.smartPopoverGroupLabel}>
+                            {t(`form.smartGroup.${group.id}` as never)}
+                          </div>
+                          <div className={styles.smartPopoverGrid}>
+                            {group.colors.slice(0, SMART_SWATCHES).map((color) => (
+                              <button
+                                key={`${group.id}-${color}`}
+                                type="button"
+                                className={styles.smartPopoverSwatch}
+                                style={{ backgroundColor: color }}
+                                title={color}
+                                aria-label={`${t("actions.select")} ${color}`}
+                                onClick={() => {
+                                  field.onChange(color);
+                                  setIsSmartOpen(false);
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.smartPopoverHint}>{t("form.smartSwatchEmpty")}</div>
+                  )}
+                </div>
+              ) : null}
+            </div>
             {savedSwatches.slice(0, MAX_SWATCHES).map((swatch) => (
               <SwatchWithRemove
                 key={swatch}
@@ -224,7 +385,9 @@ type SwatchActionButtonProps = {
   title: string;
   disabled?: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  buttonRef?: RefObject<HTMLButtonElement>;
+  isActive?: boolean;
+  children: ReactNode;
 };
 
 function SwatchActionButton({
@@ -232,6 +395,8 @@ function SwatchActionButton({
   title,
   disabled,
   onClick,
+  buttonRef,
+  isActive,
   children,
 }: SwatchActionButtonProps) {
   return (
@@ -239,9 +404,10 @@ function SwatchActionButton({
       type="button"
       aria-label={label}
       title={title}
-      className={styles.swatchAction}
+      className={`${styles.swatchAction} ${isActive ? styles.swatchActionActive : ""}`}
       disabled={disabled}
       onClick={onClick}
+      ref={buttonRef}
     >
       {children}
     </button>

@@ -61,7 +61,10 @@ function runStrategyPipeline(
         lineHeight: result.layout.lineHeight ?? context.lineHeight,
         lines: result.layout.lines,
       };
-      if (context.role === "statHeading" && fitsWithinBounds(result.layout, bounds, fontFamily, context.fontWeight)) {
+      if (
+        context.role === "statHeading" &&
+        fitsWithinBounds(result.layout, bounds, fontFamily, context.fontWeight)
+      ) {
         return { layout: result.layout, attempts };
       }
       if (result.success && context.role !== "statHeading") return { layout: result.layout, attempts };
@@ -94,7 +97,10 @@ function runStrategyPipeline(
         lineHeight: result.layout.lineHeight ?? context.lineHeight,
         lines: result.layout.lines,
       };
-      if (context.role === "statHeading" && fitsWithinBounds(result.layout, bounds)) {
+      if (
+        context.role === "statHeading" &&
+        fitsWithinBounds(result.layout, bounds, fontFamily, context.fontWeight)
+      ) {
         return { layout: result.layout, attempts };
       }
       if (context.role !== "statHeading") {
@@ -116,27 +122,32 @@ export function fitTextWithEngine(
   const resolvedPreferences = {
     ...roleDefaults.defaultPreferences,
     ...(preferences ?? {}),
-  };
+  } as PreferencesByRole[TextRole];
   const orderedStrategies = (() => {
     if (!resolvedPreferences.preferEllipsis) {
       return roleDefaults.defaultStrategies;
     }
-    const base = roleDefaults.defaultStrategies.filter((id) => id !== "ellipsis");
+    const base: StrategyId[] = roleDefaults.defaultStrategies.filter((id) => id !== "ellipsis");
     const shrinkIndex = base.indexOf("shrink");
     if (shrinkIndex >= 0) {
       base.splice(shrinkIndex, 0, "ellipsis");
-      return base;
+      return base as StrategyId[];
     }
-    return ["ellipsis", ...base];
+    return ["ellipsis", ...base] as StrategyId[];
   })();
+  const twoLineMinPercent =
+    "twoLineMinPercent" in resolvedPreferences ? resolvedPreferences.twoLineMinPercent : undefined;
+  const allowWrap = "allowWrap" in resolvedPreferences ? resolvedPreferences.allowWrap : undefined;
+  const forceTwoLine =
+    "forceTwoLine" in resolvedPreferences ? resolvedPreferences.forceTwoLine : undefined;
   const layout = role === "title" ? titleAlgorithm(text) : statHeadingAlgorithm(text, bounds);
   return runStrategyPipeline(
     layout,
     bounds,
     orderedStrategies,
     resolvedPreferences.minFontPercent,
-    resolvedPreferences.twoLineMinPercent,
-    resolvedPreferences.allowWrap,
-    resolvedPreferences.forceTwoLine,
+    twoLineMinPercent,
+    allowWrap,
+    forceTwoLine,
   );
 }

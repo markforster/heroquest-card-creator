@@ -5,20 +5,27 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { SHOW_WEBGL_TOGGLE, USE_WEBGL_PREVIEW } from "@/config/flags";
 
 export type PreviewRenderer = "svg" | "webgl";
+export type PreviewRotationMode = "pan" | "spin";
 
 type PreviewRendererContextValue = {
   previewRenderer: PreviewRenderer;
   setPreviewRenderer: (renderer: PreviewRenderer) => void;
   togglePreviewRenderer: () => void;
+  rotationMode: PreviewRotationMode;
+  setRotationMode: (mode: PreviewRotationMode) => void;
+  rotationResetToken: number;
 };
 
 const PREVIEW_RENDERER_STORAGE_KEY = "hqcc.previewRenderer";
+const PREVIEW_RENDERER_SETTINGS_KEY = "hqcc.previewRendererSettings";
 const FORCED_RENDERER: PreviewRenderer | null = USE_WEBGL_PREVIEW ? "webgl" : null;
 
 const PreviewRendererContext = createContext<PreviewRendererContextValue | null>(null);
 
 export function PreviewRendererProvider({ children }: { children: React.ReactNode }) {
   const [previewRenderer, setPreviewRenderer] = useState<PreviewRenderer>(FORCED_RENDERER ?? "svg");
+  const [rotationMode, setRotationMode] = useState<PreviewRotationMode>("pan");
+  const [rotationResetToken, setRotationResetToken] = useState(0);
 
   useEffect(() => {
     if (FORCED_RENDERER) {
@@ -27,9 +34,24 @@ export function PreviewRendererProvider({ children }: { children: React.ReactNod
     }
     if (typeof window === "undefined") return;
     try {
-      const stored = window.localStorage.getItem(PREVIEW_RENDERER_STORAGE_KEY);
-      if (stored === "svg" || stored === "webgl") {
-        setPreviewRenderer(stored);
+      const storedSettings = window.localStorage.getItem(PREVIEW_RENDERER_SETTINGS_KEY);
+      if (storedSettings) {
+        const parsed = JSON.parse(storedSettings) as {
+          renderer?: PreviewRenderer;
+          rotationMode?: PreviewRotationMode;
+        };
+        if (parsed.renderer === "svg" || parsed.renderer === "webgl") {
+          setPreviewRenderer(parsed.renderer);
+        }
+        if (parsed.rotationMode === "pan" || parsed.rotationMode === "spin") {
+          setRotationMode(parsed.rotationMode);
+        }
+        return;
+      }
+
+      const storedRenderer = window.localStorage.getItem(PREVIEW_RENDERER_STORAGE_KEY);
+      if (storedRenderer === "svg" || storedRenderer === "webgl") {
+        setPreviewRenderer(storedRenderer);
       }
     } catch {
       // Ignore localStorage errors.
@@ -40,11 +62,16 @@ export function PreviewRendererProvider({ children }: { children: React.ReactNod
     if (FORCED_RENDERER) return;
     if (typeof window === "undefined") return;
     try {
+      const payload = JSON.stringify({
+        renderer: previewRenderer,
+        rotationMode,
+      });
+      window.localStorage.setItem(PREVIEW_RENDERER_SETTINGS_KEY, payload);
       window.localStorage.setItem(PREVIEW_RENDERER_STORAGE_KEY, previewRenderer);
     } catch {
       // Ignore localStorage errors.
     }
-  }, [previewRenderer]);
+  }, [previewRenderer, rotationMode]);
 
   const value = useMemo<PreviewRendererContextValue>(
     () => ({
@@ -52,13 +79,27 @@ export function PreviewRendererProvider({ children }: { children: React.ReactNod
       setPreviewRenderer: (renderer) => {
         if (FORCED_RENDERER) return;
         setPreviewRenderer(renderer);
+        if (renderer === "svg") {
+          setRotationResetToken((prev) => prev + 1);
+        }
       },
       togglePreviewRenderer: () => {
         if (FORCED_RENDERER) return;
-        setPreviewRenderer((prev) => (prev === "svg" ? "webgl" : "svg"));
+        setPreviewRenderer((prev) => {
+          const next = prev === "svg" ? "webgl" : "svg";
+          if (next === "svg") {
+            setRotationResetToken((current) => current + 1);
+          }
+          return next;
+        });
       },
+      rotationMode,
+      setRotationMode: (mode) => {
+        setRotationMode(mode);
+      },
+      rotationResetToken,
     }),
-    [previewRenderer],
+    [previewRenderer, rotationMode, rotationResetToken],
   );
 
   return (

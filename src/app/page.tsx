@@ -9,6 +9,7 @@ import CardPreviewContainer from "@/components/CardEditor/CardPreviewContainer";
 import CardInspector from "@/components/CardInspector/CardInspector";
 import TemplateChooser from "@/components/CardInspector/TemplateChooser";
 import type { CardPreviewHandle } from "@/components/CardPreview";
+import { PreviewCanvasProvider } from "@/components/CardPreview/PreviewCanvasContext";
 import DatabaseVersionGate from "@/components/DatabaseVersionGate";
 import { EditorSaveProvider } from "@/components/EditorSaveContext";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
@@ -146,7 +147,9 @@ function IndexPageInner() {
                   <TemplateChooser />
                 </div>
                 <div className={styles.inspectorBody}>
-                  <CardInspector />
+                  <PreviewCanvasProvider previewRef={previewRef}>
+                    <CardInspector />
+                  </PreviewCanvasProvider>
                 </div>
                 <EditorActionsToolbar
                   canSaveChanges={canSaveChanges}

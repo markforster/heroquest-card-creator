@@ -20,11 +20,13 @@ import {
   Shape,
   Texture,
   TextureLoader,
+  Vector2,
   Vector3,
 } from "three";
 
 import blueprintFallback from "@/assets/blueprint.png";
 import linenNormal3 from "@/assets/linen-3.png";
+import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
 
 import styles from "./WebglPreview.module.css";
@@ -40,6 +42,7 @@ type WebglPreviewProps = {
   backTextureCanvas?: HTMLCanvasElement | null;
   backTextureVersion?: number;
   fallbackTextureSrc?: string;
+  rotationResetToken?: number;
 };
 
 const CARD_ASPECT = 1050 / 750;
@@ -112,6 +115,8 @@ function CardPlane({
   }, []);
 
   const activeNormalTexture = USE_DEBUG_NORMAL_MAP ? debugNormalTexture : linenNormalTexture;
+  const strongNormalScale = useMemo(() => new Vector2(2, 2), []);
+  const lightNormalScale = useMemo(() => new Vector2(1.1, 1.1), []);
   const glintMaterial = useMemo(() => {
     const material = new ShaderMaterial({
       transparent: true,
@@ -202,7 +207,7 @@ function CardPlane({
           emissive="#ffffff"
           emissiveIntensity={0.45}
           normalMap={activeNormalTexture ?? undefined}
-          normalScale={[2.0, 2.0]}
+          normalScale={strongNormalScale}
           roughness={0.6}
           metalness={0.02}
           clearcoat={0.3}
@@ -226,7 +231,7 @@ function CardPlane({
             depthWrite={false}
             roughness={0.3}
             normalMap={activeNormalTexture}
-            normalScale={[1.1, 1.1]}
+            normalScale={lightNormalScale}
             metalness={0}
             clearcoat={1}
             clearcoatRoughness={0.2}
@@ -412,9 +417,11 @@ export default function WebglPreview({
   backTextureCanvas,
   backTextureVersion = 0,
   fallbackTextureSrc,
+  rotationResetToken = 0,
 }: WebglPreviewProps) {
   const rootClassName = className ? `${styles.root} ${className}` : styles.root;
-  const { sheenAngle, sheenIntensity, interactionMode } = useWebglPreviewSettings();
+  const { sheenAngle, sheenIntensity } = useWebglPreviewSettings();
+  const { rotationMode } = usePreviewRenderer();
   const glintPower = Math.max(0.06, Math.min(0.45, 0.55 - sheenAngle * 0.35));
   const containerRef = useRef<HTMLDivElement | null>(null);
   const yawGroupRef = useRef<Group | null>(null);
@@ -507,16 +514,30 @@ export default function WebglPreview({
   });
   const targetRotationRef = useRef({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const isPanMode = interactionMode === "pan";
+  const isPanMode = rotationMode === "pan";
 
   useEffect(() => {
-    if (interactionMode === "pan") {
+    if (rotationMode === "pan") {
       if (yawGroupRef.current) {
         yawGroupRef.current.rotation.y = normalizeAngle(yawGroupRef.current.rotation.y);
       }
       targetRotationRef.current = { x: 0, y: 0 };
     }
-  }, [interactionMode]);
+  }, [rotationMode]);
+
+  useEffect(() => {
+    if (dragStateRef.current.active) {
+      dragStateRef.current.active = false;
+      setIsDragging(false);
+    }
+    targetRotationRef.current = { x: 0, y: 0 };
+    if (yawGroupRef.current) {
+      yawGroupRef.current.rotation.y = 0;
+    }
+    if (pitchGroupRef.current) {
+      pitchGroupRef.current.rotation.x = 0;
+    }
+  }, [rotationResetToken]);
 
   const clampRotation = (value: number, maxDeg: number) => {
     const max = (maxDeg * Math.PI) / 180;

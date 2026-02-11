@@ -4,28 +4,28 @@ import { Move, Rotate3d } from "lucide-react";
 
 import ToolbarButton from "@/components/ToolsToolbar/ToolbarButton";
 import ToolbarButtonGroup from "@/components/ToolsToolbar/ToolbarButtonGroup";
-import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
+import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export default function WebglInteractionGroup() {
-  const { interactionMode, setInteractionMode } = useWebglPreviewSettings();
+  const { rotationMode, setRotationMode } = usePreviewRenderer();
   const { t } = useI18n();
 
   return (
     <ToolbarButtonGroup>
       <ToolbarButton
-        isActive={interactionMode === "pan"}
+        isActive={rotationMode === "pan"}
         ariaLabel={t("label.webglPan")}
         title={t("label.webglPan")}
-        onClick={() => setInteractionMode("pan")}
+        onClick={() => setRotationMode("pan")}
       >
         <Move aria-hidden="true" />
       </ToolbarButton>
       <ToolbarButton
-        isActive={interactionMode === "orbit"}
+        isActive={rotationMode === "spin"}
         ariaLabel={t("label.webglRotate")}
         title={t("label.webglRotate")}
-        onClick={() => setInteractionMode("orbit")}
+        onClick={() => setRotationMode("spin")}
       >
         <Rotate3d aria-hidden="true" />
       </ToolbarButton>

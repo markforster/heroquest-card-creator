@@ -184,3 +184,4 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 CardPreview.displayName = "CardPreview";
 
 export default CardPreview;
+export type { CardPreviewHandle, CardPreviewProps } from "./types";

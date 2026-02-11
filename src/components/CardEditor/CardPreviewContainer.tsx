@@ -27,7 +27,7 @@ type CardPreviewContainerProps = {
 
 export default function CardPreviewContainer({ previewRef }: CardPreviewContainerProps) {
   const { language } = useI18n();
-  const { previewRenderer } = usePreviewRenderer();
+  const { previewRenderer, rotationResetToken } = usePreviewRenderer();
   const { preferences, isDragging } = useTextFittingPreferences();
   const preferencesKey = JSON.stringify(preferences);
   const [textureCanvas, setTextureCanvas] = useState<HTMLCanvasElement | null>(null);
@@ -290,6 +290,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           frontTextureVersion={textureVersion}
           backTextureCanvas={reverseTextureCanvas}
           backTextureVersion={reverseTextureVersion}
+          rotationResetToken={rotationResetToken}
         />
       ) : showWebgl ? (
         <WebglPreview
@@ -299,6 +300,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           frontTextureVersion={textureVersion}
           backTextureCanvas={reverseTextureCanvas}
           backTextureVersion={reverseTextureVersion}
+          rotationResetToken={rotationResetToken}
         />
       ) : null}
     </div>
