@@ -9,6 +9,7 @@ import styles from "@/app/page.module.css";
 import CardPreview from "@/components/CardPreview";
 import ConfirmModal from "@/components/ConfirmModal";
 import ModalShell from "@/components/ModalShell";
+import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import {
   formatMessage,
   resolveExportFileName,
@@ -30,7 +31,6 @@ import {
 } from "@/lib/collections-db";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 import type { CardRecord } from "@/types/cards-db";
-import type { CollectionRecord } from "@/types/collections-db";
 
 import { CardPreviewHandle } from "../CardPreview/types";
 
@@ -76,21 +76,24 @@ export default function StockpileModal({
     cardIds: string[];
     onConfirm: () => Promise<void> | void;
   } | null>(null);
-  const [cards, setCards] = useState<CardRecord[]>([]);
-  const [collections, setCollections] = useState<CollectionRecord[]>([]);
   const [search, setSearch] = useState("");
   const [templateFilter, setTemplateFilter] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<
     { type: "all" } | { type: "recent" } | { type: "unfiled" } | { type: "collection"; id: string }
   >({ type: "all" });
+  const { cards, setCards, collections, setCollections } = useStockpileData({
+    isOpen,
+    refreshToken,
+    activeFilter,
+    setActiveFilter,
+  });
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
   const [collectionFormMode, setCollectionFormMode] = useState<"create" | "edit">("create");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addTargetCollectionId, setAddTargetCollectionId] = useState("");
   const [collectionName, setCollectionName] = useState("");
   const [collectionDescription, setCollectionDescription] = useState("");
-  const [storedCollectionId, setStoredCollectionId] = useState<string | null>(null);
   const [collectionNameError, setCollectionNameError] = useState<string | null>(null);
   const [exportTarget, setExportTarget] = useState<CardRecord | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -110,28 +113,6 @@ export default function StockpileModal({
   } | null>(null);
   const [conflictPopoverCardId, setConflictPopoverCardId] = useState<string | null>(null);
   const conflictHoverTimeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    let cancelled = false;
-
-    listCards({ status: "saved" })
-      .then((results) => {
-        if (!cancelled) {
-          setCards(results);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCards([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, refreshToken]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -162,67 +143,12 @@ export default function StockpileModal({
   }, [isOpen, isPairMode]);
 
   useEffect(() => {
-    if (!collections.length || !storedCollectionId) {
-      return;
-    }
-
-    const exists = collections.some((collection) => collection.id === storedCollectionId);
-    if (exists) {
-      setActiveFilter({ type: "collection", id: storedCollectionId });
-      return;
-    }
-
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem("hqcc.selectedCollectionId");
-    }
-    setStoredCollectionId(null);
-  }, [collections, storedCollectionId]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    if (activeFilter.type === "collection") {
-      window.localStorage.setItem("hqcc.selectedCollectionId", activeFilter.id);
-      setStoredCollectionId(activeFilter.id);
-      return;
-    }
-
-    window.localStorage.removeItem("hqcc.selectedCollectionId");
-    setStoredCollectionId(null);
-  }, [activeFilter]);
-
-  useEffect(() => {
     if (!isOpen) return;
 
     setIsCollectionModalOpen(false);
     setCollectionName("");
     setCollectionDescription("");
-    if (typeof window !== "undefined") {
-      setStoredCollectionId(window.localStorage.getItem("hqcc.selectedCollectionId"));
-    }
   }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    let cancelled = false;
-
-    listCollections()
-      .then((results) => {
-        if (!cancelled) {
-          setCollections(results);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCollections([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, refreshToken]);
 
   const recentCards = useMemo(() => {
     const withViewed = cards.filter((card) => typeof card.lastViewedAt === "number");
@@ -1814,7 +1740,6 @@ export default function StockpileModal({
                             if (typeof window !== "undefined") {
                               window.localStorage.removeItem("hqcc.selectedCollectionId");
                             }
-                            setStoredCollectionId(null);
                             setIsCollectionModalOpen(false);
                             setCollectionName("");
                             setCollectionDescription("");
