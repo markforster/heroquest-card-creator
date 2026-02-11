@@ -2481,6 +2481,65 @@
 
 /* Image field controls */
 
+.imageAccordion {
+  margin-top: 0.35rem;
+}
+
+.imageAccordionItem {
+  border: 1px solid #2b2b2b;
+  border-radius: 8px;
+  background: #1b1b1b;
+}
+
+.imageAccordionHeader {
+  margin: 0;
+}
+
+.imageAccordionButton {
+  padding: 0.45rem 0.65rem;
+  background: #1e1e1e;
+  color: #e5e7eb;
+  font-size: 0.85rem;
+  box-shadow: none;
+}
+
+.imageAccordionButton:not(.collapsed) {
+  background: #1e1e1e;
+  color: #f5f5f5;
+}
+
+.imageAccordionButton:hover {
+  background: #222;
+  color: #f8fafc;
+}
+
+.imageAccordionButton:focus {
+  box-shadow: 0 0 0 2px var(--hq-focus-ring);
+}
+
+.imageAccordionButton::after {
+  display: none;
+}
+
+.imageAccordionTitle {
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+.imageAccordionIcon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.imageAccordionBody {
+  padding: 0.65rem 0.65rem 0.75rem;
+  background: #151515;
+}
+
 .imageControlGroup {
   margin-top: 0.5rem;
   display: flex;
