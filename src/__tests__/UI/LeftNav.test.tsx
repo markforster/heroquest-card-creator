@@ -5,6 +5,7 @@ import LeftNav from "@/components/LeftNav";
 const openAssets = jest.fn();
 const openStockpile = jest.fn();
 const openSettings = jest.fn();
+const openTemplatePicker = jest.fn();
 
 jest.mock("@/components/AppActionsContext", () => ({
   __esModule: true,
@@ -12,6 +13,20 @@ jest.mock("@/components/AppActionsContext", () => ({
     openAssets,
     openStockpile,
     openSettings,
+    openTemplatePicker,
+    hasTemplate: true,
+  }),
+}));
+
+jest.mock("@/components/CardEditor/CardEditorContext", () => ({
+  __esModule: true,
+  useCardEditor: () => ({
+    state: {
+      selectedTemplateId: "hero",
+      activeCardIdByTemplate: {
+        hero: "card-1",
+      },
+    },
   }),
 }));
 
@@ -67,6 +82,7 @@ describe("LeftNav (UI)", () => {
     openAssets.mockClear();
     openStockpile.mockClear();
     openSettings.mockClear();
+    openTemplatePicker.mockClear();
   });
 
   it("renders actions and triggers handlers", () => {

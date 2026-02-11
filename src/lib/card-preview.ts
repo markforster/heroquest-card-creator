@@ -57,3 +57,19 @@ export function resolveCardPreviewFileName(
 
   return (safe || fallback) + ".png";
 }
+
+let cachedEmbeddedFontCss: string | null = null;
+
+export async function getEmbeddedFontCss(): Promise<string | null> {
+  if (cachedEmbeddedFontCss) {
+    return cachedEmbeddedFontCss;
+  }
+
+  try {
+    const { embeddedFontFaceCss } = await import("@/generated/embeddedAssets");
+    cachedEmbeddedFontCss = embeddedFontFaceCss;
+    return cachedEmbeddedFontCss;
+  } catch {
+    return null;
+  }
+}
