@@ -21,6 +21,7 @@ const MAX_SWATCHES = 10;
 const SMART_SWATCHES = 5;
 const SMART_CANVAS_WIDTH = 300;
 const SMART_CANVAS_HEIGHT = 420;
+const TRANSPARENT_BORDER_COLOR = "transparent";
 
 type BorderColorFieldProps = {
   label: string;
@@ -51,10 +52,16 @@ export default function BorderColorField({ label, templateId }: BorderColorField
 
   const { field } = useController({ name: "borderColor", control });
   const borderColor = typeof field.value === "string" ? field.value : "";
-  const colorValue = borderColor.trim() ? borderColor : DEFAULT_BORDER_COLOR;
+  const isTransparent = isTransparentColor(borderColor);
+  const colorValue =
+    borderColor.trim() && !isTransparent ? borderColor : DEFAULT_BORDER_COLOR;
   const normalizedCurrent = useMemo(
     () => normalizeHex(colorValue) ?? DEFAULT_BORDER_COLOR,
     [colorValue],
+  );
+  const normalizedSelected = useMemo(
+    () => normalizeBorderColor(borderColor),
+    [borderColor],
   );
   const swatchKeys = useMemo(
     () => new Set(swatches.map((swatch) => swatch.toUpperCase())),
@@ -63,7 +70,11 @@ export default function BorderColorField({ label, templateId }: BorderColorField
   const savedColorRef = useRef<string | undefined>(undefined);
   const draftColor = (cardDrafts[templateId] as { borderColor?: string } | undefined)?.borderColor;
   const savedSwatches = useMemo(
-    () => swatches.filter((swatch) => swatch.toUpperCase() !== DEFAULT_BORDER_COLOR.toUpperCase()),
+    () =>
+      swatches.filter((swatch) => {
+        if (isTransparentColor(swatch)) return false;
+        return swatch.toUpperCase() !== DEFAULT_BORDER_COLOR.toUpperCase();
+      }),
     [swatches],
   );
 
@@ -166,12 +177,17 @@ export default function BorderColorField({ label, templateId }: BorderColorField
   };
 
   const handleRevert = () => {
-    const saved = normalizeHex(savedColorRef.current);
-    const nextColor = (saved ? saved : DEFAULT_BORDER_COLOR).toUpperCase();
+    const saved = normalizeBorderColor(savedColorRef.current);
+    const nextColor =
+      saved === TRANSPARENT_BORDER_COLOR ? TRANSPARENT_BORDER_COLOR : saved.toUpperCase();
     setValue("borderColor", nextColor, { shouldDirty: true, shouldTouch: true });
 
     const currentDraft = (cardDrafts[templateId] as { borderColor?: string } | undefined) ?? {};
     setCardDraft(templateId, { ...currentDraft, borderColor: nextColor } as never);
+  };
+
+  const handleSelectDefault = () => {
+    setValue("borderColor", undefined, { shouldDirty: true, shouldTouch: true });
   };
 
   const handleGenerateSmartSwatches = async () => {
@@ -229,17 +245,18 @@ export default function BorderColorField({ label, templateId }: BorderColorField
           />
         </div>
         <div className={styles.swatches}>
-          <div className={styles.swatchRow}>
+          <div className={styles.specialRow}>
             <SwatchButton
               color={DEFAULT_BORDER_COLOR}
               label={`${t("actions.select")} ${DEFAULT_BORDER_COLOR}`}
               title={t("form.heroquestDefaultBrown")}
-              onClick={() => field.onChange(undefined)}
+              isSelected={normalizedSelected === DEFAULT_BORDER_COLOR}
+              onClick={handleSelectDefault}
             />
             <SwatchActionButton
               label={t("actions.cancel")}
               title={t("actions.cancel")}
-              disabled={!hasRevert(normalizedCurrent, savedColorRef.current)}
+              disabled={!hasRevert(borderColor, savedColorRef.current)}
               onClick={handleRevert}
             >
               ↺
@@ -300,10 +317,21 @@ export default function BorderColorField({ label, templateId }: BorderColorField
                 </div>
               ) : null}
             </div>
+            <SwatchButton
+              color={TRANSPARENT_BORDER_COLOR}
+              label={`${t("actions.select")} ${t("form.noBorder")}`}
+              title={t("form.noBorder")}
+              className={styles.noBorderSwatch}
+              isSelected={normalizedSelected === TRANSPARENT_BORDER_COLOR}
+              onClick={() => field.onChange(TRANSPARENT_BORDER_COLOR)}
+            />
+          </div>
+          <div className={styles.swatchGrid}>
             {savedSwatches.slice(0, MAX_SWATCHES).map((swatch) => (
               <SwatchWithRemove
                 key={swatch}
                 color={swatch}
+                isSelected={normalizeBorderColor(swatch) === normalizedSelected}
                 onSelect={() => field.onChange(swatch)}
                 onRemove={() => handleRemoveSwatch(swatch)}
                 ariaLabel={`${t("actions.select")} ${swatch}`}
@@ -354,10 +382,19 @@ function normalizeHex(value: string | undefined): string | null {
   return null;
 }
 
+function isTransparentColor(value?: string) {
+  return value?.trim().toLowerCase() === TRANSPARENT_BORDER_COLOR;
+}
+
+function normalizeBorderColor(value?: string) {
+  if (isTransparentColor(value)) return TRANSPARENT_BORDER_COLOR;
+  return normalizeHex(value) ?? DEFAULT_BORDER_COLOR;
+}
+
 function hasRevert(current: string, saved: string | undefined) {
-  const normalizedCurrent = normalizeHex(current) ?? DEFAULT_BORDER_COLOR;
-  const normalizedSaved = normalizeHex(saved) ?? DEFAULT_BORDER_COLOR;
-  return normalizedCurrent.toUpperCase() !== normalizedSaved.toUpperCase();
+  const normalizedCurrent = normalizeBorderColor(current);
+  const normalizedSaved = normalizeBorderColor(saved);
+  return normalizedCurrent !== normalizedSaved;
 }
 
 type SwatchButtonProps = {
@@ -365,15 +402,26 @@ type SwatchButtonProps = {
   label: string;
   title?: string;
   onClick: () => void;
+  className?: string;
+  isSelected?: boolean;
 };
 
-function SwatchButton({ color, label, title, onClick }: SwatchButtonProps) {
+function SwatchButton({
+  color,
+  label,
+  title,
+  onClick,
+  className,
+  isSelected,
+}: SwatchButtonProps) {
   return (
     <button
       type="button"
       aria-label={label}
       title={title ?? label}
-      className={styles.swatchButton}
+      className={`${styles.swatchButton} ${isSelected ? styles.swatchSelected : ""} ${
+        className ?? ""
+      }`}
       style={{ backgroundColor: color }}
       onClick={onClick}
     />
@@ -420,6 +468,7 @@ type SwatchWithRemoveProps = {
   onRemove: () => void;
   ariaLabel: string;
   removeLabel: string;
+  isSelected?: boolean;
 };
 
 function SwatchWithRemove({
@@ -428,6 +477,7 @@ function SwatchWithRemove({
   onRemove,
   ariaLabel,
   removeLabel,
+  isSelected,
 }: SwatchWithRemoveProps) {
   return (
     <div className={styles.swatchShell}>
@@ -435,7 +485,7 @@ function SwatchWithRemove({
         type="button"
         aria-label={ariaLabel}
         title={color}
-        className={styles.swatchButton}
+        className={`${styles.swatchButton} ${isSelected ? styles.swatchSelected : ""}`}
         style={{ backgroundColor: color }}
         onClick={onSelect}
       />
