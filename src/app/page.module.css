@@ -560,6 +560,8 @@
   border: 1px solid rgba(0, 0, 0, 0.75);
   border-radius: 8px;
   overflow: hidden;
+  animation: toolsToolbarReveal 160ms ease-out;
+  transform-origin: top right;
 }
 
 .toolsToolbarGroup .toolsToolbarButton {
@@ -573,6 +575,10 @@
   background: #0f0f0f;
   color: #f2f2f2;
   border: 0;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .toolsToolbarGroup .toolsToolbarButton svg {
@@ -684,6 +690,17 @@
 .toolsToolbarPopoverHint {
   font-size: 0.72rem;
   color: #9a9a9a;
+}
+
+@keyframes toolsToolbarReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .previewModeFixed {

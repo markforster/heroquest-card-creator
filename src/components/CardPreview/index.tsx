@@ -5,39 +5,20 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import BlueprintRenderer from "@/components/BlueprintRenderer";
-import { usePreviewMode } from "@/components/PreviewModeContext";
-import { templateComponentsById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getAssetBlob } from "@/lib/assets-db";
+import {
+  extractFileName,
+  guessOriginalFileName,
+  readBlobAsDataUrl,
+  resolveCardPreviewFileName,
+} from "@/lib/card-preview";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
-import type { CardDataByTemplate } from "@/types/card-data";
-import type { TemplateId } from "@/types/templates";
 
 import styles from "./CardPreview.module.css";
+import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "./consts";
 
-import type { StaticImageData } from "next/image";
-
-type CardPreviewProps = {
-  templateId?: TemplateId;
-  templateName?: string;
-  backgroundSrc?: StaticImageData;
-  cardData?: CardDataByTemplate[TemplateId];
-};
-
-export type CardPreviewHandle = {
-  exportAsPng: () => Promise<void>;
-  renderToPngBlob: (options?: { width?: number; height?: number }) => Promise<Blob | null>;
-  renderToCanvas: (options?: {
-    width?: number;
-    height?: number;
-  }) => Promise<HTMLCanvasElement | null>;
-  getSvgElement: () => SVGSVGElement | null;
-};
-
-const CARD_WIDTH = 750;
-const CARD_HEIGHT = 1050;
-const CARD_CLIP_INSET = 2;
-const CARD_CORNER_RADIUS = 28;
+import type { CardPreviewHandle, CardPreviewProps } from "./types";
 
 let cachedEmbeddedFontCss: string | null = null;
 
@@ -55,50 +36,9 @@ async function getEmbeddedFontCss(): Promise<string | null> {
   }
 }
 
-function extractFileName(href: string): string | null {
-  const trimmed = href.split("#")[0]?.split("?")[0];
-  if (!trimmed) return null;
-
-  const parts = trimmed.split("/");
-  const last = parts[parts.length - 1];
-  return last || null;
-}
-
-function guessOriginalFileName(fileName: string): string[] {
-  const candidates = new Set([fileName]);
-
-  const dotParts = fileName.split(".");
-  if (dotParts.length >= 3) {
-    const ext = dotParts[dotParts.length - 1];
-    const base = dotParts.slice(0, -2).join(".");
-    candidates.add(`${base}.${ext}`);
-  }
-
-  if (dotParts.length === 2) {
-    const ext = dotParts[1];
-    const base = dotParts[0];
-    const withoutDashHash = base.replace(/-[0-9a-f]{8,}$/i, "");
-    if (withoutDashHash !== base) {
-      candidates.add(`${withoutDashHash}.${ext}`);
-    }
-  }
-
-  return Array.from(candidates);
-}
-
-function readBlobAsDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error("Failed to read blob"));
-    reader.readAsDataURL(blob);
-  });
-}
-
 const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
   ({ templateId, templateName, backgroundSrc, cardData }, ref) => {
     const { t } = useI18n();
-    const { previewMode } = usePreviewMode();
     const background = backgroundSrc ?? parchmentBackground;
     const [backgroundLoaded, setBackgroundLoaded] = useState(false);
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -198,12 +138,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           try {
             const response = await fetch(url);
             const blob = await response.blob();
-            const dataUrl: string = await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = () => reject(new Error("Failed to read image blob"));
-              reader.readAsDataURL(blob);
-            });
+            const dataUrl = await readBlobAsDataUrl(blob, "Failed to read image blob");
 
             imgEl.setAttribute("href", dataUrl);
             imgEl.setAttributeNS("http://www.w3.org/1999/xlink", "href", dataUrl);
@@ -308,23 +243,9 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 
           const pngUrl = URL.createObjectURL(pngBlob);
 
-          const resolveFileName = () => {
-            const rawTitle =
-              (cardData && "title" in cardData && (cardData as { title?: string }).title) ||
-              templateName ||
-              "card";
-
-            const trimmed = rawTitle.trim();
-            const lower = trimmed.toLowerCase();
-            const replacedSpaces = lower.replace(/\s+/g, "-");
-            const safe = replacedSpaces.replace(/[^a-z0-9\-_.]+/g, "");
-
-            return (safe || "card") + ".png";
-          };
-
           const link = document.createElement("a");
           link.href = pngUrl;
-          link.download = resolveFileName();
+          link.download = resolveCardPreviewFileName(cardData as { title?: string }, templateName);
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
@@ -361,9 +282,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
       [cardData, templateName],
     );
 
-    const TemplateComponent = templateId ? templateComponentsById[templateId] : undefined;
-    const showBlueprint = previewMode === "blueprint";
-
     return (
       <div className={styles.root}>
         <div className={styles.frame}>
@@ -393,26 +311,15 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                 />
               </clipPath>
             </defs>
-            {showBlueprint ? (
-              <g clipPath="url(#cardClip)">
-                <BlueprintRenderer
-                  templateId={templateId}
-                  templateName={templateName}
-                  background={background}
-                  backgroundLoaded={backgroundLoaded}
-                  cardData={cardData}
-                />
-              </g>
-            ) : TemplateComponent ? (
-              <g clipPath="url(#cardClip)">
-                <TemplateComponent
-                  templateName={templateName}
-                  background={background}
-                  backgroundLoaded={backgroundLoaded}
-                  cardData={cardData}
-                />
-              </g>
-            ) : null}
+            <g clipPath="url(#cardClip)">
+              <BlueprintRenderer
+                templateId={templateId}
+                templateName={templateName}
+                background={background}
+                backgroundLoaded={backgroundLoaded}
+                cardData={cardData}
+              />
+            </g>
             <rect
               x={CARD_CLIP_INSET}
               y={CARD_CLIP_INSET}

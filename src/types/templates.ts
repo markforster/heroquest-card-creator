@@ -1,7 +1,5 @@
-import type { CardDataByTemplate } from "./card-data";
 import type { CardFace } from "./card-face";
 import type { StaticImageData } from "next/image";
-import type { ComponentType } from "react";
 
 export type TemplateId =
   | "hero"
@@ -12,15 +10,6 @@ export type TemplateId =
   | "labelled-back";
 
 export type TemplateKind = "character" | "monster" | "treasure" | "back" | "custom" | "other";
-
-export type TemplateRenderProps = {
-  templateName?: string;
-  background: StaticImageData;
-  backgroundLoaded: boolean;
-  cardData?: CardDataByTemplate[TemplateId];
-};
-
-export type CardTemplateComponent = ComponentType<TemplateRenderProps>;
 
 export type CardTemplateMeta = {
   id: TemplateId;

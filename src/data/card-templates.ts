@@ -9,13 +9,7 @@ import labelledBackThumbnail from "@/assets/template-thumbnails/labelled-back.pn
 import largeTreasureThumbnail from "@/assets/template-thumbnails/large-treasure.png";
 import monsterThumbnail from "@/assets/template-thumbnails/monster.png";
 import smallTreasureThumbnail from "@/assets/template-thumbnails/small-treasure.png";
-import HeroBackTemplate from "@/components/CardTemplates/HeroBackTemplate";
-import HeroCardTemplate from "@/components/CardTemplates/HeroCardTemplate";
-import LabelledBackTemplate from "@/components/CardTemplates/LabelledBackTemplate";
-import LargeTreasureTemplate from "@/components/CardTemplates/LargeTreasureTemplate";
-import MonsterCardTemplate from "@/components/CardTemplates/MonsterCardTemplate";
-import SmallTreasureTemplate from "@/components/CardTemplates/SmallTreasureTemplate";
-import type { CardTemplateComponent, CardTemplateMeta, TemplateId } from "@/types/templates";
+import type { CardTemplateMeta } from "@/types/templates";
 
 export const cardTemplates: CardTemplateMeta[] = [
   {
@@ -77,12 +71,3 @@ export const cardTemplates: CardTemplateMeta[] = [
 export const cardTemplatesById: Record<string, CardTemplateMeta> = Object.fromEntries(
   cardTemplates.map((tpl) => [tpl.id, tpl]),
 );
-
-export const templateComponentsById: Record<TemplateId, CardTemplateComponent> = {
-  hero: HeroCardTemplate,
-  monster: MonsterCardTemplate,
-  "small-treasure": SmallTreasureTemplate,
-  "large-treasure": LargeTreasureTemplate,
-  "hero-back": HeroBackTemplate,
-  "labelled-back": LabelledBackTemplate,
-};
