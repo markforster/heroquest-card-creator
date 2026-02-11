@@ -1,9 +1,9 @@
 import ribbon from "@/assets/card-parts/ribbon.png";
 import Layer from "@/components/CardPreview/Layer";
+import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
 import { isTextBoundsDebugEnabled } from "@/lib/debug-flags";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";
-import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
 
 type RibbonTitleProps = {
   title: string;
@@ -38,8 +38,9 @@ export default function RibbonTitle({
     height: RIBBON_HEIGHT,
   };
   const resolvedRibbonBounds = ribbonBounds ?? ribbonBox;
-  const resolvedTextBounds =
-    showRibbon ? textBounds ?? resolvedRibbonBounds : textBoundsNoRibbon ?? textBounds ?? resolvedRibbonBounds;
+  const resolvedTextBounds = showRibbon
+    ? (textBounds ?? resolvedRibbonBounds)
+    : (textBoundsNoRibbon ?? textBounds ?? resolvedRibbonBounds);
   const centerX = resolvedTextBounds.x + resolvedTextBounds.width / 2;
   const centerY = resolvedTextBounds.y + resolvedTextBounds.height / 2;
   const { preferences } = useTextFittingPreferences();

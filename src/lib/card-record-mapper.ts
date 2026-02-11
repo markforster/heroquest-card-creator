@@ -1,7 +1,7 @@
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
-import type { TemplateId } from "@/types/templates";
 import type { StatValue } from "@/types/stats";
+import type { TemplateId } from "@/types/templates";
 
 export function cardRecordToCardData<T extends TemplateId>(
   record: CardRecord & { templateId: T },

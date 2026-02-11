@@ -1,12 +1,14 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import CardPreview, { CardPreviewHandle } from "@/components/CardPreview";
 import WebglPreview from "@/components/CardPreview/WebglPreview";
 import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
 import { cardTemplatesById } from "@/data/card-templates";
-import { useI18n } from "@/i18n/I18nProvider";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
+import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { getCard, listCards } from "@/lib/cards-db";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -14,11 +16,9 @@ import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
 import { useCardEditor } from "./CardEditorContext";
-
-import { useEffect, useRef, useState } from "react";
-import type { RefObject } from "react";
-
 import styles from "./CardPreviewContainer.module.css";
+
+import type { RefObject } from "react";
 
 type CardPreviewContainerProps = {
   previewRef: RefObject<CardPreviewHandle>;

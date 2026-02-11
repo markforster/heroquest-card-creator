@@ -1,10 +1,10 @@
 "use client";
 
-import type { ReactNode } from "react";
-
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
+
+import type { ReactNode } from "react";
 
 type ConfirmModalProps = {
   isOpen: boolean;

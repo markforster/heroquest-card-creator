@@ -17,14 +17,12 @@ export default function BackupProgressOverlay({
   title,
   statusLabel,
   secondaryLabel,
-  secondaryPercent,
   current,
   total,
 }: BackupProgressOverlayProps) {
   if (!isOpen) return null;
 
-  const percent =
-    total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+  const percent = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
   const mainPercentValue = current >= total && total > 0 ? 100 : percent;
   const showSecondary = Boolean(secondaryLabel);
 

@@ -16,9 +16,9 @@ import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import { inspectorModeFlags, useInspectorMode } from "@/components/InspectorModeContext";
-import { previewModeFlags, usePreviewMode } from "@/components/PreviewModeContext";
-import LanguageMenu from "@/components/LanguageMenu";
 import KeyBinding from "@/components/KeyBinding";
+import LanguageMenu from "@/components/LanguageMenu";
+import { previewModeFlags, usePreviewMode } from "@/components/PreviewModeContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
 const COLLAPSE_MEDIA_QUERY = "(max-width: 1280px)";

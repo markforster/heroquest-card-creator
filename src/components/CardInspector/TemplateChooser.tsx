@@ -1,8 +1,8 @@
 "use client";
 
+import { BringToFront, Combine, SendToBack, Unlink2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { BringToFront, Combine, SendToBack, Unlink2 } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
@@ -10,8 +10,8 @@ import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useEditorSave } from "@/components/EditorSaveContext";
 import { cardTemplatesById } from "@/data/card-templates";
-import { useI18n } from "@/i18n/I18nProvider";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
+import { useI18n } from "@/i18n/I18nProvider";
 import { getCard, listCards, touchCardLastViewed, updateCard, updateCards } from "@/lib/cards-db";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
@@ -76,9 +76,7 @@ export default function TemplateChooser() {
   const draft = currentTemplateId
     ? (cardDrafts[currentTemplateId] as CardDataByTemplate[TemplateId] | undefined)
     : undefined;
-  const activeCardId = currentTemplateId
-    ? activeCardIdByTemplate[currentTemplateId]
-    : undefined;
+  const activeCardId = currentTemplateId ? activeCardIdByTemplate[currentTemplateId] : undefined;
 
   const effectiveFace = useMemo<CardFace | undefined>(() => {
     if (!template) return undefined;
@@ -516,7 +514,7 @@ export default function TemplateChooser() {
                 </div>
               ) : null}
             </div>
-          <div className={styles.inspectorPairActions} />
+            <div className={styles.inspectorPairActions} />
           </>
         ) : null}
       </div>
@@ -527,8 +525,7 @@ export default function TemplateChooser() {
             const tileGap = 8;
             const columns = 5;
             const padding = 16;
-            const popoverWidth =
-              padding * 2 + columns * tileWidth + (columns - 1) * tileGap;
+            const popoverWidth = padding * 2 + columns * tileWidth + (columns - 1) * tileGap;
             const popoverMaxHeight = 300;
             const left = Math.min(
               overflowPopoverAnchor.rect.left,

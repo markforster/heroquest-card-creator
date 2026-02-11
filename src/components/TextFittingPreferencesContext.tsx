@@ -1,14 +1,22 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-import type { PreferencesByRole, TextRole } from "@/lib/text-fitting/types";
 import {
   getDefaultTextFittingPreferences,
   getTextFittingPreferences,
   mergeTextFittingPreferences,
   storeTextFittingPreferences,
 } from "@/lib/text-fitting/preferences";
+import type { PreferencesByRole, TextRole } from "@/lib/text-fitting/types";
 
 type TextFittingPreferencesContextValue = {
   preferences: PreferencesByRole;
@@ -18,7 +26,9 @@ type TextFittingPreferencesContextValue = {
   setIsDragging: (value: boolean) => void;
 };
 
-const TextFittingPreferencesContext = createContext<TextFittingPreferencesContextValue | null>(null);
+const TextFittingPreferencesContext = createContext<TextFittingPreferencesContextValue | null>(
+  null,
+);
 
 export function TextFittingPreferencesProvider({ children }: { children: React.ReactNode }) {
   const [preferences, setPreferences] = useState<PreferencesByRole>({

@@ -1,9 +1,9 @@
+import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { formatStatValue } from "@/lib/stat-values";
-import type { StatValue } from "@/types/stats";
 import fitText from "@/lib/text-fitting/fitText";
 import { shrinkToFitSingleLine } from "@/lib/text-fitting/shrink";
-import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
+import type { StatValue } from "@/types/stats";
 
 import Layer from "../CardPreview/Layer";
 
@@ -68,7 +68,13 @@ export default function StatsPair({
   const formattedValue = formatStatValue(value);
   const valueFontSize =
     formattedValue != null
-      ? shrinkToFitSingleLine(formattedValue, innerWidth, valueHeight, VALUE_FONT_SIZE, MIN_VALUE_FONT_SIZE)
+      ? shrinkToFitSingleLine(
+          formattedValue,
+          innerWidth,
+          valueHeight,
+          VALUE_FONT_SIZE,
+          MIN_VALUE_FONT_SIZE,
+        )
       : VALUE_FONT_SIZE;
 
   return (

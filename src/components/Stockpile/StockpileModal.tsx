@@ -1,8 +1,7 @@
 "use client";
 
-import { AlertTriangle, Search } from "lucide-react";
 import JSZip from "jszip";
-import { USE_ZIP_COMPRESSION } from "@/config/flags";
+import { AlertTriangle, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -10,11 +9,12 @@ import styles from "@/app/page.module.css";
 import CardPreview, { type CardPreviewHandle } from "@/components/CardPreview";
 import ConfirmModal from "@/components/ConfirmModal";
 import ModalShell from "@/components/ModalShell";
+import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
-import { useI18n } from "@/i18n/I18nProvider";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
-import { deleteCards, listCards } from "@/lib/cards-db";
+import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
+import { deleteCards, listCards } from "@/lib/cards-db";
 import {
   createCollection,
   deleteCollection,
@@ -79,10 +79,7 @@ export default function StockpileModal({
   const [templateFilter, setTemplateFilter] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<
-    | { type: "all" }
-    | { type: "recent" }
-    | { type: "unfiled" }
-    | { type: "collection"; id: string }
+    { type: "all" } | { type: "recent" } | { type: "unfiled" } | { type: "collection"; id: string }
   >({ type: "all" });
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
   const [collectionFormMode, setCollectionFormMode] = useState<"create" | "edit">("create");
@@ -143,7 +140,7 @@ export default function StockpileModal({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
+
   useEffect(() => {
     return () => {
       if (pairHoverTimeoutRef.current) {
@@ -234,15 +231,14 @@ export default function StockpileModal({
           return isPairBacks ? effectiveFace === "back" : effectiveFace === "front";
         })
       : withViewed;
-    return filtered
-      .sort((a, b) => {
-        const aViewed = a.lastViewedAt ?? 0;
-        const bViewed = b.lastViewedAt ?? 0;
-        if (bViewed !== aViewed) {
-          return bViewed - aViewed;
-        }
-        return b.updatedAt - a.updatedAt;
-      });
+    return filtered.sort((a, b) => {
+      const aViewed = a.lastViewedAt ?? 0;
+      const bViewed = b.lastViewedAt ?? 0;
+      if (bViewed !== aViewed) {
+        return bViewed - aViewed;
+      }
+      return b.updatedAt - a.updatedAt;
+    });
   }, [cards, isPairMode, isPairBacks]);
 
   const {
@@ -463,7 +459,7 @@ export default function StockpileModal({
         ? t("cardFace.frontFacing")
         : templateFilter === "back"
           ? t("cardFace.backFacing")
-          : templateFilterLabelMap[templateFilter] ?? templateFilter;
+          : (templateFilterLabelMap[templateFilter] ?? templateFilter);
   const exportTemplate =
     exportTarget && cardTemplatesById[exportTarget.templateId]
       ? cardTemplatesById[exportTarget.templateId]
@@ -529,8 +525,7 @@ export default function StockpileModal({
     !isExporting &&
     exportCards.length > 0 &&
     (activeFilter.type === "collection" ||
-      ((activeFilter.type === "all" || activeFilter.type === "unfiled") &&
-        selectedIds.length > 0));
+      ((activeFilter.type === "all" || activeFilter.type === "unfiled") && selectedIds.length > 0));
   const exportCount = exportCards.length;
   const exportLabel = isExporting
     ? t("actions.exporting")
@@ -540,8 +535,7 @@ export default function StockpileModal({
         ? `${t("actions.export")} (${exportCount}) ${t("actions.fromThisCollection")}`
         : `${t("actions.export")} (${exportCount})`;
   const exportCollectionName = activeCollection?.name;
-  const exportPercent =
-    exportTotal > 0 ? Math.round((exportProgress / exportTotal) * 100) : 0;
+  const exportPercent = exportTotal > 0 ? Math.round((exportProgress / exportTotal) * 100) : 0;
   const exportTitle = exportCollectionName
     ? `${t("status.exportingImagesFrom")} ${exportCollectionName} (${exportTotal})`
     : `${t("status.exportingImages")} (${exportTotal})`;
@@ -607,11 +601,8 @@ export default function StockpileModal({
   const resolveZipFileName = () => {
     const now = new Date();
     const pad = (value: number) => (value < 10 ? `0${value}` : `${value}`);
-    const timestamp = [
-      now.getFullYear(),
-      pad(now.getMonth() + 1),
-      pad(now.getDate()),
-    ].join("") +
+    const timestamp =
+      [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join("") +
       "-" +
       [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join("");
     const collectionName =
@@ -636,8 +627,8 @@ export default function StockpileModal({
 
     try {
       if (!exportCards.length) {
-      window.alert(t("alert.selectCardToExport"));
-      return;
+        window.alert(t("alert.selectCardToExport"));
+        return;
       }
 
       for (const card of exportCards) {
@@ -648,8 +639,8 @@ export default function StockpileModal({
         await waitForFrame();
         await waitForFrame();
 
-        const assetIds = [card.imageAssetId, card.monsterIconAssetId].filter(
-          (id): id is string => Boolean(id),
+        const assetIds = [card.imageAssetId, card.monsterIconAssetId].filter((id): id is string =>
+          Boolean(id),
         );
         await waitForAssetElements(assetIds);
 
@@ -722,11 +713,7 @@ export default function StockpileModal({
         footer={
           isPairMode ? (
             <div className="d-flex w-100 justify-content-end gap-2">
-              <button
-                type="button"
-                className="btn btn-outline-secondary btn-sm"
-                onClick={onClose}
-              >
+              <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onClose}>
                 {t("actions.cancel")}
               </button>
               <button
@@ -995,101 +982,102 @@ export default function StockpileModal({
         {!isPairMode ? (
           <div className={styles.assetsToolbar}>
             <div className={`${styles.assetsActions} ms-auto gap-2`}>
-            {collections.filter(
-              (collection) =>
-                activeFilter.type !== "collection" || collection.id !== activeFilter.id,
-            ).length ? (
-              <button
-                type="button"
-                className="btn btn-outline-light btn-sm"
-                disabled={!visibleSelectedIds.length}
-                onClick={() => {
-                  const available = collections.filter(
-                    (collection) =>
-                      activeFilter.type !== "collection" ||
-                      collection.id !== activeFilter.id,
-                  );
-                  if (!available.length) return;
-                  setAddTargetCollectionId((prev) => prev || available[0]?.id || "");
-                  setIsAddModalOpen(true);
-                }}
-              >
-                {t("actions.addToCollection")}
-              </button>
-            ) : null}
-            {activeFilter.type === "collection" ? (
-              <button
-                type="button"
-                className="btn btn-outline-light btn-sm"
-                disabled={!selectedIds.length}
-                onClick={async () => {
-                  const target = collections.find((item) => item.id === activeFilter.id);
-                  if (!target) return;
-                  try {
-                    const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
-                    await updateCollection(target.id, { cardIds: remaining });
-                    const refreshed = await listCollections();
-                    setCollections(refreshed);
-                    setSelectedIds([]);
-                  } catch (error) {
-                    // eslint-disable-next-line no-console
-                    console.error("[StockpileModal] Failed to remove from collection", error);
-                  }
-                }}
-              >
-                {t("actions.removeFromCollection")}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="btn btn-outline-danger btn-sm"
-              disabled={!selectedIds.length}
-              onClick={async () => {
-                if (!selectedIds.length) return;
-                const ids = [...selectedIds];
-                setConfirmDialog({
-                  title: t("confirm.deleteCardsTitle"),
-                  body: `${t("confirm.deleteCardsBodyPrefix")} ${ids.length} ${
-                    ids.length === 1 ? t("label.card") : t("label.cards")
-                  } ${t("confirm.deleteCardsBodySuffix")}`,
-                  confirmLabel:
-                    ids.length > 1 ? `${t("actions.delete")} (${ids.length})` : t("actions.delete"),
-                  onConfirm: async () => {
+              {collections.filter(
+                (collection) =>
+                  activeFilter.type !== "collection" || collection.id !== activeFilter.id,
+              ).length ? (
+                <button
+                  type="button"
+                  className="btn btn-outline-light btn-sm"
+                  disabled={!visibleSelectedIds.length}
+                  onClick={() => {
+                    const available = collections.filter(
+                      (collection) =>
+                        activeFilter.type !== "collection" || collection.id !== activeFilter.id,
+                    );
+                    if (!available.length) return;
+                    setAddTargetCollectionId((prev) => prev || available[0]?.id || "");
+                    setIsAddModalOpen(true);
+                  }}
+                >
+                  {t("actions.addToCollection")}
+                </button>
+              ) : null}
+              {activeFilter.type === "collection" ? (
+                <button
+                  type="button"
+                  className="btn btn-outline-light btn-sm"
+                  disabled={!selectedIds.length}
+                  onClick={async () => {
+                    const target = collections.find((item) => item.id === activeFilter.id);
+                    if (!target) return;
                     try {
-                      await deleteCards(ids);
-                      const idSet = new Set(ids);
-                      const updates = collections
-                        .map((collection) => {
-                          const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
-                          return nextCardIds.length === collection.cardIds.length
-                            ? null
-                            : { id: collection.id, cardIds: nextCardIds };
-                        })
-                        .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
-                      await Promise.all(
-                        updates.map((update) =>
-                          updateCollection(update.id, { cardIds: update.cardIds }),
-                        ),
-                      );
-                      const refreshed = await listCards({ status: "saved" });
-                      setCards(refreshed);
-                      const refreshedCollections = await listCollections();
-                      setCollections(refreshedCollections);
+                      const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
+                      await updateCollection(target.id, { cardIds: remaining });
+                      const refreshed = await listCollections();
+                      setCollections(refreshed);
                       setSelectedIds([]);
                     } catch (error) {
                       // eslint-disable-next-line no-console
-                      console.error("[StockpileModal] Failed to delete card", error);
-                    } finally {
-                      setConfirmDialog(null);
+                      console.error("[StockpileModal] Failed to remove from collection", error);
                     }
-                  },
-                });
-              }}
-            >
-              {selectedIds.length > 1
-                ? `${t("actions.delete")} (${selectedIds.length})`
-                : t("actions.delete")}
-            </button>
+                  }}
+                >
+                  {t("actions.removeFromCollection")}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="btn btn-outline-danger btn-sm"
+                disabled={!selectedIds.length}
+                onClick={async () => {
+                  if (!selectedIds.length) return;
+                  const ids = [...selectedIds];
+                  setConfirmDialog({
+                    title: t("confirm.deleteCardsTitle"),
+                    body: `${t("confirm.deleteCardsBodyPrefix")} ${ids.length} ${
+                      ids.length === 1 ? t("label.card") : t("label.cards")
+                    } ${t("confirm.deleteCardsBodySuffix")}`,
+                    confirmLabel:
+                      ids.length > 1
+                        ? `${t("actions.delete")} (${ids.length})`
+                        : t("actions.delete"),
+                    onConfirm: async () => {
+                      try {
+                        await deleteCards(ids);
+                        const idSet = new Set(ids);
+                        const updates = collections
+                          .map((collection) => {
+                            const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
+                            return nextCardIds.length === collection.cardIds.length
+                              ? null
+                              : { id: collection.id, cardIds: nextCardIds };
+                          })
+                          .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
+                        await Promise.all(
+                          updates.map((update) =>
+                            updateCollection(update.id, { cardIds: update.cardIds }),
+                          ),
+                        );
+                        const refreshed = await listCards({ status: "saved" });
+                        setCards(refreshed);
+                        const refreshedCollections = await listCollections();
+                        setCollections(refreshedCollections);
+                        setSelectedIds([]);
+                      } catch (error) {
+                        // eslint-disable-next-line no-console
+                        console.error("[StockpileModal] Failed to delete card", error);
+                      } finally {
+                        setConfirmDialog(null);
+                      }
+                    },
+                  });
+                }}
+              >
+                {selectedIds.length > 1
+                  ? `${t("actions.delete")} (${selectedIds.length})`
+                  : t("actions.delete")}
+              </button>
             </div>
           </div>
         ) : null}
@@ -1097,65 +1085,59 @@ export default function StockpileModal({
           <aside className={styles.stockpileSidebar} aria-label={t("heading.collections")}>
             <div className={styles.stockpileSidebarHeader}>{t("heading.collections")}</div>
             <div className={styles.stockpileSidebarList}>
-            <button
-              type="button"
-              className={`${styles.stockpileSidebarItem} ${activeFilter.type === "recent" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
-              onClick={() => {
-                setActiveFilter({ type: "recent" });
-                if (!isPairMode) {
-                  setSelectedIds([]);
-                }
-              }}
-            >
-              <span className="flex-grow-1 text-truncate fs-6">{t("actions.recentCards")}</span>
-              {!isPairMode ? (
-                <span
-                  className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}
-                >
-                  {recentCards.length}
-                </span>
-              ) : null}
-            </button>
-            <button
-              type="button"
-              className={`${styles.stockpileSidebarItem} ${activeFilter.type === "all" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
-              onClick={() => {
-                setActiveFilter({ type: "all" });
-                if (!isPairMode) {
-                  setSelectedIds([]);
-                }
-              }}
-            >
-              <span className="flex-grow-1 text-truncate fs-6">{t("actions.allCards")}</span>
-              {!isPairMode ? (
-                <span
-                  className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}
-                >
-                  {overallCount}
-                </span>
-              ) : selectedIds.length > 0 ? (
-                <span className={styles.stockpileSelectedDot} aria-hidden="true" />
-              ) : null}
-            </button>
-            <button
-              type="button"
-              className={`${styles.stockpileSidebarItem} ${activeFilter.type === "unfiled" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
-              onClick={() => {
-                setActiveFilter({ type: "unfiled" });
-                if (!isPairMode) {
-                  setSelectedIds([]);
-                }
-              }}
-            >
-              <span className="flex-grow-1 text-truncate fs-6">{t("actions.unfiled")}</span>
-              {!isPairMode ? (
-                <span
-                  className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}
-                >
-                  {unfiledCount}
-                </span>
-              ) : null}
-            </button>
+              <button
+                type="button"
+                className={`${styles.stockpileSidebarItem} ${activeFilter.type === "recent" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
+                onClick={() => {
+                  setActiveFilter({ type: "recent" });
+                  if (!isPairMode) {
+                    setSelectedIds([]);
+                  }
+                }}
+              >
+                <span className="flex-grow-1 text-truncate fs-6">{t("actions.recentCards")}</span>
+                {!isPairMode ? (
+                  <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
+                    {recentCards.length}
+                  </span>
+                ) : null}
+              </button>
+              <button
+                type="button"
+                className={`${styles.stockpileSidebarItem} ${activeFilter.type === "all" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
+                onClick={() => {
+                  setActiveFilter({ type: "all" });
+                  if (!isPairMode) {
+                    setSelectedIds([]);
+                  }
+                }}
+              >
+                <span className="flex-grow-1 text-truncate fs-6">{t("actions.allCards")}</span>
+                {!isPairMode ? (
+                  <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
+                    {overallCount}
+                  </span>
+                ) : selectedIds.length > 0 ? (
+                  <span className={styles.stockpileSelectedDot} aria-hidden="true" />
+                ) : null}
+              </button>
+              <button
+                type="button"
+                className={`${styles.stockpileSidebarItem} ${activeFilter.type === "unfiled" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
+                onClick={() => {
+                  setActiveFilter({ type: "unfiled" });
+                  if (!isPairMode) {
+                    setSelectedIds([]);
+                  }
+                }}
+              >
+                <span className="flex-grow-1 text-truncate fs-6">{t("actions.unfiled")}</span>
+                {!isPairMode ? (
+                  <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
+                    {unfiledCount}
+                  </span>
+                ) : null}
+              </button>
               <div className={styles.stockpileSidebarDivider} />
             </div>
             <div className={styles.stockpileSidebarMiddle}>
@@ -1174,9 +1156,7 @@ export default function StockpileModal({
                 >
                   <span className="flex-grow-1 text-truncate fs-6">{collection.name}</span>
                   {!isPairMode ? (
-                    <span
-                      className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}
-                    >
+                    <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
                       {collectionCounts.get(collection.id) ?? 0}
                     </span>
                   ) : null}
@@ -1195,15 +1175,13 @@ export default function StockpileModal({
                     ? t("empty.noCardsFound")
                     : activeFilter.type === "recent"
                       ? t("empty.noRecentCards")
-                    : activeFilter.type === "collection"
-                      ? templateFilter !== "all" && totalCount > 0
-                        ? `${t("empty.collectionFilteredByType")} ${
-                            filterLabel
-                          }.`
-                        : t("empty.collectionEmpty")
-                      : activeFilter.type === "unfiled"
-                        ? t("empty.nothingUnfiled")
-                        : t("empty.noSavedCards")}
+                      : activeFilter.type === "collection"
+                        ? templateFilter !== "all" && totalCount > 0
+                          ? `${t("empty.collectionFilteredByType")} ${filterLabel}.`
+                          : t("empty.collectionEmpty")
+                        : activeFilter.type === "unfiled"
+                          ? t("empty.nothingUnfiled")
+                          : t("empty.noSavedCards")}
                 </div>
               ) : (
                 <div className={styles.assetsGrid}>
@@ -1227,14 +1205,14 @@ export default function StockpileModal({
                     const isPairingConflict =
                       isPairFronts && card.pairedWith && card.pairedWith !== activeBackId;
                     const conflictCard = isPairingConflict
-                      ? cardById.get(card.pairedWith ?? "") ?? null
+                      ? (cardById.get(card.pairedWith ?? "") ?? null)
                       : null;
                     const templateMeta = cardTemplatesById[card.templateId];
                     const effectiveFace = card.face ?? templateMeta?.defaultFace;
                     const pairedFronts = pairedByTargetId.get(card.id) ?? [];
                     const pairedCard = card.pairedWith
-                      ? cardById.get(card.pairedWith) ?? null
-                      : pairedFronts[0] ?? null;
+                      ? (cardById.get(card.pairedWith) ?? null)
+                      : (pairedFronts[0] ?? null);
                     const pairedThumbUrl =
                       typeof window !== "undefined" && pairedCard?.thumbnailBlob
                         ? URL.createObjectURL(pairedCard.thumbnailBlob)
@@ -1251,7 +1229,11 @@ export default function StockpileModal({
                         key={card.id}
                         type="button"
                         className={`${styles.assetsItem} ${
-                          isSelected ? (isPairingConflict ? styles.assetsItemConflict : styles.assetsItemSelected) : ""
+                          isSelected
+                            ? isPairingConflict
+                              ? styles.assetsItemConflict
+                              : styles.assetsItemSelected
+                            : ""
                         }`}
                         onMouseEnter={() => {
                           if (!isPairingConflict || !isSelected) return;
@@ -1276,9 +1258,7 @@ export default function StockpileModal({
                               : null;
                           if (isPairMode) {
                             if (isPairBacks) {
-                              setSelectedIds((prev) =>
-                                prev.includes(card.id) ? [] : [card.id],
-                              );
+                              setSelectedIds((prev) => (prev.includes(card.id) ? [] : [card.id]));
                               return;
                             }
                             setSelectedIds((prev) => {
@@ -1323,7 +1303,10 @@ export default function StockpileModal({
                       >
                         {isPairingConflict ? (
                           <div className={styles.cardsConflictIndicator}>
-                            <AlertTriangle className={styles.cardsConflictIcon} aria-hidden="true" />
+                            <AlertTriangle
+                              className={styles.cardsConflictIcon}
+                              aria-hidden="true"
+                            />
                           </div>
                         ) : null}
                         {conflictPopoverCardId === card.id ? (
@@ -1444,9 +1427,7 @@ export default function StockpileModal({
                                             // eslint-disable-next-line @next/next/no-img-element
                                             <img src={stackTemplateThumb.src} alt="" />
                                           ) : (
-                                            <div
-                                              className={styles.cardsPairIndicatorPlaceholder}
-                                            />
+                                            <div className={styles.cardsPairIndicatorPlaceholder} />
                                           )}
                                         </div>
                                       </div>
@@ -1533,8 +1514,8 @@ export default function StockpileModal({
             const isHoveredBack = hoveredFace === "back";
             const hoveredPairedFronts = pairedByTargetId.get(hoveredCard.id) ?? [];
             const hoveredPairedCard = hoveredCard.pairedWith
-              ? cardById.get(hoveredCard.pairedWith) ?? null
-              : hoveredPairedFronts[0] ?? null;
+              ? (cardById.get(hoveredCard.pairedWith) ?? null)
+              : (hoveredPairedFronts[0] ?? null);
             const hoveredPairedThumbUrl =
               typeof window !== "undefined" && hoveredPairedCard?.thumbnailBlob
                 ? URL.createObjectURL(hoveredPairedCard.thumbnailBlob)
@@ -1564,7 +1545,9 @@ export default function StockpileModal({
             return createPortal(
               <div
                 className={
-                  isGridPopover ? styles.cardsPairStackPopoverGrid : styles.cardsPairStackPopoverSingle
+                  isGridPopover
+                    ? styles.cardsPairStackPopoverGrid
+                    : styles.cardsPairStackPopoverSingle
                 }
                 aria-hidden="true"
                 style={{ left, top }}
@@ -1588,40 +1571,37 @@ export default function StockpileModal({
                   hoveredPairedFronts.length ? (
                     <div
                       className={
-                        isGridPopover
-                          ? styles.cardsPairStackGrid
-                          : styles.cardsPairStackGridSingle
+                        isGridPopover ? styles.cardsPairStackGrid : styles.cardsPairStackGridSingle
                       }
                     >
                       {hoveredPairedFronts
                         .slice(0, isGridPopover ? hoveredPairedFronts.length : 1)
                         .map((paired) => {
-                        const gridThumbUrl =
-                          typeof window !== "undefined" && paired.thumbnailBlob
-                            ? URL.createObjectURL(paired.thumbnailBlob)
-                            : null;
-                        const gridTemplateThumb =
-                          cardTemplatesById[paired.templateId]?.thumbnail;
-                        return (
-                          <div key={paired.id} className={styles.cardsPairStackGridItem}>
-                            {gridThumbUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={gridThumbUrl}
-                                alt=""
-                                onLoad={() => {
-                                  URL.revokeObjectURL(gridThumbUrl);
-                                }}
-                              />
-                            ) : gridTemplateThumb?.src ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={gridTemplateThumb.src} alt="" />
-                            ) : (
-                              <div className={styles.cardsPairIndicatorPlaceholder} />
-                            )}
-                          </div>
-                        );
-                      })}
+                          const gridThumbUrl =
+                            typeof window !== "undefined" && paired.thumbnailBlob
+                              ? URL.createObjectURL(paired.thumbnailBlob)
+                              : null;
+                          const gridTemplateThumb = cardTemplatesById[paired.templateId]?.thumbnail;
+                          return (
+                            <div key={paired.id} className={styles.cardsPairStackGridItem}>
+                              {gridThumbUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={gridThumbUrl}
+                                  alt=""
+                                  onLoad={() => {
+                                    URL.revokeObjectURL(gridThumbUrl);
+                                  }}
+                                />
+                              ) : gridTemplateThumb?.src ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={gridTemplateThumb.src} alt="" />
+                              ) : (
+                                <div className={styles.cardsPairIndicatorPlaceholder} />
+                              )}
+                            </div>
+                          );
+                        })}
                     </div>
                   ) : (
                     <div className={styles.cardsPairStackGridSingle}>
@@ -1687,7 +1667,9 @@ export default function StockpileModal({
         >
           {(() => {
             const backTitle = activeBackId
-              ? cardById.get(activeBackId)?.title ?? cardById.get(activeBackId)?.name ?? "Back card"
+              ? (cardById.get(activeBackId)?.title ??
+                cardById.get(activeBackId)?.name ??
+                "Back card")
               : "Back card";
             return pairingConflictDialog.count === 1
               ? formatMessage("warning.pairingLossSingle", { back: backTitle })
@@ -1704,8 +1686,7 @@ export default function StockpileModal({
                 typeof window !== "undefined" && conflictCard.thumbnailBlob
                   ? URL.createObjectURL(conflictCard.thumbnailBlob)
                   : null;
-              const templateThumb =
-                cardTemplatesById[conflictCard.templateId]?.thumbnail ?? null;
+              const templateThumb = cardTemplatesById[conflictCard.templateId]?.thumbnail ?? null;
               return (
                 <div key={id} className={styles.pairingConflictItem}>
                   {thumbUrl ? (
@@ -1748,10 +1729,7 @@ export default function StockpileModal({
             </div>
             <div className="d-flex flex-column gap-2">
               <div className={styles.exportProgressTrack} aria-hidden="true">
-                <div
-                  className={styles.exportProgressFill}
-                  style={{ width: `${exportPercent}%` }}
-                />
+                <div className={styles.exportProgressFill} style={{ width: `${exportPercent}%` }} />
               </div>
               <div className={styles.exportProgressLabel}>
                 {exportProgress} / {exportTotal}
@@ -1793,8 +1771,7 @@ export default function StockpileModal({
                 className={styles.modalCloseButton}
                 onClick={() => setIsCollectionModalOpen(false)}
               >
-                <span className="visually-hidden">{t("actions.close")}</span>
-                ✕
+                <span className="visually-hidden">{t("actions.close")}</span>✕
               </button>
             </div>
             <form
@@ -1930,10 +1907,7 @@ export default function StockpileModal({
         </div>
       ) : null}
       {isAddModalOpen ? (
-        <div
-          className={styles.stockpileOverlayBackdrop}
-          onClick={() => setIsAddModalOpen(false)}
-        >
+        <div className={styles.stockpileOverlayBackdrop} onClick={() => setIsAddModalOpen(false)}>
           <div
             className={styles.stockpileOverlayPanel}
             onClick={(event) => event.stopPropagation()}
@@ -1945,8 +1919,7 @@ export default function StockpileModal({
                 className={styles.modalCloseButton}
                 onClick={() => setIsAddModalOpen(false)}
               >
-                <span className="visually-hidden">{t("actions.close")}</span>
-                ✕
+                <span className="visually-hidden">{t("actions.close")}</span>✕
               </button>
             </div>
             <form
@@ -1979,8 +1952,7 @@ export default function StockpileModal({
                   {collections
                     .filter(
                       (collection) =>
-                        activeFilter.type !== "collection" ||
-                        collection.id !== activeFilter.id,
+                        activeFilter.type !== "collection" || collection.id !== activeFilter.id,
                     )
                     .map((collection) => (
                       <option key={collection.id} value={collection.id}>

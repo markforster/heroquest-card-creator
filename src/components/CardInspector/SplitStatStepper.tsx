@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
@@ -40,9 +40,7 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
   const isArrayValue = Array.isArray(valueWatch);
   const splitFlag = isArrayValue ? valueWatch[2] : undefined;
   const isSplit = isArrayValue ? splitFlag !== 0 : false;
-  const primaryValue = isArrayValue
-    ? readNumber(valueWatch[0], 0)
-    : readNumber(valueWatch, 0);
+  const primaryValue = isArrayValue ? readNumber(valueWatch[0], 0) : readNumber(valueWatch, 0);
   const secondaryValue = isArrayValue
     ? readNumber(valueWatch[1], splitSecondaryDefault)
     : splitSecondaryDefault;
@@ -68,7 +66,11 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
   const setSplitValue = (nextPrimary: number, nextSecondary: number, nextFlag: 0 | 1) => {
     setValue(
       name,
-      [clampValue(nextPrimary), clampValue(nextSecondary), nextFlag] as unknown as TFormValues[keyof TFormValues],
+      [
+        clampValue(nextPrimary),
+        clampValue(nextSecondary),
+        nextFlag,
+      ] as unknown as TFormValues[keyof TFormValues],
       {
         shouldDirty: true,
         shouldTouch: true,

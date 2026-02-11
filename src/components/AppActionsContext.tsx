@@ -9,9 +9,9 @@ import StatLabelOverridesModal from "@/components/StatLabelOverridesModal";
 import { StockpileModal } from "@/components/Stockpile";
 import TemplatePicker from "@/components/TemplatePicker";
 import { cardTemplatesById } from "@/data/card-templates";
-import { useI18n } from "@/i18n/I18nProvider";
-import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { usePopupState } from "@/hooks/usePopupState";
+import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
+import { useI18n } from "@/i18n/I18nProvider";
 import { getCard, touchCardLastViewed } from "@/lib/cards-db";
 import type { TemplateId } from "@/types/templates";
 
@@ -54,9 +54,9 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
   const templatePicker = usePopupState(false);
   const assetsModal = usePopupState(false);
   const stockpileModal = usePopupState(false);
-  const [stockpileMode, setStockpileMode] = useState<
-    "manage" | "pair-fronts" | "pair-backs"
-  >("manage");
+  const [stockpileMode, setStockpileMode] = useState<"manage" | "pair-fronts" | "pair-backs">(
+    "manage",
+  );
   const [stockpileConfirmHandler, setStockpileConfirmHandler] = useState<
     ((cardIds: string[]) => void) | null
   >(null);
@@ -120,7 +120,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
       settingsModal.open,
       stockpileModal.open,
       templatePicker,
-    ]
+    ],
   );
 
   return (
@@ -135,10 +135,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
         onClose={templatePicker.close}
       />
       <AssetsModal isOpen={assetsModal.isOpen} onClose={assetsModal.close} mode="manage" />
-      <StatLabelOverridesModal
-        isOpen={settingsModal.isOpen}
-        onClose={settingsModal.close}
-      />
+      <StatLabelOverridesModal isOpen={settingsModal.isOpen} onClose={settingsModal.close} />
       <StockpileModal
         isOpen={stockpileModal.isOpen}
         onClose={() => {
@@ -155,7 +152,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
         titleOverride={stockpileTitleOverride ?? undefined}
         onConfirmSelection={
           stockpileMode === "pair-fronts" || stockpileMode === "pair-backs"
-            ? stockpileConfirmHandler ?? undefined
+            ? (stockpileConfirmHandler ?? undefined)
             : undefined
         }
         onLoadCard={async (card) => {

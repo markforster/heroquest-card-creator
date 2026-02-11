@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useController, useFormContext } from "react-hook-form";
-import { HexColorInput, HexColorPicker } from "react-colorful";
 import { Plus, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { HexColorInput, HexColorPicker } from "react-colorful";
+import { useController, useFormContext } from "react-hook-form";
 
-import { DEFAULT_BORDER_COLOR } from "@/components/CardParts/CardBorder";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import { DEFAULT_BORDER_COLOR } from "@/components/CardParts/CardBorder";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getBorderSwatches, setBorderSwatches } from "@/lib/settings-db";
 import type { TemplateId } from "@/types/templates";
@@ -32,9 +32,10 @@ export default function BorderColorField({ label, templateId }: BorderColorField
   const { field } = useController({ name: "borderColor", control });
   const borderColor = typeof field.value === "string" ? field.value : "";
   const colorValue = borderColor.trim() ? borderColor : DEFAULT_BORDER_COLOR;
-  const normalizedCurrent = useMemo(() => normalizeHex(colorValue) ?? DEFAULT_BORDER_COLOR, [
-    colorValue,
-  ]);
+  const normalizedCurrent = useMemo(
+    () => normalizeHex(colorValue) ?? DEFAULT_BORDER_COLOR,
+    [colorValue],
+  );
   const swatchKeys = useMemo(
     () => new Set(swatches.map((swatch) => swatch.toUpperCase())),
     [swatches],
@@ -42,10 +43,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
   const savedColorRef = useRef<string | undefined>(undefined);
   const draftColor = (cardDrafts[templateId] as { borderColor?: string } | undefined)?.borderColor;
   const savedSwatches = useMemo(
-    () =>
-      swatches.filter(
-        (swatch) => swatch.toUpperCase() !== DEFAULT_BORDER_COLOR.toUpperCase(),
-      ),
+    () => swatches.filter((swatch) => swatch.toUpperCase() !== DEFAULT_BORDER_COLOR.toUpperCase()),
     [swatches],
   );
 
@@ -110,9 +108,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
 
   return (
     <div className="mb-2">
-      <label className="form-label">
-        {label}
-      </label>
+      <label className="form-label">{label}</label>
       <div className={styles.layout}>
         <div className={styles.picker}>
           <HexColorPicker
@@ -129,12 +125,12 @@ export default function BorderColorField({ label, templateId }: BorderColorField
         </div>
         <div className={styles.swatches}>
           <div className={styles.swatchRow}>
-        <SwatchButton
-          color={DEFAULT_BORDER_COLOR}
-          label={`${t("actions.select")} ${DEFAULT_BORDER_COLOR}`}
-          title={t("form.heroquestDefaultBrown")}
-          onClick={() => field.onChange(undefined)}
-        />
+            <SwatchButton
+              color={DEFAULT_BORDER_COLOR}
+              label={`${t("actions.select")} ${DEFAULT_BORDER_COLOR}`}
+              title={t("form.heroquestDefaultBrown")}
+              onClick={() => field.onChange(undefined)}
+            />
             <SwatchActionButton
               label={t("actions.cancel")}
               title={t("actions.cancel")}
@@ -143,27 +139,27 @@ export default function BorderColorField({ label, templateId }: BorderColorField
             >
               ↺
             </SwatchActionButton>
-        {savedSwatches.slice(0, MAX_SWATCHES).map((swatch) => (
-          <SwatchWithRemove
-            key={swatch}
-            color={swatch}
-            onSelect={() => field.onChange(swatch)}
-            onRemove={() => handleRemoveSwatch(swatch)}
-            ariaLabel={`${t("actions.select")} ${swatch}`}
-            removeLabel={`${t("actions.delete")} ${swatch}`}
-          />
-        ))}
-        <SwatchActionButton
-          label={t("form.saveSwatch")}
-          title={t("form.saveSwatch")}
-          disabled={
-            normalizedCurrent.toUpperCase() === DEFAULT_BORDER_COLOR.toUpperCase() ||
-            swatchKeys.has(normalizedCurrent.toUpperCase())
-          }
-          onClick={handleSaveSwatch}
-        >
-          <Plus aria-hidden size={14} />
-        </SwatchActionButton>
+            {savedSwatches.slice(0, MAX_SWATCHES).map((swatch) => (
+              <SwatchWithRemove
+                key={swatch}
+                color={swatch}
+                onSelect={() => field.onChange(swatch)}
+                onRemove={() => handleRemoveSwatch(swatch)}
+                ariaLabel={`${t("actions.select")} ${swatch}`}
+                removeLabel={`${t("actions.delete")} ${swatch}`}
+              />
+            ))}
+            <SwatchActionButton
+              label={t("form.saveSwatch")}
+              title={t("form.saveSwatch")}
+              disabled={
+                normalizedCurrent.toUpperCase() === DEFAULT_BORDER_COLOR.toUpperCase() ||
+                swatchKeys.has(normalizedCurrent.toUpperCase())
+              }
+              onClick={handleSaveSwatch}
+            >
+              <Plus aria-hidden size={14} />
+            </SwatchActionButton>
           </div>
         </div>
       </div>

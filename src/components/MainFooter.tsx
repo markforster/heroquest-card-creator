@@ -3,9 +3,9 @@
 import styles from "@/app/page.module.css";
 import HelpModal from "@/components/HelpModal";
 import ReleaseNotesModal from "@/components/ReleaseNotesModal";
-import { useI18n } from "@/i18n/I18nProvider";
-import { usePopupState } from "@/hooks/usePopupState";
 import useIsTauriApp from "@/hooks/useIsTauriApp";
+import { usePopupState } from "@/hooks/usePopupState";
+import { useI18n } from "@/i18n/I18nProvider";
 import { APP_VERSION } from "@/version";
 
 export default function MainFooter() {

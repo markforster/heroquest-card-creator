@@ -9,12 +9,12 @@ import { useI18n } from "@/i18n/I18nProvider";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
-import ContentField from "./ContentField";
 import BorderColorField from "./BorderColorField";
+import ContentField from "./ContentField";
 import HeroStatsInspector from "./HeroStatsInspector";
 import ImageField from "./ImageField";
-import MonsterStatsInspector from "./MonsterStatsInspector";
 import MonsterIconField from "./MonsterIconField";
+import MonsterStatsInspector from "./MonsterStatsInspector";
 import TitleField from "./TitleField";
 
 type GenericInspectorFormProps = {
@@ -39,7 +39,9 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
     fields?.some((field) => field.fieldType === "title" && field.showToggle),
   );
   const methods = useForm<CardDataByTemplate[TemplateId]>({
-    defaultValues: showTitleToggle ? { ...draft, showTitle: draft?.showTitle ?? true } : draft ?? {},
+    defaultValues: showTitleToggle
+      ? { ...draft, showTitle: draft?.showTitle ?? true }
+      : (draft ?? {}),
     mode: "onBlur",
   });
 
@@ -79,12 +81,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
             );
           }
           if (field.fieldType === "text") {
-            return (
-              <ContentField
-                key={`${field.bind}-${index}`}
-                label={t(field.labelKey)}
-              />
-            );
+            return <ContentField key={`${field.bind}-${index}`} label={t(field.labelKey)} />;
           }
           if (field.fieldType === "stats") {
             if (field.statsType === "hero") {
@@ -129,12 +126,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
             );
           }
           if (field.fieldType === "monsterIcon") {
-            return (
-              <MonsterIconField
-                key={`${field.bind}-${index}`}
-                label={t(field.labelKey)}
-              />
-            );
+            return <MonsterIconField key={`${field.bind}-${index}`} label={t(field.labelKey)} />;
           }
           return null;
         })}

@@ -5,11 +5,11 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import BlueprintRenderer from "@/components/BlueprintRenderer";
+import { usePreviewMode } from "@/components/PreviewModeContext";
 import { templateComponentsById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getAssetBlob } from "@/lib/assets-db";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
-import { usePreviewMode } from "@/components/PreviewModeContext";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -27,7 +27,10 @@ type CardPreviewProps = {
 export type CardPreviewHandle = {
   exportAsPng: () => Promise<void>;
   renderToPngBlob: (options?: { width?: number; height?: number }) => Promise<Blob | null>;
-  renderToCanvas: (options?: { width?: number; height?: number }) => Promise<HTMLCanvasElement | null>;
+  renderToCanvas: (options?: {
+    width?: number;
+    height?: number;
+  }) => Promise<HTMLCanvasElement | null>;
   getSvgElement: () => SVGSVGElement | null;
 };
 
@@ -228,10 +231,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
         source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
       }
       if (!source.match(/xmlns:xlink=/)) {
-        source = source.replace(
-          /^<svg/,
-          '<svg xmlns:xlink="http://www.w3.org/1999/xlink"',
-        );
+        source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
       }
 
       const svgBlob = new Blob([source], {
@@ -425,11 +425,11 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               strokeWidth={3}
             />
           </svg>
-        {!backgroundLoaded ? (
-          <div className={styles.spinnerOverlay}>
-            <div className={styles.spinner} />
-          </div>
-        ) : null}
+          {!backgroundLoaded ? (
+            <div className={styles.spinnerOverlay}>
+              <div className={styles.spinner} />
+            </div>
+          ) : null}
         </div>
       </div>
     );

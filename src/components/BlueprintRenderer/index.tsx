@@ -1,8 +1,8 @@
 "use client";
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
-import CardTextBlock, { layoutCardText } from "@/components/CardParts/CardTextBlock";
 import CardBorder from "@/components/CardParts/CardBorder";
+import CardTextBlock, { layoutCardText } from "@/components/CardParts/CardTextBlock";
 import HeroStatsBlock, {
   HERO_STATS_HEIGHT,
   type HeroStats,

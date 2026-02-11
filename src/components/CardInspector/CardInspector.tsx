@@ -3,8 +3,8 @@
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import { useInspectorMode } from "@/components/InspectorModeContext";
 import { useI18n } from "@/i18n/I18nProvider";
-import GenericInspectorForm from "./GenericInspectorForm";
 
+import GenericInspectorForm from "./GenericInspectorForm";
 import HeroBackInspectorForm from "./HeroBackInspectorForm";
 import HeroInspectorForm from "./HeroInspectorForm";
 import LabelledBackInspectorForm from "./LabelledBackInspectorForm";

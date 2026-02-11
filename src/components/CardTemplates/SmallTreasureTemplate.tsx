@@ -2,8 +2,8 @@ import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
 import CardTextBlock from "@/components/CardParts/CardTextBlock";
 import RibbonTitle from "@/components/CardParts/RibbonTitle";
 import Layer from "@/components/CardPreview/Layer";
-import { useI18n } from "@/i18n/I18nProvider";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
+import { useI18n } from "@/i18n/I18nProvider";
 import type { SmallTreasureCardData } from "@/types/card-data";
 import type { TemplateRenderProps } from "@/types/templates";
 

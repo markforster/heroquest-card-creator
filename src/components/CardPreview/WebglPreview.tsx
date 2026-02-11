@@ -2,8 +2,6 @@
 
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { MutableRefObject, RefObject } from "react";
-import type { Group } from "three";
 import {
   AdditiveBlending,
   BackSide,
@@ -25,12 +23,14 @@ import {
   Vector3,
 } from "three";
 
-import styles from "./WebglPreview.module.css";
-
 import blueprintFallback from "@/assets/blueprint.png";
-import linenNormal2 from "@/assets/linen-2.png";
 import linenNormal3 from "@/assets/linen-3.png";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
+
+import styles from "./WebglPreview.module.css";
+
+import type { MutableRefObject, RefObject } from "react";
+import type { Group } from "three";
 
 type WebglPreviewProps = {
   className?: string;
