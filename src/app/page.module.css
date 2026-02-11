@@ -168,7 +168,9 @@
   background-position:
     calc(100% - 0.6rem) 50%,
     calc(100% - 0.45rem) 50%;
-  background-size: 6px 6px, 6px 6px;
+  background-size:
+    6px 6px,
+    6px 6px;
   background-repeat: no-repeat;
 }
 
@@ -472,7 +474,9 @@
   justify-content: stretch;
   gap: 1rem;
   padding: 1rem;
-  background: radial-gradient(circle at top, #2a2a2aff, #181818ff);
+  background-size: 1200px 1200px;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .templateSidebar {
@@ -1437,7 +1441,6 @@
   box-sizing: border-box;
 }
 
-
 .statIconButtonPlus:hover:enabled {
   background: var(--hq-stat-plus-hover);
 }
@@ -1945,7 +1948,6 @@
   align-items: center;
   justify-content: center;
 }
-
 
 .cardsPairStackItem:first-child {
   margin-left: 0;

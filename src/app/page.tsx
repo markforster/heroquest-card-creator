@@ -21,6 +21,7 @@ import { PreviewRendererProvider } from "@/components/PreviewRendererContext";
 import { TextFittingPreferencesProvider } from "@/components/TextFittingPreferencesContext";
 import ToolsToolbar from "@/components/ToolsToolbar";
 import { WebglPreviewSettingsProvider } from "@/components/WebglPreviewSettingsContext";
+import dungeonAtmosphere from "@/assets/dungeon atmostphere - 2.png";
 import { cardTemplatesById } from "@/data/card-templates";
 import { cardDataToCardRecordPatch } from "@/lib/card-record-mapper";
 import { createCard, updateCard } from "@/lib/cards-db";
@@ -129,7 +130,10 @@ function IndexPageInner() {
             <HeaderWithTemplatePicker />
             <main className={styles.main}>
               <LeftNav />
-              <section className={styles.leftPanel}>
+              <section
+                className={styles.leftPanel}
+                style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
+              >
                 {/* <div className={styles.templateSidebar}>
                   <TemplatesList
                     selectedId={selectedTemplateId}
