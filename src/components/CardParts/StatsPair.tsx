@@ -1,6 +1,9 @@
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { formatStatValue } from "@/lib/stat-values";
 import type { StatValue } from "@/types/stats";
+import fitText from "@/lib/text-fitting/fitText";
+import { shrinkToFitSingleLine } from "@/lib/text-fitting/shrink";
+import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
 
 import Layer from "../CardPreview/Layer";
 
@@ -21,48 +24,6 @@ const HEADER_FONT_SIZE = 22;
 const HEADER_LINE_HEIGHT = HEADER_FONT_SIZE * 1.05;
 const VALUE_FONT_SIZE = 56;
 const MIN_VALUE_FONT_SIZE = 24;
-
-function estimateTextWidth(text: string, fontSize: number): number {
-  const approxCharWidth = fontSize * 0.6;
-  return text.length * approxCharWidth;
-}
-
-function resolveValueFontSize(value: string, maxWidth: number, maxHeight: number): number {
-  const baseSize = VALUE_FONT_SIZE;
-  if (!value) return baseSize;
-
-  const widthAtBase = estimateTextWidth(value, baseSize);
-  const widthScale = maxWidth / widthAtBase;
-  const heightScale = maxHeight / baseSize;
-  const scale = Math.min(1, widthScale, heightScale);
-  const nextSize = Math.floor(baseSize * scale);
-  return Math.max(MIN_VALUE_FONT_SIZE, nextSize);
-}
-
-function wrapHeaderLines(text: string, maxWidth: number): string[] {
-  const approxCharWidth = HEADER_FONT_SIZE * 0.6;
-  const words = text.split(" ");
-  const lines: string[] = [];
-
-  let current = "";
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    const estimatedWidth = candidate.length * approxCharWidth;
-
-    if (!current || estimatedWidth <= maxWidth) {
-      current = candidate;
-    } else {
-      lines.push(current);
-      current = word;
-    }
-  }
-
-  if (current) {
-    lines.push(current);
-  }
-
-  return lines;
-}
 
 export default function StatsPair({
   header,
@@ -88,53 +49,41 @@ export default function StatsPair({
   const valueBoxY = y + resolvedHeaderHeight;
   const valueCenterY = valueBoxY + valueHeight / 2;
 
-  const headerLines = wrapHeaderLines(header, innerWidth);
+  const { preferences } = useTextFittingPreferences();
+  const headerLayout = fitText(
+    "statHeading",
+    header,
+    {
+      width: innerWidth,
+      height: resolvedHeaderHeight,
+    },
+    preferences.statHeading,
+  );
+  const headerLines = headerLayout.lines;
+  const headerFontSize = headerLayout.fontSize;
+  const headerLineHeight = headerLayout.lineHeight ?? HEADER_LINE_HEIGHT;
   const lineCount = headerLines.length || 1;
-  const totalHeaderTextHeight = HEADER_LINE_HEIGHT * lineCount;
-  const firstLineY = headerCenterY - (totalHeaderTextHeight - HEADER_LINE_HEIGHT) / 2;
+  const totalHeaderTextHeight = headerLineHeight * lineCount;
+  const firstLineY = headerCenterY - (totalHeaderTextHeight - headerLineHeight) / 2;
   const formattedValue = formatStatValue(value);
   const valueFontSize =
     formattedValue != null
-      ? resolveValueFontSize(formattedValue, innerWidth, valueHeight)
+      ? shrinkToFitSingleLine(formattedValue, innerWidth, valueHeight, VALUE_FONT_SIZE, MIN_VALUE_FONT_SIZE)
       : VALUE_FONT_SIZE;
 
   return (
     <Layer>
-      {/* Header bounds (debug) */}
-      {debug && (
-        <rect
-          x={innerX}
-          y={headerBoxY}
-          width={innerWidth}
-          height={resolvedHeaderHeight}
-          fill="transparent"
-          stroke="#cd14e2ff"
-          strokeWidth={1}
-        />
-      )}
-      {/* Value bounds (debug) */}
-      {debug && value != undefined && (
-        <rect
-          x={innerX}
-          y={valueBoxY}
-          width={innerWidth}
-          height={valueHeight}
-          fill="transparent"
-          stroke="#14e2cdff"
-          strokeWidth={1}
-        />
-      )}
       <text
         textAnchor="middle"
         dominantBaseline="middle"
         // fill="#ffffff"
         fill="#452304"
-        fontSize={HEADER_FONT_SIZE}
+        fontSize={headerFontSize}
         fontWeight={700}
         fontFamily={CARD_TEXT_FONT_FAMILY}
       >
         {headerLines.map((line, index) => (
-          <tspan key={`${line}-${index}`} x={centerX} y={firstLineY + index * HEADER_LINE_HEIGHT}>
+          <tspan key={`${line}-${index}`} x={centerX} y={firstLineY + index * headerLineHeight}>
             {line}
           </tspan>
         ))}
@@ -152,6 +101,30 @@ export default function StatsPair({
         >
           {formattedValue}
         </text>
+      )}
+      {/* Header bounds (debug) */}
+      {debug && (
+        <rect
+          x={innerX}
+          y={headerBoxY}
+          width={innerWidth}
+          height={resolvedHeaderHeight}
+          fill="transparent"
+          stroke="#cd14e2ff"
+          strokeWidth={2}
+        />
+      )}
+      {/* Value bounds (debug) */}
+      {debug && value != undefined && (
+        <rect
+          x={innerX}
+          y={valueBoxY}
+          width={innerWidth}
+          height={valueHeight}
+          fill="transparent"
+          stroke="#14e2cdff"
+          strokeWidth={2}
+        />
       )}
     </Layer>
   );

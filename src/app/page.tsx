@@ -19,6 +19,7 @@ import LeftNav from "@/components/LeftNav";
 import MainFooter from "@/components/MainFooter";
 import { PreviewModeProvider } from "@/components/PreviewModeContext";
 import { PreviewRendererProvider } from "@/components/PreviewRendererContext";
+import { TextFittingPreferencesProvider } from "@/components/TextFittingPreferencesContext";
 import ToolsToolbar from "@/components/ToolsToolbar";
 import { WebglPreviewSettingsProvider } from "@/components/WebglPreviewSettingsContext";
 import { cardTemplatesById } from "@/data/card-templates";
@@ -202,9 +203,11 @@ export default function IndexPage() {
           <PreviewModeProvider>
             <PreviewRendererProvider>
               <WebglPreviewSettingsProvider>
-                <InspectorModeProvider>
-                  <IndexPageInner />
-                </InspectorModeProvider>
+                <TextFittingPreferencesProvider>
+                  <InspectorModeProvider>
+                    <IndexPageInner />
+                  </InspectorModeProvider>
+                </TextFittingPreferencesProvider>
               </WebglPreviewSettingsProvider>
             </PreviewRendererProvider>
           </PreviewModeProvider>

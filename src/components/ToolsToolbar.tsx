@@ -1,10 +1,11 @@
 "use client";
 
-import { Box, Move, Rotate3d, Square } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Box, Move, Rotate3d, SlidersHorizontal, Square } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { previewRendererFlags, usePreviewRenderer } from "@/components/PreviewRendererContext";
+import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -27,6 +28,13 @@ export default function ToolsToolbar() {
   const [isWebglSupported, setIsWebglSupported] = useState(false);
   const { interactionMode, setInteractionMode } = useWebglPreviewSettings();
   const showWebglControls = previewRenderer === "webgl";
+  const { preferences, setRolePreferences, resetRolePreferences, setIsDragging } =
+    useTextFittingPreferences();
+  const [isTextPrefsOpen, setIsTextPrefsOpen] = useState(false);
+  const [titleMinDraft, setTitleMinDraft] = useState(preferences.title.minFontPercent ?? 75);
+  const [statMinDraft, setStatMinDraft] = useState(preferences.statHeading.minFontPercent ?? 95);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const supported = supportsWebgl();
@@ -36,12 +44,48 @@ export default function ToolsToolbar() {
     }
   }, []);
 
+  useEffect(() => {
+    setTitleMinDraft(preferences.title.minFontPercent ?? 75);
+  }, [preferences.title.minFontPercent]);
+
+  useEffect(() => {
+    setStatMinDraft(preferences.statHeading.minFontPercent ?? 95);
+  }, [preferences.statHeading.minFontPercent]);
+
+  useEffect(() => {
+    if (!isTextPrefsOpen) return;
+    const handlePointer = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (popoverRef.current?.contains(target) || buttonRef.current?.contains(target)) {
+        return;
+      }
+      setIsTextPrefsOpen(false);
+    };
+    window.addEventListener("mousedown", handlePointer);
+    return () => window.removeEventListener("mousedown", handlePointer);
+  }, [isTextPrefsOpen]);
+
   if (!SHOW_WEBGL_TOGGLE || !isWebglSupported) {
     return null;
   }
 
   return (
     <div className={styles.toolsToolbar} aria-label={t("label.previewRenderer")}>
+      <div className={`btn-group-vertical ${styles.toolsToolbarGroup}`} role="group">
+        <button
+          ref={buttonRef}
+          type="button"
+          className={`btn btn-sm btn-outline-light ${styles.toolsToolbarButton} ${
+            isTextPrefsOpen ? "active" : ""
+          }`}
+          aria-pressed={isTextPrefsOpen}
+          aria-label="Text fitting settings"
+          title="Text fitting settings"
+          onClick={() => setIsTextPrefsOpen((prev) => !prev)}
+        >
+          <SlidersHorizontal aria-hidden="true" />
+        </button>
+      </div>
       <div className={`btn-group-vertical ${styles.toolsToolbarGroup}`} role="group">
         <button
           type="button"
@@ -94,6 +138,96 @@ export default function ToolsToolbar() {
           >
             <Rotate3d aria-hidden="true" />
           </button>
+        </div>
+      ) : null}
+      {isTextPrefsOpen ? (
+        <div ref={popoverRef} className={styles.toolsToolbarPopover} role="dialog" aria-label="Text fitting">
+          <div className={styles.toolsToolbarPopoverHeader}>Text Fitting (Global)</div>
+          <div className={styles.toolsToolbarPopoverBody}>
+            <div className={styles.toolsToolbarPopoverSection}>
+              <div className={styles.toolsToolbarPopoverSectionTitle}>Title</div>
+              <label className={styles.toolsToolbarPopoverToggle}>
+                <input
+                  type="checkbox"
+                  checked={Boolean(preferences.title.preferEllipsis)}
+                  onChange={(event) =>
+                    setRolePreferences("title", { preferEllipsis: event.target.checked })
+                  }
+                />
+                Prefer ellipsis over shrink
+              </label>
+              <label className={styles.toolsToolbarPopoverLabel}>
+                Min font size: {Math.round(titleMinDraft)}%
+                <input
+                  type="range"
+                  min={65}
+                  max={100}
+                  step={1}
+                  value={titleMinDraft}
+                  onChange={(event) => setTitleMinDraft(Number(event.target.value))}
+                  onPointerDown={() => setIsDragging(true)}
+                  onPointerUp={() => {
+                    setIsDragging(false);
+                    setRolePreferences("title", { minFontPercent: Number(titleMinDraft) });
+                  }}
+                  onPointerCancel={() => {
+                    setIsDragging(false);
+                    setRolePreferences("title", { minFontPercent: Number(titleMinDraft) });
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                className="btn btn-outline-light btn-sm"
+                onClick={() => resetRolePreferences("title")}
+              >
+                Reset Title Defaults
+              </button>
+            </div>
+            <div className={styles.toolsToolbarPopoverSection}>
+              <div className={styles.toolsToolbarPopoverSectionTitle}>Stat Headings</div>
+              <label className={styles.toolsToolbarPopoverToggle}>
+                <input
+                  type="checkbox"
+                  checked={Boolean(preferences.statHeading.preferEllipsis)}
+                  onChange={(event) =>
+                    setRolePreferences("statHeading", { preferEllipsis: event.target.checked })
+                  }
+                />
+                Prefer ellipsis over shrink
+              </label>
+              <label className={styles.toolsToolbarPopoverLabel}>
+                Min font size: {Math.round(statMinDraft)}%
+                <input
+                  type="range"
+                  min={65}
+                  max={100}
+                  step={1}
+                  value={statMinDraft}
+                  onChange={(event) => setStatMinDraft(Number(event.target.value))}
+                  onPointerDown={() => setIsDragging(true)}
+                  onPointerUp={() => {
+                    setIsDragging(false);
+                    setRolePreferences("statHeading", { minFontPercent: Number(statMinDraft) });
+                  }}
+                  onPointerCancel={() => {
+                    setIsDragging(false);
+                    setRolePreferences("statHeading", { minFontPercent: Number(statMinDraft) });
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                className="btn btn-outline-light btn-sm"
+                onClick={() => resetRolePreferences("statHeading")}
+              >
+                Reset Stat Defaults
+              </button>
+            </div>
+            <div className={styles.toolsToolbarPopoverHint}>
+              These settings are global (not per card).
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

@@ -3,6 +3,7 @@
 import CardPreview, { CardPreviewHandle } from "@/components/CardPreview";
 import WebglPreview from "@/components/CardPreview/WebglPreview";
 import { usePreviewRenderer } from "@/components/PreviewRendererContext";
+import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
@@ -26,6 +27,8 @@ type CardPreviewContainerProps = {
 export default function CardPreviewContainer({ previewRef }: CardPreviewContainerProps) {
   const { language } = useI18n();
   const { previewRenderer } = usePreviewRenderer();
+  const { preferences, isDragging } = useTextFittingPreferences();
+  const preferencesKey = JSON.stringify(preferences);
   const [textureCanvas, setTextureCanvas] = useState<HTMLCanvasElement | null>(null);
   const [textureVersion, setTextureVersion] = useState(0);
   const renderInFlightRef = useRef(false);
@@ -57,7 +60,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
   const effectiveFace = (cardData?.face ?? template.defaultFace) as CardFace;
 
   useEffect(() => {
-    if (!showWebgl) return;
+    if (!showWebgl || isDragging) return;
 
     let cancelled = false;
     const width = 1463;
@@ -104,7 +107,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
         window.clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [showWebgl, cardData, template.id, templateName, previewRef]);
+  }, [showWebgl, cardData, template.id, templateName, previewRef, preferencesKey, isDragging]);
 
   useEffect(() => {
     if (!showWebgl) {
@@ -204,7 +207,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
   const reverseDebounceTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!showWebgl || !reverseCard) {
+    if (!showWebgl || !reverseCard || isDragging) {
       setReverseTextureCanvas(null);
       return;
     }
@@ -254,7 +257,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
         window.clearTimeout(reverseDebounceTimeoutRef.current);
       }
     };
-  }, [showWebgl, reverseCard, reversePreviewRef]);
+  }, [showWebgl, reverseCard, reversePreviewRef, preferencesKey, isDragging]);
 
   return (
     <div className={styles.previewSwap}>

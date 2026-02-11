@@ -251,8 +251,35 @@ function TitleLayer({
 
   const showRibbon = typeof layer.props?.showRibbon === "boolean" ? layer.props.showRibbon : true;
   const y = typeof layer.props?.y === "number" ? layer.props.y : undefined;
+  const getBound = (prefix: string) => {
+    const x = layer.props?.[`${prefix}X`];
+    const y = layer.props?.[`${prefix}Y`];
+    const width = layer.props?.[`${prefix}Width`];
+    const height = layer.props?.[`${prefix}Height`];
+    if (
+      typeof x === "number" &&
+      typeof y === "number" &&
+      typeof width === "number" &&
+      typeof height === "number"
+    ) {
+      return { x, y, width, height };
+    }
+    return undefined;
+  };
+  const ribbonBounds = getBound("ribbon");
+  const textBounds = getBound("text");
+  const textBoundsNoRibbon = getBound("textNoRibbon");
 
-  return <RibbonTitle title={title} showRibbon={showRibbon} y={y} />;
+  return (
+    <RibbonTitle
+      title={title}
+      showRibbon={showRibbon}
+      y={y}
+      ribbonBounds={ribbonBounds}
+      textBounds={textBounds}
+      textBoundsNoRibbon={textBoundsNoRibbon}
+    />
+  );
 }
 
 function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | undefined {
