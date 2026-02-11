@@ -79,8 +79,8 @@ export default function ToolsToolbar() {
             isTextPrefsOpen ? "active" : ""
           }`}
           aria-pressed={isTextPrefsOpen}
-          aria-label="Text fitting settings"
-          title="Text fitting settings"
+          aria-label={t("label.textFittingSettings")}
+          title={t("label.textFittingSettings")}
           onClick={() => setIsTextPrefsOpen((prev) => !prev)}
         >
           <SlidersHorizontal aria-hidden="true" />
@@ -141,11 +141,16 @@ export default function ToolsToolbar() {
         </div>
       ) : null}
       {isTextPrefsOpen ? (
-        <div ref={popoverRef} className={styles.toolsToolbarPopover} role="dialog" aria-label="Text fitting">
-          <div className={styles.toolsToolbarPopoverHeader}>Text Fitting (Global)</div>
+        <div
+          ref={popoverRef}
+          className={styles.toolsToolbarPopover}
+          role="dialog"
+          aria-label={t("label.textFittingSettings")}
+        >
+          <div className={styles.toolsToolbarPopoverHeader}>{t("label.textFittingGlobal")}</div>
           <div className={styles.toolsToolbarPopoverBody}>
             <div className={styles.toolsToolbarPopoverSection}>
-              <div className={styles.toolsToolbarPopoverSectionTitle}>Title</div>
+              <div className={styles.toolsToolbarPopoverSectionTitle}>{t("label.textFittingTitle")}</div>
               <label className={styles.toolsToolbarPopoverToggle}>
                 <input
                   type="checkbox"
@@ -154,10 +159,10 @@ export default function ToolsToolbar() {
                     setRolePreferences("title", { preferEllipsis: event.target.checked })
                   }
                 />
-                Prefer ellipsis over shrink
+                {t("label.textFittingPreferEllipsis")}
               </label>
               <label className={styles.toolsToolbarPopoverLabel}>
-                Min font size: {Math.round(titleMinDraft)}%
+                {t("label.textFittingMinFontSize")}: {Math.round(titleMinDraft)}%
                 <input
                   type="range"
                   min={65}
@@ -181,11 +186,13 @@ export default function ToolsToolbar() {
                 className="btn btn-outline-light btn-sm"
                 onClick={() => resetRolePreferences("title")}
               >
-                Reset Title Defaults
+                {t("actions.resetTitleDefaults")}
               </button>
             </div>
             <div className={styles.toolsToolbarPopoverSection}>
-              <div className={styles.toolsToolbarPopoverSectionTitle}>Stat Headings</div>
+              <div className={styles.toolsToolbarPopoverSectionTitle}>
+                {t("label.textFittingStatHeadings")}
+              </div>
               <label className={styles.toolsToolbarPopoverToggle}>
                 <input
                   type="checkbox"
@@ -194,10 +201,10 @@ export default function ToolsToolbar() {
                     setRolePreferences("statHeading", { preferEllipsis: event.target.checked })
                   }
                 />
-                Prefer ellipsis over shrink
+                {t("label.textFittingPreferEllipsis")}
               </label>
               <label className={styles.toolsToolbarPopoverLabel}>
-                Min font size: {Math.round(statMinDraft)}%
+                {t("label.textFittingMinFontSize")}: {Math.round(statMinDraft)}%
                 <input
                   type="range"
                   min={65}
@@ -221,12 +228,10 @@ export default function ToolsToolbar() {
                 className="btn btn-outline-light btn-sm"
                 onClick={() => resetRolePreferences("statHeading")}
               >
-                Reset Stat Defaults
+                {t("actions.resetStatDefaults")}
               </button>
             </div>
-            <div className={styles.toolsToolbarPopoverHint}>
-              These settings are global (not per card).
-            </div>
+            <div className={styles.toolsToolbarPopoverHint}>{t("label.textFittingGlobalHint")}</div>
           </div>
         </div>
       ) : null}
