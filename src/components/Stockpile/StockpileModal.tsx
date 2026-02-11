@@ -6,9 +6,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
-import CardPreview, { type CardPreviewHandle } from "@/components/CardPreview";
+import CardPreview from "@/components/CardPreview";
 import ConfirmModal from "@/components/ConfirmModal";
 import ModalShell from "@/components/ModalShell";
+import {
+  formatMessage,
+  resolveExportFileName,
+  resolveZipFileName,
+  waitForAssetElements,
+  waitForFrame,
+} from "@/components/Stockpile/stockpile-utils";
 import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
@@ -24,6 +31,8 @@ import {
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 import type { CardRecord } from "@/types/cards-db";
 import type { CollectionRecord } from "@/types/collections-db";
+
+import { CardPreviewHandle } from "../CardPreview/types";
 
 type StockpileModalMode = "manage" | "pair-fronts" | "pair-backs";
 
@@ -51,14 +60,8 @@ export default function StockpileModal({
   titleOverride,
 }: StockpileModalProps) {
   const { t, language } = useI18n();
-  const formatMessage = (key: string, vars: Record<string, string | number>) => {
-    let text = t(key as never);
-    Object.entries(vars).forEach(([name, value]) => {
-      const safeName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      text = text.replace(new RegExp(`\\{\\s*${safeName}\\s*\\}`, "g"), String(value));
-    });
-    return text;
-  };
+  const formatMessageWith = (key: string, vars: Record<string, string | number>) =>
+    formatMessage(t(key as never), vars);
   const isPairFronts = mode === "pair-fronts";
   const isPairBacks = mode === "pair-backs";
   const isPairMode = isPairFronts || isPairBacks;
@@ -554,65 +557,6 @@ export default function StockpileModal({
     checkbox.indeterminate = selectedVisible > 0 && selectedVisible < visibleIds.size;
   }, [filteredCards, selectedIds]);
 
-  const resolveExportBaseName = (rawName?: string) => {
-    const trimmed = (rawName || "").trim();
-    const lower = trimmed.toLowerCase();
-    const replacedSpaces = lower.replace(/\s+/g, "-");
-    const safe = replacedSpaces.replace(/[^a-z0-9\-_.]+/g, "");
-    return safe || "card";
-  };
-
-  const resolveExportFileName = (rawName: string, usedNames: Map<string, number>) => {
-    const baseName = resolveExportBaseName(rawName);
-    const withExtension = baseName.endsWith(".png") ? baseName : `${baseName}.png`;
-    const currentCount = usedNames.get(withExtension) ?? 0;
-    usedNames.set(withExtension, currentCount + 1);
-    if (currentCount === 0) {
-      return withExtension;
-    }
-    const dotIndex = withExtension.lastIndexOf(".");
-    const stem = dotIndex >= 0 ? withExtension.slice(0, dotIndex) : withExtension;
-    const ext = dotIndex >= 0 ? withExtension.slice(dotIndex) : "";
-    return `${stem}-${currentCount + 1}${ext}`;
-  };
-
-  const waitForFrame = () =>
-    new Promise<void>((resolve) => {
-      requestAnimationFrame(() => resolve());
-    });
-
-  const waitForAssetElements = async (assetIds: string[], timeoutMs = 4000) => {
-    if (!assetIds.length) return;
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-      const svg = previewRef.current?.getSvgElement();
-      if (svg) {
-        const hasAllAssets = assetIds.every((id) =>
-          svg.querySelector(`image[data-user-asset-id="${id}"]`),
-        );
-        if (hasAllAssets) {
-          return;
-        }
-      }
-      await waitForFrame();
-    }
-  };
-
-  const resolveZipFileName = () => {
-    const now = new Date();
-    const pad = (value: number) => (value < 10 ? `0${value}` : `${value}`);
-    const timestamp =
-      [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join("") +
-      "-" +
-      [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join("");
-    const collectionName =
-      activeFilter.type === "collection"
-        ? collections.find((collection) => collection.id === activeFilter.id)?.name
-        : null;
-    const base = collectionName ? resolveExportBaseName(collectionName) : "heroquest-cards";
-    return `${base}-${timestamp}.zip`;
-  };
-
   const handleBulkExport = async () => {
     if (!canExport) return;
 
@@ -642,7 +586,7 @@ export default function StockpileModal({
         const assetIds = [card.imageAssetId, card.monsterIconAssetId].filter((id): id is string =>
           Boolean(id),
         );
-        await waitForAssetElements(assetIds);
+        await waitForAssetElements(() => previewRef.current?.getSvgElement(), assetIds);
 
         const pngBlob = await previewRef.current?.renderToPngBlob();
         if (!pngBlob) {
@@ -679,7 +623,10 @@ export default function StockpileModal({
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = resolveZipFileName();
+      link.download = resolveZipFileName(() => {
+        if (activeFilter.type !== "collection") return null;
+        return collections.find((collection) => collection.id === activeFilter.id)?.name ?? null;
+      });
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1204,9 +1151,6 @@ export default function StockpileModal({
                     const isSelected = selectedIds.includes(card.id);
                     const isPairingConflict =
                       isPairFronts && card.pairedWith && card.pairedWith !== activeBackId;
-                    const conflictCard = isPairingConflict
-                      ? (cardById.get(card.pairedWith ?? "") ?? null)
-                      : null;
                     const templateMeta = cardTemplatesById[card.templateId];
                     const effectiveFace = card.face ?? templateMeta?.defaultFace;
                     const pairedFronts = pairedByTargetId.get(card.id) ?? [];
@@ -1252,10 +1196,6 @@ export default function StockpileModal({
                           }, 200);
                         }}
                         onClick={(event) => {
-                          const rectForConflict =
-                            isPairingConflict && event.currentTarget
-                              ? event.currentTarget.getBoundingClientRect()
-                              : null;
                           if (isPairMode) {
                             if (isPairBacks) {
                               setSelectedIds((prev) => (prev.includes(card.id) ? [] : [card.id]));
@@ -1672,8 +1612,8 @@ export default function StockpileModal({
                 "Back card")
               : "Back card";
             return pairingConflictDialog.count === 1
-              ? formatMessage("warning.pairingLossSingle", { back: backTitle })
-              : formatMessage("warning.pairingLossMultiple", {
+              ? formatMessageWith("warning.pairingLossSingle", { back: backTitle })
+              : formatMessageWith("warning.pairingLossMultiple", {
                   count: pairingConflictDialog.count,
                   back: backTitle,
                 });
