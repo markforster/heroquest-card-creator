@@ -85,6 +85,7 @@ function CardPlane({
   side,
   depthSign,
   depthOffset,
+  emissiveBoost = 0,
 }: {
   texture: Texture;
   sheenPower: number;
@@ -92,6 +93,7 @@ function CardPlane({
   side: typeof FrontSide | typeof BackSide | typeof DoubleSide;
   depthSign: 1 | -1;
   depthOffset: number;
+  emissiveBoost?: number;
 }) {
   const geometry = useMemo(() => new PlaneGeometry(1, CARD_ASPECT), []);
   const linenNormalTexture = useLoader(TextureLoader, LINEN_NORMAL_MAP.src);
@@ -219,7 +221,7 @@ function CardPlane({
           map={texture}
           emissiveMap={texture}
           emissive="#ffffff"
-          emissiveIntensity={0.45}
+          emissiveIntensity={0.45 + emissiveBoost}
           normalMap={activeNormalTexture ?? undefined}
           normalScale={strongNormalScale}
           roughness={0.6}
@@ -506,10 +508,11 @@ function WebglScene({
         <CardPlane
           texture={backTexture}
           sheenPower={sheenPower}
-          sheenIntensity={sheenIntensity}
+          sheenIntensity={useBlueprintEdge ? Math.max(0.7, sheenIntensity * 1.8) : sheenIntensity}
           side={BackSide}
           depthSign={-1}
           depthOffset={-(CARD_THICKNESS / 2 + 0.002)}
+          emissiveBoost={useBlueprintEdge ? 0.55 : 0}
         />
         {showMagicOverlay ? (
           <group scale={[scale, scale, 1]}>
