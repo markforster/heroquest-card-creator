@@ -222,7 +222,8 @@ export default function StockpileModal({
       initialSelectedIds?.filter((id) => typeof id === "string" && id.length > 0) ?? [];
     if (isPairMode) {
       setSelectedIds((prev) => {
-        const merged = Array.from(new Set([...normalizedInitial, ...prev]));
+        const base = prev.length ? prev : activeCardId ? [activeCardId] : [];
+        const merged = Array.from(new Set([...base, ...normalizedInitial]));
         if (isPairBacks) {
           return merged.length ? [merged[0]] : [];
         }
@@ -230,12 +231,11 @@ export default function StockpileModal({
       });
       return;
     }
-    setSelectedIds((prev) => {
-      const base = prev.length ? prev : activeCardId ? [activeCardId] : [];
+    setSelectedIds(() => {
       if (!normalizedInitial.length) {
-        return base;
+        return [];
       }
-      const merged = new Set<string>([...base, ...normalizedInitial]);
+      const merged = new Set<string>(normalizedInitial);
       return Array.from(merged);
     });
   }, [isOpen, activeCardId, isPairMode, isPairBacks, initialSelectedIds]);

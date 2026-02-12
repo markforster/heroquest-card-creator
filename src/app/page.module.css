@@ -2220,7 +2220,7 @@
 }
 
 .stockpileCountBadge {
-  font-size: 0.64rem;
+  font-size: 0.85rem;
   line-height: 1;
   color: #f8fafc;
   border: 1px solid var(--hq-accent);
