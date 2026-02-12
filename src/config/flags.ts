@@ -85,3 +85,8 @@ export const USE_STATS_VERTICAL_COMPRESSION = false;
  * Vertical scale factor when USE_STATS_VERTICAL_COMPRESSION is enabled.
  */
 export const STATS_VERTICAL_SCALE_Y = 0.985;
+
+/**
+ * Adds subtle rotation/offset jitter to paired export preview cards in the Stockpile modal.
+ */
+export const USE_EXPORT_PAIR_JITTER = false;

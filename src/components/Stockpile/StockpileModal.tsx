@@ -11,7 +11,12 @@ import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import ModalShell from "@/components/ModalShell";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
-import { formatMessage, resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
+import {
+  formatMessage,
+  resolveExportFileName,
+  resolveZipFileName,
+} from "@/components/Stockpile/stockpile-utils";
+import { USE_EXPORT_PAIR_JITTER } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -121,6 +126,7 @@ export default function StockpileModal({
     exportOnlyLabel: string;
     previewRows: { left: CardRecord[]; right: CardRecord[] }[];
   } | null>(null);
+  const exportPairVisibleCount = 9;
   const [pairOverflowAnchor, setPairOverflowAnchor] = useState<{
     rect: { top: number; left: number; bottom: number; right: number };
     cards: CardRecord[];
@@ -182,21 +188,33 @@ export default function StockpileModal({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       if (exportPairPrompt) {
+        event.stopPropagation();
+        if ("stopImmediatePropagation" in event) {
+          event.stopImmediatePropagation();
+        }
         event.preventDefault();
         setExportPairPrompt(null);
         return;
       }
       if (isPairOverflowOpen) {
+        event.stopPropagation();
+        if ("stopImmediatePropagation" in event) {
+          event.stopImmediatePropagation();
+        }
         event.preventDefault();
         setIsPairOverflowOpen(false);
         setPairOverflowAnchor(null);
         return;
       }
+      event.stopPropagation();
+      if ("stopImmediatePropagation" in event) {
+        event.stopImmediatePropagation();
+      }
       onClose();
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [exportPairPrompt, isOpen, isPairOverflowOpen, onClose]);
 
   useEffect(() => {
@@ -206,7 +224,6 @@ export default function StockpileModal({
     setCollectionName("");
     setCollectionDescription("");
   }, [isOpen]);
-
 
   useEffect(() => {
     if (!isOpen) {
@@ -347,9 +364,7 @@ export default function StockpileModal({
       sortCardsByName(leftCards);
       const leftIdSet = new Set(leftCards.map((card) => card.id));
       const rightCards: CardRecord[] = [];
-      const hasBackInLeft = leftCards.some(
-        (card) => card.face === "back" || card.id === groupKey,
-      );
+      const hasBackInLeft = leftCards.some((card) => card.face === "back" || card.id === groupKey);
 
       if (hasBackInLeft) {
         const pairedFronts = pairedByTargetId.get(groupKey) ?? [];
@@ -386,6 +401,17 @@ export default function StockpileModal({
       pairedIds: pairedCards.map((card) => card.id),
       previewRows,
     };
+  };
+
+  const resolveCardJitter = (id: string) => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i += 1) {
+      hash = (hash * 31 + id.charCodeAt(i)) % 1024;
+    }
+    const rotation = ((hash % 7) - 3) * 0.6;
+    const offsetX = (((hash >> 3) % 7) - 3) * 0.7;
+    const offsetY = (((hash >> 6) % 7) - 3) * 0.7;
+    return { rotation, offsetX, offsetY };
   };
   const canExport =
     !isExporting &&
@@ -443,7 +469,9 @@ export default function StockpileModal({
         resolveZipName: () =>
           resolveZipFileName(() => {
             if (activeFilter.type !== "collection") return null;
-            return collections.find((collection) => collection.id === activeFilter.id)?.name ?? null;
+            return (
+              collections.find((collection) => collection.id === activeFilter.id)?.name ?? null
+            );
           }),
         shouldCancel: () => cancelExportRef.current,
         onTargetChange: (card) => setExportTarget(card),
@@ -1518,13 +1546,11 @@ export default function StockpileModal({
                 <span className="visually-hidden">{t("actions.close")}</span>✕
               </button>
             </div>
-            <div className={styles.stockpileOverlayBody}>
-              {t("confirm.exportPairedFacesBody")}
-            </div>
+            <div className={styles.stockpileOverlayBody}>{t("confirm.exportPairedFacesBody")}</div>
             {exportPairPrompt.previewRows.length > 0 ? (
               <div className={styles.exportPairPreviewList}>
                 {exportPairPrompt.previewRows.map((row) => {
-                  const visibleCount = 6;
+                  const visibleCount = exportPairVisibleCount;
                   return (
                     <div
                       key={`${row.left.map((card) => card.id).join("|")}-${row.right
@@ -1540,13 +1566,23 @@ export default function StockpileModal({
                               : null;
                           const leftTemplateThumb =
                             cardTemplatesById[leftCard.templateId]?.thumbnail ?? null;
+                          const leftJitter = USE_EXPORT_PAIR_JITTER
+                            ? resolveCardJitter(leftCard.id)
+                            : null;
                           return (
                             <div
                               key={leftCard.id}
                               className={`${styles.inspectorStackItem} ${styles.exportPairStackItem}`}
                               style={{ zIndex: index + 1 }}
                             >
-                              <div className={styles.inspectorStackThumbInner}>
+                              <div
+                                className={styles.inspectorStackThumbInner}
+                                style={{
+                                  transform: leftJitter
+                                    ? `translate(${leftJitter.offsetX}px, ${leftJitter.offsetY}px) rotate(${leftJitter.rotation}deg)`
+                                    : undefined,
+                                }}
+                              >
                                 {leftThumbUrl ? (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img
@@ -1630,13 +1666,23 @@ export default function StockpileModal({
                               : null;
                           const pairedTemplateThumb =
                             cardTemplatesById[pairedCard.templateId]?.thumbnail ?? null;
+                          const pairedJitter = USE_EXPORT_PAIR_JITTER
+                            ? resolveCardJitter(pairedCard.id)
+                            : null;
                           return (
                             <div
                               key={pairedCard.id}
                               className={`${styles.inspectorStackItem} ${styles.exportPairStackItem}`}
                               style={{ zIndex: index + 1 }}
                             >
-                              <div className={styles.inspectorStackThumbInner}>
+                              <div
+                                className={styles.inspectorStackThumbInner}
+                                style={{
+                                  transform: pairedJitter
+                                    ? `translate(${pairedJitter.offsetX}px, ${pairedJitter.offsetY}px) rotate(${pairedJitter.rotation}deg)`
+                                    : undefined,
+                                }}
+                              >
                                 {pairedThumbUrl ? (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img

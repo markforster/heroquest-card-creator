@@ -2370,12 +2370,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  width: 100%;
 }
 
 .exportPairRow {
   display: flex;
   align-items: center;
   gap: 1rem;
+  width: 100%;
 }
 
 .exportPairBaseCard {
@@ -2415,6 +2417,10 @@
 .exportPairStackItem {
   width: 96px;
   height: 132px;
+}
+
+.exportPairStackItem .inspectorStackThumbInner {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 .exportPairStackItem + .exportPairStackItem {
