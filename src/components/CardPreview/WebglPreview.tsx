@@ -32,7 +32,7 @@ import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContex
 import styles from "./WebglPreview.module.css";
 
 import type { MutableRefObject, RefObject } from "react";
-import type { Group } from "three";
+import type { Group, Mesh } from "three";
 
 type WebglPreviewProps = {
   className?: string;
@@ -63,9 +63,14 @@ const CARD_THICKNESS = 0.0012;
 const CARD_CORNER_RADIUS = 28 / 750;
 const CARD_EDGE_INSET = 0.0085;
 const EDGE_COLOR = "#310101";
+const EDGE_BLUEPRINT_COLOR = "#2d6cc3";
+const EDGE_BLUEPRINT_EMISSIVE = "#1a4f9a";
+const EDGE_BLUEPRINT_OPACITY = 0.55;
 const EDGE_ROUGHNESS = 0.72;
 const EDGE_METALNESS = 0.05;
 const EDGE_CLEARCOAT = 0.15;
+const SPINNER_SIZE = 0.11;
+const SPINNER_ROTATION_SPEED = -2.4;
 
 function CardPlane({
   texture,
@@ -285,6 +290,8 @@ function WebglScene({
   recenterBoostUntilRef,
   sheenPower,
   sheenIntensity,
+  useBlueprintEdge,
+  showSpinner,
 }: {
   frontTexture: Texture;
   backTexture: Texture;
@@ -294,6 +301,8 @@ function WebglScene({
   recenterBoostUntilRef: MutableRefObject<number>;
   sheenPower: number;
   sheenIntensity: number;
+  useBlueprintEdge: boolean;
+  showSpinner: boolean;
 }) {
   const { width, height, gl } = useThree((state) => ({
     width: state.viewport.width,
@@ -333,16 +342,28 @@ function WebglScene({
     return geometry;
   }, []);
 
-  const depthMaterial = useMemo(
-    () => ({
-      color: EDGE_COLOR,
-      roughness: EDGE_ROUGHNESS,
-      metalness: EDGE_METALNESS,
-      clearcoat: EDGE_CLEARCOAT,
-      clearcoatRoughness: 0.4,
-    }),
-    [],
-  );
+  const depthMaterial = useMemo(() => {
+    if (!useBlueprintEdge) {
+      return {
+        color: EDGE_COLOR,
+        roughness: EDGE_ROUGHNESS,
+        metalness: EDGE_METALNESS,
+        clearcoat: EDGE_CLEARCOAT,
+        clearcoatRoughness: 0.4,
+      };
+    }
+    return {
+      color: EDGE_BLUEPRINT_COLOR,
+      emissive: EDGE_BLUEPRINT_EMISSIVE,
+      emissiveIntensity: 0.35,
+      roughness: 0.4,
+      metalness: 0.05,
+      clearcoat: 0.08,
+      clearcoatRoughness: 0.6,
+      transparent: true,
+      opacity: EDGE_BLUEPRINT_OPACITY,
+    };
+  }, [useBlueprintEdge]);
   const capMaterial = useMemo(
     () => ({
       visible: false,
@@ -373,6 +394,13 @@ function WebglScene({
     configureTexture(backTexture, true);
   }, [backTexture, frontTexture, gl]);
 
+  const spinnerTexture = useLoader(TextureLoader, "/spinner-blueprint.svg");
+  const spinnerRef = useRef<Mesh | null>(null);
+  useEffect(() => {
+    spinnerTexture.colorSpace = SRGBColorSpace;
+    spinnerTexture.needsUpdate = true;
+  }, [spinnerTexture]);
+
   useFrame(() => {
     const yawGroup = yawGroupRef.current;
     const pitchGroup = pitchGroupRef.current;
@@ -382,6 +410,12 @@ function WebglScene({
     pitchGroup.rotation.x +=
       (targetRotationRef.current.x - pitchGroup.rotation.x) * smoothing;
     yawGroup.rotation.y += (targetRotationRef.current.y - yawGroup.rotation.y) * smoothing;
+  });
+  useFrame((_, delta) => {
+    if (!showSpinner) return;
+    if (spinnerRef.current) {
+      spinnerRef.current.rotation.z += delta * SPINNER_ROTATION_SPEED;
+    }
   });
 
   return (
@@ -411,6 +445,21 @@ function WebglScene({
           depthSign={-1}
           depthOffset={-(CARD_THICKNESS / 2 + 0.002)}
         />
+        {showSpinner ? (
+          <mesh
+            ref={spinnerRef}
+            position={[0, 0, CARD_THICKNESS / 2 + 0.006]}
+            renderOrder={2}
+          >
+            <planeGeometry args={[SPINNER_SIZE, SPINNER_SIZE]} />
+            <meshBasicMaterial
+              map={spinnerTexture}
+              transparent
+              opacity={0.85}
+              depthWrite={false}
+            />
+          </mesh>
+        ) : null}
       </group>
     </group>
   );
@@ -507,6 +556,9 @@ export default function WebglPreview({
     frontCanvasTexture && isReadyForFrontCanvas ? frontCanvasTexture : fallbackFrontTexture;
   const activeBackTexture =
     backCanvasTexture && isReadyForBackCanvas ? backCanvasTexture : fallbackBackTexture;
+  const hasTwoSidedRender = Boolean(backTextureCanvas);
+  const useBlueprintEdge = !hasFrontRenderedOnce || !hasTwoSidedRender;
+  const showSpinner = !hasFrontRenderedOnce;
   const dragStateRef = useRef<{
     active: boolean;
     startX: number;
@@ -658,6 +710,8 @@ export default function WebglPreview({
           recenterBoostUntilRef={recenterBoostUntilRef}
           sheenPower={glintPower}
           sheenIntensity={sheenIntensity}
+          useBlueprintEdge={useBlueprintEdge}
+          showSpinner={showSpinner}
         />
       </Canvas>
     </div>
