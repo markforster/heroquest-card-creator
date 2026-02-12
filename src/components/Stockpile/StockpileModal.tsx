@@ -8,6 +8,7 @@ import styles from "@/app/page.module.css";
 import CardPreview from "@/components/CardPreview";
 import ConfirmModal from "@/components/ConfirmModal";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
+import { useEscapeModalAware } from "@/components/EscapeStackProvider";
 import ModalShell from "@/components/ModalShell";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
@@ -182,40 +183,27 @@ export default function StockpileModal({
     setPairOverflowAnchor(null);
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
+  useEscapeModalAware({
+    id: "stockpile-modal",
+    isOpen,
+    onEscape: onClose,
+  });
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      if (exportPairPrompt) {
-        event.stopPropagation();
-        if ("stopImmediatePropagation" in event) {
-          event.stopImmediatePropagation();
-        }
-        event.preventDefault();
-        setExportPairPrompt(null);
-        return;
-      }
-      if (isPairOverflowOpen) {
-        event.stopPropagation();
-        if ("stopImmediatePropagation" in event) {
-          event.stopImmediatePropagation();
-        }
-        event.preventDefault();
-        setIsPairOverflowOpen(false);
-        setPairOverflowAnchor(null);
-        return;
-      }
-      event.stopPropagation();
-      if ("stopImmediatePropagation" in event) {
-        event.stopImmediatePropagation();
-      }
-      onClose();
-    };
+  useEscapeModalAware({
+    id: "stockpile-export-prompt",
+    isOpen: Boolean(exportPairPrompt),
+    onEscape: () => setExportPairPrompt(null),
+  });
 
-    window.addEventListener("keydown", handleKeyDown, true);
-    return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [exportPairPrompt, isOpen, isPairOverflowOpen, onClose]);
+  useEscapeModalAware({
+    id: "stockpile-pair-overflow",
+    isOpen: isPairOverflowOpen,
+    onEscape: () => {
+      setIsPairOverflowOpen(false);
+      setPairOverflowAnchor(null);
+    },
+    enabled: isPairOverflowOpen,
+  });
 
   useEffect(() => {
     if (!isOpen) return;

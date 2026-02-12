@@ -13,6 +13,7 @@ import { PreviewCanvasProvider } from "@/components/CardPreview/PreviewCanvasCon
 import DatabaseVersionGate from "@/components/DatabaseVersionGate";
 import { EditorSaveProvider } from "@/components/EditorSaveContext";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
+import { EscapeStackProvider } from "@/components/EscapeStackProvider";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import HeaderWithTemplatePicker from "@/components/HeaderWithTemplatePicker";
 import { LibraryTransferProvider } from "@/components/LibraryTransferContext";
@@ -315,58 +316,60 @@ function IndexPageInner() {
     <div className={styles.page}>
       <LibraryTransferProvider>
         <EditorSaveProvider value={{ saveCurrentCard, saveToken }}>
-          <AppActionsProvider>
-            <HeaderWithTemplatePicker />
-            <main className={styles.main}>
-              <LeftNav />
-              <section
-                className={styles.leftPanel}
-                // style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
-              >
-                {/* <div className={styles.templateSidebar}>
-                  <TemplatesList
-                    selectedId={selectedTemplateId}
-                    onSelect={(id) => setSelectedTemplateId(id as TemplateId)}
-                    variant="sidebar"
+          <EscapeStackProvider>
+            <AppActionsProvider>
+              <HeaderWithTemplatePicker />
+              <main className={styles.main}>
+                <LeftNav />
+                <section
+                  className={styles.leftPanel}
+                  // style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
+                >
+                  {/* <div className={styles.templateSidebar}>
+                    <TemplatesList
+                      selectedId={selectedTemplateId}
+                      onSelect={(id) => setSelectedTemplateId(id as TemplateId)}
+                      variant="sidebar"
+                    />
+                  </div> */}
+                  <div className={styles.previewContainer}>
+                    <ToolsToolbar />
+                    {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
+                  </div>
+                </section>
+                <aside className={styles.rightPanel}>
+                  <div className={styles.inspectorTop}>
+                    <TemplateChooser />
+                  </div>
+                  <div className={styles.inspectorBody}>
+                    <PreviewCanvasProvider previewRef={previewRef}>
+                      <CardInspector />
+                    </PreviewCanvasProvider>
+                  </div>
+                  <EditorActionsToolbar
+                    canSaveChanges={canSaveChanges}
+                    canSaveAsNew={canSaveAsNew}
+                    savingMode={savingMode}
+                    onExportPng={exportCurrentFace}
+                    exportMenuItems={exportMenuItems.map((item) => ({
+                      ...item,
+                      onClick: () => {
+                        if (item.id === "export-both-faces") {
+                          void handleExportBothFaces();
+                        } else if (item.id === "export-back-active-front") {
+                          void handleExportBackActiveFront();
+                        } else if (item.id === "export-back-all-fronts") {
+                          void handleExportBackAllFronts();
+                        }
+                      },
+                    }))}
+                    onSaveChanges={() => handleSave("update")}
+                    onSaveAsNew={() => handleSave("new")}
                   />
-                </div> */}
-                <div className={styles.previewContainer}>
-                  <ToolsToolbar />
-                  {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
-                </div>
-              </section>
-              <aside className={styles.rightPanel}>
-                <div className={styles.inspectorTop}>
-                  <TemplateChooser />
-                </div>
-                <div className={styles.inspectorBody}>
-                  <PreviewCanvasProvider previewRef={previewRef}>
-                    <CardInspector />
-                  </PreviewCanvasProvider>
-                </div>
-                <EditorActionsToolbar
-                  canSaveChanges={canSaveChanges}
-                  canSaveAsNew={canSaveAsNew}
-                  savingMode={savingMode}
-                  onExportPng={exportCurrentFace}
-                  exportMenuItems={exportMenuItems.map((item) => ({
-                    ...item,
-                    onClick: () => {
-                      if (item.id === "export-both-faces") {
-                        void handleExportBothFaces();
-                      } else if (item.id === "export-back-active-front") {
-                        void handleExportBackActiveFront();
-                      } else if (item.id === "export-back-all-fronts") {
-                        void handleExportBackAllFronts();
-                      }
-                    },
-                  }))}
-                  onSaveChanges={() => handleSave("update")}
-                  onSaveAsNew={() => handleSave("new")}
-                />
-              </aside>
-            </main>
-          </AppActionsProvider>
+                </aside>
+              </main>
+            </AppActionsProvider>
+          </EscapeStackProvider>
         </EditorSaveProvider>
         {exportTemplate && exportTarget ? (
           <div className={styles.bulkExportPreview} aria-hidden="true">

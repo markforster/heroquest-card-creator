@@ -1,10 +1,11 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import styles from "@/app/page.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useEscapeModalAware } from "@/components/EscapeStackProvider";
 
 import type { ReactNode, MouseEvent } from "react";
 
@@ -31,20 +32,15 @@ export default function ModalShell({
   keepMounted = false,
 }: ModalShellProps) {
   const { t } = useI18n();
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, onClose]);
+  const escapeId = useMemo(
+    () => `modal-${Math.random().toString(36).slice(2, 10)}`,
+    [],
+  );
+  useEscapeModalAware({
+    id: escapeId,
+    isOpen,
+    onEscape: onClose,
+  });
 
   if (!isOpen && !keepMounted) return null;
 
