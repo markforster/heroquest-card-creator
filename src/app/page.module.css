@@ -1227,6 +1227,56 @@
   background: linear-gradient(to bottom, rgba(17, 17, 17, 0.85), rgba(12, 10, 8, 0.95));
 }
 
+.exportSplit {
+  position: relative;
+  display: inline-flex;
+}
+
+.exportSplitPrimary {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.exportSplitChevron {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  padding: 0.25rem 0.45rem;
+}
+
+.exportSplitMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  background: #14110d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.45rem;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
+  padding: 0.35rem;
+  z-index: 15;
+}
+
+.exportSplitMenuUp {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.exportSplitMenuItem {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #f3e8d2;
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.35rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+}
+
+.exportSplitMenuItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 /* Stat controls */
 
 .statGroup {
@@ -2280,6 +2330,106 @@
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.75rem;
+}
+
+.stockpileOverlayBody {
+  font-size: 0.92rem;
+  color: #efe7d3;
+  line-height: 1.5;
+}
+
+.exportPairActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.exportPairActionGroup {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.exportPairPanel {
+  width: min(92vw, 840px);
+  max-width: 840px;
+}
+
+.exportPairActionGroup .btn {
+  white-space: normal;
+}
+
+.exportPairPreviewList {
+  margin-top: 1rem;
+  max-height: min(50vh, 420px);
+  overflow: auto;
+  padding: 0.4rem 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.exportPairRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.exportPairBaseCard {
+  flex: 0 0 96px;
+}
+
+.exportPairIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hq-accent);
+  flex: 0 0 auto;
+}
+
+.exportPairCardThumb {
+  width: 96px;
+  height: 132px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: rgba(10, 10, 10, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.exportPairCardThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.exportPairStack {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.exportPairStackItem {
+  width: 96px;
+  height: 132px;
+}
+
+.exportPairStackItem + .exportPairStackItem {
+  margin-left: -48px;
+}
+
+.exportPairStack .inspectorStackOverflowItem {
+  margin-left: 12px;
+}
+
+.exportPairStack .inspectorStackOverflow {
+  width: 96px;
+  height: 132px;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
 }
 
 .bulkExportPreview {

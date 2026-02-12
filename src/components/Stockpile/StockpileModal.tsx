@@ -1,36 +1,29 @@
 "use client";
 
-import JSZip from "jszip";
-import { AlertTriangle, Search } from "lucide-react";
+import { AlertTriangle, Combine, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
 import CardPreview from "@/components/CardPreview";
 import ConfirmModal from "@/components/ConfirmModal";
+import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import ModalShell from "@/components/ModalShell";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
-import {
-  formatMessage,
-  resolveExportFileName,
-  resolveZipFileName,
-  waitForAssetElements,
-  waitForFrame,
-} from "@/components/Stockpile/stockpile-utils";
-import { USE_ZIP_COMPRESSION } from "@/config/flags";
+import { formatMessage, resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { deleteCards, listCards } from "@/lib/cards-db";
+import { runBulkExport } from "@/lib/export-cards";
 import {
   createCollection,
   deleteCollection,
   listCollections,
   updateCollection,
 } from "@/lib/collections-db";
-import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 import type { CardRecord } from "@/types/cards-db";
 
 import { CardPreviewHandle } from "../CardPreview/types";
@@ -121,6 +114,19 @@ export default function StockpileModal({
   const [exportTotal, setExportTotal] = useState(0);
   const [exportProgress, setExportProgress] = useState(0);
   const [exportCancelled, setExportCancelled] = useState(false);
+  const [exportPairPrompt, setExportPairPrompt] = useState<{
+    baseIds: string[];
+    pairedIds: string[];
+    exportLabel: string;
+    exportOnlyLabel: string;
+    previewRows: { left: CardRecord[]; right: CardRecord[] }[];
+  } | null>(null);
+  const [pairOverflowAnchor, setPairOverflowAnchor] = useState<{
+    rect: { top: number; left: number; bottom: number; right: number };
+    cards: CardRecord[];
+  } | null>(null);
+  const [isPairOverflowOpen, setIsPairOverflowOpen] = useState(false);
+  const pairOverflowHoverTimeoutRef = useRef<number | null>(null);
   const previewRef = useRef<CardPreviewHandle | null>(null);
   const selectAllRef = useRef<HTMLInputElement | null>(null);
   const cancelExportRef = useRef(false);
@@ -162,6 +168,36 @@ export default function StockpileModal({
     setTemplateFilter("all");
     setSelectedIds([]);
   }, [isOpen, isPairMode]);
+
+  useEffect(() => {
+    if (isOpen) return;
+    setExportPairPrompt(null);
+    setIsPairOverflowOpen(false);
+    setPairOverflowAnchor(null);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (exportPairPrompt) {
+        event.preventDefault();
+        setExportPairPrompt(null);
+        return;
+      }
+      if (isPairOverflowOpen) {
+        event.preventDefault();
+        setIsPairOverflowOpen(false);
+        setPairOverflowAnchor(null);
+        return;
+      }
+      onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [exportPairPrompt, isOpen, isPairOverflowOpen, onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -249,6 +285,7 @@ export default function StockpileModal({
     return map;
   }, [cards]);
   const selectedCards = cards.filter((card) => selectedIds.includes(card.id));
+  const shouldShowPairOverflow = isPairOverflowOpen && pairOverflowAnchor;
   const activeCollection =
     activeFilter.type === "collection"
       ? collections.find((collection) => collection.id === activeFilter.id)
@@ -283,6 +320,73 @@ export default function StockpileModal({
     activeFilter.type === "collection" && selectedCards.length === 0
       ? activeCollectionCards
       : selectedCards;
+
+  const sortCardsByName = (items: CardRecord[]) =>
+    items.sort((a, b) => {
+      const aName = a.nameLower ?? a.name.toLocaleLowerCase();
+      const bName = b.nameLower ?? b.name.toLocaleLowerCase();
+      return aName.localeCompare(bName);
+    });
+
+  const resolvePairedExportPlan = (base: CardRecord[]) => {
+    const baseIdSet = new Set(base.map((card) => card.id));
+    const baseIds = Array.from(baseIdSet);
+    const pairedCandidateSet = new Set<string>();
+    const previewRows: { left: CardRecord[]; right: CardRecord[] }[] = [];
+    const groupMap = new Map<string, CardRecord[]>();
+
+    base.forEach((card) => {
+      const isBack = card.face === "back";
+      const groupKey = !isBack && card.pairedWith ? card.pairedWith : card.id;
+      const existing = groupMap.get(groupKey) ?? [];
+      existing.push(card);
+      groupMap.set(groupKey, existing);
+    });
+
+    groupMap.forEach((leftCards, groupKey) => {
+      sortCardsByName(leftCards);
+      const leftIdSet = new Set(leftCards.map((card) => card.id));
+      const rightCards: CardRecord[] = [];
+      const hasBackInLeft = leftCards.some(
+        (card) => card.face === "back" || card.id === groupKey,
+      );
+
+      if (hasBackInLeft) {
+        const pairedFronts = pairedByTargetId.get(groupKey) ?? [];
+        pairedFronts.forEach((front) => {
+          pairedCandidateSet.add(front.id);
+          if (!baseIdSet.has(front.id)) {
+            rightCards.push(front);
+          }
+        });
+      } else {
+        const pairedBack = cardById.get(groupKey);
+        if (pairedBack) {
+          pairedCandidateSet.add(pairedBack.id);
+          if (!baseIdSet.has(pairedBack.id)) {
+            rightCards.push(pairedBack);
+          }
+        }
+      }
+
+      if (rightCards.length > 0) {
+        sortCardsByName(rightCards);
+        previewRows.push({ left: leftCards, right: rightCards });
+      }
+    });
+
+    const pairedCards = Array.from(pairedCandidateSet)
+      .filter((id) => !baseIdSet.has(id))
+      .map((id) => cardById.get(id))
+      .filter((card): card is CardRecord => Boolean(card));
+    sortCardsByName(pairedCards);
+
+    return {
+      baseIds,
+      pairedIds: pairedCards.map((card) => card.id),
+      previewRows,
+    };
+  };
   const canExport =
     !isExporting &&
     exportCards.length > 0 &&
@@ -297,7 +401,6 @@ export default function StockpileModal({
         ? `${t("actions.export")} (${exportCount}) ${t("actions.fromThisCollection")}`
         : `${t("actions.export")} (${exportCount})`;
   const exportCollectionName = activeCollection?.name;
-  const exportPercent = exportTotal > 0 ? Math.round((exportProgress / exportTotal) * 100) : 0;
   const exportTitle = exportCollectionName
     ? `${t("status.exportingImagesFrom")} ${exportCollectionName} (${exportTotal})`
     : `${t("status.exportingImages")} (${exportTotal})`;
@@ -316,81 +419,40 @@ export default function StockpileModal({
     checkbox.indeterminate = selectedVisible > 0 && selectedVisible < visibleIds.size;
   }, [filteredCards, selectedIds]);
 
-  const handleBulkExport = async () => {
-    if (!canExport) return;
+  const handleExportCards = async (cardsToExport: CardRecord[]) => {
+    if (!cardsToExport.length) {
+      window.alert(t("alert.selectCardToExport"));
+      return;
+    }
 
     setIsExporting(true);
-    setExportTotal(exportCards.length);
+    setExportTotal(cardsToExport.length);
     setExportProgress(0);
     setExportCancelled(false);
     cancelExportRef.current = false;
-    const usedNames = new Map<string, number>();
-    const zip = new JSZip();
-    let exportedCount = 0;
 
     try {
-      if (!exportCards.length) {
-        window.alert(t("alert.selectCardToExport"));
-        return;
-      }
+      const result = await runBulkExport({
+        cards: cardsToExport,
+        previewRef,
+        resolveName: (card, usedNames) =>
+          resolveExportFileName(
+            card.name || card.title || templateFilterLabelMap[card.templateId] || card.templateId,
+            usedNames,
+          ),
+        resolveZipName: () =>
+          resolveZipFileName(() => {
+            if (activeFilter.type !== "collection") return null;
+            return collections.find((collection) => collection.id === activeFilter.id)?.name ?? null;
+          }),
+        shouldCancel: () => cancelExportRef.current,
+        onTargetChange: (card) => setExportTarget(card),
+        onProgress: (exportedCount) => setExportProgress(exportedCount),
+      });
 
-      for (const card of exportCards) {
-        if (cancelExportRef.current) {
-          break;
-        }
-        setExportTarget(card);
-        await waitForFrame();
-        await waitForFrame();
-
-        const assetIds = [card.imageAssetId, card.monsterIconAssetId].filter((id): id is string =>
-          Boolean(id),
-        );
-        await waitForAssetElements(() => previewRef.current?.getSvgElement(), assetIds);
-
-        const pngBlob = await previewRef.current?.renderToPngBlob();
-        if (!pngBlob) {
-          if (cancelExportRef.current) {
-            break;
-          }
-          continue;
-        }
-
-        const fileName = resolveExportFileName(
-          card.name || card.title || templateFilterLabelMap[card.templateId] || card.templateId,
-          usedNames,
-        );
-        zip.file(fileName, pngBlob);
-        exportedCount += 1;
-        setExportProgress(exportedCount);
-      }
-
-      if (cancelExportRef.current) {
-        return;
-      }
-
-      if (!exportedCount) {
+      if (result.status === "no-images") {
         window.alert(t("alert.noImagesExported"));
-        return;
       }
-
-      const zipBlob = await zip.generateAsync({
-        type: "blob",
-        ...(USE_ZIP_COMPRESSION
-          ? { compression: "DEFLATE", compressionOptions: { level: 6 } }
-          : {}),
-      });
-      const url = URL.createObjectURL(zipBlob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = resolveZipFileName(() => {
-        if (activeFilter.type !== "collection") return null;
-        return collections.find((collection) => collection.id === activeFilter.id)?.name ?? null;
-      });
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      void openDownloadsFolderIfTauri();
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("[StockpileModal] Bulk export failed", error);
@@ -403,6 +465,29 @@ export default function StockpileModal({
       setExportCancelled(false);
       cancelExportRef.current = false;
     }
+  };
+
+  const handleBulkExport = async () => {
+    if (!canExport) return;
+
+    const { baseIds, pairedIds, previewRows } = resolvePairedExportPlan(exportCards);
+    if (pairedIds.length > 0) {
+      const baseCount = baseIds.length;
+      const exportOnlyLabel =
+        activeFilter.type === "collection" && selectedCards.length === 0
+          ? formatMessageWith("label.exportOnlyInCollection", { count: baseCount })
+          : formatMessageWith("label.exportOnlySelected", { count: baseCount });
+      setExportPairPrompt({
+        baseIds,
+        pairedIds,
+        exportLabel,
+        exportOnlyLabel,
+        previewRows,
+      });
+      return;
+    }
+
+    await handleExportCards(exportCards);
   };
 
   if (!isOpen) {
@@ -1420,36 +1505,344 @@ export default function StockpileModal({
           />
         </div>
       ) : null}
-      {isExporting ? (
+      {exportPairPrompt ? (
         <div className={styles.stockpileOverlayBackdrop}>
-          <div className={styles.stockpileOverlayPanel}>
+          <div className={`${styles.stockpileOverlayPanel} ${styles.exportPairPanel}`}>
             <div className={styles.stockpileOverlayHeader}>
-              <h3 className={styles.stockpileOverlayTitle}>{exportTitle}</h3>
+              <h3 className={styles.stockpileOverlayTitle}>{t("heading.exportPairedFaces")}</h3>
+              <button
+                type="button"
+                className={styles.modalCloseButton}
+                onClick={() => setExportPairPrompt(null)}
+              >
+                <span className="visually-hidden">{t("actions.close")}</span>✕
+              </button>
             </div>
-            <div className="d-flex flex-column gap-2">
-              <div className={styles.exportProgressTrack} aria-hidden="true">
-                <div className={styles.exportProgressFill} style={{ width: `${exportPercent}%` }} />
-              </div>
-              <div className={styles.exportProgressLabel}>
-                {exportProgress} / {exportTotal}
-              </div>
+            <div className={styles.stockpileOverlayBody}>
+              {t("confirm.exportPairedFacesBody")}
             </div>
-            <div className={styles.stockpileOverlayActions}>
+            {exportPairPrompt.previewRows.length > 0 ? (
+              <div className={styles.exportPairPreviewList}>
+                {exportPairPrompt.previewRows.map((row) => {
+                  const visibleCount = 6;
+                  return (
+                    <div
+                      key={`${row.left.map((card) => card.id).join("|")}-${row.right
+                        .map((card) => card.id)
+                        .join("|")}`}
+                      className={styles.exportPairRow}
+                    >
+                      <div className={styles.exportPairStack}>
+                        {row.left.slice(0, visibleCount).map((leftCard, index) => {
+                          const leftThumbUrl =
+                            typeof window !== "undefined" && leftCard.thumbnailBlob
+                              ? URL.createObjectURL(leftCard.thumbnailBlob)
+                              : null;
+                          const leftTemplateThumb =
+                            cardTemplatesById[leftCard.templateId]?.thumbnail ?? null;
+                          return (
+                            <div
+                              key={leftCard.id}
+                              className={`${styles.inspectorStackItem} ${styles.exportPairStackItem}`}
+                              style={{ zIndex: index + 1 }}
+                            >
+                              <div className={styles.inspectorStackThumbInner}>
+                                {leftThumbUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={leftThumbUrl}
+                                    alt=""
+                                    onLoad={() => {
+                                      URL.revokeObjectURL(leftThumbUrl);
+                                    }}
+                                  />
+                                ) : leftTemplateThumb?.src ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={leftTemplateThumb.src} alt="" />
+                                ) : (
+                                  <div className={styles.inspectorStackPlaceholder} />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {row.left.length > visibleCount ? (
+                          <div
+                            className={`${styles.inspectorStackItem} ${styles.exportPairStackItem} ${styles.inspectorStackOverflowItem}`}
+                            style={{ zIndex: Math.min(row.left.length, visibleCount) + 1 }}
+                            onMouseEnter={(event) => {
+                              if (pairOverflowHoverTimeoutRef.current) {
+                                window.clearTimeout(pairOverflowHoverTimeoutRef.current);
+                              }
+                              const rect = event.currentTarget.getBoundingClientRect();
+                              setPairOverflowAnchor({
+                                rect: {
+                                  top: rect.top,
+                                  left: rect.left,
+                                  bottom: rect.bottom,
+                                  right: rect.right,
+                                },
+                                cards: row.left,
+                              });
+                              setIsPairOverflowOpen(true);
+                            }}
+                            onMouseLeave={() => {
+                              if (pairOverflowHoverTimeoutRef.current) {
+                                window.clearTimeout(pairOverflowHoverTimeoutRef.current);
+                              }
+                              pairOverflowHoverTimeoutRef.current = window.setTimeout(() => {
+                                setIsPairOverflowOpen(false);
+                                setPairOverflowAnchor(null);
+                              }, 200);
+                            }}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              if (pairOverflowHoverTimeoutRef.current) {
+                                window.clearTimeout(pairOverflowHoverTimeoutRef.current);
+                              }
+                              const rect = event.currentTarget.getBoundingClientRect();
+                              setPairOverflowAnchor({
+                                rect: {
+                                  top: rect.top,
+                                  left: rect.left,
+                                  bottom: rect.bottom,
+                                  right: rect.right,
+                                },
+                                cards: row.left,
+                              });
+                              setIsPairOverflowOpen(true);
+                            }}
+                          >
+                            <div className={styles.inspectorStackOverflow}>
+                              +{row.left.length - visibleCount}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                      <div className={styles.exportPairIcon} aria-hidden="true">
+                        <Combine size={18} />
+                      </div>
+                      <div className={styles.exportPairStack}>
+                        {row.right.slice(0, visibleCount).map((pairedCard, index) => {
+                          const pairedThumbUrl =
+                            typeof window !== "undefined" && pairedCard.thumbnailBlob
+                              ? URL.createObjectURL(pairedCard.thumbnailBlob)
+                              : null;
+                          const pairedTemplateThumb =
+                            cardTemplatesById[pairedCard.templateId]?.thumbnail ?? null;
+                          return (
+                            <div
+                              key={pairedCard.id}
+                              className={`${styles.inspectorStackItem} ${styles.exportPairStackItem}`}
+                              style={{ zIndex: index + 1 }}
+                            >
+                              <div className={styles.inspectorStackThumbInner}>
+                                {pairedThumbUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={pairedThumbUrl}
+                                    alt=""
+                                    onLoad={() => {
+                                      URL.revokeObjectURL(pairedThumbUrl);
+                                    }}
+                                  />
+                                ) : pairedTemplateThumb?.src ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={pairedTemplateThumb.src} alt="" />
+                                ) : (
+                                  <div className={styles.inspectorStackPlaceholder} />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {row.right.length > visibleCount ? (
+                          <div
+                            className={`${styles.inspectorStackItem} ${styles.exportPairStackItem} ${styles.inspectorStackOverflowItem}`}
+                            style={{ zIndex: Math.min(row.right.length, visibleCount) + 1 }}
+                            onMouseEnter={(event) => {
+                              if (pairOverflowHoverTimeoutRef.current) {
+                                window.clearTimeout(pairOverflowHoverTimeoutRef.current);
+                              }
+                              const rect = event.currentTarget.getBoundingClientRect();
+                              setPairOverflowAnchor({
+                                rect: {
+                                  top: rect.top,
+                                  left: rect.left,
+                                  bottom: rect.bottom,
+                                  right: rect.right,
+                                },
+                                cards: row.right,
+                              });
+                              setIsPairOverflowOpen(true);
+                            }}
+                            onMouseLeave={() => {
+                              if (pairOverflowHoverTimeoutRef.current) {
+                                window.clearTimeout(pairOverflowHoverTimeoutRef.current);
+                              }
+                              pairOverflowHoverTimeoutRef.current = window.setTimeout(() => {
+                                setIsPairOverflowOpen(false);
+                                setPairOverflowAnchor(null);
+                              }, 200);
+                            }}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              if (pairOverflowHoverTimeoutRef.current) {
+                                window.clearTimeout(pairOverflowHoverTimeoutRef.current);
+                              }
+                              const rect = event.currentTarget.getBoundingClientRect();
+                              setPairOverflowAnchor({
+                                rect: {
+                                  top: rect.top,
+                                  left: rect.left,
+                                  bottom: rect.bottom,
+                                  right: rect.right,
+                                },
+                                cards: row.right,
+                              });
+                              setIsPairOverflowOpen(true);
+                            }}
+                          >
+                            <div className={styles.inspectorStackOverflow}>
+                              +{row.right.length - visibleCount}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+            <div className={styles.exportPairActions}>
               <button
                 type="button"
                 className="btn btn-outline-secondary btn-sm"
-                disabled={exportCancelled}
-                onClick={() => {
-                  cancelExportRef.current = true;
-                  setExportCancelled(true);
-                }}
+                onClick={() => setExportPairPrompt(null)}
               >
-                {exportCancelled ? t("actions.cancelling") : t("actions.cancel")}
+                {t("actions.cancel")}
               </button>
+              <div className={styles.exportPairActionGroup}>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => {
+                    const baseCards = exportPairPrompt.baseIds
+                      .map((id) => cardById.get(id))
+                      .filter((card): card is CardRecord => Boolean(card));
+                    setExportPairPrompt(null);
+                    void handleExportCards(baseCards);
+                  }}
+                >
+                  {exportPairPrompt.exportOnlyLabel}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => {
+                    const combinedIds = [
+                      ...exportPairPrompt.baseIds,
+                      ...exportPairPrompt.pairedIds,
+                    ];
+                    const exportCards = combinedIds
+                      .map((id) => cardById.get(id))
+                      .filter((card): card is CardRecord => Boolean(card));
+                    setExportPairPrompt(null);
+                    void handleExportCards(exportCards);
+                  }}
+                >
+                  {exportPairPrompt.exportLabel} +{" "}
+                  {formatMessageWith("label.pairedCardsCount", {
+                    count: exportPairPrompt.pairedIds.length,
+                  })}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       ) : null}
+      {shouldShowPairOverflow && typeof document !== "undefined"
+        ? (() => {
+            const tileWidth = 96;
+            const tileHeight = 132;
+            const tileGap = 8;
+            const columns = 5;
+            const padding = 16;
+            const popoverWidth = padding * 2 + columns * tileWidth + (columns - 1) * tileGap;
+            const popoverMaxHeight = 300;
+            const left = Math.min(
+              pairOverflowAnchor.rect.left,
+              window.innerWidth - popoverWidth - 16,
+            );
+            const top = Math.min(
+              pairOverflowAnchor.rect.bottom + 6,
+              window.innerHeight - popoverMaxHeight - 16,
+            );
+            return createPortal(
+              <div
+                className={styles.inspectorStackOverflowPopover}
+                style={{ left, top, width: popoverWidth }}
+                onMouseEnter={() => {
+                  if (pairOverflowHoverTimeoutRef.current) {
+                    window.clearTimeout(pairOverflowHoverTimeoutRef.current);
+                  }
+                  setIsPairOverflowOpen(true);
+                }}
+                onMouseLeave={() => {
+                  if (pairOverflowHoverTimeoutRef.current) {
+                    window.clearTimeout(pairOverflowHoverTimeoutRef.current);
+                  }
+                  pairOverflowHoverTimeoutRef.current = window.setTimeout(() => {
+                    setIsPairOverflowOpen(false);
+                    setPairOverflowAnchor(null);
+                  }, 200);
+                }}
+              >
+                <div className={styles.inspectorStackOverflowGrid}>
+                  {pairOverflowAnchor.cards.map((card) => {
+                    const thumbUrl =
+                      typeof window !== "undefined" && card.thumbnailBlob
+                        ? URL.createObjectURL(card.thumbnailBlob)
+                        : null;
+                    const templateThumb = cardTemplatesById[card.templateId]?.thumbnail;
+                    return (
+                      <div key={card.id} className={styles.inspectorStackOverflowGridItem}>
+                        {thumbUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={thumbUrl}
+                            alt=""
+                            onLoad={() => {
+                              URL.revokeObjectURL(thumbUrl);
+                            }}
+                          />
+                        ) : templateThumb?.src ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={templateThumb.src} alt="" />
+                        ) : (
+                          <div className={styles.inspectorStackPlaceholder} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>,
+              document.body,
+            );
+          })()
+        : null}
+      <ExportProgressOverlay
+        isOpen={isExporting}
+        title={exportTitle}
+        progress={exportProgress}
+        total={exportTotal}
+        cancelLabel={exportCancelled ? t("actions.cancelling") : t("actions.cancel")}
+        cancelDisabled={exportCancelled}
+        onCancel={() => {
+          cancelExportRef.current = true;
+          setExportCancelled(true);
+        }}
+      />
       {isCollectionModalOpen ? (
         <div
           className={styles.stockpileOverlayBackdrop}
