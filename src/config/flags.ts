@@ -36,6 +36,11 @@ export const KEEP_WEBGL_MOUNTED = true;
 export const ENABLE_WEBGL_RECENTER_ON_FACE_SELECT = false;
 
 /**
+ * Selects the overlay shader for the WebGL blueprint back face.
+ */
+export const WEBGL_BLUEPRINT_OVERLAY_MODE: "off" | "magic" | "sparkle" = "sparkle";
+
+/**
  * Applies tighter letter-spacing to title and stat header text to better match
  * printed card ink density.
  */

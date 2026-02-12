@@ -29,6 +29,9 @@ import blueprintFallback from "@/assets/blueprint.png";
 import linenNormal3 from "@/assets/linen-3.png";
 import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
+import { WEBGL_BLUEPRINT_OVERLAY_MODE } from "@/config/flags";
+import { createMagicOverlayMaterial } from "@/lib/webgl/magicOverlayShader";
+import { createSparkleOverlayMaterial } from "@/lib/webgl/sparkleOverlayShader";
 
 import styles from "./WebglPreview.module.css";
 
@@ -66,12 +69,14 @@ const CARD_EDGE_INSET = 0.0085;
 const EDGE_COLOR = "#310101";
 const EDGE_BLUEPRINT_COLOR = "#2d6cc3";
 const EDGE_BLUEPRINT_EMISSIVE = "#1a4f9a";
-const EDGE_BLUEPRINT_OPACITY = 0.55;
+const EDGE_BLUEPRINT_OPACITY = 0.75;
 const EDGE_ROUGHNESS = 0.72;
 const EDGE_METALNESS = 0.05;
 const EDGE_CLEARCOAT = 0.15;
 const SPINNER_SIZE = 0.11;
 const SPINNER_ROTATION_SPEED = -2.4;
+const MAGIC_OVERLAY_OPACITY = 0.6;
+const MAGIC_OVERLAY_SPEED = 6.6;
 
 function CardPlane({
   texture,
@@ -294,6 +299,7 @@ function WebglScene({
   useBlueprintEdge,
   showSpinner,
   hasTwoSidedRender,
+  showMagicOverlay,
 }: {
   frontTexture: Texture;
   backTexture: Texture;
@@ -306,6 +312,7 @@ function WebglScene({
   useBlueprintEdge: boolean;
   showSpinner: boolean;
   hasTwoSidedRender: boolean;
+  showMagicOverlay: boolean;
 }) {
   const { width, height, gl } = useThree((state) => ({
     width: state.viewport.width,
@@ -364,7 +371,7 @@ function WebglScene({
       clearcoat: 0.08,
       clearcoatRoughness: 0.6,
       transparent: true,
-      opacity: 0.28,
+      opacity: EDGE_BLUEPRINT_OPACITY,
       depthWrite: false,
       depthTest: true,
     };
@@ -379,6 +386,28 @@ function WebglScene({
     }),
     [],
   );
+
+  const overlayMaterial = useMemo(
+    () =>
+      WEBGL_BLUEPRINT_OVERLAY_MODE === "sparkle"
+        ? createSparkleOverlayMaterial({
+            opacity: MAGIC_OVERLAY_OPACITY,
+            aspect: CARD_ASPECT,
+            radius: CARD_CORNER_RADIUS,
+            color: { r: 0.2, g: 0.85, b: 1.0 },
+          })
+        : createMagicOverlayMaterial({
+            opacity: MAGIC_OVERLAY_OPACITY,
+            aspect: CARD_ASPECT,
+            radius: CARD_CORNER_RADIUS,
+            color: { r: 0.15, g: 0.75, b: 1.0 },
+          }),
+    [],
+  );
+
+  useEffect(() => {
+    overlayMaterial.uniforms.uOpacity.value = MAGIC_OVERLAY_OPACITY;
+  }, [overlayMaterial]);
 
   useEffect(() => {
     const configureTexture = (texture: Texture, flipX: boolean) => {
@@ -412,14 +441,25 @@ function WebglScene({
     if (!yawGroup || !pitchGroup) return;
     const smoothing =
       recenterBoostUntilRef.current > performance.now() ? RECENTER_SMOOTHING : ROTATION_SMOOTHING;
-    pitchGroup.rotation.x +=
-      (targetRotationRef.current.x - pitchGroup.rotation.x) * smoothing;
+    pitchGroup.rotation.x += (targetRotationRef.current.x - pitchGroup.rotation.x) * smoothing;
     yawGroup.rotation.y += (targetRotationRef.current.y - yawGroup.rotation.y) * smoothing;
   });
   useFrame((_, delta) => {
     if (!showSpinner) return;
     if (spinnerRef.current) {
       spinnerRef.current.rotation.z += delta * SPINNER_ROTATION_SPEED;
+    }
+  });
+  useFrame((state) => {
+    if (!showMagicOverlay) return;
+    overlayMaterial.uniforms.uTime.value = state.clock.getElapsedTime() * MAGIC_OVERLAY_SPEED;
+    const yaw = yawGroupRef.current?.rotation.y ?? 0;
+    const pitch = pitchGroupRef.current?.rotation.x ?? 0;
+    if ("uYaw" in overlayMaterial.uniforms) {
+      overlayMaterial.uniforms.uYaw.value = yaw;
+    }
+    if ("uPitch" in overlayMaterial.uniforms) {
+      overlayMaterial.uniforms.uPitch.value = pitch;
     }
   });
 
@@ -450,19 +490,18 @@ function WebglScene({
           depthSign={-1}
           depthOffset={-(CARD_THICKNESS / 2 + 0.002)}
         />
+        {showMagicOverlay ? (
+          <group scale={[scale, scale, 1]}>
+            <mesh position={[0, 0, -(CARD_THICKNESS / 2 + 0.0032)]} renderOrder={2}>
+              <planeGeometry args={[1, CARD_ASPECT]} />
+              <primitive object={overlayMaterial} attach="material" />
+            </mesh>
+          </group>
+        ) : null}
         {showSpinner ? (
-          <mesh
-            ref={spinnerRef}
-            position={[0, 0, CARD_THICKNESS / 2 + 0.006]}
-            renderOrder={2}
-          >
+          <mesh ref={spinnerRef} position={[0, 0, CARD_THICKNESS / 2 + 0.006]} renderOrder={2}>
             <planeGeometry args={[SPINNER_SIZE, SPINNER_SIZE]} />
-            <meshBasicMaterial
-              map={spinnerTexture}
-              transparent
-              opacity={0.85}
-              depthWrite={false}
-            />
+            <meshBasicMaterial map={spinnerTexture} transparent opacity={0.85} depthWrite={false} />
           </mesh>
         ) : null}
       </group>
@@ -564,6 +603,7 @@ export default function WebglPreview({
   const hasTwoSidedRender = Boolean(backTextureCanvas);
   const useBlueprintEdge = !hasFrontRenderedOnce || !hasTwoSidedRender;
   const showSpinner = !hasFrontRenderedOnce;
+  const showMagicOverlay = WEBGL_BLUEPRINT_OVERLAY_MODE !== "off" && useBlueprintEdge;
   const dragStateRef = useRef<{
     active: boolean;
     startX: number;
@@ -718,6 +758,7 @@ export default function WebglPreview({
           useBlueprintEdge={useBlueprintEdge}
           showSpinner={showSpinner}
           hasTwoSidedRender={hasTwoSidedRender}
+          showMagicOverlay={showMagicOverlay}
         />
       </Canvas>
     </div>
