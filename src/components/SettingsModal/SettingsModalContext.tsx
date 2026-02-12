@@ -222,6 +222,15 @@ type SettingsPanelProviderProps = {
 };
 
 export function SettingsPanelProvider({ panelId, children }: SettingsPanelProviderProps) {
+  const modalContext = useSettingsModalContext();
+
+  useEffect(() => {
+    modalContext.registerPanel(panelId);
+    return () => {
+      modalContext.unregisterPanel(panelId);
+    };
+  }, [modalContext, panelId]);
+
   return (
     <SettingsPanelContext.Provider value={{ panelId }}>
       {children}
@@ -232,13 +241,6 @@ export function SettingsPanelProvider({ panelId, children }: SettingsPanelProvid
 export function useSettingsPanel(): SettingsPanelApi {
   const { panelId } = useSettingsPanelContext();
   const modalContext = useSettingsModalContext();
-
-  useEffect(() => {
-    modalContext.registerPanel(panelId);
-    return () => {
-      modalContext.unregisterPanel(panelId);
-    };
-  }, [modalContext, panelId]);
 
   return useMemo(
     () => ({

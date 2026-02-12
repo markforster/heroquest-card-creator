@@ -6,7 +6,7 @@ import { useRef } from "react";
 import styles from "@/app/page.module.css";
 import { previewRendererFlags, usePreviewRenderer } from "@/components/PreviewRendererContext";
 import RendererToggleGroup from "@/components/ToolsToolbar/RendererToggleGroup";
-import TextFittingPopover from "@/components/ToolsToolbar/TextFittingPopover";
+import TextFittingSettingsPopover from "@/components/TextFittingSettings/TextFittingSettingsPopover";
 import ToolbarButton from "@/components/ToolsToolbar/ToolbarButton";
 import ToolbarButtonGroup from "@/components/ToolsToolbar/ToolbarButtonGroup";
 import WebglInteractionGroup from "@/components/ToolsToolbar/WebglInteractionGroup";
@@ -48,7 +48,7 @@ export default function ToolsToolbar() {
       {showWebglControls ? (
         <WebglInteractionGroup />
       ) : null}
-      {textPrefsPopup.isOpen ? <TextFittingPopover popoverRef={popoverRef} /> : null}
+      {textPrefsPopup.isOpen ? <TextFittingSettingsPopover popoverRef={popoverRef} /> : null}
     </div>
   );
 }

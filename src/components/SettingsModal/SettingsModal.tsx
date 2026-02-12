@@ -5,17 +5,12 @@ import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/ModalShell";
-import SettingsDemoPanel from "@/components/SettingsModal/SettingsDemoPanel";
-import StatLabelOverridesPanel from "@/components/SettingsModal/StatLabelOverridesPanel";
+import { SETTINGS_AREAS, SETTINGS_NAV_CONFIG } from "@/components/SettingsModal/settings-areas";
 import {
   SettingsModalProvider,
   SettingsPanelProvider,
   useSettingsModalControls,
 } from "@/components/SettingsModal/SettingsModalContext";
-import {
-  SETTINGS_AREAS,
-  SETTINGS_NAV_CONFIG,
-} from "@/components/SettingsModal/settings-areas";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export type SettingsModalProps = {
@@ -36,21 +31,13 @@ function SettingsModalContent({
   const enabledAreas = SETTINGS_AREAS.filter((area) => area.isEnabled !== false);
   const activeArea =
     enabledAreas.find((area) => area.id === activeAreaId) ?? enabledAreas[0] ?? null;
-  const showAreaList =
-    SETTINGS_NAV_CONFIG.forceShowAreaList || enabledAreas.length > 1;
+  const showAreaList = SETTINGS_NAV_CONFIG.forceShowAreaList || enabledAreas.length > 1;
 
   const renderActivePanel = () => {
     if (!activeArea) {
       return null;
     }
-    switch (activeArea.panelId) {
-      case "stat-label-overrides":
-        return <StatLabelOverridesPanel />;
-      case "settings-demo":
-        return <SettingsDemoPanel />;
-      default:
-        return null;
-    }
+    return activeArea.panel();
   };
 
   return (
@@ -117,14 +104,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   }, [isOpen]);
 
   return (
-    <SettingsModalProvider
-      onClose={onClose}
-      onAreaChange={(nextId) => setActiveAreaId(nextId)}
-    >
-      <SettingsModalContent
-        activeAreaId={activeAreaId}
-        isOpen={isOpen}
-      />
+    <SettingsModalProvider onClose={onClose} onAreaChange={(nextId) => setActiveAreaId(nextId)}>
+      <SettingsModalContent activeAreaId={activeAreaId} isOpen={isOpen} />
     </SettingsModalProvider>
   );
 }

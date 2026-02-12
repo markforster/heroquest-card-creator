@@ -226,15 +226,15 @@ export default function StatLabelOverridesPanel() {
   return (
     <div className={styles.settingsPanelBody}>
       <div className={styles.statLabelsScroll}>
-        <div className={styles.statLabelsSection}>
+        <div className={`${styles.statLabelsSection} ${styles.toolsToolbarPopoverSection}`}>
           <h3 className={styles.statLabelsSectionTitle}>{t("heading.sharedStatText")}</h3>
           <div className={styles.statLabelsGrid}>{sharedFields.map(renderField)}</div>
         </div>
-        <div className={styles.statLabelsSection}>
+        <div className={`${styles.statLabelsSection} ${styles.toolsToolbarPopoverSection}`}>
           <h3 className={styles.statLabelsSectionTitle}>{t("heading.monsterStatText")}</h3>
           <div className={styles.statLabelsGrid}>{monsterFields.map(renderField)}</div>
         </div>
-        <div className={styles.statLabelsSection}>
+        <div className={`${styles.statLabelsSection} ${styles.toolsToolbarPopoverSection}`}>
           <h3 className={styles.statLabelsSectionTitle}>{t("heading.heroStatText")}</h3>
           <div className={styles.statLabelsGrid}>{heroFields.map(renderField)}</div>
         </div>

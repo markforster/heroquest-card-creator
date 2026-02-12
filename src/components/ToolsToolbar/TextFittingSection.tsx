@@ -1,13 +1,11 @@
-"use client";
-
 import styles from "@/app/page.module.css";
-import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
 import type { PreferencesByRole, TextRole } from "@/lib/text-fitting/types";
 
 type TextFittingSectionProps = {
   role: TextRole;
   title: string;
   preferences: PreferencesByRole;
+  setRolePreferences: (role: TextRole, updates: Partial<PreferencesByRole[TextRole]>) => void;
   minDraft: number;
   onMinDraftChange: (value: number) => void;
   onDragStart: () => void;
@@ -22,6 +20,7 @@ export default function TextFittingSection({
   role,
   title,
   preferences,
+  setRolePreferences,
   minDraft,
   onMinDraftChange,
   onDragStart,
@@ -31,8 +30,6 @@ export default function TextFittingSection({
   labelMinFontSize,
   resetLabel,
 }: TextFittingSectionProps) {
-  const { setRolePreferences } = useTextFittingPreferences();
-
   return (
     <div className={styles.toolsToolbarPopoverSection}>
       <div className={styles.toolsToolbarPopoverSectionTitle}>{title}</div>
