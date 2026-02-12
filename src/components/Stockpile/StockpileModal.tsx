@@ -1468,48 +1468,112 @@ export default function StockpileModal({
           }}
         >
           {(() => {
-            const backTitle = activeBackId
-              ? (cardById.get(activeBackId)?.title ??
-                cardById.get(activeBackId)?.name ??
-                "Back card")
-              : "Back card";
+            const backIds = new Set<string>();
+            pairingConflictDialog.cardIds.forEach((id) => {
+              const card = cardById.get(id);
+              if (card?.pairedWith) {
+                backIds.add(card.pairedWith);
+              }
+            });
+            const backCount = backIds.size || 1;
             return pairingConflictDialog.count === 1
-              ? formatMessageWith("warning.pairingLossSingle", { back: backTitle })
-              : formatMessageWith("warning.pairingLossMultiple", {
+              ? formatMessageWith("warning.pairingLossSingleGeneric", { backCount })
+              : formatMessageWith("warning.pairingLossMultipleGeneric", {
                   count: pairingConflictDialog.count,
-                  back: backTitle,
+                  backCount,
                 });
           })()}
-          <div className={styles.pairingConflictGrid}>
-            {pairingConflictDialog.cardIds.map((id) => {
-              const conflictCard = cardById.get(id);
-              if (!conflictCard) return null;
-              const thumbUrl =
-                typeof window !== "undefined" && conflictCard.thumbnailBlob
-                  ? URL.createObjectURL(conflictCard.thumbnailBlob)
-                  : null;
-              const templateThumb = cardTemplatesById[conflictCard.templateId]?.thumbnail ?? null;
-              return (
-                <div key={id} className={styles.pairingConflictItem}>
-                  {thumbUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={thumbUrl}
-                      alt=""
-                      onLoad={() => {
-                        URL.revokeObjectURL(thumbUrl);
-                      }}
-                    />
-                  ) : templateThumb?.src ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={templateThumb.src} alt="" />
-                  ) : (
-                    <div className={styles.cardsPairIndicatorPlaceholder} />
-                  )}
+          {(() => {
+            const pairedBackIds = new Set<string>();
+            pairingConflictDialog.cardIds.forEach((id) => {
+              const card = cardById.get(id);
+              if (card?.pairedWith) {
+                pairedBackIds.add(card.pairedWith);
+              }
+            });
+            const pairedBacks = Array.from(pairedBackIds)
+              .map((id) => cardById.get(id))
+              .filter((card): card is CardRecord => Boolean(card));
+            return (
+              <>
+                <div className={styles.pairingConflictDivider} />
+                <div className={styles.pairingConflictScroll}>
+                  <div className={styles.pairingConflictSection}>
+                    <div className={styles.pairingConflictTitle}>
+                      {t("heading.cardsToBeUnpaired")}
+                    </div>
+                    <div className={styles.pairingConflictGrid}>
+                      {pairingConflictDialog.cardIds.map((id) => {
+                        const conflictCard = cardById.get(id);
+                        if (!conflictCard) return null;
+                        const thumbUrl =
+                          typeof window !== "undefined" && conflictCard.thumbnailBlob
+                            ? URL.createObjectURL(conflictCard.thumbnailBlob)
+                            : null;
+                        const templateThumb =
+                          cardTemplatesById[conflictCard.templateId]?.thumbnail ?? null;
+                        return (
+                          <div key={id} className={styles.pairingConflictItem}>
+                            {thumbUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={thumbUrl}
+                                alt=""
+                                onLoad={() => {
+                                  URL.revokeObjectURL(thumbUrl);
+                                }}
+                              />
+                            ) : templateThumb?.src ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={templateThumb.src} alt="" />
+                            ) : (
+                              <div className={styles.cardsPairIndicatorPlaceholder} />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {pairedBacks.length > 0 ? (
+                    <div className={styles.pairingConflictSection}>
+                      <div className={styles.pairingConflictTitle}>
+                        {t("heading.pairedWith")}
+                      </div>
+                      <div className={styles.pairingConflictGrid}>
+                        {pairedBacks.map((paired) => {
+                          const thumbUrl =
+                            typeof window !== "undefined" && paired.thumbnailBlob
+                              ? URL.createObjectURL(paired.thumbnailBlob)
+                              : null;
+                          const templateThumb =
+                            cardTemplatesById[paired.templateId]?.thumbnail ?? null;
+                          return (
+                            <div key={paired.id} className={styles.pairingConflictItem}>
+                              {thumbUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={thumbUrl}
+                                  alt=""
+                                  onLoad={() => {
+                                    URL.revokeObjectURL(thumbUrl);
+                                  }}
+                                />
+                              ) : templateThumb?.src ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={templateThumb.src} alt="" />
+                              ) : (
+                                <div className={styles.cardsPairIndicatorPlaceholder} />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              );
-            })}
-          </div>
+              </>
+            );
+          })()}
         </ConfirmModal>
       ) : null}
       {isOpen && exportTarget && exportTemplate ? (

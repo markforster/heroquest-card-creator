@@ -1619,14 +1619,10 @@
 }
 
 .pairingConflictGrid {
-  margin-top: 0.75rem;
   display: grid;
   grid-template-columns: repeat(auto-fill, 72px);
   grid-auto-rows: 100px;
   gap: 8px;
-  max-height: 240px;
-  overflow-y: auto;
-  padding-right: 0.25rem;
 }
 
 .pairingConflictItem {
@@ -1646,6 +1642,30 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.pairingConflictDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0.75rem 0 0.5rem;
+}
+
+.pairingConflictScroll {
+  max-height: min(50vh, calc(100vh - 16rem));
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.pairingConflictSection {
+  margin-bottom: 0.85rem;
+}
+
+.pairingConflictTitle {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hq-accent);
+  margin-bottom: 0.4rem;
 }
 
 .cardsPopover {
