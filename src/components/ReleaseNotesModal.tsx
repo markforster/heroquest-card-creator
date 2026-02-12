@@ -156,11 +156,22 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             </li>
             <li>
               Customize stat labels globally (optional), and apply custom border colours to labelled
-              backs with saved swatches and quick restore.
+              backs with smart suggestions, saved swatches, and quick restore.
             </li>
             <li>
               Use text fitting controls to keep long titles and stat headings readable, and switch
               to the WebGL preview for a more physical, card-in-hand feel.
+            </li>
+            <li>
+              Pair front and back faces so related cards stay linked, with quick previews and bulk
+              pairing tools.
+            </li>
+            <li>
+              Export paired faces together from the inspector or include paired faces during bulk
+              export.
+            </li>
+            <li>
+              Use Image Adjustments to refine scale, position, and rotation for artwork.
             </li>
             <li>
               Browse example cards and screenshots to see what&apos;s possible. A growing gallery of
@@ -215,6 +226,43 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             build that can be hosted anywhere. In the meantime, if this tool helps you create new
             quests, heroes or treasure for your table, it&apos;s doing its job.
           </p>
+        </section>
+
+        <section style={{ marginTop: "0.9rem" }}>
+          <h3
+            style={{
+              margin: 0,
+              marginBottom: "0.35rem",
+              fontSize: "1.2rem",
+              color: "#e6b35a",
+            }}
+          >
+            Update 12/02/2026 (v0.5.2)
+          </h3>
+          <p style={{ margin: 0, lineHeight: 1.4 }}>
+            This release expanded pairing workflows and export options:
+          </p>
+          <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.1rem", lineHeight: 1.4 }}>
+            <li>
+              Front/back faces are now first-class, with clearer pairing controls in the inspector
+              and stockpile.
+            </li>
+            <li>
+              Back faces can manage multiple paired fronts with visual stacks and quick previews.
+            </li>
+            <li>
+              Export supports paired faces with a split-button and a bulk export prompt.
+            </li>
+            <li>
+              Template selection is faster with keyboard navigation and a Cmd/Ctrl+Shift+Y shortcut.
+            </li>
+            <li>
+              WebGL preview now shows a blueprint fallback on first render for smoother loading.
+            </li>
+            <li>
+              Image adjustments add rotation controls alongside position and scale.
+            </li>
+          </ul>
         </section>
 
         <section style={{ marginTop: "0.9rem" }}>

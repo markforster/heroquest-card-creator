@@ -81,7 +81,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               rendering.
             </li>
             <li>
-              In WebGL, you can choose pan or orbit interaction modes to move the card under the
+              In WebGL, you can choose pan or rotate interaction modes to move the card under the
               light.
             </li>
             <li>
@@ -177,8 +177,8 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               the artwork window.
             </li>
             <li>
-              Use scale and offset controls to fine-tune framing; step buttons let you nudge
-              left/right/up/down with precision.
+              Use the Image Adjustments accordion to fine-tune scale, offset, and rotation; step
+              buttons let you nudge left/right/up/down with precision.
             </li>
             <li>
               Once you find a good framing, it’s easy to repeat it across similar cards.
@@ -259,6 +259,10 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
             <li>
               Pairing keeps the two faces together for browsing and export workflows.
             </li>
+            <li>
+              Fronts can be paired to a back via the Combine button; backs can manage many fronts
+              at once using Manage Pairings.
+            </li>
           </ul>
         </section>
 
@@ -278,7 +282,8 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               Labelled backs can optionally hide/show the title.
             </li>
             <li>
-              Some templates allow custom border colours and saved swatches for quick reuse.
+              Some templates allow custom border colours, smart swatch suggestions, and saved
+              swatches for quick reuse.
             </li>
           </ul>
         </section>
@@ -300,10 +305,18 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               from the same SVG used in the preview.
             </li>
             <li>
+              If a card has paired faces, the export menu can include options to export both faces
+              or an active front with a back.
+            </li>
+            <li>
               In the Cards browser, use Export to bulk export multiple cards as a ZIP.
             </li>
             <li>
-              Use Export data and Import data in the footer to back up or restore your entire
+              When exporting a collection or selection, you may be prompted to include paired
+              faces.
+            </li>
+            <li>
+              Use Export data and Import data in the header to back up or restore your entire
               library (.hqcc file). Import replaces existing data in this browser profile, so
               export first if you want a safety copy.
             </li>

@@ -49,7 +49,7 @@ export default function MainFooter() {
           <div className="ms-auto d-flex align-items-center gap-1">
             <span>·</span>
             <a
-              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.1"
+              href={`https://github.com/markforster/heroquest-card-creator/releases/tag/v${APP_VERSION}`}
               target="_blank"
               rel="noreferrer noopener"
               className={styles.footerLink}
