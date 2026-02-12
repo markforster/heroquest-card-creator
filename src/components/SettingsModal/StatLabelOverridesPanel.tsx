@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import ModalShell from "@/components/ModalShell";
+import { useSettingsPanel } from "@/components/SettingsModal/SettingsModalContext";
 import { useStatLabelOverrides } from "@/components/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { MessageKey } from "@/i18n/messages";
@@ -13,11 +13,6 @@ import {
   type StatLabelKey,
   type StatLabelOverrides,
 } from "@/lib/stat-labels";
-
-type StatLabelOverridesModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-};
 
 type FieldConfig = {
   key: StatLabelKey;
@@ -75,18 +70,53 @@ const STAT_LABEL_DISPLAY_KEYS: Record<StatLabelKey, MessageKey> = {
   statsLabelMind: "statsLabelMind",
 };
 
-export default function StatLabelOverridesModal({
-  isOpen,
-  onClose,
-}: StatLabelOverridesModalProps) {
+const STAT_LABEL_FIELDS: (keyof StatLabelOverrides)[] = [
+  "statLabelsEnabled",
+  "statsLabelAttack",
+  "statsLabelDefend",
+  "statsLabelMove",
+  "statsLabelStartingPoints",
+  "statsLabelHeroBody",
+  "statsLabelHeroMind",
+  "statsLabelMonsterBodyPoints",
+  "statsLabelMonsterMindPoints",
+  "statsLabelBody",
+  "statsLabelMind",
+];
+
+export default function StatLabelOverridesPanel() {
   const { t } = useI18n();
   const { overrides, setOverrides } = useStatLabelOverrides();
+  const settingsPanel = useSettingsPanel();
   const [formState, setFormState] = useState<StatLabelOverrides>(DEFAULT_STAT_LABELS);
+  const [saveState, setSaveState] = useState<"idle" | "saving">("idle");
+  const saveTimeoutsRef = useRef<number[]>([]);
 
   useEffect(() => {
-    if (!isOpen) return;
     setFormState(overrides);
-  }, [isOpen, overrides]);
+  }, [overrides]);
+
+  const isDirty = useMemo(
+    () =>
+      STAT_LABEL_FIELDS.some((key) => {
+        return formState[key] !== overrides[key];
+      }),
+    [formState, overrides],
+  );
+
+  useEffect(() => {
+    settingsPanel.setBlocked(
+      isDirty,
+      t("confirm.discardSettingsChangesBody"),
+    );
+  }, [isDirty, settingsPanel, t]);
+
+  useEffect(() => {
+    return () => {
+      saveTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      saveTimeoutsRef.current = [];
+    };
+  }, []);
 
   const handleChange = (key: keyof StatLabelOverrides, value: string | boolean) => {
     setFormState((prev) => ({
@@ -119,12 +149,21 @@ export default function StatLabelOverridesModal({
     };
 
     setOverrides(next);
-    onClose();
+    settingsPanel.setBlocked(false);
+    setSaveState("saving");
+    saveTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    saveTimeoutsRef.current = [];
+    saveTimeoutsRef.current.push(
+      window.setTimeout(() => {
+        setSaveState("idle");
+      }, 500),
+    );
+    // settingsPanel.requestClose();
   };
 
-  const footer = useMemo(
+  const statLabelFooter = useMemo(
     () => (
-      <div className="d-flex align-items-center w-100 mt-2">
+      <div className="d-flex align-items-center w-100">
         <div className="form-check">
           <input
             id="statLabelsEnabled"
@@ -138,65 +177,69 @@ export default function StatLabelOverridesModal({
           </label>
         </div>
         <div className="ms-auto d-flex gap-2">
-          <button type="button" className="btn btn-outline-light btn-sm" onClick={onClose}>
-            {t("actions.cancel")}
-          </button>
-          <button type="button" className="btn btn-primary btn-sm" onClick={handleSave}>
-            {t("actions.save")}
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={handleSave}
+            disabled={saveState === "saving"}
+          >
+            {saveState === "saving" ? t("actions.saving") : t("actions.save")}
           </button>
         </div>
       </div>
     ),
-    [formState.statLabelsEnabled, handleSave, onClose],
+    [formState.statLabelsEnabled, handleSave, saveState, settingsPanel, t],
   );
 
-  const renderField = (field: FieldConfig) => (
-    <div key={field.key} className="mb-2 d-flex align-items-end gap-2">
-      <div className="flex-grow-1">
-        <label htmlFor={field.key} className="form-label">
-          {t(STAT_LABEL_DISPLAY_KEYS[field.labelKey])}
-        </label>
+  const renderField = (field: FieldConfig) => {
+    const value = formState[field.key] as string;
+    const hasValue = value.trim().length > 0;
+
+    return (
+      <div key={field.key} className={styles.statLabelsField}>
+        <div className={styles.statLabelsFieldHeader}>
+          <label htmlFor={field.key} className="form-label">
+            {t(STAT_LABEL_DISPLAY_KEYS[field.labelKey])}
+          </label>
+          {hasValue ? (
+            <button
+              type="button"
+              className={styles.statLabelsClearButton}
+              onClick={() => handleClear(field.key)}
+            >
+              {t("actions.clear")}
+            </button>
+          ) : null}
+        </div>
         <input
           id={field.key}
           type="text"
           className="form-control form-control-sm"
-          value={formState[field.key] as string}
+          value={value}
           placeholder={t(STAT_LABEL_DISPLAY_KEYS[field.placeholderKey])}
           onChange={(event) => handleChange(field.key, event.target.value)}
         />
       </div>
-      <button
-        type="button"
-        className="btn btn-outline-light btn-sm"
-        onClick={() => handleClear(field.key)}
-      >
-        {t("actions.clear")}
-      </button>
-    </div>
-  );
+    );
+  };
 
   return (
-    <ModalShell
-      isOpen={isOpen}
-      onClose={onClose}
-      title={t("heading.statLabelOverrides")}
-      footer={footer}
-      contentClassName={styles.statLabelsPopover}
-    >
+    <div className={styles.settingsPanelBody}>
       <div className={styles.statLabelsScroll}>
-        <div className="mb-3">
+        <div className={styles.statLabelsSection}>
           <h3 className={styles.statLabelsSectionTitle}>{t("heading.sharedStatText")}</h3>
-          {sharedFields.map(renderField)}
+          <div className={styles.statLabelsGrid}>{sharedFields.map(renderField)}</div>
         </div>
-        <div className="mb-3">
+        <div className={styles.statLabelsSection}>
           <h3 className={styles.statLabelsSectionTitle}>{t("heading.monsterStatText")}</h3>
-          {monsterFields.map(renderField)}
+          <div className={styles.statLabelsGrid}>{monsterFields.map(renderField)}</div>
         </div>
-        <div className="mb-3">
+        <div className={styles.statLabelsSection}>
           <h3 className={styles.statLabelsSectionTitle}>{t("heading.heroStatText")}</h3>
-          {heroFields.map(renderField)}
+          <div className={styles.statLabelsGrid}>{heroFields.map(renderField)}</div>
         </div>
       </div>
-    </ModalShell>
+      <div className={styles.settingsPanelFooter}>{statLabelFooter}</div>
+    </div>
   );
 }

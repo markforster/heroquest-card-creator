@@ -121,6 +121,7 @@ const baseMessages = {
     "heading.exportPairedFaces": "Export paired faces?",
     "heading.importData": "Import data",
     "heading.statLabelOverrides": "Stat Label Overrides",
+    "heading.settingsDemo": "Settings Demo",
     "heading.uploadProgress": "Upload Progress",
     "heading.editCollection": "Edit collection",
     "heading.newCollection": "New collection",
@@ -300,6 +301,8 @@ const baseMessages = {
     "confirm.deleteAssetsBody": "Deleting",
     "confirm.discardChangesBody":
       "You have unsaved changes on the current card. Load another card and discard these changes?",
+    "confirm.discardSettingsChangesBody":
+      "You have unsaved changes in settings. Discard them and continue?",
     "confirm.saveBeforeViewBody": "Save changes before viewing this card?",
     "confirm.exportPairedFacesBody":
       "Some selected items include paired faces. Would you like to include them in the export?",
@@ -464,6 +467,7 @@ const baseMessages = {
     "heading.exportPairedFaces": "Exporter les faces associées ?",
     "heading.importData": "Importer des données",
     "heading.statLabelOverrides": "Libellés de stats",
+    "heading.settingsDemo": "Démo paramètres",
     "heading.uploadProgress": "Progression d’upload",
     "heading.editCollection": "Modifier la collection",
     "heading.newCollection": "Nouvelle collection",
@@ -642,6 +646,8 @@ const baseMessages = {
     "confirm.deleteAssetsBody": "Suppression",
     "confirm.discardChangesBody":
       "Vous avez des modifications non enregistrées. Charger une autre carte et les perdre ?",
+    "confirm.discardSettingsChangesBody":
+      "Vous avez des modifications non enregistrées dans les paramètres. Les ignorer et continuer ?",
     "confirm.saveBeforeViewBody": "Enregistrer les modifications avant d’ouvrir cette carte ?",
     "confirm.exportPairedFacesBody":
       "Certains éléments sélectionnés ont des faces associées. Voulez-vous les inclure dans l’export ?",
@@ -806,6 +812,7 @@ const baseMessages = {
     "heading.exportPairedFaces": "Verknüpfte Seiten exportieren?",
     "heading.importData": "Daten importieren",
     "heading.statLabelOverrides": "Stats-Labels",
+    "heading.settingsDemo": "Einstellungen Demo",
     "heading.uploadProgress": "Upload-Fortschritt",
     "heading.editCollection": "Sammlung bearbeiten",
     "heading.newCollection": "Neue Sammlung",
@@ -983,6 +990,8 @@ const baseMessages = {
     "confirm.deleteAssetsBody": "Lösche",
     "confirm.discardChangesBody":
       "Ungespeicherte Änderungen vorhanden. Andere Karte laden und verwerfen?",
+    "confirm.discardSettingsChangesBody":
+      "Ungespeicherte Änderungen in den Einstellungen. Verwerfen und fortfahren?",
     "confirm.saveBeforeViewBody": "Änderungen vor dem Öffnen speichern?",
     "confirm.exportPairedFacesBody":
       "Einige ausgewählte Elemente haben verknüpfte Seiten. Möchten Sie sie in den Export aufnehmen?",
@@ -1147,6 +1156,7 @@ const baseMessages = {
     "heading.exportPairedFaces": "¿Exportar caras emparejadas?",
     "heading.importData": "Importar datos",
     "heading.statLabelOverrides": "Etiquetas de stats",
+    "heading.settingsDemo": "Demostración de ajustes",
     "heading.uploadProgress": "Progreso de upload",
     "heading.editCollection": "Editar colección",
     "heading.newCollection": "Nueva colección",
@@ -1322,6 +1332,8 @@ const baseMessages = {
     "confirm.deleteCollectionBodySuffix": "Las cartas de esta colección no se eliminarán.",
     "confirm.deleteAssetsBody": "Eliminando",
     "confirm.discardChangesBody": "Hay cambios sin guardar. ¿Cargar otra carta y descartarlos?",
+    "confirm.discardSettingsChangesBody":
+      "Tienes cambios sin guardar en la configuración. ¿Descartarlos y continuar?",
     "confirm.saveBeforeViewBody": "¿Guardar cambios antes de abrir esta carta?",
     "confirm.exportPairedFacesBody":
       "Algunos elementos seleccionados tienen caras emparejadas. ¿Quieres incluirlas en la exportación?",
@@ -1483,6 +1495,7 @@ const baseMessages = {
     "heading.exportPairedFaces": "Esportare le facce abbinate?",
     "heading.importData": "Importa dati",
     "heading.statLabelOverrides": "Etichette stat",
+    "heading.settingsDemo": "Demo impostazioni",
     "heading.uploadProgress": "Progresso upload",
     "heading.editCollection": "Modifica raccolta",
     "heading.newCollection": "Nuova raccolta",
@@ -1658,6 +1671,8 @@ const baseMessages = {
     "confirm.deleteAssetsBody": "Eliminazione",
     "confirm.discardChangesBody":
       "Ci sono modifiche non salvate. Caricare un’altra carta e scartarle?",
+    "confirm.discardSettingsChangesBody":
+      "Ci sono modifiche non salvate nelle impostazioni. Scartarle e continuare?",
     "confirm.saveBeforeViewBody": "Salvare le modifiche prima di aprire questa carta?",
     "confirm.exportPairedFacesBody":
       "Alcuni elementi selezionati hanno facce abbinate. Vuoi includerle nell’esportazione?",
@@ -1820,6 +1835,7 @@ const baseMessages = {
     "heading.exportPairedFaces": "Exportar faces emparelhadas?",
     "heading.importData": "Importar dados",
     "heading.statLabelOverrides": "Etiquetas de stats",
+    "heading.settingsDemo": "Demonstração de definições",
     "heading.uploadProgress": "Progresso do upload",
     "heading.editCollection": "Editar coleção",
     "heading.newCollection": "Nova coleção",
@@ -1995,6 +2011,8 @@ const baseMessages = {
     "confirm.deleteCollectionBodySuffix": "As cartas desta coleção não serão excluídas.",
     "confirm.deleteAssetsBody": "Excluindo",
     "confirm.discardChangesBody": "Há alterações não salvas. Carregar outro card e descartá-las?",
+    "confirm.discardSettingsChangesBody":
+      "Há alterações não salvas nas definições. Descartá-las e continuar?",
     "confirm.saveBeforeViewBody": "Guardar alterações antes de abrir esta carta?",
     "confirm.exportPairedFacesBody":
       "Alguns itens selecionados têm faces emparelhadas. Deseja incluí-las na exportação?",
@@ -2158,6 +2176,7 @@ const baseMessages = {
     "heading.exportPairedFaces": "Gekoppelde zijden exporteren?",
     "heading.importData": "Data importeren",
     "heading.statLabelOverrides": "Statslabels",
+    "heading.settingsDemo": "Instellingen demo",
     "heading.uploadProgress": "Uploadvoortgang",
     "heading.editCollection": "Collectie bewerken",
     "heading.newCollection": "Nieuwe collectie",
@@ -2333,6 +2352,8 @@ const baseMessages = {
     "confirm.deleteAssetsBody": "Verwijderen",
     "confirm.discardChangesBody":
       "Er zijn niet-opgeslagen wijzigingen. Andere kaart laden en verwerpen?",
+    "confirm.discardSettingsChangesBody":
+      "Je hebt niet-opgeslagen wijzigingen in de instellingen. Verwerpen en doorgaan?",
     "confirm.saveBeforeViewBody": "Wijzigingen opslaan voordat je deze kaart opent?",
     "confirm.exportPairedFacesBody":
       "Sommige geselecteerde items hebben gekoppelde zijden. Wil je ze opnemen in de export?",

@@ -5,7 +5,7 @@ import { createContext, useContext, useMemo, useState } from "react";
 import AssetsModal from "@/components/Assets/AssetsModal";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import ConfirmModal from "@/components/ConfirmModal";
-import StatLabelOverridesModal from "@/components/StatLabelOverridesModal";
+import SettingsModal from "@/components/SettingsModal/SettingsModal";
 import { StockpileModal } from "@/components/Stockpile";
 import TemplatePicker from "@/components/TemplatePicker";
 import { cardTemplatesById } from "@/data/card-templates";
@@ -137,7 +137,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
         onClose={templatePicker.close}
       />
       <AssetsModal isOpen={assetsModal.isOpen} onClose={assetsModal.close} mode="manage" />
-      <StatLabelOverridesModal isOpen={settingsModal.isOpen} onClose={settingsModal.close} />
+      <SettingsModal isOpen={settingsModal.isOpen} onClose={settingsModal.close} />
       <StockpileModal
         isOpen={stockpileModal.isOpen}
         onClose={() => {

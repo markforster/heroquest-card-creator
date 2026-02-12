@@ -18,6 +18,7 @@ type ModalShellProps = {
   headerActions?: ReactNode;
   /** Optional extra class for the inner panel (e.g. cardsPopover). */
   contentClassName?: string;
+  hideHeader?: boolean;
   keepMounted?: boolean;
 };
 
@@ -29,6 +30,7 @@ export default function ModalShell({
   footer,
   headerActions,
   contentClassName,
+  hideHeader = false,
   keepMounted = false,
 }: ModalShellProps) {
   const { t } = useI18n();
@@ -67,16 +69,18 @@ export default function ModalShell({
         className={`${styles.templatePopover} modal-content${contentClassName ? ` ${contentClassName}` : ""}`}
         onClick={handleContentClick}
       >
-        <div className={`${styles.templatePopoverHeader} modal-header`}>
-          <h2 className={styles.templatePopoverTitle}>{title}</h2>
-          <div className={styles.modalHeaderActions}>
-            {headerActions}
-            <button type="button" className={styles.modalCloseButton} onClick={onClose}>
-              <X className={styles.icon} aria-hidden="true" />
-              <span className="visually-hidden">{t("actions.close")}</span>
-            </button>
+        {hideHeader ? null : (
+          <div className={`${styles.templatePopoverHeader} modal-header`}>
+            <h2 className={styles.templatePopoverTitle}>{title}</h2>
+            <div className={styles.modalHeaderActions}>
+              {headerActions}
+              <button type="button" className={styles.modalCloseButton} onClick={onClose}>
+                <X className={styles.icon} aria-hidden="true" />
+                <span className="visually-hidden">{t("actions.close")}</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
         <div className="modal-body">{children}</div>
         {footer ? <div className="modal-footer">{footer}</div> : null}
       </div>

@@ -1588,11 +1588,126 @@
   max-height: calc(100vh - 6rem);
 }
 
+.settingsPopover {
+  width: min(920px, 100% - 2rem);
+  min-height: 28rem;
+  height: min(820px, calc(100vh - 6rem));
+  max-height: calc(100vh - 6rem);
+}
+
 .statLabelsPopover :global(.modal-body) {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+.settingsPopover :global(.modal-body) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.settingsLayout {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.settingsLayoutSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.settingsAreaList {
+  min-height: 0;
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(16, 16, 16, 0.6);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.settingsAreaButton {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settingsAreaButton:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.settingsAreaButtonActive {
+  border-color: rgba(250, 204, 21, 0.65);
+  background: rgba(250, 204, 21, 0.12);
+  color: rgba(255, 255, 255, 0.98);
+}
+
+.settingsAreaIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.settingsPanel {
+  min-height: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(12, 12, 12, 0.65);
+  padding: 0.85rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.settingsPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex: 0 1 auto;
+}
+
+.settingsPanelTitle {
+  margin: 0;
+  font-size: 0.95rem;
+  font-family: var(--hq-font-display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--hq-accent);
+}
+
+.settingsPanelScroll {
+  min-height: 0;
+  flex: 1 0 auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.settingsPanelBody {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  flex: 1 0 auto;
+}
+
+.settingsPanelFooter {
+  flex: 0 0 auto;
 }
 
 .statLabelsScroll {
@@ -1602,12 +1717,63 @@
   padding-right: 0.25rem;
 }
 
+.statLabelsSection {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(14, 14, 14, 0.55);
+  padding: 0.75rem 0.85rem 0.9rem;
+}
+
+.statLabelsSection + .statLabelsSection {
+  margin-top: 0.75rem;
+}
+
 .statLabelsSectionTitle {
   margin: 0 0 0.35rem;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--hq-accent);
+}
+
+.statLabelsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.65rem 0.9rem;
+}
+
+.statLabelsField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.statLabelsFieldHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.statLabelsFieldHeader :global(.form-label) {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.statLabelsClearButton {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
+.statLabelsClearButton:hover {
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .confirmPopover {
