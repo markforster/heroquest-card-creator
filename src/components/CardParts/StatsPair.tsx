@@ -139,6 +139,7 @@ export default function StatsPair({
           fill="transparent"
           stroke="#cd14e2ff"
           strokeWidth={2}
+          data-debug-bounds="true"
         />
       )}
       {/* Value bounds (debug) */}
@@ -151,6 +152,7 @@ export default function StatsPair({
           fill="transparent"
           stroke="#14e2cdff"
           strokeWidth={2}
+          data-debug-bounds="true"
         />
       )}
     </Layer>

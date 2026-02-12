@@ -34,12 +34,12 @@ export const SETTINGS_AREAS: SettingsAreaDefinition[] = [
     icon: ALargeSmall,
     panel: () => <TextFittingSettingsPanel />,
   },
-  {
-    id: "preview-settings",
-    labelKey: "heading.previewSettings",
-    icon: Monitor,
-    panel: () => <PreviewSettingsPanel />,
-  },
+  // {
+  //   id: "preview-settings",
+  //   labelKey: "heading.previewSettings",
+  //   icon: Monitor,
+  //   panel: () => <PreviewSettingsPanel />,
+  // },
   {
     id: "debug-settings",
     labelKey: "heading.debugTools",

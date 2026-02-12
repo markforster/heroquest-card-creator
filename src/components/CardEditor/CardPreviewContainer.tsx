@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import CardPreview, { CardPreviewHandle } from "@/components/CardPreview";
 import WebglPreview from "@/components/CardPreview/WebglPreview";
+import { useDebugVisuals } from "@/components/DebugVisualsContext";
 import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
 import { KEEP_WEBGL_MOUNTED } from "@/config/flags";
@@ -29,6 +30,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
   const { language } = useI18n();
   const { previewRenderer, rotationResetToken, recenterToken } = usePreviewRenderer();
   const { preferences, isDragging } = useTextFittingPreferences();
+  const { showTextBounds } = useDebugVisuals();
   const preferencesKey = JSON.stringify(preferences);
   const [textureCanvas, setTextureCanvas] = useState<HTMLCanvasElement | null>(null);
   const [textureVersion, setTextureVersion] = useState(0);
@@ -79,7 +81,11 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           await new Promise<void>((resolve) => {
             window.requestAnimationFrame(() => resolve());
           });
-          const canvas = await handle.renderToCanvas({ width, height });
+          const canvas = await handle.renderToCanvas({
+            width,
+            height,
+            removeDebugBounds: false,
+          });
           if (!canvas || cancelled) return;
           setTextureCanvas(canvas);
           setTextureVersion((prev) => prev + 1);
@@ -108,7 +114,16 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
         window.clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [showWebgl, cardData, template.id, templateName, previewRef, preferencesKey, isDragging]);
+  }, [
+    showWebgl,
+    cardData,
+    template.id,
+    templateName,
+    previewRef,
+    preferencesKey,
+    isDragging,
+    showTextBounds,
+  ]);
 
   useEffect(() => {
     if (!showWebgl) {
@@ -229,7 +244,11 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           await new Promise<void>((resolve) => {
             window.requestAnimationFrame(() => resolve());
           });
-          const canvas = await handle.renderToCanvas({ width, height });
+          const canvas = await handle.renderToCanvas({
+            width,
+            height,
+            removeDebugBounds: false,
+          });
           if (!canvas || cancelled) return;
           setReverseTextureCanvas(canvas);
           setReverseTextureVersion((prev) => prev + 1);
@@ -258,7 +277,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
         window.clearTimeout(reverseDebounceTimeoutRef.current);
       }
     };
-  }, [showWebgl, reverseCard, reversePreviewRef, preferencesKey, isDragging]);
+  }, [showWebgl, reverseCard, reversePreviewRef, preferencesKey, isDragging, showTextBounds]);
 
   return (
     <div className={styles.previewSwap}>

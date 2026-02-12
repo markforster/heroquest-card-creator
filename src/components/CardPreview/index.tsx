@@ -52,6 +52,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             width: CARD_WIDTH,
             height: CARD_HEIGHT,
             existingCanvas: canvasRef.current,
+            removeDebugBounds: true,
           });
           if (canvas) {
             canvasRef.current = canvas;
@@ -85,6 +86,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             width,
             height,
             existingCanvas: canvasRef.current,
+            removeDebugBounds: true,
           });
           if (canvas) {
             canvasRef.current = canvas;
@@ -101,12 +103,14 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 
           const width = options?.width ?? CARD_WIDTH;
           const height = options?.height ?? CARD_HEIGHT;
+          const removeDebugBounds = options?.removeDebugBounds ?? true;
 
           const canvas = await renderSvgToCanvas({
             svgElement,
             width,
             height,
             existingCanvas: canvasRef.current,
+            removeDebugBounds,
           });
           if (canvas) {
             canvasRef.current = canvas;

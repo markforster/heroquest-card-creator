@@ -15,8 +15,15 @@ export async function renderSvgToCanvas({
   width,
   height,
   existingCanvas,
+  removeDebugBounds = true,
 }: RenderSvgToCanvasOptions): Promise<HTMLCanvasElement | null> {
   const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
+
+  if (removeDebugBounds) {
+    clonedSvg.querySelectorAll('[data-debug-bounds="true"]').forEach((node) => {
+      node.remove();
+    });
+  }
 
   const { origin, isFileProtocol } = getLocationOriginInfo();
   const images = Array.from(clonedSvg.querySelectorAll("image"));

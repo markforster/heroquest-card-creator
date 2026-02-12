@@ -2,7 +2,7 @@ import monsterStatsBg from "@/assets/card-parts/monster-stats.png";
 import Layer from "@/components/CardPreview/Layer";
 import { useStatLabelOverrides } from "@/components/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
-import { isTextBoundsDebugEnabled } from "@/lib/debug-flags";
+import { useDebugVisuals } from "@/components/DebugVisualsContext";
 import { getStatLabel } from "@/lib/stat-labels";
 import type { StatValue } from "@/types/stats";
 
@@ -40,7 +40,7 @@ export const MONSTER_STATS_HEIGHT = STATS_HEIGHT;
 export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterStatsBlockProps) {
   const { t } = useI18n();
   const { overrides } = useStatLabelOverrides();
-  const showDebugBounds = isTextBoundsDebugEnabled();
+  const { showTextBounds } = useDebugVisuals();
 
   return (
     <Layer>
@@ -62,7 +62,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           width={176}
           height={138}
           // headerHeight={headerHeight}
-          debug={showDebugBounds}
+          debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelAttack", t("stats.attackDice"), overrides)}
@@ -71,7 +71,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           y={14}
           width={116}
           height={138}
-          debug={showDebugBounds}
+          debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelDefend", t("stats.defendDice"), overrides)}
@@ -80,7 +80,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           y={14}
           width={116}
           height={138}
-          debug={showDebugBounds}
+          debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelMonsterBodyPoints", t("stats.bodyPoints"), overrides)}
@@ -89,7 +89,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           y={14}
           width={116}
           height={138}
-          debug={showDebugBounds}
+          debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelMonsterMindPoints", t("stats.mindPoints"), overrides)}
@@ -98,9 +98,9 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           y={14}
           width={116}
           height={138}
-          debug={showDebugBounds}
+          debug={showTextBounds}
         />
-        {showDebugBounds && (
+        {showTextBounds && (
           <rect
             x={0}
             y={0}
@@ -109,6 +109,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
             fill="transparent"
             stroke="#cd14e2ff"
             strokeWidth={2}
+            data-debug-bounds="true"
           />
         )}
       </g>

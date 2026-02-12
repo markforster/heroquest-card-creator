@@ -10,7 +10,7 @@ import {
   USE_TITLE_STROKE,
   USE_TITLE_VERTICAL_COMPRESSION,
 } from "@/config/flags";
-import { isTextBoundsDebugEnabled } from "@/lib/debug-flags";
+import { useDebugVisuals } from "@/components/DebugVisualsContext";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";
 
@@ -67,7 +67,7 @@ export default function RibbonTitle({
   const titleLineHeight = titleLayout.lineHeight ?? titleFontSize * 1.05;
   const totalTitleHeight = titleLineHeight * titleLines.length;
   const firstLineY = centerY - (totalTitleHeight - titleLineHeight) / 2;
-  const showDebugBounds = isTextBoundsDebugEnabled();
+  const { showTextBounds } = useDebugVisuals();
   const letterSpacing = USE_TIGHTER_TITLE_TRACKING ? TITLE_LETTER_SPACING : undefined;
   const scaleY = USE_TITLE_VERTICAL_COMPRESSION ? TITLE_VERTICAL_SCALE_Y : 1;
   const titleTransform =
@@ -134,7 +134,7 @@ export default function RibbonTitle({
           {titleLines[0]}
         </text>
       </g>
-      {showDebugBounds && (
+      {showTextBounds && (
         <rect
           x={resolvedRibbonBounds.x}
           y={resolvedRibbonBounds.y}
@@ -143,9 +143,10 @@ export default function RibbonTitle({
           fill="transparent"
           stroke="#cd14e2ff"
           strokeWidth={2}
+          data-debug-bounds="true"
         />
       )}
-      {showDebugBounds && (
+      {showTextBounds && (
         <rect
           x={resolvedTextBounds.x}
           y={resolvedTextBounds.y}
@@ -154,6 +155,7 @@ export default function RibbonTitle({
           fill="transparent"
           stroke="#14e2cdff"
           strokeWidth={2}
+          data-debug-bounds="true"
         />
       )}
     </Layer>

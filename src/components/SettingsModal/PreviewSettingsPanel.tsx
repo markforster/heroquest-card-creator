@@ -6,6 +6,7 @@ import {
   usePreviewRenderer,
 } from "@/components/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
+import { useWebglSupport } from "@/hooks/useWebglSupport";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export default function PreviewSettingsPanel() {
@@ -15,11 +16,15 @@ export default function PreviewSettingsPanel() {
   const { sheenAngle, setSheenAngle, sheenIntensity, setSheenIntensity } =
     useWebglPreviewSettings();
   const { USE_WEBGL_PREVIEW } = previewRendererFlags;
+  const isWebglSupported = useWebglSupport(previewRenderer, setPreviewRenderer);
   const rendererDisabled = USE_WEBGL_PREVIEW;
+  const webglDisabled = rendererDisabled || !isWebglSupported;
 
   return (
     <div className={styles.settingsPanelBody}>
-      <div className={styles.settingsPanelSection}>
+      <div
+        className={`${styles.settingsPanelSection}${webglDisabled ? ` ${styles.settingsPanelSectionDisabled}` : ""}`}
+      >
         <div className={styles.settingsPanelSectionTitle}>{t("label.previewRenderer")}</div>
         <div className={styles.settingsPanelRow}>
           <label className={styles.settingsPanelOption}>
@@ -40,14 +45,16 @@ export default function PreviewSettingsPanel() {
               value="webgl"
               checked={previewRenderer === "webgl"}
               onChange={() => setPreviewRenderer("webgl")}
-              disabled={rendererDisabled}
+              disabled={webglDisabled}
             />
             {t("label.previewRendererWebgl")}
           </label>
         </div>
       </div>
 
-      <div className={styles.settingsPanelSection}>
+      <div
+        className={`${styles.settingsPanelSection}${webglDisabled ? ` ${styles.settingsPanelSectionDisabled}` : ""}`}
+      >
         <div className={styles.settingsPanelSectionTitle}>{t("label.webglInteraction")}</div>
         <div className={styles.settingsPanelRow}>
           <label className={styles.settingsPanelOption}>
@@ -57,6 +64,7 @@ export default function PreviewSettingsPanel() {
               value="pan"
               checked={rotationMode === "pan"}
               onChange={() => setRotationMode("pan")}
+              disabled={webglDisabled}
             />
             {t("label.webglPan")}
           </label>
@@ -67,13 +75,16 @@ export default function PreviewSettingsPanel() {
               value="spin"
               checked={rotationMode === "spin"}
               onChange={() => setRotationMode("spin")}
+              disabled={webglDisabled}
             />
             {t("label.webglRotate")}
           </label>
         </div>
       </div>
 
-      <div className={styles.settingsPanelSection}>
+      <div
+        className={`${styles.settingsPanelSection}${webglDisabled ? ` ${styles.settingsPanelSectionDisabled}` : ""}`}
+      >
         <div className={styles.settingsPanelSectionTitle}>{t("label.webglSheen")}</div>
         <label className={styles.settingsPanelRange}>
           {t("label.webglSheenAngle")}: {sheenAngle.toFixed(2)}
@@ -84,6 +95,7 @@ export default function PreviewSettingsPanel() {
             step={0.05}
             value={sheenAngle}
             onChange={(event) => setSheenAngle(Number(event.target.value))}
+            disabled={webglDisabled}
           />
         </label>
         <label className={styles.settingsPanelRange}>
@@ -95,6 +107,7 @@ export default function PreviewSettingsPanel() {
             step={0.05}
             value={sheenIntensity}
             onChange={(event) => setSheenIntensity(Number(event.target.value))}
+            disabled={webglDisabled}
           />
         </label>
       </div>

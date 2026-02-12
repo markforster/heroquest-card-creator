@@ -5,4 +5,5 @@ export type RenderSvgToCanvasOptions = {
   width: number;
   height: number;
   existingCanvas?: HTMLCanvasElement | null;
+  removeDebugBounds?: boolean;
 };

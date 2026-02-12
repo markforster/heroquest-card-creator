@@ -19,6 +19,8 @@ import HeaderWithTemplatePicker from "@/components/HeaderWithTemplatePicker";
 import { LibraryTransferProvider } from "@/components/LibraryTransferContext";
 import LeftNav from "@/components/LeftNav";
 import MainFooter from "@/components/MainFooter";
+import { DebugVisualsProvider } from "@/components/DebugVisualsContext";
+import { LocalStorageProvider } from "@/components/LocalStorageProvider";
 import { PreviewRendererProvider } from "@/components/PreviewRendererContext";
 import { TextFittingPreferencesProvider } from "@/components/TextFittingPreferencesContext";
 import ToolsToolbar from "@/components/ToolsToolbar";
@@ -405,13 +407,17 @@ export default function IndexPage() {
     <DatabaseVersionGate>
       <CardEditorProvider>
         <AssetHashIndexProvider>
-          <PreviewRendererProvider>
-            <WebglPreviewSettingsProvider>
-              <TextFittingPreferencesProvider>
-                <IndexPageInner />
-              </TextFittingPreferencesProvider>
-            </WebglPreviewSettingsProvider>
-          </PreviewRendererProvider>
+          <LocalStorageProvider>
+            <DebugVisualsProvider>
+              <PreviewRendererProvider>
+                <WebglPreviewSettingsProvider>
+                  <TextFittingPreferencesProvider>
+                    <IndexPageInner />
+                  </TextFittingPreferencesProvider>
+                </WebglPreviewSettingsProvider>
+              </PreviewRendererProvider>
+            </DebugVisualsProvider>
+          </LocalStorageProvider>
         </AssetHashIndexProvider>
       </CardEditorProvider>
     </DatabaseVersionGate>

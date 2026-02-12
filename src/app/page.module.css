@@ -1683,6 +1683,10 @@
   gap: 0.5rem;
 }
 
+.settingsPanelSectionDisabled {
+  opacity: 0.45;
+}
+
 .settingsPanelSectionTitle {
   font-size: 0.75rem;
   text-transform: uppercase;

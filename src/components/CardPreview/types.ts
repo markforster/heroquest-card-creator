@@ -18,6 +18,7 @@ export type CardPreviewHandle = {
   renderToCanvas: (options?: {
     width?: number;
     height?: number;
+    removeDebugBounds?: boolean;
   }) => Promise<HTMLCanvasElement | null>;
   getSvgElement: () => SVGSVGElement | null;
 };

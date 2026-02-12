@@ -3,7 +3,7 @@ import StatsPair from "@/components/CardParts/StatsPair";
 import Layer from "@/components/CardPreview/Layer";
 import { useStatLabelOverrides } from "@/components/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
-import { isTextBoundsDebugEnabled } from "@/lib/debug-flags";
+import { useDebugVisuals } from "@/components/DebugVisualsContext";
 import { getStatLabel } from "@/lib/stat-labels";
 import type { StatValue } from "@/types/stats";
 
@@ -37,7 +37,7 @@ export const HERO_STATS_HEIGHT = STATS_HEIGHT;
 export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlockProps) {
   const { t } = useI18n();
   const { overrides } = useStatLabelOverrides();
-  const showDebugBounds = isTextBoundsDebugEnabled();
+  const { showTextBounds } = useDebugVisuals();
 
   return (
     <Layer>
@@ -58,7 +58,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           y={12}
           width={166}
           height={134}
-          debug={showDebugBounds}
+          debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelDefend", t("stats.defendDice"), overrides)}
@@ -67,7 +67,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           y={12}
           width={166}
           height={134}
-          debug={showDebugBounds}
+          debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelStartingPoints", t("statsLabelStartingPoints"), overrides)}
@@ -76,7 +76,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           y={12}
           height={101}
           headerHeight={35}
-          debug={showDebugBounds}
+          debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelHeroBody", t("stats.body"), overrides)}
@@ -86,7 +86,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           y={44}
           height={101}
           headerHeight={35}
-          debug={showDebugBounds}
+          debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelHeroMind", t("stats.mind"), overrides)}
@@ -97,7 +97,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           y={44}
           height={101}
           headerHeight={35}
-          debug={showDebugBounds}
+          debug={showTextBounds}
         />
         {showDebugBounds && (
           <rect
