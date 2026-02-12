@@ -6,6 +6,7 @@ import {
   AdditiveBlending,
   BackSide,
   CanvasTexture,
+  DoubleSide,
   ExtrudeGeometry,
   FrontSide,
   LinearFilter,
@@ -83,7 +84,7 @@ function CardPlane({
   texture: Texture;
   sheenPower: number;
   sheenIntensity: number;
-  side: typeof FrontSide | typeof BackSide;
+  side: typeof FrontSide | typeof BackSide | typeof DoubleSide;
   depthSign: 1 | -1;
   depthOffset: number;
 }) {
@@ -292,6 +293,7 @@ function WebglScene({
   sheenIntensity,
   useBlueprintEdge,
   showSpinner,
+  hasTwoSidedRender,
 }: {
   frontTexture: Texture;
   backTexture: Texture;
@@ -303,6 +305,7 @@ function WebglScene({
   sheenIntensity: number;
   useBlueprintEdge: boolean;
   showSpinner: boolean;
+  hasTwoSidedRender: boolean;
 }) {
   const { width, height, gl } = useThree((state) => ({
     width: state.viewport.width,
@@ -361,7 +364,9 @@ function WebglScene({
       clearcoat: 0.08,
       clearcoatRoughness: 0.6,
       transparent: true,
-      opacity: EDGE_BLUEPRINT_OPACITY,
+      opacity: 0.28,
+      depthWrite: false,
+      depthTest: true,
     };
   }, [useBlueprintEdge]);
   const capMaterial = useMemo(
@@ -433,7 +438,7 @@ function WebglScene({
           texture={frontTexture}
           sheenPower={sheenPower}
           sheenIntensity={sheenIntensity}
-          side={FrontSide}
+          side={hasTwoSidedRender ? FrontSide : DoubleSide}
           depthSign={1}
           depthOffset={CARD_THICKNESS / 2 + 0.002}
         />
@@ -712,6 +717,7 @@ export default function WebglPreview({
           sheenIntensity={sheenIntensity}
           useBlueprintEdge={useBlueprintEdge}
           showSpinner={showSpinner}
+          hasTwoSidedRender={hasTwoSidedRender}
         />
       </Canvas>
     </div>
