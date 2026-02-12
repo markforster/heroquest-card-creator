@@ -29,14 +29,14 @@ import blueprintFallback from "@/assets/blueprint.png";
 import linenNormal3 from "@/assets/linen-3.png";
 import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
-import { WEBGL_BLUEPRINT_OVERLAY_MODE } from "@/config/flags";
+import { USE_WEBGL_SPARKLE_PARALLAX, WEBGL_BLUEPRINT_OVERLAY_MODE } from "@/config/flags";
 import { createMagicOverlayMaterial } from "@/lib/webgl/magicOverlayShader";
 import { createSparkleOverlayMaterial } from "@/lib/webgl/sparkleOverlayShader";
 
 import styles from "./WebglPreview.module.css";
 
 import type { MutableRefObject, RefObject } from "react";
-import type { Group, Mesh } from "three";
+import type { Group, Mesh, SpotLight, DirectionalLight } from "three";
 
 type WebglPreviewProps = {
   className?: string;
@@ -300,6 +300,8 @@ function WebglScene({
   showSpinner,
   hasTwoSidedRender,
   showMagicOverlay,
+  spotLightRef,
+  directionalLightRef,
 }: {
   frontTexture: Texture;
   backTexture: Texture;
@@ -313,6 +315,8 @@ function WebglScene({
   showSpinner: boolean;
   hasTwoSidedRender: boolean;
   showMagicOverlay: boolean;
+  spotLightRef: RefObject<SpotLight>;
+  directionalLightRef: RefObject<DirectionalLight>;
 }) {
   const { width, height, gl } = useThree((state) => ({
     width: state.viewport.width,
@@ -395,6 +399,7 @@ function WebglScene({
             aspect: CARD_ASPECT,
             radius: CARD_CORNER_RADIUS,
             color: { r: 0.2, g: 0.85, b: 1.0 },
+            enableParallax: USE_WEBGL_SPARKLE_PARALLAX,
           })
         : createMagicOverlayMaterial({
             opacity: MAGIC_OVERLAY_OPACITY,
@@ -460,6 +465,22 @@ function WebglScene({
     }
     if ("uPitch" in overlayMaterial.uniforms) {
       overlayMaterial.uniforms.uPitch.value = pitch;
+    }
+    if ("uLightDir" in overlayMaterial.uniforms) {
+      const lightDir = overlayMaterial.uniforms.uLightDir.value;
+      const spot = spotLightRef.current;
+      const dir = directionalLightRef.current;
+      if (spot) {
+        spot.getWorldDirection(lightDir);
+        overlayMaterial.uniforms.uLightIntensity.value = spot.intensity;
+      } else if (dir) {
+        dir.getWorldDirection(lightDir);
+        overlayMaterial.uniforms.uLightIntensity.value = dir.intensity;
+      } else {
+        lightDir.set(0.4, 0.6, 1.0).normalize();
+        overlayMaterial.uniforms.uLightIntensity.value = 0.8;
+      }
+      overlayMaterial.uniforms.uSpecPower.value = 24.0;
     }
   });
 
@@ -527,6 +548,8 @@ export default function WebglPreview({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const yawGroupRef = useRef<Group | null>(null);
   const pitchGroupRef = useRef<Group | null>(null);
+  const spotLightRef = useRef<SpotLight | null>(null);
+  const directionalLightRef = useRef<DirectionalLight | null>(null);
   const fallbackTexture = useLoader(TextureLoader, fallbackTextureSrc ?? blueprintFallback.src);
   const fallbackFrontTexture = useMemo(() => fallbackTexture.clone(), [fallbackTexture]);
   const fallbackBackTexture = useMemo(() => fallbackTexture.clone(), [fallbackTexture]);
@@ -740,12 +763,17 @@ export default function WebglPreview({
       >
         <ambientLight intensity={0.4} />
         <spotLight
+          ref={spotLightRef}
           position={[2.5, 3.2, 4]}
           intensity={sheenIntensity * 2.4}
           angle={Math.max(0.2, sheenAngle * 0.65)}
           penumbra={0.25}
         />
-        <directionalLight position={[-2.5, -1.5, 3.5]} intensity={0.4} />
+        <directionalLight
+          ref={directionalLightRef}
+          position={[-2.5, -1.5, 3.5]}
+          intensity={0.4}
+        />
         <WebglScene
           frontTexture={activeFrontTexture}
           backTexture={activeBackTexture}
@@ -759,6 +787,8 @@ export default function WebglPreview({
           showSpinner={showSpinner}
           hasTwoSidedRender={hasTwoSidedRender}
           showMagicOverlay={showMagicOverlay}
+          spotLightRef={spotLightRef}
+          directionalLightRef={directionalLightRef}
         />
       </Canvas>
     </div>

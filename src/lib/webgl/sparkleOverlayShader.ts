@@ -7,6 +7,7 @@ type SparkleOverlayOptions = {
   aspect: number;
   radius: number;
   color: { r: number; g: number; b: number };
+  enableParallax?: boolean;
 };
 
 export function createSparkleOverlayMaterial({
@@ -14,6 +15,7 @@ export function createSparkleOverlayMaterial({
   aspect,
   radius,
   color,
+  enableParallax = true,
 }: SparkleOverlayOptions): ShaderMaterial {
   const params: ShaderMaterialParameters = {
     transparent: true,
@@ -31,6 +33,10 @@ export function createSparkleOverlayMaterial({
       uTwinkle: { value: 1.4 },
       uYaw: { value: 0.0 },
       uPitch: { value: 0.0 },
+      uParallaxEnabled: { value: enableParallax ? 1.0 : 0.0 },
+      uLightDir: { value: new Vector3(0.4, 0.6, 1.0).normalize() },
+      uLightIntensity: { value: 0.8 },
+      uSpecPower: { value: 24.0 },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -51,6 +57,10 @@ export function createSparkleOverlayMaterial({
       uniform float uTwinkle;
       uniform float uYaw;
       uniform float uPitch;
+      uniform float uParallaxEnabled;
+      uniform vec3 uLightDir;
+      uniform float uLightIntensity;
+      uniform float uSpecPower;
 
       float hash(vec2 p) {
         return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
@@ -73,7 +83,10 @@ export function createSparkleOverlayMaterial({
         float mask = roundedRectMask(vUv, uRadius, uAspect);
         if (mask <= 0.0) discard;
 
-        vec2 parallax = vec2(uYaw, -uPitch) * 0.16;
+        float yawSin = sin(uYaw);
+        float pitchSin = sin(uPitch);
+        float scale = 1.0 + abs(yawSin) * 1.6 + abs(pitchSin) * 1.2;
+        vec2 parallax = vec2(-yawSin, -pitchSin) * 0.16 * scale * uParallaxEnabled;
         vec2 uv = (vUv + parallax) * uDensity;
         vec2 cell = floor(uv);
         vec2 f = fract(uv);
@@ -87,15 +100,20 @@ export function createSparkleOverlayMaterial({
             vec2 center = r;
             float d = length((f - center) + offset);
             float size = uSize * (0.6 + r.x * 0.8);
-            float twinkle = 0.6 + 0.4 * sin(uTime * uTwinkle + r.y * 6.283);
+            float twinkleSpeed = mix(0.35, 1.5, r.x);
+            float twinkle = 0.6 + 0.4 * sin(uTime * uTwinkle * twinkleSpeed + r.y * 6.283);
             float glow = smoothstep(size, 0.0, d) * twinkle;
             sparkle = max(sparkle, glow);
           }
         }
 
         float glow = pow(sparkle, 0.6);
+        vec3 normal = vec3(0.0, 0.0, 1.0);
+        float ndl = clamp(dot(normal, normalize(uLightDir)), 0.0, 1.0);
+        float spec = pow(ndl, uSpecPower) * uLightIntensity;
+        float lightBoost = 0.4 + 0.6 * ndl + spec * 3.2;
         float alpha = glow * uOpacity * mask;
-        gl_FragColor = vec4(uColor * 2.4, alpha);
+        gl_FragColor = vec4(uColor * 3.2 * lightBoost, alpha);
       }
     `,
   };

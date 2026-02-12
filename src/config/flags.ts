@@ -41,6 +41,11 @@ export const ENABLE_WEBGL_RECENTER_ON_FACE_SELECT = false;
 export const WEBGL_BLUEPRINT_OVERLAY_MODE: "off" | "magic" | "sparkle" = "sparkle";
 
 /**
+ * Enables parallax for the WebGL sparkle overlay.
+ */
+export const USE_WEBGL_SPARKLE_PARALLAX = false;
+
+/**
  * Applies tighter letter-spacing to title and stat header text to better match
  * printed card ink density.
  */
