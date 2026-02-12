@@ -30,6 +30,12 @@ export const SHOW_WEBGL_SHEEN_CONTROLS = false;
 export const KEEP_WEBGL_MOUNTED = true;
 
 /**
+ * When enabled, selecting a mini card or switching faces triggers a WebGL recenter.
+ * This is used to keep the recenter path in place without forcing the behavior.
+ */
+export const ENABLE_WEBGL_RECENTER_ON_FACE_SELECT = false;
+
+/**
  * Applies tighter letter-spacing to title and stat header text to better match
  * printed card ink density.
  */

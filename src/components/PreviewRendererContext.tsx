@@ -14,6 +14,8 @@ type PreviewRendererContextValue = {
   rotationMode: PreviewRotationMode;
   setRotationMode: (mode: PreviewRotationMode) => void;
   rotationResetToken: number;
+  recenterToken: number;
+  requestRecenter: () => void;
 };
 
 const PREVIEW_RENDERER_STORAGE_KEY = "hqcc.previewRenderer";
@@ -26,6 +28,7 @@ export function PreviewRendererProvider({ children }: { children: React.ReactNod
   const [previewRenderer, setPreviewRenderer] = useState<PreviewRenderer>(FORCED_RENDERER ?? "svg");
   const [rotationMode, setRotationMode] = useState<PreviewRotationMode>("pan");
   const [rotationResetToken, setRotationResetToken] = useState(0);
+  const [recenterToken, setRecenterToken] = useState(0);
 
   useEffect(() => {
     if (FORCED_RENDERER) {
@@ -98,8 +101,12 @@ export function PreviewRendererProvider({ children }: { children: React.ReactNod
         setRotationMode(mode);
       },
       rotationResetToken,
+      recenterToken,
+      requestRecenter: () => {
+        setRecenterToken((prev) => prev + 1);
+      },
     }),
-    [previewRenderer, rotationMode, rotationResetToken],
+    [previewRenderer, rotationMode, rotationResetToken, recenterToken],
   );
 
   return (

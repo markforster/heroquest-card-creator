@@ -50,6 +50,7 @@ function IndexPageInner() {
   const canSaveChanges = Boolean(currentTemplateId && activeCardId && activeStatus === "saved");
 
   const [savingMode, setSavingMode] = useState<"new" | "update" | null>(null);
+  const [saveToken, setSaveToken] = useState(0);
   const handleSave = async (mode: "new" | "update") => {
     if (!currentTemplateId) return;
     const templateId = currentTemplateId as TemplateId;
@@ -78,6 +79,7 @@ function IndexPageInner() {
     const patch = cardDataToCardRecordPatch(templateId, derivedName, draft as never);
     const viewedAt = Date.now();
 
+    let didSave = false;
     try {
       if (mode === "new") {
         const record = await createCard({
@@ -90,6 +92,7 @@ function IndexPageInner() {
         });
         setActiveCard(templateId, record.id, record.status);
         setTemplateDirty(templateId, false);
+        didSave = true;
       } else if (mode === "update") {
         if (!activeCardId || activeStatus !== "saved") return;
         const record = await updateCard(activeCardId, {
@@ -100,12 +103,16 @@ function IndexPageInner() {
         if (record) {
           setActiveCard(templateId, record.id, record.status);
           setTemplateDirty(templateId, false);
+          didSave = true;
         }
       }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("[page] Failed to save card", error);
     } finally {
+      if (didSave) {
+        setSaveToken((prev) => prev + 1);
+      }
       const elapsed = Date.now() - startedAt;
       const remaining = Math.max(0, 300 - elapsed);
       if (remaining > 0) {
@@ -125,7 +132,7 @@ function IndexPageInner() {
   return (
     <div className={styles.page}>
       <LibraryTransferProvider>
-        <EditorSaveProvider value={{ saveCurrentCard }}>
+        <EditorSaveProvider value={{ saveCurrentCard, saveToken }}>
           <AppActionsProvider>
             <HeaderWithTemplatePicker />
             <main className={styles.main}>

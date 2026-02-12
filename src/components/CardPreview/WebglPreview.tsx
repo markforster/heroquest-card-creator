@@ -43,12 +43,15 @@ type WebglPreviewProps = {
   backTextureVersion?: number;
   fallbackTextureSrc?: string;
   rotationResetToken?: number;
+  recenterToken?: number;
 };
 
 const CARD_ASPECT = 1050 / 750;
 const MAX_ROTATION_X_DEG = 25;
 const MAX_ROTATION_Y_DEG = 60;
 const ROTATION_SMOOTHING = 0.12;
+const RECENTER_SMOOTHING = 0.26;
+const RECENTER_DURATION_MS = 320;
 const LINEN_NORMAL_MAP = linenNormal3;
 const USE_DEBUG_NORMAL_MAP = false;
 const BLUEPRINT_DELAY_MS = 20;
@@ -279,6 +282,7 @@ function WebglScene({
   yawGroupRef,
   pitchGroupRef,
   targetRotationRef,
+  recenterBoostUntilRef,
   sheenPower,
   sheenIntensity,
 }: {
@@ -287,6 +291,7 @@ function WebglScene({
   yawGroupRef: RefObject<Group>;
   pitchGroupRef: RefObject<Group>;
   targetRotationRef: MutableRefObject<{ x: number; y: number }>;
+  recenterBoostUntilRef: MutableRefObject<number>;
   sheenPower: number;
   sheenIntensity: number;
 }) {
@@ -372,9 +377,11 @@ function WebglScene({
     const yawGroup = yawGroupRef.current;
     const pitchGroup = pitchGroupRef.current;
     if (!yawGroup || !pitchGroup) return;
+    const smoothing =
+      recenterBoostUntilRef.current > performance.now() ? RECENTER_SMOOTHING : ROTATION_SMOOTHING;
     pitchGroup.rotation.x +=
-      (targetRotationRef.current.x - pitchGroup.rotation.x) * ROTATION_SMOOTHING;
-    yawGroup.rotation.y += (targetRotationRef.current.y - yawGroup.rotation.y) * ROTATION_SMOOTHING;
+      (targetRotationRef.current.x - pitchGroup.rotation.x) * smoothing;
+    yawGroup.rotation.y += (targetRotationRef.current.y - yawGroup.rotation.y) * smoothing;
   });
 
   return (
@@ -418,6 +425,7 @@ export default function WebglPreview({
   backTextureVersion = 0,
   fallbackTextureSrc,
   rotationResetToken = 0,
+  recenterToken = 0,
 }: WebglPreviewProps) {
   const rootClassName = className ? `${styles.root} ${className}` : styles.root;
   const { sheenAngle, sheenIntensity } = useWebglPreviewSettings();
@@ -513,6 +521,7 @@ export default function WebglPreview({
     startRotY: 0,
   });
   const targetRotationRef = useRef({ x: 0, y: 0 });
+  const recenterBoostUntilRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
   const isPanMode = rotationMode === "pan";
 
@@ -538,6 +547,11 @@ export default function WebglPreview({
       pitchGroupRef.current.rotation.x = 0;
     }
   }, [rotationResetToken]);
+
+  useEffect(() => {
+    targetRotationRef.current = { x: 0, y: 0 };
+    recenterBoostUntilRef.current = performance.now() + RECENTER_DURATION_MS;
+  }, [recenterToken]);
 
   const clampRotation = (value: number, maxDeg: number) => {
     const max = (maxDeg * Math.PI) / 180;
@@ -641,6 +655,7 @@ export default function WebglPreview({
           yawGroupRef={yawGroupRef}
           pitchGroupRef={pitchGroupRef}
           targetRotationRef={targetRotationRef}
+          recenterBoostUntilRef={recenterBoostUntilRef}
           sheenPower={glintPower}
           sheenIntensity={sheenIntensity}
         />

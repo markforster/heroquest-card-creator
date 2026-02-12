@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 type EditorSaveContextValue = {
   saveCurrentCard: () => Promise<boolean>;
+  saveToken: number;
 };
 
 const EditorSaveContext = createContext<EditorSaveContextValue | null>(null);

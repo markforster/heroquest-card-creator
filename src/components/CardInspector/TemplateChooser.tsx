@@ -9,6 +9,8 @@ import { useAppActions } from "@/components/AppActionsContext";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useEditorSave } from "@/components/EditorSaveContext";
+import { usePreviewRenderer } from "@/components/PreviewRendererContext";
+import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -35,6 +37,8 @@ const FALLBACK_TITLE = "Untitled card";
 
 export default function TemplateChooser() {
   const { t, language } = useI18n();
+  const { requestRecenter } = usePreviewRenderer();
+  const recenterTimeoutRef = useRef<number | null>(null);
   const {
     state: { selectedTemplateId, cardDrafts, activeCardIdByTemplate, isDirtyByTemplate },
     setSelectedTemplateId,
@@ -43,12 +47,14 @@ export default function TemplateChooser() {
     loadCardIntoEditor,
   } = useCardEditor();
   const { openStockpile } = useAppActions();
-  const { saveCurrentCard } = useEditorSave();
+  const { saveCurrentCard, saveToken } = useEditorSave();
   const [pendingChange, setPendingChange] = useState<PendingFaceChange | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isFaceMenuOpen, setIsFaceMenuOpen] = useState(false);
   const [pairedCard, setPairedCard] = useState<CardRecord | null>(null);
   const [pairedThumbnailUrl, setPairedThumbnailUrl] = useState<string | null>(null);
+  const [currentCard, setCurrentCard] = useState<CardRecord | null>(null);
+  const [currentThumbnailUrl, setCurrentThumbnailUrl] = useState<string | null>(null);
   const [pairedFronts, setPairedFronts] = useState<CardRecord[]>([]);
   const [pairedFrontsToken, setPairedFrontsToken] = useState(0);
   const [pendingOpenCard, setPendingOpenCard] = useState<CardRecord | null>(null);
@@ -92,6 +98,14 @@ export default function TemplateChooser() {
       const nextRecord = viewed ?? record;
       setSelectedTemplateId(nextRecord.templateId as TemplateId);
       loadCardIntoEditor(nextRecord.templateId as TemplateId, nextRecord);
+      if (ENABLE_WEBGL_RECENTER_ON_FACE_SELECT) {
+        if (recenterTimeoutRef.current) {
+          window.clearTimeout(recenterTimeoutRef.current);
+        }
+        recenterTimeoutRef.current = window.setTimeout(() => {
+          requestRecenter();
+        }, 90);
+      }
     } catch {
       // Ignore load errors for now.
     }
@@ -108,6 +122,41 @@ export default function TemplateChooser() {
     }
     await openCard(cardId);
   };
+
+  useEffect(() => {
+    if (!activeCardId) {
+      setCurrentCard(null);
+      return;
+    }
+    let active = true;
+    getCard(activeCardId)
+      .then((record) => {
+        if (!active) return;
+        setCurrentCard(record ?? null);
+      })
+      .catch(() => {
+        if (!active) return;
+        setCurrentCard(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [activeCardId, saveToken]);
+
+  useEffect(() => {
+    if (currentThumbnailUrl) {
+      URL.revokeObjectURL(currentThumbnailUrl);
+    }
+    if (currentCard?.thumbnailBlob instanceof Blob) {
+      const nextUrl = URL.createObjectURL(currentCard.thumbnailBlob);
+      setCurrentThumbnailUrl(nextUrl);
+      return () => {
+        URL.revokeObjectURL(nextUrl);
+      };
+    }
+    setCurrentThumbnailUrl(null);
+    return undefined;
+  }, [currentCard?.thumbnailBlob]);
 
   useEffect(() => {
     let active = true;
@@ -191,6 +240,14 @@ export default function TemplateChooser() {
     } as CardDataByTemplate[TemplateId];
     setCardDraft(currentTemplateId, nextDraft);
     setTemplateDirty(currentTemplateId, true);
+    if (ENABLE_WEBGL_RECENTER_ON_FACE_SELECT) {
+      if (recenterTimeoutRef.current) {
+        window.clearTimeout(recenterTimeoutRef.current);
+      }
+      recenterTimeoutRef.current = window.setTimeout(() => {
+        requestRecenter();
+      }, 90);
+    }
   };
 
   const handleFaceChange = async (nextFace: CardFace) => {
@@ -238,6 +295,7 @@ export default function TemplateChooser() {
       : `Confirm unpairing of this card to the ${pendingChange.affectedCount} cards`
     : "";
 
+  const currentTemplateThumbnail = template?.thumbnail ?? null;
   const pairedThumbnail = pairedCard ? cardTemplatesById[pairedCard.templateId]?.thumbnail : null;
   const pairedTitle = pairedCard?.title ?? FALLBACK_TITLE;
   const hasPair = Boolean(draft?.pairedWith && pairedCard);
@@ -246,12 +304,25 @@ export default function TemplateChooser() {
   const shouldShowOverflowPopover = isOverflowPopoverOpen && overflowPopoverAnchor;
 
   return (
-    <div className={styles.inspectorHeader}>
-      <div className={styles.inspectorSectionTitle}>
-        {t("actions.template")} -{" "}
-        {template ? getTemplateNameLabel(language, template) : t("ui.loading")}
-      </div>
-      <div className={styles.inspectorPairRow}>
+    <>
+      <div className={styles.inspectorHeader}>
+        <div className={styles.inspectorHeaderPreview} aria-hidden="true">
+          <div className={styles.inspectorHeaderPreviewInner}>
+            {currentThumbnailUrl ? (
+              <img src={currentThumbnailUrl} alt="" />
+            ) : currentTemplateThumbnail?.src ? (
+              <img src={currentTemplateThumbnail.src} alt="" />
+            ) : (
+              <div className={styles.inspectorHeaderPreviewPlaceholder} />
+            )}
+          </div>
+        </div>
+        <div className={styles.inspectorHeaderContent}>
+          <div className={styles.inspectorSectionTitle}>
+            {t("actions.template")} -{" "}
+            {template ? getTemplateNameLabel(language, template) : t("ui.loading")}
+          </div>
+          <div className={styles.inspectorPairRow}>
         <div className={styles.inspectorFaceMenu} ref={faceMenuRef}>
           <button
             type="button"
@@ -518,7 +589,9 @@ export default function TemplateChooser() {
           </>
         ) : null}
       </div>
-      {shouldShowOverflowPopover && typeof document !== "undefined"
+    </div>
+  </div>
+  {shouldShowOverflowPopover && typeof document !== "undefined"
         ? (() => {
             const tileWidth = 100;
             const tileHeight = 140;
@@ -646,6 +719,6 @@ export default function TemplateChooser() {
       >
         {t("confirm.saveBeforeViewBody")}
       </ConfirmModal>
-    </div>
+    </>
   );
 }
