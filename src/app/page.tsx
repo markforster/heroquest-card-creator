@@ -132,7 +132,7 @@ function IndexPageInner() {
               <LeftNav />
               <section
                 className={styles.leftPanel}
-                style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
+                // style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
               >
                 {/* <div className={styles.templateSidebar}>
                   <TemplatesList
