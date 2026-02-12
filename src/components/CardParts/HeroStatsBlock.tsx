@@ -99,7 +99,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
           headerHeight={35}
           debug={showTextBounds}
         />
-        {showDebugBounds && (
+        {showTextBounds && (
           <rect
             x={0}
             y={0}

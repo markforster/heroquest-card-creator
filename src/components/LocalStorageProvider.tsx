@@ -95,7 +95,7 @@ export function useLocalStorageValue<T>(
   }, [ensureValue, key, defaultValue, serialize]);
 
   const raw = values[key];
-  const parsed = raw !== undefined ? parse(raw) : null;
+  const parsed = typeof raw === "string" ? parse(raw) : null;
   const value = parsed ?? defaultValue;
 
   const set = useCallback(

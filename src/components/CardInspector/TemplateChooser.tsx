@@ -58,6 +58,7 @@ export default function TemplateChooser() {
   const [pairedFronts, setPairedFronts] = useState<CardRecord[]>([]);
   const [pairedFrontsToken, setPairedFrontsToken] = useState(0);
   const [pendingOpenCard, setPendingOpenCard] = useState<CardRecord | null>(null);
+  const [pendingFaceChange, setPendingFaceChange] = useState<CardFace | null>(null);
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
   const [overflowPopoverAnchor, setOverflowPopoverAnchor] = useState<{
     rect: { top: number; left: number; bottom: number; right: number };
@@ -254,6 +255,11 @@ export default function TemplateChooser() {
     try {
       if (!template || !currentTemplateId) return;
       if (!effectiveFace || nextFace === effectiveFace) return;
+      if (isDirtyByTemplate[currentTemplateId]) {
+        setPendingFaceChange(nextFace);
+        setIsSavePromptOpen(true);
+        return;
+      }
 
       if (nextFace === "back") {
         const pairedId = draft?.pairedWith ?? null;
@@ -705,16 +711,24 @@ export default function TemplateChooser() {
         cancelLabel={t("actions.cancel")}
         onConfirm={async () => {
           setIsSavePromptOpen(false);
-          if (!pendingOpenCard) return;
-          const saved = await saveCurrentCard();
-          if (saved) {
-            await openCard(pendingOpenCard.id);
-          }
+          const nextOpenCard = pendingOpenCard;
+          const nextFace = pendingFaceChange;
           setPendingOpenCard(null);
+          setPendingFaceChange(null);
+          const saved = await saveCurrentCard();
+          if (!saved) return;
+          if (nextOpenCard) {
+            await openCard(nextOpenCard.id);
+            return;
+          }
+          if (nextFace) {
+            await handleFaceChange(nextFace);
+          }
         }}
         onCancel={() => {
           setIsSavePromptOpen(false);
           setPendingOpenCard(null);
+          setPendingFaceChange(null);
         }}
       >
         {t("confirm.saveBeforeViewBody")}

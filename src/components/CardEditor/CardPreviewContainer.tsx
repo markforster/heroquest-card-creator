@@ -13,6 +13,7 @@ import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { getCard, listCards } from "@/lib/cards-db";
+import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
@@ -61,6 +62,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
   const showWebgl = previewRenderer === "webgl";
   const activeCardId = activeCardIdByTemplate[selectedTemplateId as TemplateId];
   const effectiveFace = (cardData?.face ?? template.defaultFace) as CardFace;
+  const assetIds = getCardAssetIds(cardData);
 
   useEffect(() => {
     if (!showWebgl || isDragging) return;
@@ -81,6 +83,9 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           await new Promise<void>((resolve) => {
             window.requestAnimationFrame(() => resolve());
           });
+          if (assetIds.length) {
+            await waitForAssetElements(() => handle.getSvgElement(), assetIds);
+          }
           const canvas = await handle.renderToCanvas({
             width,
             height,
@@ -221,6 +226,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
   const reverseRenderInFlightRef = useRef(false);
   const reverseRenderRequestIdRef = useRef(0);
   const reverseDebounceTimeoutRef = useRef<number | null>(null);
+  const reverseAssetIds = getCardAssetIds(reverseCard?.cardData);
 
   useEffect(() => {
     if (!showWebgl || !reverseCard || isDragging) {
@@ -244,6 +250,9 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           await new Promise<void>((resolve) => {
             window.requestAnimationFrame(() => resolve());
           });
+          if (reverseAssetIds.length) {
+            await waitForAssetElements(() => handle.getSvgElement(), reverseAssetIds);
+          }
           const canvas = await handle.renderToCanvas({
             width,
             height,
@@ -326,4 +335,17 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
       ) : null}
     </div>
   );
+}
+
+function getCardAssetIds(cardData?: CardDataByTemplate[TemplateId] | null) {
+  if (!cardData) return [];
+  const ids: string[] = [];
+  if (typeof cardData.imageAssetId === "string" && cardData.imageAssetId) {
+    ids.push(cardData.imageAssetId);
+  }
+  const iconAssetId = (cardData as { iconAssetId?: string }).iconAssetId;
+  if (typeof iconAssetId === "string" && iconAssetId) {
+    ids.push(iconAssetId);
+  }
+  return ids;
 }
