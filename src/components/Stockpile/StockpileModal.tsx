@@ -290,6 +290,7 @@ export default function StockpileModal({
     return map;
   }, [cards]);
   const selectedCards = cards.filter((card) => selectedIds.includes(card.id));
+  const selectedVisibleCards = cards.filter((card) => visibleSelectedIds.includes(card.id));
   const shouldShowPairOverflow = isPairOverflowOpen && pairOverflowAnchor;
   const activeCollection =
     activeFilter.type === "collection"
@@ -322,9 +323,9 @@ export default function StockpileModal({
       )
     : [];
   const exportCards =
-    activeFilter.type === "collection" && selectedCards.length === 0
+    activeFilter.type === "collection" && selectedVisibleCards.length === 0
       ? activeCollectionCards
-      : selectedCards;
+      : selectedVisibleCards;
 
   const sortCardsByName = (items: CardRecord[]) =>
     items.sort((a, b) => {
@@ -405,11 +406,12 @@ export default function StockpileModal({
     !isExporting &&
     exportCards.length > 0 &&
     (activeFilter.type === "collection" ||
-      ((activeFilter.type === "all" || activeFilter.type === "unfiled") && selectedIds.length > 0));
+      ((activeFilter.type === "all" || activeFilter.type === "unfiled") &&
+        selectedVisibleCards.length > 0));
   const exportCount = exportCards.length;
   const exportLabel = isExporting
     ? t("actions.exporting")
-    : activeFilter.type === "collection" && selectedCards.length === 0
+    : activeFilter.type === "collection" && selectedVisibleCards.length === 0
       ? `${t("actions.exportAll")} ${t("actions.fromThisCollection")}`
       : activeFilter.type === "collection"
         ? `${t("actions.export")} (${exportCount}) ${t("actions.fromThisCollection")}`
@@ -490,7 +492,7 @@ export default function StockpileModal({
     if (pairedIds.length > 0) {
       const baseCount = baseIds.length;
       const exportOnlyLabel =
-        activeFilter.type === "collection" && selectedCards.length === 0
+        activeFilter.type === "collection" && selectedVisibleCards.length === 0
           ? formatMessageWith("label.exportOnlyInCollection", { count: baseCount })
           : formatMessageWith("label.exportOnlySelected", { count: baseCount });
       setExportPairPrompt({

@@ -63,6 +63,12 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     () => normalizeBorderColor(borderColor),
     [borderColor],
   );
+  const isDefaultSelected = useMemo(
+    () =>
+      !borderColor.trim() ||
+      normalizeBorderColor(borderColor) === normalizeBorderColor(DEFAULT_BORDER_COLOR),
+    [borderColor],
+  );
   const swatchKeys = useMemo(
     () => new Set(swatches.map((swatch) => swatch.toUpperCase())),
     [swatches],
@@ -250,7 +256,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
               color={DEFAULT_BORDER_COLOR}
               label={`${t("actions.select")} ${DEFAULT_BORDER_COLOR}`}
               title={t("form.heroquestDefaultBrown")}
-              isSelected={normalizedSelected === DEFAULT_BORDER_COLOR}
+              isSelected={isDefaultSelected}
               onClick={handleSelectDefault}
             />
             <SwatchActionButton
