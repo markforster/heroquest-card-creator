@@ -242,7 +242,7 @@ function CardPlane({
           map={texture}
           emissiveMap={ENABLE_WEBGL_EMISSIVE ? texture : null}
           emissive={ENABLE_WEBGL_EMISSIVE ? "#ffffff" : "#000000"}
-          emissiveIntensity={ENABLE_WEBGL_EMISSIVE ? 0.75 + emissiveBoost : 0}
+          emissiveIntensity={ENABLE_WEBGL_EMISSIVE ? 0.5 + emissiveBoost : 0}
           normalMap={activeNormalTexture ?? undefined}
           normalScale={strongNormalScale}
           clearcoatNormalMap={activeNormalTexture ?? undefined}
