@@ -53,6 +53,8 @@ type WebglPreviewProps = {
   fallbackTextureSrc?: string;
   rotationResetToken?: number;
   recenterToken?: number;
+  activeCardId?: string | null;
+  unpairedLabel?: string;
 };
 
 const CARD_ASPECT = 1050 / 750;
@@ -95,6 +97,8 @@ function CardPlane({
   depthSign,
   depthOffset,
   emissiveBoost = 0,
+  showUnpairedLabel = false,
+  unpairedLabelTexture,
 }: {
   texture: Texture;
   sheenPower: number;
@@ -103,6 +107,8 @@ function CardPlane({
   depthSign: 1 | -1;
   depthOffset: number;
   emissiveBoost?: number;
+  showUnpairedLabel?: boolean;
+  unpairedLabelTexture?: Texture | null;
 }) {
   const geometry = useMemo(() => new PlaneGeometry(1, CARD_ASPECT), []);
   const linenNormalTexture = useLoader(TextureLoader, LINEN_NORMAL_MAP.src);
@@ -302,6 +308,22 @@ function CardPlane({
           />
         </mesh>
       ) : null}
+      {showUnpairedLabel && unpairedLabelTexture ? (
+        <mesh
+          position={[0, 0, depthOffset + 0.0034 * depthSign]}
+          scale={[-1, 1, 1]}
+          renderOrder={5}
+        >
+          <planeGeometry args={[0.78, 0.2]} />
+          <meshBasicMaterial
+            map={unpairedLabelTexture}
+            transparent
+            opacity={0.9}
+            depthWrite={false}
+            side={side}
+          />
+        </mesh>
+      ) : null}
     </group>
   );
 }
@@ -321,6 +343,7 @@ function WebglScene({
   showMagicOverlay,
   spotLightRef,
   directionalLightRef,
+  unpairedLabelTexture,
 }: {
   frontTexture: Texture;
   backTexture: Texture;
@@ -336,6 +359,7 @@ function WebglScene({
   showMagicOverlay: boolean;
   spotLightRef: RefObject<SpotLight>;
   directionalLightRef: RefObject<DirectionalLight>;
+  unpairedLabelTexture?: Texture | null;
 }) {
   const { width, height, gl } = useThree((state) => ({
     width: state.viewport.width,
@@ -530,6 +554,8 @@ function WebglScene({
           depthSign={-1}
           depthOffset={-(CARD_THICKNESS / 2 + 0.002)}
           emissiveBoost={useBlueprintEdge ? 0.55 : 0}
+          showUnpairedLabel={!hasTwoSidedRender}
+          unpairedLabelTexture={unpairedLabelTexture}
         />
         {showMagicOverlay ? (
           <group scale={[scale, scale, 1]}>
@@ -560,6 +586,8 @@ export default function WebglPreview({
   fallbackTextureSrc,
   rotationResetToken = 0,
   recenterToken = 0,
+  activeCardId = null,
+  unpairedLabel,
 }: WebglPreviewProps) {
   const rootClassName = className ? `${styles.root} ${className}` : styles.root;
   const { sheenAngle, sheenIntensity } = useWebglPreviewSettings();
@@ -647,6 +675,52 @@ export default function WebglPreview({
   const useBlueprintEdge = !hasFrontRenderedOnce || !hasTwoSidedRender;
   const showSpinner = !hasFrontRenderedOnce;
   const showMagicOverlay = WEBGL_BLUEPRINT_OVERLAY_MODE !== "off" && useBlueprintEdge;
+  const unpairedLabelTexture = useMemo(() => {
+    if (!unpairedLabel) return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = 900;
+    canvas.height = 280;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    const paddingX = 36;
+    const paddingY = 24;
+    const maxWidth = canvas.width - paddingX * 2;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 2;
+    ctx.fillStyle = "#2d6cc3";
+    ctx.font = "600 96px 'HeroQuest', 'Cinzel', 'Trajan Pro', serif";
+    const words = unpairedLabel.split(/\s+/).filter(Boolean);
+    const lines: string[] = [];
+    let line = "";
+    words.forEach((word) => {
+      const test = line ? `${line} ${word}` : word;
+      if (ctx.measureText(test).width <= maxWidth) {
+        line = test;
+      } else {
+        if (line) lines.push(line);
+        line = word;
+      }
+    });
+    if (line) lines.push(line);
+    const maxLines = 2;
+    const finalLines = lines.slice(0, maxLines);
+    const lineHeight = 96 * 1.05;
+    const totalHeight = finalLines.length * lineHeight;
+    const startY = canvas.height / 2 - totalHeight / 2 + lineHeight / 2;
+    finalLines.forEach((text, index) => {
+      ctx.fillText(text, canvas.width / 2, startY + index * lineHeight);
+    });
+    const tex = new CanvasTexture(canvas);
+    tex.colorSpace = SRGBColorSpace;
+    tex.minFilter = LinearFilter;
+    tex.magFilter = LinearFilter;
+    tex.needsUpdate = true;
+    return tex;
+  }, [unpairedLabel]);
   const dragStateRef = useRef<{
     active: boolean;
     startX: number;
@@ -813,6 +887,7 @@ export default function WebglPreview({
           showMagicOverlay={showMagicOverlay}
           spotLightRef={spotLightRef}
           directionalLightRef={directionalLightRef}
+          unpairedLabelTexture={unpairedLabelTexture}
         />
       </Canvas>
     </div>

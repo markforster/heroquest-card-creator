@@ -28,7 +28,7 @@ type CardPreviewContainerProps = {
 };
 
 export default function CardPreviewContainer({ previewRef }: CardPreviewContainerProps) {
-  const { language } = useI18n();
+  const { language, t } = useI18n();
   const { previewRenderer, rotationResetToken, recenterToken } = usePreviewRenderer();
   const { preferences, isDragging } = useTextFittingPreferences();
   const { showTextBounds } = useDebugVisuals();
@@ -61,6 +61,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
   const templateName = getTemplateNameLabel(language, template);
   const showWebgl = previewRenderer === "webgl";
   const activeCardId = activeCardIdByTemplate[selectedTemplateId as TemplateId];
+  const noPairingLabel = t("label.webglNoPairing");
   const effectiveFace = (cardData?.face ?? template.defaultFace) as CardFace;
   const assetIds = getCardAssetIds(cardData);
 
@@ -320,6 +321,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           backTextureVersion={reverseTextureVersion}
           rotationResetToken={rotationResetToken}
           recenterToken={recenterToken}
+          unpairedLabel={noPairingLabel}
         />
       ) : showWebgl ? (
         <WebglPreview
@@ -331,6 +333,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           backTextureVersion={reverseTextureVersion}
           rotationResetToken={rotationResetToken}
           recenterToken={recenterToken}
+          unpairedLabel={noPairingLabel}
         />
       ) : null}
     </div>
