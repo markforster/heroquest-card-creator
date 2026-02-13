@@ -656,6 +656,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin-bottom: 8px;
+  color: var(--hq-accent);
 }
 
 .toolsToolbarPopoverBody {
@@ -678,7 +679,7 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #cfcfcf;
+  color: var(--hq-accent);
 }
 
 .toolsToolbarPopoverLabel {
@@ -686,6 +687,7 @@
   flex-direction: column;
   gap: 6px;
   font-size: 0.82rem;
+  color: var(--hq-accent);
 }
 
 .toolsToolbarPopoverToggle {
@@ -693,6 +695,7 @@
   align-items: center;
   gap: 8px;
   font-size: 0.82rem;
+  color: #f5f5f5;
 }
 
 .toolsToolbarPopoverToggle input[type="checkbox"] {
@@ -1089,8 +1092,18 @@
   cursor: pointer;
 }
 
+.inspectorPairActionButtonEmpty {
+  border: 1px dotted #2d6cc3;
+  color: #2d6cc3;
+  background: rgba(45, 108, 195, 0.08);
+}
+
 .inspectorPairActionButton:hover:enabled {
   background: rgba(255, 255, 255, 0.12);
+}
+
+.inspectorPairActionButtonEmpty:hover:enabled {
+  background: rgba(45, 108, 195, 0.16);
 }
 
 .inspectorStack {
@@ -1705,7 +1718,7 @@
   align-items: center;
   gap: 0.45rem;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: #f5f5f5;
 }
 
 .settingsPanelRange {
@@ -1725,7 +1738,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: #f5f5f5;
 }
 
 .settingsPanelHeader {
@@ -1811,6 +1824,28 @@
   margin: 0;
   font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.82);
+}
+
+.statLabelsSection :global(.form-control) {
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #333;
+  color: #f5f5f5;
+  font-size: 0.85rem;
+  font-family: var(--hq-font-form);
+}
+
+.statLabelsSection :global(.form-control:focus) {
+  outline: 1px solid var(--hq-focus-ring);
+  border-color: var(--hq-focus-ring);
+  box-shadow: none;
+  background: #333;
+  color: #f5f5f5;
+}
+
+.statLabelsSection :global(.form-control::placeholder) {
+  color: rgba(245, 245, 245, 0.55);
 }
 
 .statLabelsClearButton {

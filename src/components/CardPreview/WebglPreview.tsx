@@ -26,7 +26,7 @@ import {
 } from "three";
 
 import blueprintFallback from "@/assets/blueprint.png";
-import linenNormal3 from "@/assets/linen-3.png";
+import linenNormal3 from "@/assets/linen-5.png";
 import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
 import { USE_WEBGL_SPARKLE_PARALLAX, WEBGL_BLUEPRINT_OVERLAY_MODE } from "@/config/flags";
@@ -57,6 +57,9 @@ const ROTATION_SMOOTHING = 0.12;
 const RECENTER_SMOOTHING = 0.26;
 const RECENTER_DURATION_MS = 320;
 const LINEN_NORMAL_MAP = linenNormal3;
+const LINEN_NORMAL_REPEAT = new Vector2(2.4, 3.2);
+const LINEN_NORMAL_STRENGTH = 3.0;
+const LINEN_NORMAL_HIGHLIGHT = 1.8;
 const USE_DEBUG_NORMAL_MAP = false;
 const BLUEPRINT_DELAY_MS = 20;
 const ENABLE_SHEEN = true;
@@ -100,7 +103,7 @@ function CardPlane({
   linenNormalTexture.colorSpace = NoColorSpace;
   linenNormalTexture.wrapS = RepeatWrapping;
   linenNormalTexture.wrapT = RepeatWrapping;
-  linenNormalTexture.repeat.set(1.6, 2.2);
+  linenNormalTexture.repeat.copy(LINEN_NORMAL_REPEAT);
   linenNormalTexture.needsUpdate = true;
 
   const debugNormalTexture = useMemo(() => {
@@ -131,8 +134,14 @@ function CardPlane({
   }, []);
 
   const activeNormalTexture = USE_DEBUG_NORMAL_MAP ? debugNormalTexture : linenNormalTexture;
-  const strongNormalScale = useMemo(() => new Vector2(2, 2), []);
-  const lightNormalScale = useMemo(() => new Vector2(1.1, 1.1), []);
+  const strongNormalScale = useMemo(
+    () => new Vector2(LINEN_NORMAL_STRENGTH, LINEN_NORMAL_STRENGTH),
+    [],
+  );
+  const lightNormalScale = useMemo(
+    () => new Vector2(LINEN_NORMAL_HIGHLIGHT, LINEN_NORMAL_HIGHLIGHT),
+    [],
+  );
   const glintMaterial = useMemo(() => {
     const material = new ShaderMaterial({
       transparent: true,
@@ -772,11 +781,7 @@ export default function WebglPreview({
           angle={Math.max(0.2, sheenAngle * 0.65)}
           penumbra={0.25}
         />
-        <directionalLight
-          ref={directionalLightRef}
-          position={[-2.5, -1.5, 3.5]}
-          intensity={0.4}
-        />
+        <directionalLight ref={directionalLightRef} position={[-2.5, -1.5, 3.5]} intensity={0.4} />
         <WebglScene
           frontTexture={activeFrontTexture}
           backTexture={activeBackTexture}

@@ -382,7 +382,9 @@ export default function TemplateChooser() {
           <>
             <button
               type="button"
-              className={styles.inspectorPairActionButton}
+              className={`${styles.inspectorPairActionButton} ${
+                hasPair ? "" : styles.inspectorPairActionButtonEmpty
+              }`}
               title={t("tooltip.pairBack")}
               onClick={() => {
                 openStockpile({
@@ -468,7 +470,9 @@ export default function TemplateChooser() {
           <>
             <button
               type="button"
-              className={styles.inspectorPairActionButton}
+              className={`${styles.inspectorPairActionButton} ${
+                pairedFronts.length > 0 ? "" : styles.inspectorPairActionButtonEmpty
+              }`}
               title={t("tooltip.managePairings")}
               onClick={() => {
                 if (!activeCardId) return;
