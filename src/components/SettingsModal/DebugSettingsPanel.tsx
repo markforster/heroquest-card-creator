@@ -10,9 +10,9 @@ export default function DebugSettingsPanel() {
 
   return (
     <div className={styles.settingsPanelBody}>
-      <div className="alert alert-info" role="status">
-        Debug is enabled while we work through version 0.5.x and will be turned off in some
-        future relase!
+      <div className={`${styles.settingsNotice} ${styles.settingsNoticeWarning}`} role="status">
+        Debug is enabled while we work through version 0.5.x and will be turned off in a future
+        release.
       </div>
       <div className={styles.settingsPanelSection}>
         <div className={styles.settingsPanelSectionTitle}>{t("label.debugVisuals")}</div>
