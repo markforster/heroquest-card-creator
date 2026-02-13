@@ -191,6 +191,13 @@ export default function StatLabelOverridesPanel() {
     [formState.statLabelsEnabled, handleSave, saveState, settingsPanel, t],
   );
 
+  useEffect(() => {
+    settingsPanel.setSaveHandler(handleSave);
+    return () => {
+      settingsPanel.setSaveHandler(undefined);
+    };
+  }, [handleSave, settingsPanel]);
+
   const renderField = (field: FieldConfig) => {
     const value = formState[field.key] as string;
     const hasValue = value.trim().length > 0;

@@ -11,6 +11,7 @@ import {
   SettingsPanelProvider,
   useSettingsModalControls,
 } from "@/components/SettingsModal/SettingsModalContext";
+import NavActionButton from "@/components/NavActionButton";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export type SettingsModalProps = {
@@ -44,8 +45,7 @@ function SettingsModalContent({
     <ModalShell
       isOpen={isOpen}
       onClose={requestClose}
-      title=""
-      hideHeader
+      title={t("actions.settings")}
       contentClassName={styles.settingsPopover}
     >
       <div
@@ -57,33 +57,24 @@ function SettingsModalContent({
               const Icon = area.icon;
               const isActive = area.id === activeArea?.id;
               return (
-                <button
+                <NavActionButton
                   key={area.id}
-                  type="button"
-                  className={`${styles.settingsAreaButton}${isActive ? ` ${styles.settingsAreaButtonActive}` : ""}`}
+                  label={t(area.labelKey)}
+                  icon={Icon}
                   onClick={() => requestAreaChange(area.id)}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  <Icon className={styles.settingsAreaIcon} aria-hidden="true" />
-                  <span>{t(area.labelKey)}</span>
-                </button>
+                  isActive={isActive}
+                  ariaLabel={t(area.labelKey)}
+                  title={t(area.labelKey)}
+                  className={styles.settingsAreaButton}
+                />
               );
             })}
           </div>
         ) : null}
         <div className={styles.settingsPanel}>
-          <div className={styles.settingsPanelHeader}>
-            <h2 className={styles.settingsPanelTitle}>
-              {activeArea ? t(activeArea.labelKey) : ""}
-            </h2>
-            <button type="button" className={styles.modalCloseButton} onClick={requestClose}>
-              <X className={styles.icon} aria-hidden="true" />
-              <span className="visually-hidden">{t("actions.close")}</span>
-            </button>
-          </div>
           <div className={styles.settingsPanelScroll}>
             {activeArea ? (
-              <SettingsPanelProvider panelId={activeArea.id}>
+              <SettingsPanelProvider panelId={activeArea.id} label={t(activeArea.labelKey)}>
                 {renderActivePanel()}
               </SettingsPanelProvider>
             ) : null}

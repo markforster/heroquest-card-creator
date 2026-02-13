@@ -3,12 +3,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import ConfirmModal from "@/components/ConfirmModal";
+import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { useI18n } from "@/i18n/I18nProvider";
 
 import type { ReactNode } from "react";
 
 export type SettingsPanelApi = {
   setBlocked: (blocked: boolean, reason?: string) => void;
+  setPanelLabel: (label: string) => void;
+  setSaveHandler: (handler?: () => void | Promise<void>) => void;
   setBeforeClose: (handler?: () => void | Promise<void>) => void;
   canClose: () => boolean;
   requestClose: () => void;
@@ -18,6 +21,8 @@ export type SettingsPanelApi = {
 type PanelState = {
   blocked: boolean;
   reason?: string;
+  label?: string;
+  saveHandler?: () => void | Promise<void>;
   beforeClose?: () => void | Promise<void>;
 };
 
@@ -29,6 +34,8 @@ type SettingsModalContextValue = {
   registerPanel: (panelId: string) => void;
   unregisterPanel: (panelId: string) => void;
   setBlocked: (panelId: string, blocked: boolean, reason?: string) => void;
+  setPanelLabel: (panelId: string, label: string) => void;
+  setSaveHandler: (panelId: string, handler?: () => void | Promise<void>) => void;
   setBeforeClose: (panelId: string, handler?: () => void | Promise<void>) => void;
   canClose: () => boolean;
   requestClose: () => void;
@@ -74,6 +81,11 @@ export function SettingsModalProvider({
   const [confirmAction, setConfirmAction] = useState<PendingAction | null>(null);
   const [confirmReason, setConfirmReason] = useState<string | null>(null);
   const [, forceRender] = useState(0);
+  const formatMessageWith = useCallback(
+    (key: string, vars: Record<string, string | number>) =>
+      formatMessage(t(key), vars),
+    [t],
+  );
 
   const registerPanel = useCallback((panelId: string) => {
     if (!panelsRef.current.has(panelId)) {
@@ -95,6 +107,21 @@ export function SettingsModalProvider({
     panel.reason = reason;
     forceRender((value) => value + 1);
   }, []);
+
+  const setPanelLabel = useCallback((panelId: string, label: string) => {
+    const panel = panelsRef.current.get(panelId);
+    if (!panel) return;
+    panel.label = label;
+  }, []);
+
+  const setSaveHandler = useCallback(
+    (panelId: string, handler?: () => void | Promise<void>) => {
+      const panel = panelsRef.current.get(panelId);
+      if (!panel) return;
+      panel.saveHandler = handler;
+    },
+    [],
+  );
 
   const setBeforeClose = useCallback(
     (panelId: string, handler?: () => void | Promise<void>) => {
@@ -136,7 +163,11 @@ export function SettingsModalProvider({
     if (blockedPanel) {
       setConfirmAction({ type: "close" });
       setConfirmReason(
-        blockedPanel.reason ?? t("confirm.discardSettingsChangesBody"),
+        blockedPanel.label
+          ? formatMessageWith("confirm.discardSettingsChangesPanel", {
+              panel: blockedPanel.label,
+            })
+          : blockedPanel.reason ?? t("confirm.discardSettingsChangesBody"),
       );
       return;
     }
@@ -149,7 +180,11 @@ export function SettingsModalProvider({
       if (blockedPanel) {
         setConfirmAction({ type: "switch", nextAreaId });
         setConfirmReason(
-          blockedPanel.reason ?? t("confirm.discardSettingsChangesBody"),
+          blockedPanel.label
+            ? formatMessageWith("confirm.discardSettingsChangesPanel", {
+                panel: blockedPanel.label,
+              })
+            : blockedPanel.reason ?? t("confirm.discardSettingsChangesBody"),
         );
         return;
       }
@@ -174,6 +209,29 @@ export function SettingsModalProvider({
     }
   }, [confirmAction, onAreaChange, performClose]);
 
+  const [isSaving, setIsSaving] = useState(false);
+  const handleSave = useCallback(async () => {
+    const action = confirmAction;
+    if (!action) return;
+    const blockedPanel = getBlockedPanel();
+    if (!blockedPanel?.saveHandler) return;
+    setIsSaving(true);
+    try {
+      await blockedPanel.saveHandler();
+      setConfirmAction(null);
+      setConfirmReason(null);
+      if (action.type === "close") {
+        await performClose();
+        return;
+      }
+      if (action.type === "switch") {
+        onAreaChange(action.nextAreaId);
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  }, [confirmAction, getBlockedPanel, onAreaChange, performClose]);
+
   const handleCancel = useCallback(() => {
     setConfirmAction(null);
     setConfirmReason(null);
@@ -184,6 +242,8 @@ export function SettingsModalProvider({
       registerPanel,
       unregisterPanel,
       setBlocked,
+      setPanelLabel,
+      setSaveHandler,
       setBeforeClose,
       canClose,
       requestClose,
@@ -193,6 +253,8 @@ export function SettingsModalProvider({
       registerPanel,
       unregisterPanel,
       setBlocked,
+      setPanelLabel,
+      setSaveHandler,
       setBeforeClose,
       canClose,
       requestClose,
@@ -207,6 +269,9 @@ export function SettingsModalProvider({
         isOpen={Boolean(confirmAction)}
         title={t("heading.discardChanges")}
         confirmLabel={t("actions.discard")}
+        extraLabel={getBlockedPanel()?.saveHandler ? t("actions.save") : undefined}
+        onExtra={getBlockedPanel()?.saveHandler ? handleSave : undefined}
+        isExtraConfirming={isSaving}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
       >
@@ -218,18 +283,22 @@ export function SettingsModalProvider({
 
 type SettingsPanelProviderProps = {
   panelId: string;
+  label?: string;
   children: ReactNode;
 };
 
-export function SettingsPanelProvider({ panelId, children }: SettingsPanelProviderProps) {
+export function SettingsPanelProvider({ panelId, label, children }: SettingsPanelProviderProps) {
   const modalContext = useSettingsModalContext();
 
   useEffect(() => {
     modalContext.registerPanel(panelId);
+    if (label) {
+      modalContext.setPanelLabel(panelId, label);
+    }
     return () => {
       modalContext.unregisterPanel(panelId);
     };
-  }, [modalContext, panelId]);
+  }, [label, modalContext, panelId]);
 
   return (
     <SettingsPanelContext.Provider value={{ panelId }}>
@@ -246,6 +315,9 @@ export function useSettingsPanel(): SettingsPanelApi {
     () => ({
       setBlocked: (blocked: boolean, reason?: string) =>
         modalContext.setBlocked(panelId, blocked, reason),
+      setPanelLabel: (label: string) => modalContext.setPanelLabel(panelId, label),
+      setSaveHandler: (handler?: () => void | Promise<void>) =>
+        modalContext.setSaveHandler(panelId, handler),
       setBeforeClose: (handler?: () => void | Promise<void>) =>
         modalContext.setBeforeClose(panelId, handler),
       canClose: () => modalContext.canClose(),

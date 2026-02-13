@@ -15,6 +15,7 @@ import { useAppActions } from "@/components/AppActionsContext";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import KeyBinding from "@/components/KeyBinding";
 import LanguageMenu from "@/components/LanguageMenu";
+import NavActionButton from "@/components/NavActionButton";
 import { useI18n } from "@/i18n/I18nProvider";
 
 const COLLAPSE_MEDIA_QUERY = "(max-width: 1280px)";
@@ -124,66 +125,49 @@ export default function LeftNav() {
                 onTrigger={() => openTemplatePicker()}
                 label={t("tooltip.chooseTemplate")}
               >
-                <button
-                  className={`${styles.leftNavItem} ${
-                    isTemplatePickerOpen ? styles.leftNavItemActive : ""
-                  }`}
-                  type="button"
+                <NavActionButton
+                  label={t("actions.templates")}
+                  icon={LayoutTemplate}
                   onClick={openTemplatePicker}
-                  aria-label={t("tooltip.chooseTemplate")}
+                  ariaLabel={t("tooltip.chooseTemplate")}
+                  title={t("tooltip.chooseTemplate")}
                   disabled={!hasTemplate}
-                >
-                  <span className={styles.leftNavGlyph} aria-hidden="true">
-                    <LayoutTemplate />
-                  </span>
-                  <span className={styles.leftNavLabel}>{t("actions.templates")}</span>
-                </button>
+                  isActive={isTemplatePickerOpen}
+                />
               </KeyBinding>
             </KeyBinding>
-            <button
-              className={`${styles.leftNavItem} ${isStockpileOpen ? styles.leftNavItemActive : ""}`}
-              type="button"
+            <NavActionButton
+              label={t("actions.cards")}
+              icon={SquareStack}
               onClick={() =>
                 openStockpile({
                   initialSelectedIds: activeCardId ? [activeCardId] : [],
                 })
               }
               title={t("tooltip.openCards")}
-              aria-label={t("tooltip.openCards")}
-            >
-              <span className={styles.leftNavGlyph} aria-hidden="true">
-                <SquareStack />
-              </span>
-              <span className={styles.leftNavLabel}>{t("actions.cards")}</span>
-            </button>
-            <button
-              className={`${styles.leftNavItem} ${isAssetsOpen ? styles.leftNavItemActive : ""}`}
-              type="button"
+              ariaLabel={t("tooltip.openCards")}
+              isActive={isStockpileOpen}
+            />
+            <NavActionButton
+              label={t("actions.assets")}
+              icon={Images}
               onClick={openAssets}
               title={t("tooltip.openAssets")}
-              aria-label={t("tooltip.openAssets")}
-            >
-              <span className={styles.leftNavGlyph} aria-hidden="true">
-                <Images />
-              </span>
-              <span className={styles.leftNavLabel}>{t("actions.assets")}</span>
-            </button>
+              ariaLabel={t("tooltip.openAssets")}
+              isActive={isAssetsOpen}
+            />
           </div>
         </div>
         <div className={styles.leftNavBottom}>
           <div className={styles.leftNavList}>
-            <button
-              className={`${styles.leftNavItem} ${isSettingsOpen ? styles.leftNavItemActive : ""}`}
-              type="button"
+            <NavActionButton
+              label={t("actions.settings")}
+              icon={Settings}
               onClick={openSettings}
               title={t("tooltip.openSettings")}
-              aria-label={t("tooltip.openSettings")}
-            >
-              <span className={styles.leftNavGlyph} aria-hidden="true">
-                <Settings />
-              </span>
-              <span className={styles.leftNavLabel}>{t("actions.settings")}</span>
-            </button>
+              ariaLabel={t("tooltip.openSettings")}
+              isActive={isSettingsOpen}
+            />
             <LanguageMenu isCollapsed={isCollapsed} />
           </div>
         </div>

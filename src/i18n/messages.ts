@@ -311,6 +311,8 @@ const baseMessages = {
       "You have unsaved changes on the current card. Load another card and discard these changes?",
     "confirm.discardSettingsChangesBody":
       "You have unsaved changes in settings. Discard them and continue?",
+    "confirm.discardSettingsChangesPanel":
+      "You have unsaved changes in {panel}. Discard them and continue?",
     "confirm.saveBeforeViewBody": "Save changes before viewing this card?",
     "confirm.exportPairedFacesBody":
       "Some selected items include paired faces. Would you like to include them in the export?",
@@ -664,6 +666,8 @@ const baseMessages = {
       "Vous avez des modifications non enregistrées. Charger une autre carte et les perdre ?",
     "confirm.discardSettingsChangesBody":
       "Vous avez des modifications non enregistrées dans les paramètres. Les ignorer et continuer ?",
+    "confirm.discardSettingsChangesPanel":
+      "Vous avez des modifications non enregistrées dans {panel}. Les ignorer et continuer ?",
     "confirm.saveBeforeViewBody": "Enregistrer les modifications avant d’ouvrir cette carte ?",
     "confirm.exportPairedFacesBody":
       "Certains éléments sélectionnés ont des faces associées. Voulez-vous les inclure dans l’export ?",
@@ -1016,6 +1020,8 @@ const baseMessages = {
       "Ungespeicherte Änderungen vorhanden. Andere Karte laden und verwerfen?",
     "confirm.discardSettingsChangesBody":
       "Ungespeicherte Änderungen in den Einstellungen. Verwerfen und fortfahren?",
+    "confirm.discardSettingsChangesPanel":
+      "Ungespeicherte Änderungen in {panel}. Verwerfen und fortfahren?",
     "confirm.saveBeforeViewBody": "Änderungen vor dem Öffnen speichern?",
     "confirm.exportPairedFacesBody":
       "Einige ausgewählte Elemente haben verknüpfte Seiten. Möchten Sie sie in den Export aufnehmen?",
@@ -1366,6 +1372,8 @@ const baseMessages = {
     "confirm.discardChangesBody": "Hay cambios sin guardar. ¿Cargar otra carta y descartarlos?",
     "confirm.discardSettingsChangesBody":
       "Tienes cambios sin guardar en la configuración. ¿Descartarlos y continuar?",
+    "confirm.discardSettingsChangesPanel":
+      "Tienes cambios sin guardar en {panel}. ¿Descartarlos y continuar?",
     "confirm.saveBeforeViewBody": "¿Guardar cambios antes de abrir esta carta?",
     "confirm.exportPairedFacesBody":
       "Algunos elementos seleccionados tienen caras emparejadas. ¿Quieres incluirlas en la exportación?",
@@ -1713,6 +1721,8 @@ const baseMessages = {
       "Ci sono modifiche non salvate. Caricare un’altra carta e scartarle?",
     "confirm.discardSettingsChangesBody":
       "Ci sono modifiche non salvate nelle impostazioni. Scartarle e continuare?",
+    "confirm.discardSettingsChangesPanel":
+      "Ci sono modifiche non salvate in {panel}. Scartarle e continuare?",
     "confirm.saveBeforeViewBody": "Salvare le modifiche prima di aprire questa carta?",
     "confirm.exportPairedFacesBody":
       "Alcuni elementi selezionati hanno facce abbinate. Vuoi includerle nell’esportazione?",
@@ -2061,6 +2071,8 @@ const baseMessages = {
     "confirm.discardChangesBody": "Há alterações não salvas. Carregar outro card e descartá-las?",
     "confirm.discardSettingsChangesBody":
       "Há alterações não salvas nas definições. Descartá-las e continuar?",
+    "confirm.discardSettingsChangesPanel":
+      "Há alterações não salvas em {panel}. Descartá-las e continuar?",
     "confirm.saveBeforeViewBody": "Guardar alterações antes de abrir esta carta?",
     "confirm.exportPairedFacesBody":
       "Alguns itens selecionados têm faces emparelhadas. Deseja incluí-las na exportação?",
@@ -2410,6 +2422,8 @@ const baseMessages = {
       "Er zijn niet-opgeslagen wijzigingen. Andere kaart laden en verwerpen?",
     "confirm.discardSettingsChangesBody":
       "Je hebt niet-opgeslagen wijzigingen in de instellingen. Verwerpen en doorgaan?",
+    "confirm.discardSettingsChangesPanel":
+      "Je hebt niet-opgeslagen wijzigingen in {panel}. Verwerpen en doorgaan?",
     "confirm.saveBeforeViewBody": "Wijzigingen opslaan voordat je deze kaart opent?",
     "confirm.exportPairedFacesBody":
       "Sommige geselecteerde items hebben gekoppelde zijden. Wil je ze opnemen in de export?",
