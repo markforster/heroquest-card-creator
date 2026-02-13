@@ -29,7 +29,12 @@ import blueprintFallback from "@/assets/blueprint.png";
 import linenNormal3 from "@/assets/linen-5.png";
 import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
-import { USE_WEBGL_SPARKLE_PARALLAX, WEBGL_BLUEPRINT_OVERLAY_MODE } from "@/config/flags";
+import {
+  ENABLE_WEBGL_EMISSIVE,
+  ENABLE_WEBGL_SHEEN,
+  USE_WEBGL_SPARKLE_PARALLAX,
+  WEBGL_BLUEPRINT_OVERLAY_MODE,
+} from "@/config/flags";
 import { createMagicOverlayMaterial } from "@/lib/webgl/magicOverlayShader";
 import { createSparkleOverlayMaterial } from "@/lib/webgl/sparkleOverlayShader";
 
@@ -62,7 +67,7 @@ const LINEN_NORMAL_STRENGTH = 3.0;
 const LINEN_NORMAL_HIGHLIGHT = 1.8;
 const USE_DEBUG_NORMAL_MAP = false;
 const BLUEPRINT_DELAY_MS = 20;
-const ENABLE_SHEEN = true;
+const ENABLE_SHEEN = ENABLE_WEBGL_SHEEN;
 const SHEEN_INTENSITY_SCALE = 0.25;
 const ENABLE_DEPTH = true;
 const INVERT_VERTICAL_DRAG = false;
@@ -80,6 +85,7 @@ const SPINNER_SIZE = 0.11;
 const SPINNER_ROTATION_SPEED = -2.4;
 const MAGIC_OVERLAY_OPACITY = 0.3;
 const MAGIC_OVERLAY_SPEED = 6.6;
+const SHEEN_LIGHT_INTENSITY = 1.1;
 
 function CardPlane({
   texture,
@@ -228,11 +234,13 @@ function CardPlane({
       <mesh geometry={geometry} position={[0, 0, depthOffset]}>
         <meshPhysicalMaterial
           map={texture}
-          emissiveMap={texture}
-          emissive="#ffffff"
-          emissiveIntensity={0.45 + emissiveBoost}
+          emissiveMap={ENABLE_WEBGL_EMISSIVE ? texture : null}
+          emissive={ENABLE_WEBGL_EMISSIVE ? "#ffffff" : "#000000"}
+          emissiveIntensity={ENABLE_WEBGL_EMISSIVE ? 0.75 + emissiveBoost : 0}
           normalMap={activeNormalTexture ?? undefined}
           normalScale={strongNormalScale}
+          clearcoatNormalMap={activeNormalTexture ?? undefined}
+          clearcoatNormalScale={lightNormalScale}
           roughness={0.6}
           metalness={0.02}
           clearcoat={0.3}
@@ -780,6 +788,14 @@ export default function WebglPreview({
           intensity={sheenIntensity * 2.4}
           angle={Math.max(0.2, sheenAngle * 0.65)}
           penumbra={0.25}
+        />
+        <spotLight
+          position={[-2.2, 2.1, 2.6]}
+          intensity={sheenIntensity * SHEEN_LIGHT_INTENSITY}
+          angle={0.28}
+          penumbra={0.6}
+          decay={2}
+          distance={6}
         />
         <directionalLight ref={directionalLightRef} position={[-2.5, -1.5, 3.5]} intensity={0.4} />
         <WebglScene

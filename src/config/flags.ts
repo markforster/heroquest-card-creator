@@ -22,6 +22,8 @@ export const SHOW_WEBGL_TOGGLE = true;
  * consumed by Webgl preview UI components to gate additional controls.
  */
 export const SHOW_WEBGL_SHEEN_CONTROLS = false;
+export const ENABLE_WEBGL_SHEEN = true;
+export const ENABLE_WEBGL_EMISSIVE = true;
 
 /**
  * Keeps the WebGL preview mounted even when SVG is selected, hiding it via CSS instead
