@@ -42,8 +42,17 @@ function useMediaQuery(query: string) {
 
 export default function LeftNav() {
   const { t } = useI18n();
-  const { openAssets, openStockpile, openSettings, openTemplatePicker, hasTemplate } =
-    useAppActions();
+  const {
+    openAssets,
+    openStockpile,
+    openSettings,
+    openTemplatePicker,
+    hasTemplate,
+    isTemplatePickerOpen,
+    isAssetsOpen,
+    isStockpileOpen,
+    isSettingsOpen,
+  } = useAppActions();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
@@ -116,7 +125,9 @@ export default function LeftNav() {
                 label={t("tooltip.chooseTemplate")}
               >
                 <button
-                  className={styles.leftNavItem}
+                  className={`${styles.leftNavItem} ${
+                    isTemplatePickerOpen ? styles.leftNavItemActive : ""
+                  }`}
                   type="button"
                   onClick={openTemplatePicker}
                   aria-label={t("tooltip.chooseTemplate")}
@@ -130,7 +141,7 @@ export default function LeftNav() {
               </KeyBinding>
             </KeyBinding>
             <button
-              className={styles.leftNavItem}
+              className={`${styles.leftNavItem} ${isStockpileOpen ? styles.leftNavItemActive : ""}`}
               type="button"
               onClick={() =>
                 openStockpile({
@@ -146,7 +157,7 @@ export default function LeftNav() {
               <span className={styles.leftNavLabel}>{t("actions.cards")}</span>
             </button>
             <button
-              className={styles.leftNavItem}
+              className={`${styles.leftNavItem} ${isAssetsOpen ? styles.leftNavItemActive : ""}`}
               type="button"
               onClick={openAssets}
               title={t("tooltip.openAssets")}
@@ -162,7 +173,7 @@ export default function LeftNav() {
         <div className={styles.leftNavBottom}>
           <div className={styles.leftNavList}>
             <button
-              className={styles.leftNavItem}
+              className={`${styles.leftNavItem} ${isSettingsOpen ? styles.leftNavItemActive : ""}`}
               type="button"
               onClick={openSettings}
               title={t("tooltip.openSettings")}

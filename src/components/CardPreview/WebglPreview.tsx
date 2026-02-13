@@ -859,15 +859,15 @@ export default function WebglPreview({
         <spotLight
           ref={spotLightRef}
           position={[2.5, 3.2, 4]}
-          intensity={sheenIntensity * 2.4}
-          angle={Math.max(0.2, sheenAngle * 0.65)}
-          penumbra={0.25}
+          intensity={sheenIntensity * 3.1}
+          angle={Math.max(0.18, sheenAngle * 0.45)}
+          penumbra={0.08}
         />
         <spotLight
           position={[-2.2, 2.1, 2.6]}
-          intensity={sheenIntensity * SHEEN_LIGHT_INTENSITY}
-          angle={0.28}
-          penumbra={0.6}
+          intensity={sheenIntensity * (SHEEN_LIGHT_INTENSITY + 0.6)}
+          angle={0.22}
+          penumbra={0.2}
           decay={2}
           distance={6}
         />

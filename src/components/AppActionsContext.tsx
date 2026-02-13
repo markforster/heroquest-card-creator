@@ -29,6 +29,10 @@ type AppActionsContextValue = {
   openAssets: () => void;
   openStockpile: (options?: StockpileOpenOptions) => void;
   openSettings: () => void;
+  isTemplatePickerOpen: boolean;
+  isAssetsOpen: boolean;
+  isStockpileOpen: boolean;
+  isSettingsOpen: boolean;
 };
 
 const AppActionsContext = createContext<AppActionsContextValue | null>(null);
@@ -114,14 +118,21 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
         stockpileModal.open();
       },
       openSettings: settingsModal.open,
+      isTemplatePickerOpen: templatePicker.isOpen,
+      isAssetsOpen: assetsModal.isOpen,
+      isStockpileOpen: stockpileModal.isOpen,
+      isSettingsOpen: settingsModal.isOpen,
     }),
     [
       assetsModal.open,
+      assetsModal.isOpen,
       currentTemplateName,
       selectedTemplateId,
       settingsModal.open,
+      settingsModal.isOpen,
       stockpileModal.open,
-      templatePicker,
+      stockpileModal.isOpen,
+      templatePicker.isOpen,
     ],
   );
 

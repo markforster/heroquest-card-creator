@@ -86,7 +86,9 @@ export default function EditorActionsToolbar({
       <div className="btn-group me-2" role="group">
         <div className={styles.exportSplit} ref={exportMenuRef}>
           <IconButton
-            className={`btn btn-outline-light btn-sm ${styles.exportSplitPrimary}`}
+            className={`btn btn-outline-light btn-sm ${
+              hasExportMenu ? styles.exportSplitPrimary : ""
+            }`}
             icon={Download}
             disabled={isBusy}
             onClick={onExportPng}

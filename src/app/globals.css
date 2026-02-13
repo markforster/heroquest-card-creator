@@ -40,13 +40,22 @@ body {
 /* Themed Bootstrap overrides */
 
 .btn {
-  border-radius: 999px;
+  border-radius: var(--hq-button-radius);
   font-family: var(--hq-font-inline);
   font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   min-height: 32px;
   padding: 0.35rem 0.9rem;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+button {
+  border-radius: var(--hq-button-radius);
 }
 
 .btn-primary {
@@ -62,7 +71,7 @@ body {
 .btn-primary.active,
 .show > .btn-primary.dropdown-toggle {
   background-color: var(--hq-accent-soft-hover) !important;
-  border-color: transparent !important;
+  border-color: var(--hq-accent) !important;
   color: var(--hq-accent) !important;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.4) !important;
 }
@@ -86,6 +95,40 @@ body {
   border-color: rgba(255, 255, 255, 0.2) !important;
   background-color: rgba(255, 255, 255, 0.04) !important;
   opacity: 0.6;
+  box-shadow: none !important;
+}
+
+.btn-outline-light:hover,
+.btn-outline-light:focus,
+.btn-outline-light:focus-visible,
+.btn-outline-light:active,
+.btn-outline-light.active,
+.show > .btn-outline-light.dropdown-toggle {
+  border-color: var(--hq-accent) !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus,
+.btn-outline-secondary:focus-visible,
+.btn-outline-secondary:active,
+.btn-outline-secondary.active,
+.show > .btn-outline-secondary.dropdown-toggle {
+  border-color: rgba(245, 245, 245, 0.9) !important;
+  color: #ffffff !important;
+}
+
+.btn-outline-light:hover,
+.btn-outline-light:focus,
+.btn-outline-light:focus-visible,
+.btn-outline-light:active,
+.btn-outline-light.active,
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus,
+.btn-outline-secondary:focus-visible,
+.btn-outline-secondary:active,
+.btn-outline-secondary.active {
   box-shadow: none !important;
 }
 
