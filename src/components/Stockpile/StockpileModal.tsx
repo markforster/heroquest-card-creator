@@ -531,7 +531,7 @@ export default function StockpileModal({
               <button
                 type="button"
                 className="btn btn-primary btn-sm"
-                disabled={isPairBacks ? selectedIds.length !== 1 : selectedIds.length === 0}
+                disabled={isPairBacks ? selectedIds.length !== 1 : false}
                 onClick={() => {
                   if (!onConfirmSelection) {
                     onClose();

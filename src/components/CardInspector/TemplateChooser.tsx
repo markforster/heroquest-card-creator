@@ -499,9 +499,17 @@ export default function TemplateChooser() {
                   titleOverride: t("heading.manageFrontPairings"),
                   initialSelectedIds: pairedFronts.map((card) => card.id),
                   onConfirmSelection: async (cardIds) => {
-                    if (!cardIds.length) return;
+                    const selectedSet = new Set(cardIds);
+                    const removedIds = pairedFronts
+                      .map((card) => card.id)
+                      .filter((id) => !selectedSet.has(id));
                     try {
-                      await updateCards(cardIds, { pairedWith: activeCardId, face: "front" });
+                      if (removedIds.length > 0) {
+                        await updateCards(removedIds, { pairedWith: null });
+                      }
+                      if (cardIds.length > 0) {
+                        await updateCards(cardIds, { pairedWith: activeCardId, face: "front" });
+                      }
                       setPairedFrontsToken((prev) => prev + 1);
                     } catch {
                       // Ignore update errors for now.
