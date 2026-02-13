@@ -242,7 +242,7 @@ function CardPlane({
           map={texture}
           emissiveMap={ENABLE_WEBGL_EMISSIVE ? texture : null}
           emissive={ENABLE_WEBGL_EMISSIVE ? "#ffffff" : "#000000"}
-          emissiveIntensity={ENABLE_WEBGL_EMISSIVE ? 0.5 + emissiveBoost : 0}
+          emissiveIntensity={ENABLE_WEBGL_EMISSIVE ? 0.25 + emissiveBoost : 0}
           normalMap={activeNormalTexture ?? undefined}
           normalScale={strongNormalScale}
           clearcoatNormalMap={activeNormalTexture ?? undefined}
@@ -855,7 +855,8 @@ export default function WebglPreview({
         }}
         frameloop={isVisible ? "always" : "never"}
       >
-        <ambientLight intensity={0.4} />
+        <ambientLight intensity={0.75} />
+        <directionalLight position={[0, 0, 3]} intensity={0.5} />
         <spotLight
           ref={spotLightRef}
           position={[2.5, 3.2, 4]}
