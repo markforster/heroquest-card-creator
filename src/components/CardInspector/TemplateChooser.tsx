@@ -130,10 +130,28 @@ export default function TemplateChooser() {
       return;
     }
     let active = true;
+    const normalizePairing = async (record: CardRecord) => {
+      if (!record.pairedWith) return record;
+      const isSelfPair = record.pairedWith === record.id;
+      const isBackPaired = record.face === "back";
+      if (!isSelfPair && !isBackPaired) return record;
+      try {
+        const updated = await updateCard(record.id, { pairedWith: null });
+        return updated ?? { ...record, pairedWith: null };
+      } catch {
+        return { ...record, pairedWith: null };
+      }
+    };
     getCard(activeCardId)
-      .then((record) => {
+      .then(async (record) => {
         if (!active) return;
-        setCurrentCard(record ?? null);
+        if (!record) {
+          setCurrentCard(null);
+          return;
+        }
+        const normalized = await normalizePairing(record);
+        if (!active) return;
+        setCurrentCard(normalized);
       })
       .catch(() => {
         if (!active) return;

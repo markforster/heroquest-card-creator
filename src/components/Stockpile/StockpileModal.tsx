@@ -220,10 +220,13 @@ export default function StockpileModal({
     }
     const normalizedInitial =
       initialSelectedIds?.filter((id) => typeof id === "string" && id.length > 0) ?? [];
+    const filteredInitial = activeCardId
+      ? normalizedInitial.filter((id) => id !== activeCardId)
+      : normalizedInitial;
     if (isPairMode) {
       setSelectedIds((prev) => {
-        const base = prev.length ? prev : activeCardId ? [activeCardId] : [];
-        const merged = Array.from(new Set([...base, ...normalizedInitial]));
+        const base = prev.length ? prev : isPairFronts ? [] : activeCardId ? [activeCardId] : [];
+        const merged = Array.from(new Set([...base, ...filteredInitial]));
         if (isPairBacks) {
           return merged.length ? [merged[0]] : [];
         }

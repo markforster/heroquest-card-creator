@@ -230,6 +230,14 @@ export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecor
   return filtered;
 }
 
+export async function normalizeSelfPairings(): Promise<number> {
+  const cards = await listCards({ status: "saved" });
+  const invalidIds = cards.filter((card) => card.pairedWith === card.id).map((card) => card.id);
+  if (!invalidIds.length) return 0;
+  await updateCards(invalidIds, { pairedWith: null });
+  return invalidIds.length;
+}
+
 export async function deleteCard(id: string): Promise<void> {
   const store = await getCardsStore("readwrite");
 

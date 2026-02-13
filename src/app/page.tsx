@@ -28,7 +28,7 @@ import { WebglPreviewSettingsProvider } from "@/components/WebglPreviewSettingsC
 import dungeonAtmosphere from "@/assets/dungeon atmostphere - 2.png";
 import { cardTemplatesById } from "@/data/card-templates";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
-import { createCard, listCards, updateCard } from "@/lib/cards-db";
+import { createCard, listCards, normalizeSelfPairings, updateCard } from "@/lib/cards-db";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -97,13 +97,17 @@ function IndexPageInner() {
     const derivedName = (rawTitle ?? "").toString().trim() || `${templateId} card`;
 
     const patch = cardDataToCardRecordPatch(templateId, derivedName, draft as never);
+    const safePatch =
+      mode === "update" && activeCardId && patch.pairedWith === activeCardId
+        ? { ...patch, pairedWith: null }
+        : patch;
     const viewedAt = Date.now();
 
     let didSave = false;
     try {
       if (mode === "new") {
         const record = await createCard({
-          ...patch,
+          ...safePatch,
           templateId,
           status: "saved",
           thumbnailBlob,
@@ -116,7 +120,7 @@ function IndexPageInner() {
       } else if (mode === "update") {
         if (!activeCardId || activeStatus !== "saved") return;
         const record = await updateCard(activeCardId, {
-          ...patch,
+          ...safePatch,
           thumbnailBlob,
           lastViewedAt: viewedAt,
         });
@@ -195,6 +199,17 @@ function IndexPageInner() {
       active = false;
     };
   }, [activeCardId, effectiveFace]);
+
+  useEffect(() => {
+    let active = true;
+    normalizeSelfPairings().catch(() => {
+      if (!active) return;
+      // Ignore normalization failures; nothing is blocked.
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const exportMenuItems = useMemo(() => {
     if (!effectiveFace) return [];
