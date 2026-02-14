@@ -127,6 +127,14 @@ Build flow:
 - `npm run tauri:icons` – generate native icons into `src-tauri/icons/`.
 - `npm run tauri:build` – build the static export and bundle the desktop app.
 
+macOS install note (unsigned builds):
+
+- Local Tauri builds are unsigned unless you notarize them with an Apple Developer ID. When users download the DMG, macOS Gatekeeper will report the app as “damaged” and block it.
+- To install anyway, drag the app to `/Applications`, then right-click the app and choose `Open` (you may need to confirm in System Settings > Privacy & Security).
+- If Gatekeeper still blocks the app, remove the quarantine flag:
+  - `xattr -dr com.apple.quarantine /Applications/heroquest-card-creator.app`
+- If you are technical and want to give it a go, you can build the app yourself on your machine; the web `index.html` works in any browser, and the native app is just a wrapper that makes it look installed.
+
 Docs:
 
 - Tauri distribute/build guide. https://v2.tauri.app/
