@@ -369,6 +369,7 @@ const baseMessages = {
     "label.databaseVersion": "Database version",
     "label.expectedDatabaseVersion": "Expected database version",
     "label.databaseAppVersion": "Database created by app version",
+    "label.lastEdited": "Last edited",
     "label.unknownVersion": "Unknown",
   },
 
@@ -731,6 +732,7 @@ const baseMessages = {
     "label.databaseVersion": "Version de la base de données",
     "label.expectedDatabaseVersion": "Version de base attendue",
     "label.databaseAppVersion": "Version de l’app ayant créé la base",
+    "label.lastEdited": "Dernière modification",
     "label.unknownVersion": "Inconnue",
   },
 
@@ -1092,6 +1094,7 @@ const baseMessages = {
     "label.databaseVersion": "Datenbankversion",
     "label.expectedDatabaseVersion": "Erwartete Datenbankversion",
     "label.databaseAppVersion": "Datenbank erstellt mit App-Version",
+    "label.lastEdited": "Zuletzt bearbeitet",
     "label.unknownVersion": "Unbekannt",
   },
 
@@ -1448,6 +1451,7 @@ const baseMessages = {
     "label.databaseVersion": "Versión de la base de datos",
     "label.expectedDatabaseVersion": "Versión de base de datos esperada",
     "label.databaseAppVersion": "Base creada con versión de la app",
+    "label.lastEdited": "Última edición",
     "label.unknownVersion": "Desconocida",
   },
 
@@ -1805,6 +1809,7 @@ const baseMessages = {
     "label.databaseVersion": "Versione del database",
     "label.expectedDatabaseVersion": "Versione del database prevista",
     "label.databaseAppVersion": "Database creato con versione dell'app",
+    "label.lastEdited": "Ultima modifica",
     "label.unknownVersion": "Sconosciuta",
   },
 
@@ -2163,6 +2168,7 @@ const baseMessages = {
     "label.databaseVersion": "Versão do banco de dados",
     "label.expectedDatabaseVersion": "Versão esperada do banco de dados",
     "label.databaseAppVersion": "Banco criado pela versão do app",
+    "label.lastEdited": "Última edição",
     "label.unknownVersion": "Desconhecida",
   },
 
@@ -2521,6 +2527,7 @@ const baseMessages = {
     "label.databaseVersion": "Databaseversie",
     "label.expectedDatabaseVersion": "Verwachte databaseversie",
     "label.databaseAppVersion": "Database gemaakt met app-versie",
+    "label.lastEdited": "Laatst bewerkt",
     "label.unknownVersion": "Onbekend",
   },
 } satisfies Record<SupportedLanguage, Messages>;

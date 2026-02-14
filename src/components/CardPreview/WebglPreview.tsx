@@ -26,6 +26,9 @@ import {
 } from "three";
 
 import blueprintFallback from "@/assets/blueprint.png";
+import { blueprintDataUrl } from "@/assets/blueprint-data";
+import { linen5DataUrl } from "@/assets/linen-5-data";
+import { spinnerBlueprintDataUrl } from "@/assets/spinner-blueprint-data";
 import linenNormal3 from "@/assets/linen-5.png";
 import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
@@ -111,7 +114,13 @@ function CardPlane({
   unpairedLabelTexture?: Texture | null;
 }) {
   const geometry = useMemo(() => new PlaneGeometry(1, CARD_ASPECT), []);
-  const linenNormalTexture = useLoader(TextureLoader, LINEN_NORMAL_MAP.src);
+  const linenNormalSource = useMemo(() => {
+    if (typeof window !== "undefined" && window.location.protocol === "file:") {
+      return linen5DataUrl;
+    }
+    return LINEN_NORMAL_MAP.src;
+  }, []);
+  const linenNormalTexture = useLoader(TextureLoader, linenNormalSource);
   linenNormalTexture.colorSpace = NoColorSpace;
   linenNormalTexture.wrapS = RepeatWrapping;
   linenNormalTexture.wrapT = RepeatWrapping;
@@ -476,7 +485,13 @@ function WebglScene({
     configureTexture(backTexture, true);
   }, [backTexture, frontTexture, gl]);
 
-  const spinnerTexture = useLoader(TextureLoader, "/spinner-blueprint.svg");
+  const spinnerSource = useMemo(() => {
+    if (typeof window !== "undefined" && window.location.protocol === "file:") {
+      return spinnerBlueprintDataUrl;
+    }
+    return "/spinner-blueprint.svg";
+  }, []);
+  const spinnerTexture = useLoader(TextureLoader, spinnerSource);
   const spinnerRef = useRef<Mesh | null>(null);
   useEffect(() => {
     spinnerTexture.colorSpace = SRGBColorSpace;
@@ -598,7 +613,14 @@ export default function WebglPreview({
   const pitchGroupRef = useRef<Group | null>(null);
   const spotLightRef = useRef<SpotLight | null>(null);
   const directionalLightRef = useRef<DirectionalLight | null>(null);
-  const fallbackTexture = useLoader(TextureLoader, fallbackTextureSrc ?? blueprintFallback.src);
+  const fallbackTextureSource = useMemo(() => {
+    if (fallbackTextureSrc) return fallbackTextureSrc;
+    if (typeof window !== "undefined" && window.location.protocol === "file:") {
+      return blueprintDataUrl;
+    }
+    return blueprintFallback.src;
+  }, [fallbackTextureSrc]);
+  const fallbackTexture = useLoader(TextureLoader, fallbackTextureSource);
   const fallbackFrontTexture = useMemo(() => fallbackTexture.clone(), [fallbackTexture]);
   const fallbackBackTexture = useMemo(() => fallbackTexture.clone(), [fallbackTexture]);
   const [isReadyForFrontCanvas, setIsReadyForFrontCanvas] = useState(false);
