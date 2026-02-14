@@ -24,43 +24,52 @@ type GenericInspectorFormProps = {
 export default function GenericInspectorForm({ templateId }: GenericInspectorFormProps) {
   const { t } = useI18n();
   const {
-    state: { cardDrafts },
+    state: { draftTemplateId, draft },
     setCardDraft,
+    setSingleDraft,
     setTemplateDirty,
   } = useCardEditor();
 
-  const draft = cardDrafts[templateId] as CardDataByTemplate[TemplateId] | undefined;
-  const draftRef = useRef<CardDataByTemplate[TemplateId] | undefined>(draft);
+  const draftValue =
+    draftTemplateId === templateId && draft
+      ? (draft as CardDataByTemplate[TemplateId])
+      : undefined;
+  const draftRef = useRef<CardDataByTemplate[TemplateId] | undefined>(draftValue);
   useEffect(() => {
-    draftRef.current = draft;
-  }, [draft]);
+    draftRef.current = draftValue;
+  }, [draftValue]);
   const fields = inspectorFieldsByTemplate[templateId];
   const showTitleToggle = Boolean(
     fields?.some((field) => field.fieldType === "title" && field.showToggle),
   );
   const methods = useForm<CardDataByTemplate[TemplateId]>({
     defaultValues: showTitleToggle
-      ? { ...draft, showTitle: draft?.showTitle ?? true }
-      : (draft ?? {}),
+      ? { ...draftValue, showTitle: draftValue?.showTitle ?? true }
+      : (draftValue ?? {}),
     mode: "onBlur",
   });
 
   useEffect(() => {
     let isInitial = true;
     const subscription = methods.watch((value) => {
-      const currentDraft = (draftRef.current ?? {}) as CardDataByTemplate[TemplateId];
-      setCardDraft(templateId, {
-        ...currentDraft,
-        ...(value as CardDataByTemplate[TemplateId]),
-      });
       if (isInitial) {
         isInitial = false;
-        return;
+        if (!draftRef.current) {
+          return;
+        }
+      } else {
+        setTemplateDirty(templateId, true);
       }
-      setTemplateDirty(templateId, true);
+      const currentDraft = (draftRef.current ?? {}) as CardDataByTemplate[TemplateId];
+      const nextDraft = {
+        ...currentDraft,
+        ...(value as CardDataByTemplate[TemplateId]),
+      } as CardDataByTemplate[TemplateId];
+      setCardDraft(templateId, nextDraft);
+      setSingleDraft(templateId, nextDraft);
     });
     return () => subscription.unsubscribe();
-  }, [methods, setCardDraft, setTemplateDirty, templateId]);
+  }, [methods, setCardDraft, setSingleDraft, setTemplateDirty, templateId]);
 
   if (!fields || fields.length === 0) {
     return <div>{t("ui.inspectorGenericWip")}</div>;

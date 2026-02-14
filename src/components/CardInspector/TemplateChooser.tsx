@@ -40,9 +40,17 @@ export default function TemplateChooser() {
   const { requestRecenter } = usePreviewRenderer();
   const recenterTimeoutRef = useRef<number | null>(null);
   const {
-    state: { selectedTemplateId, cardDrafts, activeCardIdByTemplate, isDirtyByTemplate },
+    state: {
+      selectedTemplateId,
+      draftTemplateId,
+      draft,
+      draftPairingFrontIds,
+      activeCardIdByTemplate,
+      isDirtyByTemplate,
+    },
     setSelectedTemplateId,
     setCardDraft,
+    setSingleDraft,
     setTemplateDirty,
     loadCardIntoEditor,
   } = useCardEditor();
@@ -55,6 +63,8 @@ export default function TemplateChooser() {
   const [pairedThumbnailUrl, setPairedThumbnailUrl] = useState<string | null>(null);
   const [currentCard, setCurrentCard] = useState<CardRecord | null>(null);
   const [currentThumbnailUrl, setCurrentThumbnailUrl] = useState<string | null>(null);
+  const [currentThumbnailError, setCurrentThumbnailError] = useState(false);
+  const [currentThumbnailDataUrl, setCurrentThumbnailDataUrl] = useState<string | null>(null);
   const [pairedFronts, setPairedFronts] = useState<CardRecord[]>([]);
   const [pairedFrontsToken, setPairedFrontsToken] = useState(0);
   const [pendingOpenCard, setPendingOpenCard] = useState<CardRecord | null>(null);
@@ -80,16 +90,22 @@ export default function TemplateChooser() {
 
   const currentTemplateId = selectedTemplateId ?? null;
   const template = currentTemplateId ? cardTemplatesById[currentTemplateId] : undefined;
-  const draft = currentTemplateId
-    ? (cardDrafts[currentTemplateId] as CardDataByTemplate[TemplateId] | undefined)
-    : undefined;
+  const draftValue =
+    currentTemplateId && draftTemplateId === currentTemplateId && draft
+      ? (draft as CardDataByTemplate[TemplateId])
+      : undefined;
   const activeCardId = currentTemplateId ? activeCardIdByTemplate[currentTemplateId] : undefined;
+  const isDraftDirty = Boolean(currentTemplateId && isDirtyByTemplate[currentTemplateId]);
+  const isDraft = Boolean(
+    currentTemplateId && draftTemplateId === currentTemplateId && draft && !activeCardId,
+  );
+  const pairingDisabled = isDraft;
 
   const effectiveFace = useMemo<CardFace | undefined>(() => {
     if (!template) return undefined;
-    return (draft?.face ?? template.defaultFace) as CardFace;
-  }, [draft?.face, template]);
-  const isInferredFace = Boolean(template && draft?.face == null);
+    return (draftValue?.face ?? template.defaultFace) as CardFace;
+  }, [draftValue?.face, template]);
+  const isInferredFace = Boolean(template && draftValue?.face == null);
 
   const openCard = async (cardId: string) => {
     try {
@@ -166,20 +182,24 @@ export default function TemplateChooser() {
     if (currentThumbnailUrl) {
       URL.revokeObjectURL(currentThumbnailUrl);
     }
-    if (currentCard?.thumbnailBlob instanceof Blob) {
+    if (!isDraftDirty && currentCard?.thumbnailBlob instanceof Blob) {
       const nextUrl = URL.createObjectURL(currentCard.thumbnailBlob);
       setCurrentThumbnailUrl(nextUrl);
+      setCurrentThumbnailError(false);
+      setCurrentThumbnailDataUrl(null);
       return () => {
         URL.revokeObjectURL(nextUrl);
       };
     }
     setCurrentThumbnailUrl(null);
+    setCurrentThumbnailError(false);
+    setCurrentThumbnailDataUrl(null);
     return undefined;
-  }, [currentCard?.thumbnailBlob]);
+  }, [currentCard?.thumbnailBlob, isDraftDirty]);
 
   useEffect(() => {
     let active = true;
-    const pairedId = draft?.pairedWith ?? null;
+    const pairedId = draftValue?.pairedWith ?? null;
     if (!pairedId) {
       setPairedCard(null);
       return () => {
@@ -198,32 +218,42 @@ export default function TemplateChooser() {
     return () => {
       active = false;
     };
-  }, [draft?.pairedWith]);
+  }, [draftValue?.pairedWith]);
 
   useEffect(() => {
     if (effectiveFace !== "back") {
       setPairedFronts([]);
       return;
     }
-    if (!activeCardId) {
-      setPairedFronts([]);
-      return;
-    }
     let active = true;
+    const loadFronts = async (cards: CardRecord[]) => {
+      if (!active) return;
+      const sorted = [...cards].sort((a, b) => {
+        const aViewed = a.lastViewedAt ?? 0;
+        const bViewed = b.lastViewedAt ?? 0;
+        if (bViewed !== aViewed) return bViewed - aViewed;
+        if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
+        const aName = a.nameLower ?? a.name.toLocaleLowerCase();
+        const bName = b.nameLower ?? b.name.toLocaleLowerCase();
+        return aName.localeCompare(bName);
+      });
+      setPairedFronts(sorted);
+    };
     listCards({ status: "saved" })
       .then((cards) => {
         if (!active) return;
-        const matches = cards.filter((card) => card.pairedWith === activeCardId);
-        matches.sort((a, b) => {
-          const aViewed = a.lastViewedAt ?? 0;
-          const bViewed = b.lastViewedAt ?? 0;
-          if (bViewed !== aViewed) return bViewed - aViewed;
-          if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
-          const aName = a.nameLower ?? a.name.toLocaleLowerCase();
-          const bName = b.nameLower ?? b.name.toLocaleLowerCase();
-          return aName.localeCompare(bName);
-        });
-        setPairedFronts(matches);
+        if (activeCardId) {
+          const matches = cards.filter((card) => card.pairedWith === activeCardId);
+          void loadFronts(matches);
+          return;
+        }
+        if (draftPairingFrontIds?.length) {
+          const idSet = new Set(draftPairingFrontIds);
+          const matches = cards.filter((card) => idSet.has(card.id));
+          void loadFronts(matches);
+          return;
+        }
+        setPairedFronts([]);
       })
       .catch(() => {
         if (!active) return;
@@ -233,7 +263,7 @@ export default function TemplateChooser() {
     return () => {
       active = false;
     };
-  }, [activeCardId, effectiveFace, pairedFrontsToken]);
+  }, [activeCardId, effectiveFace, pairedFrontsToken, draftPairingFrontIds]);
 
   useEffect(() => {
     if (pairedThumbnailUrl) {
@@ -253,11 +283,12 @@ export default function TemplateChooser() {
   const applyFaceChange = (nextFace: CardFace) => {
     if (!currentTemplateId) return;
     const nextDraft = {
-      ...(draft ?? {}),
+      ...(draftValue ?? {}),
       face: nextFace,
-      pairedWith: nextFace === "back" ? null : draft?.pairedWith,
+      pairedWith: nextFace === "back" ? null : draftValue?.pairedWith,
     } as CardDataByTemplate[TemplateId];
     setCardDraft(currentTemplateId, nextDraft);
+    setSingleDraft(currentTemplateId, nextDraft);
     setTemplateDirty(currentTemplateId, true);
     if (ENABLE_WEBGL_RECENTER_ON_FACE_SELECT) {
       if (recenterTimeoutRef.current) {
@@ -280,7 +311,7 @@ export default function TemplateChooser() {
       }
 
       if (nextFace === "back") {
-        const pairedId = draft?.pairedWith ?? null;
+        const pairedId = draftValue?.pairedWith ?? null;
         if (pairedId) {
           const pairedRecord = await getCard(pairedId);
           const pairedTitle = pairedRecord?.title ?? FALLBACK_TITLE;
@@ -322,7 +353,7 @@ export default function TemplateChooser() {
   const currentTemplateThumbnail = template?.thumbnail ?? null;
   const pairedThumbnail = pairedCard ? cardTemplatesById[pairedCard.templateId]?.thumbnail : null;
   const pairedTitle = pairedCard?.title ?? FALLBACK_TITLE;
-  const hasPair = Boolean(draft?.pairedWith && pairedCard);
+  const hasPair = Boolean(draftValue?.pairedWith && pairedCard);
   const visibleFronts = pairedFronts.slice(0, 8);
   const overflowCount = pairedFronts.length > 8 ? pairedFronts.length - 8 : 0;
   const shouldShowOverflowPopover = isOverflowPopoverOpen && overflowPopoverAnchor;
@@ -332,8 +363,24 @@ export default function TemplateChooser() {
       <div className={styles.inspectorHeader}>
         <div className={styles.inspectorHeaderPreview} aria-hidden="true">
           <div className={styles.inspectorHeaderPreviewInner}>
-            {currentThumbnailUrl ? (
-              <img src={currentThumbnailUrl} alt="" />
+            {currentThumbnailDataUrl ? (
+              <img src={currentThumbnailDataUrl} alt="" />
+            ) : currentThumbnailUrl && !currentThumbnailError ? (
+              <img
+                src={currentThumbnailUrl}
+                alt=""
+                onError={() => {
+                  setCurrentThumbnailError(true);
+                  if (!currentCard?.thumbnailBlob) return;
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    if (typeof reader.result === "string") {
+                      setCurrentThumbnailDataUrl(reader.result);
+                    }
+                  };
+                  reader.readAsDataURL(currentCard.thumbnailBlob);
+                }}
+              />
             ) : currentTemplateThumbnail?.src ? (
               <img src={currentTemplateThumbnail.src} alt="" />
             ) : (
@@ -342,11 +389,26 @@ export default function TemplateChooser() {
           </div>
         </div>
         <div className={styles.inspectorHeaderContent}>
-          <div className={styles.inspectorSectionTitle}>
-            {t("actions.template")} -{" "}
-            {template ? getTemplateNameLabel(language, template) : t("ui.loading")}
+          <div className={styles.inspectorTemplateRow}>
+            <div className={styles.inspectorSectionTitle}>
+              {t("actions.template")} -{" "}
+              {template ? getTemplateNameLabel(language, template) : t("ui.loading")}
+            </div>
+            {currentTemplateId ? (
+              <span
+                className={`${styles.inspectorStatusBadge} ${
+                  isDraft ? styles.inspectorStatusDraft : styles.inspectorStatusSaved
+                }`}
+              >
+                {isDraft ? t("label.draft") : t("label.saved")}
+              </span>
+            ) : null}
           </div>
-          <div className={styles.inspectorPairRow}>
+          <div
+            className={`${styles.inspectorPairRow} ${
+              pairingDisabled ? styles.inspectorPairRowDisabled : ""
+            }`}
+          >
         <div className={styles.inspectorFaceMenu} ref={faceMenuRef}>
           <button
             type="button"
@@ -403,21 +465,26 @@ export default function TemplateChooser() {
               className={`${styles.inspectorPairActionButton} ${
                 hasPair ? "" : styles.inspectorPairActionButtonEmpty
               }`}
-              title={t("tooltip.pairBack")}
+              title={
+                pairingDisabled ? t("tooltip.saveBeforePairing") : t("tooltip.pairBack")
+              }
+              disabled={pairingDisabled}
               onClick={() => {
+                if (pairingDisabled) return;
                 openStockpile({
                   mode: "pair-backs",
                   titleOverride: t("heading.selectBackCard"),
-                  initialSelectedIds: draft?.pairedWith ? [draft.pairedWith] : [],
+                  initialSelectedIds: draftValue?.pairedWith ? [draftValue.pairedWith] : [],
                   onConfirmSelection: (cardIds) => {
                     const selectedId = cardIds?.[0];
                     if (!selectedId || !currentTemplateId) return;
                     const nextDraft = {
-                      ...(draft ?? {}),
+                      ...(draftValue ?? {}),
                       pairedWith: selectedId,
-                      face: draft?.face ?? template?.defaultFace,
+                      face: draftValue?.face ?? template?.defaultFace,
                     } as CardDataByTemplate[TemplateId];
                     setCardDraft(currentTemplateId, nextDraft);
+                    setSingleDraft(currentTemplateId, nextDraft);
                     setTemplateDirty(currentTemplateId, true);
                   },
                 });
@@ -427,13 +494,15 @@ export default function TemplateChooser() {
             </button>
             <div
               className={styles.inspectorPairThumb}
-              role={hasPair ? "button" : undefined}
-              tabIndex={hasPair ? 0 : -1}
+              role={hasPair && !pairingDisabled ? "button" : undefined}
+              tabIndex={hasPair && !pairingDisabled ? 0 : -1}
               onClick={async () => {
+                if (pairingDisabled) return;
                 if (!hasPair || !pairedCard) return;
                 await requestOpenCard(pairedCard.id);
               }}
               onKeyDown={async (event) => {
+                if (pairingDisabled) return;
                 if (!hasPair || !pairedCard) return;
                 if (event.key !== "Enter" && event.key !== " ") return;
                 event.preventDefault();
@@ -467,14 +536,19 @@ export default function TemplateChooser() {
                 <button
                   type="button"
                   className={styles.inspectorPairActionButton}
-                  title={t("tooltip.unpairBack")}
+                  title={
+                    pairingDisabled ? t("tooltip.saveBeforePairing") : t("tooltip.unpairBack")
+                  }
+                  disabled={pairingDisabled}
                   onClick={() => {
+                    if (pairingDisabled) return;
                     if (!currentTemplateId) return;
                     const nextDraft = {
-                      ...(draft ?? {}),
+                      ...(draftValue ?? {}),
                       pairedWith: null,
                     } as CardDataByTemplate[TemplateId];
                     setCardDraft(currentTemplateId, nextDraft);
+                    setSingleDraft(currentTemplateId, nextDraft);
                     setTemplateDirty(currentTemplateId, true);
                   }}
                 >
@@ -491,8 +565,12 @@ export default function TemplateChooser() {
               className={`${styles.inspectorPairActionButton} ${
                 pairedFronts.length > 0 ? "" : styles.inspectorPairActionButtonEmpty
               }`}
-              title={t("tooltip.managePairings")}
+              title={
+                pairingDisabled ? t("tooltip.saveBeforePairing") : t("tooltip.managePairings")
+              }
+              disabled={pairingDisabled}
               onClick={() => {
+                if (pairingDisabled) return;
                 if (!activeCardId) return;
                 openStockpile({
                   mode: "pair-fronts",
@@ -533,11 +611,13 @@ export default function TemplateChooser() {
                     className={styles.inspectorStackItem}
                     style={{ zIndex: index + 1 }}
                     onClick={async () => {
+                      if (pairingDisabled) return;
                       await requestOpenCard(card.id);
                     }}
                     role="button"
                     tabIndex={0}
                     onKeyDown={async (event) => {
+                      if (pairingDisabled) return;
                       if (event.key !== "Enter" && event.key !== " ") return;
                       event.preventDefault();
                       await requestOpenCard(card.id);
@@ -601,6 +681,7 @@ export default function TemplateChooser() {
                     }, 200);
                   }}
                   onClick={(event) => {
+                    if (pairingDisabled) return;
                     event.stopPropagation();
                     if (overflowHoverTimeoutRef.current) {
                       window.clearTimeout(overflowHoverTimeoutRef.current);

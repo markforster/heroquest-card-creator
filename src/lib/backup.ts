@@ -37,7 +37,8 @@ export interface CollectionRecordExportV1 {
 }
 
 export interface HqccExportLocalStorageV1 {
-  cardDraftsV1?: string | null;
+  draftV1?: string | null;
+  draftTemplateIdV1?: string | null;
   activeCardsV1?: string | null;
   statLabels?: string | null;
 }
@@ -306,14 +307,21 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
     }
   }
 
-  let cardDraftsV1: string | null | undefined;
+  let draftV1: string | null | undefined;
+  let draftTemplateIdV1: string | null | undefined;
   let activeCardsV1: string | null | undefined;
   let statLabels: string | null | undefined;
 
   try {
-    cardDraftsV1 = window.localStorage.getItem("hqcc.cardDrafts.v1");
+    draftV1 = window.localStorage.getItem("hqcc.draft.v1");
   } catch {
-    cardDraftsV1 = undefined;
+    draftV1 = undefined;
+  }
+
+  try {
+    draftTemplateIdV1 = window.localStorage.getItem("hqcc.draftTemplateId.v1");
+  } catch {
+    draftTemplateIdV1 = undefined;
   }
 
   try {
@@ -329,7 +337,8 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
   }
 
   const localStorage: HqccExportLocalStorageV1 = {
-    cardDraftsV1,
+    draftV1,
+    draftTemplateIdV1,
     activeCardsV1,
     statLabels,
   };
@@ -527,9 +536,12 @@ async function applyBackupObject(
   }
 
   try {
-    const { cardDraftsV1, activeCardsV1, statLabels } = exportData.localStorage;
-    if (typeof cardDraftsV1 === "string") {
-      window.localStorage.setItem("hqcc.cardDrafts.v1", cardDraftsV1);
+    const { draftV1, draftTemplateIdV1, activeCardsV1, statLabels } = exportData.localStorage;
+    if (typeof draftV1 === "string") {
+      window.localStorage.setItem("hqcc.draft.v1", draftV1);
+    }
+    if (typeof draftTemplateIdV1 === "string") {
+      window.localStorage.setItem("hqcc.draftTemplateId.v1", draftTemplateIdV1);
     }
     if (typeof activeCardsV1 === "string") {
       window.localStorage.setItem("hqcc.activeCards.v1", activeCardsV1);

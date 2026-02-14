@@ -3,8 +3,9 @@
 import {
   ChevronLeft,
   ChevronRight,
+  Clock,
+  CopyPlus,
   Images,
-  LayoutTemplate,
   Settings,
   SquareStack,
 } from "lucide-react";
@@ -48,10 +49,11 @@ export default function LeftNav() {
     openStockpile,
     openSettings,
     openTemplatePicker,
-    hasTemplate,
+    openRecent,
     isTemplatePickerOpen,
     isAssetsOpen,
     isStockpileOpen,
+    isRecentOpen,
     isSettingsOpen,
   } = useAppActions();
   const {
@@ -126,16 +128,24 @@ export default function LeftNav() {
                 label={t("tooltip.chooseTemplate")}
               >
                 <NavActionButton
-                  label={t("actions.templates")}
-                  icon={LayoutTemplate}
+                  label={t("actions.saveAsNew")}
+                  icon={CopyPlus}
                   onClick={openTemplatePicker}
-                  ariaLabel={t("tooltip.chooseTemplate")}
-                  title={t("tooltip.chooseTemplate")}
-                  disabled={!hasTemplate}
+                  ariaLabel={t("tooltip.createFromTemplate")}
+                  title={t("tooltip.createFromTemplate")}
                   isActive={isTemplatePickerOpen}
+                  className={styles.leftNavNewButton}
                 />
               </KeyBinding>
             </KeyBinding>
+            <NavActionButton
+              label={t("actions.recentCards")}
+              icon={Clock}
+              onClick={openRecent}
+              title={t("actions.recentCards")}
+              ariaLabel={t("actions.recentCards")}
+              isActive={isRecentOpen}
+            />
             <NavActionButton
               label={t("actions.cards")}
               icon={SquareStack}

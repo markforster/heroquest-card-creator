@@ -199,14 +199,13 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
           </h3>
           <ul style={{ margin: 0, paddingLeft: "1.1rem", lineHeight: 1.4 }}>
             <li>
-              Use Save as new under the inspector to add the current draft as a named card.
+              Use New in the left navigation to start a draft with a template.
             </li>
             <li>
-              Use Save changes to update the active saved card.
+              Save creates a new card from the draft. Save changes updates the active saved card.
             </li>
             <li>
-              Open Cards to browse, search, and load saved cards. Loading a card replaces the
-              current draft for that template.
+              Open Cards to browse, search, and load saved cards.
             </li>
             <li>
               Use collections to organise cards without deleting them.

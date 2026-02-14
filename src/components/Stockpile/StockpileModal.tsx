@@ -10,6 +10,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import { useEscapeModalAware } from "@/components/EscapeStackProvider";
 import ModalShell from "@/components/ModalShell";
+import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
 import {
@@ -30,7 +31,9 @@ import {
   listCollections,
   updateCollection,
 } from "@/lib/collections-db";
+import { createDefaultCardData } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
+import type { TemplateId } from "@/types/templates";
 
 import { CardPreviewHandle } from "../CardPreview/types";
 
@@ -82,6 +85,12 @@ export default function StockpileModal({
   const [activeFilter, setActiveFilter] = useState<
     { type: "all" } | { type: "recent" } | { type: "unfiled" } | { type: "collection"; id: string }
   >({ type: "all" });
+  const {
+    state: { activeCardIdByTemplate },
+    setActiveCard,
+    setCardDraft,
+    setTemplateDirty,
+  } = useCardEditor();
   const { cards, setCards, collections, setCollections } = useStockpileData({
     isOpen,
     refreshToken,
@@ -858,6 +867,15 @@ export default function StockpileModal({
                       try {
                         await deleteCards(ids);
                         const idSet = new Set(ids);
+                        (Object.keys(activeCardIdByTemplate) as TemplateId[]).forEach(
+                          (templateId) => {
+                            const activeId = activeCardIdByTemplate[templateId];
+                            if (!activeId || !idSet.has(activeId)) return;
+                            setActiveCard(templateId, null, null);
+                            setCardDraft(templateId, createDefaultCardData(templateId));
+                            setTemplateDirty(templateId, false);
+                          },
+                        );
                         const updates = collections
                           .map((collection) => {
                             const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));

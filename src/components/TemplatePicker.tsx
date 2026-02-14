@@ -34,7 +34,7 @@ export default function TemplatePicker({
     (templateId: string | null) => {
       if (!templateId) return;
       onApply(templateId);
-      setTimeout(() => onClose(), 500);
+      onClose();
     },
     [onApply, onClose],
   );

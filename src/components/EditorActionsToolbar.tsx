@@ -11,22 +11,24 @@ type SavingMode = "new" | "update" | null;
 
 type EditorActionsToolbarProps = {
   canSaveChanges: boolean;
-  canSaveAsNew: boolean;
+  canDuplicate: boolean;
   savingMode: SavingMode;
   onExportPng: () => void;
   exportMenuItems?: { id: string; label: string; onClick: () => void }[];
   onSaveChanges: () => void;
-  onSaveAsNew: () => void;
+  onDuplicate: () => void;
+  onDuplicateWithPairing: () => void;
 };
 
 export default function EditorActionsToolbar({
   canSaveChanges,
-  canSaveAsNew,
+  canDuplicate,
   savingMode,
   onExportPng,
   exportMenuItems = [],
   onSaveChanges,
-  onSaveAsNew,
+  onDuplicate,
+  onDuplicateWithPairing,
 }: EditorActionsToolbarProps) {
   const { t } = useI18n();
 
@@ -35,6 +37,10 @@ export default function EditorActionsToolbar({
   const [exportMenuPlacement, setExportMenuPlacement] = useState<"down" | "up">("down");
   const exportMenuRef = useRef<HTMLDivElement | null>(null);
   const exportMenuPanelRef = useRef<HTMLDivElement | null>(null);
+  const [isDuplicateMenuOpen, setIsDuplicateMenuOpen] = useState(false);
+  const [duplicateMenuPlacement, setDuplicateMenuPlacement] = useState<"down" | "up">("down");
+  const duplicateMenuRef = useRef<HTMLDivElement | null>(null);
+  const duplicateMenuPanelRef = useRef<HTMLDivElement | null>(null);
   const hasExportMenu = exportMenuItems.length > 0;
   const exportMenuOptions = useMemo(() => exportMenuItems, [exportMenuItems]);
 
@@ -46,9 +52,11 @@ export default function EditorActionsToolbar({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (!exportMenuRef.current) return;
-      if (!exportMenuRef.current.contains(event.target as Node)) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
         setIsExportMenuOpen(false);
+      }
+      if (duplicateMenuRef.current && !duplicateMenuRef.current.contains(event.target as Node)) {
+        setIsDuplicateMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -81,10 +89,36 @@ export default function EditorActionsToolbar({
     };
   }, [isExportMenuOpen, exportMenuOptions.length]);
 
+  useEffect(() => {
+    if (!isDuplicateMenuOpen) return;
+
+    const updatePlacement = () => {
+      const anchor = duplicateMenuRef.current;
+      const menu = duplicateMenuPanelRef.current;
+      if (!anchor || !menu) return;
+      const anchorRect = anchor.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const padding = 12;
+      const spaceBelow = window.innerHeight - anchorRect.bottom - padding;
+      const spaceAbove = anchorRect.top - padding;
+      const needsFlip = menuRect.height > spaceBelow && spaceAbove > spaceBelow;
+      setDuplicateMenuPlacement(needsFlip ? "up" : "down");
+    };
+
+    const raf = window.requestAnimationFrame(updatePlacement);
+    window.addEventListener("resize", updatePlacement);
+    window.addEventListener("scroll", updatePlacement, true);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener("resize", updatePlacement);
+      window.removeEventListener("scroll", updatePlacement, true);
+    };
+  }, [isDuplicateMenuOpen]);
+
   return (
-    <div className={`${styles.editorActions} btn-toolbar w-100`} role="toolbar">
-      <div className="btn-group me-2" role="group">
-        <div className={styles.exportSplit} ref={exportMenuRef}>
+      <div className={`${styles.editorActions} btn-toolbar w-100`} role="toolbar">
+        <div className="btn-group me-2" role="group">
+          <div className={styles.exportSplit} ref={exportMenuRef}>
           <IconButton
             className={`btn btn-outline-light btn-sm ${
               hasExportMenu ? styles.exportSplitPrimary : ""
@@ -137,6 +171,53 @@ export default function EditorActionsToolbar({
           ) : null}
         </div>
       </div>
+      {canDuplicate ? (
+        <div className="btn-group me-2" role="group">
+          <div className={styles.exportSplit} ref={duplicateMenuRef}>
+            <IconButton
+              className={`btn btn-outline-light btn-sm ${styles.exportSplitPrimary}`}
+              icon={CopyPlus}
+              disabled={isBusy}
+              onClick={onDuplicate}
+              title={t("tooltip.duplicate")}
+            >
+              {t("actions.duplicate")}
+            </IconButton>
+            <button
+              type="button"
+              className={`btn btn-outline-light btn-sm ${styles.exportSplitChevron}`}
+              aria-label={t("actions.duplicate")}
+              aria-haspopup="menu"
+              aria-expanded={isDuplicateMenuOpen}
+              disabled={isBusy}
+              onClick={() => setIsDuplicateMenuOpen((prev) => !prev)}
+            >
+              <ChevronDown size={16} aria-hidden="true" />
+            </button>
+            {isDuplicateMenuOpen ? (
+              <div
+                className={`${styles.exportSplitMenu} ${
+                  duplicateMenuPlacement === "up" ? styles.exportSplitMenuUp : ""
+                }`}
+                role="menu"
+                ref={duplicateMenuPanelRef}
+              >
+                <button
+                  type="button"
+                  className={styles.exportSplitMenuItem}
+                  role="menuitem"
+                  onClick={() => {
+                    setIsDuplicateMenuOpen(false);
+                    onDuplicateWithPairing();
+                  }}
+                >
+                  {t("actions.duplicateWithPairing")}
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <div className="ms-auto d-flex gap-2" role="group">
         <IconButton
           className="btn btn-primary btn-sm"
@@ -146,15 +227,6 @@ export default function EditorActionsToolbar({
           title={t("tooltip.saveChanges")}
         >
           {savingMode === "update" ? t("actions.saving") : t("actions.save")}
-        </IconButton>
-        <IconButton
-          className="btn btn-outline-secondary btn-sm"
-          icon={CopyPlus}
-          disabled={!canSaveAsNew || isBusy}
-          onClick={onSaveAsNew}
-          title={t("tooltip.saveAsNew")}
-        >
-          {savingMode === "new" ? t("actions.saving") : t("actions.saveAsNew")}
         </IconButton>
       </div>
     </div>

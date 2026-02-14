@@ -328,6 +328,29 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+.leftNavNewButton .leftNavGlyph {
+  background: #2f8f3d;
+  color: #f5f1e6;
+  border-color: #1f6d2c;
+}
+
+.leftNavNewButton .leftNavGlyph svg {
+  color: #f5f1e6;
+}
+
+.leftNavNewButton:hover:enabled .leftNavGlyph {
+  background: #39a04a;
+  border-color: #2c7f38;
+}
+
+.leftNavNewButton.leftNavItemActive .leftNavGlyph,
+.leftNavNewButton.leftNavItemActive:focus .leftNavGlyph,
+.leftNavNewButton.leftNavItemActive:focus-visible .leftNavGlyph {
+  background: #2f8f3d;
+  border-color: #1f6d2c;
+  box-shadow: inset 0 0 0 1px #1f6d2c;
+}
+
 .leftNavItem:focus,
 .leftNavItem:focus-visible {
   outline: none;
@@ -912,6 +935,31 @@
   align-items: center;
 }
 
+.inspectorStatusBadge {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.inspectorStatusDraft {
+  background: rgba(76, 175, 80, 0.18);
+  border-color: rgba(76, 175, 80, 0.45);
+  color: #c7f2cf;
+}
+
+.inspectorStatusSaved {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #e0e6eb;
+}
+
 .inspectorSectionTitle {
   font-size: 0.72rem;
   line-height: 1;
@@ -1007,6 +1055,18 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
+}
+
+.inspectorPairRowDisabled {
+  opacity: 0.55;
+}
+
+.inspectorPairRowDisabled .inspectorPairActionButton {
+  cursor: not-allowed;
+}
+
+.inspectorPairRowDisabled .inspectorPairActionButton:disabled {
+  opacity: 0.7;
 }
 
 .inspectorPairIcon {
@@ -1129,6 +1189,7 @@
   position: relative;
   width: 22.5px;
   height: 31.5px;
+  z-index: 1;
 }
 
 .inspectorStackItem + .inspectorStackItem {
@@ -1230,7 +1291,7 @@
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
   padding: 2px;
   display: none;
-  z-index: 30;
+  z-index: 120;
 }
 
 .inspectorStackPopover img {
@@ -1619,6 +1680,12 @@
   border: 1px solid #000;
   padding: 1rem 1.1rem 1rem;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.65);
+}
+
+.templatePopoverMessage {
+  margin: 0 0 0.75rem;
+  color: var(--hq-text-muted);
+  font-size: 0.95rem;
 }
 
 .statLabelsPopover {
@@ -2020,6 +2087,19 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+.recentPopover {
+  width: min(1125px, 100% - 2rem);
+  min-height: 25rem;
+  height: min(820px, calc(100vh - 6rem));
+  max-height: calc(100vh - 6rem);
+}
+
+.recentPopover :global(.modal-body) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .templatePopoverHeader {
@@ -2889,6 +2969,39 @@
   border-color: #ef4444;
   box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.85);
   transform: translateY(-1px);
+}
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.cardsItem {
+  text-align: left;
+  background: var(--hq-surface-card);
+  border-radius: 8px;
+  border: 1px solid #2b2b2b;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.05s ease;
+}
+
+.cardsItem:hover {
+  border-color: rgba(230, 179, 90, 0.7);
+  box-shadow: 0 0 0 1px rgba(230, 179, 90, 0.5);
+  transform: translateY(-1px);
+}
+
+.cardsItem:focus-visible {
+  outline: 2px solid rgba(230, 179, 90, 0.9);
+  outline-offset: 2px;
 }
 .cardsThumbWrapper {
   width: 100%;

@@ -39,7 +39,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
   const renderRequestIdRef = useRef(0);
   const debounceTimeoutRef = useRef<number | null>(null);
   const {
-    state: { selectedTemplateId, cardDrafts, activeCardIdByTemplate },
+    state: { selectedTemplateId, draftTemplateId, draft, activeCardIdByTemplate },
   } = useCardEditor();
   const reversePreviewRef = useRef<CardPreviewHandle | null>(null);
   const [reverseCard, setReverseCard] = useState<{
@@ -57,7 +57,10 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
     return null;
   }
 
-  const cardData = cardDrafts[selectedTemplateId as TemplateId];
+  const cardData =
+    draftTemplateId === selectedTemplateId && draft
+      ? (draft as CardDataByTemplate[TemplateId])
+      : undefined;
   const templateName = getTemplateNameLabel(language, template);
   const showWebgl = previewRenderer === "webgl";
   const activeCardId = activeCardIdByTemplate[selectedTemplateId as TemplateId];

@@ -83,7 +83,7 @@ export function SettingsModalProvider({
   const [, forceRender] = useState(0);
   const formatMessageWith = useCallback(
     (key: string, vars: Record<string, string | number>) =>
-      formatMessage(t(key), vars),
+      formatMessage(t(key as never), vars),
     [t],
   );
 

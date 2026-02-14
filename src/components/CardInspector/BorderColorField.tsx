@@ -33,7 +33,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
   const { control, setValue } = useFormContext();
   const { renderPreviewCanvas } = usePreviewCanvas();
   const {
-    state: { cardDrafts, isDirtyByTemplate },
+    state: { draftTemplateId, draft, isDirtyByTemplate },
     setCardDraft,
   } = useCardEditor();
   const [swatches, setSwatches] = useState<string[]>([]);
@@ -74,7 +74,10 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     [swatches],
   );
   const savedColorRef = useRef<string | undefined>(undefined);
-  const draftColor = (cardDrafts[templateId] as { borderColor?: string } | undefined)?.borderColor;
+  const draftColor =
+    draftTemplateId === templateId && draft
+      ? (draft as { borderColor?: string } | undefined)?.borderColor
+      : undefined;
   const savedSwatches = useMemo(
     () =>
       swatches.filter((swatch) => {
@@ -188,7 +191,10 @@ export default function BorderColorField({ label, templateId }: BorderColorField
       saved === TRANSPARENT_BORDER_COLOR ? TRANSPARENT_BORDER_COLOR : saved.toUpperCase();
     setValue("borderColor", nextColor, { shouldDirty: true, shouldTouch: true });
 
-    const currentDraft = (cardDrafts[templateId] as { borderColor?: string } | undefined) ?? {};
+    const currentDraft =
+      draftTemplateId === templateId && draft
+        ? (draft as { borderColor?: string })
+        : {};
     setCardDraft(templateId, { ...currentDraft, borderColor: nextColor } as never);
   };
 
