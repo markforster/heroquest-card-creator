@@ -485,13 +485,7 @@ function WebglScene({
     configureTexture(backTexture, true);
   }, [backTexture, frontTexture, gl]);
 
-  const spinnerSource = useMemo(() => {
-    if (typeof window !== "undefined" && window.location.protocol === "file:") {
-      return spinnerBlueprintDataUrl;
-    }
-    return "/spinner-blueprint.svg";
-  }, []);
-  const spinnerTexture = useLoader(TextureLoader, spinnerSource);
+  const spinnerTexture = useLoader(TextureLoader, spinnerBlueprintDataUrl);
   const spinnerRef = useRef<Mesh | null>(null);
   useEffect(() => {
     spinnerTexture.colorSpace = SRGBColorSpace;
