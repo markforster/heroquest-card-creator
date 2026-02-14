@@ -18,9 +18,10 @@ Key features:
 The app is intentionally a **single‑page editor**:
 
 - `src/app/page.tsx` – the only page; wires together:
-  - Header actions (Template / Assets / Cards / Help).
+  - LeftNav actions (Cards / Assets / Settings / Help).
   - Central card preview (`CardPreviewContainer`).
   - Right‑hand inspector (`CardInspector`).
+  - Tools toolbar for preview renderer controls (SVG/WebGL).
   - Modals for templates, assets, and saved cards.
 - `src/app/layout.tsx` – root layout, global fonts and CSS, and the i18n provider.
 - `src/app/page.module.css` – main layout and theme styling for the editor.
@@ -30,7 +31,7 @@ The app is intentionally a **single‑page editor**:
 Core feature areas:
 
 - `src/components/CardPreview` – SVG card preview and PNG export (including font + image inlining).
-- `src/components/CardTemplates/*` – one React component per card template.
+- `src/components/BlueprintRenderer` – blueprint-driven renderer (single preview path).
 - `src/components/CardParts/*` – reusable SVG parts (ribbons, stats blocks, text blocks, etc.).
 - `src/components/CardInspector/*` – form controls for editing current card fields.
 - `src/components/Assets/*` – asset manager (IndexedDB‑backed image library).
@@ -42,6 +43,16 @@ Core feature areas:
   - `assets-db.ts` – assets store (consolidated into the shared `hqcc` DB).
   - `backup.ts` – full import/export for cards/assets/settings (`.hqcc`).
   - `card-record-mapper.ts` – mapping between editor data and `CardRecord`s.
+
+### Blueprint rendering (developer notes)
+The preview renderer uses **blueprints** as the single source of truth for card layout. Each template defines layout bounds and layers in blueprint data, and the `BlueprintRenderer` maps card data onto those layers.
+
+To tinker:
+- Start at `src/components/BlueprintRenderer/index.tsx` to see how layers are interpreted.
+- Blueprint definitions live in `src/data/blueprints.ts` (and related files). Update bounds, fonts, and layer config there.
+- Shared SVG parts (ribbons, stats blocks, text blocks) are in `src/components/CardParts/*`.
+
+This means adding or adjusting a template is primarily a **data change** (blueprint tweaks), not a new bespoke React template component.
 
 ---
 
@@ -160,7 +171,6 @@ Outputs are written under `src-tauri/target/release/bundle/`.
   - `npm run test`
 - Generate coverage:
   - `npm run test:coverage`
-  - Output is written to `artefacts/coverage/`
 - Generate the HTML test report (includes coverage):
   - `npm run test:report`
   - Report is written to `artefacts/reports/test-report.html`
@@ -202,7 +212,7 @@ The core editor itself does **not** depend on any backend credentials or secret 
 The codebase is deliberately small and component‑driven. If you’re exploring or extending it, good starting points are:
 
 - `src/app/page.tsx` – top‑level wiring of the editor UI.
-- `src/components/CardTemplates/*` and `src/components/CardParts/*` – how the SVG cards are built.
+- `src/components/BlueprintRenderer` and `src/components/CardParts/*` – how the SVG cards are built.
 
 Prettier + ESLint are configured; running `npm run lint` and `npm run format` before committing will keep things consistent.
 

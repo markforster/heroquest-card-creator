@@ -1,19 +1,23 @@
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
-import type { TemplateId } from "@/types/templates";
 import type { StatValue } from "@/types/stats";
+import type { TemplateId } from "@/types/templates";
 
 export function cardRecordToCardData<T extends TemplateId>(
   record: CardRecord & { templateId: T },
 ): CardDataByTemplate[T] {
   const base = {
     title: record.title,
+    showTitle: record.showTitle ?? true,
+    face: record.face,
+    pairedWith: record.pairedWith,
     description: record.description,
     imageAssetId: record.imageAssetId,
     imageAssetName: record.imageAssetName,
     imageScale: record.imageScale,
     imageOffsetX: record.imageOffsetX,
     imageOffsetY: record.imageOffsetY,
+    imageRotation: record.imageRotation,
     imageOriginalWidth: record.imageOriginalWidth,
     imageOriginalHeight: record.imageOriginalHeight,
     borderColor: record.borderColor,
@@ -79,16 +83,29 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
   name: string,
   data: CardDataByTemplate[T],
 ): Partial<CardRecord> {
+  const face = data.face;
+  let pairedWith = data.pairedWith;
+  if (face === "back") {
+    pairedWith = null;
+  }
+  if (pairedWith && face !== "front") {
+    pairedWith = null;
+  }
+
   const basePatch: Partial<CardRecord> = {
     templateId,
     name,
     title: data.title,
+    showTitle: data.showTitle,
+    face,
+    pairedWith,
     description: data.description,
     imageAssetId: data.imageAssetId,
     imageAssetName: data.imageAssetName,
     imageScale: data.imageScale,
     imageOffsetX: data.imageOffsetX,
     imageOffsetY: data.imageOffsetY,
+    imageRotation: data.imageRotation,
     imageOriginalWidth: data.imageOriginalWidth,
     imageOriginalHeight: data.imageOriginalHeight,
     borderColor: data.borderColor,
@@ -135,7 +152,20 @@ function normalizeStatValueForSave(value?: StatValue): StatValue | undefined {
       return [primary, secondary, 1];
     }
     if (value.length >= 3) {
-      const [primary, secondary, splitFlag] = value as [number, number, 0 | 1];
+      const [primary, secondary, splitFlag, splitFormat] = value as [
+        number,
+        number,
+        0 | 1,
+        string | undefined,
+      ];
+      if (splitFormat) {
+        return [
+          primary,
+          secondary,
+          splitFlag,
+          splitFormat as "slash" | "paren" | "paren-leading",
+        ];
+      }
       return [primary, secondary, splitFlag];
     }
   }

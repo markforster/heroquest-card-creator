@@ -9,13 +9,7 @@ import labelledBackThumbnail from "@/assets/template-thumbnails/labelled-back.pn
 import largeTreasureThumbnail from "@/assets/template-thumbnails/large-treasure.png";
 import monsterThumbnail from "@/assets/template-thumbnails/monster.png";
 import smallTreasureThumbnail from "@/assets/template-thumbnails/small-treasure.png";
-import HeroBackTemplate from "@/components/CardTemplates/HeroBackTemplate";
-import HeroCardTemplate from "@/components/CardTemplates/HeroCardTemplate";
-import LabelledBackTemplate from "@/components/CardTemplates/LabelledBackTemplate";
-import LargeTreasureTemplate from "@/components/CardTemplates/LargeTreasureTemplate";
-import MonsterCardTemplate from "@/components/CardTemplates/MonsterCardTemplate";
-import SmallTreasureTemplate from "@/components/CardTemplates/SmallTreasureTemplate";
-import type { CardTemplateComponent, CardTemplateMeta, TemplateId } from "@/types/templates";
+import type { CardTemplateMeta } from "@/types/templates";
 
 export const cardTemplates: CardTemplateMeta[] = [
   {
@@ -25,6 +19,7 @@ export const cardTemplates: CardTemplateMeta[] = [
     description: "Character-style card with full stats row and large hero artwork.",
     thumbnail: heroThumbnail,
     background: parchmentBackground,
+    defaultFace: "front",
   },
   {
     id: "monster",
@@ -33,22 +28,25 @@ export const cardTemplates: CardTemplateMeta[] = [
     description: "Monster card with stats and dedicated icon area.",
     thumbnail: monsterThumbnail,
     background: parchmentBackground,
+    defaultFace: "front",
   },
   {
     id: "small-treasure",
-    name: "Small Artwork Card",
+    name: "Small Artwork",
     kind: "treasure",
     description: "Card with smaller artwork window and large rules text area.",
     thumbnail: smallTreasureThumbnail,
     background: smallWindowBackground,
+    defaultFace: "front",
   },
   {
     id: "large-treasure",
-    name: "Large Artwork Card",
+    name: "Large Artwork",
     kind: "treasure",
     description: "Card with large artwork area and supporting rules text.",
     thumbnail: largeTreasureThumbnail,
     background: largeWindowBackground,
+    defaultFace: "front",
   },
   {
     id: "hero-back",
@@ -57,6 +55,7 @@ export const cardTemplates: CardTemplateMeta[] = [
     description: "Simple back design for hero or character decks.",
     thumbnail: heroBackThumbnail,
     background: heroBackBackground,
+    defaultFace: "back",
   },
   {
     id: "labelled-back",
@@ -65,18 +64,10 @@ export const cardTemplates: CardTemplateMeta[] = [
     description: "Back design with a label/banner, e.g. 'Card Back'.",
     thumbnail: labelledBackThumbnail,
     background: borderedMask,
+    defaultFace: "back",
   },
 ];
 
 export const cardTemplatesById: Record<string, CardTemplateMeta> = Object.fromEntries(
   cardTemplates.map((tpl) => [tpl.id, tpl]),
 );
-
-export const templateComponentsById: Record<TemplateId, CardTemplateComponent> = {
-  hero: HeroCardTemplate,
-  monster: MonsterCardTemplate,
-  "small-treasure": SmallTreasureTemplate,
-  "large-treasure": LargeTreasureTemplate,
-  "hero-back": HeroBackTemplate,
-  "labelled-back": LabelledBackTemplate,
-};

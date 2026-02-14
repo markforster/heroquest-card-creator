@@ -3,9 +3,9 @@
 import styles from "@/app/page.module.css";
 import HelpModal from "@/components/HelpModal";
 import ReleaseNotesModal from "@/components/ReleaseNotesModal";
-import { useI18n } from "@/i18n/I18nProvider";
-import { usePopupState } from "@/hooks/usePopupState";
 import useIsTauriApp from "@/hooks/useIsTauriApp";
+import { usePopupState } from "@/hooks/usePopupState";
+import { useI18n } from "@/i18n/I18nProvider";
 import { APP_VERSION } from "@/version";
 
 export default function MainFooter() {
@@ -49,7 +49,7 @@ export default function MainFooter() {
           <div className="ms-auto d-flex align-items-center gap-1">
             <span>·</span>
             <a
-              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.1"
+              href={`https://github.com/markforster/heroquest-card-creator/releases/tag/v${APP_VERSION}`}
               target="_blank"
               rel="noreferrer noopener"
               className={styles.footerLink}

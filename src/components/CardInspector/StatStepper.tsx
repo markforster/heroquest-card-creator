@@ -5,6 +5,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
+
 import { formatStatInputValue, parseStatInputValue } from "./stat-stepper-input";
 
 import type { FieldValues, Path } from "react-hook-form";

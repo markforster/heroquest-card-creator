@@ -1,18 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
 
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   DB_VERSION,
   openHqccDb,
   readExistingHqccDbAppVersion,
   readExistingHqccDbVersion,
 } from "@/lib/hqcc-db";
-import { useI18n } from "@/i18n/I18nProvider";
 import { APP_VERSION } from "@/version";
 
 import styles from "./DatabaseVersionGate.module.css";
+
+import type { ReactNode } from "react";
 
 type GateStatus = "checking" | "ready" | "blocked";
 

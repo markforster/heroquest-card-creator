@@ -3,6 +3,7 @@
 import type { CollectionRecord } from "@/types/collections-db";
 
 import { openHqccDb } from "./hqcc-db";
+
 import { generateId } from ".";
 
 import type { HqccDb } from "./hqcc-db";
@@ -39,8 +40,7 @@ export async function createCollection(input: {
   await new Promise<void>((resolve, reject) => {
     const request = store.add(record);
     request.onsuccess = () => resolve();
-    request.onerror = () =>
-      reject(request.error ?? new Error("Failed to create collection"));
+    request.onerror = () => reject(request.error ?? new Error("Failed to create collection"));
   });
 
   return record;
@@ -76,8 +76,7 @@ export async function updateCollection(
   await new Promise<void>((resolve, reject) => {
     const putRequest = store.put(next);
     putRequest.onsuccess = () => resolve();
-    putRequest.onerror = () =>
-      reject(putRequest.error ?? new Error("Failed to update collection"));
+    putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update collection"));
   });
 
   return next;
@@ -130,7 +129,6 @@ export async function deleteCollection(id: string): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const request = store.delete(id);
     request.onsuccess = () => resolve();
-    request.onerror = () =>
-      reject(request.error ?? new Error("Failed to delete collection"));
+    request.onerror = () => reject(request.error ?? new Error("Failed to delete collection"));
   });
 }

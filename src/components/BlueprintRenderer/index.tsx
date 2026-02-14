@@ -1,8 +1,8 @@
 "use client";
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
-import CardTextBlock, { layoutCardText } from "@/components/CardParts/CardTextBlock";
 import CardBorder from "@/components/CardParts/CardBorder";
+import CardTextBlock, { layoutCardText } from "@/components/CardParts/CardTextBlock";
 import HeroStatsBlock, {
   HERO_STATS_HEIGHT,
   type HeroStats,
@@ -134,6 +134,9 @@ function ImageLayer({
   const scale = (cardData as { imageScale?: number }).imageScale ?? 1;
   const offsetX = (cardData as { imageOffsetX?: number }).imageOffsetX ?? 0;
   const offsetY = (cardData as { imageOffsetY?: number }).imageOffsetY ?? 0;
+  const rotation = (cardData as { imageRotation?: number }).imageRotation ?? 0;
+  const layerOffsetX = typeof layer.props?.offsetX === "number" ? layer.props.offsetX : 0;
+  const layerOffsetY = typeof layer.props?.offsetY === "number" ? layer.props.offsetY : 0;
 
   const baseWidth =
     (cardData as { imageOriginalWidth?: number }).imageOriginalWidth ?? bounds.width;
@@ -143,8 +146,11 @@ function ImageLayer({
   const scaledWidth = baseWidth * scale;
   const scaledHeight = baseHeight * scale;
 
-  const x = bounds.x + (bounds.width - scaledWidth) / 2 + offsetX;
-  const y = bounds.y + (bounds.height - scaledHeight) / 2 + offsetY;
+  const x = bounds.x + (bounds.width - scaledWidth) / 2 + offsetX + layerOffsetX;
+  const y = bounds.y + (bounds.height - scaledHeight) / 2 + offsetY + layerOffsetY;
+  const cx = x + scaledWidth / 2;
+  const cy = y + scaledHeight / 2;
+  const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
 
   return (
     <Layer key={layer.id}>
@@ -155,6 +161,7 @@ function ImageLayer({
         y={y}
         width={scaledWidth}
         height={scaledHeight}
+        transform={transform}
         preserveAspectRatio="xMidYMid slice"
       />
     </Layer>
@@ -223,12 +230,23 @@ function TitleLayer({
   layer,
   cardData,
   templateName,
+  templateId,
 }: {
   layer: BlueprintLayer;
   cardData?: CardDataByTemplate[TemplateId];
   templateName?: string;
+  templateId?: TemplateId;
 }) {
   if (layer.type !== "title") return null;
+
+  const showTitle =
+    templateId === "labelled-back"
+      ? cardData && typeof (cardData as { showTitle?: boolean }).showTitle === "boolean"
+        ? (cardData as { showTitle?: boolean }).showTitle
+        : true
+      : true;
+
+  if (!showTitle) return null;
 
   const titleKey = layer.bind?.titleKey;
   const titleValue =
@@ -240,8 +258,35 @@ function TitleLayer({
 
   const showRibbon = typeof layer.props?.showRibbon === "boolean" ? layer.props.showRibbon : true;
   const y = typeof layer.props?.y === "number" ? layer.props.y : undefined;
+  const getBound = (prefix: string) => {
+    const x = layer.props?.[`${prefix}X`];
+    const y = layer.props?.[`${prefix}Y`];
+    const width = layer.props?.[`${prefix}Width`];
+    const height = layer.props?.[`${prefix}Height`];
+    if (
+      typeof x === "number" &&
+      typeof y === "number" &&
+      typeof width === "number" &&
+      typeof height === "number"
+    ) {
+      return { x, y, width, height };
+    }
+    return undefined;
+  };
+  const ribbonBounds = getBound("ribbon");
+  const textBounds = getBound("text");
+  const textBoundsNoRibbon = getBound("textNoRibbon");
 
-  return <RibbonTitle title={title} showRibbon={showRibbon} y={y} />;
+  return (
+    <RibbonTitle
+      title={title}
+      showRibbon={showRibbon}
+      y={y}
+      ribbonBounds={ribbonBounds}
+      textBounds={textBounds}
+      textBoundsNoRibbon={textBoundsNoRibbon}
+    />
+  );
 }
 
 function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | undefined {
@@ -423,13 +468,20 @@ function buildGroupItems({
 
       const size = typeof child.props?.size === "number" ? child.props.size : 140;
       const offsetX = typeof child.props?.offsetX === "number" ? child.props.offsetX : 0;
+      const offsetY = typeof child.props?.offsetY === "number" ? child.props.offsetY : 0;
       const x = group.origin.x + offsetX;
 
       items.push({
         id: child.id,
         height: size,
         render: (topY) => (
-          <GroupIconLayer key={child.id} assetId={iconId} x={x} y={topY} size={size} />
+          <GroupIconLayer
+            key={child.id}
+            assetId={iconId}
+            x={x}
+            y={topY + offsetY}
+            size={size}
+          />
         ),
       });
     }
@@ -575,6 +627,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
               layer={layer}
               cardData={props.cardData}
               templateName={templateName}
+              templateId={blueprint.templateId}
             />
           );
         }

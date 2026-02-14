@@ -1,10 +1,11 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import styles from "@/app/page.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useEscapeModalAware } from "@/components/EscapeStackProvider";
 
 import type { ReactNode, MouseEvent } from "react";
 
@@ -17,6 +18,8 @@ type ModalShellProps = {
   headerActions?: ReactNode;
   /** Optional extra class for the inner panel (e.g. cardsPopover). */
   contentClassName?: string;
+  hideHeader?: boolean;
+  keepMounted?: boolean;
 };
 
 export default function ModalShell({
@@ -27,23 +30,21 @@ export default function ModalShell({
   footer,
   headerActions,
   contentClassName,
+  hideHeader = false,
+  keepMounted = false,
 }: ModalShellProps) {
   const { t } = useI18n();
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-      }
-    };
+  const escapeId = useMemo(
+    () => `modal-${Math.random().toString(36).slice(2, 10)}`,
+    [],
+  );
+  useEscapeModalAware({
+    id: escapeId,
+    isOpen,
+    onEscape: onClose,
+  });
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+  if (!isOpen && !keepMounted) return null;
 
   const handleBackdropClick = () => {
     onClose();
@@ -54,21 +55,32 @@ export default function ModalShell({
   };
 
   return (
-    <div className={styles.templatePopoverBackdrop} onClick={handleBackdropClick}>
+    <div
+      className={styles.templatePopoverBackdrop}
+      onClick={handleBackdropClick}
+      aria-hidden={!isOpen}
+      style={
+        !isOpen
+          ? { visibility: "hidden", pointerEvents: "none", opacity: 0 }
+          : undefined
+      }
+    >
       <div
         className={`${styles.templatePopover} modal-content${contentClassName ? ` ${contentClassName}` : ""}`}
         onClick={handleContentClick}
       >
-        <div className={`${styles.templatePopoverHeader} modal-header`}>
-          <h2 className={styles.templatePopoverTitle}>{title}</h2>
-          <div className={styles.modalHeaderActions}>
-            {headerActions}
-            <button type="button" className={styles.modalCloseButton} onClick={onClose}>
-              <X className={styles.icon} aria-hidden="true" />
-              <span className="visually-hidden">{t("actions.close")}</span>
-            </button>
+        {hideHeader ? null : (
+          <div className={`${styles.templatePopoverHeader} modal-header`}>
+            <h2 className={styles.templatePopoverTitle}>{title}</h2>
+            <div className={styles.modalHeaderActions}>
+              {headerActions}
+              <button type="button" className={styles.modalCloseButton} onClick={onClose}>
+                <X className={styles.icon} aria-hidden="true" />
+                <span className="visually-hidden">{t("actions.close")}</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
         <div className="modal-body">{children}</div>
         {footer ? <div className="modal-footer">{footer}</div> : null}
       </div>

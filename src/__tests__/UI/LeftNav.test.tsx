@@ -5,6 +5,7 @@ import LeftNav from "@/components/LeftNav";
 const openAssets = jest.fn();
 const openStockpile = jest.fn();
 const openSettings = jest.fn();
+const openTemplatePicker = jest.fn();
 
 jest.mock("@/components/AppActionsContext", () => ({
   __esModule: true,
@@ -12,36 +13,26 @@ jest.mock("@/components/AppActionsContext", () => ({
     openAssets,
     openStockpile,
     openSettings,
+    openTemplatePicker,
+    hasTemplate: true,
+  }),
+}));
+
+jest.mock("@/components/CardEditor/CardEditorContext", () => ({
+  __esModule: true,
+  useCardEditor: () => ({
+    state: {
+      selectedTemplateId: "hero",
+      activeCardIdByTemplate: {
+        hero: "card-1",
+      },
+    },
   }),
 }));
 
 jest.mock("@/components/LanguageMenu", () => ({
   __esModule: true,
   default: () => <div data-testid="language-menu" />,
-}));
-
-jest.mock("@/components/PreviewModeContext", () => ({
-  __esModule: true,
-  usePreviewMode: () => ({
-    previewMode: "legacy",
-    togglePreviewMode: jest.fn(),
-  }),
-  previewModeFlags: {
-    SHOW_BLUEPRINTS_TOGGLE: false,
-    USE_BLUEPRINTS: false,
-  },
-}));
-
-jest.mock("@/components/InspectorModeContext", () => ({
-  __esModule: true,
-  useInspectorMode: () => ({
-    inspectorMode: "legacy",
-    toggleInspectorMode: jest.fn(),
-  }),
-  inspectorModeFlags: {
-    SHOW_INSPECTOR_TOGGLE: false,
-    USE_GENERIC_INSPECTOR: false,
-  },
 }));
 
 jest.mock("@/i18n/I18nProvider", () => ({
@@ -67,6 +58,7 @@ describe("LeftNav (UI)", () => {
     openAssets.mockClear();
     openStockpile.mockClear();
     openSettings.mockClear();
+    openTemplatePicker.mockClear();
   });
 
   it("renders actions and triggers handlers", () => {

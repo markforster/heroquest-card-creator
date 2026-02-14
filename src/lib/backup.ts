@@ -1,11 +1,13 @@
 "use client";
 
+import JSZip from "jszip";
+
+import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import type { CardRecord } from "@/types/cards-db";
 
-import type { AssetRecord } from "./assets-db";
-import JSZip from "jszip";
-import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import { openHqccDb } from "./hqcc-db";
+
+import type { AssetRecord } from "./assets-db";
 import type { HqccDb } from "./hqcc-db";
 
 export const BACKUP_SCHEMA_VERSION = 1 as const;
@@ -35,7 +37,8 @@ export interface CollectionRecordExportV1 {
 }
 
 export interface HqccExportLocalStorageV1 {
-  cardDraftsV1?: string | null;
+  draftV1?: string | null;
+  draftTemplateIdV1?: string | null;
   activeCardsV1?: string | null;
   statLabels?: string | null;
 }
@@ -73,7 +76,11 @@ export type ImportResult = {
 };
 
 export type BackupProgressPhase = "export" | "import";
-export type BackupProgressCallback = (current: number, total: number, phase: BackupProgressPhase) => void;
+export type BackupProgressCallback = (
+  current: number,
+  total: number,
+  phase: BackupProgressPhase,
+) => void;
 export type BackupStatusPhase = "preparing" | "processing" | "finalizing";
 export type BackupStatusCallback = (phase: BackupStatusPhase) => void;
 export type BackupSecondaryProgressCallback = (percent: number, phase: BackupStatusPhase) => void;
@@ -169,9 +176,7 @@ function parseBackupJson(text: string): HqccExportFileV1 {
   return candidate as HqccExportFileV1;
 }
 
-async function buildExportObject(
-  onProgress?: BackupProgressCallback,
-): Promise<HqccExportFileV1> {
+async function buildExportObject(onProgress?: BackupProgressCallback): Promise<HqccExportFileV1> {
   if (typeof window === "undefined") {
     throw new Error("Backup export is only available in the browser");
   }
@@ -302,14 +307,21 @@ async function buildExportObject(
     }
   }
 
-  let cardDraftsV1: string | null | undefined;
+  let draftV1: string | null | undefined;
+  let draftTemplateIdV1: string | null | undefined;
   let activeCardsV1: string | null | undefined;
   let statLabels: string | null | undefined;
 
   try {
-    cardDraftsV1 = window.localStorage.getItem("hqcc.cardDrafts.v1");
+    draftV1 = window.localStorage.getItem("hqcc.draft.v1");
   } catch {
-    cardDraftsV1 = undefined;
+    draftV1 = undefined;
+  }
+
+  try {
+    draftTemplateIdV1 = window.localStorage.getItem("hqcc.draftTemplateId.v1");
+  } catch {
+    draftTemplateIdV1 = undefined;
   }
 
   try {
@@ -325,7 +337,8 @@ async function buildExportObject(
   }
 
   const localStorage: HqccExportLocalStorageV1 = {
-    cardDraftsV1,
+    draftV1,
+    draftTemplateIdV1,
     activeCardsV1,
     statLabels,
   };
@@ -475,7 +488,11 @@ async function applyBackupObject(
     });
   }
 
-  if (hasCollectionsStore && Array.isArray(exportData.collections) && exportData.collections.length) {
+  if (
+    hasCollectionsStore &&
+    Array.isArray(exportData.collections) &&
+    exportData.collections.length
+  ) {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction("collections", "readwrite");
       const store = tx.objectStore("collections");
@@ -519,9 +536,12 @@ async function applyBackupObject(
   }
 
   try {
-    const { cardDraftsV1, activeCardsV1, statLabels } = exportData.localStorage;
-    if (typeof cardDraftsV1 === "string") {
-      window.localStorage.setItem("hqcc.cardDrafts.v1", cardDraftsV1);
+    const { draftV1, draftTemplateIdV1, activeCardsV1, statLabels } = exportData.localStorage;
+    if (typeof draftV1 === "string") {
+      window.localStorage.setItem("hqcc.draft.v1", draftV1);
+    }
+    if (typeof draftTemplateIdV1 === "string") {
+      window.localStorage.setItem("hqcc.draftTemplateId.v1", draftTemplateIdV1);
     }
     if (typeof activeCardsV1 === "string") {
       window.localStorage.setItem("hqcc.activeCards.v1", activeCardsV1);
@@ -540,13 +560,11 @@ async function applyBackupObject(
   };
 }
 
-export async function createBackupJson(
-  options?: {
-    onProgress?: BackupProgressCallback;
-    onStatus?: BackupStatusCallback;
-    onSecondaryProgress?: BackupSecondaryProgressCallback;
-  },
-): Promise<ExportResult> {
+export async function createBackupJson(options?: {
+  onProgress?: BackupProgressCallback;
+  onStatus?: BackupStatusCallback;
+  onSecondaryProgress?: BackupSecondaryProgressCallback;
+}): Promise<ExportResult> {
   options?.onStatus?.("processing");
   const exportObject = await buildExportObject(options?.onProgress);
 
@@ -555,11 +573,8 @@ export async function createBackupJson(
 
   const now = new Date();
   const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-  const timestamp = [
-    now.getFullYear(),
-    pad(now.getMonth() + 1),
-    pad(now.getDate()),
-  ].join("") +
+  const timestamp =
+    [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join("") +
     "-" +
     [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join("");
 
@@ -600,13 +615,11 @@ export async function importBackupJson(
   return applyBackupObject(exportData, options?.onProgress);
 }
 
-export async function createBackupHqcc(
-  options?: {
-    onProgress?: BackupProgressCallback;
-    onStatus?: BackupStatusCallback;
-    onSecondaryProgress?: BackupSecondaryProgressCallback;
-  },
-): Promise<ExportResult> {
+export async function createBackupHqcc(options?: {
+  onProgress?: BackupProgressCallback;
+  onStatus?: BackupStatusCallback;
+  onSecondaryProgress?: BackupSecondaryProgressCallback;
+}): Promise<ExportResult> {
   options?.onStatus?.("processing");
   const exportObject = await buildExportObject(options?.onProgress);
   const json = JSON.stringify(exportObject, null, 2);
@@ -619,9 +632,7 @@ export async function createBackupHqcc(
   const blob = await zip.generateAsync(
     {
       type: "blob",
-      ...(USE_ZIP_COMPRESSION
-        ? { compression: "DEFLATE", compressionOptions: { level: 6 } }
-        : {}),
+      ...(USE_ZIP_COMPRESSION ? { compression: "DEFLATE", compressionOptions: { level: 6 } } : {}),
     },
     (metadata) => {
       options?.onSecondaryProgress?.(metadata.percent ?? 0, "finalizing");
@@ -630,11 +641,8 @@ export async function createBackupHqcc(
 
   const now = new Date();
   const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-  const timestamp = [
-    now.getFullYear(),
-    pad(now.getMonth() + 1),
-    pad(now.getDate()),
-  ].join("") +
+  const timestamp =
+    [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join("") +
     "-" +
     [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join("");
 

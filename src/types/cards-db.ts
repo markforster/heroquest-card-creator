@@ -1,5 +1,6 @@
 import type { TemplateId } from "./templates";
 import type { StatValue } from "./stats";
+import type { CardFace } from "./card-face";
 
 export type CardStatus = "draft" | "saved" | "archived";
 
@@ -17,6 +18,9 @@ export interface CardRecord {
   schemaVersion: 1;
 
   title?: string;
+  showTitle?: boolean;
+  face?: CardFace;
+  pairedWith?: string | null;
   description?: string;
 
   imageAssetId?: string;
@@ -24,6 +28,7 @@ export interface CardRecord {
   imageScale?: number;
   imageOffsetX?: number;
   imageOffsetY?: number;
+  imageRotation?: number;
   imageOriginalWidth?: number;
   imageOriginalHeight?: number;
   borderColor?: string;

@@ -3,9 +3,9 @@
 import {
   ChevronLeft,
   ChevronRight,
+  Clock,
+  CopyPlus,
   Images,
-  Layers,
-  LayoutPanelTop,
   Settings,
   SquareStack,
 } from "lucide-react";
@@ -13,9 +13,10 @@ import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
-import { inspectorModeFlags, useInspectorMode } from "@/components/InspectorModeContext";
-import { previewModeFlags, usePreviewMode } from "@/components/PreviewModeContext";
+import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import KeyBinding from "@/components/KeyBinding";
 import LanguageMenu from "@/components/LanguageMenu";
+import NavActionButton from "@/components/NavActionButton";
 import { useI18n } from "@/i18n/I18nProvider";
 
 const COLLAPSE_MEDIA_QUERY = "(max-width: 1280px)";
@@ -43,20 +44,28 @@ function useMediaQuery(query: string) {
 
 export default function LeftNav() {
   const { t } = useI18n();
-  const { openAssets, openStockpile, openSettings } = useAppActions();
-  const { previewMode, togglePreviewMode } = usePreviewMode();
-  const { SHOW_BLUEPRINTS_TOGGLE } = previewModeFlags;
-  const { inspectorMode, toggleInspectorMode } = useInspectorMode();
-  const { SHOW_INSPECTOR_TOGGLE } = inspectorModeFlags;
+  const {
+    openAssets,
+    openStockpile,
+    openSettings,
+    openTemplatePicker,
+    openRecent,
+    isTemplatePickerOpen,
+    isAssetsOpen,
+    isStockpileOpen,
+    isRecentOpen,
+    isSettingsOpen,
+  } = useAppActions();
+  const {
+    state: { selectedTemplateId, activeCardIdByTemplate },
+  } = useCardEditor();
   const autoCollapsed = useMediaQuery(COLLAPSE_MEDIA_QUERY);
   const [manualCollapsed, setManualCollapsed] = useState(false);
   const [isCollapsedReady, setIsCollapsedReady] = useState(false);
   const isCollapsed = autoCollapsed || manualCollapsed;
   const collapseStateLabel = isCollapsed ? "Expand navigation" : "Collapse navigation";
-  const previewModeLabel =
-    previewMode === "blueprint" ? t("label.previewBlueprint") : t("label.previewLegacy");
-  const inspectorModeLabel =
-    inspectorMode === "generic" ? t("label.inspectorGeneric") : t("label.inspectorLegacy");
+  const activeCardId =
+    selectedTemplateId != null ? activeCardIdByTemplate[selectedTemplateId] : undefined;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -108,80 +117,67 @@ export default function LeftNav() {
         </div>
         <div className={styles.leftNavMiddle}>
           <div className={styles.leftNavList}>
-            <button
-              className={styles.leftNavItem}
-              type="button"
-              onClick={openStockpile}
-              title={t("tooltip.openCards")}
-              aria-label={t("tooltip.openCards")}
+            <KeyBinding
+              combo={{ key: "y", shift: true, meta: true }}
+              onTrigger={() => openTemplatePicker()}
+              label={t("tooltip.chooseTemplate")}
             >
-              <span className={styles.leftNavGlyph} aria-hidden="true">
-                <SquareStack />
-              </span>
-              <span className={styles.leftNavLabel}>{t("actions.cards")}</span>
-            </button>
-            <button
-              className={styles.leftNavItem}
-              type="button"
+              <KeyBinding
+                combo={{ key: "y", shift: true, ctrl: true }}
+                onTrigger={() => openTemplatePicker()}
+                label={t("tooltip.chooseTemplate")}
+              >
+                <NavActionButton
+                  label={t("actions.saveAsNew")}
+                  icon={CopyPlus}
+                  onClick={openTemplatePicker}
+                  ariaLabel={t("tooltip.createFromTemplate")}
+                  title={t("tooltip.createFromTemplate")}
+                  isActive={isTemplatePickerOpen}
+                  className={styles.leftNavNewButton}
+                />
+              </KeyBinding>
+            </KeyBinding>
+            <NavActionButton
+              label={t("actions.recentCards")}
+              icon={Clock}
+              onClick={openRecent}
+              title={t("actions.recentCards")}
+              ariaLabel={t("actions.recentCards")}
+              isActive={isRecentOpen}
+            />
+            <NavActionButton
+              label={t("actions.cards")}
+              icon={SquareStack}
+              onClick={() =>
+                openStockpile({
+                  initialSelectedIds: activeCardId ? [activeCardId] : [],
+                })
+              }
+              title={t("tooltip.openCards")}
+              ariaLabel={t("tooltip.openCards")}
+              isActive={isStockpileOpen}
+            />
+            <NavActionButton
+              label={t("actions.assets")}
+              icon={Images}
               onClick={openAssets}
               title={t("tooltip.openAssets")}
-              aria-label={t("tooltip.openAssets")}
-            >
-              <span className={styles.leftNavGlyph} aria-hidden="true">
-                <Images />
-              </span>
-              <span className={styles.leftNavLabel}>{t("actions.assets")}</span>
-            </button>
+              ariaLabel={t("tooltip.openAssets")}
+              isActive={isAssetsOpen}
+            />
           </div>
         </div>
         <div className={styles.leftNavBottom}>
           <div className={styles.leftNavList}>
-            <button
-              className={styles.leftNavItem}
-              type="button"
+            <NavActionButton
+              label={t("actions.settings")}
+              icon={Settings}
               onClick={openSettings}
               title={t("tooltip.openSettings")}
-              aria-label={t("tooltip.openSettings")}
-            >
-              <span className={styles.leftNavGlyph} aria-hidden="true">
-                <Settings />
-              </span>
-              <span className={styles.leftNavLabel}>{t("actions.settings")}</span>
-            </button>
-            {SHOW_BLUEPRINTS_TOGGLE ? (
-              <button
-                className={styles.leftNavItem}
-                type="button"
-                onClick={togglePreviewMode}
-                title={t("tooltip.previewMode")}
-                aria-pressed={previewMode === "blueprint"}
-                aria-label={`${t("label.previewMode")}: ${previewModeLabel}`}
-              >
-                <span className={styles.leftNavGlyph} aria-hidden="true">
-                  <Layers />
-                </span>
-                <span className={styles.leftNavLabel}>
-                  {t("label.previewMode")}: {previewModeLabel}
-                </span>
-              </button>
-            ) : null}
-            {SHOW_INSPECTOR_TOGGLE ? (
-              <button
-                className={styles.leftNavItem}
-                type="button"
-                onClick={toggleInspectorMode}
-                title={t("tooltip.inspectorMode")}
-                aria-pressed={inspectorMode === "generic"}
-                aria-label={`${t("label.inspectorMode")}: ${inspectorModeLabel}`}
-              >
-                <span className={styles.leftNavGlyph} aria-hidden="true">
-                  <LayoutPanelTop />
-                </span>
-                <span className={styles.leftNavLabel}>
-                  {t("label.inspectorMode")}: {inspectorModeLabel}
-                </span>
-              </button>
-            ) : null}
+              ariaLabel={t("tooltip.openSettings")}
+              isActive={isSettingsOpen}
+            />
             <LanguageMenu isCollapsed={isCollapsed} />
           </div>
         </div>

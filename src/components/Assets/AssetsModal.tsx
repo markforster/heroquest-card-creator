@@ -802,8 +802,9 @@ function AssetsModalFooter({
 }) {
   const { t } = useI18n();
   const {
-    state: { cardDrafts, activeCardIdByTemplate },
+    state: { draftTemplateId, draft, activeCardIdByTemplate },
     setCardDraft,
+    setSingleDraft,
   } = useCardEditor();
   const [affectedCardCount, setAffectedCardCount] = useState<number | null>(null);
 
@@ -879,21 +880,13 @@ function AssetsModalFooter({
     const idSet = new Set(assetIds);
 
     const affectedDrafts = new Set<TemplateId>();
-    (
-      Object.entries(cardDrafts) as [
-        TemplateId,
-        CardDataByTemplate[TemplateId] | undefined,
-      ][]
-    ).forEach(([templateId, draft]) => {
-      if (!draft) return;
-      if (activeCardIdByTemplate[templateId]) return;
+    if (draftTemplateId && draft && !activeCardIdByTemplate[draftTemplateId]) {
       const imageMatch = draft.imageAssetId && idSet.has(draft.imageAssetId);
       const iconMatch = "iconAssetId" in draft && draft.iconAssetId && idSet.has(draft.iconAssetId);
-
       if (imageMatch || iconMatch) {
-        affectedDrafts.add(templateId);
+        affectedDrafts.add(draftTemplateId);
       }
-    });
+    }
 
     const affectedDraftCount = affectedDrafts.size;
     const cardCountLabel = affectedCardCount === 1 ? t("label.card") : t("label.cards");
@@ -930,13 +923,7 @@ function AssetsModalFooter({
             setConfirmState((prev) => (prev ? { ...prev, isDeleting: true } : prev));
 
             // Clear image fields on any drafts that reference these assets.
-            (
-              Object.entries(cardDrafts) as [
-                TemplateId,
-                CardDataByTemplate[TemplateId] | undefined,
-              ][]
-            ).forEach(([templateId, draft]) => {
-              if (!draft) return;
+            if (draftTemplateId && draft) {
               const imageMatch = draft.imageAssetId && idSet.has(draft.imageAssetId);
               const iconMatch =
                 "iconAssetId" in draft && draft.iconAssetId && idSet.has(draft.iconAssetId);
@@ -954,6 +941,7 @@ function AssetsModalFooter({
                 nextDraft.imageOriginalHeight = undefined;
                 nextDraft.imageOffsetX = undefined;
                 nextDraft.imageOffsetY = undefined;
+                nextDraft.imageRotation = undefined;
               }
 
               if (iconMatch && "iconAssetId" in nextDraft) {
@@ -961,11 +949,9 @@ function AssetsModalFooter({
                 nextDraft.iconAssetName = undefined;
               }
 
-              setCardDraft(
-                templateId as TemplateId,
-                nextDraft as never,
-              );
-            });
+              setCardDraft(draftTemplateId, nextDraft as never);
+              setSingleDraft(draftTemplateId, nextDraft as never);
+            }
 
             await onConfirmDelete(ids);
             setConfirmState(null);

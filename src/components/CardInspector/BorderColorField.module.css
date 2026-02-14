@@ -62,14 +62,26 @@
   text-transform: uppercase;
 }
 
-.swatchRow {
+.specialRow {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.swatchRow > * {
+.specialRow > * {
+  flex: 0 0 auto;
+}
+
+.swatchGrid {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.swatchGrid > * {
   flex: 0 0 auto;
 }
 
@@ -77,10 +89,25 @@
   width: 34px;
   height: 34px;
   border-radius: 999px;
-  border: 2px solid rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.55);
   padding: 0;
   cursor: pointer;
   background: transparent;
+}
+
+.swatchSelected {
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+}
+
+.noBorderSwatch {
+  background-color: transparent;
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.18) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.18) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.18) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.18) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
 }
 
 .swatchAction {
@@ -94,6 +121,12 @@
   line-height: 1;
   padding: 0;
   cursor: pointer;
+}
+
+.swatchActionActive {
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .swatchAction:disabled {
@@ -128,4 +161,69 @@
 .swatchShell:hover .swatchRemove {
   opacity: 1;
   pointer-events: auto;
+}
+
+.smartSwatchAnchor {
+  position: relative;
+}
+
+.smartPopover {
+  position: fixed;
+  width: 220px;
+  padding: 10px;
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #1b1b1b;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.35);
+  z-index: 10;
+}
+
+.smartPopoverHeader {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+}
+
+.smartPopoverGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.smartPopoverGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.smartPopoverGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.smartPopoverGroupLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.smartPopoverSwatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.smartPopoverHint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
 }

@@ -21,6 +21,18 @@ describe("formatStatValue", () => {
     expect(formatStatValue([4, 6, 1])).toBe("4/6");
   });
 
+  it("formats split values using parentheses when requested", () => {
+    expect(formatStatValue([4, 6, 1, "paren"])).toBe("4(6)");
+  });
+
+  it("formats wildcard using parentheses when requested", () => {
+    expect(formatStatValue([4, -1, 1, "paren"])).toBe("4(*)");
+  });
+
+  it("formats split values using leading parentheses when requested", () => {
+    expect(formatStatValue([4, 6, 1, "paren-leading"])).toBe("(4)6");
+  });
+
   it("formats flagged split values as single when disabled", () => {
     expect(formatStatValue([4, 6, 0])).toBe("4");
   });

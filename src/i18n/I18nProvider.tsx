@@ -38,8 +38,9 @@ export function I18nProvider({ children }: Props) {
 
   const t = useCallback(
     (key: MessageKey): string => {
-      const bundle = messages[language] ?? messages.en;
-      return bundle[key] ?? messages.en[key] ?? key;
+      const bundle = messages[language] as Partial<Record<MessageKey, string>>;
+      const fallback = messages.en as Record<MessageKey, string>;
+      return bundle[key] ?? fallback[key] ?? key;
     },
     [language],
   );

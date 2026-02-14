@@ -3,6 +3,7 @@ import StatsPair from "@/components/CardParts/StatsPair";
 import Layer from "@/components/CardPreview/Layer";
 import { useStatLabelOverrides } from "@/components/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useDebugVisuals } from "@/components/DebugVisualsContext";
 import { getStatLabel } from "@/lib/stat-labels";
 import type { StatValue } from "@/types/stats";
 
@@ -36,20 +37,11 @@ export const HERO_STATS_HEIGHT = STATS_HEIGHT;
 export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlockProps) {
   const { t } = useI18n();
   const { overrides } = useStatLabelOverrides();
+  const { showTextBounds } = useDebugVisuals();
 
   return (
     <Layer>
       <g transform={`translate(${STATS_X}, ${y ?? STATS_Y})`}>
-        {/* Outer debug frame for alignment */}
-        {/* <rect
-          x={0}
-          y={0}
-          width={STATS_WIDTH}
-          height={STATS_HEIGHT}
-          fill="transparent"
-          stroke="#e21414ff"
-          strokeWidth={1}
-        /> */}
         <image
           href={heroStatsBg.src}
           x={0}
@@ -62,46 +54,62 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
         <StatsPair
           header={getStatLabel("statsLabelAttack", t("stats.attackDice"), overrides)}
           value={stats.attackDice}
-          x={14}
+          x={11}
           y={12}
-          width={160}
+          width={166}
           height={134}
+          debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelDefend", t("stats.defendDice"), overrides)}
           value={stats.defendDice}
-          x={174}
+          x={171}
           y={12}
-          width={160}
+          width={166}
           height={134}
+          debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelStartingPoints", t("statsLabelStartingPoints"), overrides)}
-          x={174 + 160}
-          width={320}
+          x={174 + 160 - 3}
+          width={326}
           y={12}
           height={101}
           headerHeight={35}
+          debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelHeroBody", t("stats.body"), overrides)}
           value={stats.bodyPoints}
-          x={174 + 160}
-          width={160}
+          x={174 + 160 - 3}
+          width={166}
           y={44}
           height={101}
           headerHeight={35}
+          debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelHeroMind", t("stats.mind"), overrides)}
           value={stats.mindPoints}
-          x={174 + 160 + 160}
+          x={174 + 160 + 160 - 3}
           // y={12}
-          width={160}
+          width={166}
           y={44}
           height={101}
           headerHeight={35}
+          debug={showTextBounds}
         />
+        {showTextBounds && (
+          <rect
+            x={0}
+            y={0}
+            width={STATS_WIDTH}
+            height={STATS_HEIGHT}
+            fill="transparent"
+            stroke="#cd14e2ff"
+            strokeWidth={2}
+          />
+        )}
       </g>
     </Layer>
   );

@@ -2,6 +2,7 @@
 
 import ModalShell from "@/components/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
+import { APP_VERSION } from "@/version";
 
 type ReleaseNotesModalProps = {
   isOpen: boolean;
@@ -36,7 +37,11 @@ const screenshotFilenames = [
 export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModalProps) {
   const { t } = useI18n();
   return (
-    <ModalShell isOpen={isOpen} onClose={onClose} title={t("heading.aboutTool")}>
+    <ModalShell
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`${t("heading.aboutTool")} - v${APP_VERSION}`}
+    >
       <div style={{ maxHeight: "60vh", overflowY: "auto", fontSize: "1.1rem" }}>
         <section style={{ marginBottom: "0.75rem" }}>
           <h3
@@ -117,8 +122,8 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             <li>
               Add rules text using a simple markdown-style syntax for bold and italic, with
               automatic word wrapping inside the available text area. There&apos;s also a
-              lightweight &quot;leader line&quot; format for things like{" "}
-              <code>[cost [...] 1gp]</code> that draws dotted lines between labels and values.
+              lightweight "leader line" format for things like <code>[cost [...] 1gp]</code> that
+              draws dotted lines between labels and values.
             </li>
             <li>
               On hero and monster cards, the body text grows upward from the bottom of the card
@@ -144,6 +149,29 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
               Back up your entire library of cards and image assets to a single <code>.hqcc</code>{" "}
               file and restore it in the same or another browser, so you can move work between
               machines or keep a local safety copy.
+            </li>
+            <li>
+              Organize your library with collections in the Cards browser, and bulk export a
+              selection or an entire view as a ZIP.
+            </li>
+            <li>
+              Customize stat labels globally (optional), and apply custom border colours to labelled
+              backs with smart suggestions, saved swatches, and quick restore.
+            </li>
+            <li>
+              Use text fitting controls to keep long titles and stat headings readable, and switch
+              to the WebGL preview for a more physical, card-in-hand feel.
+            </li>
+            <li>
+              Pair front and back faces so related cards stay linked, with quick previews and bulk
+              pairing tools.
+            </li>
+            <li>
+              Export paired faces together from the inspector or include paired faces during bulk
+              export.
+            </li>
+            <li>
+              Use Image Adjustments to refine scale, position, and rotation for artwork.
             </li>
             <li>
               Browse example cards and screenshots to see what&apos;s possible. A growing gallery of
@@ -182,10 +210,10 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             Notes & future work
           </h3>
           <p style={{ margin: 0, lineHeight: 1.4 }}>
-            This version is intentionally &quot;early but useful&quot;: it should feel about 99%
-            usable for day-to-day card creation, but there will definitely be rough edges, glitches
-            and missing quality-of-life touches. Things like keyboard shortcuts, richer help,
-            smoother loading, and additional card templates and layout polish are all on the list.
+            This version is intentionally "early but useful": it should feel about 99% usable for
+            day-to-day card creation, but there will definitely be rough edges, glitches and missing
+            quality-of-life touches. Things like keyboard shortcuts, richer help, smoother loading,
+            and additional card templates and layout polish are all on the list.
           </p>
           <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
             At the moment the tool has been primarily developed and tested in Chrome on desktop. It
@@ -209,7 +237,118 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
               color: "#e6b35a",
             }}
           >
-            Update 18/12/2025
+            Update 12/02/2026 (v0.5.2)
+          </h3>
+          <p style={{ margin: 0, lineHeight: 1.4 }}>
+            This release expanded pairing workflows and export options:
+          </p>
+          <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.1rem", lineHeight: 1.4 }}>
+            <li>
+              Front/back faces are now first-class, with clearer pairing controls in the inspector
+              and stockpile.
+            </li>
+            <li>
+              Back faces can manage multiple paired fronts with visual stacks and quick previews.
+            </li>
+            <li>
+              Export supports paired faces with a split-button and a bulk export prompt.
+            </li>
+            <li>
+              Template selection is faster with keyboard navigation and a Cmd/Ctrl+Shift+Y shortcut.
+            </li>
+            <li>
+              WebGL preview now shows a blueprint fallback on first render for smoother loading.
+            </li>
+            <li>
+              Image adjustments add rotation controls alongside position and scale.
+            </li>
+          </ul>
+        </section>
+
+        <section style={{ marginTop: "0.9rem" }}>
+          <h3
+            style={{
+              margin: 0,
+              marginBottom: "0.35rem",
+              fontSize: "1.2rem",
+              color: "#e6b35a",
+            }}
+          >
+            Update 07/02/2026 (v0.5.1)
+          </h3>
+          <p style={{ margin: 0, lineHeight: 1.4 }}>
+            This update focused on the editor’s foundation and workflow:
+          </p>
+          <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.1rem", lineHeight: 1.4 }}>
+            <li>
+              A blueprint-based renderer now drives card layouts for better consistency and easier
+              future expansion.
+            </li>
+            <li>
+              A metadata-driven inspector makes editing forms more flexible and maintainable.
+            </li>
+            <li>
+              A three-pane layout adds LeftNav navigation and clearer editor flow.
+            </li>
+            <li>
+              Custom border colours for labelled backs, with saved swatches and easy restore.
+            </li>
+            <li>
+              Double stats plus inline stat input for richer stat layouts and faster editing.
+            </li>
+            <li>
+              Safer storage and export improvements (DB version guard, export compression, persistent
+              storage request).
+            </li>
+            <li>
+              Optional Tauri desktop wrapper for native packaging.
+            </li>
+          </ul>
+        </section>
+
+        <section style={{ marginTop: "0.9rem" }}>
+          <h3
+            style={{
+              margin: 0,
+              marginBottom: "0.35rem",
+              fontSize: "1.2rem",
+              color: "#e6b35a",
+            }}
+          >
+            Update 10/01/2026 (v0.5.0)
+          </h3>
+          <p style={{ margin: 0, lineHeight: 1.4 }}>
+            This release focused on organizing larger libraries and making exports easier:
+          </p>
+          <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.1rem", lineHeight: 1.4 }}>
+            <li>
+              Collections were added to the Cards browser, with a sidebar for All cards, Unfiled,
+              and named collections.
+            </li>
+            <li>
+              Bulk export to ZIP lets you export a selection or a full view in one download.
+            </li>
+            <li>
+              Duplicate image detection keeps the asset library tidy (skips duplicates and
+              auto-renames same-name uploads).
+            </li>
+            <li>
+              Custom stat labels (optional) let you rename stats globally, and those preferences
+              are included in backups.
+            </li>
+          </ul>
+        </section>
+
+        <section style={{ marginTop: "0.9rem" }}>
+          <h3
+            style={{
+              margin: 0,
+              marginBottom: "0.35rem",
+              fontSize: "1.2rem",
+              color: "#e6b35a",
+            }}
+          >
+            Update 18/12/2025 (v0.4.0)
           </h3>
           <p style={{ margin: 0, lineHeight: 1.4 }}>
             This pass has been all about polish and consistency rather than big new features. The
@@ -237,133 +376,6 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             some stray visual glitches around the preview and inputs have been ironed out. There is
             still plenty of room for future quality-of-life improvements, but this update should
             make everyday use noticeably calmer and more consistent.
-          </p>
-        </section>
-
-        <section style={{ marginTop: "0.9rem" }}>
-          <h3
-            style={{
-              margin: 0,
-              marginBottom: "0.35rem",
-              fontSize: "1.2rem",
-              color: "#e6b35a",
-            }}
-          >
-            Update 18/12/2025 – Backup &amp; restore
-          </h3>
-          <p style={{ margin: 0, lineHeight: 1.4 }}>
-            You can now back up and restore your work using the new &quot;Export data&quot; and
-            &quot;Import data&quot; links in the footer. Export creates a single <code>.hqcc</code>{" "}
-            file (a zipped JSON backup) that contains your saved cards, image assets, and key editor
-            state; import lets you load that file in the same or another browser and continue where
-            you left off.
-          </p>
-          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
-            Backups are created entirely in your browser and never leave your device unless you
-            choose to move or share them. Importing a backup will replace the existing cards and
-            assets in this browser profile, so if you&apos;ve already started new work here
-            it&apos;s worth exporting a fresh backup first. The format is designed to be
-            forwards-compatible, so future versions of the tool can continue to read today&apos;s
-            backups, and older
-            <code>.hqcc.json</code> backups from earlier versions will still import correctly.
-          </p>
-        </section>
-
-        <section style={{ marginTop: "0.9rem" }}>
-          <h3
-            style={{
-              margin: 0,
-              marginBottom: "0.35rem",
-              fontSize: "1.2rem",
-              color: "#e6b35a",
-            }}
-          >
-            Update 29/12/2025 – Organise, export, and customise
-          </h3>
-          <p style={{ margin: 0, lineHeight: 1.4 }}>
-            This update focuses on making it easier to manage a growing library of cards and get
-            them out of the app when you&apos;re ready to share, print, or play. The Cards browser
-            is now more powerful, and a few common workflow annoyances have been smoothed away.
-          </p>
-          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
-            Collections are now available in the Cards browser, with a Finder-style sidebar that
-            lets you quickly switch between All cards, Unfiled, and your own named collections. You
-            can create and manage collections, see what&apos;s inside at a glance with live counts,
-            and add or remove multiple cards in one go to keep your decks and sets tidy.
-          </p>
-          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
-            Bulk export is here too: select the cards you want (or export everything in the current
-            view) and download a single ZIP containing all the card images. The export flow shows
-            progress as it runs and can be cancelled if you started the wrong batch, making larger
-            exports much less of a waiting game.
-          </p>
-          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
-            Uploading images should also feel cleaner: duplicate uploads are detected and skipped
-            automatically, and filename collisions are handled so your library stays readable.
-            Finally, a new Settings panel lets you customise the stat heading labels on your cards
-            (optional and off by default), which is handy if your group uses different terminology.
-          </p>
-        </section>
-
-        <section style={{ marginTop: "0.9rem" }}>
-          <h3
-            style={{
-              margin: 0,
-              marginBottom: "0.35rem",
-              fontSize: "1.2rem",
-              color: "#e6b35a",
-            }}
-          >
-            Screenshots
-          </h3>
-          <p style={{ margin: 0, marginBottom: "0.5rem", lineHeight: 1.4 }}>
-            A few examples of the editor in use. You can open any image in a new tab to see it at
-            full resolution.
-          </p>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr)",
-              gap: "0.5rem",
-            }}
-          >
-            {/* eslint-disable @next/next/no-img-element */}
-            {screenshotFilenames.map((filename) => {
-              const url = `${screenshotBaseUrl}/${encodeURIComponent(filename)}`;
-              const label = filename.replace(/\.[^.]+$/, "");
-              return (
-                <a
-                  key={filename}
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  style={{ display: "block" }}
-                >
-                  <img
-                    src={url}
-                    alt={`${label} screenshot`}
-                    style={{
-                      width: "100%",
-                      borderRadius: 6,
-                      border: "1px solid rgba(0,0,0,0.6)",
-                    }}
-                  />
-                </a>
-              );
-            })}
-            {/* eslint-enable @next/next/no-img-element */}
-          </div>
-          <p style={{ margin: "0.5rem 0 0", lineHeight: 1.4 }}>
-            For the full set of screenshots, visit{" "}
-            <a
-              href="https://public.markforster.info/Heroquest/Tools/card-maker-sample-screenshots/"
-              target="_blank"
-              rel="noreferrer noopener"
-              style={{ color: "#e6b35a" }}
-            >
-              /Heroquest/Tools/card-maker-sample-screenshots
-            </a>
-            .
           </p>
         </section>
       </div>

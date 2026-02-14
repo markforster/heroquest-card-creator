@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
@@ -9,12 +9,12 @@ import { useI18n } from "@/i18n/I18nProvider";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
-import ContentField from "./ContentField";
 import BorderColorField from "./BorderColorField";
+import ContentField from "./ContentField";
 import HeroStatsInspector from "./HeroStatsInspector";
 import ImageField from "./ImageField";
-import MonsterStatsInspector from "./MonsterStatsInspector";
 import MonsterIconField from "./MonsterIconField";
+import MonsterStatsInspector from "./MonsterStatsInspector";
 import TitleField from "./TitleField";
 
 type GenericInspectorFormProps = {
@@ -24,30 +24,53 @@ type GenericInspectorFormProps = {
 export default function GenericInspectorForm({ templateId }: GenericInspectorFormProps) {
   const { t } = useI18n();
   const {
-    state: { cardDrafts },
+    state: { draftTemplateId, draft },
     setCardDraft,
+    setSingleDraft,
     setTemplateDirty,
   } = useCardEditor();
 
+  const draftValue =
+    draftTemplateId === templateId && draft
+      ? (draft as CardDataByTemplate[TemplateId])
+      : undefined;
+  const draftRef = useRef<CardDataByTemplate[TemplateId] | undefined>(draftValue);
+  useEffect(() => {
+    draftRef.current = draftValue;
+  }, [draftValue]);
+  const fields = inspectorFieldsByTemplate[templateId];
+  const showTitleToggle = Boolean(
+    fields?.some((field) => field.fieldType === "title" && field.showToggle),
+  );
   const methods = useForm<CardDataByTemplate[TemplateId]>({
-    defaultValues: (cardDrafts[templateId] as CardDataByTemplate[TemplateId] | undefined) ?? {},
+    defaultValues: showTitleToggle
+      ? { ...draftValue, showTitle: draftValue?.showTitle ?? true }
+      : (draftValue ?? {}),
     mode: "onBlur",
   });
 
   useEffect(() => {
     let isInitial = true;
     const subscription = methods.watch((value) => {
-      setCardDraft(templateId, value as CardDataByTemplate[TemplateId]);
       if (isInitial) {
         isInitial = false;
-        return;
+        if (!draftRef.current) {
+          return;
+        }
+      } else {
+        setTemplateDirty(templateId, true);
       }
-      setTemplateDirty(templateId, true);
+      const currentDraft = (draftRef.current ?? {}) as CardDataByTemplate[TemplateId];
+      const nextDraft = {
+        ...currentDraft,
+        ...(value as CardDataByTemplate[TemplateId]),
+      } as CardDataByTemplate[TemplateId];
+      setCardDraft(templateId, nextDraft);
+      setSingleDraft(templateId, nextDraft);
     });
     return () => subscription.unsubscribe();
-  }, [methods, setCardDraft, setTemplateDirty, templateId]);
+  }, [methods, setCardDraft, setSingleDraft, setTemplateDirty, templateId]);
 
-  const fields = inspectorFieldsByTemplate[templateId];
   if (!fields || fields.length === 0) {
     return <div>{t("ui.inspectorGenericWip")}</div>;
   }
@@ -62,16 +85,12 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
                 key={`${field.bind}-${index}`}
                 label={t(field.labelKey)}
                 required={field.required}
+                showToggle={field.showToggle}
               />
             );
           }
           if (field.fieldType === "text") {
-            return (
-              <ContentField
-                key={`${field.bind}-${index}`}
-                label={t(field.labelKey)}
-              />
-            );
+            return <ContentField key={`${field.bind}-${index}`} label={t(field.labelKey)} />;
           }
           if (field.fieldType === "stats") {
             if (field.statsType === "hero") {
@@ -116,12 +135,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
             );
           }
           if (field.fieldType === "monsterIcon") {
-            return (
-              <MonsterIconField
-                key={`${field.bind}-${index}`}
-                label={t(field.labelKey)}
-              />
-            );
+            return <MonsterIconField key={`${field.bind}-${index}`} label={t(field.labelKey)} />;
           }
           return null;
         })}
