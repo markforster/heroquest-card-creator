@@ -14,7 +14,9 @@ import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getCard, listCards, touchCardLastViewed, updateCard, updateCards } from "@/lib/cards-db";
+import { getCard, listCards, touchCardLastViewed } from "@/lib/cards-db";
+import { createPair, deletePairsForFront, replacePairsForBack } from "@/lib/pairs-service";
+import { listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { CardRecord } from "@/types/cards-db";
@@ -146,28 +148,10 @@ export default function TemplateChooser() {
       return;
     }
     let active = true;
-    const normalizePairing = async (record: CardRecord) => {
-      if (!record.pairedWith) return record;
-      const isSelfPair = record.pairedWith === record.id;
-      const isBackPaired = record.face === "back";
-      if (!isSelfPair && !isBackPaired) return record;
-      try {
-        const updated = await updateCard(record.id, { pairedWith: null });
-        return updated ?? { ...record, pairedWith: null };
-      } catch {
-        return { ...record, pairedWith: null };
-      }
-    };
     getCard(activeCardId)
-      .then(async (record) => {
+      .then((record) => {
         if (!active) return;
-        if (!record) {
-          setCurrentCard(null);
-          return;
-        }
-        const normalized = await normalizePairing(record);
-        if (!active) return;
-        setCurrentCard(normalized);
+        setCurrentCard(record);
       })
       .catch(() => {
         if (!active) return;
@@ -199,26 +183,35 @@ export default function TemplateChooser() {
 
   useEffect(() => {
     let active = true;
-    const pairedId = draftValue?.pairedWith ?? null;
-    if (!pairedId) {
-      setPairedCard(null);
-      return () => {
-        active = false;
-      };
-    }
-    getCard(pairedId)
-      .then((record) => {
-        if (!active) return;
-        setPairedCard(record);
-      })
-      .catch(() => {
+    const loadPairedBack = async () => {
+      if (!activeCardId || effectiveFace !== "front") {
         if (!active) return;
         setPairedCard(null);
-      });
+        return;
+      }
+
+      const pairs = await listPairsForFace(activeCardId);
+      if (!active) return;
+      const match =
+        pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
+        pairs.find((pair) => pair.backFaceId);
+      if (!match?.backFaceId) {
+        setPairedCard(null);
+        return;
+      }
+      const record = await getCard(match.backFaceId);
+      if (!active) return;
+      setPairedCard(record);
+    };
+
+    loadPairedBack().catch(() => {
+      if (!active) return;
+      setPairedCard(null);
+    });
     return () => {
       active = false;
     };
-  }, [draftValue?.pairedWith]);
+  }, [activeCardId, effectiveFace]);
 
   useEffect(() => {
     if (effectiveFace !== "back") {
@@ -243,8 +236,21 @@ export default function TemplateChooser() {
       .then((cards) => {
         if (!active) return;
         if (activeCardId) {
-          const matches = cards.filter((card) => card.pairedWith === activeCardId);
-          void loadFronts(matches);
+          void listPairsForFace(activeCardId)
+            .then((pairs) => {
+              if (!active) return;
+              const frontIds = new Set(
+                pairs
+                  .map((pair) => pair.frontFaceId)
+                  .filter((id): id is string => Boolean(id)),
+              );
+              const matches = cards.filter((card) => frontIds.has(card.id));
+              void loadFronts(matches);
+            })
+            .catch(() => {
+              if (!active) return;
+              setPairedFronts([]);
+            });
           return;
         }
         if (draftPairingFrontIds?.length) {
@@ -285,7 +291,6 @@ export default function TemplateChooser() {
     const nextDraft = {
       ...(draftValue ?? {}),
       face: nextFace,
-      pairedWith: nextFace === "back" ? null : draftValue?.pairedWith,
     } as CardDataByTemplate[TemplateId];
     setCardDraft(currentTemplateId, nextDraft);
     setSingleDraft(currentTemplateId, nextDraft);
@@ -311,22 +316,32 @@ export default function TemplateChooser() {
       }
 
       if (nextFace === "back") {
-        const pairedId = draftValue?.pairedWith ?? null;
-        if (pairedId) {
-          const pairedRecord = await getCard(pairedId);
-          const pairedTitle = pairedRecord?.title ?? FALLBACK_TITLE;
-          setPendingChange({
-            mode: "front-to-back",
-            nextFace,
-            pairedTitle,
-          });
-          return;
+        if (activeCardId) {
+          const pairs = await listPairsForFace(activeCardId);
+          const match =
+            pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
+            pairs.find((pair) => pair.backFaceId);
+          if (match?.backFaceId) {
+            const pairedRecord = await getCard(match.backFaceId);
+            const pairedTitle = pairedRecord?.title ?? FALLBACK_TITLE;
+            setPendingChange({
+              mode: "front-to-back",
+              nextFace,
+              pairedTitle,
+            });
+            return;
+          }
         }
       }
 
       if (nextFace === "front" && effectiveFace === "back" && activeCardId) {
-        const cards = await listCards();
-        const affected = cards.filter((card) => card.pairedWith === activeCardId);
+        const pairs = await listPairsForFace(activeCardId);
+        const affectedIds = pairs
+          .map((pair) => pair.frontFaceId)
+          .filter((id): id is string => Boolean(id));
+        const affected = affectedIds.length
+          ? (await listCards()).filter((card) => affectedIds.includes(card.id))
+          : [];
         if (affected.length > 0) {
           setPendingChange({
             mode: "back-to-front",
@@ -353,7 +368,7 @@ export default function TemplateChooser() {
   const currentTemplateThumbnail = template?.thumbnail ?? null;
   const pairedThumbnail = pairedCard ? cardTemplatesById[pairedCard.templateId]?.thumbnail : null;
   const pairedTitle = pairedCard?.title ?? FALLBACK_TITLE;
-  const hasPair = Boolean(draftValue?.pairedWith && pairedCard);
+  const hasPair = Boolean(pairedCard);
   const visibleFronts = pairedFronts.slice(0, 8);
   const overflowCount = pairedFronts.length > 8 ? pairedFronts.length - 8 : 0;
   const shouldShowOverflowPopover = isOverflowPopoverOpen && overflowPopoverAnchor;
@@ -474,13 +489,15 @@ export default function TemplateChooser() {
                 openStockpile({
                   mode: "pair-backs",
                   titleOverride: t("heading.selectBackCard"),
-                  initialSelectedIds: draftValue?.pairedWith ? [draftValue.pairedWith] : [],
+                  initialSelectedIds: pairedCard ? [pairedCard.id] : [],
                   onConfirmSelection: (cardIds) => {
                     const selectedId = cardIds?.[0];
                     if (!selectedId || !currentTemplateId) return;
+                    if (activeCardId) {
+                      void createPair(activeCardId, selectedId);
+                    }
                     const nextDraft = {
                       ...(draftValue ?? {}),
-                      pairedWith: selectedId,
                       face: draftValue?.face ?? template?.defaultFace,
                     } as CardDataByTemplate[TemplateId];
                     setCardDraft(currentTemplateId, nextDraft);
@@ -542,14 +559,16 @@ export default function TemplateChooser() {
                   disabled={pairingDisabled}
                   onClick={() => {
                     if (pairingDisabled) return;
-                    if (!currentTemplateId) return;
-                    const nextDraft = {
-                      ...(draftValue ?? {}),
-                      pairedWith: null,
-                    } as CardDataByTemplate[TemplateId];
-                    setCardDraft(currentTemplateId, nextDraft);
-                    setSingleDraft(currentTemplateId, nextDraft);
-                    setTemplateDirty(currentTemplateId, true);
+                    if (!activeCardId) return;
+                    void deletePairsForFront(activeCardId);
+                    if (currentTemplateId) {
+                      const nextDraft = {
+                        ...(draftValue ?? {}),
+                      } as CardDataByTemplate[TemplateId];
+                      setCardDraft(currentTemplateId, nextDraft);
+                      setSingleDraft(currentTemplateId, nextDraft);
+                      setTemplateDirty(currentTemplateId, true);
+                    }
                   }}
                 >
                   <Unlink2 aria-hidden="true" />
@@ -570,31 +589,30 @@ export default function TemplateChooser() {
               }
               disabled={pairingDisabled}
               onClick={() => {
-                if (pairingDisabled) return;
-                if (!activeCardId) return;
-                openStockpile({
-                  mode: "pair-fronts",
-                  titleOverride: t("heading.manageFrontPairings"),
-                  initialSelectedIds: pairedFronts.map((card) => card.id),
-                  onConfirmSelection: async (cardIds) => {
-                    const selectedSet = new Set(cardIds);
-                    const removedIds = pairedFronts
-                      .map((card) => card.id)
-                      .filter((id) => !selectedSet.has(id));
-                    try {
-                      if (removedIds.length > 0) {
-                        await updateCards(removedIds, { pairedWith: null });
-                      }
-                      if (cardIds.length > 0) {
-                        await updateCards(cardIds, { pairedWith: activeCardId, face: "front" });
-                      }
+                    if (pairingDisabled) return;
+                    if (!activeCardId) return;
+                    openStockpile({
+                      mode: "pair-fronts",
+                      titleOverride: t("heading.manageFrontPairings"),
+                      initialSelectedIds: pairedFronts.map((card) => card.id),
+                      onConfirmSelection: async (cardIds) => {
+                        try {
+                          await replacePairsForBack(activeCardId, cardIds);
+                        } catch {
+                          // Ignore pair update errors for now.
+                        }
+                        const selectedSet = new Set(cardIds);
+                        const removedIds = pairedFronts
+                          .map((card) => card.id)
+                          .filter((id) => !selectedSet.has(id));
+                        try {
                       setPairedFrontsToken((prev) => prev + 1);
-                    } catch {
-                      // Ignore update errors for now.
-                    }
-                  },
-                });
-              }}
+                        } catch {
+                          // Ignore update errors for now.
+                        }
+                      },
+                    });
+                  }}
             >
               <Combine aria-hidden="true" />
             </button>
@@ -799,9 +817,7 @@ export default function TemplateChooser() {
           setIsConfirming(true);
           try {
             if (pendingChange.mode === "back-to-front") {
-              await Promise.all(
-                pendingChange.affectedFrontIds.map((id) => updateCard(id, { pairedWith: null })),
-              );
+              await Promise.all(pendingChange.affectedFrontIds.map((id) => deletePairsForFront(id)));
             }
             applyFaceChange(pendingChange.nextFace);
           } finally {

@@ -7,7 +7,6 @@ export interface BaseCardFields {
   title?: string;
   showTitle?: boolean;
   face?: CardFace;
-  pairedWith?: string | null;
   imageUrl?: string;
   imageAssetId?: string;
   imageAssetName?: string;

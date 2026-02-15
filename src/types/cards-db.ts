@@ -20,7 +20,6 @@ export interface CardRecord {
   title?: string;
   showTitle?: boolean;
   face?: CardFace;
-  pairedWith?: string | null;
   description?: string;
 
   imageAssetId?: string;

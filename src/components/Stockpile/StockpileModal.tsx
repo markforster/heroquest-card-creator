@@ -25,6 +25,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { deleteCards, listCards } from "@/lib/cards-db";
 import { runBulkExport } from "@/lib/export-cards";
+import { deletePairsForFace, listAllPairs } from "@/lib/pairs-service";
 import {
   createCollection,
   deleteCollection,
@@ -156,6 +157,8 @@ export default function StockpileModal({
   } | null>(null);
   const [conflictPopoverCardId, setConflictPopoverCardId] = useState<string | null>(null);
   const conflictHoverTimeoutRef = useRef<number | null>(null);
+  const [pairsByBackId, setPairsByBackId] = useState<Map<string, string[]>>(new Map());
+  const [backByFrontId, setBackByFrontId] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -213,6 +216,34 @@ export default function StockpileModal({
     },
     enabled: isPairOverflowOpen,
   });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    listAllPairs()
+      .then((pairs) => {
+        if (!active) return;
+        const nextPairsByBack = new Map<string, string[]>();
+        const nextBackByFront = new Map<string, string>();
+        pairs.forEach((pair) => {
+          if (!pair.frontFaceId || !pair.backFaceId) return;
+          nextBackByFront.set(pair.frontFaceId, pair.backFaceId);
+          const existing = nextPairsByBack.get(pair.backFaceId) ?? [];
+          existing.push(pair.frontFaceId);
+          nextPairsByBack.set(pair.backFaceId, existing);
+        });
+        setPairsByBackId(nextPairsByBack);
+        setBackByFrontId(nextBackByFront);
+      })
+      .catch(() => {
+        if (!active) return;
+        setPairsByBackId(new Map());
+        setBackByFrontId(new Map());
+      });
+    return () => {
+      active = false;
+    };
+  }, [cards, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -293,14 +324,16 @@ export default function StockpileModal({
   }, [isPairFronts, activeCardId]);
   const pairedByTargetId = useMemo(() => {
     const map = new Map<string, CardRecord[]>();
-    cards.forEach((card) => {
-      if (!card.pairedWith) return;
-      const existing = map.get(card.pairedWith) ?? [];
-      existing.push(card);
-      map.set(card.pairedWith, existing);
+    pairsByBackId.forEach((frontIds, backId) => {
+      const fronts = frontIds
+        .map((frontId) => cardById.get(frontId))
+        .filter((card): card is CardRecord => Boolean(card));
+      if (fronts.length) {
+        map.set(backId, fronts);
+      }
     });
     return map;
-  }, [cards]);
+  }, [pairsByBackId, cardById]);
   const selectedCards = cards.filter((card) => selectedIds.includes(card.id));
   const selectedVisibleCards = cards.filter((card) => visibleSelectedIds.includes(card.id));
   const shouldShowPairOverflow = isPairOverflowOpen && pairOverflowAnchor;
@@ -355,7 +388,8 @@ export default function StockpileModal({
 
     base.forEach((card) => {
       const isBack = card.face === "back";
-      const groupKey = !isBack && card.pairedWith ? card.pairedWith : card.id;
+      const pairedBackId = !isBack ? backByFrontId.get(card.id) : null;
+      const groupKey = !isBack && pairedBackId ? pairedBackId : card.id;
       const existing = groupMap.get(groupKey) ?? [];
       existing.push(card);
       groupMap.set(groupKey, existing);
@@ -549,8 +583,9 @@ export default function StockpileModal({
                   if (isPairFronts) {
                     const conflicting = selectedIds.filter((id) => {
                       const selectedCard = cardById.get(id);
-                      if (!selectedCard?.pairedWith) return false;
-                      return selectedCard.pairedWith !== activeBackId;
+                      const pairedBackId = selectedCard ? backByFrontId.get(selectedCard.id) : null;
+                      if (!pairedBackId) return false;
+                      return pairedBackId !== activeBackId;
                     });
                     if (conflicting.length > 0) {
                       setPairingConflictDialog({
@@ -865,6 +900,7 @@ export default function StockpileModal({
                         : t("actions.delete"),
                     onConfirm: async () => {
                       try {
+                        await Promise.all(ids.map((id) => deletePairsForFace(id)));
                         await deleteCards(ids);
                         const idSet = new Set(ids);
                         (Object.keys(activeCardIdByTemplate) as TemplateId[]).forEach(
@@ -1032,13 +1068,14 @@ export default function StockpileModal({
                         ? URL.createObjectURL(card.thumbnailBlob)
                         : null;
                     const isSelected = selectedIds.includes(card.id);
+                    const pairedBackId = backByFrontId.get(card.id) ?? null;
                     const isPairingConflict =
-                      isPairFronts && card.pairedWith && card.pairedWith !== activeBackId;
+                      isPairFronts && pairedBackId && pairedBackId !== activeBackId;
                     const templateMeta = cardTemplatesById[card.templateId];
                     const effectiveFace = card.face ?? templateMeta?.defaultFace;
                     const pairedFronts = pairedByTargetId.get(card.id) ?? [];
-                    const pairedCard = card.pairedWith
-                      ? (cardById.get(card.pairedWith) ?? null)
+                    const pairedCard = pairedBackId
+                      ? (cardById.get(pairedBackId) ?? null)
                       : (pairedFronts[0] ?? null);
                     const pairedThumbUrl =
                       typeof window !== "undefined" && pairedCard?.thumbnailBlob
@@ -1139,8 +1176,8 @@ export default function StockpileModal({
                                 <div className={styles.cardsConflictPopoverThumb}>
                                   {(() => {
                                     const conflictCard = cardById.get(card.id);
-                                    const paired = conflictCard?.pairedWith
-                                      ? cardById.get(conflictCard.pairedWith)
+                                    const paired = conflictCard
+                                      ? cardById.get(backByFrontId.get(conflictCard.id) ?? "")
                                       : null;
                                     const pairedThumbUrl =
                                       typeof window !== "undefined" && paired?.thumbnailBlob
@@ -1175,8 +1212,8 @@ export default function StockpileModal({
                                   <span>
                                     {(() => {
                                       const conflictCard = cardById.get(card.id);
-                                      const paired = conflictCard?.pairedWith
-                                        ? cardById.get(conflictCard.pairedWith)
+                                      const paired = conflictCard
+                                        ? cardById.get(backByFrontId.get(conflictCard.id) ?? "")
                                         : null;
                                       return paired?.title ?? paired?.name ?? "Untitled card";
                                     })()}
@@ -1336,8 +1373,8 @@ export default function StockpileModal({
             const hoveredFace = hoveredCard.face ?? hoveredTemplate?.defaultFace;
             const isHoveredBack = hoveredFace === "back";
             const hoveredPairedFronts = pairedByTargetId.get(hoveredCard.id) ?? [];
-            const hoveredPairedCard = hoveredCard.pairedWith
-              ? (cardById.get(hoveredCard.pairedWith) ?? null)
+            const hoveredPairedCard = backByFrontId.get(hoveredCard.id)
+              ? (cardById.get(backByFrontId.get(hoveredCard.id) ?? "") ?? null)
               : (hoveredPairedFronts[0] ?? null);
             const hoveredPairedThumbUrl =
               typeof window !== "undefined" && hoveredPairedCard?.thumbnailBlob
@@ -1492,8 +1529,9 @@ export default function StockpileModal({
             const backIds = new Set<string>();
             pairingConflictDialog.cardIds.forEach((id) => {
               const card = cardById.get(id);
-              if (card?.pairedWith) {
-                backIds.add(card.pairedWith);
+              const pairedBackId = card ? backByFrontId.get(card.id) : null;
+              if (pairedBackId) {
+                backIds.add(pairedBackId);
               }
             });
             const backCount = backIds.size || 1;
@@ -1508,8 +1546,9 @@ export default function StockpileModal({
             const pairedBackIds = new Set<string>();
             pairingConflictDialog.cardIds.forEach((id) => {
               const card = cardById.get(id);
-              if (card?.pairedWith) {
-                pairedBackIds.add(card.pairedWith);
+              const pairedBackId = card ? backByFrontId.get(card.id) : null;
+              if (pairedBackId) {
+                pairedBackIds.add(pairedBackId);
               }
             });
             const pairedBacks = Array.from(pairedBackIds)

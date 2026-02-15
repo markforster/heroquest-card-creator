@@ -294,21 +294,7 @@ export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecor
   return filtered;
 }
 
-export async function normalizeSelfPairings(): Promise<number> {
-  const cards = await listCards({ status: "saved" });
-  const invalidIds = cards.filter((card) => card.pairedWith === card.id).map((card) => card.id);
-  if (!invalidIds.length) return 0;
-  await updateCards(invalidIds, { pairedWith: null });
-  return invalidIds.length;
-}
-
 export async function deleteCard(id: string): Promise<void> {
-  const cards = await listCards({ status: "saved" });
-  const pairedIds = cards.filter((card) => card.pairedWith === id).map((card) => card.id);
-  if (pairedIds.length > 0) {
-    await updateCards(pairedIds, { pairedWith: null });
-  }
-
   const store = await getCardsStore("readwrite");
 
   await new Promise<void>((resolve, reject) => {
@@ -320,15 +306,6 @@ export async function deleteCard(id: string): Promise<void> {
 
 export async function deleteCards(ids: string[]): Promise<void> {
   if (!ids.length) return;
-
-  const idSet = new Set(ids);
-  const cards = await listCards({ status: "saved" });
-  const pairedIds = cards
-    .filter((card) => card.pairedWith && idSet.has(card.pairedWith))
-    .map((card) => card.id);
-  if (pairedIds.length > 0) {
-    await updateCards(pairedIds, { pairedWith: null });
-  }
 
   const store = await getCardsStore("readwrite");
 

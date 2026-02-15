@@ -13,6 +13,7 @@ import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { getCard, listCards } from "@/lib/cards-db";
+import { listPairsForFace } from "@/lib/pairs-service";
 import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
@@ -143,13 +144,20 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
 
     const updateReverseCard = async () => {
       if (effectiveFace === "front") {
-        const pairedId = cardData?.pairedWith ?? null;
-        if (!pairedId) {
-          setReverseCard(null);
-          return;
-        }
         try {
-          const record = await getCard(pairedId);
+          let backId: string | null = null;
+          if (activeCardId) {
+            const pairs = await listPairsForFace(activeCardId);
+            const match =
+              pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
+              pairs.find((pair) => pair.backFaceId);
+            backId = match?.backFaceId ?? null;
+          }
+          if (!backId) {
+            setReverseCard(null);
+            return;
+          }
+          const record = await getCard(backId);
           if (!active || !record) {
             setReverseCard(null);
             return;
@@ -181,7 +189,14 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
         try {
           const cards = await listCards({ status: "saved" });
           if (!active) return;
-          const matches = cards.filter((card) => card.pairedWith === activeCardId);
+          const pairs = await listPairsForFace(activeCardId);
+          if (!active) return;
+          const frontIds = new Set(
+            pairs
+              .map((pair) => pair.frontFaceId)
+              .filter((id): id is string => Boolean(id)),
+          );
+          const matches = cards.filter((card) => frontIds.has(card.id));
           matches.sort((a, b) => {
             const aViewed = a.lastViewedAt ?? 0;
             const bViewed = b.lastViewedAt ?? 0;
@@ -223,7 +238,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
     return () => {
       active = false;
     };
-  }, [activeCardId, cardData?.pairedWith, effectiveFace, language, showWebgl]);
+  }, [activeCardId, effectiveFace, language, showWebgl]);
 
   const [reverseTextureCanvas, setReverseTextureCanvas] = useState<HTMLCanvasElement | null>(null);
   const [reverseTextureVersion, setReverseTextureVersion] = useState(0);

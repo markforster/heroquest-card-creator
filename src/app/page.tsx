@@ -29,7 +29,8 @@ import { WebglPreviewSettingsProvider } from "@/components/WebglPreviewSettingsC
 import dungeonAtmosphere from "@/assets/dungeon atmostphere - 2.png";
 import { cardTemplatesById } from "@/data/card-templates";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
-import { createCard, listCards, normalizeSelfPairings, updateCard, updateCards } from "@/lib/cards-db";
+import { createCard, listCards, updateCard, updateCards } from "@/lib/cards-db";
+import { createPair, deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -90,6 +91,7 @@ function IndexPageInner() {
   const [pairedFrontCount, setPairedFrontCount] = useState(0);
   const [pairedFrontIds, setPairedFrontIds] = useState<string[]>([]);
   const [activeFrontId, setActiveFrontId] = useState<string | null>(null);
+  const [pairedBackId, setPairedBackId] = useState<string | null>(null);
   const [exportTarget, setExportTarget] = useState<CardRecord | null>(null);
   const [isExportingFaces, setIsExportingFaces] = useState(false);
   const [exportTotal, setExportTotal] = useState(0);
@@ -131,10 +133,9 @@ function IndexPageInner() {
     const derivedName = (draftTitle ?? "").toString().trim() || `${templateId} card`;
 
     const patch = cardDataToCardRecordPatch(templateId, derivedName, draftValue as never);
-    const safePatch =
-      mode === "update" && activeCardId && patch.pairedWith === activeCardId
-        ? { ...patch, pairedWith: null }
-        : patch;
+    const saveFace =
+      (draftValue?.face ?? selectedTemplate?.defaultFace) === "back" ? "back" : "front";
+    const safePatch = patch;
     const viewedAt = Date.now();
 
     let didSave = false;
@@ -150,12 +151,14 @@ function IndexPageInner() {
         });
         setActiveCard(templateId, record.id, record.status);
         setTemplateDirty(templateId, false);
+        if (saveFace === "front" && pairedBackId) {
+          await createPair(record.id, pairedBackId);
+        }
         if (draftPairingFrontIds?.length) {
           try {
-            await updateCards(draftPairingFrontIds, {
-              pairedWith: record.id,
-              face: "front",
-            });
+            await Promise.all(
+              draftPairingFrontIds.map((frontId) => createPair(frontId, record.id)),
+            );
           } catch (error) {
             // eslint-disable-next-line no-console
             console.error("[page] Failed to apply draft pairings", error);
@@ -171,6 +174,13 @@ function IndexPageInner() {
           lastViewedAt: viewedAt,
         });
         if (record) {
+          if (saveFace === "front") {
+            if (pairedBackId) {
+              await createPair(activeCardId, pairedBackId);
+            } else {
+              await deletePairsForFront(activeCardId);
+            }
+          }
           setActiveCard(templateId, record.id, record.status);
           setTemplateDirty(templateId, false);
           didSave = true;
@@ -232,7 +242,6 @@ function IndexPageInner() {
     const nextDraft = {
       ...draftValue,
       ...(draftTitle ? { title: nextDuplicateTitle(String(draftTitle)) } : {}),
-      ...(withPairing ? {} : { pairedWith: null }),
     } as CardDataByTemplate[TemplateId];
     if (withPairing && effectiveFace === "back" && pairedFrontIds.length > 0) {
       setDraftPairingFrontIds(pairedFrontIds);
@@ -310,9 +319,16 @@ function IndexPageInner() {
     }
     let active = true;
     listCards({ status: "saved" })
-      .then((cards) => {
+      .then(async (cards) => {
         if (!active) return;
-        const matches = cards.filter((card) => card.pairedWith === activeCardId);
+        const pairs = await listPairsForFace(activeCardId);
+        if (!active) return;
+        const frontIds = new Set(
+          pairs
+            .map((pair) => pair.frontFaceId)
+            .filter((id): id is string => Boolean(id)),
+        );
+        const matches = cards.filter((card) => frontIds.has(card.id));
         sortByRecent(matches);
         setPairedFrontCount(matches.length);
         setPairedFrontIds(matches.map((card) => card.id));
@@ -330,20 +346,32 @@ function IndexPageInner() {
   }, [activeCardId, effectiveFace]);
 
   useEffect(() => {
+    if (effectiveFace !== "front" || !activeCardId) {
+      setPairedBackId(null);
+      return;
+    }
     let active = true;
-    normalizeSelfPairings().catch(() => {
+    const loadPairedBack = async () => {
+      const pairs = await listPairsForFace(activeCardId);
       if (!active) return;
-      // Ignore normalization failures; nothing is blocked.
+      const match =
+        pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
+        pairs.find((pair) => pair.backFaceId);
+      setPairedBackId(match?.backFaceId ?? null);
+    };
+    loadPairedBack().catch(() => {
+      if (!active) return;
+      setPairedBackId(null);
     });
     return () => {
       active = false;
     };
-  }, []);
+  }, [activeCardId, effectiveFace]);
 
   const exportMenuItems = useMemo(() => {
     if (!effectiveFace) return [];
     if (effectiveFace === "front") {
-      if (!draft?.pairedWith) return [];
+      if (!pairedBackId) return [];
       return [
         {
           id: "export-both-faces",
@@ -373,7 +401,7 @@ function IndexPageInner() {
       ];
     }
     return [];
-  }, [draft?.pairedWith, effectiveFace, pairedFrontCount, t]);
+  }, [effectiveFace, pairedBackId, pairedFrontCount, t]);
 
   const exportCurrentFace = () => {
     previewRef.current?.exportAsPng();
@@ -420,11 +448,11 @@ function IndexPageInner() {
       return;
     }
     if (effectiveFace === "front") {
-      if (!draft?.pairedWith) {
+      if (!pairedBackId) {
         exportCurrentFace();
         return;
       }
-      await exportFaceIds([activeCardId, draft.pairedWith]);
+      await exportFaceIds([activeCardId, pairedBackId]);
       return;
     }
     if (effectiveFace === "back") {
