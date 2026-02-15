@@ -494,7 +494,11 @@ export default function TemplateChooser() {
                     const selectedId = cardIds?.[0];
                     if (!selectedId || !currentTemplateId) return;
                     if (activeCardId) {
-                      void createPair(activeCardId, selectedId);
+                      void (async () => {
+                        await createPair(activeCardId, selectedId);
+                        const record = await getCard(selectedId);
+                        setPairedCard(record);
+                      })();
                     }
                     const nextDraft = {
                       ...(draftValue ?? {}),
@@ -560,7 +564,10 @@ export default function TemplateChooser() {
                   onClick={() => {
                     if (pairingDisabled) return;
                     if (!activeCardId) return;
-                    void deletePairsForFront(activeCardId);
+                    void (async () => {
+                      await deletePairsForFront(activeCardId);
+                      setPairedCard(null);
+                    })();
                     if (currentTemplateId) {
                       const nextDraft = {
                         ...(draftValue ?? {}),

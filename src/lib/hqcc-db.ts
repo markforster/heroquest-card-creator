@@ -13,6 +13,7 @@ const META_APP_VERSION_KEY = "appVersion";
 const META_PAIRS_MIGRATED_KEY = "pairsMigrated";
 const META_PAIRS_DEDUPED_KEY = "pairsDeduped";
 const META_PAIRED_WITH_CLEANED_KEY = "pairedWithCleaned";
+let pairMaintenanceInFlight: Promise<void> | null = null;
 
 export type HqccDb = IDBDatabase;
 
@@ -71,12 +72,13 @@ async function backfillPairsFromLegacy(db: HqccDb): Promise<void> {
     const pairsStore = tx.objectStore("pairs");
 
     cards.forEach((card) => {
-      if (card.face === "back" || !card.pairedWith) return;
-      if (card.pairedWith === card.id) {
+      const pairedWith = (card as CardRecord & { pairedWith?: string | null }).pairedWith ?? null;
+      if (card.face === "back" || !pairedWith) return;
+      if (pairedWith === card.id) {
         skippedInvalid += 1;
         return;
       }
-      const backCard = cardById.get(card.pairedWith);
+      const backCard = cardById.get(pairedWith);
       if (!backCard) {
         skippedMissingBack += 1;
         return;
@@ -377,12 +379,14 @@ export async function openHqccDb(): Promise<HqccDb> {
             let skippedInvalid = 0;
 
             cards.forEach((card) => {
-              if (card.face === "back" || !card.pairedWith) return;
-              if (card.pairedWith === card.id) {
+              const pairedWith =
+                (card as CardRecord & { pairedWith?: string | null }).pairedWith ?? null;
+              if (card.face === "back" || !pairedWith) return;
+              if (pairedWith === card.id) {
                 skippedInvalid += 1;
                 return;
               }
-              const backCard = cardById.get(card.pairedWith);
+              const backCard = cardById.get(pairedWith);
               if (!backCard) {
                 skippedMissingBack += 1;
                 return;
@@ -432,12 +436,17 @@ export async function openHqccDb(): Promise<HqccDb> {
       // eslint-disable-next-line no-console
       console.debug("[hqcc-db] openHqccDb success");
       const db = request.result;
-      void dedupePairsFromStore(db)
-        .then(() => backfillPairsFromLegacy(db))
-        .then(() => cleanupLegacyPairedWith(db))
-        .catch(() => {
-          // Ignore dedupe/backfill failures.
-        });
+      if (!pairMaintenanceInFlight) {
+        pairMaintenanceInFlight = dedupePairsFromStore(db)
+          .then(() => backfillPairsFromLegacy(db))
+          .then(() => cleanupLegacyPairedWith(db))
+          .catch(() => {
+            // Ignore dedupe/backfill failures.
+          })
+          .finally(() => {
+            pairMaintenanceInFlight = null;
+          });
+      }
       resolve(db);
     };
 

@@ -4,20 +4,23 @@ import JSZip from "jszip";
 
 import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import type { CardRecord } from "@/types/cards-db";
+import type { PairRecord } from "@/types/pairs-db";
 
 import { openHqccDb } from "./hqcc-db";
+import { generateId } from ".";
 
 import type { AssetRecord } from "./assets-db";
 import type { HqccDb } from "./hqcc-db";
 
-export const BACKUP_SCHEMA_VERSION = 1 as const;
+export const BACKUP_SCHEMA_VERSION = 2 as const;
 export const BACKUP_FILE_EXTENSION = ".hqcc.json" as const;
 export const BACKUP_CONTAINER_EXTENSION = ".hqcc" as const;
 
-export type HqccExportSchemaVersion = typeof BACKUP_SCHEMA_VERSION;
+export type HqccExportSchemaVersion = 1 | 2;
 
 export type CardRecordExportV1 = Omit<CardRecord, "thumbnailBlob"> & {
   thumbnailDataUrl?: string | null;
+  pairedWith?: string | null;
 };
 
 export type AssetRecordExportV1 = AssetRecord & {
@@ -54,6 +57,7 @@ export interface HqccExportFileV1 {
   notes?: string;
   cards: CardRecordExportV1[];
   assets: AssetRecordExportV1[];
+  pairs?: PairRecord[];
   collections?: CollectionRecordExportV1[];
   settings?: HqccExportSettingsV1;
   localStorage: HqccExportLocalStorageV1;
@@ -161,7 +165,7 @@ function parseBackupJson(text: string): HqccExportFileV1 {
     throw new Error("This file is not a valid HeroQuest Card Maker backup");
   }
 
-  if (candidate.schemaVersion !== BACKUP_SCHEMA_VERSION) {
+  if (candidate.schemaVersion !== 1 && candidate.schemaVersion !== 2) {
     throw new Error("This backup was created by an incompatible version of the app");
   }
 
@@ -343,11 +347,28 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
     statLabels,
   };
 
+  let pairs: PairRecord[] | undefined;
+  if (db.objectStoreNames.contains("pairs")) {
+    const pairsTx = db.transaction("pairs", "readonly");
+    const pairsStore = pairsTx.objectStore("pairs");
+    pairs = await new Promise<PairRecord[]>((resolve, reject) => {
+      const request = pairsStore.getAll();
+      request.onsuccess = () => {
+        const results = (request.result as PairRecord[]) ?? [];
+        resolve(results);
+      };
+      request.onerror = () => {
+        reject(request.error ?? new Error("Failed to read pairs for backup"));
+      };
+    });
+  }
+
   const exportObject: HqccExportFileV1 = {
     schemaVersion: BACKUP_SCHEMA_VERSION,
     createdAt: new Date().toISOString(),
     cards,
     assets,
+    ...(pairs ? { pairs } : {}),
     collections,
     settings,
     localStorage,
@@ -360,7 +381,7 @@ async function applyBackupObject(
   exportData: HqccExportFileV1,
   onProgress?: BackupProgressCallback,
 ): Promise<ImportResult> {
-  if (exportData.schemaVersion !== BACKUP_SCHEMA_VERSION) {
+  if (exportData.schemaVersion !== 1 && exportData.schemaVersion !== 2) {
     throw new Error("Incompatible backup version");
   }
 
@@ -382,6 +403,7 @@ async function applyBackupObject(
   const hasAssetsStore = db.objectStoreNames.contains("assets");
   const hasCollectionsStore = db.objectStoreNames.contains("collections");
   const hasSettingsStore = db.objectStoreNames.contains("settings");
+  const hasPairsStore = db.objectStoreNames.contains("pairs");
 
   async function clearStore(name: string): Promise<void> {
     if (!db.objectStoreNames.contains(name)) return;
@@ -405,6 +427,9 @@ async function applyBackupObject(
   }
   if (hasSettingsStore) {
     await clearStore("settings");
+  }
+  if (hasPairsStore) {
+    await clearStore("pairs");
   }
 
   let cardsCount = 0;
@@ -468,7 +493,7 @@ async function applyBackupObject(
           }
 
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { thumbnailDataUrl, ...rest } = cardExport;
+          const { thumbnailDataUrl, pairedWith, ...rest } = cardExport as CardRecordExportV1;
           const record: CardRecord = {
             ...(rest as CardRecord),
             thumbnailBlob,
@@ -533,6 +558,67 @@ async function applyBackupObject(
       tx.onerror = () =>
         reject(tx.error ?? new Error("Failed to write settings during backup import"));
     });
+  }
+
+  if (hasPairsStore) {
+    if (Array.isArray(exportData.pairs) && exportData.pairs.length > 0) {
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction("pairs", "readwrite");
+        const store = tx.objectStore("pairs");
+        try {
+          exportData.pairs?.forEach((pair) => {
+            store.put(pair);
+          });
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error("Failed to import pairs"));
+          return;
+        }
+        tx.oncomplete = () => resolve();
+        tx.onerror = () =>
+          reject(tx.error ?? new Error("Failed to write pairs during backup import"));
+      });
+    } else {
+      const legacyPairs = exportData.cards
+        .filter((card) => card.pairedWith)
+        .map((card) => {
+          const back = exportData.cards.find((candidate) => candidate.id === card.pairedWith);
+          const frontName = card.name ?? card.title ?? "Untitled front";
+          const backName = back?.name ?? back?.title ?? "Untitled back";
+          return {
+            frontFaceId: card.id,
+            backFaceId: card.pairedWith as string,
+            name: `${frontName} - ${backName}`,
+          };
+        });
+      if (legacyPairs.length > 0) {
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction("pairs", "readwrite");
+          const store = tx.objectStore("pairs");
+          try {
+            legacyPairs.forEach((pair) => {
+              const now = Date.now();
+              const record: PairRecord = {
+                id: generateId(),
+                name: pair.name,
+                nameLower: pair.name.toLocaleLowerCase(),
+                frontFaceId: pair.frontFaceId,
+                backFaceId: pair.backFaceId,
+                createdAt: now,
+                updatedAt: now,
+                schemaVersion: 1,
+              };
+              store.put(record);
+            });
+          } catch (error) {
+            reject(error instanceof Error ? error : new Error("Failed to import legacy pairs"));
+            return;
+          }
+          tx.oncomplete = () => resolve();
+          tx.onerror = () =>
+            reject(tx.error ?? new Error("Failed to write legacy pairs during backup import"));
+        });
+      }
+    }
   }
 
   try {

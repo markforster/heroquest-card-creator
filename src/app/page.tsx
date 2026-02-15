@@ -29,7 +29,7 @@ import { WebglPreviewSettingsProvider } from "@/components/WebglPreviewSettingsC
 import dungeonAtmosphere from "@/assets/dungeon atmostphere - 2.png";
 import { cardTemplatesById } from "@/data/card-templates";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
-import { createCard, listCards, updateCard, updateCards } from "@/lib/cards-db";
+import { createCard, listCards, updateCard } from "@/lib/cards-db";
 import { createPair, deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
