@@ -109,6 +109,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.backText",
+      props: { showToolbar: true },
     },
   ],
   "labelled-back": [
@@ -130,6 +131,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.backText",
+      props: { showToolbar: true },
     },
     {
       fieldType: "borderColor",

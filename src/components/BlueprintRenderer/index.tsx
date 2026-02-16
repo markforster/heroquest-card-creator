@@ -15,7 +15,7 @@ import RibbonTitle from "@/components/CardParts/RibbonTitle";
 import Layer from "@/components/CardPreview/Layer";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
-import type { Blueprint, BlueprintGroup, BlueprintLayer } from "@/types/blueprints";
+import type { Blueprint, BlueprintBounds, BlueprintGroup, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -208,15 +208,39 @@ function TextLayer({
   const labelledBackData = cardData as {
     titlePlacement?: "top" | "bottom";
     showTitle?: boolean;
+    bodyTextStyle?: {
+      enabled?: boolean;
+      backdrop?: {
+        enabled?: boolean;
+        color?: string;
+        opacity?: number;
+        insetMode?: "matchBorder" | "flush";
+        cornerMode?: "all" | "opposite-title";
+        fitMode?: "full" | "fit-to-text";
+      };
+    };
   };
-  const placement = blueprint.templateId === "labelled-back" ? labelledBackData.titlePlacement : undefined;
-  const hideTitle = blueprint.templateId === "labelled-back" ? labelledBackData.showTitle === false : false;
-  const bounds =
+  const placement =
+    blueprint.templateId === "labelled-back" ? labelledBackData.titlePlacement : undefined;
+  const hideTitle =
+    blueprint.templateId === "labelled-back" ? labelledBackData.showTitle === false : false;
+  const bodyTextEnabled =
+    blueprint.templateId === "labelled-back" ? labelledBackData.bodyTextStyle?.enabled ?? false : true;
+  if (blueprint.templateId === "labelled-back" && !bodyTextEnabled) {
+    return null;
+  }
+  let baseBounds =
     hideTitle
       ? getPlacementBounds("hidden") ?? getLayerBounds(blueprint, layer)
       : placement === "top"
         ? getPlacementBounds("top") ?? getLayerBounds(blueprint, layer)
         : getLayerBounds(blueprint, layer);
+  let flushBounds =
+    hideTitle
+      ? getPlacementBounds("flushHidden") ?? baseBounds
+      : placement === "top"
+        ? getPlacementBounds("flushTop") ?? baseBounds
+        : getPlacementBounds("flush") ?? baseBounds;
   const fontSize = typeof layer.props?.fontSize === "number" ? layer.props.fontSize : undefined;
   const lineHeight =
     typeof layer.props?.lineHeight === "number" ? layer.props.lineHeight : undefined;
@@ -236,87 +260,334 @@ function TextLayer({
       ? layer.props.align
       : undefined;
 
-  const backdrop =
+  const defaultBackdropEnabled =
     layer.props && typeof layer.props.backdrop === "boolean" ? layer.props.backdrop : false;
-  const backdropFill =
+  const defaultBackdropFill =
     layer.props && typeof layer.props.backdropFill === "string"
       ? layer.props.backdropFill
       : "#ffffff";
-  const backdropOpacity =
+  const defaultBackdropOpacity =
     layer.props && typeof layer.props.backdropOpacity === "number"
       ? layer.props.backdropOpacity
       : 0.2;
-  const backdropRadius =
+  const defaultBackdropRadius =
     layer.props && typeof layer.props.backdropRadius === "number"
       ? layer.props.backdropRadius
       : 0;
+  const defaultBackdropInsetMode =
+    layer.props && typeof layer.props.backdropInsetMode === "string"
+      ? layer.props.backdropInsetMode
+      : "matchBorder";
+  const defaultBackdropCornerMode =
+    layer.props && typeof layer.props.backdropCornerMode === "string"
+      ? layer.props.backdropCornerMode
+      : "all";
+  const defaultBackdropFitMode =
+    layer.props && typeof layer.props.backdropFitMode === "string"
+      ? layer.props.backdropFitMode
+      : "full";
   const textPadding =
     layer.props && typeof layer.props.textPadding === "number" ? layer.props.textPadding : 0;
-  const paddedTextBounds =
-    textPadding > 0
-      ? {
-          x: bounds.x + textPadding,
-          y: bounds.y + textPadding,
-          width: Math.max(0, bounds.width - textPadding * 2),
-          height: Math.max(0, bounds.height - textPadding * 2),
+
+  if (blueprint.templateId === "labelled-back" && placement === "bottom" && !hideTitle) {
+    const titleLayer = blueprint.layers.find((entry) => entry.type === "title");
+    const titleProps = titleLayer?.props ?? {};
+    const getTitleBounds = (prefix: string) => {
+      const x = titleProps[`${prefix}X`];
+      const y = titleProps[`${prefix}Y`];
+      const width = titleProps[`${prefix}Width`];
+      const height = titleProps[`${prefix}Height`];
+      if (
+        typeof x === "number" &&
+        typeof y === "number" &&
+        typeof width === "number" &&
+        typeof height === "number"
+      ) {
+        return { x, y, width, height };
+      }
+      return undefined;
+    };
+
+    const ribbonBottomBounds = getTitleBounds("ribbon");
+    const ribbonTopBounds = getTitleBounds("ribbonTop");
+    const textTopBounds = getPlacementBounds("top");
+
+    if (ribbonBottomBounds && ribbonTopBounds && textTopBounds) {
+      const desiredGap =
+        textTopBounds.y - (ribbonTopBounds.y + ribbonTopBounds.height) + textPadding;
+      if (desiredGap >= 0) {
+        const desiredBottom = ribbonBottomBounds.y - desiredGap;
+        if (desiredBottom > baseBounds.y) {
+          const nextHeight = desiredBottom - baseBounds.y;
+          if (nextHeight > 0) {
+            baseBounds = { ...baseBounds, height: nextHeight };
+            if (desiredBottom > flushBounds.y) {
+              flushBounds = { ...flushBounds, height: desiredBottom - flushBounds.y };
+            }
+          }
         }
-      : bounds;
+      }
+    }
+  }
+
+  if (blueprint.templateId === "labelled-back" && placement === "bottom" && !hideTitle) {
+    const titleLayer = blueprint.layers.find((entry) => entry.type === "title");
+    const titleProps = titleLayer?.props ?? {};
+    const getTitleBounds = (prefix: string) => {
+      const x = titleProps[`${prefix}X`];
+      const y = titleProps[`${prefix}Y`];
+      const width = titleProps[`${prefix}Width`];
+      const height = titleProps[`${prefix}Height`];
+      if (
+        typeof x === "number" &&
+        typeof y === "number" &&
+        typeof width === "number" &&
+        typeof height === "number"
+      ) {
+        return { x, y, width, height };
+      }
+      return undefined;
+    };
+
+    const ribbonBottomBounds = getTitleBounds("ribbon");
+    if (ribbonBottomBounds) {
+      const fontSizeResolved = fontSize ?? 22;
+      const minBottomGap = fontSizeResolved;
+      const bottomLimitY = ribbonBottomBounds.y - minBottomGap;
+      const clampHeight = (bounds: { y: number; height: number }) =>
+        Math.max(0, Math.min(bounds.height, bottomLimitY - bounds.y));
+      baseBounds = { ...baseBounds, height: clampHeight(baseBounds) };
+      flushBounds = { ...flushBounds, height: clampHeight(flushBounds) };
+    }
+  }
+  const overrides = labelledBackData.bodyTextStyle?.backdrop ?? {};
+  const effectiveBackdrop = {
+    enabled: overrides.enabled ?? defaultBackdropEnabled,
+    color: overrides.color ?? defaultBackdropFill,
+    opacity: overrides.opacity ?? defaultBackdropOpacity,
+    insetMode: overrides.insetMode ?? defaultBackdropInsetMode,
+    cornerMode: overrides.cornerMode ?? defaultBackdropCornerMode,
+    fitMode: overrides.fitMode ?? defaultBackdropFitMode,
+    radius: defaultBackdropRadius,
+  };
+  let backdropBounds = effectiveBackdrop.insetMode === "flush" ? flushBounds : baseBounds;
+  const textBoundsBase = baseBounds;
   const backdropWhenImageKey =
     layer.props && typeof layer.props.backdropWhenImageKey === "string"
       ? layer.props.backdropWhenImageKey
       : undefined;
   const hasBodyText = typeof text === "string" && text.trim().length > 0;
   const shouldShowBackdrop =
-    backdrop &&
+    effectiveBackdrop.enabled &&
     hasBodyText &&
     (!backdropWhenImageKey || Boolean((cardData as Record<string, unknown>)[backdropWhenImageKey]));
 
-  const clampRadius = (radius: number) =>
-    Math.max(0, Math.min(radius, bounds.width / 2, bounds.height / 2));
-  const cornerRadius = hideTitle
-    ? {
-        top: clampRadius(backdropRadius),
-        bottom: clampRadius(backdropRadius),
-      }
-    : placement === "top"
+  const paddedTextBounds =
+    textPadding > 0
       ? {
-          top: 0,
-          bottom: clampRadius(backdropRadius),
+          x: textBoundsBase.x + textPadding,
+          y: textBoundsBase.y + textPadding,
+          width: Math.max(0, textBoundsBase.width - textPadding * 2),
+          height: Math.max(0, textBoundsBase.height - textPadding * 2),
         }
-      : {
-          top: clampRadius(backdropRadius),
-          bottom: 0,
-        };
-  const backdropPath = (() => {
-    const rTop = clampRadius(cornerRadius.top);
-    const rBottom = clampRadius(cornerRadius.bottom);
-    const x = bounds.x;
-    const y = bounds.y;
-    const w = bounds.width;
-    const h = bounds.height;
-    const right = x + w;
-    const bottom = y + h;
-    return [
-      `M ${x + rTop} ${y}`,
-      `H ${right - rTop}`,
-      `Q ${right} ${y} ${right} ${y + rTop}`,
-      `V ${bottom - rBottom}`,
-      `Q ${right} ${bottom} ${right - rBottom} ${bottom}`,
-      `H ${x + rBottom}`,
-      `Q ${x} ${bottom} ${x} ${bottom - rBottom}`,
-      `V ${y + rTop}`,
-      `Q ${x} ${y} ${x + rTop} ${y}`,
-      "Z",
-    ].join(" ");
-  })();
+      : textBoundsBase;
+
+  const splitSegments =
+    typeof text === "string" ? splitTextOnHr(text).filter((segment) => segment.trim() !== "") : [];
+  const useSegmentedBackdrop = shouldShowBackdrop && splitSegments.length > 1;
+
+  if (effectiveBackdrop.fitMode === "fit-to-text" && shouldShowBackdrop) {
+    const fontSizeResolved = fontSize ?? 22;
+    const safeWidth = Math.max(0, textBoundsBase.width - textPadding * 2);
+    const { lines, lineHeight: effectiveLineHeight } = layoutCardText({
+      text: text as string,
+      width: safeWidth,
+      fontSize: fontSizeResolved,
+      lineHeight,
+      fontFamily,
+      defaultAlign: align ?? "left",
+    });
+    const minBottomPadding =
+      placement === "bottom" && !hideTitle && effectiveBackdrop.insetMode === "flush"
+        ? fontSizeResolved
+        : 0;
+    const maxTextHeight = Math.max(
+      0,
+      backdropBounds.height - textPadding * 2 - minBottomPadding,
+    );
+    const maxLinesByHeight = Math.floor(maxTextHeight / effectiveLineHeight);
+    const effectiveLines = Math.min(lines.length, Math.max(0, maxLinesByHeight));
+    const textHeight = effectiveLines * effectiveLineHeight;
+    const desiredHeight = Math.min(
+      backdropBounds.height,
+      textHeight + textPadding * 2 + minBottomPadding,
+    );
+    backdropBounds = {
+      ...backdropBounds,
+      height: desiredHeight,
+    };
+  }
+
+  const clampRadius = (radius: number) =>
+    Math.max(0, Math.min(radius, backdropBounds.width / 2, backdropBounds.height / 2));
+  const resolvedRadius =
+    effectiveBackdrop.fitMode === "fit-to-text" && effectiveBackdrop.insetMode === "flush"
+      ? 0
+      : clampRadius(effectiveBackdrop.radius);
+  const cornerRadius =
+    effectiveBackdrop.cornerMode === "all"
+      ? {
+          top: resolvedRadius,
+          bottom: resolvedRadius,
+        }
+      : hideTitle
+        ? {
+            top: resolvedRadius,
+            bottom: resolvedRadius,
+          }
+        : placement === "top"
+          ? {
+              top: 0,
+              bottom: resolvedRadius,
+            }
+          : {
+              top: resolvedRadius,
+              bottom: 0,
+            };
+
+  const flushBackdrop = effectiveBackdrop.insetMode === "flush";
+  const effectiveCornerRadius = flushBackdrop ? { top: 0, bottom: 0 } : cornerRadius;
+
+  if (useSegmentedBackdrop) {
+    const fontSizeResolved = fontSize ?? 22;
+    const lineHeightDefault = lineHeight ?? fontSizeResolved * 1.05;
+    const gap = Math.max(lineHeightDefault, fontSizeResolved + textPadding * 2) * 0.5;
+    const textAreaWidth = Math.max(0, paddedTextBounds.width);
+    const textAreaX = paddedTextBounds.x;
+    let cursorBubbleY = backdropBounds.y;
+
+    const segmentItems: Array<{
+      text: string;
+      textBounds: BlueprintBounds;
+      backdropBounds: BlueprintBounds;
+      lineHeight: number;
+    }> = [];
+
+    splitSegments.forEach((segment, index) => {
+      const remainingBubbleHeight = backdropBounds.y + backdropBounds.height - cursorBubbleY;
+      if (remainingBubbleHeight <= 0) return;
+
+      const { lines, lineHeight: resolvedLineHeight } = layoutCardText({
+        text: segment,
+        width: textAreaWidth,
+        fontSize: fontSizeResolved,
+        lineHeight,
+        fontFamily,
+        defaultAlign: align ?? "left",
+      });
+      if (lines.length === 0) return;
+
+      const isLastSegment = index === splitSegments.length - 1;
+      const minBottomPadding =
+        isLastSegment &&
+        placement === "bottom" &&
+        !hideTitle &&
+        effectiveBackdrop.insetMode === "flush"
+          ? fontSizeResolved
+          : 0;
+      const isFullHeight = effectiveBackdrop.fitMode === "full";
+      const availableForThisSegment = Math.max(
+        0,
+        remainingBubbleHeight - (isLastSegment ? 0 : gap),
+      );
+      const textBoundsY = Math.max(cursorBubbleY + textPadding, paddedTextBounds.y);
+      const bubbleTopPadding = textBoundsY - cursorBubbleY;
+      const maxTextHeight = Math.max(
+        0,
+        availableForThisSegment - bubbleTopPadding - textPadding - minBottomPadding,
+      );
+      const maxLines = Math.floor(maxTextHeight / resolvedLineHeight);
+      if (maxLines <= 0) return;
+
+      const visibleLines = Math.min(lines.length, maxLines);
+      const textHeight = visibleLines * resolvedLineHeight;
+      const bubbleHeight = isLastSegment && isFullHeight
+        ? availableForThisSegment
+        : bubbleTopPadding + textHeight + textPadding + minBottomPadding;
+
+      const textBounds = {
+        x: textAreaX,
+        y: textBoundsY,
+        width: textAreaWidth,
+        height: textHeight,
+      };
+
+      segmentItems.push({
+        text: segment,
+        textBounds,
+        backdropBounds: {
+          x: backdropBounds.x,
+          y: cursorBubbleY,
+          width: backdropBounds.width,
+          height: bubbleHeight,
+        },
+        lineHeight: resolvedLineHeight,
+      });
+
+      cursorBubbleY += bubbleHeight;
+      if (!isLastSegment && cursorBubbleY + gap <= backdropBounds.y + backdropBounds.height) {
+        cursorBubbleY += gap;
+      }
+    });
+
+    const segmentCount = segmentItems.length;
+
+    return (
+      <Layer key={layer.id}>
+        {segmentItems.map((segment, index) => {
+          const segmentCornerRadius = flushBackdrop
+            ? { top: 0, bottom: 0 }
+            : segmentCount <= 1
+              ? effectiveCornerRadius
+              : {
+                  top: index === 0 ? effectiveCornerRadius.top : resolvedRadius,
+                  bottom: index === segmentCount - 1 ? effectiveCornerRadius.bottom : resolvedRadius,
+                };
+
+          return (
+            <g key={`${layer.id}-segment-${index}`}>
+              <path
+                d={buildBackdropPath(segment.backdropBounds, segmentCornerRadius)}
+                fill={effectiveBackdrop.color}
+                opacity={effectiveBackdrop.opacity}
+              />
+              <CardTextBlock
+                text={segment.text}
+                bounds={segment.textBounds}
+                fontSize={fontSize}
+                lineHeight={segment.lineHeight}
+                fontWeight={fontWeight}
+                fontFamily={fontFamily}
+                fill={fill}
+                letterSpacingEm={letterSpacingEm}
+                align={align}
+              />
+            </g>
+          );
+        })}
+      </Layer>
+    );
+  }
+
+  const backdropPath = buildBackdropPath(backdropBounds, effectiveCornerRadius);
 
   return (
     <Layer key={layer.id}>
       {shouldShowBackdrop ? (
         <path
           d={backdropPath}
-          fill={backdropFill}
-          opacity={backdropOpacity}
+          fill={effectiveBackdrop.color}
+          opacity={effectiveBackdrop.opacity}
         />
       ) : null}
       <CardTextBlock
@@ -332,6 +603,50 @@ function TextLayer({
       />
     </Layer>
   );
+}
+
+function splitTextOnHr(text: string): string[] {
+  const lines = text.split(/\r?\n/);
+  const segments: string[] = [];
+  let current: string[] = [];
+
+  lines.forEach((line) => {
+    if (line.trim() === "---") {
+      segments.push(current.join("\n"));
+      current = [];
+      return;
+    }
+    current.push(line);
+  });
+
+  segments.push(current.join("\n"));
+  return segments;
+}
+
+function buildBackdropPath(
+  bounds: BlueprintBounds,
+  cornerRadius: { top: number; bottom: number },
+): string {
+  const rTop = Math.max(0, Math.min(cornerRadius.top, bounds.width / 2, bounds.height / 2));
+  const rBottom = Math.max(0, Math.min(cornerRadius.bottom, bounds.width / 2, bounds.height / 2));
+  const x = bounds.x;
+  const y = bounds.y;
+  const w = bounds.width;
+  const h = bounds.height;
+  const right = x + w;
+  const bottom = y + h;
+  return [
+    `M ${x + rTop} ${y}`,
+    `H ${right - rTop}`,
+    `Q ${right} ${y} ${right} ${y + rTop}`,
+    `V ${bottom - rBottom}`,
+    `Q ${right} ${bottom} ${right - rBottom} ${bottom}`,
+    `H ${x + rBottom}`,
+    `Q ${x} ${bottom} ${x} ${bottom - rBottom}`,
+    `V ${y + rTop}`,
+    `Q ${x} ${y} ${x + rTop} ${y}`,
+    "Z",
+  ].join(" ");
 }
 
 function TitleLayer({

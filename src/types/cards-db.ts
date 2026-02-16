@@ -1,6 +1,7 @@
 import type { TemplateId } from "./templates";
 import type { StatValue } from "./stats";
 import type { CardFace } from "./card-face";
+import type { BodyTextStyle } from "./card-data";
 
 export type CardStatus = "draft" | "saved" | "archived";
 
@@ -20,6 +21,7 @@ export interface CardRecord {
   title?: string;
   showTitle?: boolean;
   titlePlacement?: "top" | "bottom";
+  bodyTextStyle?: BodyTextStyle;
   face?: CardFace;
   description?: string;
 

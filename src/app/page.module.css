@@ -3823,6 +3823,87 @@
   gap: 0.35rem;
 }
 
+.bodyTextToolbar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+}
+
+.bodyTextToolbarButton {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: #d7d7d7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.bodyTextToolbarButton:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.bodyTextToolbarButtonActive {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+}
+
+.bodyTextToolbarButtonDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.bodyTextToolbarButtonDisabled:hover {
+  color: #d7d7d7;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bodyTextToolbarPopover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  border: 1px solid #2b2b2b;
+  border-radius: 8px;
+  background: #151515;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  padding: 0.5rem;
+  z-index: 50;
+  width: 180px;
+}
+
+.bodyTextToolbarRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #d1d5db;
+}
+
+.bodyTextToolbarRow + .bodyTextToolbarRow {
+  margin-top: 0.35rem;
+}
+
+.bodyTextToolbarRow input[type="color"] {
+  width: 36px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.bodyTextToolbarRow input[type="range"] {
+  flex: 1 1 auto;
+}
+
 .imageHeaderStatus {
   flex: 1 1 auto;
   min-width: 0;

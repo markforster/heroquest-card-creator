@@ -105,7 +105,13 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
             );
           }
           if (field.fieldType === "text") {
-            return <ContentField key={`${field.bind}-${index}`} label={t(field.labelKey)} />;
+            return (
+              <ContentField
+                key={`${field.bind}-${index}`}
+                label={t(field.labelKey)}
+                showToolbar={field.props?.showToolbar}
+              />
+            );
           }
           if (field.fieldType === "stats") {
             if (field.statsType === "hero") {

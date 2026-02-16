@@ -927,30 +927,31 @@ function AssetsModalFooter({
               const imageMatch = draft.imageAssetId && idSet.has(draft.imageAssetId);
               const iconMatch =
                 "iconAssetId" in draft && draft.iconAssetId && idSet.has(draft.iconAssetId);
-              if (!imageMatch && !iconMatch) return;
 
-              const nextDraft = {
-                ...draft,
-              } as CardDataByTemplate[TemplateId];
+              if (imageMatch || iconMatch) {
+                const nextDraft = {
+                  ...draft,
+                } as CardDataByTemplate[TemplateId];
 
-              if (imageMatch) {
-                nextDraft.imageAssetId = undefined;
-                nextDraft.imageAssetName = undefined;
-                nextDraft.imageScale = undefined;
-                nextDraft.imageOriginalWidth = undefined;
-                nextDraft.imageOriginalHeight = undefined;
-                nextDraft.imageOffsetX = undefined;
-                nextDraft.imageOffsetY = undefined;
-                nextDraft.imageRotation = undefined;
+                if (imageMatch) {
+                  nextDraft.imageAssetId = undefined;
+                  nextDraft.imageAssetName = undefined;
+                  nextDraft.imageScale = undefined;
+                  nextDraft.imageOriginalWidth = undefined;
+                  nextDraft.imageOriginalHeight = undefined;
+                  nextDraft.imageOffsetX = undefined;
+                  nextDraft.imageOffsetY = undefined;
+                  nextDraft.imageRotation = undefined;
+                }
+
+                if (iconMatch && "iconAssetId" in nextDraft) {
+                  nextDraft.iconAssetId = undefined;
+                  nextDraft.iconAssetName = undefined;
+                }
+
+                setCardDraft(draftTemplateId, nextDraft as never);
+                setSingleDraft(draftTemplateId, nextDraft as never);
               }
-
-              if (iconMatch && "iconAssetId" in nextDraft) {
-                nextDraft.iconAssetId = undefined;
-                nextDraft.iconAssetName = undefined;
-              }
-
-              setCardDraft(draftTemplateId, nextDraft as never);
-              setSingleDraft(draftTemplateId, nextDraft as never);
             }
 
             await onConfirmDelete(ids);

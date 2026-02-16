@@ -132,6 +132,12 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     }
   }, [showAdjustments]);
 
+  useEffect(() => {
+    if (!imageAssetId) {
+      setShowAdjustments(false);
+    }
+  }, [imageAssetId]);
+
   return (
     <div className="mb-2">
       <label className="form-label">{label}</label>
@@ -191,9 +197,10 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
               type="button"
               className={`accordion-button ${layoutStyles.imageAccordionButton} ${
                 showAdjustments ? "" : "collapsed"
-              }`}
+              } ${!imageAssetId ? "disabled" : ""}`}
               aria-expanded={showAdjustments}
               aria-controls={accordionBodyId}
+              disabled={!imageAssetId}
               onClick={() => {
                 setShowAdjustments((prev) => !prev);
               }}

@@ -43,8 +43,21 @@ export interface LargeTreasureCardData extends BaseCardFields {}
 
 export interface HeroBackCardData extends BaseCardFields {}
 
+export type BodyTextStyle = {
+  enabled?: boolean;
+  backdrop?: {
+    enabled?: boolean;
+    color?: string;
+    opacity?: number;
+    insetMode?: "matchBorder" | "flush";
+    cornerMode?: "all" | "opposite-title";
+    fitMode?: "full" | "fit-to-text";
+  };
+};
+
 export interface LabelledBackCardData extends BaseCardFields {
   titlePlacement?: "top" | "bottom";
+  bodyTextStyle?: BodyTextStyle;
 }
 
 export type CardDataByTemplate = {

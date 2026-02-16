@@ -16,6 +16,7 @@ export type InspectorTextField = {
   labelKey: MessageKey;
   props?: {
     rows?: number;
+    showToolbar?: boolean;
   };
 };
 

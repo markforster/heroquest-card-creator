@@ -1,44 +1,256 @@
 "use client";
 
-import { useFormContext } from "react-hook-form";
+import { useEffect, useRef, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
+import {
+  Expand,
+  Eye,
+  EyeOff,
+  ListChevronsDownUp,
+  ListChevronsUpDown,
+  Palette,
+  Square,
+  SquareRoundCorner,
+  Shrink,
+} from "lucide-react";
 
+import layoutStyles from "@/app/page.module.css";
+import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { BodyTextStyle } from "@/types/card-data";
 
 type ContentFieldProps = {
   label: string;
+  showToolbar?: boolean;
 };
 
-export default function ContentField({ label }: ContentFieldProps) {
+const DEFAULT_BODY_TEXT_STYLE: BodyTextStyle = {
+  enabled: false,
+  backdrop: {
+    enabled: true,
+    color: "#ffffff",
+    opacity: 0.55,
+    insetMode: "matchBorder",
+    cornerMode: "opposite-title",
+    fitMode: "full",
+  },
+};
+
+export default function ContentField({ label, showToolbar = false }: ContentFieldProps) {
   const { t } = useI18n();
   const {
     register,
     formState: { errors },
+    setValue,
   } = useFormContext();
-
+  const bodyTextStyle = useWatch({ name: "bodyTextStyle" }) as BodyTextStyle | undefined;
+  const borderColor = useWatch({ name: "borderColor" }) as string | undefined;
   const fieldError = (errors as Record<string, { message?: string }>).description;
+
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const paletteButtonRef = useRef<HTMLButtonElement | null>(null);
+  const palettePopoverRef = useRef<HTMLDivElement | null>(null);
+  useOutsideClick([paletteButtonRef, palettePopoverRef], () => setIsPaletteOpen(false), isPaletteOpen);
+
+  const effectiveBackdrop = {
+    ...DEFAULT_BODY_TEXT_STYLE.backdrop,
+    ...(bodyTextStyle?.backdrop ?? {}),
+  };
+  const textEnabled = bodyTextStyle?.enabled ?? false;
+
+  useEffect(() => {
+    if (!textEnabled) {
+      setIsPaletteOpen(false);
+    }
+  }, [textEnabled]);
+
+  const updateBackdrop = (partial: Partial<NonNullable<BodyTextStyle["backdrop"]>>) => {
+    const next: BodyTextStyle = {
+      ...(bodyTextStyle ?? {}),
+      backdrop: {
+        ...effectiveBackdrop,
+        ...partial,
+      },
+    };
+    setValue("bodyTextStyle", next, { shouldDirty: true, shouldTouch: true });
+  };
+
+  const borderHidden =
+    !borderColor ||
+    borderColor.trim() === "" ||
+    borderColor.toLowerCase() === "transparent" ||
+    borderColor.toLowerCase() === "none" ||
+    borderColor.replace(/\s+/g, "").toLowerCase() === "rgba(0,0,0,0)";
+  const cornerToggleDisabled = effectiveBackdrop.fitMode === "fit-to-text";
 
   return (
     <div className="mb-2">
-      <label htmlFor="description" className="form-label">
-        {label}
-      </label>
-      <textarea
-        id="description"
-        className="form-control form-control-sm"
-        rows={6}
-        style={{ backgroundColor: "#333", color: "#f5f5f5" }}
-        title={t("tooltip.rulesAndFlavour")}
-        {...register("description", {
-          maxLength: {
-            value: 2000,
-            message: t("errors.contentMaxLength"),
-          },
-        })}
-      />
-      {fieldError ? (
-        <div className="form-text text-danger">
-          {String(fieldError.message ?? t("errors.invalidValue"))}
-        </div>
+      <div className="d-flex align-items-center gap-2 mb-1">
+        <label htmlFor="description" className="form-label mb-0 flex-grow-1">
+          {label}
+        </label>
+        {showToolbar ? (
+          <div className={layoutStyles.bodyTextToolbar}>
+            <button
+              type="button"
+              className={`${layoutStyles.bodyTextToolbarButton} ${
+                effectiveBackdrop.enabled ? layoutStyles.bodyTextToolbarButtonActive : ""
+              } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+              title={t("tooltip.bodyTextBackdrop")}
+              disabled={!textEnabled}
+              onClick={() => updateBackdrop({ enabled: !effectiveBackdrop.enabled })}
+            >
+              {effectiveBackdrop.enabled ? (
+                <Eye size={14} aria-hidden="true" />
+              ) : (
+                <EyeOff size={14} aria-hidden="true" />
+              )}
+            </button>
+            <button
+              ref={paletteButtonRef}
+              type="button"
+              className={`${layoutStyles.bodyTextToolbarButton} ${
+                isPaletteOpen ? layoutStyles.bodyTextToolbarButtonActive : ""
+              } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+              title={t("tooltip.bodyTextColor")}
+              disabled={!textEnabled}
+              onClick={() => setIsPaletteOpen((prev) => !prev)}
+            >
+              <Palette size={14} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${layoutStyles.bodyTextToolbarButton} ${
+                effectiveBackdrop.insetMode === "matchBorder"
+                  ? layoutStyles.bodyTextToolbarButtonActive
+                  : ""
+              } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+              title={t("tooltip.bodyTextInset")}
+              disabled={!textEnabled}
+              onClick={() =>
+                updateBackdrop({
+                  insetMode: effectiveBackdrop.insetMode === "matchBorder" ? "flush" : "matchBorder",
+                })
+              }
+            >
+              {effectiveBackdrop.insetMode === "matchBorder" ? (
+                <Shrink size={14} aria-hidden="true" />
+              ) : (
+                <Expand size={14} aria-hidden="true" />
+              )}
+            </button>
+            <button
+              type="button"
+              className={`${layoutStyles.bodyTextToolbarButton} ${
+                effectiveBackdrop.cornerMode === "all"
+                  ? layoutStyles.bodyTextToolbarButtonActive
+                  : ""
+              } ${cornerToggleDisabled || !textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+              title={t("tooltip.bodyTextCorners")}
+              disabled={cornerToggleDisabled || !textEnabled}
+              onClick={() =>
+                updateBackdrop({
+                  cornerMode:
+                    effectiveBackdrop.cornerMode === "all" ? "opposite-title" : "all",
+                })
+              }
+            >
+              {effectiveBackdrop.cornerMode === "all" ? (
+                <SquareRoundCorner size={14} aria-hidden="true" />
+              ) : (
+                <Square size={14} aria-hidden="true" />
+              )}
+            </button>
+            <button
+              type="button"
+              className={`${layoutStyles.bodyTextToolbarButton} ${
+                effectiveBackdrop.fitMode === "fit-to-text"
+                  ? layoutStyles.bodyTextToolbarButtonActive
+                  : ""
+              } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+              title={t("tooltip.bodyTextFit")}
+              disabled={!textEnabled}
+              onClick={() =>
+                updateBackdrop({
+                  fitMode: effectiveBackdrop.fitMode === "fit-to-text" ? "full" : "fit-to-text",
+                })
+              }
+            >
+              {effectiveBackdrop.fitMode === "fit-to-text" ? (
+                <ListChevronsDownUp size={14} aria-hidden="true" />
+              ) : (
+                <ListChevronsUpDown size={14} aria-hidden="true" />
+              )}
+            </button>
+            <div className="form-check form-switch m-0 ms-2">
+              <input
+                id="bodyTextEnabled"
+                type="checkbox"
+                className="form-check-input hq-toggle"
+                title={t("tooltip.bodyTextVisibility")}
+                aria-label={t("tooltip.bodyTextVisibility")}
+                role="switch"
+                checked={textEnabled}
+                onChange={() =>
+                  setValue(
+                    "bodyTextStyle",
+                    { ...(bodyTextStyle ?? {}), enabled: !textEnabled },
+                    { shouldDirty: true, shouldTouch: true },
+                  )
+                }
+              />
+            </div>
+            {isPaletteOpen && textEnabled ? (
+              <div ref={palettePopoverRef} className={layoutStyles.bodyTextToolbarPopover}>
+                <div className={layoutStyles.bodyTextToolbarRow}>
+                  <label htmlFor="bodyTextBackdropColor">{t("label.color")}</label>
+                  <input
+                    id="bodyTextBackdropColor"
+                    type="color"
+                    value={effectiveBackdrop.color ?? "#ffffff"}
+                    onChange={(event) => updateBackdrop({ color: event.target.value })}
+                  />
+                </div>
+                <div className={layoutStyles.bodyTextToolbarRow}>
+                  <label htmlFor="bodyTextBackdropOpacity">{t("label.opacity")}</label>
+                  <input
+                    id="bodyTextBackdropOpacity"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={effectiveBackdrop.opacity ?? 0.55}
+                    onChange={(event) =>
+                      updateBackdrop({ opacity: Number(event.target.value) })
+                    }
+                  />
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+      {textEnabled ? (
+        <>
+          <textarea
+            id="description"
+            className="form-control form-control-sm"
+            rows={6}
+            style={{ backgroundColor: "#333", color: "#f5f5f5" }}
+            title={t("tooltip.rulesAndFlavour")}
+            {...register("description", {
+              maxLength: {
+                value: 2000,
+                message: t("errors.contentMaxLength"),
+              },
+            })}
+          />
+          {fieldError ? (
+            <div className="form-text text-danger">
+              {String(fieldError.message ?? t("errors.invalidValue"))}
+            </div>
+          ) : null}
+        </>
       ) : null}
     </div>
   );
