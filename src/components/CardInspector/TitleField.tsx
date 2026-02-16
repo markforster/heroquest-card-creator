@@ -75,9 +75,9 @@ export default function TitleField({
                 }
               >
                 {placement === "top" ? (
-                  <PanelTop size={14} aria-hidden="true" />
-                ) : (
                   <PanelBottom size={14} aria-hidden="true" />
+                ) : (
+                  <PanelTop size={14} aria-hidden="true" />
                 )}
               </button>
             ) : null}
@@ -101,9 +101,9 @@ export default function TitleField({
                 }
               >
                 {titleStyle === "ribbon" ? (
-                  <Tag size={14} aria-hidden="true" />
-                ) : (
                   <Type size={14} aria-hidden="true" />
+                ) : (
+                  <Tag size={14} aria-hidden="true" />
                 )}
               </button>
             ) : null}
