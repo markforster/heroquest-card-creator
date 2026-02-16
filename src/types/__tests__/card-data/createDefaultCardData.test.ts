@@ -27,7 +27,10 @@ describe("createDefaultCardData", () => {
   });
 
   it("returns empty object for labelled-back by default", () => {
-    expect(createDefaultCardData("labelled-back")).toEqual({});
+    expect(createDefaultCardData("labelled-back")).toEqual({
+      titlePlacement: "bottom",
+      titleStyle: "ribbon",
+    });
   });
 
   it("returns empty object for unknown template ids (runtime safety)", () => {

@@ -6,6 +6,8 @@ import type { CardFace } from "./card-face";
 export interface BaseCardFields {
   title?: string;
   showTitle?: boolean;
+  titleStyle?: "ribbon" | "plain";
+  titleColor?: string;
   face?: CardFace;
   imageUrl?: string;
   imageAssetId?: string;
@@ -96,7 +98,7 @@ export function createDefaultCardData<T extends TemplateId>(templateId: T): Card
     case "hero-back":
       return {} as CardDataByTemplate[T];
     case "labelled-back":
-      return { titlePlacement: "bottom" } as CardDataByTemplate[T];
+      return { titlePlacement: "bottom", titleStyle: "ribbon" } as CardDataByTemplate[T];
     default:
       return {} as CardDataByTemplate[T];
   }

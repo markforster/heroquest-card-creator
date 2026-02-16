@@ -9,6 +9,8 @@ export function cardRecordToCardData<T extends TemplateId>(
   const base = {
     title: record.title,
     showTitle: record.showTitle ?? true,
+    titleStyle: record.titleStyle,
+    titleColor: record.titleColor,
     titlePlacement: record.titlePlacement,
     bodyTextStyle: record.bodyTextStyle,
     face: record.face,
@@ -90,6 +92,8 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     name,
     title: data.title,
     showTitle: data.showTitle,
+    titleStyle: data.titleStyle,
+    titleColor: data.titleColor,
     titlePlacement: (data as { titlePlacement?: "top" | "bottom" }).titlePlacement,
     bodyTextStyle: (data as { bodyTextStyle?: unknown }).bodyTextStyle,
     face,

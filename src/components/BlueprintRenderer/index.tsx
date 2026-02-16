@@ -677,7 +677,12 @@ function TitleLayer({
   const title = titleValue ?? templateName;
   if (!title) return null;
 
-  const showRibbon = typeof layer.props?.showRibbon === "boolean" ? layer.props.showRibbon : true;
+  const showRibbonDefault =
+    typeof layer.props?.showRibbon === "boolean" ? layer.props.showRibbon : true;
+  const titleStyle = cardData ? (cardData as { titleStyle?: "ribbon" | "plain" }).titleStyle : undefined;
+  const showRibbon =
+    titleStyle === "ribbon" ? true : titleStyle === "plain" ? false : showRibbonDefault;
+  const titleColor = cardData ? (cardData as { titleColor?: string }).titleColor : undefined;
   const y = typeof layer.props?.y === "number" ? layer.props.y : undefined;
   const getBound = (prefix: string) => {
     const x = layer.props?.[`${prefix}X`];
@@ -700,13 +705,14 @@ function TitleLayer({
       : undefined;
   const ribbonBounds = getBound(placement === "top" ? "ribbonTop" : "ribbon");
   const textBounds = getBound(placement === "top" ? "textTop" : "text");
-  const textBoundsNoRibbon = getBound("textNoRibbon");
+  const textBoundsNoRibbon = getBound(placement === "top" ? "textNoRibbonTop" : "textNoRibbon");
 
   return (
     <RibbonTitle
       title={title}
       showRibbon={showRibbon}
       y={y}
+      titleColor={titleColor}
       ribbonBounds={ribbonBounds}
       textBounds={textBounds}
       textBoundsNoRibbon={textBoundsNoRibbon}

@@ -7,6 +7,8 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "title",
       labelKey: "form.heroName",
       required: true,
+      showToolbar: true,
+      showTitleColor: true,
     },
     {
       fieldType: "image",
@@ -34,6 +36,8 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "title",
       labelKey: "form.monsterName",
       required: true,
+      showToolbar: true,
+      showTitleColor: true,
     },
     {
       fieldType: "image",
@@ -66,6 +70,8 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "title",
       labelKey: "form.cardTitle",
       required: true,
+      showToolbar: true,
+      showTitleColor: true,
     },
     {
       fieldType: "image",
@@ -85,6 +91,8 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "title",
       labelKey: "form.cardTitle",
       required: true,
+      showToolbar: true,
+      showTitleColor: true,
     },
     {
       fieldType: "image",
@@ -104,6 +112,8 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "title",
       labelKey: "form.backTitle",
       required: false,
+      showToolbar: true,
+      showTitleColor: true,
     },
     {
       fieldType: "text",
@@ -120,6 +130,9 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       required: true,
       showToggle: true,
       showPlacement: true,
+      showStyleToggle: true,
+      showToolbar: true,
+      showTitleColor: true,
     },
     {
       fieldType: "image",

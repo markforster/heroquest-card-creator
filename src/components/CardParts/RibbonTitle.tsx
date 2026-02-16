@@ -11,6 +11,7 @@ import {
   USE_TITLE_VERTICAL_COMPRESSION,
 } from "@/config/flags";
 import { useDebugVisuals } from "@/components/DebugVisualsContext";
+import { DEFAULT_TITLE_COLOR } from "@/config/colors";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";
 
@@ -21,6 +22,7 @@ type RibbonTitleProps = {
   ribbonBounds?: { x: number; y: number; width: number; height: number };
   textBounds?: { x: number; y: number; width: number; height: number };
   textBoundsNoRibbon?: { x: number; y: number; width: number; height: number };
+  titleColor?: string;
 };
 
 const CARD_WIDTH = 750;
@@ -38,6 +40,7 @@ export default function RibbonTitle({
   ribbonBounds,
   textBounds,
   textBoundsNoRibbon,
+  titleColor,
 }: RibbonTitleProps) {
   const x = (CARD_WIDTH - RIBBON_WIDTH) / 2;
   const ribbonBox = {
@@ -72,11 +75,12 @@ export default function RibbonTitle({
   const scaleY = USE_TITLE_VERTICAL_COMPRESSION ? TITLE_VERTICAL_SCALE_Y : 1;
   const titleTransform =
     scaleY === 1 ? undefined : `translate(${centerX} ${centerY}) scale(1 ${scaleY}) translate(${-centerX} ${-centerY})`;
-  const titleStroke = USE_TITLE_STROKE ? "#000" : "none";
+  const titleStroke = USE_TITLE_STROKE ? "transparent" : "none";
   const titleStrokeWidth = USE_TITLE_STROKE ? "1.5px" : undefined;
   const defaultTitleWeight = USE_BOLD_TITLE_WEIGHT ? 700 : 550;
   const titleFontWeight =
     !showRibbon && USE_LIGHTER_NONRIBBON_TITLE_WEIGHT ? NONRIBBON_TITLE_WEIGHT : defaultTitleWeight;
+  const resolvedTitleColor = titleColor ?? DEFAULT_TITLE_COLOR;
 
   return (
     <Layer>
@@ -118,7 +122,7 @@ export default function RibbonTitle({
           textAnchor="middle"
           dominantBaseline="middle"
           // fill="#1a130c"
-          fill="#502300"
+          fill={resolvedTitleColor}
           fontSize={titleFontSize}
           // fontWeight={700}
           fontWeight={titleFontWeight}

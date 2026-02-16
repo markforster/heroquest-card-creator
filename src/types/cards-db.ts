@@ -20,6 +20,8 @@ export interface CardRecord {
 
   title?: string;
   showTitle?: boolean;
+  titleStyle?: "ribbon" | "plain";
+  titleColor?: string;
   titlePlacement?: "top" | "bottom";
   bodyTextStyle?: BodyTextStyle;
   face?: CardFace;

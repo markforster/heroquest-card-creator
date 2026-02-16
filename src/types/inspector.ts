@@ -8,6 +8,9 @@ export type InspectorTitleField = {
   required?: boolean;
   showToggle?: boolean;
   showPlacement?: boolean;
+  showStyleToggle?: boolean;
+  showToolbar?: boolean;
+  showTitleColor?: boolean;
 };
 
 export type InspectorTextField = {

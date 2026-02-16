@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import {
   Expand,
@@ -8,16 +7,16 @@ import {
   EyeOff,
   ListChevronsDownUp,
   ListChevronsUpDown,
-  Palette,
   Square,
   SquareRoundCorner,
   Shrink,
 } from "lucide-react";
 
 import layoutStyles from "@/app/page.module.css";
-import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { BodyTextStyle } from "@/types/card-data";
+
+import ColorPickerPopover from "./ColorPickerPopover";
 
 type ContentFieldProps = {
   label: string;
@@ -52,22 +51,11 @@ export default function ContentField({
   const borderColor = useWatch({ name: "borderColor" }) as string | undefined;
   const fieldError = (errors as Record<string, { message?: string }>).description;
 
-  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-  const paletteButtonRef = useRef<HTMLButtonElement | null>(null);
-  const palettePopoverRef = useRef<HTMLDivElement | null>(null);
-  useOutsideClick([paletteButtonRef, palettePopoverRef], () => setIsPaletteOpen(false), isPaletteOpen);
-
   const effectiveBackdrop = {
     ...DEFAULT_BODY_TEXT_STYLE.backdrop,
     ...(bodyTextStyle?.backdrop ?? {}),
   };
   const textEnabled = showToggle ? (bodyTextStyle?.enabled ?? false) : true;
-
-  useEffect(() => {
-    if (!textEnabled) {
-      setIsPaletteOpen(false);
-    }
-  }, [textEnabled]);
 
   const updateBackdrop = (partial: Partial<NonNullable<BodyTextStyle["backdrop"]>>) => {
     const next: BodyTextStyle = {
@@ -111,18 +99,22 @@ export default function ContentField({
                 <EyeOff size={14} aria-hidden="true" />
               )}
             </button>
-            <button
-              ref={paletteButtonRef}
-              type="button"
-              className={`${layoutStyles.bodyTextToolbarButton} ${
-                isPaletteOpen ? layoutStyles.bodyTextToolbarButtonActive : ""
-              } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
-              title={t("tooltip.bodyTextColor")}
+            <ColorPickerPopover
+              color={effectiveBackdrop.color ?? "#ffffff"}
+              onColorChange={(value) => updateBackdrop({ color: value })}
+              opacity={effectiveBackdrop.opacity ?? 0.55}
+              onOpacityChange={(value) => updateBackdrop({ opacity: value })}
+              showOpacity
               disabled={!textEnabled}
-              onClick={() => setIsPaletteOpen((prev) => !prev)}
-            >
-              <Palette size={14} aria-hidden="true" />
-            </button>
+              title={t("tooltip.bodyTextColor")}
+              labelColor={t("label.color")}
+              labelOpacity={t("label.opacity")}
+              buttonClassName={layoutStyles.bodyTextToolbarButton}
+              buttonActiveClassName={layoutStyles.bodyTextToolbarButtonActive}
+              buttonDisabledClassName={layoutStyles.bodyTextToolbarButtonDisabled}
+              popoverClassName={layoutStyles.bodyTextToolbarPopover}
+              rowClassName={layoutStyles.bodyTextToolbarRow}
+            />
             <button
               type="button"
               className={`${layoutStyles.bodyTextToolbarButton} ${
@@ -205,33 +197,6 @@ export default function ContentField({
                     )
                   }
                 />
-              </div>
-            ) : null}
-            {isPaletteOpen && textEnabled ? (
-              <div ref={palettePopoverRef} className={layoutStyles.bodyTextToolbarPopover}>
-                <div className={layoutStyles.bodyTextToolbarRow}>
-                  <label htmlFor="bodyTextBackdropColor">{t("label.color")}</label>
-                  <input
-                    id="bodyTextBackdropColor"
-                    type="color"
-                    value={effectiveBackdrop.color ?? "#ffffff"}
-                    onChange={(event) => updateBackdrop({ color: event.target.value })}
-                  />
-                </div>
-                <div className={layoutStyles.bodyTextToolbarRow}>
-                  <label htmlFor="bodyTextBackdropOpacity">{t("label.opacity")}</label>
-                  <input
-                    id="bodyTextBackdropOpacity"
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={effectiveBackdrop.opacity ?? 0.55}
-                    onChange={(event) =>
-                      updateBackdrop({ opacity: Number(event.target.value) })
-                    }
-                  />
-                </div>
               </div>
             ) : null}
           </div>

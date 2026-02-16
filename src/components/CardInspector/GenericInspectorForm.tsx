@@ -45,21 +45,20 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
   const showTitlePlacement = Boolean(
     fields?.some((field) => field.fieldType === "title" && field.showPlacement),
   );
+  const showTitleStyle = Boolean(
+    fields?.some((field) => field.fieldType === "title" && field.showStyleToggle),
+  );
   const methods = useForm<CardDataByTemplate[TemplateId]>({
-    defaultValues: showTitleToggle
-      ? {
-          ...draftValue,
-          showTitle: draftValue?.showTitle ?? true,
-          ...(showTitlePlacement
-            ? { titlePlacement: (draftValue as { titlePlacement?: string })?.titlePlacement ?? "bottom" }
-            : {}),
-        }
-      : {
-          ...(draftValue ?? {}),
-          ...(showTitlePlacement
-            ? { titlePlacement: (draftValue as { titlePlacement?: string })?.titlePlacement ?? "bottom" }
-            : {}),
-        },
+    defaultValues: {
+      ...(draftValue ?? {}),
+      ...(showTitleToggle ? { showTitle: draftValue?.showTitle ?? true } : {}),
+      ...(showTitlePlacement
+        ? { titlePlacement: (draftValue as { titlePlacement?: string })?.titlePlacement ?? "bottom" }
+        : {}),
+      ...(showTitleStyle
+        ? { titleStyle: (draftValue as { titleStyle?: string })?.titleStyle ?? "ribbon" }
+        : {}),
+    },
     mode: "onBlur",
   });
 
@@ -101,6 +100,9 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
                 required={field.required}
                 showToggle={field.showToggle}
                 showPlacement={field.showPlacement}
+                showStyleToggle={field.showStyleToggle}
+                showToolbar={field.showToolbar}
+                showTitleColor={field.showTitleColor}
               />
             );
           }
