@@ -42,10 +42,24 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
   const showTitleToggle = Boolean(
     fields?.some((field) => field.fieldType === "title" && field.showToggle),
   );
+  const showTitlePlacement = Boolean(
+    fields?.some((field) => field.fieldType === "title" && field.showPlacement),
+  );
   const methods = useForm<CardDataByTemplate[TemplateId]>({
     defaultValues: showTitleToggle
-      ? { ...draftValue, showTitle: draftValue?.showTitle ?? true }
-      : (draftValue ?? {}),
+      ? {
+          ...draftValue,
+          showTitle: draftValue?.showTitle ?? true,
+          ...(showTitlePlacement
+            ? { titlePlacement: (draftValue as { titlePlacement?: string })?.titlePlacement ?? "bottom" }
+            : {}),
+        }
+      : {
+          ...(draftValue ?? {}),
+          ...(showTitlePlacement
+            ? { titlePlacement: (draftValue as { titlePlacement?: string })?.titlePlacement ?? "bottom" }
+            : {}),
+        },
     mode: "onBlur",
   });
 
@@ -86,6 +100,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
                 label={t(field.labelKey)}
                 required={field.required}
                 showToggle={field.showToggle}
+                showPlacement={field.showPlacement}
               />
             );
           }

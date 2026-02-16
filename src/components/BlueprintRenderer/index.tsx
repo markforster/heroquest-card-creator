@@ -189,7 +189,34 @@ function TextLayer({
     if (!testValue) return null;
   }
 
-  const bounds = getLayerBounds(blueprint, layer);
+  const getPlacementBounds = (prefix: string) => {
+    const x = layer.props?.[`${prefix}X`];
+    const y = layer.props?.[`${prefix}Y`];
+    const width = layer.props?.[`${prefix}Width`];
+    const height = layer.props?.[`${prefix}Height`];
+    if (
+      typeof x === "number" &&
+      typeof y === "number" &&
+      typeof width === "number" &&
+      typeof height === "number"
+    ) {
+      return { x, y, width, height };
+    }
+    return undefined;
+  };
+
+  const labelledBackData = cardData as {
+    titlePlacement?: "top" | "bottom";
+    showTitle?: boolean;
+  };
+  const placement = blueprint.templateId === "labelled-back" ? labelledBackData.titlePlacement : undefined;
+  const hideTitle = blueprint.templateId === "labelled-back" ? labelledBackData.showTitle === false : false;
+  const bounds =
+    hideTitle
+      ? getPlacementBounds("hidden") ?? getLayerBounds(blueprint, layer)
+      : placement === "top"
+        ? getPlacementBounds("top") ?? getLayerBounds(blueprint, layer)
+        : getLayerBounds(blueprint, layer);
   const fontSize = typeof layer.props?.fontSize === "number" ? layer.props.fontSize : undefined;
   const lineHeight =
     typeof layer.props?.lineHeight === "number" ? layer.props.lineHeight : undefined;
@@ -209,11 +236,92 @@ function TextLayer({
       ? layer.props.align
       : undefined;
 
+  const backdrop =
+    layer.props && typeof layer.props.backdrop === "boolean" ? layer.props.backdrop : false;
+  const backdropFill =
+    layer.props && typeof layer.props.backdropFill === "string"
+      ? layer.props.backdropFill
+      : "#ffffff";
+  const backdropOpacity =
+    layer.props && typeof layer.props.backdropOpacity === "number"
+      ? layer.props.backdropOpacity
+      : 0.2;
+  const backdropRadius =
+    layer.props && typeof layer.props.backdropRadius === "number"
+      ? layer.props.backdropRadius
+      : 0;
+  const textPadding =
+    layer.props && typeof layer.props.textPadding === "number" ? layer.props.textPadding : 0;
+  const paddedTextBounds =
+    textPadding > 0
+      ? {
+          x: bounds.x + textPadding,
+          y: bounds.y + textPadding,
+          width: Math.max(0, bounds.width - textPadding * 2),
+          height: Math.max(0, bounds.height - textPadding * 2),
+        }
+      : bounds;
+  const backdropWhenImageKey =
+    layer.props && typeof layer.props.backdropWhenImageKey === "string"
+      ? layer.props.backdropWhenImageKey
+      : undefined;
+  const hasBodyText = typeof text === "string" && text.trim().length > 0;
+  const shouldShowBackdrop =
+    backdrop &&
+    hasBodyText &&
+    (!backdropWhenImageKey || Boolean((cardData as Record<string, unknown>)[backdropWhenImageKey]));
+
+  const clampRadius = (radius: number) =>
+    Math.max(0, Math.min(radius, bounds.width / 2, bounds.height / 2));
+  const cornerRadius = hideTitle
+    ? {
+        top: clampRadius(backdropRadius),
+        bottom: clampRadius(backdropRadius),
+      }
+    : placement === "top"
+      ? {
+          top: 0,
+          bottom: clampRadius(backdropRadius),
+        }
+      : {
+          top: clampRadius(backdropRadius),
+          bottom: 0,
+        };
+  const backdropPath = (() => {
+    const rTop = clampRadius(cornerRadius.top);
+    const rBottom = clampRadius(cornerRadius.bottom);
+    const x = bounds.x;
+    const y = bounds.y;
+    const w = bounds.width;
+    const h = bounds.height;
+    const right = x + w;
+    const bottom = y + h;
+    return [
+      `M ${x + rTop} ${y}`,
+      `H ${right - rTop}`,
+      `Q ${right} ${y} ${right} ${y + rTop}`,
+      `V ${bottom - rBottom}`,
+      `Q ${right} ${bottom} ${right - rBottom} ${bottom}`,
+      `H ${x + rBottom}`,
+      `Q ${x} ${bottom} ${x} ${bottom - rBottom}`,
+      `V ${y + rTop}`,
+      `Q ${x} ${y} ${x + rTop} ${y}`,
+      "Z",
+    ].join(" ");
+  })();
+
   return (
     <Layer key={layer.id}>
+      {shouldShowBackdrop ? (
+        <path
+          d={backdropPath}
+          fill={backdropFill}
+          opacity={backdropOpacity}
+        />
+      ) : null}
       <CardTextBlock
         text={text as string | null | undefined}
-        bounds={bounds}
+        bounds={paddedTextBounds}
         fontSize={fontSize}
         lineHeight={lineHeight}
         fontWeight={fontWeight}
@@ -271,8 +379,12 @@ function TitleLayer({
     }
     return undefined;
   };
-  const ribbonBounds = getBound("ribbon");
-  const textBounds = getBound("text");
+  const placement =
+    templateId === "labelled-back"
+      ? (cardData as { titlePlacement?: "top" | "bottom" } | undefined)?.titlePlacement
+      : undefined;
+  const ribbonBounds = getBound(placement === "top" ? "ribbonTop" : "ribbon");
+  const textBounds = getBound(placement === "top" ? "textTop" : "text");
   const textBoundsNoRibbon = getBound("textNoRibbon");
 
   return (

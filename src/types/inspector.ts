@@ -7,6 +7,7 @@ export type InspectorTitleField = {
   labelKey: MessageKey;
   required?: boolean;
   showToggle?: boolean;
+  showPlacement?: boolean;
 };
 
 export type InspectorTextField = {

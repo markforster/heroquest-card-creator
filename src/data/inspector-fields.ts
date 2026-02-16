@@ -118,12 +118,18 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       labelKey: "form.backLabel",
       required: true,
       showToggle: true,
+      showPlacement: true,
     },
     {
       fieldType: "image",
       bind: "imageAssetId",
       labelKey: "form.backImage",
       props: { boundsWidth: 750, boundsHeight: 1050 },
+    },
+    {
+      fieldType: "text",
+      bind: "description",
+      labelKey: "form.backText",
     },
     {
       fieldType: "borderColor",

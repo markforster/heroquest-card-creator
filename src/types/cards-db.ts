@@ -19,6 +19,7 @@ export interface CardRecord {
 
   title?: string;
   showTitle?: boolean;
+  titlePlacement?: "top" | "bottom";
   face?: CardFace;
   description?: string;
 

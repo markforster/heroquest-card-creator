@@ -9,6 +9,7 @@ export function cardRecordToCardData<T extends TemplateId>(
   const base = {
     title: record.title,
     showTitle: record.showTitle ?? true,
+    titlePlacement: record.titlePlacement,
     face: record.face,
     description: record.description,
     imageAssetId: record.imageAssetId,
@@ -88,6 +89,7 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     name,
     title: data.title,
     showTitle: data.showTitle,
+    titlePlacement: (data as { titlePlacement?: "top" | "bottom" }).titlePlacement,
     face,
     description: data.description,
     imageAssetId: data.imageAssetId,

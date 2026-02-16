@@ -43,7 +43,9 @@ export interface LargeTreasureCardData extends BaseCardFields {}
 
 export interface HeroBackCardData extends BaseCardFields {}
 
-export interface LabelledBackCardData extends BaseCardFields {}
+export interface LabelledBackCardData extends BaseCardFields {
+  titlePlacement?: "top" | "bottom";
+}
 
 export type CardDataByTemplate = {
   hero: HeroCardData;
@@ -81,7 +83,7 @@ export function createDefaultCardData<T extends TemplateId>(templateId: T): Card
     case "hero-back":
       return {} as CardDataByTemplate[T];
     case "labelled-back":
-      return {} as CardDataByTemplate[T];
+      return { titlePlacement: "bottom" } as CardDataByTemplate[T];
     default:
       return {} as CardDataByTemplate[T];
   }
