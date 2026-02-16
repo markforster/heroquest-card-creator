@@ -18,6 +18,7 @@ export type CardEditorState = {
   draftTemplateId: TemplateId | null;
   draft: CardDataByTemplate[TemplateId] | null;
   draftPairingFrontIds: string[] | null;
+  draftPairingBackIds: string[] | null;
   activeCardIdByTemplate: Partial<Record<TemplateId, string>>;
   activeCardStatusByTemplate: Partial<Record<TemplateId, CardStatus>>;
   isDirtyByTemplate: Partial<Record<TemplateId, boolean>>;
@@ -29,6 +30,7 @@ export type CardEditorContextValue = {
   setCardDraft: <K extends TemplateId>(templateId: K, data: CardDataByTemplate[K]) => void;
   setSingleDraft: <K extends TemplateId>(templateId: K, data: CardDataByTemplate[K] | null) => void;
   setDraftPairingFrontIds: (frontIds: string[] | null) => void;
+  setDraftPairingBackIds: (backIds: string[] | null) => void;
   setActiveCard: (templateId: TemplateId, id: string | null, status: CardStatus | null) => void;
   setTemplateDirty: (templateId: TemplateId, isDirty: boolean) => void;
   loadCardIntoEditor: (templateId: TemplateId, record: CardRecord) => void;
@@ -41,6 +43,7 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
   const [draftTemplateId, setDraftTemplateId] = useState<TemplateId | null>(null);
   const [draft, setDraft] = useState<CardDataByTemplate[TemplateId] | null>(null);
   const [draftPairingFrontIds, setDraftPairingFrontIds] = useState<string[] | null>(null);
+  const [draftPairingBackIds, setDraftPairingBackIds] = useState<string[] | null>(null);
   const [activeCardIdByTemplate, setActiveCardIdByTemplate] = useState<
     Partial<Record<TemplateId, string>>
   >({});
@@ -75,6 +78,7 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
     let initialDraft: CardDataByTemplate[TemplateId] | null = null;
     let initialDraftTemplateId: TemplateId | null = null;
     let initialDraftPairingFrontIds: string[] | null = null;
+    let initialDraftPairingBackIds: string[] | null = null;
     const initialActiveIds: Partial<Record<TemplateId, string>> = {};
     const initialActiveStatuses: Partial<Record<TemplateId, CardStatus>> = {};
 
@@ -87,6 +91,7 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
       const storedSingleDraft = window.localStorage.getItem("hqcc.draft.v1");
       const storedSingleDraftTemplateId = window.localStorage.getItem("hqcc.draftTemplateId.v1");
       const storedDraftPairings = window.localStorage.getItem("hqcc.draftPairingFrontIds.v1");
+      const storedDraftPairingBacks = window.localStorage.getItem("hqcc.draftPairingBackIds.v1");
       if (storedSingleDraft && storedSingleDraftTemplateId) {
         const parsed = JSON.parse(storedSingleDraft) as unknown;
         if (parsed && typeof parsed === "object") {
@@ -101,6 +106,14 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
         const parsed = JSON.parse(storedDraftPairings) as unknown;
         if (Array.isArray(parsed)) {
           initialDraftPairingFrontIds = parsed.filter(
+            (value) => typeof value === "string" && value.length > 0,
+          );
+        }
+      }
+      if (storedDraftPairingBacks) {
+        const parsed = JSON.parse(storedDraftPairingBacks) as unknown;
+        if (Array.isArray(parsed)) {
+          initialDraftPairingBackIds = parsed.filter(
             (value) => typeof value === "string" && value.length > 0,
           );
         }
@@ -180,6 +193,9 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
     if (initialDraftPairingFrontIds?.length) {
       setDraftPairingFrontIds(initialDraftPairingFrontIds);
     }
+    if (initialDraftPairingBackIds?.length) {
+      setDraftPairingBackIds(initialDraftPairingBackIds);
+    }
     if (Object.keys(initialActiveIds).length > 0) {
       setActiveCardIdByTemplate(initialActiveIds);
     }
@@ -232,6 +248,22 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
     }
   }, [draft, draftTemplateId, draftPairingFrontIds]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (draft && draftTemplateId && draftPairingBackIds?.length) {
+        window.localStorage.setItem(
+          "hqcc.draftPairingBackIds.v1",
+          JSON.stringify(draftPairingBackIds),
+        );
+      } else {
+        window.localStorage.removeItem("hqcc.draftPairingBackIds.v1");
+      }
+    } catch {
+      // Ignore localStorage errors for draft pairing backs
+    }
+  }, [draft, draftTemplateId, draftPairingBackIds]);
+
   // Persist active cards (id + status) whenever they change
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -275,6 +307,7 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
         draftTemplateId,
         draft,
         draftPairingFrontIds,
+        draftPairingBackIds,
         activeCardIdByTemplate,
         activeCardStatusByTemplate,
         isDirtyByTemplate,
@@ -289,10 +322,14 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
         setDraft(data ? (data as CardDataByTemplate[TemplateId]) : null);
         if (!data) {
           setDraftPairingFrontIds(null);
+          setDraftPairingBackIds(null);
         }
       },
       setDraftPairingFrontIds: (frontIds) => {
         setDraftPairingFrontIds(frontIds && frontIds.length ? frontIds : null);
+      },
+      setDraftPairingBackIds: (backIds) => {
+        setDraftPairingBackIds(backIds && backIds.length ? backIds : null);
       },
       setActiveCard: (templateId, id, status) => {
         setActiveCardIdByTemplate((prev) => ({
@@ -318,6 +355,7 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
         setDraftTemplateId(templateId);
         setDraft(data as CardDataByTemplate[TemplateId]);
         setDraftPairingFrontIds(null);
+        setDraftPairingBackIds(null);
         setActiveCardIdByTemplate((prev) => ({
           ...prev,
           [templateId]: record.id,
@@ -337,6 +375,7 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
       draftTemplateId,
       draft,
       draftPairingFrontIds,
+      draftPairingBackIds,
       activeCardIdByTemplate,
       activeCardStatusByTemplate,
       isDirtyByTemplate,

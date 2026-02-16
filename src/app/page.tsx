@@ -50,6 +50,7 @@ function IndexPageInner() {
       draftTemplateId,
       draft,
       draftPairingFrontIds,
+      draftPairingBackIds,
       activeCardIdByTemplate,
       activeCardStatusByTemplate,
     },
@@ -57,6 +58,7 @@ function IndexPageInner() {
     setSelectedTemplateId,
     setSingleDraft,
     setDraftPairingFrontIds,
+    setDraftPairingBackIds,
     setTemplateDirty,
     loadCardIntoEditor,
   } = useCardEditor();
@@ -151,8 +153,20 @@ function IndexPageInner() {
         });
         setActiveCard(templateId, record.id, record.status);
         setTemplateDirty(templateId, false);
-        if (saveFace === "front" && pairedBackId) {
-          await createPair(record.id, pairedBackId);
+        if (saveFace === "front") {
+          if (draftPairingBackIds?.length) {
+            try {
+              await Promise.all(
+                draftPairingBackIds.map((backId) => createPair(record.id, backId)),
+              );
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.error("[page] Failed to apply draft back pairings", error);
+            }
+            setDraftPairingBackIds(null);
+          } else if (pairedBackId) {
+            await createPair(record.id, pairedBackId);
+          }
         }
         if (draftPairingFrontIds?.length) {
           try {
@@ -175,10 +189,18 @@ function IndexPageInner() {
         });
         if (record) {
           if (saveFace === "front") {
-            if (pairedBackId) {
+            if (draftPairingBackIds?.length) {
+              try {
+                await Promise.all(
+                  draftPairingBackIds.map((backId) => createPair(activeCardId, backId)),
+                );
+              } catch (error) {
+                // eslint-disable-next-line no-console
+                console.error("[page] Failed to apply draft back pairings", error);
+              }
+              setDraftPairingBackIds(null);
+            } else if (pairedBackId) {
               await createPair(activeCardId, pairedBackId);
-            } else {
-              await deletePairsForFront(activeCardId);
             }
           }
           setActiveCard(templateId, record.id, record.status);

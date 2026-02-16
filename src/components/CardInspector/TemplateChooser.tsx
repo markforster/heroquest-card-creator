@@ -1,11 +1,9 @@
 "use client";
 
-import { BringToFront, Combine, SendToBack, Unlink2 } from "lucide-react";
+import { BringToFront, SendToBack } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
-import { useAppActions } from "@/components/AppActionsContext";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useEditorSave } from "@/components/EditorSaveContext";
@@ -14,9 +12,8 @@ import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getCard, listCards, touchCardLastViewed } from "@/lib/cards-db";
-import { createPair, deletePairsForFront, replacePairsForBack } from "@/lib/pairs-service";
-import { listPairsForFace } from "@/lib/pairs-service";
+import { getCard, listCards } from "@/lib/cards-db";
+import { deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { CardRecord } from "@/types/cards-db";
@@ -46,37 +43,23 @@ export default function TemplateChooser() {
       selectedTemplateId,
       draftTemplateId,
       draft,
-      draftPairingFrontIds,
       activeCardIdByTemplate,
       isDirtyByTemplate,
     },
-    setSelectedTemplateId,
     setCardDraft,
     setSingleDraft,
     setTemplateDirty,
-    loadCardIntoEditor,
   } = useCardEditor();
-  const { openStockpile } = useAppActions();
   const { saveCurrentCard, saveToken } = useEditorSave();
   const [pendingChange, setPendingChange] = useState<PendingFaceChange | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isFaceMenuOpen, setIsFaceMenuOpen] = useState(false);
-  const [pairedCard, setPairedCard] = useState<CardRecord | null>(null);
-  const [pairedThumbnailUrl, setPairedThumbnailUrl] = useState<string | null>(null);
   const [currentCard, setCurrentCard] = useState<CardRecord | null>(null);
   const [currentThumbnailUrl, setCurrentThumbnailUrl] = useState<string | null>(null);
   const [currentThumbnailError, setCurrentThumbnailError] = useState(false);
   const [currentThumbnailDataUrl, setCurrentThumbnailDataUrl] = useState<string | null>(null);
-  const [pairedFronts, setPairedFronts] = useState<CardRecord[]>([]);
-  const [pairedFrontsToken, setPairedFrontsToken] = useState(0);
-  const [pendingOpenCard, setPendingOpenCard] = useState<CardRecord | null>(null);
   const [pendingFaceChange, setPendingFaceChange] = useState<CardFace | null>(null);
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
-  const [overflowPopoverAnchor, setOverflowPopoverAnchor] = useState<{
-    rect: { top: number; left: number; bottom: number; right: number };
-  } | null>(null);
-  const [isOverflowPopoverOpen, setIsOverflowPopoverOpen] = useState(false);
-  const overflowHoverTimeoutRef = useRef<number | null>(null);
   const faceMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -101,46 +84,12 @@ export default function TemplateChooser() {
   const isDraft = Boolean(
     currentTemplateId && draftTemplateId === currentTemplateId && draft && !activeCardId,
   );
-  const pairingDisabled = isDraft;
 
   const effectiveFace = useMemo<CardFace | undefined>(() => {
     if (!template) return undefined;
     return (draftValue?.face ?? template.defaultFace) as CardFace;
   }, [draftValue?.face, template]);
   const isInferredFace = Boolean(template && draftValue?.face == null);
-
-  const openCard = async (cardId: string) => {
-    try {
-      const record = await getCard(cardId);
-      if (!record) return;
-      const viewed = await touchCardLastViewed(record.id);
-      const nextRecord = viewed ?? record;
-      setSelectedTemplateId(nextRecord.templateId as TemplateId);
-      loadCardIntoEditor(nextRecord.templateId as TemplateId, nextRecord);
-      if (ENABLE_WEBGL_RECENTER_ON_FACE_SELECT) {
-        if (recenterTimeoutRef.current) {
-          window.clearTimeout(recenterTimeoutRef.current);
-        }
-        recenterTimeoutRef.current = window.setTimeout(() => {
-          requestRecenter();
-        }, 90);
-      }
-    } catch {
-      // Ignore load errors for now.
-    }
-  };
-
-  const requestOpenCard = async (cardId: string) => {
-    const currentTemplate = selectedTemplateId;
-    if (currentTemplate && isDirtyByTemplate[currentTemplate]) {
-      const record = await getCard(cardId);
-      if (!record) return;
-      setPendingOpenCard(record);
-      setIsSavePromptOpen(true);
-      return;
-    }
-    await openCard(cardId);
-  };
 
   useEffect(() => {
     if (!activeCardId) {
@@ -166,7 +115,7 @@ export default function TemplateChooser() {
     if (currentThumbnailUrl) {
       URL.revokeObjectURL(currentThumbnailUrl);
     }
-    if (!isDraftDirty && currentCard?.thumbnailBlob instanceof Blob) {
+    if (currentCard?.thumbnailBlob instanceof Blob) {
       const nextUrl = URL.createObjectURL(currentCard.thumbnailBlob);
       setCurrentThumbnailUrl(nextUrl);
       setCurrentThumbnailError(false);
@@ -180,111 +129,6 @@ export default function TemplateChooser() {
     setCurrentThumbnailDataUrl(null);
     return undefined;
   }, [currentCard?.thumbnailBlob, isDraftDirty]);
-
-  useEffect(() => {
-    let active = true;
-    const loadPairedBack = async () => {
-      if (!activeCardId || effectiveFace !== "front") {
-        if (!active) return;
-        setPairedCard(null);
-        return;
-      }
-
-      const pairs = await listPairsForFace(activeCardId);
-      if (!active) return;
-      const match =
-        pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
-        pairs.find((pair) => pair.backFaceId);
-      if (!match?.backFaceId) {
-        setPairedCard(null);
-        return;
-      }
-      const record = await getCard(match.backFaceId);
-      if (!active) return;
-      setPairedCard(record);
-    };
-
-    loadPairedBack().catch(() => {
-      if (!active) return;
-      setPairedCard(null);
-    });
-    return () => {
-      active = false;
-    };
-  }, [activeCardId, effectiveFace]);
-
-  useEffect(() => {
-    if (effectiveFace !== "back") {
-      setPairedFronts([]);
-      return;
-    }
-    let active = true;
-    const loadFronts = async (cards: CardRecord[]) => {
-      if (!active) return;
-      const sorted = [...cards].sort((a, b) => {
-        const aViewed = a.lastViewedAt ?? 0;
-        const bViewed = b.lastViewedAt ?? 0;
-        if (bViewed !== aViewed) return bViewed - aViewed;
-        if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
-        const aName = a.nameLower ?? a.name.toLocaleLowerCase();
-        const bName = b.nameLower ?? b.name.toLocaleLowerCase();
-        return aName.localeCompare(bName);
-      });
-      setPairedFronts(sorted);
-    };
-    listCards({ status: "saved" })
-      .then((cards) => {
-        if (!active) return;
-        if (activeCardId) {
-          void listPairsForFace(activeCardId)
-            .then((pairs) => {
-              if (!active) return;
-              const frontIds = new Set(
-                pairs
-                  .map((pair) => pair.frontFaceId)
-                  .filter((id): id is string => Boolean(id)),
-              );
-              const matches = cards.filter((card) => frontIds.has(card.id));
-              void loadFronts(matches);
-            })
-            .catch(() => {
-              if (!active) return;
-              setPairedFronts([]);
-            });
-          return;
-        }
-        if (draftPairingFrontIds?.length) {
-          const idSet = new Set(draftPairingFrontIds);
-          const matches = cards.filter((card) => idSet.has(card.id));
-          void loadFronts(matches);
-          return;
-        }
-        setPairedFronts([]);
-      })
-      .catch(() => {
-        if (!active) return;
-        setPairedFronts([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [activeCardId, effectiveFace, pairedFrontsToken, draftPairingFrontIds]);
-
-  useEffect(() => {
-    if (pairedThumbnailUrl) {
-      URL.revokeObjectURL(pairedThumbnailUrl);
-    }
-    if (pairedCard?.thumbnailBlob instanceof Blob) {
-      const nextUrl = URL.createObjectURL(pairedCard.thumbnailBlob);
-      setPairedThumbnailUrl(nextUrl);
-      return () => {
-        URL.revokeObjectURL(nextUrl);
-      };
-    }
-    setPairedThumbnailUrl(null);
-    return undefined;
-  }, [pairedCard?.thumbnailBlob]);
 
   const applyFaceChange = (nextFace: CardFace) => {
     if (!currentTemplateId) return;
@@ -366,12 +210,6 @@ export default function TemplateChooser() {
     : "";
 
   const currentTemplateThumbnail = template?.thumbnail ?? null;
-  const pairedThumbnail = pairedCard ? cardTemplatesById[pairedCard.templateId]?.thumbnail : null;
-  const pairedTitle = pairedCard?.title ?? FALLBACK_TITLE;
-  const hasPair = Boolean(pairedCard);
-  const visibleFronts = pairedFronts.slice(0, 8);
-  const overflowCount = pairedFronts.length > 8 ? pairedFronts.length - 8 : 0;
-  const shouldShowOverflowPopover = isOverflowPopoverOpen && overflowPopoverAnchor;
 
   return (
     <>
@@ -419,400 +257,59 @@ export default function TemplateChooser() {
               </span>
             ) : null}
           </div>
-          <div
-            className={`${styles.inspectorPairRow} ${
-              pairingDisabled ? styles.inspectorPairRowDisabled : ""
-            }`}
-          >
-        <div className={styles.inspectorFaceMenu} ref={faceMenuRef}>
-          <button
-            type="button"
-            className={`${styles.inspectorFaceButton} ${
-              isInferredFace ? styles.inspectorFaceButtonInferred : ""
-            }`}
-            aria-label={t("aria.cardFace")}
-            aria-expanded={isFaceMenuOpen}
-            disabled={!template || Boolean(pendingChange) || isConfirming}
-            onClick={() => setIsFaceMenuOpen((prev) => !prev)}
-          >
-            {effectiveFace === "back" ? (
-              <SendToBack size={16} className={styles.inspectorFaceItemIcon} />
-            ) : (
-              <BringToFront size={16} className={styles.inspectorFaceItemIcon} />
-            )}
-            <span>
-              {effectiveFace === "back" ? t("cardFace.backFacing") : t("cardFace.frontFacing")}
-            </span>
-          </button>
-          {isFaceMenuOpen ? (
-            <div className={styles.inspectorFacePopover} role="menu">
+          <div className={styles.inspectorPairRow}>
+            <div className={styles.inspectorFaceMenu} ref={faceMenuRef}>
               <button
                 type="button"
-                className={styles.inspectorFaceItem}
-                role="menuitem"
-                onClick={() => {
-                  setIsFaceMenuOpen(false);
-                  void handleFaceChange("front");
-                }}
+                className={`${styles.inspectorFaceButton} ${
+                  isInferredFace ? styles.inspectorFaceButtonInferred : ""
+                }`}
+                aria-label={t("aria.cardFace")}
+                aria-expanded={isFaceMenuOpen}
+                disabled={!template || Boolean(pendingChange) || isConfirming}
+                onClick={() => setIsFaceMenuOpen((prev) => !prev)}
               >
-                <BringToFront className={styles.inspectorFaceItemIcon} aria-hidden="true" />
-                {t("cardFace.frontFacing")}
-              </button>
-              <button
-                type="button"
-                className={styles.inspectorFaceItem}
-                role="menuitem"
-                onClick={() => {
-                  setIsFaceMenuOpen(false);
-                  void handleFaceChange("back");
-                }}
-              >
-                <SendToBack className={styles.inspectorFaceItemIcon} aria-hidden="true" />
-                {t("cardFace.backFacing")}
-              </button>
-            </div>
-          ) : null}
-        </div>
-        {effectiveFace === "front" ? (
-          <>
-            <button
-              type="button"
-              className={`${styles.inspectorPairActionButton} ${
-                hasPair ? "" : styles.inspectorPairActionButtonEmpty
-              }`}
-              title={
-                pairingDisabled ? t("tooltip.saveBeforePairing") : t("tooltip.pairBack")
-              }
-              disabled={pairingDisabled}
-              onClick={() => {
-                if (pairingDisabled) return;
-                openStockpile({
-                  mode: "pair-backs",
-                  titleOverride: t("heading.selectBackCard"),
-                  initialSelectedIds: pairedCard ? [pairedCard.id] : [],
-                  onConfirmSelection: (cardIds) => {
-                    const selectedId = cardIds?.[0];
-                    if (!selectedId || !currentTemplateId) return;
-                    if (activeCardId) {
-                      void (async () => {
-                        await createPair(activeCardId, selectedId);
-                        const record = await getCard(selectedId);
-                        setPairedCard(record);
-                      })();
-                    }
-                    const nextDraft = {
-                      ...(draftValue ?? {}),
-                      face: draftValue?.face ?? template?.defaultFace,
-                    } as CardDataByTemplate[TemplateId];
-                    setCardDraft(currentTemplateId, nextDraft);
-                    setSingleDraft(currentTemplateId, nextDraft);
-                    setTemplateDirty(currentTemplateId, true);
-                  },
-                });
-              }}
-            >
-              <Combine aria-hidden="true" />
-            </button>
-            <div
-              className={styles.inspectorPairThumb}
-              role={hasPair && !pairingDisabled ? "button" : undefined}
-              tabIndex={hasPair && !pairingDisabled ? 0 : -1}
-              onClick={async () => {
-                if (pairingDisabled) return;
-                if (!hasPair || !pairedCard) return;
-                await requestOpenCard(pairedCard.id);
-              }}
-              onKeyDown={async (event) => {
-                if (pairingDisabled) return;
-                if (!hasPair || !pairedCard) return;
-                if (event.key !== "Enter" && event.key !== " ") return;
-                event.preventDefault();
-                await requestOpenCard(pairedCard.id);
-              }}
-            >
-              <div className={styles.inspectorPairThumbInner}>
-                {pairedThumbnailUrl ? (
-                  <img src={pairedThumbnailUrl} alt="" />
-                ) : pairedThumbnail?.src ? (
-                  <img src={pairedThumbnail.src} alt="" />
+                {effectiveFace === "back" ? (
+                  <SendToBack size={16} className={styles.inspectorFaceItemIcon} />
                 ) : (
-                  <div className={styles.inspectorPairThumbPlaceholder} />
+                  <BringToFront size={16} className={styles.inspectorFaceItemIcon} />
                 )}
-              </div>
-              {hasPair ? (
-                <div className={styles.inspectorPairThumbPopover} aria-hidden="true">
-                  {pairedThumbnailUrl ? (
-                    <img src={pairedThumbnailUrl} alt="" />
-                  ) : pairedThumbnail?.src ? (
-                    <img src={pairedThumbnail.src} alt="" />
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-            <div className={styles.inspectorPairTitle}>
-              {hasPair ? pairedTitle : t("cardFace.unpaired")}
-            </div>
-            <div className={styles.inspectorPairActions}>
-              {hasPair ? (
-                <button
-                  type="button"
-                  className={styles.inspectorPairActionButton}
-                  title={
-                    pairingDisabled ? t("tooltip.saveBeforePairing") : t("tooltip.unpairBack")
-                  }
-                  disabled={pairingDisabled}
-                  onClick={() => {
-                    if (pairingDisabled) return;
-                    if (!activeCardId) return;
-                    void (async () => {
-                      await deletePairsForFront(activeCardId);
-                      setPairedCard(null);
-                    })();
-                    if (currentTemplateId) {
-                      const nextDraft = {
-                        ...(draftValue ?? {}),
-                      } as CardDataByTemplate[TemplateId];
-                      setCardDraft(currentTemplateId, nextDraft);
-                      setSingleDraft(currentTemplateId, nextDraft);
-                      setTemplateDirty(currentTemplateId, true);
-                    }
-                  }}
-                >
-                  <Unlink2 aria-hidden="true" />
-                </button>
-              ) : null}
-            </div>
-          </>
-        ) : null}
-        {effectiveFace === "back" ? (
-          <>
-            <button
-              type="button"
-              className={`${styles.inspectorPairActionButton} ${
-                pairedFronts.length > 0 ? "" : styles.inspectorPairActionButtonEmpty
-              }`}
-              title={
-                pairingDisabled ? t("tooltip.saveBeforePairing") : t("tooltip.managePairings")
-              }
-              disabled={pairingDisabled}
-              onClick={() => {
-                    if (pairingDisabled) return;
-                    if (!activeCardId) return;
-                    openStockpile({
-                      mode: "pair-fronts",
-                      titleOverride: t("heading.manageFrontPairings"),
-                      initialSelectedIds: pairedFronts.map((card) => card.id),
-                      onConfirmSelection: async (cardIds) => {
-                        try {
-                          await replacePairsForBack(activeCardId, cardIds);
-                        } catch {
-                          // Ignore pair update errors for now.
-                        }
-                        const selectedSet = new Set(cardIds);
-                        const removedIds = pairedFronts
-                          .map((card) => card.id)
-                          .filter((id) => !selectedSet.has(id));
-                        try {
-                      setPairedFrontsToken((prev) => prev + 1);
-                        } catch {
-                          // Ignore update errors for now.
-                        }
-                      },
-                    });
-                  }}
-            >
-              <Combine aria-hidden="true" />
-            </button>
-            <div className={styles.inspectorStack}>
-              {visibleFronts.map((card, index) => {
-                const thumbUrl =
-                  typeof window !== "undefined" && card.thumbnailBlob
-                    ? URL.createObjectURL(card.thumbnailBlob)
-                    : null;
-                const templateThumb = cardTemplatesById[card.templateId]?.thumbnail;
-                return (
-                  <div
-                    key={card.id}
-                    className={styles.inspectorStackItem}
-                    style={{ zIndex: index + 1 }}
-                    onClick={async () => {
-                      if (pairingDisabled) return;
-                      await requestOpenCard(card.id);
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={async (event) => {
-                      if (pairingDisabled) return;
-                      if (event.key !== "Enter" && event.key !== " ") return;
-                      event.preventDefault();
-                      await requestOpenCard(card.id);
+                <span>
+                  {effectiveFace === "back" ? t("cardFace.backFacing") : t("cardFace.frontFacing")}
+                </span>
+              </button>
+              {isFaceMenuOpen ? (
+                <div className={styles.inspectorFacePopover} role="menu">
+                  <button
+                    type="button"
+                    className={styles.inspectorFaceItem}
+                    role="menuitem"
+                    onClick={() => {
+                      setIsFaceMenuOpen(false);
+                      void handleFaceChange("front");
                     }}
                   >
-                    <div className={styles.inspectorStackThumbInner}>
-                      {thumbUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={thumbUrl}
-                          alt=""
-                          onLoad={() => {
-                            URL.revokeObjectURL(thumbUrl);
-                          }}
-                        />
-                      ) : templateThumb?.src ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={templateThumb.src} alt="" />
-                      ) : (
-                        <div className={styles.inspectorStackPlaceholder} />
-                      )}
-                    </div>
-                    <div className={styles.inspectorStackPopover} aria-hidden="true">
-                      {thumbUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={thumbUrl} alt="" />
-                      ) : templateThumb?.src ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={templateThumb.src} alt="" />
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-              {overflowCount > 0 ? (
-                <div
-                  className={`${styles.inspectorStackItem} ${styles.inspectorStackOverflowItem}`}
-                  style={{ zIndex: visibleFronts.length + 1 }}
-                  onMouseEnter={(event) => {
-                    if (overflowHoverTimeoutRef.current) {
-                      window.clearTimeout(overflowHoverTimeoutRef.current);
-                    }
-                    const rect = event.currentTarget.getBoundingClientRect();
-                    setOverflowPopoverAnchor({
-                      rect: {
-                        top: rect.top,
-                        left: rect.left,
-                        bottom: rect.bottom,
-                        right: rect.right,
-                      },
-                    });
-                    setIsOverflowPopoverOpen(true);
-                  }}
-                  onMouseLeave={() => {
-                    if (overflowHoverTimeoutRef.current) {
-                      window.clearTimeout(overflowHoverTimeoutRef.current);
-                    }
-                    overflowHoverTimeoutRef.current = window.setTimeout(() => {
-                      setIsOverflowPopoverOpen(false);
-                      setOverflowPopoverAnchor(null);
-                    }, 200);
-                  }}
-                  onClick={(event) => {
-                    if (pairingDisabled) return;
-                    event.stopPropagation();
-                    if (overflowHoverTimeoutRef.current) {
-                      window.clearTimeout(overflowHoverTimeoutRef.current);
-                    }
-                    const rect = event.currentTarget.getBoundingClientRect();
-                    setOverflowPopoverAnchor({
-                      rect: {
-                        top: rect.top,
-                        left: rect.left,
-                        bottom: rect.bottom,
-                        right: rect.right,
-                      },
-                    });
-                    setIsOverflowPopoverOpen(true);
-                  }}
-                >
-                  <div className={styles.inspectorStackOverflow}>+{overflowCount}</div>
+                    <BringToFront className={styles.inspectorFaceItemIcon} aria-hidden="true" />
+                    {t("cardFace.frontFacing")}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.inspectorFaceItem}
+                    role="menuitem"
+                    onClick={() => {
+                      setIsFaceMenuOpen(false);
+                      void handleFaceChange("back");
+                    }}
+                  >
+                    <SendToBack className={styles.inspectorFaceItemIcon} aria-hidden="true" />
+                    {t("cardFace.backFacing")}
+                  </button>
                 </div>
               ) : null}
             </div>
-            <div className={styles.inspectorPairActions} />
-          </>
-        ) : null}
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-  {shouldShowOverflowPopover && typeof document !== "undefined"
-        ? (() => {
-            const tileWidth = 100;
-            const tileHeight = 140;
-            const tileGap = 8;
-            const columns = 5;
-            const padding = 16;
-            const popoverWidth = padding * 2 + columns * tileWidth + (columns - 1) * tileGap;
-            const popoverMaxHeight = 300;
-            const left = Math.min(
-              overflowPopoverAnchor.rect.left,
-              window.innerWidth - popoverWidth - 16,
-            );
-            const top = Math.min(
-              overflowPopoverAnchor.rect.bottom + 6,
-              window.innerHeight - popoverMaxHeight - 16,
-            );
-            return createPortal(
-              <div
-                className={styles.inspectorStackOverflowPopover}
-                style={{ left, top, width: popoverWidth }}
-                onMouseEnter={() => {
-                  if (overflowHoverTimeoutRef.current) {
-                    window.clearTimeout(overflowHoverTimeoutRef.current);
-                  }
-                  setIsOverflowPopoverOpen(true);
-                }}
-                onMouseLeave={() => {
-                  if (overflowHoverTimeoutRef.current) {
-                    window.clearTimeout(overflowHoverTimeoutRef.current);
-                  }
-                  overflowHoverTimeoutRef.current = window.setTimeout(() => {
-                    setIsOverflowPopoverOpen(false);
-                    setOverflowPopoverAnchor(null);
-                  }, 200);
-                }}
-              >
-                <div className={styles.inspectorStackOverflowGrid}>
-                  {pairedFronts.map((card) => {
-                    const thumbUrl =
-                      typeof window !== "undefined" && card.thumbnailBlob
-                        ? URL.createObjectURL(card.thumbnailBlob)
-                        : null;
-                    const templateThumb = cardTemplatesById[card.templateId]?.thumbnail;
-                    return (
-                      <button
-                        key={card.id}
-                        type="button"
-                        className={styles.inspectorStackOverflowGridItem}
-                        onClick={async (event) => {
-                          event.stopPropagation();
-                          await requestOpenCard(card.id);
-                          setIsOverflowPopoverOpen(false);
-                          setOverflowPopoverAnchor(null);
-                        }}
-                      >
-                        {thumbUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={thumbUrl}
-                            alt=""
-                            onLoad={() => {
-                              URL.revokeObjectURL(thumbUrl);
-                            }}
-                          />
-                        ) : templateThumb?.src ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={templateThumb.src} alt="" />
-                        ) : (
-                          <div className={styles.inspectorStackPlaceholder} />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>,
-              document.body,
-            );
-          })()
-        : null}
       <ConfirmModal
         isOpen={Boolean(pendingChange)}
         title={t("actions.confirm")}
@@ -845,23 +342,16 @@ export default function TemplateChooser() {
         cancelLabel={t("actions.cancel")}
         onConfirm={async () => {
           setIsSavePromptOpen(false);
-          const nextOpenCard = pendingOpenCard;
           const nextFace = pendingFaceChange;
-          setPendingOpenCard(null);
           setPendingFaceChange(null);
           const saved = await saveCurrentCard();
           if (!saved) return;
-          if (nextOpenCard) {
-            await openCard(nextOpenCard.id);
-            return;
-          }
           if (nextFace) {
             await handleFaceChange(nextFace);
           }
         }}
         onCancel={() => {
           setIsSavePromptOpen(false);
-          setPendingOpenCard(null);
           setPendingFaceChange(null);
         }}
       >

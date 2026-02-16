@@ -871,8 +871,71 @@
 .inspectorBody {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 0 1rem 0.5rem;
+}
+
+.inspectorMode {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 0.5rem;
+}
+
+.inspectorModeHeader {
+  flex: 0 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+}
+
+.inspectorModeSegment {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.inspectorModeTab {
+  border: 0;
+  background: transparent;
+  color: #c7c7c7;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.inspectorModeTab:hover {
+  color: #f5f5f5;
+}
+
+.inspectorModeTabActive {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.inspectorModeBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 0.5rem;
+}
+
+.inspectorModeEmpty {
+  padding: 0.75rem 0;
+}
+
+.inspectorPairingPlaceholder {
+  min-height: 100%;
 }
 
 .inspectorHeader {
@@ -1148,6 +1211,339 @@
   align-items: center;
   gap: 0.4rem;
   flex: 0 1 auto;
+}
+
+.pairingPanelBody {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.pairingPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pairingPanelGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 56px);
+  gap: 8px;
+}
+
+.pairingPanelGridItem {
+  width: 56px;
+  height: 80px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2b2b2b;
+  background: #151515;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.pairingPanelGridItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 160ms ease, transform 160ms ease;
+  transition-delay: var(--pairing-thumb-delay, 0ms);
+}
+
+.pairingPanelGridItemLoaded img {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.pairingPanelGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pairingPanelGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pairingPanelGroup :global(.accordion-item) {
+  background: transparent;
+  border: 0;
+}
+
+.pairingPanelGroup :global(.accordion-collapse) {
+  background: transparent;
+}
+
+.pairingPanelGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.pairingPanelGroupHeaderButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pairingPanelGroupChevron {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #d7d7d7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: none;
+  position: relative;
+}
+
+.pairingPanelGroupControls {
+  margin-left: auto;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.pairingPanelGroupUnpair {
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #d7d7d7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.pairingPanelGroupUnpair:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.pairingPanelGroupChevron:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.pairingPanelGroupChevronDown,
+.pairingPanelGroupChevronUp {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+.pairingPanelGroupChevronUp {
+  opacity: 0;
+}
+
+.pairingPanelGroupHeaderButton[aria-expanded="true"] .pairingPanelGroupChevronDown {
+  opacity: 0;
+}
+
+.pairingPanelGroupHeaderButton[aria-expanded="true"] .pairingPanelGroupChevronUp {
+  opacity: 1;
+}
+
+.pairingPanelGroupBody {
+  padding: 0.4rem 0.1rem 0.1rem;
+}
+
+.pairingPanelGroupThumb {
+  width: 56px;
+  height: 80px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2b2b2b;
+  background: #151515;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0;
+  cursor: pointer;
+}
+
+.pairingPanelGroupThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.pairingPanelGroupTitle {
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+}
+
+.pairingPanelGroupInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.pairingPanelGroupCount {
+  font-size: 0.75rem;
+  color: #cbd0d8;
+}
+
+.pairingPanelGroupGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 56px);
+  gap: 8px;
+}
+
+.pairingPanelHoverPopover {
+  position: fixed;
+  border: 1px solid #2b2b2b;
+  border-radius: 6px;
+  background: #151515;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  padding: 8px;
+  z-index: 200;
+}
+
+.pairingPanelHoverCard {
+  width: 120px;
+  height: 168px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2b2b2b;
+  background: #151515;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pairingPanelHoverCard img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pairingPanelSelected {
+  border-color: var(--hq-accent);
+  box-shadow: inset 0 0 0 1px var(--hq-accent);
+}
+
+.inspectorBackList {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 31.5px;
+  flex-wrap: wrap;
+}
+
+.inspectorBackItem {
+  position: relative;
+  width: 22.5px;
+  height: 31.5px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.inspectorBackThumbInner {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  border: 1px solid #3a3a3a;
+  background: #151515;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.inspectorBackThumbInner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.inspectorBackThumbPlaceholder {
+  width: 100%;
+  height: 100%;
+  background: #1a1a1a;
+}
+
+.inspectorBackPopover {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  border: 1px solid #2b2b2b;
+  border-radius: 6px;
+  background: #151515;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  padding: 8px;
+  display: none;
+  z-index: 120;
+}
+
+.inspectorBackPopoverGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 60px);
+  grid-auto-rows: 84px;
+  gap: 6px;
+}
+
+.inspectorBackPopoverItem {
+  width: 60px;
+  height: 84px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2b2b2b;
+  background: #151515;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inspectorBackPopoverItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.inspectorBackItem:hover .inspectorBackPopover {
+  display: block;
 }
 
 .inspectorPairActionButton {
@@ -3304,6 +3700,118 @@
 }
 
 .imageAccordionBody {
+  padding: 0.65rem 0.65rem 0.75rem;
+  background: #151515;
+}
+
+/* Stats accordion */
+
+.statAccordion {
+  margin-top: 0.35rem;
+}
+
+.statAccordionItem {
+  border: 1px solid #2b2b2b;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.statAccordionHeader {
+  margin: 0;
+}
+
+.statAccordionButton {
+  padding: 0.45rem 0.65rem;
+  background: #1e1e1e;
+  color: #e5e7eb;
+  font-size: 0.85rem;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.statAccordionButton:not(.collapsed) {
+  background: #1e1e1e;
+  color: #f5f5f5;
+}
+
+.statAccordionButton:hover {
+  background: #222;
+  color: #f8fafc;
+}
+
+.statAccordionButton:focus {
+  box-shadow: 0 0 0 2px var(--hq-focus-ring);
+}
+
+.statAccordionButton::after {
+  display: none;
+}
+
+.statAccordionLabel {
+  flex: 0 0 auto;
+  text-align: left;
+  color: var(--hq-accent);
+  font-size: 1rem;
+}
+
+.statAccordionPreview {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.statAccordionPreviewHidden {
+  opacity: 0;
+}
+
+.statAccordionPreviewTable {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid #1f1f1f;
+  border-radius: 0;
+  background: #f9f2e1;
+  overflow: hidden;
+  color: #111827;
+  font-weight: 600;
+  font-size: 0.75rem;
+  margin: 2px;
+}
+
+.statAccordionPreviewCell {
+  padding: 0.1rem 0.4rem;
+  border-right: 1px solid #1f1f1f;
+  min-width: 1.4rem;
+  text-align: center;
+}
+
+.statAccordionPreviewCell:last-child {
+  border-right: none;
+}
+
+.statAccordionPreviewContainer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: 1px solid #2b2b2b;
+  border-radius: 6px;
+  background: #efe7d4;
+}
+
+.statAccordionChevron {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.statAccordionBody {
   padding: 0.65rem 0.65rem 0.75rem;
   background: #151515;
 }

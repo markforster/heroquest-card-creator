@@ -265,11 +265,8 @@ export default function StockpileModal({
       : normalizedInitial;
     if (isPairMode) {
       setSelectedIds((prev) => {
-        const base = prev.length ? prev : isPairFronts ? [] : activeCardId ? [activeCardId] : [];
+        const base = prev.length ? prev : [];
         const merged = Array.from(new Set([...base, ...filteredInitial]));
-        if (isPairBacks) {
-          return merged.length ? [merged[0]] : [];
-        }
         return merged;
       });
       return;
@@ -574,7 +571,7 @@ export default function StockpileModal({
               <button
                 type="button"
                 className="btn btn-primary btn-sm"
-                disabled={isPairBacks ? selectedIds.length !== 1 : false}
+                disabled={false}
                 onClick={() => {
                   if (!onConfirmSelection) {
                     onClose();
@@ -1117,10 +1114,6 @@ export default function StockpileModal({
                         }}
                         onClick={(event) => {
                           if (isPairMode) {
-                            if (isPairBacks) {
-                              setSelectedIds((prev) => (prev.includes(card.id) ? [] : [card.id]));
-                              return;
-                            }
                             setSelectedIds((prev) => {
                               const next = prev.includes(card.id)
                                 ? prev.filter((id) => id !== card.id)
@@ -1148,13 +1141,6 @@ export default function StockpileModal({
                           setSelectedIds([card.id]);
                         }}
                         onDoubleClick={() => {
-                          if (isPairBacks) {
-                            if (onConfirmSelection) {
-                              onConfirmSelection([card.id]);
-                            }
-                            onClose();
-                            return;
-                          }
                           if (isPairMode) return;
                           if (!onLoadCard) return;
                           onLoadCard(card);

@@ -1,11 +1,15 @@
 "use client";
 
+import { useFormContext, useWatch } from "react-hook-form";
+
 import layoutStyles from "@/app/page.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
+import { formatStatValue } from "@/lib/stat-values";
 import type { MonsterCardData } from "@/types/card-data";
 
 import SplitStatStepper from "./SplitStatStepper";
 import StatStepper from "./StatStepper";
+import StatsAccordion from "./StatsAccordion";
 
 type MonsterStatsInspectorProps = {
   allowSplit?: boolean;
@@ -19,11 +23,23 @@ export default function MonsterStatsInspector({
   splitSecondaryDefault = 0,
 }: MonsterStatsInspectorProps) {
   const { t } = useI18n();
+  const { control } = useFormContext<MonsterCardData>();
   const StatControl = allowSplit ? SplitStatStepper<MonsterCardData> : StatStepper<MonsterCardData>;
+  const movementSquares = useWatch({ control, name: "movementSquares" });
+  const attackDice = useWatch({ control, name: "attackDice" });
+  const defendDice = useWatch({ control, name: "defendDice" });
+  const bodyPoints = useWatch({ control, name: "bodyPoints" });
+  const mindPoints = useWatch({ control, name: "mindPoints" });
+  const previewValues = [
+    formatStatValue(movementSquares) ?? "0",
+    formatStatValue(attackDice) ?? "0",
+    formatStatValue(defendDice) ?? "0",
+    formatStatValue(bodyPoints) ?? "0",
+    formatStatValue(mindPoints) ?? "0",
+  ];
 
   return (
-    <div className={layoutStyles.statGroup}>
-      <label>{t("form.stats")}</label>
+    <StatsAccordion label={t("form.stats")} previewValues={previewValues}>
       <div className={layoutStyles.statRows}>
         <div className={layoutStyles.statRow}>
           <StatControl
@@ -76,6 +92,6 @@ export default function MonsterStatsInspector({
           />
         </div>
       </div>
-    </div>
+    </StatsAccordion>
   );
 }

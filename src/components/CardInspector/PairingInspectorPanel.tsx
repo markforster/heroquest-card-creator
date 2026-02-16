@@ -1,0 +1,734 @@
+"use client";
+
+import { ChevronDown, ChevronUp, Combine, Unlink2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+
+import styles from "@/app/page.module.css";
+import { useAppActions } from "@/components/AppActionsContext";
+import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import ConfirmModal from "@/components/ConfirmModal";
+import { useEditorSave } from "@/components/EditorSaveContext";
+import { usePreviewRenderer } from "@/components/PreviewRendererContext";
+import { formatMessage } from "@/components/Stockpile/stockpile-utils";
+import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
+import { cardTemplatesById } from "@/data/card-templates";
+import { useI18n } from "@/i18n/I18nProvider";
+import { getCard, listCards, touchCardLastViewed } from "@/lib/cards-db";
+import { createPair, deletePair, deletePairsForFront, replacePairsForBack } from "@/lib/pairs-service";
+import { listPairsForFace } from "@/lib/pairs-service";
+import type { CardDataByTemplate } from "@/types/card-data";
+import type { CardFace } from "@/types/card-face";
+import type { CardRecord } from "@/types/cards-db";
+import type { TemplateId } from "@/types/templates";
+
+import CollapsibleGroup from "./CollapsibleGroup";
+
+const FALLBACK_TITLE = "Untitled card";
+
+export default function PairingInspectorPanel() {
+  const { t } = useI18n();
+  const formatMessageWith = useMemo(
+    () => (key: string, vars: Record<string, string | number>) => formatMessage(t(key as never), vars),
+    [t],
+  );
+  const { requestRecenter } = usePreviewRenderer();
+  const recenterTimeoutRef = useRef<number | null>(null);
+  const { openStockpile } = useAppActions();
+  const {
+    state: {
+      selectedTemplateId,
+      draftTemplateId,
+      draft,
+      draftPairingFrontIds,
+      draftPairingBackIds,
+      activeCardIdByTemplate,
+      isDirtyByTemplate,
+    },
+    setSelectedTemplateId,
+    setCardDraft,
+    setSingleDraft,
+    setTemplateDirty,
+    setDraftPairingBackIds,
+    loadCardIntoEditor,
+  } = useCardEditor();
+  const { saveCurrentCard, saveToken } = useEditorSave();
+
+  const [pairedBacks, setPairedBacks] = useState<CardRecord[]>([]);
+  const [pairedBacksToken, setPairedBacksToken] = useState(0);
+  const [pairedBackFrontsMap, setPairedBackFrontsMap] = useState<Map<string, CardRecord[]>>(
+    new Map(),
+  );
+  const [cardsById, setCardsById] = useState<Map<string, CardRecord>>(new Map());
+  const [pairedFronts, setPairedFronts] = useState<CardRecord[]>([]);
+  const [pairedFrontsToken, setPairedFrontsToken] = useState(0);
+  const [pendingOpenCard, setPendingOpenCard] = useState<CardRecord | null>(null);
+  const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
+  const [loadedThumbs, setLoadedThumbs] = useState<Record<string, boolean>>({});
+  const [hoveredCard, setHoveredCard] = useState<CardRecord | null>(null);
+  const [hoverAnchor, setHoverAnchor] = useState<DOMRect | null>(null);
+  const hoverTimeoutRef = useRef<number | null>(null);
+  const currentTemplateId = selectedTemplateId ?? null;
+  const template = currentTemplateId ? cardTemplatesById[currentTemplateId] : undefined;
+  const draftValue =
+    currentTemplateId && draftTemplateId === currentTemplateId && draft
+      ? (draft as CardDataByTemplate[TemplateId])
+      : undefined;
+  const activeCardId = currentTemplateId ? activeCardIdByTemplate[currentTemplateId] : undefined;
+  const isDraft = Boolean(
+    currentTemplateId && draftTemplateId === currentTemplateId && draft && !activeCardId,
+  );
+  const pairingDisabled = isDraft;
+
+  const effectiveFace = useMemo<CardFace | undefined>(() => {
+    if (!template) return undefined;
+    return (draftValue?.face ?? template.defaultFace) as CardFace;
+  }, [draftValue?.face, template]);
+
+  const sortByRecent = (cards: CardRecord[]) =>
+    cards.sort((a, b) => {
+      const aViewed = a.lastViewedAt ?? 0;
+      const bViewed = b.lastViewedAt ?? 0;
+      if (bViewed !== aViewed) return bViewed - aViewed;
+      if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
+      const aName = a.nameLower ?? a.name.toLocaleLowerCase();
+      const bName = b.nameLower ?? b.name.toLocaleLowerCase();
+      return aName.localeCompare(bName);
+    });
+
+  const openCard = async (cardId: string) => {
+    try {
+      const record = await getCard(cardId);
+      if (!record) return;
+      const viewed = await touchCardLastViewed(record.id);
+      const nextRecord = viewed ?? record;
+      setSelectedTemplateId(nextRecord.templateId as TemplateId);
+      loadCardIntoEditor(nextRecord.templateId as TemplateId, nextRecord);
+      if (ENABLE_WEBGL_RECENTER_ON_FACE_SELECT) {
+        if (recenterTimeoutRef.current) {
+          window.clearTimeout(recenterTimeoutRef.current);
+        }
+        recenterTimeoutRef.current = window.setTimeout(() => {
+          requestRecenter();
+        }, 90);
+      }
+    } catch {
+      // Ignore load errors for now.
+    }
+  };
+
+  const requestOpenCard = async (cardId: string) => {
+    const currentTemplate = selectedTemplateId;
+    if (currentTemplate && isDirtyByTemplate[currentTemplate]) {
+      const record = await getCard(cardId);
+      if (!record) return;
+      setPendingOpenCard(record);
+      setIsSavePromptOpen(true);
+      return;
+    }
+    await openCard(cardId);
+  };
+
+  useEffect(() => {
+    let active = true;
+    const loadPairedBacks = async () => {
+      if (effectiveFace !== "front") {
+        if (!active) return;
+        setPairedBacks([]);
+        setPairedBackFrontsMap(new Map());
+        return;
+      }
+
+      const cards = await listCards({ status: "saved" });
+      if (!active) return;
+      const byId = new Map(cards.map((card) => [card.id, card]));
+      setCardsById(byId);
+
+      let backIds: string[] = [];
+      if (activeCardId) {
+        const pairs = await listPairsForFace(activeCardId);
+        if (!active) return;
+        backIds = Array.from(
+          new Set(
+            pairs
+              .filter((pair) => pair.frontFaceId === activeCardId)
+              .map((pair) => pair.backFaceId)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        );
+      } else if (draftPairingBackIds?.length) {
+        backIds = draftPairingBackIds;
+      }
+
+      if (!backIds.length) {
+        setPairedBacks([]);
+        setPairedBackFrontsMap(new Map());
+        return;
+      }
+
+      const matches = backIds
+        .map((id) => byId.get(id))
+        .filter((card): card is CardRecord => Boolean(card));
+      sortByRecent(matches);
+      setPairedBacks(matches);
+    };
+
+    loadPairedBacks().catch(() => {
+      if (!active) return;
+      setPairedBacks([]);
+      setPairedBackFrontsMap(new Map());
+    });
+    return () => {
+      active = false;
+    };
+  }, [activeCardId, effectiveFace, pairedBacksToken, saveToken, draftPairingBackIds]);
+
+  useEffect(() => {
+    if (effectiveFace !== "back") {
+      setPairedFronts([]);
+      return;
+    }
+    let active = true;
+    const loadFronts = async (cards: CardRecord[]) => {
+      if (!active) return;
+      const sorted = sortByRecent([...cards]);
+      setPairedFronts(sorted);
+    };
+    listCards({ status: "saved" })
+      .then((cards) => {
+        if (!active) return;
+        setCardsById(new Map(cards.map((card) => [card.id, card])));
+        if (activeCardId) {
+          void listPairsForFace(activeCardId)
+            .then((pairs) => {
+              if (!active) return;
+              const frontIds = new Set(
+                pairs
+                  .map((pair) => pair.frontFaceId)
+                  .filter((id): id is string => Boolean(id)),
+              );
+              const matches = cards.filter((card) => frontIds.has(card.id));
+              void loadFronts(matches);
+            })
+            .catch(() => {
+              if (!active) return;
+              setPairedFronts([]);
+            });
+          return;
+        }
+        if (draftPairingFrontIds?.length) {
+          const idSet = new Set(draftPairingFrontIds);
+          const matches = cards.filter((card) => idSet.has(card.id));
+          void loadFronts(matches);
+          return;
+        }
+        setPairedFronts([]);
+      })
+      .catch(() => {
+        if (!active) return;
+        setPairedFronts([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activeCardId, effectiveFace, pairedFrontsToken, draftPairingFrontIds, saveToken]);
+
+  useEffect(() => {
+    if (effectiveFace !== "front") {
+      setPairedBackFrontsMap(new Map());
+      return;
+    }
+    if (pairedBacks.length === 0 || cardsById.size === 0) {
+      setPairedBackFrontsMap(new Map());
+      return;
+    }
+    let active = true;
+    const loadBackFronts = async () => {
+      const nextMap = new Map<string, CardRecord[]>();
+      await Promise.all(
+        pairedBacks.map(async (back) => {
+          const pairs = await listPairsForFace(back.id);
+          if (!active) return;
+          const frontIds = Array.from(
+            new Set(
+              pairs
+                .filter((pair) => pair.backFaceId === back.id)
+                .map((pair) => pair.frontFaceId)
+                .filter((id): id is string => Boolean(id)),
+            ),
+          );
+          const fronts = frontIds
+            .map((id) => cardsById.get(id))
+            .filter((card): card is CardRecord => Boolean(card));
+          sortByRecent(fronts);
+          nextMap.set(back.id, fronts);
+        }),
+      );
+      if (!active) return;
+      setPairedBackFrontsMap(nextMap);
+    };
+    loadBackFronts().catch(() => {
+      if (!active) return;
+      setPairedBackFrontsMap(new Map());
+    });
+    return () => {
+      active = false;
+    };
+  }, [cardsById, effectiveFace, pairedBacks]);
+
+  const hasPairedBacks = pairedBacks.length > 0;
+  const activeFrontId = activeCardId ?? null;
+
+  if (!template) {
+    return null;
+  }
+
+  const markThumbLoaded = (cardId: string) => {
+    setLoadedThumbs((prev) => {
+      if (prev[cardId]) return prev;
+      return { ...prev, [cardId]: true };
+    });
+  };
+
+  const showHoverPreview = (card: CardRecord, element: HTMLElement) => {
+    if (hoverTimeoutRef.current) {
+      window.clearTimeout(hoverTimeoutRef.current);
+    }
+    setHoveredCard(card);
+    setHoverAnchor(element.getBoundingClientRect());
+  };
+
+  const hideHoverPreview = () => {
+    if (hoverTimeoutRef.current) {
+      window.clearTimeout(hoverTimeoutRef.current);
+    }
+    setHoveredCard(null);
+    setHoverAnchor(null);
+  };
+
+  return (
+    <div className={styles.pairingPanel}>
+      <div
+        className={`${styles.inspectorPairRow} ${
+          pairingDisabled ? styles.inspectorPairRowDisabled : ""
+        }`}
+      >
+        {effectiveFace === "front" ? (
+          <>
+            <div className={styles.inspectorPairTitle}>
+              {hasPairedBacks
+                ? pairedBacks.length === 1
+                  ? t("label.pairedBackFacingSingle")
+                  : formatMessageWith("label.pairedBackFacingMultiple", {
+                      count: pairedBacks.length,
+                    })
+                : t("cardFace.unpaired")}
+            </div>
+            <div className={styles.inspectorPairActions}>
+              <button
+                type="button"
+                className={`${styles.inspectorPairActionButton} ${
+                  hasPairedBacks ? "" : styles.inspectorPairActionButtonEmpty
+                }`}
+                title={pairingDisabled ? t("tooltip.saveBeforePairing") : t("tooltip.pairBack")}
+                disabled={pairingDisabled}
+                onClick={() => {
+                  if (pairingDisabled) return;
+                  openStockpile({
+                    mode: "pair-backs",
+                    titleOverride: t("heading.selectBackCard"),
+                    initialSelectedIds: pairedBacks.map((card) => card.id),
+                    onConfirmSelection: (cardIds) => {
+                      if (!currentTemplateId) return;
+                      if (activeCardId) {
+                        void (async () => {
+                          const existingIds = new Set(pairedBacks.map((card) => card.id));
+                          const nextIds = new Set(cardIds ?? []);
+                          const toRemove = [...existingIds].filter((id) => !nextIds.has(id));
+                          const toAdd = [...nextIds].filter((id) => !existingIds.has(id));
+                          await Promise.all([
+                            ...toRemove.map((id) => deletePair(activeCardId, id)),
+                            ...toAdd.map((id) => createPair(activeCardId, id)),
+                          ]);
+                          setPairedBacksToken((prev) => prev + 1);
+                        })();
+                      } else {
+                        setDraftPairingBackIds(cardIds ?? []);
+                      }
+                      const nextDraft = {
+                        ...(draftValue ?? {}),
+                        face: draftValue?.face ?? template?.defaultFace,
+                      } as CardDataByTemplate[TemplateId];
+                      setCardDraft(currentTemplateId, nextDraft);
+                      setSingleDraft(currentTemplateId, nextDraft);
+                      setTemplateDirty(currentTemplateId, true);
+                    },
+                  });
+                }}
+              >
+                <Combine size={18} aria-hidden="true" />
+              </button>
+              {hasPairedBacks ? (
+                <button
+                  type="button"
+                  className={styles.inspectorPairActionButton}
+                  title={
+                    pairingDisabled ? t("tooltip.saveBeforePairing") : t("tooltip.unpairBackAll")
+                  }
+                  disabled={pairingDisabled}
+                  onClick={() => {
+                    if (pairingDisabled) return;
+                    if (!activeCardId) return;
+                    void (async () => {
+                      await deletePairsForFront(activeCardId);
+                      setPairedBacks([]);
+                    })();
+                    if (currentTemplateId) {
+                      const nextDraft = {
+                        ...(draftValue ?? {}),
+                      } as CardDataByTemplate[TemplateId];
+                      setCardDraft(currentTemplateId, nextDraft);
+                      setSingleDraft(currentTemplateId, nextDraft);
+                      setTemplateDirty(currentTemplateId, true);
+                    }
+                  }}
+                >
+                  <Unlink2 size={18} aria-hidden="true" />
+                </button>
+              ) : null}
+            </div>
+          </>
+        ) : null}
+        {effectiveFace === "back" ? (
+          <>
+            <div className={styles.inspectorPairTitle}>
+              {pairedFronts.length === 0
+                ? t("cardFace.unpaired")
+                : pairedFronts.length === 1
+                  ? t("label.pairedFrontFacingSingle")
+                  : formatMessageWith("label.pairedFrontFacingMultiple", {
+                      count: pairedFronts.length,
+                    })}
+            </div>
+            <button
+              type="button"
+              className={`${styles.inspectorPairActionButton} ${
+                pairedFronts.length > 0 ? "" : styles.inspectorPairActionButtonEmpty
+              }`}
+              title={pairingDisabled ? t("tooltip.saveBeforePairing") : t("tooltip.managePairings")}
+              disabled={pairingDisabled}
+              onClick={() => {
+                if (pairingDisabled) return;
+                if (!activeCardId) return;
+                openStockpile({
+                  mode: "pair-fronts",
+                  titleOverride: t("heading.manageFrontPairings"),
+                  initialSelectedIds: pairedFronts.map((card) => card.id),
+                  onConfirmSelection: async (cardIds) => {
+                    try {
+                      await replacePairsForBack(activeCardId, cardIds);
+                    } catch {
+                      // Ignore pair update errors for now.
+                    }
+                    try {
+                      setPairedFrontsToken((prev) => prev + 1);
+                    } catch {
+                      // Ignore update errors for now.
+                    }
+                  },
+                });
+              }}
+            >
+              <Combine size={18} aria-hidden="true" />
+            </button>
+            <div className={styles.inspectorPairActions} />
+          </>
+        ) : null}
+      </div>
+      <div className={styles.pairingPanelBody}>
+        {effectiveFace === "back" ? (
+          <div className={styles.pairingPanelGrid}>
+            {pairedFronts.map((card, index) => {
+              const thumbUrl =
+                typeof window !== "undefined" && card.thumbnailBlob
+                  ? URL.createObjectURL(card.thumbnailBlob)
+                  : null;
+              const templateThumb = cardTemplatesById[card.templateId]?.thumbnail;
+              const isSelected = activeFrontId === card.id;
+              const isLoaded = Boolean(loadedThumbs[card.id]);
+              return (
+                <button
+                  key={card.id}
+                  type="button"
+                  className={`${styles.pairingPanelGridItem} ${
+                    isSelected ? styles.pairingPanelSelected : ""
+                  } ${isLoaded ? styles.pairingPanelGridItemLoaded : ""}`}
+                  onMouseEnter={(event) => {
+                    showHoverPreview(card, event.currentTarget);
+                  }}
+                  onMouseLeave={hideHoverPreview}
+                  onClick={async () => {
+                    if (pairingDisabled) return;
+                    await requestOpenCard(card.id);
+                  }}
+                >
+                  {thumbUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={thumbUrl}
+                      alt=""
+                      style={{ ["--pairing-thumb-delay" as never]: `${index * 25}ms` }}
+                      onLoad={() => {
+                        URL.revokeObjectURL(thumbUrl);
+                        markThumbLoaded(card.id);
+                      }}
+                    />
+                  ) : templateThumb?.src ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={templateThumb.src}
+                      alt=""
+                      style={{ ["--pairing-thumb-delay" as never]: `${index * 25}ms` }}
+                      onLoad={() => {
+                        markThumbLoaded(card.id);
+                      }}
+                    />
+                  ) : (
+                    <div className={styles.inspectorStackPlaceholder} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+        {effectiveFace === "front" ? (
+          <div className={styles.pairingPanelGroups}>
+            {pairedBacks.map((backCard) => {
+              const backThumbUrl =
+                typeof window !== "undefined" && backCard.thumbnailBlob
+                  ? URL.createObjectURL(backCard.thumbnailBlob)
+                  : null;
+              const backTemplateThumb = cardTemplatesById[backCard.templateId]?.thumbnail;
+              const groupFrontCards = pairedBackFrontsMap.get(backCard.id) ?? [];
+              const backTitle = backCard.title ?? FALLBACK_TITLE;
+              const groupCountLabel =
+                groupFrontCards.length === 1
+                  ? t("label.frontFacingCountSingle")
+                  : formatMessageWith("label.frontFacingCountMultiple", {
+                      count: groupFrontCards.length,
+                    });
+              return (
+                <CollapsibleGroup
+                  key={backCard.id}
+                  id={`pairing-group-${backCard.id}`}
+                  className={styles.pairingPanelGroup}
+                  headerClassName={styles.pairingPanelGroupHeader}
+                  headerButtonClassName={styles.pairingPanelGroupHeaderButton}
+                  bodyClassName={styles.pairingPanelGroupBody}
+                  defaultOpen={false}
+                  headerContent={
+                    <>
+                      <button
+                        type="button"
+                        className={styles.pairingPanelGroupThumb}
+                        onMouseEnter={(event) => {
+                          showHoverPreview(backCard, event.currentTarget);
+                        }}
+                        onMouseLeave={hideHoverPreview}
+                        onClick={async (event) => {
+                          event.stopPropagation();
+                          if (pairingDisabled) return;
+                          await requestOpenCard(backCard.id);
+                        }}
+                      >
+                        {backThumbUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={backThumbUrl}
+                            alt=""
+                            onLoad={() => {
+                              URL.revokeObjectURL(backThumbUrl);
+                            }}
+                          />
+                        ) : backTemplateThumb?.src ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={backTemplateThumb.src} alt="" />
+                        ) : (
+                          <div className={styles.inspectorStackPlaceholder} />
+                        )}
+                      </button>
+                      <div className={styles.pairingPanelGroupInfo}>
+                        <div className={styles.pairingPanelGroupTitle}>{backTitle}</div>
+                        <div className={styles.pairingPanelGroupCount}>{groupCountLabel}</div>
+                      </div>
+                      <span className={styles.pairingPanelGroupControls} aria-hidden="true">
+                      <button
+                        type="button"
+                        className={styles.pairingPanelGroupUnpair}
+                          title={
+                            pairingDisabled
+                              ? t("tooltip.saveBeforePairing")
+                              : t("tooltip.unpairBack")
+                          }
+                        onClick={async (event) => {
+                          event.stopPropagation();
+                          if (pairingDisabled) return;
+                          if (!activeCardId) {
+                            const nextDraftIds = (draftPairingBackIds ?? []).filter(
+                              (id) => id !== backCard.id,
+                            );
+                            setDraftPairingBackIds(nextDraftIds.length ? nextDraftIds : null);
+                            return;
+                          }
+                          try {
+                            await deletePair(activeCardId, backCard.id);
+                            setPairedBacksToken((prev) => prev + 1);
+                          } catch (error) {
+                            // eslint-disable-next-line no-console
+                            console.error("[pairing] Failed to unpair back", error);
+                          }
+                        }}
+                      >
+                        <Unlink2 size={18} aria-hidden="true" />
+                      </button>
+                      <span className={styles.pairingPanelGroupChevron}>
+                        <ChevronDown size={18} className={styles.pairingPanelGroupChevronDown} />
+                        <ChevronUp size={18} className={styles.pairingPanelGroupChevronUp} />
+                      </span>
+                      </span>
+                    </>
+                  }
+                >
+                  <div className={styles.pairingPanelGroupGrid}>
+                    {groupFrontCards.map((frontCard, index) => {
+                      const frontThumbUrl =
+                        typeof window !== "undefined" && frontCard.thumbnailBlob
+                          ? URL.createObjectURL(frontCard.thumbnailBlob)
+                          : null;
+                      const frontTemplateThumb =
+                        cardTemplatesById[frontCard.templateId]?.thumbnail;
+                      const isSelected = activeFrontId === frontCard.id;
+                      const isLoaded = Boolean(loadedThumbs[frontCard.id]);
+                      return (
+                        <button
+                          key={frontCard.id}
+                          type="button"
+                          className={`${styles.pairingPanelGridItem} ${
+                            isSelected ? styles.pairingPanelSelected : ""
+                          } ${isLoaded ? styles.pairingPanelGridItemLoaded : ""}`}
+                          onMouseEnter={(event) => {
+                            showHoverPreview(frontCard, event.currentTarget);
+                          }}
+                          onMouseLeave={hideHoverPreview}
+                          onClick={async () => {
+                            if (pairingDisabled) return;
+                            await requestOpenCard(frontCard.id);
+                          }}
+                        >
+                          {frontThumbUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={frontThumbUrl}
+                              alt=""
+                              style={{ ["--pairing-thumb-delay" as never]: `${index * 25}ms` }}
+                              onLoad={() => {
+                                URL.revokeObjectURL(frontThumbUrl);
+                                markThumbLoaded(frontCard.id);
+                              }}
+                            />
+                          ) : frontTemplateThumb?.src ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={frontTemplateThumb.src}
+                              alt=""
+                              style={{ ["--pairing-thumb-delay" as never]: `${index * 25}ms` }}
+                              onLoad={() => {
+                                markThumbLoaded(frontCard.id);
+                              }}
+                            />
+                          ) : (
+                            <div className={styles.inspectorStackPlaceholder} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </CollapsibleGroup>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+      <ConfirmModal
+        isOpen={isSavePromptOpen}
+        title={t("heading.saveBeforeView")}
+        confirmLabel={t("actions.save")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={async () => {
+          setIsSavePromptOpen(false);
+          const nextOpenCard = pendingOpenCard;
+          setPendingOpenCard(null);
+          const saved = await saveCurrentCard();
+          if (!saved) return;
+          if (nextOpenCard) {
+            await openCard(nextOpenCard.id);
+          }
+        }}
+        onCancel={() => {
+          setIsSavePromptOpen(false);
+          setPendingOpenCard(null);
+        }}
+      >
+        {t("confirm.saveBeforeViewBody")}
+      </ConfirmModal>
+      {hoveredCard && hoverAnchor && typeof document !== "undefined"
+        ? (() => {
+            const templateThumb = cardTemplatesById[hoveredCard.templateId]?.thumbnail;
+            const hoverThumbUrl =
+              typeof window !== "undefined" && hoveredCard.thumbnailBlob
+                ? URL.createObjectURL(hoveredCard.thumbnailBlob)
+                : null;
+            const popoverWidth = 120 + 16;
+            const popoverHeight = 168 + 16;
+            const left = Math.min(hoverAnchor.left, window.innerWidth - popoverWidth - 16);
+            const belowTop = hoverAnchor.bottom + 6;
+            const aboveTop = hoverAnchor.top - popoverHeight - 6;
+            const canShowBelow = belowTop + popoverHeight + 16 <= window.innerHeight;
+            const top = canShowBelow
+              ? Math.min(belowTop, window.innerHeight - popoverHeight - 16)
+              : Math.max(16, aboveTop);
+
+            return createPortal(
+              <div
+                className={styles.pairingPanelHoverPopover}
+                style={{ left, top }}
+                aria-hidden="true"
+                onMouseEnter={hideHoverPreview}
+                onMouseLeave={hideHoverPreview}
+              >
+                <div className={styles.pairingPanelHoverCard}>
+                  {hoverThumbUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={hoverThumbUrl}
+                      alt=""
+                      onLoad={() => {
+                        URL.revokeObjectURL(hoverThumbUrl);
+                      }}
+                    />
+                  ) : templateThumb?.src ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={templateThumb.src} alt="" />
+                  ) : (
+                    <div className={styles.inspectorStackPlaceholder} />
+                  )}
+                </div>
+              </div>,
+              document.body,
+            );
+          })()
+        : null}
+    </div>
+  );
+}
