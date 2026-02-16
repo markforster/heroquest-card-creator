@@ -22,6 +22,7 @@ import type { BodyTextStyle } from "@/types/card-data";
 type ContentFieldProps = {
   label: string;
   showToolbar?: boolean;
+  showToggle?: boolean;
 };
 
 const DEFAULT_BODY_TEXT_STYLE: BodyTextStyle = {
@@ -36,7 +37,11 @@ const DEFAULT_BODY_TEXT_STYLE: BodyTextStyle = {
   },
 };
 
-export default function ContentField({ label, showToolbar = false }: ContentFieldProps) {
+export default function ContentField({
+  label,
+  showToolbar = false,
+  showToggle = false,
+}: ContentFieldProps) {
   const { t } = useI18n();
   const {
     register,
@@ -56,7 +61,7 @@ export default function ContentField({ label, showToolbar = false }: ContentFiel
     ...DEFAULT_BODY_TEXT_STYLE.backdrop,
     ...(bodyTextStyle?.backdrop ?? {}),
   };
-  const textEnabled = bodyTextStyle?.enabled ?? false;
+  const textEnabled = showToggle ? (bodyTextStyle?.enabled ?? false) : true;
 
   useEffect(() => {
     if (!textEnabled) {
@@ -182,24 +187,26 @@ export default function ContentField({ label, showToolbar = false }: ContentFiel
                 <ListChevronsUpDown size={14} aria-hidden="true" />
               )}
             </button>
-            <div className="form-check form-switch m-0 ms-2">
-              <input
-                id="bodyTextEnabled"
-                type="checkbox"
-                className="form-check-input hq-toggle"
-                title={t("tooltip.bodyTextVisibility")}
-                aria-label={t("tooltip.bodyTextVisibility")}
-                role="switch"
-                checked={textEnabled}
-                onChange={() =>
-                  setValue(
-                    "bodyTextStyle",
-                    { ...(bodyTextStyle ?? {}), enabled: !textEnabled },
-                    { shouldDirty: true, shouldTouch: true },
-                  )
-                }
-              />
-            </div>
+            {showToggle ? (
+              <div className="form-check form-switch m-0 ms-2">
+                <input
+                  id="bodyTextEnabled"
+                  type="checkbox"
+                  className="form-check-input hq-toggle"
+                  title={t("tooltip.bodyTextVisibility")}
+                  aria-label={t("tooltip.bodyTextVisibility")}
+                  role="switch"
+                  checked={textEnabled}
+                  onChange={() =>
+                    setValue(
+                      "bodyTextStyle",
+                      { ...(bodyTextStyle ?? {}), enabled: !textEnabled },
+                      { shouldDirty: true, shouldTouch: true },
+                    )
+                  }
+                />
+              </div>
+            ) : null}
             {isPaletteOpen && textEnabled ? (
               <div ref={palettePopoverRef} className={layoutStyles.bodyTextToolbarPopover}>
                 <div className={layoutStyles.bodyTextToolbarRow}>

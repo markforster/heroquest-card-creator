@@ -131,6 +131,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.backText",
+      showToggle: true,
       props: { showToolbar: true },
     },
     {

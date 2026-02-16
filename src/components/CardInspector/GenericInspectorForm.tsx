@@ -110,6 +110,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
                 key={`${field.bind}-${index}`}
                 label={t(field.labelKey)}
                 showToolbar={field.props?.showToolbar}
+                showToggle={field.showToggle}
               />
             );
           }

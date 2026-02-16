@@ -14,6 +14,7 @@ export type InspectorTextField = {
   fieldType: "text";
   bind: "description";
   labelKey: MessageKey;
+  showToggle?: boolean;
   props?: {
     rows?: number;
     showToolbar?: boolean;
