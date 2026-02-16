@@ -240,10 +240,8 @@ function TitleLayer({
   if (layer.type !== "title") return null;
 
   const showTitle =
-    templateId === "labelled-back"
-      ? cardData && typeof (cardData as { showTitle?: boolean }).showTitle === "boolean"
-        ? (cardData as { showTitle?: boolean }).showTitle
-        : true
+    cardData && typeof (cardData as { showTitle?: boolean }).showTitle === "boolean"
+      ? (cardData as { showTitle?: boolean }).showTitle
       : true;
 
   if (!showTitle) return null;

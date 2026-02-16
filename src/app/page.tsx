@@ -252,7 +252,7 @@ function IndexPageInner() {
     return `${base} (${suffix + 1})`;
   };
 
-  const duplicateCurrentCard = (withPairing: boolean) => {
+  const duplicateCurrentCard = async (withPairing: boolean) => {
     if (!currentTemplateId) return;
     const templateId = currentTemplateId as TemplateId;
     if (!draftValue) return;
@@ -269,6 +269,28 @@ function IndexPageInner() {
       setDraftPairingFrontIds(pairedFrontIds);
     } else {
       setDraftPairingFrontIds(null);
+    }
+
+    if (withPairing && effectiveFace === "front") {
+      if (activeCardId) {
+        try {
+          const pairs = await listPairsForFace(activeCardId);
+          const backIds = Array.from(
+            new Set(
+              pairs
+                .map((pair) => pair.backFaceId)
+                .filter((id): id is string => Boolean(id)),
+            ),
+          );
+          setDraftPairingBackIds(backIds.length ? backIds : null);
+        } catch {
+          setDraftPairingBackIds(null);
+        }
+      } else {
+        setDraftPairingBackIds(draftPairingBackIds ?? null);
+      }
+    } else {
+      setDraftPairingBackIds(null);
     }
     setSelectedTemplateId(templateId);
     setSingleDraft(templateId, nextDraft);
