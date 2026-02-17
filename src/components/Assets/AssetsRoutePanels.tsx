@@ -359,6 +359,7 @@ function AssetsInspector({
           <label className={styles.assetsInspectorReplaceToggle}>
             <input
               type="checkbox"
+              className="form-check-input hq-checkbox"
               checked={keepBackup}
               onChange={(event) => setKeepBackup(event.target.checked)}
               disabled={isReplacing}

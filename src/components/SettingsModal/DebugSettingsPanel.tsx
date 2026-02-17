@@ -2,6 +2,7 @@
 
 import styles from "@/app/page.module.css";
 import { useDebugVisuals } from "@/components/DebugVisualsContext";
+import { WarningNotice } from "@/components/common/Notice";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export default function DebugSettingsPanel() {
@@ -10,18 +11,20 @@ export default function DebugSettingsPanel() {
 
   return (
     <div className={styles.settingsPanelBody}>
-      <div className={`${styles.settingsNotice} ${styles.settingsNoticeWarning}`} role="status">
+      <WarningNotice role="status">
         Debug is enabled while we work through version 0.5.x and will be turned off in a future
         release.
-      </div>
+      </WarningNotice>
       <div className={styles.settingsPanelSection}>
         <div className={styles.settingsPanelSectionTitle}>{t("label.debugVisuals")}</div>
         <label className={styles.settingsPanelToggle}>
           <input
             type="checkbox"
-            className="form-check-input hq-toggle"
+            className="form-check-input hq-checkbox"
             checked={showTextBounds}
-            onChange={(event) => setShowTextBounds(event.target.checked)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              setShowTextBounds(event.target.checked)
+            }
           />
           {t("label.debugTextBounds")}
         </label>

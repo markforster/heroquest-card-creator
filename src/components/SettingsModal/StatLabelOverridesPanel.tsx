@@ -167,7 +167,7 @@ export default function StatLabelOverridesPanel() {
         <div className="form-check">
           <input
             id="statLabelsEnabled"
-            className="form-check-input"
+            className="form-check-input hq-checkbox"
             type="checkbox"
             checked={formState.statLabelsEnabled}
             onChange={(event) => handleChange("statLabelsEnabled", event.target.checked)}

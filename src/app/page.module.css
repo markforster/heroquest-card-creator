@@ -820,10 +820,6 @@
   color: #f5f5f5;
 }
 
-.toolsToolbarPopoverToggle input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-}
 
 .toolsToolbarPopoverLabel input[type="range"] {
   width: 100%;
@@ -923,29 +919,6 @@
   display: none !important;
 }
 
-.rightPanel .form-switch .form-check-input {
-  cursor: pointer;
-}
-
-.rightPanel .form-check-input:checked {
-  background-color: var(--hq-accent) !important;
-  border-color: var(--hq-accent) !important;
-}
-
-.rightPanel .form-check-input:focus {
-  border-color: var(--hq-accent) !important;
-  box-shadow: 0 0 0 0.25rem rgba(230, 179, 90, 0.35) !important;
-}
-
-.rightPanel .form-switch .form-check-input:checked {
-  background-color: var(--hq-accent) !important;
-  border-color: var(--hq-accent) !important;
-}
-
-.rightPanel .form-switch .form-check-input:focus {
-  border-color: var(--hq-accent) !important;
-  box-shadow: 0 0 0 0.25rem rgba(230, 179, 90, 0.35) !important;
-}
 
 .rightPanel label {
   display: flex;
@@ -1192,11 +1165,6 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-.assetsInspectorReplaceToggle input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--hq-accent);
-}
 
 .inspectorMode {
   display: flex;

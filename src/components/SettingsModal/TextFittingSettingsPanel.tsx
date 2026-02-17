@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import TextFittingSettingsForm from "@/components/TextFittingSettings/TextFittingSettingsForm";
 import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
+import TextFittingSettingsForm from "@/components/TextFittingSettings/TextFittingSettingsForm";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { TextRole } from "@/lib/text-fitting/types";
 

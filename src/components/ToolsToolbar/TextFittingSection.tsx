@@ -36,6 +36,7 @@ export default function TextFittingSection({
       <label className={styles.toolsToolbarPopoverToggle}>
         <input
           type="checkbox"
+          className="form-check-input hq-checkbox"
           checked={Boolean(preferences[role].preferEllipsis)}
           onChange={(event) =>
             setRolePreferences(role, { preferEllipsis: event.target.checked })

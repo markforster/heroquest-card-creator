@@ -704,7 +704,7 @@ export default function StockpilePanelContent({
                   {!isPairMode ? (
                     <label className="form-check form-check-inline mb-0 ms-2">
                       <input
-                        className="form-check-input"
+                        className="form-check-input hq-checkbox"
                         type="checkbox"
                         checked={showUnpairedOnly}
                         onChange={(event) => setShowUnpairedOnly(event.target.checked)}
@@ -827,7 +827,7 @@ export default function StockpilePanelContent({
                     >
                       <input
                         ref={selectAllRef}
-                        className="form-check-input"
+                        className="form-check-input hq-checkbox"
                         type="checkbox"
                         disabled={filteredCards.length === 0}
                         onChange={(event) => {

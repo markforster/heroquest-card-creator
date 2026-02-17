@@ -268,14 +268,12 @@ export default function CardTextBlock({
         // Label runs
         line.labelRuns.forEach((run, runIndex) => {
           const tspanProps: {
-            key: string;
             x?: number;
             y?: number;
             fontWeight?: string;
             fontStyle?: string;
-          } = {
-            key: `${lineIndex}-label-${runIndex}`,
-          };
+          } = {};
+          const tspanKey = `${lineIndex}-label-${runIndex}`;
 
           if (runIndex === 0) {
             tspanProps.x = labelStartX;
@@ -284,7 +282,11 @@ export default function CardTextBlock({
           if (run.bold) tspanProps.fontWeight = "700";
           if (run.italic) tspanProps.fontStyle = "italic";
 
-          tspans.push(<tspan {...tspanProps}>{run.text}</tspan>);
+          tspans.push(
+            <tspan key={tspanKey} {...tspanProps}>
+              {run.text}
+            </tspan>,
+          );
         });
 
         // Separator
@@ -299,14 +301,12 @@ export default function CardTextBlock({
         // Value runs, right-aligned by starting at valueStartX
         line.valueRuns.forEach((run, runIndex) => {
           const tspanProps: {
-            key: string;
             x?: number;
             y?: number;
             fontWeight?: string;
             fontStyle?: string;
-          } = {
-            key: `${lineIndex}-value-${runIndex}`,
-          };
+          } = {};
+          const tspanKey = `${lineIndex}-value-${runIndex}`;
 
           if (runIndex === 0) {
             tspanProps.x = valueStartX;
@@ -315,7 +315,11 @@ export default function CardTextBlock({
           if (run.bold) tspanProps.fontWeight = "700";
           if (run.italic) tspanProps.fontStyle = "italic";
 
-          tspans.push(<tspan {...tspanProps}>{run.text}</tspan>);
+          tspans.push(
+            <tspan key={tspanKey} {...tspanProps}>
+              {run.text}
+            </tspan>,
+          );
         });
 
         return tspans;
