@@ -4,21 +4,16 @@ import styles from "@/app/page.module.css";
 import LanguageMenu from "@/components/LanguageMenu";
 import { useI18n } from "@/i18n/I18nProvider";
 
-import { COLLAPSE_MEDIA_QUERY, NAV_COLLAPSE_STORAGE_KEY } from "./consts";
 import LeftNavBottom from "./LeftNavBottom";
 import LeftNavCollapseToggle from "./LeftNavCollapseToggle";
 import LeftNavMiddle from "./LeftNavMiddle";
 import LeftNavPrimaryActions from "./LeftNavPrimaryActions";
 import SettingsAction from "./SettingsAction";
-import { useLeftNavCollapsedState } from "./useLeftNavCollapsedState";
-import { useMediaQuery } from "./useMediaQuery";
+import { useLeftNavCollapse } from "./useLeftNavCollapse";
 
 export default function LeftNav() {
   const { t } = useI18n();
-  const autoCollapsed = useMediaQuery(COLLAPSE_MEDIA_QUERY);
-  const { manualCollapsed, setManualCollapsed, isCollapsedReady } =
-    useLeftNavCollapsedState(NAV_COLLAPSE_STORAGE_KEY);
-  const isCollapsed = autoCollapsed || manualCollapsed;
+  const { isCollapsed, setManualCollapsed, isCollapsedReady } = useLeftNavCollapse();
   const collapseStateLabel = isCollapsed ? "Expand navigation" : "Collapse navigation";
 
   if (!isCollapsedReady) {
