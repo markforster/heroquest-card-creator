@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import ModalShell from "@/components/ModalShell";
+import ModalShell from "@/components/common/ModalShell";
 import styles from "@/app/page.module.css";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";

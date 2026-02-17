@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import ModalShell from "@/components/ModalShell";
+import ModalShell from "@/components/common/ModalShell";
 import { SETTINGS_AREAS, SETTINGS_NAV_CONFIG } from "@/components/SettingsModal/settings-areas";
 import {
   SettingsModalProvider,

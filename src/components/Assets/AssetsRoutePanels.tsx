@@ -6,7 +6,7 @@ import type { ChangeEvent } from "react";
 
 import styles from "@/app/page.module.css";
 import AssetsMainPanel from "@/components/Assets/AssetsMainPanel";
-import ModalShell from "@/components/ModalShell";
+import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { AssetRecord } from "@/lib/assets-db";
 import { addAsset, getAllAssets, getAssetBlob, getAssetObjectUrl, replaceAsset } from "@/lib/assets-db";

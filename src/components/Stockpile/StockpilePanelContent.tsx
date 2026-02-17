@@ -9,7 +9,7 @@ import CardPreview from "@/components/CardPreview";
 import ConfirmModal from "@/components/ConfirmModal";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import { useEscapeModalAware } from "@/components/EscapeStackProvider";
-import ModalShell from "@/components/ModalShell";
+import ModalShell from "@/components/common/ModalShell";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";

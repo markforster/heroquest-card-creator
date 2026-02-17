@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "@/app/page.module.css";
-import ModalShell from "@/components/ModalShell";
+import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
 
 import type { ReactNode } from "react";

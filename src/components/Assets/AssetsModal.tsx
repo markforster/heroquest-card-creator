@@ -1,6 +1,6 @@
 "use client";
 
-import ModalShell from "@/components/ModalShell";
+import ModalShell from "@/components/common/ModalShell";
 import AssetsPanelContent from "@/components/Assets/AssetsPanelContent";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { AssetRecord } from "@/lib/assets-db";

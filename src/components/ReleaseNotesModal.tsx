@@ -1,6 +1,6 @@
 "use client";
 
-import ModalShell from "@/components/ModalShell";
+import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
 import { APP_VERSION } from "@/version";
 

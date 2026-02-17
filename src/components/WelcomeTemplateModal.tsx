@@ -1,6 +1,6 @@
 "use client";
 
-import ModalShell from "@/components/ModalShell";
+import ModalShell from "@/components/common/ModalShell";
 import TemplatesList from "@/components/TemplatesList";
 import { cardTemplates } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
