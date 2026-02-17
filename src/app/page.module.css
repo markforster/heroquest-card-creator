@@ -3407,6 +3407,7 @@
 .stockpileActionsBar {
   flex: 0 1 auto;
   display: flex;
+  align-items: center;
   margin-bottom: 0.75rem;
 }
 

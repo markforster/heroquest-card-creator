@@ -18,6 +18,8 @@ type UseStockpileFiltersOptions = {
   activeFilter: ActiveFilter;
   isPairMode: boolean;
   isPairBacks: boolean;
+  showUnpairedOnly?: boolean;
+  pairedIdSet?: Set<string>;
 };
 
 export const useStockpileFilters = ({
@@ -28,6 +30,8 @@ export const useStockpileFilters = ({
   activeFilter,
   isPairMode,
   isPairBacks,
+  showUnpairedOnly = false,
+  pairedIdSet,
 }: UseStockpileFiltersOptions) => {
   const recentCards = useMemo(() => {
     const withViewed = cards.filter((card) => typeof card.lastViewedAt === "number");
@@ -90,6 +94,10 @@ export const useStockpileFilters = ({
     if (search.trim()) {
       const q = search.toLocaleLowerCase();
       base = base.filter((card) => card.nameLower.includes(q));
+    }
+
+    if (showUnpairedOnly && pairedIdSet) {
+      base = base.filter((card) => !pairedIdSet.has(card.id));
     }
 
     const countsBase = base;
@@ -216,6 +224,8 @@ export const useStockpileFilters = ({
     collections,
     isPairMode,
     isPairBacks,
+    showUnpairedOnly,
+    pairedIdSet,
   ]);
 
   return {
