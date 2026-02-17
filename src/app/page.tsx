@@ -13,6 +13,7 @@ import {
 
 import { AssetHashIndexProvider } from "@/components/Assets/AssetHashIndexProvider";
 import { AssetsMainPanel } from "@/components/Assets";
+import { StockpileMainPanel } from "@/components/Stockpile";
 import { AppActionsProvider } from "@/components/AppActionsContext";
 import { CardEditorProvider, useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import CardPreviewContainer from "@/components/CardEditor/CardPreviewContainer";
@@ -58,7 +59,8 @@ function IndexPageInner() {
   const navigate = useNavigate();
   const { cardId } = useParams();
   const isAssetsRoute = Boolean(useMatch("/assets"));
-  const isCardsRoute = Boolean(useMatch("/cards/:cardId?"));
+  const isCardsListRoute = Boolean(useMatch("/cards"));
+  const isCardDetailRoute = Boolean(useMatch("/cards/:cardId"));
   const {
     state: {
       selectedTemplateId,
@@ -127,6 +129,17 @@ function IndexPageInner() {
         navigate(`/cards/${activeCardId}`);
       } else {
         navigate("/cards");
+      }
+    },
+  });
+
+  useEscapeModalAware({
+    id: "route:cards",
+    isOpen: isCardsListRoute,
+    enabled: isCardsListRoute,
+    onEscape: () => {
+      if (activeCardId) {
+        navigate(`/cards/${activeCardId}`);
       }
     },
   });
@@ -345,7 +358,7 @@ function IndexPageInner() {
     });
 
   useEffect(() => {
-    if (!isCardsRoute) return;
+    if (!isCardDetailRoute) return;
     if (draftTemplateId && draft) return;
     if (!selectedTemplateId) return;
     const currentTemplate = selectedTemplateId as TemplateId;
@@ -379,11 +392,11 @@ function IndexPageInner() {
     draftTemplateId,
     selectedTemplateId,
     navigate,
-    isCardsRoute,
+    isCardDetailRoute,
   ]);
 
   useEffect(() => {
-    if (!isCardsRoute) return;
+    if (!isCardDetailRoute) return;
     if (!cardId) {
       lastLoadedRef.current = null;
       setRouteError(null);
@@ -424,7 +437,7 @@ function IndexPageInner() {
     activeCardIdByTemplate,
     loadCardIntoEditor,
     navigate,
-    isCardsRoute,
+    isCardDetailRoute,
     selectedTemplateId,
     setSelectedTemplateId,
   ]);
@@ -618,7 +631,17 @@ function IndexPageInner() {
                   <section className={styles.leftPanel}>
                     <AssetsMainPanel />
                   </section>
-                ) : routeError ? (
+                ) : null}
+                {isCardsListRoute ? (
+                  <section className={styles.leftPanel}>
+                    <StockpileMainPanel
+                      isOpen
+                      onClose={() => {}}
+                      onLoadCard={(card) => navigate(`/cards/${card.id}`)}
+                    />
+                  </section>
+                ) : null}
+                {isCardDetailRoute && routeError ? (
                   <section className={styles.routeErrorPanel}>
                     <div className={styles.routeErrorCard}>
                       <div className={styles.routeErrorTitle}>Card not found</div>
@@ -636,70 +659,73 @@ function IndexPageInner() {
                       </button>
                     </div>
                   </section>
-                ) : (
-                  <>
-                    <section
-                      className={styles.leftPanel}
-                      // style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
-                    >
-                      {/* <div className={styles.templateSidebar}>
-                        <TemplatesList
-                          selectedId={selectedTemplateId}
-                          onSelect={(id) => setSelectedTemplateId(id as TemplateId)}
-                          variant="sidebar"
-                        />
-                      </div> */}
-                      <div className={styles.previewContainer}>
-                        <ToolsToolbar />
-                        {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
-                      </div>
-                    </section>
-                    <aside className={styles.rightPanel}>
-                      <div className={styles.inspectorTop}>
-                        <TemplateChooser />
-                        <WelcomeTemplateModal
-                          isOpen={isWelcomeOpen}
-                          onSelect={(templateId) => {
-                            const nextDraft = createDefaultCardData(templateId);
-                            setSelectedTemplateId(templateId);
-                            setSingleDraft(templateId, nextDraft);
-                            setActiveCard(templateId, null, null);
-                            setTemplateDirty(templateId, false);
-                            setIsWelcomeOpen(false);
-                          }}
-                        />
-                      </div>
-                      <div className={styles.inspectorBody}>
-                        <PreviewCanvasProvider previewRef={previewRef}>
-                          <CardInspector />
-                        </PreviewCanvasProvider>
-                      </div>
-                      <EditorActionsToolbar
-                        canSaveChanges={canSaveChanges}
-                        canDuplicate={canDuplicate}
-                        savingMode={savingMode}
-                        onExportPng={exportCurrentFace}
-                        exportMenuItems={exportMenuItems.map((item) => ({
-                          ...item,
-                          onClick: () => {
-                            if (item.id === "export-both-faces") {
-                              void handleExportBothFaces();
-                            } else if (item.id === "export-back-active-front") {
-                              void handleExportBackActiveFront();
-                            } else if (item.id === "export-back-all-fronts") {
-                              void handleExportBackAllFronts();
-                            }
-                          },
-                        }))}
-                        onSaveChanges={() => {
-                          void saveCurrentCard();
-                        }}
-                        onDuplicate={() => duplicateCurrentCard(false)}
-                        onDuplicateWithPairing={() => duplicateCurrentCard(true)}
-                      />
-                    </aside>
-                  </>
-                )}
+                ) : null}
+                <section
+                  className={`${styles.leftPanel} ${
+                    !isCardDetailRoute || routeError ? styles.routeHidden : ""
+                  }`}
+                  // style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
+                >
+                  {/* <div className={styles.templateSidebar}>
+                    <TemplatesList
+                      selectedId={selectedTemplateId}
+                      onSelect={(id) => setSelectedTemplateId(id as TemplateId)}
+                      variant="sidebar"
+                    />
+                  </div> */}
+                  <div className={styles.previewContainer}>
+                    <ToolsToolbar />
+                    {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
+                  </div>
+                </section>
+                <aside
+                  className={`${styles.rightPanel} ${
+                    !isCardDetailRoute || routeError ? styles.routeHidden : ""
+                  }`}
+                >
+                  <div className={styles.inspectorTop}>
+                    <TemplateChooser />
+                    <WelcomeTemplateModal
+                      isOpen={isWelcomeOpen}
+                      onSelect={(templateId) => {
+                        const nextDraft = createDefaultCardData(templateId);
+                        setSelectedTemplateId(templateId);
+                        setSingleDraft(templateId, nextDraft);
+                        setActiveCard(templateId, null, null);
+                        setTemplateDirty(templateId, false);
+                        setIsWelcomeOpen(false);
+                      }}
+                    />
+                  </div>
+                  <div className={styles.inspectorBody}>
+                    <PreviewCanvasProvider previewRef={previewRef}>
+                      <CardInspector />
+                    </PreviewCanvasProvider>
+                  </div>
+                  <EditorActionsToolbar
+                    canSaveChanges={canSaveChanges}
+                    canDuplicate={canDuplicate}
+                    savingMode={savingMode}
+                    onExportPng={exportCurrentFace}
+                    exportMenuItems={exportMenuItems.map((item) => ({
+                      ...item,
+                      onClick: () => {
+                        if (item.id === "export-both-faces") {
+                          void handleExportBothFaces();
+                        } else if (item.id === "export-back-active-front") {
+                          void handleExportBackActiveFront();
+                        } else if (item.id === "export-back-all-fronts") {
+                          void handleExportBackAllFronts();
+                        }
+                      },
+                    }))}
+                    onSaveChanges={() => {
+                      void saveCurrentCard();
+                    }}
+                    onDuplicate={() => duplicateCurrentCard(false)}
+                    onDuplicateWithPairing={() => duplicateCurrentCard(true)}
+                  />
+                </aside>
               </main>
             </AppActionsProvider>
           </EscapeStackProvider>
@@ -745,7 +771,8 @@ export default function IndexPage() {
                   <TextFittingPreferencesProvider>
                     <HashRouter>
                       <Routes>
-                        <Route path="/cards/:cardId?" element={<IndexPageInner />} />
+                        <Route path="/cards" element={<IndexPageInner />} />
+                        <Route path="/cards/:cardId" element={<IndexPageInner />} />
                         <Route path="/assets" element={<IndexPageInner />} />
                         <Route path="*" element={<Navigate to="/cards" replace />} />
                       </Routes>

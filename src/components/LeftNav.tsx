@@ -48,12 +48,10 @@ function useMediaQuery(query: string) {
 export default function LeftNav() {
   const { t } = useI18n();
   const {
-    openStockpile,
     openSettings,
     openTemplatePicker,
     openRecent,
     isTemplatePickerOpen,
-    isStockpileOpen,
     isRecentOpen,
     isSettingsOpen,
   } = useAppActions();
@@ -67,6 +65,7 @@ export default function LeftNav() {
   const collapseStateLabel = isCollapsed ? "Expand navigation" : "Collapse navigation";
   const navigate = useNavigate();
   const isAssetsRoute = Boolean(useMatch("/assets"));
+  const isCardsRoute = Boolean(useMatch("/cards"));
   const [currentCardName, setCurrentCardName] = useState<string | null>(null);
   const [currentCardThumbUrl, setCurrentCardThumbUrl] = useState<string | null>(null);
   const currentCardThumbRef = useRef<string | null>(null);
@@ -249,14 +248,10 @@ export default function LeftNav() {
             <NavActionButton
               label={t("actions.cards")}
               icon={SquareStack}
-              onClick={() =>
-                openStockpile({
-                  initialSelectedIds: activeCardId ? [activeCardId] : [],
-                })
-              }
+              onClick={() => navigate("/cards")}
               title={t("tooltip.openCards")}
               ariaLabel={t("tooltip.openCards")}
-              isActive={isStockpileOpen}
+              isActive={isCardsRoute}
             />
             {/* <LeftNavSpacer size="medium" showLine /> */}
             <NavActionButton

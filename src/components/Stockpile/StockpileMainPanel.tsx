@@ -3,23 +3,21 @@
 import type { CardRecord } from "@/types/cards-db";
 import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
 
-export type StockpileModalMode = "manage" | "pair-fronts" | "pair-backs";
-
-type StockpileModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
+type StockpileMainPanelProps = {
+  isOpen?: boolean;
+  onClose?: () => void;
   onLoadCard?: (card: CardRecord) => void;
   refreshToken?: number;
   activeCardId?: string | null;
-  mode?: StockpileModalMode;
+  mode?: "manage" | "pair-fronts" | "pair-backs";
   onConfirmSelection?: (cardIds: string[]) => void;
   initialSelectedIds?: string[];
   titleOverride?: string;
 };
 
-export default function StockpileModal({
-  isOpen,
-  onClose,
+export default function StockpileMainPanel({
+  isOpen = true,
+  onClose = () => {},
   onLoadCard,
   refreshToken,
   activeCardId,
@@ -27,7 +25,7 @@ export default function StockpileModal({
   onConfirmSelection,
   initialSelectedIds,
   titleOverride,
-}: StockpileModalProps) {
+}: StockpileMainPanelProps) {
   return (
     <StockpilePanelContent
       isOpen={isOpen}
@@ -39,7 +37,7 @@ export default function StockpileModal({
       onConfirmSelection={onConfirmSelection}
       initialSelectedIds={initialSelectedIds}
       titleOverride={titleOverride}
-      frame="modal"
+      frame="panel"
     />
   );
 }
