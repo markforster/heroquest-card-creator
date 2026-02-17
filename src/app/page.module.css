@@ -212,11 +212,26 @@
   width: 72px;
 }
 
-.leftNavInner {
+.leftNavInner,
+.inspectorMode,
+.pairingPanelBody,
+.pairingPanel,
+.settingsAreaList,
+.settingsPanel,
+.settingsPanelScroll,
+.settingsPanelBody,
+.assetsPanel,
+.stockpileSidebarMiddle,
+.stockpileContentPane,
+.stockpilePanel,
+.stockpilePanelBody {
   display: flex;
   flex-direction: column;
-  width: 100%;
   min-height: 0;
+}
+
+.leftNavInner {
+  width: 100%;
   gap: 0.75rem;
 }
 
@@ -1167,10 +1182,7 @@
 
 
 .inspectorMode {
-  display: flex;
-  flex-direction: column;
   height: 100%;
-  min-height: 0;
   gap: 0.5rem;
 }
 
@@ -1506,18 +1518,12 @@
 
 .pairingPanelBody {
   margin-top: 1rem;
-  display: flex;
-  flex-direction: column;
   gap: 1rem;
   flex: 1 1 auto;
-  min-height: 0;
   overflow-y: auto;
 }
 
 .pairingPanel {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
   height: 100%;
   overflow: hidden;
 }
@@ -2416,14 +2422,11 @@
 }
 
 .settingsAreaList {
-  min-height: 0;
   overflow-y: auto;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(16, 16, 16, 0.6);
   padding: 0.5rem;
-  display: flex;
-  flex-direction: column;
   gap: 0.35rem;
 }
 
@@ -2464,13 +2467,10 @@
 }
 
 .settingsPanel {
-  min-height: 0;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(12, 12, 12, 0.65);
   padding: 0.85rem 0.9rem;
-  display: flex;
-  flex-direction: column;
   gap: 0.75rem;
 }
 
@@ -2547,17 +2547,11 @@
 }
 
 .settingsPanelScroll {
-  min-height: 0;
   flex: 1 0 auto;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
 .settingsPanelBody {
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
   gap: 0.85rem;
   flex: 1 0 auto;
 }
@@ -2778,9 +2772,6 @@
 
 .assetsPanel {
   flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
 }
 
 .recentPopover {
@@ -3311,10 +3302,7 @@
 
 .stockpileSidebarMiddle {
   flex: 1 1 auto;
-  min-height: 0;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
   gap: 0.25rem;
 }
 
@@ -3367,9 +3355,6 @@
 .stockpileContentPane {
   flex: 1 1 auto;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
 }
 
 .stockpileActionsBar {
@@ -3394,16 +3379,10 @@
 .stockpilePanel {
   flex: 1 1 auto;
   min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
 }
 
 .stockpilePanelBody {
   flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
 }
 
 .stockpilePanelBody > .assetsToolbar {

@@ -1,5 +1,7 @@
 "use client";
 
+import { NavLink } from "react-router-dom";
+
 import styles from "@/app/page.module.css";
 
 import type { ComponentType, ReactNode } from "react";
@@ -7,6 +9,7 @@ import type { ComponentType, ReactNode } from "react";
 type NavActionButtonProps = {
   label: ReactNode;
   icon: ComponentType<{ className?: string }>;
+  to?: string;
   onClick?: () => void;
   title?: string;
   ariaLabel?: string;
@@ -18,6 +21,7 @@ type NavActionButtonProps = {
 export default function NavActionButton({
   label,
   icon: Icon,
+  to,
   onClick,
   title,
   ariaLabel,
@@ -25,15 +29,35 @@ export default function NavActionButton({
   disabled = false,
   className,
 }: NavActionButtonProps) {
+  const computedAriaLabel = ariaLabel ?? (typeof label === "string" ? label : undefined);
+  const baseClassName = `${styles.leftNavItem}${className ? ` ${className}` : ""}`;
+
+  if (to) {
+    return (
+      <NavLink
+        to={to}
+        className={({ isActive: linkActive }) =>
+          `${baseClassName}${linkActive ? ` ${styles.leftNavItemActive}` : ""}`
+        }
+        onClick={onClick}
+        title={title}
+        aria-label={computedAriaLabel}
+      >
+        <span className={styles.leftNavGlyph} aria-hidden="true">
+          <Icon />
+        </span>
+        <span className={styles.leftNavLabel}>{label}</span>
+      </NavLink>
+    );
+  }
+
   return (
     <button
       type="button"
-      className={`${styles.leftNavItem}${isActive ? ` ${styles.leftNavItemActive}` : ""}${
-        className ? ` ${className}` : ""
-      }`}
+      className={`${baseClassName}${isActive ? ` ${styles.leftNavItemActive}` : ""}`}
       onClick={onClick}
       title={title}
-      aria-label={ariaLabel ?? (typeof label === "string" ? label : undefined)}
+      aria-label={computedAriaLabel}
       disabled={disabled}
     >
       <span className={styles.leftNavGlyph} aria-hidden="true">
