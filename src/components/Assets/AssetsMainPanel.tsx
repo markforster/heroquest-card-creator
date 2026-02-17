@@ -10,6 +10,7 @@ type AssetsMainPanelProps = {
   onSelect?: (asset: AssetRecord) => void;
   onClose?: () => void;
   onSelectionChange?: (assets: AssetRecord[]) => void;
+  refreshKey?: number;
 };
 
 export default function AssetsMainPanel({
@@ -17,6 +18,7 @@ export default function AssetsMainPanel({
   onSelect,
   onClose,
   onSelectionChange,
+  refreshKey,
 }: AssetsMainPanelProps) {
   return (
     <AssetsPanelContent
@@ -25,6 +27,7 @@ export default function AssetsMainPanel({
       mode={mode}
       onSelect={onSelect}
       onSelectionChange={onSelectionChange}
+      refreshKey={refreshKey}
     />
   );
 }

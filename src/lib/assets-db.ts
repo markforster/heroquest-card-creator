@@ -53,6 +53,43 @@ export async function addAsset(
   });
 }
 
+export async function replaceAsset(
+  id: string,
+  blob: Blob,
+  meta: Omit<AssetRecord, "id" | "createdAt">,
+  createdAt?: number,
+): Promise<void> {
+  const db = await openHqccDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const record: AssetRecord & { blob: Blob } = {
+      id,
+      createdAt: createdAt ?? Date.now(),
+      ...meta,
+      blob,
+    };
+
+    const req = store.put(record);
+
+    req.onsuccess = () => {
+      // noop
+    };
+
+    tx.oncomplete = () => {
+      // eslint-disable-next-line no-console
+      console.debug("[assets-db] replaceAsset complete", id);
+      resolve();
+    };
+    tx.onerror = () => {
+      // eslint-disable-next-line no-console
+      console.error("[assets-db] replaceAsset tx error", tx.error);
+      reject(tx.error ?? new Error("Failed to replace asset"));
+    };
+  });
+}
+
 export async function getAllAssets(): Promise<AssetRecord[]> {
   const db = await openHqccDb();
 

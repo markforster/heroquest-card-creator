@@ -30,6 +30,7 @@ type AssetsPanelProps = {
   mode?: AssetsPanelMode;
   onSelect?: (asset: AssetRecord) => void;
   onSelectionChange?: (assets: AssetRecord[]) => void;
+  refreshKey?: number;
 };
 
 type ConfirmState = {
@@ -79,6 +80,7 @@ export default function AssetsPanelContent({
   mode = "manage",
   onSelect,
   onSelectionChange,
+  refreshKey,
 }: AssetsPanelProps) {
   const { t } = useI18n();
   const [assets, setAssets] = useState<AssetRecord[]>([]);
@@ -114,7 +116,7 @@ export default function AssetsPanelContent({
     return () => {
       cancelled = true;
     };
-  }, [isOpen]);
+  }, [isOpen, refreshKey]);
 
   useEffect(() => {
     if (!isOpen || assets.length === 0) {
@@ -150,7 +152,7 @@ export default function AssetsPanelContent({
         URL.revokeObjectURL(url);
       });
     };
-  }, [isOpen, assets]);
+  }, [isOpen, assets, refreshKey]);
 
   useEffect(() => {
     if (!isOpen && selectedIds.size > 0) {

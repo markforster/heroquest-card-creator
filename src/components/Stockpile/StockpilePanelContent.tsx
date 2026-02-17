@@ -556,427 +556,430 @@ export default function StockpilePanelContent({
       <div className={styles.stockpilePanel}>
         <div className={styles.stockpilePanelBody}>
           <div className={styles.assetsToolbar}>
-          <div className={styles.cardsFiltersRow}>
-            <div className={styles.cardsFiltersLeft}>
-              <div className="input-group input-group-sm" style={{ width: 325 }}>
-                <span className="input-group-text">
-                  <Search className={styles.icon} aria-hidden="true" />
-                </span>
-                <input
-                  type="search"
-                  placeholder={t("placeholders.searchCards")}
-                  className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch}`}
-                  title={t("tooltip.searchCards")}
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              </div>
-              <div className="d-flex align-items-center gap-2">
-                <div className={styles.cardsFilterMenu} ref={filterMenuRef}>
-                  <button
-                    type="button"
-                    className={styles.cardsFilterButton}
-                    title={t("tooltip.filterCards")}
-                    aria-expanded={isFilterMenuOpen}
-                    onClick={() => setIsFilterMenuOpen((prev) => !prev)}
-                  >
-                    <span>{filterLabel}</span>
-                  </button>
-                  {isFilterMenuOpen ? (
-                    <div className={styles.cardsFilterPopover} role="menu">
-                      <button
-                        type="button"
-                        className={`${styles.cardsFilterItem} ${
-                          templateFilter === "all" ? styles.cardsFilterItemActive : ""
-                        }`}
-                        role="menuitem"
-                        onClick={() => {
-                          setTemplateFilter("all");
-                          setIsFilterMenuOpen(false);
-                        }}
-                      >
-                        <span>{t("ui.allTypes")}</span>
-                        <span className={styles.cardsFilterCount}>{totalCount}</span>
-                      </button>
-                      {!isPairBacks ? (
-                        <>
-                          <button
-                            type="button"
-                            className={`${styles.cardsFilterItem} ${
-                              templateFilter === "front" ? styles.cardsFilterItemActive : ""
-                            }`}
-                            role="menuitem"
-                            onClick={() => {
-                              setTemplateFilter("front");
-                              setIsFilterMenuOpen(false);
-                            }}
-                          >
-                            <span>{t("cardFace.frontFacing")}</span>
-                            <span className={styles.cardsFilterCount}>{faceCounts.front}</span>
-                          </button>
-                          {cardTemplates
-                            .filter((template) => template.defaultFace === "front")
-                            .map((template) => (
-                              <button
-                                key={template.id}
-                                type="button"
-                                className={`${styles.cardsFilterItem} ${
-                                  templateFilter === template.id ? styles.cardsFilterItemActive : ""
-                                }`}
-                                role="menuitem"
-                                onClick={() => {
-                                  setTemplateFilter(template.id);
-                                  setIsFilterMenuOpen(false);
-                                }}
-                              >
-                                <span>{getTemplateNameLabel(language, template)}</span>
-                                <span className={styles.cardsFilterCount}>
-                                  {typeCounts.get(template.id) ?? 0}
-                                </span>
-                              </button>
-                            ))}
-                        </>
-                      ) : null}
-                      {!isPairFronts ? (
-                        <>
-                          <button
-                            type="button"
-                            className={`${styles.cardsFilterItem} ${
-                              templateFilter === "back" ? styles.cardsFilterItemActive : ""
-                            }`}
-                            role="menuitem"
-                            onClick={() => {
-                              setTemplateFilter("back");
-                              setIsFilterMenuOpen(false);
-                            }}
-                          >
-                            <span>{t("cardFace.backFacing")}</span>
-                            <span className={styles.cardsFilterCount}>{faceCounts.back}</span>
-                          </button>
-                          {cardTemplates
-                            .filter((template) => template.defaultFace === "back")
-                            .map((template) => (
-                              <button
-                                key={template.id}
-                                type="button"
-                                className={`${styles.cardsFilterItem} ${
-                                  templateFilter === template.id ? styles.cardsFilterItemActive : ""
-                                }`}
-                                role="menuitem"
-                                onClick={() => {
-                                  setTemplateFilter(template.id);
-                                  setIsFilterMenuOpen(false);
-                                }}
-                              >
-                                <span>{getTemplateNameLabel(language, template)}</span>
-                                <span className={styles.cardsFilterCount}>
-                                  {typeCounts.get(template.id) ?? 0}
-                                </span>
-                              </button>
-                            ))}
-                        </>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-            <div className={styles.cardsFiltersSpacer} />
-            <div className={styles.cardsFiltersRight}>
-              {isPairBacks ? null : (
-                <label
-                  className="form-check form-check-inline mb-0 ms-2"
-                  title={t("tooltip.selectAllCards")}
-                >
+            <div className={styles.cardsFiltersRow}>
+              <div className={styles.cardsFiltersLeft}>
+                <div className="input-group input-group-sm" style={{ width: 325 }}>
+                  <span className="input-group-text">
+                    <Search className={styles.icon} aria-hidden="true" />
+                  </span>
                   <input
-                    ref={selectAllRef}
-                    className="form-check-input"
-                    type="checkbox"
-                    disabled={filteredCards.length === 0}
-                    onChange={(event) => {
-                      const visibleIds = filteredCards.map((card) => card.id);
-                      if (!visibleIds.length) return;
-                      setSelectedIds((prev) => {
-                        const prevSet = new Set(prev);
-                        const allSelected = visibleIds.every((id) => prevSet.has(id));
-                        if (allSelected) {
-                          return prev.filter((id) => !visibleIds.includes(id));
-                        }
-                        const merged = new Set(prev);
-                        visibleIds.forEach((id) => merged.add(id));
-                        return Array.from(merged);
-                      });
-                      event.currentTarget.checked = false;
-                    }}
+                    type="search"
+                    placeholder={t("placeholders.searchCards")}
+                    className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch}`}
+                    title={t("tooltip.searchCards")}
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
                   />
-                  <span className={`form-check-label ${styles.selectAllLabel}`}>
-                    {t("form.selectAll")}
-                  </span>
-                </label>
-              )}
-              {isPairMode ? (
-                <div className={`${styles.assetsActions} ms-3 gap-2`}>
-                  <span className={styles.cardsSelectionLabel}>{t("status.selectedCards")}</span>
-                  <span className="badge rounded-pill bg-warning text-dark fs-6 px-2 py-1">
-                    {selectedIds.length}
-                  </span>
                 </div>
-              ) : null}
+                <div className="d-flex align-items-center gap-2">
+                  <div className={styles.cardsFilterMenu} ref={filterMenuRef}>
+                    <button
+                      type="button"
+                      className={styles.cardsFilterButton}
+                      title={t("tooltip.filterCards")}
+                      aria-expanded={isFilterMenuOpen}
+                      onClick={() => setIsFilterMenuOpen((prev) => !prev)}
+                    >
+                      <span>{filterLabel}</span>
+                    </button>
+                    {isFilterMenuOpen ? (
+                      <div className={styles.cardsFilterPopover} role="menu">
+                        <button
+                          type="button"
+                          className={`${styles.cardsFilterItem} ${
+                            templateFilter === "all" ? styles.cardsFilterItemActive : ""
+                          }`}
+                          role="menuitem"
+                          onClick={() => {
+                            setTemplateFilter("all");
+                            setIsFilterMenuOpen(false);
+                          }}
+                        >
+                          <span>{t("ui.allTypes")}</span>
+                          <span className={styles.cardsFilterCount}>{totalCount}</span>
+                        </button>
+                        {!isPairBacks ? (
+                          <>
+                            <button
+                              type="button"
+                              className={`${styles.cardsFilterItem} ${
+                                templateFilter === "front" ? styles.cardsFilterItemActive : ""
+                              }`}
+                              role="menuitem"
+                              onClick={() => {
+                                setTemplateFilter("front");
+                                setIsFilterMenuOpen(false);
+                              }}
+                            >
+                              <span>{t("cardFace.frontFacing")}</span>
+                              <span className={styles.cardsFilterCount}>{faceCounts.front}</span>
+                            </button>
+                            {cardTemplates
+                              .filter((template) => template.defaultFace === "front")
+                              .map((template) => (
+                                <button
+                                  key={template.id}
+                                  type="button"
+                                  className={`${styles.cardsFilterItem} ${
+                                    templateFilter === template.id ? styles.cardsFilterItemActive : ""
+                                  }`}
+                                  role="menuitem"
+                                  onClick={() => {
+                                    setTemplateFilter(template.id);
+                                    setIsFilterMenuOpen(false);
+                                  }}
+                                >
+                                  <span>{getTemplateNameLabel(language, template)}</span>
+                                  <span className={styles.cardsFilterCount}>
+                                    {typeCounts.get(template.id) ?? 0}
+                                  </span>
+                                </button>
+                              ))}
+                          </>
+                        ) : null}
+                        {!isPairFronts ? (
+                          <>
+                            <button
+                              type="button"
+                              className={`${styles.cardsFilterItem} ${
+                                templateFilter === "back" ? styles.cardsFilterItemActive : ""
+                              }`}
+                              role="menuitem"
+                              onClick={() => {
+                                setTemplateFilter("back");
+                                setIsFilterMenuOpen(false);
+                              }}
+                            >
+                              <span>{t("cardFace.backFacing")}</span>
+                              <span className={styles.cardsFilterCount}>{faceCounts.back}</span>
+                            </button>
+                            {cardTemplates
+                              .filter((template) => template.defaultFace === "back")
+                              .map((template) => (
+                                <button
+                                  key={template.id}
+                                  type="button"
+                                  className={`${styles.cardsFilterItem} ${
+                                    templateFilter === template.id ? styles.cardsFilterItemActive : ""
+                                  }`}
+                                  role="menuitem"
+                                  onClick={() => {
+                                    setTemplateFilter(template.id);
+                                    setIsFilterMenuOpen(false);
+                                  }}
+                                >
+                                  <span>{getTemplateNameLabel(language, template)}</span>
+                                  <span className={styles.cardsFilterCount}>
+                                    {typeCounts.get(template.id) ?? 0}
+                                  </span>
+                                </button>
+                              ))}
+                          </>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+              <div className={styles.cardsFiltersSpacer} />
+              <div className={styles.cardsFiltersRight}>
+                {isPairBacks ? null : (
+                  <label
+                    className="form-check form-check-inline mb-0 ms-2"
+                    title={t("tooltip.selectAllCards")}
+                  >
+                    <input
+                      ref={selectAllRef}
+                      className="form-check-input"
+                      type="checkbox"
+                      disabled={filteredCards.length === 0}
+                      onChange={(event) => {
+                        const visibleIds = filteredCards.map((card) => card.id);
+                        if (!visibleIds.length) return;
+                        setSelectedIds((prev) => {
+                          const prevSet = new Set(prev);
+                          const allSelected = visibleIds.every((id) => prevSet.has(id));
+                          if (allSelected) {
+                            return prev.filter((id) => !visibleIds.includes(id));
+                          }
+                          const merged = new Set(prev);
+                          visibleIds.forEach((id) => merged.add(id));
+                          return Array.from(merged);
+                        });
+                        event.currentTarget.checked = false;
+                      }}
+                    />
+                    <span className={`form-check-label ${styles.selectAllLabel}`}>
+                      {t("form.selectAll")}
+                    </span>
+                  </label>
+                )}
+                {isPairMode ? (
+                  <div className={`${styles.assetsActions} ms-3 gap-2`}>
+                    <span className={styles.cardsSelectionLabel}>{t("status.selectedCards")}</span>
+                    <span className="badge rounded-pill bg-warning text-dark fs-6 px-2 py-1">
+                      {selectedIds.length}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
-        {!isPairMode ? (
-          <div className={styles.assetsToolbar}>
-            <div className={`${styles.assetsActions} ms-auto gap-2`}>
-              {collections.filter(
-                (collection) =>
-                  activeFilter.type !== "collection" || collection.id !== activeFilter.id,
-              ).length ? (
+          <div className={styles.stockpileLayout}>
+            <aside className={styles.stockpileSidebar} aria-label={t("heading.collections")}>
+              <div className={styles.stockpileSidebarHeader}>{t("heading.collections")}</div>
+              <div className={styles.stockpileSidebarList}>
                 <button
                   type="button"
-                  className="btn btn-outline-light btn-sm"
-                  disabled={!visibleSelectedIds.length}
+                  className={`${styles.stockpileSidebarItem} ${activeFilter.type === "recent" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
                   onClick={() => {
-                    const available = collections.filter(
-                      (collection) =>
-                        activeFilter.type !== "collection" || collection.id !== activeFilter.id,
-                    );
-                    if (!available.length) return;
-                    setAddTargetCollectionId((prev) => prev || available[0]?.id || "");
-                    setIsAddModalOpen(true);
-                  }}
-                >
-                  {t("actions.addToCollection")}
-                </button>
-              ) : null}
-              {activeFilter.type === "collection" ? (
-                <button
-                  type="button"
-                  className="btn btn-outline-light btn-sm"
-                  disabled={!selectedIds.length}
-                  onClick={async () => {
-                    const target = collections.find((item) => item.id === activeFilter.id);
-                    if (!target) return;
-                    try {
-                      const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
-                      await updateCollection(target.id, { cardIds: remaining });
-                      const refreshed = await listCollections();
-                      setCollections(refreshed);
-                      setSelectedIds([]);
-                    } catch (error) {
-                      // eslint-disable-next-line no-console
-                      console.error("[StockpileModal] Failed to remove from collection", error);
-                    }
-                  }}
-                >
-                  {t("actions.removeFromCollection")}
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className="btn btn-outline-danger btn-sm"
-                disabled={!selectedIds.length}
-                onClick={async () => {
-                  if (!selectedIds.length) return;
-                  const ids = [...selectedIds];
-                  setConfirmDialog({
-                    title: t("confirm.deleteCardsTitle"),
-                    body: `${t("confirm.deleteCardsBodyPrefix")} ${ids.length} ${
-                      ids.length === 1 ? t("label.card") : t("label.cards")
-                    } ${t("confirm.deleteCardsBodySuffix")}`,
-                    confirmLabel:
-                      ids.length > 1
-                        ? `${t("actions.delete")} (${ids.length})`
-                        : t("actions.delete"),
-                    onConfirm: async () => {
-                      try {
-                        await Promise.all(ids.map((id) => deletePairsForFace(id)));
-                        await deleteCards(ids);
-                        const idSet = new Set(ids);
-                        (Object.keys(activeCardIdByTemplate) as TemplateId[]).forEach(
-                          (templateId) => {
-                            const activeId = activeCardIdByTemplate[templateId];
-                            if (!activeId || !idSet.has(activeId)) return;
-                            setActiveCard(templateId, null, null);
-                            setCardDraft(templateId, createDefaultCardData(templateId));
-                            setTemplateDirty(templateId, false);
-                          },
-                        );
-                        const updates = collections
-                          .map((collection) => {
-                            const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
-                            return nextCardIds.length === collection.cardIds.length
-                              ? null
-                              : { id: collection.id, cardIds: nextCardIds };
-                          })
-                          .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
-                        await Promise.all(
-                          updates.map((update) =>
-                            updateCollection(update.id, { cardIds: update.cardIds }),
-                          ),
-                        );
-                        const refreshed = await listCards({ status: "saved" });
-                        setCards(refreshed);
-                        const refreshedCollections = await listCollections();
-                        setCollections(refreshedCollections);
-                        setSelectedIds([]);
-                      } catch (error) {
-                        // eslint-disable-next-line no-console
-                        console.error("[StockpileModal] Failed to delete card", error);
-                      } finally {
-                        setConfirmDialog(null);
-                      }
-                    },
-                  });
-                }}
-              >
-                {selectedIds.length > 1
-                  ? `${t("actions.delete")} (${selectedIds.length})`
-                  : t("actions.delete")}
-              </button>
-            </div>
-          </div>
-        ) : null}
-        <div className={styles.stockpileLayout}>
-          <aside className={styles.stockpileSidebar} aria-label={t("heading.collections")}>
-            <div className={styles.stockpileSidebarHeader}>{t("heading.collections")}</div>
-            <div className={styles.stockpileSidebarList}>
-              <button
-                type="button"
-                className={`${styles.stockpileSidebarItem} ${activeFilter.type === "recent" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
-                onClick={() => {
-                  setActiveFilter({ type: "recent" });
-                  if (!isPairMode) {
-                    setSelectedIds([]);
-                  }
-                }}
-              >
-                <span className="flex-grow-1 text-truncate fs-6">{t("actions.recentCards")}</span>
-                {!isPairMode ? (
-                  <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
-                    {recentCards.length}
-                  </span>
-                ) : null}
-              </button>
-              <button
-                type="button"
-                className={`${styles.stockpileSidebarItem} ${activeFilter.type === "all" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
-                onClick={() => {
-                  setActiveFilter({ type: "all" });
-                  if (!isPairMode) {
-                    setSelectedIds([]);
-                  }
-                }}
-              >
-                <span className="flex-grow-1 text-truncate fs-6">{t("actions.allCards")}</span>
-                {!isPairMode ? (
-                  <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
-                    {overallCount}
-                  </span>
-                ) : selectedIds.length > 0 ? (
-                  <span className={styles.stockpileSelectedDot} aria-hidden="true" />
-                ) : null}
-              </button>
-              <button
-                type="button"
-                className={`${styles.stockpileSidebarItem} ${activeFilter.type === "unfiled" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
-                onClick={() => {
-                  setActiveFilter({ type: "unfiled" });
-                  if (!isPairMode) {
-                    setSelectedIds([]);
-                  }
-                }}
-              >
-                <span className="flex-grow-1 text-truncate fs-6">{t("actions.unfiled")}</span>
-                {!isPairMode ? (
-                  <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
-                    {unfiledCount}
-                  </span>
-                ) : null}
-              </button>
-              <div className={styles.stockpileSidebarDivider} />
-            </div>
-            <div className={styles.stockpileSidebarMiddle}>
-              {visibleCollections.map((collection) => (
-                <button
-                  key={collection.id}
-                  type="button"
-                  className={`${styles.stockpileSidebarItem} ${activeFilter.type === "collection" && activeFilter.id === collection.id ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
-                  onClick={() => {
-                    setActiveFilter({ type: "collection", id: collection.id });
+                    setActiveFilter({ type: "recent" });
                     if (!isPairMode) {
                       setSelectedIds([]);
                     }
                   }}
-                  title={collection.description || collection.name}
                 >
-                  <span className="flex-grow-1 text-truncate fs-6">{collection.name}</span>
+                  <span className="flex-grow-1 text-truncate fs-6">{t("actions.recentCards")}</span>
                   {!isPairMode ? (
                     <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
-                      {collectionCounts.get(collection.id) ?? 0}
+                      {recentCards.length}
                     </span>
                   ) : null}
-                  {isPairMode && selectedCountByCollection.get(collection.id) ? (
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.stockpileSidebarItem} ${activeFilter.type === "all" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
+                  onClick={() => {
+                    setActiveFilter({ type: "all" });
+                    if (!isPairMode) {
+                      setSelectedIds([]);
+                    }
+                  }}
+                >
+                  <span className="flex-grow-1 text-truncate fs-6">{t("actions.allCards")}</span>
+                  {!isPairMode ? (
+                    <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
+                      {overallCount}
+                    </span>
+                  ) : selectedIds.length > 0 ? (
                     <span className={styles.stockpileSelectedDot} aria-hidden="true" />
                   ) : null}
                 </button>
-              ))}
-            </div>
-          </aside>
-          <div className={styles.stockpileContentPane}>
-            <div className={styles.assetsGridContainer}>
-              {filteredCards.length === 0 ? (
-                <div className={styles.assetsEmptyState}>
-                  {search.trim()
-                    ? t("empty.noCardsFound")
-                    : activeFilter.type === "recent"
-                      ? t("empty.noRecentCards")
-                      : activeFilter.type === "collection"
-                        ? templateFilter !== "all" && totalCount > 0
-                          ? `${t("empty.collectionFilteredByType")} ${filterLabel}.`
-                          : t("empty.collectionEmpty")
-                        : activeFilter.type === "unfiled"
-                          ? t("empty.nothingUnfiled")
-                          : t("empty.noSavedCards")}
+                <button
+                  type="button"
+                  className={`${styles.stockpileSidebarItem} ${activeFilter.type === "unfiled" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
+                  onClick={() => {
+                    setActiveFilter({ type: "unfiled" });
+                    if (!isPairMode) {
+                      setSelectedIds([]);
+                    }
+                  }}
+                >
+                  <span className="flex-grow-1 text-truncate fs-6">{t("actions.unfiled")}</span>
+                  {!isPairMode ? (
+                    <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
+                      {unfiledCount}
+                    </span>
+                  ) : null}
+                </button>
+                <div className={styles.stockpileSidebarDivider} />
+              </div>
+              <div className={styles.stockpileSidebarMiddle}>
+                {visibleCollections.map((collection) => (
+                  <button
+                    key={collection.id}
+                    type="button"
+                    className={`${styles.stockpileSidebarItem} ${activeFilter.type === "collection" && activeFilter.id === collection.id ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
+                    onClick={() => {
+                      setActiveFilter({ type: "collection", id: collection.id });
+                      if (!isPairMode) {
+                        setSelectedIds([]);
+                      }
+                    }}
+                    title={collection.description || collection.name}
+                  >
+                    <span className="flex-grow-1 text-truncate fs-6">{collection.name}</span>
+                    {!isPairMode ? (
+                      <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
+                        {collectionCounts.get(collection.id) ?? 0}
+                      </span>
+                    ) : null}
+                    {isPairMode && selectedCountByCollection.get(collection.id) ? (
+                      <span className={styles.stockpileSelectedDot} aria-hidden="true" />
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            </aside>
+            <div className={styles.stockpileContentPane}>
+              {!isPairMode ? (
+                <div className={styles.stockpileActionsBar}>
+                  <div className={`${styles.assetsActions} ms-auto gap-2`}>
+                    {collections.filter(
+                      (collection) =>
+                        activeFilter.type !== "collection" || collection.id !== activeFilter.id,
+                    ).length ? (
+                      <button
+                        type="button"
+                        className="btn btn-outline-light btn-sm"
+                        disabled={!visibleSelectedIds.length}
+                        onClick={() => {
+                          const available = collections.filter(
+                            (collection) =>
+                              activeFilter.type !== "collection" ||
+                              collection.id !== activeFilter.id,
+                          );
+                          if (!available.length) return;
+                          setAddTargetCollectionId((prev) => prev || available[0]?.id || "");
+                          setIsAddModalOpen(true);
+                        }}
+                      >
+                        {t("actions.addToCollection")}
+                      </button>
+                    ) : null}
+                    {activeFilter.type === "collection" ? (
+                      <button
+                        type="button"
+                        className="btn btn-outline-light btn-sm"
+                        disabled={!selectedIds.length}
+                        onClick={async () => {
+                          const target = collections.find((item) => item.id === activeFilter.id);
+                          if (!target) return;
+                          try {
+                            const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
+                            await updateCollection(target.id, { cardIds: remaining });
+                            const refreshed = await listCollections();
+                            setCollections(refreshed);
+                            setSelectedIds([]);
+                          } catch (error) {
+                            // eslint-disable-next-line no-console
+                            console.error("[StockpileModal] Failed to remove from collection", error);
+                          }
+                        }}
+                      >
+                        {t("actions.removeFromCollection")}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger btn-sm"
+                      disabled={!selectedIds.length}
+                      onClick={async () => {
+                        if (!selectedIds.length) return;
+                        const ids = [...selectedIds];
+                        setConfirmDialog({
+                          title: t("confirm.deleteCardsTitle"),
+                          body: `${t("confirm.deleteCardsBodyPrefix")} ${ids.length} ${
+                            ids.length === 1 ? t("label.card") : t("label.cards")
+                          } ${t("confirm.deleteCardsBodySuffix")}`,
+                          confirmLabel:
+                            ids.length > 1
+                              ? `${t("actions.delete")} (${ids.length})`
+                              : t("actions.delete"),
+                          onConfirm: async () => {
+                            try {
+                              await Promise.all(ids.map((id) => deletePairsForFace(id)));
+                              await deleteCards(ids);
+                              const idSet = new Set(ids);
+                              (Object.keys(activeCardIdByTemplate) as TemplateId[]).forEach(
+                                (templateId) => {
+                                  const activeId = activeCardIdByTemplate[templateId];
+                                  if (!activeId || !idSet.has(activeId)) return;
+                                  setActiveCard(templateId, null, null);
+                                  setCardDraft(templateId, createDefaultCardData(templateId));
+                                  setTemplateDirty(templateId, false);
+                                },
+                              );
+                              const updates = collections
+                                .map((collection) => {
+                                  const nextCardIds = collection.cardIds.filter(
+                                    (id) => !idSet.has(id),
+                                  );
+                                  return nextCardIds.length === collection.cardIds.length
+                                    ? null
+                                    : { id: collection.id, cardIds: nextCardIds };
+                                })
+                                .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
+                              await Promise.all(
+                                updates.map((update) =>
+                                  updateCollection(update.id, { cardIds: update.cardIds }),
+                                ),
+                              );
+                              const refreshed = await listCards({ status: "saved" });
+                              setCards(refreshed);
+                              const refreshedCollections = await listCollections();
+                              setCollections(refreshedCollections);
+                              setSelectedIds([]);
+                            } catch (error) {
+                              // eslint-disable-next-line no-console
+                              console.error("[StockpileModal] Failed to delete card", error);
+                            } finally {
+                              setConfirmDialog(null);
+                            }
+                          },
+                        });
+                      }}
+                    >
+                      {selectedIds.length > 1
+                        ? `${t("actions.delete")} (${selectedIds.length})`
+                        : t("actions.delete")}
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <div className={styles.assetsGrid}>
-                  {filteredCards.map((card) => {
-                    const updated = new Date(card.updatedAt);
-                    const updatedLabel = updated.toLocaleDateString(undefined, {
-                      year: "numeric",
-                      month: "short",
-                      day: "2-digit",
-                    });
-                    const timeLabel = updated.toLocaleTimeString(undefined, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    });
+              ) : null}
+              <div className={styles.assetsGridContainer}>
+                {filteredCards.length === 0 ? (
+                  <div className={styles.assetsEmptyState}>
+                    {search.trim()
+                      ? t("empty.noCardsFound")
+                      : activeFilter.type === "recent"
+                        ? t("empty.noRecentCards")
+                        : activeFilter.type === "collection"
+                          ? templateFilter !== "all" && totalCount > 0
+                            ? `${t("empty.collectionFilteredByType")} ${filterLabel}.`
+                            : t("empty.collectionEmpty")
+                          : activeFilter.type === "unfiled"
+                            ? t("empty.nothingUnfiled")
+                            : t("empty.noSavedCards")}
+                  </div>
+                ) : (
+                  <div className={styles.assetsGrid}>
+                    {filteredCards.map((card) => {
+                      const updated = new Date(card.updatedAt);
+                      const updatedLabel = updated.toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "2-digit",
+                      });
+                      const timeLabel = updated.toLocaleTimeString(undefined, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      });
 
-                    const thumbUrl =
-                      typeof window !== "undefined" && card.thumbnailBlob
-                        ? URL.createObjectURL(card.thumbnailBlob)
+                      const thumbUrl =
+                        typeof window !== "undefined" && card.thumbnailBlob
+                          ? URL.createObjectURL(card.thumbnailBlob)
+                          : null;
+                      const isSelected = selectedIds.includes(card.id);
+                      const pairedBackId = backByFrontId.get(card.id) ?? null;
+                      const isPairingConflict =
+                        isPairFronts && pairedBackId && pairedBackId !== activeBackId;
+                      const templateMeta = cardTemplatesById[card.templateId];
+                      const effectiveFace = card.face ?? templateMeta?.defaultFace;
+                      const pairedFronts = pairedByTargetId.get(card.id) ?? [];
+                      const pairedCard = pairedBackId
+                        ? (cardById.get(pairedBackId) ?? null)
+                        : (pairedFronts[0] ?? null);
+                      const pairedThumbUrl =
+                        typeof window !== "undefined" && pairedCard?.thumbnailBlob
+                          ? URL.createObjectURL(pairedCard.thumbnailBlob)
+                          : null;
+                      const pairedTemplateThumb = pairedCard
+                        ? cardTemplatesById[pairedCard.templateId]?.thumbnail
                         : null;
-                    const isSelected = selectedIds.includes(card.id);
-                    const pairedBackId = backByFrontId.get(card.id) ?? null;
-                    const isPairingConflict =
-                      isPairFronts && pairedBackId && pairedBackId !== activeBackId;
-                    const templateMeta = cardTemplatesById[card.templateId];
-                    const effectiveFace = card.face ?? templateMeta?.defaultFace;
-                    const pairedFronts = pairedByTargetId.get(card.id) ?? [];
-                    const pairedCard = pairedBackId
-                      ? (cardById.get(pairedBackId) ?? null)
-                      : (pairedFronts[0] ?? null);
-                    const pairedThumbUrl =
-                      typeof window !== "undefined" && pairedCard?.thumbnailBlob
-                        ? URL.createObjectURL(pairedCard.thumbnailBlob)
-                        : null;
-                    const pairedTemplateThumb = pairedCard
-                      ? cardTemplatesById[pairedCard.templateId]?.thumbnail
-                      : null;
-                    const visiblePairedFronts = pairedFronts.slice(0, 3);
-                    const pairedFrontsOverflow =
-                      pairedFronts.length > 3 ? pairedFronts.length - 3 : 0;
+                      const visiblePairedFronts = pairedFronts.slice(0, 3);
+                      const pairedFrontsOverflow =
+                        pairedFronts.length > 3 ? pairedFronts.length - 3 : 0;
 
                     return (
                       <button
@@ -1242,9 +1245,8 @@ export default function StockpilePanelContent({
               )}
             </div>
           </div>
-        </div>
-        </div>
-        <div className={styles.stockpilePanelFooter}>
+          </div>
+          <div className={styles.stockpilePanelFooter}>
           {isPairMode ? (
             <div className="d-flex w-100 justify-content-end gap-2">
               <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onClose}>
@@ -1342,6 +1344,7 @@ export default function StockpilePanelContent({
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
       {hoveredPairCardId && pairPopoverAnchor && typeof document !== "undefined"

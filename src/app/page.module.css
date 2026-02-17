@@ -1015,6 +1015,11 @@
   height: 100%;
 }
 
+.assetsInspectorActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .assetsInspectorCarousel {
   display: flex;
   align-items: center;
@@ -1161,6 +1166,36 @@
   font-size: 0.95rem;
   font-weight: 600;
   color: #ffffff;
+}
+
+.assetsInspectorReplaceBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.assetsInspectorReplaceWarning {
+  color: rgba(255, 210, 140, 0.95);
+}
+
+.assetsInspectorReplaceInfo {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.assetsInspectorReplaceToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.assetsInspectorReplaceToggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--hq-accent);
 }
 
 .inspectorMode {
@@ -3369,6 +3404,16 @@
   min-height: 0;
 }
 
+.stockpileActionsBar {
+  flex: 0 1 auto;
+  display: flex;
+  margin-bottom: 0.75rem;
+}
+
+.stockpileContentPane .assetsGridContainer {
+  flex: 1 1 auto;
+}
+
 .stockpileFooter {
   display: flex;
   align-items: center;
@@ -3392,6 +3437,17 @@
   flex-direction: column;
 }
 
+.stockpilePanelBody > .assetsToolbar {
+  flex: 0 0 auto;
+}
+
+.stockpilePanelBody > .stockpileLayout {
+  flex: 1 1 auto;
+}
+
+.stockpilePanelBody > .stockpilePanelFooter {
+  flex: 0 0 auto;
+}
 .stockpilePanelFooter {
   margin-top: 0.75rem;
 }
