@@ -600,7 +600,7 @@ export default function WebglPreview({
 }: WebglPreviewProps) {
   const rootClassName = className ? `${styles.root} ${className}` : styles.root;
   const { sheenAngle, sheenIntensity } = useWebglPreviewSettings();
-  const { rotationMode } = usePreviewRenderer();
+  const { rotationMode, requestRecenter } = usePreviewRenderer();
   const glintPower = Math.max(0.06, Math.min(0.45, 0.55 - sheenAngle * 0.35));
   const containerRef = useRef<HTMLDivElement | null>(null);
   const yawGroupRef = useRef<Group | null>(null);
@@ -850,6 +850,11 @@ export default function WebglPreview({
     }
   };
 
+  const handleDoubleClick = () => {
+    if (rotationMode !== "spin") return;
+    requestRecenter();
+  };
+
   return (
     <div
       ref={containerRef}
@@ -858,6 +863,7 @@ export default function WebglPreview({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
+      onDoubleClick={handleDoubleClick}
       style={{ cursor: isDragging ? "grabbing" : "grab" }}
     >
       <Canvas
