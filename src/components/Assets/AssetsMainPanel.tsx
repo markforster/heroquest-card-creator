@@ -9,12 +9,14 @@ type AssetsMainPanelProps = {
   mode?: AssetsMainPanelMode;
   onSelect?: (asset: AssetRecord) => void;
   onClose?: () => void;
+  onSelectionChange?: (assets: AssetRecord[]) => void;
 };
 
 export default function AssetsMainPanel({
   mode = "manage",
   onSelect,
   onClose,
+  onSelectionChange,
 }: AssetsMainPanelProps) {
   return (
     <AssetsPanelContent
@@ -22,6 +24,7 @@ export default function AssetsMainPanel({
       onClose={onClose ?? (() => {})}
       mode={mode}
       onSelect={onSelect}
+      onSelectionChange={onSelectionChange}
     />
   );
 }

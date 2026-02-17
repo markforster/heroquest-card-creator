@@ -12,7 +12,7 @@ import {
 } from "react-router-dom";
 
 import { AssetHashIndexProvider } from "@/components/Assets/AssetHashIndexProvider";
-import { AssetsMainPanel } from "@/components/Assets";
+import { AssetsRoutePanels } from "@/components/Assets";
 import { StockpileMainPanel } from "@/components/Stockpile";
 import { AppActionsProvider } from "@/components/AppActionsContext";
 import { CardEditorProvider, useCardEditor } from "@/components/CardEditor/CardEditorContext";
@@ -627,11 +627,7 @@ function IndexPageInner() {
               <HeaderWithTemplatePicker />
               <main className={styles.main}>
                 <LeftNav />
-                {isAssetsRoute ? (
-                  <section className={styles.leftPanel}>
-                    <AssetsMainPanel />
-                  </section>
-                ) : null}
+                {isAssetsRoute ? <AssetsRoutePanels /> : null}
                 {isCardsListRoute ? (
                   <section className={styles.leftPanel}>
                     <StockpileMainPanel

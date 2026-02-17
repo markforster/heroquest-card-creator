@@ -29,6 +29,7 @@ type AssetsPanelProps = {
   onClose: () => void;
   mode?: AssetsPanelMode;
   onSelect?: (asset: AssetRecord) => void;
+  onSelectionChange?: (assets: AssetRecord[]) => void;
 };
 
 type ConfirmState = {
@@ -77,12 +78,14 @@ export default function AssetsPanelContent({
   onClose,
   mode = "manage",
   onSelect,
+  onSelectionChange,
 }: AssetsPanelProps) {
   const { t } = useI18n();
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [search, setSearch] = useState("");
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedOrder, setSelectedOrder] = useState<string[]>([]);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [uploadNotice, setUploadNotice] = useState<UploadNotice | null>(null);
   const [uploadProgress, setUploadProgress] = useState<UploadProgressState | null>(null);
@@ -152,8 +155,19 @@ export default function AssetsPanelContent({
   useEffect(() => {
     if (!isOpen && selectedIds.size > 0) {
       setSelectedIds(new Set());
+      setSelectedOrder([]);
     }
   }, [isOpen, selectedIds]);
+
+  useEffect(() => {
+    if (selectedOrder.length === 0) return;
+    const idSet = new Set(assets.map((asset) => asset.id));
+    const nextOrder = selectedOrder.filter((id) => idSet.has(id));
+    if (nextOrder.length !== selectedOrder.length) {
+      setSelectedOrder(nextOrder);
+      setSelectedIds(new Set(nextOrder));
+    }
+  }, [assets, selectedOrder]);
 
   useEffect(() => {
     if (!confirmState || confirmState.isDeleting) return;
@@ -174,6 +188,15 @@ export default function AssetsPanelContent({
       return { ...prev, assetIds: nextIds };
     });
   }, [confirmState, selectedIds, setConfirmState]);
+
+  useEffect(() => {
+    if (!onSelectionChange) return;
+    const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+    const selectedAssets = selectedOrder
+      .map((id) => assetById.get(id))
+      .filter((asset): asset is AssetRecord => Boolean(asset));
+    onSelectionChange(selectedAssets);
+  }, [assets, onSelectionChange, selectedOrder]);
 
   const filteredAssets = search
     ? assets.filter((asset) => asset.name.toLowerCase().includes(search.toLowerCase()))
@@ -560,20 +583,30 @@ export default function AssetsPanelContent({
                     isSelected ? styles.assetsItemSelected : ""
                   }`}
                   title={asset.name}
-                  onClick={() => {
+                  onClick={(event) => {
                     setSelectedIds((prev) => {
                       if (mode === "select") {
-                        const next = new Set<string>();
-                        next.add(asset.id);
+                        setSelectedOrder([asset.id]);
+                        return new Set([asset.id]);
+                      }
+                      const hasModifier = event.metaKey || event.ctrlKey;
+                      if (hasModifier) {
+                        const next = new Set(prev);
+                        if (next.has(asset.id)) {
+                          next.delete(asset.id);
+                          setSelectedOrder((order) => order.filter((id) => id !== asset.id));
+                        } else {
+                          next.add(asset.id);
+                          setSelectedOrder((order) => [asset.id, ...order.filter((id) => id !== asset.id)]);
+                        }
                         return next;
                       }
-                      const next = new Set(prev);
-                      if (next.has(asset.id)) {
-                        next.delete(asset.id);
-                      } else {
-                        next.add(asset.id);
+                      if (prev.size === 1 && prev.has(asset.id)) {
+                        setSelectedOrder([]);
+                        return new Set();
                       }
-                      return next;
+                      setSelectedOrder([asset.id]);
+                      return new Set([asset.id]);
                     });
                   }}
                   onDoubleClick={() => {
