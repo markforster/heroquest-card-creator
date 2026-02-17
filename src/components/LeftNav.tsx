@@ -24,7 +24,7 @@ import { getCard } from "@/lib/cards-db";
 
 const COLLAPSE_MEDIA_QUERY = "(max-width: 1280px)";
 const NAV_COLLAPSE_STORAGE_KEY = "hqcc.leftNavCollapsed";
-
+const SHOW_DECKS = false;
 function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(false);
 
@@ -254,14 +254,16 @@ export default function LeftNav() {
               isActive={isCardsRoute}
             />
             {/* <LeftNavSpacer size="medium" showLine /> */}
-            <NavActionButton
-              label={t("actions.decks")}
-              icon={Layers}
-              onClick={() => {}}
-              title={t("actions.decks")}
-              ariaLabel={t("actions.decks")}
-              isActive={false}
-            />
+            {SHOW_DECKS && (
+              <NavActionButton
+                label={t("actions.decks")}
+                icon={Layers}
+                onClick={() => {}}
+                title={t("actions.decks")}
+                ariaLabel={t("actions.decks")}
+                isActive={false}
+              />
+            )}
             <LeftNavSpacer size="small" showLine={false} />
             <NavActionButton
               label={t("actions.assets")}
