@@ -384,6 +384,60 @@
   box-shadow: inset 0 0 0 1px #1f6d2c;
 }
 
+.leftNavCurrentCard {
+  padding: 0.65rem 0.6rem;
+  gap: 0.65rem;
+  font-size: 0.8rem;
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+
+.leftNavCurrentCardThumb {
+  width: 46px;
+  height: 64px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.leftNavCurrentCardThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.leftNavCurrentCardFallback {
+  width: 70%;
+  height: 70%;
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.2));
+}
+
+.leftNavCurrentCardLabel {
+  flex: 1 1 auto;
+  text-align: left;
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--hq-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leftNavCollapsed .leftNavCurrentCard {
+  justify-content: center;
+  padding: 0.6rem 0.4rem;
+}
+
+.leftNavCollapsed .leftNavCurrentCardLabel {
+  display: none;
+}
+
 .leftNavItem:focus,
 .leftNavItem:focus-visible {
   outline: none;
@@ -2552,6 +2606,13 @@
 }
 
 .assetsPopover :global(.modal-body) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.assetsPanel {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;

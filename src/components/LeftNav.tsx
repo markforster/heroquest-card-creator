@@ -10,7 +10,8 @@ import {
   Settings,
   SquareStack,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useMatch } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
@@ -19,6 +20,7 @@ import KeyBinding from "@/components/KeyBinding";
 import LanguageMenu from "@/components/LanguageMenu";
 import NavActionButton from "@/components/NavActionButton";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getCard } from "@/lib/cards-db";
 
 const COLLAPSE_MEDIA_QUERY = "(max-width: 1280px)";
 const NAV_COLLAPSE_STORAGE_KEY = "hqcc.leftNavCollapsed";
@@ -46,13 +48,11 @@ function useMediaQuery(query: string) {
 export default function LeftNav() {
   const { t } = useI18n();
   const {
-    openAssets,
     openStockpile,
     openSettings,
     openTemplatePicker,
     openRecent,
     isTemplatePickerOpen,
-    isAssetsOpen,
     isStockpileOpen,
     isRecentOpen,
     isSettingsOpen,
@@ -65,6 +65,11 @@ export default function LeftNav() {
   const [isCollapsedReady, setIsCollapsedReady] = useState(false);
   const isCollapsed = autoCollapsed || manualCollapsed;
   const collapseStateLabel = isCollapsed ? "Expand navigation" : "Collapse navigation";
+  const navigate = useNavigate();
+  const isAssetsRoute = Boolean(useMatch("/assets"));
+  const [currentCardName, setCurrentCardName] = useState<string | null>(null);
+  const [currentCardThumbUrl, setCurrentCardThumbUrl] = useState<string | null>(null);
+  const currentCardThumbRef = useRef<string | null>(null);
   const activeCardId =
     selectedTemplateId != null ? activeCardIdByTemplate[selectedTemplateId] : undefined;
 
@@ -90,6 +95,54 @@ export default function LeftNav() {
       // Ignore localStorage errors.
     }
   }, [manualCollapsed]);
+
+  useEffect(() => {
+    if (!activeCardId) {
+      setCurrentCardName(null);
+      if (currentCardThumbRef.current) {
+        URL.revokeObjectURL(currentCardThumbRef.current);
+        currentCardThumbRef.current = null;
+      }
+      setCurrentCardThumbUrl(null);
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      try {
+        const record = await getCard(activeCardId);
+        if (!active || !record) return;
+        setCurrentCardName(record.name || record.title || "Untitled card");
+        if (currentCardThumbRef.current) {
+          URL.revokeObjectURL(currentCardThumbRef.current);
+          currentCardThumbRef.current = null;
+        }
+        if (record.thumbnailBlob) {
+          const nextUrl = URL.createObjectURL(record.thumbnailBlob);
+          currentCardThumbRef.current = nextUrl;
+          setCurrentCardThumbUrl(nextUrl);
+        } else {
+          setCurrentCardThumbUrl(null);
+        }
+      } catch {
+        if (!active) return;
+        setCurrentCardName(null);
+        if (currentCardThumbRef.current) {
+          URL.revokeObjectURL(currentCardThumbRef.current);
+          currentCardThumbRef.current = null;
+        }
+        setCurrentCardThumbUrl(null);
+      }
+    })();
+
+    return () => {
+      active = false;
+      if (currentCardThumbRef.current) {
+        URL.revokeObjectURL(currentCardThumbRef.current);
+        currentCardThumbRef.current = null;
+      }
+    };
+  }, [activeCardId]);
 
   if (!isCollapsedReady) {
     return null;
@@ -149,6 +202,30 @@ export default function LeftNav() {
                 onTrigger={() => openTemplatePicker()}
                 label={t("tooltip.chooseTemplate")}
               >
+                {activeCardId ? (
+                  <>
+                    <button
+                      type="button"
+                      className={`${styles.leftNavItem} ${styles.leftNavCurrentCard}`}
+                      onClick={() => navigate(`/cards/${activeCardId}`)}
+                      title={currentCardName ?? t("actions.cards")}
+                      aria-label={currentCardName ?? t("actions.cards")}
+                    >
+                      <div className={styles.leftNavCurrentCardThumb}>
+                        {currentCardThumbUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={currentCardThumbUrl} alt="" />
+                        ) : (
+                          <div className={styles.leftNavCurrentCardFallback} />
+                        )}
+                      </div>
+                      <div className={styles.leftNavCurrentCardLabel}>
+                        {currentCardName ?? t("actions.cards")}
+                      </div>
+                    </button>
+                    <LeftNavSpacer size="small" showLine />
+                  </>
+                ) : null}
                 <NavActionButton
                   label={t("actions.saveAsNew")}
                   icon={CopyPlus}
@@ -194,10 +271,10 @@ export default function LeftNav() {
             <NavActionButton
               label={t("actions.assets")}
               icon={Images}
-              onClick={openAssets}
+              onClick={() => navigate("/assets")}
               title={t("tooltip.openAssets")}
               ariaLabel={t("tooltip.openAssets")}
-              isActive={isAssetsOpen}
+              isActive={isAssetsRoute}
             />
           </div>
         </div>

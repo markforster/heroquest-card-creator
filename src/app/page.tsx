@@ -6,11 +6,13 @@ import {
   Navigate,
   Route,
   Routes,
+  useMatch,
   useNavigate,
   useParams,
 } from "react-router-dom";
 
 import { AssetHashIndexProvider } from "@/components/Assets/AssetHashIndexProvider";
+import { AssetsMainPanel } from "@/components/Assets";
 import { AppActionsProvider } from "@/components/AppActionsContext";
 import { CardEditorProvider, useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import CardPreviewContainer from "@/components/CardEditor/CardPreviewContainer";
@@ -22,6 +24,7 @@ import DatabaseVersionGate from "@/components/DatabaseVersionGate";
 import { EditorSaveProvider } from "@/components/EditorSaveContext";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
 import { EscapeStackProvider } from "@/components/EscapeStackProvider";
+import { useEscapeModalAware } from "@/components/EscapeStackProvider";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import HeaderWithTemplatePicker from "@/components/HeaderWithTemplatePicker";
 import { LibraryTransferProvider } from "@/components/LibraryTransferContext";
@@ -54,6 +57,8 @@ function IndexPageInner() {
   const { t, language } = useI18n();
   const navigate = useNavigate();
   const { cardId } = useParams();
+  const isAssetsRoute = Boolean(useMatch("/assets"));
+  const isCardsRoute = Boolean(useMatch("/cards/:cardId?"));
   const {
     state: {
       selectedTemplateId,
@@ -112,6 +117,19 @@ function IndexPageInner() {
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [routeError, setRouteError] = useState<"not-found" | "load-failed" | null>(null);
   const lastLoadedRef = useRef<string | null>(null);
+
+  useEscapeModalAware({
+    id: "route:assets",
+    isOpen: isAssetsRoute,
+    enabled: isAssetsRoute,
+    onEscape: () => {
+      if (activeCardId) {
+        navigate(`/cards/${activeCardId}`);
+      } else {
+        navigate("/cards");
+      }
+    },
+  });
   const handleSave = async (mode: "new" | "update") => {
     if (!currentTemplateId) return;
     const templateId = currentTemplateId as TemplateId;
@@ -327,6 +345,7 @@ function IndexPageInner() {
     });
 
   useEffect(() => {
+    if (!isCardsRoute) return;
     if (draftTemplateId && draft) return;
     if (!selectedTemplateId) return;
     const currentTemplate = selectedTemplateId as TemplateId;
@@ -360,9 +379,11 @@ function IndexPageInner() {
     draftTemplateId,
     selectedTemplateId,
     navigate,
+    isCardsRoute,
   ]);
 
   useEffect(() => {
+    if (!isCardsRoute) return;
     if (!cardId) {
       lastLoadedRef.current = null;
       setRouteError(null);
@@ -403,6 +424,7 @@ function IndexPageInner() {
     activeCardIdByTemplate,
     loadCardIntoEditor,
     navigate,
+    isCardsRoute,
     selectedTemplateId,
     setSelectedTemplateId,
   ]);
@@ -592,7 +614,11 @@ function IndexPageInner() {
               <HeaderWithTemplatePicker />
               <main className={styles.main}>
                 <LeftNav />
-                {routeError ? (
+                {isAssetsRoute ? (
+                  <section className={styles.leftPanel}>
+                    <AssetsMainPanel />
+                  </section>
+                ) : routeError ? (
                   <section className={styles.routeErrorPanel}>
                     <div className={styles.routeErrorCard}>
                       <div className={styles.routeErrorTitle}>Card not found</div>
@@ -720,6 +746,7 @@ export default function IndexPage() {
                     <HashRouter>
                       <Routes>
                         <Route path="/cards/:cardId?" element={<IndexPageInner />} />
+                        <Route path="/assets" element={<IndexPageInner />} />
                         <Route path="*" element={<Navigate to="/cards" replace />} />
                       </Routes>
                     </HashRouter>
