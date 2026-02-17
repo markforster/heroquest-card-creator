@@ -297,6 +297,39 @@
   gap: 0.4rem;
 }
 
+.leftNavSpacer {
+  position: relative;
+  width: 100%;
+}
+
+.leftNavSpacerSmall {
+  height: 1em;
+}
+
+.leftNavSpacerMedium {
+  height: 2em;
+}
+
+.leftNavSpacerLarge {
+  height: 4em;
+}
+
+.leftNavSpacerLine::after {
+  content: "";
+  position: absolute;
+  left: 0.3rem;
+  right: 0.3rem;
+  top: 50%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-0.5px);
+}
+
+.leftNavCollapsed .leftNavSpacerLine::after {
+  left: 0.2rem;
+  right: 0.2rem;
+}
+
 .leftNavItem {
   border: 1px solid rgba(0, 0, 0, 0.6);
   background: rgba(255, 255, 255, 0.03);
@@ -3371,6 +3404,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 0.75rem;
+  padding: 2px;
 }
 
 .cardsItem {

@@ -6,6 +6,7 @@ import {
   Clock,
   CopyPlus,
   Images,
+  Layers,
   Settings,
   SquareStack,
 } from "lucide-react";
@@ -94,6 +95,27 @@ export default function LeftNav() {
     return null;
   }
 
+  const spacerClassMap = {
+    small: styles.leftNavSpacerSmall,
+    medium: styles.leftNavSpacerMedium,
+    large: styles.leftNavSpacerLarge,
+  } as const;
+
+  const LeftNavSpacer = ({
+    size = "small",
+    showLine = true,
+  }: {
+    size?: "small" | "medium" | "large";
+    showLine?: boolean;
+  }) => (
+    <div
+      className={`${styles.leftNavSpacer} ${spacerClassMap[size]} ${
+        showLine ? styles.leftNavSpacerLine : ""
+      }`}
+      aria-hidden="true"
+    />
+  );
+
   return (
     <nav
       className={`${styles.leftNav} ${isCollapsed ? styles.leftNavCollapsed : ""}`}
@@ -138,6 +160,7 @@ export default function LeftNav() {
                 />
               </KeyBinding>
             </KeyBinding>
+            <LeftNavSpacer size="medium" showLine={false} />
             <NavActionButton
               label={t("actions.recentCards")}
               icon={Clock}
@@ -158,6 +181,16 @@ export default function LeftNav() {
               ariaLabel={t("tooltip.openCards")}
               isActive={isStockpileOpen}
             />
+            {/* <LeftNavSpacer size="medium" showLine /> */}
+            <NavActionButton
+              label={t("actions.decks")}
+              icon={Layers}
+              onClick={() => {}}
+              title={t("actions.decks")}
+              ariaLabel={t("actions.decks")}
+              isActive={false}
+            />
+            <LeftNavSpacer size="small" showLine={false} />
             <NavActionButton
               label={t("actions.assets")}
               icon={Images}

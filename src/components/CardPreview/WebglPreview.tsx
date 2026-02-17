@@ -25,11 +25,11 @@ import {
   Vector3,
 } from "three";
 
-import blueprintFallback from "@/assets/blueprint.png";
 import { blueprintDataUrl } from "@/assets/blueprint-data";
+import blueprintFallback from "@/assets/blueprint.png";
 import { linen5DataUrl } from "@/assets/linen-5-data";
-import { spinnerBlueprintDataUrl } from "@/assets/spinner-blueprint-data";
 import linenNormal3 from "@/assets/linen-5.png";
+import { spinnerBlueprintDataUrl } from "@/assets/spinner-blueprint-data";
 import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
 import {
@@ -852,6 +852,18 @@ export default function WebglPreview({
 
   const handleDoubleClick = () => {
     if (rotationMode !== "spin") return;
+    const yaw = yawGroupRef.current?.rotation.y ?? 0;
+    const pitch = pitchGroupRef.current?.rotation.x ?? 0;
+    const normalizedYaw = normalizeAngle(yaw);
+    const normalizedPitch = normalizeAngle(pitch);
+    const epsilon = 0.02;
+    const isFrontFacing =
+      Math.abs(normalizedYaw) <= epsilon && Math.abs(normalizedPitch) <= epsilon;
+    if (isFrontFacing) {
+      targetRotationRef.current = { x: 0, y: Math.PI };
+      recenterBoostUntilRef.current = performance.now() + RECENTER_DURATION_MS;
+      return;
+    }
     requestRecenter();
   };
 
