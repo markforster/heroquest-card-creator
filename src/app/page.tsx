@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  HashRouter,
+  Navigate,
+  Route,
+  Routes,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 
 import { AssetHashIndexProvider } from "@/components/Assets/AssetHashIndexProvider";
 import { AppActionsProvider } from "@/components/AppActionsContext";
@@ -29,7 +37,7 @@ import { WebglPreviewSettingsProvider } from "@/components/WebglPreviewSettingsC
 import dungeonAtmosphere from "@/assets/dungeon atmostphere - 2.png";
 import { cardTemplatesById } from "@/data/card-templates";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
-import { createCard, listCards, updateCard } from "@/lib/cards-db";
+import { createCard, getCard, listCards, touchCardLastViewed, updateCard } from "@/lib/cards-db";
 import { createPair, deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
@@ -44,6 +52,8 @@ import styles from "./page.module.css";
 
 function IndexPageInner() {
   const { t, language } = useI18n();
+  const navigate = useNavigate();
+  const { cardId } = useParams();
   const {
     state: {
       selectedTemplateId,
@@ -100,6 +110,8 @@ function IndexPageInner() {
   const [exportProgress, setExportProgress] = useState(0);
   const [exportCancelled, setExportCancelled] = useState(false);
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
+  const [routeError, setRouteError] = useState<"not-found" | "load-failed" | null>(null);
+  const lastLoadedRef = useRef<string | null>(null);
   const handleSave = async (mode: "new" | "update") => {
     if (!currentTemplateId) return;
     const templateId = currentTemplateId as TemplateId;
@@ -333,9 +345,7 @@ function IndexPageInner() {
         sortByRecent(cards);
         const latest = cards[0];
         if (!latest) return;
-        setSelectedTemplateId(latest.templateId as TemplateId);
-        loadCardIntoEditor(latest.templateId as TemplateId, latest);
-        setTemplateDirty(latest.templateId as TemplateId, false);
+        navigate(`/cards/${latest.id}`, { replace: true });
       } catch {
         // Ignore failures; app can still run without auto-restore.
       }
@@ -348,10 +358,53 @@ function IndexPageInner() {
     activeCardIdByTemplate,
     draft,
     draftTemplateId,
+    selectedTemplateId,
+    navigate,
+  ]);
+
+  useEffect(() => {
+    if (!cardId) {
+      lastLoadedRef.current = null;
+      setRouteError(null);
+      return;
+    }
+    if (lastLoadedRef.current === cardId) return;
+    lastLoadedRef.current = cardId;
+    setRouteError(null);
+    const alreadyActive =
+      selectedTemplateId != null && activeCardIdByTemplate[selectedTemplateId] === cardId;
+    if (alreadyActive) return;
+
+    let active = true;
+    (async () => {
+      try {
+        const record = await getCard(cardId);
+        if (!active) return;
+        if (!record) {
+          setRouteError("not-found");
+          return;
+        }
+        const viewed = await touchCardLastViewed(record.id);
+        const nextRecord = viewed ?? record;
+        setSelectedTemplateId(nextRecord.templateId as TemplateId);
+        loadCardIntoEditor(nextRecord.templateId as TemplateId, nextRecord);
+      } catch {
+        if (active) {
+          setRouteError("load-failed");
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    cardId,
+    activeCardIdByTemplate,
     loadCardIntoEditor,
+    navigate,
     selectedTemplateId,
     setSelectedTemplateId,
-    setTemplateDirty,
   ]);
 
   useEffect(() => {
@@ -539,66 +592,88 @@ function IndexPageInner() {
               <HeaderWithTemplatePicker />
               <main className={styles.main}>
                 <LeftNav />
-                <section
-                  className={styles.leftPanel}
-                  // style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
-                >
-                  {/* <div className={styles.templateSidebar}>
-                    <TemplatesList
-                      selectedId={selectedTemplateId}
-                      onSelect={(id) => setSelectedTemplateId(id as TemplateId)}
-                      variant="sidebar"
-                    />
-                  </div> */}
-                  <div className={styles.previewContainer}>
-                    <ToolsToolbar />
-                    {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
-                  </div>
-                </section>
-                <aside className={styles.rightPanel}>
-                  <div className={styles.inspectorTop}>
-                    <TemplateChooser />
-                    <WelcomeTemplateModal
-                      isOpen={isWelcomeOpen}
-                      onSelect={(templateId) => {
-                        const nextDraft = createDefaultCardData(templateId);
-                        setSelectedTemplateId(templateId);
-                        setSingleDraft(templateId, nextDraft);
-                        setActiveCard(templateId, null, null);
-                        setTemplateDirty(templateId, false);
-                        setIsWelcomeOpen(false);
-                      }}
-                    />
-                  </div>
-                  <div className={styles.inspectorBody}>
-                    <PreviewCanvasProvider previewRef={previewRef}>
-                      <CardInspector />
-                    </PreviewCanvasProvider>
-                  </div>
-                  <EditorActionsToolbar
-                    canSaveChanges={canSaveChanges}
-                    canDuplicate={canDuplicate}
-                    savingMode={savingMode}
-                    onExportPng={exportCurrentFace}
-                    exportMenuItems={exportMenuItems.map((item) => ({
-                      ...item,
-                      onClick: () => {
-                        if (item.id === "export-both-faces") {
-                          void handleExportBothFaces();
-                        } else if (item.id === "export-back-active-front") {
-                          void handleExportBackActiveFront();
-                        } else if (item.id === "export-back-all-fronts") {
-                          void handleExportBackAllFronts();
-                        }
-                      },
-                    }))}
-                    onSaveChanges={() => {
-                      void saveCurrentCard();
-                    }}
-                    onDuplicate={() => duplicateCurrentCard(false)}
-                    onDuplicateWithPairing={() => duplicateCurrentCard(true)}
-                  />
-                </aside>
+                {routeError ? (
+                  <section className={styles.routeErrorPanel}>
+                    <div className={styles.routeErrorCard}>
+                      <div className={styles.routeErrorTitle}>Card not found</div>
+                      <div className={styles.routeErrorBody}>
+                        {routeError === "not-found"
+                          ? "The card you requested does not exist or was deleted."
+                          : "We couldn't load this card right now."}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={() => navigate("/cards", { replace: true })}
+                      >
+                        Back to cards
+                      </button>
+                    </div>
+                  </section>
+                ) : (
+                  <>
+                    <section
+                      className={styles.leftPanel}
+                      // style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
+                    >
+                      {/* <div className={styles.templateSidebar}>
+                        <TemplatesList
+                          selectedId={selectedTemplateId}
+                          onSelect={(id) => setSelectedTemplateId(id as TemplateId)}
+                          variant="sidebar"
+                        />
+                      </div> */}
+                      <div className={styles.previewContainer}>
+                        <ToolsToolbar />
+                        {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
+                      </div>
+                    </section>
+                    <aside className={styles.rightPanel}>
+                      <div className={styles.inspectorTop}>
+                        <TemplateChooser />
+                        <WelcomeTemplateModal
+                          isOpen={isWelcomeOpen}
+                          onSelect={(templateId) => {
+                            const nextDraft = createDefaultCardData(templateId);
+                            setSelectedTemplateId(templateId);
+                            setSingleDraft(templateId, nextDraft);
+                            setActiveCard(templateId, null, null);
+                            setTemplateDirty(templateId, false);
+                            setIsWelcomeOpen(false);
+                          }}
+                        />
+                      </div>
+                      <div className={styles.inspectorBody}>
+                        <PreviewCanvasProvider previewRef={previewRef}>
+                          <CardInspector />
+                        </PreviewCanvasProvider>
+                      </div>
+                      <EditorActionsToolbar
+                        canSaveChanges={canSaveChanges}
+                        canDuplicate={canDuplicate}
+                        savingMode={savingMode}
+                        onExportPng={exportCurrentFace}
+                        exportMenuItems={exportMenuItems.map((item) => ({
+                          ...item,
+                          onClick: () => {
+                            if (item.id === "export-both-faces") {
+                              void handleExportBothFaces();
+                            } else if (item.id === "export-back-active-front") {
+                              void handleExportBackActiveFront();
+                            } else if (item.id === "export-back-all-fronts") {
+                              void handleExportBackAllFronts();
+                            }
+                          },
+                        }))}
+                        onSaveChanges={() => {
+                          void saveCurrentCard();
+                        }}
+                        onDuplicate={() => duplicateCurrentCard(false)}
+                        onDuplicateWithPairing={() => duplicateCurrentCard(true)}
+                      />
+                    </aside>
+                  </>
+                )}
               </main>
             </AppActionsProvider>
           </EscapeStackProvider>
@@ -642,7 +717,12 @@ export default function IndexPage() {
               <PreviewRendererProvider>
                 <WebglPreviewSettingsProvider>
                   <TextFittingPreferencesProvider>
-                    <IndexPageInner />
+                    <HashRouter>
+                      <Routes>
+                        <Route path="/cards/:cardId?" element={<IndexPageInner />} />
+                        <Route path="*" element={<Navigate to="/cards" replace />} />
+                      </Routes>
+                    </HashRouter>
                   </TextFittingPreferencesProvider>
                 </WebglPreviewSettingsProvider>
               </PreviewRendererProvider>

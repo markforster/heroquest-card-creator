@@ -2,6 +2,7 @@
 
 import { ChevronDown, ChevronUp, Combine, Unlink2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
@@ -14,7 +15,7 @@ import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getCard, listCards, touchCardLastViewed } from "@/lib/cards-db";
+import { getCard, listCards } from "@/lib/cards-db";
 import { createPair, deletePair, deletePairsForFront, replacePairsForBack } from "@/lib/pairs-service";
 import { listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -34,6 +35,7 @@ export default function PairingInspectorPanel() {
   );
   const { requestRecenter } = usePreviewRenderer();
   const recenterTimeoutRef = useRef<number | null>(null);
+  const navigate = useNavigate();
   const { openStockpile } = useAppActions();
   const {
     state: {
@@ -45,12 +47,10 @@ export default function PairingInspectorPanel() {
       activeCardIdByTemplate,
       isDirtyByTemplate,
     },
-    setSelectedTemplateId,
     setCardDraft,
     setSingleDraft,
     setTemplateDirty,
     setDraftPairingBackIds,
-    loadCardIntoEditor,
   } = useCardEditor();
   const { saveCurrentCard, saveToken } = useEditorSave();
 
@@ -97,23 +97,14 @@ export default function PairingInspectorPanel() {
     });
 
   const openCard = async (cardId: string) => {
-    try {
-      const record = await getCard(cardId);
-      if (!record) return;
-      const viewed = await touchCardLastViewed(record.id);
-      const nextRecord = viewed ?? record;
-      setSelectedTemplateId(nextRecord.templateId as TemplateId);
-      loadCardIntoEditor(nextRecord.templateId as TemplateId, nextRecord);
-      if (ENABLE_WEBGL_RECENTER_ON_FACE_SELECT) {
-        if (recenterTimeoutRef.current) {
-          window.clearTimeout(recenterTimeoutRef.current);
-        }
-        recenterTimeoutRef.current = window.setTimeout(() => {
-          requestRecenter();
-        }, 90);
+    navigate(`/cards/${cardId}`);
+    if (ENABLE_WEBGL_RECENTER_ON_FACE_SELECT) {
+      if (recenterTimeoutRef.current) {
+        window.clearTimeout(recenterTimeoutRef.current);
       }
-    } catch {
-      // Ignore load errors for now.
+      recenterTimeoutRef.current = window.setTimeout(() => {
+        requestRecenter();
+      }, 90);
     }
   };
 

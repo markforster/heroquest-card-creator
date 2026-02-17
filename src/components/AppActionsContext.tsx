@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import AssetsModal from "@/components/Assets/AssetsModal";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
@@ -13,7 +14,7 @@ import { cardTemplatesById } from "@/data/card-templates";
 import { usePopupState } from "@/hooks/usePopupState";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getCard, touchCardLastViewed } from "@/lib/cards-db";
+import { getCard } from "@/lib/cards-db";
 import { createDefaultCardData } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -55,6 +56,7 @@ type AppActionsProviderProps = {
 
 export function AppActionsProvider({ children }: AppActionsProviderProps) {
   const { t, language } = useI18n();
+  const navigate = useNavigate();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate, isDirtyByTemplate },
     setSelectedTemplateId,
@@ -93,18 +95,8 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
 
   const handleLoadCard = async (card: Awaited<ReturnType<typeof getCard>> | null) => {
     if (!card) return;
-    try {
-      const fresh = await getCard(card.id);
-      const record = fresh ?? card;
-      const viewed = await touchCardLastViewed(record.id);
-      const nextRecord = viewed ?? record;
-      setSelectedTemplateId(nextRecord.templateId as TemplateId);
-      loadCardIntoEditor(nextRecord.templateId as TemplateId, nextRecord);
-      setStockpileRefreshToken((prev) => prev + 1);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("[AppActionsProvider] Failed to load card", error);
-    }
+    navigate(`/cards/${card.id}`);
+    setStockpileRefreshToken((prev) => prev + 1);
   };
 
   const contextValue = useMemo(
