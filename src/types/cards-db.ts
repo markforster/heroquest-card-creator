@@ -49,6 +49,10 @@ export interface CardRecord {
   monsterMindPoints?: StatValue;
   monsterIconAssetId?: string;
   monsterIconAssetName?: string;
+  monsterIconOffsetX?: number;
+  monsterIconOffsetY?: number;
+  monsterIconScale?: number;
+  monsterIconRotation?: number;
 
   thumbnailBlob?: Blob | null;
 }

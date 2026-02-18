@@ -782,9 +782,11 @@ type GroupItem = {
 function buildGroupItems({
   group,
   cardData,
+  blueprint,
 }: {
   group: BlueprintGroup;
   cardData?: CardDataByTemplate[TemplateId];
+  blueprint: Blueprint;
 }): GroupItem[] {
   const items: GroupItem[] = [];
 
@@ -900,7 +902,37 @@ function buildGroupItems({
       const size = typeof child.props?.size === "number" ? child.props.size : 140;
       const offsetX = typeof child.props?.offsetX === "number" ? child.props.offsetX : 0;
       const offsetY = typeof child.props?.offsetY === "number" ? child.props.offsetY : 0;
-      const x = group.origin.x + offsetX;
+      const baseX = group.origin.x + offsetX;
+      const normalizedOffsetX =
+        typeof (cardData as Record<string, unknown>)?.iconOffsetX === "number"
+          ? Number((cardData as Record<string, unknown>).iconOffsetX)
+          : 0;
+      const normalizedOffsetY =
+        typeof (cardData as Record<string, unknown>)?.iconOffsetY === "number"
+          ? Number((cardData as Record<string, unknown>).iconOffsetY)
+          : 0;
+      const iconScale =
+        typeof (cardData as Record<string, unknown>)?.iconScale === "number"
+          ? Number((cardData as Record<string, unknown>).iconScale)
+          : 1;
+      const iconRotation =
+        typeof (cardData as Record<string, unknown>)?.iconRotation === "number"
+          ? Number((cardData as Record<string, unknown>).iconRotation)
+          : 0;
+
+      const canvasWidth = blueprint.canvas?.width ?? DEFAULT_CANVAS.width;
+      const rightInset = baseX;
+      const rightEdgeTarget = canvasWidth - rightInset;
+      const titleLayer = blueprint.layers?.find((layer) => layer.id === "title");
+      const ribbonY = typeof titleLayer?.props?.ribbonY === "number" ? titleLayer.props.ribbonY : 0;
+      const ribbonHeight =
+        typeof titleLayer?.props?.ribbonHeight === "number" ? titleLayer.props.ribbonHeight : 0;
+      const ribbonBottom = ribbonY + ribbonHeight;
+      const verticalTarget = ribbonBottom + 8;
+
+      const maxRight = Math.max(0, rightEdgeTarget - size - baseX);
+      const deltaX = normalizedOffsetX * maxRight;
+      const x = baseX + deltaX;
 
       items.push({
         id: child.id,
@@ -910,8 +942,15 @@ function buildGroupItems({
             key={child.id}
             assetId={iconId}
             x={x}
-            y={topY + offsetY}
+            y={(() => {
+              const baseTop = topY + offsetY;
+              const maxUp = Math.max(0, baseTop - verticalTarget);
+              const deltaY = -normalizedOffsetY * maxUp;
+              return baseTop + deltaY;
+            })()}
             size={size}
+            scale={iconScale}
+            rotation={iconRotation}
           />
         ),
       });
@@ -926,14 +965,25 @@ function GroupIconLayer({
   x,
   y,
   size,
+  scale,
+  rotation,
 }: {
   assetId: string;
   x: number;
   y: number;
   size: number;
+  scale: number;
+  rotation: number;
 }) {
   const imageUrl = useAssetImageUrl(assetId);
   if (!imageUrl) return null;
+
+  const cx = x + size / 2;
+  const cy = y + size / 2;
+  const transform =
+    scale !== 1 || rotation !== 0
+      ? `translate(${cx} ${cy}) rotate(${rotation}) scale(${scale}) translate(${-cx} ${-cy})`
+      : undefined;
 
   return (
     <Layer>
@@ -945,6 +995,7 @@ function GroupIconLayer({
         width={size}
         height={size}
         preserveAspectRatio="xMidYMid meet"
+        transform={transform}
       />
     </Layer>
   );
@@ -964,7 +1015,7 @@ function renderGroups({
       return null;
     }
 
-    const items = buildGroupItems({ group, cardData });
+    const items = buildGroupItems({ group, cardData, blueprint });
     let cursor = group.origin.y;
 
     return items.map((item) => {

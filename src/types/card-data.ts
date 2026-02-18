@@ -37,6 +37,10 @@ export interface MonsterCardData extends BaseCardFields {
   mindPoints?: StatValue;
   iconAssetId?: string;
   iconAssetName?: string;
+  iconOffsetX?: number;
+  iconOffsetY?: number;
+  iconScale?: number;
+  iconRotation?: number;
 }
 
 export interface SmallTreasureCardData extends BaseCardFields {}

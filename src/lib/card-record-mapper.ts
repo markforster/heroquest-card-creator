@@ -47,6 +47,10 @@ export function cardRecordToCardData<T extends TemplateId>(
         mindPoints: record.monsterMindPoints,
         iconAssetId: record.monsterIconAssetId,
         iconAssetName: record.monsterIconAssetName,
+        iconOffsetX: record.monsterIconOffsetX,
+        iconOffsetY: record.monsterIconOffsetY,
+        iconScale: record.monsterIconScale,
+        iconRotation: record.monsterIconRotation,
       };
       return data as CardDataByTemplate[T];
     }
@@ -131,6 +135,10 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
         monsterMindPoints: normalizeStatValueForSave(monster.mindPoints),
         monsterIconAssetId: monster.iconAssetId,
         monsterIconAssetName: monster.iconAssetName,
+        monsterIconOffsetX: monster.iconOffsetX,
+        monsterIconOffsetY: monster.iconOffsetY,
+        monsterIconScale: monster.iconScale,
+        monsterIconRotation: monster.iconRotation,
       };
     }
     case "large-treasure":
