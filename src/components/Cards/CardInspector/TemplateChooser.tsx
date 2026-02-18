@@ -242,7 +242,7 @@ export default function TemplateChooser() {
           </div>
         </div>
         <div className={styles.inspectorHeaderContent}>
-          <div className={styles.inspectorHeaderRow}>
+          <div className={`${styles.inspectorHeaderRow} ${styles.uRowMd}`}>
             <div className={styles.inspectorSectionTitle}>
               {t("actions.template")} -{" "}
               {template ? getTemplateNameLabel(language, template) : t("ui.loading")}

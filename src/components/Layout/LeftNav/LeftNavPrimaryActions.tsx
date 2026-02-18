@@ -40,7 +40,7 @@ export default function LeftNavPrimaryActions() {
           <>
             <button
               type="button"
-              className={`${styles.leftNavItem} ${styles.leftNavCurrentCard}`}
+              className={`${styles.leftNavItem} ${styles.uRowMd} ${styles.leftNavCurrentCard}`}
               onClick={() => navigate(`/cards/${activeCardId}`)}
               title={currentCardName ?? t("actions.cards")}
               aria-label={currentCardName ?? t("actions.cards")}

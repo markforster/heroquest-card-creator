@@ -15,7 +15,7 @@ export default function DebugSettingsPanel() {
         Debug is enabled while we work through version 0.5.x and will be turned off in a future
         release.
       </WarningNotice>
-      <div className={styles.settingsPanelSection}>
+      <div className={`${styles.settingsPanelSection} ${styles.uStackSm}`}>
         <div className={styles.settingsPanelSectionTitle}>{t("label.debugVisuals")}</div>
         <label className={styles.settingsPanelToggle}>
           <input

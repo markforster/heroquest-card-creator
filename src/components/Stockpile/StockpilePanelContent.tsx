@@ -586,9 +586,9 @@ export default function StockpilePanelContent({
     <>
       <div className={styles.stockpilePanel}>
         <div className={styles.stockpilePanelBody}>
-          <div className={styles.assetsToolbar}>
-            <div className={styles.cardsFiltersRow}>
-              <div className={styles.cardsFiltersLeft}>
+          <div className={`${styles.assetsToolbar} ${styles.uRowMd}`}>
+            <div className={`${styles.cardsFiltersRow} ${styles.uRowLg}`}>
+              <div className={`${styles.cardsFiltersLeft} ${styles.uRowLg}`}>
                 <div className="input-group input-group-sm" style={{ width: "18em" }}>
                   <span className="input-group-text">
                     <Search className={styles.icon} aria-hidden="true" />
@@ -730,9 +730,9 @@ export default function StockpilePanelContent({
                 </div>
               </div>
               <div className={styles.cardsFiltersSpacer} />
-              <div className={styles.cardsFiltersRight}>
+              <div className={`${styles.cardsFiltersRight} ${styles.uRowLg}`}>
                 {isPairMode ? (
-                  <div className={`${styles.assetsActions} ms-3 gap-2`}>
+                  <div className={`${styles.assetsActions} ${styles.uRowMd} ms-3 gap-2`}>
                     <span className={styles.cardsSelectionLabel}>{t("status.selectedCards")}</span>
                     <span className="badge rounded-pill bg-warning text-dark fs-6 px-2 py-1">
                       {selectedIds.length}
@@ -743,7 +743,7 @@ export default function StockpilePanelContent({
             </div>
           </div>
           <div className={styles.stockpileLayout}>
-            <aside className={styles.stockpileSidebar} aria-label={t("heading.collections")}>
+            <aside className={`${styles.stockpileSidebar} ${styles.uStackSm}`} aria-label={t("heading.collections")}>
               <div className={styles.stockpileSidebarHeader}>{t("heading.collections")}</div>
               <div className={styles.stockpileSidebarList}>
                 <button
@@ -864,7 +864,7 @@ export default function StockpilePanelContent({
                       </span>
                     </label>
                   )}
-                  <div className={`${styles.assetsActions} ms-auto gap-2`}>
+                  <div className={`${styles.assetsActions} ${styles.uRowMd} ms-auto gap-2`}>
                     {collections.filter(
                       (collection) =>
                         activeFilter.type !== "collection" || collection.id !== activeFilter.id,
@@ -1355,7 +1355,7 @@ export default function StockpilePanelContent({
                 </button>
               </div>
             ) : (
-              <div className={`d-flex w-100 align-items-center ${styles.stockpileFooter}`}>
+              <div className={`d-flex w-100 align-items-center ${styles.stockpileFooter} ${styles.uRowLg}`}>
                 <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">
                   <button
                     type="button"
@@ -1719,7 +1719,7 @@ export default function StockpilePanelContent({
                         .join("|")}`}
                       className={styles.exportPairRow}
                     >
-                      <div className={styles.exportPairStack}>
+                      <div className={`${styles.exportPairStack} ${styles.uRowSm}`}>
                         {row.left.slice(0, visibleCount).map((leftCard, index) => {
                           const leftThumbUrl =
                             typeof window !== "undefined" && leftCard.thumbnailBlob
@@ -1819,7 +1819,7 @@ export default function StockpilePanelContent({
                       <div className={styles.exportPairIcon} aria-hidden="true">
                         <Combine size={18} />
                       </div>
-                      <div className={styles.exportPairStack}>
+                      <div className={`${styles.exportPairStack} ${styles.uRowSm}`}>
                         {row.right.slice(0, visibleCount).map((pairedCard, index) => {
                           const pairedThumbUrl =
                             typeof window !== "undefined" && pairedCard.thumbnailBlob

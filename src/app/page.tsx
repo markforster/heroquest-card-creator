@@ -639,7 +639,7 @@ function IndexPageInner() {
                 ) : null}
                 {isCardDetailRoute && routeError ? (
                   <section className={styles.routeErrorPanel}>
-                    <div className={styles.routeErrorCard}>
+                    <div className={`${styles.routeErrorCard} ${styles.uStackLg}`}>
                       <div className={styles.routeErrorTitle}>Card not found</div>
                       <div className={styles.routeErrorBody}>
                         {routeError === "not-found"

@@ -313,7 +313,7 @@ export default function PairingInspectorPanel() {
                     })
                 : t("cardFace.unpaired")}
             </div>
-            <div className={styles.inspectorPairActions}>
+            <div className={`${styles.inspectorPairActions} ${styles.uRowSm}`}>
               <button
                 type="button"
                 className={`${styles.inspectorPairActionButton} ${
@@ -430,7 +430,7 @@ export default function PairingInspectorPanel() {
             >
               <Combine size={18} aria-hidden="true" />
             </button>
-            <div className={styles.inspectorPairActions} />
+            <div className={`${styles.inspectorPairActions} ${styles.uRowSm}`} />
           </>
         ) : null}
       </div>
@@ -511,8 +511,8 @@ export default function PairingInspectorPanel() {
                   key={backCard.id}
                   id={`pairing-group-${backCard.id}`}
                   className={styles.pairingPanelGroup}
-                  headerClassName={styles.pairingPanelGroupHeader}
-                  headerButtonClassName={styles.pairingPanelGroupHeaderButton}
+                  headerClassName={`${styles.pairingPanelGroupHeader} ${styles.uRowLg}`}
+                  headerButtonClassName={`${styles.pairingPanelGroupHeaderButton} ${styles.uRowLg}`}
                   bodyClassName={styles.pairingPanelGroupBody}
                   defaultOpen={false}
                   headerContent={

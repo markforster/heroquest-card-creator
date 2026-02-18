@@ -16,7 +16,7 @@ export default function LeftNavCollapseToggle({
   onToggle,
 }: LeftNavCollapseToggleProps) {
   return (
-    <div className={styles.leftNavTop}>
+    <div className={`${styles.leftNavTop} ${styles.uRowMd}`}>
       <button
         className={styles.leftNavToggle}
         type="button"

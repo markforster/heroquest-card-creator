@@ -543,7 +543,7 @@ export default function AssetsPanelContent({
 
   return (
     <div className={styles.assetsPanel}>
-      <div className={styles.assetsToolbar}>
+      <div className={`${styles.assetsToolbar} ${styles.uRowMd}`}>
         <div className="input-group input-group-sm" style={{ maxWidth: 260 }}>
           <span className="input-group-text">
             <Search className={styles.icon} aria-hidden="true" />
@@ -558,7 +558,7 @@ export default function AssetsPanelContent({
           />
         </div>
         <div className={styles.assetsToolbarSpacer} />
-        <div className={styles.assetsActions}>
+        <div className={`${styles.assetsActions} ${styles.uRowMd}`}>
           <IconButton
             className="btn btn-primary btn-sm"
             icon={Upload}
@@ -714,7 +714,7 @@ export default function AssetsPanelContent({
                     {uploadNotice.duplicates.length === 1 ? t("label.file") : t("label.files")}{" "}
                     {t("status.filesWereSkipped")}
                   </div>
-                  <div className={styles.assetsReportList}>
+                  <div className={`${styles.assetsReportList} ${styles.uStackSm}`}>
                     {uploadNotice.duplicates.map((item) => (
                       <div
                         key={`${item.fileIndex}-${item.file.name}`}
@@ -738,7 +738,7 @@ export default function AssetsPanelContent({
                     {uploadNotice.renames.length === 1 ? t("label.file") : t("label.files")}{" "}
                     {t("status.filesWereRenamed")}
                   </div>
-                  <div className={styles.assetsReportList}>
+                  <div className={`${styles.assetsReportList} ${styles.uStackSm}`}>
                     {uploadNotice.renames.map((item) => (
                       <div
                         key={`${item.original}-${item.renamed}`}

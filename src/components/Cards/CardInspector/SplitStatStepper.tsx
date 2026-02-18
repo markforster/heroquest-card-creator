@@ -314,7 +314,7 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
 
   return (
     <div className={layoutStyles.statCell}>
-      <div className={layoutStyles.statControlRow}>
+      <div className={`${layoutStyles.statControlRow} ${layoutStyles.uRowSm}`}>
         <div className={layoutStyles.statSubLabel}>{label}</div>
         <div className={layoutStyles.statSplitFields}>
           {renderStatField(primaryValue, "primary")}

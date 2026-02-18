@@ -11,7 +11,7 @@ export default function HeaderBrand() {
   const { t } = useI18n();
 
   return (
-    <div className={styles.headerTitleRow}>
+    <div className={`${styles.headerTitleRow} ${styles.uRowSm}`}>
       <Image
         src={APP_LOGO_SRC}
         alt={t("app.title")}

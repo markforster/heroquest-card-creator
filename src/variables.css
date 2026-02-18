@@ -34,6 +34,69 @@
   --hq-font-form: "Calibri Light", "Calibri", system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
 
+  /* Consolidation tokens: colors */
+  --hq-black: #000;
+  --hq-white: #ffffff;
+  --hq-gray-200: #e5e7eb;
+  --hq-gray-300: #d1d5db;
+  --hq-surface-900: #111111;
+  --hq-surface-850: #151515;
+  --hq-surface-800: #1a1a1a;
+  --hq-surface-750: #1e1b16;
+  --hq-surface-700: #2b2b2b;
+  --hq-border-strong: #333333;
+  --hq-border-mid: #444444;
+  --hq-white-05: rgba(255, 255, 255, 0.05);
+  --hq-white-06: rgba(255, 255, 255, 0.06);
+  --hq-white-08: rgba(255, 255, 255, 0.08);
+  --hq-white-12: rgba(255, 255, 255, 0.12);
+  --hq-white-15: rgba(255, 255, 255, 0.15);
+  --hq-black-35: rgba(0, 0, 0, 0.35);
+  --hq-black-45: rgba(0, 0, 0, 0.45);
+  --hq-black-60: rgba(0, 0, 0, 0.6);
+
+  /* Consolidation tokens: spacing */
+  --space-1: 0.2rem;
+  --space-2: 0.25rem;
+  --space-3: 0.35rem;
+  --space-4: 0.4rem;
+  --space-5: 0.45rem;
+  --space-6: 0.5rem;
+  --space-7: 0.6rem;
+  --space-8: 0.65rem;
+  --space-9: 0.7rem;
+  --space-10: 0.75rem;
+  --space-11: 0.8rem;
+  --space-12: 0.85rem;
+  --space-13: 0.9rem;
+  --space-14: 1rem;
+  --space-15: 1.5rem;
+  --space-16: 2rem;
+
+  /* Consolidation tokens: typography */
+  --text-2xs: 0.6rem;
+  --text-xs: 0.7rem;
+  --text-sm: 0.75rem;
+  --text-md: 0.8rem;
+  --text-lg: 0.85rem;
+  --text-xl: 0.9rem;
+  --text-2xl: 0.95rem;
+  --text-3xl: 1rem;
+  --text-4xl: 1.05rem;
+  --text-5xl: 1.15rem;
+
+  /* Consolidation tokens: radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-pill: 999px;
+
+  /* Consolidation tokens: shadows */
+  --shadow-soft: 0 6px 16px rgba(0, 0, 0, 0.35);
+  --shadow-popover: 0 12px 28px rgba(0, 0, 0, 0.45);
+  --shadow-float: 0 8px 20px rgba(0, 0, 0, 0.4);
+
   /* Fallback / legacy variable */
   --main-bg-color: #ffffffdd;
 }

@@ -16,7 +16,7 @@ export default function MainFooter() {
 
   return (
     <>
-      <footer className={styles.footer}>
+      <footer className={`${styles.footer} ${styles.uRowMd}`}>
         <div className="d-flex align-items-center w-100">
           <div className={styles.footerLeft}>
             <button

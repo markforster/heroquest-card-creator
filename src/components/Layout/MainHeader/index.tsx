@@ -37,7 +37,7 @@ export default function MainHeader() {
       <div className={styles.headerLeft}>
         <HeaderBrand />
       </div>
-      <div className={styles.headerRight}>
+      <div className={`${styles.headerRight} ${styles.uRowMd}`}>
         <HeaderMenu
           isMenuOpen={isMenuOpen}
           isBusy={isBusy}

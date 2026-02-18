@@ -108,7 +108,7 @@ export default function StatStepper<TFormValues extends FieldValues>({
 
   return (
     <div className={layoutStyles.statCell}>
-      <div className={layoutStyles.statControlRow}>
+      <div className={`${layoutStyles.statControlRow} ${layoutStyles.uRowSm}`}>
         <div className={layoutStyles.statSubLabel}>{label}</div>
         <div className={layoutStyles.statField}>
           <input

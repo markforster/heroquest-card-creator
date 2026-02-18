@@ -247,7 +247,7 @@ function AssetsInspector({
           />
         </div>
         {showCarousel ? (
-          <div className={styles.assetsInspectorCarousel}>
+          <div className={`${styles.assetsInspectorCarousel} ${styles.uRowLg}`}>
             <button
               type="button"
               className={styles.assetsInspectorCarouselButton}
@@ -290,15 +290,15 @@ function AssetsInspector({
           {asset.name}
         </div>
         <dl className={styles.assetsInspectorDetails}>
-          <div>
+          <div className={styles.uRowLg}>
             <dt>{t("label.fileType")}</dt>
             <dd>{asset.mimeType}</dd>
           </div>
-          <div>
+          <div className={styles.uRowLg}>
             <dt>{t("label.dimensions")}</dt>
             <dd>{dimensionsLabel}</dd>
           </div>
-          <div>
+          <div className={styles.uRowLg}>
             <dt>{t("label.dateAdded")}</dt>
             <dd>{formatAssetDate(asset.createdAt)}</dd>
           </div>
@@ -343,7 +343,7 @@ function AssetsInspector({
           </>
         }
       >
-        <div className={styles.assetsInspectorReplaceBody}>
+        <div className={`${styles.assetsInspectorReplaceBody} ${styles.uStackLg}`}>
           {pendingMismatch ? (
             <div className={styles.assetsInspectorReplaceWarning}>
               {t("confirm.replaceDifferentDimensionsBody")

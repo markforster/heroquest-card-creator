@@ -63,7 +63,7 @@ function SettingsModalContent({
                   isActive={isActive}
                   ariaLabel={t(area.labelKey)}
                   title={t(area.labelKey)}
-                  className={styles.settingsAreaButton}
+                  className={`${styles.settingsAreaButton} ${styles.uRowMd}`}
                 />
               );
             })}

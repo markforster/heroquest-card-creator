@@ -32,7 +32,7 @@ export default function NavActionButton({
   className,
 }: NavActionButtonProps) {
   const computedAriaLabel = ariaLabel ?? (typeof label === "string" ? label : undefined);
-  const baseClassName = `${styles.leftNavItem}${className ? ` ${className}` : ""}`;
+  const baseClassName = `${styles.leftNavItem} ${styles.uRowMd}${className ? ` ${className}` : ""}`;
 
   if (to) {
     return (

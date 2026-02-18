@@ -16,6 +16,7 @@ import ImageField from "./ImageField";
 import MonsterIconField from "./MonsterIconField";
 import MonsterStatsInspector from "./MonsterStatsInspector";
 import TitleField from "./TitleField";
+import styles from "@/app/page.module.css";
 
 type GenericInspectorFormProps = {
   templateId: TemplateId;
@@ -96,7 +97,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
 
   return (
     <FormProvider {...methods}>
-      <form>
+      <form className={styles.uStackLg}>
         {fields.map((field, index) => {
           if (field.fieldType === "title") {
             return (

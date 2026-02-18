@@ -24,7 +24,7 @@ export default function ModalHeader({
   }
 
   return (
-    <div className={`${styles.templatePopoverHeader} modal-header`}>
+    <div className={`${styles.templatePopoverHeader} ${styles.uRowMd} modal-header`}>
       <h2 className={styles.templatePopoverTitle}>{title}</h2>
       <div className={styles.modalHeaderActions}>
         {headerActions}

@@ -78,7 +78,7 @@ export default function UploadProgressOverlay({
             </div>
           ) : null}
           {isComplete ? (
-            <div className={styles.assetsReportList}>
+            <div className={`${styles.assetsReportList} ${styles.uStackSm}`}>
               {summaryRows.map((row) => (
                 <div key={row.label} className={styles.assetsReportItem}>
                   <div className={styles.assetsReportName}>{row.label}</div>
@@ -102,7 +102,7 @@ export default function UploadProgressOverlay({
                   {t("status.filesWillBeRenamed")}
                 </div>
               ) : null}
-              <div className={styles.assetsReportList}>
+              <div className={`${styles.assetsReportList} ${styles.uStackSm}`}>
                 {review.duplicates.length > 0 ? (
                   <>
                     {review.duplicates.map((item) => (
