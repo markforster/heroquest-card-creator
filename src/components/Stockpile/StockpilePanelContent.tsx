@@ -589,14 +589,14 @@ export default function StockpilePanelContent({
           <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
             <div className={`${styles.cardsFiltersRow} ${styles.uRowLg}`}>
               <div className={`${styles.cardsFiltersLeft} ${styles.uRowLg}`}>
-                <div className="input-group input-group-sm" style={{ width: "18em" }}>
+                <div className="input-group input-group-sm" style={{ width: "17.25em" }}>
                   <span className="input-group-text">
                     <Search className={styles.icon} aria-hidden="true" />
                   </span>
                   <input
                     type="search"
                     placeholder={t("placeholders.searchCards")}
-                    className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch}`}
+                    className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch} ${styles.cardsSearchInputFixed}`}
                     title={t("tooltip.searchCards")}
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
@@ -743,7 +743,10 @@ export default function StockpilePanelContent({
             </div>
           </div>
           <div className={styles.stockpileLayout}>
-            <aside className={`${styles.stockpileSidebar} d-flex flex-column gap-2`} aria-label={t("heading.collections")}>
+            <aside
+              className={`${styles.stockpileSidebar} d-flex flex-column gap-2`}
+              aria-label={t("heading.collections")}
+            >
               <div className={styles.stockpileSidebarHeader}>{t("heading.collections")}</div>
               <div className={styles.stockpileSidebarList}>
                 <button
@@ -864,7 +867,9 @@ export default function StockpilePanelContent({
                       </span>
                     </label>
                   )}
-                  <div className={`${styles.assetsActions} d-flex align-items-center gap-2 ms-auto`}>
+                  <div
+                    className={`${styles.assetsActions} d-flex align-items-center gap-2 ms-auto`}
+                  >
                     {collections.filter(
                       (collection) =>
                         activeFilter.type !== "collection" || collection.id !== activeFilter.id,
@@ -1355,7 +1360,9 @@ export default function StockpilePanelContent({
                 </button>
               </div>
             ) : (
-              <div className={`d-flex w-100 align-items-center ${styles.stockpileFooter} ${styles.uRowLg}`}>
+              <div
+                className={`d-flex w-100 align-items-center ${styles.stockpileFooter} ${styles.uRowLg}`}
+              >
                 <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">
                   <button
                     type="button"

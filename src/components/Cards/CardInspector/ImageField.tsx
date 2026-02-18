@@ -8,24 +8,36 @@ import {
   Crosshair,
   ImagePlus,
   RotateCcw,
+  SlidersHorizontal,
   XCircle,
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
 import { AssetsModal } from "@/components/Assets";
 import IconButton from "@/components/common/IconButton";
+import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getAllAssets } from "@/lib/assets-db";
 import type { AssetRecord } from "@/lib/assets-db";
 
 type ImageFieldProps = {
   label: string;
   boundsWidth?: number;
   boundsHeight?: number;
+};
+
+type LastClearedImage = {
+  id: string;
+  name?: string;
+  width?: number;
+  height?: number;
 };
 
 export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFieldProps) {
@@ -57,16 +69,12 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const imageRotation = imageRotationWatch ?? 0;
   const imageOriginalWidth = imageOriginalWidthWatch;
   const imageOriginalHeight = imageOriginalHeightWatch;
-  const [showAdjustments, setShowAdjustments] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return window.localStorage.getItem("hqcc.imageAdjustmentsOpen") === "1";
-    } catch {
-      return false;
-    }
-  });
-  const accordionId = useId();
-  const accordionBodyId = `${accordionId}-body`;
+  const [isAdjustmentsOpen, setIsAdjustmentsOpen] = useState(false);
+  const adjustmentsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const adjustmentsPopoverRef = useRef<HTMLDivElement | null>(null);
+  const [adjustmentsStyle, setAdjustmentsStyle] = useState<CSSProperties | null>(null);
+  const [isClient, setIsClient] = useState(false);
+  const [lastCleared, setLastCleared] = useState<LastClearedImage | null>(null);
 
   const maxOffsetX = boundsWidth ? Math.round(boundsWidth) : 300;
   const maxOffsetY = boundsHeight ? Math.round(boundsHeight) : 300;
@@ -99,7 +107,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     return 1;
   };
 
-  const handleSelect = (asset: AssetRecord) => {
+  const applyAssetSelection = (asset: AssetRecord) => {
     setValue("imageAssetId", asset.id, { shouldDirty: true, shouldTouch: true });
     setValue("imageAssetName", asset.name, { shouldDirty: true, shouldTouch: true });
     setValue("imageRotation", 0, { shouldDirty: true, shouldTouch: true });
@@ -123,20 +131,108 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     }
   };
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem("hqcc.imageAdjustmentsOpen", showAdjustments ? "1" : "0");
-    } catch {
-      // Ignore localStorage errors.
+  const handleSelect = (asset: AssetRecord) => {
+    applyAssetSelection(asset);
+    setLastCleared(null);
+  };
+
+  const handleRestoreLastCleared = async () => {
+    if (!lastCleared) return;
+
+    let width = lastCleared.width;
+    let height = lastCleared.height;
+    let name = lastCleared.name;
+
+    if (!width || !height) {
+      try {
+        const assets = await getAllAssets();
+        const match = assets.find((asset) => asset.id === lastCleared.id);
+        if (match) {
+          width = match.width;
+          height = match.height;
+          name = match.name;
+        }
+      } catch {
+        // ignore lookup errors; fall back to partial restore
+      }
     }
-  }, [showAdjustments]);
+
+    if (width && height) {
+      applyAssetSelection({
+        id: lastCleared.id,
+        name: name ?? lastCleared.id,
+        width,
+        height,
+        mimeType: "image/unknown",
+        createdAt: Date.now(),
+      });
+    } else {
+      setValue("imageAssetId", lastCleared.id, { shouldDirty: true, shouldTouch: true });
+      if (name) {
+        setValue("imageAssetName", name, { shouldDirty: true, shouldTouch: true });
+      }
+    }
+
+    setLastCleared(null);
+  };
 
   useEffect(() => {
     if (!imageAssetId) {
-      setShowAdjustments(false);
+      setIsAdjustmentsOpen(false);
     }
   }, [imageAssetId]);
+
+  useOutsideClick(
+    [adjustmentsPopoverRef, adjustmentsButtonRef],
+    () => setIsAdjustmentsOpen(false),
+    isAdjustmentsOpen,
+  );
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const positionPopover = () => {
+    const anchor = adjustmentsButtonRef.current;
+    const popover = adjustmentsPopoverRef.current;
+    if (!anchor || !popover) return;
+
+    const anchorRect = anchor.getBoundingClientRect();
+    const padding = 12;
+    const offset = 8;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    const spaceLeft = anchorRect.left - padding - offset;
+    const clampedWidth = Math.max(240, Math.min(520, spaceLeft));
+    popover.style.width = `${clampedWidth}px`;
+
+    const { width, height } = popover.getBoundingClientRect();
+
+    const left = Math.max(anchorRect.left - width - offset, padding);
+    const anchorCenterY = anchorRect.top + anchorRect.height / 2;
+    let top = anchorCenterY;
+    top = Math.min(Math.max(top, padding + height / 2), viewportHeight - padding - height / 2);
+
+    setAdjustmentsStyle({ left, top });
+  };
+
+  useLayoutEffect(() => {
+    if (!isAdjustmentsOpen) return;
+    if (typeof window === "undefined") return;
+
+    const updatePosition = () => {
+      positionPopover();
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isAdjustmentsOpen]);
 
   return (
     <div className="mb-2">
@@ -165,12 +261,41 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
         >
           {t("actions.chooseImage")}
         </IconButton>
+        <IconButton
+          className="btn btn-outline-secondary btn-sm"
+          icon={SlidersHorizontal}
+          title={t("form.imageAdjustments")}
+          disabled={!imageAssetId}
+          buttonRef={adjustmentsButtonRef}
+          iconOnly
+          onClick={() => {
+            setIsAdjustmentsOpen((prev) => {
+              const next = !prev;
+              if (next) {
+                requestAnimationFrame(() => {
+                  positionPopover();
+                });
+              }
+              return next;
+            });
+          }}
+        >
+          <span className="visually-hidden">{t("form.imageAdjustments")}</span>
+        </IconButton>
         {imageAssetId ? (
           <IconButton
             className="btn btn-outline-secondary btn-sm"
             icon={XCircle}
             title={t("tooltip.clearSelectedImage")}
             onClick={() => {
+              if (imageAssetId) {
+                setLastCleared({
+                  id: imageAssetId,
+                  name: imageAssetName,
+                  width: imageOriginalWidth,
+                  height: imageOriginalHeight,
+                });
+              }
               setValue("imageAssetId", undefined, { shouldDirty: true, shouldTouch: true });
               setValue("imageAssetName", undefined, { shouldDirty: true, shouldTouch: true });
               setValue("imageScale", undefined, { shouldDirty: true, shouldTouch: true });
@@ -183,6 +308,17 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
           >
             <span className="visually-hidden">{t("actions.clear")}</span>
           </IconButton>
+        ) : lastCleared ? (
+          <IconButton
+            className="btn btn-outline-secondary btn-sm"
+            icon={RotateCcw}
+            title={t("tooltip.restoreSelectedImage")}
+            onClick={() => {
+              void handleRestoreLastCleared();
+            }}
+          >
+            <span className="visually-hidden">{t("actions.restore")}</span>
+          </IconButton>
         ) : null}
       </div>
       {fieldError ? (
@@ -190,39 +326,14 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
           {String(fieldError.message ?? t("errors.invalidValue"))}
         </div>
       ) : null}
-      <div className={`accordion ${layoutStyles.imageAccordion}`}>
-        <div className={`accordion-item ${layoutStyles.imageAccordionItem}`}>
-          <h2 className={`accordion-header ${layoutStyles.imageAccordionHeader}`}>
-            <button
-              type="button"
-              className={`accordion-button ${layoutStyles.imageAccordionButton} ${
-                showAdjustments ? "" : "collapsed"
-              } ${!imageAssetId ? "disabled" : ""}`}
-              aria-expanded={showAdjustments}
-              aria-controls={accordionBodyId}
-              disabled={!imageAssetId}
-              onClick={() => {
-                setShowAdjustments((prev) => !prev);
-              }}
+      {isAdjustmentsOpen && imageAssetId && isClient
+        ? createPortal(
+            <div
+              ref={adjustmentsPopoverRef}
+              className={layoutStyles.imageAdjustmentsPopover}
+              style={adjustmentsStyle ?? undefined}
             >
-              <span className={layoutStyles.imageAccordionTitle}>
-                {t("form.imageAdjustments")}
-              </span>
-              <span className={layoutStyles.imageAccordionIcon}>
-                {showAdjustments ? (
-                  <ChevronUp className={layoutStyles.icon} aria-hidden="true" />
-                ) : (
-                  <ChevronDown className={layoutStyles.icon} aria-hidden="true" />
-                )}
-              </span>
-            </button>
-          </h2>
-          <div
-            id={accordionBodyId}
-            className={`accordion-collapse collapse ${showAdjustments ? "show" : ""}`}
-          >
-            <div className={`accordion-body ${layoutStyles.imageAccordionBody}`}>
-              {imageAssetId ? (
+              <div className={layoutStyles.imageAdjustmentsPopoverContent}>
                 <div className={layoutStyles.imageControlGroup}>
                   <div className={layoutStyles.imageControlLabelRow}>
                     <label className="form-label mb-1">{t("form.horizontalPosition")}</label>
@@ -479,11 +590,11 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                     </button>
                   </div>
                 </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
       <AssetsModal
         isOpen={picker.isOpen}
         onClose={picker.close}

@@ -2,7 +2,7 @@
 
 import styles from "@/app/page.module.css";
 
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, ReactNode, Ref } from "react";
 
 type IconButtonProps = {
   type?: "button" | "submit";
@@ -12,6 +12,8 @@ type IconButtonProps = {
   disabled?: boolean;
   onClick?: () => void;
   title?: string;
+  iconOnly?: boolean;
+  buttonRef?: Ref<HTMLButtonElement>;
 };
 
 export default function IconButton({
@@ -22,16 +24,24 @@ export default function IconButton({
   disabled,
   onClick,
   title,
+  iconOnly = false,
+  buttonRef,
 }: IconButtonProps) {
   return (
     <button
       type={type}
-      className={`${className} d-inline-flex align-items-center`}
+      className={`${className} d-inline-flex align-items-center ${
+        iconOnly ? "justify-content-center" : ""
+      }`}
       disabled={disabled}
       onClick={onClick}
       title={title}
+      ref={buttonRef}
     >
-      <Icon className={`${styles.icon} ${styles.iconLeft}`} aria-hidden="true" />
+      <Icon
+        className={`${styles.icon} ${iconOnly ? "" : styles.iconLeft}`}
+        aria-hidden="true"
+      />
       {children}
     </button>
   );
