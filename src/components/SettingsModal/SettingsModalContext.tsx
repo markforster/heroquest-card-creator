@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
-import ConfirmModal from "@/components/ConfirmModal";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { useI18n } from "@/i18n/I18nProvider";
 

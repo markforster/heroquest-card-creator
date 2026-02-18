@@ -3,7 +3,7 @@
 import { createContext, useContext, useRef, useState } from "react";
 
 import BackupProgressOverlay from "@/components/BackupProgressOverlay";
-import ConfirmModal from "@/components/ConfirmModal";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { createBackupHqcc, importBackupHqcc, importBackupJson } from "@/lib/backup";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
-import ConfirmModal from "@/components/ConfirmModal";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useEditorSave } from "@/components/EditorSaveContext";
 import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";

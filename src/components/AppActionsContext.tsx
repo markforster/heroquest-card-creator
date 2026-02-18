@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 
 import AssetsModal from "@/components/Assets/AssetsModal";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
-import ConfirmModal from "@/components/ConfirmModal";
-import RecentCardsModal from "@/components/RecentCardsModal";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
+import RecentCardsModal from "@/components/Modals/RecentCardsModal";
 import SettingsModal from "@/components/SettingsModal/SettingsModal";
 import { StockpileModal } from "@/components/Stockpile";
 import TemplatePicker from "@/components/TemplatePicker";

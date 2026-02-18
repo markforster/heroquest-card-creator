@@ -36,7 +36,7 @@ import { LocalStorageProvider } from "@/components/LocalStorageProvider";
 import { PreviewRendererProvider } from "@/components/PreviewRendererContext";
 import { TextFittingPreferencesProvider } from "@/components/TextFittingPreferencesContext";
 import ToolsToolbar from "@/components/ToolsToolbar";
-import WelcomeTemplateModal from "@/components/WelcomeTemplateModal";
+import WelcomeTemplateModal from "@/components/Modals/WelcomeTemplateModal";
 import { WebglPreviewSettingsProvider } from "@/components/WebglPreviewSettingsContext";
 import dungeonAtmosphere from "@/assets/dungeon atmostphere - 2.png";
 import { cardTemplatesById } from "@/data/card-templates";

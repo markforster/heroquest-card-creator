@@ -7,12 +7,12 @@ jest.mock("@/version", () => ({
   APP_VERSION: "0.0.0-test",
 }));
 
-jest.mock("@/components/HelpModal", () => ({
+jest.mock("@/components/Modals/HelpModal", () => ({
   __esModule: true,
   default: () => null,
 }));
 
-jest.mock("@/components/ReleaseNotesModal", () => ({
+jest.mock("@/components/Modals/ReleaseNotesModal", () => ({
   __esModule: true,
   default: () => null,
 }));

@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
 import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
-import ConfirmModal from "@/components/ConfirmModal";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useEditorSave } from "@/components/EditorSaveContext";
 import { usePreviewRenderer } from "@/components/PreviewRendererContext";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";

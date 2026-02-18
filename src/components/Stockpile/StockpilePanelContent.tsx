@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
 import CardPreview from "@/components/CardPreview";
-import ConfirmModal from "@/components/ConfirmModal";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import { useEscapeModalAware } from "@/components/EscapeStackProvider";
 import ModalShell from "@/components/common/ModalShell";
