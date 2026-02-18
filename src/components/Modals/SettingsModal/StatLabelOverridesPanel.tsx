@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import { useSettingsPanel } from "@/components/SettingsModal/SettingsModalContext";
+import { useSettingsPanel } from "@/components/Modals/SettingsModal/SettingsModalContext";
 import { useStatLabelOverrides } from "@/components/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { MessageKey } from "@/i18n/messages";

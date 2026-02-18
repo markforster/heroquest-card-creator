@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
-import { SETTINGS_AREAS, SETTINGS_NAV_CONFIG } from "@/components/SettingsModal/settings-areas";
+import { SETTINGS_AREAS, SETTINGS_NAV_CONFIG } from "@/components/Modals/SettingsModal/settings-areas";
 import {
   SettingsModalProvider,
   SettingsPanelProvider,
   useSettingsModalControls,
-} from "@/components/SettingsModal/SettingsModalContext";
+} from "@/components/Modals/SettingsModal/SettingsModalContext";
 import NavActionButton from "@/components/NavActionButton";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { OpenCloseProps } from "@/types/ui";

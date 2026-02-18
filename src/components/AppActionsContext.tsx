@@ -7,7 +7,7 @@ import AssetsModal from "@/components/Assets/AssetsModal";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import RecentCardsModal from "@/components/Modals/RecentCardsModal";
-import SettingsModal from "@/components/SettingsModal/SettingsModal";
+import SettingsModal from "@/components/Modals/SettingsModal/SettingsModal";
 import { StockpileModal } from "@/components/Stockpile";
 import TemplatePicker from "@/components/TemplatePicker";
 import { cardTemplatesById } from "@/data/card-templates";

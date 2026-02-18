@@ -4,10 +4,10 @@ import type { LucideIcon } from "lucide-react";
 import { ALargeSmall, Bug, Monitor, TableCellsSplit } from "lucide-react";
 
 import type { MessageKey } from "@/i18n/messages";
-import DebugSettingsPanel from "@/components/SettingsModal/DebugSettingsPanel";
-import PreviewSettingsPanel from "@/components/SettingsModal/PreviewSettingsPanel";
-import StatLabelOverridesPanel from "@/components/SettingsModal/StatLabelOverridesPanel";
-import TextFittingSettingsPanel from "@/components/SettingsModal/TextFittingSettingsPanel";
+import DebugSettingsPanel from "@/components/Modals/SettingsModal/DebugSettingsPanel";
+import PreviewSettingsPanel from "@/components/Modals/SettingsModal/PreviewSettingsPanel";
+import StatLabelOverridesPanel from "@/components/Modals/SettingsModal/StatLabelOverridesPanel";
+import TextFittingSettingsPanel from "@/components/Modals/SettingsModal/TextFittingSettingsPanel";
 
 export type SettingsAreaDefinition = {
   id: string;
