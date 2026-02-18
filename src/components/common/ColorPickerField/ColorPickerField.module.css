@@ -31,6 +31,11 @@
   text-transform: uppercase;
 }
 
+.hexInput:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .currentSwatch {
   flex: 0 1 auto;
   width: 30px;
@@ -40,6 +45,11 @@
   padding: 0;
   cursor: pointer;
   background: transparent;
+}
+
+.currentSwatchDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .popover {
@@ -126,27 +136,40 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 90px;
+  height: 220px;
 }
 
 .colorful :global(.react-colorful__saturation) {
   width: 100%;
-  height: 48px;
+  height: 160px;
   flex-grow: 0;
-  border-radius: 10px 10px 6px 6px;
+  border-radius: 12px;
 }
 
 .colorful :global(.react-colorful__hue) {
   width: 100%;
-  height: 24px;
+  height: 20px;
   border-radius: 999px;
-  margin-top: 6px;
+  margin-top: 8px;
+}
+
+.colorful :global(.react-colorful__alpha) {
+  width: 100%;
+  height: 20px;
+  border-radius: 999px;
+  margin-top: 8px;
 }
 
 .colorful :global(.react-colorful__hue-pointer),
-.colorful :global(.react-colorful__saturation-pointer) {
-  width: 14px;
-  height: 14px;
+.colorful :global(.react-colorful__saturation-pointer),
+.colorful :global(.react-colorful__alpha-pointer) {
+  width: 18px;
+  height: 18px;
+}
+
+.colorful :global(.react-colorful__pointer-fill) {
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 .specialRow {
@@ -174,9 +197,25 @@
 }
 
 .swatchGridScroll {
-  max-height: 166px;
-  overflow-y: auto;
-  padding-right: 4px;
+  height: 122px;
+  overflow-y: scroll;
+  padding-right: 6px;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.swatchGridScroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.swatchGridScroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+}
+
+.swatchGridScroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .swatchButton {

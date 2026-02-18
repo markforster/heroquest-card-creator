@@ -160,7 +160,6 @@ export default function TitleField({
               inputValue={titleColor}
               selectedValue={titleColor}
               defaultColor={DEFAULT_TITLE_COLOR}
-              swatches={[]}
               smartGroups={smartGroups}
               isSmartBusy={isSmartBusy}
               onRequestSmart={requestSmart}
@@ -171,9 +170,6 @@ export default function TitleField({
                 setValue("titleColor", DEFAULT_TITLE_COLOR, { shouldDirty: true, shouldTouch: true })
               }
               onSelectTransparent={() => undefined}
-              onSaveSwatch={() => undefined}
-              onRemoveSwatch={() => undefined}
-              canSaveSwatch={false}
               canRevert={titleColor !== DEFAULT_TITLE_COLOR}
               onRevert={() =>
                 setValue("titleColor", DEFAULT_TITLE_COLOR, { shouldDirty: true, shouldTouch: true })

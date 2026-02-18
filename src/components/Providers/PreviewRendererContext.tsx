@@ -29,10 +29,12 @@ export function PreviewRendererProvider({ children }: { children: React.ReactNod
   const [rotationMode, setRotationMode] = useState<PreviewRotationMode>("pan");
   const [rotationResetToken, setRotationResetToken] = useState(0);
   const [recenterToken, setRecenterToken] = useState(0);
+  const [hasHydrated, setHasHydrated] = useState(false);
 
   useEffect(() => {
     if (FORCED_RENDERER) {
       setPreviewRenderer(FORCED_RENDERER);
+      setHasHydrated(true);
       return;
     }
     if (typeof window === "undefined") return;
@@ -58,11 +60,14 @@ export function PreviewRendererProvider({ children }: { children: React.ReactNod
       }
     } catch {
       // Ignore localStorage errors.
+    } finally {
+      setHasHydrated(true);
     }
   }, []);
 
   useEffect(() => {
     if (FORCED_RENDERER) return;
+    if (!hasHydrated) return;
     if (typeof window === "undefined") return;
     try {
       const payload = JSON.stringify({

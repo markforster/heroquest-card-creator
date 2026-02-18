@@ -361,10 +361,18 @@ function TextLayer({
     }
   }
   const overrides = labelledBackData.bodyTextStyle?.backdrop ?? {};
+  const resolvedBackdropColor = overrides.color ?? defaultBackdropFill;
+  const { color: backdropFill, alpha: backdropAlpha } = splitHexAlpha(resolvedBackdropColor);
+  const resolvedBackdropOpacity =
+    typeof overrides.opacity === "number"
+      ? overrides.opacity
+      : typeof backdropAlpha === "number"
+        ? backdropAlpha
+        : defaultBackdropOpacity;
   const effectiveBackdrop = {
     enabled: overrides.enabled ?? defaultBackdropEnabled,
-    color: overrides.color ?? defaultBackdropFill,
-    opacity: overrides.opacity ?? defaultBackdropOpacity,
+    color: backdropFill,
+    opacity: resolvedBackdropOpacity,
     insetMode: overrides.insetMode ?? defaultBackdropInsetMode,
     cornerMode: overrides.cornerMode ?? defaultBackdropCornerMode,
     fitMode: overrides.fitMode ?? defaultBackdropFitMode,
@@ -603,6 +611,39 @@ function TextLayer({
       />
     </Layer>
   );
+}
+
+function splitHexAlpha(value: string | undefined): { color: string; alpha?: number } {
+  if (!value) return { color: "#000000" };
+  const trimmed = value.trim();
+  if (!trimmed) return { color: "#000000" };
+  if (trimmed.toLowerCase() === "transparent") {
+    return { color: "#000000", alpha: 0 };
+  }
+  const raw = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;
+  if (!/^[0-9a-fA-F]+$/.test(raw)) {
+    return { color: trimmed };
+  }
+  if (raw.length === 3 || raw.length === 4) {
+    const r = raw[0];
+    const g = raw[1];
+    const b = raw[2];
+    const a = raw.length === 4 ? raw[3] : "f";
+    return {
+      color: `#${r}${r}${g}${g}${b}${b}`,
+      alpha: parseInt(`${a}${a}`, 16) / 255,
+    };
+  }
+  if (raw.length === 8) {
+    return {
+      color: `#${raw.slice(0, 6)}`,
+      alpha: parseInt(raw.slice(6, 8), 16) / 255,
+    };
+  }
+  if (raw.length === 6) {
+    return { color: `#${raw}` };
+  }
+  return { color: trimmed };
 }
 
 function splitTextOnHr(text: string): string[] {

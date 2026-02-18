@@ -24,7 +24,7 @@ import IconButton from "@/components/common/IconButton";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getAllAssets } from "@/lib/assets-db";
+import { getAllAssets, getAssetObjectUrl } from "@/lib/assets-db";
 import type { AssetRecord } from "@/lib/assets-db";
 
 type ImageFieldProps = {
@@ -33,11 +33,15 @@ type ImageFieldProps = {
   boundsHeight?: number;
 };
 
-type LastClearedImage = {
-  id: string;
-  name?: string;
-  width?: number;
-  height?: number;
+type ImageSnapshot = {
+  imageAssetId?: string;
+  imageAssetName?: string;
+  imageOriginalWidth?: number;
+  imageOriginalHeight?: number;
+  imageScale?: number;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+  imageRotation?: number;
 };
 
 export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFieldProps) {
@@ -61,8 +65,11 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const picker = usePopupState(false);
 
   const fieldError = (errors as Record<string, { message?: string }>).imageAssetId;
-
   const imageAssetName = imageAssetNameWatch;
+  const currentDisplayValue = imageAssetId
+    ? (imageAssetName ?? t("status.imageSelected"))
+    : t("status.noImageSelected");
+
   const imageScale = imageScaleWatch ?? 1;
   const imageOffsetX = imageOffsetXWatch ?? 0;
   const imageOffsetY = imageOffsetYWatch ?? 0;
@@ -70,11 +77,18 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const imageOriginalWidth = imageOriginalWidthWatch;
   const imageOriginalHeight = imageOriginalHeightWatch;
   const [isAdjustmentsOpen, setIsAdjustmentsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [query, setQuery] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [assets, setAssets] = useState<AssetRecord[]>([]);
+  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const adjustmentsButtonRef = useRef<HTMLButtonElement | null>(null);
   const adjustmentsPopoverRef = useRef<HTMLDivElement | null>(null);
   const [adjustmentsStyle, setAdjustmentsStyle] = useState<CSSProperties | null>(null);
   const [isClient, setIsClient] = useState(false);
-  const [lastCleared, setLastCleared] = useState<LastClearedImage | null>(null);
+  const inputWrapRef = useRef<HTMLDivElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const previousImageRef = useRef<ImageSnapshot | null>(null);
 
   const maxOffsetX = boundsWidth ? Math.round(boundsWidth) : 300;
   const maxOffsetY = boundsHeight ? Math.round(boundsHeight) : 300;
@@ -87,6 +101,21 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const ROTATION_STEP = 1;
 
   const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+  const getCurrentSnapshot = (): ImageSnapshot => ({
+    imageAssetId,
+    imageAssetName,
+    imageOriginalWidth,
+    imageOriginalHeight,
+    imageScale,
+    imageOffsetX,
+    imageOffsetY,
+    imageRotation,
+  });
+
+  const capturePreviousImageState = () => {
+    previousImageRef.current = getCurrentSnapshot();
+  };
 
   const computeAutoScale = () => {
     if (
@@ -108,6 +137,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   };
 
   const applyAssetSelection = (asset: AssetRecord) => {
+    capturePreviousImageState();
     setValue("imageAssetId", asset.id, { shouldDirty: true, shouldTouch: true });
     setValue("imageAssetName", asset.name, { shouldDirty: true, shouldTouch: true });
     setValue("imageRotation", 0, { shouldDirty: true, shouldTouch: true });
@@ -133,47 +163,27 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
 
   const handleSelect = (asset: AssetRecord) => {
     applyAssetSelection(asset);
-    setLastCleared(null);
+    picker.close();
   };
 
-  const handleRestoreLastCleared = async () => {
-    if (!lastCleared) return;
-
-    let width = lastCleared.width;
-    let height = lastCleared.height;
-    let name = lastCleared.name;
-
-    if (!width || !height) {
-      try {
-        const assets = await getAllAssets();
-        const match = assets.find((asset) => asset.id === lastCleared.id);
-        if (match) {
-          width = match.width;
-          height = match.height;
-          name = match.name;
-        }
-      } catch {
-        // ignore lookup errors; fall back to partial restore
-      }
-    }
-
-    if (width && height) {
-      applyAssetSelection({
-        id: lastCleared.id,
-        name: name ?? lastCleared.id,
-        width,
-        height,
-        mimeType: "image/unknown",
-        createdAt: Date.now(),
-      });
-    } else {
-      setValue("imageAssetId", lastCleared.id, { shouldDirty: true, shouldTouch: true });
-      if (name) {
-        setValue("imageAssetName", name, { shouldDirty: true, shouldTouch: true });
-      }
-    }
-
-    setLastCleared(null);
+  const handleRestorePreviousImage = () => {
+    if (!previousImageRef.current) return;
+    const previous = previousImageRef.current;
+    setValue("imageAssetId", previous.imageAssetId, { shouldDirty: true, shouldTouch: true });
+    setValue("imageAssetName", previous.imageAssetName, { shouldDirty: true, shouldTouch: true });
+    setValue("imageOriginalWidth", previous.imageOriginalWidth, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("imageOriginalHeight", previous.imageOriginalHeight, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("imageScale", previous.imageScale, { shouldDirty: true, shouldTouch: true });
+    setValue("imageOffsetX", previous.imageOffsetX, { shouldDirty: true, shouldTouch: true });
+    setValue("imageOffsetY", previous.imageOffsetY, { shouldDirty: true, shouldTouch: true });
+    setValue("imageRotation", previous.imageRotation, { shouldDirty: true, shouldTouch: true });
+    resetSearchState();
   };
 
   useEffect(() => {
@@ -191,6 +201,98 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const resetSearchState = () => {
+    setIsDropdownOpen(false);
+    setIsEditing(false);
+    setQuery("");
+  };
+
+  useOutsideClick([inputWrapRef, dropdownRef], resetSearchState, isDropdownOpen);
+
+  useEffect(() => {
+    if (!previousImageRef.current) {
+      previousImageRef.current = getCurrentSnapshot();
+    }
+  }, [
+    imageAssetId,
+    imageAssetName,
+    imageOriginalWidth,
+    imageOriginalHeight,
+    imageScale,
+    imageOffsetX,
+    imageOffsetY,
+    imageRotation,
+  ]);
+
+  useEffect(() => {
+    if (!isEditing) return;
+
+    let cancelled = false;
+
+    getAllAssets()
+      .then((records) => {
+        if (!cancelled) {
+          setAssets(records);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAssets([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditing]);
+
+  useEffect(() => {
+    if (!isEditing || assets.length === 0) {
+      setThumbUrls({});
+      return;
+    }
+
+    let cancelled = false;
+    const localUrls: Record<string, string> = {};
+
+    (async () => {
+      for (const asset of assets) {
+        try {
+          const url = await getAssetObjectUrl(asset.id);
+          if (!url) continue;
+          localUrls[asset.id] = url;
+        } catch {
+          // Ignore individual asset errors.
+        }
+      }
+      if (!cancelled) {
+        setThumbUrls(localUrls);
+      } else {
+        Object.values(localUrls).forEach((url) => {
+          URL.revokeObjectURL(url);
+        });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      Object.values(localUrls).forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, [assets, isEditing]);
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredAssets = normalizedQuery
+    ? assets.filter((asset) => asset.name.toLowerCase().includes(normalizedQuery))
+    : [];
+  const cappedAssets =
+    normalizedQuery.length < 4 ? filteredAssets.slice(0, 8) : filteredAssets;
+  const previousImageId = previousImageRef.current?.imageAssetId;
+  const canRestorePrevious = previousImageRef.current
+    ? (imageAssetId ?? "") !== (previousImageId ?? "")
+    : false;
 
   const positionPopover = () => {
     const anchor = adjustmentsButtonRef.current;
@@ -237,88 +339,136 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   return (
     <div className="mb-2">
       <label className="form-label">{label}</label>
-      <div className="input-group input-group-sm mb-2">
-        <input
-          type="text"
-          className={`form-control ${layoutStyles.imageHeaderStatus} ${
-            imageAssetId ? "" : layoutStyles.imageHeaderStatusMissing
-          }`}
-          readOnly
-          value={
-            imageAssetId
-              ? (imageAssetName ?? t("status.imageSelected"))
-              : t("status.noImageSelected")
-          }
-          title={imageAssetId ? (imageAssetName ?? imageAssetId) : undefined}
-        />
-        <IconButton
-          className="btn btn-outline-secondary btn-sm"
-          icon={ImagePlus}
-          title={t("tooltip.openImagePicker")}
-          onClick={() => {
-            picker.open();
-          }}
-        >
-          {t("actions.chooseImage")}
-        </IconButton>
-        <IconButton
-          className="btn btn-outline-secondary btn-sm"
-          icon={SlidersHorizontal}
-          title={t("form.imageAdjustments")}
-          disabled={!imageAssetId}
-          buttonRef={adjustmentsButtonRef}
-          iconOnly
-          onClick={() => {
-            setIsAdjustmentsOpen((prev) => {
-              const next = !prev;
-              if (next) {
-                requestAnimationFrame(() => {
-                  positionPopover();
-                });
+      <div ref={inputWrapRef} className={layoutStyles.imageAutocompleteWrap}>
+        <div className="input-group input-group-sm mb-2">
+          <input
+            type="text"
+            className={`form-control ${layoutStyles.imageHeaderStatus} ${
+              imageAssetId ? "" : layoutStyles.imageHeaderStatusMissing
+            }`}
+            value={isEditing ? query : currentDisplayValue}
+            onFocus={() => {
+              setIsEditing(true);
+              setQuery("");
+            }}
+            onChange={(event) => {
+              const next = event.target.value;
+              setQuery(next);
+              setIsDropdownOpen(next.trim().length > 0);
+            }}
+            onBlur={() => {
+              if (isEditing) {
+                resetSearchState();
               }
-              return next;
-            });
-          }}
-        >
-          <span className="visually-hidden">{t("form.imageAdjustments")}</span>
-        </IconButton>
-        {imageAssetId ? (
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                resetSearchState();
+              }
+              if (event.key === "Enter" && query.trim().length === 0) {
+                event.preventDefault();
+                resetSearchState();
+              }
+            }}
+            title={imageAssetId ? (imageAssetName ?? imageAssetId) : undefined}
+          />
           <IconButton
             className="btn btn-outline-secondary btn-sm"
-            icon={XCircle}
-            title={t("tooltip.clearSelectedImage")}
+            icon={ImagePlus}
+            title={t("tooltip.openImagePicker")}
             onClick={() => {
-              if (imageAssetId) {
-                setLastCleared({
-                  id: imageAssetId,
-                  name: imageAssetName,
-                  width: imageOriginalWidth,
-                  height: imageOriginalHeight,
-                });
-              }
-              setValue("imageAssetId", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageAssetName", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageScale", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageOriginalWidth", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageOriginalHeight", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
+              picker.open();
             }}
           >
-            <span className="visually-hidden">{t("actions.clear")}</span>
+            {t("actions.chooseImage")}
           </IconButton>
-        ) : lastCleared ? (
           <IconButton
             className="btn btn-outline-secondary btn-sm"
-            icon={RotateCcw}
-            title={t("tooltip.restoreSelectedImage")}
+            icon={SlidersHorizontal}
+            title={t("form.imageAdjustments")}
+            disabled={!imageAssetId}
+            buttonRef={adjustmentsButtonRef}
+            iconOnly
             onClick={() => {
-              void handleRestoreLastCleared();
+              setIsAdjustmentsOpen((prev) => {
+                const next = !prev;
+                if (next) {
+                  requestAnimationFrame(() => {
+                    positionPopover();
+                  });
+                }
+                return next;
+              });
             }}
           >
-            <span className="visually-hidden">{t("actions.restore")}</span>
+            <span className="visually-hidden">{t("form.imageAdjustments")}</span>
           </IconButton>
+          {canRestorePrevious ? (
+            <IconButton
+              className="btn btn-outline-secondary btn-sm"
+              icon={RotateCcw}
+              title={t("tooltip.restoreSelectedImage")}
+              onClick={() => {
+                handleRestorePreviousImage();
+              }}
+            >
+              <span className="visually-hidden">{t("actions.restore")}</span>
+            </IconButton>
+          ) : imageAssetId ? (
+            <IconButton
+              className="btn btn-outline-secondary btn-sm"
+              icon={XCircle}
+              title={t("tooltip.clearSelectedImage")}
+              onClick={() => {
+                capturePreviousImageState();
+                setValue("imageAssetId", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("imageAssetName", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("imageScale", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("imageOriginalWidth", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("imageOriginalHeight", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
+              }}
+            >
+              <span className="visually-hidden">{t("actions.clear")}</span>
+            </IconButton>
+          ) : null}
+        </div>
+        {isDropdownOpen ? (
+          <div
+            ref={dropdownRef}
+            className={layoutStyles.imageAutocompleteList}
+            onMouseDown={(event) => {
+              event.preventDefault();
+            }}
+          >
+            {cappedAssets.length === 0 ? (
+              <div className={layoutStyles.imageAutocompleteEmpty}>{t("empty.noAssets")}</div>
+            ) : (
+              cappedAssets.map((asset) => (
+                <button
+                  key={asset.id}
+                  type="button"
+                  className={layoutStyles.imageAutocompleteItem}
+                  onClick={() => {
+                    applyAssetSelection(asset);
+                    resetSearchState();
+                  }}
+                >
+                  <div className={layoutStyles.imageAutocompleteThumb}>
+                    {thumbUrls[asset.id] ? (
+                      <img src={thumbUrls[asset.id]} alt="" />
+                    ) : null}
+                  </div>
+                  <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
+                    {asset.name}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
         ) : null}
       </div>
       {fieldError ? (

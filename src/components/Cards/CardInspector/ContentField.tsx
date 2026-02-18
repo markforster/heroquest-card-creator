@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import {
   Expand,
@@ -13,10 +14,11 @@ import {
 } from "lucide-react";
 
 import layoutStyles from "@/app/page.module.css";
+import ColorPickerField from "@/components/common/ColorPickerField";
+import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
+import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { BodyTextStyle } from "@/types/card-data";
-
-import ColorPickerPopover from "./ColorPickerPopover";
 
 type ContentFieldProps = {
   label: string;
@@ -48,13 +50,28 @@ export default function ContentField({
     setValue,
   } = useFormContext();
   const bodyTextStyle = useWatch({ name: "bodyTextStyle" }) as BodyTextStyle | undefined;
-  const borderColor = useWatch({ name: "borderColor" }) as string | undefined;
   const fieldError = (errors as Record<string, { message?: string }>).description;
+  const [isBodyColorOpen, setIsBodyColorOpen] = useState(false);
+  const { renderPreviewCanvas } = usePreviewCanvas();
+  const { smartGroups, isSmartBusy, requestSmart } = useSmartSwatches({
+    renderPreviewCanvas,
+    width: 300,
+    height: 420,
+  });
 
   const effectiveBackdrop = {
     ...DEFAULT_BODY_TEXT_STYLE.backdrop,
     ...(bodyTextStyle?.backdrop ?? {}),
   };
+  const defaultBackdropColor = DEFAULT_BODY_TEXT_STYLE.backdrop.color ?? "#ffffff";
+  const defaultBackdropHex = toHex8(
+    defaultBackdropColor,
+    DEFAULT_BODY_TEXT_STYLE.backdrop?.opacity ?? 1,
+  );
+  const currentBackdropHex = toHex8(
+    effectiveBackdrop.color ?? defaultBackdropColor,
+    effectiveBackdrop.opacity,
+  );
   const textEnabled = showToggle ? (bodyTextStyle?.enabled ?? false) : true;
 
   const updateBackdrop = (partial: Partial<NonNullable<BodyTextStyle["backdrop"]>>) => {
@@ -68,13 +85,9 @@ export default function ContentField({
     setValue("bodyTextStyle", next, { shouldDirty: true, shouldTouch: true });
   };
 
-  const borderHidden =
-    !borderColor ||
-    borderColor.trim() === "" ||
-    borderColor.toLowerCase() === "transparent" ||
-    borderColor.toLowerCase() === "none" ||
-    borderColor.replace(/\s+/g, "").toLowerCase() === "rgba(0,0,0,0)";
-  const cornerToggleDisabled = effectiveBackdrop.fitMode === "fit-to-text";
+  const updateBackdropColor = (value: string) => {
+    updateBackdrop({ color: value, opacity: undefined });
+  };
 
   return (
     <div className="mb-2">
@@ -101,22 +114,6 @@ export default function ContentField({
                 <EyeOff size={14} aria-hidden="true" />
               )}
             </button>
-            <ColorPickerPopover
-              color={effectiveBackdrop.color ?? "#ffffff"}
-              onColorChange={(value) => updateBackdrop({ color: value })}
-              opacity={effectiveBackdrop.opacity ?? 0.55}
-              onOpacityChange={(value) => updateBackdrop({ opacity: value })}
-              showOpacity
-              disabled={!textEnabled}
-              title={t("tooltip.bodyTextColor")}
-              labelColor={t("label.color")}
-              labelOpacity={t("label.opacity")}
-              buttonClassName={layoutStyles.bodyTextToolbarButton}
-              buttonActiveClassName={layoutStyles.bodyTextToolbarButtonActive}
-              buttonDisabledClassName={layoutStyles.bodyTextToolbarButtonDisabled}
-              popoverClassName={layoutStyles.bodyTextToolbarPopover}
-              rowClassName={`${layoutStyles.bodyTextToolbarRow} d-flex align-items-center justify-content-between gap-2`}
-            />
             <button
               type="button"
               className={`${layoutStyles.bodyTextToolbarButton} ${
@@ -144,9 +141,9 @@ export default function ContentField({
                 effectiveBackdrop.cornerMode === "all"
                   ? layoutStyles.bodyTextToolbarButtonActive
                   : ""
-              } ${cornerToggleDisabled || !textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+              } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
               title={t("tooltip.bodyTextCorners")}
-              disabled={cornerToggleDisabled || !textEnabled}
+              disabled={!textEnabled}
               onClick={() =>
                 updateBackdrop({
                   cornerMode:
@@ -206,19 +203,47 @@ export default function ContentField({
       </div>
       {textEnabled ? (
         <>
-          <textarea
-            id="description"
-            className="form-control form-control-sm"
-            rows={6}
-            style={{ backgroundColor: "#333", color: "#f5f5f5" }}
-            title={t("tooltip.rulesAndFlavour")}
-            {...register("description", {
-              maxLength: {
-                value: 2000,
-                message: t("errors.contentMaxLength"),
-              },
-            })}
-          />
+          <div className="d-flex align-items-start gap-2">
+            <div style={{ flex: "1 0 auto", minWidth: 0 }}>
+              <textarea
+                id="description"
+                className="form-control form-control-sm"
+                rows={6}
+                style={{ backgroundColor: "#333", color: "#f5f5f5" }}
+                title={t("tooltip.rulesAndFlavour")}
+                {...register("description", {
+                  maxLength: {
+                    value: 2000,
+                    message: t("errors.contentMaxLength"),
+                  },
+                })}
+              />
+            </div>
+            <div style={{ flex: "0 1 auto" }}>
+              <ColorPickerField
+                label={t("label.color")}
+                showLabel={false}
+                showInput={false}
+                inputValue={currentBackdropHex}
+                selectedValue={currentBackdropHex}
+                defaultColor={defaultBackdropHex}
+                smartGroups={smartGroups}
+                isSmartBusy={isSmartBusy}
+                onRequestSmart={requestSmart}
+                onChange={updateBackdropColor}
+                onSelectDefault={() => updateBackdropColor(defaultBackdropHex)}
+                onSelectTransparent={() => updateBackdropColor("#00000000")}
+                canRevert={currentBackdropHex.toLowerCase() !== defaultBackdropHex.toLowerCase()}
+                onRevert={() => updateBackdropColor(defaultBackdropHex)}
+                isOpen={isBodyColorOpen}
+                onToggleOpen={() => setIsBodyColorOpen((prev) => !prev)}
+                onClose={() => setIsBodyColorOpen(false)}
+                popoverAlign="auto"
+                popoverVAlign="center"
+                isDisabled={!textEnabled}
+              />
+            </div>
+          </div>
           {fieldError ? (
             <div className="form-text text-danger">
               {String(fieldError.message ?? t("errors.invalidValue"))}
@@ -228,4 +253,56 @@ export default function ContentField({
       ) : null}
     </div>
   );
+}
+
+function toHex8(color: string, opacity?: number) {
+  const resolved = normalizeHex(color);
+  const baseHex = resolved?.hex ?? "#FFFFFF";
+  const alpha =
+    typeof opacity === "number"
+      ? opacity
+      : typeof resolved?.alpha === "number"
+        ? resolved.alpha
+        : 1;
+  return `${baseHex}${alphaToHex(alpha)}`;
+}
+
+function normalizeHex(value: string | undefined) {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.toLowerCase() === "transparent") {
+    return { hex: "#000000", alpha: 0 };
+  }
+
+  const raw = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;
+  if (!/^[0-9a-fA-F]+$/.test(raw)) return null;
+
+  if (raw.length === 3 || raw.length === 4) {
+    const r = raw[0];
+    const g = raw[1];
+    const b = raw[2];
+    const a = raw.length === 4 ? raw[3] : "f";
+    return {
+      hex: `#${r}${r}${g}${g}${b}${b}`.toUpperCase(),
+      alpha: parseInt(`${a}${a}`, 16) / 255,
+    };
+  }
+
+  if (raw.length === 6 || raw.length === 8) {
+    return {
+      hex: `#${raw.slice(0, 6)}`.toUpperCase(),
+      alpha: raw.length === 8 ? parseInt(raw.slice(6, 8), 16) / 255 : 1,
+    };
+  }
+
+  return null;
+}
+
+function alphaToHex(alpha: number) {
+  const clamped = Math.min(Math.max(alpha, 0), 1);
+  return Math.round(clamped * 255)
+    .toString(16)
+    .padStart(2, "0")
+    .toUpperCase();
 }

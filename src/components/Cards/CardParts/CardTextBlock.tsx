@@ -382,7 +382,8 @@ function parseInlineMarkdown(line: string): TextRun[] {
   // - There is at least one non-space character inside.
   // - The first and last characters inside are not spaces.
   // Everything else (including stray *) is treated as plain text.
-  const pattern = /\*\*(\S(?:[\s\S]*?\S)?)\*\*|\*(\S(?:[\s\S]*?\S)?)\*/g;
+  const pattern =
+    /\*\*\*(\S(?:[\s\S]*?\S)?)\*\*\*|\*\*(\S(?:[\s\S]*?\S)?)\*\*|\*(\S(?:[\s\S]*?\S)?)\*/g;
 
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -400,10 +401,13 @@ function parseInlineMarkdown(line: string): TextRun[] {
       pushRun(line.slice(lastIndex, matchStart));
     }
 
-    const boldText = match[1];
-    const italicText = match[2];
+    const boldItalicText = match[1];
+    const boldText = match[2];
+    const italicText = match[3];
 
-    if (boldText != null) {
+    if (boldItalicText != null) {
+      pushRun(boldItalicText, true, true);
+    } else if (boldText != null) {
       pushRun(boldText, true, false);
     } else if (italicText != null) {
       pushRun(italicText, false, true);

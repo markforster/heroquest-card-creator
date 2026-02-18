@@ -621,6 +621,7 @@ export default function WebglPreview({
   const [hasFrontRenderedOnce, setHasFrontRenderedOnce] = useState(false);
   const [isReadyForBackCanvas, setIsReadyForBackCanvas] = useState(false);
   const [hasBackRenderedOnce, setHasBackRenderedOnce] = useState(false);
+  const [isHeroQuestFontReady, setIsHeroQuestFontReady] = useState(false);
   const frontCanvasTexture = useMemo(() => {
     if (!frontTextureCanvas) return null;
     return new CanvasTexture(frontTextureCanvas);
@@ -683,6 +684,22 @@ export default function WebglPreview({
       setHasBackRenderedOnce(true);
     }
   }, [backCanvasTexture, hasBackRenderedOnce, isReadyForBackCanvas]);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const fontApi = document.fonts;
+    if (!fontApi || typeof fontApi.load !== "function") {
+      setIsHeroQuestFontReady(true);
+      return;
+    }
+    fontApi
+      .load("600 96px 'HeroQuest'")
+      .catch(() => {
+        // ignore font load errors
+      })
+      .finally(() => {
+        setIsHeroQuestFontReady(true);
+      });
+  }, []);
   const activeFrontTexture =
     frontCanvasTexture && isReadyForFrontCanvas ? frontCanvasTexture : fallbackFrontTexture;
   const activeBackTexture =
@@ -736,7 +753,7 @@ export default function WebglPreview({
     tex.magFilter = LinearFilter;
     tex.needsUpdate = true;
     return tex;
-  }, [unpairedLabel]);
+  }, [unpairedLabel, isHeroQuestFontReady]);
   const dragStateRef = useRef<{
     active: boolean;
     startX: number;

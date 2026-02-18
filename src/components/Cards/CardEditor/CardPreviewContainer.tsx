@@ -37,6 +37,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
   const [textureCanvas, setTextureCanvas] = useState<HTMLCanvasElement | null>(null);
   const [textureVersion, setTextureVersion] = useState(0);
   const renderInFlightRef = useRef(false);
+  const pendingRenderRef = useRef(false);
   const renderRequestIdRef = useRef(0);
   const debounceTimeoutRef = useRef<number | null>(null);
   const {
@@ -79,7 +80,10 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
     const renderTexture = async () => {
       const handle = previewRef.current;
       if (!handle) return;
-      if (renderInFlightRef.current) return;
+      if (renderInFlightRef.current) {
+        pendingRenderRef.current = true;
+        return;
+      }
       renderInFlightRef.current = true;
 
       try {
@@ -107,6 +111,14 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
         // Ignore texture render errors for now.
       } finally {
         renderInFlightRef.current = false;
+        if (pendingRenderRef.current && !cancelled) {
+          pendingRenderRef.current = false;
+          window.requestAnimationFrame(() => {
+            if (!cancelled) {
+              void renderTexture();
+            }
+          });
+        }
       }
     };
 

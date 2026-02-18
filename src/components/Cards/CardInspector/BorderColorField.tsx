@@ -7,11 +7,9 @@ import { DEFAULT_BORDER_COLOR } from "@/components/Cards/CardParts/CardBorder";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
-import { getBorderSwatches, setBorderSwatches } from "@/lib/settings-db";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 import type { TemplateId } from "@/types/templates";
 
-const MAX_SWATCHES = 10;
 const SMART_CANVAS_WIDTH = 300;
 const SMART_CANVAS_HEIGHT = 420;
 const TRANSPARENT_BORDER_COLOR = "transparent";
@@ -28,7 +26,6 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     state: { draftTemplateId, draft, isDirtyByTemplate },
     setCardDraft,
   } = useCardEditor();
-  const [swatches, setSwatches] = useState<string[]>([]);
   const { smartGroups, isSmartBusy, requestSmart } = useSmartSwatches({
     renderPreviewCanvas,
     width: SMART_CANVAS_WIDTH,
@@ -40,81 +37,21 @@ export default function BorderColorField({ label, templateId }: BorderColorField
   const borderColor = typeof field.value === "string" ? field.value : "";
   const isTransparent = isTransparentColor(borderColor);
   const colorValue = borderColor.trim() && !isTransparent ? borderColor : DEFAULT_BORDER_COLOR;
-  const normalizedCurrent = useMemo(
-    () => normalizeHex(colorValue) ?? DEFAULT_BORDER_COLOR,
-    [colorValue],
-  );
   const normalizedSelected = useMemo(() => normalizeBorderColor(borderColor), [borderColor]);
   const inputValue =
     normalizedSelected === TRANSPARENT_BORDER_COLOR
       ? ""
-      : normalizeHex(normalizedSelected) ?? normalizedCurrent;
-  const swatchKeys = useMemo(
-    () => new Set(swatches.map((swatch) => swatch.toUpperCase())),
-    [swatches],
-  );
+      : normalizeHex(normalizedSelected) ?? DEFAULT_BORDER_COLOR;
   const savedColorRef = useRef<string | undefined>(undefined);
   const draftColor =
     draftTemplateId === templateId && draft
       ? (draft as { borderColor?: string } | undefined)?.borderColor
       : undefined;
-  const savedSwatches = useMemo(
-    () =>
-      swatches.filter((swatch) => {
-        if (isTransparentColor(swatch)) return false;
-        return swatch.toUpperCase() !== DEFAULT_BORDER_COLOR.toUpperCase();
-      }),
-    [swatches],
-  );
-  useEffect(() => {
-    let active = true;
-    getBorderSwatches()
-      .then((values) => {
-        if (!active) return;
-        setSwatches(values);
-      })
-      .catch(() => {
-        if (!active) return;
-        setSwatches([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
   useEffect(() => {
     if (!isDirtyByTemplate[templateId]) {
       savedColorRef.current = draftColor?.trim() ? draftColor.trim() : undefined;
     }
   }, [draftColor, isDirtyByTemplate, templateId]);
-
-  const handleSaveSwatch = async () => {
-    const normalized = normalizedCurrent.toUpperCase();
-    if (normalized === DEFAULT_BORDER_COLOR.toUpperCase()) return;
-    if (swatchKeys.has(normalized)) return;
-    const capped = swatches.filter(
-      (swatch) => swatch.toUpperCase() !== DEFAULT_BORDER_COLOR.toUpperCase(),
-    );
-    const next = [...capped, normalized].slice(-MAX_SWATCHES);
-    setSwatches(next);
-    try {
-      await setBorderSwatches(next);
-    } catch {
-      // Ignore persistence errors; UI still reflects latest swatches.
-    }
-  };
-
-  const handleRemoveSwatch = async (color: string) => {
-    const normalized = color.toUpperCase();
-    const next = swatches.filter((swatch) => swatch.toUpperCase() !== normalized);
-    setSwatches(next);
-    try {
-      await setBorderSwatches(next);
-    } catch {
-      // Ignore persistence errors; UI still reflects latest swatches.
-    }
-  };
 
   const handleRevert = () => {
     const saved = normalizeBorderColor(savedColorRef.current);
@@ -150,19 +87,12 @@ export default function BorderColorField({ label, templateId }: BorderColorField
         selectedValue={normalizedSelected}
         defaultColor={DEFAULT_BORDER_COLOR}
         transparentValue={TRANSPARENT_BORDER_COLOR}
-        swatches={savedSwatches.slice(0, MAX_SWATCHES)}
         smartGroups={smartGroups}
         isSmartBusy={isSmartBusy}
         onRequestSmart={handleRequestSmart}
         onChange={(value) => field.onChange(value)}
         onSelectDefault={handleSelectDefault}
         onSelectTransparent={() => field.onChange(TRANSPARENT_BORDER_COLOR)}
-        onSaveSwatch={handleSaveSwatch}
-        onRemoveSwatch={handleRemoveSwatch}
-        canSaveSwatch={
-          normalizedCurrent.toUpperCase() !== DEFAULT_BORDER_COLOR.toUpperCase() &&
-          !swatchKeys.has(normalizedCurrent.toUpperCase())
-        }
         canRevert={hasRevert(borderColor, savedColorRef.current)}
         onRevert={handleRevert}
         isOpen={isPopoverOpen}
@@ -182,29 +112,31 @@ function normalizeHex(value: string | undefined): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
 
-  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) {
-    return trimmed.toUpperCase();
+  const raw = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;
+  if (!/^[0-9a-fA-F]+$/.test(raw)) return null;
+
+  if (raw.length === 3 || raw.length === 4) {
+    const r = raw[0];
+    const g = raw[1];
+    const b = raw[2];
+    const a = raw.length === 4 ? raw[3] : "f";
+    const hex = `${r}${r}${g}${g}${b}${b}${a}${a}`.toUpperCase();
+    return raw.length === 4 ? `#${hex}` : `#${hex.slice(0, 6)}`;
   }
 
-  if (/^[0-9a-fA-F]{6}$/.test(trimmed)) {
-    return `#${trimmed.toUpperCase()}`;
-  }
-
-  if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
-    const short = trimmed.slice(1);
-    return `#${short[0]}${short[0]}${short[1]}${short[1]}${short[2]}${short[2]}`.toUpperCase();
-  }
-
-  if (/^[0-9a-fA-F]{3}$/.test(trimmed)) {
-    const short = trimmed;
-    return `#${short[0]}${short[0]}${short[1]}${short[1]}${short[2]}${short[2]}`.toUpperCase();
+  if (raw.length === 6 || raw.length === 8) {
+    return `#${raw.toUpperCase()}`;
   }
 
   return null;
 }
 
 function isTransparentColor(value?: string) {
-  return value?.trim().toLowerCase() === TRANSPARENT_BORDER_COLOR;
+  if (!value) return false;
+  if (value.trim().toLowerCase() === TRANSPARENT_BORDER_COLOR) return true;
+  const normalized = normalizeHex(value);
+  if (!normalized) return false;
+  return normalized.length === 9 && normalized.slice(7, 9) === "00";
 }
 
 function normalizeBorderColor(value?: string) {

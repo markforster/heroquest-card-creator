@@ -3,9 +3,10 @@
 import { Plus, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
-import { HexColorInput, HexColorPicker } from "react-colorful";
+import { RgbaColorPicker } from "react-colorful";
 
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
+import { useSharedColorSwatches } from "@/hooks/useSharedColorSwatches";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -20,16 +21,13 @@ type ColorPickerFieldProps = {
   selectedValue: string;
   defaultColor: string;
   transparentValue?: string;
-  swatches: string[];
   smartGroups: SmartGroup[];
   isSmartBusy: boolean;
   onRequestSmart: () => void;
   onChange: (value: string) => void;
+  allowAlpha?: boolean;
   onSelectDefault: () => void;
   onSelectTransparent: () => void;
-  onSaveSwatch: () => void;
-  onRemoveSwatch: (color: string) => void;
-  canSaveSwatch: boolean;
   canRevert: boolean;
   onRevert: () => void;
   isOpen: boolean;
@@ -39,6 +37,7 @@ type ColorPickerFieldProps = {
   popoverVAlign?: "center" | "top" | "bottom";
   showLabel?: boolean;
   showInput?: boolean;
+  isDisabled?: boolean;
 };
 
 export default function ColorPickerField({
@@ -47,16 +46,13 @@ export default function ColorPickerField({
   selectedValue,
   defaultColor,
   transparentValue = "transparent",
-  swatches,
   smartGroups,
   isSmartBusy,
   onRequestSmart,
   onChange,
+  allowAlpha = true,
   onSelectDefault,
   onSelectTransparent,
-  onSaveSwatch,
-  onRemoveSwatch,
-  canSaveSwatch,
   canRevert,
   onRevert,
   isOpen,
@@ -66,12 +62,16 @@ export default function ColorPickerField({
   popoverVAlign = "center",
   showLabel = true,
   showInput = true,
+  isDisabled = false,
 }: ColorPickerFieldProps) {
   const { t } = useI18n();
+  const { swatches, saveSwatch, removeSwatch, maxSwatches } = useSharedColorSwatches();
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const swatchRef = useRef<HTMLButtonElement | null>(null);
   const [popoverStyle, setPopoverStyle] = useState<{ left: number; top: number } | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("picker");
+  const [hexDraft, setHexDraft] = useState<string>("");
+  const [isEditingHex, setIsEditingHex] = useState(false);
 
   const popoverPlacement = usePopoverPlacement({
     isOpen,
@@ -82,6 +82,12 @@ export default function ColorPickerField({
   });
 
   useOutsideClick([popoverRef, swatchRef], onClose, isOpen);
+
+  useEffect(() => {
+    if (isDisabled && isOpen) {
+      onClose();
+    }
+  }, [isDisabled, isOpen, onClose]);
 
   useLayoutEffect(() => {
     if (!isOpen) return;
@@ -158,7 +164,60 @@ export default function ColorPickerField({
     setActiveTab("picker");
   }, [isOpen]);
 
-  const isTransparent = selectedValue.trim().toLowerCase() === transparentValue;
+  const transparentHex = normalizeHexColor(transparentValue, true) ?? "#00000000";
+  const normalizedSelected =
+    normalizeHexColor(selectedValue, allowAlpha) ?? normalizeHexColor(defaultColor, allowAlpha);
+  const isTransparent = isTransparentValue(selectedValue, transparentValue);
+  const normalizedInput = isTransparent
+    ? transparentHex
+    : normalizeHexColor(inputValue, allowAlpha) ??
+      normalizeHexColor(selectedValue, allowAlpha) ??
+      normalizeHexColor(defaultColor, allowAlpha) ??
+      "#000000FF";
+  const normalizedDefault = normalizeHexColor(defaultColor, true);
+  const normalizedSelectedUpper = normalizedSelected?.toUpperCase();
+  const swatchKeys = new Set(swatches.map((swatch) => swatch.toUpperCase()));
+  const canSaveSwatch =
+    Boolean(normalizedSelectedUpper) &&
+    normalizedSelectedUpper !== normalizedDefault?.toUpperCase() &&
+    !isTransparent &&
+    !swatchKeys.has(normalizedSelectedUpper);
+  const previewHex = isEditingHex ? normalizeDraftHex(hexDraft, allowAlpha) : null;
+  const previewColor = previewHex ? hexToRgba(previewHex) : null;
+  const pickerColor = isTransparent
+    ? { r: 0, g: 0, b: 0, a: 0 }
+    : hexToRgba(previewHex ?? normalizedInput);
+
+  useEffect(() => {
+    if (isEditingHex) return;
+    setHexDraft(normalizedInput);
+  }, [isEditingHex, normalizedInput]);
+
+  const handleChangeNormalized = (value: string) => {
+    const normalized = normalizeHexColor(value, allowAlpha);
+    if (normalized) {
+      onChange(normalized);
+      return;
+    }
+    onChange(value);
+  };
+
+  const handleHexChange = (value: string) => {
+    const sanitized = sanitizeHexInput(value);
+    setIsEditingHex(true);
+    setHexDraft(sanitized);
+  };
+
+  const commitHexDraft = () => {
+    const normalized = normalizeDraftHex(hexDraft, allowAlpha);
+    if (normalized) {
+      onChange(normalized);
+      setHexDraft(normalized);
+    } else {
+      setHexDraft(normalizedInput);
+    }
+    setIsEditingHex(false);
+  };
 
   const handleSelectTab = (tab: ActiveTab) => {
     setActiveTab(tab);
@@ -173,11 +232,23 @@ export default function ColorPickerField({
       <div className={styles.fieldRow}>
         {showInput ? (
           <div className={styles.inputWrap}>
-            <HexColorInput
+            <input
               className={styles.hexInput}
-              color={inputValue}
-              onChange={onChange}
-              prefixed
+              type="text"
+              value={hexDraft}
+              onChange={(event) => handleHexChange(event.target.value)}
+              disabled={isDisabled}
+              spellCheck={false}
+              autoCapitalize="none"
+              autoCorrect="off"
+              inputMode="text"
+              onBlur={commitHexDraft}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  commitHexDraft();
+                }
+              }}
             />
           </div>
         ) : null}
@@ -187,13 +258,23 @@ export default function ColorPickerField({
             ref={swatchRef}
             aria-label={`${t("actions.select")} ${selectedValue}`}
             title={selectedValue}
-            className={`${styles.currentSwatch} ${isTransparent ? styles.noBorderSwatch : ""}`}
-            style={isTransparent ? undefined : { backgroundColor: selectedValue }}
-            onClick={onToggleOpen}
+            className={`${styles.currentSwatch} ${isTransparent ? styles.noBorderSwatch : ""} ${
+              isDisabled ? styles.currentSwatchDisabled : ""
+            }`}
+            style={
+              isTransparent
+                ? undefined
+                : {
+                    backgroundColor:
+                      previewHex ?? normalizedSelected ?? selectedValue,
+                  }
+            }
+            onClick={isDisabled ? undefined : onToggleOpen}
+            disabled={isDisabled}
           />
         </div>
       </div>
-      {isOpen ? (
+      {isOpen && !isDisabled ? (
         <div
           ref={popoverRef}
           className={styles.popover}
@@ -225,9 +306,14 @@ export default function ColorPickerField({
           <div className={styles.tabContent}>
             {activeTab === "picker" ? (
               <div className={styles.picker}>
-                <HexColorPicker
-                  color={inputValue}
-                  onChange={onChange}
+                <RgbaColorPicker
+                  color={pickerColor}
+                  onChange={(value) => {
+                    const next = rgbaToHex(value);
+                    handleChangeNormalized(next);
+                    setIsEditingHex(false);
+                    setHexDraft(next);
+                  }}
                   className={styles.colorful}
                 />
                 <div className={styles.actionRow}>
@@ -235,7 +321,9 @@ export default function ColorPickerField({
                     color={defaultColor}
                     label={`${t("actions.select")} ${defaultColor}`}
                     title={t("form.heroquestDefaultBrown")}
-                    isSelected={selectedValue.toUpperCase() === defaultColor.toUpperCase()}
+                    isSelected={
+                      normalizeHexColor(defaultColor, true) === normalizeHexColor(selectedValue, true)
+                    }
                     onClick={onSelectDefault}
                   />
                   <SwatchActionButton
@@ -251,14 +339,17 @@ export default function ColorPickerField({
                     label={`${t("actions.select")} ${t("form.noBorder")}`}
                     title={t("form.noBorder")}
                     className={styles.noBorderSwatch}
-                    isSelected={selectedValue.toLowerCase() === transparentValue}
+                    isSelected={isTransparent}
                     onClick={onSelectTransparent}
                   />
                   <SwatchActionButton
                     label={t("form.saveSwatch")}
                     title={t("form.saveSwatch")}
                     disabled={!canSaveSwatch}
-                    onClick={onSaveSwatch}
+                    onClick={() => {
+                      if (!normalizedSelected) return;
+                      void saveSwatch(normalizedSelected);
+                    }}
                   >
                     <Plus aria-hidden size={14} />
                   </SwatchActionButton>
@@ -272,7 +363,9 @@ export default function ColorPickerField({
                     color={defaultColor}
                     label={`${t("actions.select")} ${defaultColor}`}
                     title={t("form.heroquestDefaultBrown")}
-                    isSelected={selectedValue.toUpperCase() === defaultColor.toUpperCase()}
+                    isSelected={
+                      normalizeHexColor(defaultColor, true) === normalizeHexColor(selectedValue, true)
+                    }
                     onClick={onSelectDefault}
                   />
                   <SwatchActionButton
@@ -288,19 +381,23 @@ export default function ColorPickerField({
                     label={`${t("actions.select")} ${t("form.noBorder")}`}
                     title={t("form.noBorder")}
                     className={styles.noBorderSwatch}
-                    isSelected={selectedValue.toLowerCase() === transparentValue}
+                    isSelected={isTransparent}
                     onClick={onSelectTransparent}
                   />
                 </div>
                 <div className={styles.swatchGridScroll}>
                   <div className={styles.swatchGrid}>
-                    {swatches.map((swatch) => (
+                    {swatches.slice(0, maxSwatches).map((swatch) => (
                       <SwatchWithRemove
                         key={swatch}
                         color={swatch}
-                        isSelected={swatch.toUpperCase() === selectedValue.toUpperCase()}
-                        onSelect={() => onChange(swatch)}
-                        onRemove={() => onRemoveSwatch(swatch)}
+                        isSelected={
+                          normalizeHexColor(swatch, true) === normalizeHexColor(selectedValue, true)
+                        }
+                        onSelect={() => handleChangeNormalized(swatch)}
+                        onRemove={() => {
+                          void removeSwatch(swatch);
+                        }}
                         ariaLabel={`${t("actions.select")} ${swatch}`}
                         removeLabel={`${t("actions.delete")} ${swatch}`}
                       />
@@ -331,7 +428,7 @@ export default function ColorPickerField({
                               style={{ backgroundColor: color }}
                               title={color}
                               aria-label={`${t("actions.select")} ${color}`}
-                              onClick={() => onChange(color)}
+                              onClick={() => handleChangeNormalized(color)}
                             />
                             ))}
                           </div>
@@ -349,6 +446,90 @@ export default function ColorPickerField({
       ) : null}
     </div>
   );
+}
+
+type RgbaColor = { r: number; g: number; b: number; a: number };
+
+function normalizeHexColor(value: string | undefined, allowAlpha: boolean): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.toLowerCase() === "transparent") return null;
+
+  const raw = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;
+  if (!/^[0-9a-fA-F]+$/.test(raw)) return null;
+
+  if (raw.length === 3 || raw.length === 4) {
+    const r = raw[0];
+    const g = raw[1];
+    const b = raw[2];
+    const a = raw.length === 4 ? raw[3] : "f";
+    const hex = `${r}${r}${g}${g}${b}${b}${a}${a}`.toUpperCase();
+    return allowAlpha ? `#${hex}` : `#${hex.slice(0, 6)}`;
+  }
+
+  if (raw.length === 6 || raw.length === 8) {
+    const hex = raw.toUpperCase();
+    if (allowAlpha) {
+      return `#${hex.length === 6 ? `${hex}FF` : hex}`;
+    }
+    return `#${hex.slice(0, 6)}`;
+  }
+
+  return null;
+}
+
+function hexToRgba(value: string): RgbaColor {
+  const normalized = normalizeHexColor(value, true);
+  if (!normalized) {
+    return { r: 0, g: 0, b: 0, a: 1 };
+  }
+  const hex = normalized.slice(1);
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const a = parseInt(hex.slice(6, 8), 16) / 255;
+  return { r, g, b, a };
+}
+
+function rgbaToHex({ r, g, b, a }: RgbaColor): string {
+  const clamp = (value: number, min: number, max: number) =>
+    Math.min(Math.max(value, min), max);
+  const channel = (value: number) => {
+    const hex = Math.round(clamp(value, 0, 255)).toString(16).padStart(2, "0");
+    return hex.toUpperCase();
+  };
+  const alpha = channel(Math.round(clamp(a ?? 1, 0, 1) * 255));
+  return `#${channel(r)}${channel(g)}${channel(b)}${alpha}`;
+}
+
+function normalizeDraftHex(value: string, allowAlpha: boolean) {
+  if (!value) return null;
+  const rawValue = value.trim();
+  if (!rawValue) return null;
+  const raw = rawValue.startsWith("#") ? rawValue.slice(1) : rawValue;
+  if (!/^[0-9a-fA-F]+$/.test(raw)) return null;
+  if (raw.length === 3 || raw.length === 4 || raw.length === 6 || raw.length === 8) {
+    return normalizeHexColor(`#${raw}`, allowAlpha);
+  }
+  return null;
+}
+
+function sanitizeHexInput(value: string) {
+  if (!value) return "";
+  const trimmed = value.trim();
+  const hasHash = trimmed.startsWith("#");
+  const stripped = trimmed.replace(/#/g, "");
+  const hexOnly = stripped.replace(/[^0-9a-fA-F]/g, "");
+  return hasHash ? `#${hexOnly}` : hexOnly;
+}
+
+function isTransparentValue(value: string, transparentValue: string) {
+  if (value.trim().toLowerCase() === "transparent") return true;
+  if (value.trim().toLowerCase() === transparentValue.toLowerCase()) return true;
+  const normalized = normalizeHexColor(value, true);
+  if (!normalized) return false;
+  return normalized.slice(7, 9) === "00";
 }
 
 type SwatchButtonProps = {

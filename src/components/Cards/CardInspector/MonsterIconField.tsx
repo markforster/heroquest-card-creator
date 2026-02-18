@@ -17,6 +17,11 @@ type MonsterIconFieldProps = {
   label: string;
 };
 
+type LastClearedIcon = {
+  id: string;
+  name?: string;
+};
+
 export default function MonsterIconField({ label }: MonsterIconFieldProps) {
   const { t } = useI18n();
   const {
@@ -44,6 +49,7 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
   const adjustmentsPopoverRef = useRef<HTMLDivElement | null>(null);
   const [adjustmentsStyle, setAdjustmentsStyle] = useState<CSSProperties | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [lastCleared, setLastCleared] = useState<LastClearedIcon | null>(null);
 
   const MIN_SCALE = 0.2;
   const MAX_SCALE = 3;
@@ -53,6 +59,19 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
   const ROTATION_STEP = 1;
 
   const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+  const handleRestoreLastCleared = () => {
+    if (!lastCleared) return;
+    setValue("iconAssetId", lastCleared.id, { shouldDirty: true, shouldTouch: true });
+    if (lastCleared.name) {
+      setValue("iconAssetName", lastCleared.name, { shouldDirty: true, shouldTouch: true });
+    }
+    setValue("iconOffsetX", 0, { shouldDirty: true, shouldTouch: true });
+    setValue("iconOffsetY", 0, { shouldDirty: true, shouldTouch: true });
+    setValue("iconScale", 1, { shouldDirty: true, shouldTouch: true });
+    setValue("iconRotation", 0, { shouldDirty: true, shouldTouch: true });
+    setLastCleared(null);
+  };
 
   useOutsideClick(
     [adjustmentsPopoverRef, adjustmentsButtonRef],
@@ -160,6 +179,12 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
             icon={XCircle}
             title={t("tooltip.clearSelectedIcon")}
             onClick={() => {
+              if (iconAssetId) {
+                setLastCleared({
+                  id: iconAssetId,
+                  name: iconAssetName,
+                });
+              }
               setValue("iconAssetId", undefined, { shouldDirty: true, shouldTouch: true });
               setValue("iconAssetName", undefined, { shouldDirty: true, shouldTouch: true });
               setValue("iconOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
@@ -169,6 +194,17 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
             }}
           >
             <span className="visually-hidden">{t("actions.clear")}</span>
+          </IconButton>
+        ) : lastCleared ? (
+          <IconButton
+            className="btn btn-outline-secondary btn-sm"
+            icon={RotateCcw}
+            title={t("tooltip.restoreSelectedImage")}
+            onClick={() => {
+              handleRestoreLastCleared();
+            }}
+          >
+            <span className="visually-hidden">{t("actions.restore")}</span>
           </IconButton>
         ) : null}
       </div>
@@ -444,15 +480,16 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
             document.body,
           )
         : null}
-      <AssetsModal
-        isOpen={picker.isOpen}
-        onClose={picker.close}
-        mode="select"
-        onSelect={(asset) => {
-          setValue("iconAssetId", asset.id, { shouldDirty: true, shouldTouch: true });
-          setValue("iconAssetName", asset.name, { shouldDirty: true, shouldTouch: true });
-        }}
-      />
+        <AssetsModal
+          isOpen={picker.isOpen}
+          onClose={picker.close}
+          mode="select"
+          onSelect={(asset) => {
+            setValue("iconAssetId", asset.id, { shouldDirty: true, shouldTouch: true });
+            setValue("iconAssetName", asset.name, { shouldDirty: true, shouldTouch: true });
+            setLastCleared(null);
+          }}
+        />
     </div>
   );
 }
