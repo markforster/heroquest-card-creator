@@ -3,7 +3,7 @@
 import { SquareStack } from "lucide-react";
 import { useNavigate, useMatch } from "react-router-dom";
 
-import NavActionButton from "@/components/NavActionButton";
+import NavActionButton from "@/components/Layout/LeftNav/NavActionButton";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export default function CardsAction() {

@@ -2,7 +2,7 @@
 
 import { Clock } from "lucide-react";
 
-import NavActionButton from "@/components/NavActionButton";
+import NavActionButton from "@/components/Layout/LeftNav/NavActionButton";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
