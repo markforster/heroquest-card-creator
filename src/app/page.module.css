@@ -1027,7 +1027,7 @@
   border: 1px solid var(--hq-black-60);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  padding: var(--space-6);
+  padding: var(--space-12);
 }
 
 .assetsInspectorPreviewInner::before {
