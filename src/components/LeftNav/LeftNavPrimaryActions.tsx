@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/AppActionsContext";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
-import KeyBinding from "@/components/KeyBinding";
+import KeyBinding from "@/components/common/KeyBinding";
 import NavActionButton from "@/components/NavActionButton";
 import { useI18n } from "@/i18n/I18nProvider";
 
