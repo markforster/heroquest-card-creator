@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import IconButton from "@/components/common/IconButton";
@@ -71,7 +71,7 @@ export default function SplitActionMenu({
             disabled={disabled}
             onClick={onToggleMenu}
           >
-            <ChevronDown size={16} aria-hidden="true" />
+            <MoreVertical size={16} aria-hidden="true" />
           </button>
           {isMenuOpen ? (
             <div
