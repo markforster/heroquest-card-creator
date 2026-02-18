@@ -8,7 +8,7 @@ import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
 import CardPreview from "@/components/CardPreview";
 import ModalShell from "@/components/common/ModalShell";
-import { useEscapeModalAware } from "@/components/EscapeStackProvider";
+import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";

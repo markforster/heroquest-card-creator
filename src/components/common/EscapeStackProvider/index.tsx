@@ -1,14 +1,9 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+
+import { useEscapeKey } from "./useEscapeKey";
+import { useEscapeListener } from "./useEscapeListener";
 
 type EscapeEntry = {
   id: string;
@@ -64,10 +59,7 @@ export function EscapeStackProvider({ children }: { children: React.ReactNode })
     [entries],
   );
 
-  useEffect(() => {
-    window.addEventListener("keydown", handleEscape, true);
-    return () => window.removeEventListener("keydown", handleEscape, true);
-  }, [handleEscape]);
+  useEscapeListener(handleEscape);
 
   const value = useMemo(() => ({ register, unregister, update }), [register, unregister, update]);
 
@@ -105,20 +97,5 @@ export function useEscapeModalAware(options: {
     return () => ctx.unregister(id);
   }, [ctx, enabled, id, isOpen, onEscape]);
 
-  useEffect(() => {
-    if (!ctx) return;
-    if (!isOpen) return;
-    ctx.update(id, onEscape, enabled);
-  }, [ctx, enabled, id, isOpen, onEscape]);
-
-  useEffect(() => {
-    if (ctx || !isOpen || !enabled) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      onEscape();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [ctx, enabled, isOpen, onEscape]);
+  useEscapeKey({ enabled: !ctx && isOpen && enabled, onEscape });
 }

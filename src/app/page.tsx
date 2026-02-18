@@ -24,8 +24,8 @@ import { PreviewCanvasProvider } from "@/components/CardPreview/PreviewCanvasCon
 import DatabaseVersionGate from "@/components/DatabaseVersionGate";
 import { EditorSaveProvider } from "@/components/EditorSaveContext";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
-import { EscapeStackProvider } from "@/components/EscapeStackProvider";
-import { useEscapeModalAware } from "@/components/EscapeStackProvider";
+import { EscapeStackProvider } from "@/components/common/EscapeStackProvider";
+import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import HeaderWithTemplatePicker from "@/components/HeaderWithTemplatePicker";
 import { LibraryTransferProvider } from "@/components/LibraryTransferContext";

@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 
-import { useEscapeModalAware } from "@/components/EscapeStackProvider";
+import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 
 type UseModalEscapeArgs = {
   isOpen: boolean;
