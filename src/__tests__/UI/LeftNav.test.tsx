@@ -7,7 +7,7 @@ const openStockpile = jest.fn();
 const openSettings = jest.fn();
 const openTemplatePicker = jest.fn();
 
-jest.mock("@/components/AppActionsContext", () => ({
+jest.mock("@/components/Providers/AppActionsContext", () => ({
   __esModule: true,
   useAppActions: () => ({
     openAssets,
@@ -18,7 +18,7 @@ jest.mock("@/components/AppActionsContext", () => ({
   }),
 }));
 
-jest.mock("@/components/CardEditor/CardEditorContext", () => ({
+jest.mock("@/components/Providers/CardEditorContext", () => ({
   __esModule: true,
   useCardEditor: () => ({
     state: {

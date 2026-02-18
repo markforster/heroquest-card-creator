@@ -1,6 +1,6 @@
 import ribbon from "@/assets/card-parts/ribbon.png";
 import Layer from "@/components/CardPreview/Layer";
-import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
+import { useTextFittingPreferences } from "@/components/Providers/TextFittingPreferencesContext";
 import {
   NONRIBBON_TITLE_WEIGHT,
   TITLE_VERTICAL_SCALE_Y,
@@ -10,7 +10,7 @@ import {
   USE_TITLE_STROKE,
   USE_TITLE_VERTICAL_COMPRESSION,
 } from "@/config/flags";
-import { useDebugVisuals } from "@/components/DebugVisualsContext";
+import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { DEFAULT_TITLE_COLOR } from "@/config/colors";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";

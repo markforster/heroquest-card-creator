@@ -2,7 +2,7 @@
 
 import { Box, Square } from "lucide-react";
 
-import { usePreviewRenderer } from "@/components/PreviewRendererContext";
+import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import ToolbarButton from "@/components/ToolsToolbar/ToolbarButton";
 import ToolbarButtonGroup from "@/components/ToolsToolbar/ToolbarButtonGroup";
 import { useI18n } from "@/i18n/I18nProvider";

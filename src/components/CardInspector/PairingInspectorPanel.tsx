@@ -6,11 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
-import { useAppActions } from "@/components/AppActionsContext";
-import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import { useAppActions } from "@/components/Providers/AppActionsContext";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
-import { useEditorSave } from "@/components/EditorSaveContext";
-import { usePreviewRenderer } from "@/components/PreviewRendererContext";
+import { useEditorSave } from "@/components/Providers/EditorSaveContext";
+import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";

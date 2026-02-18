@@ -4,8 +4,8 @@ import { CopyPlus, Images } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
-import { useAppActions } from "@/components/AppActionsContext";
-import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import { useAppActions } from "@/components/Providers/AppActionsContext";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import KeyBinding from "@/components/common/KeyBinding";
 import NavActionButton from "@/components/NavActionButton";
 import { useI18n } from "@/i18n/I18nProvider";

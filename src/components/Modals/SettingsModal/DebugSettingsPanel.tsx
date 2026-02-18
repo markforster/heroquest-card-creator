@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "@/app/page.module.css";
-import { useDebugVisuals } from "@/components/DebugVisualsContext";
+import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { WarningNotice } from "@/components/common/Notice";
 import { useI18n } from "@/i18n/I18nProvider";
 

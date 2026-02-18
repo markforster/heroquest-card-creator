@@ -6,8 +6,8 @@ import type { ReactNode, RefObject } from "react";
 import { HexColorInput, HexColorPicker } from "react-colorful";
 import { useController, useFormContext } from "react-hook-form";
 
-import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
-import { usePreviewCanvas } from "@/components/CardPreview/PreviewCanvasContext";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { DEFAULT_BORDER_COLOR } from "@/components/CardParts/CardBorder";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getPaletteGroups } from "@/lib/palette";

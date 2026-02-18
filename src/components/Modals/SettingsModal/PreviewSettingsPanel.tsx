@@ -4,8 +4,8 @@ import styles from "@/app/page.module.css";
 import {
   previewRendererFlags,
   usePreviewRenderer,
-} from "@/components/PreviewRendererContext";
-import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
+} from "@/components/Providers/PreviewRendererContext";
+import { useWebglPreviewSettings } from "@/components/Providers/WebglPreviewSettingsContext";
 import { useWebglSupport } from "@/hooks/useWebglSupport";
 import { useI18n } from "@/i18n/I18nProvider";
 

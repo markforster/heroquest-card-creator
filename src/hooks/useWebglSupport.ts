@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 
-import type { PreviewRenderer } from "@/components/PreviewRendererContext";
+import type { PreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { supportsWebgl } from "@/lib/webgl";
 
 export function useWebglSupport(

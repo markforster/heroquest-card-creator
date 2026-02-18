@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 
 import CardPreview, { CardPreviewHandle } from "@/components/CardPreview";
 import WebglPreview from "@/components/CardPreview/WebglPreview";
-import { useDebugVisuals } from "@/components/DebugVisualsContext";
-import { usePreviewRenderer } from "@/components/PreviewRendererContext";
-import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
+import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
+import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
+import { useTextFittingPreferences } from "@/components/Providers/TextFittingPreferencesContext";
 import { KEEP_WEBGL_MOUNTED } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
@@ -19,7 +19,7 @@ import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
-import { useCardEditor } from "./CardEditorContext";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import styles from "./CardPreviewContainer.module.css";
 
 import type { RefObject } from "react";

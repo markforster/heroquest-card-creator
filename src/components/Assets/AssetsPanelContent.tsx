@@ -4,7 +4,7 @@ import { Search, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import IconButton from "@/components/common/IconButton";
 import ModalShell from "@/components/common/ModalShell";
 import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";

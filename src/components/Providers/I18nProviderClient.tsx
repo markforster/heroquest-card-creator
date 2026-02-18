@@ -1,6 +1,6 @@
 "use client";
 
-import StatLabelOverridesProvider from "@/components/StatLabelOverridesProvider";
+import StatLabelOverridesProvider from "@/components/Providers/StatLabelOverridesProvider";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
 import type { PropsWithChildren } from "react";

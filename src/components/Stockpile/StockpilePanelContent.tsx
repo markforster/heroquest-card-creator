@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
-import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import CardPreview from "@/components/CardPreview";
 import ModalShell from "@/components/common/ModalShell";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";

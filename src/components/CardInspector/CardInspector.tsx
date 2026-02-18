@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import styles from "@/app/page.module.css";
-import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
 import GenericInspectorForm from "./GenericInspectorForm";

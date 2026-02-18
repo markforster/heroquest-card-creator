@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
-import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardDataByTemplate } from "@/types/card-data";

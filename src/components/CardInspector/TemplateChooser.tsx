@@ -4,10 +4,10 @@ import { BringToFront, SendToBack } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
-import { useEditorSave } from "@/components/EditorSaveContext";
-import { usePreviewRenderer } from "@/components/PreviewRendererContext";
+import { useEditorSave } from "@/components/Providers/EditorSaveContext";
+import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";

@@ -4,7 +4,7 @@ import { Move, Rotate3d } from "lucide-react";
 
 import ToolbarButton from "@/components/ToolsToolbar/ToolbarButton";
 import ToolbarButtonGroup from "@/components/ToolsToolbar/ToolbarButtonGroup";
-import { usePreviewRenderer } from "@/components/PreviewRendererContext";
+import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export default function WebglInteractionGroup() {

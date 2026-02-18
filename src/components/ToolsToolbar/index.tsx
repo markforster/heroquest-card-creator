@@ -4,7 +4,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { useRef } from "react";
 
 import styles from "@/app/page.module.css";
-import { previewRendererFlags, usePreviewRenderer } from "@/components/PreviewRendererContext";
+import { previewRendererFlags, usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import RendererToggleGroup from "@/components/ToolsToolbar/RendererToggleGroup";
 import TextFittingSettingsPopover from "@/components/TextFittingSettings/TextFittingSettingsPopover";
 import ToolbarButton from "@/components/ToolsToolbar/ToolbarButton";

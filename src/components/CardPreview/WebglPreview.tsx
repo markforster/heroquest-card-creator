@@ -30,8 +30,8 @@ import blueprintFallback from "@/assets/blueprint.png";
 import { linen5DataUrl } from "@/assets/linen-5-data";
 import linenNormal3 from "@/assets/linen-5.png";
 import { spinnerBlueprintDataUrl } from "@/assets/spinner-blueprint-data";
-import { usePreviewRenderer } from "@/components/PreviewRendererContext";
-import { useWebglPreviewSettings } from "@/components/WebglPreviewSettingsContext";
+import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
+import { useWebglPreviewSettings } from "@/components/Providers/WebglPreviewSettingsContext";
 import {
   ENABLE_WEBGL_EMISSIVE,
   ENABLE_WEBGL_SHEEN,

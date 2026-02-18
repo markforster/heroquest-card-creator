@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useMemo } from "react";
 
-import { useLocalStorageBoolean } from "@/components/LocalStorageProvider";
+import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
 
 import type { ReactNode } from "react";
 

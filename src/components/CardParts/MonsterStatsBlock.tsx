@@ -1,8 +1,8 @@
 import monsterStatsBg from "@/assets/card-parts/monster-stats.png";
 import Layer from "@/components/CardPreview/Layer";
-import { useStatLabelOverrides } from "@/components/StatLabelOverridesProvider";
+import { useStatLabelOverrides } from "@/components/Providers/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useDebugVisuals } from "@/components/DebugVisualsContext";
+import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { getStatLabel } from "@/lib/stat-labels";
 import type { StatValue } from "@/types/stats";
 

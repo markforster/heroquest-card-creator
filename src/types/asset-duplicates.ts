@@ -1,6 +1,6 @@
 "use client";
 
-import type { ExistingAssetRef } from "@/components/Assets/AssetHashIndexProvider";
+import type { ExistingAssetRef } from "@/components/Providers/AssetHashIndexProvider";
 
 export type UploadScanStatus =
   | "unique"

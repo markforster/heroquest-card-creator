@@ -1,4 +1,4 @@
-import { useTextFittingPreferences } from "@/components/TextFittingPreferencesContext";
+import { useTextFittingPreferences } from "@/components/Providers/TextFittingPreferencesContext";
 import {
   STATS_VERTICAL_SCALE_Y,
   USE_STATS_VERTICAL_COMPRESSION,

@@ -1,6 +1,6 @@
 import { GoogleTagManager } from "@next/third-parties/google";
 
-import I18nProviderClient from "@/components/I18nProviderClient";
+import I18nProviderClient from "@/components/Providers/I18nProviderClient";
 
 import type { Metadata, Viewport } from "next";
 import type { PropsWithChildren } from "react";

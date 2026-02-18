@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import { useLibraryTransfer } from "@/components/LibraryTransferContext";
+import { useLibraryTransfer } from "@/components/Providers/LibraryTransferContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
 import appLogo from "../../public/assets/apple-touch-icon.png";

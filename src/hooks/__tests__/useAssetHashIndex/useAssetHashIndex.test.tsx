@@ -2,9 +2,9 @@ import { renderHook } from "@testing-library/react";
 
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
 
-import { useAssetHashIndexContext } from "@/components/Assets/AssetHashIndexProvider";
+import { useAssetHashIndexContext } from "@/components/Providers/AssetHashIndexProvider";
 
-jest.mock("@/components/Assets/AssetHashIndexProvider", () => ({
+jest.mock("@/components/Providers/AssetHashIndexProvider", () => ({
   useAssetHashIndexContext: jest.fn(),
 }));
 
