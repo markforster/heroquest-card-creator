@@ -1,30 +1,46 @@
-.helpBody {
+.docBody {
   max-height: 60vh;
   overflow-y: auto;
   font-size: 1.1rem;
 }
 
-.helpSection {
+.docSection {
   margin-bottom: 0.75rem;
 }
 
-.helpSection:last-child {
+.docSection:last-child {
   margin-bottom: 0;
 }
 
-.helpHeading {
+.docHeading {
   margin: 0 0 0.35rem;
   font-size: 1.2rem;
   color: #e6b35a;
 }
 
-.helpList {
+.docList {
   margin: 0;
   padding-left: 1.1rem;
   line-height: 1.4;
 }
 
-.helpParagraph {
+.docParagraph {
   margin: 0;
   line-height: 1.4;
+}
+
+.docParagraphSpaced {
+  margin-top: 0.5rem;
+}
+
+.docListSpaced {
+  margin-top: 0.5rem;
+}
+
+.docSectionSpaced {
+  margin-top: 0.9rem;
+}
+
+.docLink {
+  color: #e6b35a;
 }
