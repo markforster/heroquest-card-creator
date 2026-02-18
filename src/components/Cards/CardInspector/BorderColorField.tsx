@@ -45,6 +45,10 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     [colorValue],
   );
   const normalizedSelected = useMemo(() => normalizeBorderColor(borderColor), [borderColor]);
+  const inputValue =
+    normalizedSelected === TRANSPARENT_BORDER_COLOR
+      ? ""
+      : normalizeHex(normalizedSelected) ?? normalizedCurrent;
   const swatchKeys = useMemo(
     () => new Set(swatches.map((swatch) => swatch.toUpperCase())),
     [swatches],
@@ -142,7 +146,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     <div className="mb-2">
       <ColorPickerField
         label={label}
-        inputValue={normalizedCurrent}
+        inputValue={inputValue}
         selectedValue={normalizedSelected}
         defaultColor={DEFAULT_BORDER_COLOR}
         transparentValue={TRANSPARENT_BORDER_COLOR}
