@@ -33,8 +33,8 @@
 
 .currentSwatch {
   flex: 0 1 auto;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
   border: 2px solid rgba(255, 255, 255, 0.55);
   padding: 0;
