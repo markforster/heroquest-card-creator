@@ -37,12 +37,11 @@ import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
 
 import { CardPreviewHandle } from "../CardPreview/types";
+import type { OpenCloseProps } from "@/types/ui";
 
 type StockpilePanelMode = "manage" | "pair-fronts" | "pair-backs";
 
-type StockpilePanelContentProps = {
-  isOpen: boolean;
-  onClose: () => void;
+type StockpilePanelContentProps = OpenCloseProps & {
   onLoadCard?: (card: CardRecord) => void;
   refreshToken?: number;
   activeCardId?: string | null;

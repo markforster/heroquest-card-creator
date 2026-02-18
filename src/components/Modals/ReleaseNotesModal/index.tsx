@@ -1,19 +1,12 @@
 "use client";
 
+import { DocList, DocParagraph, DocSection, docStyles } from "@/components/common/DocContent";
 import ModalShell from "@/components/common/ModalShell";
-import {
-  DocList,
-  DocParagraph,
-  DocSection,
-  docStyles,
-} from "@/components/common/DocContent";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { OpenCloseProps } from "@/types/ui";
 import { APP_VERSION } from "@/version";
 
-type ReleaseNotesModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-};
+type ReleaseNotesModalProps = OpenCloseProps;
 
 export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModalProps) {
   const { t } = useI18n();
@@ -168,9 +161,7 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
         </DocSection>
 
         <DocSection title="Update 12/02/2026 (v0.5.2)" className={docStyles.docSectionSpaced}>
-          <DocParagraph>
-            This release expanded pairing workflows and export options:
-          </DocParagraph>
+          <DocParagraph>This release expanded pairing workflows and export options:</DocParagraph>
           <DocList className={docStyles.docListSpaced}>
             <li>
               Front/back faces are now first-class, with clearer pairing controls in the inspector
@@ -191,9 +182,7 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
         </DocSection>
 
         <DocSection title="Update 07/02/2026 (v0.5.1)" className={docStyles.docSectionSpaced}>
-          <DocParagraph>
-            This update focused on the editor’s foundation and workflow:
-          </DocParagraph>
+          <DocParagraph>This update focused on the editor’s foundation and workflow:</DocParagraph>
           <DocList className={docStyles.docListSpaced}>
             <li>
               A blueprint-based renderer now drives card layouts for better consistency and easier

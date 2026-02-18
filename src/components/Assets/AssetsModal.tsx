@@ -5,12 +5,11 @@ import AssetsPanelContent from "@/components/Assets/AssetsPanelContent";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { AssetRecord } from "@/lib/assets-db";
 import styles from "@/app/page.module.css";
+import type { OpenCloseProps } from "@/types/ui";
 
 type AssetsModalMode = "manage" | "select";
 
-type AssetsModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
+type AssetsModalProps = OpenCloseProps & {
   mode?: AssetsModalMode;
   onSelect?: (asset: AssetRecord) => void;
 };

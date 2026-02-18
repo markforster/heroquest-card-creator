@@ -2,14 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import ModalShell from "@/components/common/ModalShell";
 import styles from "@/app/page.module.css";
+import ModalShell from "@/components/common/ModalShell";
 import { cardTemplatesById } from "@/data/card-templates";
-import { useI18n } from "@/i18n/I18nProvider";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
+import { useI18n } from "@/i18n/I18nProvider";
 import { listCards } from "@/lib/cards-db";
-
 import type { CardRecord } from "@/types/cards-db";
+import type { OpenCloseProps } from "@/types/ui";
 
 type RecentCardsModalProps = {
   isOpen: boolean;
@@ -19,11 +19,7 @@ type RecentCardsModalProps = {
 
 const RECENT_LIMIT = 100;
 
-export default function RecentCardsModal({
-  isOpen,
-  onClose,
-  onSelectCard,
-}: RecentCardsModalProps) {
+export default function RecentCardsModal({ isOpen, onClose, onSelectCard }: RecentCardsModalProps) {
   const { t, language } = useI18n();
   const [cards, setCards] = useState<CardRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -80,7 +76,9 @@ export default function RecentCardsModal({
         <div className={styles.cardsGrid}>
           {recentCards.map((card) => {
             const template = cardTemplatesById[card.templateId];
-            const templateLabel = template ? getTemplateNameLabel(language, template) : card.templateId;
+            const templateLabel = template
+              ? getTemplateNameLabel(language, template)
+              : card.templateId;
             const thumbUrl =
               typeof window !== "undefined" && card.thumbnailBlob
                 ? URL.createObjectURL(card.thumbnailBlob)
@@ -116,7 +114,11 @@ export default function RecentCardsModal({
                     />
                   ) : templateThumb?.src ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={templateThumb.src} alt={card.name} className={styles.cardsThumbImage} />
+                    <img
+                      src={templateThumb.src}
+                      alt={card.name}
+                      className={styles.cardsThumbImage}
+                    />
                   ) : null}
                 </div>
                 <div className={styles.cardsItemMeta}>

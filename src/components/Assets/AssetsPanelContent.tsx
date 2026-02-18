@@ -21,12 +21,11 @@ import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
 import type { Dispatch, SetStateAction } from "react";
+import type { OpenCloseProps } from "@/types/ui";
 
 type AssetsPanelMode = "manage" | "select";
 
-type AssetsPanelProps = {
-  isOpen: boolean;
-  onClose: () => void;
+type AssetsPanelProps = OpenCloseProps & {
   mode?: AssetsPanelMode;
   onSelect?: (asset: AssetRecord) => void;
   onSelectionChange?: (assets: AssetRecord[]) => void;

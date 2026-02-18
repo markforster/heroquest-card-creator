@@ -3,11 +3,9 @@
 import ModalShell from "@/components/common/ModalShell";
 import { DocList, DocParagraph, DocSection, docStyles } from "@/components/common/DocContent";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { OpenCloseProps } from "@/types/ui";
 
-type HelpModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-};
+type HelpModalProps = OpenCloseProps;
 
 export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
   const { t } = useI18n();

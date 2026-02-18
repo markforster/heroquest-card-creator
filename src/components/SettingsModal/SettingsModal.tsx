@@ -13,11 +13,9 @@ import {
 } from "@/components/SettingsModal/SettingsModalContext";
 import NavActionButton from "@/components/NavActionButton";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { OpenCloseProps } from "@/types/ui";
 
-export type SettingsModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-};
+export type SettingsModalProps = OpenCloseProps;
 
 function SettingsModalContent({
   isOpen,
