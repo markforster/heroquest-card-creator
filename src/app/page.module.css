@@ -1044,11 +1044,40 @@
   background-size: cover;
   background-position: center;
   opacity: 0.45;
-  filter: blur(20px);
+  filter: blur(var(--asset-preview-blur, 20px));
   transform: scale(1.8);
   transform-origin: center;
   pointer-events: none;
   z-index: 0;
+  animation:
+    assetPreviewPulse 7s ease-in-out infinite,
+    assetPreviewRock 13s ease-in-out infinite;
+}
+
+@keyframes assetPreviewPulse {
+  0%,
+  100% {
+    opacity: 0.38;
+  }
+  50% {
+    opacity: 0.56;
+  }
+}
+
+@keyframes assetPreviewRock {
+  0%,
+  100% {
+    transform: scale(1.6) rotate(-1.2deg) translate(-2%, 1%);
+  }
+  50% {
+    transform: scale(2) rotate(1.2deg) translate(2%, -1%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assetsInspectorPreviewInner::before {
+    animation: none;
+  }
 }
 
 .assetsInspectorPreviewInner img {
