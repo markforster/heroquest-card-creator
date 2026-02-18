@@ -13,6 +13,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { getPaletteGroups } from "@/lib/palette";
 import { getBorderSwatches, setBorderSwatches } from "@/lib/settings-db";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
+import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
 import type { TemplateId } from "@/types/templates";
 
 import styles from "./BorderColorField.module.css";
@@ -86,6 +87,13 @@ export default function BorderColorField({ label, templateId }: BorderColorField
       }),
     [swatches],
   );
+  const smartPopoverPlacement = usePopoverPlacement({
+    isOpen: isSmartOpen,
+    anchorRef: smartButtonRef,
+    popoverRef: smartPopoverRef,
+    padding: 12,
+    offset: 8,
+  });
 
   useOutsideClick([smartPopoverRef, smartButtonRef], () => setIsSmartOpen(false), isSmartOpen);
 
@@ -101,7 +109,10 @@ export default function BorderColorField({ label, templateId }: BorderColorField
       const anchorRect = anchor.getBoundingClientRect();
       const popoverRect = popover.getBoundingClientRect();
       const padding = 12;
-      const preferredTop = anchorRect.bottom + 8;
+      const preferredTop =
+        smartPopoverPlacement === "up"
+          ? anchorRect.top - popoverRect.height - 8
+          : anchorRect.bottom + 8;
       const preferredLeft = anchorRect.left;
 
       const viewportWidth = window.innerWidth;
@@ -113,11 +124,6 @@ export default function BorderColorField({ label, templateId }: BorderColorField
       );
 
       let top = preferredTop;
-      const wouldOverflowBottom = preferredTop + popoverRect.height + padding > viewportHeight;
-      if (wouldOverflowBottom) {
-        const aboveTop = anchorRect.top - popoverRect.height - 8;
-        top = aboveTop;
-      }
       top = Math.min(
         Math.max(top, padding),
         viewportHeight - popoverRect.height - padding,
@@ -133,7 +139,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [isSmartOpen, smartGroups, isSmartBusy]);
+  }, [isSmartOpen, smartGroups, isSmartBusy, smartPopoverPlacement]);
 
   useEffect(() => {
     let active = true;

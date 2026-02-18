@@ -2,6 +2,7 @@
 
 import styles from "@/app/page.module.css";
 import ActionBar from "@/components/common/ActionBar";
+import ProgressBar from "@/components/common/ProgressBar";
 import ModalShell from "@/components/common/ModalShell";
 
 type ExportProgressOverlayProps = {
@@ -37,14 +38,16 @@ export default function ExportProgressOverlay({
       contentClassName={styles.stockpileOverlayPanel}
       keepMounted
     >
-      <div className="d-flex flex-column gap-2">
-        <div className={styles.exportProgressTrack} aria-hidden="true">
-          <div className={styles.exportProgressFill} style={{ width: `${percent}%` }} />
-        </div>
-        <div className={styles.exportProgressLabel}>
-          {progress} / {total}
-        </div>
-      </div>
+      <ProgressBar
+        percent={percent}
+        trackClassName={styles.exportProgressTrack}
+        fillClassName={styles.exportProgressFill}
+        label={
+          <div className={styles.exportProgressLabel}>
+            {progress} / {total}
+          </div>
+        }
+      />
       <div className={styles.stockpileOverlayActions}>
         <ActionBar
           right={
