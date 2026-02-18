@@ -811,6 +811,12 @@
   width: 100%;
 }
 
+.bodyTextToolbarRow input[type="range"],
+.toolsToolbarPopoverLabel input[type="range"],
+.settingsPanelRange input[type="range"] {
+  accent-color: var(--hq-accent);
+}
+
 .toolsToolbarPopoverHint {
   font-size: 0.72rem;
   color: #9a9a9a;
