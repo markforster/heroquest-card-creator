@@ -53,10 +53,16 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
       ...(draftValue ?? {}),
       ...(showTitleToggle ? { showTitle: draftValue?.showTitle ?? true } : {}),
       ...(showTitlePlacement
-        ? { titlePlacement: (draftValue as { titlePlacement?: string })?.titlePlacement ?? "bottom" }
+        ? {
+            titlePlacement:
+              (draftValue as { titlePlacement?: "top" | "bottom" })?.titlePlacement ?? "bottom",
+          }
         : {}),
       ...(showTitleStyle
-        ? { titleStyle: (draftValue as { titleStyle?: string })?.titleStyle ?? "ribbon" }
+        ? {
+            titleStyle:
+              (draftValue as { titleStyle?: "ribbon" | "plain" })?.titleStyle ?? "ribbon",
+          }
         : {}),
     },
     mode: "onBlur",

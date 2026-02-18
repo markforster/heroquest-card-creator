@@ -1,4 +1,4 @@
-import type { CardDataByTemplate } from "@/types/card-data";
+import type { BodyTextStyle, CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { StatValue } from "@/types/stats";
 import type { TemplateId } from "@/types/templates";
@@ -95,7 +95,7 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     titleStyle: data.titleStyle,
     titleColor: data.titleColor,
     titlePlacement: (data as { titlePlacement?: "top" | "bottom" }).titlePlacement,
-    bodyTextStyle: (data as { bodyTextStyle?: unknown }).bodyTextStyle,
+    bodyTextStyle: (data as { bodyTextStyle?: BodyTextStyle }).bodyTextStyle,
     face,
     description: data.description,
     imageAssetId: data.imageAssetId,

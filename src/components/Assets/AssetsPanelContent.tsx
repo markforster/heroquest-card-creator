@@ -237,15 +237,16 @@ export default function AssetsPanelContent({
           duplicateCount: 0,
         });
       }
-      let scanByIndex: Map<number, string> | null = null;
+      let scanByIndex: Map<number, string | null> | null = null;
       let reportByIndex: Map<
         number,
         "unique" | "duplicate-existing" | "duplicate-batch" | "name-collision" | "error"
       > | null = null;
 
       try {
-        const scanResult = await scanFiles(files, {
-          onProgress: async ({ completed, total }) => {
+        const scanResult = await scanFiles(
+          files,
+          async (completed, total) => {
             if (!ENABLE_UPLOAD_PROGRESS) return;
             setUploadProgress((prev) =>
               prev
@@ -260,9 +261,9 @@ export default function AssetsPanelContent({
             );
             await maybeDelayUploadStep();
           },
-        });
-        scanByIndex = scanResult.scanByIndex;
-        reportByIndex = scanResult.reportByIndex;
+        );
+        scanByIndex = new Map(scanResult.items.map((item) => [item.fileIndex, item.hash]));
+        reportByIndex = new Map(scanResult.items.map((item) => [item.fileIndex, item.status]));
       } catch (scanError) {
         // eslint-disable-next-line no-console
         console.warn("[AssetsModal] Upload scan failed", scanError);
@@ -284,10 +285,14 @@ export default function AssetsPanelContent({
       const duplicates: UploadScanReportItem[] = [];
       const renames: Array<{ original: string; renamed: string }> = [];
       const uploaded = new Set<string>();
-      const existing = new Set(existingNames.map((name) => name.toLowerCase()));
+      const existingNamesLower = new Set(
+        Array.from(existingNames, (name) => name.toLowerCase()),
+      );
+      const existingFileNames = new Set(existingNames);
       const colliding = new Set<string>();
       const batchHashes = new Set<string>();
       const batchNames = new Set<string>();
+      const batchNamesLower = new Set<string>();
       let skippedCount = 0;
       let errorCount = 0;
 
@@ -309,12 +314,24 @@ export default function AssetsPanelContent({
           fileHash = scanByIndex.get(index) ?? null;
           const report = reportByIndex.get(index);
           if (report === "duplicate-existing") {
-            duplicates.push({ file, status: "duplicate-existing", fileIndex: index });
+            duplicates.push({
+              file,
+              status: "duplicate-existing",
+              fileIndex: index,
+              hash: fileHash,
+              recommendedAction: "skip",
+            });
             skippedCount += 1;
             continue;
           }
           if (report === "duplicate-batch") {
-            duplicates.push({ file, status: "duplicate-batch", fileIndex: index });
+            duplicates.push({
+              file,
+              status: "duplicate-batch",
+              fileIndex: index,
+              hash: fileHash,
+              recommendedAction: "skip",
+            });
             skippedCount += 1;
             continue;
           }
@@ -339,7 +356,13 @@ export default function AssetsPanelContent({
 
         if (fileHash) {
           if (batchHashes.has(fileHash)) {
-            duplicates.push({ file, status: "duplicate-batch", fileIndex: index });
+            duplicates.push({
+              file,
+              status: "duplicate-batch",
+              fileIndex: index,
+              hash: fileHash,
+              recommendedAction: "skip",
+            });
             skippedCount += 1;
             continue;
           }
@@ -348,32 +371,42 @@ export default function AssetsPanelContent({
 
         let nextName = name;
         let isRename = false;
-        if (existing.has(nameLower) || batchNames.has(nameLower) || colliding.has(nameLower)) {
-          nextName = getNextAvailableFilename(name, existing, batchNames);
+        if (
+          existingNamesLower.has(nameLower) ||
+          batchNamesLower.has(nameLower) ||
+          colliding.has(nameLower)
+        ) {
+          nextName = getNextAvailableFilename(
+            new Set([...existingFileNames, ...batchNames]),
+            name,
+          );
           isRename = true;
           renames.push({ original: name, renamed: nextName });
         }
 
         try {
-          const record = await addAsset({
-            id: generateId(),
+          const assetId = generateId();
+          await addAsset(assetId, file, {
             name: nextName,
             mimeType: file.type,
-            size: file.size,
-            width: null,
-            height: null,
-            blob: file,
+            width: 0,
+            height: 0,
           });
-
-          if (record) {
-            uploaded.add(record.id);
-            existing.add(nextName.toLowerCase());
-            batchNames.add(nextName.toLowerCase());
-            if (fileHash) {
-              addToIndex(record.id, fileHash);
-            }
-          } else {
-            errorCount += 1;
+          uploaded.add(assetId);
+          existingNamesLower.add(nextName.toLowerCase());
+          existingFileNames.add(nextName);
+          batchNamesLower.add(nextName.toLowerCase());
+          batchNames.add(nextName);
+          if (fileHash) {
+            addToIndex(fileHash, {
+              id: assetId,
+              name: nextName,
+              mimeType: file.type,
+              width: 0,
+              height: 0,
+              createdAt: Date.now(),
+              size: file.size,
+            });
           }
         } catch (fileError) {
           // eslint-disable-next-line no-console

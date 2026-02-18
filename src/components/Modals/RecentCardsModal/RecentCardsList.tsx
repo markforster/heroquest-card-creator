@@ -6,11 +6,11 @@ import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardRecord } from "@/types/cards-db";
 
-import type { LanguageKey } from "@/i18n/messages";
+import type { SupportedLanguage } from "@/i18n/messages";
 
 type RecentCardsListProps = {
   cards: CardRecord[];
-  language: LanguageKey;
+  language: SupportedLanguage;
   onSelectCard: (card: CardRecord) => boolean | void;
   onClose: () => void;
 };

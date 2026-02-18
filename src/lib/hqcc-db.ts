@@ -306,9 +306,9 @@ export async function openHqccDb(): Promise<HqccDb> {
 
     const request = window.indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
-      const { oldVersion } = request;
+      const { oldVersion } = event;
 
       // Cards store for drafts and saved cards. The concrete CardRecord
       // shape and indexes are defined in docs/card-stockpile.v1.md and

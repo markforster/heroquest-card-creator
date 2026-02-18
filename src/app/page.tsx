@@ -683,6 +683,7 @@ function IndexPageInner() {
                     <TemplateChooser />
                     <WelcomeTemplateModal
                       isOpen={isWelcomeOpen}
+                      onClose={() => setIsWelcomeOpen(false)}
                       onSelect={(templateId) => {
                         const nextDraft = createDefaultCardData(templateId);
                         setSelectedTemplateId(templateId);

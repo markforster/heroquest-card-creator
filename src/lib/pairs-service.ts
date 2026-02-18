@@ -1,6 +1,7 @@
 "use client";
 
 import type { PairRecord } from "@/types/pairs-db";
+import type { CardRecord } from "@/types/cards-db";
 
 import { getCard } from "./cards-db";
 import { generateId } from ".";

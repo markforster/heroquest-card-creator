@@ -142,10 +142,10 @@ function AssetsInspector({
         const existingBlob = await getAssetBlob(asset.id);
         if (existingBlob) {
           const allAssets = await getAllAssets();
-          const existingNames = new Set(allAssets.map((item) => item.name.toLowerCase()));
+          const existingNames = new Set(allAssets.map((item) => item.name));
           const dateStamp = new Date().toISOString().slice(0, 10);
           const backupBase = `${asset.name} (backup ${dateStamp})`;
-          const backupName = getNextAvailableFilename(backupBase, existingNames, new Set());
+          const backupName = getNextAvailableFilename(existingNames, backupBase);
           await addAsset(
             generateId(),
             existingBlob,

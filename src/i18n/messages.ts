@@ -1235,7 +1235,6 @@ const baseMessages = {
     "actions.exportPng": "Exportar",
     "actions.assets": "Recursos",
     "actions.cards": "Cartas",
-    "actions.decks": "Baralhos",
     "actions.decks": "Mazos",
     "actions.settings": "Opciones",
     "actions.save": "Guardar",

@@ -25,6 +25,7 @@ export default function TemplateCard({
   onSelect,
 }: TemplateCardProps) {
   const isSidebar = variant === "sidebar";
+  const thumbnailSrc = typeof thumbnail === "string" ? thumbnail : thumbnail.src;
   const buttonClassName = isSidebar
     ? `${styles.templateSidebarCard} ${isSelected ? styles.templateSidebarCardSelected : ""}`
     : `${styles.templateCard} ${isSelected ? styles.templateCardSelected : ""}`;
@@ -34,7 +35,7 @@ export default function TemplateCard({
       {isSidebar ? (
         <div className={styles.templateSidebarThumbWrapper}>
           <Image
-            src={thumbnail}
+            src={thumbnailSrc}
             alt={label}
             className={styles.templateSidebarThumb}
             fill
@@ -44,7 +45,7 @@ export default function TemplateCard({
       ) : (
         <div className={styles.templateCardThumbWrapper}>
           <Image
-            src={thumbnail}
+            src={thumbnailSrc}
             alt={label}
             className={styles.templateCardThumb}
             width={75}
