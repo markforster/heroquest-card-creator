@@ -11,9 +11,7 @@ import { listCards } from "@/lib/cards-db";
 import type { CardRecord } from "@/types/cards-db";
 import type { OpenCloseProps } from "@/types/ui";
 
-type RecentCardsModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
+type RecentCardsModalProps = OpenCloseProps & {
   onSelectCard: (card: CardRecord) => boolean | void;
 };
 

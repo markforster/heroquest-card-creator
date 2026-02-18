@@ -5,19 +5,23 @@ import ModalShell from "@/components/common/ModalShell";
 import TemplatesList from "@/components/TemplatesList";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { TemplateId } from "@/types/templates";
+import type { OpenCloseProps } from "@/types/ui";
 
-type WelcomeTemplateModalProps = {
-  isOpen: boolean;
+type WelcomeTemplateModalProps = OpenCloseProps & {
   onSelect: (templateId: TemplateId) => void;
 };
 
-export default function WelcomeTemplateModal({ isOpen, onSelect }: WelcomeTemplateModalProps) {
+export default function WelcomeTemplateModal({
+  isOpen,
+  onClose,
+  onSelect,
+}: WelcomeTemplateModalProps) {
   const { t } = useI18n();
 
   return (
     <ModalShell
       isOpen={isOpen}
-      onClose={() => {}}
+      onClose={onClose}
       title={t("heading.chooseTemplate")}
       hideHeader
       keepMounted
