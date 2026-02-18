@@ -2,6 +2,9 @@
 
 import { useEffect } from "react";
 
+import { useIsMac } from "./useIsMac";
+import { useKeyBindingLabel } from "./useKeyBindingLabel";
+
 type KeyBindingProps = {
   combo: {
     key: string;
@@ -23,15 +26,8 @@ const isEditableTarget = (target: EventTarget | null) => {
 };
 
 export default function KeyBinding({ combo, onTrigger, children, label }: KeyBindingProps) {
-  const parts: string[] = [];
-  const isMac = typeof navigator !== "undefined" && navigator.platform.includes("Mac");
-  if (combo.meta) parts.push(isMac ? "Cmd" : "Meta");
-  if (combo.ctrl) parts.push("Ctrl");
-  if (combo.alt) parts.push(isMac ? "Option" : "Alt");
-  if (combo.shift) parts.push("Shift");
-  parts.push(combo.key.toUpperCase());
-  const shortcut = parts.join("+");
-  const tooltip = label ? `${shortcut} - ${label}` : shortcut;
+  const isMac = useIsMac();
+  const tooltip = useKeyBindingLabel({ combo, isMac, label });
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target)) return;
