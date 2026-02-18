@@ -45,9 +45,21 @@ export default function CardInspector() {
     };
 
     updateTrack();
+    const rafId = window.requestAnimationFrame(updateTrack);
+
+    let observer: ResizeObserver | null = null;
+    if (segmentRef.current && typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => updateTrack());
+      observer.observe(segmentRef.current);
+    }
+
     window.addEventListener("resize", updateTrack);
-    return () => window.removeEventListener("resize", updateTrack);
-  }, [mode]);
+    return () => {
+      window.removeEventListener("resize", updateTrack);
+      window.cancelAnimationFrame(rafId);
+      if (observer) observer.disconnect();
+    };
+  }, [mode, selectedTemplateId, key]);
 
   return (
     <div className={styles.inspectorMode}>

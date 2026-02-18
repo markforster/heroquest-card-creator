@@ -83,7 +83,9 @@ export default function ContentField({
           {label}
         </label>
         {showToolbar ? (
-          <div className={layoutStyles.bodyTextToolbar}>
+          <div
+            className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1`}
+          >
             <button
               type="button"
               className={`${layoutStyles.bodyTextToolbarButton} ${
@@ -113,7 +115,7 @@ export default function ContentField({
               buttonActiveClassName={layoutStyles.bodyTextToolbarButtonActive}
               buttonDisabledClassName={layoutStyles.bodyTextToolbarButtonDisabled}
               popoverClassName={layoutStyles.bodyTextToolbarPopover}
-              rowClassName={layoutStyles.bodyTextToolbarRow}
+              rowClassName={`${layoutStyles.bodyTextToolbarRow} d-flex align-items-center justify-content-between gap-2`}
             />
             <button
               type="button"

@@ -3,83 +3,74 @@
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
 import { cardTemplatesById } from "@/data/card-templates";
-import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardRecord } from "@/types/cards-db";
-
-import type { SupportedLanguage } from "@/i18n/messages";
+import type { RecentCardGroup } from "./useRecentCards";
 
 type RecentCardsListProps = {
-  cards: CardRecord[];
-  language: SupportedLanguage;
+  cards: RecentCardGroup[];
   onSelectCard: (card: CardRecord) => boolean | void;
   onClose: () => void;
 };
 
 export default function RecentCardsList({
   cards,
-  language,
   onSelectCard,
   onClose,
 }: RecentCardsListProps) {
   const { t } = useI18n();
 
   return (
-    <div className={styles.cardsGrid}>
-      {cards.map((card) => {
-        const template = cardTemplatesById[card.templateId];
-        const templateLabel = template
-          ? getTemplateNameLabel(language, template)
-          : card.templateId;
-        const thumbUrl =
-          typeof window !== "undefined" && card.thumbnailBlob
-            ? URL.createObjectURL(card.thumbnailBlob)
-            : null;
-        const templateThumb = template?.thumbnail ?? null;
+    <div className={styles.recentCardsSections}>
+      {cards.map((group) =>
+        group.cards.length ? (
+          <section key={group.id} className={styles.recentCardsSection}>
+            <h3 className={styles.recentCardsSectionTitle}>{t(group.labelKey)}</h3>
+            <div className={`${styles.cardsGrid} ${styles.recentCardsGrid}`}>
+              {group.cards.map((card) => {
+                const thumbUrl =
+                  typeof window !== "undefined" && card.thumbnailBlob
+                    ? URL.createObjectURL(card.thumbnailBlob)
+                    : null;
+                const templateThumb = cardTemplatesById[card.templateId]?.thumbnail ?? null;
 
-        return (
-          <button
-            key={card.id}
-            type="button"
-            className={styles.cardsItem}
-            onClick={() => {
-              const shouldClose = onSelectCard(card);
-              if (shouldClose !== false) {
-                onClose();
-              }
-            }}
-          >
-            <div className={styles.cardsItemHeader}>
-              <div className={styles.cardsItemName} title={card.name}>
-                {card.name}
-              </div>
+                return (
+                  <button
+                    key={card.id}
+                    type="button"
+                    className={`${styles.cardsItem} ${styles.recentCardsItem}`}
+                    onClick={() => {
+                      const shouldClose = onSelectCard(card);
+                      if (shouldClose !== false) {
+                        onClose();
+                      }
+                    }}
+                  >
+                    <div className={styles.cardsItemHeader}>
+                      <div className={`${styles.cardsItemName} ${styles.recentCardsItemName}`} title={card.name}>
+                        {card.name}
+                      </div>
+                    </div>
+                    <CardThumbnail
+                      src={thumbUrl ?? templateThumb?.src ?? null}
+                      alt={card.name}
+                      variant="fluidSm"
+                      fit="contain"
+                      onLoad={
+                        thumbUrl
+                          ? () => {
+                              URL.revokeObjectURL(thumbUrl);
+                            }
+                          : undefined
+                      }
+                    />
+                  </button>
+                );
+              })}
             </div>
-            <CardThumbnail
-              src={thumbUrl ?? templateThumb?.src ?? null}
-              alt={card.name}
-              variant="md"
-              fit="contain"
-              onLoad={
-                thumbUrl
-                  ? () => {
-                      URL.revokeObjectURL(thumbUrl);
-                    }
-                  : undefined
-              }
-            />
-            <div className={styles.cardsItemMeta}>
-              <div
-                className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}
-              >
-                {templateLabel}
-              </div>
-              <div className={styles.cardsItemDetails}>
-                {t("label.lastEdited")} {new Date(card.updatedAt).toLocaleDateString()}
-              </div>
-            </div>
-          </button>
-        );
-      })}
+          </section>
+        ) : null,
+      )}
     </div>
   );
 }

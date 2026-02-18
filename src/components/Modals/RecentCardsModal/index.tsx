@@ -17,10 +17,8 @@ type RecentCardsModalProps = OpenCloseProps & {
   onSelectCard: (card: CardRecord) => boolean | void;
 };
 
-const RECENT_LIMIT = 100;
-
 export default function RecentCardsModal({ isOpen, onClose, onSelectCard }: RecentCardsModalProps) {
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const [cards, setCards] = useState<CardRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,7 +45,8 @@ export default function RecentCardsModal({ isOpen, onClose, onSelectCard }: Rece
     };
   }, [isOpen]);
 
-  const recentCards = useRecentCards({ cards, limit: RECENT_LIMIT });
+  const recentCards = useRecentCards({ cards });
+  const hasCards = recentCards.some((group) => group.cards.length > 0);
 
   return (
     <ModalShell
@@ -59,15 +58,10 @@ export default function RecentCardsModal({ isOpen, onClose, onSelectCard }: Rece
     >
       {isLoading ? (
         <LoadingMessage>{t("ui.loading")}</LoadingMessage>
-      ) : recentCards.length === 0 ? (
+      ) : !hasCards ? (
         <div className={styles.templatePopoverMessage}>{t("empty.noRecentCards")}</div>
       ) : (
-        <RecentCardsList
-          cards={recentCards}
-          language={language}
-          onSelectCard={onSelectCard}
-          onClose={onClose}
-        />
+        <RecentCardsList cards={recentCards} onSelectCard={onSelectCard} onClose={onClose} />
       )}
     </ModalShell>
   );

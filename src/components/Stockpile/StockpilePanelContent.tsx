@@ -586,7 +586,7 @@ export default function StockpilePanelContent({
     <>
       <div className={styles.stockpilePanel}>
         <div className={styles.stockpilePanelBody}>
-          <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2`}>
+          <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
             <div className={`${styles.cardsFiltersRow} ${styles.uRowLg}`}>
               <div className={`${styles.cardsFiltersLeft} ${styles.uRowLg}`}>
                 <div className="input-group input-group-sm" style={{ width: "18em" }}>

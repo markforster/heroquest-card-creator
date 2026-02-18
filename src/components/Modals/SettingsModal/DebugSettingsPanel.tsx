@@ -17,7 +17,7 @@ export default function DebugSettingsPanel() {
       </WarningNotice>
       <div className={`${styles.settingsPanelSection} d-flex flex-column gap-2`}>
         <div className={styles.settingsPanelSectionTitle}>{t("label.debugVisuals")}</div>
-        <label className={styles.settingsPanelToggle}>
+        <label className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}>
           <input
             type="checkbox"
             className="form-check-input hq-checkbox"

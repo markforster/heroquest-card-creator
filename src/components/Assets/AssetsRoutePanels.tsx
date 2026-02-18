@@ -275,7 +275,14 @@ function AssetsInspector({
           </div>
         ) : null}
         <div className={styles.assetsInspectorPreview}>
-          <div className={styles.assetsInspectorPreviewInner}>
+          <div
+            className={styles.assetsInspectorPreviewInner}
+            style={
+              previewUrl
+                ? ({ ["--asset-preview-url" as const]: `url("${previewUrl}")` } as React.CSSProperties)
+                : undefined
+            }
+          >
             {previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={previewUrl} alt={asset.name} />
@@ -393,7 +400,7 @@ export default function AssetsRoutePanels() {
 
   return (
     <>
-      <section className={styles.leftPanel}>
+      <section className={`${styles.leftPanel} d-flex align-items-stretch gap-3 p-3`}>
         <AssetsMainPanel onSelectionChange={setSelectedAssets} refreshKey={refreshKey} />
       </section>
       {selectedAssets.length > 0 ? (

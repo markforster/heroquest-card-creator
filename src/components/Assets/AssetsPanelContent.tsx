@@ -542,8 +542,8 @@ export default function AssetsPanelContent({
   };
 
   return (
-    <div className={styles.assetsPanel}>
-      <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2`}>
+    <div className={`${styles.assetsPanel} d-flex flex-column flex-grow-1`}>
+      <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
         <div className="input-group input-group-sm" style={{ maxWidth: 260 }}>
           <span className="input-group-text">
             <Search className={styles.icon} aria-hidden="true" />
@@ -602,7 +602,7 @@ export default function AssetsPanelContent({
           />
         </div>
       </div>
-      <div className={styles.assetsGridContainer}>
+      <div className={`${styles.assetsGridContainer} flex-grow-1 overflow-auto`}>
         {filteredAssets.length === 0 ? (
           <div className={styles.assetsEmptyState}>{t("empty.noAssets")}</div>
         ) : (

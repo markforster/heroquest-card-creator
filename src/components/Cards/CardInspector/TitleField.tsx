@@ -1,13 +1,15 @@
 "use client";
 
 import { PanelBottom, PanelTop, Tag, Type } from "lucide-react";
+import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
 import { DEFAULT_TITLE_COLOR } from "@/config/colors";
 import { useI18n } from "@/i18n/I18nProvider";
-
-import ColorPickerPopover from "./ColorPickerPopover";
+import ColorPickerField from "@/components/common/ColorPickerField";
+import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
+import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 
 type TitleFieldProps = {
   label: string;
@@ -42,6 +44,13 @@ export default function TitleField({
   const placement = placementValue ?? "bottom";
   const titleStyle = titleStyleValue ?? "ribbon";
   const titleColor = titleColorValue ?? DEFAULT_TITLE_COLOR;
+  const [isTitleColorOpen, setIsTitleColorOpen] = useState(false);
+  const { renderPreviewCanvas } = usePreviewCanvas();
+  const { smartGroups, isSmartBusy, requestSmart } = useSmartSwatches({
+    renderPreviewCanvas,
+    width: 300,
+    height: 420,
+  });
 
   const fieldError = (errors as Record<string, { message?: string }>).title;
 
@@ -54,7 +63,9 @@ export default function TitleField({
           </label>
         </div>
         {showToolbar ? (
-          <div className={layoutStyles.bodyTextToolbar}>
+          <div
+            className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1`}
+          >
             {showPlacement ? (
               <button
                 type="button"
@@ -107,24 +118,6 @@ export default function TitleField({
                 )}
               </button>
             ) : null}
-            {showTitleColor ? (
-              <ColorPickerPopover
-                color={titleColor}
-                onColorChange={(value) =>
-                  setValue("titleColor", value, { shouldDirty: true, shouldTouch: true })
-                }
-                resetColor={DEFAULT_TITLE_COLOR}
-                disabled={titleDisabled}
-                title={t("tooltip.titleColor")}
-                labelColor={t("label.color")}
-                labelReset={t("label.resetColor")}
-                buttonClassName={layoutStyles.bodyTextToolbarButton}
-                buttonActiveClassName={layoutStyles.bodyTextToolbarButtonActive}
-                buttonDisabledClassName={layoutStyles.bodyTextToolbarButtonDisabled}
-                popoverClassName={layoutStyles.bodyTextToolbarPopover}
-                rowClassName={layoutStyles.bodyTextToolbarRow}
-              />
-            ) : null}
           </div>
         ) : null}
         {showToggle ? (
@@ -158,6 +151,41 @@ export default function TitleField({
             })}
           />
         </div>
+        {showTitleColor ? (
+          <div style={{ flex: "0 1 auto" }}>
+            <ColorPickerField
+              label={t("label.color")}
+              showLabel={false}
+              showInput={false}
+              inputValue={titleColor}
+              selectedValue={titleColor}
+              defaultColor={DEFAULT_TITLE_COLOR}
+              swatches={[]}
+              smartGroups={smartGroups}
+              isSmartBusy={isSmartBusy}
+              onRequestSmart={requestSmart}
+              onChange={(value) =>
+                setValue("titleColor", value, { shouldDirty: true, shouldTouch: true })
+              }
+              onSelectDefault={() =>
+                setValue("titleColor", DEFAULT_TITLE_COLOR, { shouldDirty: true, shouldTouch: true })
+              }
+              onSelectTransparent={() => undefined}
+              onSaveSwatch={() => undefined}
+              onRemoveSwatch={() => undefined}
+              canSaveSwatch={false}
+              canRevert={titleColor !== DEFAULT_TITLE_COLOR}
+              onRevert={() =>
+                setValue("titleColor", DEFAULT_TITLE_COLOR, { shouldDirty: true, shouldTouch: true })
+              }
+              isOpen={isTitleColorOpen}
+              onToggleOpen={() => setIsTitleColorOpen((prev) => !prev)}
+              onClose={() => setIsTitleColorOpen(false)}
+              popoverAlign="auto"
+              popoverVAlign="center"
+            />
+          </div>
+        ) : null}
         {showPlacement && !showToolbar ? (
           <div className="btn-group btn-group-sm" role="group" aria-label={t("form.titlePlacement")}>
             <input

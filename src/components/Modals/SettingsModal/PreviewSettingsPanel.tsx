@@ -27,7 +27,7 @@ export default function PreviewSettingsPanel() {
       >
         <div className={styles.settingsPanelSectionTitle}>{t("label.previewRenderer")}</div>
         <div className={styles.settingsPanelRow}>
-          <label className={styles.settingsPanelOption}>
+          <label className={`${styles.settingsPanelOption} d-inline-flex align-items-center gap-2`}>
             <input
               type="radio"
               name="previewRenderer"
@@ -38,7 +38,7 @@ export default function PreviewSettingsPanel() {
             />
             {t("label.previewRendererSvg")}
           </label>
-          <label className={styles.settingsPanelOption}>
+          <label className={`${styles.settingsPanelOption} d-inline-flex align-items-center gap-2`}>
             <input
               type="radio"
               name="previewRenderer"
@@ -57,7 +57,7 @@ export default function PreviewSettingsPanel() {
       >
         <div className={styles.settingsPanelSectionTitle}>{t("label.webglInteraction")}</div>
         <div className={styles.settingsPanelRow}>
-          <label className={styles.settingsPanelOption}>
+          <label className={`${styles.settingsPanelOption} d-inline-flex align-items-center gap-2`}>
             <input
               type="radio"
               name="webglMode"
@@ -68,7 +68,7 @@ export default function PreviewSettingsPanel() {
             />
             {t("label.webglPan")}
           </label>
-          <label className={styles.settingsPanelOption}>
+          <label className={`${styles.settingsPanelOption} d-inline-flex align-items-center gap-2`}>
             <input
               type="radio"
               name="webglMode"

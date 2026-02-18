@@ -20,6 +20,19 @@
   border-radius: 6px;
 }
 
+.sizeSMMD {
+  width: 105px;
+  height: 147px;
+  border-radius: 6px;
+}
+
+.sizeFLUIDSM {
+  width: 100%;
+  max-width: 160px;
+  aspect-ratio: 750 / 1050;
+  border-radius: 6px;
+}
+
 .sizeMD {
   width: 100%;
   aspect-ratio: 750 / 1050;

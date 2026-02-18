@@ -4,7 +4,7 @@ import styles from "./CardThumbnail.module.css";
 
 import type { ReactNode } from "react";
 
-export type CardThumbnailVariant = "xs" | "sm" | "md" | "lg";
+export type CardThumbnailVariant = "xs" | "sm" | "smMd" | "fluidSm" | "md" | "lg";
 export type CardThumbnailFit = "cover" | "contain";
 
 type CardThumbnailProps = {

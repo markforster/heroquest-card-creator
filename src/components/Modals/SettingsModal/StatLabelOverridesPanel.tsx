@@ -204,7 +204,9 @@ export default function StatLabelOverridesPanel() {
 
     return (
       <div key={field.key} className={styles.statLabelsField}>
-        <div className={styles.statLabelsFieldHeader}>
+        <div
+          className={`${styles.statLabelsFieldHeader} d-flex align-items-baseline justify-content-between gap-2`}
+        >
           <label htmlFor={field.key} className="form-label">
             {t(STAT_LABEL_DISPLAY_KEYS[field.labelKey])}
           </label>

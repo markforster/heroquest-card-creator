@@ -1,3 +1,93 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inputWrap {
+  flex: 1 0 auto;
+  min-width: 0;
+}
+
+.swatchWrap {
+  flex: 0 1 auto;
+}
+
+.hexInput {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #2f2f2f;
+  color: #f5f5f5;
+  font-size: 13px;
+  font-family: var(--hq-font-form);
+  text-transform: uppercase;
+}
+
+.currentSwatch {
+  flex: 0 1 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+}
+
+.popover {
+  position: fixed;
+  z-index: 20;
+  width: 220px;
+  max-width: calc(100vw - 2rem);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #1b1b1b;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
+  padding: 12px;
+}
+
+.tabHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  margin-bottom: 12px;
+}
+
+.tabButton {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tabButtonActive {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .layout {
   display: flex;
   gap: 16px;
@@ -11,6 +101,15 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
+  width: 100%;
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
 }
 
 .swatches {
@@ -26,17 +125,19 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 200px;
+  width: 100%;
   height: 90px;
 }
 
 .colorful :global(.react-colorful__saturation) {
+  width: 100%;
   height: 48px;
   flex-grow: 0;
   border-radius: 10px 10px 6px 6px;
 }
 
 .colorful :global(.react-colorful__hue) {
+  width: 100%;
   height: 24px;
   border-radius: 999px;
   margin-top: 6px;
@@ -46,20 +147,6 @@
 .colorful :global(.react-colorful__saturation-pointer) {
   width: 14px;
   height: 14px;
-}
-
-.hexInput {
-  margin-top: 0;
-  width: 100%;
-  max-width: 200px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: #2f2f2f;
-  color: #f5f5f5;
-  font-size: 13px;
-  font-family: var(--hq-font-form);
-  text-transform: uppercase;
 }
 
 .specialRow {
@@ -74,6 +161,7 @@
 }
 
 .swatchGrid {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -83,6 +171,12 @@
 
 .swatchGrid > * {
   flex: 0 0 auto;
+}
+
+.swatchGridScroll {
+  max-height: 166px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .swatchButton {
@@ -163,23 +257,6 @@
   pointer-events: auto;
 }
 
-.smartSwatchAnchor {
-  position: relative;
-}
-
-.smartPopover {
-  position: fixed;
-  width: 220px;
-  padding: 10px;
-  max-height: min(60vh, 420px);
-  overflow-y: auto;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: #1b1b1b;
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.35);
-  z-index: 10;
-}
-
 .smartPopoverHeader {
   font-size: 12px;
   letter-spacing: 0.02em;
@@ -189,9 +266,10 @@
 }
 
 .smartPopoverGrid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .smartPopoverGroups {
