@@ -242,22 +242,11 @@ export default function TemplateChooser() {
           </div>
         </div>
         <div className={styles.inspectorHeaderContent}>
-          <div className={styles.inspectorTemplateRow}>
+          <div className={styles.inspectorHeaderRow}>
             <div className={styles.inspectorSectionTitle}>
               {t("actions.template")} -{" "}
               {template ? getTemplateNameLabel(language, template) : t("ui.loading")}
             </div>
-            {currentTemplateId ? (
-              <span
-                className={`${styles.inspectorStatusBadge} ${
-                  isDraft ? styles.inspectorStatusDraft : styles.inspectorStatusSaved
-                }`}
-              >
-                {isDraft ? t("label.draft") : t("label.saved")}
-              </span>
-            ) : null}
-          </div>
-          <div className={styles.inspectorPairRow}>
             <div className={styles.inspectorFaceMenu} ref={faceMenuRef}>
               <button
                 type="button"
@@ -308,6 +297,15 @@ export default function TemplateChooser() {
               ) : null}
             </div>
           </div>
+          {currentTemplateId ? (
+            <span
+              className={`${styles.inspectorStatusBadge} ${
+                isDraft ? styles.inspectorStatusDraft : styles.inspectorStatusSaved
+              }`}
+            >
+              {isDraft ? t("label.draft") : t("label.saved")}
+            </span>
+          ) : null}
         </div>
       </div>
       <ConfirmModal

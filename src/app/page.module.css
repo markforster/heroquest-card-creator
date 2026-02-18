@@ -1237,25 +1237,25 @@
   display: flex;
   flex-direction: row;
   gap: 0.75rem;
-  align-items: stretch;
+  align-items: center;
   --inspector-header-title-size: 0.72rem;
   --inspector-header-row-gap: 0.5rem;
   --inspector-header-controls-height: 34px;
-  padding-bottom: 0.5rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.8);
 }
 
 .inspectorHeaderPreview {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   display: flex;
-  align-items: stretch;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .inspectorHeaderPreviewInner {
-  height: calc(
-    var(--inspector-header-title-size) + var(--inspector-header-row-gap) +
-      var(--inspector-header-controls-height)
-  );
+  height: 64px;
   aspect-ratio: 750 / 1050;
   border-radius: 6px;
   border: 1px solid #2b2b2b;
@@ -1282,15 +1282,19 @@
 .inspectorHeaderContent {
   display: flex;
   flex-direction: column;
-  gap: var(--inspector-header-row-gap);
+  align-items: flex-start;
+  gap: 0.35rem;
   flex: 1 0 auto;
   min-width: 0;
+  min-height: 64px;
 }
 
-.inspectorTemplateRow {
+.inspectorHeaderRow {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .inspectorStatusBadge {
@@ -1324,6 +1328,8 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--hq-accent);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .inspectorTemplateButton {
@@ -2351,7 +2357,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 60;
+  z-index: 80;
 }
 
 .templatePopover {

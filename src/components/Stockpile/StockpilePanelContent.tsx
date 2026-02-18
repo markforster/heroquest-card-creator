@@ -231,6 +231,21 @@ export default function StockpilePanelContent({
     enabled: isPairOverflowOpen,
   });
 
+  useEscapeModalAware({
+    id: "stockpile-collection-editor",
+    isOpen: isCollectionModalOpen,
+    onEscape: () => {
+      setIsCollectionModalOpen(false);
+      setCollectionNameError(null);
+    },
+  });
+
+  useEscapeModalAware({
+    id: "stockpile-add-to-collection",
+    isOpen: isAddModalOpen,
+    onEscape: () => setIsAddModalOpen(false),
+  });
+
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
