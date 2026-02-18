@@ -408,23 +408,14 @@
   letter-spacing: 0.04em;
 }
 
-.leftNavCurrentCardThumb {
-  width: 46px;
-  height: 64px;
+.leftNavCurrentCardThumbFrame {
   border-radius: 6px;
   border: 1px solid rgba(0, 0, 0, 0.6);
   background: rgba(0, 0, 0, 0.35);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   flex: 0 0 auto;
-}
-
-.leftNavCurrentCardThumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .leftNavCurrentCardFallback {
@@ -3719,24 +3710,6 @@
   outline: 2px solid rgba(230, 179, 90, 0.9);
   outline-offset: 2px;
 }
-.cardsThumbWrapper {
-  width: 100%;
-  aspect-ratio: 750 / 1050;
-  border-radius: 4px;
-  background: var(--hq-surface-sunken);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cardsThumbImage {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
 .cardsItemHeader {
   display: flex;
   align-items: center;

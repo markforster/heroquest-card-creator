@@ -1,6 +1,7 @@
 "use client";
 
 import styles from "@/app/page.module.css";
+import CardThumbnail from "@/components/common/CardThumbnail";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -53,22 +54,19 @@ export default function RecentCardsList({
                 {card.name}
               </div>
             </div>
-            <div className={styles.cardsThumbWrapper}>
-              {thumbUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={thumbUrl}
-                  alt={card.name}
-                  className={styles.cardsThumbImage}
-                  onLoad={() => {
-                    URL.revokeObjectURL(thumbUrl);
-                  }}
-                />
-              ) : templateThumb?.src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={templateThumb.src} alt={card.name} className={styles.cardsThumbImage} />
-              ) : null}
-            </div>
+            <CardThumbnail
+              src={thumbUrl ?? templateThumb?.src ?? null}
+              alt={card.name}
+              variant="md"
+              fit="contain"
+              onLoad={
+                thumbUrl
+                  ? () => {
+                      URL.revokeObjectURL(thumbUrl);
+                    }
+                  : undefined
+              }
+            />
             <div className={styles.cardsItemMeta}>
               <div
                 className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}

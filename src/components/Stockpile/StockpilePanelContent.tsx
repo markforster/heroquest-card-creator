@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import CardPreview from "@/components/Cards/CardPreview";
+import CardThumbnail from "@/components/common/CardThumbnail";
 import ModalShell from "@/components/common/ModalShell";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
@@ -1258,19 +1259,19 @@ export default function StockpilePanelContent({
                               </div>
                             </div>
                           )}
-                          <div className={styles.cardsThumbWrapper}>
-                            {thumbUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={thumbUrl}
-                                alt={card.name}
-                                className={styles.cardsThumbImage}
-                                onLoad={() => {
-                                  URL.revokeObjectURL(thumbUrl);
-                                }}
-                              />
-                            ) : null}
-                          </div>
+                          <CardThumbnail
+                            src={thumbUrl}
+                            alt={card.name}
+                            variant="md"
+                            fit="contain"
+                            onLoad={
+                              thumbUrl
+                                ? () => {
+                                    URL.revokeObjectURL(thumbUrl);
+                                  }
+                                : undefined
+                            }
+                          />
                           {isPairMode ? null : (
                             <div className={styles.cardsItemMeta}>
                               <div

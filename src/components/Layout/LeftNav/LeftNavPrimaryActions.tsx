@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import CardThumbnail from "@/components/common/CardThumbnail";
 import KeyBinding from "@/components/common/KeyBinding";
 import NavActionButton from "@/components/Layout/LeftNav/NavActionButton";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -44,14 +45,14 @@ export default function LeftNavPrimaryActions() {
               title={currentCardName ?? t("actions.cards")}
               aria-label={currentCardName ?? t("actions.cards")}
             >
-              <div className={styles.leftNavCurrentCardThumb}>
-                {currentCardThumbUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={currentCardThumbUrl} alt="" />
-                ) : (
-                  <div className={styles.leftNavCurrentCardFallback} />
-                )}
-              </div>
+              <CardThumbnail
+                src={currentCardThumbUrl}
+                alt=""
+                variant="sm"
+                fit="cover"
+                className={styles.leftNavCurrentCardThumbFrame}
+                fallback={<div className={styles.leftNavCurrentCardFallback} />}
+              />
               <div className={styles.leftNavCurrentCardLabel}>
                 {currentCardName ?? t("actions.cards")}
               </div>
