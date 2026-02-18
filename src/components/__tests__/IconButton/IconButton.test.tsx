@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import IconButton from "@/components/IconButton";
+import IconButton from "@/components/common/IconButton";
 
 describe("IconButton", () => {
   function TestIcon(props: React.SVGProps<SVGSVGElement>) {

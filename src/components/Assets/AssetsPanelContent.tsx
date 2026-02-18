@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
-import IconButton from "@/components/IconButton";
+import IconButton from "@/components/common/IconButton";
 import ModalShell from "@/components/common/ModalShell";
 import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
 import { useI18n } from "@/i18n/I18nProvider";

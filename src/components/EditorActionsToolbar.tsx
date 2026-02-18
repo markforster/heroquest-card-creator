@@ -4,7 +4,7 @@ import { CheckCircle2, ChevronDown, CopyPlus, Download } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import IconButton from "@/components/IconButton";
+import IconButton from "@/components/common/IconButton";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type SavingMode = "new" | "update" | null;
