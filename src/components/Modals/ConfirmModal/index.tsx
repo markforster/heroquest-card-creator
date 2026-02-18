@@ -1,8 +1,12 @@
 "use client";
 
 import styles from "@/app/page.module.css";
+import ActionBar from "@/components/common/ActionBar";
 import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
+
+import CancelButton from "./CancelButton";
+import ConfirmButton from "./ConfirmButton";
 
 import type { ReactNode } from "react";
 
@@ -44,29 +48,28 @@ export default function ConfirmModal({
       title={title}
       contentClassName={styles.confirmPopover}
       footer={
-        <div className="d-flex justify-content-end gap-2">
-          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onCancel}>
-            {cancelLabelText}
-          </button>
-          {extraLabel && onExtra ? (
-            <button
-              type="button"
-              className="btn btn-outline-light btn-sm"
-              onClick={onExtra}
-              disabled={isExtraConfirming}
-            >
-              {extraLabel}
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={onConfirm}
-            disabled={isConfirming}
-          >
-            {confirmLabelText}
-          </button>
-        </div>
+        <ActionBar
+          right={
+            <>
+              <CancelButton label={cancelLabelText} onCancel={onCancel} />
+              {extraLabel && onExtra ? (
+                <button
+                  type="button"
+                  className="btn btn-outline-light btn-sm"
+                  onClick={onExtra}
+                  disabled={isExtraConfirming}
+                >
+                  {extraLabel}
+                </button>
+              ) : null}
+              <ConfirmButton
+                label={confirmLabelText}
+                onConfirm={onConfirm}
+                isConfirming={isConfirming}
+              />
+            </>
+          }
+        />
       }
     >
       {children}

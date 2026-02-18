@@ -5,12 +5,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
-import CardPreview from "@/components/CardPreview";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
-import ExportProgressOverlay from "@/components/ExportProgressOverlay";
-import { useEscapeModalAware } from "@/components/EscapeStackProvider";
-import ModalShell from "@/components/common/ModalShell";
 import { useCardEditor } from "@/components/CardEditor/CardEditorContext";
+import CardPreview from "@/components/CardPreview";
+import ModalShell from "@/components/common/ModalShell";
+import { useEscapeModalAware } from "@/components/EscapeStackProvider";
+import ExportProgressOverlay from "@/components/ExportProgressOverlay";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
 import {
@@ -24,14 +24,14 @@ import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { deleteCards, listCards } from "@/lib/cards-db";
-import { runBulkExport } from "@/lib/export-cards";
-import { deletePairsForFace, listAllPairs } from "@/lib/pairs-service";
 import {
   createCollection,
   deleteCollection,
   listCollections,
   updateCollection,
 } from "@/lib/collections-db";
+import { runBulkExport } from "@/lib/export-cards";
+import { deletePairsForFace, listAllPairs } from "@/lib/pairs-service";
 import { createDefaultCardData } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
@@ -345,7 +345,6 @@ export default function StockpilePanelContent({
     });
     return map;
   }, [pairsByBackId, cardById]);
-  const selectedCards = cards.filter((card) => selectedIds.includes(card.id));
   const selectedVisibleCards = cards.filter((card) => visibleSelectedIds.includes(card.id));
   const shouldShowPairOverflow = isPairOverflowOpen && pairOverflowAnchor;
   const activeCollection =
@@ -408,7 +407,6 @@ export default function StockpilePanelContent({
 
     groupMap.forEach((leftCards, groupKey) => {
       sortCardsByName(leftCards);
-      const leftIdSet = new Set(leftCards.map((card) => card.id));
       const rightCards: CardRecord[] = [];
       const hasBackInLeft = leftCards.some((card) => card.face === "back" || card.id === groupKey);
 
@@ -1958,7 +1956,6 @@ export default function StockpilePanelContent({
       {shouldShowPairOverflow && typeof document !== "undefined"
         ? (() => {
             const tileWidth = 96;
-            const tileHeight = 132;
             const tileGap = 8;
             const columns = 5;
             const padding = 16;
