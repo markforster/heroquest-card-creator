@@ -85,11 +85,8 @@ export default function PairingInspectorPanel() {
     return (draftValue?.face ?? template.defaultFace) as CardFace;
   }, [draftValue?.face, template]);
 
-  const sortByRecent = (cards: CardRecord[]) =>
+  const sortByUpdated = (cards: CardRecord[]) =>
     cards.sort((a, b) => {
-      const aViewed = a.lastViewedAt ?? 0;
-      const bViewed = b.lastViewedAt ?? 0;
-      if (bViewed !== aViewed) return bViewed - aViewed;
       if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
       const aName = a.nameLower ?? a.name.toLocaleLowerCase();
       const bName = b.nameLower ?? b.name.toLocaleLowerCase();
@@ -160,8 +157,8 @@ export default function PairingInspectorPanel() {
       const matches = backIds
         .map((id) => byId.get(id))
         .filter((card): card is CardRecord => Boolean(card));
-      sortByRecent(matches);
-      setPairedBacks(matches);
+      const sorted = sortByUpdated(matches);
+      setPairedBacks(sorted);
     };
 
     loadPairedBacks().catch(() => {
@@ -182,7 +179,7 @@ export default function PairingInspectorPanel() {
     let active = true;
     const loadFronts = async (cards: CardRecord[]) => {
       if (!active) return;
-      const sorted = sortByRecent([...cards]);
+      const sorted = sortByUpdated([...cards]);
       setPairedFronts(sorted);
     };
     listCards({ status: "saved" })
@@ -252,8 +249,8 @@ export default function PairingInspectorPanel() {
           const fronts = frontIds
             .map((id) => cardsById.get(id))
             .filter((card): card is CardRecord => Boolean(card));
-          sortByRecent(fronts);
-          nextMap.set(back.id, fronts);
+          const sorted = sortByUpdated(fronts);
+          nextMap.set(back.id, sorted);
         }),
       );
       if (!active) return;

@@ -10,6 +10,7 @@ type NavActionButtonProps = {
   label: ReactNode;
   icon: ComponentType<{ className?: string }>;
   to?: string;
+  end?: boolean;
   onClick?: () => void;
   title?: string;
   ariaLabel?: string;
@@ -22,6 +23,7 @@ export default function NavActionButton({
   label,
   icon: Icon,
   to,
+  end = false,
   onClick,
   title,
   ariaLabel,
@@ -36,6 +38,7 @@ export default function NavActionButton({
     return (
       <NavLink
         to={to}
+        end={end}
         className={({ isActive: linkActive }) =>
           `${baseClassName}${linkActive ? ` ${styles.leftNavItemActive}` : ""}`
         }

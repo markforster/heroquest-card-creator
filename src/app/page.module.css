@@ -1194,6 +1194,31 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
+  --segment-track-left: 0px;
+  --segment-track-top: 0px;
+  --segment-track-width: 0px;
+  --segment-track-height: 0px;
+}
+
+.inspectorModeSegment::before {
+  content: "";
+  position: absolute;
+  left: var(--segment-track-left);
+  top: var(--segment-track-top);
+  width: var(--segment-track-width);
+  height: var(--segment-track-height);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+  transition:
+    left 160ms ease,
+    top 160ms ease,
+    width 160ms ease,
+    height 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+  z-index: 0;
 }
 
 .inspectorModeTab {
@@ -1206,6 +1231,12 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+  position: relative;
+  z-index: 1;
 }
 
 .inspectorModeTab:hover {
@@ -1213,9 +1244,7 @@
 }
 
 .inspectorModeTabActive {
-  background: rgba(255, 255, 255, 0.16);
   color: #ffffff;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
 
 .inspectorModeBody {
