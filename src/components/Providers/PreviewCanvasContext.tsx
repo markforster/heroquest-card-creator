@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo } from "react";
 
-import type { CardPreviewHandle } from "@/components/CardPreview";
+import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 
 import type { ReactNode, RefObject } from "react";
 

@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 
-import MainFooter from "@/components/MainFooter";
+import MainFooter from "@/components/Layout/MainFooter";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
 jest.mock("@/version", () => ({

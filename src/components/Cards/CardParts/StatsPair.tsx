@@ -10,7 +10,7 @@ import fitText from "@/lib/text-fitting/fitText";
 import { shrinkToFitSingleLine } from "@/lib/text-fitting/shrink";
 import type { StatValue } from "@/types/stats";
 
-import Layer from "../CardPreview/Layer";
+import Layer from "@/components/Cards/CardPreview/Layer";
 
 type StatsPairProps = {
   header: string;

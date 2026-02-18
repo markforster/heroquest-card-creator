@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import CardPreview, { CardPreviewHandle } from "@/components/CardPreview";
-import WebglPreview from "@/components/CardPreview/WebglPreview";
+import CardPreview, { CardPreviewHandle } from "@/components/Cards/CardPreview";
+import WebglPreview from "@/components/Cards/CardPreview/WebglPreview";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { useTextFittingPreferences } from "@/components/Providers/TextFittingPreferencesContext";

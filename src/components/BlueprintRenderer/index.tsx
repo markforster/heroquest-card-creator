@@ -1,18 +1,18 @@
 "use client";
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
-import CardBorder from "@/components/CardParts/CardBorder";
-import CardTextBlock, { layoutCardText } from "@/components/CardParts/CardTextBlock";
+import CardBorder from "@/components/Cards/CardParts/CardBorder";
+import CardTextBlock, { layoutCardText } from "@/components/Cards/CardParts/CardTextBlock";
 import HeroStatsBlock, {
   HERO_STATS_HEIGHT,
   type HeroStats,
-} from "@/components/CardParts/HeroStatsBlock";
+} from "@/components/Cards/CardParts/HeroStatsBlock";
 import MonsterStatsBlock, {
   MONSTER_STATS_HEIGHT,
   type MonsterStats,
-} from "@/components/CardParts/MonsterStatsBlock";
-import RibbonTitle from "@/components/CardParts/RibbonTitle";
-import Layer from "@/components/CardPreview/Layer";
+} from "@/components/Cards/CardParts/MonsterStatsBlock";
+import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
+import Layer from "@/components/Cards/CardPreview/Layer";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import type { Blueprint, BlueprintBounds, BlueprintGroup, BlueprintLayer } from "@/types/blueprints";

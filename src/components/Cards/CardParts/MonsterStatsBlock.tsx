@@ -1,5 +1,5 @@
 import monsterStatsBg from "@/assets/card-parts/monster-stats.png";
-import Layer from "@/components/CardPreview/Layer";
+import Layer from "@/components/Cards/CardPreview/Layer";
 import { useStatLabelOverrides } from "@/components/Providers/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";

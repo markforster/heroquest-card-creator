@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
-import CardPreview from "@/components/CardPreview";
+import CardPreview from "@/components/Cards/CardPreview";
 import ModalShell from "@/components/common/ModalShell";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
@@ -36,7 +36,7 @@ import { createDefaultCardData } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
 
-import { CardPreviewHandle } from "../CardPreview/types";
+import { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import type { OpenCloseProps } from "@/types/ui";
 
 type StockpilePanelMode = "manage" | "pair-fronts" | "pair-backs";

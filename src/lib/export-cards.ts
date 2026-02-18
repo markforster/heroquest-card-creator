@@ -5,7 +5,7 @@ import JSZip from "jszip";
 import { waitForAssetElements, waitForFrame } from "@/components/Stockpile/stockpile-utils";
 import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
-import type { CardPreviewHandle } from "@/components/CardPreview/types";
+import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import type { CardRecord } from "@/types/cards-db";
 
 export type BulkExportResult =

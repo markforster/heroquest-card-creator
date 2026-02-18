@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import MainHeader from "@/components/MainHeader";
+import MainHeader from "@/components/Layout/MainHeader";
 import { LibraryTransferProvider } from "@/components/Providers/LibraryTransferContext";
 import { I18nProvider } from "@/i18n/I18nProvider";
 

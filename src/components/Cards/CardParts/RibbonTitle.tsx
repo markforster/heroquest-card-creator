@@ -1,5 +1,5 @@
 import ribbon from "@/assets/card-parts/ribbon.png";
-import Layer from "@/components/CardPreview/Layer";
+import Layer from "@/components/Cards/CardPreview/Layer";
 import { useTextFittingPreferences } from "@/components/Providers/TextFittingPreferencesContext";
 import {
   NONRIBBON_TITLE_WEIGHT,

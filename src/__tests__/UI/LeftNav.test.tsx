@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import LeftNav from "@/components/LeftNav";
+import LeftNav from "@/components/Layout/LeftNav";
 
 const openAssets = jest.fn();
 const openStockpile = jest.fn();

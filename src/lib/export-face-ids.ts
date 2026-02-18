@@ -3,7 +3,7 @@
 import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
 import { runBulkExport, type BulkExportResult } from "@/lib/export-cards";
 import { getCard } from "@/lib/cards-db";
-import type { CardPreviewHandle } from "@/components/CardPreview/types";
+import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import type { CardRecord } from "@/types/cards-db";
 
 export type ExportFaceIdsOptions = {

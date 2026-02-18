@@ -1,6 +1,6 @@
 import heroStatsBg from "@/assets/card-parts/hero-stats.png";
-import StatsPair from "@/components/CardParts/StatsPair";
-import Layer from "@/components/CardPreview/Layer";
+import StatsPair from "@/components/Cards/CardParts/StatsPair";
+import Layer from "@/components/Cards/CardPreview/Layer";
 import { useStatLabelOverrides } from "@/components/Providers/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";

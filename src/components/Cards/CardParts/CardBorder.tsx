@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 
-import Layer from "@/components/CardPreview/Layer";
+import Layer from "@/components/Cards/CardPreview/Layer";
 
 import type { StaticImageData } from "next/image";
 
