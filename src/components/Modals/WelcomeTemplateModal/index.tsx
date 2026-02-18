@@ -1,12 +1,9 @@
 "use client";
 
+import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
 import TemplatesList from "@/components/TemplatesList";
-import { cardTemplates } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-
-import styles from "@/app/page.module.css";
-
 import type { TemplateId } from "@/types/templates";
 
 type WelcomeTemplateModalProps = {

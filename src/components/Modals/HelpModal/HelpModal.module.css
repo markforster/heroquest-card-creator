@@ -1,0 +1,30 @@
+.helpBody {
+  max-height: 60vh;
+  overflow-y: auto;
+  font-size: 1.1rem;
+}
+
+.helpSection {
+  margin-bottom: 0.75rem;
+}
+
+.helpSection:last-child {
+  margin-bottom: 0;
+}
+
+.helpHeading {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+  color: #e6b35a;
+}
+
+.helpList {
+  margin: 0;
+  padding-left: 1.1rem;
+  line-height: 1.4;
+}
+
+.helpParagraph {
+  margin: 0;
+  line-height: 1.4;
+}
