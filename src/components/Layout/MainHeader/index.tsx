@@ -33,11 +33,11 @@ export default function MainHeader() {
   useClickOutside(menuRef, handleCloseMenu);
 
   return (
-    <header className={styles.header}>
-      <div className={styles.headerLeft}>
+    <header className={`${styles.header} d-flex align-items-center justify-content-between`}>
+      <div className={`${styles.headerLeft} d-flex flex-column`}>
         <HeaderBrand />
       </div>
-      <div className={`${styles.headerRight} ${styles.uRowMd}`}>
+      <div className={`${styles.headerRight} d-flex align-items-center gap-2`}>
         <HeaderMenu
           isMenuOpen={isMenuOpen}
           isBusy={isBusy}

@@ -619,17 +619,17 @@ function IndexPageInner() {
   const exportCardData = exportTarget ? cardRecordToCardData(exportTarget) : undefined;
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} d-flex flex-column`}>
       <LibraryTransferProvider>
         <EditorSaveProvider value={{ saveCurrentCard, saveToken }}>
           <EscapeStackProvider>
             <AppActionsProvider>
               <HeaderWithTemplatePicker />
-              <main className={styles.main}>
+              <main className={`${styles.main} d-flex`}>
                 <LeftNav />
                 {isAssetsRoute ? <AssetsRoutePanels /> : null}
                 {isCardsListRoute ? (
-                  <section className={styles.leftPanel}>
+                  <section className={`${styles.leftPanel} d-flex align-items-stretch gap-3 p-3`}>
                     <StockpileMainPanel
                       isOpen
                       onClose={() => {}}
@@ -638,7 +638,7 @@ function IndexPageInner() {
                   </section>
                 ) : null}
                 {isCardDetailRoute && routeError ? (
-                  <section className={styles.routeErrorPanel}>
+                  <section className={`${styles.routeErrorPanel} d-flex align-items-center justify-content-center`}>
                     <div className={`${styles.routeErrorCard} ${styles.uStackLg}`}>
                       <div className={styles.routeErrorTitle}>Card not found</div>
                       <div className={styles.routeErrorBody}>
@@ -657,7 +657,7 @@ function IndexPageInner() {
                   </section>
                 ) : null}
                 <section
-                  className={`${styles.leftPanel} ${
+                  className={`${styles.leftPanel} d-flex align-items-stretch gap-3 p-3 ${
                     !isCardDetailRoute || routeError ? styles.routeHidden : ""
                   }`}
                   // style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
@@ -669,13 +669,15 @@ function IndexPageInner() {
                       variant="sidebar"
                     />
                   </div> */}
-                  <div className={styles.previewContainer}>
+                  <div
+                    className={`${styles.previewContainer} d-flex align-items-center justify-content-center`}
+                  >
                     <ToolsToolbar />
                     {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
                   </div>
                 </section>
                 <aside
-                  className={`${styles.rightPanel} ${
+                  className={`${styles.rightPanel} d-flex flex-column ${
                     !isCardDetailRoute || routeError ? styles.routeHidden : ""
                   }`}
                 >

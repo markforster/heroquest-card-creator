@@ -230,7 +230,7 @@ function AssetsInspector({
   return (
     <aside className={styles.rightPanel}>
       <div className={styles.assetsInspectorBody}>
-        <div className={styles.assetsInspectorActions}>
+        <div className={`${styles.assetsInspectorActions} d-flex justify-content-end`}>
           <button
             type="button"
             className="btn btn-outline-light btn-sm"

@@ -586,7 +586,7 @@ export default function StockpilePanelContent({
     <>
       <div className={styles.stockpilePanel}>
         <div className={styles.stockpilePanelBody}>
-          <div className={`${styles.assetsToolbar} ${styles.uRowMd}`}>
+          <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2`}>
             <div className={`${styles.cardsFiltersRow} ${styles.uRowLg}`}>
               <div className={`${styles.cardsFiltersLeft} ${styles.uRowLg}`}>
                 <div className="input-group input-group-sm" style={{ width: "18em" }}>
@@ -732,7 +732,7 @@ export default function StockpilePanelContent({
               <div className={styles.cardsFiltersSpacer} />
               <div className={`${styles.cardsFiltersRight} ${styles.uRowLg}`}>
                 {isPairMode ? (
-                  <div className={`${styles.assetsActions} ${styles.uRowMd} ms-3 gap-2`}>
+                  <div className={`${styles.assetsActions} d-flex align-items-center gap-2 ms-3`}>
                     <span className={styles.cardsSelectionLabel}>{t("status.selectedCards")}</span>
                     <span className="badge rounded-pill bg-warning text-dark fs-6 px-2 py-1">
                       {selectedIds.length}
@@ -743,7 +743,7 @@ export default function StockpilePanelContent({
             </div>
           </div>
           <div className={styles.stockpileLayout}>
-            <aside className={`${styles.stockpileSidebar} ${styles.uStackSm}`} aria-label={t("heading.collections")}>
+            <aside className={`${styles.stockpileSidebar} d-flex flex-column gap-2`} aria-label={t("heading.collections")}>
               <div className={styles.stockpileSidebarHeader}>{t("heading.collections")}</div>
               <div className={styles.stockpileSidebarList}>
                 <button
@@ -864,7 +864,7 @@ export default function StockpilePanelContent({
                       </span>
                     </label>
                   )}
-                  <div className={`${styles.assetsActions} ${styles.uRowMd} ms-auto gap-2`}>
+                  <div className={`${styles.assetsActions} d-flex align-items-center gap-2 ms-auto`}>
                     {collections.filter(
                       (collection) =>
                         activeFilter.type !== "collection" || collection.id !== activeFilter.id,

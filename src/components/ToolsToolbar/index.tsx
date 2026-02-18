@@ -32,7 +32,7 @@ export default function ToolsToolbar() {
   }
 
   return (
-    <div className={styles.toolsToolbar} aria-label={t("label.previewRenderer")}>
+    <div className={`${styles.toolsToolbar} d-flex flex-column`} aria-label={t("label.previewRenderer")}>
       <ToolbarButtonGroup>
         <ToolbarButton
           buttonRef={buttonRef}

@@ -16,7 +16,7 @@ export default function LeftNavCollapseToggle({
   onToggle,
 }: LeftNavCollapseToggleProps) {
   return (
-    <div className={`${styles.leftNavTop} ${styles.uRowMd}`}>
+    <div className={`${styles.leftNavTop} d-flex align-items-center justify-content-end gap-2`}>
       <button
         className={styles.leftNavToggle}
         type="button"

@@ -23,7 +23,7 @@ export default function PreviewSettingsPanel() {
   return (
     <div className={styles.settingsPanelBody}>
       <div
-        className={`${styles.settingsPanelSection} ${styles.uStackSm}${webglDisabled ? ` ${styles.settingsPanelSectionDisabled}` : ""}`}
+        className={`${styles.settingsPanelSection} d-flex flex-column gap-2${webglDisabled ? ` ${styles.settingsPanelSectionDisabled}` : ""}`}
       >
         <div className={styles.settingsPanelSectionTitle}>{t("label.previewRenderer")}</div>
         <div className={styles.settingsPanelRow}>
@@ -53,7 +53,7 @@ export default function PreviewSettingsPanel() {
       </div>
 
       <div
-        className={`${styles.settingsPanelSection} ${styles.uStackSm}${webglDisabled ? ` ${styles.settingsPanelSectionDisabled}` : ""}`}
+        className={`${styles.settingsPanelSection} d-flex flex-column gap-2${webglDisabled ? ` ${styles.settingsPanelSectionDisabled}` : ""}`}
       >
         <div className={styles.settingsPanelSectionTitle}>{t("label.webglInteraction")}</div>
         <div className={styles.settingsPanelRow}>
@@ -83,7 +83,7 @@ export default function PreviewSettingsPanel() {
       </div>
 
       <div
-        className={`${styles.settingsPanelSection} ${styles.uStackSm}${webglDisabled ? ` ${styles.settingsPanelSectionDisabled}` : ""}`}
+        className={`${styles.settingsPanelSection} d-flex flex-column gap-2${webglDisabled ? ` ${styles.settingsPanelSectionDisabled}` : ""}`}
       >
         <div className={styles.settingsPanelSectionTitle}>{t("label.webglSheen")}</div>
         <label className={styles.settingsPanelRange}>

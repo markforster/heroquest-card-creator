@@ -2,8 +2,6 @@
 
 .page {
   height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
 .footer {
@@ -11,13 +9,9 @@
   padding: var(--space-4) 1.25rem var(--space-7);
   font-size: var(--text-sm);
   color: var(--hq-text-muted);
-  justify-content: space-between;
 }
 
 .footerLeft {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
 }
 
 .footerHeart {
@@ -35,9 +29,6 @@
 
 .header {
   flex: 0 0 52px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   padding: 0 var(--space-12);
   background: var(--hq-header-bg);
   color: var(--hq-text);
@@ -46,8 +37,6 @@
 }
 
 .headerLeft {
-  display: flex;
-  flex-direction: column;
   gap: var(--space-1);
   min-width: 0;
 }
@@ -181,7 +170,6 @@ font-size: var(--text-2xl);
 
 .main {
   flex: 1 1 auto;
-  display: flex;
   min-height: 0;
   background: transparent;
 }
@@ -264,7 +252,6 @@ font-size: var(--text-2xl);
 
 .leftNavTop {
   flex: 0 1 auto;
-  justify-content: flex-end;
   height: 0;
   overflow: hidden;
 }
@@ -606,11 +593,6 @@ flex: 1 1 auto;
 .leftPanel {
   flex: 1 1 auto;
   min-width: 0;
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-  gap: var(--space-14);
-  padding: var(--space-14);
   position: relative;
   background-size: 1200px 1200px;
   background-position: center;
@@ -689,9 +671,6 @@ position: absolute;
 .previewContainer {
   flex: 1 1 auto;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
   height: 100%;
   z-index: 1;
@@ -701,15 +680,11 @@ position: absolute;
   position: absolute;
   top: 0;
   right: 0;
-  display: flex;
-  flex-direction: column;
   gap: 12px;
   z-index: 15;
 }
 
 .toolsToolbarGroup {
-  display: inline-flex;
-  flex-direction: column;
   gap: 0;
   background: var(--hq-surface-850);
   border: 1px solid rgba(0, 0, 0, 0.75);
@@ -860,8 +835,6 @@ width: 100%;
   background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
   padding: 0;
   border-left: 1px solid var(--hq-black);
-  display: flex;
-  flex-direction: column;
   color: var(--hq-text);
   font-size: var(--text-xl);
   overflow: visible;
@@ -884,9 +857,6 @@ width: 100%;
 .routeErrorPanel {
   flex: 1 1 auto;
   min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   padding: var(--space-16);
   background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
   color: var(--hq-text);
@@ -985,8 +955,6 @@ background-color: var(--hq-border-strong) !important;
 }
 
 .assetsInspectorActions {
-  display: flex;
-  justify-content: flex-end;
 }
 .assetsInspectorCarousel,
 .assetsInspectorDetails div {

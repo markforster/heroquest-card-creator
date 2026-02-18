@@ -24,7 +24,9 @@ export default function ModalHeader({
   }
 
   return (
-    <div className={`${styles.templatePopoverHeader} ${styles.uRowMd} modal-header`}>
+    <div
+      className={`${styles.templatePopoverHeader} d-flex align-items-center justify-content-between gap-2 modal-header`}
+    >
       <h2 className={styles.templatePopoverTitle}>{title}</h2>
       <div className={styles.modalHeaderActions}>
         {headerActions}

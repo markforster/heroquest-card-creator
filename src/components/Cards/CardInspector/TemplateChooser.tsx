@@ -242,7 +242,9 @@ export default function TemplateChooser() {
           </div>
         </div>
         <div className={styles.inspectorHeaderContent}>
-          <div className={`${styles.inspectorHeaderRow} ${styles.uRowMd}`}>
+          <div
+            className={`${styles.inspectorHeaderRow} d-flex align-items-center justify-content-between gap-2`}
+          >
             <div className={styles.inspectorSectionTitle}>
               {t("actions.template")} -{" "}
               {template ? getTemplateNameLabel(language, template) : t("ui.loading")}

@@ -16,9 +16,9 @@ export default function MainFooter() {
 
   return (
     <>
-      <footer className={`${styles.footer} ${styles.uRowMd}`}>
+      <footer className={`${styles.footer} d-flex align-items-center justify-content-between gap-2`}>
         <div className="d-flex align-items-center w-100">
-          <div className={styles.footerLeft}>
+          <div className={`${styles.footerLeft} d-flex align-items-center gap-1`}>
             <button
               type="button"
               className={styles.footerLink}

@@ -63,7 +63,7 @@ function SettingsModalContent({
                   isActive={isActive}
                   ariaLabel={t(area.labelKey)}
                   title={t(area.labelKey)}
-                  className={`${styles.settingsAreaButton} ${styles.uRowMd}`}
+                  className={`${styles.settingsAreaButton} d-flex align-items-center gap-2`}
                 />
               );
             })}
