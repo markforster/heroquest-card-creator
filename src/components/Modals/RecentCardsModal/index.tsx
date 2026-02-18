@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
-import { cardTemplatesById } from "@/data/card-templates";
-import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { listCards } from "@/lib/cards-db";
 import type { CardRecord } from "@/types/cards-db";
 import type { OpenCloseProps } from "@/types/ui";
+
+import LoadingMessage from "./LoadingMessage";
+import RecentCardsList from "./RecentCardsList";
+import { useRecentCards } from "./useRecentCards";
 
 type RecentCardsModalProps = OpenCloseProps & {
   onSelectCard: (card: CardRecord) => boolean | void;
@@ -45,18 +47,7 @@ export default function RecentCardsModal({ isOpen, onClose, onSelectCard }: Rece
     };
   }, [isOpen]);
 
-  const recentCards = useMemo(() => {
-    const sorted = [...cards].sort((a, b) => {
-      const aViewed = a.lastViewedAt ?? 0;
-      const bViewed = b.lastViewedAt ?? 0;
-      if (bViewed !== aViewed) return bViewed - aViewed;
-      if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
-      const aName = a.nameLower ?? a.name.toLocaleLowerCase();
-      const bName = b.nameLower ?? b.name.toLocaleLowerCase();
-      return aName.localeCompare(bName);
-    });
-    return sorted.slice(0, RECENT_LIMIT);
-  }, [cards]);
+  const recentCards = useRecentCards({ cards, limit: RECENT_LIMIT });
 
   return (
     <ModalShell
@@ -67,72 +58,16 @@ export default function RecentCardsModal({ isOpen, onClose, onSelectCard }: Rece
       keepMounted
     >
       {isLoading ? (
-        <div className={styles.templatePopoverMessage}>{t("ui.loading")}</div>
+        <LoadingMessage>{t("ui.loading")}</LoadingMessage>
       ) : recentCards.length === 0 ? (
         <div className={styles.templatePopoverMessage}>{t("empty.noRecentCards")}</div>
       ) : (
-        <div className={styles.cardsGrid}>
-          {recentCards.map((card) => {
-            const template = cardTemplatesById[card.templateId];
-            const templateLabel = template
-              ? getTemplateNameLabel(language, template)
-              : card.templateId;
-            const thumbUrl =
-              typeof window !== "undefined" && card.thumbnailBlob
-                ? URL.createObjectURL(card.thumbnailBlob)
-                : null;
-            const templateThumb = template?.thumbnail ?? null;
-            return (
-              <button
-                key={card.id}
-                type="button"
-                className={styles.cardsItem}
-                onClick={() => {
-                  const shouldClose = onSelectCard(card);
-                  if (shouldClose !== false) {
-                    onClose();
-                  }
-                }}
-              >
-                <div className={styles.cardsItemHeader}>
-                  <div className={styles.cardsItemName} title={card.name}>
-                    {card.name}
-                  </div>
-                </div>
-                <div className={styles.cardsThumbWrapper}>
-                  {thumbUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={thumbUrl}
-                      alt={card.name}
-                      className={styles.cardsThumbImage}
-                      onLoad={() => {
-                        URL.revokeObjectURL(thumbUrl);
-                      }}
-                    />
-                  ) : templateThumb?.src ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={templateThumb.src}
-                      alt={card.name}
-                      className={styles.cardsThumbImage}
-                    />
-                  ) : null}
-                </div>
-                <div className={styles.cardsItemMeta}>
-                  <div
-                    className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}
-                  >
-                    {templateLabel}
-                  </div>
-                  <div className={styles.cardsItemDetails}>
-                    {t("label.lastEdited")} {new Date(card.updatedAt).toLocaleDateString()}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        <RecentCardsList
+          cards={recentCards}
+          language={language}
+          onSelectCard={onSelectCard}
+          onClose={onClose}
+        />
       )}
     </ModalShell>
   );
