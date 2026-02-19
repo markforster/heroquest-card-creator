@@ -6,6 +6,7 @@ const fs = require("fs");
 const os = require("os");
 const net = require("net");
 const path = require("path");
+const { spawn } = require("child_process");
 const mime = require("mime");
 const yaml = require("yaml");
 const chalk = require("chalk");
@@ -168,6 +169,55 @@ function saveInfo(port, existing) {
 
 function isInteractive() {
   return Boolean(process.stdin.isTTY && process.stdout.isTTY);
+}
+
+function openBrowser(url) {
+  let command;
+  let args;
+
+  if (process.platform === "darwin") {
+    command = "open";
+    args = [url];
+  } else if (process.platform === "win32") {
+    command = "cmd";
+    args = ["/c", "start", "", url];
+  } else {
+    command = "xdg-open";
+    args = [url];
+  }
+
+  try {
+    const child = spawn(command, args, { stdio: "ignore", detached: true });
+    child.unref();
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function promptOpenBrowser(url) {
+  if (!isInteractive()) {
+    return;
+  }
+
+  const { default: inquirer } = await import("inquirer");
+  const answer = await inquirer.prompt([
+    {
+      name: "openBrowser",
+      type: "confirm",
+      message: chalk.cyanBright("Open the app in your browser now?"),
+      default: true,
+    },
+  ]);
+
+  if (!answer.openBrowser) {
+    return;
+  }
+
+  const opened = openBrowser(url);
+  if (!opened) {
+    console.warn("[heroquest-card-creator] Unable to open browser automatically. Open the URL manually.");
+  }
 }
 
 function canConnect(port, host) {
@@ -481,7 +531,9 @@ async function main() {
   });
   server.listen(port, DEFAULT_HOST, () => {
     saveInfo(port, info);
-    console.log(`HeroQuest Card Creator ready at http://${DEFAULT_HOST}:${port}`);
+    const url = `http://${DEFAULT_HOST}:${port}`;
+    console.log(`HeroQuest Card Creator ready at ${url}`);
+    void promptOpenBrowser(url);
   });
 }
 
