@@ -1,6 +1,7 @@
 {
   "name": "heroquest-card-creator",
-  "version": "0.5.3-dev.260219.2",
+  "version": "0.5.3-dev.260219.3",
+  "description": "Browser-based tool to design HeroQuest-style cards with accurate layouts, asset library, and PNG export — runs locally.",
   "author": "Mark Forster (markforster)",
   "license": "GPL-3.0",
   "repository": {
@@ -11,6 +12,23 @@
   "bugs": {
     "url": "https://github.com/markforster/heroquest-card-creator/issues"
   },
+  "keywords": [
+    "heroquest",
+    "card",
+    "cards",
+    "card-creator",
+    "card-maker",
+    "homebrew",
+    "tabletop",
+    "boardgame",
+    "rpg",
+    "fantasy",
+    "custom-cards",
+    "printable",
+    "deck",
+    "generator",
+    "editor"
+  ],
   "packageManager": "npm@10.8.1",
   "bin": {
     "heroquest-card-creator": "bin/heroquest-card-creator.js"

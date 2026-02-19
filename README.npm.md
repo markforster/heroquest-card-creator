@@ -2,6 +2,20 @@
 
 Create HeroQuest‑style cards (heroes, monsters, treasure, backs, and more) in your browser, preview them live, and export print‑ready PNGs — no server, no account, all client‑side.
 
+Layouts, typography, and proportions are tuned to match the classic cards, so you can focus on ideas instead of fighting fonts and spacing. Pick a template, drop in artwork, tweak framing, write rules text, and export print‑ready PNGs. Everything runs locally in your browser, and you can export a single `.hqcc` backup to move or restore your library.
+
+Prefer a hosted version? You can also run the app from itch.io:
+
+```text
+https://mark-forster.itch.io/heroquest-card-creator
+```
+
+Community and updates:
+
+```text
+https://mark-forster.itch.io/heroquest-card-creator/community
+```
+
 ## Highlights
 
 - SVG preview with high‑fidelity layout.
