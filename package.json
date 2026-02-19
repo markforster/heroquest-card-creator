@@ -1,6 +1,16 @@
 {
   "name": "heroquest-card-creator",
-  "version": "0.5.3",
+  "version": "0.5.3-dev.260219.1",
+  "author": "Mark Forster (markforster)",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/markforster/heroquest-card-creator"
+  },
+  "homepage": "https://github.com/markforster/heroquest-card-creator",
+  "bugs": {
+    "url": "https://github.com/markforster/heroquest-card-creator/issues"
+  },
   "packageManager": "npm@10.8.1",
   "bin": {
     "heroquest-card-creator": "bin/heroquest-card-creator.js"
@@ -18,7 +28,7 @@
     "generate:embedded-assets": "node scripts/generate-embedded-assets.cjs",
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "predev": "npm run generate:embedded-assets",
-    "prepack": "npm run build",
+    "prepack": "cp README.npm.md README.md && npm run build",
     "prebuild": "npm run generate:embedded-assets",
     "build": "NODE_ENV=production npm run verify:env && NODE_ENV=production next build",
     "build:download": "npm run build && node scripts/package-download.js",
@@ -38,7 +48,8 @@
     "tauri:icons": "tauri icon public/assets/web-app-manifest-512x512.png",
     "sync:tauri-version": "node scripts/sync-tauri-version.cjs",
     "pretauri:build": "npm run sync:tauri-version",
-    "tauri:build": "npm run build && npm run tauri:icons && tauri build"
+    "tauri:build": "npm run build && npm run tauri:icons && tauri build",
+    "postpack": "git checkout -- README.md"
   },
   "dependencies": {
     "chalk": "^4.1.2",
@@ -51,8 +62,8 @@
     "@react-three/fiber": "^8.16.8",
     "@svgr/webpack": "^8.1.0",
     "@tauri-apps/api": "^2.9.1",
-    "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/cli": "^2",
+    "@tauri-apps/plugin-opener": "^2",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
     "@types/jest": "^29.5.12",
