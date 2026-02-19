@@ -14,6 +14,7 @@ export type CardPreviewProps = {
 
 export type CardPreviewHandle = {
   exportAsPng: () => Promise<void>;
+  waitForBackgroundLoaded?: (timeoutMs?: number) => Promise<void>;
   renderToPngBlob: (options?: {
     width?: number;
     height?: number;

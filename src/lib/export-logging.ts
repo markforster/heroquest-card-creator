@@ -118,6 +118,21 @@ export function logCardRender(
   console.debug(`${LOG_PREFIX} Render: ${formatDuration(durationMs)}ms | success=${success}`);
 }
 
+export function logCardFileName(
+  session: ExportLoggingSession,
+  {
+    cardId,
+    fileName,
+    wasDeduped,
+  }: { cardId?: string | null; fileName: string; wasDeduped: boolean },
+): void {
+  if (!exportSessions.has(session.sessionId)) return;
+  const safeCardId = safeValue(cardId, "unknown");
+  console.debug(
+    `${LOG_PREFIX} Filename: card=${safeCardId} | name="${fileName}" | deduped=${wasDeduped}`,
+  );
+}
+
 export function logCardSkip(
   session: ExportLoggingSession,
   { reason }: { reason: string },

@@ -31,7 +31,7 @@ export default function CardBorder({
   const { color: resolvedColor, alpha: resolvedAlpha } = splitHexAlpha(
     color?.trim() ? color : DEFAULT_BORDER_COLOR,
   );
-  const resolvedOpacity = (backgroundLoaded === false ? 0 : 1) * (resolvedAlpha ?? 1);
+  const resolvedOpacity = resolvedAlpha ?? 1;
 
   if (!mask) {
     return null;
@@ -47,6 +47,7 @@ export default function CardBorder({
         >
           <image
             href={mask.src}
+            data-template-asset="border-mask"
             x={0}
             y={0}
             width={width}
@@ -68,7 +69,7 @@ export default function CardBorder({
   );
 }
 
-function splitHexAlpha(value: string): { color: string; alpha?: number } {
+export function splitHexAlpha(value: string): { color: string; alpha?: number } {
   const trimmed = value.trim();
   if (!trimmed) return { color: DEFAULT_BORDER_COLOR };
   if (trimmed.toLowerCase() === "transparent") {

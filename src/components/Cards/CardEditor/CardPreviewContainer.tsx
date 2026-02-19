@@ -93,6 +93,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           await new Promise<void>((resolve) => {
             window.requestAnimationFrame(() => resolve());
           });
+          await handle.waitForBackgroundLoaded?.();
           if (assetIds.length) {
             await waitForAssetElements(() => handle.getSvgElement(), assetIds);
           }
@@ -282,6 +283,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           await new Promise<void>((resolve) => {
             window.requestAnimationFrame(() => resolve());
           });
+          await handle.waitForBackgroundLoaded?.();
           if (reverseAssetIds.length) {
             await waitForAssetElements(() => handle.getSvgElement(), reverseAssetIds);
           }

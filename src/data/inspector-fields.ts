@@ -84,6 +84,11 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "description",
       labelKey: "form.cardText",
     },
+    {
+      fieldType: "borderColor",
+      bind: "borderColor",
+      labelKey: "form.borderColor",
+    },
   ],
   "large-treasure": [
     {
@@ -104,6 +109,11 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.cardText",
+    },
+    {
+      fieldType: "borderColor",
+      bind: "borderColor",
+      labelKey: "form.borderColor",
     },
   ],
   "hero-back": [

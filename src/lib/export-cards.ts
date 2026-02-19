@@ -8,6 +8,7 @@ import {
   endExportLogging,
   logAssetPrefetch,
   logCardInfo,
+  logCardFileName,
   logCardRender,
   logCardSkip,
   logCardWait,
@@ -164,6 +165,7 @@ export const runBulkExport = async ({
         await waitForAssetElements(() => previewRef.current?.getSvgElement(), assetIds);
         logCardWait(session, { durationMs: now() - waitStart });
 
+        await previewRef.current?.waitForBackgroundLoaded?.();
         const renderStart = now();
         const pngBlob = await previewRef.current?.renderToPngBlob({
           loggingId: session.sessionId,
@@ -182,7 +184,25 @@ export const runBulkExport = async ({
           continue;
         }
 
-        const fileName = resolveName(card, usedNames);
+        const resolvedName = resolveName(card, usedNames);
+        let fileName = resolvedName;
+        let dedupeAttempts = 0;
+        const shortId = card.id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) || "card";
+        while (zip.file(fileName)) {
+          dedupeAttempts += 1;
+          const dotIndex = fileName.lastIndexOf(".");
+          const stem = dotIndex >= 0 ? fileName.slice(0, dotIndex) : fileName;
+          const ext = dotIndex >= 0 ? fileName.slice(dotIndex) : "";
+          fileName = `${stem}-${shortId}${ext}`;
+          if (dedupeAttempts > 3) {
+            fileName = `${stem}-${shortId}-${dedupeAttempts}${ext}`;
+          }
+        }
+        logCardFileName(session, {
+          cardId: card.id,
+          fileName,
+          wasDeduped: fileName !== resolvedName,
+        });
         zip.file(fileName, pngBlob);
         exportedCount += 1;
         onProgress(exportedCount);

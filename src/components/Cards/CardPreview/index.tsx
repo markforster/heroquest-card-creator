@@ -36,16 +36,26 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
     const { t } = useI18n();
     const background = backgroundSrc ?? parchmentBackground;
     const [backgroundLoaded, setBackgroundLoaded] = useState(false);
+    const backgroundLoadedRef = useRef(false);
+    const backgroundWaitersRef = useRef<(() => void)[]>([]);
     const svgRef = useRef<SVGSVGElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     useEffect(() => {
       setBackgroundLoaded(false);
+      backgroundLoadedRef.current = false;
+      if (backgroundWaitersRef.current.length) {
+        backgroundWaitersRef.current.splice(0);
+      }
 
       const img = new Image();
       img.src = background.src;
       const handleLoad = () => {
+        backgroundLoadedRef.current = true;
         setBackgroundLoaded(true);
+        if (backgroundWaitersRef.current.length) {
+          backgroundWaitersRef.current.splice(0).forEach((resolve) => resolve());
+        }
       };
       img.addEventListener("load", handleLoad);
 
@@ -86,6 +96,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               imageAsset: { id: imageAssetId, name: imageAssetName },
               iconAsset: { id: iconAssetId, name: iconAssetName },
             });
+
+            await this.waitForBackgroundLoaded?.();
 
             const assetIds = collectCardAssetIds(cardData);
             const { cache, missing } = await buildAssetCache(assetIds);
@@ -186,6 +198,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           const svgElement = svgRef.current;
           if (!svgElement) return null;
 
+          await this.waitForBackgroundLoaded?.();
+
           const width = options?.width ?? CARD_WIDTH;
           const height = options?.height ?? CARD_HEIGHT;
 
@@ -211,6 +225,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           const svgElement = svgRef.current;
           if (!svgElement) return null;
 
+          await this.waitForBackgroundLoaded?.();
+
           const width = options?.width ?? CARD_WIDTH;
           const height = options?.height ?? CARD_HEIGHT;
           const removeDebugBounds = options?.removeDebugBounds ?? true;
@@ -229,6 +245,20 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
         },
         getSvgElement() {
           return svgRef.current;
+        },
+        waitForBackgroundLoaded(timeoutMs = 3000) {
+          if (backgroundLoadedRef.current) return Promise.resolve();
+          return new Promise((resolve) => {
+            const handleResolve = () => resolve();
+            backgroundWaitersRef.current.push(handleResolve);
+            window.setTimeout(() => {
+              const index = backgroundWaitersRef.current.indexOf(handleResolve);
+              if (index >= 0) {
+                backgroundWaitersRef.current.splice(index, 1);
+              }
+              resolve();
+            }, timeoutMs);
+          });
         },
       }),
       [cardData, templateName],

@@ -2,6 +2,7 @@
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
+import CardTexturedBorder from "@/components/Cards/CardParts/CardTexturedBorder";
 import CardTextBlock, { layoutCardText } from "@/components/Cards/CardParts/CardTextBlock";
 import HeroStatsBlock, {
   HERO_STATS_HEIGHT,
@@ -141,6 +142,7 @@ function renderBackgroundLayer({
       <image
         href={image.src}
         data-card-background="true"
+        data-template-asset="background"
         x={bounds.x}
         y={bounds.y}
         width={bounds.width}
@@ -170,11 +172,31 @@ function renderBorderLayer({
     cardData && typeof (cardData as { borderColor?: string }).borderColor === "string"
       ? (cardData as { borderColor?: string }).borderColor
       : undefined;
+  const borderMask = "mask" in layer ? layer.mask : undefined;
+  const borderTexture = "texture" in layer ? layer.texture : undefined;
+  const blendMode = "blendMode" in layer ? layer.blendMode : undefined;
+
+  if (borderMask && borderTexture) {
+    return (
+      <CardTexturedBorder
+        key={layer.id}
+        alphaMask={borderMask}
+        textureMask={borderTexture}
+        backgroundLoaded={backgroundLoaded}
+        color={borderColor}
+        width={bounds.width}
+        height={bounds.height}
+        blendMode={blendMode}
+      />
+    );
+  }
 
   return (
     <CardBorder
       key={layer.id}
-      mask={blueprint.templateId === "labelled-back" ? borderedMask : undefined}
+      mask={
+        borderMask ?? (blueprint.templateId === "labelled-back" ? borderedMask : undefined)
+      }
       backgroundLoaded={backgroundLoaded}
       color={borderColor}
       width={bounds.width}

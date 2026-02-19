@@ -1,3 +1,5 @@
+import smallLargeArtworkBorderMask from "@/assets/card-backgrounds/small-large-artwork-border-alpha-mask.png";
+import smallLargeArtworkBorderTexture from "@/assets/card-backgrounds/small-large-artwork-border-blend-texture.png";
 import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
 import type { Blueprint } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
@@ -29,6 +31,13 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       id: "background-frame",
       type: "background",
       source: "template",
+    },
+    {
+      id: "border-texture",
+      type: "border",
+      mask: smallLargeArtworkBorderMask,
+      texture: smallLargeArtworkBorderTexture,
+      blendMode: "multiply",
     },
     {
       id: "description",
@@ -107,6 +116,13 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       id: "background-frame",
       type: "background",
       source: "template",
+    },
+    {
+      id: "border-texture",
+      type: "border",
+      mask: smallLargeArtworkBorderMask,
+      texture: smallLargeArtworkBorderTexture,
+      blendMode: "multiply",
     },
     {
       id: "description",

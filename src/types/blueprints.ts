@@ -43,6 +43,9 @@ export type BlueprintLayerBackground = BlueprintLayerBase & {
 
 export type BlueprintLayerBorder = BlueprintLayerBase & {
   type: "border";
+  mask?: StaticImageData;
+  texture?: StaticImageData;
+  blendMode?: "multiply" | "overlay" | "screen";
 };
 
 export type BlueprintLayer =
