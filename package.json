@@ -1,13 +1,24 @@
 {
-  "name": "heroquest.card-creator",
+  "name": "heroquest-card-creator",
   "version": "0.5.3",
-  "private": true,
   "packageManager": "npm@10.8.1",
+  "bin": {
+    "heroquest-card-creator": "bin/heroquest-card-creator.js"
+  },
+  "files": [
+    "out/**",
+    "bin/**",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "generate:embedded-assets": "node scripts/generate-embedded-assets.cjs",
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "predev": "npm run generate:embedded-assets",
-    "postinstall": "npm run generate:embedded-assets",
+    "prepack": "npm run build",
     "prebuild": "npm run generate:embedded-assets",
     "build": "NODE_ENV=production npm run verify:env && NODE_ENV=production next build",
     "build:download": "npm run build && node scripts/package-download.js",
@@ -30,24 +41,17 @@
     "tauri:build": "npm run build && npm run tauri:icons && tauri build"
   },
   "dependencies": {
+    "chalk": "^4.1.2",
+    "inquirer": "^9.3.7",
+    "mime": "^3.0.0",
+    "yaml": "^2.8.0"
+  },
+  "devDependencies": {
     "@next/third-parties": "^16.1.0",
     "@react-three/fiber": "^8.16.8",
     "@svgr/webpack": "^8.1.0",
     "@tauri-apps/api": "^2.9.1",
     "@tauri-apps/plugin-opener": "^2",
-    "bootstrap": "^5.3.3",
-    "jszip": "^3.10.1",
-    "lucide-react": "^0.561.0",
-    "next": "14.2.15",
-    "react": "^18",
-    "react-colorful": "^5.6.1",
-    "react-dom": "^18",
-    "react-hook-form": "^7.68.0",
-    "react-router-dom": "^7.13.0",
-    "react-snowfall": "^2.2.0",
-    "three": "^0.167.1"
-  },
-  "devDependencies": {
     "@tauri-apps/cli": "^2",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
@@ -56,6 +60,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/three": "^0.182.0",
+    "bootstrap": "^5.3.3",
     "eslint": "^8",
     "eslint-config-next": "14.2.15",
     "eslint-config-prettier": "^10.1.8",
@@ -65,7 +70,17 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "jest-html-reporter": "^3.10.2",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.561.0",
+    "next": "14.2.15",
     "prettier": "^3.6.2",
+    "react": "^18",
+    "react-colorful": "^5.6.1",
+    "react-dom": "^18",
+    "react-hook-form": "^7.68.0",
+    "react-router-dom": "^7.13.0",
+    "react-snowfall": "^2.2.0",
+    "three": "^0.167.1",
     "typescript": "^5"
   },
   "jest-html-reporter": {

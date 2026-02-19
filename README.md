@@ -112,6 +112,29 @@ Because fonts and assets are referenced relatively and IndexedDB/localStorage ar
 
 ---
 
+## CLI module (npm)
+
+You can run the static build from a simple local server via the published CLI package:
+
+- Install globally:
+  - `npm i -g heroquest-card-creator`
+- Run (default `http://127.0.0.1:3000`):
+  - `heroquest-card-creator`
+- Run on another port:
+  - `heroquest-card-creator -p 4000`
+
+Notes:
+
+- The CLI serves the bundled static `out/` content included in the npm package.
+- Your cards and assets are stored in the browser via IndexedDB/localStorage.
+- Browser storage is tied to the origin (host + port). If you run on a new port, you won’t see libraries from other ports.
+- Port behavior:
+  - If no port is supplied, the CLI tries 3000 first.
+  - If 3000 is busy, it auto-selects a free port.
+  - It stores recent ports in `~/.hqcc/info.yml` and may prompt you to reuse them.
+
+---
+
 ## Optional: Tauri desktop build
 
 This repo includes a thin Tauri wrapper so you can ship a native desktop app around the static build.
