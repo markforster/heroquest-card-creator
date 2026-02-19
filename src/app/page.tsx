@@ -20,6 +20,8 @@ import CardPreviewContainer from "@/components/Cards/CardEditor/CardPreviewConta
 import CardInspector from "@/components/Cards/CardInspector/CardInspector";
 import TemplateChooser from "@/components/Cards/CardInspector/TemplateChooser";
 import CardPreview, { type CardPreviewHandle } from "@/components/Cards/CardPreview";
+import CardThumbnail from "@/components/common/CardThumbnail";
+import { WarningNotice } from "@/components/common/Notice";
 import { PreviewCanvasProvider } from "@/components/Providers/PreviewCanvasContext";
 import DatabaseVersionGate from "@/components/DatabaseVersionGate";
 import { EditorSaveProvider } from "@/components/Providers/EditorSaveContext";
@@ -27,6 +29,7 @@ import EditorActionsToolbar from "@/components/EditorActionsToolbar";
 import { EscapeStackProvider } from "@/components/common/EscapeStackProvider";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import HeaderWithTemplatePicker from "@/components/Layout/HeaderWithTemplatePicker";
 import { LibraryTransferProvider } from "@/components/Providers/LibraryTransferContext";
 import LeftNav from "@/components/Layout/LeftNav";
@@ -44,6 +47,11 @@ import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-reco
 import { createCard, getCard, listCards, touchCardLastViewed, updateCard } from "@/lib/cards-db";
 import { createPair, deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
+import {
+  buildMissingAssetsReport,
+  type MissingAssetReport,
+} from "@/lib/export-assets-cache";
+import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -56,6 +64,8 @@ import styles from "./page.module.css";
 
 function IndexPageInner() {
   const { t, language } = useI18n();
+  const formatMessageWith = (key: string, vars: Record<string, string | number>) =>
+    formatMessage(t(key as never), vars);
   const navigate = useNavigate();
   const { cardId } = useParams();
   const isAssetsRoute = Boolean(useMatch("/assets"));
@@ -116,6 +126,16 @@ function IndexPageInner() {
   const [exportTotal, setExportTotal] = useState(0);
   const [exportProgress, setExportProgress] = useState(0);
   const [exportCancelled, setExportCancelled] = useState(false);
+  const [missingAssetsPrompt, setMissingAssetsPrompt] = useState<{
+    report: MissingAssetReport[];
+    skipIds: Set<string>;
+    skipNotes: Map<string, string>;
+    onProceed: () => void;
+  } | null>(null);
+  const [missingAssetsBanner, setMissingAssetsBanner] = useState<{
+    count: number;
+    report: MissingAssetReport[];
+  } | null>(null);
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [routeError, setRouteError] = useState<"not-found" | "load-failed" | null>(null);
   const lastLoadedRef = useRef<string | null>(null);
@@ -132,6 +152,44 @@ function IndexPageInner() {
       }
     },
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    const schedule = (cb: () => void) => {
+      if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+        const id = (window as unknown as { requestIdleCallback: (fn: () => void) => number })
+          .requestIdleCallback(cb);
+        return () => {
+          (
+            window as unknown as { cancelIdleCallback?: (id: number) => void }
+          ).cancelIdleCallback?.(id);
+        };
+      }
+      const id = window.setTimeout(cb, 0);
+      return () => window.clearTimeout(id);
+    };
+
+    const cancel = schedule(() => {
+      void (async () => {
+        try {
+          const cards = await listCards();
+          if (cancelled) return;
+          const report = await buildMissingAssetsReport(cards);
+          if (cancelled) return;
+          if (report.length > 0) {
+            setMissingAssetsBanner({ count: report.length, report });
+          }
+        } catch {
+          // Ignore scan failures.
+        }
+      })();
+    });
+
+    return () => {
+      cancelled = true;
+      cancel?.();
+    };
+  }, []);
 
   useEscapeModalAware({
     id: "route:cards",
@@ -535,18 +593,98 @@ function IndexPageInner() {
     return [];
   }, [effectiveFace, pairedBackId, pairedFrontCount, t]);
 
-  const exportCurrentFace = () => {
-    previewRef.current?.exportAsPng();
+  const openCardInNewTab = (cardIdToOpen: string) => {
+    if (typeof window === "undefined") return;
+    const url = `${window.location.origin}${window.location.pathname}#/cards/${cardIdToOpen}`;
+    window.open(url, "_blank", "noopener");
   };
 
-  const exportFaceIds = async (faceIds: string[]) => {
+  const buildSkipNotesFromReport = (report: MissingAssetReport[]) => {
+    const notes = new Map<string, string>();
+    report.forEach((entry) => {
+      const missingSummary = entry.missing
+        .map((asset) => `${asset.label} asset \"${asset.name}\" (id=${asset.id})`)
+        .join(", ");
+      notes.set(
+        entry.cardId,
+        `Card \"${entry.title}\" (id=${entry.cardId}, template=${entry.templateId}, face=${entry.face}) could not be exported because the ${missingSummary}.`,
+      );
+    });
+    return notes;
+  };
+
+  const exportCurrentFace = () => {
+    if (!activeCardId) {
+      previewRef.current?.exportAsPng();
+      return;
+    }
+
+    void (async () => {
+      try {
+        const card = await getCard(activeCardId);
+        if (!card) {
+          previewRef.current?.exportAsPng();
+          return;
+        }
+        const report = await buildMissingAssetsReport([card]);
+        if (report.length > 0) {
+          setMissingAssetsPrompt({
+            report,
+            skipIds: new Set(report.map((entry) => entry.cardId)),
+            skipNotes: buildSkipNotesFromReport(report),
+            onProceed: () => {
+              previewRef.current?.exportAsPng();
+            },
+          });
+          return;
+        }
+        previewRef.current?.exportAsPng();
+      } catch {
+        previewRef.current?.exportAsPng();
+      }
+    })();
+  };
+
+  const exportFaceIds = async (
+    faceIds: string[],
+    options?: { skipIds?: Set<string>; skipNotes?: Map<string, string>; skipPrecheck?: boolean },
+  ) => {
     if (faceIds.length <= 1) {
       exportCurrentFace();
       return;
     }
+
+    if (!options?.skipPrecheck) {
+      const records = await Promise.all(
+        faceIds.map(async (id) => {
+          try {
+            return await getCard(id);
+          } catch {
+            return null;
+          }
+        }),
+      );
+      const cards = records.filter((record): record is CardRecord => Boolean(record));
+      const report = await buildMissingAssetsReport(cards);
+      if (report.length > 0) {
+        const skipIds = new Set(report.map((entry) => entry.cardId));
+        const skipNotes = buildSkipNotesFromReport(report);
+        setMissingAssetsPrompt({
+          report,
+          skipIds,
+          skipNotes,
+          onProceed: () => {
+            void exportFaceIds(faceIds, { skipIds, skipNotes, skipPrecheck: true });
+          },
+        });
+        return;
+      }
+    }
     try {
       setIsExportingFaces(true);
-      setExportTotal(faceIds.length);
+      const skipIds = options?.skipIds;
+      const total = skipIds ? faceIds.filter((id) => !skipIds.has(id)).length : faceIds.length;
+      setExportTotal(total);
       setExportProgress(0);
       setExportCancelled(false);
       exportCancelRef.current = false;
@@ -555,6 +693,8 @@ function IndexPageInner() {
         onTargetChange: (card) => setExportTarget(card),
         onProgress: (count) => setExportProgress(count),
         shouldCancel: () => exportCancelRef.current,
+        skipCardIds: options?.skipIds,
+        skipCardNotes: options?.skipNotes,
       });
       if (result.status === "empty") {
         window.alert(t("alert.selectCardToExport"));
@@ -625,6 +765,32 @@ function IndexPageInner() {
           <EscapeStackProvider>
             <AppActionsProvider>
               <HeaderWithTemplatePicker />
+              {missingAssetsBanner ? (
+                <div className={styles.missingAssetsBanner}>
+                  <WarningNotice
+                    role="status"
+                    className="d-flex align-items-start gap-3"
+                  >
+                    <div className={styles.missingAssetsBannerBody}>
+                      <div className={styles.missingAssetsBannerTitle}>
+                        {t("warning.missingArtworkDetectedTitle")}
+                      </div>
+                      <div>
+                        {formatMessageWith("warning.missingArtworkDetectedBody", {
+                          count: missingAssetsBanner.count,
+                        })}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className={`btn btn-outline-light btn-sm ${styles.missingAssetsBannerClose}`}
+                      onClick={() => setMissingAssetsBanner(null)}
+                    >
+                      {t("actions.close")}
+                    </button>
+                  </WarningNotice>
+                </div>
+              ) : null}
               <main className={`${styles.main} d-flex`}>
                 <LeftNav />
                 {isAssetsRoute ? <AssetsRoutePanels /> : null}
@@ -739,6 +905,67 @@ function IndexPageInner() {
               cardData={exportCardData}
             />
           </div>
+        ) : null}
+        {missingAssetsPrompt ? (
+          <ConfirmModal
+            isOpen={Boolean(missingAssetsPrompt)}
+            title={t("warning.missingAssetsTitle")}
+            confirmLabel={t("actions.proceedExport")}
+            cancelLabel={t("actions.cancel")}
+            contentClassName={styles.missingAssetsModal}
+            onConfirm={() => {
+              const prompt = missingAssetsPrompt;
+              if (!prompt) return;
+              setMissingAssetsPrompt(null);
+              prompt.onProceed();
+            }}
+            onCancel={() => {
+              setMissingAssetsPrompt(null);
+            }}
+          >
+            <div>{t("warning.missingAssetsBody")}</div>
+            <div className={styles.assetsReportStatus}>{t("label.opensInNewTab")}</div>
+            <div className={styles.assetsReportList}>
+              {missingAssetsPrompt.report.map((entry) => {
+                const thumbUrl = entry.thumbnailBlob
+                  ? URL.createObjectURL(entry.thumbnailBlob)
+                  : null;
+                const fallbackUrl = cardTemplatesById[entry.templateId]?.thumbnail?.src ?? null;
+                return (
+                  <div key={entry.cardId} className={styles.assetsReportItem}>
+                    <div className="d-flex align-items-center gap-3">
+                      <CardThumbnail
+                        src={thumbUrl ?? fallbackUrl}
+                        alt={entry.title}
+                        variant="sm"
+                        onLoad={() => {
+                          if (thumbUrl) {
+                            URL.revokeObjectURL(thumbUrl);
+                          }
+                        }}
+                      />
+                      <div className={styles.assetsReportName}>
+                        {entry.title} ({entry.templateId})
+                      </div>
+                    </div>
+                    <div className={styles.assetsReportStatus}>
+                      {t("label.missingAssets")}:{" "}
+                      {entry.missing
+                        .map((asset) => `${asset.label} \"${asset.name}\"`)
+                        .join(", ")}
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-outline-light btn-sm mt-2"
+                      onClick={() => openCardInNewTab(entry.cardId)}
+                    >
+                      {t("actions.openCardNewTab")}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </ConfirmModal>
         ) : null}
         <ExportProgressOverlay
           isOpen={isExportingFaces}

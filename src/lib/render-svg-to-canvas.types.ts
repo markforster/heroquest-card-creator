@@ -6,4 +6,6 @@ export type RenderSvgToCanvasOptions = {
   height: number;
   existingCanvas?: HTMLCanvasElement | null;
   removeDebugBounds?: boolean;
+  loggingId?: string;
+  assetBlobsById?: Map<string, Blob>;
 };

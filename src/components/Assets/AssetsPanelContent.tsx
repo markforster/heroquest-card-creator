@@ -15,7 +15,8 @@ import { getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
 import type { AssetRecord } from "@/lib/assets-db";
 import { addAsset, deleteAssets, getAllAssets, getAssetObjectUrl } from "@/lib/assets-db";
-import { listCards } from "@/lib/cards-db";
+import { listCards, updateCard } from "@/lib/cards-db";
+import type { CardRecord } from "@/types/cards-db";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
@@ -209,6 +210,38 @@ export default function AssetsPanelContent({
       removeFromIndex(ids);
       const records = await getAllAssets();
       setAssets(records);
+
+      const idSet = new Set(ids);
+      const cards = await listCards();
+      await Promise.all(
+        cards.map(async (card) => {
+          const imageMatch = card.imageAssetId && idSet.has(card.imageAssetId);
+          const iconMatch = card.monsterIconAssetId && idSet.has(card.monsterIconAssetId);
+          if (!imageMatch && !iconMatch) return;
+
+          const patch: Partial<CardRecord> = {};
+          if (imageMatch) {
+            patch.imageAssetId = undefined;
+            patch.imageAssetName = undefined;
+            patch.imageScale = undefined;
+            patch.imageOriginalWidth = undefined;
+            patch.imageOriginalHeight = undefined;
+            patch.imageOffsetX = undefined;
+            patch.imageOffsetY = undefined;
+            patch.imageRotation = undefined;
+          }
+          if (iconMatch) {
+            patch.monsterIconAssetId = undefined;
+            patch.monsterIconAssetName = undefined;
+            patch.monsterIconOffsetX = undefined;
+            patch.monsterIconOffsetY = undefined;
+            patch.monsterIconScale = undefined;
+            patch.monsterIconRotation = undefined;
+          }
+
+          await updateCard(card.id, patch);
+        }),
+      );
     } catch {
       // eslint-disable-next-line no-console
       console.error("[AssetsModal] Failed to delete assets");

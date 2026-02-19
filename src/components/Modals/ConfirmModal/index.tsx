@@ -17,6 +17,7 @@ type ConfirmModalProps = {
   confirmLabel?: string;
   cancelLabel?: string;
   extraLabel?: string;
+  contentClassName?: string;
   onConfirm: () => void;
   onExtra?: () => void;
   onCancel: () => void;
@@ -31,6 +32,7 @@ export default function ConfirmModal({
   confirmLabel,
   cancelLabel,
   extraLabel,
+  contentClassName,
   onConfirm,
   onExtra,
   onCancel,
@@ -46,7 +48,7 @@ export default function ConfirmModal({
       isOpen={isOpen}
       onClose={onCancel}
       title={title}
-      contentClassName={styles.confirmPopover}
+      contentClassName={`${styles.confirmPopover}${contentClassName ? ` ${contentClassName}` : ""}`}
       footer={
         <ActionBar
           right={

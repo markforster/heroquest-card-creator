@@ -5,10 +5,24 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import BlueprintRenderer from "@/components/BlueprintRenderer";
+import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   resolveCardPreviewFileName,
 } from "@/lib/card-preview";
+import { collectCardAssetIds } from "@/lib/card-assets";
+import { buildAssetCache } from "@/lib/export-assets-cache";
+import {
+  endExportLogging,
+  logCardInfo,
+  logCardRender,
+  logCardSkip,
+  logCardWait,
+  logDeviceInfo,
+  logAssetPrefetch,
+  logSummary,
+  startExportLogging,
+} from "@/lib/export-logging";
 import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 
@@ -44,35 +58,129 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
       ref,
       () => ({
         async exportAsPng() {
-          const svgElement = svgRef.current;
-          if (!svgElement) return;
+          const session = startExportLogging({ mode: "single", totalCards: 1 });
+          logDeviceInfo(session);
 
-          const canvas = await renderSvgToCanvas({
-            svgElement,
-            width: CARD_WIDTH,
-            height: CARD_HEIGHT,
-            existingCanvas: canvasRef.current,
-            removeDebugBounds: true,
-          });
-          if (canvas) {
-            canvasRef.current = canvas;
+          let renders = 0;
+          let failures = 0;
+
+          try {
+            const svgElement = svgRef.current;
+            if (!svgElement) {
+              failures += 1;
+              return;
+            }
+
+            const title = (cardData as { title?: string })?.title ?? templateName ?? "card";
+            const face = (cardData as { face?: string })?.face ?? "unknown";
+            const imageAssetId = (cardData as { imageAssetId?: string })?.imageAssetId;
+            const imageAssetName = (cardData as { imageAssetName?: string })?.imageAssetName;
+            const iconAssetId = (cardData as { iconAssetId?: string })?.iconAssetId;
+            const iconAssetName = (cardData as { iconAssetName?: string })?.iconAssetName;
+
+            logCardInfo(session, {
+              cardId: "active",
+              title,
+              templateId: templateId ?? "unknown",
+              face,
+              imageAsset: { id: imageAssetId, name: imageAssetName },
+              iconAsset: { id: iconAssetId, name: iconAssetName },
+            });
+
+            const assetIds = collectCardAssetIds(cardData);
+            const { cache, missing } = await buildAssetCache(assetIds);
+            logAssetPrefetch(session, {
+              total: assetIds.length,
+              cached: cache.size,
+              missing: missing.size,
+            });
+            const missingAssets: { label: string; id: string; name?: string | null }[] = [];
+            if (imageAssetId && missing.has(imageAssetId)) {
+              missingAssets.push({
+                label: "image",
+                id: imageAssetId,
+                name: imageAssetName ?? null,
+              });
+            }
+            if (iconAssetId && missing.has(iconAssetId)) {
+              missingAssets.push({
+                label: "icon",
+                id: iconAssetId,
+                name: iconAssetName ?? null,
+              });
+            }
+            if (missingAssets.length > 0) {
+              failures += 1;
+              const missingSummary = missingAssets
+                .map(
+                  (asset) =>
+                    `${asset.label} asset "${asset.name ?? "unknown"}" (id=${asset.id})`,
+                )
+                .join(", ");
+              logCardSkip(session, { reason: `Missing ${missingSummary}` });
+              return;
+            }
+
+            const now = () =>
+              typeof performance !== "undefined" ? performance.now() : Date.now();
+
+            const waitStart = now();
+            if (assetIds.length) {
+              await waitForAssetElements(() => svgRef.current, assetIds);
+            }
+            logCardWait(session, { durationMs: now() - waitStart });
+
+            const renderStart = now();
+            const canvas = await renderSvgToCanvas({
+              svgElement,
+              width: CARD_WIDTH,
+              height: CARD_HEIGHT,
+              existingCanvas: canvasRef.current,
+              removeDebugBounds: true,
+              loggingId: session.sessionId,
+              assetBlobsById: cache,
+            });
+            renders += 1;
+            if (canvas) {
+              canvasRef.current = canvas;
+            }
+            if (!canvas) {
+              failures += 1;
+              logCardRender(session, { durationMs: now() - renderStart, success: false });
+              return;
+            }
+            const pngBlob: Blob | null = await new Promise((resolve) =>
+              canvas.toBlob((blob) => resolve(blob), "image/png", 1),
+            );
+            const renderDuration = now() - renderStart;
+            const success = Boolean(pngBlob);
+            logCardRender(session, { durationMs: renderDuration, success });
+            if (!pngBlob) {
+              failures += 1;
+              return;
+            }
+
+            const pngUrl = URL.createObjectURL(pngBlob);
+
+            const link = document.createElement("a");
+            link.href = pngUrl;
+            link.download = resolveCardPreviewFileName(cardData as { title?: string }, templateName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(pngUrl);
+            void openDownloadsFolderIfTauri();
+          } finally {
+            const endedAt = Date.now();
+            logSummary(session, {
+              endedAt,
+              totalMs: endedAt - session.startedAt,
+              cards: 1,
+              renders,
+              failures,
+            });
+            endExportLogging(session);
           }
-          if (!canvas) return;
-          const pngBlob: Blob | null = await new Promise((resolve) =>
-            canvas.toBlob((blob) => resolve(blob), "image/png", 1),
-          );
-          if (!pngBlob) return;
-
-          const pngUrl = URL.createObjectURL(pngBlob);
-
-          const link = document.createElement("a");
-          link.href = pngUrl;
-          link.download = resolveCardPreviewFileName(cardData as { title?: string }, templateName);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(pngUrl);
-          void openDownloadsFolderIfTauri();
         },
         async renderToPngBlob(options) {
           const svgElement = svgRef.current;
@@ -87,6 +195,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             height,
             existingCanvas: canvasRef.current,
             removeDebugBounds: true,
+            loggingId: options?.loggingId,
+            assetBlobsById: options?.assetBlobsById,
           });
           if (canvas) {
             canvasRef.current = canvas;

@@ -32,6 +32,10 @@ import {
   updateCollection,
 } from "@/lib/collections-db";
 import { runBulkExport } from "@/lib/export-cards";
+import {
+  buildMissingAssetsReport,
+  type MissingAssetReport,
+} from "@/lib/export-assets-cache";
 import { deletePairsForFace, listAllPairs } from "@/lib/pairs-service";
 import { createDefaultCardData } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
@@ -51,6 +55,13 @@ type StockpilePanelContentProps = OpenCloseProps & {
   initialSelectedIds?: string[];
   titleOverride?: string;
   frame?: "panel" | "modal";
+};
+
+type MissingAssetsPrompt = {
+  cards: CardRecord[];
+  report: MissingAssetReport[];
+  skipIds: Set<string>;
+  skipNotes: Map<string, string>;
 };
 
 export default function StockpilePanelContent({
@@ -117,6 +128,9 @@ export default function StockpilePanelContent({
     });
     return paired;
   }, [backByFrontId, pairsByBackId]);
+  const [missingAssetsPrompt, setMissingAssetsPrompt] = useState<MissingAssetsPrompt | null>(null);
+  const [missingArtworkIds, setMissingArtworkIds] = useState<Set<string>>(() => new Set());
+  const [showMissingArtworkOnly, setShowMissingArtworkOnly] = useState(false);
   const {
     recentCards,
     filteredCards,
@@ -138,6 +152,8 @@ export default function StockpilePanelContent({
     isPairBacks,
     showUnpairedOnly,
     pairedIdSet,
+    showMissingArtworkOnly,
+    missingArtworkIdSet: missingArtworkIds,
   });
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
   const [collectionFormMode, setCollectionFormMode] = useState<"create" | "edit">("create");
@@ -189,6 +205,52 @@ export default function StockpilePanelContent({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    let debounceId: number | null = null;
+    let idleId: number | null = null;
+
+    const runScan = () => {
+      if (cancelled) return;
+      void (async () => {
+        try {
+          const report = await buildMissingAssetsReport(cards);
+          if (cancelled) return;
+          const nextIds = new Set(report.map((entry) => entry.cardId));
+          setMissingArtworkIds(nextIds);
+          if (nextIds.size === 0) {
+            setShowMissingArtworkOnly(false);
+          }
+        } catch {
+          // Ignore scan failures.
+        }
+      })();
+    };
+
+    debounceId = window.setTimeout(() => {
+      if ("requestIdleCallback" in window) {
+        idleId = (
+          window as unknown as { requestIdleCallback: (cb: () => void) => number }
+        ).requestIdleCallback(runScan);
+      } else {
+        runScan();
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      if (debounceId) {
+        window.clearTimeout(debounceId);
+      }
+      if (idleId != null) {
+        (
+          window as unknown as { cancelIdleCallback?: (id: number) => void }
+        ).cancelIdleCallback?.(idleId);
+      }
+    };
+  }, [isOpen, refreshToken, cards]);
 
   useEffect(() => {
     return () => {
@@ -505,14 +567,51 @@ export default function StockpilePanelContent({
     checkbox.indeterminate = selectedVisible > 0 && selectedVisible < visibleIds.size;
   }, [filteredCards, selectedIds]);
 
-  const handleExportCards = async (cardsToExport: CardRecord[]) => {
+  const openCardInNewTab = (cardId: string) => {
+    if (typeof window === "undefined") return;
+    const url = `${window.location.origin}${window.location.pathname}#/cards/${cardId}`;
+    window.open(url, "_blank", "noopener");
+  };
+
+  const handleExportCards = async (
+    cardsToExport: CardRecord[],
+    options?: { skipIds?: Set<string>; skipNotes?: Map<string, string>; skipPrecheck?: boolean },
+  ) => {
     if (!cardsToExport.length) {
       window.alert(t("alert.selectCardToExport"));
       return;
     }
 
+    const skipIds = options?.skipIds ?? new Set<string>();
+    const skipNotes = options?.skipNotes ?? new Map<string, string>();
+
+    if (!options?.skipPrecheck) {
+      const report = await buildMissingAssetsReport(cardsToExport);
+      if (report.length > 0) {
+        const nextSkipIds = new Set(report.map((entry) => entry.cardId));
+        const nextSkipNotes = new Map<string, string>();
+        report.forEach((entry) => {
+          const missingSummary = entry.missing
+            .map((asset) => `${asset.label} asset \"${asset.name}\" (id=${asset.id})`)
+            .join(", ");
+          nextSkipNotes.set(
+            entry.cardId,
+            `Card \"${entry.title}\" (id=${entry.cardId}, template=${entry.templateId}, face=${entry.face}) could not be exported because the ${missingSummary}.`,
+          );
+        });
+        setMissingAssetsPrompt({
+          cards: cardsToExport,
+          report,
+          skipIds: nextSkipIds,
+          skipNotes: nextSkipNotes,
+        });
+        return;
+      }
+    }
+
+    const exportableCount = cardsToExport.filter((card) => !skipIds.has(card.id)).length;
     setIsExporting(true);
-    setExportTotal(cardsToExport.length);
+    setExportTotal(exportableCount);
     setExportProgress(0);
     setExportCancelled(false);
     cancelExportRef.current = false;
@@ -536,6 +635,8 @@ export default function StockpilePanelContent({
         shouldCancel: () => cancelExportRef.current,
         onTargetChange: (card) => setExportTarget(card),
         onProgress: (exportedCount) => setExportProgress(exportedCount),
+        skipCardIds: skipIds,
+        skipCardNotes: skipNotes,
       });
 
       if (result.status === "no-images") {
@@ -731,6 +832,22 @@ export default function StockpilePanelContent({
               </div>
               <div className={styles.cardsFiltersSpacer} />
               <div className={`${styles.cardsFiltersRight} ${styles.uRowLg}`}>
+                {!isPairMode && missingArtworkIds.size > 0 ? (
+                  <label
+                    className={`form-check form-check-inline mb-0 ${styles.missingArtworkFilter}`}
+                  >
+                    <input
+                      className="form-check-input hq-checkbox"
+                      type="checkbox"
+                      checked={showMissingArtworkOnly}
+                      onChange={(event) => setShowMissingArtworkOnly(event.target.checked)}
+                    />
+                    <span className={styles.missingArtworkLabel}>
+                      {t("label.missingArtwork")}
+                    </span>
+                    <AlertTriangle className={styles.missingArtworkIcon} size={16} />
+                  </label>
+                ) : null}
                 {isPairMode ? (
                   <div className={`${styles.assetsActions} d-flex align-items-center gap-2 ms-3`}>
                     <span className={styles.cardsSelectionLabel}>{t("status.selectedCards")}</span>
@@ -1688,6 +1805,71 @@ export default function StockpilePanelContent({
               </>
             );
           })()}
+        </ConfirmModal>
+      ) : null}
+      {missingAssetsPrompt ? (
+        <ConfirmModal
+          isOpen={Boolean(missingAssetsPrompt)}
+          title={t("warning.missingAssetsTitle")}
+          confirmLabel={t("actions.proceedExport")}
+          cancelLabel={t("actions.cancel")}
+          contentClassName={styles.missingAssetsModal}
+          onConfirm={async () => {
+            const prompt = missingAssetsPrompt;
+            if (!prompt) return;
+            setMissingAssetsPrompt(null);
+            await handleExportCards(prompt.cards, {
+              skipIds: prompt.skipIds,
+              skipNotes: prompt.skipNotes,
+              skipPrecheck: true,
+            });
+          }}
+          onCancel={() => {
+            setMissingAssetsPrompt(null);
+          }}
+        >
+          <div>{t("warning.missingAssetsBody")}</div>
+          <div className={styles.assetsReportStatus}>{t("label.opensInNewTab")}</div>
+          <div className={styles.assetsReportList}>
+            {missingAssetsPrompt.report.map((entry) => {
+              const thumbUrl = entry.thumbnailBlob
+                ? URL.createObjectURL(entry.thumbnailBlob)
+                : null;
+              const fallbackUrl = cardTemplatesById[entry.templateId]?.thumbnail?.src ?? null;
+              return (
+                <div key={entry.cardId} className={styles.assetsReportItem}>
+                  <div className="d-flex align-items-center gap-3">
+                    <CardThumbnail
+                      src={thumbUrl ?? fallbackUrl}
+                      alt={entry.title}
+                      variant="sm"
+                      onLoad={() => {
+                        if (thumbUrl) {
+                          URL.revokeObjectURL(thumbUrl);
+                        }
+                      }}
+                    />
+                    <div className={styles.assetsReportName}>
+                      {entry.title} ({entry.templateId})
+                    </div>
+                  </div>
+                  <div className={styles.assetsReportStatus}>
+                    {t("label.missingAssets")}:{" "}
+                    {entry.missing
+                      .map((asset) => `${asset.label} \"${asset.name}\"`)
+                      .join(", ")}
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-outline-light btn-sm mt-2"
+                    onClick={() => openCardInNewTab(entry.cardId)}
+                  >
+                    {t("actions.openCardNewTab")}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </ConfirmModal>
       ) : null}
       {isOpen && exportTarget && exportTemplate ? (

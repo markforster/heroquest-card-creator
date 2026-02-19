@@ -14,7 +14,12 @@ export type CardPreviewProps = {
 
 export type CardPreviewHandle = {
   exportAsPng: () => Promise<void>;
-  renderToPngBlob: (options?: { width?: number; height?: number }) => Promise<Blob | null>;
+  renderToPngBlob: (options?: {
+    width?: number;
+    height?: number;
+    loggingId?: string;
+    assetBlobsById?: Map<string, Blob>;
+  }) => Promise<Blob | null>;
   renderToCanvas: (options?: {
     width?: number;
     height?: number;

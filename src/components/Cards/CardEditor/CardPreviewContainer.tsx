@@ -15,6 +15,7 @@ import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { getCard, listCards } from "@/lib/cards-db";
 import { listPairsForFace } from "@/lib/pairs-service";
 import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
+import { collectCardAssetIds } from "@/lib/card-assets";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
@@ -68,7 +69,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
   const activeCardId = activeCardIdByTemplate[selectedTemplateId as TemplateId];
   const noPairingLabel = t("label.webglNoPairing");
   const effectiveFace = (cardData?.face ?? template.defaultFace) as CardFace;
-  const assetIds = getCardAssetIds(cardData);
+  const assetIds = collectCardAssetIds(cardData);
 
   useEffect(() => {
     if (!showWebgl || isDragging) return;
@@ -257,7 +258,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
   const reverseRenderInFlightRef = useRef(false);
   const reverseRenderRequestIdRef = useRef(0);
   const reverseDebounceTimeoutRef = useRef<number | null>(null);
-  const reverseAssetIds = getCardAssetIds(reverseCard?.cardData);
+  const reverseAssetIds = collectCardAssetIds(reverseCard?.cardData);
 
   useEffect(() => {
     if (!showWebgl || !reverseCard || isDragging) {
@@ -368,17 +369,4 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
       ) : null}
     </div>
   );
-}
-
-function getCardAssetIds(cardData?: CardDataByTemplate[TemplateId] | null) {
-  if (!cardData) return [];
-  const ids: string[] = [];
-  if (typeof cardData.imageAssetId === "string" && cardData.imageAssetId) {
-    ids.push(cardData.imageAssetId);
-  }
-  const iconAssetId = (cardData as { iconAssetId?: string }).iconAssetId;
-  if (typeof iconAssetId === "string" && iconAssetId) {
-    ids.push(iconAssetId);
-  }
-  return ids;
 }

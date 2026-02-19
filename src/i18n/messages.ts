@@ -70,6 +70,8 @@ const baseMessages = {
     "actions.cancelling": "Cancelling…",
     "actions.resetTitleDefaults": "Reset Title Defaults",
     "actions.resetStatDefaults": "Reset Stat Defaults",
+    "actions.proceedExport": "Proceed with export",
+    "actions.openCardNewTab": "Open card in new tab",
     "form.heroName": "Hero name",
     "form.heroImage": "Hero image",
     "form.monsterName": "Monster name",
@@ -86,6 +88,11 @@ const baseMessages = {
     "form.titlePlacement": "Title placement",
     "label.titlePlacementTop": "Top",
     "label.titlePlacementBottom": "Bottom",
+    "label.missingAssets": "Missing assets",
+    "label.opensInNewTab": "All cards open in a new tab.",
+    "label.artworkMissing": "Artwork Missing",
+    "label.unknownAsset": "Unknown asset",
+    "label.missingArtwork": "Missing Artwork",
     "form.titleStyle": "Title style",
     "label.titleStyleRibbon": "Ribbon",
     "label.titleStylePlain": "Plain",
@@ -135,6 +142,12 @@ const baseMessages = {
     "warning.alreadyPairedWith": "Already paired with",
     "warning.pairingLossSingle": "1 card will be unpaired from {back}. Continue?",
     "warning.pairingLossMultiple": "{count} cards will be unpaired from {back}. Continue?",
+    "warning.missingAssetsTitle": "Missing artwork",
+    "warning.missingAssetsBody":
+      "Some cards reference artwork that is missing. You can open them in a new tab to fix them, or proceed to export without those cards.",
+    "warning.missingArtworkDetectedTitle": "Missing artwork detected",
+    "warning.missingArtworkDetectedBody":
+      "{count} cards reference missing artwork. Exports will skip them until fixed.",
     "warning.pairingLossSingleGeneric":
       "1 card will be unpaired from {backCount} back face. Continue?",
     "warning.pairingLossMultipleGeneric":
@@ -815,6 +828,19 @@ const baseMessages = {
     "status.finalizing": "Finalisation...",
     "alert.unsupportedBackupFile":
       "Type de sauvegarde non pris en charge. Choisissez un fichier .hqcc.",
+    "actions.proceedExport": "Proceed with export",
+    "actions.openCardNewTab": "Open card in new tab",
+    "label.missingAssets": "Missing assets",
+    "label.opensInNewTab": "All cards open in a new tab.",
+    "label.artworkMissing": "Artwork Missing",
+    "label.unknownAsset": "Unknown asset",
+    "label.missingArtwork": "Missing Artwork",
+    "warning.missingAssetsTitle": "Missing artwork",
+    "warning.missingAssetsBody":
+      "Some cards reference artwork that is missing. You can open them in a new tab to fix them, or proceed to export without those cards.",
+    "warning.missingArtworkDetectedTitle": "Missing artwork detected",
+    "warning.missingArtworkDetectedBody":
+      "{count} cards reference missing artwork. Exports will skip them until fixed.",
 
     "stats.attackDice": "Dés d'attaque",
     "stats.defendDice": "Dés de défense",
@@ -1228,6 +1254,19 @@ const baseMessages = {
     "status.finalizing": "Finalisieren...",
     "alert.unsupportedBackupFile":
       "Backup-Dateityp nicht unterstützt. Bitte eine .hqcc-Datei wählen.",
+    "actions.proceedExport": "Proceed with export",
+    "actions.openCardNewTab": "Open card in new tab",
+    "label.missingAssets": "Missing assets",
+    "label.opensInNewTab": "All cards open in a new tab.",
+    "label.artworkMissing": "Artwork Missing",
+    "label.unknownAsset": "Unknown asset",
+    "label.missingArtwork": "Missing Artwork",
+    "warning.missingAssetsTitle": "Missing artwork",
+    "warning.missingAssetsBody":
+      "Some cards reference artwork that is missing. You can open them in a new tab to fix them, or proceed to export without those cards.",
+    "warning.missingArtworkDetectedTitle": "Missing artwork detected",
+    "warning.missingArtworkDetectedBody":
+      "{count} cards reference missing artwork. Exports will skip them until fixed.",
 
     "stats.attackDice": "Angriffswürfel",
     "stats.defendDice": "Verteidigungswürfel",
@@ -1636,6 +1675,19 @@ const baseMessages = {
     "status.willClearImagesOn": "borrará imágenes en",
     "status.finalizing": "Finalizando...",
     "alert.unsupportedBackupFile": "Tipo de copia no compatible. Elige un archivo .hqcc.",
+    "actions.proceedExport": "Proceed with export",
+    "actions.openCardNewTab": "Open card in new tab",
+    "label.missingAssets": "Missing assets",
+    "label.opensInNewTab": "All cards open in a new tab.",
+    "label.artworkMissing": "Artwork Missing",
+    "label.unknownAsset": "Unknown asset",
+    "label.missingArtwork": "Missing Artwork",
+    "warning.missingAssetsTitle": "Missing artwork",
+    "warning.missingAssetsBody":
+      "Some cards reference artwork that is missing. You can open them in a new tab to fix them, or proceed to export without those cards.",
+    "warning.missingArtworkDetectedTitle": "Missing artwork detected",
+    "warning.missingArtworkDetectedBody":
+      "{count} cards reference missing artwork. Exports will skip them until fixed.",
 
     "stats.attackDice": "Dados de ataque",
     "stats.defendDice": "Dados de defensa",
@@ -2045,6 +2097,19 @@ const baseMessages = {
     "status.willClearImagesOn": "rimuoverà immagini su",
     "status.finalizing": "Finalizzazione...",
     "alert.unsupportedBackupFile": "Tipo di backup non supportato. Scegli un file .hqcc.",
+    "actions.proceedExport": "Proceed with export",
+    "actions.openCardNewTab": "Open card in new tab",
+    "label.missingAssets": "Missing assets",
+    "label.opensInNewTab": "All cards open in a new tab.",
+    "label.artworkMissing": "Artwork Missing",
+    "label.unknownAsset": "Unknown asset",
+    "label.missingArtwork": "Missing Artwork",
+    "warning.missingAssetsTitle": "Missing artwork",
+    "warning.missingAssetsBody":
+      "Some cards reference artwork that is missing. You can open them in a new tab to fix them, or proceed to export without those cards.",
+    "warning.missingArtworkDetectedTitle": "Missing artwork detected",
+    "warning.missingArtworkDetectedBody":
+      "{count} cards reference missing artwork. Exports will skip them until fixed.",
 
     "stats.attackDice": "Dadi di attacco",
     "stats.defendDice": "Dadi di difesa",
@@ -2454,6 +2519,19 @@ const baseMessages = {
     "status.willClearImagesOn": "limpará imagens em",
     "status.finalizing": "Finalizando...",
     "alert.unsupportedBackupFile": "Tipo de backup não suportado. Escolha um arquivo .hqcc.",
+    "actions.proceedExport": "Proceed with export",
+    "actions.openCardNewTab": "Open card in new tab",
+    "label.missingAssets": "Missing assets",
+    "label.opensInNewTab": "All cards open in a new tab.",
+    "label.artworkMissing": "Artwork Missing",
+    "label.unknownAsset": "Unknown asset",
+    "label.missingArtwork": "Missing Artwork",
+    "warning.missingAssetsTitle": "Missing artwork",
+    "warning.missingAssetsBody":
+      "Some cards reference artwork that is missing. You can open them in a new tab to fix them, or proceed to export without those cards.",
+    "warning.missingArtworkDetectedTitle": "Missing artwork detected",
+    "warning.missingArtworkDetectedBody":
+      "{count} cards reference missing artwork. Exports will skip them until fixed.",
 
     "stats.attackDice": "Dados de ataque",
     "stats.defendDice": "Dados de defesa",
@@ -2864,6 +2942,19 @@ const baseMessages = {
     "status.willClearImagesOn": "verwijdert afbeeldingen op",
     "status.finalizing": "Afronden...",
     "alert.unsupportedBackupFile": "Backupbestandstype niet ondersteund. Kies een .hqcc-bestand.",
+    "actions.proceedExport": "Proceed with export",
+    "actions.openCardNewTab": "Open card in new tab",
+    "label.missingAssets": "Missing assets",
+    "label.opensInNewTab": "All cards open in a new tab.",
+    "label.artworkMissing": "Artwork Missing",
+    "label.unknownAsset": "Unknown asset",
+    "label.missingArtwork": "Missing Artwork",
+    "warning.missingAssetsTitle": "Missing artwork",
+    "warning.missingAssetsBody":
+      "Some cards reference artwork that is missing. You can open them in a new tab to fix them, or proceed to export without those cards.",
+    "warning.missingArtworkDetectedTitle": "Missing artwork detected",
+    "warning.missingArtworkDetectedBody":
+      "{count} cards reference missing artwork. Exports will skip them until fixed.",
 
     "stats.attackDice": "Aanvalsdobbelstenen",
     "stats.defendDice": "Verdedigingsdobbelstenen",

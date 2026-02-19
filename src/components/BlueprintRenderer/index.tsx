@@ -15,10 +15,12 @@ import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
+import { useI18n } from "@/i18n/I18nProvider";
 import type { Blueprint, BlueprintBounds, BlueprintGroup, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
+import { AlertTriangle } from "lucide-react";
 import type { StaticImageData } from "next/image";
 
 type BlueprintRendererProps = {
@@ -30,6 +32,11 @@ type BlueprintRendererProps = {
 };
 
 const DEFAULT_CANVAS = { width: 750, height: 1050 };
+const MISSING_ARTWORK_COLOR = "#e0b15b";
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
 
 function getLayerBounds(blueprint: Blueprint, layer: BlueprintLayer) {
   return (
@@ -39,6 +46,72 @@ function getLayerBounds(blueprint: Blueprint, layer: BlueprintLayer) {
       width: blueprint.canvas?.width ?? DEFAULT_CANVAS.width,
       height: blueprint.canvas?.height ?? DEFAULT_CANVAS.height,
     }
+  );
+}
+
+function truncateText(value: string, maxChars: number) {
+  if (value.length <= maxChars) return value;
+  if (maxChars <= 3) return value.slice(0, maxChars);
+  return `${value.slice(0, maxChars - 3)}...`;
+}
+
+function MissingArtworkPlaceholder({
+  bounds,
+  assetName,
+  scale = 1,
+}: {
+  bounds: BlueprintBounds;
+  assetName?: string;
+  scale?: number;
+}) {
+  const { t } = useI18n();
+  const { width, height, x, y } = bounds;
+  const minSize = Math.min(width, height);
+  const iconSize = clamp(minSize * 0.18 * scale, 16, 80);
+  const fontSize = clamp(minSize * 0.08 * scale, 10, 36);
+  const lineHeight = fontSize * 1.2;
+  const label = t("label.artworkMissing");
+  const detail = assetName || t("label.unknownAsset");
+  const maxChars = Math.max(8, Math.floor(width / (fontSize * 0.6)));
+  const truncatedDetail = truncateText(detail, maxChars);
+
+  const contentHeight = iconSize + lineHeight * 2;
+  const contentTop = y + (height - contentHeight) / 2;
+  const iconX = x + (width - iconSize) / 2;
+  const iconY = contentTop;
+  const line1Y = iconY + iconSize + lineHeight * 0.9;
+  const line2Y = line1Y + lineHeight;
+
+  return (
+    <Layer>
+      <AlertTriangle
+        width={iconSize}
+        height={iconSize}
+        x={iconX}
+        y={iconY}
+        color={MISSING_ARTWORK_COLOR}
+      />
+      <text
+        x={x + width / 2}
+        y={line1Y}
+        textAnchor="middle"
+        fontSize={fontSize}
+        fontFamily="Carter Sans W01, serif"
+        fill={MISSING_ARTWORK_COLOR}
+      >
+        {label}
+      </text>
+      <text
+        x={x + width / 2}
+        y={line2Y}
+        textAnchor="middle"
+        fontSize={fontSize}
+        fontFamily="Carter Sans W01, serif"
+        fill={MISSING_ARTWORK_COLOR}
+      >
+        {truncatedDetail}
+      </text>
+    </Layer>
   );
 }
 
@@ -123,14 +196,23 @@ function ImageLayer({
     layer.type === "image" && layer.bind?.imageKey && cardData
       ? ((cardData as Record<string, unknown>)[layer.bind.imageKey] as string | undefined)
       : undefined;
-  const imageUrl = useAssetImageUrl(assetId);
+  const assetName =
+    layer.type === "image" && cardData
+      ? ((cardData as { imageAssetName?: string }).imageAssetName as string | undefined)
+      : undefined;
+  const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
 
   if (layer.type !== "image") return null;
   if (!layer.bind?.imageKey) return null;
   if (!cardData) return null;
-  if (!imageUrl) return null;
-
   const bounds = getLayerBounds(blueprint, layer);
+  if (!imageUrl) {
+    if (imageStatus === "missing") {
+      return <MissingArtworkPlaceholder bounds={bounds} assetName={assetName} scale={2} />;
+    }
+    return null;
+  }
+
   const scale = (cardData as { imageScale?: number }).imageScale ?? 1;
   const offsetX = (cardData as { imageOffsetX?: number }).imageOffsetX ?? 0;
   const offsetY = (cardData as { imageOffsetY?: number }).imageOffsetY ?? 0;
@@ -157,6 +239,7 @@ function ImageLayer({
       <image
         href={imageUrl}
         data-user-asset-id={assetId}
+        data-user-asset-name={assetName}
         x={x}
         y={y}
         width={scaledWidth}
@@ -927,6 +1010,9 @@ function buildGroupItems({
         iconKey && cardData
           ? ((cardData as Record<string, unknown>)[iconKey] as string | null | undefined)
           : undefined;
+      const iconName = cardData
+        ? ((cardData as { iconAssetName?: string }).iconAssetName as string | undefined)
+        : undefined;
 
       if (child.when?.hasImage) {
         const testValue = cardData
@@ -982,6 +1068,7 @@ function buildGroupItems({
           <GroupIconLayer
             key={child.id}
             assetId={iconId}
+            assetName={iconName}
             x={x}
             y={(() => {
               const baseTop = topY + offsetY;
@@ -1003,6 +1090,7 @@ function buildGroupItems({
 
 function GroupIconLayer({
   assetId,
+  assetName,
   x,
   y,
   size,
@@ -1010,14 +1098,26 @@ function GroupIconLayer({
   rotation,
 }: {
   assetId: string;
+  assetName?: string;
   x: number;
   y: number;
   size: number;
   scale: number;
   rotation: number;
 }) {
-  const imageUrl = useAssetImageUrl(assetId);
-  if (!imageUrl) return null;
+  const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
+  if (!imageUrl) {
+    if (imageStatus === "missing") {
+      return (
+        <MissingArtworkPlaceholder
+          bounds={{ x, y, width: size, height: size }}
+          assetName={assetName}
+          scale={1}
+        />
+      );
+    }
+    return null;
+  }
 
   const cx = x + size / 2;
   const cy = y + size / 2;
@@ -1031,6 +1131,7 @@ function GroupIconLayer({
       <image
         href={imageUrl}
         data-user-asset-id={assetId}
+        data-user-asset-name={assetName}
         x={x}
         y={y}
         width={size}

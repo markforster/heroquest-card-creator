@@ -13,6 +13,8 @@ export type ExportFaceIdsOptions = {
   shouldCancel?: () => boolean;
   onTargetChange?: (card: CardRecord | null) => void;
   onProgress?: (exportedCount: number) => void;
+  skipCardIds?: Set<string>;
+  skipCardNotes?: Map<string, string>;
 };
 
 const defaultResolveName = (card: CardRecord, usedNames: Map<string, number>) =>
@@ -29,6 +31,8 @@ export const exportFaceIdsToZip = async (
     shouldCancel = () => false,
     onTargetChange = () => {},
     onProgress = () => {},
+    skipCardIds,
+    skipCardNotes,
   }: ExportFaceIdsOptions,
 ): Promise<BulkExportResult> => {
   if (!faceIds.length) {
@@ -58,5 +62,7 @@ export const exportFaceIdsToZip = async (
     shouldCancel,
     onTargetChange,
     onProgress,
+    skipCardIds,
+    skipCardNotes,
   });
 };

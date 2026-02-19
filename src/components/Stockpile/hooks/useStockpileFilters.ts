@@ -20,6 +20,8 @@ type UseStockpileFiltersOptions = {
   isPairBacks: boolean;
   showUnpairedOnly?: boolean;
   pairedIdSet?: Set<string>;
+  showMissingArtworkOnly?: boolean;
+  missingArtworkIdSet?: Set<string>;
 };
 
 export const useStockpileFilters = ({
@@ -32,6 +34,8 @@ export const useStockpileFilters = ({
   isPairBacks,
   showUnpairedOnly = false,
   pairedIdSet,
+  showMissingArtworkOnly = false,
+  missingArtworkIdSet,
 }: UseStockpileFiltersOptions) => {
   const recentCards = useMemo(() => {
     const withViewed = cards.filter((card) => typeof card.lastViewedAt === "number");
@@ -94,6 +98,10 @@ export const useStockpileFilters = ({
     if (search.trim()) {
       const q = search.toLocaleLowerCase();
       base = base.filter((card) => card.nameLower.includes(q));
+    }
+
+    if (showMissingArtworkOnly && missingArtworkIdSet) {
+      base = base.filter((card) => missingArtworkIdSet.has(card.id));
     }
 
     if (showUnpairedOnly && pairedIdSet) {
@@ -226,6 +234,8 @@ export const useStockpileFilters = ({
     isPairBacks,
     showUnpairedOnly,
     pairedIdSet,
+    showMissingArtworkOnly,
+    missingArtworkIdSet,
   ]);
 
   return {
