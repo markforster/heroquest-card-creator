@@ -59,14 +59,15 @@ export default function ContentField({
     height: 420,
   });
 
+  const defaultBackdrop = DEFAULT_BODY_TEXT_STYLE.backdrop ?? {};
   const effectiveBackdrop = {
-    ...DEFAULT_BODY_TEXT_STYLE.backdrop,
+    ...defaultBackdrop,
     ...(bodyTextStyle?.backdrop ?? {}),
   };
-  const defaultBackdropColor = DEFAULT_BODY_TEXT_STYLE.backdrop.color ?? "#ffffff";
+  const defaultBackdropColor = defaultBackdrop.color ?? "#ffffff";
   const defaultBackdropHex = toHex8(
     defaultBackdropColor,
-    DEFAULT_BODY_TEXT_STYLE.backdrop?.opacity ?? 1,
+    defaultBackdrop.opacity ?? 1,
   );
   const currentBackdropHex = toHex8(
     effectiveBackdrop.color ?? defaultBackdropColor,

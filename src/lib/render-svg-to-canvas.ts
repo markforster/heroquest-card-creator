@@ -30,7 +30,9 @@ export async function renderSvgToCanvas({
   }
 
   const { origin, isFileProtocol } = getLocationOriginInfo();
-  const images = Array.from(clonedSvg.querySelectorAll("image, feImage"));
+  const images = Array.from(
+    clonedSvg.querySelectorAll<SVGImageElement | SVGFEImageElement>("image, feImage"),
+  );
   const backgroundImages = Array.from(
     clonedSvg.querySelectorAll('image[data-card-background="true"]'),
   );

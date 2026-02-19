@@ -156,17 +156,18 @@ function IndexPageInner() {
   useEffect(() => {
     let cancelled = false;
     const schedule = (cb: () => void) => {
-      if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-        const id = (window as unknown as { requestIdleCallback: (fn: () => void) => number })
-          .requestIdleCallback(cb);
+      const idleApi = globalThis as {
+        requestIdleCallback?: (fn: () => void) => number;
+        cancelIdleCallback?: (id: number) => void;
+      };
+      if (typeof idleApi.requestIdleCallback === "function") {
+        const id = idleApi.requestIdleCallback(cb);
         return () => {
-          (
-            window as unknown as { cancelIdleCallback?: (id: number) => void }
-          ).cancelIdleCallback?.(id);
+          idleApi.cancelIdleCallback?.(id);
         };
       }
-      const id = window.setTimeout(cb, 0);
-      return () => window.clearTimeout(id);
+      const id = globalThis.setTimeout(cb, 0);
+      return () => globalThis.clearTimeout(id);
     };
 
     const cancel = schedule(() => {

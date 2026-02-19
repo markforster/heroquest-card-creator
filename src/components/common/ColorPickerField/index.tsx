@@ -181,7 +181,7 @@ export default function ColorPickerField({
     Boolean(normalizedSelectedUpper) &&
     normalizedSelectedUpper !== normalizedDefault?.toUpperCase() &&
     !isTransparent &&
-    !swatchKeys.has(normalizedSelectedUpper);
+    !swatchKeys.has(normalizedSelectedUpper ?? "");
   const previewHex = isEditingHex ? normalizeDraftHex(hexDraft, allowAlpha) : null;
   const previewColor = previewHex ? hexToRgba(previewHex) : null;
   const pickerColor = isTransparent
