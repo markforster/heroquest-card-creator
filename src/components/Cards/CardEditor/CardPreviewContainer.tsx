@@ -147,6 +147,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
     preferencesKey,
     isDragging,
     showTextBounds,
+    activeCardId,
   ]);
 
   useEffect(() => {
@@ -321,6 +322,12 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
       }
     };
   }, [showWebgl, reverseCard, reversePreviewRef, preferencesKey, isDragging, showTextBounds]);
+
+  useEffect(() => {
+    if (!showWebgl) return;
+    setTextureCanvas(null);
+    setReverseTextureCanvas(null);
+  }, [activeCardId, showWebgl]);
 
   return (
     <div className={styles.previewSwap}>

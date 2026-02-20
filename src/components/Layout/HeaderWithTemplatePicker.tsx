@@ -2,6 +2,19 @@
 
 import MainHeader from "@/components/Layout/MainHeader";
 
-export default function HeaderWithTemplatePicker() {
-  return <MainHeader />;
+type HeaderWithTemplatePickerProps = {
+  missingAssetsCount?: number;
+  showMissingAssetsReminder?: boolean;
+};
+
+export default function HeaderWithTemplatePicker({
+  missingAssetsCount,
+  showMissingAssetsReminder,
+}: HeaderWithTemplatePickerProps) {
+  return (
+    <MainHeader
+      missingAssetsCount={missingAssetsCount}
+      showMissingAssetsReminder={showMissingAssetsReminder}
+    />
+  );
 }

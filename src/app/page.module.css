@@ -91,6 +91,23 @@
   white-space: nowrap;
 }
 
+.missingAssetsHeaderToast {
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  color: #fff1c9;
+  border: 1px solid rgba(214, 154, 63, 0.7);
+  background: rgba(78, 52, 14, 0.85);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 6px 12px rgba(0, 0, 0, 0.25);
+  max-width: 40vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .headerMenu,
 /* Left nav language menu */
 .leftNavMenu {
@@ -3863,8 +3880,19 @@
   text-overflow: ellipsis;
 }
 
+.imageHeaderStatus::placeholder {
+  color: var(--hq-gray-200);
+  opacity: 1;
+}
+
 .imageHeaderStatusMissing {
   color: var(--hq-error-soft);
+}
+
+.imageSearchAddon {
+  background: var(--hq-surface-900);
+  border-color: var(--hq-surface-700);
+  color: var(--hq-gray-200);
 }
 
 .imageAutocompleteWrap {
@@ -3873,7 +3901,7 @@
 
 .imageAutocompleteList {
   position: absolute;
-  top: calc(100% - var(--space-2));
+  top: calc(100% + var(--space-2));
   left: 0;
   width: 100%;
   max-height: 320px;
@@ -3900,6 +3928,16 @@
   color: var(--hq-text);
   text-align: left;
   cursor: pointer;
+}
+
+.imageAutocompleteMarker {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hq-gray-200);
+  flex: 0 0 auto;
 }
 
 .imageAutocompleteItem:hover,

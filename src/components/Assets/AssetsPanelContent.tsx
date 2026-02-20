@@ -5,7 +5,12 @@ import { useEffect, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import IconButton from "@/components/common/IconButton";
+import {
+  ENABLE_MISSING_ASSET_CHECKS,
+  ENABLE_MISSING_ASSET_DELETE_SCAN,
+} from "@/config/flags";
 import ModalShell from "@/components/common/ModalShell";
 import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -95,6 +100,7 @@ export default function AssetsPanelContent({
   const reviewResolverRef = useRef<((shouldContinue: boolean) => void) | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { scanFiles, addToIndex, removeFromIndex, existingNames } = useAssetHashIndex();
+  const { runMissingAssetsScan } = useMissingAssets();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -242,6 +248,9 @@ export default function AssetsPanelContent({
           await updateCard(card.id, patch);
         }),
       );
+      if (ENABLE_MISSING_ASSET_CHECKS && ENABLE_MISSING_ASSET_DELETE_SCAN) {
+        runMissingAssetsScan("assets-deleted");
+      }
     } catch {
       // eslint-disable-next-line no-console
       console.error("[AssetsModal] Failed to delete assets");

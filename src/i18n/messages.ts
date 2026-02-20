@@ -29,6 +29,7 @@ const baseMessages = {
     "actions.upload": "Upload",
     "actions.ok": "OK",
     "actions.close": "Close",
+    "actions.dismiss": "Dismiss",
     "actions.previous": "Previous",
     "actions.next": "Next",
     "actions.help": "Help",
@@ -148,6 +149,7 @@ const baseMessages = {
     "warning.missingArtworkDetectedTitle": "Missing artwork detected",
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
+    "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
     "warning.pairingLossSingleGeneric":
       "1 card will be unpaired from {backCount} back face. Continue?",
     "warning.pairingLossMultipleGeneric":
@@ -466,6 +468,7 @@ const baseMessages = {
     "actions.upload": "Upload",
     "actions.ok": "OK",
     "actions.close": "Fermer",
+    "actions.dismiss": "Fermer",
     "actions.previous": "Précédent",
     "actions.next": "Suivant",
     "actions.replace": "Remplacer",
@@ -841,6 +844,7 @@ const baseMessages = {
     "warning.missingArtworkDetectedTitle": "Missing artwork detected",
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
+    "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
 
     "stats.attackDice": "Dés d'attaque",
     "stats.defendDice": "Dés de défense",
@@ -893,6 +897,7 @@ const baseMessages = {
     "actions.upload": "Upload",
     "actions.ok": "OK",
     "actions.close": "Schließen",
+    "actions.dismiss": "Ausblenden",
     "actions.previous": "Zurück",
     "actions.next": "Weiter",
     "actions.replace": "Ersetzen",
@@ -1267,6 +1272,7 @@ const baseMessages = {
     "warning.missingArtworkDetectedTitle": "Missing artwork detected",
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
+    "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
 
     "stats.attackDice": "Angriffswürfel",
     "stats.defendDice": "Verteidigungswürfel",
@@ -1319,6 +1325,7 @@ const baseMessages = {
     "actions.upload": "Upload",
     "actions.ok": "OK",
     "actions.close": "Cerrar",
+    "actions.dismiss": "Descartar",
     "actions.previous": "Anterior",
     "actions.next": "Siguiente",
     "actions.replace": "Reemplazar",
@@ -1688,6 +1695,7 @@ const baseMessages = {
     "warning.missingArtworkDetectedTitle": "Missing artwork detected",
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
+    "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
 
     "stats.attackDice": "Dados de ataque",
     "stats.defendDice": "Dados de defensa",
@@ -1740,6 +1748,7 @@ const baseMessages = {
     "actions.upload": "Upload",
     "actions.ok": "OK",
     "actions.close": "Chiudi",
+    "actions.dismiss": "Ignora",
     "actions.previous": "Precedente",
     "actions.next": "Successivo",
     "actions.replace": "Sostituisci",
@@ -2110,6 +2119,7 @@ const baseMessages = {
     "warning.missingArtworkDetectedTitle": "Missing artwork detected",
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
+    "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
 
     "stats.attackDice": "Dadi di attacco",
     "stats.defendDice": "Dadi di difesa",
@@ -2161,6 +2171,7 @@ const baseMessages = {
     "actions.upload": "Upload",
     "actions.ok": "OK",
     "actions.close": "Fechar",
+    "actions.dismiss": "Dispensar",
     "actions.previous": "Anterior",
     "actions.next": "Próximo",
     "actions.replace": "Substituir",
@@ -2532,6 +2543,7 @@ const baseMessages = {
     "warning.missingArtworkDetectedTitle": "Missing artwork detected",
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
+    "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
 
     "stats.attackDice": "Dados de ataque",
     "stats.defendDice": "Dados de defesa",
@@ -2584,6 +2596,7 @@ const baseMessages = {
     "actions.upload": "Upload",
     "actions.ok": "OK",
     "actions.close": "Sluiten",
+    "actions.dismiss": "Negeren",
     "actions.previous": "Vorige",
     "actions.next": "Volgende",
     "actions.replace": "Vervangen",
@@ -2955,6 +2968,7 @@ const baseMessages = {
     "warning.missingArtworkDetectedTitle": "Missing artwork detected",
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
+    "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
 
     "stats.attackDice": "Aanvalsdobbelstenen",
     "stats.defendDice": "Verdedigingsdobbelstenen",

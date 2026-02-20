@@ -1,6 +1,20 @@
 "use client";
 
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Crosshair, ImagePlus, RotateCcw, SlidersHorizontal, XCircle, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Crosshair,
+  ImagePlus,
+  RotateCcw,
+  Search,
+  SlidersHorizontal,
+  XCircle,
+  ZoomIn,
+  ZoomOut,
+  Pin,
+} from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
@@ -12,6 +26,8 @@ import IconButton from "@/components/common/IconButton";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getAllAssets, getAssetObjectUrl } from "@/lib/assets-db";
+import type { AssetRecord } from "@/lib/assets-db";
 
 type MonsterIconFieldProps = {
   label: string;
@@ -45,11 +61,19 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
   const iconRotation = Number.isFinite(iconRotationWatch) ? (iconRotationWatch as number) : 0;
 
   const [isAdjustmentsOpen, setIsAdjustmentsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [query, setQuery] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [assets, setAssets] = useState<AssetRecord[]>([]);
+  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const adjustmentsButtonRef = useRef<HTMLButtonElement | null>(null);
   const adjustmentsPopoverRef = useRef<HTMLDivElement | null>(null);
   const [adjustmentsStyle, setAdjustmentsStyle] = useState<CSSProperties | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [lastCleared, setLastCleared] = useState<LastClearedIcon | null>(null);
+  const inputWrapRef = useRef<HTMLDivElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const MIN_SCALE = 0.2;
   const MAX_SCALE = 3;
@@ -59,6 +83,19 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
   const ROTATION_STEP = 1;
 
   const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+  const currentDisplayValue = iconAssetId
+    ? (iconAssetName ?? t("status.imageSelected"))
+    : t("status.noImageSelected");
+
+  const applyAssetSelection = (asset: AssetRecord) => {
+    setValue("iconAssetId", asset.id, { shouldDirty: true, shouldTouch: true });
+    setValue("iconAssetName", asset.name, { shouldDirty: true, shouldTouch: true });
+    setValue("iconOffsetX", 0, { shouldDirty: true, shouldTouch: true });
+    setValue("iconOffsetY", 0, { shouldDirty: true, shouldTouch: true });
+    setValue("iconScale", 1, { shouldDirty: true, shouldTouch: true });
+    setValue("iconRotation", 0, { shouldDirty: true, shouldTouch: true });
+  };
 
   const handleRestoreLastCleared = () => {
     if (!lastCleared) return;
@@ -73,15 +110,124 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
     setLastCleared(null);
   };
 
+  const resetSearchState = () => {
+    setIsDropdownOpen(false);
+    setIsEditing(false);
+    setQuery("");
+  };
+
   useOutsideClick(
     [adjustmentsPopoverRef, adjustmentsButtonRef],
     () => setIsAdjustmentsOpen(false),
     isAdjustmentsOpen,
   );
 
+  useOutsideClick([inputWrapRef, dropdownRef], resetSearchState, isDropdownOpen);
+
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (!isEditing) return;
+
+    let cancelled = false;
+
+    getAllAssets()
+      .then((records) => {
+        if (!cancelled) {
+          setAssets(records);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAssets([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditing]);
+
+  useEffect(() => {
+    if (!isEditing || assets.length === 0) {
+      setThumbUrls({});
+      return;
+    }
+
+    let cancelled = false;
+    const localUrls: Record<string, string> = {};
+
+    (async () => {
+      for (const asset of assets) {
+        try {
+          const url = await getAssetObjectUrl(asset.id);
+          if (!url) continue;
+          localUrls[asset.id] = url;
+        } catch {
+          // Ignore individual asset errors.
+        }
+      }
+      if (!cancelled) {
+        setThumbUrls(localUrls);
+      } else {
+        Object.values(localUrls).forEach((url) => {
+          URL.revokeObjectURL(url);
+        });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      Object.values(localUrls).forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, [assets, isEditing]);
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
+  const pinnedIds = new Set<string>();
+  const pinnedAssets: AssetRecord[] = [];
+  const makeFallbackAsset = (assetId: string, assetName: string): AssetRecord => ({
+    id: assetId,
+    name: assetName,
+    mimeType: "image/*",
+    width: 0,
+    height: 0,
+    createdAt: 0,
+  });
+  const addPinnedAsset = (assetId?: string, assetName?: string) => {
+    if (!assetId || pinnedIds.has(assetId)) return;
+    const asset =
+      assetsById.get(assetId) ?? makeFallbackAsset(assetId, assetName ?? assetId);
+    pinnedAssets.push(asset);
+    pinnedIds.add(assetId);
+  };
+  addPinnedAsset(iconAssetId, iconAssetName);
+
+  const rankedAssets = normalizedQuery
+    ? assets
+        .map((asset) => {
+          const nameLower = asset.name.toLowerCase();
+          if (!nameLower.includes(normalizedQuery)) return null;
+          const words = nameLower.split(/[^a-z0-9]+/i).filter(Boolean);
+          const isPrefix = words.some((word) => word.startsWith(normalizedQuery));
+          return { asset, score: isPrefix ? 0 : 1 };
+        })
+        .filter(
+          (entry): entry is { asset: AssetRecord; score: number } => entry !== null,
+        )
+        .sort((a, b) => {
+          if (a.score !== b.score) return a.score - b.score;
+          return a.asset.name.localeCompare(b.asset.name, undefined, { sensitivity: "base" });
+        })
+        .map((entry) => entry.asset)
+    : [];
+
+  const cappedAssets =
+    normalizedQuery.length < 4 ? rankedAssets.slice(0, 8) : rankedAssets;
 
   const positionPopover = () => {
     const anchor = adjustmentsButtonRef.current;
@@ -128,20 +274,46 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
   return (
     <div className="mb-2">
       <label className="form-label">{label}</label>
-      <div className="input-group input-group-sm">
-        <input
-          type="text"
-          className={`form-control ${layoutStyles.imageHeaderStatus} ${
-            iconAssetId ? "" : layoutStyles.imageHeaderStatusMissing
-          }`}
-          readOnly
-          value={
-            iconAssetId
-              ? (iconAssetName ?? t("status.imageSelected"))
-              : t("status.noImageSelected")
-          }
-          title={iconAssetId ? (iconAssetName ?? iconAssetId) : t("status.noIconSelected")}
-        />
+      <div ref={inputWrapRef} className={layoutStyles.imageAutocompleteWrap}>
+        <div className="input-group input-group-sm">
+          <span className={`input-group-text ${layoutStyles.imageSearchAddon}`}>
+            <Search className={layoutStyles.icon} aria-hidden="true" />
+          </span>
+          <input
+            type="text"
+            ref={inputRef}
+            className={`form-control ${layoutStyles.imageHeaderStatus} ${
+              iconAssetId ? "" : layoutStyles.imageHeaderStatusMissing
+            }`}
+            value={isEditing ? query : currentDisplayValue}
+            placeholder={t("placeholders.searchAssets")}
+            onFocus={() => {
+              setIsEditing(true);
+              setQuery("");
+              setIsDropdownOpen(true);
+            }}
+            onChange={(event) => {
+              const next = event.target.value;
+              setQuery(next);
+              setIsDropdownOpen(true);
+            }}
+            onBlur={() => {
+              if (isEditing) {
+                resetSearchState();
+              }
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                resetSearchState();
+              }
+              if (event.key === "Enter" && query.trim().length === 0) {
+                event.preventDefault();
+                resetSearchState();
+              }
+            }}
+            title={iconAssetId ? (iconAssetName ?? iconAssetId) : t("status.noIconSelected")}
+          />
         <IconButton
           className="btn btn-outline-secondary btn-sm"
           icon={ImagePlus}
@@ -206,6 +378,69 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
           >
             <span className="visually-hidden">{t("actions.restore")}</span>
           </IconButton>
+          ) : null}
+        </div>
+        {isDropdownOpen ? (
+          <div
+            ref={dropdownRef}
+            className={layoutStyles.imageAutocompleteList}
+            onMouseDown={(event) => {
+              event.preventDefault();
+            }}
+          >
+            {pinnedAssets.length === 0 && (!normalizedQuery || cappedAssets.length === 0) ? (
+              <div className={layoutStyles.imageAutocompleteEmpty}>{t("empty.noAssets")}</div>
+            ) : (
+              <>
+                {normalizedQuery
+                  ? cappedAssets
+                      .filter((asset) => !pinnedIds.has(asset.id))
+                      .map((asset) => (
+                        <button
+                          key={asset.id}
+                          type="button"
+                          className={layoutStyles.imageAutocompleteItem}
+                          onClick={() => {
+                            applyAssetSelection(asset);
+                            resetSearchState();
+                            inputRef.current?.blur();
+                          }}
+                        >
+                          <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true" />
+                          <div className={layoutStyles.imageAutocompleteThumb}>
+                            {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
+                          </div>
+                          <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
+                            {asset.name}
+                          </div>
+                        </button>
+                      ))
+                  : null}
+                {pinnedAssets.map((asset) => (
+                  <button
+                    key={`pinned-${asset.id}`}
+                    type="button"
+                    className={layoutStyles.imageAutocompleteItem}
+                    onClick={() => {
+                      applyAssetSelection(asset);
+                      resetSearchState();
+                      inputRef.current?.blur();
+                    }}
+                  >
+                    <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true">
+                      <Pin className={layoutStyles.icon} aria-hidden="true" />
+                    </div>
+                    <div className={layoutStyles.imageAutocompleteThumb}>
+                      {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
+                    </div>
+                    <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
+                      {asset.name}
+                    </div>
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
         ) : null}
       </div>
       {fieldError ? (

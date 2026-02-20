@@ -7,11 +7,13 @@ import {
   ChevronUp,
   Crosshair,
   ImagePlus,
+  Search,
   RotateCcw,
   SlidersHorizontal,
   XCircle,
   ZoomIn,
   ZoomOut,
+  Pin,
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
@@ -88,6 +90,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const [isClient, setIsClient] = useState(false);
   const inputWrapRef = useRef<HTMLDivElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const previousImageRef = useRef<ImageSnapshot | null>(null);
 
   const maxOffsetX = boundsWidth ? Math.round(boundsWidth) : 300;
@@ -284,11 +287,47 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   }, [assets, isEditing]);
 
   const normalizedQuery = query.trim().toLowerCase();
-  const filteredAssets = normalizedQuery
-    ? assets.filter((asset) => asset.name.toLowerCase().includes(normalizedQuery))
+  const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
+  const pinnedIds = new Set<string>();
+  const pinnedAssets: AssetRecord[] = [];
+  const makeFallbackAsset = (assetId: string, assetName: string): AssetRecord => ({
+    id: assetId,
+    name: assetName,
+    mimeType: "image/*",
+    width: 0,
+    height: 0,
+    createdAt: 0,
+  });
+  const addPinnedAsset = (assetId?: string, assetName?: string) => {
+    if (!assetId || pinnedIds.has(assetId)) return;
+    const asset =
+      assetsById.get(assetId) ?? makeFallbackAsset(assetId, assetName ?? assetId);
+    pinnedAssets.push(asset);
+    pinnedIds.add(assetId);
+  };
+  addPinnedAsset(imageAssetId, imageAssetName);
+
+  const rankedAssets = normalizedQuery
+    ? assets
+        .map((asset) => {
+          const nameLower = asset.name.toLowerCase();
+          if (!nameLower.includes(normalizedQuery)) return null;
+          const words = nameLower.split(/[^a-z0-9]+/i).filter(Boolean);
+          const isPrefix = words.some((word) => word.startsWith(normalizedQuery));
+          return { asset, score: isPrefix ? 0 : 1 };
+        })
+        .filter(
+          (entry): entry is { asset: AssetRecord; score: number } => entry !== null,
+        )
+        .sort((a, b) => {
+          if (a.score !== b.score) return a.score - b.score;
+          return a.asset.name.localeCompare(b.asset.name, undefined, { sensitivity: "base" });
+        })
+        .map((entry) => entry.asset)
     : [];
+
   const cappedAssets =
-    normalizedQuery.length < 4 ? filteredAssets.slice(0, 8) : filteredAssets;
+    normalizedQuery.length < 4 ? rankedAssets.slice(0, 8) : rankedAssets;
   const previousImageId = previousImageRef.current?.imageAssetId;
   const canRestorePrevious = previousImageRef.current
     ? (imageAssetId ?? "") !== (previousImageId ?? "")
@@ -341,20 +380,26 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
       <label className="form-label">{label}</label>
       <div ref={inputWrapRef} className={layoutStyles.imageAutocompleteWrap}>
         <div className="input-group input-group-sm mb-2">
+          <span className={`input-group-text ${layoutStyles.imageSearchAddon}`}>
+            <Search className={layoutStyles.icon} aria-hidden="true" />
+          </span>
           <input
             type="text"
+            ref={inputRef}
             className={`form-control ${layoutStyles.imageHeaderStatus} ${
               imageAssetId ? "" : layoutStyles.imageHeaderStatusMissing
             }`}
             value={isEditing ? query : currentDisplayValue}
+            placeholder={t("placeholders.searchAssets")}
             onFocus={() => {
               setIsEditing(true);
               setQuery("");
+              setIsDropdownOpen(true);
             }}
             onChange={(event) => {
               const next = event.target.value;
               setQuery(next);
-              setIsDropdownOpen(next.trim().length > 0);
+              setIsDropdownOpen(true);
             }}
             onBlur={() => {
               if (isEditing) {
@@ -444,29 +489,57 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
               event.preventDefault();
             }}
           >
-            {cappedAssets.length === 0 ? (
+            {pinnedAssets.length === 0 && (!normalizedQuery || cappedAssets.length === 0) ? (
               <div className={layoutStyles.imageAutocompleteEmpty}>{t("empty.noAssets")}</div>
             ) : (
-              cappedAssets.map((asset) => (
-                <button
-                  key={asset.id}
-                  type="button"
-                  className={layoutStyles.imageAutocompleteItem}
-                  onClick={() => {
-                    applyAssetSelection(asset);
-                    resetSearchState();
-                  }}
-                >
-                  <div className={layoutStyles.imageAutocompleteThumb}>
-                    {thumbUrls[asset.id] ? (
-                      <img src={thumbUrls[asset.id]} alt="" />
-                    ) : null}
-                  </div>
-                  <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
-                    {asset.name}
-                  </div>
-                </button>
-              ))
+              <>
+                {normalizedQuery
+                  ? cappedAssets
+                      .filter((asset) => !pinnedIds.has(asset.id))
+                      .map((asset) => (
+                        <button
+                          key={asset.id}
+                          type="button"
+                          className={layoutStyles.imageAutocompleteItem}
+                          onClick={() => {
+                            applyAssetSelection(asset);
+                            resetSearchState();
+                            inputRef.current?.blur();
+                          }}
+                        >
+                          <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true" />
+                          <div className={layoutStyles.imageAutocompleteThumb}>
+                            {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
+                          </div>
+                          <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
+                            {asset.name}
+                          </div>
+                        </button>
+                      ))
+                  : null}
+                {pinnedAssets.map((asset) => (
+                  <button
+                    key={`pinned-${asset.id}`}
+                    type="button"
+                    className={layoutStyles.imageAutocompleteItem}
+                    onClick={() => {
+                      applyAssetSelection(asset);
+                      resetSearchState();
+                      inputRef.current?.blur();
+                    }}
+                  >
+                    <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true">
+                      <Pin className={layoutStyles.icon} aria-hidden="true" />
+                    </div>
+                    <div className={layoutStyles.imageAutocompleteThumb}>
+                      {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
+                    </div>
+                    <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
+                      {asset.name}
+                    </div>
+                  </button>
+                ))}
+              </>
             )}
           </div>
         ) : null}

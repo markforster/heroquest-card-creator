@@ -38,10 +38,20 @@ export default function DatabaseVersionGate({ children }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    const startedAt = performance.now();
+    const log = (message: string, extra?: Record<string, unknown>) => {
+      // eslint-disable-next-line no-console
+      console.info("[DatabaseVersionGate]", message, extra ?? {});
+    };
 
     const check = async () => {
       try {
+        log("starting DB version check");
         const db = await openHqccDb();
+        log("openHqccDb resolved", {
+          ms: Math.round(performance.now() - startedAt),
+          version: db.version,
+        });
         const version = Number.isFinite(db.version) ? db.version : null;
         db.close();
         if (!cancelled) {
@@ -51,17 +61,26 @@ export default function DatabaseVersionGate({ children }: Props) {
       } catch (error) {
         if (cancelled) return;
         if (isVersionError(error)) {
+          log("VersionError detected, reading existing DB version");
           try {
             const [version, appVersion] = await Promise.all([
               readExistingHqccDbVersion(),
               readExistingHqccDbAppVersion(),
             ]);
+            log("existing DB version read", {
+              ms: Math.round(performance.now() - startedAt),
+              version,
+              appVersion,
+            });
             if (!cancelled) {
               setDbVersion(version);
               setDbAppVersion(appVersion);
               setStatus("blocked");
             }
           } catch {
+            log("failed to read existing DB version", {
+              ms: Math.round(performance.now() - startedAt),
+            });
             if (!cancelled) {
               setDbVersion(null);
               setDbAppVersion(null);
@@ -74,6 +93,9 @@ export default function DatabaseVersionGate({ children }: Props) {
         // Fall back to letting the app load; other errors will surface where relevant.
         // eslint-disable-next-line no-console
         console.error("[DatabaseVersionGate] Failed to verify DB version", error);
+        log("DB version check failed, allowing app to load", {
+          ms: Math.round(performance.now() - startedAt),
+        });
         setStatus("ready");
       }
     };

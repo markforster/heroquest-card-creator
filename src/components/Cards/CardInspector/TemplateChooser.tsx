@@ -61,6 +61,7 @@ export default function TemplateChooser() {
   const [pendingFaceChange, setPendingFaceChange] = useState<CardFace | null>(null);
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
   const faceMenuRef = useRef<HTMLDivElement | null>(null);
+  const thumbnailUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -112,11 +113,14 @@ export default function TemplateChooser() {
   }, [activeCardId, saveToken]);
 
   useEffect(() => {
-    if (currentThumbnailUrl) {
-      URL.revokeObjectURL(currentThumbnailUrl);
+    if (thumbnailUrlRef.current) {
+      URL.revokeObjectURL(thumbnailUrlRef.current);
+      thumbnailUrlRef.current = null;
     }
+
     if (currentCard?.thumbnailBlob instanceof Blob) {
       const nextUrl = URL.createObjectURL(currentCard.thumbnailBlob);
+      thumbnailUrlRef.current = nextUrl;
       setCurrentThumbnailUrl(nextUrl);
       setCurrentThumbnailError(false);
       setCurrentThumbnailDataUrl(null);
@@ -124,6 +128,7 @@ export default function TemplateChooser() {
         URL.revokeObjectURL(nextUrl);
       };
     }
+
     setCurrentThumbnailUrl(null);
     setCurrentThumbnailError(false);
     setCurrentThumbnailDataUrl(null);
