@@ -17,9 +17,17 @@ const nextConfig = {
     unoptimized: true,
   },
   webpack: (config) => {
-    // Add rule for SVG files as React components via SVGR
+    // Allow importing SVGs as URLs with `?url`.
     config.module.rules.push({
       test: /\.svg$/,
+      resourceQuery: /url/,
+      type: "asset/resource",
+    });
+
+    // Add rule for SVG files as React components via SVGR (excluding ?url).
+    config.module.rules.push({
+      test: /\.svg$/,
+      resourceQuery: { not: [/url/] },
       use: ["@svgr/webpack"],
     });
 

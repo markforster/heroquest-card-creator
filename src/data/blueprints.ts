@@ -4,6 +4,10 @@ import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
 import type { Blueprint } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
 
+const DESCRIPTION_FONT_SIZE = 26;
+const DESCRIPTION_LINE_HEIGHT = DESCRIPTION_FONT_SIZE * 1.05;
+const DESCRIPTION_LETTER_SPACING = 0.02;
+
 const SMALL_TREASURE_BLUEPRINT: Blueprint = {
   schemaVersion: 1,
   templateId: "small-treasure",
@@ -49,7 +53,11 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
         height: 580,
       },
       bind: { textKey: "description" },
-      props: { fontSize: 32, letterSpacingEm: 0.02 },
+      props: {
+        fontSize: DESCRIPTION_FONT_SIZE,
+        lineHeight: DESCRIPTION_LINE_HEIGHT,
+        letterSpacingEm: DESCRIPTION_LETTER_SPACING,
+      },
     },
     {
       id: "title",
@@ -134,7 +142,11 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
         height: 400,
       },
       bind: { textKey: "description" },
-      props: { fontSize: 32, letterSpacingEm: 0.02 },
+      props: {
+        fontSize: DESCRIPTION_FONT_SIZE,
+        lineHeight: DESCRIPTION_LINE_HEIGHT,
+        letterSpacingEm: DESCRIPTION_LETTER_SPACING,
+      },
     },
     {
       id: "title",
@@ -207,8 +219,9 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
       },
       bind: { textKey: "description" },
       props: {
-        fontSize: 30,
-        letterSpacingEm: 0.02,
+        fontSize: DESCRIPTION_FONT_SIZE,
+        lineHeight: DESCRIPTION_LINE_HEIGHT,
+        letterSpacingEm: DESCRIPTION_LETTER_SPACING,
         topX: 26,
         topY: 210,
         topWidth: 696,
@@ -376,7 +389,12 @@ const HERO_BLUEPRINT: Blueprint = {
           id: "hero-description",
           type: "text",
           bind: { textKey: "description" },
-          props: { fontSize: 26, fontWeight: 550 },
+          props: {
+            fontSize: DESCRIPTION_FONT_SIZE,
+            lineHeight: DESCRIPTION_LINE_HEIGHT,
+            letterSpacingEm: DESCRIPTION_LETTER_SPACING,
+            fontWeight: 550,
+          },
         },
         {
           id: "hero-stats",
@@ -450,7 +468,12 @@ const MONSTER_BLUEPRINT: Blueprint = {
           id: "monster-description",
           type: "text",
           bind: { textKey: "description" },
-          props: { fontSize: 26, fontWeight: 550 },
+          props: {
+            fontSize: DESCRIPTION_FONT_SIZE,
+            lineHeight: DESCRIPTION_LINE_HEIGHT,
+            letterSpacingEm: DESCRIPTION_LETTER_SPACING,
+            fontWeight: 550,
+          },
         },
         {
           id: "monster-stats",
