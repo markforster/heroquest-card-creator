@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 
 import type { LucideIcon } from "lucide-react";
-import { ALargeSmall, Bug, Monitor, TableCellsSplit } from "lucide-react";
+import { ALargeSmall, Bug, Copyright, Monitor, TableCellsSplit } from "lucide-react";
 
 import type { MessageKey } from "@/i18n/messages";
+import CopyrightSettingsPanel from "@/components/Modals/SettingsModal/CopyrightSettingsPanel";
 import DebugSettingsPanel from "@/components/Modals/SettingsModal/DebugSettingsPanel";
 import PreviewSettingsPanel from "@/components/Modals/SettingsModal/PreviewSettingsPanel";
 import StatLabelOverridesPanel from "@/components/Modals/SettingsModal/StatLabelOverridesPanel";
@@ -27,6 +28,12 @@ export const SETTINGS_AREAS: SettingsAreaDefinition[] = [
     labelKey: "heading.statLabelOverrides",
     icon: TableCellsSplit,
     panel: () => <StatLabelOverridesPanel />,
+  },
+  {
+    id: "copyright-defaults",
+    labelKey: "heading.copyrightDefaults",
+    icon: Copyright,
+    panel: () => <CopyrightSettingsPanel />,
   },
   {
     id: "text-fitting-global",

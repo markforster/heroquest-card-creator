@@ -11,6 +11,7 @@ import type { TemplateId } from "@/types/templates";
 
 import BorderColorField from "./BorderColorField";
 import ContentField from "./ContentField";
+import CopyrightField from "./CopyrightField";
 import HeroStatsInspector from "./HeroStatsInspector";
 import ImageField from "./ImageField";
 import MonsterIconField from "./MonsterIconField";
@@ -167,6 +168,16 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
           }
           if (field.fieldType === "monsterIcon") {
             return <MonsterIconField key={`${field.bind}-${index}`} label={t(field.labelKey)} />;
+          }
+          if (field.fieldType === "copyright") {
+            return (
+              <CopyrightField
+                key={`${field.bind}-${index}`}
+                label={t(field.labelKey)}
+                placeholder={field.placeholderKey ? t(field.placeholderKey) : undefined}
+                showToggle={field.showToggle}
+              />
+            );
           }
           return null;
         })}

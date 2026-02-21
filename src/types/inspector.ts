@@ -55,12 +55,21 @@ export type InspectorBorderColorField = {
   labelKey: MessageKey;
 };
 
+export type InspectorCopyrightField = {
+  fieldType: "copyright";
+  bind: "copyright";
+  labelKey: MessageKey;
+  showToggle?: boolean;
+  placeholderKey?: MessageKey;
+};
+
 export type InspectorField =
   | InspectorTitleField
   | InspectorTextField
   | InspectorStatsField
   | InspectorImageField
   | InspectorMonsterIconField
-  | InspectorBorderColorField;
+  | InspectorBorderColorField
+  | InspectorCopyrightField;
 
 export type InspectorFieldsByTemplate = Record<TemplateId, InspectorField[]>;

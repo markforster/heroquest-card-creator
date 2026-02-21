@@ -62,7 +62,8 @@ export type BlueprintLayerType =
   | "overlay"
   | "icon"
   | "stats-hero"
-  | "stats-monster";
+  | "stats-monster"
+  | "copyright";
 
 export type BlueprintGroup = {
   id: string;

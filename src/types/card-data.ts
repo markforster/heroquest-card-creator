@@ -20,6 +20,8 @@ export interface BaseCardFields {
   imageOriginalHeight?: number;
   description?: string;
   borderColor?: string;
+  copyright?: string;
+  showCopyright?: boolean;
 }
 
 export interface HeroCardData extends BaseCardFields {

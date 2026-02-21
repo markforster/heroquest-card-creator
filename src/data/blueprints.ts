@@ -11,6 +11,18 @@ const DESCRIPTION_LETTER_SPACING = 0.000015;
 const HERO_MONSTER_BODY_FONT_SIZE = 26;
 const HERO_MONSTER_BODY_LINE_HEIGHT = HERO_MONSTER_BODY_FONT_SIZE * 1.05;
 const HERO_MONSTER_BODY_LETTER_SPACING = 0.000015;
+const COPYRIGHT_FONT_SIZE = 20;
+const COPYRIGHT_LINE_HEIGHT = 20;
+const COPYRIGHT_HEIGHT = 22;
+const COPYRIGHT_BOTTOM_MARGIN = 24;
+const COPYRIGHT_STACK_GAP = 8;
+const COPYRIGHT_BOUNDS = {
+  x: 60,
+  y: 1050 - COPYRIGHT_BOTTOM_MARGIN - COPYRIGHT_HEIGHT,
+  width: 630,
+  height: COPYRIGHT_HEIGHT,
+};
+const HERO_MONSTER_STACK_ORIGIN_Y = COPYRIGHT_BOUNDS.y - COPYRIGHT_STACK_GAP;
 const TREASURE_DESC_X = 120;
 const TREASURE_DESC_WIDTH = 515;
 const TREASURE_DESC_BOTTOM = 946;
@@ -122,6 +134,21 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
         // textNoRibbonHeight: 96.15,
       },
     },
+    {
+      id: "copyright",
+      type: "copyright",
+      bounds: COPYRIGHT_BOUNDS,
+      bind: { textKey: "copyright" },
+      props: {
+        fontSize: COPYRIGHT_FONT_SIZE,
+        lineHeight: COPYRIGHT_LINE_HEIGHT,
+        fontWeight: 500,
+        align: "center",
+        fill: "#3b1f04",
+        letterSpacingEm: -0.01,
+        fontFamily: "Helvetica, Arial, sans-serif",
+      },
+    },
   ],
 };
 
@@ -204,6 +231,21 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
         // textNoRibbonY: 78,
         // textNoRibbonWidth: 588,
         // textNoRibbonHeight: 96.15,
+      },
+    },
+    {
+      id: "copyright",
+      type: "copyright",
+      bounds: COPYRIGHT_BOUNDS,
+      bind: { textKey: "copyright" },
+      props: {
+        fontSize: COPYRIGHT_FONT_SIZE,
+        lineHeight: COPYRIGHT_LINE_HEIGHT,
+        fontWeight: 500,
+        align: "center",
+        fill: "#3b1f04",
+        letterSpacingEm: -0.01,
+        fontFamily: "Helvetica, Arial, sans-serif",
       },
     },
   ],
@@ -404,6 +446,21 @@ const HERO_BLUEPRINT: Blueprint = {
         // textHeight: 96.15,
       },
     },
+    {
+      id: "copyright",
+      type: "copyright",
+      bounds: COPYRIGHT_BOUNDS,
+      bind: { textKey: "copyright" },
+      props: {
+        fontSize: COPYRIGHT_FONT_SIZE,
+        lineHeight: COPYRIGHT_LINE_HEIGHT,
+        fontWeight: 500,
+        align: "center",
+        fill: "#3b1f04",
+        letterSpacingEm: -0.01,
+        fontFamily: "Helvetica, Arial, sans-serif",
+      },
+    },
   ],
   groups: [
     {
@@ -413,7 +470,7 @@ const HERO_BLUEPRINT: Blueprint = {
       direction: "up",
       // origin: { x: 65, y: 1020 },
       // width: 620,
-      origin: { x: 54, y: 1020 },
+      origin: { x: 54, y: HERO_MONSTER_STACK_ORIGIN_Y },
       width: 636,
       gap: 2,
       children: [
@@ -485,6 +542,21 @@ const MONSTER_BLUEPRINT: Blueprint = {
         // textHeight: 96.15,
       },
     },
+    {
+      id: "copyright",
+      type: "copyright",
+      bounds: COPYRIGHT_BOUNDS,
+      bind: { textKey: "copyright" },
+      props: {
+        fontSize: COPYRIGHT_FONT_SIZE,
+        lineHeight: COPYRIGHT_LINE_HEIGHT,
+        fontWeight: 500,
+        align: "center",
+        fill: "#3b1f04",
+        letterSpacingEm: -0.01,
+        fontFamily: "Helvetica, Arial, sans-serif",
+      },
+    },
   ],
   groups: [
     {
@@ -492,7 +564,7 @@ const MONSTER_BLUEPRINT: Blueprint = {
       type: "stack",
       anchor: "bottom",
       direction: "up",
-      origin: { x: 48, y: 1020 },
+      origin: { x: 48, y: HERO_MONSTER_STACK_ORIGIN_Y },
       width: 652,
       gap: 2,
       children: [

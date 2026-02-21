@@ -26,6 +26,8 @@ export interface CardRecord {
   bodyTextStyle?: BodyTextStyle;
   face?: CardFace;
   description?: string;
+  copyright?: string;
+  showCopyright?: boolean;
 
   imageAssetId?: string;
   imageAssetName?: string;

@@ -48,6 +48,7 @@ export interface HqccExportLocalStorageV1 {
 
 export interface HqccExportSettingsV1 {
   borderSwatches?: string[];
+  defaultCopyright?: string;
 }
 
 export interface HqccExportFileV1 {
@@ -293,7 +294,7 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
   if (db.objectStoreNames.contains("settings")) {
     const settingsTx = db.transaction("settings", "readonly");
     const settingsStore = settingsTx.objectStore("settings");
-    const record = await new Promise<{ value?: unknown } | undefined>((resolve, reject) => {
+    const borderRecord = await new Promise<{ value?: unknown } | undefined>((resolve, reject) => {
       const request = settingsStore.get("borderSwatches");
       request.onsuccess = () => {
         resolve(request.result as { value?: unknown } | undefined);
@@ -302,11 +303,27 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
         reject(request.error ?? new Error("Failed to read settings for backup"));
       };
     });
+    const copyrightRecord = await new Promise<{ value?: unknown } | undefined>((resolve, reject) => {
+      const request = settingsStore.get("defaultCopyright");
+      request.onsuccess = () => {
+        resolve(request.result as { value?: unknown } | undefined);
+      };
+      request.onerror = () => {
+        reject(request.error ?? new Error("Failed to read settings for backup"));
+      };
+    });
 
-    const swatches = record?.value;
+    const swatches = borderRecord?.value;
+    const defaultCopyright = copyrightRecord?.value;
     if (Array.isArray(swatches)) {
       settings = {
         borderSwatches: swatches.filter((value) => typeof value === "string") as string[],
+        defaultCopyright:
+          typeof defaultCopyright === "string" ? defaultCopyright : undefined,
+      };
+    } else if (typeof defaultCopyright === "string") {
+      settings = {
+        defaultCopyright,
       };
     }
   }
@@ -539,17 +556,31 @@ async function applyBackupObject(
     });
   }
 
-  if (hasSettingsStore && exportData.settings?.borderSwatches) {
+  if (
+    hasSettingsStore &&
+    (exportData.settings?.borderSwatches ||
+      typeof exportData.settings?.defaultCopyright === "string")
+  ) {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction("settings", "readwrite");
       const store = tx.objectStore("settings");
       try {
-        store.put({
-          id: "borderSwatches",
-          value: exportData.settings?.borderSwatches,
-          updatedAt: Date.now(),
-          schemaVersion: 1,
-        });
+        if (exportData.settings?.borderSwatches) {
+          store.put({
+            id: "borderSwatches",
+            value: exportData.settings?.borderSwatches,
+            updatedAt: Date.now(),
+            schemaVersion: 1,
+          });
+        }
+        if (typeof exportData.settings?.defaultCopyright === "string") {
+          store.put({
+            id: "defaultCopyright",
+            value: exportData.settings?.defaultCopyright,
+            updatedAt: Date.now(),
+            schemaVersion: 1,
+          });
+        }
       } catch (error) {
         reject(error instanceof Error ? error : new Error("Failed to import settings"));
         return;

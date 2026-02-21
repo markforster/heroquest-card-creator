@@ -29,6 +29,13 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "description",
       labelKey: "form.cardText",
     },
+    {
+      fieldType: "copyright",
+      bind: "copyright",
+      labelKey: "form.copyright",
+      placeholderKey: "placeholders.copyright",
+      showToggle: true,
+    },
   ],
   monster: [
     {
@@ -63,6 +70,13 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "description",
       labelKey: "form.cardText",
     },
+    {
+      fieldType: "copyright",
+      bind: "copyright",
+      labelKey: "form.copyright",
+      placeholderKey: "placeholders.copyright",
+      showToggle: true,
+    },
   ],
   "small-treasure": [
     {
@@ -89,6 +103,13 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "borderColor",
       labelKey: "form.borderColor",
     },
+    {
+      fieldType: "copyright",
+      bind: "copyright",
+      labelKey: "form.copyright",
+      placeholderKey: "placeholders.copyright",
+      showToggle: true,
+    },
   ],
   "large-treasure": [
     {
@@ -114,6 +135,13 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "borderColor",
       bind: "borderColor",
       labelKey: "form.borderColor",
+    },
+    {
+      fieldType: "copyright",
+      bind: "copyright",
+      labelKey: "form.copyright",
+      placeholderKey: "placeholders.copyright",
+      showToggle: true,
     },
   ],
   "hero-back": [

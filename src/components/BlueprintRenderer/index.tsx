@@ -15,6 +15,7 @@ import MonsterStatsBlock, {
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -871,6 +872,78 @@ function TitleLayer({
   );
 }
 
+function CopyrightLayer({
+  blueprint,
+  layer,
+  cardData,
+}: {
+  blueprint: Blueprint;
+  layer: BlueprintLayer;
+  cardData?: CardDataByTemplate[TemplateId];
+}) {
+  if (layer.type !== "copyright") return null;
+  if (!cardData) return null;
+
+  const { defaultCopyright } = useCopyrightSettings();
+  const showCopyright =
+    typeof (cardData as { showCopyright?: boolean }).showCopyright === "boolean"
+      ? (cardData as { showCopyright?: boolean }).showCopyright
+      : undefined;
+  if (showCopyright === false) return null;
+
+  const textKey = layer.bind?.textKey;
+  const overrideValue =
+    textKey && cardData
+      ? ((cardData as Record<string, unknown>)[textKey] as string | null | undefined)
+      : undefined;
+  const normalizedOverride = typeof overrideValue === "string" ? overrideValue.trim() : "";
+  const normalizedDefault = defaultCopyright.trim();
+
+  const resolvedText =
+    normalizedOverride.length > 0
+      ? normalizedOverride
+      : normalizedDefault.length > 0
+        ? normalizedDefault
+        : "";
+  if (!resolvedText) return null;
+
+  const bounds = getLayerBounds(blueprint, layer);
+  const fontSize = typeof layer.props?.fontSize === "number" ? layer.props.fontSize : undefined;
+  const lineHeight =
+    typeof layer.props?.lineHeight === "number" ? layer.props.lineHeight : undefined;
+  const fontWeight =
+    typeof layer.props?.fontWeight === "number" || typeof layer.props?.fontWeight === "string"
+      ? layer.props.fontWeight
+      : undefined;
+  const fontFamily =
+    typeof layer.props?.fontFamily === "string" ? layer.props.fontFamily : undefined;
+  const fill = typeof layer.props?.fill === "string" ? layer.props.fill : undefined;
+  const letterSpacingEm =
+    typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;
+  const align =
+    layer.props?.align === "left" ||
+    layer.props?.align === "center" ||
+    layer.props?.align === "right"
+      ? layer.props.align
+      : undefined;
+
+  return (
+    <Layer key={layer.id}>
+      <CardTextBlock
+        text={resolvedText}
+        bounds={bounds}
+        fontSize={fontSize}
+        lineHeight={lineHeight}
+        fontWeight={fontWeight}
+        fontFamily={fontFamily}
+        fill={fill}
+        letterSpacingEm={letterSpacingEm}
+        align={align}
+      />
+    </Layer>
+  );
+}
+
 function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | undefined {
   if (!cardData) return undefined;
   const data = cardData as {
@@ -1286,6 +1359,16 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
               cardData={props.cardData}
               templateName={templateName}
               templateId={blueprint.templateId}
+            />
+          );
+        }
+        if (layer.type === "copyright") {
+          return (
+            <CopyrightLayer
+              key={layer.id}
+              blueprint={blueprint}
+              layer={layer}
+              cardData={props.cardData}
             />
           );
         }
