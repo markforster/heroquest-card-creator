@@ -14,6 +14,7 @@ import MonsterStatsBlock, {
 } from "@/components/Cards/CardParts/MonsterStatsBlock";
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import Layer from "@/components/Cards/CardPreview/Layer";
+import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -277,10 +278,12 @@ function TextLayer({
   blueprint,
   layer,
   cardData,
+  showTextBounds = false,
 }: {
   blueprint: Blueprint;
   layer: BlueprintLayer;
   cardData?: CardDataByTemplate[TemplateId];
+  showTextBounds?: boolean;
 }) {
   if (layer.type !== "text") return null;
   if (!layer.bind?.textKey) return null;
@@ -684,6 +687,7 @@ function TextLayer({
                 fill={fill}
                 letterSpacingEm={letterSpacingEm}
                 align={align}
+                debug={showTextBounds}
               />
             </g>
           );
@@ -713,6 +717,7 @@ function TextLayer({
         fill={fill}
         letterSpacingEm={letterSpacingEm}
         align={align}
+        debug={showTextBounds}
       />
     </Layer>
   );
@@ -929,10 +934,12 @@ function buildGroupItems({
   group,
   cardData,
   blueprint,
+  showTextBounds = false,
 }: {
   group: BlueprintGroup;
   cardData?: CardDataByTemplate[TemplateId];
   blueprint: Blueprint;
+  showTextBounds?: boolean;
 }): GroupItem[] {
   const items: GroupItem[] = [];
 
@@ -993,6 +1000,7 @@ function buildGroupItems({
               fill={fill}
               letterSpacingEm={letterSpacingEm}
               align={align}
+              debug={showTextBounds}
             />
           </Layer>
         ),
@@ -1168,9 +1176,11 @@ function GroupIconLayer({
 function renderGroups({
   blueprint,
   cardData,
+  showTextBounds = false,
 }: {
   blueprint: Blueprint;
   cardData?: CardDataByTemplate[TemplateId];
+  showTextBounds?: boolean;
 }) {
   if (!blueprint.groups?.length) return null;
 
@@ -1179,7 +1189,7 @@ function renderGroups({
       return null;
     }
 
-    const items = buildGroupItems({ group, cardData, blueprint });
+    const items = buildGroupItems({ group, cardData, blueprint, showTextBounds });
     let cursor = group.origin.y;
 
     return items.map((item) => {
@@ -1195,6 +1205,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
   if (!templateId) return null;
 
   const blueprint = blueprintsByTemplateId[templateId];
+  const { showTextBounds } = useDebugVisuals();
   if (!blueprint) {
     return (
       <Layer>
@@ -1263,6 +1274,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
               blueprint={blueprint}
               layer={layer}
               cardData={props.cardData}
+              showTextBounds={showTextBounds}
             />
           );
         }
@@ -1279,7 +1291,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
         }
         return null;
       })}
-      {renderGroups({ blueprint, cardData: props.cardData })}
+      {renderGroups({ blueprint, cardData: props.cardData, showTextBounds })}
     </>
   );
 }

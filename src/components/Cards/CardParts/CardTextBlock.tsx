@@ -29,6 +29,7 @@ type CardTextBlockProps = {
   fill?: string;
   letterSpacingEm?: number;
   align?: "left" | "center" | "right";
+  debug?: boolean;
 };
 
 const CARD_BODY_LINE_HEIGHT = 1.05;
@@ -211,6 +212,7 @@ export default function CardTextBlock({
   fill = "#111111",
   letterSpacingEm,
   align = "left",
+  debug = false,
 }: CardTextBlockProps) {
   const { lines, lineHeight: effectiveLineHeight } = layoutCardText({
     text,
@@ -239,10 +241,31 @@ export default function CardTextBlock({
   };
 
   const measure = createTextMeasurer(fontSize, fontFamily);
+  const letterSpacingPx = (letterSpacingEm ?? 0) * fontSize;
+  const measureWithSpacing = (
+    text: string,
+    token?: Extract<WrapToken, { kind: "text" }>,
+  ) => {
+    const base = measure(text, token);
+    if (letterSpacingPx <= 0 || text.length <= 1) return base;
+    return base + (text.length - 1) * letterSpacingPx;
+  };
   const maskPrefix = useId().replace(/:/g, "");
 
   return (
     <g>
+      {debug && (
+        <rect
+          x={bounds.x}
+          y={bounds.y}
+          width={bounds.width}
+          height={bounds.height}
+          fill="transparent"
+          stroke="#cd14e2ff"
+          strokeWidth={2}
+          data-debug-bounds="true"
+        />
+      )}
       {clippedLines.flatMap((line, lineIndex) => {
         const lineY = bounds.y + fontSize + effectiveLineHeight * lineIndex;
 
@@ -253,7 +276,7 @@ export default function CardTextBlock({
           lineHeight: effectiveLineHeight,
           bounds,
           lineAlign: line.align ?? align,
-          measure,
+          measure: measureWithSpacing,
           fill,
             textStyle,
             maskPrefix,
@@ -267,8 +290,8 @@ export default function CardTextBlock({
         const leftX = bounds.x;
         const rightX = bounds.x + bounds.width;
 
-        const labelWidth = measureTokensWidth(line.labelTokens, measure);
-        const valueWidth = measureTokensWidth(line.valueTokens, measure);
+        const labelWidth = measureTokensWidth(line.labelTokens, measureWithSpacing);
+        const valueWidth = measureTokensWidth(line.valueTokens, measureWithSpacing);
 
         const labelStartX = leftX;
         const valueEndX = rightX;
@@ -279,7 +302,7 @@ export default function CardTextBlock({
         const availableGapWidth = Math.max(0, gapEndX - gapStartX);
 
         const sepChar = line.separator || ".";
-        const sepWidth = measure(sepChar);
+        const sepWidth = measureWithSpacing(sepChar);
         const sepCount =
           sepWidth > 0 ? Math.max(0, Math.floor(availableGapWidth / sepWidth)) : 0;
         const sepText = sepCount > 0 ? sepChar.repeat(sepCount) : "";
@@ -292,7 +315,7 @@ export default function CardTextBlock({
           startX: labelStartX,
           y: lineY,
           lineHeight: effectiveLineHeight,
-          measure,
+          measure: measureWithSpacing,
           fill,
           textStyle,
             maskPrefix,
@@ -322,7 +345,7 @@ export default function CardTextBlock({
           startX: valueStartX,
           y: lineY,
           lineHeight: effectiveLineHeight,
-          measure,
+          measure: measureWithSpacing,
           fill,
           textStyle,
             maskPrefix,

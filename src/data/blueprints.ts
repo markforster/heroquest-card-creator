@@ -322,7 +322,13 @@ const HERO_BACK_BLUEPRINT: Blueprint = {
         height: 480,
       },
       bind: { textKey: "description" },
-      props: { fontSize: 34, letterSpacingEm: 0.02, align: "center" },
+      props: {
+        fontSize: DESCRIPTION_FONT_SIZE,
+        lineHeight: DESCRIPTION_LINE_HEIGHT,
+        letterSpacingEm: DESCRIPTION_LETTER_SPACING,
+        fontWeight: 550,
+        align: "center",
+      },
     },
   ],
 };
