@@ -5,6 +5,7 @@ import { FormProvider, useForm } from "react-hook-form";
 
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
+import { getImageLayerBounds } from "@/lib/image-scale";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
@@ -148,12 +149,18 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
             return null;
           }
           if (field.fieldType === "image") {
+            const bounds = getImageLayerBounds(templateId, field.bind) ?? {
+              width: field.props.boundsWidth,
+              height: field.props.boundsHeight,
+              x: 0,
+              y: 0,
+            };
             return (
               <ImageField
                 key={`${field.bind}-${index}`}
                 label={t(field.labelKey)}
-                boundsWidth={field.props.boundsWidth}
-                boundsHeight={field.props.boundsHeight}
+                boundsWidth={bounds.width}
+                boundsHeight={bounds.height}
               />
             );
           }

@@ -112,8 +112,8 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               Open Assets to upload artwork into a shared image library (stored in your browser).
             </li>
             <li>
-              In the inspector, choose an image for the current card. The tool scales it to fill
-              the artwork window.
+              In the inspector, choose an image for the current card. The tool scales it to fit
+              within the artwork window by default.
             </li>
             <li>
               Use the Image Adjustments accordion to fine-tune scale, offset, and rotation; step

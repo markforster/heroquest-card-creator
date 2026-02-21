@@ -230,6 +230,7 @@ export default function AssetsPanelContent({
             patch.imageAssetId = undefined;
             patch.imageAssetName = undefined;
             patch.imageScale = undefined;
+            patch.imageScaleMode = undefined;
             patch.imageOriginalWidth = undefined;
             patch.imageOriginalHeight = undefined;
             patch.imageOffsetX = undefined;
@@ -991,6 +992,7 @@ function AssetsModalFooter({
                   nextDraft.imageAssetId = undefined;
                   nextDraft.imageAssetName = undefined;
                   nextDraft.imageScale = undefined;
+                  nextDraft.imageScaleMode = undefined;
                   nextDraft.imageOriginalWidth = undefined;
                   nextDraft.imageOriginalHeight = undefined;
                   nextDraft.imageOffsetX = undefined;

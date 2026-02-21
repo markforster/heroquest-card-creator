@@ -19,6 +19,7 @@ import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsCo
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { useI18n } from "@/i18n/I18nProvider";
+import { computeContainScale } from "@/lib/image-scale";
 import type { Blueprint, BlueprintBounds, BlueprintGroup, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
@@ -238,6 +239,8 @@ function ImageLayer({
   }
 
   const scale = (cardData as { imageScale?: number }).imageScale ?? 1;
+  const scaleMode =
+    (cardData as { imageScaleMode?: "absolute" | "relative" }).imageScaleMode ?? "relative";
   const offsetX = (cardData as { imageOffsetX?: number }).imageOffsetX ?? 0;
   const offsetY = (cardData as { imageOffsetY?: number }).imageOffsetY ?? 0;
   const rotation = (cardData as { imageRotation?: number }).imageRotation ?? 0;
@@ -249,8 +252,10 @@ function ImageLayer({
   const baseHeight =
     (cardData as { imageOriginalHeight?: number }).imageOriginalHeight ?? bounds.height;
 
-  const scaledWidth = baseWidth * scale;
-  const scaledHeight = baseHeight * scale;
+  const fitScale = computeContainScale(bounds, baseWidth, baseHeight);
+  const effectiveScale = scaleMode === "relative" ? fitScale * scale : scale;
+  const scaledWidth = baseWidth * effectiveScale;
+  const scaledHeight = baseHeight * effectiveScale;
 
   const x = bounds.x + (bounds.width - scaledWidth) / 2 + offsetX + layerOffsetX;
   const y = bounds.y + (bounds.height - scaledHeight) / 2 + offsetY + layerOffsetY;
@@ -269,7 +274,7 @@ function ImageLayer({
         width={scaledWidth}
         height={scaledHeight}
         transform={transform}
-        preserveAspectRatio="xMidYMid slice"
+        preserveAspectRatio="xMidYMid meet"
       />
     </Layer>
   );

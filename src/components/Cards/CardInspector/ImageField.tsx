@@ -41,6 +41,7 @@ type ImageSnapshot = {
   imageOriginalWidth?: number;
   imageOriginalHeight?: number;
   imageScale?: number;
+  imageScaleMode?: "absolute" | "relative";
   imageOffsetX?: number;
   imageOffsetY?: number;
   imageRotation?: number;
@@ -61,6 +62,10 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     name: "imageOriginalHeight",
   }) as number | undefined;
   const imageScaleWatch = useWatch({ name: "imageScale" }) as number | undefined;
+  const imageScaleModeWatch = useWatch({ name: "imageScaleMode" }) as
+    | "absolute"
+    | "relative"
+    | undefined;
   const imageOffsetXWatch = useWatch({ name: "imageOffsetX" }) as number | undefined;
   const imageOffsetYWatch = useWatch({ name: "imageOffsetY" }) as number | undefined;
   const imageRotationWatch = useWatch({ name: "imageRotation" }) as number | undefined;
@@ -73,6 +78,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     : t("status.noImageSelected");
 
   const imageScale = imageScaleWatch ?? 1;
+  const imageScaleMode = imageScaleModeWatch ?? "relative";
   const imageOffsetX = imageOffsetXWatch ?? 0;
   const imageOffsetY = imageOffsetYWatch ?? 0;
   const imageRotation = imageRotationWatch ?? 0;
@@ -96,8 +102,8 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const maxOffsetX = boundsWidth ? Math.round(boundsWidth) : 300;
   const maxOffsetY = boundsHeight ? Math.round(boundsHeight) : 300;
 
-  const MIN_SCALE = 0.2;
-  const MAX_SCALE = 3;
+  const MIN_SCALE = 0.5;
+  const MAX_SCALE = 2;
   const SCALE_STEP = 0.05;
   const MIN_ROTATION = -180;
   const MAX_ROTATION = 180;
@@ -111,6 +117,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     imageOriginalWidth,
     imageOriginalHeight,
     imageScale,
+    imageScaleMode,
     imageOffsetX,
     imageOffsetY,
     imageRotation,
@@ -121,21 +128,6 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   };
 
   const computeAutoScale = () => {
-    if (
-      boundsWidth &&
-      boundsHeight &&
-      imageOriginalWidth &&
-      imageOriginalHeight &&
-      imageOriginalWidth > 0 &&
-      imageOriginalHeight > 0
-    ) {
-      const bw = boundsWidth;
-      const bh = boundsHeight;
-      const aw = imageOriginalWidth;
-      const ah = imageOriginalHeight;
-
-      return Math.max(bw / aw, bh / ah);
-    }
     return 1;
   };
 
@@ -145,23 +137,16 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     setValue("imageAssetName", asset.name, { shouldDirty: true, shouldTouch: true });
     setValue("imageRotation", 0, { shouldDirty: true, shouldTouch: true });
 
-    if (boundsWidth && boundsHeight && asset.width && asset.height) {
-      const bw = boundsWidth;
-      const bh = boundsHeight;
+    setValue("imageScale", 1, { shouldDirty: true, shouldTouch: true });
+    setValue("imageScaleMode", "relative", { shouldDirty: true, shouldTouch: true });
+    if (asset.width && asset.height) {
       const aw = asset.width;
       const ah = asset.height;
-
-      let scale = 1;
-      if (aw > 0 && ah > 0) {
-        scale = Math.max(bw / aw, bh / ah);
-      }
-
-      setValue("imageScale", scale, { shouldDirty: true, shouldTouch: true });
       setValue("imageOriginalWidth", aw, { shouldDirty: true, shouldTouch: true });
       setValue("imageOriginalHeight", ah, { shouldDirty: true, shouldTouch: true });
-      setValue("imageOffsetX", 0, { shouldDirty: true, shouldTouch: true });
-      setValue("imageOffsetY", 0, { shouldDirty: true, shouldTouch: true });
     }
+    setValue("imageOffsetX", 0, { shouldDirty: true, shouldTouch: true });
+    setValue("imageOffsetY", 0, { shouldDirty: true, shouldTouch: true });
   };
 
   const handleSelect = (asset: AssetRecord) => {
@@ -183,6 +168,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
       shouldTouch: true,
     });
     setValue("imageScale", previous.imageScale, { shouldDirty: true, shouldTouch: true });
+    setValue("imageScaleMode", previous.imageScaleMode, { shouldDirty: true, shouldTouch: true });
     setValue("imageOffsetX", previous.imageOffsetX, { shouldDirty: true, shouldTouch: true });
     setValue("imageOffsetY", previous.imageOffsetY, { shouldDirty: true, shouldTouch: true });
     setValue("imageRotation", previous.imageRotation, { shouldDirty: true, shouldTouch: true });
@@ -223,6 +209,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     imageOriginalWidth,
     imageOriginalHeight,
     imageScale,
+    imageScaleMode,
     imageOffsetX,
     imageOffsetY,
     imageRotation,
@@ -470,6 +457,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                 setValue("imageAssetId", undefined, { shouldDirty: true, shouldTouch: true });
                 setValue("imageAssetName", undefined, { shouldDirty: true, shouldTouch: true });
                 setValue("imageScale", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("imageScaleMode", undefined, { shouldDirty: true, shouldTouch: true });
                 setValue("imageOriginalWidth", undefined, { shouldDirty: true, shouldTouch: true });
                 setValue("imageOriginalHeight", undefined, { shouldDirty: true, shouldTouch: true });
                 setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
@@ -740,6 +728,10 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                         const auto = computeAutoScale();
                         const next = clamp(auto, MIN_SCALE, MAX_SCALE);
                         setValue("imageScale", next, {
+                          shouldDirty: true,
+                          shouldTouch: true,
+                        });
+                        setValue("imageScaleMode", "relative", {
                           shouldDirty: true,
                           shouldTouch: true,
                         });

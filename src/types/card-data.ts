@@ -13,6 +13,7 @@ export interface BaseCardFields {
   imageAssetId?: string;
   imageAssetName?: string;
   imageScale?: number;
+  imageScaleMode?: "absolute" | "relative";
   imageOffsetX?: number;
   imageOffsetY?: number;
   imageRotation?: number;
