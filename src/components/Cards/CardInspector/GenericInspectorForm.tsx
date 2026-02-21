@@ -4,10 +4,12 @@ import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { cardTemplatesById } from "@/data/card-templates";
 import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 import { getImageLayerBounds } from "@/lib/image-scale";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardDataByTemplate } from "@/types/card-data";
+import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
 import BorderColorField from "./BorderColorField";
@@ -42,6 +44,11 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
     draftRef.current = draftValue;
   }, [draftValue]);
   const fields = inspectorFieldsByTemplate[templateId];
+  const effectiveFace = (() => {
+    const template = cardTemplatesById[templateId];
+    if (!template) return undefined;
+    return (draftValue?.face ?? template.defaultFace) as CardFace;
+  })();
   const showTitleToggle = Boolean(
     fields?.some((field) => field.fieldType === "title" && field.showToggle),
   );
@@ -177,6 +184,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
             return <MonsterIconField key={`${field.bind}-${index}`} label={t(field.labelKey)} />;
           }
           if (field.fieldType === "copyright") {
+            if (effectiveFace !== "front") return null;
             return (
               <CopyrightField
                 key={`${field.bind}-${index}`}

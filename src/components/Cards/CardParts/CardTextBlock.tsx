@@ -58,6 +58,13 @@ type TextLine =
       labelTokens: WrapToken[];
       valueTokens: WrapToken[];
       separator: string;
+      leaderLayout?: LeaderLayout;
+      align?: "left" | "center" | "right";
+    }
+  | {
+      kind: "leader-continuation";
+      valueTokens: WrapToken[];
+      leaderLayout: LeaderLayout;
       align?: "left" | "center" | "right";
     };
 
@@ -67,6 +74,19 @@ export type CardTextLayout = {
 };
 
 type TextToken = WrapToken;
+
+type LeaderLayout = {
+  valueStartOffset: number;
+  valueColumnWidth: number;
+  leaderPadding: number;
+};
+
+type LeaderGroupSettings = {
+  pivotMode: "auto" | "fixed";
+  pivotValue?: number;
+  wrap: "value" | "none";
+  explicit: boolean;
+};
 
 export function layoutCardText({
   text,
@@ -117,6 +137,164 @@ export function layoutCardText({
   };
   const safeWidth = Math.max(0, width - fontSize * 0.4);
 
+  const isGroupStartLine = (lineText: string) => lineText.trim() === "[[";
+  const isGroupEndLine = (lineText: string) => lineText.trim() === "]]";
+  const isGroupSettingsLine = (lineText: string) =>
+    /^\s*\[\{[\s\S]*\}\]\s*,?\s*$/.test(lineText);
+  const isSingleLineGroup = (lineText: string) => /^\s*\[\[[\s\S]*\]\]\s*$/.test(lineText);
+
+  const parseLeaderGroupSettings = (lineText: string): LeaderGroupSettings | null => {
+    if (!isGroupSettingsLine(lineText)) return null;
+    const trimmed = lineText.trim().replace(/,\s*$/, "");
+    const inner = trimmed.slice(2, -2).trim();
+    if (!inner) return null;
+
+    const settings: LeaderGroupSettings = {
+      pivotMode: "auto",
+      wrap: "value",
+      explicit: true,
+    };
+    const parts = inner.split(",").map((part) => part.trim()).filter(Boolean);
+    for (const part of parts) {
+      const [rawKey, rawValue] = part.split(":").map((item) => item.trim());
+      if (!rawKey || !rawValue) continue;
+      const key = rawKey.toLowerCase();
+      const value = rawValue.toLowerCase();
+      if (key === "pivot") {
+        if (value.endsWith("%")) {
+          const num = Number.parseFloat(value.slice(0, -1));
+          if (!Number.isNaN(num)) {
+            const pivot = num / 100;
+            if (pivot >= 0 && pivot <= 1) {
+              settings.pivotMode = "fixed";
+              settings.pivotValue = pivot;
+            }
+          }
+        } else {
+          const num = Number.parseFloat(value);
+          if (!Number.isNaN(num) && num >= 0 && num <= 1) {
+            settings.pivotMode = "fixed";
+            settings.pivotValue = num;
+          }
+        }
+      } else if (key === "wrap") {
+        if (value === "value" || value === "none") {
+          settings.wrap = value;
+        }
+      }
+    }
+
+    return settings;
+  };
+
+  const parseLeaderLine = (
+    lineText: string,
+  ): { labelTokens: WrapToken[]; valueTokens: WrapToken[]; separator: string } | null => {
+    const trimmed = lineText.trim();
+    const startsWithDice = trimmed.startsWith("[{");
+    const leaderMatch = startsWithDice
+      ? null
+      : lineText.match(/^\[(.+?)\[(.*?)\](.+?)\]$/);
+    if (!leaderMatch) return null;
+
+    const labelRaw = leaderMatch[1];
+    const sepRaw = leaderMatch[2];
+    const valueRaw = leaderMatch[3];
+    const separator = sepRaw || ".";
+    const labelTokens = injectDiceAdjacentSpaces(
+      segmentsToTokens(tokenizeInlineDice(labelRaw), fontSize),
+    );
+    const valueTokens = injectDiceAdjacentSpaces(
+      segmentsToTokens(tokenizeInlineDice(valueRaw), fontSize),
+    );
+    return { labelTokens, valueTokens, separator };
+  };
+
+  const parseSingleLineGroup = (
+    lineText: string,
+  ): { settings: LeaderGroupSettings; leaders: ReturnType<typeof parseLeaderLine>[] } | null => {
+    if (!isSingleLineGroup(lineText)) return null;
+    const trimmed = lineText.trim();
+    const inner = trimmed.slice(2, -2).trim();
+    if (!inner) return null;
+
+    let settings: LeaderGroupSettings = {
+      pivotMode: "auto",
+      wrap: "none",
+      explicit: false,
+    };
+    let remainder = inner;
+
+    if (remainder.startsWith("[{")) {
+      const endIndex = remainder.indexOf("}]");
+      if (endIndex >= 0) {
+        const settingsText = remainder.slice(0, endIndex + 2);
+        const parsed = parseLeaderGroupSettings(settingsText);
+        if (parsed) settings = parsed;
+        remainder = remainder.slice(endIndex + 2).trim();
+      }
+    }
+
+    if (!remainder) return null;
+
+    const leaders: ReturnType<typeof parseLeaderLine>[] = [];
+    let depth = 0;
+    let segmentStart = -1;
+    for (let i = 0; i < remainder.length; i += 1) {
+      const ch = remainder[i];
+      if (ch === "[") {
+        if (depth === 0) segmentStart = i;
+        depth += 1;
+      } else if (ch === "]") {
+        depth = Math.max(0, depth - 1);
+        if (depth === 0 && segmentStart >= 0) {
+          const segment = remainder.slice(segmentStart, i + 1);
+          const leader = parseLeaderLine(segment);
+          if (leader) leaders.push(leader);
+          segmentStart = -1;
+        }
+      }
+    }
+
+    if (leaders.length === 0) return null;
+    return { settings, leaders };
+  };
+
+  const hasMatchingGroupEnd = (() => {
+    const flags = new Array(logicalLines.length).fill(false);
+    let i = 0;
+    while (i < logicalLines.length) {
+      if (isGroupStartLine(logicalLines[i])) {
+        let j = i + 1;
+        while (j < logicalLines.length && !isGroupEndLine(logicalLines[j])) {
+          j += 1;
+        }
+        if (j < logicalLines.length) {
+          flags[i] = true;
+          i = j + 1;
+          continue;
+        }
+      }
+      i += 1;
+    }
+    return flags;
+  })();
+
+  const pushWrappedTextLine = (lineText: string, align: "left" | "center" | "right") => {
+    // Preserve intentional blank lines (including lines with only whitespace) as visual gaps.
+    if (lineText.trim() === "") {
+      visualLines.push({ kind: "text", tokens: [{ kind: "text", text: "" }], align });
+      return;
+    }
+
+    const inlineSegments = tokenizeInlineDice(lineText);
+    const tokens = injectDiceAdjacentSpaces(segmentsToTokens(inlineSegments, fontSize));
+    const wrapped = wrapTokens(tokens, safeWidth, measure);
+    wrapped.forEach((lineTokens) => {
+      visualLines.push({ kind: "text", tokens: lineTokens, align });
+    });
+  };
+
   const pushAlignedLine = (lineText: string, align: "left" | "center" | "right") => {
     // Preserve intentional blank lines (including lines with only whitespace) as visual gaps.
     if (lineText.trim() === "") {
@@ -152,17 +330,120 @@ export function layoutCardText({
       return;
     }
 
-    const inlineSegments = tokenizeInlineDice(lineText);
-    const tokens = injectDiceAdjacentSpaces(segmentsToTokens(inlineSegments, fontSize));
-    const wrapped = wrapTokens(tokens, safeWidth, measure);
-    wrapped.forEach((lineTokens) => {
-      visualLines.push({ kind: "text", tokens: lineTokens, align });
-    });
+    pushWrappedTextLine(lineText, align);
   };
 
   let inlineAlign: "left" | "center" | "right" | null = null;
 
-  for (const logicalLine of logicalLines) {
+  let groupActive = false;
+  let groupSettings: LeaderGroupSettings = {
+    pivotMode: "auto",
+    wrap: "none",
+    explicit: false,
+  };
+  let groupLines: Array<{
+    labelTokens: WrapToken[];
+    valueTokens: WrapToken[];
+    separator: string;
+    align: "left" | "center" | "right";
+  }> = [];
+
+  const computeGroupLayout = (
+    items: typeof groupLines,
+    settings: LeaderGroupSettings,
+  ): LeaderLayout => {
+    const leaderPadding = fontSize * 0.25;
+    let maxLabelWidth = 0;
+    let maxValueWidth = 0;
+    items.forEach((item) => {
+      maxLabelWidth = Math.max(
+        maxLabelWidth,
+        measureTokensWidth(item.labelTokens, measure),
+      );
+      maxValueWidth = Math.max(
+        maxValueWidth,
+        measureTokensWidth(item.valueTokens, measure),
+      );
+    });
+
+    const minValueColumnWidth =
+      settings.wrap === "value" ? Math.max(width * 0.25, fontSize * 4) : 0;
+
+    if (settings.pivotMode === "fixed" && typeof settings.pivotValue === "number") {
+      const desiredStart = width * settings.pivotValue;
+      const minStart = Math.min(width, maxLabelWidth + leaderPadding * 2);
+      const maxStart = Math.max(
+        0,
+        width - (settings.wrap === "none" ? maxValueWidth : minValueColumnWidth),
+      );
+      const clampedStart = Math.min(Math.max(desiredStart, minStart), maxStart);
+      const valueStartOffset = Number.isFinite(clampedStart) ? clampedStart : 0;
+      const valueColumnWidth = Math.max(0, width - valueStartOffset);
+      return { valueStartOffset, valueColumnWidth, leaderPadding };
+    }
+
+    let valueColumnWidth = Math.min(
+      maxValueWidth,
+      Math.max(0, width - maxLabelWidth - leaderPadding * 2),
+    );
+    if (valueColumnWidth < minValueColumnWidth) {
+      valueColumnWidth = Math.min(width, minValueColumnWidth);
+    }
+    const valueStartOffset = Math.max(0, width - valueColumnWidth);
+    return { valueStartOffset, valueColumnWidth, leaderPadding };
+  };
+
+  const flushLeaderGroup = () => {
+    if (groupLines.length === 0) {
+      groupActive = false;
+      groupSettings = { pivotMode: "auto", wrap: "none", explicit: false };
+      return;
+    }
+
+    if (!groupSettings.explicit) {
+      groupLines.forEach((line) => {
+        visualLines.push({
+          kind: "leader",
+          labelTokens: line.labelTokens,
+          valueTokens: line.valueTokens,
+          separator: line.separator,
+          align: line.align,
+        });
+      });
+    } else {
+      const layout = computeGroupLayout(groupLines, groupSettings);
+      groupLines.forEach((line) => {
+        const wrappedValue =
+          groupSettings.wrap === "value" && layout.valueColumnWidth > 0
+            ? wrapTokens(line.valueTokens, layout.valueColumnWidth, measure)
+            : [line.valueTokens];
+        const [firstLine, ...restLines] = wrappedValue;
+        visualLines.push({
+          kind: "leader",
+          labelTokens: line.labelTokens,
+          valueTokens: firstLine ?? [],
+          separator: line.separator,
+          leaderLayout: layout,
+          align: line.align,
+        });
+        restLines.forEach((valueTokens) => {
+          visualLines.push({
+            kind: "leader-continuation",
+            valueTokens,
+            leaderLayout: layout,
+            align: line.align,
+          });
+        });
+      });
+    }
+
+    groupLines = [];
+    groupActive = false;
+    groupSettings = { pivotMode: "auto", wrap: "none", explicit: false };
+  };
+
+  for (let index = 0; index < logicalLines.length; index += 1) {
+    const logicalLine = logicalLines[index];
     if (inlineAlign) {
       const closeIndex = logicalLine.indexOf(":::");
       if (closeIndex >= 0) {
@@ -196,7 +477,62 @@ export function layoutCardText({
       continue;
     }
 
+    if (groupActive) {
+      const trimmed = logicalLine.trim();
+      const leaderCandidate = trimmed.replace(/,\s*$/, "");
+      if (isGroupEndLine(logicalLine)) {
+        flushLeaderGroup();
+        continue;
+      }
+
+      const parsedLeader = parseLeaderLine(leaderCandidate);
+      if (parsedLeader) {
+        groupLines.push({
+          labelTokens: parsedLeader.labelTokens,
+          valueTokens: parsedLeader.valueTokens,
+          separator: parsedLeader.separator,
+          align: currentAlign,
+        });
+        continue;
+      }
+
+      flushLeaderGroup();
+      pushAlignedLine(logicalLine, currentAlign);
+      continue;
+    }
+
+    const inlineGroup = parseSingleLineGroup(logicalLine);
+    if (inlineGroup) {
+      groupActive = true;
+      groupSettings = inlineGroup.settings;
+      inlineGroup.leaders.forEach((leader) => {
+        groupLines.push({
+          labelTokens: leader.labelTokens,
+          valueTokens: leader.valueTokens,
+          separator: leader.separator,
+          align: currentAlign,
+        });
+      });
+      flushLeaderGroup();
+      continue;
+    }
+
+    if (isGroupStartLine(logicalLine) && hasMatchingGroupEnd[index]) {
+      groupActive = true;
+      groupSettings = { pivotMode: "auto", wrap: "none", explicit: false };
+      if (index + 1 < logicalLines.length && isGroupSettingsLine(logicalLines[index + 1])) {
+        const parsedSettings = parseLeaderGroupSettings(logicalLines[index + 1]);
+        if (parsedSettings) groupSettings = parsedSettings;
+        index += 1;
+      }
+      continue;
+    }
+
     pushAlignedLine(logicalLine, currentAlign);
+  }
+
+  if (groupActive) {
+    flushLeaderGroup();
   }
 
   return { lines: visualLines, lineHeight: effectiveLineHeight };
@@ -285,8 +621,25 @@ export default function CardTextBlock({
           });
         }
 
+        if (line.kind === "leader-continuation") {
+          const valueStartX = bounds.x + line.leaderLayout.valueStartOffset;
+          return renderTokenSequence({
+            tokens: line.valueTokens,
+            startX: valueStartX,
+            y: lineY,
+            lineHeight: effectiveLineHeight,
+            measure: measureWithSpacing,
+            fill,
+            textStyle,
+            maskPrefix,
+            lineIndex,
+            tokenGroup: "value",
+            fontSize,
+          });
+        }
+
         // Leader line rendering
-        const leaderPadding = fontSize * 0.25;
+        const leaderPadding = line.leaderLayout?.leaderPadding ?? fontSize * 0.25;
         const leftX = bounds.x;
         const rightX = bounds.x + bounds.width;
 
@@ -294,8 +647,10 @@ export default function CardTextBlock({
         const valueWidth = measureTokensWidth(line.valueTokens, measureWithSpacing);
 
         const labelStartX = leftX;
-        const valueEndX = rightX;
-        const valueStartX = valueEndX - valueWidth;
+        const valueStartX =
+          line.leaderLayout?.valueStartOffset != null
+            ? bounds.x + line.leaderLayout.valueStartOffset
+            : rightX - valueWidth;
 
         const gapStartX = labelStartX + labelWidth + leaderPadding;
         const gapEndX = valueStartX - leaderPadding;

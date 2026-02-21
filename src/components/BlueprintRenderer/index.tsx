@@ -16,12 +16,14 @@ import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
+import { cardTemplatesById } from "@/data/card-templates";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { useI18n } from "@/i18n/I18nProvider";
 import { computeContainScale } from "@/lib/image-scale";
 import type { Blueprint, BlueprintBounds, BlueprintGroup, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
+import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
 import { AlertTriangle } from "lucide-react";
@@ -890,6 +892,12 @@ function CopyrightLayer({
   if (!cardData) return null;
 
   const { defaultCopyright } = useCopyrightSettings();
+  const { showTextBounds } = useDebugVisuals();
+  const template = cardTemplatesById[blueprint.templateId];
+  const effectiveFace = template
+    ? ((cardData as { face?: CardFace }).face ?? template.defaultFace)
+    : (cardData as { face?: CardFace }).face;
+  if (effectiveFace !== "front") return null;
   const showCopyright =
     typeof (cardData as { showCopyright?: boolean }).showCopyright === "boolean"
       ? (cardData as { showCopyright?: boolean }).showCopyright
@@ -934,6 +942,18 @@ function CopyrightLayer({
 
   return (
     <Layer key={layer.id}>
+      {showTextBounds ? (
+        <rect
+          x={bounds.x}
+          y={bounds.y}
+          width={bounds.width}
+          height={bounds.height}
+          fill="transparent"
+          stroke="#00e5ff"
+          strokeWidth={2}
+          data-debug-bounds="true"
+        />
+      ) : null}
       <CardTextBlock
         text={resolvedText}
         bounds={bounds}

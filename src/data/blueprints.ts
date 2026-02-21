@@ -22,6 +22,10 @@ const COPYRIGHT_BOUNDS = {
   width: 630,
   height: COPYRIGHT_HEIGHT,
 };
+const COPYRIGHT_BOUNDS_ARTWORK = {
+  ...COPYRIGHT_BOUNDS,
+  y: COPYRIGHT_BOUNDS.y - 56,
+};
 const HERO_MONSTER_STACK_ORIGIN_Y = COPYRIGHT_BOUNDS.y - COPYRIGHT_STACK_GAP;
 const TREASURE_DESC_X = 120;
 const TREASURE_DESC_WIDTH = 515;
@@ -137,7 +141,7 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
     {
       id: "copyright",
       type: "copyright",
-      bounds: COPYRIGHT_BOUNDS,
+      bounds: COPYRIGHT_BOUNDS_ARTWORK,
       bind: { textKey: "copyright" },
       props: {
         fontSize: COPYRIGHT_FONT_SIZE,
@@ -236,7 +240,7 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
     {
       id: "copyright",
       type: "copyright",
-      bounds: COPYRIGHT_BOUNDS,
+      bounds: COPYRIGHT_BOUNDS_ARTWORK,
       bind: { textKey: "copyright" },
       props: {
         fontSize: COPYRIGHT_FONT_SIZE,
@@ -365,6 +369,21 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
       id: "background-frame",
       type: "border",
     },
+    {
+      id: "copyright",
+      type: "copyright",
+      bounds: COPYRIGHT_BOUNDS,
+      bind: { textKey: "copyright" },
+      props: {
+        fontSize: COPYRIGHT_FONT_SIZE,
+        lineHeight: COPYRIGHT_LINE_HEIGHT,
+        fontWeight: 500,
+        align: "center",
+        fill: "#3b1f04",
+        letterSpacingEm: -0.01,
+        fontFamily: "Helvetica, Arial, sans-serif",
+      },
+    },
   ],
 };
 
@@ -394,6 +413,21 @@ const HERO_BACK_BLUEPRINT: Blueprint = {
         letterSpacingEm: DESCRIPTION_LETTER_SPACING,
         fontWeight: 550,
         align: "center",
+      },
+    },
+    {
+      id: "copyright",
+      type: "copyright",
+      bounds: COPYRIGHT_BOUNDS,
+      bind: { textKey: "copyright" },
+      props: {
+        fontSize: COPYRIGHT_FONT_SIZE,
+        lineHeight: COPYRIGHT_LINE_HEIGHT,
+        fontWeight: 500,
+        align: "center",
+        fill: "#3b1f04",
+        letterSpacingEm: -0.01,
+        fontFamily: "Helvetica, Arial, sans-serif",
       },
     },
   ],

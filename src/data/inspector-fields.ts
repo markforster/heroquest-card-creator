@@ -159,6 +159,13 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       labelKey: "form.backText",
       props: { showToolbar: true },
     },
+    {
+      fieldType: "copyright",
+      bind: "copyright",
+      labelKey: "form.copyright",
+      placeholderKey: "placeholders.copyright",
+      showToggle: true,
+    },
   ],
   "labelled-back": [
     {
@@ -189,6 +196,13 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "borderColor",
       bind: "borderColor",
       labelKey: "form.borderColor",
+    },
+    {
+      fieldType: "copyright",
+      bind: "copyright",
+      labelKey: "form.copyright",
+      placeholderKey: "placeholders.copyright",
+      showToggle: true,
     },
   ],
 };

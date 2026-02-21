@@ -74,6 +74,12 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               <code> [cost [...] 1gp]</code> and the dots will be drawn between the label and value.
             </li>
             <li>
+              To group leader lines and control layout, wrap them in
+              <code> [[</code> and <code>]]</code>. You can add an optional settings line like
+              <code> [{'{'}pivot:50%, wrap:value{'}'}]</code> to set a fixed pivot or wrap values
+              inside the value column.
+            </li>
+            <li>
               Alignment directives let you switch alignment mid-text: use <code>:::ac</code>,
               <code>:::al</code>, or <code>:::ar</code> on their own line, and <code>:::</code> to
               reset.
