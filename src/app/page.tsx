@@ -163,12 +163,6 @@ function IndexPageInner() {
     },
   });
 
-  useEffect(() => {
-    if (missingAssetsReport.length === 0 && missingAssetsDismissed) {
-      setMissingAssetsDismissed(false);
-    }
-  }, [missingAssetsReport.length, missingAssetsDismissed, setMissingAssetsDismissed]);
-
   useEscapeModalAware({
     id: "route:cards",
     isOpen: isCardsListRoute,
