@@ -1,15 +1,39 @@
 import smallLargeArtworkBorderMask from "@/assets/card-backgrounds/small-large-artwork-border-alpha-mask.png";
 import smallLargeArtworkBorderTexture from "@/assets/card-backgrounds/small-large-artwork-border-blend-texture.png";
 import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
+import { EMPHASIZED_LABEL_WEIGHT } from "@/config/typography";
 import type { Blueprint } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
 
 const DESCRIPTION_FONT_SIZE = 32;
 const DESCRIPTION_LINE_HEIGHT = DESCRIPTION_FONT_SIZE * 1.25;
 const DESCRIPTION_LETTER_SPACING = 0.000015;
+const HERO_MONSTER_BODY_FONT_SIZE = 26;
+const HERO_MONSTER_BODY_LINE_HEIGHT = HERO_MONSTER_BODY_FONT_SIZE * 1.05;
+const HERO_MONSTER_BODY_LETTER_SPACING = 0.000015;
 const TREASURE_DESC_X = 120;
 const TREASURE_DESC_WIDTH = 515;
 const TREASURE_DESC_BOTTOM = 946;
+const RIBBON_BOUNDS = { x: 86, y: 46, width: 578, height: 145.15 };
+const RIBBON_TEXT_BOUNDS = { x: 171, y: 66, width: 428, height: 58.15 };
+const RIBBON_TEXT_BOUNDS_NO_RIBBON = { x: 81, y: 82, width: 588, height: 60.15 };
+
+const makeRibbonBounds = (overrides?: Partial<typeof RIBBON_BOUNDS>) => ({
+  ...RIBBON_BOUNDS,
+  ...(overrides ?? {}),
+});
+
+const makeRibbonTextBounds = (overrides?: Partial<typeof RIBBON_TEXT_BOUNDS>) => ({
+  ...RIBBON_TEXT_BOUNDS,
+  ...(overrides ?? {}),
+});
+
+const makeRibbonTextNoRibbonBounds = (
+  overrides?: Partial<typeof RIBBON_TEXT_BOUNDS_NO_RIBBON>,
+) => ({
+  ...RIBBON_TEXT_BOUNDS_NO_RIBBON,
+  ...(overrides ?? {}),
+});
 
 const makeTreasureDescBounds = (topY: number) => ({
   x: TREASURE_DESC_X,
@@ -71,18 +95,18 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       props: {
         showRibbon: false,
         // Known working values (previous)
-        ribbonX: 81,
-        ribbonY: 46,
-        ribbonWidth: 588,
-        ribbonHeight: 150.15,
-        textX: 81,
-        textY: 46,
-        textWidth: 588,
-        textHeight: 150.15,
-        textNoRibbonX: 81,
-        textNoRibbonY: 82,
-        textNoRibbonWidth: 588,
-        textNoRibbonHeight: 60.15,
+        ribbonX: makeRibbonBounds({ y: 46 }).x,
+        ribbonY: makeRibbonBounds({ y: 46 }).y,
+        ribbonWidth: makeRibbonBounds().width,
+        ribbonHeight: makeRibbonBounds().height,
+        textX: makeRibbonTextBounds({ y: 46 }).x,
+        textY: makeRibbonTextBounds({ y: 46 }).y,
+        textWidth: makeRibbonTextBounds().width,
+        textHeight: makeRibbonTextBounds().height,
+        textNoRibbonX: makeRibbonTextNoRibbonBounds({ y: 82 }).x,
+        textNoRibbonY: makeRibbonTextNoRibbonBounds({ y: 82 }).y,
+        textNoRibbonWidth: makeRibbonTextNoRibbonBounds().width,
+        textNoRibbonHeight: makeRibbonTextNoRibbonBounds().height,
         // Trial values (multiline experiment)
         // ribbonX: 81,
         // ribbonY: 46,
@@ -155,18 +179,18 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       props: {
         showRibbon: false,
         // Known working values (previous)
-        ribbonX: 81,
-        ribbonY: 46,
-        ribbonWidth: 588,
-        ribbonHeight: 150.15,
-        textX: 81,
-        textY: 46,
-        textWidth: 588,
-        textHeight: 150.15,
-        textNoRibbonX: 81,
-        textNoRibbonY: 82,
-        textNoRibbonWidth: 588,
-        textNoRibbonHeight: 60.15,
+        ribbonX: makeRibbonBounds({ y: 46 }).x,
+        ribbonY: makeRibbonBounds({ y: 46 }).y,
+        ribbonWidth: makeRibbonBounds().width,
+        ribbonHeight: makeRibbonBounds().height,
+        textX: makeRibbonTextBounds({ y: 46 }).x,
+        textY: makeRibbonTextBounds({ y: 46 }).y,
+        textWidth: makeRibbonTextBounds().width,
+        textHeight: makeRibbonTextBounds().height,
+        textNoRibbonX: makeRibbonTextNoRibbonBounds({ y: 82 }).x,
+        textNoRibbonY: makeRibbonTextNoRibbonBounds({ y: 82 }).y,
+        textNoRibbonWidth: makeRibbonTextNoRibbonBounds().width,
+        textNoRibbonHeight: makeRibbonTextNoRibbonBounds().height,
         // Trial values (multiline experiment)
         // ribbonX: 81,
         // ribbonY: 46,
@@ -260,30 +284,30 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
       props: {
         y: 866,
         // Known working values (previous)
-        ribbonX: 81,
-        ribbonY: 866,
-        ribbonWidth: 588,
-        ribbonHeight: 150.15,
-        textX: 171,
-        textY: 888,
-        textWidth: 428,
-        textHeight: 58.15,
-        textNoRibbonX: 81,
-        textNoRibbonY: 888,
-        textNoRibbonWidth: 588,
-        textNoRibbonHeight: 58.15,
-        textNoRibbonTopX: 81,
-        textNoRibbonTopY: 82,
-        textNoRibbonTopWidth: 588,
-        textNoRibbonTopHeight: 58.15,
-        ribbonTopX: 81,
-        ribbonTopY: 46,
-        ribbonTopWidth: 588,
-        ribbonTopHeight: 150.15,
-        textTopX: 171,
-        textTopY: 68,
-        textTopWidth: 428,
-        textTopHeight: 58.15,
+        ribbonX: makeRibbonBounds({ y: 866 }).x,
+        ribbonY: makeRibbonBounds({ y: 866 }).y,
+        ribbonWidth: makeRibbonBounds().width,
+        ribbonHeight: makeRibbonBounds().height,
+        textX: makeRibbonTextBounds({ y: 888 }).x,
+        textY: makeRibbonTextBounds({ y: 888 }).y,
+        textWidth: makeRibbonTextBounds().width,
+        textHeight: makeRibbonTextBounds().height,
+        textNoRibbonX: makeRibbonTextNoRibbonBounds({ y: 888 }).x,
+        textNoRibbonY: makeRibbonTextNoRibbonBounds({ y: 888 }).y,
+        textNoRibbonWidth: makeRibbonTextNoRibbonBounds().width,
+        textNoRibbonHeight: makeRibbonTextNoRibbonBounds().height,
+        textNoRibbonTopX: makeRibbonTextNoRibbonBounds({ y: 82 }).x,
+        textNoRibbonTopY: makeRibbonTextNoRibbonBounds({ y: 82 }).y,
+        textNoRibbonTopWidth: makeRibbonTextNoRibbonBounds().width,
+        textNoRibbonTopHeight: makeRibbonTextNoRibbonBounds().height,
+        ribbonTopX: makeRibbonBounds({ y: 46 }).x,
+        ribbonTopY: makeRibbonBounds({ y: 46 }).y,
+        ribbonTopWidth: makeRibbonBounds().width,
+        ribbonTopHeight: makeRibbonBounds().height,
+        textTopX: makeRibbonTextBounds({ y: 68 }).x,
+        textTopY: makeRibbonTextBounds({ y: 68 }).y,
+        textTopWidth: makeRibbonTextBounds().width,
+        textTopHeight: makeRibbonTextBounds().height,
         // Trial values (multiline experiment)
         // ribbonX: 81,
         // ribbonY: 850,
@@ -361,14 +385,14 @@ const HERO_BLUEPRINT: Blueprint = {
       bind: { titleKey: "title" },
       props: {
         // Known working values (previous)
-        ribbonX: 81,
-        ribbonY: 46,
-        ribbonWidth: 588,
-        ribbonHeight: 150.15,
-        textX: 171,
-        textY: 66,
-        textWidth: 428,
-        textHeight: 58.15,
+        ribbonX: makeRibbonBounds({ y: 46 }).x,
+        ribbonY: makeRibbonBounds({ y: 46 }).y,
+        ribbonWidth: makeRibbonBounds().width,
+        ribbonHeight: makeRibbonBounds().height,
+        textX: makeRibbonTextBounds({ y: 66 }).x,
+        textY: makeRibbonTextBounds({ y: 66 }).y,
+        textWidth: makeRibbonTextBounds().width,
+        textHeight: makeRibbonTextBounds().height,
         // Trial values (multiline experiment)
         // ribbonX: 81,
         // ribbonY: 46,
@@ -387,8 +411,10 @@ const HERO_BLUEPRINT: Blueprint = {
       type: "stack",
       anchor: "bottom",
       direction: "up",
-      origin: { x: 65, y: 1020 },
-      width: 620,
+      // origin: { x: 65, y: 1020 },
+      // width: 620,
+      origin: { x: 54, y: 1020 },
+      width: 636,
       gap: 2,
       children: [
         {
@@ -396,10 +422,10 @@ const HERO_BLUEPRINT: Blueprint = {
           type: "text",
           bind: { textKey: "description" },
           props: {
-            fontSize: DESCRIPTION_FONT_SIZE,
-            lineHeight: DESCRIPTION_LINE_HEIGHT,
-            letterSpacingEm: DESCRIPTION_LETTER_SPACING,
-            fontWeight: 550,
+            fontSize: HERO_MONSTER_BODY_FONT_SIZE,
+            lineHeight: HERO_MONSTER_BODY_LINE_HEIGHT,
+            letterSpacingEm: HERO_MONSTER_BODY_LETTER_SPACING,
+            fontWeight: EMPHASIZED_LABEL_WEIGHT,
           },
         },
         {
@@ -440,14 +466,14 @@ const MONSTER_BLUEPRINT: Blueprint = {
       bind: { titleKey: "title" },
       props: {
         // Known working values (previous)
-        ribbonX: 81,
-        ribbonY: 46,
-        ribbonWidth: 588,
-        ribbonHeight: 150.15,
-        textX: 171,
-        textY: 66,
-        textWidth: 428,
-        textHeight: 58.15,
+        ribbonX: makeRibbonBounds({ y: 46 }).x,
+        ribbonY: makeRibbonBounds({ y: 46 }).y,
+        ribbonWidth: makeRibbonBounds().width,
+        ribbonHeight: makeRibbonBounds().height,
+        textX: makeRibbonTextBounds({ y: 66 }).x,
+        textY: makeRibbonTextBounds({ y: 66 }).y,
+        textWidth: makeRibbonTextBounds().width,
+        textHeight: makeRibbonTextBounds().height,
         // Trial values (multiline experiment)
         // ribbonX: 81,
         // ribbonY: 46,
@@ -466,8 +492,8 @@ const MONSTER_BLUEPRINT: Blueprint = {
       type: "stack",
       anchor: "bottom",
       direction: "up",
-      origin: { x: 65, y: 1020 },
-      width: 620,
+      origin: { x: 48, y: 1020 },
+      width: 652,
       gap: 2,
       children: [
         {
@@ -475,10 +501,10 @@ const MONSTER_BLUEPRINT: Blueprint = {
           type: "text",
           bind: { textKey: "description" },
           props: {
-            fontSize: DESCRIPTION_FONT_SIZE,
-            lineHeight: DESCRIPTION_LINE_HEIGHT,
-            letterSpacingEm: DESCRIPTION_LETTER_SPACING,
-            fontWeight: 550,
+            fontSize: HERO_MONSTER_BODY_FONT_SIZE,
+            lineHeight: HERO_MONSTER_BODY_LINE_HEIGHT,
+            letterSpacingEm: HERO_MONSTER_BODY_LETTER_SPACING,
+            fontWeight: EMPHASIZED_LABEL_WEIGHT,
           },
         },
         {

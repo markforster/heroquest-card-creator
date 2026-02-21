@@ -4,6 +4,7 @@ import {
   USE_STATS_VERTICAL_COMPRESSION,
   USE_TIGHTER_STATS_TRACKING,
 } from "@/config/flags";
+import { EMPHASIZED_LABEL_WEIGHT } from "@/config/typography";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { formatStatValue } from "@/lib/stat-values";
 import fitText from "@/lib/text-fitting/fitText";
@@ -102,7 +103,7 @@ export default function StatsPair({
           // fill="#ffffff"
           fill="#452304"
           fontSize={headerFontSize}
-          fontWeight={700}
+          fontWeight={EMPHASIZED_LABEL_WEIGHT}
           letterSpacing={headerLetterSpacing}
           fontFamily={CARD_TEXT_FONT_FAMILY}
         >
