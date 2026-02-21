@@ -4,9 +4,19 @@ import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
 import type { Blueprint } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
 
-const DESCRIPTION_FONT_SIZE = 26;
-const DESCRIPTION_LINE_HEIGHT = DESCRIPTION_FONT_SIZE * 1.05;
-const DESCRIPTION_LETTER_SPACING = 0.02;
+const DESCRIPTION_FONT_SIZE = 32;
+const DESCRIPTION_LINE_HEIGHT = DESCRIPTION_FONT_SIZE * 1.25;
+const DESCRIPTION_LETTER_SPACING = 0.000015;
+const TREASURE_DESC_X = 120;
+const TREASURE_DESC_WIDTH = 515;
+const TREASURE_DESC_BOTTOM = 946;
+
+const makeTreasureDescBounds = (topY: number) => ({
+  x: TREASURE_DESC_X,
+  y: topY,
+  width: TREASURE_DESC_WIDTH,
+  height: TREASURE_DESC_BOTTOM - topY,
+});
 
 const SMALL_TREASURE_BLUEPRINT: Blueprint = {
   schemaVersion: 1,
@@ -46,12 +56,7 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
     {
       id: "description",
       type: "text",
-      bounds: {
-        x: 125,
-        y: 366,
-        width: 500,
-        height: 580,
-      },
+      bounds: makeTreasureDescBounds(366),
       bind: { textKey: "description" },
       props: {
         fontSize: DESCRIPTION_FONT_SIZE,
@@ -135,12 +140,7 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
     {
       id: "description",
       type: "text",
-      bounds: {
-        x: 125,
-        y: 555,
-        width: 500,
-        height: 400,
-      },
+      bounds: makeTreasureDescBounds(555),
       bind: { textKey: "description" },
       props: {
         fontSize: DESCRIPTION_FONT_SIZE,
