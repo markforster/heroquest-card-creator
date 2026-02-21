@@ -180,6 +180,8 @@ function renderBorderLayer({
   const borderMask = "mask" in layer ? layer.mask : undefined;
   const borderTexture = "texture" in layer ? layer.texture : undefined;
   const blendMode = "blendMode" in layer ? layer.blendMode : undefined;
+  const offsetX = "offsetX" in layer && typeof layer.offsetX === "number" ? layer.offsetX : 0;
+  const offsetY = "offsetY" in layer && typeof layer.offsetY === "number" ? layer.offsetY : 0;
 
   if (borderMask && borderTexture) {
     return (
@@ -192,6 +194,8 @@ function renderBorderLayer({
         width={bounds.width}
         height={bounds.height}
         blendMode={blendMode}
+        offsetX={offsetX}
+        offsetY={offsetY}
       />
     );
   }
@@ -206,6 +210,8 @@ function renderBorderLayer({
       color={borderColor}
       width={bounds.width}
       height={bounds.height}
+      offsetX={offsetX}
+      offsetY={offsetY}
     />
   );
 }

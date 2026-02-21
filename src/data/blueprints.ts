@@ -92,6 +92,8 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       mask: smallLargeArtworkBorderMask,
       texture: smallLargeArtworkBorderTexture,
       blendMode: "multiply",
+      offsetX: 1,
+      offsetY: -1,
     },
     {
       id: "description",
@@ -191,6 +193,8 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       mask: smallLargeArtworkBorderMask,
       texture: smallLargeArtworkBorderTexture,
       blendMode: "multiply",
+      offsetX: 1,
+      offsetY: -1,
     },
     {
       id: "description",

@@ -5,10 +5,7 @@ import { useId } from "react";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { createTextMeasurer } from "@/lib/text-fitting/measure";
 import { runsToTokens, wrapTokens, type WrapToken } from "@/lib/text-fitting/wrap";
-import {
-  tokenizeInlineDice,
-  type InlineDiceSegment,
-} from "@/lib/inline-dice";
+import { tokenizeInlineDice, type InlineDiceSegment } from "@/lib/inline-dice";
 
 import type { CSSProperties } from "react";
 
@@ -39,7 +36,7 @@ const DICE_TEXT_GAP_PX = 2;
 const DICE_CORNER_RADIUS_RATIO = 0.22;
 const DICE_ICON_PADDING_RATIO = 0.08;
 const DICE_TEXT_CENTER_RATIO = 0.5;
-const DICE_Y_OFFSET_PX = 6;
+const DICE_Y_OFFSET_PX = 0;
 const DICE_FACE_COLOR = "#111111";
 const DICE_BG_COLOR = "#ffffff";
 const DICE_BORDER_COLOR = "#111111";
@@ -125,13 +122,14 @@ export function layoutCardText({
   const letterSpacingPx = (letterSpacingEm ?? 0) * fontSize;
 
   const measure = (text: string, token?: Extract<WrapToken, { kind: "text" }>) => {
-    const baseWidth = token?.bold && token?.italic
-      ? measureBoldItalic(text)
-      : token?.bold
-        ? measureBold(text)
-        : token?.italic
-          ? measureItalic(text)
-          : measureNormal(text);
+    const baseWidth =
+      token?.bold && token?.italic
+        ? measureBoldItalic(text)
+        : token?.bold
+          ? measureBold(text)
+          : token?.italic
+            ? measureItalic(text)
+            : measureNormal(text);
     if (letterSpacingPx <= 0 || text.length <= 1) return baseWidth;
     return baseWidth + (text.length - 1) * letterSpacingPx;
   };
@@ -139,8 +137,7 @@ export function layoutCardText({
 
   const isGroupStartLine = (lineText: string) => lineText.trim() === "[[";
   const isGroupEndLine = (lineText: string) => lineText.trim() === "]]";
-  const isGroupSettingsLine = (lineText: string) =>
-    /^\s*\[\{[\s\S]*\}\]\s*,?\s*$/.test(lineText);
+  const isGroupSettingsLine = (lineText: string) => /^\s*\[\{[\s\S]*\}\]\s*,?\s*$/.test(lineText);
   const isSingleLineGroup = (lineText: string) => /^\s*\[\[[\s\S]*\]\]\s*$/.test(lineText);
 
   const parseLeaderGroupSettings = (lineText: string): LeaderGroupSettings | null => {
@@ -154,7 +151,10 @@ export function layoutCardText({
       wrap: "value",
       explicit: true,
     };
-    const parts = inner.split(",").map((part) => part.trim()).filter(Boolean);
+    const parts = inner
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
     for (const part of parts) {
       const [rawKey, rawValue] = part.split(":").map((item) => item.trim());
       if (!rawKey || !rawValue) continue;
@@ -192,9 +192,7 @@ export function layoutCardText({
   ): { labelTokens: WrapToken[]; valueTokens: WrapToken[]; separator: string } | null => {
     const trimmed = lineText.trim();
     const startsWithDice = trimmed.startsWith("[{");
-    const leaderMatch = startsWithDice
-      ? null
-      : lineText.match(/^\[(.+?)\[(.*?)\](.+?)\]$/);
+    const leaderMatch = startsWithDice ? null : lineText.match(/^\[(.+?)\[(.*?)\](.+?)\]$/);
     if (!leaderMatch) return null;
 
     const labelRaw = leaderMatch[1];
@@ -356,14 +354,8 @@ export function layoutCardText({
     let maxLabelWidth = 0;
     let maxValueWidth = 0;
     items.forEach((item) => {
-      maxLabelWidth = Math.max(
-        maxLabelWidth,
-        measureTokensWidth(item.labelTokens, measure),
-      );
-      maxValueWidth = Math.max(
-        maxValueWidth,
-        measureTokensWidth(item.valueTokens, measure),
-      );
+      maxLabelWidth = Math.max(maxLabelWidth, measureTokensWidth(item.labelTokens, measure));
+      maxValueWidth = Math.max(maxValueWidth, measureTokensWidth(item.valueTokens, measure));
     });
 
     const minValueColumnWidth =
@@ -578,10 +570,7 @@ export default function CardTextBlock({
 
   const measure = createTextMeasurer(fontSize, fontFamily);
   const letterSpacingPx = (letterSpacingEm ?? 0) * fontSize;
-  const measureWithSpacing = (
-    text: string,
-    token?: Extract<WrapToken, { kind: "text" }>,
-  ) => {
+  const measureWithSpacing = (text: string, token?: Extract<WrapToken, { kind: "text" }>) => {
     const base = measure(text, token);
     if (letterSpacingPx <= 0 || text.length <= 1) return base;
     return base + (text.length - 1) * letterSpacingPx;
@@ -606,14 +595,14 @@ export default function CardTextBlock({
         const lineY = bounds.y + fontSize + effectiveLineHeight * lineIndex;
 
         if (line.kind === "text") {
-        return renderTokenLine({
-          lineTokens: line.tokens,
-          lineY,
-          lineHeight: effectiveLineHeight,
-          bounds,
-          lineAlign: line.align ?? align,
-          measure: measureWithSpacing,
-          fill,
+          return renderTokenLine({
+            lineTokens: line.tokens,
+            lineY,
+            lineHeight: effectiveLineHeight,
+            bounds,
+            lineAlign: line.align ?? align,
+            measure: measureWithSpacing,
+            fill,
             textStyle,
             maskPrefix,
             lineIndex,
@@ -658,21 +647,20 @@ export default function CardTextBlock({
 
         const sepChar = line.separator || ".";
         const sepWidth = measureWithSpacing(sepChar);
-        const sepCount =
-          sepWidth > 0 ? Math.max(0, Math.floor(availableGapWidth / sepWidth)) : 0;
+        const sepCount = sepWidth > 0 ? Math.max(0, Math.floor(availableGapWidth / sepWidth)) : 0;
         const sepText = sepCount > 0 ? sepChar.repeat(sepCount) : "";
 
         const elements: JSX.Element[] = [];
 
         elements.push(
           ...renderTokenSequence({
-          tokens: line.labelTokens,
-          startX: labelStartX,
-          y: lineY,
-          lineHeight: effectiveLineHeight,
-          measure: measureWithSpacing,
-          fill,
-          textStyle,
+            tokens: line.labelTokens,
+            startX: labelStartX,
+            y: lineY,
+            lineHeight: effectiveLineHeight,
+            measure: measureWithSpacing,
+            fill,
+            textStyle,
             maskPrefix,
             lineIndex,
             tokenGroup: "label",
@@ -682,13 +670,7 @@ export default function CardTextBlock({
 
         if (sepText) {
           elements.push(
-            <text
-              key={`${lineIndex}-sep`}
-              x={gapStartX}
-              y={lineY}
-              fill={fill}
-              style={textStyle}
-            >
+            <text key={`${lineIndex}-sep`} x={gapStartX} y={lineY} fill={fill} style={textStyle}>
               {sepText}
             </text>,
           );
@@ -696,13 +678,13 @@ export default function CardTextBlock({
 
         elements.push(
           ...renderTokenSequence({
-          tokens: line.valueTokens,
-          startX: valueStartX,
-          y: lineY,
-          lineHeight: effectiveLineHeight,
-          measure: measureWithSpacing,
-          fill,
-          textStyle,
+            tokens: line.valueTokens,
+            startX: valueStartX,
+            y: lineY,
+            lineHeight: effectiveLineHeight,
+            measure: measureWithSpacing,
+            fill,
+            textStyle,
             maskPrefix,
             lineIndex,
             tokenGroup: "value",
@@ -855,16 +837,10 @@ function injectDiceAdjacentSpaces(tokens: TextToken[]): TextToken[] {
     const prevToken = index > 0 ? tokens[index - 1] : null;
     const nextToken = index < tokens.length - 1 ? tokens[index + 1] : null;
     const hasPrevText = Boolean(
-      prevToken &&
-        prevToken.kind === "text" &&
-        prevToken.text &&
-        !/\s$/.test(prevToken.text),
+      prevToken && prevToken.kind === "text" && prevToken.text && !/\s$/.test(prevToken.text),
     );
     const hasNextText = Boolean(
-      nextToken &&
-        nextToken.kind === "text" &&
-        nextToken.text &&
-        !/^\s/.test(nextToken.text),
+      nextToken && nextToken.kind === "text" && nextToken.text && !/^\s/.test(nextToken.text),
     );
 
     if (hasPrevText && prevToken?.kind === "text") {
@@ -968,8 +944,7 @@ function renderTokenSequence({
       const size = token.renderSize;
       const baseGap = fontSize * DICE_TEXT_GAP_RATIO + DICE_TEXT_GAP_PX;
       const maskX = cursorX + baseGap;
-      const textCenterY =
-        y - fontSize + lineHeight * DICE_TEXT_CENTER_RATIO + DICE_Y_OFFSET_PX;
+      const textCenterY = y - fontSize + lineHeight * DICE_TEXT_CENTER_RATIO + DICE_Y_OFFSET_PX;
       const maskY = textCenterY - size / 2;
       const padding = size * DICE_ICON_PADDING_RATIO;
       const innerSize = Math.max(0, size - padding * 2);
@@ -1031,10 +1006,7 @@ function renderTokenSequence({
     if (token.italic) spanStyle.fontStyle = "italic";
 
     runSpans.push(
-      <tspan
-        key={`${tokenGroup}-${lineIndex}-${tokenIndex}`}
-        style={spanStyle}
-      >
+      <tspan key={`${tokenGroup}-${lineIndex}-${tokenIndex}`} style={spanStyle}>
         {token.text}
       </tspan>,
     );

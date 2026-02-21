@@ -15,6 +15,8 @@ type CardTexturedBorderProps = {
   width?: number;
   height?: number;
   blendMode?: "multiply" | "overlay" | "screen";
+  offsetX?: number;
+  offsetY?: number;
 };
 
 function normalizeId(rawId: string) {
@@ -29,6 +31,8 @@ export default function CardTexturedBorder({
   width = 750,
   height = 1050,
   blendMode = "multiply",
+  offsetX = 0,
+  offsetY = 0,
 }: CardTexturedBorderProps) {
   const maskId = normalizeId(useId());
   const filterId = normalizeId(useId());
@@ -44,8 +48,8 @@ export default function CardTexturedBorder({
           <image
             href={alphaMask.src}
             data-template-asset="border-mask"
-            x={0}
-            y={0}
+            x={offsetX}
+            y={offsetY}
             width={width}
             height={height}
             preserveAspectRatio="xMidYMid meet"
@@ -62,8 +66,8 @@ export default function CardTexturedBorder({
           <feImage
             href={textureMask.src}
             data-template-asset="border-texture"
-            x={0}
-            y={0}
+            x={offsetX}
+            y={offsetY}
             width={width}
             height={height}
             preserveAspectRatio="xMidYMid meet"
