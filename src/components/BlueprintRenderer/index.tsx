@@ -35,6 +35,7 @@ type BlueprintRendererProps = {
   background?: StaticImageData;
   backgroundLoaded?: boolean;
   cardData?: CardDataByTemplate[TemplateId];
+  copyrightTextColor?: string;
 };
 
 const DEFAULT_CANVAS = { width: 750, height: 1050 };
@@ -889,10 +890,12 @@ function CopyrightLayer({
   blueprint,
   layer,
   cardData,
+  copyrightTextColor,
 }: {
   blueprint: Blueprint;
   layer: BlueprintLayer;
   cardData?: CardDataByTemplate[TemplateId];
+  copyrightTextColor?: string;
 }) {
   if (layer.type !== "copyright") return null;
   if (!cardData) return null;
@@ -936,7 +939,7 @@ function CopyrightLayer({
       : undefined;
   const fontFamily =
     typeof layer.props?.fontFamily === "string" ? layer.props.fontFamily : undefined;
-  const fill = typeof layer.props?.fill === "string" ? layer.props.fill : undefined;
+  const fill = copyrightTextColor ?? (typeof layer.props?.fill === "string" ? layer.props.fill : undefined);
   const letterSpacingEm =
     typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;
   const align =
@@ -1400,6 +1403,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
               blueprint={blueprint}
               layer={layer}
               cardData={props.cardData}
+              copyrightTextColor={props.copyrightTextColor}
             />
           );
         }

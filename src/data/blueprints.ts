@@ -2,7 +2,7 @@ import smallLargeArtworkBorderMask from "@/assets/card-backgrounds/small-large-a
 import smallLargeArtworkBorderTexture from "@/assets/card-backgrounds/small-large-artwork-border-blend-texture.png";
 import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
 import { EMPHASIZED_LABEL_WEIGHT } from "@/config/typography";
-import type { Blueprint } from "@/types/blueprints";
+import type { Blueprint, BlueprintBounds } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
 
 const DESCRIPTION_FONT_SIZE = 32;
@@ -642,3 +642,10 @@ export const blueprintsByTemplateId: Partial<Record<TemplateId, Blueprint>> = {
   "hero-back": HERO_BACK_BLUEPRINT,
   "labelled-back": LABELLED_BACK_BLUEPRINT,
 };
+
+export function getCopyrightBounds(templateId: TemplateId): BlueprintBounds {
+  if (templateId === "small-treasure" || templateId === "large-treasure") {
+    return COPYRIGHT_BOUNDS_ARTWORK;
+  }
+  return COPYRIGHT_BOUNDS;
+}

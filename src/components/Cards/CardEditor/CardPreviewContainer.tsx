@@ -151,6 +151,16 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
   ]);
 
   useEffect(() => {
+    if (!cardData) return;
+    const handle = previewRef.current;
+    if (!handle?.syncCopyrightContrast) return;
+    const timeoutId = window.setTimeout(() => {
+      void handle.syncCopyrightContrast?.();
+    }, 60);
+    return () => window.clearTimeout(timeoutId);
+  }, [cardData, template.id, templateName, previewRef]);
+
+  useEffect(() => {
     if (!showWebgl) {
       setReverseCard(null);
       return;
