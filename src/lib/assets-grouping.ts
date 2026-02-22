@@ -57,7 +57,7 @@ function getGroupOrder(preferredKindOrder?: AssetKindGroupId[]): AssetKindGroupI
   return order;
 }
 
-function compareAssets(a: AssetRecord, b: AssetRecord): number {
+export function compareAssetsByDefaultOrder(a: AssetRecord, b: AssetRecord): number {
   const aName = (a as AssetRecord & { nameLower?: string }).nameLower ?? a.name;
   const bName = (b as AssetRecord & { nameLower?: string }).nameLower ?? b.name;
   const nameCompare = aName.toLowerCase().localeCompare(bName.toLowerCase());
@@ -97,6 +97,6 @@ export function groupAssetsByKind(
   return order.map((id) => ({
     id,
     labelKey: GROUP_LABELS[id],
-    assets: (grouped.get(id) ?? []).slice().sort(compareAssets),
+    assets: (grouped.get(id) ?? []).slice().sort(compareAssetsByDefaultOrder),
   }));
 }

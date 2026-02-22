@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from "react";
 
 import { classifyAssetBlob } from "@/lib/asset-kind/classify";
+import { compareAssetsByDefaultOrder } from "@/lib/assets-grouping";
 import type { AssetRecord } from "@/lib/assets-db";
 import { getAllAssets, getAssetBlob, updateAssetMeta } from "@/lib/assets-db";
 
@@ -58,7 +59,11 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
   const seedQueue = useCallback(() => {
     getAllAssets()
       .then((assets) => {
-        assets.forEach((asset) => {
+        const ordered = assets
+          .filter((asset) => shouldEnqueue(asset))
+          .slice()
+          .sort(compareAssetsByDefaultOrder);
+        ordered.forEach((asset) => {
           if (shouldEnqueue(asset)) {
             enqueueAsset(asset.id);
           }
