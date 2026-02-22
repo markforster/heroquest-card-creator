@@ -15,6 +15,7 @@ import { AssetHashIndexProvider } from "@/components/Providers/AssetHashIndexPro
 import { AssetsRoutePanels } from "@/components/Assets";
 import { StockpileMainPanel } from "@/components/Stockpile";
 import { AppActionsProvider } from "@/components/Providers/AppActionsContext";
+import { AssetKindBackfillProvider } from "@/components/Providers/AssetKindBackfillProvider";
 import { CardEditorProvider, useCardEditor } from "@/components/Providers/CardEditorContext";
 import CardPreviewContainer from "@/components/Cards/CardEditor/CardPreviewContainer";
 import CardInspector from "@/components/Cards/CardInspector/CardInspector";
@@ -749,7 +750,8 @@ function IndexPageInner() {
       <LibraryTransferProvider>
         <EditorSaveProvider value={{ saveCurrentCard, saveToken }}>
           <EscapeStackProvider>
-            <AppActionsProvider>
+            <AssetKindBackfillProvider>
+              <AppActionsProvider>
               <HeaderWithTemplatePicker
                 missingAssetsCount={missingAssetsReport.length}
                 showMissingAssetsReminder={
@@ -895,7 +897,8 @@ function IndexPageInner() {
                   />
                 </aside>
               </main>
-            </AppActionsProvider>
+              </AppActionsProvider>
+            </AssetKindBackfillProvider>
           </EscapeStackProvider>
         </EditorSaveProvider>
         {exportTemplate && exportTarget ? (

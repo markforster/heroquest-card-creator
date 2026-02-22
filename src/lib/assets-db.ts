@@ -9,6 +9,11 @@ export type AssetRecord = {
   width: number;
   height: number;
   createdAt: number;
+  assetKind?: "icon" | "artwork";
+  assetKindStatus?: "unclassified" | "classifying" | "classified";
+  assetKindSource?: "auto" | "manual";
+  assetKindConfidence?: number;
+  assetKindUpdatedAt?: number;
 };
 
 export type AssetRecordWithBlob = AssetRecord & {
@@ -232,6 +237,47 @@ export async function deleteAssets(ids: string[]): Promise<void> {
       // eslint-disable-next-line no-console
       console.error("[assets-db] deleteAssets tx error", tx.error);
       reject(tx.error ?? new Error("Failed to delete assets"));
+    };
+  });
+}
+
+export async function updateAssetMeta(
+  id: string,
+  patch: Partial<AssetRecord>,
+): Promise<void> {
+  const db = await openHqccDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const request = store.get(id);
+
+    request.onsuccess = () => {
+      const record = request.result as (AssetRecord & { blob?: Blob }) | undefined;
+      if (!record) {
+        resolve();
+        return;
+      }
+      const nextRecord = {
+        ...record,
+        ...patch,
+        id,
+      } as AssetRecord & { blob?: Blob };
+      store.put(nextRecord);
+    };
+
+    request.onerror = () => {
+      reject(request.error ?? new Error("Failed to load asset for update"));
+    };
+
+    tx.oncomplete = () => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("hqcc-assets-updated"));
+      }
+      resolve();
+    };
+    tx.onerror = () => {
+      reject(tx.error ?? new Error("Failed to update asset"));
     };
   });
 }

@@ -3344,6 +3344,126 @@
     transform 0.05s ease;
 }
 
+.assetsKindBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: #f9fafb;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+button.assetsKindBadge:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.assetsKindBadgeOverlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.assetsKindBadgeClickable {
+  cursor: pointer;
+}
+
+.assetsKindBadgeUnknown {
+  border-color: rgba(148, 163, 184, 0.6);
+  color: #e5e7eb;
+}
+
+.assetsKindBadgeIcon {
+  border-color: rgba(56, 189, 248, 0.9);
+  background: rgba(2, 132, 199, 0.35);
+}
+
+.assetsKindBadgeArtwork {
+  border-color: rgba(251, 191, 36, 0.9);
+  background: rgba(245, 158, 11, 0.28);
+}
+
+.assetsKindBadgeClassifying {
+  border-color: transparent;
+  background: linear-gradient(
+    120deg,
+    rgba(14, 116, 144, 0.45),
+    rgba(147, 51, 234, 0.45),
+    rgba(37, 99, 235, 0.45),
+    rgba(14, 116, 144, 0.45)
+  );
+  background-size: 300% 300%;
+  animation: assetsKindShimmer 2.2s ease infinite;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.35);
+}
+
+@keyframes assetsKindShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.assetsKindPopoverAnchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.assetsKindPopover {
+  position: fixed;
+  min-width: 180px;
+  background: #0f172a;
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  padding: 8px;
+  z-index: 20;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.assetsKindPopoverTitle {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(226, 232, 240, 0.7);
+  margin-bottom: 6px;
+}
+
+.assetsKindPopoverOption {
+  width: 100%;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  font-size: var(--text-sm);
+}
+
+.assetsKindPopoverOption:hover {
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.assetsKindPopoverHint {
+  margin-left: 10px;
+  font-size: var(--text-xs);
+  color: rgba(148, 163, 184, 0.85);
+}
+
 .assetsThumbPlaceholder {
   width: 100%;
   padding-top: 60%;
@@ -3972,6 +4092,33 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: var(--text-sm);
+}
+
+.imageAutocompleteKind {
+  flex: 0 0 auto;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: rgba(15, 23, 42, 0.72);
+  color: #f9fafb;
+}
+
+.imageAutocompleteKindArtwork {
+  border-color: rgba(251, 191, 36, 0.85);
+  background: rgba(245, 158, 11, 0.25);
+}
+
+.imageAutocompleteKindIcon {
+  border-color: rgba(56, 189, 248, 0.85);
+  background: rgba(2, 132, 199, 0.3);
+}
+
+.imageAutocompleteKindUnknown {
+  border-color: rgba(148, 163, 184, 0.6);
+  color: #e5e7eb;
 }
 
 .imageAutocompleteEmpty {

@@ -190,6 +190,21 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
   const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
   const pinnedIds = new Set<string>();
   const pinnedAssets: AssetRecord[] = [];
+  const getAssetRank = (asset: AssetRecord) => {
+    if (asset.assetKindStatus === "classified") {
+      if (asset.assetKind === "icon") return 0;
+      if (asset.assetKind === "artwork") return 1;
+    }
+    return 2;
+  };
+  const getAssetKindLabel = (asset: AssetRecord) => {
+    if (asset.assetKindStatus === "classified") {
+      return asset.assetKind === "icon"
+        ? t("label.assetKindIcon")
+        : t("label.assetKindArtwork");
+    }
+    return t("label.assetKindFilterUnclassified");
+  };
   const makeFallbackAsset = (assetId: string, assetName: string): AssetRecord => ({
     id: assetId,
     name: assetName,
@@ -221,6 +236,8 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
         )
         .sort((a, b) => {
           if (a.score !== b.score) return a.score - b.score;
+          const rankDiff = getAssetRank(a.asset) - getAssetRank(b.asset);
+          if (rankDiff !== 0) return rankDiff;
           return a.asset.name.localeCompare(b.asset.name, undefined, { sensitivity: "base" });
         })
         .map((entry) => entry.asset)
@@ -413,6 +430,17 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                           <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
                             {asset.name}
                           </div>
+                          <span
+                            className={`${layoutStyles.imageAutocompleteKind} ${
+                              asset.assetKindStatus === "classified"
+                                ? asset.assetKind === "icon"
+                                  ? layoutStyles.imageAutocompleteKindIcon
+                                  : layoutStyles.imageAutocompleteKindArtwork
+                                : layoutStyles.imageAutocompleteKindUnknown
+                            }`}
+                          >
+                            {getAssetKindLabel(asset)}
+                          </span>
                         </button>
                       ))
                   : null}
@@ -436,6 +464,17 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                     <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
                       {asset.name}
                     </div>
+                    <span
+                      className={`${layoutStyles.imageAutocompleteKind} ${
+                        asset.assetKindStatus === "classified"
+                          ? asset.assetKind === "icon"
+                            ? layoutStyles.imageAutocompleteKindIcon
+                            : layoutStyles.imageAutocompleteKindArtwork
+                          : layoutStyles.imageAutocompleteKindUnknown
+                      }`}
+                    >
+                      {getAssetKindLabel(asset)}
+                    </span>
                   </button>
                 ))}
               </>

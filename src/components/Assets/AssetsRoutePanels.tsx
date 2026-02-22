@@ -1,18 +1,29 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
 import styles from "@/app/page.module.css";
 import AssetsMainPanel from "@/components/Assets/AssetsMainPanel";
 import ModalShell from "@/components/common/ModalShell";
+import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
+import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { AssetRecord } from "@/lib/assets-db";
-import { addAsset, getAllAssets, getAssetBlob, getAssetObjectUrl, replaceAsset } from "@/lib/assets-db";
+import {
+  addAsset,
+  getAllAssets,
+  getAssetBlob,
+  getAssetObjectUrl,
+  replaceAsset,
+  updateAssetMeta,
+} from "@/lib/assets-db";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
 import { generateId } from "@/lib";
 import { listCards } from "@/lib/cards-db";
+import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 
 type AssetUsage = {
   total: number;
@@ -58,6 +69,7 @@ function AssetsInspector({
   refreshKey: number;
 }) {
   const { t } = useI18n();
+  const { enqueueAsset, cancelAsset } = useAssetKindQueue();
   const safeIndex = Math.min(currentIndex, assets.length - 1);
   const asset = assets[safeIndex];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -72,6 +84,17 @@ function AssetsInspector({
   const [isReplacing, setIsReplacing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const showCarousel = assets.length > 1;
+  const [isKindPopoverOpen, setIsKindPopoverOpen] = useState(false);
+  const kindAnchorRef = useRef<HTMLButtonElement | null>(null);
+  const kindPopoverRef = useRef<HTMLDivElement | null>(null);
+  const [kindPopoverStyle, setKindPopoverStyle] = useState<React.CSSProperties | null>(null);
+  const kindPopoverPlacement = usePopoverPlacement({
+    isOpen: isKindPopoverOpen,
+    anchorRef: kindAnchorRef,
+    popoverRef: kindPopoverRef,
+    offset: 8,
+  });
+  useOutsideClick([kindPopoverRef, kindAnchorRef], () => setIsKindPopoverOpen(false), isKindPopoverOpen);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,6 +155,7 @@ function AssetsInspector({
   useEffect(() => {
     setPendingReplace(null);
     setKeepBackup(false);
+    setIsKindPopoverOpen(false);
   }, [asset.id]);
 
   const handleReplaceConfirm = async () => {
@@ -172,6 +196,14 @@ function AssetsInspector({
         },
         asset.createdAt,
       );
+      await updateAssetMeta(asset.id, {
+        assetKindStatus: "unclassified",
+        assetKind: undefined,
+        assetKindSource: undefined,
+        assetKindConfidence: undefined,
+        assetKindUpdatedAt: Date.now(),
+      });
+      enqueueAsset(asset.id, { width: pendingReplace.width, height: pendingReplace.height });
       onReplaceComplete();
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -226,6 +258,65 @@ function AssetsInspector({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [assets.length, currentIndex, onSelectIndex, showCarousel]);
+
+  const kindStatus = asset.assetKindStatus ?? "unclassified";
+  const kindLabel =
+    kindStatus === "classifying"
+      ? t("label.assetKindClassifying")
+      : kindStatus === "classified"
+        ? asset.assetKind === "icon"
+          ? t("label.assetKindIcon")
+          : t("label.assetKindArtwork")
+        : t("label.assetKindUnknown");
+  const canOverride = kindStatus !== "classifying";
+  const applyManualKind = async (kind: "icon" | "artwork") => {
+    cancelAsset(asset.id);
+    await updateAssetMeta(asset.id, {
+      assetKindStatus: "classified",
+      assetKind: kind,
+      assetKindSource: "manual",
+      assetKindConfidence: 1,
+      assetKindUpdatedAt: Date.now(),
+    });
+    setIsKindPopoverOpen(false);
+  };
+
+  useLayoutEffect(() => {
+    if (!isKindPopoverOpen) return;
+    if (typeof window === "undefined") return;
+
+    const updatePosition = () => {
+      const anchor = kindAnchorRef.current;
+      const popover = kindPopoverRef.current;
+      if (!anchor || !popover) return;
+
+      const anchorRect = anchor.getBoundingClientRect();
+      const popoverRect = popover.getBoundingClientRect();
+      const padding = 12;
+      const offset = 8;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      let left = anchorRect.left;
+      let top =
+        kindPopoverPlacement === "up"
+          ? anchorRect.top - popoverRect.height - offset
+          : anchorRect.bottom + offset;
+
+      left = Math.min(Math.max(left, padding), viewportWidth - popoverRect.width - padding);
+      top = Math.min(Math.max(top, padding), viewportHeight - popoverRect.height - padding);
+
+      setKindPopoverStyle({ left, top, position: "fixed" });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isKindPopoverOpen, kindPopoverPlacement]);
 
   return (
     <aside className={styles.rightPanel}>
@@ -297,6 +388,77 @@ function AssetsInspector({
           {asset.name}
         </div>
         <dl className={styles.assetsInspectorDetails}>
+          <div className={styles.uRowLg}>
+            <dt>{t("label.assetKind")}</dt>
+            <dd>
+              <div className={styles.assetsKindPopoverAnchor}>
+                <button
+                  type="button"
+                  ref={kindAnchorRef}
+                  className={`${styles.assetsKindBadge} ${
+                    kindStatus === "classifying"
+                      ? styles.assetsKindBadgeClassifying
+                      : kindStatus === "classified"
+                        ? asset.assetKind === "icon"
+                          ? styles.assetsKindBadgeIcon
+                          : styles.assetsKindBadgeArtwork
+                        : styles.assetsKindBadgeUnknown
+                  }`}
+                  onClick={() => {
+                    if (!canOverride) return;
+                    setIsKindPopoverOpen((prev) => !prev);
+                  }}
+                  aria-haspopup="dialog"
+                  aria-expanded={isKindPopoverOpen}
+                  disabled={!canOverride}
+                >
+                  {kindLabel}
+                </button>
+                {isKindPopoverOpen
+                  ? createPortal(
+                      <div
+                        ref={kindPopoverRef}
+                        className={styles.assetsKindPopover}
+                        style={
+                          kindPopoverStyle ?? {
+                            position: "fixed",
+                            left: 0,
+                            top: 0,
+                            opacity: 0,
+                            pointerEvents: "none",
+                          }
+                        }
+                        role="dialog"
+                      >
+                        <div className={styles.assetsKindPopoverTitle}>
+                          {t("label.assetKindOverride")}
+                        </div>
+                        <button
+                          type="button"
+                          className={styles.assetsKindPopoverOption}
+                          onClick={() => void applyManualKind("icon")}
+                        >
+                          {t("label.assetKindIcon")}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.assetsKindPopoverOption}
+                          onClick={() => void applyManualKind("artwork")}
+                        >
+                          {t("label.assetKindArtwork")}
+                        </button>
+                      </div>,
+                      document.body,
+                    )
+                  : null}
+              </div>
+              {!canOverride ? (
+                <span className={styles.assetsKindPopoverHint}>
+                  {t("label.assetKindClassifyingHint")}
+                </span>
+              ) : null}
+            </dd>
+          </div>
           <div className={styles.uRowLg}>
             <dt>{t("label.fileType")}</dt>
             <dd>{asset.mimeType}</dd>
