@@ -126,6 +126,9 @@ function IndexPageInner() {
   const [pairedFrontIds, setPairedFrontIds] = useState<string[]>([]);
   const [activeFrontId, setActiveFrontId] = useState<string | null>(null);
   const [pairedBackId, setPairedBackId] = useState<string | null>(null);
+  const [lastRememberedBackId, setLastRememberedBackId] = useState<string | null>(null);
+  const [frontViewToken, setFrontViewToken] = useState(0);
+  const lastFaceRef = useRef<CardFace | null>(null);
   const [exportTarget, setExportTarget] = useState<CardRecord | null>(null);
   const [isExportingFaces, setIsExportingFaces] = useState(false);
   const [exportTotal, setExportTotal] = useState(0);
@@ -479,6 +482,7 @@ function IndexPageInner() {
       setActiveFrontId(null);
       return;
     }
+    setLastRememberedBackId(activeCardId);
     let active = true;
     listCards({ status: "saved" })
       .then(async (cards) => {
@@ -529,6 +533,14 @@ function IndexPageInner() {
       active = false;
     };
   }, [activeCardId, effectiveFace]);
+
+  useEffect(() => {
+    const previousFace = lastFaceRef.current;
+    if (previousFace === "back" && effectiveFace === "front") {
+      setFrontViewToken((prev) => prev + 1);
+    }
+    lastFaceRef.current = effectiveFace;
+  }, [effectiveFace]);
 
   const exportMenuItems = useMemo(() => {
     if (!effectiveFace) return [];
@@ -821,7 +833,10 @@ function IndexPageInner() {
                   >
                     <ToolsToolbar />
                     {selectedTemplate ? (
-                      <CardPreviewContainer previewRef={previewRef} />
+                      <CardPreviewContainer
+                        previewRef={previewRef}
+                        preferredBackId={lastRememberedBackId}
+                      />
                     ) : null}
                   </div>
                 </section>
@@ -847,7 +862,12 @@ function IndexPageInner() {
                   </div>
                   <div className={styles.inspectorBody}>
                     <PreviewCanvasProvider previewRef={previewRef}>
-                      <CardInspector />
+                <CardInspector
+                  activeFrontId={activeFrontId}
+                  autoOpenBackId={lastRememberedBackId}
+                  frontViewToken={frontViewToken}
+                  onRememberBackId={setLastRememberedBackId}
+                />
                     </PreviewCanvasProvider>
                   </div>
                   <EditorActionsToolbar
