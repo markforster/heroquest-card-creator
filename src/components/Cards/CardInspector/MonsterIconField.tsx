@@ -763,6 +763,7 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
             setValue("iconAssetName", asset.name, { shouldDirty: true, shouldTouch: true });
             setLastCleared(null);
           }}
+          preferredKindOrder={["icon"]}
         />
     </div>
   );

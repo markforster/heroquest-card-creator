@@ -3304,6 +3304,40 @@
   gap: var(--space-6);
 }
 
+.assetsGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+.assetsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.assetsGroupTitle {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hq-accent);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: var(--space-3) 0;
+  background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+}
+
+.assetsGroupGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-6);
+  padding-top: var(--space-6);
+}
+
 .selectAllLabel {
   white-space: nowrap;
 }
@@ -3368,7 +3402,7 @@ button.assetsKindBadge:disabled {
   position: absolute;
   top: 10px;
   left: 10px;
-  z-index: 2;
+  z-index: 1;
   pointer-events: auto;
 }
 

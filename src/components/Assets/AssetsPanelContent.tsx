@@ -20,6 +20,8 @@ import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvi
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
+import type { AssetKindGroupId } from "@/lib/assets-grouping";
+import { groupAssetsByKind } from "@/lib/assets-grouping";
 import type { AssetRecord } from "@/lib/assets-db";
 import {
   addAsset,
@@ -44,6 +46,7 @@ type AssetsPanelProps = OpenCloseProps & {
   onSelect?: (asset: AssetRecord) => void;
   onSelectionChange?: (assets: AssetRecord[]) => void;
   refreshKey?: number;
+  preferredKindOrder?: AssetKindGroupId[];
 };
 
 type ConfirmState = {
@@ -116,6 +119,7 @@ export default function AssetsPanelContent({
   onSelect,
   onSelectionChange,
   refreshKey,
+  preferredKindOrder,
 }: AssetsPanelProps) {
   const { t } = useI18n();
   const [assets, setAssets] = useState<AssetRecord[]>([]);
@@ -375,6 +379,10 @@ export default function AssetsPanelContent({
     }
     return asset.assetKindStatus !== "classified";
   });
+
+  const groupedAssets = groupAssetsByKind(filteredAssets, preferredKindOrder).filter(
+    (group) => group.assets.length > 0,
+  );
 
   const totalCount = assets.length;
   const artworkCount = assets.filter(
@@ -936,113 +944,125 @@ export default function AssetsPanelContent({
         {filteredAssets.length === 0 ? (
           <div className={styles.assetsEmptyState}>{t("empty.noAssets")}</div>
         ) : (
-          <div className={styles.assetsGrid}>
-            {filteredAssets.map((asset) => {
-              const isSelected = selectedIds.has(asset.id);
-              const kindStatus = asset.assetKindStatus ?? "unclassified";
-              const kindLabel =
-                kindStatus === "classifying"
-                  ? t("label.assetKindClassifying")
-                  : kindStatus === "classified"
-                    ? asset.assetKind === "icon"
-                      ? t("label.assetKindIcon")
-                      : t("label.assetKindArtwork")
-                    : t("label.assetKindUnknown");
-              return (
-                <button
-                  key={asset.id}
-                  type="button"
-                  className={`${styles.assetsItem} ${
-                    isSelected ? styles.assetsItemSelected : ""
-                  }`}
-                  title={asset.name}
-                  onClick={(event) => {
-                    setSelectedIds((prev) => {
-                      if (mode === "select") {
-                        setSelectedOrder([asset.id]);
-                        return new Set([asset.id]);
-                      }
-                      const hasModifier = event.metaKey || event.ctrlKey;
-                      if (hasModifier) {
-                        const next = new Set(prev);
-                        if (next.has(asset.id)) {
-                          next.delete(asset.id);
-                          setSelectedOrder((order) => order.filter((id) => id !== asset.id));
-                        } else {
-                          next.add(asset.id);
-                          setSelectedOrder((order) => [asset.id, ...order.filter((id) => id !== asset.id)]);
-                        }
-                        return next;
-                      }
-                      if (prev.size === 1 && prev.has(asset.id)) {
-                        setSelectedOrder([]);
-                        return new Set();
-                      }
-                      setSelectedOrder([asset.id]);
-                      return new Set([asset.id]);
-                    });
-                  }}
-                  onDoubleClick={() => {
-                    if (mode !== "select" || !onSelect) return;
-                    onSelect(asset);
-                    onClose();
-                  }}
-                >
-                  <span
-                    className={`${styles.assetsKindBadge} ${styles.assetsKindBadgeOverlay} ${styles.assetsKindBadgeClickable} ${
+          <div className={styles.assetsGroups}>
+            {groupedAssets.map((group) => (
+              <section key={group.id} className={styles.assetsGroup}>
+                <h3 className={styles.assetsGroupTitle}>{t(group.labelKey)}</h3>
+                <div className={styles.assetsGroupGrid}>
+                  {group.assets.map((asset) => {
+                    const isSelected = selectedIds.has(asset.id);
+                    const kindStatus = asset.assetKindStatus ?? "unclassified";
+                    const kindLabel =
                       kindStatus === "classifying"
-                        ? styles.assetsKindBadgeClassifying
+                        ? t("label.assetKindClassifying")
                         : kindStatus === "classified"
                           ? asset.assetKind === "icon"
-                            ? styles.assetsKindBadgeIcon
-                            : styles.assetsKindBadgeArtwork
-                          : styles.assetsKindBadgeUnknown
-                    }`}
-                    role="button"
-                    tabIndex={0}
-                    aria-haspopup="dialog"
-                    aria-expanded={activeKindPopoverId === asset.id}
-                    onMouseDown={(event) => {
-                      event.stopPropagation();
-                    }}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      event.preventDefault();
-                      if (kindStatus === "classifying") return;
-                      kindAnchorRef.current = event.currentTarget;
-                      setActiveKindPopoverId(asset.id);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key !== "Enter" && event.key !== " ") return;
-                      event.preventDefault();
-                      if (kindStatus === "classifying") return;
-                      kindAnchorRef.current = event.currentTarget;
-                      setActiveKindPopoverId(asset.id);
-                    }}
-                  >
-                    {kindLabel}
-                  </span>
-                  <div className={styles.assetsThumbPlaceholder}>
-                    {thumbUrls[asset.id] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={thumbUrls[asset.id]}
-                        alt={asset.name}
-                        className={styles.assetsThumbImage}
-                      />
-                    ) : null}
-                  </div>
-                  <div className={styles.assetsItemMeta}>
-                    <div className={styles.assetsItemName} title={asset.name}>
-                      {asset.name}
-                    </div>
-                    <div className={styles.assetsItemDetails}>
-                      {asset.width}×{asset.height} · {asset.mimeType}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+                            ? t("label.assetKindIcon")
+                            : t("label.assetKindArtwork")
+                          : t("label.assetKindUnknown");
+                    return (
+                      <button
+                        key={asset.id}
+                        type="button"
+                        className={`${styles.assetsItem} ${
+                          isSelected ? styles.assetsItemSelected : ""
+                        }`}
+                        title={asset.name}
+                        onClick={(event) => {
+                          setSelectedIds((prev) => {
+                            if (mode === "select") {
+                              setSelectedOrder([asset.id]);
+                              return new Set([asset.id]);
+                            }
+                            const hasModifier = event.metaKey || event.ctrlKey;
+                            if (hasModifier) {
+                              const next = new Set(prev);
+                              if (next.has(asset.id)) {
+                                next.delete(asset.id);
+                                setSelectedOrder((order) =>
+                                  order.filter((id) => id !== asset.id),
+                                );
+                              } else {
+                                next.add(asset.id);
+                                setSelectedOrder((order) => [
+                                  asset.id,
+                                  ...order.filter((id) => id !== asset.id),
+                                ]);
+                              }
+                              return next;
+                            }
+                            if (prev.size === 1 && prev.has(asset.id)) {
+                              setSelectedOrder([]);
+                              return new Set();
+                            }
+                            setSelectedOrder([asset.id]);
+                            return new Set([asset.id]);
+                          });
+                        }}
+                        onDoubleClick={() => {
+                          if (mode !== "select" || !onSelect) return;
+                          onSelect(asset);
+                          onClose();
+                        }}
+                      >
+                        <span
+                          className={`${styles.assetsKindBadge} ${styles.assetsKindBadgeOverlay} ${styles.assetsKindBadgeClickable} ${
+                            kindStatus === "classifying"
+                              ? styles.assetsKindBadgeClassifying
+                              : kindStatus === "classified"
+                                ? asset.assetKind === "icon"
+                                  ? styles.assetsKindBadgeIcon
+                                  : styles.assetsKindBadgeArtwork
+                                : styles.assetsKindBadgeUnknown
+                          }`}
+                          role="button"
+                          tabIndex={0}
+                          aria-haspopup="dialog"
+                          aria-expanded={activeKindPopoverId === asset.id}
+                          onMouseDown={(event) => {
+                            event.stopPropagation();
+                          }}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            event.preventDefault();
+                            if (kindStatus === "classifying") return;
+                            kindAnchorRef.current = event.currentTarget;
+                            setActiveKindPopoverId(asset.id);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key !== "Enter" && event.key !== " ") return;
+                            event.preventDefault();
+                            if (kindStatus === "classifying") return;
+                            kindAnchorRef.current = event.currentTarget;
+                            setActiveKindPopoverId(asset.id);
+                          }}
+                        >
+                          {kindLabel}
+                        </span>
+                        <div className={styles.assetsThumbPlaceholder}>
+                          {thumbUrls[asset.id] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={thumbUrls[asset.id]}
+                              alt={asset.name}
+                              className={styles.assetsThumbImage}
+                            />
+                          ) : null}
+                        </div>
+                        <div className={styles.assetsItemMeta}>
+                          <div className={styles.assetsItemName} title={asset.name}>
+                            {asset.name}
+                          </div>
+                          <div className={styles.assetsItemDetails}>
+                            {asset.width}×{asset.height} · {asset.mimeType}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
           </div>
         )}
       </div>

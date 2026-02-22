@@ -1,5 +1,5 @@
 (async () => {
-  const db = await new Promise((resolve, reject) => {
+  const db = await new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open("hqcc");
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -8,9 +8,10 @@
   const tx = db.transaction("assets", "readwrite");
   const store = tx.objectStore("assets");
 
-  const records = await new Promise((resolve, reject) => {
+  type AssetRecord = Record<string, unknown>;
+  const records = await new Promise<AssetRecord[]>((resolve, reject) => {
     const req = store.getAll();
-    req.onsuccess = () => resolve(req.result || []);
+    req.onsuccess = () => resolve((req.result as AssetRecord[]) || []);
     req.onerror = () => reject(req.error);
   });
 

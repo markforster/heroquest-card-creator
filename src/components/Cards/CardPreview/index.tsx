@@ -329,7 +329,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
         getSvgElement() {
           return svgRef.current;
         },
-        async syncCopyrightContrast(options) {
+        async syncCopyrightContrast(options?: { width?: number; height?: number }) {
           await syncCopyrightContrast(options);
         },
         waitForBackgroundLoaded(timeoutMs = 3000) {

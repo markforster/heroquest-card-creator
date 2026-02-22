@@ -281,3 +281,40 @@ export async function updateAssetMeta(
     };
   });
 }
+
+export async function clearAssetClassification(): Promise<number> {
+  const db = await openHqccDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const records = (request.result as AssetRecord[]) ?? [];
+      records.forEach((record) => {
+        delete record.assetKind;
+        delete record.assetKindStatus;
+        delete record.assetKindSource;
+        delete record.assetKindConfidence;
+        delete record.assetKindUpdatedAt;
+        store.put(record as AssetRecord);
+      });
+    };
+
+    request.onerror = () => {
+      reject(request.error ?? new Error("Failed to load assets for classification reset"));
+    };
+
+    tx.oncomplete = () => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("hqcc-assets-updated"));
+      }
+      resolve((request.result as AssetRecord[] | undefined)?.length ?? 0);
+    };
+
+    tx.onerror = () => {
+      reject(tx.error ?? new Error("Failed to clear asset classification"));
+    };
+  });
+}

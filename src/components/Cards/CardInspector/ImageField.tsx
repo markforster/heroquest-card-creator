@@ -854,6 +854,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
         onClose={picker.close}
         mode="select"
         onSelect={handleSelect}
+        preferredKindOrder={["artwork"]}
       />
     </div>
   );

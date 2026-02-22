@@ -12,10 +12,13 @@ import d6Pips4Url from "@/assets/dice/d6_pips_4.svg?url";
 import d6Pips5Url from "@/assets/dice/d6_pips_5.svg?url";
 import d6Pips6Url from "@/assets/dice/d6_pips_6.svg?url";
 
+export type CombatFace = "skull" | "hero" | "monster" | "cd" | "ad" | "dd" | "md";
+export type D6Face = 1 | 2 | 3 | 4 | 5 | 6;
+
 export type InlineDiceToken = {
   kind: "dice";
   type: "combat" | "d6";
-  face: "skull" | "hero" | "monster" | "cd" | "ad" | "dd" | "md" | 1 | 2 | 3 | 4 | 5 | 6;
+  face: CombatFace | D6Face;
   color: string;
   faceColor: string;
   svgUrl: string;
@@ -49,7 +52,7 @@ const DICE_FACE_COLORS: Record<string, string> = {
   grey: "#ffffff",
 };
 
-const COMBAT_FACE_MAP: Record<string, InlineDiceToken["face"]> = {
+const COMBAT_FACE_MAP: Record<string, CombatFace> = {
   skull: "skull",
   hero: "hero",
   shield: "hero",
@@ -60,7 +63,7 @@ const COMBAT_FACE_MAP: Record<string, InlineDiceToken["face"]> = {
   md: "md",
 };
 
-const COMBAT_FACE_SHORT_MAP: Record<string, InlineDiceToken["face"]> = {
+const COMBAT_FACE_SHORT_MAP: Record<string, CombatFace> = {
   s: "skull",
   h: "hero",
   m: "monster",
@@ -82,7 +85,7 @@ const COLOR_SHORT_MAP: Record<string, string> = {
   gy: "grey",
 };
 
-const COMBAT_SVG_MAP: Record<InlineDiceToken["face"], string> = {
+const COMBAT_SVG_MAP: Record<CombatFace, string> = {
   skull: combatSkullUrl,
   hero: combatShieldUrl,
   monster: combatMonsterUrl,
@@ -92,7 +95,7 @@ const COMBAT_SVG_MAP: Record<InlineDiceToken["face"], string> = {
   md: combatMdUrl,
 };
 
-const D6_SVG_MAP: Record<number, string> = {
+const D6_SVG_MAP: Record<D6Face, string> = {
   1: d6Pips1Url,
   2: d6Pips2Url,
   3: d6Pips3Url,
@@ -141,7 +144,7 @@ export function parseDiceToken(raw: string): InlineDiceToken | null {
     face: faceNum as 1 | 2 | 3 | 4 | 5 | 6,
     color,
     faceColor,
-    svgUrl: D6_SVG_MAP[faceNum],
+    svgUrl: D6_SVG_MAP[faceNum as D6Face],
   };
 }
 
@@ -236,7 +239,7 @@ function parseShortD6Token(
     face: faceNum as 1 | 2 | 3 | 4 | 5 | 6,
     color,
     faceColor,
-    svgUrl: D6_SVG_MAP[faceNum],
+    svgUrl: D6_SVG_MAP[faceNum as D6Face],
   };
 }
 

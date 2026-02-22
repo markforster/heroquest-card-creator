@@ -12,6 +12,11 @@ declare module "*.ttf" {
   export default src;
 }
 
+declare module "*.svg?url" {
+  const src: string;
+  export default src;
+}
+
 // declare module "*.svg" {
 //   const content: any;
 //   export default content;

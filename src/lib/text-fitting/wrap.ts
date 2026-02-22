@@ -20,8 +20,10 @@ export type WrapToken =
       renderSize: number;
     };
 
-export function runsToTokens(runs: TextRun[]): WrapToken[] {
-  const tokens: WrapToken[] = [];
+type TextWrapToken = Extract<WrapToken, { kind: "text" }>;
+
+export function runsToTokens(runs: TextRun[]): TextWrapToken[] {
+  const tokens: TextWrapToken[] = [];
 
   runs.forEach((run) => {
     const parts = run.text.split(/(\s+)/);

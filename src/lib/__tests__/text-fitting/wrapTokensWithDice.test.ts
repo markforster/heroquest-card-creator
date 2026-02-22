@@ -7,11 +7,13 @@ describe("wrapTokens (dice)", () => {
       {
         kind: "dice" as const,
         width: 20,
+        renderSize: 20,
         dice: {
           kind: "dice" as const,
           type: "combat" as const,
           face: "skull" as const,
           color: "#ffffff",
+          faceColor: "#111111",
           svgUrl: "/fake.svg",
         },
       },

@@ -210,7 +210,10 @@ export function layoutCardText({
 
   const parseSingleLineGroup = (
     lineText: string,
-  ): { settings: LeaderGroupSettings; leaders: ReturnType<typeof parseLeaderLine>[] } | null => {
+  ): {
+    settings: LeaderGroupSettings;
+    leaders: NonNullable<ReturnType<typeof parseLeaderLine>>[];
+  } | null => {
     if (!isSingleLineGroup(lineText)) return null;
     const trimmed = lineText.trim();
     const inner = trimmed.slice(2, -2).trim();
@@ -235,7 +238,7 @@ export function layoutCardText({
 
     if (!remainder) return null;
 
-    const leaders: ReturnType<typeof parseLeaderLine>[] = [];
+    const leaders: NonNullable<ReturnType<typeof parseLeaderLine>>[] = [];
     let depth = 0;
     let segmentStart = -1;
     for (let i = 0; i < remainder.length; i += 1) {
@@ -570,8 +573,8 @@ export default function CardTextBlock({
 
   const measure = createTextMeasurer(fontSize, fontFamily);
   const letterSpacingPx = (letterSpacingEm ?? 0) * fontSize;
-  const measureWithSpacing = (text: string, token?: Extract<WrapToken, { kind: "text" }>) => {
-    const base = measure(text, token);
+  const measureWithSpacing = (text: string, _token?: Extract<WrapToken, { kind: "text" }>) => {
+    const base = measure(text);
     if (letterSpacingPx <= 0 || text.length <= 1) return base;
     return base + (text.length - 1) * letterSpacingPx;
   };
