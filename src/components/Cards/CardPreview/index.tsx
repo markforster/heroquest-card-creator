@@ -54,6 +54,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
     const backgroundWaitersRef = useRef<(() => void)[]>([]);
     const svgRef = useRef<SVGSVGElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
     useEffect(() => {
       setBackgroundLoaded(false);
@@ -95,14 +96,14 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           svgElement,
           width,
           height,
-          existingCanvas: canvasRef.current,
+          existingCanvas: sampleCanvasRef.current,
           removeDebugBounds: true,
         });
         if (!canvas) {
           setCopyrightTextColor(undefined);
           return;
         }
-        canvasRef.current = canvas;
+        sampleCanvasRef.current = canvas;
         const ctx = canvas.getContext("2d");
         if (!ctx) {
           setCopyrightTextColor(undefined);
@@ -123,7 +124,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
         }
         const imageData = ctx.getImageData(x, y, sampleWidth, sampleHeight);
         const luminance = computeAverageLuminance(imageData);
-        if (luminance < 0.45) {
+        if (luminance < 0.35) {
           setCopyrightTextColor("#f5efe1");
         } else {
           setCopyrightTextColor(undefined);
