@@ -2,6 +2,7 @@
 
 import { AlertTriangle, Combine, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
@@ -130,6 +131,11 @@ export default function StockpilePanelContent({
   const [missingAssetsPrompt, setMissingAssetsPrompt] = useState<MissingAssetsPrompt | null>(null);
   const { missingArtworkIds } = useMissingAssets();
   const [showMissingArtworkOnly, setShowMissingArtworkOnly] = useState(false);
+  const location = useLocation();
+  const didAutoApplyMissingArtworkRef = useRef(false);
+  const hasMissingArtworkParam = useMemo(() => {
+    return new URLSearchParams(location.search).has("missingartwork");
+  }, [location.search]);
   const {
     recentCards,
     filteredCards,
@@ -210,6 +216,14 @@ export default function StockpilePanelContent({
       setShowMissingArtworkOnly(false);
     }
   }, [missingArtworkIds]);
+
+  useEffect(() => {
+    if (!hasMissingArtworkParam) return;
+    if (didAutoApplyMissingArtworkRef.current) return;
+    if (missingArtworkIds.size === 0) return;
+    setShowMissingArtworkOnly(true);
+    didAutoApplyMissingArtworkRef.current = true;
+  }, [hasMissingArtworkParam, missingArtworkIds]);
 
   useEffect(() => {
     return () => {

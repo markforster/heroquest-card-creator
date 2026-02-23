@@ -1,16 +1,18 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { createPortal } from "react-dom";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent } from "react";
+import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
 import AssetsMainPanel from "@/components/Assets/AssetsMainPanel";
 import ModalShell from "@/components/common/ModalShell";
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
+import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
+import { generateId } from "@/lib";
+import { getNextAvailableFilename } from "@/lib/asset-filename";
 import type { AssetRecord } from "@/lib/assets-db";
 import {
   addAsset,
@@ -20,10 +22,9 @@ import {
   replaceAsset,
   updateAssetMeta,
 } from "@/lib/assets-db";
-import { getNextAvailableFilename } from "@/lib/asset-filename";
-import { generateId } from "@/lib";
 import { listCards } from "@/lib/cards-db";
-import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
+
+import type { ChangeEvent } from "react";
 
 type AssetUsage = {
   total: number;
@@ -94,7 +95,11 @@ function AssetsInspector({
     popoverRef: kindPopoverRef,
     offset: 8,
   });
-  useOutsideClick([kindPopoverRef, kindAnchorRef], () => setIsKindPopoverOpen(false), isKindPopoverOpen);
+  useOutsideClick(
+    [kindPopoverRef, kindAnchorRef],
+    () => setIsKindPopoverOpen(false),
+    isKindPopoverOpen,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -170,16 +175,12 @@ function AssetsInspector({
           const dateStamp = new Date().toISOString().slice(0, 10);
           const backupBase = `${asset.name} (backup ${dateStamp})`;
           const backupName = getNextAvailableFilename(existingNames, backupBase);
-          await addAsset(
-            generateId(),
-            existingBlob,
-            {
-              name: backupName,
-              mimeType: asset.mimeType,
-              width: asset.width,
-              height: asset.height,
-            },
-          );
+          await addAsset(generateId(), existingBlob, {
+            name: backupName,
+            mimeType: asset.mimeType,
+            width: asset.width,
+            height: asset.height,
+          });
         } else {
           window.alert(t("alert.replaceBackupFailed"));
         }
@@ -370,7 +371,9 @@ function AssetsInspector({
             className={styles.assetsInspectorPreviewInner}
             style={
               previewUrl
-                ? ({ ["--asset-preview-url" as const]: `url("${previewUrl}")` } as React.CSSProperties)
+                ? ({
+                    ["--asset-preview-url" as const]: `url("${previewUrl}")`,
+                  } as React.CSSProperties)
                 : undefined
             }
           >
@@ -378,9 +381,7 @@ function AssetsInspector({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={previewUrl} alt={asset.name} />
             ) : (
-              <div className={styles.assetsInspectorPreviewPlaceholder}>
-                {t("empty.noPreview")}
-              </div>
+              <div className={styles.assetsInspectorPreviewPlaceholder}>{t("empty.noPreview")}</div>
             )}
           </div>
         </div>
@@ -517,10 +518,7 @@ function AssetsInspector({
             <div className={styles.assetsInspectorReplaceWarning}>
               {t("confirm.replaceDifferentDimensionsBody")
                 .replace("{old}", `${asset.width}×${asset.height}`)
-                .replace(
-                  "{next}",
-                  `${pendingReplace?.width ?? 0}×${pendingReplace?.height ?? 0}`,
-                )}
+                .replace("{next}", `${pendingReplace?.width ?? 0}×${pendingReplace?.height ?? 0}`)}
             </div>
           ) : (
             <div className={styles.assetsInspectorReplaceInfo}>{t("confirm.replaceBody")}</div>

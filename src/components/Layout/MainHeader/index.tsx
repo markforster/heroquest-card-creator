@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
 import { useClickOutside } from "@/components/common/useClickOutside";
@@ -56,9 +57,11 @@ export default function MainHeader({
       <div className={`${styles.headerRight} d-flex align-items-center gap-2`}>
         {showMissingAssetsReminder ? (
           <div className={styles.missingAssetsHeaderToast} role="status">
-            {formatMessageWith("warning.missingArtworkDetectedHeader", {
-              count: missingAssetsCount,
-            })}
+            <Link className={styles.missingAssetsHeaderToastLink} to="/cards?missingartwork">
+              {formatMessageWith("warning.missingArtworkDetectedHeader", {
+                count: missingAssetsCount,
+              })}
+            </Link>
           </div>
         ) : null}
         <HeaderMenu

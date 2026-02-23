@@ -112,6 +112,6 @@ export const ENABLE_MISSING_ASSET_CHECKS = true;
  * Missing-asset scan timing controls. Keep periodic scans on, but skip initial
  * and delete-triggered scans to reduce load impact.
  */
-export const ENABLE_MISSING_ASSET_INITIAL_SCAN = false;
+export const ENABLE_MISSING_ASSET_INITIAL_SCAN = true;
 export const ENABLE_MISSING_ASSET_PERIODIC_SCAN = true;
 export const ENABLE_MISSING_ASSET_DELETE_SCAN = false;

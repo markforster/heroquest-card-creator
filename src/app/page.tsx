@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   HashRouter,
+  Link,
   Navigate,
   Route,
   Routes,
@@ -766,16 +767,18 @@ function IndexPageInner() {
                     role="status"
                     className="d-flex align-items-start gap-3"
                   >
-                    <div className={styles.missingAssetsBannerBody}>
-                      <div className={styles.missingAssetsBannerTitle}>
-                        {t("warning.missingArtworkDetectedTitle")}
+                    <Link className={styles.missingAssetsBannerLink} to="/cards?missingartwork">
+                      <div className={styles.missingAssetsBannerBody}>
+                        <div className={styles.missingAssetsBannerTitle}>
+                          {t("warning.missingArtworkDetectedTitle")}
+                        </div>
+                        <div>
+                          {formatMessageWith("warning.missingArtworkDetectedBody", {
+                            count: missingAssetsReport.length,
+                          })}
+                        </div>
                       </div>
-                      <div>
-                        {formatMessageWith("warning.missingArtworkDetectedBody", {
-                          count: missingAssetsReport.length,
-                        })}
-                      </div>
-                    </div>
+                    </Link>
                     <button
                       type="button"
                       className={`btn btn-outline-light btn-sm ${styles.missingAssetsBannerClose}`}
