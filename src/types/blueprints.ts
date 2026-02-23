@@ -46,6 +46,8 @@ export type BlueprintLayerBorder = BlueprintLayerBase & {
   mask?: StaticImageData;
   texture?: StaticImageData;
   blendMode?: "multiply" | "overlay" | "screen";
+  offsetX?: number;
+  offsetY?: number;
 };
 
 export type BlueprintLayer =
@@ -62,7 +64,8 @@ export type BlueprintLayerType =
   | "overlay"
   | "icon"
   | "stats-hero"
-  | "stats-monster";
+  | "stats-monster"
+  | "copyright";
 
 export type BlueprintGroup = {
   id: string;

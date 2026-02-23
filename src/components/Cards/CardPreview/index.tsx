@@ -1,12 +1,14 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import BlueprintRenderer from "@/components/BlueprintRenderer";
 import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getCopyrightBounds } from "@/data/blueprints";
+import { computeAverageLuminance } from "@/lib/color-contrast";
 import {
   resolveCardPreviewFileName,
 } from "@/lib/card-preview";
@@ -32,14 +34,27 @@ import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "./
 import type { CardPreviewHandle, CardPreviewProps } from "./types";
 
 const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
-  ({ templateId, templateName, backgroundSrc, cardData }, ref) => {
+  (
+    {
+      templateId,
+      templateName,
+      backgroundSrc,
+      cardData,
+      copyrightTextColor: copyrightTextColorProp,
+    },
+    ref,
+  ) => {
     const { t } = useI18n();
     const background = backgroundSrc ?? parchmentBackground;
     const [backgroundLoaded, setBackgroundLoaded] = useState(false);
+    const [copyrightTextColor, setCopyrightTextColor] = useState<string | undefined>(
+      copyrightTextColorProp,
+    );
     const backgroundLoadedRef = useRef(false);
     const backgroundWaitersRef = useRef<(() => void)[]>([]);
     const svgRef = useRef<SVGSVGElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
     useEffect(() => {
       setBackgroundLoaded(false);
@@ -63,6 +78,72 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
         img.removeEventListener("load", handleLoad);
       };
     }, [background.src]);
+
+    const syncCopyrightContrast = useMemo(() => {
+      return async (options?: { width?: number; height?: number }) => {
+        if (!templateId || !cardData) {
+          setCopyrightTextColor(undefined);
+          return;
+        }
+        const width = options?.width ?? 300;
+        const height = options?.height ?? 420;
+        const svgElement = svgRef.current;
+        if (!svgElement) {
+          setCopyrightTextColor(undefined);
+          return;
+        }
+        const canvas = await renderSvgToCanvas({
+          svgElement,
+          width,
+          height,
+          existingCanvas: sampleCanvasRef.current,
+          removeDebugBounds: true,
+        });
+        if (!canvas) {
+          setCopyrightTextColor(undefined);
+          return;
+        }
+        sampleCanvasRef.current = canvas;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          setCopyrightTextColor(undefined);
+          return;
+        }
+        const bounds = getCopyrightBounds(templateId);
+        const scaleX = width / CARD_WIDTH;
+        const scaleY = height / CARD_HEIGHT;
+        const x = Math.max(0, Math.floor(bounds.x * scaleX));
+        const y = Math.max(0, Math.floor(bounds.y * scaleY));
+        const w = Math.max(1, Math.floor(bounds.width * scaleX));
+        const h = Math.max(1, Math.floor(bounds.height * scaleY));
+        const sampleWidth = Math.min(canvas.width - x, w);
+        const sampleHeight = Math.min(canvas.height - y, h);
+        if (sampleWidth <= 0 || sampleHeight <= 0) {
+          setCopyrightTextColor(undefined);
+          return;
+        }
+        const imageData = ctx.getImageData(x, y, sampleWidth, sampleHeight);
+        const luminance = computeAverageLuminance(imageData);
+        if (luminance < 0.35) {
+          setCopyrightTextColor("#f5efe1");
+        } else {
+          setCopyrightTextColor(undefined);
+        }
+      };
+    }, [cardData, templateId]);
+
+    useEffect(() => {
+      if (typeof copyrightTextColorProp === "string") {
+        setCopyrightTextColor(copyrightTextColorProp);
+      } else if (copyrightTextColorProp === undefined) {
+        setCopyrightTextColor(undefined);
+      }
+    }, [copyrightTextColorProp]);
+
+    useEffect(() => {
+      if (!backgroundLoaded) return;
+      void syncCopyrightContrast();
+    }, [backgroundLoaded, syncCopyrightContrast]);
 
     useImperativeHandle(
       ref,
@@ -98,6 +179,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             });
 
             await this.waitForBackgroundLoaded?.();
+            await this.syncCopyrightContrast?.();
 
             const assetIds = collectCardAssetIds(cardData);
             const { cache, missing } = await buildAssetCache(assetIds);
@@ -199,6 +281,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           if (!svgElement) return null;
 
           await this.waitForBackgroundLoaded?.();
+          await this.syncCopyrightContrast?.();
 
           const width = options?.width ?? CARD_WIDTH;
           const height = options?.height ?? CARD_HEIGHT;
@@ -246,6 +329,9 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
         getSvgElement() {
           return svgRef.current;
         },
+        async syncCopyrightContrast(options?: { width?: number; height?: number }) {
+          await syncCopyrightContrast(options);
+        },
         waitForBackgroundLoaded(timeoutMs = 3000) {
           if (backgroundLoadedRef.current) return Promise.resolve();
           return new Promise((resolve) => {
@@ -261,7 +347,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           });
         },
       }),
-      [cardData, templateName],
+      [cardData, templateName, syncCopyrightContrast],
     );
 
     return (
@@ -300,6 +386,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                 background={background}
                 backgroundLoaded={backgroundLoaded}
                 cardData={cardData}
+                copyrightTextColor={copyrightTextColor}
               />
             </g>
             <rect

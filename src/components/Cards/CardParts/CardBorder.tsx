@@ -12,6 +12,8 @@ type CardBorderProps = {
   color?: string;
   width?: number;
   height?: number;
+  offsetX?: number;
+  offsetY?: number;
 };
 
 export const DEFAULT_BORDER_COLOR = "#310101";
@@ -26,6 +28,8 @@ export default function CardBorder({
   color,
   width = 750,
   height = 1050,
+  offsetX = 0,
+  offsetY = 0,
 }: CardBorderProps) {
   const maskId = normalizeMaskId(useId());
   const { color: resolvedColor, alpha: resolvedAlpha } = splitHexAlpha(
@@ -48,8 +52,8 @@ export default function CardBorder({
           <image
             href={mask.src}
             data-template-asset="border-mask"
-            x={0}
-            y={0}
+            x={offsetX}
+            y={offsetY}
             width={width}
             height={height}
             preserveAspectRatio="xMidYMid meet"

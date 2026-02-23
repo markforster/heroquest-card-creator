@@ -2,10 +2,34 @@ import type { BodyTextStyle, CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { StatValue } from "@/types/stats";
 import type { TemplateId } from "@/types/templates";
+import { computeContainScale, getImageLayerBounds } from "@/lib/image-scale";
+
+function normalizeImageScale(
+  record: CardRecord & { templateId: TemplateId },
+): { imageScale?: number; imageScaleMode?: "absolute" | "relative" } {
+  const { imageScale, imageScaleMode } = record;
+  if (imageScaleMode) {
+    return { imageScale, imageScaleMode };
+  }
+  if (imageScale == null) {
+    return { imageScale, imageScaleMode: "relative" };
+  }
+  const bounds = getImageLayerBounds(record.templateId, "imageAssetId");
+  const containScale = computeContainScale(
+    bounds,
+    record.imageOriginalWidth,
+    record.imageOriginalHeight,
+  );
+  if (!containScale) {
+    return { imageScale, imageScaleMode: "relative" };
+  }
+  return { imageScale: imageScale / containScale, imageScaleMode: "relative" };
+}
 
 export function cardRecordToCardData<T extends TemplateId>(
   record: CardRecord & { templateId: T },
 ): CardDataByTemplate[T] {
+  const normalizedScale = normalizeImageScale(record as CardRecord & { templateId: TemplateId });
   const base = {
     title: record.title,
     showTitle: record.showTitle ?? true,
@@ -15,9 +39,12 @@ export function cardRecordToCardData<T extends TemplateId>(
     bodyTextStyle: record.bodyTextStyle,
     face: record.face,
     description: record.description,
+    copyright: record.copyright,
+    showCopyright: record.showCopyright,
     imageAssetId: record.imageAssetId,
     imageAssetName: record.imageAssetName,
-    imageScale: record.imageScale,
+    imageScale: normalizedScale.imageScale,
+    imageScaleMode: normalizedScale.imageScaleMode,
     imageOffsetX: record.imageOffsetX,
     imageOffsetY: record.imageOffsetY,
     imageRotation: record.imageRotation,
@@ -102,9 +129,12 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     bodyTextStyle: (data as { bodyTextStyle?: BodyTextStyle }).bodyTextStyle,
     face,
     description: data.description,
+    copyright: data.copyright,
+    showCopyright: data.showCopyright,
     imageAssetId: data.imageAssetId,
     imageAssetName: data.imageAssetName,
     imageScale: data.imageScale,
+    imageScaleMode: data.imageScaleMode,
     imageOffsetX: data.imageOffsetX,
     imageOffsetY: data.imageOffsetY,
     imageRotation: data.imageRotation,

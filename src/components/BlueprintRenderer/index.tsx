@@ -14,11 +14,16 @@ import MonsterStatsBlock, {
 } from "@/components/Cards/CardParts/MonsterStatsBlock";
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import Layer from "@/components/Cards/CardPreview/Layer";
+import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
+import { cardTemplatesById } from "@/data/card-templates";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { useI18n } from "@/i18n/I18nProvider";
+import { computeContainScale } from "@/lib/image-scale";
 import type { Blueprint, BlueprintBounds, BlueprintGroup, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
+import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
 import { AlertTriangle } from "lucide-react";
@@ -30,6 +35,7 @@ type BlueprintRendererProps = {
   background?: StaticImageData;
   backgroundLoaded?: boolean;
   cardData?: CardDataByTemplate[TemplateId];
+  copyrightTextColor?: string;
 };
 
 const DEFAULT_CANVAS = { width: 750, height: 1050 };
@@ -175,6 +181,8 @@ function renderBorderLayer({
   const borderMask = "mask" in layer ? layer.mask : undefined;
   const borderTexture = "texture" in layer ? layer.texture : undefined;
   const blendMode = "blendMode" in layer ? layer.blendMode : undefined;
+  const offsetX = "offsetX" in layer && typeof layer.offsetX === "number" ? layer.offsetX : 0;
+  const offsetY = "offsetY" in layer && typeof layer.offsetY === "number" ? layer.offsetY : 0;
 
   if (borderMask && borderTexture) {
     return (
@@ -187,6 +195,8 @@ function renderBorderLayer({
         width={bounds.width}
         height={bounds.height}
         blendMode={blendMode}
+        offsetX={offsetX}
+        offsetY={offsetY}
       />
     );
   }
@@ -201,6 +211,8 @@ function renderBorderLayer({
       color={borderColor}
       width={bounds.width}
       height={bounds.height}
+      offsetX={offsetX}
+      offsetY={offsetY}
     />
   );
 }
@@ -236,6 +248,8 @@ function ImageLayer({
   }
 
   const scale = (cardData as { imageScale?: number }).imageScale ?? 1;
+  const scaleMode =
+    (cardData as { imageScaleMode?: "absolute" | "relative" }).imageScaleMode ?? "relative";
   const offsetX = (cardData as { imageOffsetX?: number }).imageOffsetX ?? 0;
   const offsetY = (cardData as { imageOffsetY?: number }).imageOffsetY ?? 0;
   const rotation = (cardData as { imageRotation?: number }).imageRotation ?? 0;
@@ -247,8 +261,10 @@ function ImageLayer({
   const baseHeight =
     (cardData as { imageOriginalHeight?: number }).imageOriginalHeight ?? bounds.height;
 
-  const scaledWidth = baseWidth * scale;
-  const scaledHeight = baseHeight * scale;
+  const fitScale = computeContainScale(bounds, baseWidth, baseHeight);
+  const effectiveScale = scaleMode === "relative" ? fitScale * scale : scale;
+  const scaledWidth = baseWidth * effectiveScale;
+  const scaledHeight = baseHeight * effectiveScale;
 
   const x = bounds.x + (bounds.width - scaledWidth) / 2 + offsetX + layerOffsetX;
   const y = bounds.y + (bounds.height - scaledHeight) / 2 + offsetY + layerOffsetY;
@@ -267,7 +283,7 @@ function ImageLayer({
         width={scaledWidth}
         height={scaledHeight}
         transform={transform}
-        preserveAspectRatio="xMidYMid slice"
+        preserveAspectRatio="xMidYMid meet"
       />
     </Layer>
   );
@@ -277,10 +293,12 @@ function TextLayer({
   blueprint,
   layer,
   cardData,
+  showTextBounds = false,
 }: {
   blueprint: Blueprint;
   layer: BlueprintLayer;
   cardData?: CardDataByTemplate[TemplateId];
+  showTextBounds?: boolean;
 }) {
   if (layer.type !== "text") return null;
   if (!layer.bind?.textKey) return null;
@@ -684,6 +702,7 @@ function TextLayer({
                 fill={fill}
                 letterSpacingEm={letterSpacingEm}
                 align={align}
+                debug={showTextBounds}
               />
             </g>
           );
@@ -713,6 +732,7 @@ function TextLayer({
         fill={fill}
         letterSpacingEm={letterSpacingEm}
         align={align}
+        debug={showTextBounds}
       />
     </Layer>
   );
@@ -866,6 +886,98 @@ function TitleLayer({
   );
 }
 
+function CopyrightLayer({
+  blueprint,
+  layer,
+  cardData,
+  copyrightTextColor,
+}: {
+  blueprint: Blueprint;
+  layer: BlueprintLayer;
+  cardData?: CardDataByTemplate[TemplateId];
+  copyrightTextColor?: string;
+}) {
+  if (layer.type !== "copyright") return null;
+  if (!cardData) return null;
+
+  const { defaultCopyright } = useCopyrightSettings();
+  const { showTextBounds } = useDebugVisuals();
+  const template = cardTemplatesById[blueprint.templateId];
+  const effectiveFace = template
+    ? ((cardData as { face?: CardFace }).face ?? template.defaultFace)
+    : (cardData as { face?: CardFace }).face;
+  if (effectiveFace !== "front") return null;
+  const showCopyright =
+    typeof (cardData as { showCopyright?: boolean }).showCopyright === "boolean"
+      ? (cardData as { showCopyright?: boolean }).showCopyright
+      : undefined;
+  if (showCopyright === false) return null;
+
+  const textKey = layer.bind?.textKey;
+  const overrideValue =
+    textKey && cardData
+      ? ((cardData as Record<string, unknown>)[textKey] as string | null | undefined)
+      : undefined;
+  const normalizedOverride = typeof overrideValue === "string" ? overrideValue.trim() : "";
+  const normalizedDefault = defaultCopyright.trim();
+
+  const resolvedText =
+    normalizedOverride.length > 0
+      ? normalizedOverride
+      : normalizedDefault.length > 0
+        ? normalizedDefault
+        : "";
+  if (!resolvedText) return null;
+
+  const bounds = getLayerBounds(blueprint, layer);
+  const fontSize = typeof layer.props?.fontSize === "number" ? layer.props.fontSize : undefined;
+  const lineHeight =
+    typeof layer.props?.lineHeight === "number" ? layer.props.lineHeight : undefined;
+  const fontWeight =
+    typeof layer.props?.fontWeight === "number" || typeof layer.props?.fontWeight === "string"
+      ? layer.props.fontWeight
+      : undefined;
+  const fontFamily =
+    typeof layer.props?.fontFamily === "string" ? layer.props.fontFamily : undefined;
+  const fill = copyrightTextColor ?? (typeof layer.props?.fill === "string" ? layer.props.fill : undefined);
+  const letterSpacingEm =
+    typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;
+  const align =
+    layer.props?.align === "left" ||
+    layer.props?.align === "center" ||
+    layer.props?.align === "right"
+      ? layer.props.align
+      : undefined;
+
+  return (
+    <Layer key={layer.id}>
+      {showTextBounds ? (
+        <rect
+          x={bounds.x}
+          y={bounds.y}
+          width={bounds.width}
+          height={bounds.height}
+          fill="transparent"
+          stroke="#00e5ff"
+          strokeWidth={2}
+          data-debug-bounds="true"
+        />
+      ) : null}
+      <CardTextBlock
+        text={resolvedText}
+        bounds={bounds}
+        fontSize={fontSize}
+        lineHeight={lineHeight}
+        fontWeight={fontWeight}
+        fontFamily={fontFamily}
+        fill={fill}
+        letterSpacingEm={letterSpacingEm}
+        align={align}
+      />
+    </Layer>
+  );
+}
+
 function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | undefined {
   if (!cardData) return undefined;
   const data = cardData as {
@@ -929,10 +1041,12 @@ function buildGroupItems({
   group,
   cardData,
   blueprint,
+  showTextBounds = false,
 }: {
   group: BlueprintGroup;
   cardData?: CardDataByTemplate[TemplateId];
   blueprint: Blueprint;
+  showTextBounds?: boolean;
 }): GroupItem[] {
   const items: GroupItem[] = [];
 
@@ -993,6 +1107,7 @@ function buildGroupItems({
               fill={fill}
               letterSpacingEm={letterSpacingEm}
               align={align}
+              debug={showTextBounds}
             />
           </Layer>
         ),
@@ -1168,9 +1283,11 @@ function GroupIconLayer({
 function renderGroups({
   blueprint,
   cardData,
+  showTextBounds = false,
 }: {
   blueprint: Blueprint;
   cardData?: CardDataByTemplate[TemplateId];
+  showTextBounds?: boolean;
 }) {
   if (!blueprint.groups?.length) return null;
 
@@ -1179,7 +1296,7 @@ function renderGroups({
       return null;
     }
 
-    const items = buildGroupItems({ group, cardData, blueprint });
+    const items = buildGroupItems({ group, cardData, blueprint, showTextBounds });
     let cursor = group.origin.y;
 
     return items.map((item) => {
@@ -1195,6 +1312,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
   if (!templateId) return null;
 
   const blueprint = blueprintsByTemplateId[templateId];
+  const { showTextBounds } = useDebugVisuals();
   if (!blueprint) {
     return (
       <Layer>
@@ -1263,6 +1381,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
               blueprint={blueprint}
               layer={layer}
               cardData={props.cardData}
+              showTextBounds={showTextBounds}
             />
           );
         }
@@ -1277,9 +1396,20 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
             />
           );
         }
+        if (layer.type === "copyright") {
+          return (
+            <CopyrightLayer
+              key={layer.id}
+              blueprint={blueprint}
+              layer={layer}
+              cardData={props.cardData}
+              copyrightTextColor={props.copyrightTextColor}
+            />
+          );
+        }
         return null;
       })}
-      {renderGroups({ blueprint, cardData: props.cardData })}
+      {renderGroups({ blueprint, cardData: props.cardData, showTextBounds })}
     </>
   );
 }

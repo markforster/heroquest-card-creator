@@ -54,8 +54,8 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             </li>
             <li>
               Upload artwork into a shared asset library and reuse it across multiple cards. When
-              you pick an image, the tool automatically scales it to fill the card window, and you
-              can fine-tune the framing.
+              you pick an image, the tool automatically scales it to fit within the card window,
+              and you can fine-tune the framing.
             </li>
             <li>
               Position card art with pixel-like precision using sliders and small step buttons that

@@ -29,6 +29,8 @@ function mimeForExtension(ext) {
   switch (ext.toLowerCase()) {
     case ".png":
       return "image/png";
+    case ".svg":
+      return "image/svg+xml";
     case ".jpg":
     case ".jpeg":
       return "image/jpeg";
@@ -107,12 +109,13 @@ function main() {
   const imagesDirs = [
     path.join(rootDir, "src", "assets", "card-backgrounds"),
     path.join(rootDir, "src", "assets", "card-parts"),
+    path.join(rootDir, "src", "assets", "dice"),
   ];
   const fontsDir = path.join(rootDir, "public", "fonts");
 
   const imageFiles = imagesDirs.flatMap((dir) => readDirFilesRecursive(dir)).filter((file) => {
     const ext = path.extname(file).toLowerCase();
-    return ext === ".png" || ext === ".jpg" || ext === ".jpeg" || ext === ".webp";
+    return ext === ".png" || ext === ".jpg" || ext === ".jpeg" || ext === ".webp" || ext === ".svg";
   });
 
   const fontFiles = readDirFilesRecursive(fontsDir).filter((file) => {

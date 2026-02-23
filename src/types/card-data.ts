@@ -13,6 +13,7 @@ export interface BaseCardFields {
   imageAssetId?: string;
   imageAssetName?: string;
   imageScale?: number;
+  imageScaleMode?: "absolute" | "relative";
   imageOffsetX?: number;
   imageOffsetY?: number;
   imageRotation?: number;
@@ -20,6 +21,8 @@ export interface BaseCardFields {
   imageOriginalHeight?: number;
   description?: string;
   borderColor?: string;
+  copyright?: string;
+  showCopyright?: boolean;
 }
 
 export interface HeroCardData extends BaseCardFields {

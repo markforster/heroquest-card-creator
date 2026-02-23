@@ -1,6 +1,7 @@
 "use client";
 
 import AssetsPanelContent from "@/components/Assets/AssetsPanelContent";
+import type { AssetKindGroupId } from "@/lib/assets-grouping";
 import type { AssetRecord } from "@/lib/assets-db";
 
 type AssetsMainPanelMode = "manage" | "select";
@@ -11,6 +12,7 @@ type AssetsMainPanelProps = {
   onClose?: () => void;
   onSelectionChange?: (assets: AssetRecord[]) => void;
   refreshKey?: number;
+  preferredKindOrder?: AssetKindGroupId[];
 };
 
 export default function AssetsMainPanel({
@@ -19,6 +21,7 @@ export default function AssetsMainPanel({
   onClose,
   onSelectionChange,
   refreshKey,
+  preferredKindOrder,
 }: AssetsMainPanelProps) {
   return (
     <AssetsPanelContent
@@ -28,6 +31,7 @@ export default function AssetsMainPanel({
       onSelect={onSelect}
       onSelectionChange={onSelectionChange}
       refreshKey={refreshKey}
+      preferredKindOrder={preferredKindOrder}
     />
   );
 }

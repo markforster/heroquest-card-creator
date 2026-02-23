@@ -26,10 +26,13 @@ export interface CardRecord {
   bodyTextStyle?: BodyTextStyle;
   face?: CardFace;
   description?: string;
+  copyright?: string;
+  showCopyright?: boolean;
 
   imageAssetId?: string;
   imageAssetName?: string;
   imageScale?: number;
+  imageScaleMode?: "absolute" | "relative";
   imageOffsetX?: number;
   imageOffsetY?: number;
   imageRotation?: number;

@@ -1,0 +1,1 @@
+export const EMPHASIZED_LABEL_WEIGHT = 700;

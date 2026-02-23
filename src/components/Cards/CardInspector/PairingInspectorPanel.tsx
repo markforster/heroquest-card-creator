@@ -27,7 +27,19 @@ import CollapsibleGroup from "./CollapsibleGroup";
 
 const FALLBACK_TITLE = "Untitled card";
 
-export default function PairingInspectorPanel() {
+type PairingInspectorPanelProps = {
+  activeFrontId?: string | null;
+  autoOpenBackId?: string | null;
+  frontViewToken?: number;
+  onRememberBackId?: (backId: string) => void;
+};
+
+export default function PairingInspectorPanel({
+  activeFrontId,
+  autoOpenBackId,
+  frontViewToken,
+  onRememberBackId,
+}: PairingInspectorPanelProps) {
   const { t } = useI18n();
   const formatMessageWith = useMemo(
     () => (key: string, vars: Record<string, string | number>) => formatMessage(t(key as never), vars),
@@ -266,7 +278,7 @@ export default function PairingInspectorPanel() {
   }, [cardsById, effectiveFace, pairedBacks]);
 
   const hasPairedBacks = pairedBacks.length > 0;
-  const activeFrontId = activeCardId ?? null;
+  const selectedFrontId = effectiveFace === "back" ? activeFrontId ?? null : activeCardId ?? null;
 
   if (!template) {
     return null;
@@ -443,7 +455,7 @@ export default function PairingInspectorPanel() {
                   ? URL.createObjectURL(card.thumbnailBlob)
                   : null;
               const templateThumb = cardTemplatesById[card.templateId]?.thumbnail;
-              const isSelected = activeFrontId === card.id;
+              const isSelected = selectedFrontId === card.id;
               const isLoaded = Boolean(loadedThumbs[card.id]);
               return (
                 <button
@@ -491,7 +503,10 @@ export default function PairingInspectorPanel() {
           </div>
         ) : null}
         {effectiveFace === "front" ? (
-          <div className={styles.pairingPanelGroups}>
+          <div
+            key={`pairing-groups-${frontViewToken ?? 0}`}
+            className={styles.pairingPanelGroups}
+          >
             {pairedBacks.map((backCard) => {
               const backThumbUrl =
                 typeof window !== "undefined" && backCard.thumbnailBlob
@@ -514,7 +529,7 @@ export default function PairingInspectorPanel() {
                   headerClassName={`${styles.pairingPanelGroupHeader} ${styles.uRowLg}`}
                   headerButtonClassName={`${styles.pairingPanelGroupHeaderButton} ${styles.uRowLg}`}
                   bodyClassName={styles.pairingPanelGroupBody}
-                  defaultOpen={false}
+                  defaultOpen={autoOpenBackId === backCard.id}
                   headerContent={
                     <>
                       <button
@@ -596,7 +611,7 @@ export default function PairingInspectorPanel() {
                           : null;
                       const frontTemplateThumb =
                         cardTemplatesById[frontCard.templateId]?.thumbnail;
-                      const isSelected = activeFrontId === frontCard.id;
+                      const isSelected = selectedFrontId === frontCard.id;
                       const isLoaded = Boolean(loadedThumbs[frontCard.id]);
                       return (
                         <button
@@ -611,6 +626,7 @@ export default function PairingInspectorPanel() {
                           onMouseLeave={hideHoverPreview}
                           onClick={async () => {
                             if (pairingDisabled) return;
+                            onRememberBackId?.(backCard.id);
                             await requestOpenCard(frontCard.id);
                           }}
                         >

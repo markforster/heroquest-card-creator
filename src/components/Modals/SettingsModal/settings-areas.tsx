@@ -1,13 +1,17 @@
 import type { ReactNode } from "react";
 
 import type { LucideIcon } from "lucide-react";
-import { ALargeSmall, Bug, Monitor, TableCellsSplit } from "lucide-react";
+import { ALargeSmall, Bug, Copyright, Monitor, TableCellsSplit } from "lucide-react";
 
 import type { MessageKey } from "@/i18n/messages";
+import CopyrightSettingsPanel from "@/components/Modals/SettingsModal/CopyrightSettingsPanel";
 import DebugSettingsPanel from "@/components/Modals/SettingsModal/DebugSettingsPanel";
 import PreviewSettingsPanel from "@/components/Modals/SettingsModal/PreviewSettingsPanel";
 import StatLabelOverridesPanel from "@/components/Modals/SettingsModal/StatLabelOverridesPanel";
 import TextFittingSettingsPanel from "@/components/Modals/SettingsModal/TextFittingSettingsPanel";
+import { isDebugToolsEnabled } from "@/lib/env";
+
+const debugToolsEnabled = isDebugToolsEnabled();
 
 export type SettingsAreaDefinition = {
   id: string;
@@ -29,6 +33,12 @@ export const SETTINGS_AREAS: SettingsAreaDefinition[] = [
     panel: () => <StatLabelOverridesPanel />,
   },
   {
+    id: "copyright-defaults",
+    labelKey: "heading.copyrightDefaults",
+    icon: Copyright,
+    panel: () => <CopyrightSettingsPanel />,
+  },
+  {
     id: "text-fitting-global",
     labelKey: "label.textFittingGlobal",
     icon: ALargeSmall,
@@ -45,5 +55,6 @@ export const SETTINGS_AREAS: SettingsAreaDefinition[] = [
     labelKey: "heading.debugTools",
     icon: Bug,
     panel: () => <DebugSettingsPanel />,
+    isEnabled: debugToolsEnabled,
   },
 ];

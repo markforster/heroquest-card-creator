@@ -43,7 +43,12 @@ export function EscapeStackProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const unregister = useCallback((id: string) => {
-    setEntries((prev) => prev.filter((entry) => entry.id !== id));
+    setEntries((prev) => {
+      if (!prev.some((entry) => entry.id === id)) {
+        return prev;
+      }
+      return prev.filter((entry) => entry.id !== id);
+    });
   }, []);
 
   const handleEscape = useCallback(
@@ -86,6 +91,15 @@ export function useEscapeModalAware(options: {
 }) {
   const ctx = useOptionalEscapeStack();
   const { id, isOpen, onEscape, enabled = true } = options;
+  const onEscapeRef = useRef(onEscape);
+
+  useEffect(() => {
+    onEscapeRef.current = onEscape;
+  }, [onEscape]);
+
+  const stableOnEscape = useCallback(() => {
+    onEscapeRef.current();
+  }, []);
 
   useEffect(() => {
     if (!ctx) return;
@@ -93,9 +107,9 @@ export function useEscapeModalAware(options: {
       ctx.unregister(id);
       return;
     }
-    ctx.register(id, onEscape, enabled);
+    ctx.register(id, stableOnEscape, enabled);
     return () => ctx.unregister(id);
-  }, [ctx, enabled, id, isOpen, onEscape]);
+  }, [ctx, enabled, id, isOpen, stableOnEscape]);
 
-  useEscapeKey({ enabled: !ctx && isOpen && enabled, onEscape });
+  useEscapeKey({ enabled: !ctx && isOpen && enabled, onEscape: stableOnEscape });
 }

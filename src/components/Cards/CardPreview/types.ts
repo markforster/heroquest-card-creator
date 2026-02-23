@@ -10,11 +10,13 @@ export type CardPreviewProps = {
   templateName?: string;
   backgroundSrc?: StaticImageData;
   cardData?: CardDataByTemplate[TemplateId];
+  copyrightTextColor?: string;
 };
 
 export type CardPreviewHandle = {
   exportAsPng: () => Promise<void>;
   waitForBackgroundLoaded?: (timeoutMs?: number) => Promise<void>;
+  syncCopyrightContrast?: (options?: { width?: number; height?: number }) => Promise<void>;
   renderToPngBlob: (options?: {
     width?: number;
     height?: number;

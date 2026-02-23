@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   HashRouter,
+  Link,
   Navigate,
   Route,
   Routes,
@@ -15,6 +16,7 @@ import { AssetHashIndexProvider } from "@/components/Providers/AssetHashIndexPro
 import { AssetsRoutePanels } from "@/components/Assets";
 import { StockpileMainPanel } from "@/components/Stockpile";
 import { AppActionsProvider } from "@/components/Providers/AppActionsContext";
+import { AssetKindBackfillProvider } from "@/components/Providers/AssetKindBackfillProvider";
 import { CardEditorProvider, useCardEditor } from "@/components/Providers/CardEditorContext";
 import CardPreviewContainer from "@/components/Cards/CardEditor/CardPreviewContainer";
 import CardInspector from "@/components/Cards/CardInspector/CardInspector";
@@ -35,22 +37,27 @@ import { LibraryTransferProvider } from "@/components/Providers/LibraryTransferC
 import LeftNav from "@/components/Layout/LeftNav";
 import MainFooter from "@/components/Layout/MainFooter";
 import { DebugVisualsProvider } from "@/components/Providers/DebugVisualsContext";
-import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
+import {
+  LocalStorageProvider,
+  useLocalStorageBoolean,
+} from "@/components/Providers/LocalStorageProvider";
 import { PreviewRendererProvider } from "@/components/Providers/PreviewRendererContext";
 import { TextFittingPreferencesProvider } from "@/components/Providers/TextFittingPreferencesContext";
 import ToolsToolbar from "@/components/ToolsToolbar";
 import WelcomeTemplateModal from "@/components/Modals/WelcomeTemplateModal";
 import { WebglPreviewSettingsProvider } from "@/components/Providers/WebglPreviewSettingsContext";
+import {
+  MissingAssetsProvider,
+  useMissingAssets,
+} from "@/components/Providers/MissingAssetsContext";
+import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import dungeonAtmosphere from "@/assets/dungeon atmostphere - 2.png";
 import { cardTemplatesById } from "@/data/card-templates";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
 import { createCard, getCard, listCards, touchCardLastViewed, updateCard } from "@/lib/cards-db";
 import { createPair, deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
-import {
-  buildMissingAssetsReport,
-  type MissingAssetReport,
-} from "@/lib/export-assets-cache";
+import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -121,6 +128,9 @@ function IndexPageInner() {
   const [pairedFrontIds, setPairedFrontIds] = useState<string[]>([]);
   const [activeFrontId, setActiveFrontId] = useState<string | null>(null);
   const [pairedBackId, setPairedBackId] = useState<string | null>(null);
+  const [lastRememberedBackId, setLastRememberedBackId] = useState<string | null>(null);
+  const [frontViewToken, setFrontViewToken] = useState(0);
+  const lastFaceRef = useRef<CardFace | null>(null);
   const [exportTarget, setExportTarget] = useState<CardRecord | null>(null);
   const [isExportingFaces, setIsExportingFaces] = useState(false);
   const [exportTotal, setExportTotal] = useState(0);
@@ -132,13 +142,18 @@ function IndexPageInner() {
     skipNotes: Map<string, string>;
     onProceed: () => void;
   } | null>(null);
-  const [missingAssetsBanner, setMissingAssetsBanner] = useState<{
-    count: number;
-    report: MissingAssetReport[];
-  } | null>(null);
+  const { missingAssetsReport } = useMissingAssets();
+  const [missingAssetsDismissed, setMissingAssetsDismissed] = useLocalStorageBoolean(
+    "hqcc.missingArtworkBannerDismissed",
+    false,
+  );
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [routeError, setRouteError] = useState<"not-found" | "load-failed" | null>(null);
   const lastLoadedRef = useRef<string | null>(null);
+  const activeCardKey =
+    cardId ??
+    (selectedTemplateId ? activeCardIdByTemplate[selectedTemplateId] : undefined) ??
+    "draft";
 
   useEscapeModalAware({
     id: "route:assets",
@@ -152,45 +167,6 @@ function IndexPageInner() {
       }
     },
   });
-
-  useEffect(() => {
-    let cancelled = false;
-    const schedule = (cb: () => void) => {
-      const idleApi = globalThis as {
-        requestIdleCallback?: (fn: () => void) => number;
-        cancelIdleCallback?: (id: number) => void;
-      };
-      if (typeof idleApi.requestIdleCallback === "function") {
-        const id = idleApi.requestIdleCallback(cb);
-        return () => {
-          idleApi.cancelIdleCallback?.(id);
-        };
-      }
-      const id = globalThis.setTimeout(cb, 0);
-      return () => globalThis.clearTimeout(id);
-    };
-
-    const cancel = schedule(() => {
-      void (async () => {
-        try {
-          const cards = await listCards();
-          if (cancelled) return;
-          const report = await buildMissingAssetsReport(cards);
-          if (cancelled) return;
-          if (report.length > 0) {
-            setMissingAssetsBanner({ count: report.length, report });
-          }
-        } catch {
-          // Ignore scan failures.
-        }
-      })();
-    });
-
-    return () => {
-      cancelled = true;
-      cancel?.();
-    };
-  }, []);
 
   useEscapeModalAware({
     id: "route:cards",
@@ -418,6 +394,7 @@ function IndexPageInner() {
 
   useEffect(() => {
     if (!isCardDetailRoute) return;
+    if (cardId) return;
     if (draftTemplateId && draft) return;
     if (!selectedTemplateId) return;
     const currentTemplate = selectedTemplateId as TemplateId;
@@ -447,6 +424,7 @@ function IndexPageInner() {
     };
   }, [
     activeCardIdByTemplate,
+    cardId,
     draft,
     draftTemplateId,
     selectedTemplateId,
@@ -464,10 +442,6 @@ function IndexPageInner() {
     if (lastLoadedRef.current === cardId) return;
     lastLoadedRef.current = cardId;
     setRouteError(null);
-    const alreadyActive =
-      selectedTemplateId != null && activeCardIdByTemplate[selectedTemplateId] === cardId;
-    if (alreadyActive) return;
-
     let active = true;
     (async () => {
       try {
@@ -481,6 +455,7 @@ function IndexPageInner() {
         const nextRecord = viewed ?? record;
         setSelectedTemplateId(nextRecord.templateId as TemplateId);
         loadCardIntoEditor(nextRecord.templateId as TemplateId, nextRecord);
+        setActiveCard(nextRecord.templateId as TemplateId, nextRecord.id, nextRecord.status);
       } catch {
         if (active) {
           setRouteError("load-failed");
@@ -494,6 +469,7 @@ function IndexPageInner() {
   }, [
     cardId,
     activeCardIdByTemplate,
+    setActiveCard,
     loadCardIntoEditor,
     navigate,
     isCardDetailRoute,
@@ -508,6 +484,7 @@ function IndexPageInner() {
       setActiveFrontId(null);
       return;
     }
+    setLastRememberedBackId(activeCardId);
     let active = true;
     listCards({ status: "saved" })
       .then(async (cards) => {
@@ -558,6 +535,14 @@ function IndexPageInner() {
       active = false;
     };
   }, [activeCardId, effectiveFace]);
+
+  useEffect(() => {
+    const previousFace = lastFaceRef.current;
+    if (previousFace === "back" && effectiveFace === "front") {
+      setFrontViewToken((prev) => prev + 1);
+    }
+    lastFaceRef.current = effectiveFace;
+  }, [effectiveFace]);
 
   const exportMenuItems = useMemo(() => {
     if (!effectiveFace) return [];
@@ -627,17 +612,19 @@ function IndexPageInner() {
           previewRef.current?.exportAsPng();
           return;
         }
-        const report = await buildMissingAssetsReport([card]);
-        if (report.length > 0) {
-          setMissingAssetsPrompt({
-            report,
-            skipIds: new Set(report.map((entry) => entry.cardId)),
-            skipNotes: buildSkipNotesFromReport(report),
-            onProceed: () => {
-              previewRef.current?.exportAsPng();
-            },
-          });
-          return;
+        if (ENABLE_MISSING_ASSET_CHECKS) {
+          const report = await buildMissingAssetsReport([card]);
+          if (report.length > 0) {
+            setMissingAssetsPrompt({
+              report,
+              skipIds: new Set(report.map((entry) => entry.cardId)),
+              skipNotes: buildSkipNotesFromReport(report),
+              onProceed: () => {
+                previewRef.current?.exportAsPng();
+              },
+            });
+            return;
+          }
         }
         previewRef.current?.exportAsPng();
       } catch {
@@ -655,7 +642,7 @@ function IndexPageInner() {
       return;
     }
 
-    if (!options?.skipPrecheck) {
+    if (ENABLE_MISSING_ASSET_CHECKS && !options?.skipPrecheck) {
       const records = await Promise.all(
         faceIds.map(async (id) => {
           try {
@@ -764,30 +751,40 @@ function IndexPageInner() {
       <LibraryTransferProvider>
         <EditorSaveProvider value={{ saveCurrentCard, saveToken }}>
           <EscapeStackProvider>
-            <AppActionsProvider>
-              <HeaderWithTemplatePicker />
-              {missingAssetsBanner ? (
+            <AssetKindBackfillProvider>
+              <AppActionsProvider>
+              <HeaderWithTemplatePicker
+                missingAssetsCount={missingAssetsReport.length}
+                showMissingAssetsReminder={
+                  missingAssetsDismissed && missingAssetsReport.length > 0
+                }
+              />
+              {ENABLE_MISSING_ASSET_CHECKS &&
+              missingAssetsReport.length > 0 &&
+              !missingAssetsDismissed ? (
                 <div className={styles.missingAssetsBanner}>
                   <WarningNotice
                     role="status"
                     className="d-flex align-items-start gap-3"
                   >
-                    <div className={styles.missingAssetsBannerBody}>
-                      <div className={styles.missingAssetsBannerTitle}>
-                        {t("warning.missingArtworkDetectedTitle")}
+                    <Link className={styles.missingAssetsBannerLink} to="/cards?missingartwork">
+                      <div className={styles.missingAssetsBannerBody}>
+                        <div className={styles.missingAssetsBannerTitle}>
+                          {t("warning.missingArtworkDetectedTitle")}
+                        </div>
+                        <div>
+                          {formatMessageWith("warning.missingArtworkDetectedBody", {
+                            count: missingAssetsReport.length,
+                          })}
+                        </div>
                       </div>
-                      <div>
-                        {formatMessageWith("warning.missingArtworkDetectedBody", {
-                          count: missingAssetsBanner.count,
-                        })}
-                      </div>
-                    </div>
+                    </Link>
                     <button
                       type="button"
                       className={`btn btn-outline-light btn-sm ${styles.missingAssetsBannerClose}`}
-                      onClick={() => setMissingAssetsBanner(null)}
+                      onClick={() => setMissingAssetsDismissed(true)}
                     >
-                      {t("actions.close")}
+                      {t("actions.dismiss")}
                     </button>
                   </WarningNotice>
                 </div>
@@ -840,7 +837,12 @@ function IndexPageInner() {
                     className={`${styles.previewContainer} d-flex align-items-center justify-content-center`}
                   >
                     <ToolsToolbar />
-                    {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
+                    {selectedTemplate ? (
+                      <CardPreviewContainer
+                        previewRef={previewRef}
+                        preferredBackId={lastRememberedBackId}
+                      />
+                    ) : null}
                   </div>
                 </section>
                 <aside
@@ -865,7 +867,12 @@ function IndexPageInner() {
                   </div>
                   <div className={styles.inspectorBody}>
                     <PreviewCanvasProvider previewRef={previewRef}>
-                      <CardInspector />
+                <CardInspector
+                  activeFrontId={activeFrontId}
+                  autoOpenBackId={lastRememberedBackId}
+                  frontViewToken={frontViewToken}
+                  onRememberBackId={setLastRememberedBackId}
+                />
                     </PreviewCanvasProvider>
                   </div>
                   <EditorActionsToolbar
@@ -893,7 +900,8 @@ function IndexPageInner() {
                   />
                 </aside>
               </main>
-            </AppActionsProvider>
+              </AppActionsProvider>
+            </AssetKindBackfillProvider>
           </EscapeStackProvider>
         </EditorSaveProvider>
         {exportTemplate && exportTarget ? (
@@ -996,14 +1004,16 @@ export default function IndexPage() {
               <PreviewRendererProvider>
                 <WebglPreviewSettingsProvider>
                   <TextFittingPreferencesProvider>
-                    <HashRouter>
-                      <Routes>
-                        <Route path="/cards" element={<IndexPageInner />} />
-                        <Route path="/cards/:cardId" element={<IndexPageInner />} />
-                        <Route path="/assets" element={<IndexPageInner />} />
-                        <Route path="*" element={<Navigate to="/cards" replace />} />
-                      </Routes>
-                    </HashRouter>
+                    <MissingAssetsProvider>
+                      <HashRouter>
+                        <Routes>
+                          <Route path="/cards" element={<IndexPageInner />} />
+                          <Route path="/cards/:cardId" element={<IndexPageInner />} />
+                          <Route path="/assets" element={<IndexPageInner />} />
+                          <Route path="*" element={<Navigate to="/cards" replace />} />
+                        </Routes>
+                      </HashRouter>
+                    </MissingAssetsProvider>
                   </TextFittingPreferencesProvider>
                 </WebglPreviewSettingsProvider>
               </PreviewRendererProvider>

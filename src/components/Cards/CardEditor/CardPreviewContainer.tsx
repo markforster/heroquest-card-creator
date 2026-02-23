@@ -27,9 +27,13 @@ import type { RefObject } from "react";
 
 type CardPreviewContainerProps = {
   previewRef: RefObject<CardPreviewHandle>;
+  preferredBackId?: string | null;
 };
 
-export default function CardPreviewContainer({ previewRef }: CardPreviewContainerProps) {
+export default function CardPreviewContainer({
+  previewRef,
+  preferredBackId,
+}: CardPreviewContainerProps) {
   const { language, t } = useI18n();
   const { previewRenderer, rotationResetToken, recenterToken } = usePreviewRenderer();
   const { preferences, isDragging } = useTextFittingPreferences();
@@ -147,7 +151,18 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
     preferencesKey,
     isDragging,
     showTextBounds,
+    activeCardId,
   ]);
+
+  useEffect(() => {
+    if (!cardData) return;
+    const handle = previewRef.current;
+    if (!handle?.syncCopyrightContrast) return;
+    const timeoutId = window.setTimeout(() => {
+      void handle.syncCopyrightContrast?.();
+    }, 60);
+    return () => window.clearTimeout(timeoutId);
+  }, [cardData, template.id, templateName, previewRef]);
 
   useEffect(() => {
     if (!showWebgl) {
@@ -162,10 +177,14 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
           let backId: string | null = null;
           if (activeCardId) {
             const pairs = await listPairsForFace(activeCardId);
-            const match =
-              pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
-              pairs.find((pair) => pair.backFaceId);
-            backId = match?.backFaceId ?? null;
+          const preferredMatch = preferredBackId
+            ? pairs.find((pair) => pair.backFaceId === preferredBackId)
+            : undefined;
+          const match =
+            preferredMatch ??
+            pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
+            pairs.find((pair) => pair.backFaceId);
+          backId = match?.backFaceId ?? null;
           }
           if (!backId) {
             setReverseCard(null);
@@ -252,7 +271,7 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
     return () => {
       active = false;
     };
-  }, [activeCardId, effectiveFace, language, showWebgl]);
+  }, [activeCardId, effectiveFace, language, showWebgl, preferredBackId]);
 
   const [reverseTextureCanvas, setReverseTextureCanvas] = useState<HTMLCanvasElement | null>(null);
   const [reverseTextureVersion, setReverseTextureVersion] = useState(0);
@@ -321,6 +340,12 @@ export default function CardPreviewContainer({ previewRef }: CardPreviewContaine
       }
     };
   }, [showWebgl, reverseCard, reversePreviewRef, preferencesKey, isDragging, showTextBounds]);
+
+  useEffect(() => {
+    if (!showWebgl) return;
+    setTextureCanvas(null);
+    setReverseTextureCanvas(null);
+  }, [activeCardId, showWebgl]);
 
   return (
     <div className={styles.previewSwap}>

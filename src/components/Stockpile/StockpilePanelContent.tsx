@@ -2,10 +2,12 @@
 
 import { AlertTriangle, Combine, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import CardPreview from "@/components/Cards/CardPreview";
 import CardThumbnail from "@/components/common/CardThumbnail";
 import ModalShell from "@/components/common/ModalShell";
@@ -20,6 +22,7 @@ import {
   resolveZipFileName,
 } from "@/components/Stockpile/stockpile-utils";
 import { USE_EXPORT_PAIR_JITTER } from "@/config/flags";
+import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -32,10 +35,7 @@ import {
   updateCollection,
 } from "@/lib/collections-db";
 import { runBulkExport } from "@/lib/export-cards";
-import {
-  buildMissingAssetsReport,
-  type MissingAssetReport,
-} from "@/lib/export-assets-cache";
+import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { deletePairsForFace, listAllPairs } from "@/lib/pairs-service";
 import { createDefaultCardData } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
@@ -129,8 +129,13 @@ export default function StockpilePanelContent({
     return paired;
   }, [backByFrontId, pairsByBackId]);
   const [missingAssetsPrompt, setMissingAssetsPrompt] = useState<MissingAssetsPrompt | null>(null);
-  const [missingArtworkIds, setMissingArtworkIds] = useState<Set<string>>(() => new Set());
+  const { missingArtworkIds } = useMissingAssets();
   const [showMissingArtworkOnly, setShowMissingArtworkOnly] = useState(false);
+  const location = useLocation();
+  const didAutoApplyMissingArtworkRef = useRef(false);
+  const hasMissingArtworkParam = useMemo(() => {
+    return new URLSearchParams(location.search).has("missingartwork");
+  }, [location.search]);
   const {
     recentCards,
     filteredCards,
@@ -207,50 +212,18 @@ export default function StockpilePanelContent({
   }, []);
 
   useEffect(() => {
-    if (!isOpen) return;
-    let cancelled = false;
-    let debounceId: number | null = null;
-    let idleId: number | null = null;
+    if (missingArtworkIds.size === 0) {
+      setShowMissingArtworkOnly(false);
+    }
+  }, [missingArtworkIds]);
 
-    const runScan = () => {
-      if (cancelled) return;
-      void (async () => {
-        try {
-          const report = await buildMissingAssetsReport(cards);
-          if (cancelled) return;
-          const nextIds = new Set(report.map((entry) => entry.cardId));
-          setMissingArtworkIds(nextIds);
-          if (nextIds.size === 0) {
-            setShowMissingArtworkOnly(false);
-          }
-        } catch {
-          // Ignore scan failures.
-        }
-      })();
-    };
-
-    debounceId = window.setTimeout(() => {
-      if ("requestIdleCallback" in window) {
-        idleId = (
-          window as unknown as { requestIdleCallback: (cb: () => void) => number }
-        ).requestIdleCallback(runScan);
-      } else {
-        runScan();
-      }
-    }, 300);
-
-    return () => {
-      cancelled = true;
-      if (debounceId) {
-        window.clearTimeout(debounceId);
-      }
-      if (idleId != null) {
-        (
-          window as unknown as { cancelIdleCallback?: (id: number) => void }
-        ).cancelIdleCallback?.(idleId);
-      }
-    };
-  }, [isOpen, refreshToken, cards]);
+  useEffect(() => {
+    if (!hasMissingArtworkParam) return;
+    if (didAutoApplyMissingArtworkRef.current) return;
+    if (missingArtworkIds.size === 0) return;
+    setShowMissingArtworkOnly(true);
+    didAutoApplyMissingArtworkRef.current = true;
+  }, [hasMissingArtworkParam, missingArtworkIds]);
 
   useEffect(() => {
     return () => {
@@ -585,7 +558,7 @@ export default function StockpilePanelContent({
     const skipIds = options?.skipIds ?? new Set<string>();
     const skipNotes = options?.skipNotes ?? new Map<string, string>();
 
-    if (!options?.skipPrecheck) {
+    if (ENABLE_MISSING_ASSET_CHECKS && !options?.skipPrecheck) {
       const report = await buildMissingAssetsReport(cardsToExport);
       if (report.length > 0) {
         const nextSkipIds = new Set(report.map((entry) => entry.cardId));
@@ -832,7 +805,7 @@ export default function StockpilePanelContent({
               </div>
               <div className={styles.cardsFiltersSpacer} />
               <div className={`${styles.cardsFiltersRight} ${styles.uRowLg}`}>
-                {!isPairMode && missingArtworkIds.size > 0 ? (
+                {!isPairMode && ENABLE_MISSING_ASSET_CHECKS && missingArtworkIds.size > 0 ? (
                   <label
                     className={`form-check form-check-inline mb-0 ${styles.missingArtworkFilter}`}
                   >

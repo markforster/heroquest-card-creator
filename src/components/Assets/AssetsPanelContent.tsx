@@ -1,20 +1,35 @@
 "use client";
 
 import { Search, Trash2, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import IconButton from "@/components/common/IconButton";
+import {
+  ENABLE_MISSING_ASSET_CHECKS,
+  ENABLE_MISSING_ASSET_DELETE_SCAN,
+} from "@/config/flags";
 import ModalShell from "@/components/common/ModalShell";
 import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
+import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
+import type { AssetKindGroupId } from "@/lib/assets-grouping";
+import { groupAssetsByKind } from "@/lib/assets-grouping";
 import type { AssetRecord } from "@/lib/assets-db";
-import { addAsset, deleteAssets, getAllAssets, getAssetObjectUrl } from "@/lib/assets-db";
+import {
+  addAsset,
+  deleteAssets,
+  getAllAssets,
+  getAssetObjectUrl,
+  updateAssetMeta,
+} from "@/lib/assets-db";
 import { listCards, updateCard } from "@/lib/cards-db";
 import type { CardRecord } from "@/types/cards-db";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
@@ -31,6 +46,7 @@ type AssetsPanelProps = OpenCloseProps & {
   onSelect?: (asset: AssetRecord) => void;
   onSelectionChange?: (assets: AssetRecord[]) => void;
   refreshKey?: number;
+  preferredKindOrder?: AssetKindGroupId[];
 };
 
 type ConfirmState = {
@@ -69,6 +85,28 @@ const ENABLE_UPLOAD_PROGRESS = true;
 const ENABLE_UPLOAD_DEBUG_DELAY = true;
 const UPLOAD_DEBUG_DELAY_MS = 1;
 
+async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+  if (typeof createImageBitmap === "function") {
+    const bitmap = await createImageBitmap(file);
+    const dimensions = { width: bitmap.width, height: bitmap.height };
+    bitmap.close?.();
+    return dimensions;
+  }
+
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = url;
+    });
+    return { width: img.naturalWidth, height: img.naturalHeight };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 async function maybeDelayUploadStep(): Promise<void> {
   if (!ENABLE_UPLOAD_DEBUG_DELAY) return;
   await new Promise((resolve) => setTimeout(resolve, UPLOAD_DEBUG_DELAY_MS));
@@ -81,11 +119,16 @@ export default function AssetsPanelContent({
   onSelect,
   onSelectionChange,
   refreshKey,
+  preferredKindOrder,
 }: AssetsPanelProps) {
   const { t } = useI18n();
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [search, setSearch] = useState("");
+  const [assetKindFilter, setAssetKindFilter] = useState<
+    "all" | "artwork" | "icon" | "unclassified"
+  >("all");
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
+  const thumbUrlsRef = useRef<Record<string, string>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedOrder, setSelectedOrder] = useState<string[]>([]);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
@@ -94,7 +137,15 @@ export default function AssetsPanelContent({
   const [uploadReview, setUploadReview] = useState<UploadNotice | null>(null);
   const reviewResolverRef = useRef<((shouldContinue: boolean) => void) | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isKindFilterOpen, setIsKindFilterOpen] = useState(false);
+  const kindFilterRef = useRef<HTMLDivElement | null>(null);
+  const [activeKindPopoverId, setActiveKindPopoverId] = useState<string | null>(null);
+  const [kindPopoverStyle, setKindPopoverStyle] = useState<React.CSSProperties | null>(null);
+  const kindPopoverRef = useRef<HTMLDivElement | null>(null);
+  const kindAnchorRef = useRef<HTMLElement | null>(null);
   const { scanFiles, addToIndex, removeFromIndex, existingNames } = useAssetHashIndex();
+  const { runMissingAssetsScan } = useMissingAssets();
+  const { enqueueAsset, cancelAsset } = useAssetKindQueue();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -119,38 +170,152 @@ export default function AssetsPanelContent({
   }, [isOpen, refreshKey]);
 
   useEffect(() => {
-    if (!isOpen || assets.length === 0) {
+    if (typeof window === "undefined") return;
+    if (!isOpen) return;
+    let timeoutId: number | null = null;
+    const handleUpdate = () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+      timeoutId = window.setTimeout(() => {
+        getAllAssets()
+          .then((records) => setAssets(records))
+          .catch(() => {
+            // Ignore refresh errors.
+          });
+      }, 250);
+    };
+    window.addEventListener("hqcc-assets-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("hqcc-assets-updated", handleUpdate);
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isKindFilterOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!kindFilterRef.current) return;
+      if (!kindFilterRef.current.contains(event.target as Node)) {
+        setIsKindFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isKindFilterOpen]);
+
+  useEffect(() => {
+    if (!activeKindPopoverId) return;
+    const handlePointer = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (kindPopoverRef.current?.contains(target)) return;
+      if (kindAnchorRef.current?.contains(target)) return;
+      setActiveKindPopoverId(null);
+    };
+    window.addEventListener("mousedown", handlePointer);
+    return () => window.removeEventListener("mousedown", handlePointer);
+  }, [activeKindPopoverId]);
+
+  useLayoutEffect(() => {
+    if (!activeKindPopoverId) return;
+    if (typeof window === "undefined") return;
+
+    const updatePosition = () => {
+      const anchor = kindAnchorRef.current;
+      const popover = kindPopoverRef.current;
+      if (!anchor || !popover) return;
+      const anchorRect = anchor.getBoundingClientRect();
+      const popoverRect = popover.getBoundingClientRect();
+      const padding = 12;
+      const offset = 8;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      let left = anchorRect.left;
+      let top = anchorRect.bottom + offset;
+      left = Math.min(Math.max(left, padding), viewportWidth - popoverRect.width - padding);
+      if (top + popoverRect.height + padding > viewportHeight) {
+        top = anchorRect.top - popoverRect.height - offset;
+      }
+      top = Math.min(Math.max(top, padding), viewportHeight - popoverRect.height - padding);
+      setKindPopoverStyle({ left, top, position: "fixed" });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [activeKindPopoverId]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
+      thumbUrlsRef.current = {};
+      setThumbUrls({});
+      return;
+    }
+    if (assets.length === 0) {
+      Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
+      thumbUrlsRef.current = {};
       setThumbUrls({});
       return;
     }
 
     let cancelled = false;
-    const localUrls: Record<string, string> = {};
+    const assetIds = new Set(assets.map((asset) => asset.id));
+    const nextUrls: Record<string, string> = { ...thumbUrlsRef.current };
+
+    Object.keys(nextUrls).forEach((id) => {
+      if (!assetIds.has(id)) {
+        URL.revokeObjectURL(nextUrls[id]);
+        delete nextUrls[id];
+      }
+    });
 
     (async () => {
-      for (const asset of assets) {
+      const pending = assets.filter((asset) => !nextUrls[asset.id]);
+      const concurrency = 10;
+      let cursor = 0;
+
+      const runNext = async (): Promise<void> => {
+        if (cancelled) return;
+        const index = cursor;
+        cursor += 1;
+        if (index >= pending.length) return;
+        const asset = pending[index];
+        if (!asset || nextUrls[asset.id]) {
+          return runNext();
+        }
         try {
           const url = await getAssetObjectUrl(asset.id);
-          if (!url) continue;
-          localUrls[asset.id] = url;
+          if (url) {
+            nextUrls[asset.id] = url;
+          }
         } catch {
           // Ignore individual asset errors for now.
         }
-      }
+        return runNext();
+      };
+
+      const workers = Array.from({ length: Math.min(concurrency, pending.length) }, () =>
+        runNext(),
+      );
+      await Promise.all(workers);
+
       if (!cancelled) {
-        setThumbUrls(localUrls);
+        thumbUrlsRef.current = nextUrls;
+        setThumbUrls(nextUrls);
       } else {
-        Object.values(localUrls).forEach((url) => {
-          URL.revokeObjectURL(url);
-        });
+        Object.values(nextUrls).forEach((url) => URL.revokeObjectURL(url));
       }
     })();
 
     return () => {
       cancelled = true;
-      Object.values(localUrls).forEach((url) => {
-        URL.revokeObjectURL(url);
-      });
     };
   }, [isOpen, assets, refreshKey]);
 
@@ -200,9 +365,42 @@ export default function AssetsPanelContent({
     onSelectionChange(selectedAssets);
   }, [assets, onSelectionChange, selectedOrder]);
 
-  const filteredAssets = search
+  const searchFiltered = search
     ? assets.filter((asset) => asset.name.toLowerCase().includes(search.toLowerCase()))
     : assets;
+
+  const filteredAssets = searchFiltered.filter((asset) => {
+    if (assetKindFilter === "all") return true;
+    if (assetKindFilter === "artwork") {
+      return asset.assetKindStatus === "classified" && asset.assetKind === "artwork";
+    }
+    if (assetKindFilter === "icon") {
+      return asset.assetKindStatus === "classified" && asset.assetKind === "icon";
+    }
+    return asset.assetKindStatus !== "classified";
+  });
+
+  const groupedAssets = groupAssetsByKind(filteredAssets, preferredKindOrder).filter(
+    (group) => group.assets.length > 0,
+  );
+
+  const totalCount = assets.length;
+  const artworkCount = assets.filter(
+    (asset) => asset.assetKindStatus === "classified" && asset.assetKind === "artwork",
+  ).length;
+  const iconCount = assets.filter(
+    (asset) => asset.assetKindStatus === "classified" && asset.assetKind === "icon",
+  ).length;
+  const unclassifiedCount = assets.filter((asset) => asset.assetKindStatus !== "classified").length;
+
+  const assetKindFilterLabel =
+    assetKindFilter === "all"
+      ? t("label.assetKindFilterAll")
+      : assetKindFilter === "artwork"
+        ? t("label.assetKindFilterArtwork")
+        : assetKindFilter === "icon"
+          ? t("label.assetKindFilterIcon")
+          : t("label.assetKindFilterUnclassified");
 
   const handleConfirmDelete = async (ids: string[]) => {
     try {
@@ -224,6 +422,7 @@ export default function AssetsPanelContent({
             patch.imageAssetId = undefined;
             patch.imageAssetName = undefined;
             patch.imageScale = undefined;
+            patch.imageScaleMode = undefined;
             patch.imageOriginalWidth = undefined;
             patch.imageOriginalHeight = undefined;
             patch.imageOffsetX = undefined;
@@ -242,6 +441,9 @@ export default function AssetsPanelContent({
           await updateCard(card.id, patch);
         }),
       );
+      if (ENABLE_MISSING_ASSET_CHECKS && ENABLE_MISSING_ASSET_DELETE_SCAN) {
+        runMissingAssetsScan("assets-deleted");
+      }
     } catch {
       // eslint-disable-next-line no-console
       console.error("[AssetsModal] Failed to delete assets");
@@ -418,13 +620,24 @@ export default function AssetsPanelContent({
         }
 
         try {
+          let dimensions = { width: 0, height: 0 };
+          try {
+            dimensions = await getImageDimensions(file);
+          } catch {
+            // Ignore dimension read errors; fall back to 0.
+          }
           const assetId = generateId();
           await addAsset(assetId, file, {
             name: nextName,
             mimeType: file.type,
-            width: 0,
-            height: 0,
+            width: dimensions.width,
+            height: dimensions.height,
           });
+          await updateAssetMeta(assetId, {
+            assetKindStatus: "unclassified",
+            assetKindUpdatedAt: Date.now(),
+          });
+          enqueueAsset(assetId, { width: dimensions.width, height: dimensions.height });
           uploaded.add(assetId);
           existingNamesLower.add(nextName.toLowerCase());
           existingFileNames.add(nextName);
@@ -435,8 +648,8 @@ export default function AssetsPanelContent({
               id: assetId,
               name: nextName,
               mimeType: file.type,
-              width: 0,
-              height: 0,
+              width: dimensions.width,
+              height: dimensions.height,
               createdAt: Date.now(),
               size: file.size,
             });
@@ -574,6 +787,25 @@ export default function AssetsPanelContent({
     setUploadProgress(null);
   };
 
+  const activeKindAsset = activeKindPopoverId
+    ? assets.find((asset) => asset.id === activeKindPopoverId) ?? null
+    : null;
+  const isKindPopoverOpen = Boolean(activeKindAsset);
+  const kindStatus = activeKindAsset?.assetKindStatus ?? "unclassified";
+  const canOverrideKind = kindStatus !== "classifying";
+  const applyManualKind = async (kind: "icon" | "artwork") => {
+    if (!activeKindAsset) return;
+    cancelAsset(activeKindAsset.id);
+    await updateAssetMeta(activeKindAsset.id, {
+      assetKindStatus: "classified",
+      assetKind: kind,
+      assetKindSource: "manual",
+      assetKindConfidence: 1,
+      assetKindUpdatedAt: Date.now(),
+    });
+    setActiveKindPopoverId(null);
+  };
+
   return (
     <div className={`${styles.assetsPanel} d-flex flex-column flex-grow-1`}>
       <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
@@ -589,6 +821,79 @@ export default function AssetsPanelContent({
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
+        </div>
+        <div className="d-flex align-items-center gap-2">
+          <div className={styles.cardsFilterMenu} ref={kindFilterRef}>
+            <button
+              type="button"
+              className={styles.cardsFilterButton}
+              title={t("tooltip.filterAssets")}
+              aria-expanded={isKindFilterOpen}
+              onClick={() => setIsKindFilterOpen((prev) => !prev)}
+            >
+              <span>{assetKindFilterLabel}</span>
+            </button>
+            {isKindFilterOpen ? (
+              <div className={styles.cardsFilterPopover} role="menu">
+                <button
+                  type="button"
+                  className={`${styles.cardsFilterItem} ${
+                    assetKindFilter === "all" ? styles.cardsFilterItemActive : ""
+                  }`}
+                  role="menuitem"
+                  onClick={() => {
+                    setAssetKindFilter("all");
+                    setIsKindFilterOpen(false);
+                  }}
+                >
+                  <span>{t("label.assetKindFilterAll")}</span>
+                  <span className={styles.cardsFilterCount}>{totalCount}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.cardsFilterItem} ${
+                    assetKindFilter === "artwork" ? styles.cardsFilterItemActive : ""
+                  }`}
+                  role="menuitem"
+                  onClick={() => {
+                    setAssetKindFilter("artwork");
+                    setIsKindFilterOpen(false);
+                  }}
+                >
+                  <span>{t("label.assetKindFilterArtwork")}</span>
+                  <span className={styles.cardsFilterCount}>{artworkCount}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.cardsFilterItem} ${
+                    assetKindFilter === "icon" ? styles.cardsFilterItemActive : ""
+                  }`}
+                  role="menuitem"
+                  onClick={() => {
+                    setAssetKindFilter("icon");
+                    setIsKindFilterOpen(false);
+                  }}
+                >
+                  <span>{t("label.assetKindFilterIcon")}</span>
+                  <span className={styles.cardsFilterCount}>{iconCount}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.cardsFilterItem} ${
+                    assetKindFilter === "unclassified" ? styles.cardsFilterItemActive : ""
+                  }`}
+                  role="menuitem"
+                  onClick={() => {
+                    setAssetKindFilter("unclassified");
+                    setIsKindFilterOpen(false);
+                  }}
+                >
+                  <span>{t("label.assetKindFilterUnclassified")}</span>
+                  <span className={styles.cardsFilterCount}>{unclassifiedCount}</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
         <div className={styles.assetsToolbarSpacer} />
         <div className={`${styles.assetsActions} d-flex align-items-center gap-2`}>
@@ -639,70 +944,125 @@ export default function AssetsPanelContent({
         {filteredAssets.length === 0 ? (
           <div className={styles.assetsEmptyState}>{t("empty.noAssets")}</div>
         ) : (
-          <div className={styles.assetsGrid}>
-            {filteredAssets.map((asset) => {
-              const isSelected = selectedIds.has(asset.id);
-              return (
-                <button
-                  key={asset.id}
-                  type="button"
-                  className={`${styles.assetsItem} ${
-                    isSelected ? styles.assetsItemSelected : ""
-                  }`}
-                  title={asset.name}
-                  onClick={(event) => {
-                    setSelectedIds((prev) => {
-                      if (mode === "select") {
-                        setSelectedOrder([asset.id]);
-                        return new Set([asset.id]);
-                      }
-                      const hasModifier = event.metaKey || event.ctrlKey;
-                      if (hasModifier) {
-                        const next = new Set(prev);
-                        if (next.has(asset.id)) {
-                          next.delete(asset.id);
-                          setSelectedOrder((order) => order.filter((id) => id !== asset.id));
-                        } else {
-                          next.add(asset.id);
-                          setSelectedOrder((order) => [asset.id, ...order.filter((id) => id !== asset.id)]);
-                        }
-                        return next;
-                      }
-                      if (prev.size === 1 && prev.has(asset.id)) {
-                        setSelectedOrder([]);
-                        return new Set();
-                      }
-                      setSelectedOrder([asset.id]);
-                      return new Set([asset.id]);
-                    });
-                  }}
-                  onDoubleClick={() => {
-                    if (mode !== "select" || !onSelect) return;
-                    onSelect(asset);
-                    onClose();
-                  }}
-                >
-                  <div className={styles.assetsThumbPlaceholder}>
-                    {thumbUrls[asset.id] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={thumbUrls[asset.id]}
-                        alt={asset.name}
-                        className={styles.assetsThumbImage}
-                      />
-                    ) : null}
-                  </div>
-                  <div className={styles.assetsItemMeta}>
-                    <div className={styles.assetsItemName} title={asset.name}>
-                      {asset.name}
-                    </div>
-                    <div className={styles.assetsItemDetails}>
-                      {asset.width}×{asset.height} · {asset.mimeType}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+          <div className={styles.assetsGroups}>
+            {groupedAssets.map((group) => (
+              <section key={group.id} className={styles.assetsGroup}>
+                <h3 className={styles.assetsGroupTitle}>{t(group.labelKey)}</h3>
+                <div className={styles.assetsGroupGrid}>
+                  {group.assets.map((asset) => {
+                    const isSelected = selectedIds.has(asset.id);
+                    const kindStatus = asset.assetKindStatus ?? "unclassified";
+                    const kindLabel =
+                      kindStatus === "classifying"
+                        ? t("label.assetKindClassifying")
+                        : kindStatus === "classified"
+                          ? asset.assetKind === "icon"
+                            ? t("label.assetKindIcon")
+                            : t("label.assetKindArtwork")
+                          : t("label.assetKindUnknown");
+                    return (
+                      <button
+                        key={asset.id}
+                        type="button"
+                        className={`${styles.assetsItem} ${
+                          isSelected ? styles.assetsItemSelected : ""
+                        }`}
+                        title={asset.name}
+                        onClick={(event) => {
+                          setSelectedIds((prev) => {
+                            if (mode === "select") {
+                              setSelectedOrder([asset.id]);
+                              return new Set([asset.id]);
+                            }
+                            const hasModifier = event.metaKey || event.ctrlKey;
+                            if (hasModifier) {
+                              const next = new Set(prev);
+                              if (next.has(asset.id)) {
+                                next.delete(asset.id);
+                                setSelectedOrder((order) =>
+                                  order.filter((id) => id !== asset.id),
+                                );
+                              } else {
+                                next.add(asset.id);
+                                setSelectedOrder((order) => [
+                                  asset.id,
+                                  ...order.filter((id) => id !== asset.id),
+                                ]);
+                              }
+                              return next;
+                            }
+                            if (prev.size === 1 && prev.has(asset.id)) {
+                              setSelectedOrder([]);
+                              return new Set();
+                            }
+                            setSelectedOrder([asset.id]);
+                            return new Set([asset.id]);
+                          });
+                        }}
+                        onDoubleClick={() => {
+                          if (mode !== "select" || !onSelect) return;
+                          onSelect(asset);
+                          onClose();
+                        }}
+                      >
+                        <span
+                          className={`${styles.assetsKindBadge} ${styles.assetsKindBadgeOverlay} ${styles.assetsKindBadgeClickable} ${
+                            kindStatus === "classifying"
+                              ? styles.assetsKindBadgeClassifying
+                              : kindStatus === "classified"
+                                ? asset.assetKind === "icon"
+                                  ? styles.assetsKindBadgeIcon
+                                  : styles.assetsKindBadgeArtwork
+                                : styles.assetsKindBadgeUnknown
+                          }`}
+                          role="button"
+                          tabIndex={0}
+                          aria-haspopup="dialog"
+                          aria-expanded={activeKindPopoverId === asset.id}
+                          onMouseDown={(event) => {
+                            event.stopPropagation();
+                          }}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            event.preventDefault();
+                            if (kindStatus === "classifying") return;
+                            kindAnchorRef.current = event.currentTarget;
+                            setActiveKindPopoverId(asset.id);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key !== "Enter" && event.key !== " ") return;
+                            event.preventDefault();
+                            if (kindStatus === "classifying") return;
+                            kindAnchorRef.current = event.currentTarget;
+                            setActiveKindPopoverId(asset.id);
+                          }}
+                        >
+                          {kindLabel}
+                        </span>
+                        <div className={styles.assetsThumbPlaceholder}>
+                          {thumbUrls[asset.id] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={thumbUrls[asset.id]}
+                              alt={asset.name}
+                              className={styles.assetsThumbImage}
+                            />
+                          ) : null}
+                        </div>
+                        <div className={styles.assetsItemMeta}>
+                          <div className={styles.assetsItemName} title={asset.name}>
+                            {asset.name}
+                          </div>
+                          <div className={styles.assetsItemDetails}>
+                            {asset.width}×{asset.height} · {asset.mimeType}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
           </div>
         )}
       </div>
@@ -720,6 +1080,50 @@ export default function AssetsPanelContent({
           />
         </div>
       )}
+      {isKindPopoverOpen
+        ? createPortal(
+            <div
+              ref={kindPopoverRef}
+              className={styles.assetsKindPopover}
+              style={
+                kindPopoverStyle ?? {
+                  position: "fixed",
+                  left: 0,
+                  top: 0,
+                  opacity: 0,
+                  pointerEvents: "none",
+                }
+              }
+              role="dialog"
+            >
+              <div className={styles.assetsKindPopoverTitle}>
+                {t("label.assetKindOverride")}
+              </div>
+              <button
+                type="button"
+                className={styles.assetsKindPopoverOption}
+                onClick={() => void applyManualKind("icon")}
+                disabled={!canOverrideKind}
+              >
+                {t("label.assetKindIcon")}
+              </button>
+              <button
+                type="button"
+                className={styles.assetsKindPopoverOption}
+                onClick={() => void applyManualKind("artwork")}
+                disabled={!canOverrideKind}
+              >
+                {t("label.assetKindArtwork")}
+              </button>
+              {!canOverrideKind ? (
+                <div className={styles.assetsKindPopoverHint}>
+                  {t("label.assetKindClassifyingHint")}
+                </div>
+              ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
       {!ENABLE_UPLOAD_PROGRESS ? (
         <ModalShell
           isOpen={Boolean(
@@ -982,6 +1386,7 @@ function AssetsModalFooter({
                   nextDraft.imageAssetId = undefined;
                   nextDraft.imageAssetName = undefined;
                   nextDraft.imageScale = undefined;
+                  nextDraft.imageScaleMode = undefined;
                   nextDraft.imageOriginalWidth = undefined;
                   nextDraft.imageOriginalHeight = undefined;
                   nextDraft.imageOffsetX = undefined;

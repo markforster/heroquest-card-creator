@@ -86,9 +86,44 @@
   opacity: 0.9;
 }
 
+.missingAssetsBannerLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.missingAssetsBannerLink:hover {
+  text-decoration: underline;
+}
+
 .missingAssetsBannerClose {
   margin-left: auto;
   white-space: nowrap;
+}
+
+.missingAssetsHeaderToast {
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  color: #fff1c9;
+  border: 1px solid rgba(214, 154, 63, 0.7);
+  background: rgba(78, 52, 14, 0.85);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 6px 12px rgba(0, 0, 0, 0.25);
+  max-width: 40vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.missingAssetsHeaderToastLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.missingAssetsHeaderToastLink:hover {
+  text-decoration: underline;
 }
 
 .headerMenu,
@@ -3314,6 +3349,40 @@
   gap: var(--space-6);
 }
 
+.assetsGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+.assetsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.assetsGroupTitle {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hq-accent);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: var(--space-3) 0;
+  background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+}
+
+.assetsGroupGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-6);
+  padding-top: var(--space-6);
+}
+
 .selectAllLabel {
   white-space: nowrap;
 }
@@ -3352,6 +3421,126 @@
     border-color 0.15s ease,
     box-shadow 0.15s ease,
     transform 0.05s ease;
+}
+
+.assetsKindBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: #f9fafb;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+button.assetsKindBadge:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.assetsKindBadgeOverlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.assetsKindBadgeClickable {
+  cursor: pointer;
+}
+
+.assetsKindBadgeUnknown {
+  border-color: rgba(148, 163, 184, 0.6);
+  color: #e5e7eb;
+}
+
+.assetsKindBadgeIcon {
+  border-color: rgba(56, 189, 248, 0.9);
+  background: rgba(2, 132, 199, 0.35);
+}
+
+.assetsKindBadgeArtwork {
+  border-color: rgba(251, 191, 36, 0.9);
+  background: rgba(245, 158, 11, 0.28);
+}
+
+.assetsKindBadgeClassifying {
+  border-color: transparent;
+  background: linear-gradient(
+    120deg,
+    rgba(14, 116, 144, 0.45),
+    rgba(147, 51, 234, 0.45),
+    rgba(37, 99, 235, 0.45),
+    rgba(14, 116, 144, 0.45)
+  );
+  background-size: 300% 300%;
+  animation: assetsKindShimmer 2.2s ease infinite;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.35);
+}
+
+@keyframes assetsKindShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.assetsKindPopoverAnchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.assetsKindPopover {
+  position: fixed;
+  min-width: 180px;
+  background: #0f172a;
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  padding: 8px;
+  z-index: 20;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.assetsKindPopoverTitle {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(226, 232, 240, 0.7);
+  margin-bottom: 6px;
+}
+
+.assetsKindPopoverOption {
+  width: 100%;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  font-size: var(--text-sm);
+}
+
+.assetsKindPopoverOption:hover {
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.assetsKindPopoverHint {
+  margin-left: 10px;
+  font-size: var(--text-xs);
+  color: rgba(148, 163, 184, 0.85);
 }
 
 .assetsThumbPlaceholder {
@@ -3889,8 +4078,19 @@
   text-overflow: ellipsis;
 }
 
+.imageHeaderStatus::placeholder {
+  color: var(--hq-gray-200);
+  opacity: 1;
+}
+
 .imageHeaderStatusMissing {
   color: var(--hq-error-soft);
+}
+
+.imageSearchAddon {
+  background: var(--hq-surface-900);
+  border-color: var(--hq-surface-700);
+  color: var(--hq-gray-200);
 }
 
 .imageAutocompleteWrap {
@@ -3899,7 +4099,7 @@
 
 .imageAutocompleteList {
   position: absolute;
-  top: calc(100% - var(--space-2));
+  top: calc(100% + var(--space-2));
   left: 0;
   width: 100%;
   max-height: 320px;
@@ -3926,6 +4126,16 @@
   color: var(--hq-text);
   text-align: left;
   cursor: pointer;
+}
+
+.imageAutocompleteMarker {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hq-gray-200);
+  flex: 0 0 auto;
 }
 
 .imageAutocompleteItem:hover,
@@ -3960,6 +4170,33 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: var(--text-sm);
+}
+
+.imageAutocompleteKind {
+  flex: 0 0 auto;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: rgba(15, 23, 42, 0.72);
+  color: #f9fafb;
+}
+
+.imageAutocompleteKindArtwork {
+  border-color: rgba(251, 191, 36, 0.85);
+  background: rgba(245, 158, 11, 0.25);
+}
+
+.imageAutocompleteKindIcon {
+  border-color: rgba(56, 189, 248, 0.85);
+  background: rgba(2, 132, 199, 0.3);
+}
+
+.imageAutocompleteKindUnknown {
+  border-color: rgba(148, 163, 184, 0.6);
+  color: #e5e7eb;
 }
 
 .imageAutocompleteEmpty {

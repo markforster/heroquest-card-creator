@@ -36,6 +36,8 @@ describe("createCard", () => {
       nameLower: "my hero",
       schemaVersion: 1,
       description: undefined,
+      copyright: undefined,
+      showCopyright: undefined,
       imageAssetId: undefined,
       imageAssetName: undefined,
       imageScale: undefined,

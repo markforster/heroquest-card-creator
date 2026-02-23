@@ -11,7 +11,19 @@ import PairingInspectorPanel from "./PairingInspectorPanel";
 
 type InspectorMode = "form" | "pairing";
 
-export default function CardInspector() {
+type CardInspectorProps = {
+  activeFrontId?: string | null;
+  autoOpenBackId?: string | null;
+  frontViewToken?: number;
+  onRememberBackId?: (backId: string) => void;
+};
+
+export default function CardInspector({
+  activeFrontId,
+  autoOpenBackId,
+  frontViewToken,
+  onRememberBackId,
+}: CardInspectorProps) {
   const { t } = useI18n();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
@@ -99,7 +111,12 @@ export default function CardInspector() {
         {mode === "form" ? (
           <GenericInspectorForm key={key} templateId={selectedTemplateId} />
         ) : (
-          <PairingInspectorPanel />
+          <PairingInspectorPanel
+            activeFrontId={activeFrontId}
+            autoOpenBackId={autoOpenBackId}
+            frontViewToken={frontViewToken}
+            onRememberBackId={onRememberBackId}
+          />
         )}
       </div>
     </div>

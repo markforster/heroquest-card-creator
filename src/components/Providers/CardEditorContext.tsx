@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
+import { computeContainScale, getImageLayerBounds } from "@/lib/image-scale";
 import { touchCardLastViewed } from "@/lib/cards-db";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardStatus, CardRecord } from "@/types/cards-db";
@@ -12,6 +13,35 @@ import type { TemplateId } from "@/types/templates";
 import type { ReactNode } from "react";
 
 type CardDrafts = Partial<{ [K in TemplateId]: CardDataByTemplate[K] }>;
+
+function normalizeDraftImageScale<T extends TemplateId>(
+  templateId: T,
+  draft: CardDataByTemplate[T],
+): CardDataByTemplate[T] {
+  const data = draft as {
+    imageScale?: number;
+    imageScaleMode?: "absolute" | "relative";
+    imageOriginalWidth?: number;
+    imageOriginalHeight?: number;
+  };
+  if (data.imageScaleMode) return draft;
+  const imageScale = data.imageScale;
+  if (imageScale == null) {
+    return { ...draft, imageScaleMode: "relative" } as CardDataByTemplate[T];
+  }
+  const bounds = getImageLayerBounds(templateId, "imageAssetId");
+  const containScale = computeContainScale(
+    bounds,
+    data.imageOriginalWidth,
+    data.imageOriginalHeight,
+  );
+  const relative = containScale ? imageScale / containScale : imageScale;
+  return {
+    ...draft,
+    imageScale: relative,
+    imageScaleMode: "relative",
+  } as CardDataByTemplate[T];
+}
 
 export type CardEditorState = {
   selectedTemplateId: TemplateId | null;
@@ -97,7 +127,10 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
         if (parsed && typeof parsed === "object") {
           const templateId = storedSingleDraftTemplateId as TemplateId;
           if (cardTemplatesById[templateId]) {
-            initialDraft = parsed as CardDataByTemplate[TemplateId];
+            initialDraft = normalizeDraftImageScale(
+              templateId,
+              parsed as CardDataByTemplate[TemplateId],
+            );
             initialDraftTemplateId = templateId;
           }
         }
@@ -128,7 +161,10 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
             (Object.keys(parsed) as TemplateId[]).forEach((key) => {
               if (cardTemplatesById[key]) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                safeDrafts[key] = (parsed as any)[key] as CardDataByTemplate[TemplateId];
+                safeDrafts[key] = normalizeDraftImageScale(
+                  key,
+                  (parsed as any)[key] as CardDataByTemplate[TemplateId],
+                );
               }
             });
             initialDrafts = safeDrafts;
