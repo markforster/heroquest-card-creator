@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import {
+  BadgeHelp,
   Expand,
   Eye,
   EyeOff,
@@ -19,11 +20,14 @@ import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { BodyTextStyle } from "@/types/card-data";
+import ModalShell from "@/components/common/ModalShell";
+import FormattingHelpContent from "@/components/Cards/CardInspector/FormattingHelpContent";
 
 type ContentFieldProps = {
   label: string;
   showToolbar?: boolean;
   showToggle?: boolean;
+  showFormattingHelp?: boolean;
 };
 
 const DEFAULT_BODY_TEXT_STYLE: BodyTextStyle = {
@@ -42,6 +46,7 @@ export default function ContentField({
   label,
   showToolbar = false,
   showToggle = false,
+  showFormattingHelp = false,
 }: ContentFieldProps) {
   const { t } = useI18n();
   const {
@@ -58,6 +63,7 @@ export default function ContentField({
     width: 300,
     height: 420,
   });
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const defaultBackdrop = DEFAULT_BODY_TEXT_STYLE.backdrop ?? {};
   const effectiveBackdrop = {
@@ -93,6 +99,17 @@ export default function ContentField({
   return (
     <div className="mb-2">
       <div className="d-flex align-items-center gap-2 mb-1">
+        {showFormattingHelp ? (
+          <button
+            type="button"
+            className={layoutStyles.helpIconButton}
+            title={t("tooltip.formattingHelp")}
+            aria-label={t("tooltip.formattingHelp")}
+            onClick={() => setIsHelpOpen(true)}
+          >
+            <BadgeHelp className={layoutStyles.icon} aria-hidden="true" />
+          </button>
+        ) : null}
         <label htmlFor="description" className="form-label mb-0 flex-grow-1">
           {label}
         </label>
@@ -252,6 +269,13 @@ export default function ContentField({
           ) : null}
         </>
       ) : null}
+      <ModalShell
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        title={t("heading.formattingHelp")}
+      >
+        <FormattingHelpContent />
+      </ModalShell>
     </div>
   );
 }

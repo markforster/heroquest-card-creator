@@ -129,6 +129,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
                 label={t(field.labelKey)}
                 showToolbar={field.props?.showToolbar}
                 showToggle={field.showToggle}
+                showFormattingHelp={field.bind === "description"}
               />
             );
           }

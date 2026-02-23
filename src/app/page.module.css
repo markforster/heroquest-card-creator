@@ -4039,6 +4039,162 @@ button.assetsKindBadge:disabled {
   flex: 0 0 auto;
 }
 
+.formattingHelpGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+
+.formattingHelpBody {
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+.formattingHelpCard {
+  border: 1px solid var(--hq-white-12);
+  background: rgba(10, 10, 10, 0.55);
+  border-radius: var(--radius-md);
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.formattingHelpTitle {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hq-accent);
+}
+
+.formattingHelpRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.formattingHelpRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.formattingHelpCell {
+  min-width: 0;
+}
+
+.formattingHelpCodeBlock {
+  margin: 0;
+  padding: var(--space-5);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--hq-white-08);
+  color: #f5f5f5;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.formattingHelpInlineCode {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--hq-white-08);
+  color: #f5f5f5;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.formattingHelpCodeBlock code,
+.formattingHelpInlineCode {
+  font-family: var(--font-mono);
+}
+
+.formattingHelpOutput {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: rgba(245, 245, 245, 0.9);
+  white-space: pre-wrap;
+}
+
+.formattingHelpAlignLeft {
+  text-align: left;
+}
+
+.formattingHelpAlignCenter {
+  text-align: center;
+}
+
+.formattingHelpAlignRight {
+  text-align: right;
+}
+
+.formattingHelpMono {
+  font-family: var(--font-mono);
+  display: inline-block;
+  white-space: pre-wrap;
+}
+
+.formattingHelpDiceRow {
+  display: inline-flex;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.formattingHelpDiceChip {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.formattingHelpDiceImage {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@media (max-width: 720px) {
+  .formattingHelpGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .formattingHelpRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.helpIconButton {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hq-white-15);
+  background: var(--hq-white-06);
+  color: #d7d7d7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.helpIconButton:hover {
+  color: var(--hq-white);
+  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--hq-white-10);
+}
+
 .bodyTextToolbarButton {
   width: 26px;
   height: 26px;
