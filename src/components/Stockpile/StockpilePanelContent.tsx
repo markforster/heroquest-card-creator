@@ -1,19 +1,16 @@
 "use client";
 
-import { AlertTriangle, Combine, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
+import CardPreview from "@/components/Cards/CardPreview";
+import { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
+import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
+import ModalShell from "@/components/common/ModalShell";
+import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
-import CardPreview from "@/components/Cards/CardPreview";
-import CardThumbnail from "@/components/common/CardThumbnail";
-import ModalShell from "@/components/common/ModalShell";
-import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
-import ExportProgressOverlay from "@/components/ExportProgressOverlay";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
 import {
@@ -21,27 +18,36 @@ import {
   resolveExportFileName,
   resolveZipFileName,
 } from "@/components/Stockpile/stockpile-utils";
-import { USE_EXPORT_PAIR_JITTER } from "@/config/flags";
+import StockpileActionsBar from "@/components/Stockpile/StockpileActionsBar";
+import StockpileAddToCollectionController from "@/components/Stockpile/StockpileAddToCollectionController";
+import StockpileCollectionController from "@/components/Stockpile/StockpileCollectionController";
+import StockpileConfirmModal from "@/components/Stockpile/StockpileConfirmModal";
+import StockpileContentPane from "@/components/Stockpile/StockpileContentPane";
+import StockpileExportPairPrompt from "@/components/Stockpile/StockpileExportPairPrompt";
+import StockpileFooter from "@/components/Stockpile/StockpileFooter";
+import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
+import StockpilePairPopover from "@/components/Stockpile/StockpilePairPopover";
+import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
+import StockpileTableThumbPopover from "@/components/Stockpile/StockpileTableThumbPopover";
+import StockpileToolbar from "@/components/Stockpile/StockpileToolbar";
+import type {
+  StockpileCardActions,
+  StockpileCardThumb,
+  StockpileCardView,
+} from "@/components/Stockpile/types";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { deleteCards, listCards } from "@/lib/cards-db";
-import {
-  createCollection,
-  deleteCollection,
-  listCollections,
-  updateCollection,
-} from "@/lib/collections-db";
-import { runBulkExport } from "@/lib/export-cards";
+import { listCollections, updateCollection } from "@/lib/collections-db";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
+import { runBulkExport } from "@/lib/export-cards";
 import { deletePairsForFace, listAllPairs } from "@/lib/pairs-service";
 import { createDefaultCardData } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
-
-import { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import type { OpenCloseProps } from "@/types/ui";
 
 type StockpilePanelMode = "manage" | "pair-fronts" | "pair-backs";
@@ -88,11 +94,6 @@ export default function StockpilePanelContent({
     title: string;
     body: string;
     confirmLabel?: string;
-    onConfirm: () => Promise<void> | void;
-  } | null>(null);
-  const [pairingConflictDialog, setPairingConflictDialog] = useState<{
-    count: number;
-    cardIds: string[];
     onConfirm: () => Promise<void> | void;
   } | null>(null);
   const [search, setSearch] = useState("");
@@ -163,13 +164,6 @@ export default function StockpilePanelContent({
     showMissingArtworkOnly,
     missingArtworkIdSet: missingArtworkIds,
   });
-  const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
-  const [collectionFormMode, setCollectionFormMode] = useState<"create" | "edit">("create");
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [addTargetCollectionId, setAddTargetCollectionId] = useState("");
-  const [collectionName, setCollectionName] = useState("");
-  const [collectionDescription, setCollectionDescription] = useState("");
-  const [collectionNameError, setCollectionNameError] = useState<string | null>(null);
   const [exportTarget, setExportTarget] = useState<CardRecord | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportTotal, setExportTotal] = useState(0);
@@ -182,18 +176,8 @@ export default function StockpilePanelContent({
     exportOnlyLabel: string;
     previewRows: { left: CardRecord[]; right: CardRecord[] }[];
   } | null>(null);
-  const exportPairVisibleCount = 9;
-  const [pairOverflowAnchor, setPairOverflowAnchor] = useState<{
-    rect: { top: number; left: number; bottom: number; right: number };
-    cards: CardRecord[];
-  } | null>(null);
-  const [isPairOverflowOpen, setIsPairOverflowOpen] = useState(false);
-  const pairOverflowHoverTimeoutRef = useRef<number | null>(null);
   const previewRef = useRef<CardPreviewHandle | null>(null);
-  const selectAllRef = useRef<HTMLInputElement | null>(null);
   const cancelExportRef = useRef(false);
-  const filterMenuRef = useRef<HTMLDivElement | null>(null);
-  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [hoveredPairCardId, setHoveredPairCardId] = useState<string | null>(null);
   const pairHoverTimeoutRef = useRef<number | null>(null);
   const [pairPopoverAnchor, setPairPopoverAnchor] = useState<{
@@ -207,17 +191,6 @@ export default function StockpilePanelContent({
   const [conflictPopoverCardId, setConflictPopoverCardId] = useState<string | null>(null);
   const conflictHoverTimeoutRef = useRef<number | null>(null);
   const tableThumbHoverTimeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!filterMenuRef.current) return;
-      if (!filterMenuRef.current.contains(event.target as Node)) {
-        setIsFilterMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     if (missingArtworkIds.size === 0) {
@@ -269,8 +242,6 @@ export default function StockpilePanelContent({
   useEffect(() => {
     if (isOpen) return;
     setExportPairPrompt(null);
-    setIsPairOverflowOpen(false);
-    setPairOverflowAnchor(null);
   }, [isOpen]);
 
   useEscapeModalAware({
@@ -279,30 +250,6 @@ export default function StockpilePanelContent({
     onEscape: () => setExportPairPrompt(null),
   });
 
-  useEscapeModalAware({
-    id: "stockpile-pair-overflow",
-    isOpen: isPairOverflowOpen,
-    onEscape: () => {
-      setIsPairOverflowOpen(false);
-      setPairOverflowAnchor(null);
-    },
-    enabled: isPairOverflowOpen,
-  });
-
-  useEscapeModalAware({
-    id: "stockpile-collection-editor",
-    isOpen: isCollectionModalOpen,
-    onEscape: () => {
-      setIsCollectionModalOpen(false);
-      setCollectionNameError(null);
-    },
-  });
-
-  useEscapeModalAware({
-    id: "stockpile-add-to-collection",
-    isOpen: isAddModalOpen,
-    onEscape: () => setIsAddModalOpen(false),
-  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -331,14 +278,6 @@ export default function StockpilePanelContent({
       active = false;
     };
   }, [cards, isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    setIsCollectionModalOpen(false);
-    setCollectionName("");
-    setCollectionDescription("");
-  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -419,7 +358,6 @@ export default function StockpilePanelContent({
     return map;
   }, [pairsByBackId, cardById]);
   const selectedVisibleCards = cards.filter((card) => visibleSelectedIds.includes(card.id));
-  const shouldShowPairOverflow = isPairOverflowOpen && pairOverflowAnchor;
   const activeCollection =
     activeFilter.type === "collection"
       ? collections.find((collection) => collection.id === activeFilter.id)
@@ -455,6 +393,166 @@ export default function StockpilePanelContent({
     activeFilter.type === "collection" && selectedVisibleCards.length === 0
       ? activeCollectionCards
       : selectedVisibleCards;
+  const tableHeaders = useMemo(
+    () => ({
+      card: t("label.card"),
+      name: t("label.cardName"),
+      type: t("label.cardType"),
+      face: t("label.cardFace"),
+      modified: t("label.lastModified"),
+      pairing: t("label.pairing"),
+    }),
+    [t],
+  );
+  const cardViews = useMemo<StockpileCardView[]>(() => {
+    const resolveThumb = (card: CardRecord): StockpileCardThumb => ({
+      id: card.id,
+      thumbnailBlob: card.thumbnailBlob ?? null,
+      templateThumbSrc: cardTemplatesById[card.templateId]?.thumbnail?.src ?? null,
+      name: card.name ?? card.title ?? "",
+    });
+
+    return filteredCards.map((card) => {
+      const templateMeta = cardTemplatesById[card.templateId];
+      const effectiveFace = (card.face ?? templateMeta?.defaultFace ?? "front") as "front" | "back";
+      const pairedBackId = backByFrontId.get(card.id) ?? null;
+      const pairedBack = pairedBackId ? (cardById.get(pairedBackId) ?? null) : null;
+      const pairedFronts = pairedByTargetId.get(card.id) ?? [];
+      const pairedFrontThumbs = pairedFronts.map((paired) => resolveThumb(paired));
+      const isPairingConflict = Boolean(
+        isPairFronts && pairedBackId && pairedBackId !== activeBackId,
+      );
+      const conflictPairedName = isPairingConflict
+        ? (pairedBack?.title ?? pairedBack?.name ?? "Untitled card")
+        : undefined;
+      const conflictLabel = isPairingConflict ? t("warning.alreadyPairedWith") : undefined;
+      const updated = new Date(card.updatedAt);
+
+      return {
+        id: card.id,
+        name: card.name,
+        templateId: card.templateId,
+        templateLabel: templateFilterLabelMap[card.templateId] ?? card.templateId,
+        effectiveFace,
+        faceLabel: effectiveFace === "back" ? t("cardFace.back") : t("cardFace.front"),
+        updatedLabel: updated.toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        }),
+        timeLabel: updated.toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        thumbnailBlob: card.thumbnailBlob ?? null,
+        templateThumbSrc: templateMeta?.thumbnail?.src ?? null,
+        paired: {
+          back: pairedBack ? resolveThumb(pairedBack) : null,
+          fronts: pairedFrontThumbs,
+          frontsVisible: pairedFrontThumbs.slice(0, 3),
+          frontsOverflow: Math.max(0, pairedFrontThumbs.length - 3),
+        },
+        isSelected: selectedIds.includes(card.id),
+        isPairingConflict,
+        conflictPairedName,
+        conflictLabel,
+      };
+    });
+  }, [
+    filteredCards,
+    selectedIds,
+    templateFilterLabelMap,
+    cardById,
+    pairedByTargetId,
+    backByFrontId,
+    isPairFronts,
+    activeBackId,
+    t,
+  ]);
+  const cardActions: StockpileCardActions = useMemo(
+    () => ({
+      onCardClick: (id, event, isPairMode, isPairingConflict) => {
+        if (isPairMode) {
+          setSelectedIds((prev) => {
+            const next = prev.includes(id) ? prev.filter((cardId) => cardId !== id) : [...prev, id];
+            if (isPairingConflict && next.includes(id)) {
+              setConflictPopoverCardId(id);
+            } else if (isPairingConflict && !next.includes(id)) {
+              setConflictPopoverCardId((current) => (current === id ? null : current));
+            }
+            return next;
+          });
+          return;
+        }
+        const allowMulti = event.metaKey || event.ctrlKey;
+        if (allowMulti) {
+          setSelectedIds((prev) =>
+            prev.includes(id) ? prev.filter((cardId) => cardId !== id) : [...prev, id],
+          );
+          return;
+        }
+        setSelectedIds([id]);
+      },
+      onCardDoubleClick: (id) => {
+        if (!onLoadCard) return;
+        const card = cardById.get(id);
+        if (!card) return;
+        onLoadCard(card);
+        onClose();
+      },
+      onPairHoverEnter: (id, rect) => {
+        if (pairHoverTimeoutRef.current) {
+          window.clearTimeout(pairHoverTimeoutRef.current);
+        }
+        setPairPopoverAnchor({
+          id,
+          rect: { top: rect.top, left: rect.left, bottom: rect.bottom, right: rect.right },
+        });
+        setHoveredPairCardId(id);
+      },
+      onPairHoverLeave: (id) => {
+        if (pairHoverTimeoutRef.current) {
+          window.clearTimeout(pairHoverTimeoutRef.current);
+        }
+        pairHoverTimeoutRef.current = window.setTimeout(() => {
+          setHoveredPairCardId((prev) => (prev === id ? null : prev));
+          setPairPopoverAnchor((prev) => (prev?.id === id ? null : prev));
+        }, 200);
+      },
+      onTableThumbEnter: (id, rect) => {
+        if (tableThumbHoverTimeoutRef.current) {
+          window.clearTimeout(tableThumbHoverTimeoutRef.current);
+        }
+        setTableThumbAnchor({
+          id,
+          rect: { top: rect.top, left: rect.left, bottom: rect.bottom, right: rect.right },
+        });
+      },
+      onTableThumbLeave: (id) => {
+        if (tableThumbHoverTimeoutRef.current) {
+          window.clearTimeout(tableThumbHoverTimeoutRef.current);
+        }
+        tableThumbHoverTimeoutRef.current = window.setTimeout(() => {
+          setTableThumbAnchor((prev) => (prev?.id === id ? null : prev));
+        }, 200);
+      },
+      onConflictHoverEnter: (id) => {
+        if (conflictHoverTimeoutRef.current) {
+          window.clearTimeout(conflictHoverTimeoutRef.current);
+        }
+        setConflictPopoverCardId(id);
+      },
+      onConflictHoverLeave: (id) => {
+        if (conflictHoverTimeoutRef.current) {
+          window.clearTimeout(conflictHoverTimeoutRef.current);
+        }
+        conflictHoverTimeoutRef.current = window.setTimeout(() => {
+          setConflictPopoverCardId((prev) => (prev === id ? null : prev));
+        }, 200);
+      },
+    }),
+    [cardById, onClose, onLoadCard],
+  );
 
   const sortCardsByName = (items: CardRecord[]) =>
     items.sort((a, b) => {
@@ -521,16 +619,6 @@ export default function StockpilePanelContent({
     };
   };
 
-  const resolveCardJitter = (id: string) => {
-    let hash = 0;
-    for (let i = 0; i < id.length; i += 1) {
-      hash = (hash * 31 + id.charCodeAt(i)) % 1024;
-    }
-    const rotation = ((hash % 7) - 3) * 0.6;
-    const offsetX = (((hash >> 3) % 7) - 3) * 0.7;
-    const offsetY = (((hash >> 6) % 7) - 3) * 0.7;
-    return { rotation, offsetX, offsetY };
-  };
   const canExport =
     !isExporting &&
     exportCards.length > 0 &&
@@ -549,26 +637,6 @@ export default function StockpilePanelContent({
   const exportTitle = exportCollectionName
     ? `${t("status.exportingImagesFrom")} ${exportCollectionName} (${exportTotal})`
     : `${t("status.exportingImages")} (${exportTotal})`;
-
-  useEffect(() => {
-    const checkbox = selectAllRef.current;
-    if (!checkbox) return;
-    if (filteredCards.length === 0) {
-      checkbox.indeterminate = false;
-      checkbox.checked = false;
-      return;
-    }
-    const visibleIds = new Set(filteredCards.map((card) => card.id));
-    const selectedVisible = selectedIds.filter((id) => visibleIds.has(id)).length;
-    checkbox.checked = selectedVisible === visibleIds.size;
-    checkbox.indeterminate = selectedVisible > 0 && selectedVisible < visibleIds.size;
-  }, [filteredCards, selectedIds]);
-
-  const openCardInNewTab = (cardId: string) => {
-    if (typeof window === "undefined") return;
-    const url = `${window.location.origin}${window.location.pathname}#/cards/${cardId}`;
-    window.open(url, "_blank", "noopener");
-  };
 
   const handleExportCards = async (
     cardsToExport: CardRecord[],
@@ -684,1568 +752,243 @@ export default function StockpilePanelContent({
     <>
       <div className={styles.stockpilePanel}>
         <div className={styles.stockpilePanelBody}>
-          <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
-            <div className={`${styles.cardsFiltersRow} ${styles.uRowLg}`}>
-              <div className={`${styles.cardsFiltersLeft} ${styles.uRowLg}`}>
-                <div className="input-group input-group-sm" style={{ width: "17.25em" }}>
-                  <span className="input-group-text">
-                    <Search className={styles.icon} aria-hidden="true" />
-                  </span>
-                  <input
-                    type="search"
-                    placeholder={t("placeholders.searchCards")}
-                    className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch} ${styles.cardsSearchInputFixed}`}
-                    title={t("tooltip.searchCards")}
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                  />
-                </div>
-                <div className="d-flex align-items-center gap-2">
-                  <div className={styles.cardsFilterMenu} ref={filterMenuRef}>
-                    <button
-                      type="button"
-                      className={styles.cardsFilterButton}
-                      title={t("tooltip.filterCards")}
-                      aria-expanded={isFilterMenuOpen}
-                      onClick={() => setIsFilterMenuOpen((prev) => !prev)}
-                    >
-                      <span>{filterLabel}</span>
-                    </button>
-                    {isFilterMenuOpen ? (
-                      <div className={styles.cardsFilterPopover} role="menu">
-                        <button
-                          type="button"
-                          className={`${styles.cardsFilterItem} ${
-                            templateFilter === "all" ? styles.cardsFilterItemActive : ""
-                          }`}
-                          role="menuitem"
-                          onClick={() => {
-                            setTemplateFilter("all");
-                            setIsFilterMenuOpen(false);
-                          }}
-                        >
-                          <span>{t("ui.allTypes")}</span>
-                          <span className={styles.cardsFilterCount}>{totalCount}</span>
-                        </button>
-                        {!isPairBacks ? (
-                          <>
-                            <button
-                              type="button"
-                              className={`${styles.cardsFilterItem} ${
-                                templateFilter === "front" ? styles.cardsFilterItemActive : ""
-                              }`}
-                              role="menuitem"
-                              onClick={() => {
-                                setTemplateFilter("front");
-                                setIsFilterMenuOpen(false);
-                              }}
-                            >
-                              <span>{t("cardFace.frontFacing")}</span>
-                              <span className={styles.cardsFilterCount}>{faceCounts.front}</span>
-                            </button>
-                            {cardTemplates
-                              .filter((template) => template.defaultFace === "front")
-                              .map((template) => (
-                                <button
-                                  key={template.id}
-                                  type="button"
-                                  className={`${styles.cardsFilterItem} ${
-                                    templateFilter === template.id
-                                      ? styles.cardsFilterItemActive
-                                      : ""
-                                  }`}
-                                  role="menuitem"
-                                  onClick={() => {
-                                    setTemplateFilter(template.id);
-                                    setIsFilterMenuOpen(false);
-                                  }}
-                                >
-                                  <span>{getTemplateNameLabel(language, template)}</span>
-                                  <span className={styles.cardsFilterCount}>
-                                    {typeCounts.get(template.id) ?? 0}
-                                  </span>
-                                </button>
-                              ))}
-                          </>
-                        ) : null}
-                        {!isPairFronts ? (
-                          <>
-                            <button
-                              type="button"
-                              className={`${styles.cardsFilterItem} ${
-                                templateFilter === "back" ? styles.cardsFilterItemActive : ""
-                              }`}
-                              role="menuitem"
-                              onClick={() => {
-                                setTemplateFilter("back");
-                                setIsFilterMenuOpen(false);
-                              }}
-                            >
-                              <span>{t("cardFace.backFacing")}</span>
-                              <span className={styles.cardsFilterCount}>{faceCounts.back}</span>
-                            </button>
-                            {cardTemplates
-                              .filter((template) => template.defaultFace === "back")
-                              .map((template) => (
-                                <button
-                                  key={template.id}
-                                  type="button"
-                                  className={`${styles.cardsFilterItem} ${
-                                    templateFilter === template.id
-                                      ? styles.cardsFilterItemActive
-                                      : ""
-                                  }`}
-                                  role="menuitem"
-                                  onClick={() => {
-                                    setTemplateFilter(template.id);
-                                    setIsFilterMenuOpen(false);
-                                  }}
-                                >
-                                  <span>{getTemplateNameLabel(language, template)}</span>
-                                  <span className={styles.cardsFilterCount}>
-                                    {typeCounts.get(template.id) ?? 0}
-                                  </span>
-                                </button>
-                              ))}
-                          </>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                  {!isPairMode ? (
-                    <label className="form-check form-check-inline mb-0 ms-2">
-                      <input
-                        className="form-check-input hq-checkbox"
-                        type="checkbox"
-                        checked={showUnpairedOnly}
-                        onChange={(event) => setShowUnpairedOnly(event.target.checked)}
-                      />
-                      <span className={`form-check-label ${styles.selectAllLabel}`}>
-                        {t("warning.notPaired")}
-                      </span>
-                    </label>
-                  ) : null}
-                </div>
-              </div>
-              <div className={styles.cardsFiltersSpacer} />
-              <div className={`${styles.cardsFiltersRight} ${styles.uRowLg}`}>
-                {!isPairMode && ENABLE_MISSING_ASSET_CHECKS && missingArtworkIds.size > 0 ? (
-                  <label
-                    className={`form-check form-check-inline mb-0 ${styles.missingArtworkFilter}`}
-                  >
-                    <input
-                      className="form-check-input hq-checkbox"
-                      type="checkbox"
-                      checked={showMissingArtworkOnly}
-                      onChange={(event) => setShowMissingArtworkOnly(event.target.checked)}
-                    />
-                    <span className={styles.missingArtworkLabel}>
-                      {t("label.missingArtwork")}
-                    </span>
-                    <AlertTriangle className={styles.missingArtworkIcon} size={16} />
-                  </label>
-                ) : null}
-                {isPairMode ? (
-                  <div className={`${styles.assetsActions} d-flex align-items-center gap-2 ms-3`}>
-                    <span className={styles.cardsSelectionLabel}>{t("status.selectedCards")}</span>
-                    <span className="badge rounded-pill bg-warning text-dark fs-6 px-2 py-1">
-                      {selectedIds.length}
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </div>
+          <StockpileToolbar
+            search={search}
+            onSearchChange={setSearch}
+            templateFilter={templateFilter}
+            onTemplateFilterChange={setTemplateFilter}
+            filterLabel={filterLabel}
+            totalCount={totalCount}
+            faceCounts={faceCounts}
+            typeCounts={typeCounts}
+            isPairMode={isPairMode}
+            isPairBacks={isPairBacks}
+            isPairFronts={isPairFronts}
+            showUnpairedOnly={showUnpairedOnly}
+            onShowUnpairedOnlyChange={setShowUnpairedOnly}
+            showMissingArtworkOnly={showMissingArtworkOnly}
+            onShowMissingArtworkOnlyChange={setShowMissingArtworkOnly}
+            selectedCount={selectedIds.length}
+          />
           <div className={styles.stockpileLayout}>
-            <aside
-              className={`${styles.stockpileSidebar} d-flex flex-column gap-2`}
-              aria-label={t("heading.collections")}
-            >
-              <div className={styles.stockpileSidebarHeader}>{t("heading.collections")}</div>
-              <div className={styles.stockpileSidebarList}>
-                <button
-                  type="button"
-                  className={`${styles.stockpileSidebarItem} ${activeFilter.type === "recent" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
-                  onClick={() => {
-                    setActiveFilter({ type: "recent" });
-                    if (!isPairMode) {
-                      setSelectedIds([]);
-                    }
-                  }}
-                >
-                  <span className="flex-grow-1 text-truncate fs-6">{t("actions.recentCards")}</span>
-                  {!isPairMode ? (
-                    <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
-                      {recentCards.length}
-                    </span>
-                  ) : null}
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.stockpileSidebarItem} ${activeFilter.type === "all" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
-                  onClick={() => {
-                    setActiveFilter({ type: "all" });
-                    if (!isPairMode) {
-                      setSelectedIds([]);
-                    }
-                  }}
-                >
-                  <span className="flex-grow-1 text-truncate fs-6">{t("actions.allCards")}</span>
-                  {!isPairMode ? (
-                    <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
-                      {overallCount}
-                    </span>
-                  ) : selectedIds.length > 0 ? (
-                    <span className={styles.stockpileSelectedDot} aria-hidden="true" />
-                  ) : null}
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.stockpileSidebarItem} ${activeFilter.type === "unfiled" ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
-                  onClick={() => {
-                    setActiveFilter({ type: "unfiled" });
-                    if (!isPairMode) {
-                      setSelectedIds([]);
-                    }
-                  }}
-                >
-                  <span className="flex-grow-1 text-truncate fs-6">{t("actions.unfiled")}</span>
-                  {!isPairMode ? (
-                    <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
-                      {unfiledCount}
-                    </span>
-                  ) : null}
-                </button>
-                <div className={styles.stockpileSidebarDivider} />
-              </div>
-              <div className={styles.stockpileSidebarMiddle}>
-                {visibleCollections.map((collection) => (
-                  <button
-                    key={collection.id}
-                    type="button"
-                    className={`${styles.stockpileSidebarItem} ${activeFilter.type === "collection" && activeFilter.id === collection.id ? styles.stockpileSidebarItemActive : ""} d-flex align-items-center gap-2`}
-                    onClick={() => {
-                      setActiveFilter({ type: "collection", id: collection.id });
-                      if (!isPairMode) {
-                        setSelectedIds([]);
-                      }
-                    }}
-                    title={collection.description || collection.name}
-                  >
-                    <span className="flex-grow-1 text-truncate fs-6">{collection.name}</span>
-                    {!isPairMode ? (
-                      <span
-                        className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}
-                      >
-                        {collectionCounts.get(collection.id) ?? 0}
-                      </span>
-                    ) : null}
-                    {isPairMode && selectedCountByCollection.get(collection.id) ? (
-                      <span className={styles.stockpileSelectedDot} aria-hidden="true" />
-                    ) : null}
-                  </button>
-                ))}
-              </div>
-            </aside>
+            <StockpileSidebar
+              activeFilter={activeFilter}
+              onFilterChange={setActiveFilter}
+              isPairMode={isPairMode}
+              selectedIds={selectedIds}
+              onClearSelection={() => setSelectedIds([])}
+              recentCardsCount={recentCards.length}
+              overallCount={overallCount}
+              unfiledCount={unfiledCount}
+              visibleCollections={visibleCollections}
+              collectionCounts={collectionCounts}
+              selectedCountByCollection={selectedCountByCollection}
+            />
             <div className={styles.stockpileContentPane}>
               {!isPairMode ? (
-                <div className={styles.stockpileActionsBar}>
-                  <div className={styles.stockpileViewToggle} role="group" aria-label="View mode">
-                    <button
-                      type="button"
-                      className={`${styles.stockpileViewButton} ${
-                        viewMode === "grid" ? styles.stockpileViewButtonActive : ""
-                      }`}
-                      aria-pressed={viewMode === "grid"}
-                      onClick={() => {
-                        setViewMode("grid");
+                <StockpileActionsBar
+                  viewMode={viewMode}
+                  onViewModeChange={(next) => {
+                    setViewMode(next);
+                    try {
+                      window.localStorage.setItem(STOCKPILE_VIEW_STORAGE_KEY, next);
+                    } catch {
+                      // Ignore localStorage errors.
+                    }
+                  }}
+                  isPairBacks={isPairBacks}
+                  filteredCards={filteredCards}
+                  selectedIds={selectedIds}
+                  activeFilter={activeFilter}
+                  addToCollectionControl={
+                    <StockpileAddToCollectionController
+                      collections={collections}
+                      activeFilter={activeFilter}
+                      visibleSelectedIds={visibleSelectedIds}
+                      onCollectionsUpdated={setCollections}
+                    />
+                  }
+                  onRemoveFromCollection={async () => {
+                    const target = collections.find((item) => item.id === activeFilter.id);
+                    if (!target) return;
+                    try {
+                      const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
+                      await updateCollection(target.id, { cardIds: remaining });
+                      const refreshed = await listCollections();
+                      setCollections(refreshed);
+                      setSelectedIds([]);
+                    } catch (error) {
+                      // eslint-disable-next-line no-console
+                      console.error("[StockpileModal] Failed to remove from collection", error);
+                    }
+                  }}
+                  onDeleteCards={() => {
+                    if (!selectedIds.length) return;
+                    const ids = [...selectedIds];
+                    setConfirmDialog({
+                      title: t("confirm.deleteCardsTitle"),
+                      body: `${t("confirm.deleteCardsBodyPrefix")} ${ids.length} ${
+                        ids.length === 1 ? t("label.card") : t("label.cards")
+                      } ${t("confirm.deleteCardsBodySuffix")}`,
+                      confirmLabel:
+                        ids.length > 1 ? `${t("actions.delete")} (${ids.length})` : t("actions.delete"),
+                      onConfirm: async () => {
                         try {
-                          window.localStorage.setItem(STOCKPILE_VIEW_STORAGE_KEY, "grid");
-                        } catch {
-                          // Ignore localStorage errors.
-                        }
-                      }}
-                    >
-                      {t("label.gridView")}
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.stockpileViewButton} ${
-                        viewMode === "table" ? styles.stockpileViewButtonActive : ""
-                      }`}
-                      aria-pressed={viewMode === "table"}
-                      onClick={() => {
-                        setViewMode("table");
-                        try {
-                          window.localStorage.setItem(STOCKPILE_VIEW_STORAGE_KEY, "table");
-                        } catch {
-                          // Ignore localStorage errors.
-                        }
-                      }}
-                    >
-                      {t("label.tableView")}
-                    </button>
-                  </div>
-                  {isPairBacks ? null : (
-                    <label
-                      className="form-check form-check-inline mb-0"
-                      title={t("tooltip.selectAllCards")}
-                    >
-                      <input
-                        ref={selectAllRef}
-                        className="form-check-input hq-checkbox"
-                        type="checkbox"
-                        disabled={filteredCards.length === 0}
-                        onChange={(event) => {
-                          const visibleIds = filteredCards.map((card) => card.id);
-                          if (!visibleIds.length) return;
-                          setSelectedIds((prev) => {
-                            const prevSet = new Set(prev);
-                            const allSelected = visibleIds.every((id) => prevSet.has(id));
-                            if (allSelected) {
-                              return prev.filter((id) => !visibleIds.includes(id));
-                            }
-                            const merged = new Set(prev);
-                            visibleIds.forEach((id) => merged.add(id));
-                            return Array.from(merged);
-                          });
-                          event.currentTarget.checked = false;
-                        }}
-                      />
-                      <span className={`form-check-label ${styles.selectAllLabel}`}>
-                        {t("form.selectAll")}
-                      </span>
-                    </label>
-                  )}
-                  <div
-                    className={`${styles.assetsActions} d-flex align-items-center gap-2 ms-auto`}
-                  >
-                    {collections.filter(
-                      (collection) =>
-                        activeFilter.type !== "collection" || collection.id !== activeFilter.id,
-                    ).length ? (
-                      <button
-                        type="button"
-                        className="btn btn-outline-light btn-sm"
-                        disabled={!visibleSelectedIds.length}
-                        onClick={() => {
-                          const available = collections.filter(
-                            (collection) =>
-                              activeFilter.type !== "collection" ||
-                              collection.id !== activeFilter.id,
+                          await Promise.all(ids.map((id) => deletePairsForFace(id)));
+                          await deleteCards(ids);
+                          const idSet = new Set(ids);
+                          (Object.keys(activeCardIdByTemplate) as TemplateId[]).forEach(
+                            (templateId) => {
+                              const activeId = activeCardIdByTemplate[templateId];
+                              if (!activeId || !idSet.has(activeId)) return;
+                              setActiveCard(templateId, null, null);
+                              setCardDraft(templateId, createDefaultCardData(templateId));
+                              setTemplateDirty(templateId, false);
+                            },
                           );
-                          if (!available.length) return;
-                          setAddTargetCollectionId((prev) => prev || available[0]?.id || "");
-                          setIsAddModalOpen(true);
-                        }}
-                      >
-                        {t("actions.addToCollection")}
-                      </button>
-                    ) : null}
-                    {activeFilter.type === "collection" ? (
-                      <button
-                        type="button"
-                        className="btn btn-outline-light btn-sm"
-                        disabled={!selectedIds.length}
-                        onClick={async () => {
-                          const target = collections.find((item) => item.id === activeFilter.id);
-                          if (!target) return;
-                          try {
-                            const remaining = target.cardIds.filter(
-                              (id) => !selectedIds.includes(id),
-                            );
-                            await updateCollection(target.id, { cardIds: remaining });
-                            const refreshed = await listCollections();
-                            setCollections(refreshed);
-                            setSelectedIds([]);
-                          } catch (error) {
-                            // eslint-disable-next-line no-console
-                            console.error(
-                              "[StockpileModal] Failed to remove from collection",
-                              error,
-                            );
-                          }
-                        }}
-                      >
-                        {t("actions.removeFromCollection")}
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="btn btn-outline-danger btn-sm"
-                      disabled={!selectedIds.length}
-                      onClick={async () => {
-                        if (!selectedIds.length) return;
-                        const ids = [...selectedIds];
-                        setConfirmDialog({
-                          title: t("confirm.deleteCardsTitle"),
-                          body: `${t("confirm.deleteCardsBodyPrefix")} ${ids.length} ${
-                            ids.length === 1 ? t("label.card") : t("label.cards")
-                          } ${t("confirm.deleteCardsBodySuffix")}`,
-                          confirmLabel:
-                            ids.length > 1
-                              ? `${t("actions.delete")} (${ids.length})`
-                              : t("actions.delete"),
-                          onConfirm: async () => {
-                            try {
-                              await Promise.all(ids.map((id) => deletePairsForFace(id)));
-                              await deleteCards(ids);
-                              const idSet = new Set(ids);
-                              (Object.keys(activeCardIdByTemplate) as TemplateId[]).forEach(
-                                (templateId) => {
-                                  const activeId = activeCardIdByTemplate[templateId];
-                                  if (!activeId || !idSet.has(activeId)) return;
-                                  setActiveCard(templateId, null, null);
-                                  setCardDraft(templateId, createDefaultCardData(templateId));
-                                  setTemplateDirty(templateId, false);
-                                },
-                              );
-                              const updates = collections
-                                .map((collection) => {
-                                  const nextCardIds = collection.cardIds.filter(
-                                    (id) => !idSet.has(id),
-                                  );
-                                  return nextCardIds.length === collection.cardIds.length
-                                    ? null
-                                    : { id: collection.id, cardIds: nextCardIds };
-                                })
-                                .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
-                              await Promise.all(
-                                updates.map((update) =>
-                                  updateCollection(update.id, { cardIds: update.cardIds }),
-                                ),
-                              );
-                              const refreshed = await listCards({ status: "saved" });
-                              setCards(refreshed);
-                              const refreshedCollections = await listCollections();
-                              setCollections(refreshedCollections);
-                              setSelectedIds([]);
-                            } catch (error) {
-                              // eslint-disable-next-line no-console
-                              console.error("[StockpileModal] Failed to delete card", error);
-                            } finally {
-                              setConfirmDialog(null);
-                            }
-                          },
-                        });
-                      }}
-                    >
-                      {selectedIds.length > 1
-                        ? `${t("actions.delete")} (${selectedIds.length})`
-                        : t("actions.delete")}
-                    </button>
-                  </div>
-                </div>
+                          const updates = collections
+                            .map((collection) => {
+                              const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
+                              return nextCardIds.length === collection.cardIds.length
+                                ? null
+                                : { id: collection.id, cardIds: nextCardIds };
+                            })
+                            .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
+                          await Promise.all(
+                            updates.map((update) =>
+                              updateCollection(update.id, { cardIds: update.cardIds }),
+                            ),
+                          );
+                          const refreshed = await listCards({ status: "saved" });
+                          setCards(refreshed);
+                          const refreshedCollections = await listCollections();
+                          setCollections(refreshedCollections);
+                          setSelectedIds([]);
+                        } catch (error) {
+                          // eslint-disable-next-line no-console
+                          console.error("[StockpileModal] Failed to delete card", error);
+                        } finally {
+                          setConfirmDialog(null);
+                        }
+                      },
+                    });
+                  }}
+                  onSelectAllToggle={(visibleIds) => {
+                    if (!visibleIds.length) return;
+                    setSelectedIds((prev) => {
+                      const prevSet = new Set(prev);
+                      const allSelected = visibleIds.every((id) => prevSet.has(id));
+                      if (allSelected) {
+                        return prev.filter((id) => !visibleIds.includes(id));
+                      }
+                      const merged = new Set(prev);
+                      visibleIds.forEach((id) => merged.add(id));
+                      return Array.from(merged);
+                    });
+                  }}
+                />
               ) : null}
-              <div className={styles.assetsGridContainer}>
-                {filteredCards.length === 0 ? (
-                  <div className={styles.assetsEmptyState}>
-                    {search.trim()
-                      ? t("empty.noCardsFound")
-                      : activeFilter.type === "recent"
-                        ? t("empty.noRecentCards")
-                        : activeFilter.type === "collection"
-                          ? templateFilter !== "all" && totalCount > 0
-                            ? `${t("empty.collectionFilteredByType")} ${filterLabel}.`
-                            : t("empty.collectionEmpty")
-                          : activeFilter.type === "unfiled"
-                            ? t("empty.nothingUnfiled")
-                            : t("empty.noSavedCards")}
-                  </div>
-                ) : (
-                  <>
-                    {isTableView ? (
-                      <div className={styles.stockpileTable} role="table">
-                        <div className={styles.stockpileTableHeader} role="row">
-                          <div className={styles.stockpileTableCell} role="columnheader">
-                            {t("label.card")}
-                          </div>
-                          <div className={styles.stockpileTableCell} role="columnheader">
-                            {t("label.cardName")}
-                          </div>
-                          <div className={styles.stockpileTableCell} role="columnheader">
-                            {t("label.cardType")}
-                          </div>
-                          <div className={styles.stockpileTableCell} role="columnheader">
-                            {t("label.cardFace")}
-                          </div>
-                          <div className={styles.stockpileTableCell} role="columnheader">
-                            {t("label.lastModified")}
-                          </div>
-                          <div className={styles.stockpileTableCell} role="columnheader">
-                            {t("label.pairing")}
-                          </div>
-                        </div>
-                        <div className={styles.stockpileTableBody} role="rowgroup">
-                          {filteredCards.map((card) => {
-                            const updated = new Date(card.updatedAt);
-                            const updatedLabel = updated.toLocaleDateString(undefined, {
-                              year: "numeric",
-                              month: "short",
-                              day: "2-digit",
-                            });
-                            const timeLabel = updated.toLocaleTimeString(undefined, {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            });
-                            const thumbUrl =
-                              typeof window !== "undefined" && card.thumbnailBlob
-                                ? URL.createObjectURL(card.thumbnailBlob)
-                                : null;
-                            const isSelected = selectedIds.includes(card.id);
-                            const pairedBackId = backByFrontId.get(card.id) ?? null;
-                            const templateMeta = cardTemplatesById[card.templateId];
-                            const effectiveFace = card.face ?? templateMeta?.defaultFace;
-                            const pairedFronts = pairedByTargetId.get(card.id) ?? [];
-                            const pairedCard = pairedBackId
-                              ? (cardById.get(pairedBackId) ?? null)
-                              : (pairedFronts[0] ?? null);
-                            const pairedThumbUrl =
-                              typeof window !== "undefined" && pairedCard?.thumbnailBlob
-                                ? URL.createObjectURL(pairedCard.thumbnailBlob)
-                                : null;
-                            const pairedTemplateThumb = pairedCard
-                              ? cardTemplatesById[pairedCard.templateId]?.thumbnail
-                              : null;
-                            const visiblePairedFronts = pairedFronts.slice(0, 3);
-                            const pairedFrontsOverflow =
-                              pairedFronts.length > 3 ? pairedFronts.length - 3 : 0;
-
-                            return (
-                              <button
-                                key={card.id}
-                                type="button"
-                                className={`${styles.stockpileTableRow} ${
-                                  isSelected ? styles.stockpileTableRowSelected : ""
-                                }`}
-                                role="row"
-                                onClick={(event) => {
-                                  const allowMulti = event.metaKey || event.ctrlKey;
-                                  if (allowMulti) {
-                                    setSelectedIds((prev) =>
-                                      prev.includes(card.id)
-                                        ? prev.filter((id) => id !== card.id)
-                                        : [...prev, card.id],
-                                    );
-                                    return;
-                                  }
-                                  setSelectedIds([card.id]);
-                                }}
-                                onDoubleClick={() => {
-                                  if (!onLoadCard) return;
-                                  onLoadCard(card);
-                                  onClose();
-                                }}
-                              >
-                                <div
-                                  className={styles.stockpileTableCell}
-                                  role="cell"
-                                  onMouseEnter={(event) => {
-                                    if (tableThumbHoverTimeoutRef.current) {
-                                      window.clearTimeout(tableThumbHoverTimeoutRef.current);
-                                    }
-                                    const rect = event.currentTarget.getBoundingClientRect();
-                                    setTableThumbAnchor({
-                                      id: card.id,
-                                      rect: {
-                                        top: rect.top,
-                                        left: rect.left,
-                                        bottom: rect.bottom,
-                                        right: rect.right,
-                                      },
-                                    });
-                                  }}
-                                  onMouseLeave={() => {
-                                    if (tableThumbHoverTimeoutRef.current) {
-                                      window.clearTimeout(tableThumbHoverTimeoutRef.current);
-                                    }
-                                    tableThumbHoverTimeoutRef.current = window.setTimeout(() => {
-                                      setTableThumbAnchor((prev) =>
-                                        prev?.id === card.id ? null : prev,
-                                      );
-                                    }, 200);
-                                  }}
-                                >
-                                  <CardThumbnail
-                                    src={thumbUrl}
-                                    alt={card.name}
-                                    variant="sm"
-                                    fit="contain"
-                                    onLoad={
-                                      thumbUrl
-                                        ? () => {
-                                          URL.revokeObjectURL(thumbUrl);
-                                        }
-                                        : undefined
-                                    }
-                                  />
-                                </div>
-                                <div
-                                  className={`${styles.stockpileTableCell} ${styles.stockpileTableName}`}
-                                  role="cell"
-                                  title={card.name}
-                                >
-                                  {card.name}
-                                </div>
-                                <div className={styles.stockpileTableCell} role="cell">
-                                  <span
-                                    className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}
-                                  >
-                                    {templateFilterLabelMap[card.templateId] ?? card.templateId}
-                                  </span>
-                                </div>
-                                <div className={styles.stockpileTableCell} role="cell">
-                                  {effectiveFace === "back"
-                                    ? t("cardFace.back")
-                                    : t("cardFace.front")}
-                                </div>
-                                <div className={styles.stockpileTableCell} role="cell">
-                                  {updatedLabel} {timeLabel}
-                                </div>
-                                <div
-                                  className={`${styles.stockpileTableCell} ${styles.stockpileTablePairing}`}
-                                  role="cell"
-                                >
-                                  <div
-                                    className={styles.cardsPairIndicator}
-                                    onMouseEnter={(event) => {
-                                      if (pairHoverTimeoutRef.current) {
-                                        window.clearTimeout(pairHoverTimeoutRef.current);
-                                      }
-                                      const rect = event.currentTarget.getBoundingClientRect();
-                                      setPairPopoverAnchor({
-                                        id: card.id,
-                                        rect: {
-                                          top: rect.top,
-                                          left: rect.left,
-                                          bottom: rect.bottom,
-                                          right: rect.right,
-                                        },
-                                      });
-                                      setHoveredPairCardId(card.id);
-                                    }}
-                                    onMouseLeave={() => {
-                                      if (pairHoverTimeoutRef.current) {
-                                        window.clearTimeout(pairHoverTimeoutRef.current);
-                                      }
-                                      pairHoverTimeoutRef.current = window.setTimeout(() => {
-                                        setHoveredPairCardId((prev) =>
-                                          prev === card.id ? null : prev,
-                                        );
-                                        setPairPopoverAnchor((prev) =>
-                                          prev?.id === card.id ? null : prev,
-                                        );
-                                      }, 200);
-                                    }}
-                                  >
-                                    {effectiveFace === "back" ? (
-                                      <div className={styles.cardsPairStack}>
-                                        {visiblePairedFronts.map((paired, index) => {
-                                          const stackThumbUrl =
-                                            typeof window !== "undefined" && paired.thumbnailBlob
-                                              ? URL.createObjectURL(paired.thumbnailBlob)
-                                              : null;
-                                          const stackTemplateThumb =
-                                            cardTemplatesById[paired.templateId]?.thumbnail;
-                                          return (
-                                            <div
-                                              key={paired.id}
-                                              className={styles.cardsPairStackItem}
-                                              style={{ zIndex: index + 1 }}
-                                            >
-                                              <div className={styles.cardsPairIndicatorInner}>
-                                                {stackThumbUrl ? (
-                                                  // eslint-disable-next-line @next/next/no-img-element
-                                                  <img
-                                                    src={stackThumbUrl}
-                                                    alt=""
-                                                    onLoad={() => {
-                                                      URL.revokeObjectURL(stackThumbUrl);
-                                                    }}
-                                                  />
-                                                ) : stackTemplateThumb?.src ? (
-                                                  // eslint-disable-next-line @next/next/no-img-element
-                                                  <img src={stackTemplateThumb.src} alt="" />
-                                                ) : (
-                                                  <div
-                                                    className={
-                                                      styles.cardsPairIndicatorPlaceholder
-                                                    }
-                                                  />
-                                                )}
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                        {pairedFrontsOverflow > 0 ? (
-                                          <div
-                                            className={styles.cardsPairStackItem}
-                                            style={{ zIndex: visiblePairedFronts.length + 1 }}
-                                          >
-                                            <div className={styles.cardsPairStackOverflow}>
-                                              +{pairedFrontsOverflow}
-                                            </div>
-                                          </div>
-                                        ) : null}
-                                        {pairedFronts.length === 0 ? (
-                                          <div className={styles.cardsPairIndicatorInner}>
-                                            <div
-                                              className={styles.cardsPairIndicatorPlaceholder}
-                                            />
-                                          </div>
-                                        ) : null}
-                                      </div>
-                                    ) : (
-                                      <div className={styles.cardsPairIndicatorInner}>
-                                        {pairedThumbUrl ? (
-                                          // eslint-disable-next-line @next/next/no-img-element
-                                          <img
-                                            src={pairedThumbUrl}
-                                            alt=""
-                                            onLoad={() => {
-                                              URL.revokeObjectURL(pairedThumbUrl);
-                                            }}
-                                          />
-                                        ) : pairedTemplateThumb?.src ? (
-                                          // eslint-disable-next-line @next/next/no-img-element
-                                          <img src={pairedTemplateThumb.src} alt="" />
-                                        ) : (
-                                          <div className={styles.cardsPairIndicatorPlaceholder} />
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className={styles.assetsGrid}>
-                        {filteredCards.map((card) => {
-                          const updated = new Date(card.updatedAt);
-                          const updatedLabel = updated.toLocaleDateString(undefined, {
-                            year: "numeric",
-                            month: "short",
-                            day: "2-digit",
-                          });
-                          const timeLabel = updated.toLocaleTimeString(undefined, {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          });
-
-                          const thumbUrl =
-                            typeof window !== "undefined" && card.thumbnailBlob
-                              ? URL.createObjectURL(card.thumbnailBlob)
-                              : null;
-                          const isSelected = selectedIds.includes(card.id);
-                          const pairedBackId = backByFrontId.get(card.id) ?? null;
-                          const isPairingConflict =
-                            isPairFronts && pairedBackId && pairedBackId !== activeBackId;
-                          const templateMeta = cardTemplatesById[card.templateId];
-                          const effectiveFace = card.face ?? templateMeta?.defaultFace;
-                          const pairedFronts = pairedByTargetId.get(card.id) ?? [];
-                          const pairedCard = pairedBackId
-                            ? (cardById.get(pairedBackId) ?? null)
-                            : (pairedFronts[0] ?? null);
-                          const pairedThumbUrl =
-                            typeof window !== "undefined" && pairedCard?.thumbnailBlob
-                              ? URL.createObjectURL(pairedCard.thumbnailBlob)
-                              : null;
-                          const pairedTemplateThumb = pairedCard
-                            ? cardTemplatesById[pairedCard.templateId]?.thumbnail
-                            : null;
-                          const visiblePairedFronts = pairedFronts.slice(0, 3);
-                          const pairedFrontsOverflow =
-                            pairedFronts.length > 3 ? pairedFronts.length - 3 : 0;
-
-                          return (
-                            <button
-                              key={card.id}
-                              type="button"
-                              className={`${styles.assetsItem} ${
-                                isSelected
-                                  ? isPairingConflict
-                                    ? styles.assetsItemConflict
-                                    : styles.assetsItemSelected
-                                  : ""
-                              }`}
-                              onMouseEnter={() => {
-                                if (!isPairingConflict || !isSelected) return;
-                                if (conflictHoverTimeoutRef.current) {
-                                  window.clearTimeout(conflictHoverTimeoutRef.current);
-                                }
-                                setConflictPopoverCardId(card.id);
-                              }}
-                              onMouseLeave={() => {
-                                if (!isPairingConflict || !isSelected) return;
-                                if (conflictHoverTimeoutRef.current) {
-                                  window.clearTimeout(conflictHoverTimeoutRef.current);
-                                }
-                                conflictHoverTimeoutRef.current = window.setTimeout(() => {
-                                  setConflictPopoverCardId((prev) =>
-                                    prev === card.id ? null : prev,
-                                  );
-                                }, 200);
-                              }}
-                              onClick={(event) => {
-                                if (isPairMode) {
-                                  setSelectedIds((prev) => {
-                                    const next = prev.includes(card.id)
-                                      ? prev.filter((id) => id !== card.id)
-                                      : [...prev, card.id];
-                                    if (isPairingConflict && next.includes(card.id)) {
-                                      setConflictPopoverCardId(card.id);
-                                    } else if (isPairingConflict && !next.includes(card.id)) {
-                                      setConflictPopoverCardId((current) =>
-                                        current === card.id ? null : current,
-                                      );
-                                    }
-                                    return next;
-                                  });
-                                  return;
-                                }
-                                const allowMulti = event.metaKey || event.ctrlKey;
-                                if (allowMulti) {
-                                  setSelectedIds((prev) =>
-                                    prev.includes(card.id)
-                                      ? prev.filter((id) => id !== card.id)
-                                      : [...prev, card.id],
-                                  );
-                                  return;
-                                }
-                                setSelectedIds([card.id]);
-                              }}
-                              onDoubleClick={() => {
-                                if (isPairMode) return;
-                                if (!onLoadCard) return;
-                                onLoadCard(card);
-                                onClose();
-                              }}
-                            >
-                              {isPairingConflict ? (
-                                <div className={styles.cardsConflictIndicator}>
-                                  <AlertTriangle
-                                    className={styles.cardsConflictIcon}
-                                    aria-hidden="true"
-                                  />
-                                </div>
-                              ) : null}
-                              {conflictPopoverCardId === card.id ? (
-                                <div className={styles.cardsConflictOverlay}>
-                                  <div className={styles.cardsConflictPopover}>
-                                    <div className={styles.cardsConflictPopoverContent}>
-                                      <div className={styles.cardsConflictPopoverThumb}>
-                                        {(() => {
-                                          const conflictCard = cardById.get(card.id);
-                                          const paired = conflictCard
-                                            ? cardById.get(
-                                                backByFrontId.get(conflictCard.id) ?? "",
-                                              )
-                                            : null;
-                                          const pairedThumbUrl =
-                                            typeof window !== "undefined" && paired?.thumbnailBlob
-                                              ? URL.createObjectURL(paired.thumbnailBlob)
-                                              : null;
-                                          const pairedTemplateThumb = paired
-                                            ? cardTemplatesById[paired.templateId]?.thumbnail
-                                            : null;
-                                          if (pairedThumbUrl) {
-                                            return (
-                                              // eslint-disable-next-line @next/next/no-img-element
-                                              <img
-                                                src={pairedThumbUrl}
-                                                alt=""
-                                                onLoad={() => {
-                                                  URL.revokeObjectURL(pairedThumbUrl);
-                                                }}
-                                              />
-                                            );
-                                          }
-                                          if (pairedTemplateThumb?.src) {
-                                            return (
-                                              // eslint-disable-next-line @next/next/no-img-element
-                                              <img src={pairedTemplateThumb.src} alt="" />
-                                            );
-                                          }
-                                          return (
-                                            <div
-                                              className={styles.cardsPairIndicatorPlaceholder}
-                                            />
-                                          );
-                                        })()}
-                                      </div>
-                                      <div className={styles.cardsConflictPopoverText}>
-                                        {t("warning.alreadyPairedWith")}
-                                        <span>
-                                          {(() => {
-                                            const conflictCard = cardById.get(card.id);
-                                            const paired = conflictCard
-                                              ? cardById.get(
-                                                  backByFrontId.get(conflictCard.id) ?? "",
-                                                )
-                                              : null;
-                                            return paired?.title ?? paired?.name ?? "Untitled card";
-                                          })()}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : null}
-                              {isPairMode ? null : (
-                                <div className={styles.cardsItemHeader}>
-                                  <div className={styles.cardsItemName} title={card.name}>
-                                    {card.name}
-                                  </div>
-                                  <div
-                                    className={styles.cardsPairIndicator}
-                                    onMouseEnter={(event) => {
-                                      if (pairHoverTimeoutRef.current) {
-                                        window.clearTimeout(pairHoverTimeoutRef.current);
-                                      }
-                                      const rect = event.currentTarget.getBoundingClientRect();
-                                      setPairPopoverAnchor({
-                                        id: card.id,
-                                        rect: {
-                                          top: rect.top,
-                                          left: rect.left,
-                                          bottom: rect.bottom,
-                                          right: rect.right,
-                                        },
-                                      });
-                                      setHoveredPairCardId(card.id);
-                                    }}
-                                    onMouseLeave={() => {
-                                      if (pairHoverTimeoutRef.current) {
-                                        window.clearTimeout(pairHoverTimeoutRef.current);
-                                      }
-                                      pairHoverTimeoutRef.current = window.setTimeout(() => {
-                                        setHoveredPairCardId((prev) =>
-                                          prev === card.id ? null : prev,
-                                        );
-                                        setPairPopoverAnchor((prev) =>
-                                          prev?.id === card.id ? null : prev,
-                                        );
-                                      }, 200);
-                                    }}
-                                  >
-                                    {effectiveFace === "back" ? (
-                                      <div className={styles.cardsPairStack}>
-                                        {visiblePairedFronts.map((paired, index) => {
-                                          const stackThumbUrl =
-                                            typeof window !== "undefined" && paired.thumbnailBlob
-                                              ? URL.createObjectURL(paired.thumbnailBlob)
-                                              : null;
-                                          const stackTemplateThumb =
-                                            cardTemplatesById[paired.templateId]?.thumbnail;
-                                          return (
-                                            <div
-                                              key={paired.id}
-                                              className={styles.cardsPairStackItem}
-                                              style={{ zIndex: index + 1 }}
-                                            >
-                                              <div className={styles.cardsPairIndicatorInner}>
-                                                {stackThumbUrl ? (
-                                                  // eslint-disable-next-line @next/next/no-img-element
-                                                  <img
-                                                    src={stackThumbUrl}
-                                                    alt=""
-                                                    onLoad={() => {
-                                                      URL.revokeObjectURL(stackThumbUrl);
-                                                    }}
-                                                  />
-                                                ) : stackTemplateThumb?.src ? (
-                                                  // eslint-disable-next-line @next/next/no-img-element
-                                                  <img src={stackTemplateThumb.src} alt="" />
-                                                ) : (
-                                                  <div
-                                                    className={
-                                                      styles.cardsPairIndicatorPlaceholder
-                                                    }
-                                                  />
-                                                )}
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                        {pairedFrontsOverflow > 0 ? (
-                                          <div
-                                            className={styles.cardsPairStackItem}
-                                            style={{ zIndex: visiblePairedFronts.length + 1 }}
-                                          >
-                                            <div className={styles.cardsPairStackOverflow}>
-                                              +{pairedFrontsOverflow}
-                                            </div>
-                                          </div>
-                                        ) : null}
-                                        {pairedFronts.length === 0 ? (
-                                          <div className={styles.cardsPairIndicatorInner}>
-                                            <div
-                                              className={styles.cardsPairIndicatorPlaceholder}
-                                            />
-                                          </div>
-                                        ) : null}
-                                      </div>
-                                    ) : (
-                                      <div className={styles.cardsPairIndicatorInner}>
-                                        {pairedThumbUrl ? (
-                                          // eslint-disable-next-line @next/next/no-img-element
-                                          <img
-                                            src={pairedThumbUrl}
-                                            alt=""
-                                            onLoad={() => {
-                                              URL.revokeObjectURL(pairedThumbUrl);
-                                            }}
-                                          />
-                                        ) : pairedTemplateThumb?.src ? (
-                                          // eslint-disable-next-line @next/next/no-img-element
-                                          <img src={pairedTemplateThumb.src} alt="" />
-                                        ) : (
-                                          <div className={styles.cardsPairIndicatorPlaceholder} />
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              <CardThumbnail
-                                src={thumbUrl}
-                                alt={card.name}
-                                variant="md"
-                                fit="contain"
-                                onLoad={
-                                  thumbUrl
-                                    ? () => {
-                                        URL.revokeObjectURL(thumbUrl);
-                                      }
-                                    : undefined
-                                }
-                              />
-                              {isPairMode ? null : (
-                                <div className={styles.cardsItemMeta}>
-                                  <div
-                                    className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}
-                                  >
-                                    {templateFilterLabelMap[card.templateId] ?? card.templateId}
-                                  </div>
-                                  <div className={styles.cardsItemDetails}>
-                                    {updatedLabel} {timeLabel}
-                                  </div>
-                                </div>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+              <StockpileContentPane
+                filteredCards={filteredCards}
+                search={search}
+                activeFilter={activeFilter}
+                templateFilter={templateFilter}
+                totalCount={totalCount}
+                filterLabel={filterLabel}
+                isTableView={isTableView}
+                cardViews={cardViews}
+                cardActions={cardActions}
+                conflictPopoverCardId={conflictPopoverCardId}
+                isPairMode={isPairMode}
+                tableHeaders={tableHeaders}
+              />
             </div>
           </div>
-          <div className={styles.stockpilePanelFooter}>
-            {isPairMode ? (
-              <div className="d-flex w-100 justify-content-end gap-2">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={onClose}
-                >
-                  {t("actions.cancel")}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  disabled={false}
-                  onClick={() => {
-                    if (!onConfirmSelection) {
-                      onClose();
-                      return;
-                    }
-                    if (isPairFronts) {
-                      const conflicting = selectedIds.filter((id) => {
-                        const selectedCard = cardById.get(id);
-                        const pairedBackId = selectedCard
-                          ? backByFrontId.get(selectedCard.id)
-                          : null;
-                        if (!pairedBackId) return false;
-                        return pairedBackId !== activeBackId;
-                      });
-                      if (conflicting.length > 0) {
-                        setPairingConflictDialog({
-                          count: conflicting.length,
-                          cardIds: conflicting,
-                          onConfirm: async () => {
-                            onConfirmSelection(selectedIds);
-                            onClose();
-                          },
-                        });
-                        return;
-                      }
-                    }
-                    onConfirmSelection(selectedIds);
-                    onClose();
-                  }}
-                >
-                  {t("actions.confirm")}
-                </button>
-              </div>
-            ) : (
-              <div
-                className={`d-flex w-100 align-items-center ${styles.stockpileFooter} ${styles.uRowLg}`}
-              >
-                <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-outline-light btn-sm"
-                    onClick={() => {
-                      setCollectionFormMode("create");
-                      setCollectionName("");
-                      setCollectionDescription("");
-                      setIsCollectionModalOpen(true);
-                    }}
-                  >
-                    + {t("actions.newCollection")}
-                  </button>
-                  {activeFilter.type === "collection" ? (
-                    <button
-                      type="button"
-                      className="btn btn-outline-light btn-sm"
-                      onClick={() => {
-                        const target = collections.find((item) => item.id === activeFilter.id);
-                        if (!target) return;
-                        setCollectionFormMode("edit");
-                        setCollectionName(target.name);
-                        setCollectionDescription(target.description ?? "");
-                        setIsCollectionModalOpen(true);
-                      }}
-                    >
-                      {t("actions.editCollection")}
-                    </button>
-                  ) : null}
-                </div>
-                <div className="flex-grow-1 flex-shrink-0" />
-                <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-outline-light btn-sm"
-                    onClick={handleBulkExport}
-                    disabled={!canExport}
-                  >
-                    {exportLabel}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-sm"
-                    disabled={!selectedCard || hasMultiSelection}
-                    onClick={() => {
-                      if (!selectedCard || !onLoadCard) return;
-                      onLoadCard(selectedCard);
-                      onClose();
-                    }}
-                  >
-                    {t("actions.load")}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <StockpileFooter
+            isPairMode={isPairMode}
+            isPairFronts={isPairFronts}
+            selectedIds={selectedIds}
+            activeBackId={activeBackId}
+            cardById={cardById}
+            backByFrontId={backByFrontId}
+            onConfirmSelection={onConfirmSelection}
+            onClose={onClose}
+            collectionControls={
+              <StockpileCollectionController
+                activeFilter={activeFilter}
+                collections={collections}
+                onCollectionsUpdated={setCollections}
+                onActiveFilterChange={setActiveFilter}
+              />
+            }
+            onBulkExport={handleBulkExport}
+            canExport={canExport}
+            exportLabel={exportLabel}
+            selectedCard={selectedCard}
+            hasMultiSelection={hasMultiSelection}
+            onLoadSelectedCard={() => {
+              if (!selectedCard || !onLoadCard) return;
+              onLoadCard(selectedCard);
+              onClose();
+            }}
+          />
         </div>
       </div>
-      {hoveredPairCardId && pairPopoverAnchor && typeof document !== "undefined"
-        ? (() => {
-            const hoveredCard = cardById.get(hoveredPairCardId) ?? null;
-            if (!hoveredCard) return null;
-            const hoveredTemplate = cardTemplatesById[hoveredCard.templateId];
-            const hoveredFace = hoveredCard.face ?? hoveredTemplate?.defaultFace;
-            const isHoveredBack = hoveredFace === "back";
-            const hoveredPairedFronts = pairedByTargetId.get(hoveredCard.id) ?? [];
-            const hoveredPairedCard = backByFrontId.get(hoveredCard.id)
-              ? (cardById.get(backByFrontId.get(hoveredCard.id) ?? "") ?? null)
-              : (hoveredPairedFronts[0] ?? null);
-            const hoveredPairedThumbUrl =
-              typeof window !== "undefined" && hoveredPairedCard?.thumbnailBlob
-                ? URL.createObjectURL(hoveredPairedCard.thumbnailBlob)
-                : null;
-            const hoveredPairedTemplateThumb = hoveredPairedCard
-              ? cardTemplatesById[hoveredPairedCard.templateId]?.thumbnail
-              : null;
-            const popoverColumns = 6;
-            const tileWidth = 72;
-            const tileHeight = 100;
-            const tileGap = 6;
-            const popoverPadding = 12;
-            const isGridPopover = isHoveredBack && hoveredPairedFronts.length > 1;
-            const popoverWidth = isGridPopover
-              ? popoverPadding * 2 + popoverColumns * tileWidth + (popoverColumns - 1) * tileGap
-              : popoverPadding * 2 + tileWidth;
-            const popoverMaxHeight = isGridPopover ? 320 : popoverPadding * 2 + tileHeight;
-            const left = Math.min(
-              pairPopoverAnchor.rect.left,
-              window.innerWidth - popoverWidth - 16,
-            );
-            const top = Math.min(
-              pairPopoverAnchor.rect.bottom + 6,
-              window.innerHeight - popoverMaxHeight - 16,
-            );
-
-            return createPortal(
-              <div
-                className={
-                  isGridPopover
-                    ? styles.cardsPairStackPopoverGrid
-                    : styles.cardsPairStackPopoverSingle
-                }
-                aria-hidden="true"
-                style={{ left, top }}
-                onMouseEnter={() => {
-                  if (pairHoverTimeoutRef.current) {
-                    window.clearTimeout(pairHoverTimeoutRef.current);
-                  }
-                  setHoveredPairCardId(hoveredPairCardId);
-                }}
-                onMouseLeave={() => {
-                  if (pairHoverTimeoutRef.current) {
-                    window.clearTimeout(pairHoverTimeoutRef.current);
-                  }
-                  pairHoverTimeoutRef.current = window.setTimeout(() => {
-                    setHoveredPairCardId(null);
-                    setPairPopoverAnchor(null);
-                  }, 200);
-                }}
-              >
-                {isHoveredBack ? (
-                  hoveredPairedFronts.length ? (
-                    <div
-                      className={
-                        isGridPopover ? styles.cardsPairStackGrid : styles.cardsPairStackGridSingle
-                      }
-                    >
-                      {hoveredPairedFronts
-                        .slice(0, isGridPopover ? hoveredPairedFronts.length : 1)
-                        .map((paired) => {
-                          const gridThumbUrl =
-                            typeof window !== "undefined" && paired.thumbnailBlob
-                              ? URL.createObjectURL(paired.thumbnailBlob)
-                              : null;
-                          const gridTemplateThumb = cardTemplatesById[paired.templateId]?.thumbnail;
-                          return (
-                            <div key={paired.id} className={styles.cardsPairStackGridItem}>
-                              {gridThumbUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={gridThumbUrl}
-                                  alt=""
-                                  onLoad={() => {
-                                    URL.revokeObjectURL(gridThumbUrl);
-                                  }}
-                                />
-                              ) : gridTemplateThumb?.src ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={gridTemplateThumb.src} alt="" />
-                              ) : (
-                                <div className={styles.cardsPairIndicatorPlaceholder} />
-                              )}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  ) : (
-                    <div className={styles.cardsPairStackGridSingle}>
-                      <div
-                        className={`${styles.cardsPairStackGridItem} ${styles.cardsPairStackGridItemEmpty}`}
-                      >
-                        <div className={styles.cardsPairIndicatorEmpty}>
-                          {t("warning.notPaired")}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                ) : (
-                  <div className={styles.cardsPairStackGridSingle}>
-                    <div
-                      className={`${styles.cardsPairStackGridItem} ${
-                        hoveredPairedCard ? "" : styles.cardsPairStackGridItemEmpty
-                      }`}
-                    >
-                      {hoveredPairedCard ? (
-                        hoveredPairedThumbUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={hoveredPairedThumbUrl}
-                            alt=""
-                            onLoad={() => {
-                              URL.revokeObjectURL(hoveredPairedThumbUrl);
-                            }}
-                          />
-                        ) : hoveredPairedTemplateThumb?.src ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={hoveredPairedTemplateThumb.src} alt="" />
-                        ) : (
-                          <div className={styles.cardsPairIndicatorPlaceholder} />
-                        )
-                      ) : (
-                        <div className={styles.cardsPairIndicatorEmpty}>
-                          {t("warning.notPaired")}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>,
-              document.body,
-            );
-          })()
-        : null}
-      {tableThumbAnchor && typeof document !== "undefined"
-        ? (() => {
-            const hoveredCard = cardById.get(tableThumbAnchor.id) ?? null;
-            if (!hoveredCard) return null;
-            const previewThumbUrl =
-              typeof window !== "undefined" && hoveredCard.thumbnailBlob
-                ? URL.createObjectURL(hoveredCard.thumbnailBlob)
-                : null;
-            const templateThumb = cardTemplatesById[hoveredCard.templateId]?.thumbnail ?? null;
-            const popoverWidth = 160;
-            const popoverHeight = 224;
-            const left = Math.min(
-              tableThumbAnchor.rect.left,
-              window.innerWidth - popoverWidth - 16,
-            );
-            const top = Math.min(
-              tableThumbAnchor.rect.bottom + 8,
-              window.innerHeight - popoverHeight - 16,
-            );
-
-            return createPortal(
-              <div
-                className={styles.stockpileTableThumbPopover}
-                aria-hidden="true"
-                style={{ left, top }}
-                onMouseEnter={() => {
-                  if (tableThumbHoverTimeoutRef.current) {
-                    window.clearTimeout(tableThumbHoverTimeoutRef.current);
-                  }
-                }}
-                onMouseLeave={() => {
-                  if (tableThumbHoverTimeoutRef.current) {
-                    window.clearTimeout(tableThumbHoverTimeoutRef.current);
-                  }
-                  tableThumbHoverTimeoutRef.current = window.setTimeout(() => {
-                    setTableThumbAnchor(null);
-                  }, 200);
-                }}
-              >
-                <CardThumbnail
-                  src={previewThumbUrl ?? templateThumb?.src ?? null}
-                  alt={hoveredCard.name}
-                  variant="md"
-                  fit="contain"
-                  className={styles.stockpileTableThumbPreview}
-                  onLoad={
-                    previewThumbUrl
-                      ? () => {
-                          URL.revokeObjectURL(previewThumbUrl);
-                        }
-                      : undefined
-                  }
-                />
-              </div>,
-              document.body,
-            );
-          })()
-        : null}
-      {pairingConflictDialog ? (
-        <ConfirmModal
-          isOpen={Boolean(pairingConflictDialog)}
-          title={t("actions.confirm")}
-          confirmLabel={t("actions.confirm")}
-          cancelLabel={t("actions.cancel")}
-          onConfirm={async () => {
-            const handler = pairingConflictDialog.onConfirm;
-            setPairingConflictDialog(null);
-            await handler();
-          }}
-          onCancel={() => {
-            setPairingConflictDialog(null);
-          }}
-        >
-          {(() => {
-            const backIds = new Set<string>();
-            pairingConflictDialog.cardIds.forEach((id) => {
-              const card = cardById.get(id);
-              const pairedBackId = card ? backByFrontId.get(card.id) : null;
-              if (pairedBackId) {
-                backIds.add(pairedBackId);
-              }
-            });
-            const backCount = backIds.size || 1;
-            return pairingConflictDialog.count === 1
-              ? formatMessageWith("warning.pairingLossSingleGeneric", { backCount })
-              : formatMessageWith("warning.pairingLossMultipleGeneric", {
-                  count: pairingConflictDialog.count,
-                  backCount,
-                });
-          })()}
-          {(() => {
-            const pairedBackIds = new Set<string>();
-            pairingConflictDialog.cardIds.forEach((id) => {
-              const card = cardById.get(id);
-              const pairedBackId = card ? backByFrontId.get(card.id) : null;
-              if (pairedBackId) {
-                pairedBackIds.add(pairedBackId);
-              }
-            });
-            const pairedBacks = Array.from(pairedBackIds)
-              .map((id) => cardById.get(id))
-              .filter((card): card is CardRecord => Boolean(card));
-            return (
-              <>
-                <div className={styles.pairingConflictDivider} />
-                <div className={styles.pairingConflictScroll}>
-                  <div className={styles.pairingConflictSection}>
-                    <div className={styles.pairingConflictTitle}>
-                      {t("heading.cardsToBeUnpaired")}
-                    </div>
-                    <div className={styles.pairingConflictGrid}>
-                      {pairingConflictDialog.cardIds.map((id) => {
-                        const conflictCard = cardById.get(id);
-                        if (!conflictCard) return null;
-                        const thumbUrl =
-                          typeof window !== "undefined" && conflictCard.thumbnailBlob
-                            ? URL.createObjectURL(conflictCard.thumbnailBlob)
-                            : null;
-                        const templateThumb =
-                          cardTemplatesById[conflictCard.templateId]?.thumbnail ?? null;
-                        return (
-                          <div key={id} className={styles.pairingConflictItem}>
-                            {thumbUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={thumbUrl}
-                                alt=""
-                                onLoad={() => {
-                                  URL.revokeObjectURL(thumbUrl);
-                                }}
-                              />
-                            ) : templateThumb?.src ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={templateThumb.src} alt="" />
-                            ) : (
-                              <div className={styles.cardsPairIndicatorPlaceholder} />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  {pairedBacks.length > 0 ? (
-                    <div className={styles.pairingConflictSection}>
-                      <div className={styles.pairingConflictTitle}>{t("heading.pairedWith")}</div>
-                      <div className={styles.pairingConflictGrid}>
-                        {pairedBacks.map((paired) => {
-                          const thumbUrl =
-                            typeof window !== "undefined" && paired.thumbnailBlob
-                              ? URL.createObjectURL(paired.thumbnailBlob)
-                              : null;
-                          const templateThumb =
-                            cardTemplatesById[paired.templateId]?.thumbnail ?? null;
-                          return (
-                            <div key={paired.id} className={styles.pairingConflictItem}>
-                              {thumbUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={thumbUrl}
-                                  alt=""
-                                  onLoad={() => {
-                                    URL.revokeObjectURL(thumbUrl);
-                                  }}
-                                />
-                              ) : templateThumb?.src ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={templateThumb.src} alt="" />
-                              ) : (
-                                <div className={styles.cardsPairIndicatorPlaceholder} />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              </>
-            );
-          })()}
-        </ConfirmModal>
-      ) : null}
-      {missingAssetsPrompt ? (
-        <ConfirmModal
-          isOpen={Boolean(missingAssetsPrompt)}
-          title={t("warning.missingAssetsTitle")}
-          confirmLabel={t("actions.proceedExport")}
-          cancelLabel={t("actions.cancel")}
-          contentClassName={styles.missingAssetsModal}
-          onConfirm={async () => {
-            const prompt = missingAssetsPrompt;
-            if (!prompt) return;
-            setMissingAssetsPrompt(null);
-            await handleExportCards(prompt.cards, {
-              skipIds: prompt.skipIds,
-              skipNotes: prompt.skipNotes,
-              skipPrecheck: true,
-            });
-          }}
-          onCancel={() => {
-            setMissingAssetsPrompt(null);
-          }}
-        >
-          <div>{t("warning.missingAssetsBody")}</div>
-          <div className={styles.assetsReportStatus}>{t("label.opensInNewTab")}</div>
-          <div className={styles.assetsReportList}>
-            {missingAssetsPrompt.report.map((entry) => {
-              const thumbUrl = entry.thumbnailBlob
-                ? URL.createObjectURL(entry.thumbnailBlob)
-                : null;
-              const fallbackUrl = cardTemplatesById[entry.templateId]?.thumbnail?.src ?? null;
-              return (
-                <div key={entry.cardId} className={styles.assetsReportItem}>
-                  <div className="d-flex align-items-center gap-3">
-                    <CardThumbnail
-                      src={thumbUrl ?? fallbackUrl}
-                      alt={entry.title}
-                      variant="sm"
-                      onLoad={() => {
-                        if (thumbUrl) {
-                          URL.revokeObjectURL(thumbUrl);
-                        }
-                      }}
-                    />
-                    <div className={styles.assetsReportName}>
-                      {entry.title} ({entry.templateId})
-                    </div>
-                  </div>
-                  <div className={styles.assetsReportStatus}>
-                    {t("label.missingAssets")}:{" "}
-                    {entry.missing
-                      .map((asset) => `${asset.label} \"${asset.name}\"`)
-                      .join(", ")}
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-outline-light btn-sm mt-2"
-                    onClick={() => openCardInNewTab(entry.cardId)}
-                  >
-                    {t("actions.openCardNewTab")}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </ConfirmModal>
-      ) : null}
+      <StockpilePairPopover
+        hoveredPairCardId={hoveredPairCardId}
+        pairPopoverAnchor={pairPopoverAnchor}
+        onMouseEnter={() => {
+          if (pairHoverTimeoutRef.current) {
+            window.clearTimeout(pairHoverTimeoutRef.current);
+          }
+          setHoveredPairCardId(hoveredPairCardId);
+        }}
+        onMouseLeave={() => {
+          if (pairHoverTimeoutRef.current) {
+            window.clearTimeout(pairHoverTimeoutRef.current);
+          }
+          pairHoverTimeoutRef.current = window.setTimeout(() => {
+            setHoveredPairCardId(null);
+            setPairPopoverAnchor(null);
+          }, 200);
+        }}
+        cardById={cardById}
+        pairedByTargetId={pairedByTargetId}
+        backByFrontId={backByFrontId}
+      />
+      <StockpileTableThumbPopover
+        tableThumbAnchor={tableThumbAnchor}
+        onMouseEnter={() => {
+          if (tableThumbHoverTimeoutRef.current) {
+            window.clearTimeout(tableThumbHoverTimeoutRef.current);
+          }
+        }}
+        onMouseLeave={() => {
+          if (tableThumbHoverTimeoutRef.current) {
+            window.clearTimeout(tableThumbHoverTimeoutRef.current);
+          }
+          tableThumbHoverTimeoutRef.current = window.setTimeout(() => {
+            setTableThumbAnchor(null);
+          }, 200);
+        }}
+        cardById={cardById}
+      />
+      <StockpileMissingAssetsModal
+        prompt={missingAssetsPrompt}
+        onConfirm={async () => {
+          const prompt = missingAssetsPrompt;
+          if (!prompt) return;
+          setMissingAssetsPrompt(null);
+          await handleExportCards(prompt.cards, {
+            skipIds: prompt.skipIds,
+            skipNotes: prompt.skipNotes,
+            skipPrecheck: true,
+          });
+        }}
+        onCancel={() => {
+          setMissingAssetsPrompt(null);
+        }}
+      />
       {isOpen && exportTarget && exportTemplate ? (
         <div className={styles.bulkExportPreview} aria-hidden="true">
           <CardPreview
@@ -2257,349 +1000,14 @@ export default function StockpilePanelContent({
           />
         </div>
       ) : null}
-      {exportPairPrompt ? (
-        <div className={styles.stockpileOverlayBackdrop}>
-          <div className={`${styles.stockpileOverlayPanel} ${styles.exportPairPanel}`}>
-            <div className={styles.stockpileOverlayHeader}>
-              <h3 className={styles.stockpileOverlayTitle}>{t("heading.exportPairedFaces")}</h3>
-              <button
-                type="button"
-                className={styles.modalCloseButton}
-                onClick={() => setExportPairPrompt(null)}
-              >
-                <span className="visually-hidden">{t("actions.close")}</span>✕
-              </button>
-            </div>
-            <div className={styles.stockpileOverlayBody}>{t("confirm.exportPairedFacesBody")}</div>
-            {exportPairPrompt.previewRows.length > 0 ? (
-              <div className={styles.exportPairPreviewList}>
-                {exportPairPrompt.previewRows.map((row) => {
-                  const visibleCount = exportPairVisibleCount;
-                  return (
-                    <div
-                      key={`${row.left.map((card) => card.id).join("|")}-${row.right
-                        .map((card) => card.id)
-                        .join("|")}`}
-                      className={styles.exportPairRow}
-                    >
-                      <div className={`${styles.exportPairStack} ${styles.uRowSm}`}>
-                        {row.left.slice(0, visibleCount).map((leftCard, index) => {
-                          const leftThumbUrl =
-                            typeof window !== "undefined" && leftCard.thumbnailBlob
-                              ? URL.createObjectURL(leftCard.thumbnailBlob)
-                              : null;
-                          const leftTemplateThumb =
-                            cardTemplatesById[leftCard.templateId]?.thumbnail ?? null;
-                          const leftJitter = USE_EXPORT_PAIR_JITTER
-                            ? resolveCardJitter(leftCard.id)
-                            : null;
-                          return (
-                            <div
-                              key={leftCard.id}
-                              className={`${styles.inspectorStackItem} ${styles.exportPairStackItem}`}
-                              style={{ zIndex: index + 1 }}
-                            >
-                              <div
-                                className={styles.inspectorStackThumbInner}
-                                style={{
-                                  transform: leftJitter
-                                    ? `translate(${leftJitter.offsetX}px, ${leftJitter.offsetY}px) rotate(${leftJitter.rotation}deg)`
-                                    : undefined,
-                                }}
-                              >
-                                {leftThumbUrl ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={leftThumbUrl}
-                                    alt=""
-                                    onLoad={() => {
-                                      URL.revokeObjectURL(leftThumbUrl);
-                                    }}
-                                  />
-                                ) : leftTemplateThumb?.src ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={leftTemplateThumb.src} alt="" />
-                                ) : (
-                                  <div className={styles.inspectorStackPlaceholder} />
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                        {row.left.length > visibleCount ? (
-                          <div
-                            className={`${styles.inspectorStackItem} ${styles.exportPairStackItem} ${styles.inspectorStackOverflowItem}`}
-                            style={{ zIndex: Math.min(row.left.length, visibleCount) + 1 }}
-                            onMouseEnter={(event) => {
-                              if (pairOverflowHoverTimeoutRef.current) {
-                                window.clearTimeout(pairOverflowHoverTimeoutRef.current);
-                              }
-                              const rect = event.currentTarget.getBoundingClientRect();
-                              setPairOverflowAnchor({
-                                rect: {
-                                  top: rect.top,
-                                  left: rect.left,
-                                  bottom: rect.bottom,
-                                  right: rect.right,
-                                },
-                                cards: row.left,
-                              });
-                              setIsPairOverflowOpen(true);
-                            }}
-                            onMouseLeave={() => {
-                              if (pairOverflowHoverTimeoutRef.current) {
-                                window.clearTimeout(pairOverflowHoverTimeoutRef.current);
-                              }
-                              pairOverflowHoverTimeoutRef.current = window.setTimeout(() => {
-                                setIsPairOverflowOpen(false);
-                                setPairOverflowAnchor(null);
-                              }, 200);
-                            }}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              if (pairOverflowHoverTimeoutRef.current) {
-                                window.clearTimeout(pairOverflowHoverTimeoutRef.current);
-                              }
-                              const rect = event.currentTarget.getBoundingClientRect();
-                              setPairOverflowAnchor({
-                                rect: {
-                                  top: rect.top,
-                                  left: rect.left,
-                                  bottom: rect.bottom,
-                                  right: rect.right,
-                                },
-                                cards: row.left,
-                              });
-                              setIsPairOverflowOpen(true);
-                            }}
-                          >
-                            <div className={styles.inspectorStackOverflow}>
-                              +{row.left.length - visibleCount}
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
-                      <div className={styles.exportPairIcon} aria-hidden="true">
-                        <Combine size={18} />
-                      </div>
-                      <div className={`${styles.exportPairStack} ${styles.uRowSm}`}>
-                        {row.right.slice(0, visibleCount).map((pairedCard, index) => {
-                          const pairedThumbUrl =
-                            typeof window !== "undefined" && pairedCard.thumbnailBlob
-                              ? URL.createObjectURL(pairedCard.thumbnailBlob)
-                              : null;
-                          const pairedTemplateThumb =
-                            cardTemplatesById[pairedCard.templateId]?.thumbnail ?? null;
-                          const pairedJitter = USE_EXPORT_PAIR_JITTER
-                            ? resolveCardJitter(pairedCard.id)
-                            : null;
-                          return (
-                            <div
-                              key={pairedCard.id}
-                              className={`${styles.inspectorStackItem} ${styles.exportPairStackItem}`}
-                              style={{ zIndex: index + 1 }}
-                            >
-                              <div
-                                className={styles.inspectorStackThumbInner}
-                                style={{
-                                  transform: pairedJitter
-                                    ? `translate(${pairedJitter.offsetX}px, ${pairedJitter.offsetY}px) rotate(${pairedJitter.rotation}deg)`
-                                    : undefined,
-                                }}
-                              >
-                                {pairedThumbUrl ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={pairedThumbUrl}
-                                    alt=""
-                                    onLoad={() => {
-                                      URL.revokeObjectURL(pairedThumbUrl);
-                                    }}
-                                  />
-                                ) : pairedTemplateThumb?.src ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={pairedTemplateThumb.src} alt="" />
-                                ) : (
-                                  <div className={styles.inspectorStackPlaceholder} />
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                        {row.right.length > visibleCount ? (
-                          <div
-                            className={`${styles.inspectorStackItem} ${styles.exportPairStackItem} ${styles.inspectorStackOverflowItem}`}
-                            style={{ zIndex: Math.min(row.right.length, visibleCount) + 1 }}
-                            onMouseEnter={(event) => {
-                              if (pairOverflowHoverTimeoutRef.current) {
-                                window.clearTimeout(pairOverflowHoverTimeoutRef.current);
-                              }
-                              const rect = event.currentTarget.getBoundingClientRect();
-                              setPairOverflowAnchor({
-                                rect: {
-                                  top: rect.top,
-                                  left: rect.left,
-                                  bottom: rect.bottom,
-                                  right: rect.right,
-                                },
-                                cards: row.right,
-                              });
-                              setIsPairOverflowOpen(true);
-                            }}
-                            onMouseLeave={() => {
-                              if (pairOverflowHoverTimeoutRef.current) {
-                                window.clearTimeout(pairOverflowHoverTimeoutRef.current);
-                              }
-                              pairOverflowHoverTimeoutRef.current = window.setTimeout(() => {
-                                setIsPairOverflowOpen(false);
-                                setPairOverflowAnchor(null);
-                              }, 200);
-                            }}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              if (pairOverflowHoverTimeoutRef.current) {
-                                window.clearTimeout(pairOverflowHoverTimeoutRef.current);
-                              }
-                              const rect = event.currentTarget.getBoundingClientRect();
-                              setPairOverflowAnchor({
-                                rect: {
-                                  top: rect.top,
-                                  left: rect.left,
-                                  bottom: rect.bottom,
-                                  right: rect.right,
-                                },
-                                cards: row.right,
-                              });
-                              setIsPairOverflowOpen(true);
-                            }}
-                          >
-                            <div className={styles.inspectorStackOverflow}>
-                              +{row.right.length - visibleCount}
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : null}
-            <div className={styles.exportPairActions}>
-              <button
-                type="button"
-                className="btn btn-outline-secondary btn-sm"
-                onClick={() => setExportPairPrompt(null)}
-              >
-                {t("actions.cancel")}
-              </button>
-              <div className={styles.exportPairActionGroup}>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => {
-                    const baseCards = exportPairPrompt.baseIds
-                      .map((id) => cardById.get(id))
-                      .filter((card): card is CardRecord => Boolean(card));
-                    setExportPairPrompt(null);
-                    void handleExportCards(baseCards);
-                  }}
-                >
-                  {exportPairPrompt.exportOnlyLabel}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  onClick={() => {
-                    const combinedIds = [
-                      ...exportPairPrompt.baseIds,
-                      ...exportPairPrompt.pairedIds,
-                    ];
-                    const exportCards = combinedIds
-                      .map((id) => cardById.get(id))
-                      .filter((card): card is CardRecord => Boolean(card));
-                    setExportPairPrompt(null);
-                    void handleExportCards(exportCards);
-                  }}
-                >
-                  {exportPairPrompt.exportLabel} +{" "}
-                  {formatMessageWith("label.pairedCardsCount", {
-                    count: exportPairPrompt.pairedIds.length,
-                  })}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-      {shouldShowPairOverflow && typeof document !== "undefined"
-        ? (() => {
-            const tileWidth = 96;
-            const tileGap = 8;
-            const columns = 5;
-            const padding = 16;
-            const popoverWidth = padding * 2 + columns * tileWidth + (columns - 1) * tileGap;
-            const popoverMaxHeight = 300;
-            const left = Math.min(
-              pairOverflowAnchor.rect.left,
-              window.innerWidth - popoverWidth - 16,
-            );
-            const top = Math.min(
-              pairOverflowAnchor.rect.bottom + 6,
-              window.innerHeight - popoverMaxHeight - 16,
-            );
-            return createPortal(
-              <div
-                className={styles.inspectorStackOverflowPopover}
-                style={{ left, top, width: popoverWidth }}
-                onMouseEnter={() => {
-                  if (pairOverflowHoverTimeoutRef.current) {
-                    window.clearTimeout(pairOverflowHoverTimeoutRef.current);
-                  }
-                  setIsPairOverflowOpen(true);
-                }}
-                onMouseLeave={() => {
-                  if (pairOverflowHoverTimeoutRef.current) {
-                    window.clearTimeout(pairOverflowHoverTimeoutRef.current);
-                  }
-                  pairOverflowHoverTimeoutRef.current = window.setTimeout(() => {
-                    setIsPairOverflowOpen(false);
-                    setPairOverflowAnchor(null);
-                  }, 200);
-                }}
-              >
-                <div className={styles.inspectorStackOverflowGrid}>
-                  {pairOverflowAnchor.cards.map((card) => {
-                    const thumbUrl =
-                      typeof window !== "undefined" && card.thumbnailBlob
-                        ? URL.createObjectURL(card.thumbnailBlob)
-                        : null;
-                    const templateThumb = cardTemplatesById[card.templateId]?.thumbnail;
-                    return (
-                      <div key={card.id} className={styles.inspectorStackOverflowGridItem}>
-                        {thumbUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={thumbUrl}
-                            alt=""
-                            onLoad={() => {
-                              URL.revokeObjectURL(thumbUrl);
-                            }}
-                          />
-                        ) : templateThumb?.src ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={templateThumb.src} alt="" />
-                        ) : (
-                          <div className={styles.inspectorStackPlaceholder} />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>,
-              document.body,
-            );
-          })()
-        : null}
+      <StockpileExportPairPrompt
+        exportPairPrompt={exportPairPrompt}
+        onClose={() => setExportPairPrompt(null)}
+        cardById={cardById}
+        onExportCards={(cards) => {
+          void handleExportCards(cards);
+        }}
+      />
       <ExportProgressOverlay
         isOpen={isExporting}
         title={exportTitle}
@@ -2612,240 +1020,7 @@ export default function StockpilePanelContent({
           setExportCancelled(true);
         }}
       />
-      {isCollectionModalOpen ? (
-        <div
-          className={styles.stockpileOverlayBackdrop}
-          onClick={() => setIsCollectionModalOpen(false)}
-        >
-          <div
-            className={styles.stockpileOverlayPanel}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className={styles.stockpileOverlayHeader}>
-              <h3 className={styles.stockpileOverlayTitle}>
-                {collectionFormMode === "edit"
-                  ? t("heading.editCollection")
-                  : t("heading.newCollection")}
-              </h3>
-              <button
-                type="button"
-                className={styles.modalCloseButton}
-                onClick={() => setIsCollectionModalOpen(false)}
-              >
-                <span className="visually-hidden">{t("actions.close")}</span>✕
-              </button>
-            </div>
-            <form
-              onSubmit={async (event) => {
-                event.preventDefault();
-                const trimmedName = collectionName.trim();
-                if (!trimmedName) {
-                  setCollectionNameError(t("errors.collectionNameRequired"));
-                  return;
-                }
-                const normalized = trimmedName.toLocaleLowerCase();
-                const conflict = collections.some((collection) => {
-                  if (collectionFormMode === "edit" && activeFilter.type === "collection") {
-                    if (collection.id === activeFilter.id) return false;
-                  }
-                  return collection.name.toLocaleLowerCase() === normalized;
-                });
-                if (conflict) {
-                  setCollectionNameError(t("errors.collectionNameExists"));
-                  return;
-                }
-                setCollectionNameError(null);
-                try {
-                  if (collectionFormMode === "edit") {
-                    if (activeFilter.type !== "collection") return;
-                    await updateCollection(activeFilter.id, {
-                      name: trimmedName,
-                      description: collectionDescription.trim() || undefined,
-                    });
-                  } else {
-                    const created = await createCollection({
-                      name: trimmedName,
-                      description: collectionDescription.trim() || undefined,
-                    });
-                    setActiveFilter({ type: "collection", id: created.id });
-                    setAddTargetCollectionId(created.id);
-                  }
-                  const refreshed = await listCollections();
-                  setCollections(refreshed);
-                  setIsCollectionModalOpen(false);
-                  setCollectionName("");
-                  setCollectionDescription("");
-                } catch (error) {
-                  // eslint-disable-next-line no-console
-                  console.error("[StockpileModal] Failed to create collection", error);
-                }
-              }}
-            >
-              <div className="d-flex flex-column gap-2">
-                <label className="d-flex flex-column gap-1">
-                  <span>{t("form.collectionName")}</span>
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    placeholder={t("placeholders.collectionName")}
-                    value={collectionName}
-                    onChange={(event) => {
-                      setCollectionName(event.target.value);
-                      if (collectionNameError) {
-                        setCollectionNameError(null);
-                      }
-                    }}
-                    autoFocus
-                    required
-                  />
-                  {collectionNameError ? (
-                    <span className="text-danger small">{collectionNameError}</span>
-                  ) : null}
-                </label>
-                <label className="d-flex flex-column gap-1">
-                  <span>{t("form.collectionDescription")}</span>
-                  <textarea
-                    className="form-control form-control-sm"
-                    placeholder={t("placeholders.collectionDescription")}
-                    value={collectionDescription}
-                    onChange={(event) => setCollectionDescription(event.target.value)}
-                    rows={3}
-                  />
-                </label>
-              </div>
-              <div className={styles.stockpileOverlayActions}>
-                {collectionFormMode === "edit" ? (
-                  <button
-                    type="button"
-                    className="btn btn-outline-danger btn-sm"
-                    onClick={async () => {
-                      if (activeFilter.type !== "collection") return;
-                      setConfirmDialog({
-                        title: t("confirm.deleteCollectionTitle"),
-                        body: `${t("confirm.deleteCollectionBodyPrefix")} "${collectionName}"? ${t(
-                          "confirm.deleteCollectionBodySuffix",
-                        )}`,
-                        confirmLabel: t("actions.delete"),
-                        onConfirm: async () => {
-                          try {
-                            await deleteCollection(activeFilter.id);
-                            const refreshed = await listCollections();
-                            setCollections(refreshed);
-                            setActiveFilter({ type: "all" });
-                            if (typeof window !== "undefined") {
-                              window.localStorage.removeItem("hqcc.selectedCollectionId");
-                            }
-                            setIsCollectionModalOpen(false);
-                            setCollectionName("");
-                            setCollectionDescription("");
-                          } catch (error) {
-                            // eslint-disable-next-line no-console
-                            console.error("[StockpileModal] Failed to delete collection", error);
-                          } finally {
-                            setConfirmDialog(null);
-                          }
-                        },
-                      });
-                    }}
-                  >
-                    {t("actions.delete")}
-                  </button>
-                ) : null}
-                <button type="submit" className="btn btn-primary btn-sm">
-                  {collectionFormMode === "edit" ? t("actions.save") : t("actions.create")}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => setIsCollectionModalOpen(false)}
-                >
-                  {t("actions.cancel")}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
-      {isAddModalOpen ? (
-        <div className={styles.stockpileOverlayBackdrop} onClick={() => setIsAddModalOpen(false)}>
-          <div
-            className={styles.stockpileOverlayPanel}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className={styles.stockpileOverlayHeader}>
-              <h3 className={styles.stockpileOverlayTitle}>{t("heading.addToCollection")}</h3>
-              <button
-                type="button"
-                className={styles.modalCloseButton}
-                onClick={() => setIsAddModalOpen(false)}
-              >
-                <span className="visually-hidden">{t("actions.close")}</span>✕
-              </button>
-            </div>
-            <form
-              onSubmit={async (event) => {
-                event.preventDefault();
-                if (!addTargetCollectionId) return;
-                const target = collections.find((item) => item.id === addTargetCollectionId);
-                if (!target) return;
-                try {
-                  const merged = new Set<string>(target.cardIds);
-                  visibleSelectedIds.forEach((id) => merged.add(id));
-                  await updateCollection(target.id, { cardIds: Array.from(merged) });
-                  const refreshed = await listCollections();
-                  setCollections(refreshed);
-                  setIsAddModalOpen(false);
-                } catch (error) {
-                  // eslint-disable-next-line no-console
-                  console.error("[StockpileModal] Failed to add to collection", error);
-                }
-              }}
-            >
-              <label>
-                <span className="visually-hidden">{t("form.targetCollection")}</span>
-                <select
-                  className="form-select form-select-sm"
-                  value={addTargetCollectionId}
-                  onChange={(event) => setAddTargetCollectionId(event.target.value)}
-                  required
-                >
-                  {collections
-                    .filter(
-                      (collection) =>
-                        activeFilter.type !== "collection" || collection.id !== activeFilter.id,
-                    )
-                    .map((collection) => (
-                      <option key={collection.id} value={collection.id}>
-                        {collection.name}
-                      </option>
-                    ))}
-                </select>
-              </label>
-              <div className={styles.stockpileOverlayActions}>
-                <button type="submit" className="btn btn-primary btn-sm">
-                  {t("actions.add")}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => setIsAddModalOpen(false)}
-                >
-                  {t("actions.cancel")}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
-      <ConfirmModal
-        isOpen={Boolean(confirmDialog)}
-        title={confirmDialog?.title ?? ""}
-        confirmLabel={confirmDialog?.confirmLabel}
-        onConfirm={() => confirmDialog?.onConfirm()}
-        onCancel={() => setConfirmDialog(null)}
-      >
-        {confirmDialog?.body ?? ""}
-      </ConfirmModal>
+      <StockpileConfirmModal confirmDialog={confirmDialog} onCancel={() => setConfirmDialog(null)} />
     </>
   );
 
