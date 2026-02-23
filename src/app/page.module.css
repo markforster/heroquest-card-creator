@@ -1090,13 +1090,13 @@
   align-items: center;
   justify-content: center;
   /* Asset preview background tuning (opacity, blur, motion). */
-  --asset-preview-bg-opacity: 0.45;
-  --asset-preview-blur: 20px;
-  /* --asset-preview-blur: 12px; */
+  --asset-preview-bg-opacity: 0.25;
+  /* --asset-preview-blur: 8px; */
+  --asset-preview-blur: 12px;
   --asset-preview-scale-min: 1.6;
   --asset-preview-scale-max: 2;
-  --asset-preview-rotate-min: -1.2deg;
-  --asset-preview-rotate-max: 1.2deg;
+  --asset-preview-rotate-min: -3.2deg;
+  --asset-preview-rotate-max: 3.2deg;
   --asset-preview-perspective: 800px;
   --asset-preview-tilt-x-min: -6deg;
   --asset-preview-tilt-x-max: 6deg;
