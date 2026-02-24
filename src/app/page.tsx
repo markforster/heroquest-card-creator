@@ -981,8 +981,7 @@ function IndexPageInner() {
           title={`${t("status.exportingImages")} (${exportTotal})`}
           progress={exportProgress}
           total={exportTotal}
-          cancelLabel={exportCancelled ? t("actions.cancelling") : t("actions.cancel")}
-          cancelDisabled={exportCancelled}
+          exportCancelled={exportCancelled}
           onCancel={() => {
             exportCancelRef.current = true;
             setExportCancelled(true);

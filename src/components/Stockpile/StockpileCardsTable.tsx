@@ -1,5 +1,7 @@
 "use client";
 
+import { BringToFront, SendToBack } from "lucide-react";
+
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
 import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
@@ -106,10 +108,23 @@ export default function StockpileCardsTable({
                   {card.templateLabel}
                 </span>
               </div>
-              <div className={styles.stockpileTableCell} role="cell">
-                {card.faceLabel}
+              <div
+                className={`${styles.stockpileTableCell} ${styles.stockpileTableValue}`}
+                role="cell"
+              >
+                <span className={`${styles.inspectorFaceButton} ${styles.stockpileFacePill}`}>
+                  {card.effectiveFace === "back" ? (
+                    <SendToBack size={16} className={styles.inspectorFaceItemIcon} />
+                  ) : (
+                    <BringToFront size={16} className={styles.inspectorFaceItemIcon} />
+                  )}
+                  <span>{card.facePillLabel}</span>
+                </span>
               </div>
-              <div className={styles.stockpileTableCell} role="cell">
+              <div
+                className={`${styles.stockpileTableCell} ${styles.stockpileTableValue}`}
+                role="cell"
+              >
                 {card.updatedLabel} {card.timeLabel}
               </div>
               <div

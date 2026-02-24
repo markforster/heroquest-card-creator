@@ -16,6 +16,7 @@ export type StockpileCardView = {
   templateLabel: string;
   effectiveFace: "front" | "back";
   faceLabel: string;
+  facePillLabel: string;
   updatedLabel: string;
   timeLabel: string;
   thumbnailBlob: Blob | null;

@@ -17,6 +17,8 @@ type StockpileSidebarProps = {
       | { type: "collection"; id: string },
   ) => void;
   isPairMode: boolean;
+  showMissingArtworkOnly: boolean;
+  collectionsWithMissingArtwork: Set<string>;
   selectedIds: string[];
   onClearSelection: () => void;
   recentCardsCount: number;
@@ -31,6 +33,8 @@ export default function StockpileSidebar({
   activeFilter,
   onFilterChange,
   isPairMode,
+  showMissingArtworkOnly,
+  collectionsWithMissingArtwork,
   selectedIds,
   onClearSelection,
   recentCardsCount,
@@ -129,7 +133,13 @@ export default function StockpileSidebar({
           >
             <span className="flex-grow-1 text-truncate fs-6">{collection.name}</span>
             {!isPairMode ? (
-              <span className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge}`}>
+              <span
+                className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge} ${
+                  showMissingArtworkOnly && collectionsWithMissingArtwork.has(collection.id)
+                    ? styles.stockpileCountBadgeAlert
+                    : ""
+                }`}
+              >
                 {collectionCounts.get(collection.id) ?? 0}
               </span>
             ) : null}

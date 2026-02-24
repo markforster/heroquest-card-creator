@@ -383,6 +383,16 @@ export default function StockpilePanelContent({
     });
     return map;
   }, [collections, selectedIds]);
+  const collectionsWithMissingArtwork = useMemo(() => {
+    if (!missingArtworkIds.size) return new Set<string>();
+    const set = new Set<string>();
+    collections.forEach((collection) => {
+      if (collection.cardIds.some((id) => missingArtworkIds.has(id))) {
+        set.add(collection.id);
+      }
+    });
+    return set;
+  }, [collections, missingArtworkIds]);
   const isTableView = !isPairMode && viewMode === "table";
   const activeCollectionCards = activeCollection
     ? cards.filter(
@@ -435,6 +445,7 @@ export default function StockpilePanelContent({
         templateLabel: templateFilterLabelMap[card.templateId] ?? card.templateId,
         effectiveFace,
         faceLabel: effectiveFace === "back" ? t("cardFace.back") : t("cardFace.front"),
+        facePillLabel: effectiveFace === "back" ? t("cardFace.back") : t("cardFace.front"),
         updatedLabel: updated.toLocaleDateString(undefined, {
           year: "numeric",
           month: "short",
@@ -775,6 +786,8 @@ export default function StockpilePanelContent({
               activeFilter={activeFilter}
               onFilterChange={setActiveFilter}
               isPairMode={isPairMode}
+              showMissingArtworkOnly={showMissingArtworkOnly}
+              collectionsWithMissingArtwork={collectionsWithMissingArtwork}
               selectedIds={selectedIds}
               onClearSelection={() => setSelectedIds([])}
               recentCardsCount={recentCards.length}
@@ -1013,8 +1026,7 @@ export default function StockpilePanelContent({
         title={exportTitle}
         progress={exportProgress}
         total={exportTotal}
-        cancelLabel={exportCancelled ? t("actions.cancelling") : t("actions.cancel")}
-        cancelDisabled={exportCancelled}
+        exportCancelled={exportCancelled}
         onCancel={() => {
           cancelExportRef.current = true;
           setExportCancelled(true);

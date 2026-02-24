@@ -4,14 +4,14 @@ import styles from "@/app/page.module.css";
 import ActionBar from "@/components/common/ActionBar";
 import ProgressBar from "@/components/common/ProgressBar";
 import ModalShell from "@/components/common/ModalShell";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type ExportProgressOverlayProps = {
   isOpen: boolean;
   title: string;
   progress: number;
   total: number;
-  cancelLabel: string;
-  cancelDisabled?: boolean;
+  exportCancelled: boolean;
   onCancel: () => void;
 };
 
@@ -20,15 +20,17 @@ export default function ExportProgressOverlay({
   title,
   progress,
   total,
-  cancelLabel,
-  cancelDisabled = false,
+  exportCancelled,
   onCancel,
 }: ExportProgressOverlayProps) {
+  const { t } = useI18n();
   if (!isOpen) {
     return null;
   }
 
   const percent = total > 0 ? Math.round((progress / total) * 100) : 0;
+  const cancelLabel = exportCancelled ? t("actions.cancelling") : t("actions.cancel");
+  const cancelDisabled = exportCancelled;
 
   return (
     <ModalShell

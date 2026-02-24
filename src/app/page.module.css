@@ -3124,6 +3124,10 @@
   background: transparent;
 }
 
+.stockpileCountBadgeAlert {
+  border-color: #ef4444;
+}
+
 .stockpileSidebarItemActive {
   border-color: rgba(230, 179, 90, 0.6);
   background: rgba(230, 179, 90, 0.08);
@@ -3461,6 +3465,19 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.stockpileFacePill {
+  cursor: default;
+  height: 30px;
+  padding: 0 var(--space-5);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stockpileTableValue {
+  color: #f8fafc;
 }
 
 .stockpileTablePairing {
