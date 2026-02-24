@@ -822,6 +822,7 @@ export default function StockpilePanelContent({
                     />
                   }
                   onRemoveFromCollection={async () => {
+                    if (activeFilter.type !== "collection") return;
                     const target = collections.find((item) => item.id === activeFilter.id);
                     if (!target) return;
                     try {

@@ -176,20 +176,6 @@ const baseMessages = {
     "warning.safariAutoclassifyUnsupported": "Auto-classification is currently not supported in Safari while we work out some issues. Please use Chrome, Edge, or Firefox for auto-classification.",
     "warning.clearAssetClassificationDestructive":
       "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
-    "warning.clearAssetClassificationDestructive":
-      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
-    "warning.clearAssetClassificationDestructive":
-      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
-    "warning.clearAssetClassificationDestructive":
-      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
-    "warning.clearAssetClassificationDestructive":
-      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
-    "warning.clearAssetClassificationDestructive":
-      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
-    "warning.clearAssetClassificationDestructive":
-      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
-    "warning.clearAssetClassificationDestructive":
-      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
     "warning.pairingLossSingleGeneric":
       "1 card will be unpaired from {backCount} back face. Continue?",
     "warning.pairingLossMultipleGeneric":

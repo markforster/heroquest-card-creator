@@ -74,6 +74,7 @@ What this means in practice:
 - You can:
   - Serve `out/` from any path on a web server (e.g. `/tools/card-maker/`).
   - Or open `out/index.html` directly via `file://` in a browser.
+- Note: Firefox `file://` requires a small URL shim (included) to avoid `URL constructor: null` errors.
 - No Node server or runtime is required once built.
 
 The only place `NEXT_PUBLIC_SITE_URL` matters is for `robots.ts` and `sitemap.ts` (to generate absolute URLs). It does **not** affect how the static bundle runs.

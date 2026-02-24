@@ -61,6 +61,44 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="en">
       {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null}
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function () {
+  try {
+    if (location.protocol !== "file:") return;
+    if (!navigator.userAgent || navigator.userAgent.indexOf("Firefox/") === -1) return;
+    if (window.__HQCC_URL_PATCHED__) return;
+    window.__HQCC_URL_PATCHED__ = true;
+
+    var OriginalURL = URL;
+    function PatchedURL(url, base) {
+      if (base == null || base === "null") {
+        base = window.location.href;
+      }
+      return new OriginalURL(url, base);
+    }
+    PatchedURL.prototype = OriginalURL.prototype;
+    Object.getOwnPropertyNames(OriginalURL).forEach(function (prop) {
+      try {
+        if (!(prop in PatchedURL)) {
+          Object.defineProperty(PatchedURL, prop, Object.getOwnPropertyDescriptor(OriginalURL, prop));
+        }
+      } catch (_err) {}
+    });
+    Object.getOwnPropertySymbols(OriginalURL).forEach(function (prop) {
+      try {
+        if (!(prop in PatchedURL)) {
+          Object.defineProperty(PatchedURL, prop, Object.getOwnPropertyDescriptor(OriginalURL, prop));
+        }
+      } catch (_err) {}
+    });
+    window.URL = PatchedURL;
+  } catch (_err) {}
+})();
+            `,
+          }}
+        />
         <style
           // Inject font-face rules using paths that are
           // relative to the current document so the export
