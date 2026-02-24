@@ -1357,8 +1357,8 @@
   --inspector-header-title-size: 0.72rem;
   --inspector-header-row-gap: var(--space-6);
   --inspector-header-controls-height: 34px;
-  padding-top: var(--space-3);
-  padding-bottom: var(--space-3);
+  padding-top: var(--space-1);
+  padding-bottom: var(--space-1);
   border-bottom: 1px solid rgba(0, 0, 0, 0.8);
 }
 
@@ -1413,17 +1413,24 @@
 
 .inspectorHeaderContent {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-3);
+  flex-direction: row;
+  align-items: center;
   flex: 1 0 auto;
   min-width: 0;
-  min-height: 64px;
+  min-height: 40px;
 }
 
 .inspectorHeaderRow {
   justify-content: space-between;
   width: 100%;
+}
+
+.inspectorHeaderTitle {
+  flex: 1 0 auto;
+}
+
+.inspectorHeaderStatus {
+  flex: 0 1 auto;
 }
 
 .inspectorStatusBadge {
@@ -1440,15 +1447,23 @@
 }
 
 .inspectorStatusDraft {
+  background: rgba(148, 163, 184, 0.18);
+  border-color: rgba(248, 250, 252, 0.7);
+  border-style: dotted;
+  color: #cbd5f5;
+}
+
+.inspectorStatusSaved {
   background: rgba(76, 175, 80, 0.18);
   border-color: rgba(76, 175, 80, 0.45);
   color: #c7f2cf;
 }
 
-.inspectorStatusSaved {
-  background: var(--hq-white-06);
-  border-color: rgba(255, 255, 255, 0.18);
-  color: #e0e6eb;
+.inspectorStatusModified {
+  background: rgba(148, 163, 184, 0.18);
+  border-color: rgba(248, 250, 252, 0.7);
+  border-style: dotted;
+  color: #f8fafc;
 }
 
 .inspectorSectionTitle {

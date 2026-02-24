@@ -8,6 +8,7 @@ import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import IconButton from "@/components/common/IconButton";
+import { WarningNotice } from "@/components/common/Notice";
 import {
   ENABLE_MISSING_ASSET_CHECKS,
   ENABLE_MISSING_ASSET_DELETE_SCAN,
@@ -20,6 +21,7 @@ import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvi
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
+import { isSafariBrowser } from "@/lib/browser";
 import type { AssetKindGroupId } from "@/lib/assets-grouping";
 import { groupAssetsByKind } from "@/lib/assets-grouping";
 import type { AssetRecord } from "@/lib/assets-db";
@@ -145,7 +147,19 @@ export default function AssetsPanelContent({
   const kindAnchorRef = useRef<HTMLElement | null>(null);
   const { scanFiles, addToIndex, removeFromIndex, existingNames } = useAssetHashIndex();
   const { runMissingAssetsScan } = useMissingAssets();
-  const { enqueueAsset, cancelAsset } = useAssetKindQueue();
+  const { enqueueAsset, cancelAsset, setIsActive } = useAssetKindQueue();
+  const isSafari = typeof window !== "undefined" ? isSafariBrowser() : false;
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsActive(false);
+      return;
+    }
+    setIsActive(true);
+    return () => {
+      setIsActive(false);
+    };
+  }, [isOpen, setIsActive]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -268,48 +282,63 @@ export default function AssetsPanelContent({
     let cancelled = false;
     const assetIds = new Set(assets.map((asset) => asset.id));
     const nextUrls: Record<string, string> = { ...thumbUrlsRef.current };
+    let urlsChanged = false;
 
     Object.keys(nextUrls).forEach((id) => {
       if (!assetIds.has(id)) {
         URL.revokeObjectURL(nextUrls[id]);
         delete nextUrls[id];
+        urlsChanged = true;
       }
     });
 
     (async () => {
       const pending = assets.filter((asset) => !nextUrls[asset.id]);
-      const concurrency = 10;
+      if (pending.length === 0 && !urlsChanged) return;
+      const concurrency = 3;
       let cursor = 0;
-
-      const runNext = async (): Promise<void> => {
-        if (cancelled) return;
-        const index = cursor;
-        cursor += 1;
-        if (index >= pending.length) return;
-        const asset = pending[index];
-        if (!asset || nextUrls[asset.id]) {
-          return runNext();
-        }
-        try {
-          const url = await getAssetObjectUrl(asset.id);
-          if (url) {
-            nextUrls[asset.id] = url;
+      const idleCallback = (window as Window & typeof globalThis).requestIdleCallback;
+      const maybeYield = async (): Promise<void> =>
+        new Promise<void>((resolve) => {
+          if (typeof idleCallback === "function") {
+            idleCallback(() => resolve(), { timeout: 150 });
+          } else {
+            window.setTimeout(resolve, 50);
           }
-        } catch {
-          // Ignore individual asset errors for now.
+        });
+
+      const runWorker = async (): Promise<void> => {
+        while (true) {
+          if (cancelled) return;
+          const index = cursor;
+          cursor += 1;
+          if (index >= pending.length) return;
+          const asset = pending[index];
+          if (!asset || nextUrls[asset.id]) {
+            continue;
+          }
+          try {
+            const url = await getAssetObjectUrl(asset.id);
+            if (url) {
+              nextUrls[asset.id] = url;
+              urlsChanged = true;
+            }
+          } catch {
+            // Ignore individual asset errors for now.
+          }
+          await maybeYield();
         }
-        return runNext();
       };
 
       const workers = Array.from({ length: Math.min(concurrency, pending.length) }, () =>
-        runNext(),
+        runWorker(),
       );
       await Promise.all(workers);
 
-      if (!cancelled) {
+      if (!cancelled && urlsChanged) {
         thumbUrlsRef.current = nextUrls;
         setThumbUrls(nextUrls);
-      } else {
+      } else if (cancelled) {
         Object.values(nextUrls).forEach((url) => URL.revokeObjectURL(url));
       }
     })();
@@ -330,10 +359,12 @@ export default function AssetsPanelContent({
     if (selectedOrder.length === 0) return;
     const idSet = new Set(assets.map((asset) => asset.id));
     const nextOrder = selectedOrder.filter((id) => idSet.has(id));
-    if (nextOrder.length !== selectedOrder.length) {
-      setSelectedOrder(nextOrder);
-      setSelectedIds(new Set(nextOrder));
-    }
+    const isSameLength = nextOrder.length === selectedOrder.length;
+    const isSameOrder =
+      isSameLength && nextOrder.every((id, index) => id === selectedOrder[index]);
+    if (isSameOrder) return;
+    setSelectedOrder(nextOrder);
+    setSelectedIds(new Set(nextOrder));
   }, [assets, selectedOrder]);
 
   useEffect(() => {
@@ -808,6 +839,11 @@ export default function AssetsPanelContent({
 
   return (
     <div className={`${styles.assetsPanel} d-flex flex-column flex-grow-1`}>
+      {isSafari ? (
+        <WarningNotice className="mb-2" role="status">
+          {t("warning.safariAutoclassifyUnsupported")}
+        </WarningNotice>
+      ) : null}
       <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
         <div className="input-group input-group-sm" style={{ maxWidth: 260 }}>
           <span className="input-group-text">

@@ -85,6 +85,9 @@ export async function createCard(
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to create card"));
   });
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+  }
 
   return base;
 }
@@ -132,6 +135,9 @@ export async function updateCard(
     putRequest.onsuccess = () => resolve();
     putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update card"));
   });
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+  }
 
   return next;
 }
@@ -190,6 +196,9 @@ export async function updateCards(
       };
     });
   });
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+  }
 }
 
 export async function getCard(id: string): Promise<CardRecord | null> {

@@ -52,6 +52,13 @@ export default function LeftNavPrimaryActions() {
                 fit="cover"
                 className={styles.leftNavCurrentCardThumbFrame}
                 fallback={<div className={styles.leftNavCurrentCardFallback} />}
+                onLoad={
+                  currentCardThumbUrl
+                    ? () => {
+                        URL.revokeObjectURL(currentCardThumbUrl);
+                      }
+                    : undefined
+                }
               />
               <div className={styles.leftNavCurrentCardLabel}>
                 {currentCardName ?? t("actions.cards")}

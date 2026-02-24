@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { LucideIcon } from "lucide-react";
-import { ALargeSmall, Bug, Copyright, Monitor, TableCellsSplit } from "lucide-react";
+import { ALargeSmall, Bug, Copyright, Monitor, TableCellsSplit, Image } from "lucide-react";
 
 import type { MessageKey } from "@/i18n/messages";
 import CopyrightSettingsPanel from "@/components/Modals/SettingsModal/CopyrightSettingsPanel";
@@ -9,6 +9,7 @@ import DebugSettingsPanel from "@/components/Modals/SettingsModal/DebugSettingsP
 import PreviewSettingsPanel from "@/components/Modals/SettingsModal/PreviewSettingsPanel";
 import StatLabelOverridesPanel from "@/components/Modals/SettingsModal/StatLabelOverridesPanel";
 import TextFittingSettingsPanel from "@/components/Modals/SettingsModal/TextFittingSettingsPanel";
+import AssetsSettingsPanel from "@/components/Modals/SettingsModal/AssetsSettingsPanel";
 import { isDebugToolsEnabled } from "@/lib/env";
 
 const debugToolsEnabled = isDebugToolsEnabled();
@@ -26,6 +27,12 @@ export const SETTINGS_NAV_CONFIG = {
 };
 
 export const SETTINGS_AREAS: SettingsAreaDefinition[] = [
+  {
+    id: "assets-settings",
+    labelKey: "heading.assetsSettings",
+    icon: Image,
+    panel: () => <AssetsSettingsPanel />,
+  },
   {
     id: "stat-label-overrides",
     labelKey: "heading.statLabelOverrides",

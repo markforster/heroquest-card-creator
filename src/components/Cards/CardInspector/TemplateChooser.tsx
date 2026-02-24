@@ -33,6 +33,7 @@ type PendingFaceChange =
     };
 
 const FALLBACK_TITLE = "Untitled card";
+const SHOW_TEMPLATE_THUMB = false;
 
 export default function TemplateChooser() {
   const { t, language } = useI18n();
@@ -85,6 +86,16 @@ export default function TemplateChooser() {
   const isDraft = Boolean(
     currentTemplateId && draftTemplateId === currentTemplateId && draft && !activeCardId,
   );
+  const statusLabel = isDraft
+    ? t("label.draft")
+    : isDraftDirty
+      ? t("label.modified")
+      : t("label.saved");
+  const statusClass = isDraft
+    ? styles.inspectorStatusDraft
+    : isDraftDirty
+      ? styles.inspectorStatusModified
+      : styles.inspectorStatusSaved;
 
   const effectiveFace = useMemo<CardFace | undefined>(() => {
     if (!template) return undefined;
@@ -219,38 +230,42 @@ export default function TemplateChooser() {
   return (
     <>
       <div className={styles.inspectorHeader}>
-        <div className={styles.inspectorHeaderPreview} aria-hidden="true">
-          <div className={styles.inspectorHeaderPreviewInner}>
-            {currentThumbnailDataUrl ? (
-              <img src={currentThumbnailDataUrl} alt="" />
-            ) : currentThumbnailUrl && !currentThumbnailError ? (
-              <img
-                src={currentThumbnailUrl}
-                alt=""
-                onError={() => {
-                  setCurrentThumbnailError(true);
-                  if (!currentCard?.thumbnailBlob) return;
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    if (typeof reader.result === "string") {
-                      setCurrentThumbnailDataUrl(reader.result);
-                    }
-                  };
-                  reader.readAsDataURL(currentCard.thumbnailBlob);
-                }}
-              />
-            ) : currentTemplateThumbnail?.src ? (
-              <img src={currentTemplateThumbnail.src} alt="" />
-            ) : (
-              <div className={styles.inspectorHeaderPreviewPlaceholder} />
-            )}
+        {SHOW_TEMPLATE_THUMB ? (
+          <div className={styles.inspectorHeaderPreview} aria-hidden="true">
+            <div className={styles.inspectorHeaderPreviewInner}>
+              {currentThumbnailDataUrl ? (
+                <img src={currentThumbnailDataUrl} alt="" />
+              ) : currentThumbnailUrl && !currentThumbnailError ? (
+                <img
+                  src={currentThumbnailUrl}
+                  alt=""
+                  onError={() => {
+                    setCurrentThumbnailError(true);
+                    if (!currentCard?.thumbnailBlob) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      if (typeof reader.result === "string") {
+                        setCurrentThumbnailDataUrl(reader.result);
+                      }
+                    };
+                    reader.readAsDataURL(currentCard.thumbnailBlob);
+                  }}
+                />
+              ) : currentTemplateThumbnail?.src ? (
+                <img src={currentTemplateThumbnail.src} alt="" />
+              ) : (
+                <div className={styles.inspectorHeaderPreviewPlaceholder} />
+              )}
+            </div>
           </div>
-        </div>
+        ) : null}
         <div className={styles.inspectorHeaderContent}>
           <div
             className={`${styles.inspectorHeaderRow} d-flex align-items-center justify-content-between gap-2`}
           >
-            <div className={styles.inspectorSectionTitle}>
+            <div
+              className={`${styles.inspectorSectionTitle} ${styles.inspectorHeaderTitle}`}
+            >
               {t("actions.template")} -{" "}
               {template ? getTemplateNameLabel(language, template) : t("ui.loading")}
             </div>
@@ -303,16 +318,14 @@ export default function TemplateChooser() {
                 </div>
               ) : null}
             </div>
+            {currentTemplateId ? (
+              <span
+                className={`${styles.inspectorStatusBadge} ${styles.inspectorHeaderStatus} ${statusClass}`}
+              >
+                {statusLabel}
+              </span>
+            ) : null}
           </div>
-          {currentTemplateId ? (
-            <span
-              className={`${styles.inspectorStatusBadge} ${
-                isDraft ? styles.inspectorStatusDraft : styles.inspectorStatusSaved
-              }`}
-            >
-              {isDraft ? t("label.draft") : t("label.saved")}
-            </span>
-          ) : null}
         </div>
       </div>
       <ConfirmModal

@@ -56,6 +56,9 @@ export default function DebugSettingsPanel() {
         <div className={styles.settingsPanelSectionTitle}>
           {t("actions.clearAssetClassification")}
         </div>
+        <WarningNotice>
+          {t("warning.clearAssetClassificationDestructive")}
+        </WarningNotice>
         <div className="d-flex align-items-center gap-3 flex-wrap">
           <button
             type="button"

@@ -7,17 +7,25 @@ import { classifyAssetBlob } from "@/lib/asset-kind/classify";
 import { compareAssetsByDefaultOrder } from "@/lib/assets-grouping";
 import type { AssetRecord } from "@/lib/assets-db";
 import { getAllAssets, getAssetBlob, updateAssetMeta } from "@/lib/assets-db";
+import { getAssetAutoClassifyEnabled } from "@/lib/asset-auto-classify";
+import { isSafariBrowser } from "@/lib/browser";
 
 type AssetKindQueueContextValue = {
   enqueueAsset: (id: string, meta?: { width?: number; height?: number }) => void;
   cancelAsset: (id: string) => void;
+  setIsActive: (isActive: boolean) => void;
+  setAutoClassifyEnabled: (isEnabled: boolean) => void;
 };
 
 const AssetKindQueueContext = createContext<AssetKindQueueContextValue | undefined>(undefined);
 
-const IDLE_TIMEOUT = 1000;
-const BATCH_SIZE = 6;
+const IDLE_TIMEOUT = 1500;
+const BATCH_SIZE = 2;
 const MIN_CLASSIFY_MS = 800;
+const MAX_PER_ACTIVATION = 30;
+const ACTIVATION_COOLDOWN_MS = 5000;
+const CLASSIFY_TIMEOUT_MS = 2 * 60 * 1000;
+const UPDATE_FAILURE_DELAY_MS = 200;
 
 function shouldEnqueue(asset: AssetRecord): boolean {
   if (asset.assetKindSource === "manual") return false;
@@ -35,7 +43,47 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
   const processingRef = useRef(false);
   const classifyStartRef = useRef<Map<string, number>>(new Map());
   const assetDimensionsRef = useRef<Map<string, { width?: number; height?: number }>>(new Map());
+  const assetStatusRef = useRef<Map<string, { status?: AssetRecord["assetKindStatus"]; updatedAt?: number }>>(
+    new Map(),
+  );
+  const processedThisActivationRef = useRef(0);
+  const cooldownUntilRef = useRef(0);
+  const warnedUpdateIdsRef = useRef<Set<string>>(new Set());
+  const requestedActiveRef = useRef(false);
   const [queueToken, setQueueToken] = useState(0);
+  const [isActive, setIsActiveState] = useState(false);
+  const [isAutoClassifyEnabled, setIsAutoClassifyEnabled] = useState(() =>
+    getAssetAutoClassifyEnabled(),
+  );
+  const isSafari = useMemo(
+    () => (typeof window !== "undefined" ? isSafariBrowser() : false),
+    [],
+  );
+  const setIsActive = useCallback(
+    (next: boolean) => {
+      requestedActiveRef.current = next;
+      if ((isSafari || !isAutoClassifyEnabled) && next) return;
+      setIsActiveState(next);
+    },
+    [isAutoClassifyEnabled, isSafari],
+  );
+  const setAutoClassifyEnabled = useCallback((next: boolean) => {
+    setIsAutoClassifyEnabled(next);
+    if (!next) {
+      setIsActiveState(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAutoClassifyEnabled || isSafari) return;
+    if (requestedActiveRef.current) {
+      setIsActiveState(true);
+    }
+  }, [isAutoClassifyEnabled, isSafari]);
+
+  useEffect(() => {
+    setIsAutoClassifyEnabled(getAssetAutoClassifyEnabled());
+  }, []);
 
   const enqueueAsset = useCallback((id: string, meta?: { width?: number; height?: number }) => {
     if (meta?.width != null || meta?.height != null) {
@@ -63,7 +111,33 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
           .filter((asset) => shouldEnqueue(asset))
           .slice()
           .sort(compareAssetsByDefaultOrder);
+        assetStatusRef.current = new Map(
+          assets.map((asset) => [
+            asset.id,
+            { status: asset.assetKindStatus, updatedAt: asset.assetKindUpdatedAt },
+          ]),
+        );
         ordered.forEach((asset) => {
+          if (
+            asset.assetKindStatus === "classifying" &&
+            asset.assetKindUpdatedAt &&
+            Date.now() - asset.assetKindUpdatedAt > CLASSIFY_TIMEOUT_MS
+          ) {
+            updateAssetMeta(asset.id, {
+              assetKindStatus: "unclassified",
+              assetKindSource: "auto",
+              assetKindUpdatedAt: Date.now(),
+            })
+              .then(() => {
+                assetStatusRef.current.set(asset.id, {
+                  status: "unclassified",
+                  updatedAt: Date.now(),
+                });
+              })
+              .catch(() => {
+                // Ignore reset failures during seeding.
+              });
+          }
           if (shouldEnqueue(asset)) {
             enqueueAsset(asset.id);
           }
@@ -80,10 +154,14 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
   }, [enqueueAsset]);
 
   useEffect(() => {
+    if (!isAutoClassifyEnabled) return;
+    if (isSafari) return;
+    if (!isActive) return;
+    processedThisActivationRef.current = 0;
+    cooldownUntilRef.current = 0;
+    warnedUpdateIdsRef.current.clear();
     let active = true;
-    if (active) {
-      seedQueue();
-    }
+    seedQueue();
     const intervalId = window.setInterval(() => {
       if (active) {
         seedQueue();
@@ -93,9 +171,12 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
       active = false;
       window.clearInterval(intervalId);
     };
-  }, [seedQueue]);
+  }, [isActive, isAutoClassifyEnabled, isSafari, seedQueue]);
 
   useEffect(() => {
+    if (!isAutoClassifyEnabled) return;
+    if (isSafari) return;
+    if (!isActive) return;
     if (processingRef.current) return;
     if (queueRef.current.length === 0) return;
 
@@ -104,6 +185,7 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
 
     const scheduleNext = () => {
       const idleCallback = (window as Window & typeof globalThis).requestIdleCallback;
+      if (!isActive || isSafari || !isAutoClassifyEnabled) return;
       if (typeof idleCallback === "function") {
         idleCallback(runBatch, { timeout: IDLE_TIMEOUT });
       } else {
@@ -112,30 +194,96 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
     };
 
     const runBatch = async () => {
-      if (cancelled) return;
+      if (cancelled || !isActive || isSafari || !isAutoClassifyEnabled) return;
+      const now = Date.now();
+      if (cooldownUntilRef.current > now) {
+        window.setTimeout(runBatch, cooldownUntilRef.current - now);
+        return;
+      }
+      if (processedThisActivationRef.current >= MAX_PER_ACTIVATION) {
+        cooldownUntilRef.current = now + ACTIVATION_COOLDOWN_MS;
+        window.setTimeout(runBatch, ACTIVATION_COOLDOWN_MS);
+        return;
+      }
       const batch = queueRef.current.splice(0, BATCH_SIZE);
       batch.forEach((id) => queueSetRef.current.delete(id));
 
       for (const id of batch) {
-        if (cancelled) return;
+        if (cancelled || !isActive || isSafari || !isAutoClassifyEnabled) return;
         if (cancelledRef.current.has(id)) continue;
 
-        try {
-          const assetMeta = assetDimensionsRef.current.get(id);
-          const startedAt = Date.now();
-          classifyStartRef.current.set(id, startedAt);
-          await updateAssetMeta(id, {
-            assetKindStatus: "classifying",
+        const startedAt = Date.now();
+        const lastStatus = assetStatusRef.current.get(id);
+        if (
+          lastStatus?.status === "classifying" &&
+          lastStatus.updatedAt &&
+          startedAt - lastStatus.updatedAt > CLASSIFY_TIMEOUT_MS
+        ) {
+          updateAssetMeta(id, {
+            assetKindStatus: "unclassified",
             assetKindSource: "auto",
             assetKindUpdatedAt: Date.now(),
-          });
-          const blob = await getAssetBlob(id);
-          if (!blob || cancelledRef.current.has(id)) {
+          })
+            .then(() => {
+              assetStatusRef.current.set(id, {
+                status: "unclassified",
+                updatedAt: Date.now(),
+              });
+            })
+            .catch(() => {
+              // Ignore reset failures during batch.
+            });
+          enqueueAsset(id);
+          processedThisActivationRef.current += 1;
+          continue;
+        }
+        try {
+          const assetMeta = assetDimensionsRef.current.get(id);
+          classifyStartRef.current.set(id, startedAt);
+          try {
             await updateAssetMeta(id, {
-              assetKindStatus: "unclassified",
+              assetKindStatus: "classifying",
               assetKindSource: "auto",
               assetKindUpdatedAt: Date.now(),
             });
+            assetStatusRef.current.set(id, {
+              status: "classifying",
+              updatedAt: Date.now(),
+            });
+          } catch (error) {
+            if (!warnedUpdateIdsRef.current.has(id)) {
+              warnedUpdateIdsRef.current.add(id);
+              // eslint-disable-next-line no-console
+              console.warn("[asset-kind] Failed to mark asset as classifying", id, error);
+            }
+            enqueueAsset(id);
+            await new Promise<void>((resolve) =>
+              window.setTimeout(resolve, UPDATE_FAILURE_DELAY_MS),
+            );
+            continue;
+          }
+          const blob = await getAssetBlob(id);
+          if (!blob || cancelledRef.current.has(id)) {
+            try {
+              await updateAssetMeta(id, {
+                assetKindStatus: "unclassified",
+                assetKindSource: "auto",
+                assetKindUpdatedAt: Date.now(),
+              });
+              assetStatusRef.current.set(id, {
+                status: "unclassified",
+                updatedAt: Date.now(),
+              });
+            } catch (error) {
+              if (!warnedUpdateIdsRef.current.has(id)) {
+                warnedUpdateIdsRef.current.add(id);
+                // eslint-disable-next-line no-console
+                console.warn("[asset-kind] Failed to reset asset after missing blob", id, error);
+              }
+              await new Promise<void>((resolve) =>
+                window.setTimeout(resolve, UPDATE_FAILURE_DELAY_MS),
+              );
+            }
             continue;
           }
           const result = await classifyAssetBlob(blob, {
@@ -150,29 +298,80 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
             );
           }
           if (result.kind === "unknown") {
+            try {
+              await updateAssetMeta(id, {
+                assetKindStatus: "unclassified",
+                assetKindSource: "auto",
+                assetKindConfidence: result.confidence,
+                assetKindUpdatedAt: Date.now(),
+              });
+              assetStatusRef.current.set(id, {
+                status: "unclassified",
+                updatedAt: Date.now(),
+              });
+            } catch (error) {
+              if (!warnedUpdateIdsRef.current.has(id)) {
+                warnedUpdateIdsRef.current.add(id);
+                // eslint-disable-next-line no-console
+                console.warn("[asset-kind] Failed to update unknown classification", id, error);
+              }
+              await new Promise<void>((resolve) =>
+                window.setTimeout(resolve, UPDATE_FAILURE_DELAY_MS),
+              );
+            }
+          } else {
+            try {
+              await updateAssetMeta(id, {
+                assetKindStatus: "classified",
+                assetKindSource: "auto",
+                assetKind: result.kind,
+                assetKindConfidence: result.confidence,
+                assetKindUpdatedAt: Date.now(),
+              });
+              assetStatusRef.current.set(id, {
+                status: "classified",
+                updatedAt: Date.now(),
+              });
+            } catch (error) {
+              if (!warnedUpdateIdsRef.current.has(id)) {
+                warnedUpdateIdsRef.current.add(id);
+                // eslint-disable-next-line no-console
+                console.warn("[asset-kind] Failed to finalize classification", id, error);
+              }
+              await new Promise<void>((resolve) =>
+                window.setTimeout(resolve, UPDATE_FAILURE_DELAY_MS),
+              );
+            }
+          }
+        } catch {
+          try {
             await updateAssetMeta(id, {
               assetKindStatus: "unclassified",
               assetKindSource: "auto",
-              assetKindConfidence: result.confidence,
               assetKindUpdatedAt: Date.now(),
             });
-          } else {
-            await updateAssetMeta(id, {
-              assetKindStatus: "classified",
-              assetKindSource: "auto",
-              assetKind: result.kind,
-              assetKindConfidence: result.confidence,
-              assetKindUpdatedAt: Date.now(),
+            assetStatusRef.current.set(id, {
+              status: "unclassified",
+              updatedAt: Date.now(),
             });
+          } catch (error) {
+            if (!warnedUpdateIdsRef.current.has(id)) {
+              warnedUpdateIdsRef.current.add(id);
+              // eslint-disable-next-line no-console
+              console.warn("[asset-kind] Failed to reset asset after error", id, error);
+            }
+            await new Promise<void>((resolve) =>
+              window.setTimeout(resolve, UPDATE_FAILURE_DELAY_MS),
+            );
           }
+        } finally {
           classifyStartRef.current.delete(id);
-        } catch {
-          // Ignore classification failures.
+          processedThisActivationRef.current += 1;
         }
       }
 
       processingRef.current = false;
-      if (!cancelled && queueRef.current.length > 0) {
+      if (!cancelled && isActive && queueRef.current.length > 0) {
         processingRef.current = true;
         scheduleNext();
       }
@@ -184,14 +383,16 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
       cancelled = true;
       processingRef.current = false;
     };
-  }, [queueToken]);
+  }, [isActive, queueToken]);
 
   const value = useMemo(
     () => ({
       enqueueAsset,
       cancelAsset,
+      setIsActive,
+      setAutoClassifyEnabled,
     }),
-    [enqueueAsset, cancelAsset],
+    [enqueueAsset, cancelAsset, setAutoClassifyEnabled, setIsActive],
   );
 
   return (

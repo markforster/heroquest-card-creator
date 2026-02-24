@@ -156,6 +156,11 @@ const baseMessages = {
     "heading.cards": "Cards",
     "heading.selectBackCard": "Select back card",
     "heading.manageFrontPairings": "Manage front pairings",
+
+    "heading.assetsSettings": "Assets",
+    "label.assetClassification": "Asset classification",
+    "label.assetAutoClassifyToggle": "Enable auto-classification",
+    "label.assetAutoClassifyHelp": "Automatically categorize assets as artwork or icon.",
     "warning.notPaired": "Not paired",
     "warning.alreadyPairedWith": "Already paired with",
     "warning.pairingLossSingle": "1 card will be unpaired from {back}. Continue?",
@@ -167,6 +172,23 @@ const baseMessages = {
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
     "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
+    "warning.safariAutoclassifyUnsupported": "Auto-classification is currently not supported in Safari while we work out some issues. Please use Chrome, Edge, or Firefox for auto-classification.",
+    "warning.clearAssetClassificationDestructive":
+      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
+    "warning.clearAssetClassificationDestructive":
+      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
+    "warning.clearAssetClassificationDestructive":
+      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
+    "warning.clearAssetClassificationDestructive":
+      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
+    "warning.clearAssetClassificationDestructive":
+      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
+    "warning.clearAssetClassificationDestructive":
+      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
+    "warning.clearAssetClassificationDestructive":
+      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
+    "warning.clearAssetClassificationDestructive":
+      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
     "warning.pairingLossSingleGeneric":
       "1 card will be unpaired from {backCount} back face. Continue?",
     "warning.pairingLossMultipleGeneric":
@@ -374,6 +396,7 @@ const baseMessages = {
     "label.clearingAssetClassification": "Clearing asset classification…",
     "label.assetClassificationCleared": "Asset classification cleared (${count})",
     "label.assetClassificationClearFailed": "Failed to clear asset classification",
+    "label.modified": "Modified",
     "tooltip.filterAssets": "Filter assets",
     "label.keepBackup": "Keep backup of previous image",
     "label.fileType": "File type",
@@ -622,6 +645,10 @@ const baseMessages = {
     "heading.cards": "Cartes",
     "heading.selectBackCard": "Choisir un dos",
     "heading.manageFrontPairings": "Gérer les associations recto",
+    "heading.assetsSettings": "Assets",
+    "label.assetClassification": "Asset classification",
+    "label.assetAutoClassifyToggle": "Enable auto-classification",
+    "label.assetAutoClassifyHelp": "Automatically categorize assets as artwork or icon.",
     "warning.notPaired": "Non apparié",
     "warning.alreadyPairedWith": "Déjà associé à",
     "warning.pairingLossSingle": "1 carte sera dissociée de {back}. Continuer ?",
@@ -827,6 +854,7 @@ const baseMessages = {
     "label.clearingAssetClassification": "Effacement de la classification des ressources…",
     "label.assetClassificationCleared": "Classification des ressources effacée (${count})",
     "label.assetClassificationClearFailed": "Échec de l’effacement de la classification des ressources",
+    "label.modified": "Modified",
     "tooltip.filterAssets": "Filtrer les ressources",
     "label.keepBackup": "Conserver une sauvegarde de l’image précédente",
     "label.fileType": "Type de fichier",
@@ -925,6 +953,9 @@ const baseMessages = {
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
     "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
+    "warning.safariAutoclassifyUnsupported": "Auto-classification is currently not supported in Safari while we work out some issues. Please use Chrome, Edge, or Firefox for auto-classification.",
+    "warning.clearAssetClassificationDestructive":
+      "Clearing asset classification is destructive; all automated and manual classifications will be lost.",
 
     "stats.attackDice": "Dés d'attaque",
     "stats.defendDice": "Dés de défense",
@@ -1091,6 +1122,10 @@ const baseMessages = {
     "heading.cards": "Karten",
     "heading.selectBackCard": "Rückseite wählen",
     "heading.manageFrontPairings": "Vorderseiten-Zuordnungen verwalten",
+    "heading.assetsSettings": "Assets",
+    "label.assetClassification": "Asset classification",
+    "label.assetAutoClassifyToggle": "Enable auto-classification",
+    "label.assetAutoClassifyHelp": "Automatically categorize assets as artwork or icon.",
     "warning.notPaired": "Nicht gepaart",
     "warning.alreadyPairedWith": "Bereits gepaart mit",
     "warning.pairingLossSingle": "1 Karte wird von {back} getrennt. Fortfahren?",
@@ -1393,6 +1428,7 @@ const baseMessages = {
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
     "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
+    "warning.safariAutoclassifyUnsupported": "Auto-classification is currently not supported in Safari while we work out some issues. Please use Chrome, Edge, or Firefox for auto-classification.",
 
     "stats.attackDice": "Angriffswürfel",
     "stats.defendDice": "Verteidigungswürfel",
@@ -1559,6 +1595,10 @@ const baseMessages = {
     "heading.cards": "Cartas",
     "heading.selectBackCard": "Seleccionar reverso",
     "heading.manageFrontPairings": "Gestionar emparejamientos de frente",
+    "heading.assetsSettings": "Assets",
+    "label.assetClassification": "Asset classification",
+    "label.assetAutoClassifyToggle": "Enable auto-classification",
+    "label.assetAutoClassifyHelp": "Automatically categorize assets as artwork or icon.",
     "warning.notPaired": "Sin emparejar",
     "warning.alreadyPairedWith": "Ya emparejada con",
     "warning.pairingLossSingle": "1 carta se desvinculará de {back}. ¿Continuar?",
@@ -1764,6 +1804,7 @@ const baseMessages = {
     "label.clearingAssetClassification": "Limpiando clasificación de recursos…",
     "label.assetClassificationCleared": "Clasificación de recursos limpiada (${count})",
     "label.assetClassificationClearFailed": "No se pudo limpiar la clasificación de recursos",
+    "label.modified": "Modified",
     "tooltip.filterAssets": "Filtrar recursos",
     "label.keepBackup": "Conservar copia de la imagen anterior",
     "label.fileType": "Tipo de archivo",
@@ -1856,6 +1897,7 @@ const baseMessages = {
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
     "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
+    "warning.safariAutoclassifyUnsupported": "Auto-classification is currently not supported in Safari while we work out some issues. Please use Chrome, Edge, or Firefox for auto-classification.",
 
     "stats.attackDice": "Dados de ataque",
     "stats.defendDice": "Dados de defensa",
@@ -2022,6 +2064,10 @@ const baseMessages = {
     "heading.cards": "Carte",
     "heading.selectBackCard": "Seleziona retro",
     "heading.manageFrontPairings": "Gestisci abbinamenti fronte",
+    "heading.assetsSettings": "Assets",
+    "label.assetClassification": "Asset classification",
+    "label.assetAutoClassifyToggle": "Enable auto-classification",
+    "label.assetAutoClassifyHelp": "Automatically categorize assets as artwork or icon.",
     "warning.notPaired": "Non abbinato",
     "warning.alreadyPairedWith": "Già abbinato a",
     "warning.pairingLossSingle": "1 carta verrà scollegata da {back}. Continuare?",
@@ -2227,6 +2273,7 @@ const baseMessages = {
     "label.clearingAssetClassification": "Pulizia classificazione risorse…",
     "label.assetClassificationCleared": "Classificazione risorse pulita (${count})",
     "label.assetClassificationClearFailed": "Impossibile pulire la classificazione risorse",
+    "label.modified": "Modified",
     "tooltip.filterAssets": "Filtra risorse",
     "label.keepBackup": "Conserva una copia dell’immagine precedente",
     "label.fileType": "Tipo di file",
@@ -2320,6 +2367,7 @@ const baseMessages = {
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
     "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
+    "warning.safariAutoclassifyUnsupported": "Auto-classification is currently not supported in Safari while we work out some issues. Please use Chrome, Edge, or Firefox for auto-classification.",
 
     "stats.attackDice": "Dadi di attacco",
     "stats.defendDice": "Dadi di difesa",
@@ -2485,6 +2533,10 @@ const baseMessages = {
     "heading.cards": "Cartas",
     "heading.selectBackCard": "Selecionar verso",
     "heading.manageFrontPairings": "Gerenciar pareamentos de frente",
+    "heading.assetsSettings": "Assets",
+    "label.assetClassification": "Asset classification",
+    "label.assetAutoClassifyToggle": "Enable auto-classification",
+    "label.assetAutoClassifyHelp": "Automatically categorize assets as artwork or icon.",
     "warning.notPaired": "Não emparelhado",
     "warning.alreadyPairedWith": "Já emparelhado com",
     "warning.pairingLossSingle": "1 carta será desvinculada de {back}. Continuar?",
@@ -2690,6 +2742,7 @@ const baseMessages = {
     "label.clearingAssetClassification": "Limpando classificação de recursos…",
     "label.assetClassificationCleared": "Classificação de recursos limpa (${count})",
     "label.assetClassificationClearFailed": "Falha ao limpar a classificação de recursos",
+    "label.modified": "Modified",
     "tooltip.filterAssets": "Filtrar recursos",
     "label.keepBackup": "Manter backup da imagem anterior",
     "label.fileType": "Tipo de arquivo",
@@ -2784,6 +2837,7 @@ const baseMessages = {
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
     "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
+    "warning.safariAutoclassifyUnsupported": "Auto-classification is currently not supported in Safari while we work out some issues. Please use Chrome, Edge, or Firefox for auto-classification.",
 
     "stats.attackDice": "Dados de ataque",
     "stats.defendDice": "Dados de defesa",
@@ -2950,6 +3004,10 @@ const baseMessages = {
     "heading.cards": "Kaarten",
     "heading.selectBackCard": "Achterkant kiezen",
     "heading.manageFrontPairings": "Koppelingen voorkant beheren",
+    "heading.assetsSettings": "Assets",
+    "label.assetClassification": "Asset classification",
+    "label.assetAutoClassifyToggle": "Enable auto-classification",
+    "label.assetAutoClassifyHelp": "Automatically categorize assets as artwork or icon.",
     "warning.notPaired": "Niet gekoppeld",
     "warning.alreadyPairedWith": "Al gekoppeld met",
     "warning.pairingLossSingle": "1 kaart wordt losgekoppeld van {back}. Doorgaan?",
@@ -3155,6 +3213,7 @@ const baseMessages = {
     "label.clearingAssetClassification": "Assetclassificatie wordt gewist…",
     "label.assetClassificationCleared": "Assetclassificatie gewist (${count})",
     "label.assetClassificationClearFailed": "Assetclassificatie wissen mislukt",
+    "label.modified": "Modified",
     "tooltip.filterAssets": "Assets filteren",
     "label.keepBackup": "Back-up van vorige afbeelding bewaren",
     "label.fileType": "Bestandstype",
@@ -3249,6 +3308,7 @@ const baseMessages = {
     "warning.missingArtworkDetectedBody":
       "{count} cards reference missing artwork. Exports will skip them until fixed.",
     "warning.missingArtworkDetectedHeader": "Missing artwork detected for {count} card(s).",
+    "warning.safariAutoclassifyUnsupported": "Auto-classification is currently not supported in Safari while we work out some issues. Please use Chrome, Edge, or Firefox for auto-classification.",
 
     "stats.attackDice": "Aanvalsdobbelstenen",
     "stats.defendDice": "Verdedigingsdobbelstenen",

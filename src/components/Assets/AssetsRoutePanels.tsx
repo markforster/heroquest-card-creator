@@ -543,6 +543,14 @@ export default function AssetsRoutePanels() {
   const [selectedAssets, setSelectedAssets] = useState<AssetRecord[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { setIsActive } = useAssetKindQueue();
+
+  useEffect(() => {
+    setIsActive(true);
+    return () => {
+      setIsActive(false);
+    };
+  }, [setIsActive]);
 
   useEffect(() => {
     if (selectedAssets.length === 0) {
