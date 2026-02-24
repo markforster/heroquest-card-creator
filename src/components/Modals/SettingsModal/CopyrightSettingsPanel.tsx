@@ -11,6 +11,8 @@ export default function CopyrightSettingsPanel() {
   const { defaultCopyright, setDefaultCopyright, isReady } = useCopyrightSettings();
   const [draft, setDraft] = useState(defaultCopyright);
   const saveTimeoutRef = useRef<number | null>(null);
+  const currentYear = new Date().getFullYear();
+  const placeholder = `© ${currentYear} ${t("placeholders.defaultCopyrightHolder")}`;
 
   useEffect(() => {
     if (!isReady) return;
@@ -47,7 +49,7 @@ export default function CopyrightSettingsPanel() {
           id="defaultCopyright"
           type="text"
           className="form-control form-control-sm"
-          placeholder={t("placeholders.defaultCopyright")}
+          placeholder={placeholder}
           value={draft}
           onChange={(event) => handleChange(event.target.value)}
         />
