@@ -1,6 +1,11 @@
 "use client";
 
+import { Fragment, useEffect, useMemo } from "react";
+import { Folder, LibrarySquare } from "lucide-react";
+
 import styles from "@/app/page.module.css";
+import { buildCollectionsTree } from "@/components/Stockpile/collections-tree";
+import { useCollectionsTreeSettings } from "@/components/Providers/CollectionsTreeSettingsContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type StockpileSidebarProps = {
@@ -45,6 +50,124 @@ export default function StockpileSidebar({
   selectedCountByCollection,
 }: StockpileSidebarProps) {
   const { t } = useI18n();
+  const {
+    enabled: treeEnabled,
+    expandedPaths,
+    setExpandedPaths,
+    togglePath,
+    hasStoredExpandedPaths,
+    isReady: treeSettingsReady,
+  } = useCollectionsTreeSettings();
+
+  const treeData = useMemo(() => {
+    if (!treeEnabled) return null;
+    return buildCollectionsTree(visibleCollections, {
+      collectionCounts,
+      collectionsWithMissingArtwork,
+    });
+  }, [treeEnabled, visibleCollections, collectionCounts, collectionsWithMissingArtwork]);
+
+  useEffect(() => {
+    if (!treeEnabled) return;
+    if (!treeSettingsReady) return;
+    if (hasStoredExpandedPaths) return;
+    if (!treeData?.folderPathIds.length) return;
+    setExpandedPaths(treeData.folderPathIds);
+  }, [treeEnabled, treeSettingsReady, hasStoredExpandedPaths, treeData, setExpandedPaths]);
+
+  const renderCollectionButton = (
+    collection: { id: string; name: string; description?: string; fullName?: string },
+    depth: number,
+    showLeafMarker: boolean,
+  ) => (
+    <button
+      key={collection.id}
+      type="button"
+      className={`${styles.stockpileSidebarItem} ${styles.stockpileTreeItem} ${
+        activeFilter.type === "collection" && activeFilter.id === collection.id
+          ? styles.stockpileSidebarItemActive
+          : ""
+      } d-flex align-items-center gap-2`}
+      style={{ ["--tree-depth" as never]: depth }}
+      onClick={() => {
+        onFilterChange({ type: "collection", id: collection.id });
+        if (!isPairMode) {
+          onClearSelection();
+        }
+      }}
+      title={collection.description || collection.fullName || collection.name}
+    >
+      {showLeafMarker ? (
+        <LibrarySquare className={`${styles.stockpileTreeIcon} ${styles.stockpileTreeIconLeaf}`} />
+      ) : null}
+      <span className="flex-grow-1 text-truncate fs-6">{collection.name}</span>
+      {!isPairMode ? (
+        <span
+          className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge} ${
+            showMissingArtworkOnly && collectionsWithMissingArtwork.has(collection.id)
+              ? styles.stockpileCountBadgeAlert
+              : ""
+          }`}
+        >
+          {collectionCounts.get(collection.id) ?? 0}
+        </span>
+      ) : null}
+      {isPairMode && selectedCountByCollection.get(collection.id) ? (
+        <span className={styles.stockpileSelectedDot} aria-hidden="true" />
+      ) : null}
+    </button>
+  );
+
+  const renderTreeNodes = (nodes: ReturnType<typeof buildCollectionsTree>["nodes"], depth: number) =>
+    nodes.map((node) => {
+      if (node.type === "folder") {
+        const isExpanded = !hasStoredExpandedPaths || expandedPaths.has(node.pathId);
+        return (
+          <Fragment key={`folder-${node.pathId}`}>
+            <button
+              type="button"
+              className={`${styles.stockpileSidebarItem} ${styles.stockpileTreeItem} ${styles.stockpileTreeFolder} d-flex align-items-center gap-2`}
+              style={{ ["--tree-depth" as never]: depth }}
+              onClick={() => togglePath(node.pathId)}
+              aria-expanded={isExpanded}
+            >
+              <span
+                className={`${styles.stockpileTreeCaret} ${
+                  isExpanded ? styles.stockpileTreeCaretExpanded : ""
+                }`}
+                aria-hidden="true"
+              />
+              <Folder className={`${styles.stockpileTreeIcon} ${styles.stockpileTreeIconFolder}`} />
+              <span className="flex-grow-1 text-truncate fs-6">{node.label}</span>
+              {!isPairMode ? (
+                <span
+                  className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge} ${
+                    showMissingArtworkOnly && node.hasMissingArtwork
+                      ? styles.stockpileCountBadgeAlert
+                      : ""
+                  }`}
+                >
+                  {node.count}
+                </span>
+              ) : null}
+            </button>
+            {isExpanded ? renderTreeNodes(node.children, depth + 1) : null}
+          </Fragment>
+        );
+      }
+
+      return renderCollectionButton(
+        {
+          id: node.id,
+          name: node.label,
+          description: node.description,
+          fullName: node.name,
+        },
+        depth,
+        true,
+      );
+    });
+
   return (
     <aside
       className={`${styles.stockpileSidebar} d-flex flex-column gap-2`}
@@ -114,40 +237,9 @@ export default function StockpileSidebar({
         <div className={styles.stockpileSidebarDivider} />
       </div>
       <div className={styles.stockpileSidebarMiddle}>
-        {visibleCollections.map((collection) => (
-          <button
-            key={collection.id}
-            type="button"
-            className={`${styles.stockpileSidebarItem} ${
-              activeFilter.type === "collection" && activeFilter.id === collection.id
-                ? styles.stockpileSidebarItemActive
-                : ""
-            } d-flex align-items-center gap-2`}
-            onClick={() => {
-              onFilterChange({ type: "collection", id: collection.id });
-              if (!isPairMode) {
-                onClearSelection();
-              }
-            }}
-            title={collection.description || collection.name}
-          >
-            <span className="flex-grow-1 text-truncate fs-6">{collection.name}</span>
-            {!isPairMode ? (
-              <span
-                className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge} ${
-                  showMissingArtworkOnly && collectionsWithMissingArtwork.has(collection.id)
-                    ? styles.stockpileCountBadgeAlert
-                    : ""
-                }`}
-              >
-                {collectionCounts.get(collection.id) ?? 0}
-              </span>
-            ) : null}
-            {isPairMode && selectedCountByCollection.get(collection.id) ? (
-              <span className={styles.stockpileSelectedDot} aria-hidden="true" />
-            ) : null}
-          </button>
-        ))}
+        {treeEnabled && treeData
+          ? renderTreeNodes(treeData.nodes, 1)
+          : visibleCollections.map((collection) => renderCollectionButton(collection, 1, false))}
       </div>
     </aside>
   );

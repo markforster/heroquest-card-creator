@@ -1,10 +1,19 @@
 import type { ReactNode } from "react";
 
 import type { LucideIcon } from "lucide-react";
-import { ALargeSmall, Bug, Copyright, Monitor, TableCellsSplit, Image } from "lucide-react";
+import {
+  ALargeSmall,
+  Bug,
+  Copyright,
+  FolderTree,
+  Monitor,
+  TableCellsSplit,
+  Image,
+} from "lucide-react";
 
 import type { MessageKey } from "@/i18n/messages";
 import CopyrightSettingsPanel from "@/components/Modals/SettingsModal/CopyrightSettingsPanel";
+import CollectionsSettingsPanel from "@/components/Modals/SettingsModal/CollectionsSettingsPanel";
 import DebugSettingsPanel from "@/components/Modals/SettingsModal/DebugSettingsPanel";
 import PreviewSettingsPanel from "@/components/Modals/SettingsModal/PreviewSettingsPanel";
 import StatLabelOverridesPanel from "@/components/Modals/SettingsModal/StatLabelOverridesPanel";
@@ -32,6 +41,12 @@ export const SETTINGS_AREAS: SettingsAreaDefinition[] = [
     labelKey: "heading.assetsSettings",
     icon: Image,
     panel: () => <AssetsSettingsPanel />,
+  },
+  {
+    id: "collections-settings",
+    labelKey: "heading.collectionsSettings",
+    icon: FolderTree,
+    panel: () => <CollectionsSettingsPanel />,
   },
   {
     id: "stat-label-overrides",

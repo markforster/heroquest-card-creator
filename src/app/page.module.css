@@ -3131,6 +3131,46 @@
   cursor: pointer;
 }
 
+.stockpileTreeItem {
+  padding-left: calc(var(--space-6) + (var(--tree-depth, 1) - 1) * var(--space-10));
+}
+
+.stockpileTreeFolder {
+  font-weight: 600;
+  color: var(--hq-gray-100);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.stockpileTreeIcon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.8;
+  flex: 0 0 auto;
+}
+
+.stockpileTreeIconFolder {
+  color: var(--hq-gray-200);
+}
+
+.stockpileTreeIconLeaf {
+  color: var(--hq-gray-400);
+}
+
+.stockpileTreeCaret {
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid var(--hq-gray-300);
+  transition: transform 160ms ease;
+  flex: 0 0 auto;
+}
+
+.stockpileTreeCaretExpanded {
+  transform: rotate(90deg);
+}
+
 .stockpileCountBadge {
   font-size: var(--text-lg);
   line-height: 1;
