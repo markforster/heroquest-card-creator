@@ -250,6 +250,46 @@ export async function touchCardLastViewed(
   return next;
 }
 
+export async function updateCardThumbnail(
+  id: string,
+  thumbnailBlob: Blob | null,
+): Promise<boolean> {
+  const store = await getCardsStore("readwrite");
+
+  const existing = await new Promise<CardRecord | null>((resolve, reject) => {
+    const getRequest = store.get(id);
+    getRequest.onsuccess = () => {
+      resolve((getRequest.result as CardRecord | undefined) ?? null);
+    };
+    getRequest.onerror = () => {
+      reject(getRequest.error ?? new Error("Failed to load card for thumbnail update"));
+    };
+  });
+
+  if (!existing) {
+    return false;
+  }
+
+  const normalized = normalizeThumbnailBlob(thumbnailBlob ?? null);
+  const next: CardRecord = {
+    ...existing,
+    thumbnailBlob: normalized ?? null,
+  };
+
+  await new Promise<void>((resolve, reject) => {
+    const putRequest = store.put(next);
+    putRequest.onsuccess = () => resolve();
+    putRequest.onerror = () =>
+      reject(putRequest.error ?? new Error("Failed to update card thumbnail"));
+  });
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+  }
+
+  return true;
+}
+
 export type ListCardsFilter = {
   templateId?: TemplateId;
   status?: CardStatus;

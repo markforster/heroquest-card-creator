@@ -54,7 +54,14 @@ import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import dungeonAtmosphere from "@/assets/dungeon atmostphere - 2.png";
 import { cardTemplatesById } from "@/data/card-templates";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
-import { createCard, getCard, listCards, touchCardLastViewed, updateCard } from "@/lib/cards-db";
+import {
+  createCard,
+  getCard,
+  listCards,
+  touchCardLastViewed,
+  updateCard,
+  updateCardThumbnail,
+} from "@/lib/cards-db";
 import { createPair, deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
@@ -313,6 +320,27 @@ function IndexPageInner() {
     if (!mode) return false;
     await handleSave(mode);
     return true;
+  };
+
+  const repairCurrentCardThumbnail = async () => {
+    if (!activeCardId) return false;
+    let thumbnailBlob: Blob | null = null;
+    try {
+      const blob = await previewRef.current?.renderToPngBlob({
+        width: 225,
+        height: 315,
+      });
+      thumbnailBlob = blob ?? null;
+    } catch {
+      // eslint-disable-next-line no-console
+      console.error("[page] Failed to render thumbnail blob for repair");
+    }
+    if (!thumbnailBlob) return false;
+    try {
+      return await updateCardThumbnail(activeCardId, thumbnailBlob);
+    } catch {
+      return false;
+    }
   };
 
   const nextDuplicateTitle = (title: string) => {
@@ -749,7 +777,7 @@ function IndexPageInner() {
   return (
     <div className={`${styles.page} d-flex flex-column`}>
       <LibraryTransferProvider>
-        <EditorSaveProvider value={{ saveCurrentCard, saveToken }}>
+        <EditorSaveProvider value={{ saveCurrentCard, repairCurrentCardThumbnail, saveToken }}>
           <EscapeStackProvider>
             <AssetKindBackfillProvider>
               <AppActionsProvider>

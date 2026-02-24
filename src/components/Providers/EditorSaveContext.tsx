@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 type EditorSaveContextValue = {
   saveCurrentCard: () => Promise<boolean>;
+  repairCurrentCardThumbnail: () => Promise<boolean>;
   saveToken: number;
 };
 

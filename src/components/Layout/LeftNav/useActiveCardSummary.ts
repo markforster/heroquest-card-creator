@@ -2,44 +2,72 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { getCard } from "@/lib/cards-db";
+import {
+  getCachedCardThumbnailUrl,
+  getCardThumbnailUrl,
+  invalidateCardThumbnail,
+  getLegacyCardThumbnailUrl,
+  retainCardThumbnail,
+  releaseCardThumbnail,
+} from "@/lib/card-thumbnail-cache";
 
-export function useActiveCardSummary(activeCardId?: string) {
+export function useActiveCardSummary(
+  activeCardId?: string,
+  repairCurrentCardThumbnail?: () => Promise<boolean>,
+) {
   const [currentCardName, setCurrentCardName] = useState<string | null>(null);
   const [currentCardThumbUrl, setCurrentCardThumbUrl] = useState<string | null>(null);
   const currentCardThumbRef = useRef<string | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
+  const retainedCardRef = useRef<string | null>(null);
+  const retryGuardRef = useRef<Set<string>>(new Set());
 
   const loadCardSummary = async (cardId: string) => {
     try {
       const record = await getCard(cardId);
       if (!record) {
         setCurrentCardName(null);
-        if (currentCardThumbRef.current) {
-          URL.revokeObjectURL(currentCardThumbRef.current);
-          currentCardThumbRef.current = null;
-        }
+        currentCardThumbRef.current = null;
         setCurrentCardThumbUrl(null);
         return;
       }
       setCurrentCardName(record.name || record.title || "Untitled card");
-      if (currentCardThumbRef.current) {
-        URL.revokeObjectURL(currentCardThumbRef.current);
-        currentCardThumbRef.current = null;
-      }
-      if (record.thumbnailBlob instanceof Blob) {
-        const nextUrl = URL.createObjectURL(record.thumbnailBlob);
+      currentCardThumbRef.current = null;
+      if (ENABLE_CARD_THUMB_CACHE) {
+        if (retainedCardRef.current && retainedCardRef.current !== record.id) {
+          releaseCardThumbnail(retainedCardRef.current);
+          retainedCardRef.current = null;
+        }
+        if (record.thumbnailBlob instanceof Blob) {
+          const nextUrl = getCachedCardThumbnailUrl(record.id, record.thumbnailBlob);
+          currentCardThumbRef.current = nextUrl;
+          setCurrentCardThumbUrl(nextUrl);
+          if (nextUrl && retainedCardRef.current !== record.id) {
+            retainCardThumbnail(record.id);
+            retainedCardRef.current = record.id;
+          }
+        } else {
+          const nextUrl = await getCardThumbnailUrl(record.id);
+          currentCardThumbRef.current = nextUrl;
+          setCurrentCardThumbUrl(nextUrl);
+          if (nextUrl && retainedCardRef.current !== record.id) {
+            retainCardThumbnail(record.id);
+            retainedCardRef.current = record.id;
+          }
+        }
+      } else if (record.thumbnailBlob instanceof Blob) {
+        const nextUrl = getLegacyCardThumbnailUrl(record.id, record.thumbnailBlob);
         currentCardThumbRef.current = nextUrl;
         setCurrentCardThumbUrl(nextUrl);
       } else {
+        currentCardThumbRef.current = null;
         setCurrentCardThumbUrl(null);
       }
     } catch {
       setCurrentCardName(null);
-      if (currentCardThumbRef.current) {
-        URL.revokeObjectURL(currentCardThumbRef.current);
-        currentCardThumbRef.current = null;
-      }
+      currentCardThumbRef.current = null;
       setCurrentCardThumbUrl(null);
     }
   };
@@ -47,11 +75,12 @@ export function useActiveCardSummary(activeCardId?: string) {
   useEffect(() => {
     if (!activeCardId) {
       setCurrentCardName(null);
-      if (currentCardThumbRef.current) {
-        URL.revokeObjectURL(currentCardThumbRef.current);
-        currentCardThumbRef.current = null;
-      }
+      currentCardThumbRef.current = null;
       setCurrentCardThumbUrl(null);
+      if (retainedCardRef.current) {
+        releaseCardThumbnail(retainedCardRef.current);
+        retainedCardRef.current = null;
+      }
       return;
     }
 
@@ -67,6 +96,13 @@ export function useActiveCardSummary(activeCardId?: string) {
       }
       refreshTimerRef.current = window.setTimeout(() => {
         if (!active) return;
+        if (ENABLE_CARD_THUMB_CACHE) {
+          if (retainedCardRef.current === activeCardId) {
+            releaseCardThumbnail(activeCardId);
+            retainedCardRef.current = null;
+          }
+          invalidateCardThumbnail(activeCardId);
+        }
         void loadCardSummary(activeCardId);
       }, 200);
     };
@@ -80,12 +116,30 @@ export function useActiveCardSummary(activeCardId?: string) {
         window.clearTimeout(refreshTimerRef.current);
         refreshTimerRef.current = null;
       }
-      if (currentCardThumbRef.current) {
-        URL.revokeObjectURL(currentCardThumbRef.current);
-        currentCardThumbRef.current = null;
+      currentCardThumbRef.current = null;
+      if (ENABLE_CARD_THUMB_CACHE && retainedCardRef.current) {
+        releaseCardThumbnail(retainedCardRef.current);
+        retainedCardRef.current = null;
       }
     };
   }, [activeCardId]);
 
-  return { currentCardName, currentCardThumbUrl };
+  const retryThumbnail = () => {
+    if (!activeCardId || !ENABLE_CARD_THUMB_CACHE) return;
+    if (retryGuardRef.current.has(activeCardId)) return;
+    retryGuardRef.current.add(activeCardId);
+    void (async () => {
+      if (repairCurrentCardThumbnail) {
+        try {
+          await repairCurrentCardThumbnail();
+        } catch {
+          // Ignore repair failures.
+        }
+      }
+      invalidateCardThumbnail(activeCardId);
+      await loadCardSummary(activeCardId);
+    })();
+  };
+
+  return { currentCardName, currentCardThumbUrl, retryThumbnail };
 }

@@ -12,10 +12,15 @@ import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useEditorSave } from "@/components/Providers/EditorSaveContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
-import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
+import { ENABLE_CARD_THUMB_CACHE, ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getCard, listCards } from "@/lib/cards-db";
+import {
+  getCachedCardThumbnailUrl,
+  getLegacyCardThumbnailUrl,
+  releaseLegacyCardThumbnailUrl,
+} from "@/lib/card-thumbnail-cache";
 import { createPair, deletePair, deletePairsForFront, replacePairsForBack } from "@/lib/pairs-service";
 import { listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -104,6 +109,17 @@ export default function PairingInspectorPanel({
       const bName = b.nameLower ?? b.name.toLocaleLowerCase();
       return aName.localeCompare(bName);
     });
+
+  const resolveThumb = (id: string, blob: Blob | null) => {
+    if (typeof window === "undefined") {
+      return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
+    }
+    if (ENABLE_CARD_THUMB_CACHE) {
+      return { url: getCachedCardThumbnailUrl(id, blob), onLoad: undefined };
+    }
+    const url = getLegacyCardThumbnailUrl(id, blob ?? null);
+    return { url, onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined };
+  };
 
   const openCard = async (cardId: string) => {
     navigate(`/cards/${cardId}`);
@@ -450,10 +466,7 @@ export default function PairingInspectorPanel({
         {effectiveFace === "back" ? (
           <div className={styles.pairingPanelGrid}>
             {pairedFronts.map((card, index) => {
-              const thumbUrl =
-                typeof window !== "undefined" && card.thumbnailBlob
-                  ? URL.createObjectURL(card.thumbnailBlob)
-                  : null;
+              const thumb = resolveThumb(card.id, card.thumbnailBlob ?? null);
               const templateThumb = cardTemplatesById[card.templateId]?.thumbnail;
               const isSelected = selectedFrontId === card.id;
               const isLoaded = Boolean(loadedThumbs[card.id]);
@@ -473,14 +486,14 @@ export default function PairingInspectorPanel({
                     await requestOpenCard(card.id);
                   }}
                 >
-                  {thumbUrl ? (
+                  {thumb.url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={thumbUrl}
+                      src={thumb.url}
                       alt=""
                       style={{ ["--pairing-thumb-delay" as never]: `${index * 25}ms` }}
                       onLoad={() => {
-                        URL.revokeObjectURL(thumbUrl);
+                        thumb.onLoad?.();
                         markThumbLoaded(card.id);
                       }}
                     />
@@ -508,10 +521,7 @@ export default function PairingInspectorPanel({
             className={styles.pairingPanelGroups}
           >
             {pairedBacks.map((backCard) => {
-              const backThumbUrl =
-                typeof window !== "undefined" && backCard.thumbnailBlob
-                  ? URL.createObjectURL(backCard.thumbnailBlob)
-                  : null;
+              const backThumb = resolveThumb(backCard.id, backCard.thumbnailBlob ?? null);
               const backTemplateThumb = cardTemplatesById[backCard.templateId]?.thumbnail;
               const groupFrontCards = pairedBackFrontsMap.get(backCard.id) ?? [];
               const backTitle = backCard.title ?? FALLBACK_TITLE;
@@ -545,15 +555,9 @@ export default function PairingInspectorPanel({
                           await requestOpenCard(backCard.id);
                         }}
                       >
-                        {backThumbUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={backThumbUrl}
-                            alt=""
-                            onLoad={() => {
-                              URL.revokeObjectURL(backThumbUrl);
-                            }}
-                          />
+                      {backThumb.url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={backThumb.url} alt="" onLoad={backThumb.onLoad} />
                         ) : backTemplateThumb?.src ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={backTemplateThumb.src} alt="" />
@@ -605,10 +609,10 @@ export default function PairingInspectorPanel({
                 >
                   <div className={styles.pairingPanelGroupGrid}>
                     {groupFrontCards.map((frontCard, index) => {
-                      const frontThumbUrl =
-                        typeof window !== "undefined" && frontCard.thumbnailBlob
-                          ? URL.createObjectURL(frontCard.thumbnailBlob)
-                          : null;
+                      const frontThumb = resolveThumb(
+                        frontCard.id,
+                        frontCard.thumbnailBlob ?? null,
+                      );
                       const frontTemplateThumb =
                         cardTemplatesById[frontCard.templateId]?.thumbnail;
                       const isSelected = selectedFrontId === frontCard.id;
@@ -630,14 +634,14 @@ export default function PairingInspectorPanel({
                             await requestOpenCard(frontCard.id);
                           }}
                         >
-                          {frontThumbUrl ? (
+                          {frontThumb.url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={frontThumbUrl}
+                              src={frontThumb.url}
                               alt=""
                               style={{ ["--pairing-thumb-delay" as never]: `${index * 25}ms` }}
                               onLoad={() => {
-                                URL.revokeObjectURL(frontThumbUrl);
+                                frontThumb.onLoad?.();
                                 markThumbLoaded(frontCard.id);
                               }}
                             />
@@ -687,12 +691,12 @@ export default function PairingInspectorPanel({
         {t("confirm.saveBeforeViewBody")}
       </ConfirmModal>
       {hoveredCard && hoverAnchor && typeof document !== "undefined"
-        ? (() => {
+          ? (() => {
             const templateThumb = cardTemplatesById[hoveredCard.templateId]?.thumbnail;
-            const hoverThumbUrl =
-              typeof window !== "undefined" && hoveredCard.thumbnailBlob
-                ? URL.createObjectURL(hoveredCard.thumbnailBlob)
-                : null;
+            const hoverThumb = resolveThumb(
+              hoveredCard.id,
+              hoveredCard.thumbnailBlob ?? null,
+            );
             const popoverWidth = 120 + 16;
             const popoverHeight = 168 + 16;
             const left = Math.min(hoverAnchor.left, window.innerWidth - popoverWidth - 16);
@@ -712,15 +716,9 @@ export default function PairingInspectorPanel({
                 onMouseLeave={hideHoverPreview}
               >
                 <div className={styles.pairingPanelHoverCard}>
-                  {hoverThumbUrl ? (
+                  {hoverThumb.url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={hoverThumbUrl}
-                      alt=""
-                      onLoad={() => {
-                        URL.revokeObjectURL(hoverThumbUrl);
-                      }}
-                    />
+                    <img src={hoverThumb.url} alt="" onLoad={hoverThumb.onLoad} />
                   ) : templateThumb?.src ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={templateThumb.src} alt="" />

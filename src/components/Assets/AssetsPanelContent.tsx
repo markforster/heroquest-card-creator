@@ -21,6 +21,7 @@ import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvi
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
+import { ENABLE_ASSET_THUMB_THROTTLE } from "@/config/flags";
 import { isSafariBrowser } from "@/lib/browser";
 import type { AssetKindGroupId } from "@/lib/assets-grouping";
 import { groupAssetsByKind } from "@/lib/assets-grouping";
@@ -295,11 +296,15 @@ export default function AssetsPanelContent({
     (async () => {
       const pending = assets.filter((asset) => !nextUrls[asset.id]);
       if (pending.length === 0 && !urlsChanged) return;
-      const concurrency = 3;
+      const concurrency = ENABLE_ASSET_THUMB_THROTTLE ? 3 : 10;
       let cursor = 0;
       const idleCallback = (window as Window & typeof globalThis).requestIdleCallback;
       const maybeYield = async (): Promise<void> =>
         new Promise<void>((resolve) => {
+          if (!ENABLE_ASSET_THUMB_THROTTLE) {
+            resolve();
+            return;
+          }
           if (typeof idleCallback === "function") {
             idleCallback(() => resolve(), { timeout: 150 });
           } else {

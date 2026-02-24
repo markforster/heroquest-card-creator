@@ -5,6 +5,12 @@ import { AlertTriangle } from "lucide-react";
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
 import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
+import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import {
+  getCachedCardThumbnailUrl,
+  getLegacyCardThumbnailUrl,
+  releaseLegacyCardThumbnailUrl,
+} from "@/lib/card-thumbnail-cache";
 
 type StockpileCardsGridProps = {
   items: StockpileCardView[];
@@ -13,9 +19,16 @@ type StockpileCardsGridProps = {
   conflictPopoverCardId: string | null;
 };
 
-const resolveThumbUrl = (blob: Blob | null) => {
-  if (typeof window === "undefined" || !blob) return null;
-  return URL.createObjectURL(blob);
+const resolveThumb = (id: string, blob: Blob | null) => {
+  if (typeof window === "undefined") return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
+  if (ENABLE_CARD_THUMB_CACHE) {
+    return { url: getCachedCardThumbnailUrl(id, blob), onLoad: undefined };
+  }
+  const url = getLegacyCardThumbnailUrl(id, blob ?? null);
+  return {
+    url,
+    onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined,
+  };
 };
 
 export default function StockpileCardsGrid({
@@ -27,8 +40,13 @@ export default function StockpileCardsGrid({
   return (
     <div className={styles.assetsGrid}>
       {items.map((card) => {
-        const thumbUrl = resolveThumbUrl(card.thumbnailBlob);
-        const pairedThumbUrl = resolveThumbUrl(card.paired.back?.thumbnailBlob ?? null);
+        const { url: thumbUrl, onLoad: thumbOnLoad } = resolveThumb(
+          card.id,
+          card.thumbnailBlob,
+        );
+        const pairedThumb = card.paired.back
+          ? resolveThumb(card.paired.back.id, card.paired.back.thumbnailBlob ?? null)
+          : { url: null as string | null, onLoad: undefined as (() => void) | undefined };
         const pairedTemplateThumb = card.paired.back?.templateThumbSrc ?? null;
         const visiblePairedFronts = card.paired.frontsVisible;
         const pairedFrontsOverflow = card.paired.frontsOverflow;
@@ -70,15 +88,9 @@ export default function StockpileCardsGrid({
                 <div className={styles.cardsConflictPopover}>
                   <div className={styles.cardsConflictPopoverContent}>
                     <div className={styles.cardsConflictPopoverThumb}>
-                      {pairedThumbUrl ? (
+                      {pairedThumb.url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={pairedThumbUrl}
-                          alt=""
-                          onLoad={() => {
-                            URL.revokeObjectURL(pairedThumbUrl);
-                          }}
-                        />
+                        <img src={pairedThumb.url} alt="" onLoad={pairedThumb.onLoad} />
                       ) : pairedTemplateThumb ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={pairedTemplateThumb} alt="" />
@@ -108,8 +120,11 @@ export default function StockpileCardsGrid({
                 >
                   {card.effectiveFace === "back" ? (
                     <div className={styles.cardsPairStack}>
-                      {visiblePairedFronts.map((paired, index) => {
-                        const stackThumbUrl = resolveThumbUrl(paired.thumbnailBlob ?? null);
+                    {visiblePairedFronts.map((paired, index) => {
+                        const stackThumb = resolveThumb(
+                          paired.id,
+                          paired.thumbnailBlob ?? null,
+                        );
                         const stackTemplateThumb = paired.templateThumbSrc ?? null;
                         return (
                           <div
@@ -118,15 +133,9 @@ export default function StockpileCardsGrid({
                             style={{ zIndex: index + 1 }}
                           >
                             <div className={styles.cardsPairIndicatorInner}>
-                              {stackThumbUrl ? (
+                              {stackThumb.url ? (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={stackThumbUrl}
-                                  alt=""
-                                  onLoad={() => {
-                                    URL.revokeObjectURL(stackThumbUrl);
-                                  }}
-                                />
+                                <img src={stackThumb.url} alt="" onLoad={stackThumb.onLoad} />
                               ) : stackTemplateThumb ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={stackTemplateThumb} alt="" />
@@ -155,15 +164,9 @@ export default function StockpileCardsGrid({
                     </div>
                   ) : (
                     <div className={styles.cardsPairIndicatorInner}>
-                      {pairedThumbUrl ? (
+                      {pairedThumb.url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={pairedThumbUrl}
-                          alt=""
-                          onLoad={() => {
-                            URL.revokeObjectURL(pairedThumbUrl);
-                          }}
-                        />
+                        <img src={pairedThumb.url} alt="" onLoad={pairedThumb.onLoad} />
                       ) : pairedTemplateThumb ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={pairedTemplateThumb} alt="" />
@@ -180,13 +183,7 @@ export default function StockpileCardsGrid({
               alt={card.name}
               variant="md"
               fit="contain"
-              onLoad={
-                thumbUrl
-                  ? () => {
-                      URL.revokeObjectURL(thumbUrl);
-                    }
-                  : undefined
-              }
+              onLoad={thumbOnLoad}
             />
             {isPairMode ? null : (
               <div className={styles.cardsItemMeta}>

@@ -8,6 +8,12 @@ import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
+import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import {
+  getCachedCardThumbnailUrl,
+  getLegacyCardThumbnailUrl,
+  releaseLegacyCardThumbnailUrl,
+} from "@/lib/card-thumbnail-cache";
 import type { CardRecord } from "@/types/cards-db";
 
 type StockpileFooterProps = {
@@ -55,6 +61,17 @@ export default function StockpileFooter({
     count: number;
     cardIds: string[];
   } | null>(null);
+
+  const resolveThumb = (id: string, blob: Blob | null) => {
+    if (typeof window === "undefined") {
+      return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
+    }
+    if (ENABLE_CARD_THUMB_CACHE) {
+      return { url: getCachedCardThumbnailUrl(id, blob), onLoad: undefined };
+    }
+    const url = getLegacyCardThumbnailUrl(id, blob ?? null);
+    return { url, onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined };
+  };
 
   return (
     <>
@@ -179,23 +196,17 @@ export default function StockpileFooter({
                       {pairingConflict.cardIds.map((id) => {
                         const conflictCard = cardById.get(id);
                         if (!conflictCard) return null;
-                        const thumbUrl =
-                          typeof window !== "undefined" && conflictCard.thumbnailBlob
-                            ? URL.createObjectURL(conflictCard.thumbnailBlob)
-                            : null;
+                        const thumb = resolveThumb(
+                          conflictCard.id,
+                          conflictCard.thumbnailBlob ?? null,
+                        );
                         const templateThumb =
                           cardTemplatesById[conflictCard.templateId]?.thumbnail ?? null;
                         return (
                           <div key={id} className={styles.pairingConflictItem}>
-                            {thumbUrl ? (
+                            {thumb.url ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={thumbUrl}
-                                alt=""
-                                onLoad={() => {
-                                  URL.revokeObjectURL(thumbUrl);
-                                }}
-                              />
+                              <img src={thumb.url} alt="" onLoad={thumb.onLoad} />
                             ) : templateThumb?.src ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img src={templateThumb.src} alt="" />
@@ -212,23 +223,17 @@ export default function StockpileFooter({
                       <div className={styles.pairingConflictTitle}>{t("heading.pairedWith")}</div>
                       <div className={styles.pairingConflictGrid}>
                         {pairedBacks.map((paired) => {
-                          const thumbUrl =
-                            typeof window !== "undefined" && paired.thumbnailBlob
-                              ? URL.createObjectURL(paired.thumbnailBlob)
-                              : null;
+                          const thumb = resolveThumb(
+                            paired.id,
+                            paired.thumbnailBlob ?? null,
+                          );
                           const templateThumb =
                             cardTemplatesById[paired.templateId]?.thumbnail ?? null;
                           return (
                             <div key={paired.id} className={styles.pairingConflictItem}>
-                              {thumbUrl ? (
+                              {thumb.url ? (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={thumbUrl}
-                                  alt=""
-                                  onLoad={() => {
-                                    URL.revokeObjectURL(thumbUrl);
-                                  }}
-                                />
+                                <img src={thumb.url} alt="" onLoad={thumb.onLoad} />
                               ) : templateThumb?.src ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={templateThumb.src} alt="" />

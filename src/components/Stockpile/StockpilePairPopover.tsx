@@ -5,6 +5,12 @@ import { createPortal } from "react-dom";
 import styles from "@/app/page.module.css";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
+import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import {
+  getCachedCardThumbnailUrl,
+  getLegacyCardThumbnailUrl,
+  releaseLegacyCardThumbnailUrl,
+} from "@/lib/card-thumbnail-cache";
 import type { CardRecord } from "@/types/cards-db";
 
 type StockpilePairPopoverProps = {
@@ -42,10 +48,24 @@ export default function StockpilePairPopover({
   const hoveredPairedCard = backByFrontId.get(hoveredCard.id)
     ? (cardById.get(backByFrontId.get(hoveredCard.id) ?? "") ?? null)
     : (hoveredPairedFronts[0] ?? null);
-  const hoveredPairedThumbUrl =
-    typeof window !== "undefined" && hoveredPairedCard?.thumbnailBlob
-      ? URL.createObjectURL(hoveredPairedCard.thumbnailBlob)
-      : null;
+  const hoveredPairedThumb =
+    typeof window !== "undefined" && hoveredPairedCard
+      ? ENABLE_CARD_THUMB_CACHE
+        ? {
+            url: getCachedCardThumbnailUrl(
+              hoveredPairedCard.id,
+              hoveredPairedCard.thumbnailBlob ?? null,
+            ),
+            onLoad: undefined,
+          }
+        : (() => {
+            const url = getLegacyCardThumbnailUrl(
+              hoveredPairedCard.id,
+              hoveredPairedCard.thumbnailBlob ?? null,
+            );
+            return { url, onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined };
+          })()
+      : { url: null as string | null, onLoad: undefined as (() => void) | undefined };
   const hoveredPairedTemplateThumb = hoveredPairedCard
     ? cardTemplatesById[hoveredPairedCard.templateId]?.thumbnail
     : null;
@@ -81,22 +101,35 @@ export default function StockpilePairPopover({
             {hoveredPairedFronts
               .slice(0, isGridPopover ? hoveredPairedFronts.length : 1)
               .map((paired) => {
-                const gridThumbUrl =
-                  typeof window !== "undefined" && paired.thumbnailBlob
-                    ? URL.createObjectURL(paired.thumbnailBlob)
-                    : null;
+                const gridThumb =
+                  typeof window !== "undefined"
+                    ? ENABLE_CARD_THUMB_CACHE
+                      ? {
+                          url: getCachedCardThumbnailUrl(
+                            paired.id,
+                            paired.thumbnailBlob ?? null,
+                          ),
+                          onLoad: undefined,
+                        }
+                      : (() => {
+                          const url = getLegacyCardThumbnailUrl(
+                            paired.id,
+                            paired.thumbnailBlob ?? null,
+                          );
+                          return {
+                            url,
+                            onLoad: url
+                              ? () => releaseLegacyCardThumbnailUrl(url)
+                              : undefined,
+                          };
+                        })()
+                    : { url: null as string | null, onLoad: undefined as (() => void) | undefined };
                 const gridTemplateThumb = cardTemplatesById[paired.templateId]?.thumbnail;
                 return (
                   <div key={paired.id} className={styles.cardsPairStackGridItem}>
-                    {gridThumbUrl ? (
+                    {gridThumb.url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={gridThumbUrl}
-                        alt=""
-                        onLoad={() => {
-                          URL.revokeObjectURL(gridThumbUrl);
-                        }}
-                      />
+                      <img src={gridThumb.url} alt="" onLoad={gridThumb.onLoad} />
                     ) : gridTemplateThumb?.src ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={gridTemplateThumb.src} alt="" />
@@ -124,15 +157,9 @@ export default function StockpilePairPopover({
             }`}
           >
             {hoveredPairedCard ? (
-              hoveredPairedThumbUrl ? (
+              hoveredPairedThumb.url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={hoveredPairedThumbUrl}
-                  alt=""
-                  onLoad={() => {
-                    URL.revokeObjectURL(hoveredPairedThumbUrl);
-                  }}
-                />
+                <img src={hoveredPairedThumb.url} alt="" onLoad={hoveredPairedThumb.onLoad} />
               ) : hoveredPairedTemplateThumb?.src ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={hoveredPairedTemplateThumb.src} alt="" />

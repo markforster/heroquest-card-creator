@@ -16,6 +16,7 @@ type CardThumbnailProps = {
   imageClassName?: string;
   fallback?: ReactNode;
   onLoad?: () => void;
+  onError?: () => void;
 };
 
 export default function CardThumbnail({
@@ -27,6 +28,7 @@ export default function CardThumbnail({
   imageClassName,
   fallback,
   onLoad,
+  onError,
 }: CardThumbnailProps) {
   const variantClass = styles[`size${variant.toUpperCase()}`];
   const fitClass = fit === "contain" ? styles.fitContain : styles.fitCover;
@@ -37,7 +39,7 @@ export default function CardThumbnail({
     <div className={containerClassName}>
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={alt} className={imgClassName} onLoad={onLoad} />
+        <img src={src} alt={alt} className={imgClassName} onLoad={onLoad} onError={onError} />
       ) : (
         fallback ?? <div className={styles.fallback} />
       )}

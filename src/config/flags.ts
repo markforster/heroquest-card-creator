@@ -104,6 +104,19 @@ export const STATS_VERTICAL_SCALE_Y = 0.985;
 export const USE_EXPORT_PAIR_JITTER = false;
 
 /**
+ * Enables the shared card thumbnail cache (LRU + reuse). Disable to fall back
+ * to legacy per-component object URLs.
+ */
+export const ENABLE_CARD_THUMB_CACHE = true;
+
+/**
+ * Enables throttling for asset thumbnail loading in the assets panel.
+ * Disable to restore legacy fast loading behavior.
+ */
+// export const ENABLE_ASSET_THUMB_THROTTLE = true;
+export const ENABLE_ASSET_THUMB_THROTTLE = false;
+
+/**
  * Disables missing-asset checks to isolate performance issues.
  */
 export const ENABLE_MISSING_ASSET_CHECKS = true;

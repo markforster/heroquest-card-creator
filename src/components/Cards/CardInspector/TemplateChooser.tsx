@@ -8,11 +8,16 @@ import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useEditorSave } from "@/components/Providers/EditorSaveContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
-import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
+import { ENABLE_CARD_THUMB_CACHE, ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getCard, listCards } from "@/lib/cards-db";
+import {
+  getCachedCardThumbnailUrl,
+  getLegacyCardThumbnailUrl,
+  releaseLegacyCardThumbnailUrl,
+} from "@/lib/card-thumbnail-cache";
 import { deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
@@ -62,7 +67,6 @@ export default function TemplateChooser() {
   const [pendingFaceChange, setPendingFaceChange] = useState<CardFace | null>(null);
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
   const faceMenuRef = useRef<HTMLDivElement | null>(null);
-  const thumbnailUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -124,20 +128,23 @@ export default function TemplateChooser() {
   }, [activeCardId, saveToken]);
 
   useEffect(() => {
-    if (thumbnailUrlRef.current) {
-      URL.revokeObjectURL(thumbnailUrlRef.current);
-      thumbnailUrlRef.current = null;
-    }
-
     if (currentCard?.thumbnailBlob instanceof Blob) {
-      const nextUrl = URL.createObjectURL(currentCard.thumbnailBlob);
-      thumbnailUrlRef.current = nextUrl;
-      setCurrentThumbnailUrl(nextUrl);
+      if (ENABLE_CARD_THUMB_CACHE) {
+        const nextUrl = getCachedCardThumbnailUrl(
+          currentCard.id,
+          currentCard.thumbnailBlob ?? null,
+        );
+        setCurrentThumbnailUrl(nextUrl);
+      } else {
+        const nextUrl = getLegacyCardThumbnailUrl(
+          currentCard.id,
+          currentCard.thumbnailBlob ?? null,
+        );
+        setCurrentThumbnailUrl(nextUrl);
+      }
       setCurrentThumbnailError(false);
       setCurrentThumbnailDataUrl(null);
-      return () => {
-        URL.revokeObjectURL(nextUrl);
-      };
+      return undefined;
     }
 
     setCurrentThumbnailUrl(null);
@@ -236,12 +243,17 @@ export default function TemplateChooser() {
               {currentThumbnailDataUrl ? (
                 <img src={currentThumbnailDataUrl} alt="" />
               ) : currentThumbnailUrl && !currentThumbnailError ? (
-                <img
-                  src={currentThumbnailUrl}
-                  alt=""
-                  onError={() => {
-                    setCurrentThumbnailError(true);
-                    if (!currentCard?.thumbnailBlob) return;
+                  <img
+                    src={currentThumbnailUrl}
+                    alt=""
+                    onLoad={
+                      !ENABLE_CARD_THUMB_CACHE && currentThumbnailUrl
+                        ? () => releaseLegacyCardThumbnailUrl(currentThumbnailUrl)
+                        : undefined
+                    }
+                    onError={() => {
+                      setCurrentThumbnailError(true);
+                      if (!currentCard?.thumbnailBlob) return;
                     const reader = new FileReader();
                     reader.onload = () => {
                       if (typeof reader.result === "string") {

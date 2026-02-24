@@ -4,6 +4,12 @@ import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
 import { cardTemplatesById } from "@/data/card-templates";
+import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import {
+  getCachedCardThumbnailUrl,
+  getLegacyCardThumbnailUrl,
+  releaseLegacyCardThumbnailUrl,
+} from "@/lib/card-thumbnail-cache";
 import type { CardRecord } from "@/types/cards-db";
 
 type StockpilePairOverflowPopoverProps = {
@@ -40,22 +46,30 @@ export default function StockpilePairOverflowPopover({
     >
       <div className={styles.inspectorStackOverflowGrid}>
         {anchor.cards.map((card) => {
-          const thumbUrl =
-            typeof window !== "undefined" && card.thumbnailBlob
-              ? URL.createObjectURL(card.thumbnailBlob)
-              : null;
+          const thumb =
+            typeof window !== "undefined"
+              ? ENABLE_CARD_THUMB_CACHE
+                ? {
+                    url: getCachedCardThumbnailUrl(card.id, card.thumbnailBlob ?? null),
+                    onLoad: undefined,
+                  }
+                : (() => {
+                    const url = getLegacyCardThumbnailUrl(
+                      card.id,
+                      card.thumbnailBlob ?? null,
+                    );
+                    return {
+                      url,
+                      onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined,
+                    };
+                  })()
+              : { url: null as string | null, onLoad: undefined as (() => void) | undefined };
           const templateThumb = cardTemplatesById[card.templateId]?.thumbnail;
           return (
             <div key={card.id} className={styles.inspectorStackOverflowGridItem}>
-              {thumbUrl ? (
+              {thumb.url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={thumbUrl}
-                  alt=""
-                  onLoad={() => {
-                    URL.revokeObjectURL(thumbUrl);
-                  }}
-                />
+                <img src={thumb.url} alt="" onLoad={thumb.onLoad} />
               ) : templateThumb?.src ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={templateThumb.src} alt="" />

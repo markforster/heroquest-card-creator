@@ -6,10 +6,13 @@ import { useNavigate } from "react-router-dom";
 import styles from "@/app/page.module.css";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useEditorSave } from "@/components/Providers/EditorSaveContext";
 import CardThumbnail from "@/components/common/CardThumbnail";
 import KeyBinding from "@/components/common/KeyBinding";
 import NavActionButton from "@/components/Layout/LeftNav/NavActionButton";
+import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { useI18n } from "@/i18n/I18nProvider";
+import { releaseLegacyCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 
 import CardsAction from "./CardsAction";
 import { SHOW_DECKS } from "./consts";
@@ -21,12 +24,14 @@ import { useActiveCardSummary } from "./useActiveCardSummary";
 
 export default function LeftNavPrimaryActions() {
   const { t } = useI18n();
+  const { repairCurrentCardThumbnail } = useEditorSave();
   const { openTemplatePicker, isTemplatePickerOpen } = useAppActions();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
   const activeCardId = useActiveCardId({ selectedTemplateId, activeCardIdByTemplate });
-  const { currentCardName, currentCardThumbUrl } = useActiveCardSummary(activeCardId);
+  const { currentCardName, currentCardThumbUrl, retryThumbnail } =
+    useActiveCardSummary(activeCardId, repairCurrentCardThumbnail);
   const navigate = useNavigate();
 
   return (
@@ -53,12 +58,11 @@ export default function LeftNavPrimaryActions() {
                 className={styles.leftNavCurrentCardThumbFrame}
                 fallback={<div className={styles.leftNavCurrentCardFallback} />}
                 onLoad={
-                  currentCardThumbUrl
-                    ? () => {
-                        URL.revokeObjectURL(currentCardThumbUrl);
-                      }
+                  !ENABLE_CARD_THUMB_CACHE && currentCardThumbUrl
+                    ? () => releaseLegacyCardThumbnailUrl(currentCardThumbUrl)
                     : undefined
                 }
+                onError={ENABLE_CARD_THUMB_CACHE ? retryThumbnail : undefined}
               />
               <div className={styles.leftNavCurrentCardLabel}>
                 {currentCardName ?? t("actions.cards")}

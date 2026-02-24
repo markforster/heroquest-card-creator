@@ -6,9 +6,14 @@ import { useMemo, useRef, useState } from "react";
 import styles from "@/app/page.module.css";
 import StockpilePairOverflowPopover from "@/components/Stockpile/StockpilePairOverflowPopover";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
-import { USE_EXPORT_PAIR_JITTER } from "@/config/flags";
+import { ENABLE_CARD_THUMB_CACHE, USE_EXPORT_PAIR_JITTER } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
+import {
+  getCachedCardThumbnailUrl,
+  getLegacyCardThumbnailUrl,
+  releaseLegacyCardThumbnailUrl,
+} from "@/lib/card-thumbnail-cache";
 import type { CardRecord } from "@/types/cards-db";
 
 type StockpileExportPairPromptProps = {
@@ -45,6 +50,17 @@ export default function StockpileExportPairPrompt({
   const exportPairVisibleCount = 9;
 
   if (!exportPairPrompt) return null;
+
+  const resolveThumb = (id: string, blob: Blob | null) => {
+    if (typeof window === "undefined") {
+      return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
+    }
+    if (ENABLE_CARD_THUMB_CACHE) {
+      return { url: getCachedCardThumbnailUrl(id, blob), onLoad: undefined };
+    }
+    const url = getLegacyCardThumbnailUrl(id, blob ?? null);
+    return { url, onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined };
+  };
 
   const resolveCardJitter = (id: string) => {
     let hash = 0;
@@ -86,10 +102,10 @@ export default function StockpileExportPairPrompt({
                   >
                     <div className={`${styles.exportPairStack} ${styles.uRowSm}`}>
                       {row.left.slice(0, visibleCount).map((leftCard, index) => {
-                        const leftThumbUrl =
-                          typeof window !== "undefined" && leftCard.thumbnailBlob
-                            ? URL.createObjectURL(leftCard.thumbnailBlob)
-                            : null;
+                        const leftThumb = resolveThumb(
+                          leftCard.id,
+                          leftCard.thumbnailBlob ?? null,
+                        );
                         const leftTemplateThumb =
                           cardTemplatesById[leftCard.templateId]?.thumbnail ?? null;
                         const leftJitter = USE_EXPORT_PAIR_JITTER
@@ -109,15 +125,9 @@ export default function StockpileExportPairPrompt({
                                   : undefined,
                               }}
                             >
-                              {leftThumbUrl ? (
+                              {leftThumb.url ? (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={leftThumbUrl}
-                                  alt=""
-                                  onLoad={() => {
-                                    URL.revokeObjectURL(leftThumbUrl);
-                                  }}
-                                />
+                                <img src={leftThumb.url} alt="" onLoad={leftThumb.onLoad} />
                               ) : leftTemplateThumb?.src ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={leftTemplateThumb.src} alt="" />
@@ -185,10 +195,10 @@ export default function StockpileExportPairPrompt({
                     </div>
                     <div className={`${styles.exportPairStack} ${styles.uRowSm}`}>
                       {row.right.slice(0, visibleCount).map((pairedCard, index) => {
-                        const pairedThumbUrl =
-                          typeof window !== "undefined" && pairedCard.thumbnailBlob
-                            ? URL.createObjectURL(pairedCard.thumbnailBlob)
-                            : null;
+                        const pairedThumb = resolveThumb(
+                          pairedCard.id,
+                          pairedCard.thumbnailBlob ?? null,
+                        );
                         const pairedTemplateThumb =
                           cardTemplatesById[pairedCard.templateId]?.thumbnail ?? null;
                         const pairedJitter = USE_EXPORT_PAIR_JITTER
@@ -208,15 +218,9 @@ export default function StockpileExportPairPrompt({
                                   : undefined,
                               }}
                             >
-                              {pairedThumbUrl ? (
+                              {pairedThumb.url ? (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={pairedThumbUrl}
-                                  alt=""
-                                  onLoad={() => {
-                                    URL.revokeObjectURL(pairedThumbUrl);
-                                  }}
-                                />
+                                <img src={pairedThumb.url} alt="" onLoad={pairedThumb.onLoad} />
                               ) : pairedTemplateThumb?.src ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={pairedTemplateThumb.src} alt="" />

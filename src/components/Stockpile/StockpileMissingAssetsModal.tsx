@@ -3,9 +3,15 @@
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
+import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import type { MissingAssetReport } from "@/lib/export-assets-cache";
 import { useI18n } from "@/i18n/I18nProvider";
+import {
+  getCachedCardThumbnailUrl,
+  getLegacyCardThumbnailUrl,
+  releaseLegacyCardThumbnailUrl,
+} from "@/lib/card-thumbnail-cache";
 
 type StockpileMissingAssetsModalProps = {
   prompt: {
@@ -44,20 +50,36 @@ export default function StockpileMissingAssetsModal({
       <div className={styles.assetsReportStatus}>{t("label.opensInNewTab")}</div>
       <div className={styles.assetsReportList}>
         {prompt.report.map((entry) => {
-          const thumbUrl = entry.thumbnailBlob ? URL.createObjectURL(entry.thumbnailBlob) : null;
+          const thumb =
+            typeof window !== "undefined"
+              ? ENABLE_CARD_THUMB_CACHE
+                ? {
+                    url: getCachedCardThumbnailUrl(
+                      entry.cardId,
+                      entry.thumbnailBlob ?? null,
+                    ),
+                    onLoad: undefined,
+                  }
+                : (() => {
+                    const url = getLegacyCardThumbnailUrl(
+                      entry.cardId,
+                      entry.thumbnailBlob ?? null,
+                    );
+                    return {
+                      url,
+                      onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined,
+                    };
+                  })()
+              : { url: null as string | null, onLoad: undefined as (() => void) | undefined };
           const fallbackUrl = cardTemplatesById[entry.templateId]?.thumbnail?.src ?? null;
           return (
             <div key={entry.cardId} className={styles.assetsReportItem}>
               <div className="d-flex align-items-center gap-3">
                 <CardThumbnail
-                  src={thumbUrl ?? fallbackUrl}
+                  src={thumb.url ?? fallbackUrl}
                   alt={entry.title}
                   variant="sm"
-                  onLoad={() => {
-                    if (thumbUrl) {
-                      URL.revokeObjectURL(thumbUrl);
-                    }
-                  }}
+                  onLoad={thumb.onLoad}
                 />
                 <div className={styles.assetsReportName}>
                   {entry.title} ({entry.templateId})

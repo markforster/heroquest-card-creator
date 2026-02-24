@@ -5,6 +5,12 @@ import { BringToFront, SendToBack } from "lucide-react";
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
 import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
+import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import {
+  getCachedCardThumbnailUrl,
+  getLegacyCardThumbnailUrl,
+  releaseLegacyCardThumbnailUrl,
+} from "@/lib/card-thumbnail-cache";
 
 type StockpileCardsTableProps = {
   items: StockpileCardView[];
@@ -19,9 +25,18 @@ type StockpileCardsTableProps = {
   };
 };
 
-const resolveThumbUrl = (blob: Blob | null) => {
-  if (typeof window === "undefined" || !blob) return null;
-  return URL.createObjectURL(blob);
+const resolveThumb = (id: string, blob: Blob | null) => {
+  if (typeof window === "undefined") {
+    return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
+  }
+  if (ENABLE_CARD_THUMB_CACHE) {
+    return { url: getCachedCardThumbnailUrl(id, blob), onLoad: undefined };
+  }
+  const url = getLegacyCardThumbnailUrl(id, blob ?? null);
+  return {
+    url,
+    onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined,
+  };
 };
 
 export default function StockpileCardsTable({
@@ -53,8 +68,13 @@ export default function StockpileCardsTable({
       </div>
       <div className={styles.stockpileTableBody} role="rowgroup">
         {items.map((card) => {
-          const thumbUrl = resolveThumbUrl(card.thumbnailBlob);
-          const pairedThumbUrl = resolveThumbUrl(card.paired.back?.thumbnailBlob ?? null);
+          const { url: thumbUrl, onLoad: thumbOnLoad } = resolveThumb(
+            card.id,
+            card.thumbnailBlob,
+          );
+          const pairedThumb = card.paired.back
+            ? resolveThumb(card.paired.back.id, card.paired.back.thumbnailBlob ?? null)
+            : { url: null as string | null, onLoad: undefined as (() => void) | undefined };
           const pairedTemplateThumb = card.paired.back?.templateThumbSrc ?? null;
           const visiblePairedFronts = card.paired.frontsVisible;
           const pairedFrontsOverflow = card.paired.frontsOverflow;
@@ -85,13 +105,7 @@ export default function StockpileCardsTable({
                   alt={card.name}
                   variant="sm"
                   fit="contain"
-                  onLoad={
-                    thumbUrl
-                      ? () => {
-                          URL.revokeObjectURL(thumbUrl);
-                        }
-                      : undefined
-                  }
+                  onLoad={thumbOnLoad}
                 />
               </div>
               <div
@@ -141,7 +155,10 @@ export default function StockpileCardsTable({
                   {card.effectiveFace === "back" ? (
                     <div className={styles.cardsPairStack}>
                       {visiblePairedFronts.map((paired, index) => {
-                        const stackThumbUrl = resolveThumbUrl(paired.thumbnailBlob ?? null);
+                        const stackThumb = resolveThumb(
+                          paired.id,
+                          paired.thumbnailBlob ?? null,
+                        );
                         const stackTemplateThumb = paired.templateThumbSrc ?? null;
                         return (
                           <div
@@ -150,15 +167,9 @@ export default function StockpileCardsTable({
                             style={{ zIndex: index + 1 }}
                           >
                             <div className={styles.cardsPairIndicatorInner}>
-                              {stackThumbUrl ? (
+                              {stackThumb.url ? (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={stackThumbUrl}
-                                  alt=""
-                                  onLoad={() => {
-                                    URL.revokeObjectURL(stackThumbUrl);
-                                  }}
-                                />
+                                <img src={stackThumb.url} alt="" onLoad={stackThumb.onLoad} />
                               ) : stackTemplateThumb ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={stackTemplateThumb} alt="" />
@@ -187,15 +198,9 @@ export default function StockpileCardsTable({
                     </div>
                   ) : (
                     <div className={styles.cardsPairIndicatorInner}>
-                      {pairedThumbUrl ? (
+                      {pairedThumb.url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={pairedThumbUrl}
-                          alt=""
-                          onLoad={() => {
-                            URL.revokeObjectURL(pairedThumbUrl);
-                          }}
-                        />
+                        <img src={pairedThumb.url} alt="" onLoad={pairedThumb.onLoad} />
                       ) : pairedTemplateThumb ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={pairedTemplateThumb} alt="" />
