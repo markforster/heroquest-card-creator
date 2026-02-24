@@ -56,6 +56,48 @@ function getLayerBounds(blueprint: Blueprint, layer: BlueprintLayer) {
   );
 }
 
+function resolveVisibleCopyrightBounds({
+  blueprint,
+  cardData,
+  defaultCopyright,
+}: {
+  blueprint: Blueprint;
+  cardData?: CardDataByTemplate[TemplateId];
+  defaultCopyright: string;
+}) {
+  if (!cardData) return null;
+  const template = cardTemplatesById[blueprint.templateId];
+  const effectiveFace = template
+    ? ((cardData as { face?: CardFace }).face ?? template.defaultFace)
+    : (cardData as { face?: CardFace }).face;
+  if (effectiveFace !== "front") return null;
+  const showCopyright =
+    typeof (cardData as { showCopyright?: boolean }).showCopyright === "boolean"
+      ? (cardData as { showCopyright?: boolean }).showCopyright
+      : undefined;
+  if (showCopyright === false) return null;
+
+  const copyrightLayer = blueprint.layers.find((entry) => entry.type === "copyright");
+  if (!copyrightLayer) return null;
+
+  const textKey = copyrightLayer.bind?.textKey;
+  const overrideValue =
+    textKey && cardData
+      ? ((cardData as Record<string, unknown>)[textKey] as string | null | undefined)
+      : undefined;
+  const normalizedOverride = typeof overrideValue === "string" ? overrideValue.trim() : "";
+  const normalizedDefault = defaultCopyright.trim();
+  const resolvedText =
+    normalizedOverride.length > 0
+      ? normalizedOverride
+      : normalizedDefault.length > 0
+        ? normalizedDefault
+        : "";
+  if (!resolvedText) return null;
+
+  return getLayerBounds(blueprint, copyrightLayer);
+}
+
 function truncateText(value: string, maxChars: number) {
   if (value.length <= maxChars) return value;
   if (maxChars <= 3) return value.slice(0, maxChars);
@@ -304,6 +346,8 @@ function TextLayer({
   if (!layer.bind?.textKey) return null;
   if (!cardData) return null;
 
+  const { defaultCopyright } = useCopyrightSettings();
+
   const text = (cardData as Record<string, unknown>)[layer.bind.textKey];
   if (typeof text !== "string" && text != null) return null;
 
@@ -477,6 +521,24 @@ function TextLayer({
       const fontSizeResolved = fontSize ?? 22;
       const minBottomGap = fontSizeResolved;
       const bottomLimitY = ribbonBottomBounds.y - minBottomGap;
+      const clampHeight = (bounds: { y: number; height: number }) =>
+        Math.max(0, Math.min(bounds.height, bottomLimitY - bounds.y));
+      baseBounds = { ...baseBounds, height: clampHeight(baseBounds) };
+      flushBounds = { ...flushBounds, height: clampHeight(flushBounds) };
+    }
+  }
+
+  if (
+    (blueprint.templateId === "small-treasure" || blueprint.templateId === "large-treasure") &&
+    layer.id === "description"
+  ) {
+    const copyrightBounds = resolveVisibleCopyrightBounds({
+      blueprint,
+      cardData,
+      defaultCopyright,
+    });
+    if (copyrightBounds) {
+      const bottomLimitY = copyrightBounds.y - 2;
       const clampHeight = (bounds: { y: number; height: number }) =>
         Math.max(0, Math.min(bounds.height, bottomLimitY - bounds.y));
       baseBounds = { ...baseBounds, height: clampHeight(baseBounds) };
