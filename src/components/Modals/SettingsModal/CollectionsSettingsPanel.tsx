@@ -24,6 +24,15 @@ export default function CollectionsSettingsPanel() {
           {t("label.collectionsTreeToggle")}
         </label>
         <div className={styles.settingsPanelRow}>{t("label.collectionsTreeHelp")}</div>
+        <div className={styles.settingsPanelRow}>
+          {t("label.collectionsTreeExampleSingle")}{" "}
+          <code>spells</code>
+        </div>
+        <div className={styles.settingsPanelRow}>
+          {t("label.collectionsTreeExampleGrouped")}{" "}
+          <code>spells/fire</code> {t("label.collectionsTreeExampleAnd")}{" "}
+          <code>spells/air</code>
+        </div>
       </div>
     </div>
   );

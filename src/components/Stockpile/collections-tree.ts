@@ -36,8 +36,10 @@ const normalizeSegments = (name: string): string[] => {
 const compareLabels = (a: { label: string }, b: { label: string }) =>
   a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
 
+type CollectionLike = Pick<CollectionRecord, "id" | "name" | "description">;
+
 export const buildCollectionsTree = (
-  collections: CollectionRecord[],
+  collections: CollectionLike[],
   { collectionCounts, collectionsWithMissingArtwork }: BuildCollectionsTreeOptions,
 ) => {
   const folderPaths = new Set<string>();
