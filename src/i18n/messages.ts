@@ -186,6 +186,7 @@ const baseMessages = {
       "1 card will be unpaired from {backCount} back face. Continue?",
     "warning.pairingLossMultipleGeneric":
       "{count} cards will be unpaired from {backCount} back faces. Continue?",
+    "warning.pairingLossMultipleBacks": "This will unpair this card from {backCount} back faces. Continue?",
     "heading.discardChanges": "Discard changes?",
     "heading.saveBeforeView": "Save before viewing?",
     "heading.exportPairedFaces": "Export paired faces?",
@@ -657,6 +658,7 @@ const baseMessages = {
       "1 carte sera dissociée de {backCount} face verso. Continuer ?",
     "warning.pairingLossMultipleGeneric":
       "{count} cartes seront dissociées de {backCount} faces verso. Continuer ?",
+    "warning.pairingLossMultipleBacks": "This will unpair this card from {backCount} back faces. Continue?",
     "heading.discardChanges": "Ignorer les modifications ?",
     "heading.saveBeforeView": "Enregistrer avant d’ouvrir ?",
     "heading.exportPairedFaces": "Exporter les faces associées ?",
@@ -1141,6 +1143,7 @@ const baseMessages = {
       "1 Karte wird von {backCount} Rückseite getrennt. Fortfahren?",
     "warning.pairingLossMultipleGeneric":
       "{count} Karten werden von {backCount} Rückseiten getrennt. Fortfahren?",
+    "warning.pairingLossMultipleBacks": "This will unpair this card from {backCount} back faces. Continue?",
     "heading.discardChanges": "Änderungen verwerfen?",
     "heading.saveBeforeView": "Vor dem Öffnen speichern?",
     "heading.exportPairedFaces": "Verknüpfte Seiten exportieren?",
@@ -1621,6 +1624,7 @@ const baseMessages = {
       "1 carta se desvinculará de {backCount} reverso. ¿Continuar?",
     "warning.pairingLossMultipleGeneric":
       "{count} cartas se desvincularán de {backCount} reversos. ¿Continuar?",
+    "warning.pairingLossMultipleBacks": "This will unpair this card from {backCount} back faces. Continue?",
     "heading.discardChanges": "¿Descartar cambios?",
     "heading.saveBeforeView": "¿Guardar antes de abrir?",
     "heading.exportPairedFaces": "¿Exportar caras emparejadas?",
@@ -2097,6 +2101,7 @@ const baseMessages = {
       "1 carta verrà scollegata da {backCount} retro. Continuare?",
     "warning.pairingLossMultipleGeneric":
       "{count} carte verranno scollegate da {backCount} retro. Continuare?",
+    "warning.pairingLossMultipleBacks": "This will unpair this card from {backCount} back faces. Continue?",
     "heading.discardChanges": "Scartare modifiche?",
     "heading.saveBeforeView": "Salvare prima di aprire?",
     "heading.exportPairedFaces": "Esportare le facce abbinate?",
@@ -2573,6 +2578,7 @@ const baseMessages = {
       "1 carta será desvinculada de {backCount} verso. Continuar?",
     "warning.pairingLossMultipleGeneric":
       "{count} cartas serão desvinculadas de {backCount} versos. Continuar?",
+    "warning.pairingLossMultipleBacks": "This will unpair this card from {backCount} back faces. Continue?",
     "heading.discardChanges": "Descartar alterações?",
     "heading.saveBeforeView": "Guardar antes de abrir?",
     "heading.exportPairedFaces": "Exportar faces emparelhadas?",
@@ -3051,6 +3057,7 @@ const baseMessages = {
       "1 kaart wordt losgekoppeld van {backCount} achterkant. Doorgaan?",
     "warning.pairingLossMultipleGeneric":
       "{count} kaarten worden losgekoppeld van {backCount} achterkanten. Doorgaan?",
+    "warning.pairingLossMultipleBacks": "This will unpair this card from {backCount} back faces. Continue?",
     "heading.discardChanges": "Wijzigingen verwerpen?",
     "heading.saveBeforeView": "Opslaan voordat je opent?",
     "heading.exportPairedFaces": "Gekoppelde zijden exporteren?",

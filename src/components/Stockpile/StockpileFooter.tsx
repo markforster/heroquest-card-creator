@@ -25,6 +25,7 @@ type StockpileFooterProps = {
   backByFrontId: Map<string, string>;
   onConfirmSelection?: (cardIds: string[]) => void;
   onClose: () => void;
+  baselineSelectedIds?: string[];
   collectionControls?: ReactNode;
   onBulkExport: () => void;
   canExport: boolean;
@@ -43,6 +44,7 @@ export default function StockpileFooter({
   backByFrontId,
   onConfirmSelection,
   onClose,
+  baselineSelectedIds,
   collectionControls,
   onBulkExport,
   canExport,
@@ -61,6 +63,11 @@ export default function StockpileFooter({
     count: number;
     cardIds: string[];
   } | null>(null);
+  const [pairingRemovalPrompt, setPairingRemovalPrompt] = useState<{
+    count: number;
+  } | null>(null);
+
+  const fallbackTitle = "Untitled card";
 
   const resolveThumb = (id: string, blob: Blob | null) => {
     if (typeof window === "undefined") {
@@ -103,6 +110,12 @@ export default function StockpileFooter({
                     setPairingConflict({ count: conflicting.length, cardIds: conflicting });
                     return;
                   }
+                }
+                const baseline = baselineSelectedIds ?? [];
+                const removedCount = baseline.filter((id) => !selectedIds.includes(id)).length;
+                if (removedCount > 1) {
+                  setPairingRemovalPrompt({ count: removedCount });
+                  return;
                 }
                 onConfirmSelection(selectedIds);
                 onClose();
@@ -250,6 +263,35 @@ export default function StockpileFooter({
               </>
             );
           })()}
+        </ConfirmModal>
+      ) : null}
+      {pairingRemovalPrompt ? (
+        <ConfirmModal
+          isOpen={Boolean(pairingRemovalPrompt)}
+          title={t("actions.confirm")}
+          confirmLabel={t("actions.confirm")}
+          cancelLabel={t("actions.cancel")}
+          onConfirm={() => {
+            const current = pairingRemovalPrompt;
+            setPairingRemovalPrompt(null);
+            if (!current || !onConfirmSelection) {
+              return;
+            }
+            onConfirmSelection(selectedIds);
+            onClose();
+          }}
+          onCancel={() => {
+            setPairingRemovalPrompt(null);
+          }}
+        >
+          {isPairFronts
+            ? formatMessageWith("warning.pairingLossMultiple", {
+                count: pairingRemovalPrompt.count,
+                back: activeBackId ? cardById.get(activeBackId)?.title ?? fallbackTitle : fallbackTitle,
+              })
+            : formatMessageWith("warning.pairingLossMultipleBacks", {
+                backCount: pairingRemovalPrompt.count,
+              })}
         </ConfirmModal>
       ) : null}
     </>

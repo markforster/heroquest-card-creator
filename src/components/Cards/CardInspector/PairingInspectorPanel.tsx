@@ -81,6 +81,8 @@ export default function PairingInspectorPanel({
   const [pairedFrontsToken, setPairedFrontsToken] = useState(0);
   const [pendingOpenCard, setPendingOpenCard] = useState<CardRecord | null>(null);
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
+  const [isUnpairAllPromptOpen, setIsUnpairAllPromptOpen] = useState(false);
+  const [pendingUnpairBack, setPendingUnpairBack] = useState<CardRecord | null>(null);
   const [loadedThumbs, setLoadedThumbs] = useState<Record<string, boolean>>({});
   const [hoveredCard, setHoveredCard] = useState<CardRecord | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<DOMRect | null>(null);
@@ -294,11 +296,37 @@ export default function PairingInspectorPanel({
   }, [cardsById, effectiveFace, pairedBacks]);
 
   const hasPairedBacks = pairedBacks.length > 0;
+  const pairedBackCount = pairedBacks.length;
   const selectedFrontId = effectiveFace === "back" ? activeFrontId ?? null : activeCardId ?? null;
 
   if (!template) {
     return null;
   }
+
+  const handleUnpairAll = async () => {
+    if (!activeCardId) return;
+    await deletePairsForFront(activeCardId);
+    setPairedBacks([]);
+    if (currentTemplateId) {
+      const nextDraft = {
+        ...(draftValue ?? {}),
+      } as CardDataByTemplate[TemplateId];
+      setCardDraft(currentTemplateId, nextDraft);
+      setSingleDraft(currentTemplateId, nextDraft);
+      setTemplateDirty(currentTemplateId, true);
+    }
+  };
+
+  const handleUnpairBack = async (backId: string) => {
+    if (!activeCardId) return;
+    try {
+      await deletePair(activeCardId, backId);
+      setPairedBacksToken((prev) => prev + 1);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[pairing] Failed to unpair back", error);
+    }
+  };
 
   const markThumbLoaded = (cardId: string) => {
     setLoadedThumbs((prev) => {
@@ -396,18 +424,11 @@ export default function PairingInspectorPanel({
                   onClick={() => {
                     if (pairingDisabled) return;
                     if (!activeCardId) return;
-                    void (async () => {
-                      await deletePairsForFront(activeCardId);
-                      setPairedBacks([]);
-                    })();
-                    if (currentTemplateId) {
-                      const nextDraft = {
-                        ...(draftValue ?? {}),
-                      } as CardDataByTemplate[TemplateId];
-                      setCardDraft(currentTemplateId, nextDraft);
-                      setSingleDraft(currentTemplateId, nextDraft);
-                      setTemplateDirty(currentTemplateId, true);
+                    if (pairedBackCount > 1) {
+                      setIsUnpairAllPromptOpen(true);
+                      return;
                     }
+                    void handleUnpairAll();
                   }}
                 >
                   <Unlink2 size={18} aria-hidden="true" />
@@ -588,13 +609,11 @@ export default function PairingInspectorPanel({
                             setDraftPairingBackIds(nextDraftIds.length ? nextDraftIds : null);
                             return;
                           }
-                          try {
-                            await deletePair(activeCardId, backCard.id);
-                            setPairedBacksToken((prev) => prev + 1);
-                          } catch (error) {
-                            // eslint-disable-next-line no-console
-                            console.error("[pairing] Failed to unpair back", error);
+                          if (pairedBackCount > 1) {
+                            setPendingUnpairBack(backCard);
+                            return;
                           }
+                          await handleUnpairBack(backCard.id);
                         }}
                       >
                         <Unlink2 size={18} aria-hidden="true" />
@@ -689,6 +708,44 @@ export default function PairingInspectorPanel({
         }}
       >
         {t("confirm.saveBeforeViewBody")}
+      </ConfirmModal>
+      <ConfirmModal
+        isOpen={isUnpairAllPromptOpen}
+        title={t("actions.confirm")}
+        confirmLabel={t("actions.confirm")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={async () => {
+          setIsUnpairAllPromptOpen(false);
+          await handleUnpairAll();
+        }}
+        onCancel={() => {
+          setIsUnpairAllPromptOpen(false);
+        }}
+      >
+        {formatMessageWith("warning.pairingLossMultipleBacks", {
+          backCount: pairedBackCount,
+        })}
+      </ConfirmModal>
+      <ConfirmModal
+        isOpen={Boolean(pendingUnpairBack)}
+        title={t("actions.confirm")}
+        confirmLabel={t("actions.confirm")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={async () => {
+          const pending = pendingUnpairBack;
+          setPendingUnpairBack(null);
+          if (!pending) return;
+          await handleUnpairBack(pending.id);
+        }}
+        onCancel={() => {
+          setPendingUnpairBack(null);
+        }}
+      >
+        {pendingUnpairBack
+          ? formatMessageWith("warning.pairingLossSingle", {
+              back: pendingUnpairBack.title ?? FALLBACK_TITLE,
+            })
+          : null}
       </ConfirmModal>
       {hoveredCard && hoverAnchor && typeof document !== "undefined"
           ? (() => {

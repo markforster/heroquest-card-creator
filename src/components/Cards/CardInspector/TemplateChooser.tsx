@@ -8,6 +8,7 @@ import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useEditorSave } from "@/components/Providers/EditorSaveContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
+import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { ENABLE_CARD_THUMB_CACHE, ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
@@ -42,6 +43,10 @@ const SHOW_TEMPLATE_THUMB = false;
 
 export default function TemplateChooser() {
   const { t, language } = useI18n();
+  const formatMessageWith = useMemo(
+    () => (key: string, vars: Record<string, string | number>) => formatMessage(t(key as never), vars),
+    [t],
+  );
   const { requestRecenter } = usePreviewRenderer();
   const recenterTimeoutRef = useRef<number | null>(null);
   const {
@@ -210,6 +215,11 @@ export default function TemplateChooser() {
           ? (await listCards()).filter((card) => affectedIds.includes(card.id))
           : [];
         if (affected.length > 0) {
+          if (affected.length <= 1) {
+            await Promise.all(affected.map((card) => deletePairsForFront(card.id)));
+            applyFaceChange(nextFace);
+            return;
+          }
           setPendingChange({
             mode: "back-to-front",
             nextFace,
@@ -229,7 +239,10 @@ export default function TemplateChooser() {
   const confirmBody = pendingChange
     ? pendingChange.mode === "front-to-back"
       ? `Confirm unpairing from card ${pendingChange.pairedTitle}`
-      : `Confirm unpairing of this card to the ${pendingChange.affectedCount} cards`
+      : formatMessageWith("warning.pairingLossMultiple", {
+          count: pendingChange.affectedCount,
+          back: currentCard?.title ?? FALLBACK_TITLE,
+        })
     : "";
 
   const currentTemplateThumbnail = template?.thumbnail ?? null;

@@ -101,6 +101,7 @@ export default function StockpilePanelContent({
   const [showUnpairedOnly, setShowUnpairedOnly] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [pairingBaselineIds, setPairingBaselineIds] = useState<string[]>([]);
   const [pairsByBackId, setPairsByBackId] = useState<Map<string, string[]>>(new Map());
   const [backByFrontId, setBackByFrontId] = useState<Map<string, string>>(new Map());
   const [activeFilter, setActiveFilter] = useState<
@@ -295,6 +296,7 @@ export default function StockpilePanelContent({
       ? normalizedInitial.filter((id) => id !== activeCardId)
       : normalizedInitial;
     if (isPairMode) {
+      setPairingBaselineIds(filteredInitial);
       setSelectedIds((prev) => {
         const base = prev.length ? prev : [];
         const merged = Array.from(new Set([...base, ...filteredInitial]));
@@ -302,6 +304,7 @@ export default function StockpilePanelContent({
       });
       return;
     }
+    setPairingBaselineIds([]);
     setSelectedIds(() => {
       if (!normalizedInitial.length) {
         return [];
@@ -949,6 +952,7 @@ export default function StockpilePanelContent({
             backByFrontId={backByFrontId}
             onConfirmSelection={onConfirmSelection}
             onClose={onClose}
+            baselineSelectedIds={pairingBaselineIds}
             collectionControls={
               <StockpileCollectionController
                 activeFilter={activeFilter}
