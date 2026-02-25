@@ -42,6 +42,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
   const [backupProgressStatus, setBackupProgressStatus] = useState<string | null>(null);
   const [backupSecondaryLabel, setBackupSecondaryLabel] = useState<string | null>(null);
   const [backupSecondaryPercent, setBackupSecondaryPercent] = useState<number | null>(null);
+  const backupSecondaryModeRef = useRef<"worker" | "fallback" | null>(null);
   const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -75,6 +76,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
     setBackupProgressStatus(t("status.preparing"));
     setBackupSecondaryLabel(null);
     setBackupSecondaryPercent(null);
+    backupSecondaryModeRef.current = null;
     try {
       const { blob, fileName } = await createBackupHqcc({
         onProgress: (current, total) => {
@@ -98,8 +100,16 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
             setBackupSecondaryLabel(t("status.preparing"));
           }
         },
+        onSecondaryStatus: (mode) => {
+          backupSecondaryModeRef.current = mode;
+          if (mode === "fallback") {
+            setBackupSecondaryLabel(t("status.finalizing"));
+            setBackupSecondaryPercent(null);
+          }
+        },
         onSecondaryProgress: (percent, phase) => {
           if (phase === "finalizing") {
+            if (backupSecondaryModeRef.current === "fallback") return;
             setBackupSecondaryLabel(t("status.finalizing"));
             setBackupSecondaryPercent(percent);
           }
@@ -124,6 +134,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
       setBackupProgressStatus(null);
       setBackupSecondaryLabel(null);
       setBackupSecondaryPercent(null);
+      backupSecondaryModeRef.current = null;
     }
   };
 

@@ -1,7 +1,5 @@
 "use client";
 
-import JSZip from "jszip";
-
 import { waitForAssetElements, waitForFrame } from "@/components/Stockpile/stockpile-utils";
 import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import {
@@ -22,6 +20,7 @@ import {
   EXPORT_CHUNK_SIZE,
 } from "@/lib/export-assets-cache";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
+import { createZipBlobWithProgress } from "@/lib/zip-utils";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import type { CardRecord } from "@/types/cards-db";
 
@@ -39,6 +38,8 @@ export type BulkExportParams = {
   shouldCancel: () => boolean;
   onTargetChange: (card: CardRecord | null) => void;
   onProgress: (exportedCount: number) => void;
+  onZipProgress?: (percent: number) => void;
+  onZipStatus?: (mode: "worker" | "fallback") => void;
   skipCardIds?: Set<string>;
   skipCardNotes?: Map<string, string>;
 };
@@ -51,6 +52,8 @@ export const runBulkExport = async ({
   shouldCancel,
   onTargetChange,
   onProgress,
+  onZipProgress,
+  onZipStatus,
   skipCardIds,
   skipCardNotes,
 }: BulkExportParams): Promise<BulkExportResult> => {
@@ -74,7 +77,8 @@ export const runBulkExport = async ({
   }
 
   const usedNames = new Map<string, number>();
-  const zip = new JSZip();
+  const zipFiles: { name: string; data: Blob | string }[] = [];
+  const zipNameSet = new Set<string>();
   let exportedCount = 0;
   const exportNotes: string[] = [];
   const skipIds = skipCardIds ?? new Set<string>();
@@ -188,7 +192,7 @@ export const runBulkExport = async ({
         let fileName = resolvedName;
         let dedupeAttempts = 0;
         const shortId = card.id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) || "card";
-        while (zip.file(fileName)) {
+        while (zipNameSet.has(fileName)) {
           dedupeAttempts += 1;
           const dotIndex = fileName.lastIndexOf(".");
           const stem = dotIndex >= 0 ? fileName.slice(0, dotIndex) : fileName;
@@ -203,7 +207,8 @@ export const runBulkExport = async ({
           fileName,
           wasDeduped: fileName !== resolvedName,
         });
-        zip.file(fileName, pngBlob);
+        zipFiles.push({ name: fileName, data: pngBlob });
+        zipNameSet.add(fileName);
         exportedCount += 1;
         onProgress(exportedCount);
       }
@@ -217,10 +222,13 @@ export const runBulkExport = async ({
 
     if (!exportedCount) {
       if (exportNotes.length > 0) {
-        zip.file("export-issues.txt", exportNotes.join("\n"));
-        const zipBlob = await zip.generateAsync({
-          type: "blob",
-          ...(USE_ZIP_COMPRESSION ? { compression: "DEFLATE", compressionOptions: { level: 6 } } : {}),
+        zipFiles.push({ name: "export-issues.txt", data: exportNotes.join("\n") });
+        zipNameSet.add("export-issues.txt");
+        const zipBlob = await createZipBlobWithProgress({
+          files: zipFiles,
+          compress: USE_ZIP_COMPRESSION,
+          onProgress: onZipProgress,
+          onStatus: onZipStatus,
         });
         const url = URL.createObjectURL(zipBlob);
         const link = document.createElement("a");
@@ -237,12 +245,15 @@ export const runBulkExport = async ({
     }
 
     if (exportNotes.length > 0) {
-      zip.file("export-issues.txt", exportNotes.join("\n"));
+      zipFiles.push({ name: "export-issues.txt", data: exportNotes.join("\n") });
+      zipNameSet.add("export-issues.txt");
     }
 
-    const zipBlob = await zip.generateAsync({
-      type: "blob",
-      ...(USE_ZIP_COMPRESSION ? { compression: "DEFLATE", compressionOptions: { level: 6 } } : {}),
+    const zipBlob = await createZipBlobWithProgress({
+      files: zipFiles,
+      compress: USE_ZIP_COMPRESSION,
+      onProgress: onZipProgress,
+      onStatus: onZipStatus,
     });
     const url = URL.createObjectURL(zipBlob);
     const link = document.createElement("a");

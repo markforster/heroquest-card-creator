@@ -11,6 +11,8 @@ type ExportProgressOverlayProps = {
   title: string;
   progress: number;
   total: number;
+  secondaryLabel?: string | null;
+  secondaryPercent?: number | null;
   exportCancelled: boolean;
   onCancel: () => void;
 };
@@ -20,6 +22,8 @@ export default function ExportProgressOverlay({
   title,
   progress,
   total,
+  secondaryLabel,
+  secondaryPercent,
   exportCancelled,
   onCancel,
 }: ExportProgressOverlayProps) {
@@ -31,6 +35,9 @@ export default function ExportProgressOverlay({
   const percent = total > 0 ? Math.round((progress / total) * 100) : 0;
   const cancelLabel = exportCancelled ? t("actions.cancelling") : t("actions.cancel");
   const cancelDisabled = exportCancelled;
+  const showSecondary = Boolean(secondaryLabel);
+  const secondaryValue = typeof secondaryPercent === "number" ? Math.round(secondaryPercent) : 0;
+  const secondaryIndeterminate = showSecondary && secondaryPercent == null;
 
   return (
     <ModalShell
@@ -40,16 +47,37 @@ export default function ExportProgressOverlay({
       contentClassName={styles.stockpileOverlayPanel}
       keepMounted
     >
-      <ProgressBar
-        percent={percent}
-        trackClassName={styles.exportProgressTrack}
-        fillClassName={styles.exportProgressFill}
-        label={
-          <div className={styles.exportProgressLabel}>
-            {progress} / {total}
-          </div>
-        }
-      />
+      <div className="d-flex flex-column gap-3">
+        <ProgressBar
+          percent={percent}
+          trackClassName={styles.exportProgressTrack}
+          fillClassName={styles.exportProgressFill}
+          label={
+            <div className={styles.exportProgressLabel}>
+              {progress} / {total}
+            </div>
+          }
+        />
+        {showSecondary ? (
+          secondaryIndeterminate ? (
+            <div className="d-flex align-items-center gap-2">
+              <div className={styles.spinner} aria-hidden="true" />
+              <div className={styles.exportProgressLabel}>{secondaryLabel}</div>
+            </div>
+          ) : (
+            <ProgressBar
+              percent={secondaryValue}
+              trackClassName={styles.exportProgressTrack}
+              fillClassName={styles.exportProgressFill}
+              label={
+                <div className={styles.exportProgressLabel}>
+                  {secondaryLabel} {secondaryValue}%
+                </div>
+              }
+            />
+          )
+        ) : null}
+      </div>
       <div className={styles.stockpileOverlayActions}>
         <ActionBar
           right={

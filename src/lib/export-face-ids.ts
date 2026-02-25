@@ -13,6 +13,8 @@ export type ExportFaceIdsOptions = {
   shouldCancel?: () => boolean;
   onTargetChange?: (card: CardRecord | null) => void;
   onProgress?: (exportedCount: number) => void;
+  onZipProgress?: (percent: number) => void;
+  onZipStatus?: (mode: "worker" | "fallback") => void;
   skipCardIds?: Set<string>;
   skipCardNotes?: Map<string, string>;
 };
@@ -31,6 +33,8 @@ export const exportFaceIdsToZip = async (
     shouldCancel = () => false,
     onTargetChange = () => {},
     onProgress = () => {},
+    onZipProgress,
+    onZipStatus,
     skipCardIds,
     skipCardNotes,
   }: ExportFaceIdsOptions,
@@ -62,6 +66,8 @@ export const exportFaceIdsToZip = async (
     shouldCancel,
     onTargetChange,
     onProgress,
+    onZipProgress,
+    onZipStatus,
     skipCardIds,
     skipCardNotes,
   });

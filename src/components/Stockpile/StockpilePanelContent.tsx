@@ -168,6 +168,11 @@ export default function StockpilePanelContent({
   const [isExporting, setIsExporting] = useState(false);
   const [exportTotal, setExportTotal] = useState(0);
   const [exportProgress, setExportProgress] = useState(0);
+  const [exportSecondaryPercent, setExportSecondaryPercent] = useState<number | null>(null);
+  const [exportSecondaryMode, setExportSecondaryMode] = useState<"worker" | "fallback" | null>(
+    null,
+  );
+  const exportSecondaryModeRef = useRef<"worker" | "fallback" | null>(null);
   const [exportCancelled, setExportCancelled] = useState(false);
   const [exportPairPrompt, setExportPairPrompt] = useState<{
     baseIds: string[];
@@ -689,6 +694,9 @@ export default function StockpilePanelContent({
     setIsExporting(true);
     setExportTotal(exportableCount);
     setExportProgress(0);
+    setExportSecondaryPercent(null);
+    setExportSecondaryMode(null);
+    exportSecondaryModeRef.current = null;
     setExportCancelled(false);
     cancelExportRef.current = false;
 
@@ -711,6 +719,17 @@ export default function StockpilePanelContent({
         shouldCancel: () => cancelExportRef.current,
         onTargetChange: (card) => setExportTarget(card),
         onProgress: (exportedCount) => setExportProgress(exportedCount),
+        onZipProgress: (percent) => {
+          if (exportSecondaryModeRef.current === "fallback") return;
+          setExportSecondaryPercent(percent);
+        },
+        onZipStatus: (mode) => {
+          setExportSecondaryMode(mode);
+          exportSecondaryModeRef.current = mode;
+          if (mode === "fallback") {
+            setExportSecondaryPercent(null);
+          }
+        },
         skipCardIds: skipIds,
         skipCardNotes: skipNotes,
       });
@@ -727,6 +746,9 @@ export default function StockpilePanelContent({
       setExportTarget(null);
       setExportTotal(0);
       setExportProgress(0);
+      setExportSecondaryPercent(null);
+      setExportSecondaryMode(null);
+      exportSecondaryModeRef.current = null;
       setExportCancelled(false);
       cancelExportRef.current = false;
     }
@@ -1027,6 +1049,8 @@ export default function StockpilePanelContent({
         title={exportTitle}
         progress={exportProgress}
         total={exportTotal}
+        secondaryLabel={exportSecondaryMode ? t("status.finalizing") : null}
+        secondaryPercent={exportSecondaryMode === "worker" ? exportSecondaryPercent : null}
         exportCancelled={exportCancelled}
         onCancel={() => {
           cancelExportRef.current = true;

@@ -1,8 +1,9 @@
 "use client";
 
-import JSZip from "jszip";
-
 import { USE_ZIP_COMPRESSION } from "@/config/flags";
+import { createZipBlobWithProgress } from "@/lib/zip-utils";
+import { configureZipJs } from "@/lib/zip-config";
+import { BlobReader, TextWriter, ZipReader } from "@zip.js/zip.js";
 import type { CardRecord } from "@/types/cards-db";
 import type { PairRecord } from "@/types/pairs-db";
 
@@ -736,25 +737,20 @@ export async function createBackupHqcc(options?: {
   onProgress?: BackupProgressCallback;
   onStatus?: BackupStatusCallback;
   onSecondaryProgress?: BackupSecondaryProgressCallback;
+  onSecondaryStatus?: (mode: "worker" | "fallback") => void;
 }): Promise<ExportResult> {
   options?.onStatus?.("processing");
   const exportObject = await buildExportObject(options?.onProgress);
   const json = JSON.stringify(exportObject, null, 2);
 
-  const zip = new JSZip();
-  zip.file("backup.json", json);
-
   options?.onStatus?.("finalizing");
   await new Promise((resolve) => setTimeout(resolve, 250));
-  const blob = await zip.generateAsync(
-    {
-      type: "blob",
-      ...(USE_ZIP_COMPRESSION ? { compression: "DEFLATE", compressionOptions: { level: 6 } } : {}),
-    },
-    (metadata) => {
-      options?.onSecondaryProgress?.(metadata.percent ?? 0, "finalizing");
-    },
-  );
+  const blob = await createZipBlobWithProgress({
+    files: [{ name: "backup.json", data: json }],
+    compress: USE_ZIP_COMPRESSION,
+    onProgress: (percent) => options?.onSecondaryProgress?.(percent ?? 0, "finalizing"),
+    onStatus: (mode) => options?.onSecondaryStatus?.(mode),
+  });
 
   const now = new Date();
   const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
@@ -787,23 +783,40 @@ export async function importBackupHqcc(
   },
 ): Promise<ImportResult> {
   options?.onStatus?.("preparing");
-  let zip: JSZip;
-  try {
-    zip = await JSZip.loadAsync(file);
-  } catch {
-    throw new Error("This file is not a valid HeroQuest Card Maker backup");
-  }
+  const readBackupFile = async (useWebWorkers: boolean) => {
+    configureZipJs(useWebWorkers);
+    let reader: ZipReader<BlobReader> | null = null;
+    try {
+      reader = new ZipReader(new BlobReader(file));
+    } catch {
+      throw new Error("This file is not a valid HeroQuest Card Maker backup");
+    }
 
-  const entry = zip.file("backup.json");
-  if (!entry) {
-    throw new Error("This file is not a valid HeroQuest Card Maker backup");
-  }
+    try {
+      const entries = await reader.getEntries();
+      const entry = entries.find((zipEntry) => zipEntry.filename === "backup.json");
+      if (!entry || entry.directory || !("getData" in entry)) {
+        throw new Error("This file is not a valid HeroQuest Card Maker backup");
+      }
+      return await entry.getData(new TextWriter());
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === "This file is not a valid HeroQuest Card Maker backup"
+      ) {
+        throw error;
+      }
+      throw new Error("Could not read backup data from this file");
+    } finally {
+      await reader?.close();
+    }
+  };
 
   let text: string;
   try {
-    text = await entry.async("string");
+    text = await readBackupFile(true);
   } catch {
-    throw new Error("Could not read backup data from this file");
+    text = await readBackupFile(false);
   }
 
   const exportData = parseBackupJson(text);

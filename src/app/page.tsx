@@ -142,7 +142,12 @@ function IndexPageInner() {
   const [isExportingFaces, setIsExportingFaces] = useState(false);
   const [exportTotal, setExportTotal] = useState(0);
   const [exportProgress, setExportProgress] = useState(0);
+  const [exportSecondaryPercent, setExportSecondaryPercent] = useState<number | null>(null);
+  const [exportSecondaryMode, setExportSecondaryMode] = useState<"worker" | "fallback" | null>(
+    null,
+  );
   const [exportCancelled, setExportCancelled] = useState(false);
+  const exportSecondaryModeRef = useRef<"worker" | "fallback" | null>(null);
   const [missingAssetsPrompt, setMissingAssetsPrompt] = useState<{
     report: MissingAssetReport[];
     skipIds: Set<string>;
@@ -702,12 +707,26 @@ function IndexPageInner() {
       const total = skipIds ? faceIds.filter((id) => !skipIds.has(id)).length : faceIds.length;
       setExportTotal(total);
       setExportProgress(0);
+      setExportSecondaryPercent(null);
+      setExportSecondaryMode(null);
+      exportSecondaryModeRef.current = null;
       setExportCancelled(false);
       exportCancelRef.current = false;
       const result = await exportFaceIdsToZip(faceIds, {
         previewRef: exportPreviewRef,
         onTargetChange: (card) => setExportTarget(card),
         onProgress: (count) => setExportProgress(count),
+        onZipProgress: (percent) => {
+          if (exportSecondaryModeRef.current === "fallback") return;
+          setExportSecondaryPercent(percent);
+        },
+        onZipStatus: (mode) => {
+          setExportSecondaryMode(mode);
+          exportSecondaryModeRef.current = mode;
+          if (mode === "fallback") {
+            setExportSecondaryPercent(null);
+          }
+        },
         shouldCancel: () => exportCancelRef.current,
         skipCardIds: options?.skipIds,
         skipCardNotes: options?.skipNotes,
@@ -726,6 +745,9 @@ function IndexPageInner() {
       setExportTarget(null);
       setExportTotal(0);
       setExportProgress(0);
+      setExportSecondaryPercent(null);
+      setExportSecondaryMode(null);
+      exportSecondaryModeRef.current = null;
       setExportCancelled(false);
     }
   };
@@ -1009,6 +1031,8 @@ function IndexPageInner() {
           title={`${t("status.exportingImages")} (${exportTotal})`}
           progress={exportProgress}
           total={exportTotal}
+          secondaryLabel={exportSecondaryMode ? t("status.finalizing") : null}
+          secondaryPercent={exportSecondaryMode === "worker" ? exportSecondaryPercent : null}
           exportCancelled={exportCancelled}
           onCancel={() => {
             exportCancelRef.current = true;
