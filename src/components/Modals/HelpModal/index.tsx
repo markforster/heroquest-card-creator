@@ -20,6 +20,10 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
             change titles, rules text, stats, images, and template-specific options. Most changes
             update the preview instantly, so you can trust what you see.
           </DocParagraph>
+          <DocParagraph>
+            Cards and Assets open in the main area, and your editor preview is still there when you
+            return.
+          </DocParagraph>
         </DocSection>
 
         <DocSection title="Creating and editing cards">
@@ -37,25 +41,31 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               templates without losing in-progress work.
             </li>
             <li>
-              When you&apos;re happy with a draft, use Save as new to create a named card in your
-              stockpile, or Save changes to update an existing saved card.
+              Start a new card in draft mode or open an existing card, make changes, and save when
+              you&apos;re ready.
+            </li>
+            <li>
+              Title toolbar controls are template-dependent. Labelled backs can switch ribbon/plain
+              styles and top/bottom placement.
             </li>
           </DocList>
         </DocSection>
 
-        <DocSection title="Preview modes (SVG / WebGL)">
+        <DocSection title="Preview modes">
           <DocList>
             <li>
-              The preview toolbar lets you switch between SVG (fast, crisp) and WebGL (3D-style)
-              rendering.
+              The preview toolbar lets you switch between the flat view and a 3D view.
             </li>
             <li>
-              In WebGL, you can choose pan or rotate interaction modes to move the card under the
-              light.
+              Use the flat view when you want to see the card exactly as it will print.
             </li>
             <li>
-              If you want speed and clarity, use SVG. If you want the most “physical” feel, use
-              WebGL.
+              Use the 3D view to see how the card would look if you held it in your hand and could
+              turn or flip it.
+            </li>
+            <li>
+              In 3D spin mode, double-click recenters the card; if it&apos;s already front-facing,
+              double-click flips it.
             </li>
           </DocList>
         </DocSection>
@@ -64,7 +74,8 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
           <DocList>
             <li>
               Rules text supports a simple markdown-style syntax for bold and italic. Bold uses
-              <code>**double asterisks**</code> and italic uses <code>*single asterisks*</code>.
+              <code>**double asterisks**</code>, italic uses <code>*single asterisks*</code>, and
+              bold+italic uses <code>***triple asterisks***</code>.
             </li>
             <li>
               Text wraps automatically inside the available area on the card.
@@ -78,6 +89,10 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               <code> [[</code> and <code>]]</code>. You can add an optional settings line like
               <code> [{'{'}pivot:50%, wrap:value{'}'}]</code> to set a fixed pivot or wrap values
               inside the value column.
+            </li>
+            <li>
+              Inline dice tokens are supported in body text (combat faces, D6 pips, and CD/AD/DD/MD),
+              including color and face overrides.
             </li>
             <li>
               Alignment directives let you switch alignment mid-text: use <code>:::ac</code>,
@@ -122,11 +137,18 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               within the artwork window by default.
             </li>
             <li>
-              Use the Image Adjustments accordion to fine-tune scale, offset, and rotation; step
-              buttons let you nudge left/right/up/down with precision.
+              Use the Image Adjustments popover (adjustments icon) to fine-tune scale, offset, and
+              rotation; step buttons let you nudge left/right/up/down with precision.
+            </li>
+            <li>
+              Scale starts at fit-to-frame (1.0), and you can scale from 0.5–2.0.
             </li>
             <li>
               Once you find a good framing, it’s easy to repeat it across similar cards.
+            </li>
+            <li>
+              Image and Icon fields support autocomplete search; the current asset stays pinned in
+              the results.
             </li>
           </DocList>
         </DocSection>
@@ -145,14 +167,22 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
             <li>
               Use collections to organise cards without deleting them.
             </li>
+            <li>
+              Delete moves cards into Recently Deleted; restore is available there, and permanent
+              delete is only available in Recently Deleted.
+            </li>
+            <li>
+              In manage mode, you can toggle grid/table view; table headers stay visible while
+              scrolling.
+            </li>
           </DocList>
         </DocSection>
 
         <DocSection title="Collections (organising saved cards)">
           <DocList>
             <li>
-              In the Cards browser, the left sidebar lets you switch between All cards, Unfiled,
-              and named collections.
+              In the Cards browser, the right Collections panel lets you switch between All cards,
+              Unfiled, and named collections. On narrow screens, this panel appears as a drawer.
             </li>
             <li>
               Create a collection with + New collection, then add cards using Add to collection…
@@ -160,6 +190,16 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
             </li>
             <li>
               Removing a card from a collection does not delete it.
+            </li>
+            <li>
+              Delete is safe: cards move to Recently Deleted so you can restore them if needed.
+            </li>
+            <li>
+              Enable the optional Collections tree view to group folders, collapse/expand, and use
+              Collapse all / Expand all controls.
+            </li>
+            <li>
+              Drag cards onto collection leaves to add them (multi-select supported).
             </li>
           </DocList>
         </DocSection>
@@ -174,8 +214,12 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               Pairing keeps the two faces together for browsing and export workflows.
             </li>
             <li>
-              Fronts can be paired to a back via the Combine button; backs can manage many fronts
-              at once using Manage Pairings.
+              The inspector has Properties and Pairing views. Fronts can be paired to multiple
+              backs, and backs can manage multiple fronts in one place.
+            </li>
+            <li>
+              The pairing modal supports multi-select, and actions that remove multiple pairings
+              show a confirmation prompt.
             </li>
           </DocList>
         </DocSection>
@@ -186,8 +230,15 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               Labelled backs can optionally hide/show the title.
             </li>
             <li>
+              Labelled backs can switch ribbon/plain title styles, adjust placement, and set a
+              custom title color with reset.
+            </li>
+            <li>
               Some templates allow custom border colours, smart swatch suggestions, and saved
               swatches for quick reuse.
+            </li>
+            <li>
+              Small/Large Artwork templates support textured border color controls.
             </li>
           </DocList>
         </DocSection>
@@ -210,6 +261,14 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               faces.
             </li>
             <li>
+              If missing artwork is detected, you’ll be prompted before export. In bulk export,
+              missing cards are skipped and included in a report.
+            </li>
+            <li>
+              Missing artwork warnings can appear in preview, and a startup banner may appear if
+              your library has missing assets.
+            </li>
+            <li>
               Use Export data and Import data in the header to back up or restore your entire
               library (.hqcc file). Import replaces existing data in this browser profile, so
               export first if you want a safety copy.
@@ -226,6 +285,10 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
             <li>
               Bulk export creates a single ZIP with all selected card images.
             </li>
+            <li>
+              Finalizing shows progress; if progress isn’t available, you’ll see a “Finalizing…”
+              status.
+            </li>
           </DocList>
         </DocSection>
 
@@ -240,6 +303,12 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
             </li>
             <li>
               Keep an occasional .hqcc backup if you do a lot of card work in one browser profile.
+            </li>
+            <li>
+              Recently Deleted is a safety net—restore if you remove something by mistake.
+            </li>
+            <li>
+              If you see missing-artwork warnings, fix them before export to avoid skipped cards.
             </li>
           </DocList>
         </DocSection>
