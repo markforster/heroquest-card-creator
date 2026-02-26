@@ -1,6 +1,6 @@
 {
   "name": "@markforster/heroquest-card-creator",
-  "version": "0.5.3",
+  "version": "0.5.3-dev.260226.2",
   "description": "Browser-based tool to design HeroQuest-style cards with accurate layouts, asset library, and PNG export — runs locally.",
   "author": "Mark Forster (markforster)",
   "license": "GPL-3.0",
@@ -39,6 +39,7 @@
   "files": [
     "out/**",
     "bin/**",
+    "readme-assets/banner.jpg",
     "README.md",
     "LICENSE"
   ],
@@ -72,7 +73,9 @@
     "pretauri:build": "npm run sync:tauri-version",
     "tauri:build": "npm run build && npm run tauri:icons && tauri build",
     "postpack": "git checkout -- README.md",
-    "publish:npm": "npm publish",
+    "info": "node scripts/print-package-info.cjs",
+    "publish:npm": "npm publish --registry https://registry.npmjs.org/",
+    "publish:dev": "npm publish --tag dev --registry https://registry.npmjs.org/",
     "publish:gh": "npm publish --registry https://npm.pkg.github.com",
     "publish:all": "npm run publish:npm && npm run publish:gh"
   },

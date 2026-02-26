@@ -18,9 +18,15 @@ const HISTORY_LIMIT = 10;
 function parseArgs(args) {
   let port = null;
   let portSpecified = false;
+  let help = false;
 
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
+
+    if (arg === "-h" || arg === "--help") {
+      help = true;
+      continue;
+    }
 
     if (arg === "-p" || arg === "--port") {
       const next = args[i + 1];
@@ -46,7 +52,24 @@ function parseArgs(args) {
     }
   }
 
-  return { port, portSpecified };
+  return { port, portSpecified, help };
+}
+
+function printHelp() {
+  console.log(
+    [
+      "",
+      "HeroQuest Card Creator",
+      "",
+      "Usage:",
+      "  heroquest-card-creator [options]",
+      "",
+      "Options:",
+      "  -p, --port <number>   Port to serve on (default 3000; auto-picks a free port if needed)",
+      "  -h, --help            Show this help",
+      "",
+    ].join("\n")
+  );
 }
 
 function toSafeFilePath(rootDir, pathname) {
@@ -498,7 +521,13 @@ function warnOnNewPort(port, info) {
 
 async function main() {
   const args = process.argv.slice(2);
-  const { port: requestedPort, portSpecified } = parseArgs(args);
+  const { port: requestedPort, portSpecified, help } = parseArgs(args);
+
+  if (help) {
+    printHelp();
+    process.exit(0);
+  }
+
   const rootDir = path.resolve(__dirname, "..", "out");
 
   if (!fs.existsSync(rootDir)) {
