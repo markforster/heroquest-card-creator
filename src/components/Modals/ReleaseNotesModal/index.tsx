@@ -142,21 +142,70 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
 
         <DocSection title="Notes & future work">
           <DocParagraph>
-            This version is intentionally "early but useful": it should feel about 99% usable for
-            day-to-day card creation, but there will definitely be rough edges, glitches and missing
-            quality-of-life touches. Things like keyboard shortcuts, richer help, smoother loading,
-            and additional card templates and layout polish are all on the list.
+            This version is intentionally “early but useful”: it should feel about 99% usable for
+            day-to-day card creation, while still leaving room for rough edges and future
+            improvements. Recent releases (especially 0.5.3) have focused heavily on polish and
+            quality-of-life work, and that momentum will continue.
           </DocParagraph>
           <DocParagraph className={docStyles.docParagraphSpaced}>
-            At the moment the tool has been primarily developed and tested in Chrome on desktop. It
-            should also work in Safari and Firefox, though some visual glitches or layout quirks are
-            likely. Mobile phones are not supported yet, and iPad currently has known CSS issues
-            that will be addressed in a future pass on responsive layouts.
+            The tool is confirmed working in Chrome, Safari, Edge, and Firefox on desktop. Mobile
+            phones and tablets are still not supported, though they may be explored in future
+            passes—no promises yet.
           </DocParagraph>
           <DocParagraph className={docStyles.docParagraphSpaced}>
             The plan is to keep iterating, publish the code on GitHub, and provide a self-contained
             build that can be hosted anywhere. In the meantime, if this tool helps you create new
-            quests, heroes or treasure for your table, it&apos;s doing its job.
+            quests, heroes, or treasure for your table, it&apos;s doing its job.
+          </DocParagraph>
+        </DocSection>
+
+        <DocSection title="Update 26/02/2026 (v0.5.3)" className={docStyles.docSectionSpaced}>
+          <DocParagraph>
+            This release is a major step forward in how the library feels to use, with a clearer
+            Stockpile layout, safer card management, and smoother collection workflows so it’s
+            easier to find, organise, and act on your cards without friction.
+          </DocParagraph>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Assets and pairing work are now more deliberate and visible: the Assets panel offers
+            richer inspection and safer replacement, images are easier to find and filter, and
+            pairing is split into a dedicated view with multi-select support and clearer safety
+            prompts when removing multiple links.
+          </DocParagraph>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Exports are more reliable and transparent, and the editor gets a polish pass with
+            better formatting helpers, inline dice support, and more control over labelled-back
+            title styles and textured borders.
+          </DocParagraph>
+          <DocList className={docStyles.docListSpaced}>
+            <li>
+              Stockpile panels, table view, and Recently Deleted improve browsing, selection, and
+              safe recovery.
+            </li>
+            <li>
+              Collections tree view and drag-and-drop make organising large libraries faster.
+            </li>
+            <li>
+              Missing-artwork checks warn before export and keep issues visible while you work.
+            </li>
+            <li>
+              Inline dice tokens, leader groups, and the new formatting cheat sheet make rules text
+              more expressive.
+            </li>
+            <li>
+              Labelled-back title styles/colors and textured border controls add extra finishing
+              polish.
+            </li>
+          </DocList>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Full release notes:{" "}
+            <a
+              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.3"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={docStyles.docLink}
+            >
+              v0.5.3
+            </a>
           </DocParagraph>
         </DocSection>
 
@@ -179,6 +228,17 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             </li>
             <li>Image adjustments add rotation controls alongside position and scale.</li>
           </DocList>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Full release notes:{" "}
+            <a
+              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.2"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={docStyles.docLink}
+            >
+              v0.5.2
+            </a>
+          </DocParagraph>
         </DocSection>
 
         <DocSection title="Update 07/02/2026 (v0.5.1)" className={docStyles.docSectionSpaced}>
@@ -198,6 +258,17 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             </li>
             <li>Optional Tauri desktop wrapper for native packaging.</li>
           </DocList>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Full release notes:{" "}
+            <a
+              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.1"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={docStyles.docLink}
+            >
+              v0.5.1
+            </a>
+          </DocParagraph>
         </DocSection>
 
         <DocSection title="Update 10/01/2026 (v0.5.0)" className={docStyles.docSectionSpaced}>
@@ -219,6 +290,17 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
               included in backups.
             </li>
           </DocList>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Full release notes:{" "}
+            <a
+              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.0"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={docStyles.docLink}
+            >
+              v0.5.0
+            </a>
+          </DocParagraph>
         </DocSection>
 
         <DocSection title="Update 18/12/2025 (v0.4.0)" className={docStyles.docSectionSpaced}>
