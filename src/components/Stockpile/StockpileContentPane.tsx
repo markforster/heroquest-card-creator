@@ -14,6 +14,7 @@ type StockpileContentPaneProps = {
     | { type: "all" }
     | { type: "recent" }
     | { type: "unfiled" }
+    | { type: "recentlyDeleted" }
     | { type: "collection"; id: string };
   templateFilter: string;
   totalCount: number;
@@ -56,6 +57,8 @@ export default function StockpileContentPane({
             ? t("empty.noCardsFound")
             : activeFilter.type === "recent"
               ? t("empty.noRecentCards")
+              : activeFilter.type === "recentlyDeleted"
+                ? t("empty.noRecentlyDeletedCards")
               : activeFilter.type === "collection"
                 ? templateFilter !== "all" && totalCount > 0
                   ? `${t("empty.collectionFilteredByType")} ${filterLabel}.`

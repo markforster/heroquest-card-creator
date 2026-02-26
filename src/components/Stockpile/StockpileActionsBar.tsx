@@ -18,8 +18,10 @@ type StockpileActionsBarProps = {
     | { type: "all" }
     | { type: "recent" }
     | { type: "unfiled" }
+    | { type: "recentlyDeleted" }
     | { type: "collection"; id: string };
   onRemoveFromCollection: () => void;
+  onRestoreCards?: () => void;
   onDeleteCards: () => void;
   onSelectAllToggle: (visibleIds: string[]) => void;
 };
@@ -33,6 +35,7 @@ export default function StockpileActionsBar({
   addToCollectionControl,
   activeFilter,
   onRemoveFromCollection,
+  onRestoreCards,
   onDeleteCards,
   onSelectAllToggle,
 }: StockpileActionsBarProps) {
@@ -108,15 +111,34 @@ export default function StockpileActionsBar({
             {t("actions.removeFromCollection")}
           </button>
         ) : null}
+        {activeFilter.type === "recentlyDeleted" ? (
+          <button
+            type="button"
+            className="btn btn-outline-success btn-sm"
+            disabled={!selectedIds.length}
+            onClick={onRestoreCards}
+          >
+            {selectedIds.length > 1
+              ? `${t("actions.restore")} (${selectedIds.length})`
+              : t("actions.restore")}
+          </button>
+        ) : null}
         <button
           type="button"
           className="btn btn-outline-danger btn-sm"
           disabled={!selectedIds.length}
           onClick={onDeleteCards}
         >
-          {selectedIds.length > 1
-            ? `${t("actions.delete")} (${selectedIds.length})`
-            : t("actions.delete")}
+          {(() => {
+            const baseLabel =
+              activeFilter.type === "recentlyDeleted"
+                ? t("actions.deletePermanently")
+                : t("actions.delete");
+            if (selectedIds.length > 1) {
+              return `${baseLabel} (${selectedIds.length})`;
+            }
+            return baseLabel;
+          })()}
         </button>
       </div>
     </div>

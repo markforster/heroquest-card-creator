@@ -14,6 +14,7 @@ type StockpileAddToCollectionControllerProps = {
     | { type: "all" }
     | { type: "recent" }
     | { type: "unfiled" }
+    | { type: "recentlyDeleted" }
     | { type: "collection"; id: string };
   visibleSelectedIds: string[];
   onCollectionsUpdated: (next: CollectionRecord[]) => void;

@@ -843,7 +843,7 @@ function IndexPageInner() {
                 <LeftNav />
                 {isAssetsRoute ? <AssetsRoutePanels /> : null}
                 {isCardsListRoute ? (
-                  <section className={`${styles.leftPanel} d-flex align-items-stretch gap-3 p-3`}>
+                  <section className={`${styles.leftPanel} d-flex align-items-stretch`}>
                     <StockpileMainPanel
                       isOpen
                       onClose={() => {}}

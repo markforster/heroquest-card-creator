@@ -15,6 +15,7 @@ export interface CardRecord {
   createdAt: number;
   updatedAt: number;
   lastViewedAt?: number;
+  deletedAt?: number | null;
 
   schemaVersion: 1;
 

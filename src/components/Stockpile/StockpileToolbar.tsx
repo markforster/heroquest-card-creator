@@ -11,6 +11,8 @@ import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 
 type StockpileToolbarProps = {
+  onOpenCollections: () => void;
+  collectionsToggleLabel: string;
   search: string;
   onSearchChange: (value: string) => void;
   templateFilter: string;
@@ -30,6 +32,8 @@ type StockpileToolbarProps = {
 };
 
 export default function StockpileToolbar({
+  onOpenCollections,
+  collectionsToggleLabel,
   search,
   onSearchChange,
   templateFilter,
@@ -51,6 +55,7 @@ export default function StockpileToolbar({
   const { missingArtworkIds } = useMissingAssets();
   const showMissingArtworkToggle = ENABLE_MISSING_ASSET_CHECKS && missingArtworkIds.size > 0;
   const filterMenuRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -68,18 +73,44 @@ export default function StockpileToolbar({
     <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
       <div className={`${styles.cardsFiltersRow} ${styles.uRowLg}`}>
         <div className={`${styles.cardsFiltersLeft} ${styles.uRowLg}`}>
-          <div className="input-group input-group-sm" style={{ width: "17.25em" }}>
+          <button
+            type="button"
+            className={styles.collectionsToggleButton}
+            onClick={onOpenCollections}
+            title={t("heading.collections")}
+            aria-label={t("heading.collections")}
+          >
+            <span className={styles.collectionsToggleTitle}>{t("label.collections")}</span>
+            <span className={styles.collectionsToggleValue}>{collectionsToggleLabel}</span>
+          </button>
+          <div
+            className={`input-group input-group-sm ${styles.cardsSearchGroup}`}
+            style={{ width: "17.25em" }}
+          >
             <span className="input-group-text">
               <Search className={styles.icon} aria-hidden="true" />
             </span>
             <input
+              ref={searchInputRef}
               type="search"
               placeholder={t("placeholders.searchCards")}
-              className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch} ${styles.cardsSearchInputFixed}`}
+              className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch} ${styles.cardsSearchInputFixed} ${styles.cardsSearchInputWithClear}`}
               title={t("tooltip.searchCards")}
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
             />
+            {search.trim().length > 0 ? (
+              <button
+                type="button"
+                className={`btn-close ${styles.cardsSearchClearButton}`}
+                aria-label={t("actions.clear")}
+                title={t("actions.clear")}
+                onClick={() => {
+                  onSearchChange("");
+                  searchInputRef.current?.focus();
+                }}
+              />
+            ) : null}
           </div>
           <div className="d-flex align-items-center gap-2">
             <div className={styles.cardsFilterMenu} ref={filterMenuRef}>

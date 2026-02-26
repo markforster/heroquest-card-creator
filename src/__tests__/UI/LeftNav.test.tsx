@@ -1,9 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
 import LeftNav from "@/components/Layout/LeftNav";
 
 const openAssets = jest.fn();
-const openStockpile = jest.fn();
+const openRecent = jest.fn();
 const openSettings = jest.fn();
 const openTemplatePicker = jest.fn();
 
@@ -11,10 +12,13 @@ jest.mock("@/components/Providers/AppActionsContext", () => ({
   __esModule: true,
   useAppActions: () => ({
     openAssets,
-    openStockpile,
+    openRecent,
     openSettings,
     openTemplatePicker,
     hasTemplate: true,
+    isRecentOpen: false,
+    isSettingsOpen: false,
+    isTemplatePickerOpen: false,
   }),
 }));
 
@@ -27,6 +31,13 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
         hero: "card-1",
       },
     },
+  }),
+}));
+
+jest.mock("@/components/Providers/EditorSaveContext", () => ({
+  __esModule: true,
+  useEditorSave: () => ({
+    repairCurrentCardThumbnail: jest.fn(),
   }),
 }));
 
@@ -43,9 +54,12 @@ jest.mock("@/i18n/I18nProvider", () => ({
         "actions.cards": "Cards",
         "actions.assets": "Assets",
         "actions.settings": "Settings",
+        "actions.recentCards": "Recent cards",
         "tooltip.openCards": "Browse and load saved cards",
         "tooltip.openAssets": "Open the assets manager",
         "tooltip.openSettings": "Open global settings",
+        "tooltip.chooseTemplate": "Choose template",
+        "tooltip.createFromTemplate": "Create from template",
         "app.title": "HeroQuest Card Creator",
       };
       return lookup[key] ?? key;
@@ -56,26 +70,34 @@ jest.mock("@/i18n/I18nProvider", () => ({
 describe("LeftNav (UI)", () => {
   beforeEach(() => {
     openAssets.mockClear();
-    openStockpile.mockClear();
+    openRecent.mockClear();
     openSettings.mockClear();
     openTemplatePicker.mockClear();
   });
 
   it("renders actions and triggers handlers", () => {
-    render(<LeftNav />);
+    render(
+      <MemoryRouter>
+        <LeftNav />
+      </MemoryRouter>,
+    );
 
-    fireEvent.click(screen.getByRole("button", { name: "Browse and load saved cards" }));
-    expect(openStockpile).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("link", { name: "Browse and load saved cards" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open the assets manager" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Open the assets manager" }));
-    expect(openAssets).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Recent cards" }));
+    expect(openRecent).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole("button", { name: "Open global settings" }));
     expect(openSettings).toHaveBeenCalledTimes(1);
   });
 
   it("renders the language menu placeholder", () => {
-    render(<LeftNav />);
+    render(
+      <MemoryRouter>
+        <LeftNav />
+      </MemoryRouter>,
+    );
     expect(screen.getByTestId("language-menu")).toBeInTheDocument();
   });
 });

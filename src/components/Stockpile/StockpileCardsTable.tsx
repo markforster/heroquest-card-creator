@@ -65,6 +65,11 @@ export default function StockpileCardsTable({
         <div className={styles.stockpileTableCell} role="columnheader">
           {headers.pairing}
         </div>
+        <div
+          className={styles.stockpileTableCell}
+          role="columnheader"
+          aria-label="Selection"
+        />
       </div>
       <div className={styles.stockpileTableBody} role="rowgroup">
         {items.map((card) => {
@@ -80,9 +85,8 @@ export default function StockpileCardsTable({
           const pairedFrontsOverflow = card.paired.frontsOverflow;
 
           return (
-            <button
+            <div
               key={card.id}
-              type="button"
               className={`${styles.stockpileTableRow} ${
                 card.isSelected ? styles.stockpileTableRowSelected : ""
               }`}
@@ -91,6 +95,19 @@ export default function StockpileCardsTable({
                 actions.onCardClick(card.id, event, false, card.isPairingConflict)
               }
               onDoubleClick={() => actions.onCardDoubleClick(card.id)}
+              tabIndex={0}
+              aria-label={card.name}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  actions.onCardSelectSingle(card.id);
+                  return;
+                }
+                if (event.key === " ") {
+                  event.preventDefault();
+                  actions.onCardSetSelected(card.id, !card.isSelected, false, card.isPairingConflict);
+                }
+              }}
             >
               <div
                 className={styles.stockpileTableCell}
@@ -113,7 +130,9 @@ export default function StockpileCardsTable({
                 role="cell"
                 title={card.name}
               >
-                {card.name}
+                <div className={styles.stockpileTableNameInner}>
+                  <span className={styles.stockpileTableNameLabel}>{card.name}</span>
+                </div>
               </div>
               <div className={styles.stockpileTableCell} role="cell">
                 <span
@@ -211,7 +230,28 @@ export default function StockpileCardsTable({
                   )}
                 </div>
               </div>
-            </button>
+              <div
+                className={`${styles.stockpileTableCell} ${styles.stockpileTableSelectCell}`}
+                role="cell"
+              >
+                <input
+                  type="checkbox"
+                  className={`form-check-input hq-checkbox ${styles.stockpileCardSelectCheckbox}`}
+                  checked={card.isSelected}
+                  onChange={(event) => {
+                    event.stopPropagation();
+                    actions.onCardSetSelected(
+                      card.id,
+                      event.target.checked,
+                      false,
+                      card.isPairingConflict,
+                    );
+                  }}
+                  onClick={(event) => event.stopPropagation()}
+                  aria-label={`Select ${card.name}`}
+                />
+              </div>
+            </div>
           );
         })}
       </div>

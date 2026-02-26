@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
@@ -20,12 +21,13 @@ import {
 } from "@/components/Stockpile/stockpile-utils";
 import StockpileActionsBar from "@/components/Stockpile/StockpileActionsBar";
 import StockpileAddToCollectionController from "@/components/Stockpile/StockpileAddToCollectionController";
-import StockpileCollectionController from "@/components/Stockpile/StockpileCollectionController";
+import StockpileCollectionModal from "@/components/Stockpile/StockpileCollectionModal";
 import StockpileConfirmModal from "@/components/Stockpile/StockpileConfirmModal";
 import StockpileContentPane from "@/components/Stockpile/StockpileContentPane";
 import StockpileExportPairPrompt from "@/components/Stockpile/StockpileExportPairPrompt";
 import StockpileFooter from "@/components/Stockpile/StockpileFooter";
 import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import StockpilePairPopover from "@/components/Stockpile/StockpilePairPopover";
 import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
 import StockpileTableThumbPopover from "@/components/Stockpile/StockpileTableThumbPopover";
@@ -35,13 +37,21 @@ import type {
   StockpileCardThumb,
   StockpileCardView,
 } from "@/components/Stockpile/types";
+import { getDeleteCollectionImpact } from "@/components/Stockpile/collection-delete-impact";
+import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
+import { FolderPlus, Pencil, X } from "lucide-react";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { deleteCards, listCards } from "@/lib/cards-db";
-import { listCollections, updateCollection } from "@/lib/collections-db";
+import { deleteCards, listCards, restoreCards, softDeleteCards } from "@/lib/cards-db";
+import {
+  createCollection,
+  deleteCollection,
+  listCollections,
+  updateCollection,
+} from "@/lib/collections-db";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { runBulkExport } from "@/lib/export-cards";
 import { deletePairsForFace, listAllPairs } from "@/lib/pairs-service";
@@ -92,20 +102,35 @@ export default function StockpilePanelContent({
   const isPairMode = isPairFronts || isPairBacks;
   const [confirmDialog, setConfirmDialog] = useState<{
     title: string;
-    body: string;
+    body: ReactNode;
     confirmLabel?: string;
+    extraLabel?: string;
     onConfirm: () => Promise<void> | void;
+    onExtra?: () => Promise<void> | void;
   } | null>(null);
   const [search, setSearch] = useState("");
   const [templateFilter, setTemplateFilter] = useState<string>("all");
   const [showUnpairedOnly, setShowUnpairedOnly] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [isCollectionsDrawerOpen, setIsCollectionsDrawerOpen] = useState(false);
+  const [isManagingCollections, setIsManagingCollections] = useState(false);
+  const [collectionModalState, setCollectionModalState] = useState<{
+    mode: "create" | "edit";
+    collectionId: string | null;
+  } | null>(null);
+  const [deleteCollectionPrompt, setDeleteCollectionPrompt] = useState<{
+    collectionId: string;
+  } | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pairingBaselineIds, setPairingBaselineIds] = useState<string[]>([]);
   const [pairsByBackId, setPairsByBackId] = useState<Map<string, string[]>>(new Map());
   const [backByFrontId, setBackByFrontId] = useState<Map<string, string>>(new Map());
   const [activeFilter, setActiveFilter] = useState<
-    { type: "all" } | { type: "recent" } | { type: "unfiled" } | { type: "collection"; id: string }
+    | { type: "all" }
+    | { type: "recent" }
+    | { type: "unfiled" }
+    | { type: "recentlyDeleted" }
+    | { type: "collection"; id: string }
   >({ type: "all" });
   const {
     state: { activeCardIdByTemplate },
@@ -142,6 +167,8 @@ export default function StockpilePanelContent({
     return new URLSearchParams(location.search).has("missingartwork");
   }, [location.search]);
   const {
+    recentlyDeletedCount,
+    recentlyDeletedTotalCount,
     recentCards,
     filteredCards,
     collectionCounts,
@@ -206,6 +233,14 @@ export default function StockpilePanelContent({
 
   useEffect(() => {
     if (!isOpen) return;
+    if (activeFilter.type !== "recentlyDeleted") return;
+    if (isPairMode || recentlyDeletedTotalCount === 0) {
+      setActiveFilter({ type: "all" });
+    }
+  }, [activeFilter.type, isOpen, isPairMode, recentlyDeletedTotalCount]);
+
+  useEffect(() => {
+    if (!isOpen) return;
     try {
       const stored = window.localStorage.getItem(STOCKPILE_VIEW_STORAGE_KEY);
       if (stored === "grid" || stored === "table") {
@@ -243,6 +278,7 @@ export default function StockpilePanelContent({
     setTemplateFilter("all");
     setSelectedIds([]);
     setShowUnpairedOnly(false);
+    setIsManagingCollections(false);
   }, [isOpen, isPairMode]);
 
   useEffect(() => {
@@ -254,6 +290,12 @@ export default function StockpilePanelContent({
     id: "stockpile-export-prompt",
     isOpen: Boolean(exportPairPrompt),
     onEscape: () => setExportPairPrompt(null),
+  });
+
+  useEscapeModalAware({
+    id: "stockpile-collections-drawer",
+    isOpen: isCollectionsDrawerOpen,
+    onEscape: () => setIsCollectionsDrawerOpen(false),
   });
 
 
@@ -349,6 +391,7 @@ export default function StockpilePanelContent({
     });
     return map;
   }, [cards]);
+  const existingCardIdSet = useMemo(() => new Set(cards.map((card) => card.id)), [cards]);
   const activeBackId = useMemo(() => {
     if (!isPairFronts || !activeCardId) return null;
     return activeCardId;
@@ -370,6 +413,18 @@ export default function StockpilePanelContent({
     activeFilter.type === "collection"
       ? collections.find((collection) => collection.id === activeFilter.id)
       : null;
+  const deleteCollectionName =
+    deleteCollectionPrompt?.collectionId
+      ? collections.find((collection) => collection.id === deleteCollectionPrompt.collectionId)
+          ?.name ?? ""
+      : "";
+  const collectionsToggleLabel = useMemo(() => {
+    if (activeFilter.type === "recent") return t("actions.recentCards");
+    if (activeFilter.type === "recentlyDeleted") return t("actions.recentlyDeleted");
+    if (activeFilter.type === "unfiled") return t("actions.unfiled");
+    if (activeFilter.type === "collection") return activeCollection?.name ?? t("label.collections");
+    return t("actions.allCards");
+  }, [activeCollection?.name, activeFilter.type, t]);
   const visibleCollections = useMemo(() => {
     if (!isPairMode) return collections;
     return collections.filter((collection) => visibleCollectionIds.has(collection.id));
@@ -510,7 +565,36 @@ export default function StockpilePanelContent({
           );
           return;
         }
-        setSelectedIds([id]);
+        setSelectedIds((prev) => resolveSingleSelectToggle(prev, id));
+      },
+      onCardSetSelected: (id, selected, isPairMode, isPairingConflict) => {
+        if (isPairMode) {
+          setSelectedIds((prev) => {
+            const isSelected = prev.includes(id);
+            const next = selected
+              ? isSelected
+                ? prev
+                : [...prev, id]
+              : prev.filter((cardId) => cardId !== id);
+            if (isPairingConflict && next.includes(id)) {
+              setConflictPopoverCardId(id);
+            } else if (isPairingConflict && !next.includes(id)) {
+              setConflictPopoverCardId((current) => (current === id ? null : current));
+            }
+            return next;
+          });
+          return;
+        }
+        setSelectedIds((prev) => {
+          const isSelected = prev.includes(id);
+          if (selected) {
+            return isSelected ? prev : [...prev, id];
+          }
+          return isSelected ? prev.filter((cardId) => cardId !== id) : prev;
+        });
+      },
+      onCardSelectSingle: (id) => {
+        setSelectedIds((prev) => resolveSingleSelectToggle(prev, id));
       },
       onCardDoubleClick: (id) => {
         if (!onLoadCard) return;
@@ -788,192 +872,425 @@ export default function StockpilePanelContent({
     <>
       <div className={styles.stockpilePanel}>
         <div className={styles.stockpilePanelBody}>
-          <StockpileToolbar
-            search={search}
-            onSearchChange={setSearch}
-            templateFilter={templateFilter}
-            onTemplateFilterChange={setTemplateFilter}
-            filterLabel={filterLabel}
-            totalCount={totalCount}
-            faceCounts={faceCounts}
-            typeCounts={typeCounts}
-            isPairMode={isPairMode}
-            isPairBacks={isPairBacks}
-            isPairFronts={isPairFronts}
-            showUnpairedOnly={showUnpairedOnly}
-            onShowUnpairedOnlyChange={setShowUnpairedOnly}
-            showMissingArtworkOnly={showMissingArtworkOnly}
-            onShowMissingArtworkOnlyChange={setShowMissingArtworkOnly}
-            selectedCount={selectedIds.length}
-          />
           <div className={styles.stockpileLayout}>
-            <StockpileSidebar
-              activeFilter={activeFilter}
-              onFilterChange={setActiveFilter}
-              isPairMode={isPairMode}
-              showMissingArtworkOnly={showMissingArtworkOnly}
-              collectionsWithMissingArtwork={collectionsWithMissingArtwork}
-              selectedIds={selectedIds}
-              onClearSelection={() => setSelectedIds([])}
-              recentCardsCount={recentCards.length}
-              overallCount={overallCount}
-              unfiledCount={unfiledCount}
-              visibleCollections={visibleCollections}
-              collectionCounts={collectionCounts}
-              selectedCountByCollection={selectedCountByCollection}
-            />
-            <div className={styles.stockpileContentPane}>
-              {!isPairMode ? (
-                <StockpileActionsBar
-                  viewMode={viewMode}
-                  onViewModeChange={(next) => {
-                    setViewMode(next);
-                    try {
-                      window.localStorage.setItem(STOCKPILE_VIEW_STORAGE_KEY, next);
-                    } catch {
-                      // Ignore localStorage errors.
-                    }
-                  }}
+            <section className={styles.stockpileCenterPanel}>
+              <div className={styles.stockpileCenterStack}>
+                <StockpileToolbar
+                  onOpenCollections={() => setIsCollectionsDrawerOpen(true)}
+                  collectionsToggleLabel={collectionsToggleLabel}
+                  search={search}
+                  onSearchChange={setSearch}
+                  templateFilter={templateFilter}
+                  onTemplateFilterChange={setTemplateFilter}
+                  filterLabel={filterLabel}
+                  totalCount={totalCount}
+                  faceCounts={faceCounts}
+                  typeCounts={typeCounts}
+                  isPairMode={isPairMode}
                   isPairBacks={isPairBacks}
-                  filteredCards={filteredCards}
-                  selectedIds={selectedIds}
-                  activeFilter={activeFilter}
-                  addToCollectionControl={
-                    <StockpileAddToCollectionController
-                      collections={collections}
-                      activeFilter={activeFilter}
-                      visibleSelectedIds={visibleSelectedIds}
-                      onCollectionsUpdated={setCollections}
-                    />
-                  }
-                  onRemoveFromCollection={async () => {
-                    if (activeFilter.type !== "collection") return;
-                    const target = collections.find((item) => item.id === activeFilter.id);
-                    if (!target) return;
-                    try {
-                      const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
-                      await updateCollection(target.id, { cardIds: remaining });
-                      const refreshed = await listCollections();
-                      setCollections(refreshed);
-                      setSelectedIds([]);
-                    } catch (error) {
-                      // eslint-disable-next-line no-console
-                      console.error("[StockpileModal] Failed to remove from collection", error);
-                    }
-                  }}
-                  onDeleteCards={() => {
-                    if (!selectedIds.length) return;
-                    const ids = [...selectedIds];
-                    setConfirmDialog({
-                      title: t("confirm.deleteCardsTitle"),
-                      body: `${t("confirm.deleteCardsBodyPrefix")} ${ids.length} ${
-                        ids.length === 1 ? t("label.card") : t("label.cards")
-                      } ${t("confirm.deleteCardsBodySuffix")}`,
-                      confirmLabel:
-                        ids.length > 1 ? `${t("actions.delete")} (${ids.length})` : t("actions.delete"),
-                      onConfirm: async () => {
-                        try {
-                          await Promise.all(ids.map((id) => deletePairsForFace(id)));
-                          await deleteCards(ids);
-                          const idSet = new Set(ids);
-                          (Object.keys(activeCardIdByTemplate) as TemplateId[]).forEach(
-                            (templateId) => {
-                              const activeId = activeCardIdByTemplate[templateId];
-                              if (!activeId || !idSet.has(activeId)) return;
-                              setActiveCard(templateId, null, null);
-                              setCardDraft(templateId, createDefaultCardData(templateId));
-                              setTemplateDirty(templateId, false);
-                            },
-                          );
-                          const updates = collections
-                            .map((collection) => {
-                              const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
-                              return nextCardIds.length === collection.cardIds.length
-                                ? null
-                                : { id: collection.id, cardIds: nextCardIds };
-                            })
-                            .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
-                          await Promise.all(
-                            updates.map((update) =>
-                              updateCollection(update.id, { cardIds: update.cardIds }),
-                            ),
-                          );
-                          const refreshed = await listCards({ status: "saved" });
-                          setCards(refreshed);
-                          const refreshedCollections = await listCollections();
-                          setCollections(refreshedCollections);
-                          setSelectedIds([]);
-                        } catch (error) {
-                          // eslint-disable-next-line no-console
-                          console.error("[StockpileModal] Failed to delete card", error);
-                        } finally {
-                          setConfirmDialog(null);
-                        }
-                      },
-                    });
-                  }}
-                  onSelectAllToggle={(visibleIds) => {
-                    if (!visibleIds.length) return;
-                    setSelectedIds((prev) => {
-                      const prevSet = new Set(prev);
-                      const allSelected = visibleIds.every((id) => prevSet.has(id));
-                      if (allSelected) {
-                        return prev.filter((id) => !visibleIds.includes(id));
-                      }
-                      const merged = new Set(prev);
-                      visibleIds.forEach((id) => merged.add(id));
-                      return Array.from(merged);
-                    });
-                  }}
+                  isPairFronts={isPairFronts}
+                  showUnpairedOnly={showUnpairedOnly}
+                  onShowUnpairedOnlyChange={setShowUnpairedOnly}
+                  showMissingArtworkOnly={showMissingArtworkOnly}
+                  onShowMissingArtworkOnlyChange={setShowMissingArtworkOnly}
+                  selectedCount={selectedIds.length}
                 />
-              ) : null}
-              <StockpileContentPane
-                filteredCards={filteredCards}
-                search={search}
-                activeFilter={activeFilter}
-                templateFilter={templateFilter}
-                totalCount={totalCount}
-                filterLabel={filterLabel}
-                isTableView={isTableView}
-                cardViews={cardViews}
-                cardActions={cardActions}
-                conflictPopoverCardId={conflictPopoverCardId}
+                {!isPairMode ? (
+                  <StockpileActionsBar
+                    viewMode={viewMode}
+                    onViewModeChange={(next) => {
+                      setViewMode(next);
+                      try {
+                        window.localStorage.setItem(STOCKPILE_VIEW_STORAGE_KEY, next);
+                      } catch {
+                        // Ignore localStorage errors.
+                      }
+                    }}
+                    isPairBacks={isPairBacks}
+                    filteredCards={filteredCards}
+                    selectedIds={selectedIds}
+                    activeFilter={activeFilter}
+                    addToCollectionControl={
+                      activeFilter.type === "recentlyDeleted" ? null : (
+                        <StockpileAddToCollectionController
+                          collections={collections}
+                          activeFilter={activeFilter}
+                          visibleSelectedIds={visibleSelectedIds}
+                          onCollectionsUpdated={setCollections}
+                        />
+                      )
+                    }
+                    onRemoveFromCollection={async () => {
+                      if (activeFilter.type !== "collection") return;
+                      const target = collections.find((item) => item.id === activeFilter.id);
+                      if (!target) return;
+                      try {
+                        const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
+                        await updateCollection(target.id, { cardIds: remaining });
+                        const refreshed = await listCollections();
+                        setCollections(refreshed);
+                        setSelectedIds([]);
+                      } catch (error) {
+                        // eslint-disable-next-line no-console
+                        console.error("[StockpileModal] Failed to remove from collection", error);
+                      }
+                    }}
+                    onRestoreCards={
+                      activeFilter.type === "recentlyDeleted"
+                        ? async () => {
+                            if (!selectedIds.length) return;
+                            const ids = [...selectedIds];
+                            try {
+                              await restoreCards(ids);
+                              const refreshed = await listCards({
+                                status: "saved",
+                                deleted: "include",
+                              });
+                              setCards(refreshed);
+                              setSelectedIds([]);
+                            } catch (error) {
+                              // eslint-disable-next-line no-console
+                              console.error("[StockpileModal] Failed to restore cards", error);
+                            }
+                          }
+                        : undefined
+                    }
+                    onDeleteCards={() => {
+                      if (!selectedIds.length) return;
+                      const ids = [...selectedIds];
+                      const idSet = new Set(ids);
+
+                      const clearActiveCardsForDeletedIds = () => {
+                        (Object.keys(activeCardIdByTemplate) as TemplateId[]).forEach(
+                          (templateId) => {
+                            const activeId = activeCardIdByTemplate[templateId];
+                            if (!activeId || !idSet.has(activeId)) return;
+                            setActiveCard(templateId, null, null);
+                            setCardDraft(templateId, createDefaultCardData(templateId));
+                            setTemplateDirty(templateId, false);
+                          },
+                        );
+                      };
+
+                      const refreshSavedCards = async () => {
+                        const refreshed = await listCards({ status: "saved", deleted: "include" });
+                        setCards(refreshed);
+                      };
+
+                      const runHardDelete = async () => {
+                        await Promise.all(ids.map((id) => deletePairsForFace(id)));
+                        await deleteCards(ids);
+                        clearActiveCardsForDeletedIds();
+                        const updates = collections
+                          .map((collection) => {
+                            const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
+                            return nextCardIds.length === collection.cardIds.length
+                              ? null
+                              : { id: collection.id, cardIds: nextCardIds };
+                          })
+                          .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
+                        await Promise.all(
+                          updates.map((update) =>
+                            updateCollection(update.id, { cardIds: update.cardIds }),
+                          ),
+                        );
+                        await refreshSavedCards();
+                        const refreshedCollections = await listCollections();
+                        setCollections(refreshedCollections);
+                        setSelectedIds([]);
+                      };
+
+                      const runSoftDelete = async () => {
+                        await Promise.all(ids.map((id) => deletePairsForFace(id)));
+                        await softDeleteCards(ids);
+                        clearActiveCardsForDeletedIds();
+                        await refreshSavedCards();
+                        setSelectedIds([]);
+                      };
+
+                      const softTitle = t("confirm.softDeleteCardsTitle");
+                      const softBody = t("confirm.softDeleteCardsBody");
+                      const hardTitle = t("confirm.hardDeleteCardsTitle");
+                      const hardBody = t("confirm.hardDeleteCardsBody");
+
+                      setConfirmDialog({
+                        confirmLabel:
+                          ids.length > 1
+                            ? `${
+                                activeFilter.type === "recentlyDeleted"
+                                  ? t("actions.deletePermanently")
+                                  : t("actions.moveToRecentlyDeleted")
+                              } (${ids.length})`
+                            : activeFilter.type === "recentlyDeleted"
+                              ? t("actions.deletePermanently")
+                              : t("actions.moveToRecentlyDeleted"),
+                        title:
+                          activeFilter.type === "recentlyDeleted" ? hardTitle : softTitle,
+                        body:
+                          activeFilter.type === "recentlyDeleted" ? hardBody : softBody,
+                        ...(activeFilter.type !== "recentlyDeleted"
+                          ? {
+                              extraLabel:
+                                ids.length > 1
+                                  ? `${t("actions.deletePermanently")} (${ids.length})`
+                                  : t("actions.deletePermanently"),
+                              onExtra: async () => {
+                                try {
+                                  await runHardDelete();
+                                } catch (error) {
+                                  // eslint-disable-next-line no-console
+                                  console.error(
+                                    "[StockpileModal] Failed to permanently delete cards",
+                                    error,
+                                  );
+                                } finally {
+                                  setConfirmDialog(null);
+                                }
+                              },
+                            }
+                          : {}),
+                        onConfirm: async () => {
+                          try {
+                            if (activeFilter.type === "recentlyDeleted") {
+                              await runHardDelete();
+                            } else {
+                              await runSoftDelete();
+                            }
+                          } catch (error) {
+                            // eslint-disable-next-line no-console
+                            console.error("[StockpileModal] Failed to delete cards", error);
+                          } finally {
+                            setConfirmDialog(null);
+                          }
+                        },
+                      });
+                    }}
+                    onSelectAllToggle={(visibleIds) => {
+                      if (!visibleIds.length) return;
+                      setSelectedIds((prev) => {
+                        const prevSet = new Set(prev);
+                        const allSelected = visibleIds.every((id) => prevSet.has(id));
+                        if (allSelected) {
+                          return prev.filter((id) => !visibleIds.includes(id));
+                        }
+                        const merged = new Set(prev);
+                        visibleIds.forEach((id) => merged.add(id));
+                        return Array.from(merged);
+                      });
+                    }}
+                  />
+                ) : null}
+                <div className={styles.stockpileCenterResults}>
+                  <StockpileContentPane
+                    filteredCards={filteredCards}
+                    search={search}
+                    activeFilter={activeFilter}
+                    templateFilter={templateFilter}
+                    totalCount={totalCount}
+                    filterLabel={filterLabel}
+                    isTableView={isTableView}
+                    cardViews={cardViews}
+                    cardActions={cardActions}
+                    conflictPopoverCardId={conflictPopoverCardId}
+                    isPairMode={isPairMode}
+                    tableHeaders={tableHeaders}
+                  />
+                </div>
+              </div>
+              <StockpileFooter
                 isPairMode={isPairMode}
-                tableHeaders={tableHeaders}
+                isPairFronts={isPairFronts}
+                selectedIds={selectedIds}
+                activeBackId={activeBackId}
+                cardById={cardById}
+                backByFrontId={backByFrontId}
+                onConfirmSelection={onConfirmSelection}
+                onClose={onClose}
+                baselineSelectedIds={pairingBaselineIds}
+                onBulkExport={handleBulkExport}
+                canExport={canExport}
+                exportLabel={exportLabel}
+                selectedCard={selectedCard}
+                hasMultiSelection={hasMultiSelection}
+                onLoadSelectedCard={() => {
+                  if (!selectedCard || !onLoadCard) return;
+                  onLoadCard(selectedCard);
+                  onClose();
+                }}
+              />
+            </section>
+            {isCollectionsDrawerOpen ? (
+              <div
+                className={styles.stockpileCollectionsBackdrop}
+                role="presentation"
+                onClick={() => setIsCollectionsDrawerOpen(false)}
+              />
+            ) : null}
+            <div
+              className={`${styles.stockpileRightPanel} ${
+                isCollectionsDrawerOpen ? styles.stockpileRightPanelDrawerOpen : ""
+              }`}
+            >
+              <StockpileSidebar
+                footerActions={
+                  !isPairMode ? (
+                    <div className={styles.stockpileCollectionsFooterActions}>
+                      <button
+                        type="button"
+                        className={styles.stockpileCollectionsFooterButton}
+                        title={t("actions.newCollection")}
+                        aria-label={t("actions.newCollection")}
+                        onClick={() =>
+                          setCollectionModalState({ mode: "create", collectionId: null })
+                        }
+                      >
+                        <FolderPlus size={18} aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.stockpileCollectionsFooterButton} ${
+                          isManagingCollections ? styles.stockpileCollectionsFooterButtonActive : ""
+                        }`}
+                        title={isManagingCollections ? t("actions.cancel") : t("actions.manageCollections")}
+                        aria-label={isManagingCollections ? t("actions.cancel") : t("actions.manageCollections")}
+                        aria-pressed={isManagingCollections}
+                        onClick={() => setIsManagingCollections((prev) => !prev)}
+                      >
+                        {isManagingCollections ? (
+                          <X size={18} aria-hidden="true" />
+                        ) : (
+                          <Pencil size={18} aria-hidden="true" />
+                        )}
+                      </button>
+                    </div>
+                  ) : null
+                }
+                onRequestClose={() => setIsCollectionsDrawerOpen(false)}
+                onEditCollection={(collectionId) => {
+                  setCollectionModalState({ mode: "edit", collectionId });
+                }}
+                onDeleteCollection={(collectionId) => {
+                  setDeleteCollectionPrompt({ collectionId });
+                }}
+                isManagingCollections={isManagingCollections}
+                activeFilter={activeFilter}
+                onFilterChange={(next) => {
+                  setActiveFilter(next);
+                  setIsCollectionsDrawerOpen(false);
+                }}
+                isPairMode={isPairMode}
+                showMissingArtworkOnly={showMissingArtworkOnly}
+                collectionsWithMissingArtwork={collectionsWithMissingArtwork}
+                selectedIds={selectedIds}
+                onClearSelection={() => setSelectedIds([])}
+                recentCardsCount={recentCards.length}
+                recentlyDeletedCount={recentlyDeletedCount}
+                recentlyDeletedTotalCount={recentlyDeletedTotalCount}
+                overallCount={overallCount}
+                unfiledCount={unfiledCount}
+                visibleCollections={visibleCollections}
+                collectionCounts={collectionCounts}
+                selectedCountByCollection={selectedCountByCollection}
               />
             </div>
           </div>
-          <StockpileFooter
-            isPairMode={isPairMode}
-            isPairFronts={isPairFronts}
-            selectedIds={selectedIds}
-            activeBackId={activeBackId}
-            cardById={cardById}
-            backByFrontId={backByFrontId}
-            onConfirmSelection={onConfirmSelection}
-            onClose={onClose}
-            baselineSelectedIds={pairingBaselineIds}
-            collectionControls={
-              <StockpileCollectionController
-                activeFilter={activeFilter}
-                collections={collections}
-                onCollectionsUpdated={setCollections}
-                onActiveFilterChange={setActiveFilter}
-              />
-            }
-            onBulkExport={handleBulkExport}
-            canExport={canExport}
-            exportLabel={exportLabel}
-            selectedCard={selectedCard}
-            hasMultiSelection={hasMultiSelection}
-            onLoadSelectedCard={() => {
-              if (!selectedCard || !onLoadCard) return;
-              onLoadCard(selectedCard);
-              onClose();
-            }}
-          />
         </div>
       </div>
+      {collectionModalState ? (
+        <StockpileCollectionModal
+          isOpen={Boolean(collectionModalState)}
+          mode={collectionModalState.mode}
+          collectionId={collectionModalState.collectionId}
+          collections={collections}
+          onCreate={async (name, description) => {
+            try {
+              const created = await createCollection({ name, description });
+              setActiveFilter({ type: "collection", id: created.id });
+              const refreshed = await listCollections();
+              setCollections(refreshed);
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.error("[StockpileModal] Failed to create collection", error);
+            }
+          }}
+          onUpdate={async (id, name, description) => {
+            try {
+              await updateCollection(id, { name, description });
+              const refreshed = await listCollections();
+              setCollections(refreshed);
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.error("[StockpileModal] Failed to update collection", error);
+            }
+          }}
+          onClose={() => setCollectionModalState(null)}
+        />
+      ) : null}
+      {deleteCollectionPrompt ? (
+        <ConfirmModal
+          isOpen={Boolean(deleteCollectionPrompt)}
+          title={t("confirm.deleteCollectionTitle")}
+          confirmLabel={t("actions.delete")}
+          cancelLabel={t("actions.cancel")}
+          onConfirm={async () => {
+            const current = deleteCollectionPrompt;
+            setDeleteCollectionPrompt(null);
+            if (!current) return;
+            try {
+              await deleteCollection(current.collectionId);
+              const refreshed = await listCollections();
+              setCollections(refreshed);
+              if (activeFilter.type === "collection" && activeFilter.id === current.collectionId) {
+                setActiveFilter({ type: "all" });
+              }
+              if (typeof window !== "undefined") {
+                window.localStorage.removeItem("hqcc.selectedCollectionId");
+              }
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.error("[StockpileModal] Failed to delete collection", error);
+            }
+          }}
+          onCancel={() => setDeleteCollectionPrompt(null)}
+        >
+          {(() => {
+            const collectionId = deleteCollectionPrompt.collectionId;
+            const impact = getDeleteCollectionImpact({
+              collectionId,
+              collections: collections.map((collection) => ({
+                id: collection.id,
+                name: collection.name,
+                cardIds: collection.cardIds,
+              })),
+              existingCardIdSet,
+            });
+            if (!impact) {
+              return `${t("confirm.deleteCollectionBodyPrefix")} "${deleteCollectionName}"? ${t(
+                "confirm.deleteCollectionBodySuffix",
+              )}`;
+            }
+            return (
+              <div className="d-flex flex-column gap-2">
+                <div className="fw-semibold">
+                  {formatMessageWith("confirm.deleteCollectionHeading", { name: impact.name })}
+                </div>
+                <div>
+                  {formatMessageWith("confirm.deleteCollectionRemovedCount", {
+                    count: impact.removedCount,
+                  })}
+                </div>
+                {impact.unfiledCount > 0 ? (
+                  <div>
+                    {formatMessageWith("confirm.deleteCollectionMoveToUnfiled", {
+                      count: impact.unfiledCount,
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })()}
+        </ConfirmModal>
+      ) : null}
       <StockpilePairPopover
         hoveredPairCardId={hoveredPairCardId}
         pairPopoverAnchor={pairPopoverAnchor}

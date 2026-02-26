@@ -17,6 +17,66 @@ describe("listCards", () => {
     jest.restoreAllMocks();
   });
 
+  it("excludes soft-deleted cards by default", async () => {
+    const cards = [
+      card({ id: "1", templateId: "hero", status: "saved", name: "A", nameLower: "a" }),
+      card({
+        id: "2",
+        templateId: "hero",
+        status: "saved",
+        name: "B",
+        nameLower: "b",
+        deletedAt: 123,
+      }),
+    ];
+    const harness = installMockIndexedDbCards({ hasCardsStore: true, initialCards: cards, indexNames: [] });
+
+    const result = await listCards();
+    expect(result.map((r) => r.id)).toEqual(["1"]);
+
+    harness.cleanup();
+  });
+
+  it("can include soft-deleted cards", async () => {
+    const cards = [
+      card({ id: "1", templateId: "hero", status: "saved", name: "A", nameLower: "a" }),
+      card({
+        id: "2",
+        templateId: "hero",
+        status: "saved",
+        name: "B",
+        nameLower: "b",
+        deletedAt: 123,
+      }),
+    ];
+    const harness = installMockIndexedDbCards({ hasCardsStore: true, initialCards: cards, indexNames: [] });
+
+    const result = await listCards({ deleted: "include" });
+    expect(result.map((r) => r.id)).toEqual(["1", "2"]);
+
+    harness.cleanup();
+  });
+
+  it("can list only soft-deleted cards", async () => {
+    const cards = [
+      card({ id: "1", templateId: "hero", status: "saved", name: "A", nameLower: "a" }),
+      card({
+        id: "2",
+        templateId: "hero",
+        status: "saved",
+        name: "B",
+        nameLower: "b",
+        deletedAt: 123,
+      }),
+    ];
+    const harness = installMockIndexedDbCards({ hasCardsStore: true, initialCards: cards, indexNames: [] });
+
+    const result = await listCards({ deleted: "only" });
+    expect(result.map((r) => r.id)).toEqual(["2"]);
+
+    harness.cleanup();
+  });
+
   it("uses templateId_status index when available", async () => {
     const cards = [
       card({ id: "1", templateId: "hero", status: "saved", name: "A", nameLower: "a" }),
@@ -121,4 +181,3 @@ describe("listCards", () => {
     harness.cleanup();
   });
 });
-

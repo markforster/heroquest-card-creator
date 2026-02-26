@@ -294,12 +294,13 @@ export type ListCardsFilter = {
   templateId?: TemplateId;
   status?: CardStatus;
   search?: string;
+  deleted?: "exclude" | "include" | "only";
 };
 
 export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecord[]> {
   const store = await getCardsStore("readonly");
 
-  const { templateId, status, search } = filter;
+  const { templateId, status, search, deleted = "exclude" } = filter;
   const cards: CardRecord[] = [];
 
   await new Promise<void>((resolve, reject) => {
@@ -335,12 +336,31 @@ export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecor
 
   let filtered = cards;
 
+  if (deleted === "exclude") {
+    filtered = filtered.filter((card) => card.deletedAt == null);
+  } else if (deleted === "only") {
+    filtered = filtered.filter((card) => typeof card.deletedAt === "number");
+  }
+
   if (search) {
     const q = search.toLocaleLowerCase();
     filtered = filtered.filter((card) => card.nameLower.includes(q));
   }
 
   return filtered;
+}
+
+export async function softDeleteCards(
+  ids: string[],
+  deletedAt: number = Date.now(),
+): Promise<void> {
+  if (!ids.length) return;
+  await updateCards(ids, { deletedAt });
+}
+
+export async function restoreCards(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  await updateCards(ids, { deletedAt: null });
 }
 
 export async function deleteCard(id: string): Promise<void> {

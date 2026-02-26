@@ -12,6 +12,7 @@ type StockpileAddToCollectionModalProps = {
     | { type: "all" }
     | { type: "recent" }
     | { type: "unfiled" }
+    | { type: "recentlyDeleted" }
     | { type: "collection"; id: string };
   visibleSelectedIds: string[];
   onSubmit: (collectionId: string, cardIds: string[]) => Promise<void>;

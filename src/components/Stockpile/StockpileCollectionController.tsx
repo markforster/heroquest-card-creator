@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
 import StockpileCollectionModal from "@/components/Stockpile/StockpileCollectionModal";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
-import { createCollection, deleteCollection, listCollections, updateCollection } from "@/lib/collections-db";
+import { createCollection, listCollections, updateCollection } from "@/lib/collections-db";
 import type { CollectionRecord } from "@/types/collections-db";
 
 type StockpileCollectionControllerProps = {
@@ -13,6 +13,7 @@ type StockpileCollectionControllerProps = {
     | { type: "all" }
     | { type: "recent" }
     | { type: "unfiled" }
+    | { type: "recentlyDeleted" }
     | { type: "collection"; id: string };
   collections: CollectionRecord[];
   onCollectionsUpdated: (next: CollectionRecord[]) => void;
@@ -21,6 +22,7 @@ type StockpileCollectionControllerProps = {
       | { type: "all" }
       | { type: "recent" }
       | { type: "unfiled" }
+      | { type: "recentlyDeleted" }
       | { type: "collection"; id: string },
   ) => void;
 };
@@ -74,7 +76,7 @@ export default function StockpileCollectionController({
       <StockpileCollectionModal
         isOpen={isOpen}
         mode={mode}
-        activeFilter={activeFilter}
+        collectionId={mode === "edit" && activeFilter.type === "collection" ? activeFilter.id : null}
         collections={collections}
         onCreate={async (name, description) => {
           try {
@@ -95,20 +97,6 @@ export default function StockpileCollectionController({
           } catch (error) {
             // eslint-disable-next-line no-console
             console.error("[StockpileModal] Failed to update collection", error);
-          }
-        }}
-        onDelete={async (id) => {
-          try {
-            await deleteCollection(id);
-            const refreshed = await listCollections();
-            onCollectionsUpdated(refreshed);
-            onActiveFilterChange({ type: "all" });
-            if (typeof window !== "undefined") {
-              window.localStorage.removeItem("hqcc.selectedCollectionId");
-            }
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error("[StockpileModal] Failed to delete collection", error);
           }
         }}
         onClose={() => setIsOpen(false)}

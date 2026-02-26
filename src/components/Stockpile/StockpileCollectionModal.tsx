@@ -3,44 +3,36 @@
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type StockpileCollectionModalProps = {
   isOpen: boolean;
   mode: "create" | "edit";
-  activeFilter:
-    | { type: "all" }
-    | { type: "recent" }
-    | { type: "unfiled" }
-    | { type: "collection"; id: string };
-  collections: Array<{ id: string; name: string; description?: string }>;
+  collectionId?: string | null;
+  collections: Array<{ id: string; name: string; description?: string; cardIds?: string[] }>;
   onCreate: (name: string, description?: string) => Promise<void>;
   onUpdate: (id: string, name: string, description?: string) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
   onClose: () => void;
 };
 
 export default function StockpileCollectionModal({
   isOpen,
   mode,
-  activeFilter,
+  collectionId = null,
   collections,
   onCreate,
   onUpdate,
-  onDelete,
   onClose,
 }: StockpileCollectionModalProps) {
   const { t } = useI18n();
   const [collectionName, setCollectionName] = useState("");
   const [collectionDescription, setCollectionDescription] = useState("");
   const [collectionNameError, setCollectionNameError] = useState<string | null>(null);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
-    if (mode === "edit" && activeFilter.type === "collection") {
-      const target = collections.find((item) => item.id === activeFilter.id);
+    if (mode === "edit" && collectionId) {
+      const target = collections.find((item) => item.id === collectionId);
       if (target) {
         setCollectionName(target.name);
         setCollectionDescription(target.description ?? "");
@@ -50,7 +42,7 @@ export default function StockpileCollectionModal({
       setCollectionDescription("");
     }
     setCollectionNameError(null);
-  }, [isOpen, mode, activeFilter, collections]);
+  }, [isOpen, mode, collectionId, collections]);
 
   if (!isOpen) return null;
 
@@ -75,8 +67,8 @@ export default function StockpileCollectionModal({
             }
             const normalized = trimmedName.toLocaleLowerCase();
             const conflict = collections.some((collection) => {
-              if (mode === "edit" && activeFilter.type === "collection") {
-                if (collection.id === activeFilter.id) return false;
+              if (mode === "edit" && collectionId) {
+                if (collection.id === collectionId) return false;
               }
               return collection.name.toLocaleLowerCase() === normalized;
             });
@@ -87,9 +79,9 @@ export default function StockpileCollectionModal({
             setCollectionNameError(null);
             try {
               if (mode === "edit") {
-                if (activeFilter.type !== "collection") return;
+                if (!collectionId) return;
                 await onUpdate(
-                  activeFilter.id,
+                  collectionId,
                   trimmedName,
                   collectionDescription.trim() || undefined,
                 );
@@ -136,18 +128,6 @@ export default function StockpileCollectionModal({
             </label>
           </div>
           <div className={styles.stockpileOverlayActions}>
-            {mode === "edit" ? (
-              <button
-                type="button"
-                className="btn btn-outline-danger btn-sm"
-                onClick={() => {
-                  if (activeFilter.type !== "collection") return;
-                  setIsDeleteConfirmOpen(true);
-                }}
-              >
-                {t("actions.delete")}
-              </button>
-            ) : null}
             <button type="submit" className="btn btn-primary btn-sm">
               {mode === "edit" ? t("actions.save") : t("actions.create")}
             </button>
@@ -157,28 +137,6 @@ export default function StockpileCollectionModal({
           </div>
         </form>
       </div>
-      <ConfirmModal
-        isOpen={isDeleteConfirmOpen}
-        title={t("confirm.deleteCollectionTitle")}
-        confirmLabel={t("actions.delete")}
-        cancelLabel={t("actions.cancel")}
-        onConfirm={async () => {
-          if (activeFilter.type !== "collection") return;
-          try {
-            await onDelete(activeFilter.id);
-            setIsDeleteConfirmOpen(false);
-            onClose();
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error("[StockpileModal] Failed to delete collection", error);
-          }
-        }}
-        onCancel={() => setIsDeleteConfirmOpen(false)}
-      >
-        {`${t("confirm.deleteCollectionBodyPrefix")} "${collectionName}"? ${t(
-          "confirm.deleteCollectionBodySuffix",
-        )}`}
-      </ConfirmModal>
     </div>
   );
 }

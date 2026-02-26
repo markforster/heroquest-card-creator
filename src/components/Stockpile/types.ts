@@ -36,10 +36,17 @@ export type StockpileCardView = {
 export type StockpileCardActions = {
   onCardClick: (
     id: string,
-    event: MouseEvent<HTMLButtonElement>,
+    event: MouseEvent<HTMLElement>,
     isPairMode: boolean,
     isPairingConflict: boolean,
   ) => void;
+  onCardSetSelected: (
+    id: string,
+    selected: boolean,
+    isPairMode: boolean,
+    isPairingConflict: boolean,
+  ) => void;
+  onCardSelectSingle: (id: string) => void;
   onCardDoubleClick: (id: string) => void;
   onPairHoverEnter: (id: string, rect: DOMRect) => void;
   onPairHoverLeave: (id: string) => void;

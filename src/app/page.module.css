@@ -3078,19 +3078,92 @@
 
 .stockpileLayout {
   display: flex;
-  gap: var(--space-10);
+  gap: 0;
   align-items: stretch;
   flex: 1 1 auto;
   min-height: 0;
 }
 
+.stockpileCenterPanel {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-14) var(--space-14) 0 var(--space-14);
+}
+
+.stockpileCenterStack {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-14);
+}
+
+.stockpileCenterStack .assetsToolbar {
+  margin-bottom: 0;
+}
+
+.stockpileCenterStack .stockpileActionsBar {
+  margin-bottom: 0;
+}
+
+.stockpileCenterResults {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.stockpileRightPanel {
+  flex: 0 0 20em;
+  max-width: 20em;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
+  border-left: 1px solid var(--hq-black);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.03);
+}
+
+.stockpileCollectionsBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 90;
+}
+
+.stockpileRightPanel .stockpileSidebar {
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  padding: var(--space-10) var(--space-9);
+}
+
 .stockpileSidebar {
-  flex: 0 0 18em;
-  max-width: 18em;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: var(--space-7);
   border-radius: var(--radius-md);
   border: 1px solid #222;
   background: rgba(0, 0, 0, 0.25);
+}
+
+.stockpileSidebarHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-6);
+}
+
+.stockpileSidebarHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
 }
 
 .stockpileSidebarHeader {
@@ -3099,6 +3172,22 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--hq-accent);
+}
+
+.stockpileSidebarCloseButton {
+  display: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--hq-text);
+  border-radius: var(--radius-sm);
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+}
+
+.stockpileSidebarCloseButton:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .stockpileSidebarList {
@@ -3120,6 +3209,56 @@
   gap: var(--space-2);
 }
 
+.stockpileSidebarBottomToolbar {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.stockpileSidebarBottomLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+.stockpileSidebarBottomRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+.stockpileCollectionsFooterActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.stockpileCollectionsFooterButton {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--hq-text);
+  border-radius: var(--radius-sm);
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.stockpileCollectionsFooterButton:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.stockpileCollectionsFooterButtonActive {
+  border-color: rgba(230, 179, 90, 0.65);
+  background: rgba(230, 179, 90, 0.1);
+}
+
 .stockpileSidebarItem {
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
@@ -3129,6 +3268,76 @@
   text-align: left;
   font-size: var(--text-lg);
   cursor: pointer;
+}
+
+.stockpileSidebarItemLabel {
+  /* Allow flex truncation (ellipsis) inside sidebar items. */
+  min-width: 0;
+}
+
+.stockpileSidebarItem:focus-visible {
+  outline: 2px solid var(--hq-focus-ring);
+  outline-offset: 2px;
+}
+
+.stockpileSidebarItemTail {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 0 0 auto;
+}
+
+.stockpileSidebarItemActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.stockpileSidebarItem:hover .stockpileSidebarItemActions,
+.stockpileSidebarItem:focus-within .stockpileSidebarItemActions {
+  opacity: 1;
+}
+
+.stockpileSidebarManaging .stockpileSidebarItemActions {
+  opacity: 1;
+}
+
+.stockpileSidebarItemActionButton {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--hq-text);
+  border-radius: var(--radius-sm);
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.stockpileSidebarItemActionButton:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.stockpileSidebarItemActionButtonEdit {
+  color: #4ade80;
+}
+
+.stockpileSidebarItemActionButtonDelete {
+  color: #f87171;
+}
+
+.stockpileSidebarItemActionButtonEdit:hover {
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+.stockpileSidebarItemActionButtonDelete:hover {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
 }
 
 .stockpileTreeItem {
@@ -3207,6 +3416,93 @@
   width: 18em;
   max-width: 18em;
   flex: 0 0 18em;
+}
+
+.cardsSearchGroup {
+  position: relative;
+}
+
+.cardsSearchClearButton {
+  position: absolute;
+  right: 0.45rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  opacity: 0.6;
+}
+
+.cardsSearchClearButton:hover {
+  opacity: 1;
+}
+
+.cardsSearchInputWithClear {
+  padding-right: 2rem;
+}
+
+.collectionsToggleButton {
+  display: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--hq-text);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.55rem;
+  align-items: baseline;
+  gap: var(--space-3);
+  line-height: 1;
+}
+
+.collectionsToggleButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.collectionsToggleTitle {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hq-accent);
+}
+
+.collectionsToggleValue {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 14ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stockpileRightPanelDrawerOpen {
+}
+
+@media (max-width: 1100px) {
+  .collectionsToggleButton {
+    display: inline-flex;
+  }
+
+  .stockpileRightPanel {
+    position: fixed;
+    top: var(--space-7);
+    right: var(--space-7);
+    bottom: var(--space-7);
+    width: min(24rem, calc(100vw - 2 * var(--space-7)));
+    max-width: none;
+    transform: translateX(110%);
+    transition: transform 180ms ease;
+    pointer-events: none;
+    z-index: 100;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--hq-black);
+    box-shadow: 0 12px 28px var(--hq-black-45);
+  }
+
+  .stockpileRightPanelDrawerOpen {
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .stockpileSidebarCloseButton {
+    display: inline-flex;
+  }
 }
 .stockpileContentPane,
 .stockpilePanel {
@@ -3456,7 +3752,7 @@
 .stockpileTableHeader,
 .stockpileTableRow {
   display: grid;
-  grid-template-columns: 72px 2fr 1.2fr 0.8fr 1.2fr 96px;
+  grid-template-columns: 72px 2fr 1.2fr 0.8fr 1.2fr 96px 44px;
   align-items: center;
 }
 
@@ -3517,6 +3813,17 @@
 .stockpileTableName {
   font-weight: 600;
   color: var(--hq-gray-200);
+}
+
+.stockpileTableNameInner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.stockpileTableNameLabel {
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3539,6 +3846,12 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
+}
+
+.stockpileTableSelectCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .stockpileTableThumbPopover {
@@ -3885,6 +4198,51 @@ button.assetsKindBadge:disabled {
   padding-left: var(--space-1);
 }
 
+.stockpileGridVariant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  height: 100%;
+}
+
+.stockpileGridRowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.stockpileGridRowBody {
+  display: flex;
+  flex: 1 1 auto;
+  gap: var(--space-3);
+  min-height: 0;
+}
+
+.stockpileGridColumnThumb {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.stockpileGridColumnMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 0 0 auto;
+}
+
+.stockpileGridTypeVertical {
+  transform: rotate(-90deg);
+  transform-origin: center;
+  white-space: nowrap;
+}
+
+.stockpileGridRowFooter {
+  display: flex;
+  align-items: center;
+}
+
 .cardsConflictIndicator {
   position: absolute;
   top: 6px;
@@ -3977,6 +4335,21 @@ button.assetsKindBadge:disabled {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.stockpileCardTitleRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.stockpileCardSelectCheckbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex: 0 0 auto;
 }
 
 .cardsItemDetails {
