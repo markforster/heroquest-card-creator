@@ -33,6 +33,7 @@ describe("StockpileCardsGrid (UI)", () => {
         items={[item]}
         isPairMode={false}
         conflictPopoverCardId={null}
+        dragEnabled={false}
         actions={{
           onCardClick: jest.fn(),
           onCardSetSelected,
@@ -56,4 +57,3 @@ describe("StockpileCardsGrid (UI)", () => {
     expect(onCardSetSelected).toHaveBeenCalledWith("card-1", false, false, false);
   });
 });
-

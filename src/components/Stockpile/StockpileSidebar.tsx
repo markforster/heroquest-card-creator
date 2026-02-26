@@ -1,6 +1,7 @@
 "use client";
 
-import { Fragment, useEffect, useMemo } from "react";
+import { useDroppable } from "@dnd-kit/core";
+import { Fragment, useEffect, useMemo, useRef } from "react";
 import {
   Folder,
   FolderDown,
@@ -10,8 +11,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useRef } from "react";
-
 import styles from "@/app/page.module.css";
 import { buildCollectionsTree } from "@/components/Stockpile/collections-tree";
 import { useCollectionsTreeSettings } from "@/components/Providers/CollectionsTreeSettingsContext";
@@ -25,6 +24,7 @@ type StockpileSidebarProps = {
   onEditCollection?: (collectionId: string) => void;
   onDeleteCollection?: (collectionId: string) => void;
   isManagingCollections?: boolean;
+  dragEnabled: boolean;
   activeFilter:
     | { type: "all" }
     | { type: "recent" }
@@ -61,6 +61,7 @@ export default function StockpileSidebar({
   onEditCollection,
   onDeleteCollection,
   isManagingCollections = false,
+  dragEnabled,
   activeFilter,
   onFilterChange,
   isPairMode,
@@ -233,92 +234,117 @@ export default function StockpileSidebar({
     return () => window.cancelAnimationFrame(raf);
   }, [activeFilter, expandedPaths, isManagingCollections, treeEnabled, treeSettingsReady]);
 
+  const CollectionItem = ({
+    collection,
+    depth,
+    showLeafMarker,
+  }: {
+    collection: { id: string; name: string; description?: string; fullName?: string };
+    depth: number;
+    showLeafMarker: boolean;
+  }) => {
+    const { setNodeRef, isOver } = useDroppable({
+      id: `collection:${collection.id}`,
+      disabled: !dragEnabled || isManagingCollections,
+    });
+    return (
+      <div
+        ref={setNodeRef}
+        role="button"
+        tabIndex={0}
+        data-collection-id={collection.id}
+        className={`${styles.stockpileSidebarItem} ${styles.stockpileTreeItem} ${
+          activeFilter.type === "collection" && activeFilter.id === collection.id
+            ? styles.stockpileSidebarItemActive
+            : ""
+        } ${isOver ? styles.stockpileSidebarItemDropOver : ""} d-flex align-items-center gap-2`}
+        style={{ ["--tree-depth" as never]: depth }}
+        onClick={() => {
+          onFilterChange({ type: "collection", id: collection.id });
+          if (!isPairMode) {
+            onClearSelection();
+          }
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          onFilterChange({ type: "collection", id: collection.id });
+          if (!isPairMode) {
+            onClearSelection();
+          }
+        }}
+        title={collection.description || collection.fullName || collection.name}
+      >
+        {showLeafMarker ? (
+          <LibrarySquare
+            className={`${styles.stockpileTreeIcon} ${styles.stockpileTreeIconLeaf}`}
+          />
+        ) : null}
+        <span className={`${styles.stockpileSidebarItemLabel} flex-grow-1 text-truncate fs-6`}>
+          {collection.name}
+        </span>
+        <div className={styles.stockpileSidebarItemTail}>
+          {!isPairMode && !isManagingCollections ? (
+            <span
+              className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge} ${
+                showMissingArtworkOnly && collectionsWithMissingArtwork.has(collection.id)
+                  ? styles.stockpileCountBadgeAlert
+                  : ""
+              }`}
+            >
+              {collectionCounts.get(collection.id) ?? 0}
+            </span>
+          ) : null}
+          {isPairMode && selectedCountByCollection.get(collection.id) ? (
+            <span className={styles.stockpileSelectedDot} aria-hidden="true" />
+          ) : null}
+          {!isPairMode &&
+          isManagingCollections &&
+          onEditCollection &&
+          onDeleteCollection ? (
+            <div className={styles.stockpileSidebarItemActions}>
+              <button
+                type="button"
+                className={`${styles.stockpileSidebarItemActionButton} ${styles.stockpileSidebarItemActionButtonEdit}`}
+                title={t("actions.editCollection")}
+                aria-label={t("actions.editCollection")}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEditCollection(collection.id);
+                }}
+              >
+                <Pencil size={16} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className={`${styles.stockpileSidebarItemActionButton} ${styles.stockpileSidebarItemActionButtonDelete}`}
+                title={t("actions.delete")}
+                aria-label={t("actions.delete")}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDeleteCollection(collection.id);
+                }}
+              >
+                <Trash2 size={16} aria-hidden="true" />
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+  };
+
   const renderCollectionButton = (
     collection: { id: string; name: string; description?: string; fullName?: string },
     depth: number,
     showLeafMarker: boolean,
   ) => (
-    <div
+    <CollectionItem
       key={collection.id}
-      role="button"
-      tabIndex={0}
-      data-collection-id={collection.id}
-      className={`${styles.stockpileSidebarItem} ${styles.stockpileTreeItem} ${
-        activeFilter.type === "collection" && activeFilter.id === collection.id
-          ? styles.stockpileSidebarItemActive
-          : ""
-      } d-flex align-items-center gap-2`}
-      style={{ ["--tree-depth" as never]: depth }}
-      onClick={() => {
-        onFilterChange({ type: "collection", id: collection.id });
-        if (!isPairMode) {
-          onClearSelection();
-        }
-      }}
-      onKeyDown={(event) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        onFilterChange({ type: "collection", id: collection.id });
-        if (!isPairMode) {
-          onClearSelection();
-        }
-      }}
-      title={collection.description || collection.fullName || collection.name}
-    >
-      {showLeafMarker ? (
-        <LibrarySquare className={`${styles.stockpileTreeIcon} ${styles.stockpileTreeIconLeaf}`} />
-      ) : null}
-      <span className={`${styles.stockpileSidebarItemLabel} flex-grow-1 text-truncate fs-6`}>
-        {collection.name}
-      </span>
-      <div className={styles.stockpileSidebarItemTail}>
-        {!isPairMode && !isManagingCollections ? (
-          <span
-            className={`badge rounded-pill px-2 py-1 ${styles.stockpileCountBadge} ${
-              showMissingArtworkOnly && collectionsWithMissingArtwork.has(collection.id)
-                ? styles.stockpileCountBadgeAlert
-                : ""
-            }`}
-          >
-            {collectionCounts.get(collection.id) ?? 0}
-          </span>
-        ) : null}
-        {isPairMode && selectedCountByCollection.get(collection.id) ? (
-          <span className={styles.stockpileSelectedDot} aria-hidden="true" />
-        ) : null}
-        {!isPairMode &&
-        isManagingCollections &&
-        onEditCollection &&
-        onDeleteCollection ? (
-          <div className={styles.stockpileSidebarItemActions}>
-            <button
-              type="button"
-              className={`${styles.stockpileSidebarItemActionButton} ${styles.stockpileSidebarItemActionButtonEdit}`}
-              title={t("actions.editCollection")}
-              aria-label={t("actions.editCollection")}
-              onClick={(event) => {
-                event.stopPropagation();
-                onEditCollection(collection.id);
-              }}
-            >
-              <Pencil size={16} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              className={`${styles.stockpileSidebarItemActionButton} ${styles.stockpileSidebarItemActionButtonDelete}`}
-              title={t("actions.delete")}
-              aria-label={t("actions.delete")}
-              onClick={(event) => {
-                event.stopPropagation();
-                onDeleteCollection(collection.id);
-              }}
-            >
-              <Trash2 size={16} aria-hidden="true" />
-            </button>
-          </div>
-        ) : null}
-      </div>
-    </div>
+      collection={collection}
+      depth={depth}
+      showLeafMarker={showLeafMarker}
+    />
   );
 
   const renderTreeNodes = (nodes: ReturnType<typeof buildCollectionsTree>["nodes"], depth: number) =>

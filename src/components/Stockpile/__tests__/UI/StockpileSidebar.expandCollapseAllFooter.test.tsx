@@ -74,6 +74,7 @@ describe("StockpileSidebar (UI)", () => {
         activeFilter={{ type: "collection", id: "col-1" }}
         onFilterChange={() => {}}
         isPairMode={false}
+        dragEnabled={false}
         showMissingArtworkOnly={false}
         collectionsWithMissingArtwork={new Set()}
         selectedIds={[]}

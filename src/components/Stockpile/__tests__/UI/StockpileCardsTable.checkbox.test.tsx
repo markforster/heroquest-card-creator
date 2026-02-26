@@ -31,6 +31,7 @@ describe("StockpileCardsTable (UI)", () => {
     render(
       <StockpileCardsTable
         items={[item]}
+        dragEnabled={false}
         headers={{
           card: "Card",
           name: "Name",
@@ -62,4 +63,3 @@ describe("StockpileCardsTable (UI)", () => {
     expect(onCardSetSelected).toHaveBeenCalledWith("card-1", true, false, false);
   });
 });
-

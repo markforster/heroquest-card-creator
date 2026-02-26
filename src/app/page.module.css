@@ -3116,6 +3116,10 @@
   flex-direction: column;
 }
 
+.stockpileCenterResultsNoScroll .assetsGridContainer {
+  overflow: hidden;
+}
+
 .stockpileRightPanel {
   flex: 0 0 20em;
   max-width: 20em;
@@ -4196,6 +4200,47 @@ button.assetsKindBadge:disabled {
   gap: var(--space-6);
   margin-bottom: var(--space-2);
   padding-left: var(--space-1);
+}
+
+.stockpileCardDragging {
+  opacity: 0.65;
+}
+
+.stockpileDragGhost {
+  width: 120px;
+  height: 160px;
+  background: var(--hq-surface-card);
+  border: 1px solid var(--hq-surface-700);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-3);
+  pointer-events: none;
+}
+
+.stockpileDragGhostLabel {
+  font-size: var(--text-xs);
+  color: var(--hq-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stockpileDragGhostCount {
+  align-self: flex-end;
+  background: var(--hq-accent);
+  color: #111;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+}
+
+.stockpileSidebarItemDropOver {
+  border-color: var(--hq-accent);
+  background: rgba(230, 179, 90, 0.12);
 }
 
 .stockpileGridVariant {

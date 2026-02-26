@@ -3,6 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  pointerWithin,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type { DragCancelEvent, DragEndEvent, DragStartEvent } from "@dnd-kit/core";
+import { snapCenterToCursor } from "@dnd-kit/modifiers";
 
 import styles from "@/app/page.module.css";
 import CardPreview from "@/components/Cards/CardPreview";
@@ -38,6 +48,7 @@ import type {
   StockpileCardView,
 } from "@/components/Stockpile/types";
 import { getDeleteCollectionImpact } from "@/components/Stockpile/collection-delete-impact";
+import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collections-merge";
 import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
 import { FolderPlus, Pencil, X } from "lucide-react";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
@@ -122,6 +133,9 @@ export default function StockpilePanelContent({
     collectionId: string;
   } | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const selectedIdsRef = useRef<string[]>([]);
+  const [dragActiveId, setDragActiveId] = useState<string | null>(null);
+  const [draggingIds, setDraggingIds] = useState<string[]>([]);
   const [pairingBaselineIds, setPairingBaselineIds] = useState<string[]>([]);
   const [pairsByBackId, setPairsByBackId] = useState<Map<string, string[]>>(new Map());
   const [backByFrontId, setBackByFrontId] = useState<Map<string, string>>(new Map());
@@ -132,6 +146,12 @@ export default function StockpilePanelContent({
     | { type: "recentlyDeleted" }
     | { type: "collection"; id: string }
   >({ type: "all" });
+  const dragEnabled = !isPairMode && activeFilter.type !== "recentlyDeleted";
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+  );
   const {
     state: { activeCardIdByTemplate },
     setActiveCard,
@@ -298,6 +318,9 @@ export default function StockpilePanelContent({
     onEscape: () => setIsCollectionsDrawerOpen(false),
   });
 
+  useEffect(() => {
+    selectedIdsRef.current = selectedIds;
+  }, [selectedIds]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -543,6 +566,50 @@ export default function StockpilePanelContent({
     activeBackId,
     t,
   ]);
+  const dragOverlayLabel = useMemo(() => {
+    if (!dragActiveId) return "";
+    return cardById.get(dragActiveId)?.name ?? "";
+  }, [cardById, dragActiveId]);
+
+  const handleDragStart = ({ active }: DragStartEvent) => {
+    if (!dragEnabled) return;
+    const draggedId = String(active.id);
+    const currentSelected = selectedIdsRef.current;
+    if (currentSelected.includes(draggedId)) {
+      setDraggingIds(currentSelected);
+    } else {
+      setSelectedIds([draggedId]);
+      setDraggingIds([draggedId]);
+    }
+    setDragActiveId(draggedId);
+  };
+
+  const handleDragEnd = async ({ over }: DragEndEvent) => {
+    setDragActiveId(null);
+    setDraggingIds([]);
+    if (!dragEnabled) return;
+    if (!over) return;
+    const overId = String(over.id);
+    if (!overId.startsWith("collection:")) return;
+    const collectionId = overId.replace("collection:", "");
+    const target = collections.find((collection) => collection.id === collectionId);
+    if (!target) return;
+    const nextCardIds = mergeCollectionCardIds(target.cardIds, draggingIds);
+    if (nextCardIds.length === target.cardIds.length) return;
+    try {
+      await updateCollection(collectionId, { cardIds: nextCardIds });
+      const refreshed = await listCollections();
+      setCollections(refreshed);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[StockpileModal] Failed to add cards to collection", error);
+    }
+  };
+
+  const handleDragCancel = (_event: DragCancelEvent) => {
+    setDragActiveId(null);
+    setDraggingIds([]);
+  };
   const cardActions: StockpileCardActions = useMemo(
     () => ({
       onCardClick: (id, event, isPairMode, isPairingConflict) => {
@@ -870,92 +937,99 @@ export default function StockpilePanelContent({
 
   const panel = (
     <>
-      <div className={styles.stockpilePanel}>
-        <div className={styles.stockpilePanelBody}>
-          <div className={styles.stockpileLayout}>
-            <section className={styles.stockpileCenterPanel}>
-              <div className={styles.stockpileCenterStack}>
-                <StockpileToolbar
-                  onOpenCollections={() => setIsCollectionsDrawerOpen(true)}
-                  collectionsToggleLabel={collectionsToggleLabel}
-                  search={search}
-                  onSearchChange={setSearch}
-                  templateFilter={templateFilter}
-                  onTemplateFilterChange={setTemplateFilter}
-                  filterLabel={filterLabel}
-                  totalCount={totalCount}
-                  faceCounts={faceCounts}
-                  typeCounts={typeCounts}
-                  isPairMode={isPairMode}
-                  isPairBacks={isPairBacks}
-                  isPairFronts={isPairFronts}
-                  showUnpairedOnly={showUnpairedOnly}
-                  onShowUnpairedOnlyChange={setShowUnpairedOnly}
-                  showMissingArtworkOnly={showMissingArtworkOnly}
-                  onShowMissingArtworkOnlyChange={setShowMissingArtworkOnly}
-                  selectedCount={selectedIds.length}
-                />
-                {!isPairMode ? (
-                  <StockpileActionsBar
-                    viewMode={viewMode}
-                    onViewModeChange={(next) => {
-                      setViewMode(next);
-                      try {
-                        window.localStorage.setItem(STOCKPILE_VIEW_STORAGE_KEY, next);
-                      } catch {
-                        // Ignore localStorage errors.
-                      }
-                    }}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={pointerWithin}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className={styles.stockpilePanel}>
+          <div className={styles.stockpilePanelBody}>
+            <div className={styles.stockpileLayout}>
+              <section className={styles.stockpileCenterPanel}>
+                <div className={styles.stockpileCenterStack}>
+                  <StockpileToolbar
+                    onOpenCollections={() => setIsCollectionsDrawerOpen(true)}
+                    collectionsToggleLabel={collectionsToggleLabel}
+                    search={search}
+                    onSearchChange={setSearch}
+                    templateFilter={templateFilter}
+                    onTemplateFilterChange={setTemplateFilter}
+                    filterLabel={filterLabel}
+                    totalCount={totalCount}
+                    faceCounts={faceCounts}
+                    typeCounts={typeCounts}
+                    isPairMode={isPairMode}
                     isPairBacks={isPairBacks}
-                    filteredCards={filteredCards}
-                    selectedIds={selectedIds}
-                    activeFilter={activeFilter}
-                    addToCollectionControl={
-                      activeFilter.type === "recentlyDeleted" ? null : (
-                        <StockpileAddToCollectionController
-                          collections={collections}
-                          activeFilter={activeFilter}
-                          visibleSelectedIds={visibleSelectedIds}
-                          onCollectionsUpdated={setCollections}
-                        />
-                      )
-                    }
-                    onRemoveFromCollection={async () => {
-                      if (activeFilter.type !== "collection") return;
-                      const target = collections.find((item) => item.id === activeFilter.id);
-                      if (!target) return;
-                      try {
-                        const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
-                        await updateCollection(target.id, { cardIds: remaining });
-                        const refreshed = await listCollections();
-                        setCollections(refreshed);
-                        setSelectedIds([]);
-                      } catch (error) {
-                        // eslint-disable-next-line no-console
-                        console.error("[StockpileModal] Failed to remove from collection", error);
+                    isPairFronts={isPairFronts}
+                    showUnpairedOnly={showUnpairedOnly}
+                    onShowUnpairedOnlyChange={setShowUnpairedOnly}
+                    showMissingArtworkOnly={showMissingArtworkOnly}
+                    onShowMissingArtworkOnlyChange={setShowMissingArtworkOnly}
+                    selectedCount={selectedIds.length}
+                  />
+                  {!isPairMode ? (
+                    <StockpileActionsBar
+                      viewMode={viewMode}
+                      onViewModeChange={(next) => {
+                        setViewMode(next);
+                        try {
+                          window.localStorage.setItem(STOCKPILE_VIEW_STORAGE_KEY, next);
+                        } catch {
+                          // Ignore localStorage errors.
+                        }
+                      }}
+                      isPairBacks={isPairBacks}
+                      filteredCards={filteredCards}
+                      selectedIds={selectedIds}
+                      activeFilter={activeFilter}
+                      addToCollectionControl={
+                        activeFilter.type === "recentlyDeleted" ? null : (
+                          <StockpileAddToCollectionController
+                            collections={collections}
+                            activeFilter={activeFilter}
+                            visibleSelectedIds={visibleSelectedIds}
+                            onCollectionsUpdated={setCollections}
+                          />
+                        )
                       }
-                    }}
-                    onRestoreCards={
-                      activeFilter.type === "recentlyDeleted"
-                        ? async () => {
-                            if (!selectedIds.length) return;
-                            const ids = [...selectedIds];
-                            try {
-                              await restoreCards(ids);
-                              const refreshed = await listCards({
-                                status: "saved",
-                                deleted: "include",
-                              });
-                              setCards(refreshed);
-                              setSelectedIds([]);
-                            } catch (error) {
-                              // eslint-disable-next-line no-console
-                              console.error("[StockpileModal] Failed to restore cards", error);
+                      onRemoveFromCollection={async () => {
+                        if (activeFilter.type !== "collection") return;
+                        const target = collections.find((item) => item.id === activeFilter.id);
+                        if (!target) return;
+                        try {
+                          const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
+                          await updateCollection(target.id, { cardIds: remaining });
+                          const refreshed = await listCollections();
+                          setCollections(refreshed);
+                          setSelectedIds([]);
+                        } catch (error) {
+                          // eslint-disable-next-line no-console
+                          console.error("[StockpileModal] Failed to remove from collection", error);
+                        }
+                      }}
+                      onRestoreCards={
+                        activeFilter.type === "recentlyDeleted"
+                          ? async () => {
+                              if (!selectedIds.length) return;
+                              const ids = [...selectedIds];
+                              try {
+                                await restoreCards(ids);
+                                const refreshed = await listCards({
+                                  status: "saved",
+                                  deleted: "include",
+                                });
+                                setCards(refreshed);
+                                setSelectedIds([]);
+                              } catch (error) {
+                                // eslint-disable-next-line no-console
+                                console.error("[StockpileModal] Failed to restore cards", error);
+                              }
                             }
-                          }
-                        : undefined
-                    }
-                    onDeleteCards={() => {
+                          : undefined
+                      }
+                      onDeleteCards={() => {
                       if (!selectedIds.length) return;
                       const ids = [...selectedIds];
                       const idSet = new Set(ids);
@@ -1077,125 +1151,146 @@ export default function StockpilePanelContent({
                         visibleIds.forEach((id) => merged.add(id));
                         return Array.from(merged);
                       });
-                    }}
-                  />
-                ) : null}
-                <div className={styles.stockpileCenterResults}>
-                  <StockpileContentPane
-                    filteredCards={filteredCards}
-                    search={search}
-                    activeFilter={activeFilter}
-                    templateFilter={templateFilter}
-                    totalCount={totalCount}
-                    filterLabel={filterLabel}
-                    isTableView={isTableView}
-                    cardViews={cardViews}
-                    cardActions={cardActions}
-                    conflictPopoverCardId={conflictPopoverCardId}
-                    isPairMode={isPairMode}
-                    tableHeaders={tableHeaders}
-                  />
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className={`${styles.stockpileCenterResults} ${
+                      dragActiveId ? styles.stockpileCenterResultsNoScroll : ""
+                    }`}
+                  >
+                    <StockpileContentPane
+                      filteredCards={filteredCards}
+                      search={search}
+                      activeFilter={activeFilter}
+                      templateFilter={templateFilter}
+                      totalCount={totalCount}
+                      filterLabel={filterLabel}
+                      isTableView={isTableView}
+                      cardViews={cardViews}
+                      cardActions={cardActions}
+                      conflictPopoverCardId={conflictPopoverCardId}
+                      isPairMode={isPairMode}
+                      dragEnabled={dragEnabled}
+                      tableHeaders={tableHeaders}
+                    />
+                  </div>
                 </div>
-              </div>
-              <StockpileFooter
-                isPairMode={isPairMode}
-                isPairFronts={isPairFronts}
-                selectedIds={selectedIds}
-                activeBackId={activeBackId}
-                cardById={cardById}
-                backByFrontId={backByFrontId}
-                onConfirmSelection={onConfirmSelection}
-                onClose={onClose}
-                baselineSelectedIds={pairingBaselineIds}
-                onBulkExport={handleBulkExport}
-                canExport={canExport}
-                exportLabel={exportLabel}
-                selectedCard={selectedCard}
-                hasMultiSelection={hasMultiSelection}
-                onLoadSelectedCard={() => {
-                  if (!selectedCard || !onLoadCard) return;
-                  onLoadCard(selectedCard);
-                  onClose();
-                }}
-              />
-            </section>
-            {isCollectionsDrawerOpen ? (
+                <StockpileFooter
+                  isPairMode={isPairMode}
+                  isPairFronts={isPairFronts}
+                  selectedIds={selectedIds}
+                  activeBackId={activeBackId}
+                  cardById={cardById}
+                  backByFrontId={backByFrontId}
+                  onConfirmSelection={onConfirmSelection}
+                  onClose={onClose}
+                  baselineSelectedIds={pairingBaselineIds}
+                  onBulkExport={handleBulkExport}
+                  canExport={canExport}
+                  exportLabel={exportLabel}
+                  selectedCard={selectedCard}
+                  hasMultiSelection={hasMultiSelection}
+                  onLoadSelectedCard={() => {
+                    if (!selectedCard || !onLoadCard) return;
+                    onLoadCard(selectedCard);
+                    onClose();
+                  }}
+                />
+              </section>
+              {isCollectionsDrawerOpen ? (
+                <div
+                  className={styles.stockpileCollectionsBackdrop}
+                  role="presentation"
+                  onClick={() => setIsCollectionsDrawerOpen(false)}
+                />
+              ) : null}
               <div
-                className={styles.stockpileCollectionsBackdrop}
-                role="presentation"
-                onClick={() => setIsCollectionsDrawerOpen(false)}
-              />
-            ) : null}
-            <div
-              className={`${styles.stockpileRightPanel} ${
-                isCollectionsDrawerOpen ? styles.stockpileRightPanelDrawerOpen : ""
-              }`}
-            >
-              <StockpileSidebar
-                footerActions={
-                  !isPairMode ? (
-                    <div className={styles.stockpileCollectionsFooterActions}>
-                      <button
-                        type="button"
-                        className={styles.stockpileCollectionsFooterButton}
-                        title={t("actions.newCollection")}
-                        aria-label={t("actions.newCollection")}
-                        onClick={() =>
-                          setCollectionModalState({ mode: "create", collectionId: null })
-                        }
-                      >
-                        <FolderPlus size={18} aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.stockpileCollectionsFooterButton} ${
-                          isManagingCollections ? styles.stockpileCollectionsFooterButtonActive : ""
-                        }`}
-                        title={isManagingCollections ? t("actions.cancel") : t("actions.manageCollections")}
-                        aria-label={isManagingCollections ? t("actions.cancel") : t("actions.manageCollections")}
-                        aria-pressed={isManagingCollections}
-                        onClick={() => setIsManagingCollections((prev) => !prev)}
-                      >
-                        {isManagingCollections ? (
-                          <X size={18} aria-hidden="true" />
-                        ) : (
-                          <Pencil size={18} aria-hidden="true" />
-                        )}
-                      </button>
-                    </div>
-                  ) : null
-                }
-                onRequestClose={() => setIsCollectionsDrawerOpen(false)}
-                onEditCollection={(collectionId) => {
-                  setCollectionModalState({ mode: "edit", collectionId });
-                }}
-                onDeleteCollection={(collectionId) => {
-                  setDeleteCollectionPrompt({ collectionId });
-                }}
-                isManagingCollections={isManagingCollections}
-                activeFilter={activeFilter}
-                onFilterChange={(next) => {
-                  setActiveFilter(next);
-                  setIsCollectionsDrawerOpen(false);
-                }}
-                isPairMode={isPairMode}
-                showMissingArtworkOnly={showMissingArtworkOnly}
-                collectionsWithMissingArtwork={collectionsWithMissingArtwork}
-                selectedIds={selectedIds}
-                onClearSelection={() => setSelectedIds([])}
-                recentCardsCount={recentCards.length}
-                recentlyDeletedCount={recentlyDeletedCount}
-                recentlyDeletedTotalCount={recentlyDeletedTotalCount}
-                overallCount={overallCount}
-                unfiledCount={unfiledCount}
-                visibleCollections={visibleCollections}
-                collectionCounts={collectionCounts}
-                selectedCountByCollection={selectedCountByCollection}
-              />
+                className={`${styles.stockpileRightPanel} ${
+                  isCollectionsDrawerOpen ? styles.stockpileRightPanelDrawerOpen : ""
+                }`}
+              >
+                <StockpileSidebar
+                  footerActions={
+                    !isPairMode ? (
+                      <div className={styles.stockpileCollectionsFooterActions}>
+                        <button
+                          type="button"
+                          className={styles.stockpileCollectionsFooterButton}
+                          title={t("actions.newCollection")}
+                          aria-label={t("actions.newCollection")}
+                          onClick={() =>
+                            setCollectionModalState({ mode: "create", collectionId: null })
+                          }
+                        >
+                          <FolderPlus size={18} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.stockpileCollectionsFooterButton} ${
+                            isManagingCollections ? styles.stockpileCollectionsFooterButtonActive : ""
+                          }`}
+                          title={
+                            isManagingCollections ? t("actions.cancel") : t("actions.manageCollections")
+                          }
+                          aria-label={
+                            isManagingCollections ? t("actions.cancel") : t("actions.manageCollections")
+                          }
+                          aria-pressed={isManagingCollections}
+                          onClick={() => setIsManagingCollections((prev) => !prev)}
+                        >
+                          {isManagingCollections ? (
+                            <X size={18} aria-hidden="true" />
+                          ) : (
+                            <Pencil size={18} aria-hidden="true" />
+                          )}
+                        </button>
+                      </div>
+                    ) : null
+                  }
+                  onRequestClose={() => setIsCollectionsDrawerOpen(false)}
+                  onEditCollection={(collectionId) => {
+                    setCollectionModalState({ mode: "edit", collectionId });
+                  }}
+                  onDeleteCollection={(collectionId) => {
+                    setDeleteCollectionPrompt({ collectionId });
+                  }}
+                  isManagingCollections={isManagingCollections}
+                  activeFilter={activeFilter}
+                  onFilterChange={(next) => {
+                    setActiveFilter(next);
+                    setIsCollectionsDrawerOpen(false);
+                  }}
+                  isPairMode={isPairMode}
+                  showMissingArtworkOnly={showMissingArtworkOnly}
+                  collectionsWithMissingArtwork={collectionsWithMissingArtwork}
+                  selectedIds={selectedIds}
+                  onClearSelection={() => setSelectedIds([])}
+                  recentCardsCount={recentCards.length}
+                  recentlyDeletedCount={recentlyDeletedCount}
+                  recentlyDeletedTotalCount={recentlyDeletedTotalCount}
+                  overallCount={overallCount}
+                  unfiledCount={unfiledCount}
+                  visibleCollections={visibleCollections}
+                  collectionCounts={collectionCounts}
+                  selectedCountByCollection={selectedCountByCollection}
+                  dragEnabled={dragEnabled}
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+        <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
+          {dragActiveId ? (
+            <div className={styles.stockpileDragGhost} aria-hidden="true">
+              {dragOverlayLabel ? (
+                <div className={styles.stockpileDragGhostLabel}>{dragOverlayLabel}</div>
+              ) : null}
+              <div className={styles.stockpileDragGhostCount}>{draggingIds.length}</div>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
       {collectionModalState ? (
         <StockpileCollectionModal
           isOpen={Boolean(collectionModalState)}

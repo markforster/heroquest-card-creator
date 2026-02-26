@@ -44,6 +44,7 @@ describe("StockpileSidebar (UI)", () => {
       activeFilter: { type: "collection" as const, id: "col-1" },
       onFilterChange: jest.fn(),
       isPairMode: false,
+      dragEnabled: false,
       showMissingArtworkOnly: false,
       collectionsWithMissingArtwork: new Set<string>(),
       selectedIds: [],

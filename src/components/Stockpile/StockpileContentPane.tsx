@@ -24,6 +24,7 @@ type StockpileContentPaneProps = {
   cardActions: StockpileCardActions;
   conflictPopoverCardId: string | null;
   isPairMode: boolean;
+  dragEnabled: boolean;
   tableHeaders: {
     card: string;
     name: string;
@@ -46,6 +47,7 @@ export default function StockpileContentPane({
   cardActions,
   conflictPopoverCardId,
   isPairMode,
+  dragEnabled,
   tableHeaders,
 }: StockpileContentPaneProps) {
   const { t } = useI18n();
@@ -70,13 +72,19 @@ export default function StockpileContentPane({
       ) : (
         <>
           {isTableView ? (
-            <StockpileCardsTable items={cardViews} actions={cardActions} headers={tableHeaders} />
+            <StockpileCardsTable
+              items={cardViews}
+              actions={cardActions}
+              headers={tableHeaders}
+              dragEnabled={dragEnabled}
+            />
           ) : (
             <StockpileCardsGrid
               items={cardViews}
               actions={cardActions}
               isPairMode={isPairMode}
               conflictPopoverCardId={conflictPopoverCardId}
+              dragEnabled={dragEnabled}
             />
           )}
         </>
