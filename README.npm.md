@@ -1,6 +1,6 @@
 # HeroQuest Card Creator
 
-![HeroQuest Card Creator](readme-assets/banner.jpg)
+![HeroQuest Card Creator](https://public.markforster.info/Heroquest/Tools/HeroQuest-Card-Creator-Banner.jpg)
 
 Create HeroQuest‑style cards (heroes, monsters, treasure, backs, and more) in your browser, preview them live, and export print‑ready PNGs — no server, no account, all client‑side.
 
