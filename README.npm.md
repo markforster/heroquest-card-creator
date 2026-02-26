@@ -8,15 +8,11 @@ Layouts, typography, and proportions are tuned to match the classic cards, so yo
 
 Prefer a hosted version? You can also run the app from itch.io:
 
-```text
-https://mark-forster.itch.io/heroquest-card-creator
-```
+<a href="https://mark-forster.itch.io/heroquest-card-creator" target="_blank" rel="noopener noreferrer">https://mark-forster.itch.io/heroquest-card-creator</a>
 
 Community and updates:
 
-```text
-https://mark-forster.itch.io/heroquest-card-creator/community
-```
+<a href="https://mark-forster.itch.io/heroquest-card-creator/community" target="_blank" rel="noopener noreferrer">https://mark-forster.itch.io/heroquest-card-creator/community</a>
 
 ## Highlights
 
