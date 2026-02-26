@@ -1,5 +1,5 @@
 {
-  "name": "heroquest-card-creator",
+  "name": "@markforster/heroquest-card-creator",
   "version": "0.5.3",
   "description": "Browser-based tool to design HeroQuest-style cards with accurate layouts, asset library, and PNG export — runs locally.",
   "author": "Mark Forster (markforster)",
@@ -11,6 +11,9 @@
   "homepage": "https://github.com/markforster/heroquest-card-creator",
   "bugs": {
     "url": "https://github.com/markforster/heroquest-card-creator/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "keywords": [
     "heroquest",
@@ -46,13 +49,14 @@
     "generate:embedded-assets": "node scripts/generate-embedded-assets.cjs",
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "predev": "npm run generate:embedded-assets && node scripts/copy-zip-worker.cjs",
-    "prepack": "cp README.npm.md README.md && npm run build",
+    "prepack": "cp README.npm.md README.md && npm run build && npm run verify:out",
     "prebuild": "npm run generate:embedded-assets && node scripts/copy-zip-worker.cjs",
     "build": "NODE_ENV=production npm run verify:env && NODE_ENV=production next build",
     "build:download": "npm run build && node scripts/package-download.js",
     "start": "next start",
     "lint": "next lint",
     "verify:env": "node scripts/verify-env.js",
+    "verify:out": "node scripts/verify-out.cjs",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -67,7 +71,10 @@
     "sync:tauri-version": "node scripts/sync-tauri-version.cjs",
     "pretauri:build": "npm run sync:tauri-version",
     "tauri:build": "npm run build && npm run tauri:icons && tauri build",
-    "postpack": "git checkout -- README.md"
+    "postpack": "git checkout -- README.md",
+    "publish:npm": "npm publish",
+    "publish:gh": "npm publish --registry https://npm.pkg.github.com",
+    "publish:all": "npm run publish:npm && npm run publish:gh"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -51,3 +51,4 @@ docs/issues/**
 /src-tauri/icons/
 /src-tauri/gen/
 commit.msg
+.npmrc

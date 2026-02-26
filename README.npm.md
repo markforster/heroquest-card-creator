@@ -30,7 +30,7 @@ https://mark-forster.itch.io/heroquest-card-creator/community
 ## Install
 
 ```bash
-npm i -g heroquest-card-creator
+npm i -g @markforster/heroquest-card-creator
 ```
 
 ## Run

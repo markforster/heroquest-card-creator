@@ -123,7 +123,7 @@ Because fonts and assets are referenced relatively and IndexedDB/localStorage ar
 You can run the static build from a simple local server via the published CLI package:
 
 - Install globally:
-  - `npm i -g heroquest-card-creator`
+- `npm i -g @markforster/heroquest-card-creator`
 - Run (default `http://127.0.0.1:3000`):
   - `heroquest-card-creator`
 - Run on another port:
