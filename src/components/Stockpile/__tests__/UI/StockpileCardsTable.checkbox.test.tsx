@@ -32,6 +32,7 @@ describe("StockpileCardsTable (UI)", () => {
       <StockpileCardsTable
         items={[item]}
         dragEnabled={false}
+        onClearSelection={jest.fn()}
         headers={{
           card: "Card",
           name: "Name",

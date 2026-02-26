@@ -52,10 +52,16 @@ import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collect
 import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
 import { FolderPlus, Pencil, X } from "lucide-react";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
+import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
+import {
+  getCachedCardThumbnailUrl,
+  getLegacyCardThumbnailUrl,
+  releaseLegacyCardThumbnailUrl,
+} from "@/lib/card-thumbnail-cache";
 import { deleteCards, listCards, restoreCards, softDeleteCards } from "@/lib/cards-db";
 import {
   createCollection,
@@ -323,6 +329,17 @@ export default function StockpilePanelContent({
   }, [selectedIds]);
 
   useEffect(() => {
+    if (typeof document === "undefined") return;
+    const className = styles.stockpileBodyDragging;
+    if (dragActiveId) {
+      document.body.classList.add(className);
+    } else {
+      document.body.classList.remove(className);
+    }
+    return () => document.body.classList.remove(className);
+  }, [dragActiveId]);
+
+  useEffect(() => {
     if (!isOpen) return;
     let active = true;
     listAllPairs()
@@ -566,10 +583,35 @@ export default function StockpilePanelContent({
     activeBackId,
     t,
   ]);
-  const dragOverlayLabel = useMemo(() => {
-    if (!dragActiveId) return "";
-    return cardById.get(dragActiveId)?.name ?? "";
-  }, [cardById, dragActiveId]);
+  const resolveOverlayThumb = (id: string, blob: Blob | null) => {
+    if (typeof window === "undefined") {
+      return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
+    }
+    if (ENABLE_CARD_THUMB_CACHE) {
+      return { url: getCachedCardThumbnailUrl(id, blob), onLoad: undefined };
+    }
+    const url = getLegacyCardThumbnailUrl(id, blob ?? null);
+    return {
+      url,
+      onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined,
+    };
+  };
+  const dragOverlayThumbs = useMemo(() => {
+    if (!dragActiveId || draggingIds.length === 0) return [];
+    const orderedIds = [
+      dragActiveId,
+      ...draggingIds.filter((id) => id !== dragActiveId),
+    ].slice(0, 5);
+    return orderedIds.map((id) => {
+      const card = cardById.get(id);
+      if (!card) {
+        return { id, url: null as string | null, onLoad: undefined as (() => void) | undefined };
+      }
+      const templateThumbSrc = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+      const { url, onLoad } = resolveOverlayThumb(id, card.thumbnailBlob ?? null);
+      return { id, url: url ?? templateThumbSrc, onLoad };
+    });
+  }, [cardById, dragActiveId, draggingIds]);
 
   const handleDragStart = ({ active }: DragStartEvent) => {
     if (!dragEnabled) return;
@@ -944,7 +986,11 @@ export default function StockpilePanelContent({
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className={styles.stockpilePanel}>
+        <div
+          className={`${styles.stockpilePanel} ${
+            dragActiveId ? styles.stockpilePanelDragging : ""
+          }`}
+        >
           <div className={styles.stockpilePanelBody}>
             <div className={styles.stockpileLayout}>
               <section className={styles.stockpileCenterPanel}>
@@ -1172,6 +1218,7 @@ export default function StockpilePanelContent({
                       conflictPopoverCardId={conflictPopoverCardId}
                       isPairMode={isPairMode}
                       dragEnabled={dragEnabled}
+                      onClearSelection={() => setSelectedIds([])}
                       tableHeaders={tableHeaders}
                     />
                   </div>
@@ -1283,10 +1330,30 @@ export default function StockpilePanelContent({
         <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
           {dragActiveId ? (
             <div className={styles.stockpileDragGhost} aria-hidden="true">
-              {dragOverlayLabel ? (
-                <div className={styles.stockpileDragGhostLabel}>{dragOverlayLabel}</div>
-              ) : null}
-              <div className={styles.stockpileDragGhostCount}>{draggingIds.length}</div>
+              <div className={styles.stockpileDragGhostStack}>
+                {dragOverlayThumbs.map((thumb, index) => (
+                  <div
+                    key={thumb.id}
+                    className={`${styles.stockpileDragGhostCard} ${
+                      styles[`stockpileDragGhostCard_${index}`]
+                    } ${styles.stockpileDragGhostCardGrab}`}
+                  >
+                    <div className={styles.stockpileDragGhostCardInner}>
+                      {thumb.url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={thumb.url} alt="" onLoad={thumb.onLoad} />
+                      ) : (
+                        <div className={styles.stockpileDragGhostPlaceholder} />
+                      )}
+                      {index === 0 && draggingIds.length > 5 ? (
+                        <div className={styles.stockpileDragGhostCount}>
+                          {draggingIds.length}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : null}
         </DragOverlay>

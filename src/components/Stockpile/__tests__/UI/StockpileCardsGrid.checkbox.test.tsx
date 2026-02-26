@@ -34,6 +34,7 @@ describe("StockpileCardsGrid (UI)", () => {
         isPairMode={false}
         conflictPopoverCardId={null}
         dragEnabled={false}
+        onClearSelection={jest.fn()}
         actions={{
           onCardClick: jest.fn(),
           onCardSetSelected,

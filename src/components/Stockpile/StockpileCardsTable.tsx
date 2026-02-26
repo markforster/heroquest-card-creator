@@ -17,6 +17,7 @@ type StockpileCardsTableProps = {
   items: StockpileCardView[];
   actions: StockpileCardActions;
   dragEnabled: boolean;
+  onClearSelection: () => void;
   headers: {
     card: string;
     name: string;
@@ -66,10 +67,8 @@ function StockpileCardsTableRow({ card, actions, dragEnabled }: StockpileCardsTa
       className={`${styles.stockpileTableRow} ${
         card.isSelected ? styles.stockpileTableRowSelected : ""
       } ${isDragging ? styles.stockpileCardDragging : ""}`}
-      role="row"
       onClick={(event) => actions.onCardClick(card.id, event, false, card.isPairingConflict)}
       onDoubleClick={() => actions.onCardDoubleClick(card.id)}
-      tabIndex={0}
       aria-label={card.name}
       onKeyDown={(event) => {
         if (event.key === "Enter") {
@@ -215,9 +214,17 @@ export default function StockpileCardsTable({
   actions,
   headers,
   dragEnabled,
+  onClearSelection,
 }: StockpileCardsTableProps) {
   return (
-    <div className={styles.stockpileTable} role="table">
+    <div
+      className={styles.stockpileTable}
+      role="table"
+      onClick={(event) => {
+        if (event.target !== event.currentTarget) return;
+        onClearSelection();
+      }}
+    >
       <div className={styles.stockpileTableHeader} role="row">
         <div className={styles.stockpileTableCell} role="columnheader">
           {headers.card}

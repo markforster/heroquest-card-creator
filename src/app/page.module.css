@@ -4206,36 +4206,117 @@ button.assetsKindBadge:disabled {
   opacity: 0.65;
 }
 
+.stockpilePanelDragging,
+.stockpilePanelDragging * {
+  cursor: grabbing !important;
+  cursor: -webkit-grabbing !important;
+}
+
 .stockpileDragGhost {
   width: 120px;
   height: 160px;
-  background: var(--hq-surface-card);
-  border: 1px solid var(--hq-surface-700);
+  background: transparent;
+  border: none;
   border-radius: var(--radius-sm);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: var(--space-3);
   pointer-events: none;
 }
 
-.stockpileDragGhostLabel {
-  font-size: var(--text-xs);
-  color: var(--hq-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.stockpileDragGhostStack {
+  position: relative;
+  flex: 1 1 auto;
+  align-self: stretch;
 }
 
 .stockpileDragGhostCount {
-  align-self: flex-end;
+  position: absolute;
+  top: 20%;
+  right: 8px;
+  transform: translateY(-50%);
   background: var(--hq-accent);
   color: #111;
   font-weight: 600;
   border-radius: var(--radius-pill);
-  padding: 2px 8px;
-  font-size: var(--text-xs);
+  padding: 3px 12px;
+  font-size: calc(var(--text-xs) * 1.5);
+  border: 1px solid #000;
+  z-index: 5;
+}
+
+.stockpileDragGhostCard {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 84px;
+  height: 120px;
+  border-radius: 6px;
+  overflow: visible;
+  transform-origin: bottom center;
+}
+
+.stockpileDragGhostCardGrab,
+.stockpileDragGhostCardGrab * {
+  cursor: grabbing !important;
+  cursor: -webkit-grabbing !important;
+}
+
+.stockpileBodyDragging,
+.stockpileBodyDragging * {
+  cursor: grabbing !important;
+  cursor: -webkit-grabbing !important;
+}
+
+.stockpileDragGhostCardInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  background: var(--hq-surface-sunken);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.stockpileDragGhostCard img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.stockpileDragGhostCard_0 {
+  z-index: 3;
+  transform: translate(-50%, 0) rotate(0deg) scale(1);
+}
+
+.stockpileDragGhostCard_1 {
+  z-index: 2;
+  transform: translate(calc(-50% - 8px), 0) rotate(-7deg);
+}
+
+.stockpileDragGhostCard_2 {
+  z-index: 1;
+  transform: translate(calc(-50% + 8px), 0) rotate(7deg);
+}
+
+.stockpileDragGhostCard_3 {
+  z-index: 0;
+  transform: translate(calc(-50% - 16px), 0) rotate(-12deg);
+}
+
+.stockpileDragGhostCard_4 {
+  z-index: 0;
+  transform: translate(calc(-50% + 16px), 0) rotate(12deg);
+}
+
+.stockpileDragGhostPlaceholder {
+  width: 100%;
+  height: 100%;
+  background: var(--hq-surface-sunken);
 }
 
 .stockpileSidebarItemDropOver {

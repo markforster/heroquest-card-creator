@@ -21,6 +21,7 @@ type StockpileCardsGridProps = {
   isPairMode: boolean;
   conflictPopoverCardId: string | null;
   dragEnabled: boolean;
+  onClearSelection: () => void;
 };
 
 type StockpileCardsGridItemProps = {
@@ -129,8 +130,6 @@ function StockpileCardsGridItem({
   return (
     <div
       ref={setNodeRef}
-      role="button"
-      tabIndex={0}
       className={`${styles.assetsItem} ${
         card.isSelected
           ? card.isPairingConflict
@@ -318,9 +317,16 @@ export default function StockpileCardsGrid({
   isPairMode,
   conflictPopoverCardId,
   dragEnabled,
+  onClearSelection,
 }: StockpileCardsGridProps) {
   return (
-    <div className={styles.assetsGrid}>
+    <div
+      className={styles.assetsGrid}
+      onClick={(event) => {
+        if (event.target !== event.currentTarget) return;
+        onClearSelection();
+      }}
+    >
       {items.map((card) => (
         <StockpileCardsGridItem
           key={card.id}

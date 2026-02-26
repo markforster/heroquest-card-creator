@@ -25,6 +25,7 @@ type StockpileContentPaneProps = {
   conflictPopoverCardId: string | null;
   isPairMode: boolean;
   dragEnabled: boolean;
+  onClearSelection: () => void;
   tableHeaders: {
     card: string;
     name: string;
@@ -48,11 +49,18 @@ export default function StockpileContentPane({
   conflictPopoverCardId,
   isPairMode,
   dragEnabled,
+  onClearSelection,
   tableHeaders,
 }: StockpileContentPaneProps) {
   const { t } = useI18n();
   return (
-    <div className={styles.assetsGridContainer}>
+    <div
+      className={styles.assetsGridContainer}
+      onClick={(event) => {
+        if (event.target !== event.currentTarget) return;
+        onClearSelection();
+      }}
+    >
       {filteredCards.length === 0 ? (
         <div className={styles.assetsEmptyState}>
           {search.trim()
@@ -77,6 +85,7 @@ export default function StockpileContentPane({
               actions={cardActions}
               headers={tableHeaders}
               dragEnabled={dragEnabled}
+              onClearSelection={onClearSelection}
             />
           ) : (
             <StockpileCardsGrid
@@ -85,6 +94,7 @@ export default function StockpileContentPane({
               isPairMode={isPairMode}
               conflictPopoverCardId={conflictPopoverCardId}
               dragEnabled={dragEnabled}
+              onClearSelection={onClearSelection}
             />
           )}
         </>
