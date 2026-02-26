@@ -8,8 +8,13 @@ Key features:
 
 - SVG preview + per-card PNG export (fonts/images inlined).
 - Asset library (IndexedDB-backed) for uploading/using images.
-- Saved cards (“Stockpile”), including collections + bulk export to a ZIP.
+- Saved cards (“Stockpile”), with panels, table view, and Recently Deleted safety.
+- Collections tree view and drag-and-drop organisation.
+- Assets inspector plus asset kind classification/filtering.
+- Missing-artwork export prompts to catch issues before bulk export.
 - Full backup import/export (`.hqcc`) of cards/assets (and related settings).
+
+Highlights (v0.5.3): Stockpile workflow overhaul, richer Assets/Pairing UX, and export safety checks.
 
 ---
 
@@ -35,7 +40,7 @@ Core feature areas:
 - `src/components/CardParts/*` – reusable SVG parts (ribbons, stats blocks, text blocks, etc.).
 - `src/components/CardInspector/*` – form controls for editing current card fields.
 - `src/components/Assets/*` – asset manager (IndexedDB‑backed image library).
-- `src/components/Stockpile/*` – “Cards” modal for browsing and loading saved cards.
+- `src/components/Stockpile/*` – “Cards” panel for browsing and loading saved cards.
 - `src/components/CardEditor/CardEditorContext.tsx` – central editor state, drafts, and active card tracking.
 - `src/data/card-templates.ts` / `src/types/*` – template metadata and shared type definitions.
 - `src/lib/*` – browser‑side helpers:

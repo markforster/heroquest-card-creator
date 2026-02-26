@@ -23,6 +23,9 @@ https://mark-forster.itch.io/heroquest-card-creator/community
 - Asset library for uploading and reusing images.
 - Saved cards (“Stockpile”) with collections and bulk export.
 - Full backup import/export (`.hqcc`) for cards and assets.
+- Stockpile panels/table view with Recently Deleted safety.
+- Assets inspector with asset kind classification and filtering.
+- Missing‑artwork checks before export help avoid bad ZIPs.
 
 ## Install
 
