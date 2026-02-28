@@ -1,0 +1,46 @@
+.docBody {
+  max-height: 60vh;
+  overflow-y: auto;
+  font-size: 1.1rem;
+}
+
+.docSection {
+  margin-bottom: 0.75rem;
+}
+
+.docSection:last-child {
+  margin-bottom: 0;
+}
+
+.docHeading {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+  color: #e6b35a;
+}
+
+.docList {
+  margin: 0;
+  padding-left: 1.1rem;
+  line-height: 1.4;
+}
+
+.docParagraph {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.docParagraphSpaced {
+  margin-top: 0.5rem;
+}
+
+.docListSpaced {
+  margin-top: 0.5rem;
+}
+
+.docSectionSpaced {
+  margin-top: 0.9rem;
+}
+
+.docLink {
+  color: #e6b35a;
+}

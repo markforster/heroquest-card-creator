@@ -1,0 +1,346 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inputWrap {
+  flex: 1 0 auto;
+  min-width: 0;
+}
+
+.swatchWrap {
+  flex: 0 1 auto;
+}
+
+.hexInput {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #2f2f2f;
+  color: #f5f5f5;
+  font-size: 13px;
+  font-family: var(--hq-font-form);
+  text-transform: uppercase;
+}
+
+.hexInput:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.currentSwatch {
+  flex: 0 1 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+}
+
+.currentSwatchDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.popover {
+  position: fixed;
+  z-index: 20;
+  width: 220px;
+  max-width: calc(100vw - 2rem);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #1b1b1b;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
+  padding: 12px;
+}
+
+.tabHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  margin-bottom: 12px;
+}
+
+.tabButton {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tabButtonActive {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.picker {
+  flex: 0 0 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.swatches {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.colorful {
+  width: 100%;
+}
+
+.picker :global(.react-colorful) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 220px;
+}
+
+.colorful :global(.react-colorful__saturation) {
+  width: 100%;
+  height: 160px;
+  flex-grow: 0;
+  border-radius: 12px;
+}
+
+.colorful :global(.react-colorful__hue) {
+  width: 100%;
+  height: 20px;
+  border-radius: 999px;
+  margin-top: 8px;
+}
+
+.colorful :global(.react-colorful__alpha) {
+  width: 100%;
+  height: 20px;
+  border-radius: 999px;
+  margin-top: 8px;
+}
+
+.colorful :global(.react-colorful__hue-pointer),
+.colorful :global(.react-colorful__saturation-pointer),
+.colorful :global(.react-colorful__alpha-pointer) {
+  width: 18px;
+  height: 18px;
+}
+
+.colorful :global(.react-colorful__pointer-fill) {
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.specialRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.specialRow > * {
+  flex: 0 0 auto;
+}
+
+.swatchGrid {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.swatchGrid > * {
+  flex: 0 0 auto;
+}
+
+.swatchGridScroll {
+  height: 122px;
+  overflow-y: scroll;
+  padding-right: 6px;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.swatchGridScroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.swatchGridScroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+}
+
+.swatchGridScroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.swatchButton {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+}
+
+.swatchSelected {
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+}
+
+.noBorderSwatch {
+  background-color: transparent;
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.18) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.18) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.18) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.18) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+
+.swatchAction {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+  background: transparent;
+  color: #f5f5f5;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+
+.swatchActionActive {
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.swatchAction:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.swatchShell {
+  position: relative;
+  width: 34px;
+  height: 34px;
+}
+
+.swatchRemove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: #111;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.swatchShell:hover .swatchRemove {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.smartPopoverHeader {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+}
+
+.smartPopoverGrid {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.smartPopoverGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.smartPopoverGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.smartPopoverGroupLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.smartPopoverSwatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.smartPopoverHint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import ModalShell from "@/components/ModalShell";
+import ModalShell from "@/components/common/ModalShell";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
 describe("ModalShell", () => {

@@ -1,0 +1,67 @@
+.container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--hq-surface-sunken, #111);
+  border-radius: 4px;
+}
+
+.sizeXS {
+  width: 22.5px;
+  height: 31.5px;
+  border-radius: 4px;
+}
+
+.sizeSM {
+  width: 46px;
+  height: 64px;
+  border-radius: 6px;
+}
+
+.sizeSMMD {
+  width: 105px;
+  height: 147px;
+  border-radius: 6px;
+}
+
+.sizeFLUIDSM {
+  width: 100%;
+  max-width: 160px;
+  aspect-ratio: 750 / 1050;
+  border-radius: 6px;
+}
+
+.sizeMD {
+  width: 100%;
+  aspect-ratio: 750 / 1050;
+  border-radius: 4px;
+}
+
+.sizeLG {
+  width: 150px;
+  height: 210px;
+  border-radius: 6px;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.fitCover {
+  object-fit: cover;
+}
+
+.fitContain {
+  object-fit: contain;
+}
+
+.fallback {
+  width: 70%;
+  height: 70%;
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.2));
+}

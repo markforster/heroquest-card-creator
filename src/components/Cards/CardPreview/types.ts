@@ -1,0 +1,32 @@
+"use client";
+
+import type { StaticImageData } from "next/image";
+
+import type { CardDataByTemplate } from "@/types/card-data";
+import type { TemplateId } from "@/types/templates";
+
+export type CardPreviewProps = {
+  templateId?: TemplateId;
+  templateName?: string;
+  backgroundSrc?: StaticImageData;
+  cardData?: CardDataByTemplate[TemplateId];
+  copyrightTextColor?: string;
+};
+
+export type CardPreviewHandle = {
+  exportAsPng: () => Promise<void>;
+  waitForBackgroundLoaded?: (timeoutMs?: number) => Promise<void>;
+  syncCopyrightContrast?: (options?: { width?: number; height?: number }) => Promise<void>;
+  renderToPngBlob: (options?: {
+    width?: number;
+    height?: number;
+    loggingId?: string;
+    assetBlobsById?: Map<string, Blob>;
+  }) => Promise<Blob | null>;
+  renderToCanvas: (options?: {
+    width?: number;
+    height?: number;
+    removeDebugBounds?: boolean;
+  }) => Promise<HTMLCanvasElement | null>;
+  getSvgElement: () => SVGSVGElement | null;
+};

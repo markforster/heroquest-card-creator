@@ -3,7 +3,7 @@
 import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
 import { runBulkExport, type BulkExportResult } from "@/lib/export-cards";
 import { getCard } from "@/lib/cards-db";
-import type { CardPreviewHandle } from "@/components/CardPreview/types";
+import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import type { CardRecord } from "@/types/cards-db";
 
 export type ExportFaceIdsOptions = {
@@ -13,6 +13,10 @@ export type ExportFaceIdsOptions = {
   shouldCancel?: () => boolean;
   onTargetChange?: (card: CardRecord | null) => void;
   onProgress?: (exportedCount: number) => void;
+  onZipProgress?: (percent: number) => void;
+  onZipStatus?: (mode: "worker" | "fallback") => void;
+  skipCardIds?: Set<string>;
+  skipCardNotes?: Map<string, string>;
 };
 
 const defaultResolveName = (card: CardRecord, usedNames: Map<string, number>) =>
@@ -29,6 +33,10 @@ export const exportFaceIdsToZip = async (
     shouldCancel = () => false,
     onTargetChange = () => {},
     onProgress = () => {},
+    onZipProgress,
+    onZipStatus,
+    skipCardIds,
+    skipCardNotes,
   }: ExportFaceIdsOptions,
 ): Promise<BulkExportResult> => {
   if (!faceIds.length) {
@@ -58,5 +66,9 @@ export const exportFaceIdsToZip = async (
     shouldCancel,
     onTargetChange,
     onProgress,
+    onZipProgress,
+    onZipStatus,
+    skipCardIds,
+    skipCardNotes,
   });
 };

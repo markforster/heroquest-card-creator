@@ -183,4 +183,87 @@ describe("useStockpileFilters", () => {
 
     expect(result.current.filteredCards.map((card) => card.id)).toEqual(["b"]);
   });
+
+  it("keeps All/Unfiled/Collection counts stable when switching to recentlyDeleted (search still applies)", () => {
+    const cards = [
+      baseCard({ id: "a", nameLower: "alpha" }),
+      baseCard({ id: "b", nameLower: "beta" }),
+      baseCard({ id: "d", nameLower: "delta", deletedAt: 100, updatedAt: 5 }),
+    ];
+    const collections = [baseCollection({ id: "col-1", cardIds: ["a"] })];
+
+    const allView = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections,
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+      }),
+    ).result;
+
+    expect(allView.current.overallCount).toBe(2);
+    expect(allView.current.collectionCounts.get("col-1")).toBe(1);
+    expect(allView.current.unfiledCount).toBe(1);
+
+    const deletedView = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections,
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "recentlyDeleted" },
+        isPairMode: false,
+        isPairBacks: false,
+      }),
+    ).result;
+
+    // Results show deleted cards...
+    expect(deletedView.current.filteredCards.map((card) => card.id)).toEqual(["d"]);
+    // ...but counts remain based on active cards.
+    expect(deletedView.current.overallCount).toBe(2);
+    expect(deletedView.current.collectionCounts.get("col-1")).toBe(1);
+    expect(deletedView.current.unfiledCount).toBe(1);
+
+    const searchedDeletedView = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections,
+        search: "alp",
+        templateFilter: "all",
+        activeFilter: { type: "recentlyDeleted" },
+        isPairMode: false,
+        isPairBacks: false,
+      }),
+    ).result;
+
+    // Search affects counts...
+    expect(searchedDeletedView.current.overallCount).toBe(1);
+    expect(searchedDeletedView.current.collectionCounts.get("col-1")).toBe(1);
+    expect(searchedDeletedView.current.unfiledCount).toBe(0);
+    // ...and also filters deleted results independently.
+    expect(searchedDeletedView.current.filteredCards).toHaveLength(0);
+
+    // Recently deleted pill count is also filtered by search.
+    expect(searchedDeletedView.current.recentlyDeletedCount).toBe(0);
+    // But visibility should be based on the raw deleted count.
+    expect(searchedDeletedView.current.recentlyDeletedTotalCount).toBe(1);
+
+    const filteredTypeDeletedView = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections,
+        search: "",
+        templateFilter: "monster",
+        activeFilter: { type: "recentlyDeleted" },
+        isPairMode: false,
+        isPairBacks: false,
+      }),
+    ).result;
+
+    expect(filteredTypeDeletedView.current.recentlyDeletedTotalCount).toBe(1);
+    expect(filteredTypeDeletedView.current.recentlyDeletedCount).toBe(0);
+  });
 });

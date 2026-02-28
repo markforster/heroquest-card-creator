@@ -63,7 +63,7 @@ describe("useStockpileData", () => {
       expect(result.current.collections).toHaveLength(1);
     });
 
-    expect(mockListCards).toHaveBeenCalledWith({ status: "saved" });
+    expect(mockListCards).toHaveBeenCalledWith({ status: "saved", deleted: "include" });
     expect(mockListCollections).toHaveBeenCalledTimes(1);
   });
 

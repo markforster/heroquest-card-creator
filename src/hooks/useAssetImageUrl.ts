@@ -4,8 +4,13 @@ import { useEffect, useState } from "react";
 
 import { getAssetObjectUrl } from "@/lib/assets-db";
 
-export function useAssetImageUrl(assetId?: string) {
+export type AssetImageStatus = "idle" | "loading" | "ready" | "missing";
+
+export function useAssetImageUrl(
+  assetId?: string,
+): { url: string | null; status: AssetImageStatus } {
   const [url, setUrl] = useState<string | null>(null);
+  const [status, setStatus] = useState<AssetImageStatus>("idle");
 
   useEffect(() => {
     let cancelled = false;
@@ -13,21 +18,25 @@ export function useAssetImageUrl(assetId?: string) {
 
     if (!assetId) {
       setUrl(null);
+      setStatus("idle");
       return () => {};
     }
 
     (async () => {
       try {
+        setStatus("loading");
         const next = await getAssetObjectUrl(assetId);
         localUrl = next;
         if (!cancelled) {
           setUrl(next);
+          setStatus(next ? "ready" : "missing");
         } else if (next) {
           URL.revokeObjectURL(next);
         }
       } catch {
         if (!cancelled) {
           setUrl(null);
+          setStatus("missing");
         }
       }
     })();
@@ -40,6 +49,5 @@ export function useAssetImageUrl(assetId?: string) {
     };
   }, [assetId]);
 
-  return url;
+  return { url, status };
 }
-

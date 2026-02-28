@@ -102,3 +102,29 @@ export const STATS_VERTICAL_SCALE_Y = 0.985;
  * Adds subtle rotation/offset jitter to paired export preview cards in the Stockpile modal.
  */
 export const USE_EXPORT_PAIR_JITTER = false;
+
+/**
+ * Enables the shared card thumbnail cache (LRU + reuse). Disable to fall back
+ * to legacy per-component object URLs.
+ */
+export const ENABLE_CARD_THUMB_CACHE = true;
+
+/**
+ * Enables throttling for asset thumbnail loading in the assets panel.
+ * Disable to restore legacy fast loading behavior.
+ */
+// export const ENABLE_ASSET_THUMB_THROTTLE = true;
+export const ENABLE_ASSET_THUMB_THROTTLE = false;
+
+/**
+ * Disables missing-asset checks to isolate performance issues.
+ */
+export const ENABLE_MISSING_ASSET_CHECKS = true;
+
+/**
+ * Missing-asset scan timing controls. Keep periodic scans on, but skip initial
+ * and delete-triggered scans to reduce load impact.
+ */
+export const ENABLE_MISSING_ASSET_INITIAL_SCAN = true;
+export const ENABLE_MISSING_ASSET_PERIODIC_SCAN = true;
+export const ENABLE_MISSING_ASSET_DELETE_SCAN = false;

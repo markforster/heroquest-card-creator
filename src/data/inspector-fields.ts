@@ -7,6 +7,8 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "title",
       labelKey: "form.heroName",
       required: true,
+      showToolbar: true,
+      showTitleColor: true,
     },
     {
       fieldType: "image",
@@ -27,6 +29,13 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "description",
       labelKey: "form.cardText",
     },
+    {
+      fieldType: "copyright",
+      bind: "copyright",
+      labelKey: "form.copyright",
+      placeholderKey: "placeholders.copyright",
+      showToggle: true,
+    },
   ],
   monster: [
     {
@@ -34,6 +43,8 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "title",
       labelKey: "form.monsterName",
       required: true,
+      showToolbar: true,
+      showTitleColor: true,
     },
     {
       fieldType: "image",
@@ -59,6 +70,13 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "description",
       labelKey: "form.cardText",
     },
+    {
+      fieldType: "copyright",
+      bind: "copyright",
+      labelKey: "form.copyright",
+      placeholderKey: "placeholders.copyright",
+      showToggle: true,
+    },
   ],
   "small-treasure": [
     {
@@ -66,6 +84,8 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "title",
       labelKey: "form.cardTitle",
       required: true,
+      showToolbar: true,
+      showTitleColor: true,
     },
     {
       fieldType: "image",
@@ -78,6 +98,18 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "description",
       labelKey: "form.cardText",
     },
+    {
+      fieldType: "borderColor",
+      bind: "borderColor",
+      labelKey: "form.borderColor",
+    },
+    {
+      fieldType: "copyright",
+      bind: "copyright",
+      labelKey: "form.copyright",
+      placeholderKey: "placeholders.copyright",
+      showToggle: true,
+    },
   ],
   "large-treasure": [
     {
@@ -85,6 +117,8 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "title",
       labelKey: "form.cardTitle",
       required: true,
+      showToolbar: true,
+      showTitleColor: true,
     },
     {
       fieldType: "image",
@@ -97,6 +131,18 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "description",
       labelKey: "form.cardText",
     },
+    {
+      fieldType: "borderColor",
+      bind: "borderColor",
+      labelKey: "form.borderColor",
+    },
+    {
+      fieldType: "copyright",
+      bind: "copyright",
+      labelKey: "form.copyright",
+      placeholderKey: "placeholders.copyright",
+      showToggle: true,
+    },
   ],
   "hero-back": [
     {
@@ -104,11 +150,21 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "title",
       labelKey: "form.backTitle",
       required: false,
+      showToolbar: true,
+      showTitleColor: true,
     },
     {
       fieldType: "text",
       bind: "description",
       labelKey: "form.backText",
+      props: { showToolbar: true },
+    },
+    {
+      fieldType: "copyright",
+      bind: "copyright",
+      labelKey: "form.copyright",
+      placeholderKey: "placeholders.copyright",
+      showToggle: true,
     },
   ],
   "labelled-back": [
@@ -118,6 +174,10 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       labelKey: "form.backLabel",
       required: true,
       showToggle: true,
+      showPlacement: true,
+      showStyleToggle: true,
+      showToolbar: true,
+      showTitleColor: true,
     },
     {
       fieldType: "image",
@@ -126,9 +186,23 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       props: { boundsWidth: 750, boundsHeight: 1050 },
     },
     {
+      fieldType: "text",
+      bind: "description",
+      labelKey: "form.backText",
+      showToggle: true,
+      props: { showToolbar: true },
+    },
+    {
       fieldType: "borderColor",
       bind: "borderColor",
       labelKey: "form.borderColor",
+    },
+    {
+      fieldType: "copyright",
+      bind: "copyright",
+      labelKey: "form.copyright",
+      placeholderKey: "placeholders.copyright",
+      showToggle: true,
     },
   ],
 };

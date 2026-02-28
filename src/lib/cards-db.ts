@@ -85,6 +85,9 @@ export async function createCard(
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to create card"));
   });
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+  }
 
   return base;
 }
@@ -132,6 +135,9 @@ export async function updateCard(
     putRequest.onsuccess = () => resolve();
     putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update card"));
   });
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+  }
 
   return next;
 }
@@ -190,6 +196,9 @@ export async function updateCards(
       };
     });
   });
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+  }
 }
 
 export async function getCard(id: string): Promise<CardRecord | null> {
@@ -241,16 +250,57 @@ export async function touchCardLastViewed(
   return next;
 }
 
+export async function updateCardThumbnail(
+  id: string,
+  thumbnailBlob: Blob | null,
+): Promise<boolean> {
+  const store = await getCardsStore("readwrite");
+
+  const existing = await new Promise<CardRecord | null>((resolve, reject) => {
+    const getRequest = store.get(id);
+    getRequest.onsuccess = () => {
+      resolve((getRequest.result as CardRecord | undefined) ?? null);
+    };
+    getRequest.onerror = () => {
+      reject(getRequest.error ?? new Error("Failed to load card for thumbnail update"));
+    };
+  });
+
+  if (!existing) {
+    return false;
+  }
+
+  const normalized = normalizeThumbnailBlob(thumbnailBlob ?? null);
+  const next: CardRecord = {
+    ...existing,
+    thumbnailBlob: normalized ?? null,
+  };
+
+  await new Promise<void>((resolve, reject) => {
+    const putRequest = store.put(next);
+    putRequest.onsuccess = () => resolve();
+    putRequest.onerror = () =>
+      reject(putRequest.error ?? new Error("Failed to update card thumbnail"));
+  });
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+  }
+
+  return true;
+}
+
 export type ListCardsFilter = {
   templateId?: TemplateId;
   status?: CardStatus;
   search?: string;
+  deleted?: "exclude" | "include" | "only";
 };
 
 export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecord[]> {
   const store = await getCardsStore("readonly");
 
-  const { templateId, status, search } = filter;
+  const { templateId, status, search, deleted = "exclude" } = filter;
   const cards: CardRecord[] = [];
 
   await new Promise<void>((resolve, reject) => {
@@ -286,6 +336,12 @@ export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecor
 
   let filtered = cards;
 
+  if (deleted === "exclude") {
+    filtered = filtered.filter((card) => card.deletedAt == null);
+  } else if (deleted === "only") {
+    filtered = filtered.filter((card) => typeof card.deletedAt === "number");
+  }
+
   if (search) {
     const q = search.toLocaleLowerCase();
     filtered = filtered.filter((card) => card.nameLower.includes(q));
@@ -294,21 +350,20 @@ export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecor
   return filtered;
 }
 
-export async function normalizeSelfPairings(): Promise<number> {
-  const cards = await listCards({ status: "saved" });
-  const invalidIds = cards.filter((card) => card.pairedWith === card.id).map((card) => card.id);
-  if (!invalidIds.length) return 0;
-  await updateCards(invalidIds, { pairedWith: null });
-  return invalidIds.length;
+export async function softDeleteCards(
+  ids: string[],
+  deletedAt: number = Date.now(),
+): Promise<void> {
+  if (!ids.length) return;
+  await updateCards(ids, { deletedAt });
+}
+
+export async function restoreCards(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  await updateCards(ids, { deletedAt: null });
 }
 
 export async function deleteCard(id: string): Promise<void> {
-  const cards = await listCards({ status: "saved" });
-  const pairedIds = cards.filter((card) => card.pairedWith === id).map((card) => card.id);
-  if (pairedIds.length > 0) {
-    await updateCards(pairedIds, { pairedWith: null });
-  }
-
   const store = await getCardsStore("readwrite");
 
   await new Promise<void>((resolve, reject) => {
@@ -320,15 +375,6 @@ export async function deleteCard(id: string): Promise<void> {
 
 export async function deleteCards(ids: string[]): Promise<void> {
   if (!ids.length) return;
-
-  const idSet = new Set(ids);
-  const cards = await listCards({ status: "saved" });
-  const pairedIds = cards
-    .filter((card) => card.pairedWith && idSet.has(card.pairedWith))
-    .map((card) => card.id);
-  if (pairedIds.length > 0) {
-    await updateCards(pairedIds, { pairedWith: null });
-  }
 
   const store = await getCardsStore("readwrite");
 

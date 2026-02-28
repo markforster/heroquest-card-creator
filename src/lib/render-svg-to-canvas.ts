@@ -8,6 +8,7 @@ import {
   readBlobAsDataUrl,
 } from "@/lib/card-preview";
 import { getSvgImageHref, insertSvgStyle, setSvgImageHref } from "@/lib/dom";
+import { logAssetInlineById } from "@/lib/export-logging";
 import type { RenderSvgToCanvasOptions } from "@/lib/render-svg-to-canvas.types";
 
 export async function renderSvgToCanvas({
@@ -16,7 +17,10 @@ export async function renderSvgToCanvas({
   height,
   existingCanvas,
   removeDebugBounds = true,
+  loggingId,
+  assetBlobsById,
 }: RenderSvgToCanvasOptions): Promise<HTMLCanvasElement | null> {
+  const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
   const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
 
   if (removeDebugBounds) {
@@ -26,7 +30,9 @@ export async function renderSvgToCanvas({
   }
 
   const { origin, isFileProtocol } = getLocationOriginInfo();
-  const images = Array.from(clonedSvg.querySelectorAll("image"));
+  const images = Array.from(
+    clonedSvg.querySelectorAll<SVGImageElement | SVGFEImageElement>("image, feImage"),
+  );
   const backgroundImages = Array.from(
     clonedSvg.querySelectorAll('image[data-card-background="true"]'),
   );
@@ -50,18 +56,57 @@ export async function renderSvgToCanvas({
       if (!hrefAttr || hrefAttr.startsWith("data:")) return;
 
       const userAssetId = imgEl.getAttribute("data-user-asset-id");
+      const assetName = imgEl.getAttribute("data-user-asset-name");
+      const assetLabel = userAssetId ?? extractFileName(hrefAttr) ?? hrefAttr ?? "unknown";
       if (userAssetId) {
+        const cachedBlob = assetBlobsById?.get(userAssetId);
+        if (cachedBlob) {
+          const cacheStart = now();
+          try {
+            const dataUrl = await readBlobAsDataUrl(cachedBlob);
+            setSvgImageHref(imgEl, dataUrl);
+            logAssetInlineById(loggingId, {
+              assetId: userAssetId,
+              assetName,
+              source: "userAssetCache",
+              durationMs: now() - cacheStart,
+              outcome: "success",
+            });
+            return;
+          } catch {
+            logAssetInlineById(loggingId, {
+              assetId: userAssetId,
+              assetName,
+              source: "userAssetCache",
+              durationMs: now() - cacheStart,
+              outcome: "fail",
+            });
+          }
+        }
+
+        const inlineStart = now();
+        let didInline = false;
         try {
           const { getAssetBlob } = await import("@/lib/assets-db");
           const blob = await getAssetBlob(userAssetId);
           if (blob) {
             const dataUrl = await readBlobAsDataUrl(blob);
             setSvgImageHref(imgEl, dataUrl);
+            didInline = true;
           }
         } catch {
           // Fall through to the normal handling.
         }
-        return;
+        logAssetInlineById(loggingId, {
+          assetId: userAssetId,
+          assetName,
+          source: "userAssetId",
+          durationMs: now() - inlineStart,
+          outcome: didInline ? "success" : "fail",
+        });
+        if (didInline) {
+          return;
+        }
       }
 
       if (embeddedImagesByFileName) {
@@ -71,7 +116,15 @@ export async function renderSvgToCanvas({
           for (const candidate of candidates) {
             const embedded = embeddedImagesByFileName[candidate];
             if (embedded) {
+              const inlineStart = now();
               setSvgImageHref(imgEl, embedded);
+              logAssetInlineById(loggingId, {
+                assetId: assetLabel,
+                assetName,
+                source: "embedded",
+                durationMs: now() - inlineStart,
+                outcome: "success",
+              });
               return;
             }
           }
@@ -82,6 +135,13 @@ export async function renderSvgToCanvas({
       // resources. At this point we only attempt fetch for blob: URLs (user assets), or for
       // non-file protocols.
       if (isFileProtocol && !hrefAttr.startsWith("blob:")) {
+        logAssetInlineById(loggingId, {
+          assetId: assetLabel,
+          assetName,
+          source: "fetch",
+          durationMs: 0,
+          outcome: "skipped",
+        });
         return;
       }
 
@@ -90,13 +150,28 @@ export async function renderSvgToCanvas({
         url = origin + hrefAttr;
       }
 
+      const fetchStart = now();
       try {
         const response = await fetch(url);
         const blob = await response.blob();
         const dataUrl = await readBlobAsDataUrl(blob, "Failed to read image blob");
 
         setSvgImageHref(imgEl, dataUrl);
+        logAssetInlineById(loggingId, {
+          assetId: assetLabel,
+          assetName,
+          source: "fetch",
+          durationMs: now() - fetchStart,
+          outcome: "success",
+        });
       } catch {
+        logAssetInlineById(loggingId, {
+          assetId: assetLabel,
+          assetName,
+          source: "fetch",
+          durationMs: now() - fetchStart,
+          outcome: "fail",
+        });
         if (hrefAttr.startsWith("/")) {
           const absolute = origin + hrefAttr;
           setSvgImageHref(imgEl, absolute);

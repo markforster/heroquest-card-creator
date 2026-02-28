@@ -1,18 +1,18 @@
 import { render, screen } from "@testing-library/react";
 
-import MainFooter from "@/components/MainFooter";
+import MainFooter from "@/components/Layout/MainFooter";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
 jest.mock("@/version", () => ({
   APP_VERSION: "0.0.0-test",
 }));
 
-jest.mock("@/components/HelpModal", () => ({
+jest.mock("@/components/Modals/HelpModal", () => ({
   __esModule: true,
   default: () => null,
 }));
 
-jest.mock("@/components/ReleaseNotesModal", () => ({
+jest.mock("@/components/Modals/ReleaseNotesModal", () => ({
   __esModule: true,
   default: () => null,
 }));

@@ -8,8 +8,13 @@ Key features:
 
 - SVG preview + per-card PNG export (fonts/images inlined).
 - Asset library (IndexedDB-backed) for uploading/using images.
-- Saved cards (“Stockpile”), including collections + bulk export to a ZIP.
+- Saved cards (“Stockpile”), with panels, table view, and Recently Deleted safety.
+- Collections tree view and drag-and-drop organisation.
+- Assets inspector plus asset kind classification/filtering.
+- Missing-artwork export prompts to catch issues before bulk export.
 - Full backup import/export (`.hqcc`) of cards/assets (and related settings).
+
+Highlights (v0.5.3): Stockpile workflow overhaul, richer Assets/Pairing UX, and export safety checks.
 
 ---
 
@@ -35,7 +40,7 @@ Core feature areas:
 - `src/components/CardParts/*` – reusable SVG parts (ribbons, stats blocks, text blocks, etc.).
 - `src/components/CardInspector/*` – form controls for editing current card fields.
 - `src/components/Assets/*` – asset manager (IndexedDB‑backed image library).
-- `src/components/Stockpile/*` – “Cards” modal for browsing and loading saved cards.
+- `src/components/Stockpile/*` – “Cards” panel for browsing and loading saved cards.
 - `src/components/CardEditor/CardEditorContext.tsx` – central editor state, drafts, and active card tracking.
 - `src/data/card-templates.ts` / `src/types/*` – template metadata and shared type definitions.
 - `src/lib/*` – browser‑side helpers:
@@ -74,6 +79,7 @@ What this means in practice:
 - You can:
   - Serve `out/` from any path on a web server (e.g. `/tools/card-maker/`).
   - Or open `out/index.html` directly via `file://` in a browser.
+- Note: Firefox `file://` requires a small URL shim (included) to avoid `URL constructor: null` errors.
 - No Node server or runtime is required once built.
 
 The only place `NEXT_PUBLIC_SITE_URL` matters is for `robots.ts` and `sitemap.ts` (to generate absolute URLs). It does **not** affect how the static bundle runs.
@@ -109,6 +115,29 @@ The dev server behaves like a normal Next.js SPA, but all logic still runs on th
   - Open `out/index.html` directly in a modern browser (Chrome is the primary target).
 
 Because fonts and assets are referenced relatively and IndexedDB/localStorage are used in the browser, the editor will work the same whether it’s hosted at `/`, `/some/sub/path`, or opened from the filesystem.
+
+---
+
+## CLI module (npm)
+
+You can run the static build from a simple local server via the published CLI package:
+
+- Install globally:
+- `npm i -g @markforster/heroquest-card-creator`
+- Run (default `http://127.0.0.1:3000`):
+  - `heroquest-card-creator`
+- Run on another port:
+  - `heroquest-card-creator -p 4000`
+
+Notes:
+
+- The CLI serves the bundled static `out/` content included in the npm package.
+- Your cards and assets are stored in the browser via IndexedDB/localStorage.
+- Browser storage is tied to the origin (host + port). If you run on a new port, you won’t see libraries from other ports.
+- Port behavior:
+  - If no port is supplied, the CLI tries 3000 first.
+  - If 3000 is busy, it auto-selects a free port.
+  - It stores recent ports in `~/.hqcc/info.yml` and may prompt you to reuse them.
 
 ---
 

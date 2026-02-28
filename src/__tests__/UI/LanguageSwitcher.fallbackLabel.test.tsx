@@ -11,7 +11,7 @@ jest.mock("@/i18n/messages", () => ({
   languageLabels: {},
 }));
 
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import LanguageSwitcher from "@/components/LanguageMenu/LanguageSwitcher";
 
 describe("LanguageSwitcher (UI) - label fallback", () => {
   it("falls back to code.toUpperCase() when languageLabels has no entry", () => {

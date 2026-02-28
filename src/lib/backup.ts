@@ -1,23 +1,27 @@
 "use client";
 
-import JSZip from "jszip";
-
 import { USE_ZIP_COMPRESSION } from "@/config/flags";
+import { createZipBlobWithProgress } from "@/lib/zip-utils";
+import { configureZipJs } from "@/lib/zip-config";
+import { BlobReader, TextWriter, ZipReader } from "@zip.js/zip.js";
 import type { CardRecord } from "@/types/cards-db";
+import type { PairRecord } from "@/types/pairs-db";
 
 import { openHqccDb } from "./hqcc-db";
+import { generateId } from ".";
 
 import type { AssetRecord } from "./assets-db";
 import type { HqccDb } from "./hqcc-db";
 
-export const BACKUP_SCHEMA_VERSION = 1 as const;
+export const BACKUP_SCHEMA_VERSION = 2 as const;
 export const BACKUP_FILE_EXTENSION = ".hqcc.json" as const;
 export const BACKUP_CONTAINER_EXTENSION = ".hqcc" as const;
 
-export type HqccExportSchemaVersion = typeof BACKUP_SCHEMA_VERSION;
+export type HqccExportSchemaVersion = 1 | 2;
 
 export type CardRecordExportV1 = Omit<CardRecord, "thumbnailBlob"> & {
   thumbnailDataUrl?: string | null;
+  pairedWith?: string | null;
 };
 
 export type AssetRecordExportV1 = AssetRecord & {
@@ -45,6 +49,7 @@ export interface HqccExportLocalStorageV1 {
 
 export interface HqccExportSettingsV1 {
   borderSwatches?: string[];
+  defaultCopyright?: string;
 }
 
 export interface HqccExportFileV1 {
@@ -54,6 +59,7 @@ export interface HqccExportFileV1 {
   notes?: string;
   cards: CardRecordExportV1[];
   assets: AssetRecordExportV1[];
+  pairs?: PairRecord[];
   collections?: CollectionRecordExportV1[];
   settings?: HqccExportSettingsV1;
   localStorage: HqccExportLocalStorageV1;
@@ -161,7 +167,7 @@ function parseBackupJson(text: string): HqccExportFileV1 {
     throw new Error("This file is not a valid HeroQuest Card Maker backup");
   }
 
-  if (candidate.schemaVersion !== BACKUP_SCHEMA_VERSION) {
+  if (candidate.schemaVersion !== 1 && candidate.schemaVersion !== 2) {
     throw new Error("This backup was created by an incompatible version of the app");
   }
 
@@ -289,7 +295,7 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
   if (db.objectStoreNames.contains("settings")) {
     const settingsTx = db.transaction("settings", "readonly");
     const settingsStore = settingsTx.objectStore("settings");
-    const record = await new Promise<{ value?: unknown } | undefined>((resolve, reject) => {
+    const borderRecord = await new Promise<{ value?: unknown } | undefined>((resolve, reject) => {
       const request = settingsStore.get("borderSwatches");
       request.onsuccess = () => {
         resolve(request.result as { value?: unknown } | undefined);
@@ -298,11 +304,27 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
         reject(request.error ?? new Error("Failed to read settings for backup"));
       };
     });
+    const copyrightRecord = await new Promise<{ value?: unknown } | undefined>((resolve, reject) => {
+      const request = settingsStore.get("defaultCopyright");
+      request.onsuccess = () => {
+        resolve(request.result as { value?: unknown } | undefined);
+      };
+      request.onerror = () => {
+        reject(request.error ?? new Error("Failed to read settings for backup"));
+      };
+    });
 
-    const swatches = record?.value;
+    const swatches = borderRecord?.value;
+    const defaultCopyright = copyrightRecord?.value;
     if (Array.isArray(swatches)) {
       settings = {
         borderSwatches: swatches.filter((value) => typeof value === "string") as string[],
+        defaultCopyright:
+          typeof defaultCopyright === "string" ? defaultCopyright : undefined,
+      };
+    } else if (typeof defaultCopyright === "string") {
+      settings = {
+        defaultCopyright,
       };
     }
   }
@@ -343,11 +365,28 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
     statLabels,
   };
 
+  let pairs: PairRecord[] | undefined;
+  if (db.objectStoreNames.contains("pairs")) {
+    const pairsTx = db.transaction("pairs", "readonly");
+    const pairsStore = pairsTx.objectStore("pairs");
+    pairs = await new Promise<PairRecord[]>((resolve, reject) => {
+      const request = pairsStore.getAll();
+      request.onsuccess = () => {
+        const results = (request.result as PairRecord[]) ?? [];
+        resolve(results);
+      };
+      request.onerror = () => {
+        reject(request.error ?? new Error("Failed to read pairs for backup"));
+      };
+    });
+  }
+
   const exportObject: HqccExportFileV1 = {
     schemaVersion: BACKUP_SCHEMA_VERSION,
     createdAt: new Date().toISOString(),
     cards,
     assets,
+    ...(pairs ? { pairs } : {}),
     collections,
     settings,
     localStorage,
@@ -360,7 +399,7 @@ async function applyBackupObject(
   exportData: HqccExportFileV1,
   onProgress?: BackupProgressCallback,
 ): Promise<ImportResult> {
-  if (exportData.schemaVersion !== BACKUP_SCHEMA_VERSION) {
+  if (exportData.schemaVersion !== 1 && exportData.schemaVersion !== 2) {
     throw new Error("Incompatible backup version");
   }
 
@@ -382,6 +421,7 @@ async function applyBackupObject(
   const hasAssetsStore = db.objectStoreNames.contains("assets");
   const hasCollectionsStore = db.objectStoreNames.contains("collections");
   const hasSettingsStore = db.objectStoreNames.contains("settings");
+  const hasPairsStore = db.objectStoreNames.contains("pairs");
 
   async function clearStore(name: string): Promise<void> {
     if (!db.objectStoreNames.contains(name)) return;
@@ -405,6 +445,9 @@ async function applyBackupObject(
   }
   if (hasSettingsStore) {
     await clearStore("settings");
+  }
+  if (hasPairsStore) {
+    await clearStore("pairs");
   }
 
   let cardsCount = 0;
@@ -468,7 +511,7 @@ async function applyBackupObject(
           }
 
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { thumbnailDataUrl, ...rest } = cardExport;
+          const { thumbnailDataUrl, pairedWith, ...rest } = cardExport as CardRecordExportV1;
           const record: CardRecord = {
             ...(rest as CardRecord),
             thumbnailBlob,
@@ -514,17 +557,31 @@ async function applyBackupObject(
     });
   }
 
-  if (hasSettingsStore && exportData.settings?.borderSwatches) {
+  if (
+    hasSettingsStore &&
+    (exportData.settings?.borderSwatches ||
+      typeof exportData.settings?.defaultCopyright === "string")
+  ) {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction("settings", "readwrite");
       const store = tx.objectStore("settings");
       try {
-        store.put({
-          id: "borderSwatches",
-          value: exportData.settings?.borderSwatches,
-          updatedAt: Date.now(),
-          schemaVersion: 1,
-        });
+        if (exportData.settings?.borderSwatches) {
+          store.put({
+            id: "borderSwatches",
+            value: exportData.settings?.borderSwatches,
+            updatedAt: Date.now(),
+            schemaVersion: 1,
+          });
+        }
+        if (typeof exportData.settings?.defaultCopyright === "string") {
+          store.put({
+            id: "defaultCopyright",
+            value: exportData.settings?.defaultCopyright,
+            updatedAt: Date.now(),
+            schemaVersion: 1,
+          });
+        }
       } catch (error) {
         reject(error instanceof Error ? error : new Error("Failed to import settings"));
         return;
@@ -533,6 +590,67 @@ async function applyBackupObject(
       tx.onerror = () =>
         reject(tx.error ?? new Error("Failed to write settings during backup import"));
     });
+  }
+
+  if (hasPairsStore) {
+    if (Array.isArray(exportData.pairs) && exportData.pairs.length > 0) {
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction("pairs", "readwrite");
+        const store = tx.objectStore("pairs");
+        try {
+          exportData.pairs?.forEach((pair) => {
+            store.put(pair);
+          });
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error("Failed to import pairs"));
+          return;
+        }
+        tx.oncomplete = () => resolve();
+        tx.onerror = () =>
+          reject(tx.error ?? new Error("Failed to write pairs during backup import"));
+      });
+    } else {
+      const legacyPairs = exportData.cards
+        .filter((card) => card.pairedWith)
+        .map((card) => {
+          const back = exportData.cards.find((candidate) => candidate.id === card.pairedWith);
+          const frontName = card.name ?? card.title ?? "Untitled front";
+          const backName = back?.name ?? back?.title ?? "Untitled back";
+          return {
+            frontFaceId: card.id,
+            backFaceId: card.pairedWith as string,
+            name: `${frontName} - ${backName}`,
+          };
+        });
+      if (legacyPairs.length > 0) {
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction("pairs", "readwrite");
+          const store = tx.objectStore("pairs");
+          try {
+            legacyPairs.forEach((pair) => {
+              const now = Date.now();
+              const record: PairRecord = {
+                id: generateId(),
+                name: pair.name,
+                nameLower: pair.name.toLocaleLowerCase(),
+                frontFaceId: pair.frontFaceId,
+                backFaceId: pair.backFaceId,
+                createdAt: now,
+                updatedAt: now,
+                schemaVersion: 1,
+              };
+              store.put(record);
+            });
+          } catch (error) {
+            reject(error instanceof Error ? error : new Error("Failed to import legacy pairs"));
+            return;
+          }
+          tx.oncomplete = () => resolve();
+          tx.onerror = () =>
+            reject(tx.error ?? new Error("Failed to write legacy pairs during backup import"));
+        });
+      }
+    }
   }
 
   try {
@@ -619,25 +737,20 @@ export async function createBackupHqcc(options?: {
   onProgress?: BackupProgressCallback;
   onStatus?: BackupStatusCallback;
   onSecondaryProgress?: BackupSecondaryProgressCallback;
+  onSecondaryStatus?: (mode: "worker" | "fallback") => void;
 }): Promise<ExportResult> {
   options?.onStatus?.("processing");
   const exportObject = await buildExportObject(options?.onProgress);
   const json = JSON.stringify(exportObject, null, 2);
 
-  const zip = new JSZip();
-  zip.file("backup.json", json);
-
   options?.onStatus?.("finalizing");
   await new Promise((resolve) => setTimeout(resolve, 250));
-  const blob = await zip.generateAsync(
-    {
-      type: "blob",
-      ...(USE_ZIP_COMPRESSION ? { compression: "DEFLATE", compressionOptions: { level: 6 } } : {}),
-    },
-    (metadata) => {
-      options?.onSecondaryProgress?.(metadata.percent ?? 0, "finalizing");
-    },
-  );
+  const blob = await createZipBlobWithProgress({
+    files: [{ name: "backup.json", data: json }],
+    compress: USE_ZIP_COMPRESSION,
+    onProgress: (percent) => options?.onSecondaryProgress?.(percent ?? 0, "finalizing"),
+    onStatus: (mode) => options?.onSecondaryStatus?.(mode),
+  });
 
   const now = new Date();
   const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
@@ -670,23 +783,40 @@ export async function importBackupHqcc(
   },
 ): Promise<ImportResult> {
   options?.onStatus?.("preparing");
-  let zip: JSZip;
-  try {
-    zip = await JSZip.loadAsync(file);
-  } catch {
-    throw new Error("This file is not a valid HeroQuest Card Maker backup");
-  }
+  const readBackupFile = async (useWebWorkers: boolean) => {
+    configureZipJs(useWebWorkers);
+    let reader: ZipReader<BlobReader> | null = null;
+    try {
+      reader = new ZipReader(new BlobReader(file));
+    } catch {
+      throw new Error("This file is not a valid HeroQuest Card Maker backup");
+    }
 
-  const entry = zip.file("backup.json");
-  if (!entry) {
-    throw new Error("This file is not a valid HeroQuest Card Maker backup");
-  }
+    try {
+      const entries = await reader.getEntries();
+      const entry = entries.find((zipEntry) => zipEntry.filename === "backup.json");
+      if (!entry || entry.directory || !("getData" in entry)) {
+        throw new Error("This file is not a valid HeroQuest Card Maker backup");
+      }
+      return await entry.getData(new TextWriter());
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === "This file is not a valid HeroQuest Card Maker backup"
+      ) {
+        throw error;
+      }
+      throw new Error("Could not read backup data from this file");
+    } finally {
+      await reader?.close();
+    }
+  };
 
   let text: string;
   try {
-    text = await entry.async("string");
+    text = await readBackupFile(true);
   } catch {
-    throw new Error("Could not read backup data from this file");
+    text = await readBackupFile(false);
   }
 
   const exportData = parseBackupJson(text);

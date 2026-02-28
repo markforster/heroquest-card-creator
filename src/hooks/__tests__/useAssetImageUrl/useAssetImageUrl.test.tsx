@@ -48,7 +48,7 @@ describe("useAssetImageUrl", () => {
 
   it("returns null and does not fetch when assetId is missing", () => {
     const { result } = renderHook(() => useAssetImageUrl(undefined));
-    expect(result.current).toBeNull();
+    expect(result.current).toEqual({ url: null, status: "idle" });
     expect(getAssetObjectUrl).not.toHaveBeenCalled();
   });
 
@@ -58,10 +58,10 @@ describe("useAssetImageUrl", () => {
     (getAssetObjectUrl as jest.Mock).mockResolvedValueOnce("blob:asset-1");
 
     const { result, unmount } = renderHook(() => useAssetImageUrl("asset-1"));
-    expect(result.current).toBeNull();
+    expect(result.current).toEqual({ url: null, status: "idle" });
 
     await flushMicrotasks();
-    expect(result.current).toBe("blob:asset-1");
+    expect(result.current).toEqual({ url: "blob:asset-1", status: "ready" });
     expect(getAssetObjectUrl).toHaveBeenCalledWith("asset-1");
 
     unmount();
@@ -82,7 +82,7 @@ describe("useAssetImageUrl", () => {
       { initialProps: { assetId: "asset-1" } },
     );
 
-    expect(result.current).toBeNull();
+    expect(result.current).toEqual({ url: null, status: "idle" });
 
     // Cancel the in-flight request by clearing the asset id.
     rerender({ assetId: undefined });
@@ -90,7 +90,7 @@ describe("useAssetImageUrl", () => {
     deferred.resolve("blob:late-url");
     await flushMicrotasks();
 
-    expect(result.current).toBeNull();
+    expect(result.current).toEqual({ url: null, status: "idle" });
     expect(revokeSpy).toHaveBeenCalledWith("blob:late-url");
     revokeSpy.mockRestore();
   });
@@ -99,9 +99,9 @@ describe("useAssetImageUrl", () => {
     (getAssetObjectUrl as jest.Mock).mockRejectedValueOnce(new Error("boom"));
 
     const { result } = renderHook(() => useAssetImageUrl("asset-1"));
-    expect(result.current).toBeNull();
+    expect(result.current).toEqual({ url: null, status: "idle" });
 
     await flushMicrotasks();
-    expect(result.current).toBeNull();
+    expect(result.current).toEqual({ url: null, status: "missing" });
   });
 });

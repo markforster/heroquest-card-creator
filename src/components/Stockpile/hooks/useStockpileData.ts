@@ -9,6 +9,7 @@ type ActiveFilter =
   | { type: "all" }
   | { type: "recent" }
   | { type: "unfiled" }
+  | { type: "recentlyDeleted" }
   | { type: "collection"; id: string };
 
 type UseStockpileDataOptions = {
@@ -36,7 +37,7 @@ export const useStockpileData = ({
 
     let cancelled = false;
 
-    listCards({ status: "saved" })
+    listCards({ status: "saved", deleted: "include" })
       .then((results) => {
         if (!cancelled) {
           setCards(results);

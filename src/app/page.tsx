@@ -1,36 +1,71 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  HashRouter,
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useMatch,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 
-import { AssetHashIndexProvider } from "@/components/Assets/AssetHashIndexProvider";
-import { AppActionsProvider } from "@/components/AppActionsContext";
-import { CardEditorProvider, useCardEditor } from "@/components/CardEditor/CardEditorContext";
-import CardPreviewContainer from "@/components/CardEditor/CardPreviewContainer";
-import CardInspector from "@/components/CardInspector/CardInspector";
-import TemplateChooser from "@/components/CardInspector/TemplateChooser";
-import CardPreview, { type CardPreviewHandle } from "@/components/CardPreview";
-import { PreviewCanvasProvider } from "@/components/CardPreview/PreviewCanvasContext";
+import { AssetHashIndexProvider } from "@/components/Providers/AssetHashIndexProvider";
+import { AssetsRoutePanels } from "@/components/Assets";
+import { StockpileMainPanel } from "@/components/Stockpile";
+import { AppActionsProvider } from "@/components/Providers/AppActionsContext";
+import { AssetKindBackfillProvider } from "@/components/Providers/AssetKindBackfillProvider";
+import { CardEditorProvider, useCardEditor } from "@/components/Providers/CardEditorContext";
+import CardPreviewContainer from "@/components/Cards/CardEditor/CardPreviewContainer";
+import CardInspector from "@/components/Cards/CardInspector/CardInspector";
+import TemplateChooser from "@/components/Cards/CardInspector/TemplateChooser";
+import CardPreview, { type CardPreviewHandle } from "@/components/Cards/CardPreview";
+import CardThumbnail from "@/components/common/CardThumbnail";
+import { WarningNotice } from "@/components/common/Notice";
+import { PreviewCanvasProvider } from "@/components/Providers/PreviewCanvasContext";
 import DatabaseVersionGate from "@/components/DatabaseVersionGate";
-import { EditorSaveProvider } from "@/components/EditorSaveContext";
+import { EditorSaveProvider } from "@/components/Providers/EditorSaveContext";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
-import { EscapeStackProvider } from "@/components/EscapeStackProvider";
+import { EscapeStackProvider } from "@/components/common/EscapeStackProvider";
+import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
-import HeaderWithTemplatePicker from "@/components/HeaderWithTemplatePicker";
-import { LibraryTransferProvider } from "@/components/LibraryTransferContext";
-import LeftNav from "@/components/LeftNav";
-import MainFooter from "@/components/MainFooter";
-import { DebugVisualsProvider } from "@/components/DebugVisualsContext";
-import { LocalStorageProvider } from "@/components/LocalStorageProvider";
-import { PreviewRendererProvider } from "@/components/PreviewRendererContext";
-import { TextFittingPreferencesProvider } from "@/components/TextFittingPreferencesContext";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
+import HeaderWithTemplatePicker from "@/components/Layout/HeaderWithTemplatePicker";
+import { LibraryTransferProvider } from "@/components/Providers/LibraryTransferContext";
+import LeftNav from "@/components/Layout/LeftNav";
+import MainFooter from "@/components/Layout/MainFooter";
+import { DebugVisualsProvider } from "@/components/Providers/DebugVisualsContext";
+import {
+  LocalStorageProvider,
+  useLocalStorageBoolean,
+} from "@/components/Providers/LocalStorageProvider";
+import { PreviewRendererProvider } from "@/components/Providers/PreviewRendererContext";
+import { TextFittingPreferencesProvider } from "@/components/Providers/TextFittingPreferencesContext";
 import ToolsToolbar from "@/components/ToolsToolbar";
-import WelcomeTemplateModal from "@/components/WelcomeTemplateModal";
-import { WebglPreviewSettingsProvider } from "@/components/WebglPreviewSettingsContext";
+import WelcomeTemplateModal from "@/components/Modals/WelcomeTemplateModal";
+import { WebglPreviewSettingsProvider } from "@/components/Providers/WebglPreviewSettingsContext";
+import {
+  MissingAssetsProvider,
+  useMissingAssets,
+} from "@/components/Providers/MissingAssetsContext";
+import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import dungeonAtmosphere from "@/assets/dungeon atmostphere - 2.png";
 import { cardTemplatesById } from "@/data/card-templates";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
-import { createCard, listCards, normalizeSelfPairings, updateCard, updateCards } from "@/lib/cards-db";
+import {
+  createCard,
+  getCard,
+  listCards,
+  touchCardLastViewed,
+  updateCard,
+  updateCardThumbnail,
+} from "@/lib/cards-db";
+import { createPair, deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
+import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
+import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -43,12 +78,20 @@ import styles from "./page.module.css";
 
 function IndexPageInner() {
   const { t, language } = useI18n();
+  const formatMessageWith = (key: string, vars: Record<string, string | number>) =>
+    formatMessage(t(key as never), vars);
+  const navigate = useNavigate();
+  const { cardId } = useParams();
+  const isAssetsRoute = Boolean(useMatch("/assets"));
+  const isCardsListRoute = Boolean(useMatch("/cards"));
+  const isCardDetailRoute = Boolean(useMatch("/cards/:cardId"));
   const {
     state: {
       selectedTemplateId,
       draftTemplateId,
       draft,
       draftPairingFrontIds,
+      draftPairingBackIds,
       activeCardIdByTemplate,
       activeCardStatusByTemplate,
     },
@@ -56,6 +99,7 @@ function IndexPageInner() {
     setSelectedTemplateId,
     setSingleDraft,
     setDraftPairingFrontIds,
+    setDraftPairingBackIds,
     setTemplateDirty,
     loadCardIntoEditor,
   } = useCardEditor();
@@ -90,12 +134,62 @@ function IndexPageInner() {
   const [pairedFrontCount, setPairedFrontCount] = useState(0);
   const [pairedFrontIds, setPairedFrontIds] = useState<string[]>([]);
   const [activeFrontId, setActiveFrontId] = useState<string | null>(null);
+  const [pairedBackId, setPairedBackId] = useState<string | null>(null);
+  const [lastRememberedBackId, setLastRememberedBackId] = useState<string | null>(null);
+  const [frontViewToken, setFrontViewToken] = useState(0);
+  const lastFaceRef = useRef<CardFace | null>(null);
   const [exportTarget, setExportTarget] = useState<CardRecord | null>(null);
   const [isExportingFaces, setIsExportingFaces] = useState(false);
   const [exportTotal, setExportTotal] = useState(0);
   const [exportProgress, setExportProgress] = useState(0);
+  const [exportSecondaryPercent, setExportSecondaryPercent] = useState<number | null>(null);
+  const [exportSecondaryMode, setExportSecondaryMode] = useState<"worker" | "fallback" | null>(
+    null,
+  );
   const [exportCancelled, setExportCancelled] = useState(false);
+  const exportSecondaryModeRef = useRef<"worker" | "fallback" | null>(null);
+  const [missingAssetsPrompt, setMissingAssetsPrompt] = useState<{
+    report: MissingAssetReport[];
+    skipIds: Set<string>;
+    skipNotes: Map<string, string>;
+    onProceed: () => void;
+  } | null>(null);
+  const { missingAssetsReport } = useMissingAssets();
+  const [missingAssetsDismissed, setMissingAssetsDismissed] = useLocalStorageBoolean(
+    "hqcc.missingArtworkBannerDismissed",
+    false,
+  );
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
+  const [routeError, setRouteError] = useState<"not-found" | "load-failed" | null>(null);
+  const lastLoadedRef = useRef<string | null>(null);
+  const activeCardKey =
+    cardId ??
+    (selectedTemplateId ? activeCardIdByTemplate[selectedTemplateId] : undefined) ??
+    "draft";
+
+  useEscapeModalAware({
+    id: "route:assets",
+    isOpen: isAssetsRoute,
+    enabled: isAssetsRoute,
+    onEscape: () => {
+      if (activeCardId) {
+        navigate(`/cards/${activeCardId}`);
+      } else {
+        navigate("/cards");
+      }
+    },
+  });
+
+  useEscapeModalAware({
+    id: "route:cards",
+    isOpen: isCardsListRoute,
+    enabled: isCardsListRoute,
+    onEscape: () => {
+      if (activeCardId) {
+        navigate(`/cards/${activeCardId}`);
+      }
+    },
+  });
   const handleSave = async (mode: "new" | "update") => {
     if (!currentTemplateId) return;
     const templateId = currentTemplateId as TemplateId;
@@ -131,10 +225,9 @@ function IndexPageInner() {
     const derivedName = (draftTitle ?? "").toString().trim() || `${templateId} card`;
 
     const patch = cardDataToCardRecordPatch(templateId, derivedName, draftValue as never);
-    const safePatch =
-      mode === "update" && activeCardId && patch.pairedWith === activeCardId
-        ? { ...patch, pairedWith: null }
-        : patch;
+    const saveFace =
+      (draftValue?.face ?? selectedTemplate?.defaultFace) === "back" ? "back" : "front";
+    const safePatch = patch;
     const viewedAt = Date.now();
 
     let didSave = false;
@@ -150,12 +243,26 @@ function IndexPageInner() {
         });
         setActiveCard(templateId, record.id, record.status);
         setTemplateDirty(templateId, false);
+        if (saveFace === "front") {
+          if (draftPairingBackIds?.length) {
+            try {
+              await Promise.all(
+                draftPairingBackIds.map((backId) => createPair(record.id, backId)),
+              );
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.error("[page] Failed to apply draft back pairings", error);
+            }
+            setDraftPairingBackIds(null);
+          } else if (pairedBackId) {
+            await createPair(record.id, pairedBackId);
+          }
+        }
         if (draftPairingFrontIds?.length) {
           try {
-            await updateCards(draftPairingFrontIds, {
-              pairedWith: record.id,
-              face: "front",
-            });
+            await Promise.all(
+              draftPairingFrontIds.map((frontId) => createPair(frontId, record.id)),
+            );
           } catch (error) {
             // eslint-disable-next-line no-console
             console.error("[page] Failed to apply draft pairings", error);
@@ -171,6 +278,21 @@ function IndexPageInner() {
           lastViewedAt: viewedAt,
         });
         if (record) {
+          if (saveFace === "front") {
+            if (draftPairingBackIds?.length) {
+              try {
+                await Promise.all(
+                  draftPairingBackIds.map((backId) => createPair(activeCardId, backId)),
+                );
+              } catch (error) {
+                // eslint-disable-next-line no-console
+                console.error("[page] Failed to apply draft back pairings", error);
+              }
+              setDraftPairingBackIds(null);
+            } else if (pairedBackId) {
+              await createPair(activeCardId, pairedBackId);
+            }
+          }
           setActiveCard(templateId, record.id, record.status);
           setTemplateDirty(templateId, false);
           didSave = true;
@@ -205,6 +327,27 @@ function IndexPageInner() {
     return true;
   };
 
+  const repairCurrentCardThumbnail = async () => {
+    if (!activeCardId) return false;
+    let thumbnailBlob: Blob | null = null;
+    try {
+      const blob = await previewRef.current?.renderToPngBlob({
+        width: 225,
+        height: 315,
+      });
+      thumbnailBlob = blob ?? null;
+    } catch {
+      // eslint-disable-next-line no-console
+      console.error("[page] Failed to render thumbnail blob for repair");
+    }
+    if (!thumbnailBlob) return false;
+    try {
+      return await updateCardThumbnail(activeCardId, thumbnailBlob);
+    } catch {
+      return false;
+    }
+  };
+
   const nextDuplicateTitle = (title: string) => {
     const trimmed = title.trim();
     if (!trimmed) return trimmed;
@@ -220,7 +363,7 @@ function IndexPageInner() {
     return `${base} (${suffix + 1})`;
   };
 
-  const duplicateCurrentCard = (withPairing: boolean) => {
+  const duplicateCurrentCard = async (withPairing: boolean) => {
     if (!currentTemplateId) return;
     const templateId = currentTemplateId as TemplateId;
     if (!draftValue) return;
@@ -232,12 +375,33 @@ function IndexPageInner() {
     const nextDraft = {
       ...draftValue,
       ...(draftTitle ? { title: nextDuplicateTitle(String(draftTitle)) } : {}),
-      ...(withPairing ? {} : { pairedWith: null }),
     } as CardDataByTemplate[TemplateId];
     if (withPairing && effectiveFace === "back" && pairedFrontIds.length > 0) {
       setDraftPairingFrontIds(pairedFrontIds);
     } else {
       setDraftPairingFrontIds(null);
+    }
+
+    if (withPairing && effectiveFace === "front") {
+      if (activeCardId) {
+        try {
+          const pairs = await listPairsForFace(activeCardId);
+          const backIds = Array.from(
+            new Set(
+              pairs
+                .map((pair) => pair.backFaceId)
+                .filter((id): id is string => Boolean(id)),
+            ),
+          );
+          setDraftPairingBackIds(backIds.length ? backIds : null);
+        } catch {
+          setDraftPairingBackIds(null);
+        }
+      } else {
+        setDraftPairingBackIds(draftPairingBackIds ?? null);
+      }
+    } else {
+      setDraftPairingBackIds(null);
     }
     setSelectedTemplateId(templateId);
     setSingleDraft(templateId, nextDraft);
@@ -262,6 +426,8 @@ function IndexPageInner() {
     });
 
   useEffect(() => {
+    if (!isCardDetailRoute) return;
+    if (cardId) return;
     if (draftTemplateId && draft) return;
     if (!selectedTemplateId) return;
     const currentTemplate = selectedTemplateId as TemplateId;
@@ -280,9 +446,7 @@ function IndexPageInner() {
         sortByRecent(cards);
         const latest = cards[0];
         if (!latest) return;
-        setSelectedTemplateId(latest.templateId as TemplateId);
-        loadCardIntoEditor(latest.templateId as TemplateId, latest);
-        setTemplateDirty(latest.templateId as TemplateId, false);
+        navigate(`/cards/${latest.id}`, { replace: true });
       } catch {
         // Ignore failures; app can still run without auto-restore.
       }
@@ -293,12 +457,57 @@ function IndexPageInner() {
     };
   }, [
     activeCardIdByTemplate,
+    cardId,
     draft,
     draftTemplateId,
+    selectedTemplateId,
+    navigate,
+    isCardDetailRoute,
+  ]);
+
+  useEffect(() => {
+    if (!isCardDetailRoute) return;
+    if (!cardId) {
+      lastLoadedRef.current = null;
+      setRouteError(null);
+      return;
+    }
+    if (lastLoadedRef.current === cardId) return;
+    lastLoadedRef.current = cardId;
+    setRouteError(null);
+    let active = true;
+    (async () => {
+      try {
+        const record = await getCard(cardId);
+        if (!active) return;
+        if (!record) {
+          setRouteError("not-found");
+          return;
+        }
+        const viewed = await touchCardLastViewed(record.id);
+        const nextRecord = viewed ?? record;
+        setSelectedTemplateId(nextRecord.templateId as TemplateId);
+        loadCardIntoEditor(nextRecord.templateId as TemplateId, nextRecord);
+        setActiveCard(nextRecord.templateId as TemplateId, nextRecord.id, nextRecord.status);
+      } catch {
+        if (active) {
+          setRouteError("load-failed");
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    cardId,
+    activeCardIdByTemplate,
+    setActiveCard,
     loadCardIntoEditor,
+    navigate,
+    isCardDetailRoute,
     selectedTemplateId,
     setSelectedTemplateId,
-    setTemplateDirty,
   ]);
 
   useEffect(() => {
@@ -308,11 +517,19 @@ function IndexPageInner() {
       setActiveFrontId(null);
       return;
     }
+    setLastRememberedBackId(activeCardId);
     let active = true;
     listCards({ status: "saved" })
-      .then((cards) => {
+      .then(async (cards) => {
         if (!active) return;
-        const matches = cards.filter((card) => card.pairedWith === activeCardId);
+        const pairs = await listPairsForFace(activeCardId);
+        if (!active) return;
+        const frontIds = new Set(
+          pairs
+            .map((pair) => pair.frontFaceId)
+            .filter((id): id is string => Boolean(id)),
+        );
+        const matches = cards.filter((card) => frontIds.has(card.id));
         sortByRecent(matches);
         setPairedFrontCount(matches.length);
         setPairedFrontIds(matches.map((card) => card.id));
@@ -330,20 +547,40 @@ function IndexPageInner() {
   }, [activeCardId, effectiveFace]);
 
   useEffect(() => {
+    if (effectiveFace !== "front" || !activeCardId) {
+      setPairedBackId(null);
+      return;
+    }
     let active = true;
-    normalizeSelfPairings().catch(() => {
+    const loadPairedBack = async () => {
+      const pairs = await listPairsForFace(activeCardId);
       if (!active) return;
-      // Ignore normalization failures; nothing is blocked.
+      const match =
+        pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
+        pairs.find((pair) => pair.backFaceId);
+      setPairedBackId(match?.backFaceId ?? null);
+    };
+    loadPairedBack().catch(() => {
+      if (!active) return;
+      setPairedBackId(null);
     });
     return () => {
       active = false;
     };
-  }, []);
+  }, [activeCardId, effectiveFace]);
+
+  useEffect(() => {
+    const previousFace = lastFaceRef.current;
+    if (previousFace === "back" && effectiveFace === "front") {
+      setFrontViewToken((prev) => prev + 1);
+    }
+    lastFaceRef.current = effectiveFace;
+  }, [effectiveFace]);
 
   const exportMenuItems = useMemo(() => {
     if (!effectiveFace) return [];
     if (effectiveFace === "front") {
-      if (!draft?.pairedWith) return [];
+      if (!pairedBackId) return [];
       return [
         {
           id: "export-both-faces",
@@ -373,28 +610,126 @@ function IndexPageInner() {
       ];
     }
     return [];
-  }, [draft?.pairedWith, effectiveFace, pairedFrontCount, t]);
+  }, [effectiveFace, pairedBackId, pairedFrontCount, t]);
 
-  const exportCurrentFace = () => {
-    previewRef.current?.exportAsPng();
+  const openCardInNewTab = (cardIdToOpen: string) => {
+    if (typeof window === "undefined") return;
+    const url = `${window.location.origin}${window.location.pathname}#/cards/${cardIdToOpen}`;
+    window.open(url, "_blank", "noopener");
   };
 
-  const exportFaceIds = async (faceIds: string[]) => {
+  const buildSkipNotesFromReport = (report: MissingAssetReport[]) => {
+    const notes = new Map<string, string>();
+    report.forEach((entry) => {
+      const missingSummary = entry.missing
+        .map((asset) => `${asset.label} asset \"${asset.name}\" (id=${asset.id})`)
+        .join(", ");
+      notes.set(
+        entry.cardId,
+        `Card \"${entry.title}\" (id=${entry.cardId}, template=${entry.templateId}, face=${entry.face}) could not be exported because the ${missingSummary}.`,
+      );
+    });
+    return notes;
+  };
+
+  const exportCurrentFace = () => {
+    if (!activeCardId) {
+      previewRef.current?.exportAsPng();
+      return;
+    }
+
+    void (async () => {
+      try {
+        const card = await getCard(activeCardId);
+        if (!card) {
+          previewRef.current?.exportAsPng();
+          return;
+        }
+        if (ENABLE_MISSING_ASSET_CHECKS) {
+          const report = await buildMissingAssetsReport([card]);
+          if (report.length > 0) {
+            setMissingAssetsPrompt({
+              report,
+              skipIds: new Set(report.map((entry) => entry.cardId)),
+              skipNotes: buildSkipNotesFromReport(report),
+              onProceed: () => {
+                previewRef.current?.exportAsPng();
+              },
+            });
+            return;
+          }
+        }
+        previewRef.current?.exportAsPng();
+      } catch {
+        previewRef.current?.exportAsPng();
+      }
+    })();
+  };
+
+  const exportFaceIds = async (
+    faceIds: string[],
+    options?: { skipIds?: Set<string>; skipNotes?: Map<string, string>; skipPrecheck?: boolean },
+  ) => {
     if (faceIds.length <= 1) {
       exportCurrentFace();
       return;
     }
+
+    if (ENABLE_MISSING_ASSET_CHECKS && !options?.skipPrecheck) {
+      const records = await Promise.all(
+        faceIds.map(async (id) => {
+          try {
+            return await getCard(id);
+          } catch {
+            return null;
+          }
+        }),
+      );
+      const cards = records.filter((record): record is CardRecord => Boolean(record));
+      const report = await buildMissingAssetsReport(cards);
+      if (report.length > 0) {
+        const skipIds = new Set(report.map((entry) => entry.cardId));
+        const skipNotes = buildSkipNotesFromReport(report);
+        setMissingAssetsPrompt({
+          report,
+          skipIds,
+          skipNotes,
+          onProceed: () => {
+            void exportFaceIds(faceIds, { skipIds, skipNotes, skipPrecheck: true });
+          },
+        });
+        return;
+      }
+    }
     try {
       setIsExportingFaces(true);
-      setExportTotal(faceIds.length);
+      const skipIds = options?.skipIds;
+      const total = skipIds ? faceIds.filter((id) => !skipIds.has(id)).length : faceIds.length;
+      setExportTotal(total);
       setExportProgress(0);
+      setExportSecondaryPercent(null);
+      setExportSecondaryMode(null);
+      exportSecondaryModeRef.current = null;
       setExportCancelled(false);
       exportCancelRef.current = false;
       const result = await exportFaceIdsToZip(faceIds, {
         previewRef: exportPreviewRef,
         onTargetChange: (card) => setExportTarget(card),
         onProgress: (count) => setExportProgress(count),
+        onZipProgress: (percent) => {
+          if (exportSecondaryModeRef.current === "fallback") return;
+          setExportSecondaryPercent(percent);
+        },
+        onZipStatus: (mode) => {
+          setExportSecondaryMode(mode);
+          exportSecondaryModeRef.current = mode;
+          if (mode === "fallback") {
+            setExportSecondaryPercent(null);
+          }
+        },
         shouldCancel: () => exportCancelRef.current,
+        skipCardIds: options?.skipIds,
+        skipCardNotes: options?.skipNotes,
       });
       if (result.status === "empty") {
         window.alert(t("alert.selectCardToExport"));
@@ -410,6 +745,9 @@ function IndexPageInner() {
       setExportTarget(null);
       setExportTotal(0);
       setExportProgress(0);
+      setExportSecondaryPercent(null);
+      setExportSecondaryMode(null);
+      exportSecondaryModeRef.current = null;
       setExportCancelled(false);
     }
   };
@@ -420,11 +758,11 @@ function IndexPageInner() {
       return;
     }
     if (effectiveFace === "front") {
-      if (!draft?.pairedWith) {
+      if (!pairedBackId) {
         exportCurrentFace();
         return;
       }
-      await exportFaceIds([activeCardId, draft.pairedWith]);
+      await exportFaceIds([activeCardId, pairedBackId]);
       return;
     }
     if (effectiveFace === "back") {
@@ -459,16 +797,83 @@ function IndexPageInner() {
   const exportCardData = exportTarget ? cardRecordToCardData(exportTarget) : undefined;
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} d-flex flex-column`}>
       <LibraryTransferProvider>
-        <EditorSaveProvider value={{ saveCurrentCard, saveToken }}>
+        <EditorSaveProvider value={{ saveCurrentCard, repairCurrentCardThumbnail, saveToken }}>
           <EscapeStackProvider>
-            <AppActionsProvider>
-              <HeaderWithTemplatePicker />
-              <main className={styles.main}>
+            <AssetKindBackfillProvider>
+              <AppActionsProvider>
+              <HeaderWithTemplatePicker
+                missingAssetsCount={missingAssetsReport.length}
+                showMissingAssetsReminder={
+                  missingAssetsDismissed && missingAssetsReport.length > 0
+                }
+              />
+              {ENABLE_MISSING_ASSET_CHECKS &&
+              missingAssetsReport.length > 0 &&
+              !missingAssetsDismissed ? (
+                <div className={styles.missingAssetsBanner}>
+                  <WarningNotice
+                    role="status"
+                    className="d-flex align-items-start gap-3"
+                  >
+                    <Link className={styles.missingAssetsBannerLink} to="/cards?missingartwork">
+                      <div className={styles.missingAssetsBannerBody}>
+                        <div className={styles.missingAssetsBannerTitle}>
+                          {t("warning.missingArtworkDetectedTitle")}
+                        </div>
+                        <div>
+                          {formatMessageWith("warning.missingArtworkDetectedBody", {
+                            count: missingAssetsReport.length,
+                          })}
+                        </div>
+                      </div>
+                    </Link>
+                    <button
+                      type="button"
+                      className={`btn btn-outline-light btn-sm ${styles.missingAssetsBannerClose}`}
+                      onClick={() => setMissingAssetsDismissed(true)}
+                    >
+                      {t("actions.dismiss")}
+                    </button>
+                  </WarningNotice>
+                </div>
+              ) : null}
+              <main className={`${styles.main} d-flex`}>
                 <LeftNav />
+                {isAssetsRoute ? <AssetsRoutePanels /> : null}
+                {isCardsListRoute ? (
+                  <section className={`${styles.leftPanel} d-flex align-items-stretch`}>
+                    <StockpileMainPanel
+                      isOpen
+                      onClose={() => {}}
+                      onLoadCard={(card) => navigate(`/cards/${card.id}`)}
+                    />
+                  </section>
+                ) : null}
+                {isCardDetailRoute && routeError ? (
+                  <section className={`${styles.routeErrorPanel} d-flex align-items-center justify-content-center`}>
+                    <div className={`${styles.routeErrorCard} ${styles.uStackLg}`}>
+                      <div className={styles.routeErrorTitle}>Card not found</div>
+                      <div className={styles.routeErrorBody}>
+                        {routeError === "not-found"
+                          ? "The card you requested does not exist or was deleted."
+                          : "We couldn't load this card right now."}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={() => navigate("/cards", { replace: true })}
+                      >
+                        Back to cards
+                      </button>
+                    </div>
+                  </section>
+                ) : null}
                 <section
-                  className={styles.leftPanel}
+                  className={`${styles.leftPanel} d-flex align-items-stretch gap-3 p-3 ${
+                    !isCardDetailRoute || routeError ? styles.routeHidden : ""
+                  }`}
                   // style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
                 >
                   {/* <div className={styles.templateSidebar}>
@@ -478,16 +883,28 @@ function IndexPageInner() {
                       variant="sidebar"
                     />
                   </div> */}
-                  <div className={styles.previewContainer}>
+                  <div
+                    className={`${styles.previewContainer} d-flex align-items-center justify-content-center`}
+                  >
                     <ToolsToolbar />
-                    {selectedTemplate ? <CardPreviewContainer previewRef={previewRef} /> : null}
+                    {selectedTemplate ? (
+                      <CardPreviewContainer
+                        previewRef={previewRef}
+                        preferredBackId={lastRememberedBackId}
+                      />
+                    ) : null}
                   </div>
                 </section>
-                <aside className={styles.rightPanel}>
+                <aside
+                  className={`${styles.rightPanel} d-flex flex-column ${
+                    !isCardDetailRoute || routeError ? styles.routeHidden : ""
+                  }`}
+                >
                   <div className={styles.inspectorTop}>
                     <TemplateChooser />
                     <WelcomeTemplateModal
                       isOpen={isWelcomeOpen}
+                      onClose={() => setIsWelcomeOpen(false)}
                       onSelect={(templateId) => {
                         const nextDraft = createDefaultCardData(templateId);
                         setSelectedTemplateId(templateId);
@@ -500,7 +917,12 @@ function IndexPageInner() {
                   </div>
                   <div className={styles.inspectorBody}>
                     <PreviewCanvasProvider previewRef={previewRef}>
-                      <CardInspector />
+                <CardInspector
+                  activeFrontId={activeFrontId}
+                  autoOpenBackId={lastRememberedBackId}
+                  frontViewToken={frontViewToken}
+                  onRememberBackId={setLastRememberedBackId}
+                />
                     </PreviewCanvasProvider>
                   </div>
                   <EditorActionsToolbar
@@ -528,7 +950,8 @@ function IndexPageInner() {
                   />
                 </aside>
               </main>
-            </AppActionsProvider>
+              </AppActionsProvider>
+            </AssetKindBackfillProvider>
           </EscapeStackProvider>
         </EditorSaveProvider>
         {exportTemplate && exportTarget ? (
@@ -542,13 +965,75 @@ function IndexPageInner() {
             />
           </div>
         ) : null}
+        {missingAssetsPrompt ? (
+          <ConfirmModal
+            isOpen={Boolean(missingAssetsPrompt)}
+            title={t("warning.missingAssetsTitle")}
+            confirmLabel={t("actions.proceedExport")}
+            cancelLabel={t("actions.cancel")}
+            contentClassName={styles.missingAssetsModal}
+            onConfirm={() => {
+              const prompt = missingAssetsPrompt;
+              if (!prompt) return;
+              setMissingAssetsPrompt(null);
+              prompt.onProceed();
+            }}
+            onCancel={() => {
+              setMissingAssetsPrompt(null);
+            }}
+          >
+            <div>{t("warning.missingAssetsBody")}</div>
+            <div className={styles.assetsReportStatus}>{t("label.opensInNewTab")}</div>
+            <div className={styles.assetsReportList}>
+              {missingAssetsPrompt.report.map((entry) => {
+                const thumbUrl = entry.thumbnailBlob
+                  ? URL.createObjectURL(entry.thumbnailBlob)
+                  : null;
+                const fallbackUrl = cardTemplatesById[entry.templateId]?.thumbnail?.src ?? null;
+                return (
+                  <div key={entry.cardId} className={styles.assetsReportItem}>
+                    <div className="d-flex align-items-center gap-3">
+                      <CardThumbnail
+                        src={thumbUrl ?? fallbackUrl}
+                        alt={entry.title}
+                        variant="sm"
+                        onLoad={() => {
+                          if (thumbUrl) {
+                            URL.revokeObjectURL(thumbUrl);
+                          }
+                        }}
+                      />
+                      <div className={styles.assetsReportName}>
+                        {entry.title} ({entry.templateId})
+                      </div>
+                    </div>
+                    <div className={styles.assetsReportStatus}>
+                      {t("label.missingAssets")}:{" "}
+                      {entry.missing
+                        .map((asset) => `${asset.label} \"${asset.name}\"`)
+                        .join(", ")}
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-outline-light btn-sm mt-2"
+                      onClick={() => openCardInNewTab(entry.cardId)}
+                    >
+                      {t("actions.openCardNewTab")}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </ConfirmModal>
+        ) : null}
         <ExportProgressOverlay
           isOpen={isExportingFaces}
           title={`${t("status.exportingImages")} (${exportTotal})`}
           progress={exportProgress}
           total={exportTotal}
-          cancelLabel={exportCancelled ? t("actions.cancelling") : t("actions.cancel")}
-          cancelDisabled={exportCancelled}
+          secondaryLabel={exportSecondaryMode ? t("status.finalizing") : null}
+          secondaryPercent={exportSecondaryMode === "worker" ? exportSecondaryPercent : null}
+          exportCancelled={exportCancelled}
           onCancel={() => {
             exportCancelRef.current = true;
             setExportCancelled(true);
@@ -570,7 +1055,16 @@ export default function IndexPage() {
               <PreviewRendererProvider>
                 <WebglPreviewSettingsProvider>
                   <TextFittingPreferencesProvider>
-                    <IndexPageInner />
+                    <MissingAssetsProvider>
+                      <HashRouter>
+                        <Routes>
+                          <Route path="/cards" element={<IndexPageInner />} />
+                          <Route path="/cards/:cardId" element={<IndexPageInner />} />
+                          <Route path="/assets" element={<IndexPageInner />} />
+                          <Route path="*" element={<Navigate to="/cards" replace />} />
+                        </Routes>
+                      </HashRouter>
+                    </MissingAssetsProvider>
                   </TextFittingPreferencesProvider>
                 </WebglPreviewSettingsProvider>
               </PreviewRendererProvider>

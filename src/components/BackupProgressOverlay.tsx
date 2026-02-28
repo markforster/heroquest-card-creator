@@ -17,6 +17,7 @@ export default function BackupProgressOverlay({
   title,
   statusLabel,
   secondaryLabel,
+  secondaryPercent,
   current,
   total,
 }: BackupProgressOverlayProps) {
@@ -25,6 +26,8 @@ export default function BackupProgressOverlay({
   const percent = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
   const mainPercentValue = current >= total && total > 0 ? 100 : percent;
   const showSecondary = Boolean(secondaryLabel);
+  const secondaryValue = typeof secondaryPercent === "number" ? Math.round(secondaryPercent) : 0;
+  const secondaryIndeterminate = showSecondary && secondaryPercent == null;
 
   return (
     <div className={styles.stockpileOverlayBackdrop}>
@@ -50,7 +53,19 @@ export default function BackupProgressOverlay({
           {showSecondary ? (
             <>
               <div>{secondaryLabel}</div>
-              <div className={styles.spinner} aria-hidden="true" />
+              {secondaryIndeterminate ? (
+                <div className={styles.spinner} aria-hidden="true" />
+              ) : (
+                <>
+                  <div className={styles.exportProgressTrack} aria-hidden="true">
+                    <div
+                      className={styles.exportProgressFill}
+                      style={{ width: `${secondaryValue}%`, transition: "none" }}
+                    />
+                  </div>
+                  <div className={styles.exportProgressLabel}>{secondaryValue}%</div>
+                </>
+              )}
             </>
           ) : null}
         </div>

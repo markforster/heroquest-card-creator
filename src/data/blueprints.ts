@@ -1,6 +1,62 @@
+import smallLargeArtworkBorderMask from "@/assets/card-backgrounds/small-large-artwork-border-alpha-mask.png";
+import smallLargeArtworkBorderTexture from "@/assets/card-backgrounds/small-large-artwork-border-blend-texture.png";
 import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
-import type { Blueprint } from "@/types/blueprints";
+import { EMPHASIZED_LABEL_WEIGHT } from "@/config/typography";
+import type { Blueprint, BlueprintBounds } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
+
+const DESCRIPTION_FONT_SIZE = 32;
+const DESCRIPTION_LINE_HEIGHT = DESCRIPTION_FONT_SIZE * 1.25;
+const DESCRIPTION_LETTER_SPACING = 0.000015;
+const HERO_MONSTER_BODY_FONT_SIZE = 26;
+const HERO_MONSTER_BODY_LINE_HEIGHT = HERO_MONSTER_BODY_FONT_SIZE * 1.05;
+const HERO_MONSTER_BODY_LETTER_SPACING = 0.000015;
+const COPYRIGHT_FONT_SIZE = 20;
+const COPYRIGHT_LINE_HEIGHT = 20;
+const COPYRIGHT_HEIGHT = 22;
+const COPYRIGHT_BOTTOM_MARGIN = 24;
+const COPYRIGHT_STACK_GAP = 8;
+const COPYRIGHT_BOUNDS = {
+  x: 60,
+  y: 1050 - COPYRIGHT_BOTTOM_MARGIN - COPYRIGHT_HEIGHT,
+  width: 630,
+  height: COPYRIGHT_HEIGHT,
+};
+const COPYRIGHT_BOUNDS_ARTWORK = {
+  ...COPYRIGHT_BOUNDS,
+  y: COPYRIGHT_BOUNDS.y - 56,
+};
+const HERO_MONSTER_STACK_ORIGIN_Y = COPYRIGHT_BOUNDS.y - COPYRIGHT_STACK_GAP;
+const TREASURE_DESC_X = 120;
+const TREASURE_DESC_WIDTH = 515;
+const TREASURE_DESC_BOTTOM = 986;
+const RIBBON_BOUNDS = { x: 86, y: 46, width: 578, height: 145.15 };
+const RIBBON_TEXT_BOUNDS = { x: 171, y: 66, width: 428, height: 58.15 };
+const RIBBON_TEXT_BOUNDS_NO_RIBBON = { x: 81, y: 82, width: 588, height: 60.15 };
+
+const makeRibbonBounds = (overrides?: Partial<typeof RIBBON_BOUNDS>) => ({
+  ...RIBBON_BOUNDS,
+  ...(overrides ?? {}),
+});
+
+const makeRibbonTextBounds = (overrides?: Partial<typeof RIBBON_TEXT_BOUNDS>) => ({
+  ...RIBBON_TEXT_BOUNDS,
+  ...(overrides ?? {}),
+});
+
+const makeRibbonTextNoRibbonBounds = (
+  overrides?: Partial<typeof RIBBON_TEXT_BOUNDS_NO_RIBBON>,
+) => ({
+  ...RIBBON_TEXT_BOUNDS_NO_RIBBON,
+  ...(overrides ?? {}),
+});
+
+const makeTreasureDescBounds = (topY: number) => ({
+  x: TREASURE_DESC_X,
+  y: topY,
+  width: TREASURE_DESC_WIDTH,
+  height: TREASURE_DESC_BOTTOM - topY,
+});
 
 const SMALL_TREASURE_BLUEPRINT: Blueprint = {
   schemaVersion: 1,
@@ -31,16 +87,24 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       source: "template",
     },
     {
+      id: "border-texture",
+      type: "border",
+      mask: smallLargeArtworkBorderMask,
+      texture: smallLargeArtworkBorderTexture,
+      blendMode: "multiply",
+      offsetX: 1,
+      offsetY: -1,
+    },
+    {
       id: "description",
       type: "text",
-      bounds: {
-        x: 125,
-        y: 366,
-        width: 500,
-        height: 580,
-      },
+      bounds: makeTreasureDescBounds(366),
       bind: { textKey: "description" },
-      props: { fontSize: 32, letterSpacingEm: 0.02 },
+      props: {
+        fontSize: DESCRIPTION_FONT_SIZE,
+        lineHeight: DESCRIPTION_LINE_HEIGHT,
+        letterSpacingEm: DESCRIPTION_LETTER_SPACING,
+      },
     },
     {
       id: "title",
@@ -49,18 +113,18 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       props: {
         showRibbon: false,
         // Known working values (previous)
-        ribbonX: 81,
-        ribbonY: 46,
-        ribbonWidth: 588,
-        ribbonHeight: 150.15,
-        textX: 81,
-        textY: 46,
-        textWidth: 588,
-        textHeight: 150.15,
-        textNoRibbonX: 81,
-        textNoRibbonY: 82,
-        textNoRibbonWidth: 588,
-        textNoRibbonHeight: 60.15,
+        ribbonX: makeRibbonBounds({ y: 46 }).x,
+        ribbonY: makeRibbonBounds({ y: 46 }).y,
+        ribbonWidth: makeRibbonBounds().width,
+        ribbonHeight: makeRibbonBounds().height,
+        textX: makeRibbonTextBounds({ y: 46 }).x,
+        textY: makeRibbonTextBounds({ y: 46 }).y,
+        textWidth: makeRibbonTextBounds().width,
+        textHeight: makeRibbonTextBounds().height,
+        textNoRibbonX: makeRibbonTextNoRibbonBounds({ y: 82 }).x,
+        textNoRibbonY: makeRibbonTextNoRibbonBounds({ y: 82 }).y,
+        textNoRibbonWidth: makeRibbonTextNoRibbonBounds().width,
+        textNoRibbonHeight: makeRibbonTextNoRibbonBounds().height,
         // Trial values (multiline experiment)
         // ribbonX: 81,
         // ribbonY: 46,
@@ -74,6 +138,21 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
         // textNoRibbonY: 78,
         // textNoRibbonWidth: 588,
         // textNoRibbonHeight: 96.15,
+      },
+    },
+    {
+      id: "copyright",
+      type: "copyright",
+      bounds: COPYRIGHT_BOUNDS_ARTWORK,
+      bind: { textKey: "copyright" },
+      props: {
+        fontSize: COPYRIGHT_FONT_SIZE,
+        lineHeight: COPYRIGHT_LINE_HEIGHT,
+        fontWeight: 500,
+        align: "center",
+        fill: "#3b1f04",
+        letterSpacingEm: -0.01,
+        fontFamily: "Helvetica, Arial, sans-serif",
       },
     },
   ],
@@ -109,16 +188,24 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       source: "template",
     },
     {
+      id: "border-texture",
+      type: "border",
+      mask: smallLargeArtworkBorderMask,
+      texture: smallLargeArtworkBorderTexture,
+      blendMode: "multiply",
+      offsetX: 1,
+      offsetY: -1,
+    },
+    {
       id: "description",
       type: "text",
-      bounds: {
-        x: 125,
-        y: 555,
-        width: 500,
-        height: 400,
-      },
+      bounds: makeTreasureDescBounds(555),
       bind: { textKey: "description" },
-      props: { fontSize: 32, letterSpacingEm: 0.02 },
+      props: {
+        fontSize: DESCRIPTION_FONT_SIZE,
+        lineHeight: DESCRIPTION_LINE_HEIGHT,
+        letterSpacingEm: DESCRIPTION_LETTER_SPACING,
+      },
     },
     {
       id: "title",
@@ -127,18 +214,18 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       props: {
         showRibbon: false,
         // Known working values (previous)
-        ribbonX: 81,
-        ribbonY: 46,
-        ribbonWidth: 588,
-        ribbonHeight: 150.15,
-        textX: 81,
-        textY: 46,
-        textWidth: 588,
-        textHeight: 150.15,
-        textNoRibbonX: 81,
-        textNoRibbonY: 82,
-        textNoRibbonWidth: 588,
-        textNoRibbonHeight: 60.15,
+        ribbonX: makeRibbonBounds({ y: 46 }).x,
+        ribbonY: makeRibbonBounds({ y: 46 }).y,
+        ribbonWidth: makeRibbonBounds().width,
+        ribbonHeight: makeRibbonBounds().height,
+        textX: makeRibbonTextBounds({ y: 46 }).x,
+        textY: makeRibbonTextBounds({ y: 46 }).y,
+        textWidth: makeRibbonTextBounds().width,
+        textHeight: makeRibbonTextBounds().height,
+        textNoRibbonX: makeRibbonTextNoRibbonBounds({ y: 82 }).x,
+        textNoRibbonY: makeRibbonTextNoRibbonBounds({ y: 82 }).y,
+        textNoRibbonWidth: makeRibbonTextNoRibbonBounds().width,
+        textNoRibbonHeight: makeRibbonTextNoRibbonBounds().height,
         // Trial values (multiline experiment)
         // ribbonX: 81,
         // ribbonY: 46,
@@ -152,6 +239,21 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
         // textNoRibbonY: 78,
         // textNoRibbonWidth: 588,
         // textNoRibbonHeight: 96.15,
+      },
+    },
+    {
+      id: "copyright",
+      type: "copyright",
+      bounds: COPYRIGHT_BOUNDS_ARTWORK,
+      bind: { textKey: "copyright" },
+      props: {
+        fontSize: COPYRIGHT_FONT_SIZE,
+        lineHeight: COPYRIGHT_LINE_HEIGHT,
+        fontWeight: 500,
+        align: "center",
+        fill: "#3b1f04",
+        letterSpacingEm: -0.01,
+        fontFamily: "Helvetica, Arial, sans-serif",
       },
     },
   ],
@@ -181,8 +283,49 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
       when: { hasImage: "imageAssetId" },
     },
     {
-      id: "background-frame",
-      type: "border",
+      id: "description",
+      type: "text",
+      bounds: {
+        x: 26,
+        y: 24,
+        width: 696,
+        height: 784,
+      },
+      bind: { textKey: "description" },
+      props: {
+        fontSize: DESCRIPTION_FONT_SIZE,
+        lineHeight: DESCRIPTION_LINE_HEIGHT,
+        letterSpacingEm: DESCRIPTION_LETTER_SPACING,
+        topX: 26,
+        topY: 210,
+        topWidth: 696,
+        topHeight: 816,
+        flushX: 0,
+        flushY: 0,
+        flushWidth: 750,
+        flushHeight: 806,
+        flushTopX: 0,
+        flushTopY: 210,
+        flushTopWidth: 750,
+        flushTopHeight: 840,
+        hiddenX: 26,
+        hiddenY: 24,
+        hiddenWidth: 696,
+        hiddenHeight: 1002,
+        flushHiddenX: 0,
+        flushHiddenY: 0,
+        flushHiddenWidth: 750,
+        flushHiddenHeight: 1050,
+        backdrop: true,
+        backdropFill: "#ffffff",
+        backdropOpacity: 0.55,
+        backdropRadius: 30,
+        backdropCornerMode: "opposite-title",
+        backdropInsetMode: "matchBorder",
+        backdropFitMode: "full",
+        backdropWhenImageKey: "imageAssetId",
+        textPadding: 24,
+      },
     },
     {
       id: "title",
@@ -191,14 +334,30 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
       props: {
         y: 866,
         // Known working values (previous)
-        ribbonX: 81,
-        ribbonY: 866,
-        ribbonWidth: 588,
-        ribbonHeight: 150.15,
-        textX: 171,
-        textY: 888,
-        textWidth: 428,
-        textHeight: 58.15,
+        ribbonX: makeRibbonBounds({ y: 866 }).x,
+        ribbonY: makeRibbonBounds({ y: 866 }).y,
+        ribbonWidth: makeRibbonBounds().width,
+        ribbonHeight: makeRibbonBounds().height,
+        textX: makeRibbonTextBounds({ y: 888 }).x,
+        textY: makeRibbonTextBounds({ y: 888 }).y,
+        textWidth: makeRibbonTextBounds().width,
+        textHeight: makeRibbonTextBounds().height,
+        textNoRibbonX: makeRibbonTextNoRibbonBounds({ y: 888 }).x,
+        textNoRibbonY: makeRibbonTextNoRibbonBounds({ y: 888 }).y,
+        textNoRibbonWidth: makeRibbonTextNoRibbonBounds().width,
+        textNoRibbonHeight: makeRibbonTextNoRibbonBounds().height,
+        textNoRibbonTopX: makeRibbonTextNoRibbonBounds({ y: 82 }).x,
+        textNoRibbonTopY: makeRibbonTextNoRibbonBounds({ y: 82 }).y,
+        textNoRibbonTopWidth: makeRibbonTextNoRibbonBounds().width,
+        textNoRibbonTopHeight: makeRibbonTextNoRibbonBounds().height,
+        ribbonTopX: makeRibbonBounds({ y: 46 }).x,
+        ribbonTopY: makeRibbonBounds({ y: 46 }).y,
+        ribbonTopWidth: makeRibbonBounds().width,
+        ribbonTopHeight: makeRibbonBounds().height,
+        textTopX: makeRibbonTextBounds({ y: 68 }).x,
+        textTopY: makeRibbonTextBounds({ y: 68 }).y,
+        textTopWidth: makeRibbonTextBounds().width,
+        textTopHeight: makeRibbonTextBounds().height,
         // Trial values (multiline experiment)
         // ribbonX: 81,
         // ribbonY: 850,
@@ -208,6 +367,25 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
         // textY: 853,
         // textWidth: 428,
         // textHeight: 96.15,
+      },
+    },
+    {
+      id: "background-frame",
+      type: "border",
+    },
+    {
+      id: "copyright",
+      type: "copyright",
+      bounds: COPYRIGHT_BOUNDS,
+      bind: { textKey: "copyright" },
+      props: {
+        fontSize: COPYRIGHT_FONT_SIZE,
+        lineHeight: COPYRIGHT_LINE_HEIGHT,
+        fontWeight: 500,
+        align: "center",
+        fill: "#3b1f04",
+        letterSpacingEm: -0.01,
+        fontFamily: "Helvetica, Arial, sans-serif",
       },
     },
   ],
@@ -233,7 +411,28 @@ const HERO_BACK_BLUEPRINT: Blueprint = {
         height: 480,
       },
       bind: { textKey: "description" },
-      props: { fontSize: 34, letterSpacingEm: 0.02, align: "center" },
+      props: {
+        fontSize: DESCRIPTION_FONT_SIZE,
+        lineHeight: DESCRIPTION_LINE_HEIGHT,
+        letterSpacingEm: DESCRIPTION_LETTER_SPACING,
+        fontWeight: 550,
+        align: "center",
+      },
+    },
+    {
+      id: "copyright",
+      type: "copyright",
+      bounds: COPYRIGHT_BOUNDS,
+      bind: { textKey: "copyright" },
+      props: {
+        fontSize: COPYRIGHT_FONT_SIZE,
+        lineHeight: COPYRIGHT_LINE_HEIGHT,
+        fontWeight: 500,
+        align: "center",
+        fill: "#3b1f04",
+        letterSpacingEm: -0.01,
+        fontFamily: "Helvetica, Arial, sans-serif",
+      },
     },
   ],
 };
@@ -266,14 +465,14 @@ const HERO_BLUEPRINT: Blueprint = {
       bind: { titleKey: "title" },
       props: {
         // Known working values (previous)
-        ribbonX: 81,
-        ribbonY: 46,
-        ribbonWidth: 588,
-        ribbonHeight: 150.15,
-        textX: 171,
-        textY: 66,
-        textWidth: 428,
-        textHeight: 58.15,
+        ribbonX: makeRibbonBounds({ y: 46 }).x,
+        ribbonY: makeRibbonBounds({ y: 46 }).y,
+        ribbonWidth: makeRibbonBounds().width,
+        ribbonHeight: makeRibbonBounds().height,
+        textX: makeRibbonTextBounds({ y: 66 }).x,
+        textY: makeRibbonTextBounds({ y: 66 }).y,
+        textWidth: makeRibbonTextBounds().width,
+        textHeight: makeRibbonTextBounds().height,
         // Trial values (multiline experiment)
         // ribbonX: 81,
         // ribbonY: 46,
@@ -285,6 +484,21 @@ const HERO_BLUEPRINT: Blueprint = {
         // textHeight: 96.15,
       },
     },
+    {
+      id: "copyright",
+      type: "copyright",
+      bounds: COPYRIGHT_BOUNDS,
+      bind: { textKey: "copyright" },
+      props: {
+        fontSize: COPYRIGHT_FONT_SIZE,
+        lineHeight: COPYRIGHT_LINE_HEIGHT,
+        fontWeight: 500,
+        align: "center",
+        fill: "#3b1f04",
+        letterSpacingEm: -0.01,
+        fontFamily: "Helvetica, Arial, sans-serif",
+      },
+    },
   ],
   groups: [
     {
@@ -292,15 +506,22 @@ const HERO_BLUEPRINT: Blueprint = {
       type: "stack",
       anchor: "bottom",
       direction: "up",
-      origin: { x: 65, y: 1020 },
-      width: 620,
+      // origin: { x: 65, y: 1020 },
+      // width: 620,
+      origin: { x: 54, y: HERO_MONSTER_STACK_ORIGIN_Y },
+      width: 636,
       gap: 2,
       children: [
         {
           id: "hero-description",
           type: "text",
           bind: { textKey: "description" },
-          props: { fontSize: 26, fontWeight: 550 },
+          props: {
+            fontSize: HERO_MONSTER_BODY_FONT_SIZE,
+            lineHeight: HERO_MONSTER_BODY_LINE_HEIGHT,
+            letterSpacingEm: HERO_MONSTER_BODY_LETTER_SPACING,
+            fontWeight: EMPHASIZED_LABEL_WEIGHT,
+          },
         },
         {
           id: "hero-stats",
@@ -340,14 +561,14 @@ const MONSTER_BLUEPRINT: Blueprint = {
       bind: { titleKey: "title" },
       props: {
         // Known working values (previous)
-        ribbonX: 81,
-        ribbonY: 46,
-        ribbonWidth: 588,
-        ribbonHeight: 150.15,
-        textX: 171,
-        textY: 66,
-        textWidth: 428,
-        textHeight: 58.15,
+        ribbonX: makeRibbonBounds({ y: 46 }).x,
+        ribbonY: makeRibbonBounds({ y: 46 }).y,
+        ribbonWidth: makeRibbonBounds().width,
+        ribbonHeight: makeRibbonBounds().height,
+        textX: makeRibbonTextBounds({ y: 66 }).x,
+        textY: makeRibbonTextBounds({ y: 66 }).y,
+        textWidth: makeRibbonTextBounds().width,
+        textHeight: makeRibbonTextBounds().height,
         // Trial values (multiline experiment)
         // ribbonX: 81,
         // ribbonY: 46,
@@ -359,6 +580,21 @@ const MONSTER_BLUEPRINT: Blueprint = {
         // textHeight: 96.15,
       },
     },
+    {
+      id: "copyright",
+      type: "copyright",
+      bounds: COPYRIGHT_BOUNDS,
+      bind: { textKey: "copyright" },
+      props: {
+        fontSize: COPYRIGHT_FONT_SIZE,
+        lineHeight: COPYRIGHT_LINE_HEIGHT,
+        fontWeight: 500,
+        align: "center",
+        fill: "#3b1f04",
+        letterSpacingEm: -0.01,
+        fontFamily: "Helvetica, Arial, sans-serif",
+      },
+    },
   ],
   groups: [
     {
@@ -366,15 +602,20 @@ const MONSTER_BLUEPRINT: Blueprint = {
       type: "stack",
       anchor: "bottom",
       direction: "up",
-      origin: { x: 65, y: 1020 },
-      width: 620,
+      origin: { x: 48, y: HERO_MONSTER_STACK_ORIGIN_Y },
+      width: 652,
       gap: 2,
       children: [
         {
           id: "monster-description",
           type: "text",
           bind: { textKey: "description" },
-          props: { fontSize: 26, fontWeight: 550 },
+          props: {
+            fontSize: HERO_MONSTER_BODY_FONT_SIZE,
+            lineHeight: HERO_MONSTER_BODY_LINE_HEIGHT,
+            letterSpacingEm: HERO_MONSTER_BODY_LETTER_SPACING,
+            fontWeight: EMPHASIZED_LABEL_WEIGHT,
+          },
         },
         {
           id: "monster-stats",
@@ -401,3 +642,10 @@ export const blueprintsByTemplateId: Partial<Record<TemplateId, Blueprint>> = {
   "hero-back": HERO_BACK_BLUEPRINT,
   "labelled-back": LABELLED_BACK_BLUEPRINT,
 };
+
+export function getCopyrightBounds(templateId: TemplateId): BlueprintBounds {
+  if (templateId === "small-treasure" || templateId === "large-treasure") {
+    return COPYRIGHT_BOUNDS_ARTWORK;
+  }
+  return COPYRIGHT_BOUNDS;
+}

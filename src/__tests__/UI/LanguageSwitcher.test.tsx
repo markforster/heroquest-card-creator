@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import LanguageSwitcher from "@/components/LanguageMenu/LanguageSwitcher";
 import { supportedLanguages } from "@/i18n/messages";
 import { useI18n } from "@/i18n/I18nProvider";
 

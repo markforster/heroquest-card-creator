@@ -4,6 +4,7 @@ export function createTextMeasurer(
   fontSize: number,
   fontFamily: string,
   fontWeight?: number | string,
+  fontStyle?: string,
 ): (text: string) => number {
   if (typeof document === "undefined") {
     const approxCharWidth = fontSize * 0.6;
@@ -20,7 +21,9 @@ export function createTextMeasurer(
     return (value: string) => value.length * approxCharWidth;
   }
 
-  const font = fontWeight ? `${fontWeight} ${fontSize}px ${fontFamily}` : `${fontSize}px ${fontFamily}`;
+  const resolvedStyle = fontStyle ? `${fontStyle} ` : "";
+  const resolvedWeight = fontWeight ? `${fontWeight} ` : "";
+  const font = `${resolvedStyle}${resolvedWeight}${fontSize}px ${fontFamily}`;
 
   return (value: string) => {
     ctx.font = font;
