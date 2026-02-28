@@ -28,6 +28,18 @@ import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getAllAssets, getAssetObjectUrl } from "@/lib/assets-db";
 import type { AssetRecord } from "@/lib/assets-db";
+import {
+  computeSliderTickLeftPx,
+  computeImageZoomModel,
+  IMAGE_SCALE_SLIDER_THUMB_SIZE_PX,
+  LEGACY_ABSOLUTE_IMAGE_SCALE_MAX,
+  LEGACY_ABSOLUTE_IMAGE_SCALE_MIN,
+  mapRelativeScaleToUiZoom,
+  mapUiZoomToRelativeScale,
+  normalizeLegacyImageScale,
+  UI_ZOOM_BUTTON_STEP,
+  UI_ZOOM_SLIDER_STEP,
+} from "@/lib/image-scale";
 
 type ImageFieldProps = {
   label: string;
@@ -98,16 +110,89 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const previousImageRef = useRef<ImageSnapshot | null>(null);
+  const scaleSliderRef = useRef<HTMLInputElement | null>(null);
+  const [scaleSliderWidthPx, setScaleSliderWidthPx] = useState(0);
 
   const maxOffsetX = boundsWidth ? Math.round(boundsWidth) : 300;
   const maxOffsetY = boundsHeight ? Math.round(boundsHeight) : 300;
 
-  const MIN_SCALE = 0.5;
-  const MAX_SCALE = 2;
   const SCALE_STEP = 0.05;
   const MIN_ROTATION = -180;
   const MAX_ROTATION = 180;
   const ROTATION_STEP = 1;
+
+  const imageBounds =
+    boundsWidth && boundsHeight ? { x: 0, y: 0, width: boundsWidth, height: boundsHeight } : undefined;
+
+  useEffect(() => {
+    if (imageScaleModeWatch !== "absolute") return;
+    const normalized = normalizeLegacyImageScale({
+      imageScale: imageScaleWatch,
+      imageScaleMode: undefined,
+      bounds: imageBounds,
+      imageWidth: imageOriginalWidthWatch,
+      imageHeight: imageOriginalHeightWatch,
+    });
+    if (normalized.imageScaleMode !== "relative") return;
+    setValue("imageScale", normalized.imageScale, { shouldDirty: false, shouldTouch: false });
+    setValue("imageScaleMode", "relative", { shouldDirty: false, shouldTouch: false });
+  }, [
+    imageBounds,
+    imageOriginalHeightWatch,
+    imageOriginalWidthWatch,
+    imageScaleModeWatch,
+    imageScaleWatch,
+    setValue,
+  ]);
+
+  const zoomModel =
+    imageScaleMode === "relative"
+      ? computeImageZoomModel(imageBounds, imageOriginalWidth, imageOriginalHeight)
+      : undefined;
+  const minScale =
+    imageScaleMode === "relative"
+      ? zoomModel?.relativeMin ?? LEGACY_ABSOLUTE_IMAGE_SCALE_MIN
+      : LEGACY_ABSOLUTE_IMAGE_SCALE_MIN;
+  const maxScale =
+    imageScaleMode === "relative"
+      ? zoomModel?.relativeMax ?? LEGACY_ABSOLUTE_IMAGE_SCALE_MAX
+      : LEGACY_ABSOLUTE_IMAGE_SCALE_MAX;
+  const sliderMin = imageScaleMode === "relative" ? zoomModel?.uiMin ?? 1 : minScale;
+  const sliderMax = imageScaleMode === "relative" ? zoomModel?.uiMax ?? 3 : maxScale;
+  const sliderStep = imageScaleMode === "relative" ? UI_ZOOM_SLIDER_STEP : SCALE_STEP;
+  const sliderValue =
+    imageScaleMode === "relative" && zoomModel
+      ? mapRelativeScaleToUiZoom(imageScale, zoomModel)
+      : imageScale;
+  const zoomTicksId =
+    imageScaleMode === "relative" ? `image-scale-ticks-${imageAssetId ?? "none"}` : undefined;
+  const coverScaleTick =
+    imageScaleMode === "relative" && zoomModel && zoomModel.relativeCover >= sliderMin && zoomModel.relativeCover <= sliderMax
+      ? { value: zoomModel.relativeCover, label: "Cover", id: "cover", emphasize: true }
+      : null;
+  const customScaleTicks =
+    imageScaleMode === "relative" && zoomModel
+      ? [
+          { value: sliderMin, label: `${sliderMin.toFixed(1)}x`, id: "min" },
+          { value: 1, label: "1x", id: "1x", emphasize: true },
+          { value: 2, label: "2x", id: "2x" },
+          { value: 3, label: "3x", id: "3x" },
+          { value: sliderMax, label: "max", id: "max" },
+        ].filter((tick, index, all) => {
+          return (
+            all.findIndex((candidate) => Math.abs(candidate.value - tick.value) < 1e-6) === index
+          );
+        })
+      : [];
+  const coverScaleTickLeftPx = coverScaleTick
+    ? computeSliderTickLeftPx(
+        coverScaleTick.value,
+        sliderMin,
+        sliderMax,
+        scaleSliderWidthPx,
+        IMAGE_SCALE_SLIDER_THUMB_SIZE_PX,
+      )
+    : 0;
 
   const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -378,6 +463,31 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
       window.removeEventListener("scroll", updatePosition, true);
     };
   }, [isAdjustmentsOpen]);
+
+  useLayoutEffect(() => {
+    const sliderEl = scaleSliderRef.current;
+    if (!sliderEl) return;
+
+    const measure = () => {
+      const rect = sliderEl.getBoundingClientRect();
+      const width = Number.isFinite(rect.width) && rect.width > 0 ? rect.width : sliderEl.clientWidth;
+      setScaleSliderWidthPx(width > 0 ? width : 0);
+    };
+
+    measure();
+
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(() => measure());
+      observer.observe(sliderEl);
+      return () => observer.disconnect();
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
+    return undefined;
+  }, [isAdjustmentsOpen, sliderMin, sliderMax, imageScaleMode]);
 
   return (
     <div className="mb-2">
@@ -713,30 +823,108 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                     <label className="form-label mb-1">{t("form.scale")}</label>
                   </div>
                   <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
-                    <input
-                      type="range"
-                      className={`${layoutStyles.imageControlRange} flex-grow-1`}
-                      min={MIN_SCALE}
-                      max={MAX_SCALE}
-                      step={SCALE_STEP}
-                      value={imageScale}
-                      title={t("tooltip.adjustScale")}
-                      onChange={(event) => {
-                        const next = Number(event.target.value);
-                        if (!Number.isNaN(next)) {
-                          setValue("imageScale", clamp(next, MIN_SCALE, MAX_SCALE), {
-                            shouldDirty: true,
-                            shouldTouch: true,
-                          });
+                    <div className={layoutStyles.imageScaleControlWrap}>
+                      {coverScaleTick ? (
+                        <div
+                          className={`${layoutStyles.imageScaleTicks} ${layoutStyles.imageScaleTicksTop}`}
+                          aria-hidden="true"
+                        >
+                          <div
+                            className={`${layoutStyles.imageScaleTick} ${layoutStyles.imageScaleTickTop} ${layoutStyles.imageScaleTickStrong}`}
+                            style={{ left: `${coverScaleTickLeftPx}px` }}
+                            data-testid="image-scale-tick-cover"
+                          >
+                            <span className={layoutStyles.imageScaleTickLine} />
+                            <span className={layoutStyles.imageScaleTickLabel}>
+                              {coverScaleTick.label}
+                            </span>
+                          </div>
+                        </div>
+                      ) : null}
+                      <input
+                        ref={scaleSliderRef}
+                        type="range"
+                        className={`${layoutStyles.imageControlRange} flex-grow-1`}
+                        style={
+                          {
+                            "--image-range-thumb-size": `${IMAGE_SCALE_SLIDER_THUMB_SIZE_PX}px`,
+                          } as CSSProperties
                         }
-                      }}
-                    />
+                        min={sliderMin}
+                        max={sliderMax}
+                        step={sliderStep}
+                        value={sliderValue}
+                        list={zoomTicksId}
+                        title={t("tooltip.adjustScale")}
+                        onChange={(event) => {
+                          const next = Number(event.target.value);
+                          if (!Number.isNaN(next)) {
+                            const nextScale =
+                              imageScaleMode === "relative" && zoomModel
+                                ? mapUiZoomToRelativeScale(next, zoomModel)
+                                : next;
+                            setValue("imageScale", clamp(nextScale, minScale, maxScale), {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                          }
+                        }}
+                      />
+                      {zoomTicksId ? (
+                        <datalist id={zoomTicksId}>
+                          <option value={sliderMin} />
+                          <option value={1} />
+                          <option value={2} />
+                          <option value={3} />
+                          <option value={zoomModel?.relativeCover ?? sliderMax} />
+                          <option value={sliderMax} />
+                        </datalist>
+                      ) : null}
+                      {customScaleTicks.length ? (
+                        <div className={layoutStyles.imageScaleTicks} aria-hidden="true">
+                          {customScaleTicks.map((tick, index) => {
+                            const leftPx = computeSliderTickLeftPx(
+                              tick.value,
+                              sliderMin,
+                              sliderMax,
+                              scaleSliderWidthPx,
+                              IMAGE_SCALE_SLIDER_THUMB_SIZE_PX,
+                            );
+                            const positionClass =
+                              index === 0
+                                ? layoutStyles.imageScaleTickStart
+                                : index === customScaleTicks.length - 1
+                                  ? layoutStyles.imageScaleTickEnd
+                                  : "";
+                            return (
+                              <div
+                                key={`${tick.id}-${index}`}
+                                className={`${layoutStyles.imageScaleTick} ${positionClass} ${
+                                  tick.emphasize ? layoutStyles.imageScaleTickStrong : ""
+                                }`}
+                                style={{ left: `${leftPx}px` }}
+                                data-testid={`image-scale-tick-${tick.id}`}
+                              >
+                                <span className={layoutStyles.imageScaleTickLine} />
+                                <span className={layoutStyles.imageScaleTickLabel}>{tick.label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : null}
+                    </div>
                     <button
                       type="button"
                       className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
                       title={t("tooltip.zoomOut")}
                       onClick={() => {
-                        const next = clamp(imageScale - SCALE_STEP, MIN_SCALE, MAX_SCALE);
+                        const next =
+                          imageScaleMode === "relative" && zoomModel
+                            ? mapUiZoomToRelativeScale(
+                                clamp(sliderValue - UI_ZOOM_BUTTON_STEP, sliderMin, sliderMax),
+                                zoomModel,
+                              )
+                            : clamp(imageScale - SCALE_STEP, minScale, maxScale);
                         setValue("imageScale", next, {
                           shouldDirty: true,
                           shouldTouch: true,
@@ -750,7 +938,13 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                       className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
                       title={t("tooltip.zoomIn")}
                       onClick={() => {
-                        const next = clamp(imageScale + SCALE_STEP, MIN_SCALE, MAX_SCALE);
+                        const next =
+                          imageScaleMode === "relative" && zoomModel
+                            ? mapUiZoomToRelativeScale(
+                                clamp(sliderValue + UI_ZOOM_BUTTON_STEP, sliderMin, sliderMax),
+                                zoomModel,
+                              )
+                            : clamp(imageScale + SCALE_STEP, minScale, maxScale);
                         setValue("imageScale", next, {
                           shouldDirty: true,
                           shouldTouch: true,
@@ -765,7 +959,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                       title={t("tooltip.autoScale")}
                       onClick={() => {
                         const auto = computeAutoScale();
-                        const next = clamp(auto, MIN_SCALE, MAX_SCALE);
+                        const next = clamp(auto, minScale, maxScale);
                         setValue("imageScale", next, {
                           shouldDirty: true,
                           shouldTouch: true,

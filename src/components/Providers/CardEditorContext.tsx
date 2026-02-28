@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { computeContainScale, getImageLayerBounds } from "@/lib/image-scale";
+import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 import { touchCardLastViewed } from "@/lib/cards-db";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardStatus, CardRecord } from "@/types/cards-db";
@@ -24,22 +24,18 @@ function normalizeDraftImageScale<T extends TemplateId>(
     imageOriginalWidth?: number;
     imageOriginalHeight?: number;
   };
-  if (data.imageScaleMode) return draft;
-  const imageScale = data.imageScale;
-  if (imageScale == null) {
-    return { ...draft, imageScaleMode: "relative" } as CardDataByTemplate[T];
-  }
   const bounds = getImageLayerBounds(templateId, "imageAssetId");
-  const containScale = computeContainScale(
+  const normalized = normalizeLegacyImageScale({
+    imageScale: data.imageScale,
+    imageScaleMode: data.imageScaleMode,
     bounds,
-    data.imageOriginalWidth,
-    data.imageOriginalHeight,
-  );
-  const relative = containScale ? imageScale / containScale : imageScale;
+    imageWidth: data.imageOriginalWidth,
+    imageHeight: data.imageOriginalHeight,
+  });
   return {
     ...draft,
-    imageScale: relative,
-    imageScaleMode: "relative",
+    imageScale: normalized.imageScale,
+    imageScaleMode: normalized.imageScaleMode,
   } as CardDataByTemplate[T];
 }
 

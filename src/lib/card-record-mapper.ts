@@ -2,28 +2,19 @@ import type { BodyTextStyle, CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { StatValue } from "@/types/stats";
 import type { TemplateId } from "@/types/templates";
-import { computeContainScale, getImageLayerBounds } from "@/lib/image-scale";
+import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 
 function normalizeImageScale(
   record: CardRecord & { templateId: TemplateId },
 ): { imageScale?: number; imageScaleMode?: "absolute" | "relative" } {
-  const { imageScale, imageScaleMode } = record;
-  if (imageScaleMode) {
-    return { imageScale, imageScaleMode };
-  }
-  if (imageScale == null) {
-    return { imageScale, imageScaleMode: "relative" };
-  }
   const bounds = getImageLayerBounds(record.templateId, "imageAssetId");
-  const containScale = computeContainScale(
+  return normalizeLegacyImageScale({
+    imageScale: record.imageScale,
+    imageScaleMode: record.imageScaleMode,
     bounds,
-    record.imageOriginalWidth,
-    record.imageOriginalHeight,
-  );
-  if (!containScale) {
-    return { imageScale, imageScaleMode: "relative" };
-  }
-  return { imageScale: imageScale / containScale, imageScaleMode: "relative" };
+    imageWidth: record.imageOriginalWidth,
+    imageHeight: record.imageOriginalHeight,
+  });
 }
 
 export function cardRecordToCardData<T extends TemplateId>(
