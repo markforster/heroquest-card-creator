@@ -84,7 +84,10 @@ function IndexPageInner() {
   const { cardId } = useParams();
   const isAssetsRoute = Boolean(useMatch("/assets"));
   const isCardsListRoute = Boolean(useMatch("/cards"));
+  const isDraftRoute = Boolean(useMatch("/cards/new"));
   const isCardDetailRoute = Boolean(useMatch("/cards/:cardId"));
+  const isSavedCardDetailRoute = isCardDetailRoute && cardId !== "new";
+  const isEditorRoute = isDraftRoute || isSavedCardDetailRoute;
   const {
     state: {
       selectedTemplateId,
@@ -243,6 +246,7 @@ function IndexPageInner() {
         });
         setActiveCard(templateId, record.id, record.status);
         setTemplateDirty(templateId, false);
+        navigate(`/cards/${record.id}`, { replace: true });
         if (saveFace === "front") {
           if (draftPairingBackIds?.length) {
             try {
@@ -426,8 +430,7 @@ function IndexPageInner() {
     });
 
   useEffect(() => {
-    if (!isCardDetailRoute) return;
-    if (cardId) return;
+    if (!isCardsListRoute) return;
     if (draftTemplateId && draft) return;
     if (!selectedTemplateId) return;
     const currentTemplate = selectedTemplateId as TemplateId;
@@ -462,11 +465,17 @@ function IndexPageInner() {
     draftTemplateId,
     selectedTemplateId,
     navigate,
-    isCardDetailRoute,
+    isCardsListRoute,
   ]);
 
   useEffect(() => {
-    if (!isCardDetailRoute) return;
+    if (!isSavedCardDetailRoute) {
+      if (isDraftRoute) {
+        lastLoadedRef.current = null;
+        setRouteError(null);
+      }
+      return;
+    }
     if (!cardId) {
       lastLoadedRef.current = null;
       setRouteError(null);
@@ -505,7 +514,8 @@ function IndexPageInner() {
     setActiveCard,
     loadCardIntoEditor,
     navigate,
-    isCardDetailRoute,
+    isDraftRoute,
+    isSavedCardDetailRoute,
     selectedTemplateId,
     setSelectedTemplateId,
   ]);
@@ -851,7 +861,7 @@ function IndexPageInner() {
                     />
                   </section>
                 ) : null}
-                {isCardDetailRoute && routeError ? (
+                {isSavedCardDetailRoute && routeError ? (
                   <section className={`${styles.routeErrorPanel} d-flex align-items-center justify-content-center`}>
                     <div className={`${styles.routeErrorCard} ${styles.uStackLg}`}>
                       <div className={styles.routeErrorTitle}>Card not found</div>
@@ -872,7 +882,7 @@ function IndexPageInner() {
                 ) : null}
                 <section
                   className={`${styles.leftPanel} d-flex align-items-stretch gap-3 p-3 ${
-                    !isCardDetailRoute || routeError ? styles.routeHidden : ""
+                    !isEditorRoute || routeError ? styles.routeHidden : ""
                   }`}
                   // style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
                 >
@@ -897,7 +907,7 @@ function IndexPageInner() {
                 </section>
                 <aside
                   className={`${styles.rightPanel} d-flex flex-column ${
-                    !isCardDetailRoute || routeError ? styles.routeHidden : ""
+                    !isEditorRoute || routeError ? styles.routeHidden : ""
                   }`}
                 >
                   <div className={styles.inspectorTop}>
@@ -911,6 +921,7 @@ function IndexPageInner() {
                         setSingleDraft(templateId, nextDraft);
                         setActiveCard(templateId, null, null);
                         setTemplateDirty(templateId, false);
+                        navigate("/cards/new", { replace: true });
                         setIsWelcomeOpen(false);
                       }}
                     />
@@ -1059,6 +1070,7 @@ export default function IndexPage() {
                       <HashRouter>
                         <Routes>
                           <Route path="/cards" element={<IndexPageInner />} />
+                          <Route path="/cards/new" element={<IndexPageInner />} />
                           <Route path="/cards/:cardId" element={<IndexPageInner />} />
                           <Route path="/assets" element={<IndexPageInner />} />
                           <Route path="*" element={<Navigate to="/cards" replace />} />
