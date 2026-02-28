@@ -163,6 +163,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
           setSingleDraft(nextTemplateId, nextDraft);
           setActiveCard(nextTemplateId, null, null);
           setTemplateDirty(nextTemplateId, false);
+          navigate("/cards/new");
         }}
         onClose={templatePicker.close}
       />
