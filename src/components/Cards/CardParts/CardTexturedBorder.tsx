@@ -52,7 +52,7 @@ export default function CardTexturedBorder({
             y={offsetY}
             width={width}
             height={height}
-            preserveAspectRatio="xMidYMid meet"
+            preserveAspectRatio="none"
           />
         </mask>
         <filter
@@ -70,7 +70,7 @@ export default function CardTexturedBorder({
             y={offsetY}
             width={width}
             height={height}
-            preserveAspectRatio="xMidYMid meet"
+            preserveAspectRatio="none"
             result="texture"
           />
           <feBlend in="SourceGraphic" in2="texture" mode={blendMode} />

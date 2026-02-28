@@ -5089,26 +5089,46 @@ button.assetsKindBadge:disabled {
 }
 
 .imageControlRange {
+  --image-range-thumb-size: 12px;
   flex: 1 1 auto;
   appearance: none;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  outline: none;
+}
+
+.imageControlRange::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: var(--radius-pill);
   background: #374151;
-  outline: none;
 }
 
 .imageControlRange::-webkit-slider-thumb {
   appearance: none;
-  width: 12px;
-  height: 12px;
+  width: var(--image-range-thumb-size);
+  height: var(--image-range-thumb-size);
   border-radius: 50%;
   background: var(--hq-focus-ring);
   cursor: pointer;
+  margin-top: calc((4px - var(--image-range-thumb-size)) / 2);
+}
+
+.imageControlRange::-moz-range-track {
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: #374151;
+}
+
+.imageControlRange::-moz-range-progress {
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: #374151;
 }
 
 .imageControlRange::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
+  width: var(--image-range-thumb-size);
+  height: var(--image-range-thumb-size);
   border-radius: 50%;
   background: var(--hq-focus-ring);
   border: none;
@@ -5118,4 +5138,71 @@ button.assetsKindBadge:disabled {
 .imageControlRange:focus {
   outline: 1px solid var(--hq-focus-ring);
   box-shadow: 0 0 0 1px var(--hq-focus-ring);
+}
+
+.imageScaleControlWrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.imageScaleTicks {
+  position: relative;
+  height: 18px;
+  margin-top: 4px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.imageScaleTicksTop {
+  height: 14px;
+  margin-top: 0;
+  margin-bottom: 2px;
+}
+
+.imageScaleTick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.imageScaleTickTop {
+  flex-direction: column-reverse;
+}
+
+.imageScaleTickStart {
+  transform: translateX(0);
+}
+
+.imageScaleTickEnd {
+  transform: translateX(-100%);
+}
+
+.imageScaleTickLine {
+  width: 1px;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.imageScaleTickLabel {
+  font-size: 10px;
+  line-height: 1;
+  color: rgba(229, 231, 235, 0.64);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.imageScaleTickStrong .imageScaleTickLine {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.imageScaleTickStrong .imageScaleTickLabel {
+  color: rgba(229, 231, 235, 0.95);
+  font-weight: 600;
 }
