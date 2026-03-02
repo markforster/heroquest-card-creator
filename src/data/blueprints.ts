@@ -113,7 +113,6 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       bind: { titleKey: "title" },
       props: {
         showRibbon: false,
-        // Known working values (previous)
         ribbonX: makeRibbonBounds({ y: 46 }).x,
         ribbonY: makeRibbonBounds({ y: 46 }).y,
         ribbonWidth: makeRibbonBounds().width,
@@ -126,19 +125,6 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
         textNoRibbonY: makeRibbonTextNoRibbonBounds({ y: 82 }).y,
         textNoRibbonWidth: makeRibbonTextNoRibbonBounds().width,
         textNoRibbonHeight: makeRibbonTextNoRibbonBounds().height,
-        // Trial values (multiline experiment)
-        // ribbonX: 81,
-        // ribbonY: 46,
-        // ribbonWidth: 588,
-        // ribbonHeight: 150.15,
-        // textX: 81,
-        // textY: 46,
-        // textWidth: 588,
-        // textHeight: 150.15,
-        // textNoRibbonX: 81,
-        // textNoRibbonY: 78,
-        // textNoRibbonWidth: 588,
-        // textNoRibbonHeight: 96.15,
       },
     },
     {
@@ -214,7 +200,6 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       bind: { titleKey: "title" },
       props: {
         showRibbon: false,
-        // Known working values (previous)
         ribbonX: makeRibbonBounds({ y: 46 }).x,
         ribbonY: makeRibbonBounds({ y: 46 }).y,
         ribbonWidth: makeRibbonBounds().width,
@@ -227,19 +212,6 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
         textNoRibbonY: makeRibbonTextNoRibbonBounds({ y: 82 }).y,
         textNoRibbonWidth: makeRibbonTextNoRibbonBounds().width,
         textNoRibbonHeight: makeRibbonTextNoRibbonBounds().height,
-        // Trial values (multiline experiment)
-        // ribbonX: 81,
-        // ribbonY: 46,
-        // ribbonWidth: 588,
-        // ribbonHeight: 150.15,
-        // textX: 81,
-        // textY: 46,
-        // textWidth: 588,
-        // textHeight: 150.15,
-        // textNoRibbonX: 81,
-        // textNoRibbonY: 78,
-        // textNoRibbonWidth: 588,
-        // textNoRibbonHeight: 96.15,
       },
     },
     {
@@ -359,15 +331,6 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
         textTopY: makeRibbonTextBounds({ y: 68 }).y,
         textTopWidth: makeRibbonTextBounds().width,
         textTopHeight: makeRibbonTextBounds().height,
-        // Trial values (multiline experiment)
-        // ribbonX: 81,
-        // ribbonY: 850,
-        // ribbonWidth: 588,
-        // ribbonHeight: 150.15,
-        // textX: 171,
-        // textY: 853,
-        // textWidth: 428,
-        // textHeight: 96.15,
       },
     },
     {
@@ -465,7 +428,6 @@ const HERO_BLUEPRINT: Blueprint = {
       type: "title",
       bind: { titleKey: "title" },
       props: {
-        // Known working values (previous)
         ribbonX: makeRibbonBounds({ y: 46 }).x,
         ribbonY: makeRibbonBounds({ y: 46 }).y,
         ribbonWidth: makeRibbonBounds().width,
@@ -474,15 +436,6 @@ const HERO_BLUEPRINT: Blueprint = {
         textY: makeRibbonTextBounds({ y: 66 }).y,
         textWidth: makeRibbonTextBounds().width,
         textHeight: makeRibbonTextBounds().height,
-        // Trial values (multiline experiment)
-        // ribbonX: 81,
-        // ribbonY: 46,
-        // ribbonWidth: 588,
-        // ribbonHeight: 150.15,
-        // textX: 171,
-        // textY: 47,
-        // textWidth: 428,
-        // textHeight: 96.15,
       },
     },
     {
@@ -561,7 +514,6 @@ const MONSTER_BLUEPRINT: Blueprint = {
       type: "title",
       bind: { titleKey: "title" },
       props: {
-        // Known working values (previous)
         ribbonX: makeRibbonBounds({ y: 46 }).x,
         ribbonY: makeRibbonBounds({ y: 46 }).y,
         ribbonWidth: makeRibbonBounds().width,
@@ -570,15 +522,6 @@ const MONSTER_BLUEPRINT: Blueprint = {
         textY: makeRibbonTextBounds({ y: 66 }).y,
         textWidth: makeRibbonTextBounds().width,
         textHeight: makeRibbonTextBounds().height,
-        // Trial values (multiline experiment)
-        // ribbonX: 81,
-        // ribbonY: 46,
-        // ribbonWidth: 588,
-        // ribbonHeight: 150.15,
-        // textX: 171,
-        // textY: 47,
-        // textWidth: 428,
-        // textHeight: 96.15,
       },
     },
     {
