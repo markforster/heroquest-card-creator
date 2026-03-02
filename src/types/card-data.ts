@@ -22,6 +22,7 @@ export interface BaseCardFields {
   description?: string;
   borderColor?: string;
   copyright?: string;
+  copyrightColor?: string;
   showCopyright?: boolean;
 }
 

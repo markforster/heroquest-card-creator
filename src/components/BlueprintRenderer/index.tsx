@@ -1012,7 +1012,7 @@ function CopyrightLayer({
       : undefined;
 
   return (
-    <Layer key={layer.id}>
+    <Layer key={layer.id} data-layer-type="copyright">
       {showTextBounds ? (
         <rect
           x={bounds.x}

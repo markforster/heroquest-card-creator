@@ -31,6 +31,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     width: SMART_CANVAS_WIDTH,
     height: SMART_CANVAS_HEIGHT,
   });
+  // todo: switch out for src/hooks/usePopupState.ts
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const { field } = useController({ name: "borderColor", control });
@@ -41,7 +42,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
   const inputValue =
     normalizedSelected === TRANSPARENT_BORDER_COLOR
       ? ""
-      : normalizeHex(normalizedSelected) ?? DEFAULT_BORDER_COLOR;
+      : (normalizeHex(normalizedSelected) ?? DEFAULT_BORDER_COLOR);
   const savedColorRef = useRef<string | undefined>(undefined);
   const draftColor =
     draftTemplateId === templateId && draft

@@ -1,6 +1,7 @@
 import smallLargeArtworkBorderMask from "@/assets/card-backgrounds/small-large-artwork-border-alpha-mask.png";
 import smallLargeArtworkBorderTexture from "@/assets/card-backgrounds/small-large-artwork-border-blend-texture.png";
 import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
+import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
 import { EMPHASIZED_LABEL_WEIGHT } from "@/config/typography";
 import type { Blueprint, BlueprintBounds } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
@@ -150,7 +151,7 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
         align: "center",
-        fill: "#3b1f04",
+        fill: DEFAULT_COPYRIGHT_COLOR,
         letterSpacingEm: -0.01,
         fontFamily: "Helvetica, Arial, sans-serif",
       },
@@ -251,7 +252,7 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
         align: "center",
-        fill: "#3b1f04",
+        fill: DEFAULT_COPYRIGHT_COLOR,
         letterSpacingEm: -0.01,
         fontFamily: "Helvetica, Arial, sans-serif",
       },
@@ -383,7 +384,7 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
         align: "center",
-        fill: "#3b1f04",
+        fill: DEFAULT_COPYRIGHT_COLOR,
         letterSpacingEm: -0.01,
         fontFamily: "Helvetica, Arial, sans-serif",
       },
@@ -429,7 +430,7 @@ const HERO_BACK_BLUEPRINT: Blueprint = {
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
         align: "center",
-        fill: "#3b1f04",
+        fill: DEFAULT_COPYRIGHT_COLOR,
         letterSpacingEm: -0.01,
         fontFamily: "Helvetica, Arial, sans-serif",
       },
@@ -494,7 +495,7 @@ const HERO_BLUEPRINT: Blueprint = {
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
         align: "center",
-        fill: "#3b1f04",
+        fill: DEFAULT_COPYRIGHT_COLOR,
         letterSpacingEm: -0.01,
         fontFamily: "Helvetica, Arial, sans-serif",
       },
@@ -590,7 +591,7 @@ const MONSTER_BLUEPRINT: Blueprint = {
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
         align: "center",
-        fill: "#3b1f04",
+        fill: DEFAULT_COPYRIGHT_COLOR,
         letterSpacingEm: -0.01,
         fontFamily: "Helvetica, Arial, sans-serif",
       },

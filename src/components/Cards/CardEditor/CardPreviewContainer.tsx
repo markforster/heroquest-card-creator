@@ -356,6 +356,7 @@ export default function CardPreviewContainer({
           templateName={templateName}
           backgroundSrc={template.background}
           cardData={cardData}
+          copyrightTextColor={cardData?.copyrightColor}
         />
       </div>
       {showWebgl && reverseCard ? (
@@ -366,6 +367,7 @@ export default function CardPreviewContainer({
             templateName={reverseCard.templateName}
             backgroundSrc={cardTemplatesById[reverseCard.templateId]?.background}
             cardData={reverseCard.cardData}
+            copyrightTextColor={reverseCard.cardData?.copyrightColor}
           />
         </div>
       ) : null}

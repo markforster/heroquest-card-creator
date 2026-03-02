@@ -1516,6 +1516,7 @@ export default function StockpilePanelContent({
             templateName={exportTemplate.name}
             backgroundSrc={exportTemplate.background}
             cardData={exportCardData}
+            copyrightTextColor={exportCardData?.copyrightColor}
           />
         </div>
       ) : null}

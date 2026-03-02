@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
+import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
+import ColorPickerField from "@/components/common/ColorPickerField";
+import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
+import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type CopyrightFieldProps = {
@@ -21,13 +25,23 @@ export default function CopyrightField({
   const { register, setValue } = useFormContext();
   const { defaultCopyright, isReady } = useCopyrightSettings();
   const overrideValue = useWatch({ name: "copyright" }) as string | undefined;
+  const colorValue = useWatch({ name: "copyrightColor" }) as string | undefined;
   const showValue = useWatch({ name: "showCopyright" }) as boolean | undefined;
+  const [isColorOpen, setIsColorOpen] = useState(false);
+  const { renderPreviewCanvas } = usePreviewCanvas();
+  const { smartGroups, isSmartBusy, requestSmart } = useSmartSwatches({
+    renderPreviewCanvas,
+    width: 300,
+    height: 420,
+  });
 
   const normalizedDefault = defaultCopyright.trim();
   const hasDefault = normalizedDefault.length > 0;
   const normalizedOverride = (overrideValue ?? "").trim();
   const hasOverride = normalizedOverride.length > 0;
   const effectiveVisible = showValue ?? hasOverride ?? hasDefault;
+  const normalizedColor = typeof colorValue === "string" ? colorValue.trim() : "";
+  const selectedColor = normalizedColor || DEFAULT_COPYRIGHT_COLOR;
 
   useEffect(() => {
     if (!showToggle || !isReady) return;
@@ -40,6 +54,10 @@ export default function CopyrightField({
   const handleToggle = () => {
     const next = !effectiveVisible;
     setValue("showCopyright", next, { shouldDirty: true, shouldTouch: true });
+  };
+
+  const handleSelectAuto = () => {
+    setValue("copyrightColor", undefined, { shouldDirty: true, shouldTouch: true });
   };
 
   return (
@@ -62,19 +80,62 @@ export default function CopyrightField({
           </label>
         ) : null}
       </div>
-      <input
-        id="copyright"
-        type="text"
-        className="form-control form-control-sm"
-        placeholder={placeholder ?? (hasDefault ? normalizedDefault : undefined)}
-        disabled={!effectiveVisible}
-        {...register("copyright", {
-          maxLength: {
-            value: 120,
-            message: t("errors.contentMaxLength"),
-          },
-        })}
-      />
+      <div className="d-flex align-items-center gap-2">
+        <div style={{ flex: "1 0 auto", minWidth: 0 }}>
+          <input
+            id="copyright"
+            type="text"
+            className="form-control form-control-sm"
+            placeholder={placeholder ?? (hasDefault ? normalizedDefault : undefined)}
+            disabled={!effectiveVisible}
+            {...register("copyright", {
+              maxLength: {
+                value: 120,
+                message: t("errors.contentMaxLength"),
+              },
+            })}
+          />
+        </div>
+        <div style={{ flex: "0 1 auto" }}>
+          <ColorPickerField
+            label={t("label.color")}
+            showLabel={false}
+            showInput={false}
+            inputValue={selectedColor}
+            selectedValue={selectedColor}
+            defaultColor={DEFAULT_COPYRIGHT_COLOR}
+            smartGroups={smartGroups}
+            isSmartBusy={isSmartBusy}
+            onRequestSmart={requestSmart}
+            onChange={(value) =>
+              setValue("copyrightColor", value, { shouldDirty: true, shouldTouch: true })
+            }
+            onSelectDefault={handleSelectAuto}
+            onSelectTransparent={() =>
+              setValue("copyrightColor", "transparent", { shouldDirty: true, shouldTouch: true })
+            }
+            canRevert={normalizedColor.length > 0}
+            onRevert={handleSelectAuto}
+            isOpen={isColorOpen}
+            onToggleOpen={() => setIsColorOpen((prev) => !prev)}
+            onClose={() => setIsColorOpen(false)}
+            popoverAlign="auto"
+            popoverVAlign="center"
+            isDisabled={!effectiveVisible}
+          />
+        </div>
+        <div style={{ flex: "0 0 auto" }}>
+          <button
+            type="button"
+            className="btn btn-outline-secondary btn-sm"
+            onClick={handleSelectAuto}
+            disabled={!effectiveVisible || normalizedColor.length === 0}
+            title={t("actions.auto")}
+          >
+            {t("actions.auto")}
+          </button>
+        </div>
+      </div>
       <div className="form-text">{t("helper.copyrightUsesDefault")}</div>
     </div>
   );

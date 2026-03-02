@@ -28,6 +28,7 @@ export interface CardRecord {
   face?: CardFace;
   description?: string;
   copyright?: string;
+  copyrightColor?: string;
   showCopyright?: boolean;
 
   imageAssetId?: string;
