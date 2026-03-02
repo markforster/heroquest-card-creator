@@ -31,7 +31,7 @@ import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { applyWatermarkToCanvas, shouldApplyWatermark } from "@/lib/watermark";
-import { ENABLE_WATERMARK } from "@/config/flags";
+import { ENABLE_WATERMARK, USE_ROUNDED_CARD_CLIP } from "@/config/flags";
 import { addPngTextChunk } from "@/lib/png-metadata";
 import { APP_VERSION } from "@/version";
 
@@ -631,8 +631,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   y={CARD_CLIP_INSET}
                   width={CARD_WIDTH - CARD_CLIP_INSET * 2}
                   height={CARD_HEIGHT - CARD_CLIP_INSET * 2}
-                  rx={CARD_CORNER_RADIUS}
-                  ry={CARD_CORNER_RADIUS}
+                  rx={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
+                  ry={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
                 />
               </clipPath>
             </defs>
@@ -651,8 +651,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               y={CARD_CLIP_INSET}
               width={CARD_WIDTH - CARD_CLIP_INSET * 2}
               height={CARD_HEIGHT - CARD_CLIP_INSET * 2}
-              rx={CARD_CORNER_RADIUS}
-              ry={CARD_CORNER_RADIUS}
+              rx={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
+              ry={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
               fill="none"
               stroke="#fff0"
               strokeWidth={3}
