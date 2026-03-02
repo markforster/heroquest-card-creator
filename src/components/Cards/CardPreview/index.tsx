@@ -30,6 +30,10 @@ import {
 import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
+import { applyWatermarkToCanvas, shouldApplyWatermark } from "@/lib/watermark";
+import { ENABLE_WATERMARK } from "@/config/flags";
+import { addPngTextChunk } from "@/lib/png-metadata";
+import { APP_VERSION } from "@/version";
 
 import styles from "./CardPreview.module.css";
 import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "./consts";
@@ -479,7 +483,10 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               logCardRender(session, { durationMs: now() - renderStart, success: false });
               return;
             }
-            const pngBlob: Blob | null = await new Promise((resolve) =>
+            if (ENABLE_WATERMARK && shouldApplyWatermark(templateId, cardData)) {
+              applyWatermarkToCanvas(canvas);
+            }
+            let pngBlob: Blob | null = await new Promise((resolve) =>
               canvas.toBlob((blob) => resolve(blob), "image/png", 1),
             );
             const renderDuration = now() - renderStart;
@@ -489,6 +496,11 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               failures += 1;
               return;
             }
+            pngBlob = await addPngTextChunk(
+              pngBlob,
+              "Made using",
+              `HeroQuest Card Creator ${APP_VERSION}`,
+            );
 
             const pngUrl = URL.createObjectURL(pngBlob);
 
@@ -535,8 +547,17 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             canvasRef.current = canvas;
           }
           if (!canvas) return null;
-          const pngBlob: Blob | null = await new Promise((resolve) =>
+          if (ENABLE_WATERMARK && shouldApplyWatermark(templateId, cardData)) {
+            applyWatermarkToCanvas(canvas);
+          }
+          let pngBlob: Blob | null = await new Promise((resolve) =>
             canvas.toBlob((blob) => resolve(blob), "image/png", 1),
+          );
+          if (!pngBlob) return null;
+          pngBlob = await addPngTextChunk(
+            pngBlob,
+            "Made using",
+            `HeroQuest Card Creator ${APP_VERSION}`,
           );
           return pngBlob ?? null;
         },
