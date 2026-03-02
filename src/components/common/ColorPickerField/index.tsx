@@ -2,16 +2,18 @@
 
 import { Plus, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { ReactNode, RefObject } from "react";
 import { RgbaColorPicker } from "react-colorful";
 
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
-import { useSharedColorSwatches } from "@/hooks/useSharedColorSwatches";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
+import { useSharedColorSwatches } from "@/hooks/useSharedColorSwatches";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatHexColor, parseHexColor } from "@/lib/color";
+import { clamp } from "@/lib/math";
 
 import styles from "./ColorPickerField.module.css";
+
+import type { ReactNode, RefObject } from "react";
 
 type SmartGroup = { id: string; colors: string[] };
 type ActiveTab = "picker" | "saved" | "smart";
@@ -119,7 +121,11 @@ export default function ColorPickerField({
         if (align === "left" && spaceLeft < popoverRect.width + offset && spaceRight > spaceLeft) {
           align = "right";
         }
-        if (align === "right" && spaceRight < popoverRect.width + offset && spaceLeft > spaceRight) {
+        if (
+          align === "right" &&
+          spaceRight < popoverRect.width + offset &&
+          spaceLeft > spaceRight
+        ) {
           align = "left";
         }
 
@@ -171,10 +177,10 @@ export default function ColorPickerField({
   const isTransparent = isTransparentValue(selectedValue, transparentValue);
   const normalizedInput = isTransparent
     ? transparentHex
-    : toNormalizedHex(inputValue, allowAlpha) ??
+    : (toNormalizedHex(inputValue, allowAlpha) ??
       toNormalizedHex(selectedValue, allowAlpha) ??
       toNormalizedHex(defaultColor, allowAlpha) ??
-      "#000000FF";
+      "#000000FF");
   const normalizedDefault = toNormalizedHex(defaultColor, true);
   const normalizedSelectedUpper = normalizedSelected?.toUpperCase();
   const swatchKeys = new Set(swatches.map((swatch) => swatch.toUpperCase()));
@@ -266,8 +272,7 @@ export default function ColorPickerField({
               isTransparent
                 ? undefined
                 : {
-                    backgroundColor:
-                      previewHex ?? normalizedSelected ?? selectedValue,
+                    backgroundColor: previewHex ?? normalizedSelected ?? selectedValue,
                   }
             }
             onClick={isDisabled ? undefined : onToggleOpen}
@@ -420,17 +425,17 @@ export default function ColorPickerField({
                           <div className={styles.smartPopoverGroupLabel}>
                             {t(`form.smartGroup.${group.id}` as never)}
                           </div>
-                        <div className={styles.swatchGrid}>
-                          {group.colors.slice(0, 5).map((color) => (
-                            <button
-                              key={`${group.id}-${color}`}
-                              type="button"
-                              className={styles.smartPopoverSwatch}
-                              style={{ backgroundColor: color }}
-                              title={color}
-                              aria-label={`${t("actions.select")} ${color}`}
-                              onClick={() => handleChangeNormalized(color)}
-                            />
+                          <div className={styles.swatchGrid}>
+                            {group.colors.slice(0, 5).map((color) => (
+                              <button
+                                key={`${group.id}-${color}`}
+                                type="button"
+                                className={styles.smartPopoverSwatch}
+                                style={{ backgroundColor: color }}
+                                title={color}
+                                aria-label={`${t("actions.select")} ${color}`}
+                                onClick={() => handleChangeNormalized(color)}
+                              />
                             ))}
                           </div>
                         </div>
@@ -465,10 +470,10 @@ function hexToRgba(value: string): RgbaColor {
 }
 
 function rgbaToHex({ r, g, b, a }: RgbaColor): string {
-  const clamp = (value: number, min: number, max: number) =>
-    Math.min(Math.max(value, min), max);
   const channel = (value: number) => {
-    const hex = Math.round(clamp(value, 0, 255)).toString(16).padStart(2, "0");
+    const hex = Math.round(clamp(value, 0, 255))
+      .toString(16)
+      .padStart(2, "0");
     return hex.toUpperCase();
   };
   const alpha = channel(Math.round(clamp(a ?? 1, 0, 1) * 255));
@@ -525,14 +530,7 @@ type SwatchButtonProps = {
   isSelected?: boolean;
 };
 
-function SwatchButton({
-  color,
-  label,
-  title,
-  onClick,
-  className,
-  isSelected,
-}: SwatchButtonProps) {
+function SwatchButton({ color, label, title, onClick, className, isSelected }: SwatchButtonProps) {
   return (
     <button
       type="button"

@@ -28,6 +28,7 @@ import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getAllAssets, getAssetObjectUrl } from "@/lib/assets-db";
 import type { AssetRecord } from "@/lib/assets-db";
+import { clamp } from "@/lib/math";
 import {
   computeSliderTickLeftPx,
   computeImageZoomModel,
@@ -193,8 +194,6 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
         IMAGE_SCALE_SLIDER_THUMB_SIZE_PX,
       )
     : 0;
-
-  const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
   const getCurrentSnapshot = (): ImageSnapshot => ({
     imageAssetId,

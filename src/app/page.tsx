@@ -54,6 +54,7 @@ import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import dungeonAtmosphere from "@/assets/dungeon atmostphere - 2.png";
 import { cardTemplatesById } from "@/data/card-templates";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import {
   createCard,
   getCard,
@@ -229,7 +230,12 @@ function IndexPageInner() {
 
     const patch = cardDataToCardRecordPatch(templateId, derivedName, draftValue as never);
     const saveFace =
-      (draftValue?.face ?? selectedTemplate?.defaultFace) === "back" ? "back" : "front";
+      resolveEffectiveFace(
+        draftValue?.face,
+        selectedTemplate?.defaultFace ?? "front",
+      ) === "back"
+        ? "back"
+        : "front";
     const safePatch = patch;
     const viewedAt = Date.now();
 
@@ -415,7 +421,7 @@ function IndexPageInner() {
 
   const effectiveFace = useMemo<CardFace | null>(() => {
     if (!selectedTemplate) return null;
-    return (draftValue?.face ?? selectedTemplate.defaultFace) as CardFace;
+    return resolveEffectiveFace(draftValue?.face, selectedTemplate.defaultFace);
   }, [draftValue?.face, selectedTemplate]);
 
   const sortByRecent = (cards: CardRecord[]) =>

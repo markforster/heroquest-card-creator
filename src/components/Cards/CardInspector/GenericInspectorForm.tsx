@@ -6,10 +6,10 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { cardTemplatesById } from "@/data/card-templates";
 import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import { getImageLayerBounds } from "@/lib/image-scale";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardDataByTemplate } from "@/types/card-data";
-import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
 import BorderColorField from "./BorderColorField";
@@ -47,7 +47,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
   const effectiveFace = (() => {
     const template = cardTemplatesById[templateId];
     if (!template) return undefined;
-    return (draftValue?.face ?? template.defaultFace) as CardFace;
+    return resolveEffectiveFace(draftValue?.face, template.defaultFace);
   })();
   const showTitleToggle = Boolean(
     fields?.some((field) => field.fieldType === "title" && field.showToggle),

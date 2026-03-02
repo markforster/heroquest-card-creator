@@ -24,7 +24,6 @@ function normalizeMaskId(rawId: string) {
 
 export default function CardBorder({
   mask,
-  backgroundLoaded,
   color,
   width = 750,
   height = 1050,
@@ -44,11 +43,7 @@ export default function CardBorder({
   return (
     <Layer>
       <defs>
-        <mask
-          id={maskId}
-          maskUnits="userSpaceOnUse"
-          maskContentUnits="userSpaceOnUse"
-        >
+        <mask id={maskId} maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse">
           <image
             href={mask.src}
             data-template-asset="border-mask"

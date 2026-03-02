@@ -16,6 +16,7 @@ import { ENABLE_CARD_THUMB_CACHE, ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getCard, listCards } from "@/lib/cards-db";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import {
   getCachedCardThumbnailUrl,
   getLegacyCardThumbnailUrl,
@@ -101,7 +102,7 @@ export default function PairingInspectorPanel({
 
   const effectiveFace = useMemo<CardFace | undefined>(() => {
     if (!template) return undefined;
-    return (draftValue?.face ?? template.defaultFace) as CardFace;
+    return resolveEffectiveFace(draftValue?.face, template.defaultFace);
   }, [draftValue?.face, template]);
 
   const sortByUpdated = (cards: CardRecord[]) =>
@@ -402,7 +403,10 @@ export default function PairingInspectorPanel({
                       }
                       const nextDraft = {
                         ...(draftValue ?? {}),
-                        face: draftValue?.face ?? template?.defaultFace,
+                        face: resolveEffectiveFace(
+                          draftValue?.face,
+                          template?.defaultFace ?? "front",
+                        ),
                       } as CardDataByTemplate[TemplateId];
                       setCardDraft(currentTemplateId, nextDraft);
                       setSingleDraft(currentTemplateId, nextDraft);

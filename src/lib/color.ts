@@ -24,6 +24,19 @@ type FormatCssColorOptions = {
 
 const HEX_PATTERN = /^[0-9a-fA-F]+$/;
 
+export function isTransparentHex(
+  value: string | undefined,
+  options: { allowTransparentString?: boolean } = {},
+): boolean {
+  if (!value) return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (options.allowTransparentString && trimmed.toLowerCase() === "transparent") return true;
+  const parsed = parseHexColor(trimmed);
+  if (!parsed || !parsed.inputHasAlpha) return false;
+  return parsed.hexWithAlpha.slice(7, 9) === "00";
+}
+
 export function parseHexColor(
   value: string | undefined,
   options: ParseHexColorOptions = {},

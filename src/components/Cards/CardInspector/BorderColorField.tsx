@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useController, useFormContext } from "react-hook-form";
 
 import { DEFAULT_BORDER_COLOR } from "@/components/Cards/CardParts/CardBorder";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
+import { usePopupState } from "@/hooks/usePopupState";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
-import { formatHexColor, parseHexColor } from "@/lib/color";
+import { formatHexColor, isTransparentHex, parseHexColor } from "@/lib/color";
 import type { TemplateId } from "@/types/templates";
 
 const SMART_CANVAS_WIDTH = 300;
@@ -32,8 +33,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     width: SMART_CANVAS_WIDTH,
     height: SMART_CANVAS_HEIGHT,
   });
-  // todo: switch out for src/hooks/usePopupState.ts
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const popoverState = usePopupState();
 
   const { field } = useController({ name: "borderColor", control });
   const borderColor = typeof field.value === "string" ? field.value : "";
@@ -75,12 +75,6 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     await requestSmart();
   };
 
-  const handleTogglePopover = () => {
-    setIsPopoverOpen((prev) => {
-      return !prev;
-    });
-  };
-
   return (
     <div className="mb-2">
       <ColorPickerField
@@ -97,11 +91,9 @@ export default function BorderColorField({ label, templateId }: BorderColorField
         onSelectTransparent={() => field.onChange(TRANSPARENT_BORDER_COLOR)}
         canRevert={hasRevert(borderColor, savedColorRef.current)}
         onRevert={handleRevert}
-        isOpen={isPopoverOpen}
-        onToggleOpen={handleTogglePopover}
-        onClose={() => {
-          setIsPopoverOpen(false);
-        }}
+        isOpen={popoverState.isOpen}
+        onToggleOpen={popoverState.toggle}
+        onClose={popoverState.close}
         popoverAlign="auto"
         popoverVAlign="center"
       />
@@ -118,9 +110,7 @@ function normalizeHexValue(value: string | undefined): string | null {
 function isTransparentColor(value?: string) {
   if (!value) return false;
   if (value.trim().toLowerCase() === TRANSPARENT_BORDER_COLOR) return true;
-  const parsed = parseHexColor(value);
-  if (!parsed || !parsed.inputHasAlpha) return false;
-  return parsed.hexWithAlpha.slice(7, 9) === "00";
+  return isTransparentHex(value);
 }
 
 function normalizeBorderColor(value?: string) {

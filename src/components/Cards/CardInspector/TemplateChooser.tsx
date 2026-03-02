@@ -14,6 +14,7 @@ import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getCard, listCards } from "@/lib/cards-db";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import {
   getCachedCardThumbnailUrl,
   getLegacyCardThumbnailUrl,
@@ -108,7 +109,7 @@ export default function TemplateChooser() {
 
   const effectiveFace = useMemo<CardFace | undefined>(() => {
     if (!template) return undefined;
-    return (draftValue?.face ?? template.defaultFace) as CardFace;
+    return resolveEffectiveFace(draftValue?.face, template.defaultFace);
   }, [draftValue?.face, template]);
   const isInferredFace = Boolean(template && draftValue?.face == null);
 

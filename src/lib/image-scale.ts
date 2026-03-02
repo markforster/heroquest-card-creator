@@ -1,5 +1,6 @@
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import type { BlueprintBounds } from "@/types/blueprints";
+import { clamp } from "@/lib/math";
 import type { TemplateId } from "@/types/templates";
 
 export const LEGACY_ABSOLUTE_IMAGE_SCALE_MIN = 0.2;
@@ -177,8 +178,4 @@ export function computeSliderTickLeftPx(
   const t = max > min ? clamp((clampedValue - min) / (max - min), 0, 1) : 0;
   const travel = Math.max(0, sliderWidthPx - thumbSizePx);
   return thumbSizePx / 2 + t * travel;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }

@@ -6,6 +6,7 @@ import styles from "@/app/page.module.css";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import {
   getCachedCardThumbnailUrl,
   getLegacyCardThumbnailUrl,
@@ -42,7 +43,10 @@ export default function StockpilePairPopover({
   const hoveredCard = cardById.get(hoveredPairCardId) ?? null;
   if (!hoveredCard) return null;
   const hoveredTemplate = cardTemplatesById[hoveredCard.templateId];
-  const hoveredFace = hoveredCard.face ?? hoveredTemplate?.defaultFace;
+  const hoveredFace = resolveEffectiveFace(
+    hoveredCard.face,
+    hoveredTemplate?.defaultFace ?? "front",
+  );
   const isHoveredBack = hoveredFace === "back";
   const hoveredPairedFronts = pairedByTargetId.get(hoveredCard.id) ?? [];
   const hoveredPairedCard = backByFrontId.get(hoveredCard.id)

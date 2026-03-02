@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
-
 import styles from "./DocContent.module.css";
+
+import type { ReactNode } from "react";
 
 type DocListProps = {
   children: ReactNode;

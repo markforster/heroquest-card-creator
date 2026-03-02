@@ -56,6 +56,7 @@ import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
   getCachedCardThumbnailUrl,
@@ -527,7 +528,10 @@ export default function StockpilePanelContent({
 
     return filteredCards.map((card) => {
       const templateMeta = cardTemplatesById[card.templateId];
-      const effectiveFace = (card.face ?? templateMeta?.defaultFace ?? "front") as "front" | "back";
+      const effectiveFace = resolveEffectiveFace(
+        card.face,
+        templateMeta?.defaultFace ?? "front",
+      );
       const pairedBackId = backByFrontId.get(card.id) ?? null;
       const pairedBack = pairedBackId ? (cardById.get(pairedBackId) ?? null) : null;
       const pairedFronts = pairedByTargetId.get(card.id) ?? [];

@@ -1,9 +1,11 @@
 "use client";
 
+import { AlertTriangle } from "lucide-react";
+
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
-import CardTexturedBorder from "@/components/Cards/CardParts/CardTexturedBorder";
 import CardTextBlock, { layoutCardText } from "@/components/Cards/CardParts/CardTextBlock";
+import CardTexturedBorder from "@/components/Cards/CardParts/CardTexturedBorder";
 import HeroStatsBlock, {
   HERO_STATS_HEIGHT,
   type HeroStats,
@@ -14,19 +16,25 @@ import MonsterStatsBlock, {
 } from "@/components/Cards/CardParts/MonsterStatsBlock";
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import Layer from "@/components/Cards/CardPreview/Layer";
-import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
-import { cardTemplatesById } from "@/data/card-templates";
+import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { blueprintsByTemplateId } from "@/data/blueprints";
+import { cardTemplatesById } from "@/data/card-templates";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { useI18n } from "@/i18n/I18nProvider";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import { computeContainScale } from "@/lib/image-scale";
-import type { Blueprint, BlueprintBounds, BlueprintGroup, BlueprintLayer } from "@/types/blueprints";
+import { clamp } from "@/lib/math";
+import type {
+  Blueprint,
+  BlueprintBounds,
+  BlueprintGroup,
+  BlueprintLayer,
+} from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
-import { AlertTriangle } from "lucide-react";
 import type { StaticImageData } from "next/image";
 
 type BlueprintRendererProps = {
@@ -40,10 +48,6 @@ type BlueprintRendererProps = {
 
 const DEFAULT_CANVAS = { width: 750, height: 1050 };
 const MISSING_ARTWORK_COLOR = "#e0b15b";
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
 
 function getLayerBounds(blueprint: Blueprint, layer: BlueprintLayer) {
   return (
@@ -68,7 +72,7 @@ function resolveVisibleCopyrightBounds({
   if (!cardData) return null;
   const template = cardTemplatesById[blueprint.templateId];
   const effectiveFace = template
-    ? ((cardData as { face?: CardFace }).face ?? template.defaultFace)
+    ? resolveEffectiveFace((cardData as { face?: CardFace }).face, template.defaultFace)
     : (cardData as { face?: CardFace }).face;
   if (effectiveFace !== "front") return null;
   const showCopyright =
@@ -246,9 +250,7 @@ function renderBorderLayer({
   return (
     <CardBorder
       key={layer.id}
-      mask={
-        borderMask ?? (blueprint.templateId === "labelled-back" ? borderedMask : undefined)
-      }
+      mask={borderMask ?? (blueprint.templateId === "labelled-back" ? borderedMask : undefined)}
       backgroundLoaded={backgroundLoaded}
       color={borderColor}
       width={bounds.width}
@@ -392,22 +394,22 @@ function TextLayer({
   const hideTitle =
     blueprint.templateId === "labelled-back" ? labelledBackData.showTitle === false : false;
   const bodyTextEnabled =
-    blueprint.templateId === "labelled-back" ? labelledBackData.bodyTextStyle?.enabled ?? false : true;
+    blueprint.templateId === "labelled-back"
+      ? (labelledBackData.bodyTextStyle?.enabled ?? false)
+      : true;
   if (blueprint.templateId === "labelled-back" && !bodyTextEnabled) {
     return null;
   }
-  let baseBounds =
-    hideTitle
-      ? getPlacementBounds("hidden") ?? getLayerBounds(blueprint, layer)
-      : placement === "top"
-        ? getPlacementBounds("top") ?? getLayerBounds(blueprint, layer)
-        : getLayerBounds(blueprint, layer);
-  let flushBounds =
-    hideTitle
-      ? getPlacementBounds("flushHidden") ?? baseBounds
-      : placement === "top"
-        ? getPlacementBounds("flushTop") ?? baseBounds
-        : getPlacementBounds("flush") ?? baseBounds;
+  let baseBounds = hideTitle
+    ? (getPlacementBounds("hidden") ?? getLayerBounds(blueprint, layer))
+    : placement === "top"
+      ? (getPlacementBounds("top") ?? getLayerBounds(blueprint, layer))
+      : getLayerBounds(blueprint, layer);
+  let flushBounds = hideTitle
+    ? (getPlacementBounds("flushHidden") ?? baseBounds)
+    : placement === "top"
+      ? (getPlacementBounds("flushTop") ?? baseBounds)
+      : (getPlacementBounds("flush") ?? baseBounds);
   const fontSize = typeof layer.props?.fontSize === "number" ? layer.props.fontSize : undefined;
   const lineHeight =
     typeof layer.props?.lineHeight === "number" ? layer.props.lineHeight : undefined;
@@ -438,9 +440,7 @@ function TextLayer({
       ? layer.props.backdropOpacity
       : 0.2;
   const defaultBackdropRadius =
-    layer.props && typeof layer.props.backdropRadius === "number"
-      ? layer.props.backdropRadius
-      : 0;
+    layer.props && typeof layer.props.backdropRadius === "number" ? layer.props.backdropRadius : 0;
   const defaultBackdropInsetMode =
     layer.props && typeof layer.props.backdropInsetMode === "string"
       ? layer.props.backdropInsetMode
@@ -604,10 +604,7 @@ function TextLayer({
       placement === "bottom" && !hideTitle && effectiveBackdrop.insetMode === "flush"
         ? fontSizeResolved
         : 0;
-    const maxTextHeight = Math.max(
-      0,
-      backdropBounds.height - textPadding * 2 - minBottomPadding,
-    );
+    const maxTextHeight = Math.max(0, backdropBounds.height - textPadding * 2 - minBottomPadding);
     const maxLinesByHeight = Math.floor(maxTextHeight / effectiveLineHeight);
     const effectiveLines = Math.min(lines.length, Math.max(0, maxLinesByHeight));
     const textHeight = effectiveLines * effectiveLineHeight;
@@ -704,9 +701,10 @@ function TextLayer({
 
       const visibleLines = Math.min(lines.length, maxLines);
       const textHeight = visibleLines * resolvedLineHeight;
-      const bubbleHeight = isLastSegment && isFullHeight
-        ? availableForThisSegment
-        : bubbleTopPadding + textHeight + textPadding + minBottomPadding;
+      const bubbleHeight =
+        isLastSegment && isFullHeight
+          ? availableForThisSegment
+          : bubbleTopPadding + textHeight + textPadding + minBottomPadding;
 
       const textBounds = {
         x: textAreaX,
@@ -744,7 +742,8 @@ function TextLayer({
               ? effectiveCornerRadius
               : {
                   top: index === 0 ? effectiveCornerRadius.top : resolvedRadius,
-                  bottom: index === segmentCount - 1 ? effectiveCornerRadius.bottom : resolvedRadius,
+                  bottom:
+                    index === segmentCount - 1 ? effectiveCornerRadius.bottom : resolvedRadius,
                 };
 
           return (
@@ -778,11 +777,7 @@ function TextLayer({
   return (
     <Layer key={layer.id}>
       {shouldShowBackdrop ? (
-        <path
-          d={backdropPath}
-          fill={effectiveBackdrop.color}
-          opacity={effectiveBackdrop.opacity}
-        />
+        <path d={backdropPath} fill={effectiveBackdrop.color} opacity={effectiveBackdrop.opacity} />
       ) : null}
       <CardTextBlock
         text={text as string | null | undefined}
@@ -907,7 +902,9 @@ function TitleLayer({
 
   const showRibbonDefault =
     typeof layer.props?.showRibbon === "boolean" ? layer.props.showRibbon : true;
-  const titleStyle = cardData ? (cardData as { titleStyle?: "ribbon" | "plain" }).titleStyle : undefined;
+  const titleStyle = cardData
+    ? (cardData as { titleStyle?: "ribbon" | "plain" }).titleStyle
+    : undefined;
   const showRibbon =
     titleStyle === "ribbon" ? true : titleStyle === "plain" ? false : showRibbonDefault;
   const titleColor = cardData ? (cardData as { titleColor?: string }).titleColor : undefined;
@@ -959,14 +956,15 @@ function CopyrightLayer({
   cardData?: CardDataByTemplate[TemplateId];
   copyrightTextColor?: string;
 }) {
+  const { defaultCopyright } = useCopyrightSettings();
+  const { showTextBounds } = useDebugVisuals();
+
   if (layer.type !== "copyright") return null;
   if (!cardData) return null;
 
-  const { defaultCopyright } = useCopyrightSettings();
-  const { showTextBounds } = useDebugVisuals();
   const template = cardTemplatesById[blueprint.templateId];
   const effectiveFace = template
-    ? ((cardData as { face?: CardFace }).face ?? template.defaultFace)
+    ? resolveEffectiveFace((cardData as { face?: CardFace }).face, template.defaultFace)
     : (cardData as { face?: CardFace }).face;
   if (effectiveFace !== "front") return null;
   const showCopyright =
@@ -1001,7 +999,8 @@ function CopyrightLayer({
       : undefined;
   const fontFamily =
     typeof layer.props?.fontFamily === "string" ? layer.props.fontFamily : undefined;
-  const fill = copyrightTextColor ?? (typeof layer.props?.fill === "string" ? layer.props.fill : undefined);
+  const fill =
+    copyrightTextColor ?? (typeof layer.props?.fill === "string" ? layer.props.fill : undefined);
   const letterSpacingEm =
     typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;
   const align =
