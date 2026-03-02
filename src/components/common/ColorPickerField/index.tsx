@@ -9,6 +9,7 @@ import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
 import { useSharedColorSwatches } from "@/hooks/useSharedColorSwatches";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
+import { formatHexColor, parseHexColor } from "@/lib/color";
 
 import styles from "./ColorPickerField.module.css";
 
@@ -164,17 +165,17 @@ export default function ColorPickerField({
     setActiveTab("picker");
   }, [isOpen]);
 
-  const transparentHex = normalizeHexColor(transparentValue, true) ?? "#00000000";
+  const transparentHex = toNormalizedHex(transparentValue, true) ?? "#00000000";
   const normalizedSelected =
-    normalizeHexColor(selectedValue, allowAlpha) ?? normalizeHexColor(defaultColor, allowAlpha);
+    toNormalizedHex(selectedValue, allowAlpha) ?? toNormalizedHex(defaultColor, allowAlpha);
   const isTransparent = isTransparentValue(selectedValue, transparentValue);
   const normalizedInput = isTransparent
     ? transparentHex
-    : normalizeHexColor(inputValue, allowAlpha) ??
-      normalizeHexColor(selectedValue, allowAlpha) ??
-      normalizeHexColor(defaultColor, allowAlpha) ??
+    : toNormalizedHex(inputValue, allowAlpha) ??
+      toNormalizedHex(selectedValue, allowAlpha) ??
+      toNormalizedHex(defaultColor, allowAlpha) ??
       "#000000FF";
-  const normalizedDefault = normalizeHexColor(defaultColor, true);
+  const normalizedDefault = toNormalizedHex(defaultColor, true);
   const normalizedSelectedUpper = normalizedSelected?.toUpperCase();
   const swatchKeys = new Set(swatches.map((swatch) => swatch.toUpperCase()));
   const canSaveSwatch =
@@ -194,7 +195,7 @@ export default function ColorPickerField({
   }, [isEditingHex, normalizedInput]);
 
   const handleChangeNormalized = (value: string) => {
-    const normalized = normalizeHexColor(value, allowAlpha);
+    const normalized = toNormalizedHex(value, allowAlpha);
     if (normalized) {
       onChange(normalized);
       return;
@@ -322,7 +323,7 @@ export default function ColorPickerField({
                     label={`${t("actions.select")} ${defaultColor}`}
                     title={t("form.heroquestDefaultBrown")}
                     isSelected={
-                      normalizeHexColor(defaultColor, true) === normalizeHexColor(selectedValue, true)
+                      toNormalizedHex(defaultColor, true) === toNormalizedHex(selectedValue, true)
                     }
                     onClick={onSelectDefault}
                   />
@@ -364,7 +365,7 @@ export default function ColorPickerField({
                     label={`${t("actions.select")} ${defaultColor}`}
                     title={t("form.heroquestDefaultBrown")}
                     isSelected={
-                      normalizeHexColor(defaultColor, true) === normalizeHexColor(selectedValue, true)
+                      toNormalizedHex(defaultColor, true) === toNormalizedHex(selectedValue, true)
                     }
                     onClick={onSelectDefault}
                   />
@@ -392,7 +393,7 @@ export default function ColorPickerField({
                         key={swatch}
                         color={swatch}
                         isSelected={
-                          normalizeHexColor(swatch, true) === normalizeHexColor(selectedValue, true)
+                          toNormalizedHex(swatch, true) === toNormalizedHex(selectedValue, true)
                         }
                         onSelect={() => handleChangeNormalized(swatch)}
                         onRemove={() => {
@@ -450,41 +451,12 @@ export default function ColorPickerField({
 
 type RgbaColor = { r: number; g: number; b: number; a: number };
 
-function normalizeHexColor(value: string | undefined, allowAlpha: boolean): string | null {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (trimmed.toLowerCase() === "transparent") return null;
-
-  const raw = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;
-  if (!/^[0-9a-fA-F]+$/.test(raw)) return null;
-
-  if (raw.length === 3 || raw.length === 4) {
-    const r = raw[0];
-    const g = raw[1];
-    const b = raw[2];
-    const a = raw.length === 4 ? raw[3] : "f";
-    const hex = `${r}${r}${g}${g}${b}${b}${a}${a}`.toUpperCase();
-    return allowAlpha ? `#${hex}` : `#${hex.slice(0, 6)}`;
-  }
-
-  if (raw.length === 6 || raw.length === 8) {
-    const hex = raw.toUpperCase();
-    if (allowAlpha) {
-      return `#${hex.length === 6 ? `${hex}FF` : hex}`;
-    }
-    return `#${hex.slice(0, 6)}`;
-  }
-
-  return null;
-}
-
 function hexToRgba(value: string): RgbaColor {
-  const normalized = normalizeHexColor(value, true);
-  if (!normalized) {
+  const parsed = parseHexColor(value);
+  if (!parsed) {
     return { r: 0, g: 0, b: 0, a: 1 };
   }
-  const hex = normalized.slice(1);
+  const hex = parsed.hexWithAlpha.slice(1);
   const r = parseInt(hex.slice(0, 2), 16);
   const g = parseInt(hex.slice(2, 4), 16);
   const b = parseInt(hex.slice(4, 6), 16);
@@ -510,7 +482,7 @@ function normalizeDraftHex(value: string, allowAlpha: boolean) {
   const raw = rawValue.startsWith("#") ? rawValue.slice(1) : rawValue;
   if (!/^[0-9a-fA-F]+$/.test(raw)) return null;
   if (raw.length === 3 || raw.length === 4 || raw.length === 6 || raw.length === 8) {
-    return normalizeHexColor(`#${raw}`, allowAlpha);
+    return toNormalizedHex(`#${raw}`, allowAlpha);
   }
   return null;
 }
@@ -527,9 +499,21 @@ function sanitizeHexInput(value: string) {
 function isTransparentValue(value: string, transparentValue: string) {
   if (value.trim().toLowerCase() === "transparent") return true;
   if (value.trim().toLowerCase() === transparentValue.toLowerCase()) return true;
-  const normalized = normalizeHexColor(value, true);
-  if (!normalized) return false;
-  return normalized.slice(7, 9) === "00";
+  const parsed = parseHexColor(value);
+  if (!parsed || !parsed.inputHasAlpha) return false;
+  return parsed.hexWithAlpha.slice(7, 9) === "00";
+}
+
+function toNormalizedHex(value: string | undefined, allowAlpha: boolean): string | null {
+  if (!value) return null;
+  if (!value.trim()) return null;
+  if (value.trim().toLowerCase() === "transparent") return null;
+  const parsed = parseHexColor(value);
+  if (!parsed) return null;
+  return formatHexColor(parsed, {
+    alphaMode: allowAlpha ? "force" : "strip",
+    case: "upper",
+  });
 }
 
 type SwatchButtonProps = {

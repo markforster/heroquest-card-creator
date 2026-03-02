@@ -11,6 +11,7 @@ import d6Pips3Url from "@/assets/dice/d6_pips_3.svg?url";
 import d6Pips4Url from "@/assets/dice/d6_pips_4.svg?url";
 import d6Pips5Url from "@/assets/dice/d6_pips_5.svg?url";
 import d6Pips6Url from "@/assets/dice/d6_pips_6.svg?url";
+import { formatCssColor, formatHexColor, parseHexColor } from "@/lib/color";
 
 export type CombatFace = "skull" | "hero" | "monster" | "cd" | "ad" | "dd" | "md";
 export type D6Face = 1 | 2 | 3 | 4 | 5 | 6;
@@ -150,35 +151,6 @@ export function parseDiceToken(raw: string): InlineDiceToken | null {
 
 const HEX_COLOR_PATTERN = /^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
-function normalizeHexColor(raw: string): string {
-  const lower = raw.toLowerCase();
-  if (lower.length === 4) {
-    const r = lower[1];
-    const g = lower[2];
-    const b = lower[3];
-    return `#${r}${r}${g}${g}${b}${b}`;
-  }
-  if (lower.length === 5) {
-    const r = lower[1];
-    const g = lower[2];
-    const b = lower[3];
-    const a = lower[4];
-    const rr = parseInt(r + r, 16);
-    const gg = parseInt(g + g, 16);
-    const bb = parseInt(b + b, 16);
-    const aa = parseInt(a + a, 16) / 255;
-    return `rgba(${rr}, ${gg}, ${bb}, ${aa.toFixed(3)})`;
-  }
-  if (lower.length === 9) {
-    const rr = parseInt(lower.slice(1, 3), 16);
-    const gg = parseInt(lower.slice(3, 5), 16);
-    const bb = parseInt(lower.slice(5, 7), 16);
-    const aa = parseInt(lower.slice(7, 9), 16) / 255;
-    return `rgba(${rr}, ${gg}, ${bb}, ${aa.toFixed(3)})`;
-  }
-  return lower;
-}
-
 function resolveColorKey(raw?: string): string {
   if (!raw) return "white";
   return COLOR_SHORT_MAP[raw] ?? raw;
@@ -186,7 +158,12 @@ function resolveColorKey(raw?: string): string {
 
 function resolveColorToken(raw?: string): string | null {
   if (!raw) return DICE_COLORS.white;
-  if (HEX_COLOR_PATTERN.test(raw)) return normalizeHexColor(raw);
+  if (HEX_COLOR_PATTERN.test(raw)) {
+    const parsed = parseHexColor(raw);
+    if (!parsed) return null;
+    if (parsed.inputHasAlpha) return formatCssColor(parsed);
+    return formatHexColor(parsed, { alphaMode: "strip", case: "lower" });
+  }
   const colorKey = resolveColorKey(raw);
   return DICE_COLORS[colorKey] ?? null;
 }

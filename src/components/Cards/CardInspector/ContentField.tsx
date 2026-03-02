@@ -19,6 +19,7 @@ import ColorPickerField from "@/components/common/ColorPickerField";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 import { useI18n } from "@/i18n/I18nProvider";
+import { parseHexColor } from "@/lib/color";
 import type { BodyTextStyle } from "@/types/card-data";
 import ModalShell from "@/components/common/ModalShell";
 import FormattingHelpContent from "@/components/Cards/CardInspector/FormattingHelpContent";
@@ -281,7 +282,7 @@ export default function ContentField({
 }
 
 function toHex8(color: string, opacity?: number) {
-  const resolved = normalizeHex(color);
+  const resolved = parseHexColor(color, { allowTransparent: true });
   const baseHex = resolved?.hex ?? "#FFFFFF";
   const alpha =
     typeof opacity === "number"
@@ -290,38 +291,6 @@ function toHex8(color: string, opacity?: number) {
         ? resolved.alpha
         : 1;
   return `${baseHex}${alphaToHex(alpha)}`;
-}
-
-function normalizeHex(value: string | undefined) {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (trimmed.toLowerCase() === "transparent") {
-    return { hex: "#000000", alpha: 0 };
-  }
-
-  const raw = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;
-  if (!/^[0-9a-fA-F]+$/.test(raw)) return null;
-
-  if (raw.length === 3 || raw.length === 4) {
-    const r = raw[0];
-    const g = raw[1];
-    const b = raw[2];
-    const a = raw.length === 4 ? raw[3] : "f";
-    return {
-      hex: `#${r}${r}${g}${g}${b}${b}`.toUpperCase(),
-      alpha: parseInt(`${a}${a}`, 16) / 255,
-    };
-  }
-
-  if (raw.length === 6 || raw.length === 8) {
-    return {
-      hex: `#${raw.slice(0, 6)}`.toUpperCase(),
-      alpha: raw.length === 8 ? parseInt(raw.slice(6, 8), 16) / 255 : 1,
-    };
-  }
-
-  return null;
 }
 
 function alphaToHex(alpha: number) {
