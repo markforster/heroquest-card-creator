@@ -21,15 +21,10 @@ type HeroStatsBlockProps = {
 };
 
 const STATS_INSET = sx(12);
-const STATS_CELL_INSET = sx(3);
-
 const STATS_X = sx(39) + STATS_INSET;
 const STATS_Y = sy(846);
 const STATS_WIDTH = CARD_WIDTH - STATS_X * 2; // 630
 const STATS_HEIGHT = sy(170);
-
-const cellX = (value: number) => sx(value) + STATS_CELL_INSET;
-const cellW = (value: number) => sx(value) - STATS_CELL_INSET * 2;
 
 const defaultStats: HeroStats = {
   attackDice: 3,
@@ -60,18 +55,18 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
         <StatsPair
           header={getStatLabel("statsLabelAttack", t("stats.attackDice"), overrides)}
           value={stats.attackDice}
-          x={cellX(11)}
+          x={sx(10)}
           y={sy(12)}
-          width={cellW(166)}
+          width={sx(162)}
           height={sy(134)}
           debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelDefend", t("stats.defendDice"), overrides)}
           value={stats.defendDice}
-          x={cellX(171)}
+          x={sx(164)}
           y={sy(12)}
-          width={cellW(166)}
+          width={sx(164)}
           height={sy(134)}
           debug={showTextBounds}
         />
@@ -81,31 +76,31 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
             t("statsLabelStartingPoints"),
             overrides,
           )}
-          x={cellX(174 + 160 - 3)}
-          width={cellW(326)}
+          x={sx(318)}
+          width={sx(320)}
           y={sy(12)}
-          height={sy(101)}
-          headerHeight={sy(35)}
+          height={sy(92)}
+          headerHeight={sy(32)}
           debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelHeroBody", t("stats.body"), overrides)}
           value={stats.bodyPoints}
-          x={cellX(174 + 160 - 3)}
-          width={cellW(166)}
+          x={sx(318)}
+          width={sx(166)}
           y={sy(44)}
-          height={sy(101)}
+          height={sy(102)}
           headerHeight={sy(35)}
           debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelHeroMind", t("stats.mind"), overrides)}
           value={stats.mindPoints}
-          x={cellX(174 + 160 + 160 - 3)}
+          x={sx(474)}
           // y={12}
-          width={cellW(166)}
+          width={sx(164)}
           y={sy(44)}
-          height={sy(101)}
+          height={sy(102)}
           headerHeight={sy(35)}
           debug={showTextBounds}
         />
