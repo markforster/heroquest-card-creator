@@ -32,6 +32,9 @@ import { EscapeStackProvider } from "@/components/common/EscapeStackProvider";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
+import ExportBleedPrompt, {
+  type ExportPromptResult,
+} from "@/components/Modals/ExportBleedPrompt";
 import HeaderWithTemplatePicker from "@/components/Layout/HeaderWithTemplatePicker";
 import { LibraryTransferProvider } from "@/components/Providers/LibraryTransferContext";
 import LeftNav from "@/components/Layout/LeftNav";
@@ -66,6 +69,8 @@ import {
 import { createPair, deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
+import type { ExportSettings } from "@/lib/export-settings";
+import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -152,6 +157,13 @@ function IndexPageInner() {
   );
   const [exportCancelled, setExportCancelled] = useState(false);
   const exportSecondaryModeRef = useRef<"worker" | "fallback" | null>(null);
+  const [exportPrompt, setExportPrompt] = useState<{
+    resolve: (result: ExportPromptResult | null) => void;
+    initial: ExportSettings;
+    token: number;
+  } | null>(null);
+  const { settings: exportSettings } = useExportSettingsState();
+  const exportPromptRef = useRef<number | null>(null);
   const [missingAssetsPrompt, setMissingAssetsPrompt] = useState<{
     report: MissingAssetReport[];
     skipIds: Set<string>;
@@ -183,6 +195,10 @@ function IndexPageInner() {
       }
     },
   });
+
+  useEffect(() => {
+    exportPromptRef.current = exportPrompt ? exportPrompt.token : null;
+  }, [exportPrompt]);
 
   useEscapeModalAware({
     id: "route:cards",
@@ -628,6 +644,43 @@ function IndexPageInner() {
     return [];
   }, [effectiveFace, pairedBackId, pairedFrontCount, t]);
 
+  const requestExportOptions = async (): Promise<ExportPromptResult | null> => {
+    const settings = exportSettings;
+    const resolveFromSettings = (): ExportPromptResult => ({
+      bleedPx: settings.bleed.enabled ? settings.bleed.bleedPx : 0,
+      cropMarks: {
+        enabled: settings.bleed.enabled ? settings.cropMarks.enabled : false,
+        color: settings.cropMarks.color,
+        style: settings.cropMarks.style ?? "lines",
+      },
+      cutMarks: {
+        enabled: settings.cutMarks.enabled,
+        color: settings.cutMarks.color,
+      },
+      roundedCorners: settings.roundedCorners,
+    });
+    if (!settings.bleed.askBeforeExport) {
+      return resolveFromSettings();
+    }
+
+    return new Promise<ExportPromptResult | null>((resolve) => {
+      const token = Date.now() + Math.random();
+      setExportPrompt({ resolve, initial: settings, token });
+      let resolved = false;
+      const safeResolve = (result: ExportPromptResult) => {
+        if (resolved) return;
+        resolved = true;
+        resolve(result);
+      };
+      window.setTimeout(() => {
+        if (exportPromptRef.current !== token) {
+          setExportPrompt(null);
+          safeResolve(resolveFromSettings());
+        }
+      }, 0);
+    });
+  };
+
   const openCardInNewTab = (cardIdToOpen: string) => {
     if (typeof window === "undefined") return;
     const url = `${window.location.origin}${window.location.pathname}#/cards/${cardIdToOpen}`;
@@ -648,17 +701,38 @@ function IndexPageInner() {
     return notes;
   };
 
-  const exportCurrentFace = () => {
-    if (!activeCardId) {
-      previewRef.current?.exportAsPng();
-      return;
-    }
+  const isExportPromptResult = (value: unknown): value is ExportPromptResult => {
+    if (!value || typeof value !== "object") return false;
+    const candidate = value as Partial<ExportPromptResult>;
+    if (typeof candidate.bleedPx !== "number") return false;
+    const crop = candidate.cropMarks;
+    if (!crop || typeof crop !== "object") return false;
+    if (typeof crop.enabled !== "boolean") return false;
+    if (typeof crop.color !== "string") return false;
+    if (crop.style && crop.style !== "lines" && crop.style !== "squares") return false;
+    const cut = candidate.cutMarks;
+    if (!cut || typeof cut !== "object") return false;
+    if (typeof cut.enabled !== "boolean") return false;
+    if (typeof cut.color !== "string") return false;
+    if (typeof candidate.roundedCorners !== "boolean") return false;
+    return true;
+  };
 
+  const exportCurrentFace = (exportOptions?: ExportPromptResult | unknown) => {
+    const resolvedOptions = isExportPromptResult(exportOptions) ? exportOptions : undefined;
     void (async () => {
+      const resolved = resolvedOptions ?? (await requestExportOptions());
+      if (!resolved) return;
+
+      if (!activeCardId) {
+        previewRef.current?.exportAsPng(resolved);
+        return;
+      }
+
       try {
         const card = await getCard(activeCardId);
         if (!card) {
-          previewRef.current?.exportAsPng();
+          previewRef.current?.exportAsPng(resolved);
           return;
         }
         if (ENABLE_MISSING_ASSET_CHECKS) {
@@ -669,25 +743,33 @@ function IndexPageInner() {
               skipIds: new Set(report.map((entry) => entry.cardId)),
               skipNotes: buildSkipNotesFromReport(report),
               onProceed: () => {
-                previewRef.current?.exportAsPng();
+                previewRef.current?.exportAsPng(resolved);
               },
             });
             return;
           }
         }
-        previewRef.current?.exportAsPng();
+        previewRef.current?.exportAsPng(resolved);
       } catch {
-        previewRef.current?.exportAsPng();
+        previewRef.current?.exportAsPng(resolved);
       }
     })();
   };
 
   const exportFaceIds = async (
     faceIds: string[],
-    options?: { skipIds?: Set<string>; skipNotes?: Map<string, string>; skipPrecheck?: boolean },
+    options?: {
+      skipIds?: Set<string>;
+      skipNotes?: Map<string, string>;
+      skipPrecheck?: boolean;
+      exportOptions?: ExportPromptResult;
+    },
   ) => {
+    const resolvedExportOptions = options?.exportOptions ?? (await requestExportOptions());
+    if (!resolvedExportOptions) return;
+
     if (faceIds.length <= 1) {
-      exportCurrentFace();
+      exportCurrentFace(resolvedExportOptions);
       return;
     }
 
@@ -746,6 +828,10 @@ function IndexPageInner() {
         shouldCancel: () => exportCancelRef.current,
         skipCardIds: options?.skipIds,
         skipCardNotes: options?.skipNotes,
+        bleedPx: resolvedExportOptions.bleedPx,
+        cropMarks: resolvedExportOptions.cropMarks,
+        cutMarks: resolvedExportOptions.cutMarks,
+        roundedCorners: resolvedExportOptions.roundedCorners,
       });
       if (result.status === "empty") {
         window.alert(t("alert.selectCardToExport"));
@@ -946,7 +1032,7 @@ function IndexPageInner() {
                     canSaveChanges={canSaveChanges}
                     canDuplicate={canDuplicate}
                     savingMode={savingMode}
-                    onExportPng={exportCurrentFace}
+                    onExportPng={() => exportCurrentFace()}
                     exportMenuItems={exportMenuItems.map((item) => ({
                       ...item,
                       onClick: () => {
@@ -1042,6 +1128,31 @@ function IndexPageInner() {
               })}
             </div>
           </ConfirmModal>
+        ) : null}
+        {exportPrompt ? (
+          <ExportBleedPrompt
+            isOpen={Boolean(exportPrompt)}
+            initialBleedEnabled={exportPrompt.initial.bleed.enabled}
+            initialBleedPx={exportPrompt.initial.bleed.bleedPx}
+            initialCropMarksEnabled={exportPrompt.initial.cropMarks.enabled}
+            initialCropMarkColor={exportPrompt.initial.cropMarks.color}
+            initialCropMarkStyle={exportPrompt.initial.cropMarks.style ?? "lines"}
+            initialCutMarksEnabled={exportPrompt.initial.cutMarks.enabled}
+            initialCutMarkColor={exportPrompt.initial.cutMarks.color}
+            initialRoundedCorners={exportPrompt.initial.roundedCorners}
+            onConfirm={(result) => {
+              const prompt = exportPrompt;
+              if (!prompt) return;
+              setExportPrompt(null);
+              prompt.resolve(result);
+            }}
+            onCancel={() => {
+              const prompt = exportPrompt;
+              if (!prompt) return;
+              setExportPrompt(null);
+              prompt.resolve(null);
+            }}
+          />
         ) : null}
         <ExportProgressOverlay
           isOpen={isExportingFaces}

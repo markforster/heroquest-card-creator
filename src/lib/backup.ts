@@ -45,6 +45,15 @@ export interface HqccExportLocalStorageV1 {
   draftTemplateIdV1?: string | null;
   activeCardsV1?: string | null;
   statLabels?: string | null;
+  exportBleedEnabled?: string | null;
+  exportBleedPx?: string | null;
+  exportAskBeforeExport?: string | null;
+  exportCropMarksEnabled?: string | null;
+  exportCropMarksColor?: string | null;
+  exportCropMarksStyle?: string | null;
+  exportCutMarksEnabled?: string | null;
+  exportCutMarksColor?: string | null;
+  exportRoundedCorners?: string | null;
 }
 
 export interface HqccExportSettingsV1 {
@@ -333,6 +342,15 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
   let draftTemplateIdV1: string | null | undefined;
   let activeCardsV1: string | null | undefined;
   let statLabels: string | null | undefined;
+  let exportBleedEnabled: string | null | undefined;
+  let exportBleedPx: string | null | undefined;
+  let exportAskBeforeExport: string | null | undefined;
+  let exportCropMarksEnabled: string | null | undefined;
+  let exportCropMarksColor: string | null | undefined;
+  let exportCropMarksStyle: string | null | undefined;
+  let exportCutMarksEnabled: string | null | undefined;
+  let exportCutMarksColor: string | null | undefined;
+  let exportRoundedCorners: string | null | undefined;
 
   try {
     draftV1 = window.localStorage.getItem("hqcc.draft.v1");
@@ -358,11 +376,70 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
     statLabels = undefined;
   }
 
+  try {
+    exportBleedEnabled = window.localStorage.getItem("hqcc.exportPng.bleedEnabled");
+  } catch {
+    exportBleedEnabled = undefined;
+  }
+
+  try {
+    exportBleedPx = window.localStorage.getItem("hqcc.exportPng.bleedPx");
+  } catch {
+    exportBleedPx = undefined;
+  }
+
+  try {
+    exportAskBeforeExport = window.localStorage.getItem("hqcc.exportPng.askBeforeExport");
+  } catch {
+    exportAskBeforeExport = undefined;
+  }
+
+  try {
+    exportCropMarksEnabled = window.localStorage.getItem("hqcc.exportPng.cropMarksEnabled");
+  } catch {
+    exportCropMarksEnabled = undefined;
+  }
+
+  try {
+    exportCropMarksColor = window.localStorage.getItem("hqcc.exportPng.cropMarksColor");
+  } catch {
+    exportCropMarksColor = undefined;
+  }
+  try {
+    exportCropMarksStyle = window.localStorage.getItem("hqcc.exportPng.cropMarksStyle");
+  } catch {
+    exportCropMarksStyle = undefined;
+  }
+  try {
+    exportCutMarksEnabled = window.localStorage.getItem("hqcc.exportPng.cutMarksEnabled");
+  } catch {
+    exportCutMarksEnabled = undefined;
+  }
+  try {
+    exportCutMarksColor = window.localStorage.getItem("hqcc.exportPng.cutMarksColor");
+  } catch {
+    exportCutMarksColor = undefined;
+  }
+  try {
+    exportRoundedCorners = window.localStorage.getItem("hqcc.exportPng.roundedCorners");
+  } catch {
+    exportRoundedCorners = undefined;
+  }
+
   const localStorage: HqccExportLocalStorageV1 = {
     draftV1,
     draftTemplateIdV1,
     activeCardsV1,
     statLabels,
+    exportBleedEnabled,
+    exportBleedPx,
+    exportAskBeforeExport,
+    exportCropMarksEnabled,
+    exportCropMarksColor,
+    exportCropMarksStyle,
+    exportCutMarksEnabled,
+    exportCutMarksColor,
+    exportRoundedCorners,
   };
 
   let pairs: PairRecord[] | undefined;
@@ -654,7 +731,21 @@ async function applyBackupObject(
   }
 
   try {
-    const { draftV1, draftTemplateIdV1, activeCardsV1, statLabels } = exportData.localStorage;
+    const {
+      draftV1,
+      draftTemplateIdV1,
+      activeCardsV1,
+      statLabels,
+      exportBleedEnabled,
+      exportBleedPx,
+      exportAskBeforeExport,
+      exportCropMarksEnabled,
+      exportCropMarksColor,
+      exportCropMarksStyle,
+      exportCutMarksEnabled,
+      exportCutMarksColor,
+      exportRoundedCorners,
+    } = exportData.localStorage;
     if (typeof draftV1 === "string") {
       window.localStorage.setItem("hqcc.draft.v1", draftV1);
     }
@@ -666,6 +757,33 @@ async function applyBackupObject(
     }
     if (typeof statLabels === "string") {
       window.localStorage.setItem("hqcc.statLabels", statLabels);
+    }
+    if (typeof exportBleedEnabled === "string") {
+      window.localStorage.setItem("hqcc.exportPng.bleedEnabled", exportBleedEnabled);
+    }
+    if (typeof exportBleedPx === "string") {
+      window.localStorage.setItem("hqcc.exportPng.bleedPx", exportBleedPx);
+    }
+    if (typeof exportAskBeforeExport === "string") {
+      window.localStorage.setItem("hqcc.exportPng.askBeforeExport", exportAskBeforeExport);
+    }
+    if (typeof exportCropMarksEnabled === "string") {
+      window.localStorage.setItem("hqcc.exportPng.cropMarksEnabled", exportCropMarksEnabled);
+    }
+    if (typeof exportCropMarksColor === "string") {
+      window.localStorage.setItem("hqcc.exportPng.cropMarksColor", exportCropMarksColor);
+    }
+    if (typeof exportCropMarksStyle === "string") {
+      window.localStorage.setItem("hqcc.exportPng.cropMarksStyle", exportCropMarksStyle);
+    }
+    if (typeof exportCutMarksEnabled === "string") {
+      window.localStorage.setItem("hqcc.exportPng.cutMarksEnabled", exportCutMarksEnabled);
+    }
+    if (typeof exportCutMarksColor === "string") {
+      window.localStorage.setItem("hqcc.exportPng.cutMarksColor", exportCutMarksColor);
+    }
+    if (typeof exportRoundedCorners === "string") {
+      window.localStorage.setItem("hqcc.exportPng.roundedCorners", exportRoundedCorners);
     }
   } catch {
     // Ignore localStorage restore errors

@@ -122,6 +122,13 @@
   margin-top: 8px;
 }
 
+.presetSwatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(22px, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
 .swatches {
   flex: 1 1 auto;
   min-width: 0;

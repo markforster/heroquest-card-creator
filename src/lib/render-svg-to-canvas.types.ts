@@ -8,4 +8,5 @@ export type RenderSvgToCanvasOptions = {
   removeDebugBounds?: boolean;
   loggingId?: string;
   assetBlobsById?: Map<string, Blob>;
+  mutateSvg?: (svg: SVGSVGElement) => void;
 };

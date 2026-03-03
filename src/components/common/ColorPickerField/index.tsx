@@ -41,6 +41,13 @@ type ColorPickerFieldProps = {
   showLabel?: boolean;
   showInput?: boolean;
   isDisabled?: boolean;
+  showSmartTab?: boolean;
+  showSavedTab?: boolean;
+  showDefaultOption?: boolean;
+  showTransparentOption?: boolean;
+  showRevertOption?: boolean;
+  showSaveOption?: boolean;
+  presetSwatches?: string[];
 };
 
 export default function ColorPickerField({
@@ -66,6 +73,13 @@ export default function ColorPickerField({
   showLabel = true,
   showInput = true,
   isDisabled = false,
+  showSmartTab = true,
+  showSavedTab = true,
+  showDefaultOption = true,
+  showTransparentOption = true,
+  showRevertOption = true,
+  showSaveOption = true,
+  presetSwatches = [],
 }: ColorPickerFieldProps) {
   const { t } = useI18n();
   const { swatches, saveSwatch, removeSwatch, maxSwatches } = useSharedColorSwatches();
@@ -233,6 +247,11 @@ export default function ColorPickerField({
     }
   };
 
+  const resolvedTabs: ActiveTab[] = ["picker"];
+  if (showSavedTab) resolvedTabs.push("saved");
+  if (showSmartTab) resolvedTabs.push("smart");
+  const showTabHeader = resolvedTabs.length > 1;
+
   return (
     <div className={styles.field}>
       {showLabel ? <label className="form-label">{label}</label> : null}
@@ -286,29 +305,35 @@ export default function ColorPickerField({
           className={styles.popover}
           style={popoverStyle ? { left: popoverStyle.left, top: popoverStyle.top } : undefined}
         >
-          <div className={styles.tabHeader}>
-            <button
-              type="button"
-              className={`${styles.tabButton} ${activeTab === "picker" ? styles.tabButtonActive : ""}`}
-              onClick={() => handleSelectTab("picker")}
-            >
-              {t("label.picker")}
-            </button>
-            <button
-              type="button"
-              className={`${styles.tabButton} ${activeTab === "saved" ? styles.tabButtonActive : ""}`}
-              onClick={() => handleSelectTab("saved")}
-            >
-              {t("label.saved")}
-            </button>
-            <button
-              type="button"
-              className={`${styles.tabButton} ${activeTab === "smart" ? styles.tabButtonActive : ""}`}
-              onClick={() => handleSelectTab("smart")}
-            >
-              {t("label.smart")}
-            </button>
-          </div>
+          {showTabHeader ? (
+            <div className={styles.tabHeader}>
+              <button
+                type="button"
+                className={`${styles.tabButton} ${activeTab === "picker" ? styles.tabButtonActive : ""}`}
+                onClick={() => handleSelectTab("picker")}
+              >
+                {t("label.picker")}
+              </button>
+              {showSavedTab ? (
+                <button
+                  type="button"
+                  className={`${styles.tabButton} ${activeTab === "saved" ? styles.tabButtonActive : ""}`}
+                  onClick={() => handleSelectTab("saved")}
+                >
+                  {t("label.saved")}
+                </button>
+              ) : null}
+              {showSmartTab ? (
+                <button
+                  type="button"
+                  className={`${styles.tabButton} ${activeTab === "smart" ? styles.tabButtonActive : ""}`}
+                  onClick={() => handleSelectTab("smart")}
+                >
+                  {t("label.smart")}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           <div className={styles.tabContent}>
             {activeTab === "picker" ? (
               <div className={styles.picker}>
@@ -322,47 +347,73 @@ export default function ColorPickerField({
                   }}
                   className={styles.colorful}
                 />
-                <div className={styles.actionRow}>
-                  <SwatchButton
-                    color={defaultColor}
-                    label={`${t("actions.select")} ${defaultColor}`}
-                    title={t("form.heroquestDefaultBrown")}
-                    isSelected={
-                      toNormalizedHex(defaultColor, true) === toNormalizedHex(selectedValue, true)
-                    }
-                    onClick={onSelectDefault}
-                  />
-                  <SwatchActionButton
-                    label={t("actions.cancel")}
-                    title={t("actions.cancel")}
-                    disabled={!canRevert}
-                    onClick={onRevert}
-                  >
-                    ↺
-                  </SwatchActionButton>
-                  <SwatchButton
-                    color={transparentValue}
-                    label={`${t("actions.select")} ${t("form.noBorder")}`}
-                    title={t("form.noBorder")}
-                    className={styles.noBorderSwatch}
-                    isSelected={isTransparent}
-                    onClick={onSelectTransparent}
-                  />
-                  <SwatchActionButton
-                    label={t("form.saveSwatch")}
-                    title={t("form.saveSwatch")}
-                    disabled={!canSaveSwatch}
-                    onClick={() => {
-                      if (!normalizedSelected) return;
-                      void saveSwatch(normalizedSelected);
-                    }}
-                  >
-                    <Plus aria-hidden size={14} />
-                  </SwatchActionButton>
-                </div>
+                {presetSwatches.length > 0 ? (
+                  <div className={styles.presetSwatches}>
+                    {presetSwatches.map((swatch) => (
+                      <SwatchButton
+                        key={swatch}
+                        color={swatch}
+                        label={`${t("actions.select")} ${swatch}`}
+                        title={swatch}
+                        isSelected={
+                          toNormalizedHex(swatch, true) === toNormalizedHex(selectedValue, true)
+                        }
+                        onClick={() => handleChangeNormalized(swatch)}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+                {showDefaultOption || showRevertOption || showTransparentOption || showSaveOption ? (
+                  <div className={styles.actionRow}>
+                    {showDefaultOption ? (
+                      <SwatchButton
+                        color={defaultColor}
+                        label={`${t("actions.select")} ${defaultColor}`}
+                        title={t("form.heroquestDefaultBrown")}
+                        isSelected={
+                          toNormalizedHex(defaultColor, true) === toNormalizedHex(selectedValue, true)
+                        }
+                        onClick={onSelectDefault}
+                      />
+                    ) : null}
+                    {showRevertOption ? (
+                      <SwatchActionButton
+                        label={t("actions.cancel")}
+                        title={t("actions.cancel")}
+                        disabled={!canRevert}
+                        onClick={onRevert}
+                      >
+                        ↺
+                      </SwatchActionButton>
+                    ) : null}
+                    {showTransparentOption ? (
+                      <SwatchButton
+                        color={transparentValue}
+                        label={`${t("actions.select")} ${t("form.noBorder")}`}
+                        title={t("form.noBorder")}
+                        className={styles.noBorderSwatch}
+                        isSelected={isTransparent}
+                        onClick={onSelectTransparent}
+                      />
+                    ) : null}
+                    {showSaveOption ? (
+                      <SwatchActionButton
+                        label={t("form.saveSwatch")}
+                        title={t("form.saveSwatch")}
+                        disabled={!canSaveSwatch}
+                        onClick={() => {
+                          if (!normalizedSelected) return;
+                          void saveSwatch(normalizedSelected);
+                        }}
+                      >
+                        <Plus aria-hidden size={14} />
+                      </SwatchActionButton>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             ) : null}
-            {activeTab === "saved" ? (
+            {activeTab === "saved" && showSavedTab ? (
               <div className={styles.swatches}>
                 <div className={styles.specialRow}>
                   <SwatchButton
@@ -412,7 +463,7 @@ export default function ColorPickerField({
                 </div>
               </div>
             ) : null}
-            {activeTab === "smart" ? (
+            {activeTab === "smart" && showSmartTab ? (
               <div className={styles.smartTab}>
                 <div className={styles.smartPopoverHeader}>{t("form.smartSuggestions")}</div>
                 {isSmartBusy ? (

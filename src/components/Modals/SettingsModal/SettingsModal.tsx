@@ -70,7 +70,7 @@ function SettingsModalContent({
           </div>
         ) : null}
         <div className={styles.settingsPanel}>
-          <div className={styles.settingsPanelScroll}>
+          <div className={styles.settingsPanelScroll} data-panel-id={activeArea?.id ?? ""}>
             {activeArea ? (
               <SettingsPanelProvider panelId={activeArea.id} label={t(activeArea.labelKey)}>
                 {renderActivePanel()}

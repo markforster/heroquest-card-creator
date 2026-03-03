@@ -233,7 +233,7 @@ export default function StatLabelOverridesPanel() {
   };
 
   return (
-    <div className={styles.settingsPanelBody}>
+    <div className={`${styles.settingsPanelBody} ${styles.settingsPanelBodyNoScroll}`}>
       <div className={styles.statLabelsScroll}>
         <div className={`${styles.statLabelsSection} ${styles.toolsToolbarPopoverSection}`}>
           <h3 className={styles.statLabelsSectionTitle}>{t("heading.sharedStatText")}</h3>

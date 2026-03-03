@@ -9,6 +9,7 @@ import {
   Monitor,
   TableCellsSplit,
   Image,
+  Download,
 } from "lucide-react";
 
 import type { MessageKey } from "@/i18n/messages";
@@ -19,6 +20,7 @@ import PreviewSettingsPanel from "@/components/Modals/SettingsModal/PreviewSetti
 import StatLabelOverridesPanel from "@/components/Modals/SettingsModal/StatLabelOverridesPanel";
 import TextFittingSettingsPanel from "@/components/Modals/SettingsModal/TextFittingSettingsPanel";
 import AssetsSettingsPanel from "@/components/Modals/SettingsModal/AssetsSettingsPanel";
+import ExportSettingsPanel from "@/components/Modals/SettingsModal/ExportSettingsPanel";
 import { isDebugToolsEnabled } from "@/lib/env";
 
 const debugToolsEnabled = isDebugToolsEnabled();
@@ -47,6 +49,12 @@ export const SETTINGS_AREAS: SettingsAreaDefinition[] = [
     labelKey: "heading.collectionsSettings",
     icon: FolderTree,
     panel: () => <CollectionsSettingsPanel />,
+  },
+  {
+    id: "export-settings",
+    labelKey: "heading.exportSettings",
+    icon: Download,
+    panel: () => <ExportSettingsPanel />,
   },
   {
     id: "stat-label-overrides",

@@ -17,6 +17,10 @@ export type ExportFaceIdsOptions = {
   onZipStatus?: (mode: "worker" | "fallback") => void;
   skipCardIds?: Set<string>;
   skipCardNotes?: Map<string, string>;
+  bleedPx?: number;
+  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+  cutMarks?: { enabled: boolean; color: string };
+  roundedCorners?: boolean;
 };
 
 const defaultResolveName = (card: CardRecord, usedNames: Map<string, number>) =>
@@ -37,6 +41,10 @@ export const exportFaceIdsToZip = async (
     onZipStatus,
     skipCardIds,
     skipCardNotes,
+    bleedPx,
+    cropMarks,
+    cutMarks,
+    roundedCorners,
   }: ExportFaceIdsOptions,
 ): Promise<BulkExportResult> => {
   if (!faceIds.length) {
@@ -70,5 +78,9 @@ export const exportFaceIdsToZip = async (
     onZipStatus,
     skipCardIds,
     skipCardNotes,
+    bleedPx,
+    cropMarks,
+    cutMarks,
+    roundedCorners,
   });
 };

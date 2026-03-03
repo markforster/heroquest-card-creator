@@ -34,6 +34,13 @@ import { applyWatermarkToCanvas, shouldApplyWatermark } from "@/lib/watermark";
 import { ENABLE_WATERMARK, USE_ROUNDED_CARD_CLIP } from "@/config/flags";
 import { addPngTextChunk } from "@/lib/png-metadata";
 import { APP_VERSION } from "@/version";
+import {
+  composeBleedCanvas,
+  cloneSvgForBleed,
+  setExportBackgroundFit,
+  setExportClip,
+  stripToBackgroundOnly,
+} from "@/lib/bleed-export";
 
 import styles from "./CardPreview.module.css";
 import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "./consts";
@@ -388,7 +395,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
     useImperativeHandle(
       ref,
       () => ({
-        async exportAsPng() {
+        async exportAsPng(options) {
           const session = startExportLogging({ mode: "single", totalCards: 1 });
           logDeviceInfo(session);
 
@@ -465,15 +472,47 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             logCardWait(session, { durationMs: now() - waitStart });
 
             const renderStart = now();
-            const canvas = await renderSvgToCanvas({
-              svgElement,
-              width: CARD_WIDTH,
-              height: CARD_HEIGHT,
-              existingCanvas: canvasRef.current,
-              removeDebugBounds: true,
-              loggingId: session.sessionId,
-              assetBlobsById: cache,
-            });
+            const bleedPx = options?.bleedPx ?? 0;
+            const cropMarks = options?.cropMarks;
+            const cutMarks = options?.cutMarks;
+            const requestedRounded = options?.roundedCorners ?? true;
+            const effectiveRounded =
+              requestedRounded && bleedPx === 0 && !cropMarks?.enabled;
+            const canvas =
+              bleedPx > 0 || cropMarks?.enabled || cutMarks?.enabled
+                ? await renderBleedCanvas({
+                    svgElement,
+                    bleedPx,
+                    cropMarks: cropMarks
+                      ? {
+                          ...cropMarks,
+                          style: cropMarks.style ?? "lines",
+                        }
+                      : cropMarks,
+                    cutMarks: cutMarks
+                      ? {
+                          enabled: cutMarks.enabled,
+                          color: cutMarks.color,
+                        }
+                      : cutMarks,
+                    roundedCorners: effectiveRounded,
+                    loggingId: session.sessionId,
+                    assetBlobsById: cache,
+                    templateId,
+                    cardData,
+                  })
+                : await renderSvgToCanvas({
+                    svgElement,
+                    width: CARD_WIDTH,
+                    height: CARD_HEIGHT,
+                    existingCanvas: canvasRef.current,
+                    removeDebugBounds: true,
+                    loggingId: session.sessionId,
+                    assetBlobsById: cache,
+                    mutateSvg: (svg) => {
+                      setExportClip(svg, { rounded: effectiveRounded });
+                    },
+                  });
             renders += 1;
             if (canvas) {
               canvasRef.current = canvas;
@@ -483,7 +522,11 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               logCardRender(session, { durationMs: now() - renderStart, success: false });
               return;
             }
-            if (ENABLE_WATERMARK && shouldApplyWatermark(templateId, cardData)) {
+            if (
+              ENABLE_WATERMARK &&
+              shouldApplyWatermark(templateId, cardData) &&
+              !(bleedPx > 0 || cropMarks?.enabled)
+            ) {
               applyWatermarkToCanvas(canvas);
             }
             let pngBlob: Blob | null = await new Promise((resolve) =>
@@ -533,21 +576,57 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 
           const width = options?.width ?? CARD_WIDTH;
           const height = options?.height ?? CARD_HEIGHT;
+          const bleedPx = options?.bleedPx ?? 0;
+          const cropMarks = options?.cropMarks;
+          const cutMarks = options?.cutMarks;
+          const requestedRounded = options?.roundedCorners ?? true;
+          const effectiveRounded =
+            requestedRounded && bleedPx === 0 && !cropMarks?.enabled;
 
-          const canvas = await renderSvgToCanvas({
-            svgElement,
-            width,
-            height,
-            existingCanvas: canvasRef.current,
-            removeDebugBounds: true,
-            loggingId: options?.loggingId,
-            assetBlobsById: options?.assetBlobsById,
-          });
+          const canvas =
+            bleedPx > 0 || cropMarks?.enabled || cutMarks?.enabled
+              ? await renderBleedCanvas({
+                  svgElement,
+                  bleedPx,
+                  cropMarks: cropMarks
+                    ? {
+                        ...cropMarks,
+                        style: cropMarks.style ?? "lines",
+                      }
+                    : cropMarks,
+                  cutMarks: cutMarks
+                    ? {
+                        enabled: cutMarks.enabled,
+                        color: cutMarks.color,
+                      }
+                    : cutMarks,
+                  roundedCorners: effectiveRounded,
+                  loggingId: options?.loggingId,
+                  assetBlobsById: options?.assetBlobsById,
+                  templateId,
+                  cardData,
+                })
+              : await renderSvgToCanvas({
+                  svgElement,
+                  width,
+                  height,
+                  existingCanvas: canvasRef.current,
+                  removeDebugBounds: true,
+                  loggingId: options?.loggingId,
+                  assetBlobsById: options?.assetBlobsById,
+                  mutateSvg: (svg) => {
+                    setExportClip(svg, { rounded: effectiveRounded });
+                  },
+                });
           if (canvas) {
             canvasRef.current = canvas;
           }
           if (!canvas) return null;
-          if (ENABLE_WATERMARK && shouldApplyWatermark(templateId, cardData)) {
+          if (
+            ENABLE_WATERMARK &&
+            shouldApplyWatermark(templateId, cardData) &&
+            !(bleedPx > 0 || cropMarks?.enabled)
+          ) {
             applyWatermarkToCanvas(canvas);
           }
           let pngBlob: Blob | null = await new Promise((resolve) =>
@@ -670,6 +749,79 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 );
 
 CardPreview.displayName = "CardPreview";
+
+async function renderBleedCanvas({
+  svgElement,
+  bleedPx,
+  cropMarks,
+  cutMarks,
+  roundedCorners,
+  loggingId,
+  assetBlobsById,
+  templateId,
+  cardData,
+}: {
+  svgElement: SVGSVGElement;
+  bleedPx: number;
+  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+  cutMarks?: { enabled: boolean; color: string };
+  roundedCorners: boolean;
+  loggingId?: string;
+  assetBlobsById?: Map<string, Blob>;
+  templateId?: CardPreviewProps["templateId"];
+  cardData?: CardPreviewProps["cardData"];
+}): Promise<HTMLCanvasElement | null> {
+  const fullCanvas = await renderSvgToCanvas({
+    svgElement,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    removeDebugBounds: true,
+    loggingId,
+    assetBlobsById,
+    mutateSvg: (svg) => {
+      cloneSvgForBleed(svg);
+      if (bleedPx > 0 || cropMarks?.enabled) {
+        setExportBackgroundFit(svg, "slice");
+      }
+      setExportClip(svg, { rounded: roundedCorners });
+    },
+  });
+  if (!fullCanvas) return null;
+  if (ENABLE_WATERMARK && shouldApplyWatermark(templateId, cardData)) {
+    applyWatermarkToCanvas(fullCanvas);
+  }
+
+  let bleedSourceCanvas: HTMLCanvasElement | null = null;
+  if (bleedPx > 0) {
+    bleedSourceCanvas = await renderSvgToCanvas({
+      svgElement,
+      width: CARD_WIDTH,
+      height: CARD_HEIGHT,
+      removeDebugBounds: true,
+      loggingId,
+      assetBlobsById,
+      mutateSvg: (svg) => {
+        cloneSvgForBleed(svg);
+        if (bleedPx > 0 || cropMarks?.enabled) {
+          setExportBackgroundFit(svg, "slice");
+        }
+      },
+    });
+  }
+
+  return composeBleedCanvas({
+    fullCanvas,
+    backgroundCanvas: bleedSourceCanvas,
+    bleedPx,
+    cropMarks,
+    cutMarks: cutMarks
+      ? {
+          enabled: cutMarks.enabled,
+          color: cutMarks.color,
+        }
+      : cutMarks,
+  });
+}
 
 export default CardPreview;
 export type { CardPreviewHandle, CardPreviewProps } from "./types";
