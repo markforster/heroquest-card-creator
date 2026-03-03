@@ -30,7 +30,7 @@ export type BleedComposeOptions = {
   cutMarks?: CutMarksOptions;
 };
 
-export const DEFAULT_CROP_MARK_LENGTH = 10;
+export const DEFAULT_CROP_MARK_LENGTH = 20;
 export const DEFAULT_CROP_MARK_THICKNESS = 2;
 export const DEFAULT_CUT_MARK_OFFSET = 2;
 export const DEFAULT_CUT_MARK_DASH: [number, number] = [6, 4];
