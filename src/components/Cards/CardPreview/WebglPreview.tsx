@@ -40,6 +40,7 @@ import {
 } from "@/config/flags";
 import { createMagicOverlayMaterial } from "@/lib/webgl/magicOverlayShader";
 import { createSparkleOverlayMaterial } from "@/lib/webgl/sparkleOverlayShader";
+import { CARD_ASPECT, CARD_WIDTH, savg } from "@/config/card-canvas";
 
 import styles from "./WebglPreview.module.css";
 
@@ -60,7 +61,7 @@ type WebglPreviewProps = {
   unpairedLabel?: string;
 };
 
-const CARD_ASPECT = 1050 / 750;
+const BASE_EDGE_INSET_PX = 6.375;
 const MAX_ROTATION_X_DEG = 25;
 const MAX_ROTATION_Y_DEG = 60;
 const ROTATION_SMOOTHING = 0.12;
@@ -77,8 +78,8 @@ const SHEEN_INTENSITY_SCALE = 0.25;
 const ENABLE_DEPTH = true;
 const INVERT_VERTICAL_DRAG = false;
 const CARD_THICKNESS = 0.0012;
-const CARD_CORNER_RADIUS = 28 / 750;
-const CARD_EDGE_INSET = 0.0085;
+const CARD_CORNER_RADIUS = savg(28) / CARD_WIDTH;
+const CARD_EDGE_INSET = savg(BASE_EDGE_INSET_PX) / CARD_WIDTH;
 const EDGE_COLOR = "#310101";
 const EDGE_BLUEPRINT_COLOR = "#2d6cc3";
 const EDGE_BLUEPRINT_EMISSIVE = "#1a4f9a";

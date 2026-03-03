@@ -4,6 +4,7 @@ import { useStatLabelOverrides } from "@/components/Providers/StatLabelOverrides
 import { useI18n } from "@/i18n/I18nProvider";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { getStatLabel } from "@/lib/stat-labels";
+import { CARD_WIDTH, sx, sy } from "@/config/card-canvas";
 import type { StatValue } from "@/types/stats";
 
 import StatsPair from "./StatsPair";
@@ -21,11 +22,10 @@ type MonsterStatsBlockProps = {
   y?: number;
 };
 
-const CARD_WIDTH = 750;
-const STATS_X = 39;
-const STATS_Y = 842;
+const STATS_X = sx(39);
+const STATS_Y = sy(842);
 const STATS_WIDTH = CARD_WIDTH - STATS_X * 2; // 672
-const STATS_HEIGHT = 179;
+const STATS_HEIGHT = sy(179);
 
 const defaultStats: MonsterStats = {
   movementSquares: 0,
@@ -57,47 +57,47 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
         <StatsPair
           header={getStatLabel("statsLabelMove", t("stats.movementSquares"), overrides)}
           value={stats.movementSquares}
-          x={11}
-          y={14}
-          width={176}
-          height={138}
+          x={sx(11)}
+          y={sy(14)}
+          width={sx(176)}
+          height={sy(138)}
           // headerHeight={headerHeight}
           debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelAttack", t("stats.attackDice"), overrides)}
           value={stats.attackDice}
-          x={191}
-          y={14}
-          width={116}
-          height={138}
+          x={sx(191)}
+          y={sy(14)}
+          width={sx(116)}
+          height={sy(138)}
           debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelDefend", t("stats.defendDice"), overrides)}
           value={stats.defendDice}
-          x={307}
-          y={14}
-          width={116}
-          height={138}
+          x={sx(307)}
+          y={sy(14)}
+          width={sx(116)}
+          height={sy(138)}
           debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelMonsterBodyPoints", t("stats.bodyPoints"), overrides)}
           value={stats.bodyPoints}
-          x={427}
-          y={14}
-          width={116}
-          height={138}
+          x={sx(427)}
+          y={sy(14)}
+          width={sx(116)}
+          height={sy(138)}
           debug={showTextBounds}
         />
         <StatsPair
           header={getStatLabel("statsLabelMonsterMindPoints", t("stats.mindPoints"), overrides)}
           value={stats.mindPoints}
-          x={542}
-          y={14}
-          width={116}
-          height={138}
+          x={sx(542)}
+          y={sy(14)}
+          width={sx(116)}
+          height={sy(138)}
           debug={showTextBounds}
         />
         {showTextBounds && (

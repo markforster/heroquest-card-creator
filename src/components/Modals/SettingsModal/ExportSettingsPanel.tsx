@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "@/app/page.module.css";
 import ExportOptionsForm from "@/components/Export/ExportOptionsForm";
 import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
+import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 import {
   DEFAULT_BLEED_PX,
   DEFAULT_CROP_MARK_COLOR,
@@ -49,7 +50,7 @@ export default function ExportSettingsPanel() {
 
   const finalSizeLabel = useMemo(() => {
     const bleed = normalizeBleedPx(bleedPx);
-    return `${750 + bleed * 2} x ${1050 + bleed * 2}px`;
+    return `${CARD_WIDTH + bleed * 2} x ${CARD_HEIGHT + bleed * 2}px`;
   }, [bleedPx]);
 
   const persist = useCallback((next: {

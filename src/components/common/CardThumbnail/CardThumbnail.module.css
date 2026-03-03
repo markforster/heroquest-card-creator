@@ -29,13 +29,13 @@
 .sizeFLUIDSM {
   width: 100%;
   max-width: 160px;
-  aspect-ratio: 750 / 1050;
+  aspect-ratio: 756 / 1056;
   border-radius: 6px;
 }
 
 .sizeMD {
   width: 100%;
-  aspect-ratio: 750 / 1050;
+  aspect-ratio: 756 / 1056;
   border-radius: 4px;
 }
 

@@ -246,7 +246,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
         <DocSection title="Exporting cards and backups">
           <DocList>
             <li>
-              Export the current card to a 750×1050 PNG from the inspector. The PNG is generated
+              Export the current card to a 756×1056 PNG from the inspector. The PNG is generated
               from the same SVG used in the preview.
             </li>
             <li>

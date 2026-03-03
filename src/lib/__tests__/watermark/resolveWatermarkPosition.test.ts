@@ -1,9 +1,9 @@
 import { resolveWatermarkPosition } from "@/lib/watermark";
 
 describe("resolveWatermarkPosition", () => {
-  it("returns expected default position for 750x1050", () => {
-    const { x, y } = resolveWatermarkPosition(750, 1050);
-    expect({ x, y }).toEqual({ x: 719, y: 1047 });
+  it("returns expected default position for 756x1056", () => {
+    const { x, y } = resolveWatermarkPosition(756, 1056);
+    expect({ x, y }).toEqual({ x: 725, y: 1053 });
   });
 
   it("scales proportionally for smaller sizes", () => {

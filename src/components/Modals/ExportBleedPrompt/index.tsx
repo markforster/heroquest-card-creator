@@ -6,6 +6,7 @@ import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
 import ExportOptionsForm from "@/components/Export/ExportOptionsForm";
 import { useI18n } from "@/i18n/I18nProvider";
+import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 import {
   DEFAULT_BLEED_PX,
   DEFAULT_CROP_MARK_COLOR,
@@ -101,7 +102,7 @@ export default function ExportBleedPrompt({
       bleedEnabled && cropMarksEnabled ? DEFAULT_CROP_MARK_LENGTH : 0,
       cutPad,
     );
-    return `${750 + pad * 2} x ${1050 + pad * 2}px`;
+    return `${CARD_WIDTH + pad * 2} x ${CARD_HEIGHT + pad * 2}px`;
   }, [bleedEnabled, bleedPx, cropMarksEnabled]);
 
   const handleConfirm = () => {

@@ -14,6 +14,7 @@ import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { DEFAULT_TITLE_COLOR } from "@/config/colors";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";
+import { CARD_WIDTH, savg, sx, sy } from "@/config/card-canvas";
 
 type RibbonTitleProps = {
   title: string;
@@ -25,13 +26,11 @@ type RibbonTitleProps = {
   titleColor?: string;
 };
 
-const CARD_WIDTH = 750;
-const SCALE = 1.05;
-const RIBBON_WIDTH = 560 * SCALE;
-const RIBBON_HEIGHT = 143 * SCALE;
-const DEFAULT_Y = 46;
+const RIBBON_WIDTH = sx(560 * 1.05);
+const RIBBON_HEIGHT = sy(143 * 1.05);
+const DEFAULT_Y = sy(46);
 
-const TITLE_LETTER_SPACING = -0.5;
+const TITLE_LETTER_SPACING = savg(-0.5);
 
 export default function RibbonTitle({
   title,

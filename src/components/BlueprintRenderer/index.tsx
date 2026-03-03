@@ -18,6 +18,7 @@ import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
+import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
@@ -46,7 +47,7 @@ type BlueprintRendererProps = {
   copyrightTextColor?: string;
 };
 
-const DEFAULT_CANVAS = { width: 750, height: 1050 };
+const DEFAULT_CANVAS = { width: CARD_WIDTH, height: CARD_HEIGHT };
 const MISSING_ARTWORK_COLOR = "#e0b15b";
 
 function getLayerBounds(blueprint: Blueprint, layer: BlueprintLayer) {

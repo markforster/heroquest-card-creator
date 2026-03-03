@@ -3,6 +3,7 @@
 import { APP_VERSION } from "@/version";
 import type { CardRecord } from "@/types/cards-db";
 import type { PairRecord } from "@/types/pairs-db";
+import { SCALE_X, SCALE_Y } from "@/config/card-canvas";
 
 import { generateId } from ".";
 
@@ -13,7 +14,9 @@ const META_APP_VERSION_KEY = "appVersion";
 const META_PAIRS_MIGRATED_KEY = "pairsMigrated";
 const META_PAIRS_DEDUPED_KEY = "pairsDeduped";
 const META_PAIRED_WITH_CLEANED_KEY = "pairedWithCleaned";
+const META_CARD_CANVAS_MIGRATED_KEY = "cardCanvasMigrated";
 let pairMaintenanceInFlight: Promise<void> | null = null;
+let cardCanvasMigrationInFlight: Promise<void> | null = null;
 
 export type HqccDb = IDBDatabase;
 
@@ -297,6 +300,56 @@ async function cleanupLegacyPairedWith(db: HqccDb): Promise<void> {
   console.debug("[hqcc-db] pairedWith cleanup", { updated: toUpdate.length });
 }
 
+async function migrateCardCanvas(db: HqccDb): Promise<void> {
+  if (!db.objectStoreNames.contains("cards") || !db.objectStoreNames.contains(META_STORE)) {
+    return;
+  }
+
+  const alreadyMigrated = await new Promise<boolean>((resolve, reject) => {
+    const tx = db.transaction(META_STORE, "readonly");
+    const store = tx.objectStore(META_STORE);
+    const request = store.get(META_CARD_CANVAS_MIGRATED_KEY);
+    request.onsuccess = () => {
+      resolve(Boolean((request.result as { value?: boolean } | undefined)?.value));
+    };
+    request.onerror = () =>
+      reject(request.error ?? new Error("Failed to read cardCanvasMigrated flag"));
+  });
+  if (alreadyMigrated) return;
+
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(["cards", META_STORE], "readwrite");
+    const cardsStore = tx.objectStore("cards");
+    const metaStore = tx.objectStore(META_STORE);
+    const getAllRequest = cardsStore.getAll();
+
+    getAllRequest.onsuccess = () => {
+      const cards = (getAllRequest.result as CardRecord[] | undefined) ?? [];
+      cards.forEach((card) => {
+        if (card.schemaVersion !== 1) return;
+        const next: CardRecord = {
+          ...card,
+          schemaVersion: 2,
+          imageOffsetX:
+            typeof card.imageOffsetX === "number" ? card.imageOffsetX * SCALE_X : card.imageOffsetX,
+          imageOffsetY:
+            typeof card.imageOffsetY === "number" ? card.imageOffsetY * SCALE_Y : card.imageOffsetY,
+        };
+        cardsStore.put(next);
+      });
+
+      metaStore.put({
+        id: META_CARD_CANVAS_MIGRATED_KEY,
+        value: true,
+        updatedAt: Date.now(),
+      });
+    };
+
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error("Failed to migrate card canvas data"));
+  });
+}
+
 export async function openHqccDb(): Promise<HqccDb> {
   return new Promise((resolve, reject) => {
     if (typeof window === "undefined" || !("indexedDB" in window)) {
@@ -445,6 +498,15 @@ export async function openHqccDb(): Promise<HqccDb> {
           })
           .finally(() => {
             pairMaintenanceInFlight = null;
+          });
+      }
+      if (!cardCanvasMigrationInFlight) {
+        cardCanvasMigrationInFlight = migrateCardCanvas(db)
+          .catch(() => {
+            // Ignore migration failures.
+          })
+          .finally(() => {
+            cardCanvasMigrationInFlight = null;
           });
       }
       resolve(db);
