@@ -102,6 +102,20 @@ The dev server behaves like a normal Next.js SPA, but all logic still runs on th
 
 ---
 
+## Analytics (file:// fallback)
+
+The app uses GA4 when available, but also supports a **pixel fallback** for `file://` usage or when `gtag` is unavailable.
+
+Set these env vars before building:
+
+- `NEXT_PUBLIC_GA_ID` – GA4 Measurement ID (existing behavior).
+- `NEXT_PUBLIC_PIXEL_URL` – Pixel endpoint (e.g. `http://localhost:3001/p.gif`).
+- `NEXT_PUBLIC_PIXEL_KEY` – Optional shared key, if your pixel server expects `k=...`.
+
+When the app is opened via `file://`, analytics events are sent via an image request to the pixel endpoint.
+
+---
+
 ## Building & using the static output
 
 - Production build (static export):
