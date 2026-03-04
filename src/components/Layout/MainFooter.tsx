@@ -3,6 +3,7 @@
 import styles from "@/app/page.module.css";
 import HelpModal from "@/components/Modals/HelpModal";
 import ReleaseNotesModal from "@/components/Modals/ReleaseNotesModal";
+import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import useIsTauriApp from "@/hooks/useIsTauriApp";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -10,6 +11,7 @@ import { APP_VERSION } from "@/version";
 
 export default function MainFooter() {
   const { t } = useI18n();
+  const { track } = useAnalytics();
   const helpModal = usePopupState(false);
   const releaseNotesModal = usePopupState(false);
   const isTauriApp = useIsTauriApp();
@@ -22,7 +24,10 @@ export default function MainFooter() {
             <button
               type="button"
               className={styles.footerLink}
-              onClick={helpModal.open}
+              onClick={() => {
+                track("page_view", { page_path: "/help", page_title: "Help" });
+                helpModal.open();
+              }}
               style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
             >
               {t("actions.help")}
@@ -31,7 +36,10 @@ export default function MainFooter() {
             <button
               type="button"
               className={styles.footerLink}
-              onClick={releaseNotesModal.open}
+              onClick={() => {
+                track("page_view", { page_path: "/about", page_title: "About" });
+                releaseNotesModal.open();
+              }}
               style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
             >
               {t("actions.about")}
@@ -42,6 +50,9 @@ export default function MainFooter() {
               target="_blank"
               rel="noreferrer noopener"
               className={styles.footerLink}
+              onClick={() => {
+                track("page_view", { page_path: "/download", page_title: "Download" });
+              }}
             >
               {t("actions.download")}
             </a>
@@ -70,6 +81,9 @@ export default function MainFooter() {
               target="_blank"
               rel="noreferrer noopener"
               className={styles.footerLink}
+              onClick={() => {
+                track("page_view", { page_path: "/website", page_title: "markforster.info" });
+              }}
             >
               Mark Forster
             </a>

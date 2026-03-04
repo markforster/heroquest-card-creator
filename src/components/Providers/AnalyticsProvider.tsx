@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo } from "react";
 
+import { APP_VERSION } from "@/version";
 type AnalyticsTrackParams = Record<string, string | number | boolean | null | undefined>;
 
 type AnalyticsContextValue = {
@@ -22,7 +23,11 @@ export function AnalyticsProvider({ gaId, children }: AnalyticsProviderProps) {
       if (typeof window === "undefined") return;
       const gtag = (window as typeof window & { gtag?: (...args: unknown[]) => void }).gtag;
       if (typeof gtag !== "function") return;
-      gtag("event", event, { ...(params ?? {}), send_to: gaId });
+      gtag("event", event, {
+        app_version: APP_VERSION,
+        ...(params ?? {}),
+        send_to: gaId,
+      });
     },
     [gaId],
   );

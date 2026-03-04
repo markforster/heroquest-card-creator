@@ -3,6 +3,7 @@
 import { Download, Menu, Upload } from "lucide-react";
 
 import styles from "@/app/page.module.css";
+import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 
 import type { RefObject } from "react";
@@ -31,6 +32,7 @@ export default function HeaderMenu({
   menuRef,
 }: HeaderMenuProps) {
   const { t } = useI18n();
+  const { track } = useAnalytics();
 
   return (
     <div className={styles.headerMenu} ref={menuRef}>
@@ -50,6 +52,7 @@ export default function HeaderMenu({
             className={styles.headerMenuItem}
             onClick={() => {
               onClose();
+              track("page_view", { page_path: "/export", page_title: "Export" });
               onExport();
             }}
             disabled={isBusy}
@@ -64,6 +67,7 @@ export default function HeaderMenu({
             className={styles.headerMenuItem}
             onClick={() => {
               onClose();
+              track("page_view", { page_path: "/import", page_title: "Import" });
               onImport();
             }}
             disabled={isBusy}

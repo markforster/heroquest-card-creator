@@ -7,6 +7,7 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
   useMatch,
   useNavigate,
   useParams,
@@ -85,13 +86,43 @@ function IndexPageInner() {
     formatMessage(t(key as never), vars);
   const { track } = useAnalytics();
   const navigate = useNavigate();
+  const location = useLocation();
   const { cardId } = useParams();
+  const normalizedCardId = cardId && cardId.trim().length > 0 ? cardId : null;
   const isAssetsRoute = Boolean(useMatch("/assets"));
   const isCardsListRoute = Boolean(useMatch("/cards"));
   const isDraftRoute = Boolean(useMatch("/cards/new"));
-  const isCardDetailRoute = Boolean(useMatch("/cards/:cardId"));
-  const isSavedCardDetailRoute = isCardDetailRoute && cardId !== "new";
+  const isCardDetailRoute = Boolean(useMatch("/cards/:cardId")) && Boolean(normalizedCardId);
+  const isSavedCardDetailRoute = isCardDetailRoute && normalizedCardId !== "new";
   const isEditorRoute = isDraftRoute || isSavedCardDetailRoute;
+
+  useEffect(() => {
+    let pagePath = "/cards";
+    let pageTitle = "Cards";
+
+    if (isAssetsRoute) {
+      pagePath = "/assets";
+      pageTitle = "Assets";
+    } else if (isDraftRoute) {
+      pagePath = "/cards/new";
+      pageTitle = "New Card";
+    } else if (isSavedCardDetailRoute) {
+      pagePath = "/cards/:id";
+      pageTitle = "Card Detail";
+    } else if (isCardsListRoute) {
+      pagePath = "/cards";
+      pageTitle = "Cards";
+    }
+
+    track("page_view", { page_path: pagePath, page_title: pageTitle });
+  }, [
+    track,
+    location.pathname,
+    isAssetsRoute,
+    isDraftRoute,
+    isSavedCardDetailRoute,
+    isCardsListRoute,
+  ]);
   const {
     state: {
       selectedTemplateId,
@@ -458,7 +489,7 @@ function IndexPageInner() {
     };
   }, [
     activeCardIdByTemplate,
-    cardId,
+    normalizedCardId,
     draft,
     draftTemplateId,
     selectedTemplateId,
@@ -474,18 +505,18 @@ function IndexPageInner() {
       }
       return;
     }
-    if (!cardId) {
+    if (!normalizedCardId) {
       lastLoadedRef.current = null;
       setRouteError(null);
       return;
     }
-    if (lastLoadedRef.current === cardId) return;
-    lastLoadedRef.current = cardId;
+    if (lastLoadedRef.current === normalizedCardId) return;
+    lastLoadedRef.current = normalizedCardId;
     setRouteError(null);
     let active = true;
     (async () => {
       try {
-        const record = await getCard(cardId);
+        const record = await getCard(normalizedCardId);
         if (!active) return;
         if (!record) {
           setRouteError("not-found");
@@ -507,7 +538,7 @@ function IndexPageInner() {
       active = false;
     };
   }, [
-    cardId,
+    normalizedCardId,
     activeCardIdByTemplate,
     setActiveCard,
     loadCardIntoEditor,

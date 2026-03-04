@@ -67,7 +67,7 @@ export function getExportSettings(): ExportSettings {
   }
 
   const bleedEnabled = readBool(STORAGE_KEYS.bleedEnabled, false);
-  const askBeforeExport = readBool(STORAGE_KEYS.askBeforeExport, false);
+  const askBeforeExport = safeGetItem(STORAGE_KEYS.askBeforeExport) === "1";
   const bleedPx = normalizeBleedPx(readNumber(STORAGE_KEYS.bleedPx, DEFAULT_BLEED_PX));
   const cropMarksEnabled = readBool(STORAGE_KEYS.cropMarksEnabled, false);
   const cropMarksColor = normalizeColor(readString(STORAGE_KEYS.cropMarksColor, ""));
