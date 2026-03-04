@@ -1,4 +1,5 @@
-import { GoogleTagManager } from "@next/third-parties/google";
+// import { GoogleTagManager } from "@next/third-parties/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 import I18nProviderClient from "@/components/Providers/I18nProviderClient";
 
@@ -8,7 +9,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+// const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -59,8 +61,9 @@ type RootLayoutProps = Readonly<PropsWithChildren<unknown>>;
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
-      {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null}
+      {/* {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null} */}
       <body>
+        {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
         <script
           dangerouslySetInnerHTML={{
             __html: `
