@@ -21,7 +21,7 @@ type ExportSettingsContextValue = {
 };
 
 const DEFAULT_SETTINGS: ExportSettings = {
-  bleed: { enabled: false, bleedPx: DEFAULT_BLEED_PX, askBeforeExport: true },
+  bleed: { enabled: false, bleedPx: DEFAULT_BLEED_PX, askBeforeExport: false },
   cropMarks: { enabled: false, color: DEFAULT_CROP_MARK_COLOR, style: DEFAULT_CROP_MARK_STYLE },
   cutMarks: { enabled: false, color: DEFAULT_CUT_MARK_COLOR },
   roundedCorners: DEFAULT_EXPORT_ROUNDED_CORNERS,

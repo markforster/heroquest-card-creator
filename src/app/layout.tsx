@@ -1,6 +1,6 @@
-// import { GoogleTagManager } from "@next/third-parties/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
+import { AnalyticsProvider } from "@/components/Providers/AnalyticsProvider";
 import I18nProviderClient from "@/components/Providers/I18nProviderClient";
 
 import type { Metadata, Viewport } from "next";
@@ -9,7 +9,6 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-// const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
 const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
@@ -142,7 +141,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
           `,
           }}
         />
-        <I18nProviderClient>{children}</I18nProviderClient>
+        <AnalyticsProvider gaId={gaId}>
+          <I18nProviderClient>{children}</I18nProviderClient>
+        </AnalyticsProvider>
       </body>
     </html>
   );

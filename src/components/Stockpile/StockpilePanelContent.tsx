@@ -20,6 +20,7 @@ import { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ModalShell from "@/components/common/ModalShell";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
+import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
@@ -120,6 +121,7 @@ export default function StockpilePanelContent({
   const { t, language } = useI18n();
   const formatMessageWith = (key: string, vars: Record<string, string | number>) =>
     formatMessage(t(key as never), vars);
+  const { track } = useAnalytics();
   const isPairFronts = mode === "pair-fronts";
   const isPairBacks = mode === "pair-backs";
   const isPairMode = isPairFronts || isPairBacks;
@@ -995,6 +997,16 @@ export default function StockpilePanelContent({
 
   const handleBulkExport = async () => {
     if (!canExport) return;
+
+    const exportScope =
+      activeFilter.type === "collection"
+        ? selectedVisibleCards.length === 0
+          ? "collection_all"
+          : "collection_selected"
+        : selectedVisibleCards.length === 0
+          ? "stockpile_all"
+          : "stockpile_selected";
+    track("export_started", { scope: exportScope });
 
     const { baseIds, pairedIds, previewRows } = resolvePairedExportPlan(exportCards);
     if (pairedIds.length > 0) {

@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import { AppActionsProvider, useAppActions } from "@/components/Providers/AppActionsContext";
+import { AnalyticsProvider } from "@/components/Providers/AnalyticsProvider";
 
 const navigate = jest.fn();
 const setSelectedTemplateId = jest.fn();
@@ -87,9 +88,11 @@ describe("AppActionsProvider openTemplatePicker", () => {
   it("navigates to /cards/new when applying a template", () => {
     render(
       <MemoryRouter>
-        <AppActionsProvider>
-          <Harness />
-        </AppActionsProvider>
+        <AnalyticsProvider gaId={undefined}>
+          <AppActionsProvider>
+            <Harness />
+          </AppActionsProvider>
+        </AnalyticsProvider>
       </MemoryRouter>,
     );
 

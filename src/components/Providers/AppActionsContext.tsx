@@ -15,6 +15,7 @@ import { usePopupState } from "@/hooks/usePopupState";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getCard } from "@/lib/cards-db";
+import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { createDefaultCardData } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -57,6 +58,7 @@ type AppActionsProviderProps = {
 export function AppActionsProvider({ children }: AppActionsProviderProps) {
   const { t, language } = useI18n();
   const navigate = useNavigate();
+  const { track } = useAnalytics();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate, isDirtyByTemplate },
     setSelectedTemplateId,
@@ -158,6 +160,10 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
         currentTemplateId={selectedTemplateId}
         onApply={(templateId) => {
           const nextTemplateId = templateId as TemplateId;
+          track("template_selected", {
+            template_id: nextTemplateId,
+            source: "template_picker",
+          });
           const nextDraft = createDefaultCardData(nextTemplateId);
           setSelectedTemplateId(nextTemplateId);
           setSingleDraft(nextTemplateId, nextDraft);

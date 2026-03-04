@@ -18,6 +18,7 @@ import CardInspector from "@/components/Cards/CardInspector/CardInspector";
 import TemplateChooser from "@/components/Cards/CardInspector/TemplateChooser";
 import CardPreview, { type CardPreviewHandle } from "@/components/Cards/CardPreview";
 import CardThumbnail from "@/components/common/CardThumbnail";
+import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { EscapeStackProvider, useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import { WarningNotice } from "@/components/common/Notice";
 import DatabaseVersionGate from "@/components/DatabaseVersionGate";
@@ -82,6 +83,7 @@ function IndexPageInner() {
   const { t, language } = useI18n();
   const formatMessageWith = (key: string, vars: Record<string, string | number>) =>
     formatMessage(t(key as never), vars);
+  const { track } = useAnalytics();
   const navigate = useNavigate();
   const { cardId } = useParams();
   const isAssetsRoute = Boolean(useMatch("/assets"));
@@ -328,6 +330,7 @@ function IndexPageInner() {
     if (!currentTemplateId) return false;
     const mode = activeCardId && activeStatus === "saved" ? "update" : hasDraft ? "new" : null;
     if (!mode) return false;
+    track("save_started", { mode });
     await handleSave(mode);
     return true;
   };
@@ -978,6 +981,10 @@ function IndexPageInner() {
                         isOpen={isWelcomeOpen}
                         onClose={() => setIsWelcomeOpen(false)}
                         onSelect={(templateId) => {
+                          track("template_selected", {
+                            template_id: templateId,
+                            source: "welcome_modal",
+                          });
                           const nextDraft = createDefaultCardData(templateId);
                           setSelectedTemplateId(templateId);
                           setSingleDraft(templateId, nextDraft);
@@ -1002,15 +1009,21 @@ function IndexPageInner() {
                       canSaveChanges={canSaveChanges}
                       canDuplicate={canDuplicate}
                       savingMode={savingMode}
-                      onExportPng={() => exportCurrentFace()}
+                      onExportPng={() => {
+                        track("export_started", { scope: "editor_single" });
+                        exportCurrentFace();
+                      }}
                       exportMenuItems={exportMenuItems.map((item) => ({
                         ...item,
                         onClick: () => {
                           if (item.id === "export-both-faces") {
+                            track("export_started", { scope: "editor_multi" });
                             void handleExportBothFaces();
                           } else if (item.id === "export-back-active-front") {
+                            track("export_started", { scope: "editor_multi" });
                             void handleExportBackActiveFront();
                           } else if (item.id === "export-back-all-fronts") {
+                            track("export_started", { scope: "editor_multi" });
                             void handleExportBackAllFronts();
                           }
                         },
