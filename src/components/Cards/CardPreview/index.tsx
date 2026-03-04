@@ -130,10 +130,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           setCopyrightTextColor(undefined);
           return;
         }
-        const overrideValue =
-          typeof (cardData as { copyright?: string }).copyright === "string"
-            ? (cardData as { copyright?: string }).copyright
-            : "";
+        const copyrightValue = (cardData as { copyright?: string }).copyright;
+        const overrideValue = typeof copyrightValue === "string" ? copyrightValue : "";
         const normalizedOverride = overrideValue.trim();
         const normalizedDefault = defaultCopyright.trim();
         const resolvedText =

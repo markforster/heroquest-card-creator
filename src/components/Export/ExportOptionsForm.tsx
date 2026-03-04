@@ -6,6 +6,7 @@ import styles from "@/app/page.module.css";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { MessageKey } from "@/i18n/messages";
 import { DEFAULT_CROP_MARK_COLOR, DEFAULT_CUT_MARK_COLOR } from "@/lib/export-settings";
 
 const CROP_SWATCHES = ["#00FFFF", "#FF00FF", "#FFFF00", "#000000", "#00FF00"];
@@ -23,8 +24,8 @@ export type ExportOptionsFormState = {
 };
 
 type ExportOptionsFormProps = ExportOptionsFormState & {
-  bleedLabelKey: string;
-  headingLabelKey?: string;
+  bleedLabelKey: MessageKey;
+  headingLabelKey?: MessageKey;
   finalSizeLabel?: string;
   showAskBeforeExport?: boolean;
   onChange: (next: Partial<ExportOptionsFormState>) => void;

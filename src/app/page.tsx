@@ -173,10 +173,6 @@ function IndexPageInner() {
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [routeError, setRouteError] = useState<"not-found" | "load-failed" | null>(null);
   const lastLoadedRef = useRef<string | null>(null);
-  const activeCardKey =
-    cardId ??
-    (selectedTemplateId ? activeCardIdByTemplate[selectedTemplateId] : undefined) ??
-    "draft";
 
   useEscapeModalAware({
     id: "route:assets",
