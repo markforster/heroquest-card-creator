@@ -39,11 +39,11 @@ type PendingFaceChange =
       affectedCount: number;
     };
 
-const FALLBACK_TITLE = "Untitled card";
 const SHOW_TEMPLATE_THUMB = false;
 
 export default function TemplateChooser() {
   const { t, language } = useI18n();
+  const fallbackTitle = t("label.untitledCard");
   const formatMessageWith = useMemo(
     () => (key: string, vars: Record<string, string | number>) => formatMessage(t(key as never), vars),
     [t],
@@ -196,7 +196,7 @@ export default function TemplateChooser() {
             pairs.find((pair) => pair.backFaceId);
           if (match?.backFaceId) {
             const pairedRecord = await getCard(match.backFaceId);
-            const pairedTitle = pairedRecord?.title ?? FALLBACK_TITLE;
+            const pairedTitle = pairedRecord?.title ?? fallbackTitle;
             setPendingChange({
               mode: "front-to-back",
               nextFace,
@@ -242,7 +242,7 @@ export default function TemplateChooser() {
       ? `Confirm unpairing from card ${pendingChange.pairedTitle}`
       : formatMessageWith("warning.pairingLossMultiple", {
           count: pendingChange.affectedCount,
-          back: currentCard?.title ?? FALLBACK_TITLE,
+          back: currentCard?.title ?? fallbackTitle,
         })
     : "";
 

@@ -58,7 +58,11 @@ export default function StockpileActionsBar({
 
   return (
     <div className={styles.stockpileActionsBar}>
-      <div className={styles.stockpileViewToggle} role="group" aria-label="View mode">
+      <div
+        className={styles.stockpileViewToggle}
+        role="group"
+        aria-label={t("aria.viewMode")}
+      >
         <button
           type="button"
           className={`${styles.stockpileViewButton} ${

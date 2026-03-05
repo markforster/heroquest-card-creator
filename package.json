@@ -64,6 +64,7 @@
     "test:report": "jest --coverage --reporters=default --reporters=jest-html-reporter",
     "typecheck": "tsc --noEmit",
     "typecheck:watch": "tsc --noEmit --watch",
+    "i18n:audit": "node scripts/i18n-audit.cjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "serve:out": " npx serve ./out -l 3000",

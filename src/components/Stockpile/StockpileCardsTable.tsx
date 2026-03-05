@@ -5,8 +5,10 @@ import { BringToFront, SendToBack } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
+import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   getCachedCardThumbnailUrl,
   getLegacyCardThumbnailUrl,
@@ -49,6 +51,7 @@ const resolveThumb = (id: string, blob: Blob | null) => {
 };
 
 function StockpileCardsTableRow({ card, actions, dragEnabled }: StockpileCardsTableRowProps) {
+  const { t } = useI18n();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
     disabled: !dragEnabled,
@@ -202,7 +205,7 @@ function StockpileCardsTableRow({ card, actions, dragEnabled }: StockpileCardsTa
           }}
           onClick={(event) => event.stopPropagation()}
           onPointerDown={(event) => event.stopPropagation()}
-          aria-label={`Select ${card.name}`}
+          aria-label={formatMessage(t("aria.selectCard"), { name: card.name })}
         />
       </div>
     </div>
@@ -216,6 +219,7 @@ export default function StockpileCardsTable({
   dragEnabled,
   onClearSelection,
 }: StockpileCardsTableProps) {
+  const { t } = useI18n();
   return (
     <div
       className={styles.stockpileTable}
@@ -244,7 +248,11 @@ export default function StockpileCardsTable({
         <div className={styles.stockpileTableCell} role="columnheader">
           {headers.pairing}
         </div>
-        <div className={styles.stockpileTableCell} role="columnheader" aria-label="Selection" />
+        <div
+          className={styles.stockpileTableCell}
+          role="columnheader"
+          aria-label={t("aria.selection")}
+        />
       </div>
       <div className={styles.stockpileTableBody} role="rowgroup">
         {items.map((card) => (

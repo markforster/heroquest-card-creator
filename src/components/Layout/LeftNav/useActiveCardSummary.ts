@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import { useI18n } from "@/i18n/I18nProvider";
 import { getCard } from "@/lib/cards-db";
 import {
   getCachedCardThumbnailUrl,
@@ -17,6 +18,7 @@ export function useActiveCardSummary(
   activeCardId?: string,
   repairCurrentCardThumbnail?: () => Promise<boolean>,
 ) {
+  const { t } = useI18n();
   const [currentCardName, setCurrentCardName] = useState<string | null>(null);
   const [currentCardThumbUrl, setCurrentCardThumbUrl] = useState<string | null>(null);
   const currentCardThumbRef = useRef<string | null>(null);
@@ -33,7 +35,7 @@ export function useActiveCardSummary(
         setCurrentCardThumbUrl(null);
         return;
       }
-      setCurrentCardName(record.name || record.title || "Untitled card");
+      setCurrentCardName(record.name || record.title || t("label.untitledCard"));
       currentCardThumbRef.current = null;
       if (ENABLE_CARD_THUMB_CACHE) {
         if (retainedCardRef.current && retainedCardRef.current !== record.id) {

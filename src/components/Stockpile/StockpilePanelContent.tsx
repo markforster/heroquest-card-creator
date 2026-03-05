@@ -552,7 +552,7 @@ export default function StockpilePanelContent({
         isPairFronts && pairedBackId && pairedBackId !== activeBackId,
       );
       const conflictPairedName = isPairingConflict
-        ? (pairedBack?.title ?? pairedBack?.name ?? "Untitled card")
+        ? (pairedBack?.title ?? pairedBack?.name ?? t("label.untitledCard"))
         : undefined;
       const conflictLabel = isPairingConflict ? t("warning.alreadyPairedWith") : undefined;
       const updated = new Date(card.updatedAt);

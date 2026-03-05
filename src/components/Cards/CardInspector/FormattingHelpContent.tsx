@@ -112,13 +112,19 @@ export default function FormattingHelpContent() {
         <CheatCard
           title={t("formattingHelp.markdown")}
           rows={[
-            { code: "**bold text**", output: <strong>bold text</strong> },
-            { code: "*italic text*", output: <em>italic text</em> },
             {
-              code: "***bold italic text***",
+              code: t("formattingHelp.markdown.boldCode"),
+              output: <strong>{t("formattingHelp.markdown.boldOutput")}</strong>,
+            },
+            {
+              code: t("formattingHelp.markdown.italicCode"),
+              output: <em>{t("formattingHelp.markdown.italicOutput")}</em>,
+            },
+            {
+              code: t("formattingHelp.markdown.boldItalicCode"),
               output: (
                 <strong>
-                  <em>bold italic text</em>
+                  <em>{t("formattingHelp.markdown.boldItalicOutput")}</em>
                 </strong>
               ),
             },
@@ -128,21 +134,27 @@ export default function FormattingHelpContent() {
           title={t("formattingHelp.alignment")}
           rows={[
             {
-              code: ":::al This line is left aligned.:::",
+              code: t("formattingHelp.alignment.leftCode"),
               output: (
-                <div className={styles.formattingHelpAlignLeft}>This line is left aligned.</div>
+                <div className={styles.formattingHelpAlignLeft}>
+                  {t("formattingHelp.alignment.leftOutput")}
+                </div>
               ),
             },
             {
-              code: ":::ac This line is centered.:::",
+              code: t("formattingHelp.alignment.centerCode"),
               output: (
-                <div className={styles.formattingHelpAlignCenter}>This line is centered.</div>
+                <div className={styles.formattingHelpAlignCenter}>
+                  {t("formattingHelp.alignment.centerOutput")}
+                </div>
               ),
             },
             {
-              code: ":::ar This line is right aligned.:::",
+              code: t("formattingHelp.alignment.rightCode"),
               output: (
-                <div className={styles.formattingHelpAlignRight}>This line is right aligned.</div>
+                <div className={styles.formattingHelpAlignRight}>
+                  {t("formattingHelp.alignment.rightOutput")}
+                </div>
               ),
             },
           ]}
@@ -151,28 +163,26 @@ export default function FormattingHelpContent() {
           title={t("formattingHelp.leaderLines")}
           rows={[
             {
-              code: "[Label[.]Value]",
+              code: t("formattingHelp.leaderLines.labelCode"),
               output: (
                 <span className={styles.formattingHelpMono}>
-                  Label................................Value
+                  {t("formattingHelp.leaderLines.labelOutput")}
                 </span>
               ),
             },
             {
-              code: "[Cost[.] 50 gold]",
+              code: t("formattingHelp.leaderLines.costCode"),
               output: (
                 <span className={styles.formattingHelpMono}>
-                  Cost..............................50 gold
+                  {t("formattingHelp.leaderLines.costOutput")}
                 </span>
               ),
             },
             {
-              code: "[Range[.] 3 squares][Weight[-] Light][Difficulty[ ] Hard]",
+              code: t("formattingHelp.leaderLines.multiCode"),
               output: (
                 <span className={styles.formattingHelpMono}>
-                  Range..........................3 squares
-                  {"\n"}Weight------------------------Light
-                  {"\n"}Difficulty Hard
+                  {t("formattingHelp.leaderLines.multiOutput")}
                 </span>
               ),
             },
@@ -182,34 +192,40 @@ export default function FormattingHelpContent() {
           title={t("formattingHelp.leaderGroups")}
           rows={[
             {
-              code: ["[[", "[hello[.]World]", "]]"],
+              code: [
+                t("formattingHelp.leaderGroups.simpleOpen"),
+                t("formattingHelp.leaderGroups.simpleLine"),
+                t("formattingHelp.leaderGroups.simpleClose"),
+              ],
               output: (
                 <span className={styles.formattingHelpMono}>
-                  hello.............................World
+                  {t("formattingHelp.leaderGroups.simpleOutput")}
                 </span>
               ),
             },
             {
               code: [
-                "[[",
-                "[{pivot:50%, wrap:value}],",
-                "[Cost[.] 50 gold],",
-                "[Range[.] 3 squares],",
-                "]]",
+                t("formattingHelp.leaderGroups.pivotOpen"),
+                t("formattingHelp.leaderGroups.pivotSettings"),
+                t("formattingHelp.leaderGroups.pivotCost"),
+                t("formattingHelp.leaderGroups.pivotRange"),
+                t("formattingHelp.leaderGroups.pivotClose"),
               ],
               output: (
                 <span className={styles.formattingHelpMono}>
-                  Cost.............................50 gold
-                  {"\n"}Range...........................3 squares
+                  {t("formattingHelp.leaderGroups.pivotOutput")}
                 </span>
               ),
             },
             {
-              code: ["[[[{wrap:none}],", "[hello[.]World],", "[hello[.]Universe]]]"],
+              code: [
+                t("formattingHelp.leaderGroups.wrapOpen"),
+                t("formattingHelp.leaderGroups.wrapLine1"),
+                t("formattingHelp.leaderGroups.wrapLine2"),
+              ],
               output: (
                 <span className={styles.formattingHelpMono}>
-                  hello............................World
-                  {"\n"}hello..........................Universe
+                  {t("formattingHelp.leaderGroups.wrapOutput")}
                 </span>
               ),
             },
@@ -219,11 +235,11 @@ export default function FormattingHelpContent() {
           title={t("formattingHelp.inlineDice")}
           rows={[
             {
-              code: "&cd-s-w;",
+              code: t("formattingHelp.inlineDice.skullCode"),
             output: (
               <div className={styles.formattingHelpDiceRow}>
                 <DiceIcon
-                  alt="Skull"
+                  alt={t("formattingHelp.dice.skull")}
                   src={combatSkullWhiteUrl}
                   bg="#ffffff"
                   faceColor="#111111"
@@ -233,11 +249,11 @@ export default function FormattingHelpContent() {
             ),
             },
             {
-              code: "&cd-h-r;",
+              code: t("formattingHelp.inlineDice.heroShieldCode"),
               output: (
                 <div className={styles.formattingHelpDiceRow}>
                   <DiceIcon
-                    alt="Hero shield"
+                    alt={t("formattingHelp.dice.heroShield")}
                     src={combatShieldWhiteUrl}
                     bg="#b21d1d"
                     faceColor="#ffffff"
@@ -247,11 +263,11 @@ export default function FormattingHelpContent() {
               ),
             },
             {
-              code: "&cd-m-bk;",
+              code: t("formattingHelp.inlineDice.monsterShieldCode"),
               output: (
                 <div className={styles.formattingHelpDiceRow}>
                   <DiceIcon
-                    alt="Monster shield"
+                    alt={t("formattingHelp.dice.monsterShield")}
                     src={combatMonsterWhiteUrl}
                     bg="#111111"
                     faceColor="#ffffff"
@@ -261,11 +277,11 @@ export default function FormattingHelpContent() {
               ),
             },
             {
-              code: "&cd-ad-r;",
+              code: t("formattingHelp.inlineDice.attackDieCode"),
               output: (
                 <div className={styles.formattingHelpDiceRow}>
                   <DiceIcon
-                    alt="Attack die"
+                    alt={t("formattingHelp.dice.attackDie")}
                     src={combatAdUrl}
                     bg="#b21d1d"
                     faceColor="#ffffff"
@@ -275,11 +291,11 @@ export default function FormattingHelpContent() {
               ),
             },
             {
-              code: "&cd-dd-bk;",
+              code: t("formattingHelp.inlineDice.defenseDieCode"),
               output: (
                 <div className={styles.formattingHelpDiceRow}>
                   <DiceIcon
-                    alt="Defense die"
+                    alt={t("formattingHelp.dice.defenseDie")}
                     src={combatDdUrl}
                     bg="#111111"
                     faceColor="#ffffff"
@@ -289,11 +305,11 @@ export default function FormattingHelpContent() {
               ),
             },
             {
-              code: "&cd-md-g;",
+              code: t("formattingHelp.inlineDice.movementDieCode"),
               output: (
                 <div className={styles.formattingHelpDiceRow}>
                   <DiceIcon
-                    alt="Movement die"
+                    alt={t("formattingHelp.dice.movementDie")}
                     src={combatMdUrl}
                     bg="#1f7a3b"
                     faceColor="#ffffff"
@@ -303,11 +319,11 @@ export default function FormattingHelpContent() {
               ),
             },
             {
-              code: "&d6-6-w;",
+              code: t("formattingHelp.inlineDice.d6Code"),
               output: (
                 <div className={styles.formattingHelpDiceRow}>
                   <DiceIcon
-                    alt="D6"
+                    alt={t("formattingHelp.dice.d6")}
                     src={d6Pips6Url}
                     bg="#ffffff"
                     faceColor="#111111"
@@ -322,11 +338,11 @@ export default function FormattingHelpContent() {
           title={t("formattingHelp.d6Variants")}
           rows={[
             {
-              code: "&d6-1-w;",
+              code: t("formattingHelp.d6Variants.d6_1w_Code"),
               output: (
                 <div className={styles.formattingHelpDiceRow}>
                   <DiceIcon
-                    alt="D6"
+                    alt={t("formattingHelp.dice.d6")}
                     src={d6Pips1Url}
                     bg="#ffffff"
                     faceColor="#111111"
@@ -336,11 +352,11 @@ export default function FormattingHelpContent() {
               ),
             },
             {
-              code: "&d6-6-r;",
+              code: t("formattingHelp.d6Variants.d6_6r_Code"),
               output: (
                 <div className={styles.formattingHelpDiceRow}>
                   <DiceIcon
-                    alt="D6"
+                    alt={t("formattingHelp.dice.d6")}
                     src={d6Pips6Url}
                     bg="#b21d1d"
                     faceColor="#ffffff"
@@ -350,11 +366,11 @@ export default function FormattingHelpContent() {
               ),
             },
             {
-              code: "&d6-3-bk;",
+              code: t("formattingHelp.d6Variants.d6_3bk_Code"),
               output: (
                 <div className={styles.formattingHelpDiceRow}>
                   <DiceIcon
-                    alt="D6"
+                    alt={t("formattingHelp.dice.d6")}
                     src={d6Pips3Url}
                     bg="#111111"
                     faceColor="#ffffff"
@@ -364,11 +380,11 @@ export default function FormattingHelpContent() {
               ),
             },
             {
-              code: "&d6-6-y-bk;",
+              code: t("formattingHelp.d6Variants.d6_6y_bk_Code"),
               output: (
                 <div className={styles.formattingHelpDiceRow}>
                   <DiceIcon
-                    alt="D6"
+                    alt={t("formattingHelp.dice.d6")}
                     src={d6Pips6Url}
                     bg="#d6a600"
                     faceColor="#111111"
@@ -383,11 +399,11 @@ export default function FormattingHelpContent() {
           title={t("formattingHelp.diceAdvanced")}
           rows={[
             {
-              code: "&cd-w-s;",
+              code: t("formattingHelp.diceAdvanced.whiteSkullCode"),
             output: (
               <div className={styles.formattingHelpDiceRow}>
                 <DiceIcon
-                  alt="Skull"
+                  alt={t("formattingHelp.dice.skull")}
                   src={combatSkullWhiteUrl}
                   bg="#ffffff"
                   faceColor="#111111"
@@ -397,11 +413,11 @@ export default function FormattingHelpContent() {
             ),
           },
           {
-            code: "&cd-s-w;",
+            code: t("formattingHelp.diceAdvanced.blackSkullCode"),
             output: (
               <div className={styles.formattingHelpDiceRow}>
                 <DiceIcon
-                  alt="Skull"
+                  alt={t("formattingHelp.dice.skull")}
                   src={combatSkullWhiteUrl}
                   bg="#ffffff"
                   faceColor="#111111"
@@ -411,11 +427,11 @@ export default function FormattingHelpContent() {
             ),
             },
             {
-              code: "&cd-y-s-bk;",
+              code: t("formattingHelp.diceAdvanced.yellowSkullCode"),
             output: (
               <div className={styles.formattingHelpDiceRow}>
                 <DiceIcon
-                  alt="Skull"
+                  alt={t("formattingHelp.dice.skull")}
                   src={combatSkullWhiteUrl}
                   bg="#d6a600"
                   faceColor="#111111"
@@ -425,11 +441,11 @@ export default function FormattingHelpContent() {
             ),
           },
           {
-            code: "&cd-#1c4aa8-s-#ffd200;",
+            code: t("formattingHelp.diceAdvanced.customSkullCode"),
             output: (
               <div className={styles.formattingHelpDiceRow}>
                 <DiceIcon
-                  alt="Skull"
+                  alt={t("formattingHelp.dice.skull")}
                   src={combatSkullWhiteUrl}
                   bg="#1c4aa8"
                   faceColor="#ffd200"
@@ -444,24 +460,24 @@ export default function FormattingHelpContent() {
           title={t("formattingHelp.diceStructure")}
           rows={[
             {
-              code: "&cd-<face>-<color>-<faceColor?>;",
-              output: "Combat die token",
+              code: t("formattingHelp.diceStructure.combatCode"),
+              output: t("formattingHelp.diceStructure.combatOutput"),
             },
             {
-              code: "&d6-<number>-<color>-<faceColor?>;",
-              output: "D6 token",
+              code: t("formattingHelp.diceStructure.d6Code"),
+              output: t("formattingHelp.diceStructure.d6Output"),
             },
             {
-              code: "Faces: s, h, m, cd, ad, dd, md",
-              output: "Valid faces",
+              code: t("formattingHelp.diceStructure.facesCode"),
+              output: t("formattingHelp.diceStructure.facesOutput"),
             },
             {
-              code: "Colors: w, bk, r, bl, g, y, o, p, gy",
-              output: "Valid colors",
+              code: t("formattingHelp.diceStructure.colorsCode"),
+              output: t("formattingHelp.diceStructure.colorsOutput"),
             },
             {
-              code: "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-              output: "Hex colors",
+              code: t("formattingHelp.diceStructure.hexCode"),
+              output: t("formattingHelp.diceStructure.hexOutput"),
             },
           ]}
         />

@@ -960,18 +960,20 @@ function IndexPageInner() {
                       className={`${styles.routeErrorPanel} d-flex align-items-center justify-content-center`}
                     >
                       <div className={`${styles.routeErrorCard} ${styles.uStackLg}`}>
-                        <div className={styles.routeErrorTitle}>Card not found</div>
+                        <div className={styles.routeErrorTitle}>
+                          {t("routeError.cardNotFoundTitle")}
+                        </div>
                         <div className={styles.routeErrorBody}>
                           {routeError === "not-found"
-                            ? "The card you requested does not exist or was deleted."
-                            : "We couldn't load this card right now."}
+                            ? t("routeError.cardNotFoundBody")
+                            : t("routeError.cardLoadFailedBody")}
                         </div>
                         <button
                           type="button"
                           className="btn btn-primary btn-sm"
                           onClick={() => navigate("/cards", { replace: true })}
                         >
-                          Back to cards
+                          {t("actions.backToCards")}
                         </button>
                       </div>
                     </section>

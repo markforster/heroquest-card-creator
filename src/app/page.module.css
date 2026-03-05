@@ -585,16 +585,22 @@
   position: absolute;
   left: 0;
   bottom: calc(100% + var(--space-4));
-  min-width: 180px;
+  min-width: 360px;
+  width: max-content;
+  max-height: 50vh;
   background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
   border: 1px solid var(--hq-black);
   border-radius: var(--radius-md);
   padding: var(--space-4);
+  padding-right: var(--space-4);
   box-shadow: 0 12px 28px var(--hq-black-45);
   z-index: 20;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-items: stretch;
   gap: var(--space-2);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .leftNavMenuItem {
@@ -610,6 +616,12 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-6);
+  width: 100%;
+  white-space: normal;
+}
+
+.leftNavMenuItemDetected {
+  margin-top: 2em;
 }
 .leftNavMenuText,
 .assetsPanel,

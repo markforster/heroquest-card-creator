@@ -31,8 +31,6 @@ import type { TemplateId } from "@/types/templates";
 
 import CollapsibleGroup from "./CollapsibleGroup";
 
-const FALLBACK_TITLE = "Untitled card";
-
 type PairingInspectorPanelProps = {
   activeFrontId?: string | null;
   autoOpenBackId?: string | null;
@@ -47,6 +45,7 @@ export default function PairingInspectorPanel({
   onRememberBackId,
 }: PairingInspectorPanelProps) {
   const { t } = useI18n();
+  const fallbackTitle = t("label.untitledCard");
   const formatMessageWith = useMemo(
     () => (key: string, vars: Record<string, string | number>) => formatMessage(t(key as never), vars),
     [t],
@@ -549,7 +548,7 @@ export default function PairingInspectorPanel({
               const backThumb = resolveThumb(backCard.id, backCard.thumbnailBlob ?? null);
               const backTemplateThumb = cardTemplatesById[backCard.templateId]?.thumbnail;
               const groupFrontCards = pairedBackFrontsMap.get(backCard.id) ?? [];
-              const backTitle = backCard.title ?? FALLBACK_TITLE;
+              const backTitle = backCard.title ?? fallbackTitle;
               const groupCountLabel =
                 groupFrontCards.length === 1
                   ? t("label.frontFacingCountSingle")
@@ -747,7 +746,7 @@ export default function PairingInspectorPanel({
       >
         {pendingUnpairBack
           ? formatMessageWith("warning.pairingLossSingle", {
-              back: pendingUnpairBack.title ?? FALLBACK_TITLE,
+              back: pendingUnpairBack.title ?? fallbackTitle,
             })
           : null}
       </ConfirmModal>
