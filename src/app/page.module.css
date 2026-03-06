@@ -193,6 +193,51 @@
   font-size: var(--text-2xl);
 }
 
+.headerMenuDivider {
+  height: 1px;
+  background: var(--hq-white-12);
+  margin: var(--space-2) var(--space-2);
+}
+
+.headerThemeToggle {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  border: 1px solid var(--hq-border-mid);
+  background: var(--hq-white-05);
+}
+
+.headerThemeToggleButton {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  color: var(--hq-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.headerThemeToggleButton:hover {
+  background: var(--hq-white-12);
+  color: var(--hq-text);
+}
+
+.headerThemeToggleButtonActive {
+  background: var(--hq-accent-soft);
+  color: var(--hq-accent);
+}
+
+.headerThemeToggleIcon {
+  width: 18px;
+  height: 18px;
+}
+
 .languageSwitcher {
   appearance: none;
   background: transparent;
@@ -1459,31 +1504,31 @@
   letter-spacing: 0.08em;
   padding: 0.18rem var(--space-6);
   border-radius: var(--radius-pill);
-  border: 1px solid var(--hq-white-15);
-  background: var(--hq-white-08);
-  color: var(--hq-gray-200);
+  border: 1px solid var(--hq-status-border);
+  background: var(--hq-status-bg);
+  color: var(--hq-status-text);
   line-height: 1;
   flex: 0 0 auto;
 }
 
 .inspectorStatusDraft {
-  background: rgba(148, 163, 184, 0.18);
-  border-color: rgba(248, 250, 252, 0.7);
+  background: var(--hq-status-draft-bg);
+  border-color: var(--hq-status-draft-border);
   border-style: dotted;
-  color: #cbd5f5;
+  color: var(--hq-status-draft-text);
 }
 
 .inspectorStatusSaved {
-  background: rgba(76, 175, 80, 0.18);
-  border-color: rgba(76, 175, 80, 0.45);
-  color: #c7f2cf;
+  background: var(--hq-status-saved-bg);
+  border-color: var(--hq-status-saved-border);
+  color: var(--hq-status-saved-text);
 }
 
 .inspectorStatusModified {
-  background: rgba(148, 163, 184, 0.18);
-  border-color: rgba(248, 250, 252, 0.7);
+  background: var(--hq-status-modified-bg);
+  border-color: var(--hq-status-modified-border);
   border-style: dotted;
-  color: var(--hq-text);
+  color: var(--hq-status-modified-text);
 }
 
 .inspectorSectionTitle {
@@ -2640,6 +2685,25 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+}
+
+.exportMarksRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.exportMarksRowLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.exportMarksSwatch {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
 }
 
 .settingsPanelScroll[data-panel-id="stat-label-overrides"] {

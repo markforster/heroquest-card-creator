@@ -1,9 +1,10 @@
 "use client";
 
-import { Download, Menu, Upload } from "lucide-react";
+import { Download, Menu, Monitor, Moon, Sun, Upload } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
+import { useTheme } from "@/components/Providers/ThemeProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 
 import type { RefObject } from "react";
@@ -33,6 +34,7 @@ export default function HeaderMenu({
 }: HeaderMenuProps) {
   const { t } = useI18n();
   const { track } = useAnalytics();
+  const { preference, setPreference } = useTheme();
 
   return (
     <div className={styles.headerMenu} ref={menuRef}>
@@ -77,6 +79,42 @@ export default function HeaderMenu({
             <Upload className={styles.headerMenuItemIcon} aria-hidden="true" />
             {isImporting ? t("actions.importing") : t("actions.importLibrary")}
           </button>
+          <div className={styles.headerMenuDivider} />
+          <div className={styles.headerThemeToggle} role="group" aria-label={t("label.theme")}>
+            <button
+              type="button"
+              className={`${styles.headerThemeToggleButton} ${
+                preference === "light" ? styles.headerThemeToggleButtonActive : ""
+              }`}
+              onClick={() => setPreference("light")}
+              aria-label={t("label.themeLight")}
+              aria-pressed={preference === "light"}
+            >
+              <Sun className={styles.headerThemeToggleIcon} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${styles.headerThemeToggleButton} ${
+                preference === "dark" ? styles.headerThemeToggleButtonActive : ""
+              }`}
+              onClick={() => setPreference("dark")}
+              aria-label={t("label.themeDark")}
+              aria-pressed={preference === "dark"}
+            >
+              <Moon className={styles.headerThemeToggleIcon} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${styles.headerThemeToggleButton} ${
+                preference === "system" ? styles.headerThemeToggleButtonActive : ""
+              }`}
+              onClick={() => setPreference("system")}
+              aria-label={t("label.useSystemTheme")}
+              aria-pressed={preference === "system"}
+            >
+              <Monitor className={styles.headerThemeToggleIcon} aria-hidden="true" />
+            </button>
+          </div>
         </div>
       ) : null}
     </div>

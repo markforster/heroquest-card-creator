@@ -167,48 +167,51 @@ export default function ExportOptionsForm({
       )}
 
       {useSettingsGroup ? (
-        <SettingsGroup className="d-flex flex-column gap-3">
+        <SettingsGroup title={t("label.exportMarks")} className="d-flex flex-column gap-3">
           <div className={styles.exportMarksGrid}>
             <div className={styles.exportMarksColumn}>
-              <label
-                className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}
-              >
-                <input
-                  type="checkbox"
-                  className="form-check-input hq-checkbox"
-                  checked={cropMarksEnabled}
-                  disabled={!bleedEnabled}
-                  onChange={(event) => onChange({ cropMarksEnabled: event.target.checked })}
-                />
-                {t("label.cropMarks")}
-              </label>
-              <ColorPickerField
-                label={t("label.cropMarkColor")}
-                inputValue={cropMarkColor}
-                selectedValue={cropMarkColor}
-                defaultColor={DEFAULT_CROP_MARK_COLOR}
-                smartGroups={[]}
-                isSmartBusy={false}
-                onRequestSmart={() => {}}
-                onChange={(value) => onChange({ cropMarkColor: value })}
-                allowAlpha={false}
-                onSelectDefault={() => onChange({ cropMarkColor: DEFAULT_CROP_MARK_COLOR })}
-                onSelectTransparent={() => {}}
-                canRevert={false}
-                onRevert={() => {}}
-                isOpen={cropColorPopover.isOpen}
-                onToggleOpen={cropColorPopover.toggle}
-                onClose={cropColorPopover.close}
-                showInput={false}
-                showSmartTab={false}
-                showSavedTab={false}
-                showDefaultOption={false}
-                showTransparentOption={false}
-                showRevertOption={false}
-                showSaveOption={false}
-                presetSwatches={CROP_SWATCHES}
-                isDisabled={!cropMarksEnabled}
-              />
+              <div className={styles.exportMarksRow}>
+                <label className={`${styles.settingsPanelToggle} ${styles.exportMarksRowLabel}`}>
+                  <input
+                    type="checkbox"
+                    className="form-check-input hq-checkbox"
+                    checked={cropMarksEnabled}
+                    disabled={!bleedEnabled}
+                    onChange={(event) => onChange({ cropMarksEnabled: event.target.checked })}
+                  />
+                  {t("label.cropMarks")}
+                </label>
+                <div className={styles.exportMarksSwatch}>
+                  <ColorPickerField
+                    label={t("label.cropMarkColor")}
+                    inputValue={cropMarkColor}
+                    selectedValue={cropMarkColor}
+                    defaultColor={DEFAULT_CROP_MARK_COLOR}
+                    smartGroups={[]}
+                    isSmartBusy={false}
+                    onRequestSmart={() => {}}
+                    onChange={(value) => onChange({ cropMarkColor: value })}
+                    allowAlpha={false}
+                    onSelectDefault={() => onChange({ cropMarkColor: DEFAULT_CROP_MARK_COLOR })}
+                    onSelectTransparent={() => {}}
+                    canRevert={false}
+                    onRevert={() => {}}
+                    isOpen={cropColorPopover.isOpen}
+                    onToggleOpen={cropColorPopover.toggle}
+                    onClose={cropColorPopover.close}
+                    showLabel={false}
+                    showInput={false}
+                    showSmartTab={false}
+                    showSavedTab={false}
+                    showDefaultOption={false}
+                    showTransparentOption={false}
+                    showRevertOption={false}
+                    showSaveOption={false}
+                    presetSwatches={CROP_SWATCHES}
+                    isDisabled={!cropMarksEnabled || !bleedEnabled}
+                  />
+                </div>
+              </div>
               <label className={styles.settingsPanelRow}>
                 <span>{t("label.cropMarkStyle")}</span>
                 <select
@@ -225,89 +228,98 @@ export default function ExportOptionsForm({
               </label>
             </div>
             <div className={styles.exportMarksColumn}>
-              <label
-                className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}
-              >
-                <input
-                  type="checkbox"
-                  className="form-check-input hq-checkbox"
-                  checked={cutMarksEnabled}
-                  disabled={!bleedEnabled}
-                  onChange={(event) => onChange({ cutMarksEnabled: event.target.checked })}
-                />
-                {t("label.cutMarks")}
-              </label>
-              <ColorPickerField
-                label={t("label.cutMarkColor")}
-                inputValue={cutMarkColor}
-                selectedValue={cutMarkColor}
-                defaultColor={DEFAULT_CUT_MARK_COLOR}
-                smartGroups={[]}
-                isSmartBusy={false}
-                onRequestSmart={() => {}}
-                onChange={(value) => onChange({ cutMarkColor: value })}
-                allowAlpha={false}
-                onSelectDefault={() => onChange({ cutMarkColor: DEFAULT_CUT_MARK_COLOR })}
-                onSelectTransparent={() => {}}
-                canRevert={false}
-                onRevert={() => {}}
-                isOpen={cutColorPopover.isOpen}
-                onToggleOpen={cutColorPopover.toggle}
-                onClose={cutColorPopover.close}
-                showInput={false}
-                showSmartTab={false}
-                showSavedTab={false}
-                showDefaultOption={false}
-                showTransparentOption={false}
-                showRevertOption={false}
-                showSaveOption={false}
-                presetSwatches={CROP_SWATCHES}
-                isDisabled={!cutMarksEnabled}
-              />
+              <div className={styles.exportMarksRow}>
+                <label className={`${styles.settingsPanelToggle} ${styles.exportMarksRowLabel}`}>
+                  <input
+                    type="checkbox"
+                    className="form-check-input hq-checkbox"
+                    checked={cutMarksEnabled}
+                    disabled={!bleedEnabled}
+                    onChange={(event) => onChange({ cutMarksEnabled: event.target.checked })}
+                  />
+                  {t("label.cutMarks")}
+                </label>
+                <div className={styles.exportMarksSwatch}>
+                  <ColorPickerField
+                    label={t("label.cutMarkColor")}
+                    inputValue={cutMarkColor}
+                    selectedValue={cutMarkColor}
+                    defaultColor={DEFAULT_CUT_MARK_COLOR}
+                    smartGroups={[]}
+                    isSmartBusy={false}
+                    onRequestSmart={() => {}}
+                    onChange={(value) => onChange({ cutMarkColor: value })}
+                    allowAlpha={false}
+                    onSelectDefault={() => onChange({ cutMarkColor: DEFAULT_CUT_MARK_COLOR })}
+                    onSelectTransparent={() => {}}
+                    canRevert={false}
+                    onRevert={() => {}}
+                    isOpen={cutColorPopover.isOpen}
+                    onToggleOpen={cutColorPopover.toggle}
+                    onClose={cutColorPopover.close}
+                    showLabel={false}
+                    showInput={false}
+                    showSmartTab={false}
+                    showSavedTab={false}
+                    showDefaultOption={false}
+                    showTransparentOption={false}
+                    showRevertOption={false}
+                    showSaveOption={false}
+                    presetSwatches={CROP_SWATCHES}
+                    isDisabled={!cutMarksEnabled || !bleedEnabled}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </SettingsGroup>
       ) : (
         <div className={`${styles.settingsPanelSection} d-flex flex-column gap-3`}>
+          <div className={styles.settingsPanelSectionTitle}>{t("label.exportMarks")}</div>
           <div className={styles.exportMarksGrid}>
             <div className={styles.exportMarksColumn}>
-              <label className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}>
-                <input
-                  type="checkbox"
-                  className="form-check-input hq-checkbox"
-                  checked={cropMarksEnabled}
-                  disabled={!bleedEnabled}
-                  onChange={(event) => onChange({ cropMarksEnabled: event.target.checked })}
-                />
-                {t("label.cropMarks")}
-              </label>
-              <ColorPickerField
-                label={t("label.cropMarkColor")}
-                inputValue={cropMarkColor}
-                selectedValue={cropMarkColor}
-                defaultColor={DEFAULT_CROP_MARK_COLOR}
-                smartGroups={[]}
-                isSmartBusy={false}
-                onRequestSmart={() => {}}
-                onChange={(value) => onChange({ cropMarkColor: value })}
-                allowAlpha={false}
-                onSelectDefault={() => onChange({ cropMarkColor: DEFAULT_CROP_MARK_COLOR })}
-                onSelectTransparent={() => {}}
-                canRevert={false}
-                onRevert={() => {}}
-                isOpen={cropColorPopover.isOpen}
-                onToggleOpen={cropColorPopover.toggle}
-                onClose={cropColorPopover.close}
-                showInput={false}
-                showSmartTab={false}
-                showSavedTab={false}
-                showDefaultOption={false}
-                showTransparentOption={false}
-                showRevertOption={false}
-                showSaveOption={false}
-                presetSwatches={CROP_SWATCHES}
-                isDisabled={!cropMarksEnabled}
-              />
+              <div className={styles.exportMarksRow}>
+                <label className={`${styles.settingsPanelToggle} ${styles.exportMarksRowLabel}`}>
+                  <input
+                    type="checkbox"
+                    className="form-check-input hq-checkbox"
+                    checked={cropMarksEnabled}
+                    disabled={!bleedEnabled}
+                    onChange={(event) => onChange({ cropMarksEnabled: event.target.checked })}
+                  />
+                  {t("label.cropMarks")}
+                </label>
+                <div className={styles.exportMarksSwatch}>
+                  <ColorPickerField
+                    label={t("label.cropMarkColor")}
+                    inputValue={cropMarkColor}
+                    selectedValue={cropMarkColor}
+                    defaultColor={DEFAULT_CROP_MARK_COLOR}
+                    smartGroups={[]}
+                    isSmartBusy={false}
+                    onRequestSmart={() => {}}
+                    onChange={(value) => onChange({ cropMarkColor: value })}
+                    allowAlpha={false}
+                    onSelectDefault={() => onChange({ cropMarkColor: DEFAULT_CROP_MARK_COLOR })}
+                    onSelectTransparent={() => {}}
+                    canRevert={false}
+                    onRevert={() => {}}
+                    isOpen={cropColorPopover.isOpen}
+                    onToggleOpen={cropColorPopover.toggle}
+                    onClose={cropColorPopover.close}
+                    showLabel={false}
+                    showInput={false}
+                    showSmartTab={false}
+                    showSavedTab={false}
+                    showDefaultOption={false}
+                    showTransparentOption={false}
+                    showRevertOption={false}
+                    showSaveOption={false}
+                    presetSwatches={CROP_SWATCHES}
+                    isDisabled={!cropMarksEnabled || !bleedEnabled}
+                  />
+                </div>
+              </div>
               <label className={styles.settingsPanelRow}>
                 <span>{t("label.cropMarkStyle")}</span>
                 <select
@@ -324,43 +336,48 @@ export default function ExportOptionsForm({
               </label>
             </div>
             <div className={styles.exportMarksColumn}>
-              <label className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}>
-                <input
-                  type="checkbox"
-                  className="form-check-input hq-checkbox"
-                  checked={cutMarksEnabled}
-                  disabled={!bleedEnabled}
-                  onChange={(event) => onChange({ cutMarksEnabled: event.target.checked })}
-                />
-                {t("label.cutMarks")}
-              </label>
-              <ColorPickerField
-                label={t("label.cutMarkColor")}
-                inputValue={cutMarkColor}
-                selectedValue={cutMarkColor}
-                defaultColor={DEFAULT_CUT_MARK_COLOR}
-                smartGroups={[]}
-                isSmartBusy={false}
-                onRequestSmart={() => {}}
-                onChange={(value) => onChange({ cutMarkColor: value })}
-                allowAlpha={false}
-                onSelectDefault={() => onChange({ cutMarkColor: DEFAULT_CUT_MARK_COLOR })}
-                onSelectTransparent={() => {}}
-                canRevert={false}
-                onRevert={() => {}}
-                isOpen={cutColorPopover.isOpen}
-                onToggleOpen={cutColorPopover.toggle}
-                onClose={cutColorPopover.close}
-                showInput={false}
-                showSmartTab={false}
-                showSavedTab={false}
-                showDefaultOption={false}
-                showTransparentOption={false}
-                showRevertOption={false}
-                showSaveOption={false}
-                presetSwatches={CROP_SWATCHES}
-                isDisabled={!cutMarksEnabled}
-              />
+              <div className={styles.exportMarksRow}>
+                <label className={`${styles.settingsPanelToggle} ${styles.exportMarksRowLabel}`}>
+                  <input
+                    type="checkbox"
+                    className="form-check-input hq-checkbox"
+                    checked={cutMarksEnabled}
+                    disabled={!bleedEnabled}
+                    onChange={(event) => onChange({ cutMarksEnabled: event.target.checked })}
+                  />
+                  {t("label.cutMarks")}
+                </label>
+                <div className={styles.exportMarksSwatch}>
+                  <ColorPickerField
+                    label={t("label.cutMarkColor")}
+                    inputValue={cutMarkColor}
+                    selectedValue={cutMarkColor}
+                    defaultColor={DEFAULT_CUT_MARK_COLOR}
+                    smartGroups={[]}
+                    isSmartBusy={false}
+                    onRequestSmart={() => {}}
+                    onChange={(value) => onChange({ cutMarkColor: value })}
+                    allowAlpha={false}
+                    onSelectDefault={() => onChange({ cutMarkColor: DEFAULT_CUT_MARK_COLOR })}
+                    onSelectTransparent={() => {}}
+                    canRevert={false}
+                    onRevert={() => {}}
+                    isOpen={cutColorPopover.isOpen}
+                    onToggleOpen={cutColorPopover.toggle}
+                    onClose={cutColorPopover.close}
+                    showLabel={false}
+                    showInput={false}
+                    showSmartTab={false}
+                    showSavedTab={false}
+                    showDefaultOption={false}
+                    showTransparentOption={false}
+                    showRevertOption={false}
+                    showSaveOption={false}
+                    presetSwatches={CROP_SWATCHES}
+                    isDisabled={!cutMarksEnabled || !bleedEnabled}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

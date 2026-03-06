@@ -103,6 +103,7 @@ export const en = {
   "label.bleedPixels": "Bleed (px)",
   "label.askBeforeExport": "Ask before export",
   "label.exportRoundedCorners": "Export rounded corners",
+  "label.exportMarks": "Export Marks",
   "label.cropMarks": "Crop Marks",
   "label.cropMarkColor": "Crop Mark Color",
   "label.cropMarkStyle": "Crop Mark Style",
