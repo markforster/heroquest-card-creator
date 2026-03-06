@@ -4,10 +4,11 @@ import { createContext, useContext, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import AssetsModal from "@/components/Assets/AssetsModal";
-import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import RecentCardsModal from "@/components/Modals/RecentCardsModal";
 import SettingsModal from "@/components/Modals/SettingsModal/SettingsModal";
+import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { StockpileModal } from "@/components/Stockpile";
 import TemplatePicker from "@/components/TemplatePicker";
 import { cardTemplatesById } from "@/data/card-templates";
@@ -15,7 +16,6 @@ import { usePopupState } from "@/hooks/usePopupState";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getCard } from "@/lib/cards-db";
-import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { createDefaultCardData } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 

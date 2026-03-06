@@ -132,6 +132,7 @@ export default function ExportSettingsPanel() {
         headingLabelKey="heading.exportSettings"
         finalSizeLabel={finalSizeLabel}
         showAskBeforeExport
+        useSettingsGroup
         onChange={persist}
       />
     </div>

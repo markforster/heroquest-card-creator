@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import styles from "@/app/page.module.css";
 import { WarningNotice } from "@/components/common/Notice";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
+import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getAssetAutoClassifyEnabled, setAssetAutoClassifyEnabled } from "@/lib/asset-auto-classify";
 import { isSafariBrowser } from "@/lib/browser";
@@ -43,10 +44,7 @@ export default function AssetsSettingsPanel() {
           {t("warning.safariAutoclassifyUnsupported")}
         </WarningNotice>
       ) : null}
-      <div className={`${styles.settingsPanelSection} d-flex flex-column gap-2`}>
-        <div className={styles.settingsPanelSectionTitle}>
-          {t("label.assetClassification")}
-        </div>
+      <SettingsGroup title={t("label.assetClassification")} className="d-flex flex-column gap-2">
         <label className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}>
           <input
             type="checkbox"
@@ -60,7 +58,7 @@ export default function AssetsSettingsPanel() {
         <div className={styles.settingsPanelRow}>
           {t("label.assetAutoClassifyHelp")}
         </div>
-      </div>
+      </SettingsGroup>
     </div>
   );
 }

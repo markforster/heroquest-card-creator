@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useSettingsPanel } from "@/components/Modals/SettingsModal/SettingsModalContext";
+import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { useStatLabelOverrides } from "@/components/Providers/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { MessageKey } from "@/i18n/messages";
@@ -235,18 +236,15 @@ export default function StatLabelOverridesPanel() {
   return (
     <div className={`${styles.settingsPanelBody} ${styles.settingsPanelBodyNoScroll}`}>
       <div className={styles.statLabelsScroll}>
-        <div className={`${styles.statLabelsSection} ${styles.toolsToolbarPopoverSection}`}>
-          <h3 className={styles.statLabelsSectionTitle}>{t("heading.sharedStatText")}</h3>
+        <SettingsGroup title={t("heading.sharedStatText")}>
           <div className={styles.statLabelsGrid}>{sharedFields.map(renderField)}</div>
-        </div>
-        <div className={`${styles.statLabelsSection} ${styles.toolsToolbarPopoverSection}`}>
-          <h3 className={styles.statLabelsSectionTitle}>{t("heading.monsterStatText")}</h3>
+        </SettingsGroup>
+        <SettingsGroup title={t("heading.monsterStatText")}>
           <div className={styles.statLabelsGrid}>{monsterFields.map(renderField)}</div>
-        </div>
-        <div className={`${styles.statLabelsSection} ${styles.toolsToolbarPopoverSection}`}>
-          <h3 className={styles.statLabelsSectionTitle}>{t("heading.heroStatText")}</h3>
+        </SettingsGroup>
+        <SettingsGroup title={t("heading.heroStatText")}>
           <div className={styles.statLabelsGrid}>{heroFields.map(renderField)}</div>
-        </div>
+        </SettingsGroup>
       </div>
       <div className={styles.settingsPanelFooter}>{statLabelFooter}</div>
     </div>
