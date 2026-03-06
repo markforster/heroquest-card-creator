@@ -1,6 +1,5 @@
 "use client";
 
-import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
@@ -15,6 +14,7 @@ import {
   SettingsPanelProvider,
   useSettingsModalControls,
 } from "@/components/Modals/SettingsModal/SettingsModalContext";
+import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { OpenCloseProps } from "@/types/ui";
 
@@ -29,6 +29,11 @@ function SettingsModalContent({
 }) {
   const { t } = useI18n();
   const { requestClose, requestAreaChange } = useSettingsModalControls();
+  const [developerCreditDisabled, setDeveloperCreditDisabled] = useLocalStorageBoolean(
+    "hqcc.developerCreditDisabled",
+    false,
+  );
+  const developerCreditEnabled = !developerCreditDisabled;
 
   const enabledAreas = SETTINGS_AREAS.filter((area) => area.isEnabled !== false);
   const activeArea =
@@ -80,6 +85,21 @@ function SettingsModalContent({
               </SettingsPanelProvider>
             ) : null}
           </div>
+        </div>
+      </div>
+      <div className={styles.settingsFooterRow}>
+        <div className={styles.settingsFooterRowToggle}>
+          <span className={styles.settingsFooterRowEmoji} aria-hidden="true">
+            {developerCreditEnabled ? "😊" : "😢"}
+          </span>
+          <input
+            id="developerCreditToggle"
+            type="checkbox"
+            className={`hq-toggle ${styles.settingsFooterRowInput}`}
+            checked={developerCreditEnabled}
+            onChange={(event) => setDeveloperCreditDisabled(!event.target.checked)}
+          />
+          <span className="form-check-label">{t("form.creditDeveloperCombined")}</span>
         </div>
       </div>
     </ModalShell>

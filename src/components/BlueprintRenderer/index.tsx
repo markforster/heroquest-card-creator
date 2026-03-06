@@ -4,7 +4,10 @@ import { AlertTriangle } from "lucide-react";
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
-import CardTextBlock, { layoutCardText } from "@/components/Cards/CardParts/CardTextBlock";
+import CardTextBlock, {
+  layoutCardText,
+  measureCardTextMaxLineWidth,
+} from "@/components/Cards/CardParts/CardTextBlock";
 import CardTexturedBorder from "@/components/Cards/CardParts/CardTexturedBorder";
 import HeroStatsBlock, {
   HERO_STATS_HEIGHT,
@@ -16,14 +19,26 @@ import MonsterStatsBlock, {
 } from "@/components/Cards/CardParts/MonsterStatsBlock";
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import Layer from "@/components/Cards/CardPreview/Layer";
+import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
+import {
+  DEVELOPER_CREDIT_BLEND_COLOR,
+  DEVELOPER_CREDIT_BLEND_MODE,
+  DEVELOPER_CREDIT_FONT_SCALE,
+  DEVELOPER_CREDIT_OPACITY,
+  DEVELOPER_CREDIT_RIGHT_INSET,
+  DEVELOPER_CREDIT_TOP_INSET,
+  DEVELOPER_CREDIT_TEXT,
+} from "@/config/developer-credit";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
+import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { computeContainScale } from "@/lib/image-scale";
 import { clamp } from "@/lib/math";
 import type {
@@ -45,6 +60,7 @@ type BlueprintRendererProps = {
   backgroundLoaded?: boolean;
   cardData?: CardDataByTemplate[TemplateId];
   copyrightTextColor?: string;
+  developerCreditEnabled?: boolean;
 };
 
 const DEFAULT_CANVAS = { width: CARD_WIDTH, height: CARD_HEIGHT };
@@ -107,6 +123,31 @@ function truncateText(value: string, maxChars: number) {
   if (value.length <= maxChars) return value;
   if (maxChars <= 3) return value.slice(0, maxChars);
   return `${value.slice(0, maxChars - 3)}...`;
+}
+
+function resolveCopyrightTextStyle(blueprint: Blueprint) {
+  const copyrightLayer = blueprint.layers.find((entry) => entry.type === "copyright");
+  const layerProps = copyrightLayer?.props ?? {};
+  const fontSize = typeof layerProps.fontSize === "number" ? layerProps.fontSize : 16;
+  const fontWeight =
+    typeof layerProps.fontWeight === "number" || typeof layerProps.fontWeight === "string"
+      ? layerProps.fontWeight
+      : undefined;
+  const fontFamily =
+    typeof layerProps.fontFamily === "string"
+      ? layerProps.fontFamily
+      : "Helvetica, Arial, sans-serif";
+  const letterSpacingEm =
+    typeof layerProps.letterSpacingEm === "number" ? layerProps.letterSpacingEm : undefined;
+  const fill = typeof layerProps.fill === "string" ? layerProps.fill : DEFAULT_COPYRIGHT_COLOR;
+
+  return {
+    fontSize,
+    fontWeight,
+    fontFamily,
+    letterSpacingEm,
+    fill,
+  };
 }
 
 function MissingArtworkPlaceholder({
@@ -981,7 +1022,6 @@ function CopyrightLayer({
       : undefined;
   const normalizedOverride = typeof overrideValue === "string" ? overrideValue.trim() : "";
   const normalizedDefault = defaultCopyright.trim();
-
   const resolvedText =
     normalizedOverride.length > 0
       ? normalizedOverride
@@ -1036,6 +1076,57 @@ function CopyrightLayer({
         letterSpacingEm={letterSpacingEm}
         align={align}
       />
+    </Layer>
+  );
+}
+
+function DeveloperCreditLayer({
+  blueprint,
+  cardData,
+  developerCreditEnabled,
+}: {
+  blueprint: Blueprint;
+  cardData?: CardDataByTemplate[TemplateId];
+  developerCreditEnabled?: boolean;
+}) {
+  if (!developerCreditEnabled) return null;
+  if (!cardData) return null;
+
+  const style = resolveCopyrightTextStyle(blueprint);
+  const fontSize = Math.max(1, Math.round(style.fontSize * DEVELOPER_CREDIT_FONT_SCALE));
+  const fontFamily = CARD_TEXT_FONT_FAMILY;
+  const fontWeight = "400";
+  const x = CARD_WIDTH - DEVELOPER_CREDIT_RIGHT_INSET;
+  const effectiveTopInset = Math.max(DEVELOPER_CREDIT_TOP_INSET, CARD_CORNER_RADIUS + 2);
+  const { maxLineWidth } = measureCardTextMaxLineWidth({
+    text: DEVELOPER_CREDIT_TEXT,
+    width: CARD_HEIGHT,
+    fontSize,
+    lineHeight: fontSize,
+    fontFamily,
+    fontWeight,
+    letterSpacingEm: undefined,
+    defaultAlign: "left",
+  });
+  const y = effectiveTopInset + Math.max(0, Math.floor(maxLineWidth));
+
+  return (
+    <Layer data-layer-type="developer-credit">
+      <text
+        x={0}
+        y={0}
+        transform={`translate(${x} ${y}) rotate(-90)`}
+        fontSize={fontSize}
+        fontFamily={fontFamily}
+        fontWeight={fontWeight}
+        fill={DEVELOPER_CREDIT_BLEND_COLOR}
+        fillOpacity={DEVELOPER_CREDIT_OPACITY}
+        style={{ mixBlendMode: DEVELOPER_CREDIT_BLEND_MODE }}
+        textAnchor="start"
+        dominantBaseline="text-before-edge"
+      >
+        {DEVELOPER_CREDIT_TEXT}
+      </text>
     </Layer>
   );
 }
@@ -1471,6 +1562,11 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
         }
         return null;
       })}
+      <DeveloperCreditLayer
+        blueprint={blueprint}
+        cardData={props.cardData}
+        developerCreditEnabled={props.developerCreditEnabled}
+      />
       {renderGroups({ blueprint, cardData: props.cardData, showTextBounds })}
     </>
   );

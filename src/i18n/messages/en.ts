@@ -125,6 +125,8 @@ export const en = {
   "form.copyright": "Copyright",
   "form.showCopyright": "Show copyright",
   "form.defaultCopyright": "Default copyright",
+  "form.creditDeveloperCombined":
+    "Credit the developer (Add a small developer credit on all cards).",
   "form.noBorder": "No border",
   "form.heroquestDefaultBrown": "HeroQuest Default Brown",
   "form.saveSwatch": "Save swatch",

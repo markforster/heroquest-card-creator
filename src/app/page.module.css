@@ -2559,6 +2559,34 @@
   gap: var(--space-10);
 }
 
+.settingsFooterRow {
+  margin-top: var(--space-8);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--hq-border-strong);
+  background: var(--hq-settings-sidebar-bg);
+  padding: var(--space-6) var(--space-10);
+}
+
+.settingsFooterRowToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-lg);
+  letter-spacing: 0.02em;
+  flex-wrap: wrap;
+}
+
+.settingsFooterRowEmoji {
+  display: inline-flex;
+  align-items: center;
+  font-size: 3em;
+  line-height: 1;
+}
+
+.settingsFooterRowInput {
+  margin: 0;
+}
+
 .settingsPanelSection {
   border-radius: var(--radius-lg);
   border: 1px solid var(--hq-border-mid);

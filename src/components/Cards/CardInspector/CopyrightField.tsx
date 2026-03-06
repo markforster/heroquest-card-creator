@@ -1,17 +1,17 @@
 "use client";
 
+import { Copyright } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { Copyright } from "lucide-react";
 
 import layoutStyles from "@/app/page.module.css";
-import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 import ColorPickerField from "@/components/common/ColorPickerField";
-import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
+import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
+import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 import { useI18n } from "@/i18n/I18nProvider";
-import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 
 type CopyrightFieldProps = {
   label: string;
@@ -45,6 +45,7 @@ export default function CopyrightField({
   const effectiveVisible = showValue ?? hasOverride ?? hasDefault;
   const normalizedColor = typeof colorValue === "string" ? colorValue.trim() : "";
   const selectedColor = normalizedColor || DEFAULT_COPYRIGHT_COLOR;
+  const inputId = "copyright";
 
   useEffect(() => {
     if (!showToggle || !isReady) return;
@@ -67,7 +68,7 @@ export default function CopyrightField({
     <div className="mb-2">
       <div className={`d-flex align-items-center gap-2 ${layoutStyles.inspectorFieldHeader}`}>
         <FormLabelWithIcon
-          htmlFor="copyright"
+          htmlFor={inputId}
           label={label}
           icon={Copyright}
           className="form-label mb-0 flex-grow-1"
@@ -89,7 +90,7 @@ export default function CopyrightField({
       <div className="d-flex align-items-center gap-2">
         <div style={{ flex: "1 0 auto", minWidth: 0 }}>
           <input
-            id="copyright"
+            id={inputId}
             type="text"
             className="form-control form-control-sm"
             placeholder={placeholder ?? (hasDefault ? normalizedDefault : undefined)}
