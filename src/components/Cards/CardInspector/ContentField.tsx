@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import {
   BadgeHelp,
+  TextCursorInput,
   Expand,
   Eye,
   EyeOff,
@@ -23,6 +24,7 @@ import { parseHexColor } from "@/lib/color";
 import type { BodyTextStyle } from "@/types/card-data";
 import ModalShell from "@/components/common/ModalShell";
 import FormattingHelpContent from "@/components/Cards/CardInspector/FormattingHelpContent";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 
 type ContentFieldProps = {
   label: string;
@@ -99,126 +101,134 @@ export default function ContentField({
 
   return (
     <div className="mb-2">
-      <div className="d-flex align-items-center gap-2 mb-1">
-        {showFormattingHelp ? (
-          <button
-            type="button"
-            className={layoutStyles.helpIconButton}
-            title={t("tooltip.formattingHelp")}
-            aria-label={t("tooltip.formattingHelp")}
-            onClick={() => setIsHelpOpen(true)}
-          >
-            <BadgeHelp className={layoutStyles.icon} aria-hidden="true" />
-          </button>
-        ) : null}
-        <label htmlFor="description" className="form-label mb-0 flex-grow-1">
-          {label}
-        </label>
-        {showToolbar ? (
-          <div
-            className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1`}
-          >
+      <div className={`d-flex align-items-center gap-2 ${layoutStyles.inspectorFieldHeader}`}>
+        <div className="flex-grow-1">
+          <FormLabelWithIcon
+            htmlFor="description"
+            label={label}
+            icon={TextCursorInput}
+            className="form-label mb-0"
+          />
+        </div>
+        <div className="d-inline-flex align-items-center gap-2 ms-auto">
+          {showFormattingHelp ? (
             <button
               type="button"
-              className={`${layoutStyles.bodyTextToolbarButton} ${
-                effectiveBackdrop.enabled ? layoutStyles.bodyTextToolbarButtonActive : ""
-              } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
-              title={t("tooltip.bodyTextBackdrop")}
-              disabled={!textEnabled}
-              onClick={() => updateBackdrop({ enabled: !effectiveBackdrop.enabled })}
+              className={layoutStyles.helpIconButton}
+              title={t("tooltip.formattingHelp")}
+              aria-label={t("tooltip.formattingHelp")}
+              onClick={() => setIsHelpOpen(true)}
             >
-              {effectiveBackdrop.enabled ? (
-                <Eye size={14} aria-hidden="true" />
-              ) : (
-                <EyeOff size={14} aria-hidden="true" />
-              )}
+              <BadgeHelp className={layoutStyles.icon} aria-hidden="true" />
             </button>
-            <button
-              type="button"
-              className={`${layoutStyles.bodyTextToolbarButton} ${
-                effectiveBackdrop.insetMode === "matchBorder"
-                  ? layoutStyles.bodyTextToolbarButtonActive
-                  : ""
-              } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
-              title={t("tooltip.bodyTextInset")}
-              disabled={!textEnabled}
-              onClick={() =>
-                updateBackdrop({
-                  insetMode: effectiveBackdrop.insetMode === "matchBorder" ? "flush" : "matchBorder",
-                })
-              }
+          ) : null}
+          {showToolbar ? (
+            <div
+              className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1`}
             >
-              {effectiveBackdrop.insetMode === "matchBorder" ? (
-                <Shrink size={14} aria-hidden="true" />
-              ) : (
-                <Expand size={14} aria-hidden="true" />
-              )}
-            </button>
-            <button
-              type="button"
-              className={`${layoutStyles.bodyTextToolbarButton} ${
-                effectiveBackdrop.cornerMode === "all"
-                  ? layoutStyles.bodyTextToolbarButtonActive
-                  : ""
-              } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
-              title={t("tooltip.bodyTextCorners")}
-              disabled={!textEnabled}
-              onClick={() =>
-                updateBackdrop({
-                  cornerMode:
-                    effectiveBackdrop.cornerMode === "all" ? "opposite-title" : "all",
-                })
-              }
-            >
-              {effectiveBackdrop.cornerMode === "all" ? (
-                <SquareRoundCorner size={14} aria-hidden="true" />
-              ) : (
-                <Square size={14} aria-hidden="true" />
-              )}
-            </button>
-            <button
-              type="button"
-              className={`${layoutStyles.bodyTextToolbarButton} ${
-                effectiveBackdrop.fitMode === "fit-to-text"
-                  ? layoutStyles.bodyTextToolbarButtonActive
-                  : ""
-              } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
-              title={t("tooltip.bodyTextFit")}
-              disabled={!textEnabled}
-              onClick={() =>
-                updateBackdrop({
-                  fitMode: effectiveBackdrop.fitMode === "fit-to-text" ? "full" : "fit-to-text",
-                })
-              }
-            >
-              {effectiveBackdrop.fitMode === "fit-to-text" ? (
-                <ListChevronsDownUp size={14} aria-hidden="true" />
-              ) : (
-                <ListChevronsUpDown size={14} aria-hidden="true" />
-              )}
-            </button>
-            {showToggle ? (
-              <div className="form-check form-switch m-0 ms-2">
-                <input
-                  id="bodyTextEnabled"
-                  type="checkbox"
-                  className="form-check-input hq-toggle"
-                  title={t("tooltip.bodyTextVisibility")}
-                  aria-label={t("tooltip.bodyTextVisibility")}
-                  role="switch"
-                  checked={textEnabled}
-                  onChange={() =>
-                    setValue(
-                      "bodyTextStyle",
-                      { ...(bodyTextStyle ?? {}), enabled: !textEnabled },
-                      { shouldDirty: true, shouldTouch: true },
-                    )
-                  }
-                />
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+              <button
+                type="button"
+                className={`${layoutStyles.bodyTextToolbarButton} ${
+                  effectiveBackdrop.enabled ? layoutStyles.bodyTextToolbarButtonActive : ""
+                } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+                title={t("tooltip.bodyTextBackdrop")}
+                disabled={!textEnabled}
+                onClick={() => updateBackdrop({ enabled: !effectiveBackdrop.enabled })}
+              >
+                {effectiveBackdrop.enabled ? (
+                  <Eye size={14} aria-hidden="true" />
+                ) : (
+                  <EyeOff size={14} aria-hidden="true" />
+                )}
+              </button>
+              <button
+                type="button"
+                className={`${layoutStyles.bodyTextToolbarButton} ${
+                  effectiveBackdrop.insetMode === "matchBorder"
+                    ? layoutStyles.bodyTextToolbarButtonActive
+                    : ""
+                } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+                title={t("tooltip.bodyTextInset")}
+                disabled={!textEnabled}
+                onClick={() =>
+                  updateBackdrop({
+                    insetMode:
+                      effectiveBackdrop.insetMode === "matchBorder" ? "flush" : "matchBorder",
+                  })
+                }
+              >
+                {effectiveBackdrop.insetMode === "matchBorder" ? (
+                  <Shrink size={14} aria-hidden="true" />
+                ) : (
+                  <Expand size={14} aria-hidden="true" />
+                )}
+              </button>
+              <button
+                type="button"
+                className={`${layoutStyles.bodyTextToolbarButton} ${
+                  effectiveBackdrop.cornerMode === "all"
+                    ? layoutStyles.bodyTextToolbarButtonActive
+                    : ""
+                } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+                title={t("tooltip.bodyTextCorners")}
+                disabled={!textEnabled}
+                onClick={() =>
+                  updateBackdrop({
+                    cornerMode:
+                      effectiveBackdrop.cornerMode === "all" ? "opposite-title" : "all",
+                  })
+                }
+              >
+                {effectiveBackdrop.cornerMode === "all" ? (
+                  <SquareRoundCorner size={14} aria-hidden="true" />
+                ) : (
+                  <Square size={14} aria-hidden="true" />
+                )}
+              </button>
+              <button
+                type="button"
+                className={`${layoutStyles.bodyTextToolbarButton} ${
+                  effectiveBackdrop.fitMode === "fit-to-text"
+                    ? layoutStyles.bodyTextToolbarButtonActive
+                    : ""
+                } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+                title={t("tooltip.bodyTextFit")}
+                disabled={!textEnabled}
+                onClick={() =>
+                  updateBackdrop({
+                    fitMode: effectiveBackdrop.fitMode === "fit-to-text" ? "full" : "fit-to-text",
+                  })
+                }
+              >
+                {effectiveBackdrop.fitMode === "fit-to-text" ? (
+                  <ListChevronsDownUp size={14} aria-hidden="true" />
+                ) : (
+                  <ListChevronsUpDown size={14} aria-hidden="true" />
+                )}
+              </button>
+              {showToggle ? (
+                <div className="form-check form-switch m-0 ms-2">
+                  <input
+                    id="bodyTextEnabled"
+                    type="checkbox"
+                    className="form-check-input hq-toggle"
+                    title={t("tooltip.bodyTextVisibility")}
+                    aria-label={t("tooltip.bodyTextVisibility")}
+                    role="switch"
+                    checked={textEnabled}
+                    onChange={() =>
+                      setValue(
+                        "bodyTextStyle",
+                        { ...(bodyTextStyle ?? {}), enabled: !textEnabled },
+                        { shouldDirty: true, shouldTouch: true },
+                      )
+                    }
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       </div>
       {textEnabled ? (
         <>
@@ -226,9 +236,8 @@ export default function ContentField({
             <div style={{ flex: "1 0 auto", minWidth: 0 }}>
               <textarea
                 id="description"
-                className="form-control form-control-sm"
+                className={`form-control form-control-sm ${layoutStyles.cardTextArea}`}
                 rows={6}
-                style={{ backgroundColor: "#333", color: "#f5f5f5" }}
                 title={t("tooltip.rulesAndFlavour")}
                 {...register("description", {
                   maxLength: {

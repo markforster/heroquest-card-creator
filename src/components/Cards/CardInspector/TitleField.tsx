@@ -1,6 +1,6 @@
 "use client";
 
-import { PanelBottom, PanelTop, Tag, Type } from "lucide-react";
+import { BookType, PanelBottom, PanelTop, Tag, Type } from "lucide-react";
 import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
@@ -10,6 +10,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 
 type TitleFieldProps = {
   label: string;
@@ -56,11 +57,14 @@ export default function TitleField({
 
   return (
     <div className="mb-2">
-      <div className="d-flex align-items-center gap-2 mb-1">
+      <div className={`d-flex align-items-center gap-2 ${layoutStyles.inspectorFieldHeader}`}>
         <div className="flex-grow-1 flex-shrink-0">
-          <label htmlFor="title" className="form-label mb-0">
-            {label}
-          </label>
+          <FormLabelWithIcon
+            htmlFor="title"
+            label={label}
+            icon={BookType}
+            className="form-label mb-0"
+          />
         </div>
         {showToolbar ? (
           <div

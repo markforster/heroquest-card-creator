@@ -14,7 +14,7 @@ body {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(230, 179, 90, 0.85) rgba(15, 15, 15, 0.8);
+  scrollbar-color: var(--hq-scrollbar-thumb) var(--hq-scrollbar-track);
 }
 
 *::-webkit-scrollbar {
@@ -23,18 +23,18 @@ body {
 }
 
 *::-webkit-scrollbar-track {
-  background: rgba(15, 15, 15, 0.8);
+  background: var(--hq-scrollbar-track);
   border-radius: 999px;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: rgba(230, 179, 90, 0.85);
-  border: 3px solid rgba(15, 15, 15, 0.8);
+  background: var(--hq-scrollbar-thumb);
+  border: 3px solid var(--hq-scrollbar-thumb-border);
   border-radius: 999px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(230, 179, 90, 0.95);
+  background: var(--hq-scrollbar-thumb-hover);
 }
 
 /* Themed Bootstrap overrides */
@@ -73,7 +73,7 @@ button {
   background-color: var(--hq-accent-soft-hover) !important;
   border-color: var(--hq-accent) !important;
   color: var(--hq-accent) !important;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 0 6px var(--hq-black-35) !important;
 }
 
 .btn-primary.disabled,
@@ -91,11 +91,17 @@ button {
 .btn-outline-secondary:disabled,
 .btn-outline-danger.disabled,
 .btn-outline-danger:disabled {
-  color: rgba(229, 231, 235, 0.5) !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
-  background-color: rgba(255, 255, 255, 0.04) !important;
+  color: var(--hq-text-muted) !important;
+  border-color: var(--hq-white-15) !important;
+  background-color: var(--hq-white-05) !important;
   opacity: 0.6;
   box-shadow: none !important;
+}
+
+.btn-outline-light,
+.btn-outline-secondary {
+  border-color: var(--hq-outline-border) !important;
+  color: var(--hq-outline-text) !important;
 }
 
 .btn-outline-light:hover,
@@ -104,9 +110,9 @@ button {
 .btn-outline-light:active,
 .btn-outline-light.active,
 .show > .btn-outline-light.dropdown-toggle {
-  border-color: var(--hq-accent) !important;
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  color: #ffffff !important;
+  border-color: var(--hq-outline-border) !important;
+  background-color: var(--hq-outline-hover-bg) !important;
+  color: var(--hq-outline-hover-text) !important;
 }
 
 .btn-outline-secondary:hover,
@@ -115,8 +121,8 @@ button {
 .btn-outline-secondary:active,
 .btn-outline-secondary.active,
 .show > .btn-outline-secondary.dropdown-toggle {
-  border-color: rgba(245, 245, 245, 0.9) !important;
-  color: #ffffff !important;
+  border-color: var(--hq-outline-border) !important;
+  color: var(--hq-outline-hover-text) !important;
 }
 
 .btn-outline-light:hover,
@@ -137,8 +143,8 @@ button {
   --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280, 0, 0, 0.35%29'/%3e%3c/svg%3e");
   width: 34px;
   height: 21px;
-  background-color: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
+  background-color: var(--hq-white-06);
+  border-color: var(--hq-white-15);
   transform: translateY(-2px);
   cursor: pointer;
 }
@@ -167,6 +173,30 @@ button {
 }
 
 .hq-checkbox.form-check-input:focus {
+  border-color: var(--hq-accent) !important;
+  box-shadow: 0 0 0 0.25rem rgba(230, 179, 90, 0.35) !important;
+}
+
+.form-check-input[type="radio"],
+.settingsPanelOption input[type="radio"] {
+  accent-color: var(--hq-accent) !important;
+  border-color: var(--hq-accent) !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+.form-check-input[type="radio"]:checked,
+.settingsPanelOption input[type="radio"]:checked {
+  background-color: transparent !important;
+  background-image: radial-gradient(circle at center, var(--hq-accent) 0 45%, transparent 50%) !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 100% 100% !important;
+  border-color: var(--hq-accent) !important;
+}
+
+.form-check-input[type="radio"]:focus,
+.settingsPanelOption input[type="radio"]:focus {
   border-color: var(--hq-accent) !important;
   box-shadow: 0 0 0 0.25rem rgba(230, 179, 90, 0.35) !important;
 }

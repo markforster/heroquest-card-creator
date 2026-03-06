@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { Palette } from "lucide-react";
 import { useController, useFormContext } from "react-hook-form";
 
 import { DEFAULT_BORDER_COLOR } from "@/components/Cards/CardParts/CardBorder";
@@ -11,6 +12,8 @@ import { usePopupState } from "@/hooks/usePopupState";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 import { formatHexColor, isTransparentHex, parseHexColor } from "@/lib/color";
 import type { TemplateId } from "@/types/templates";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
+import layoutStyles from "@/app/page.module.css";
 
 const SMART_CANVAS_WIDTH = 300;
 const SMART_CANVAS_HEIGHT = 420;
@@ -77,8 +80,12 @@ export default function BorderColorField({ label, templateId }: BorderColorField
 
   return (
     <div className="mb-2">
+      <div className={layoutStyles.inspectorFieldHeader}>
+        <FormLabelWithIcon label={label} icon={Palette} className="form-label" />
+      </div>
       <ColorPickerField
         label={label}
+        showLabel={false}
         inputValue={inputValue}
         selectedValue={normalizedSelected}
         defaultColor={DEFAULT_BORDER_COLOR}

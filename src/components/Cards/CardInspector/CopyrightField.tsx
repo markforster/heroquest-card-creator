@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { Copyright } from "lucide-react";
 
+import layoutStyles from "@/app/page.module.css";
 import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 import { useI18n } from "@/i18n/I18nProvider";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 
 type CopyrightFieldProps = {
   label: string;
@@ -62,10 +65,13 @@ export default function CopyrightField({
 
   return (
     <div className="mb-2">
-      <div className="d-flex align-items-center gap-2 mb-1">
-        <label htmlFor="copyright" className="form-label mb-0 flex-grow-1">
-          {label}
-        </label>
+      <div className={`d-flex align-items-center gap-2 ${layoutStyles.inspectorFieldHeader}`}>
+        <FormLabelWithIcon
+          htmlFor="copyright"
+          label={label}
+          icon={Copyright}
+          className="form-label mb-0 flex-grow-1"
+        />
         {showToggle ? (
           <label className="form-check form-switch m-0">
             <input

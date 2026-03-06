@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormContext, useWatch } from "react-hook-form";
+import { Brain, Footprints, ShieldHalf, Swords, UserRound } from "lucide-react";
 
 import layoutStyles from "@/app/page.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -45,6 +46,7 @@ export default function MonsterStatsInspector({
           <StatControl
             name="movementSquares"
             label={t("stats.movementSquares")}
+            icon={Footprints}
             min={0}
             max={999}
             allowWildcard={allowWildcard}
@@ -55,6 +57,7 @@ export default function MonsterStatsInspector({
           <StatControl
             name="attackDice"
             label={t("stats.attackDice")}
+            icon={Swords}
             min={0}
             max={999}
             allowWildcard={allowWildcard}
@@ -65,6 +68,7 @@ export default function MonsterStatsInspector({
           <StatControl
             name="defendDice"
             label={t("stats.defendDice")}
+            icon={ShieldHalf}
             min={0}
             max={999}
             allowWildcard={allowWildcard}
@@ -75,6 +79,7 @@ export default function MonsterStatsInspector({
           <StatControl
             name="bodyPoints"
             label={t("stats.bodyPoints")}
+            icon={UserRound}
             min={0}
             max={999}
             allowWildcard={allowWildcard}
@@ -85,6 +90,7 @@ export default function MonsterStatsInspector({
           <StatControl
             name="mindPoints"
             label={t("stats.mindPoints")}
+            icon={Brain}
             min={0}
             max={999}
             allowWildcard={allowWildcard}

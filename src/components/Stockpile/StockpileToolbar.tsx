@@ -87,14 +87,14 @@ export default function StockpileToolbar({
             className={`input-group input-group-sm ${styles.cardsSearchGroup}`}
             style={{ width: "17.25em" }}
           >
-            <span className="input-group-text">
+            <span className={`input-group-text ${styles.themedInputGroupText}`}>
               <Search className={styles.icon} aria-hidden="true" />
             </span>
             <input
               ref={searchInputRef}
               type="search"
               placeholder={t("placeholders.searchCards")}
-              className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch} ${styles.cardsSearchInputFixed} ${styles.cardsSearchInputWithClear}`}
+              className={`form-control form-control-sm ${styles.assetsSearch} ${styles.themedFormControl} ${styles.cardsSearchInputFixed} ${styles.cardsSearchInputWithClear}`}
               title={t("tooltip.searchCards")}
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}

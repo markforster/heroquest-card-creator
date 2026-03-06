@@ -6,8 +6,10 @@ import {
   TableCellsSplit,
   Image,
   Download,
+  SunMoon,
 } from "lucide-react";
 
+import AppearanceSettingsPanel from "@/components/Modals/SettingsModal/AppearanceSettingsPanel";
 import AssetsSettingsPanel from "@/components/Modals/SettingsModal/AssetsSettingsPanel";
 import CollectionsSettingsPanel from "@/components/Modals/SettingsModal/CollectionsSettingsPanel";
 import CopyrightSettingsPanel from "@/components/Modals/SettingsModal/CopyrightSettingsPanel";
@@ -41,6 +43,12 @@ export const SETTINGS_AREAS: SettingsAreaDefinition[] = [
     labelKey: "heading.assetsSettings",
     icon: Image,
     panel: () => <AssetsSettingsPanel />,
+  },
+  {
+    id: "appearance-settings",
+    labelKey: "heading.appearanceSettings",
+    icon: SunMoon,
+    panel: () => <AppearanceSettingsPanel />,
   },
   {
     id: "collections-settings",

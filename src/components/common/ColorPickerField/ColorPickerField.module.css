@@ -23,9 +23,9 @@
   width: 100%;
   padding: 8px 10px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: #2f2f2f;
-  color: #f5f5f5;
+  border: 1px solid var(--hq-input-border);
+  background: var(--hq-input-bg);
+  color: var(--hq-input-text);
   font-size: 13px;
   font-family: var(--hq-font-form);
   text-transform: uppercase;
@@ -41,7 +41,7 @@
   width: 30px;
   height: 30px;
   border-radius: 999px;
-  border: 2px solid rgba(255, 255, 255, 0.55);
+  border: 2px solid var(--hq-swatch-border);
   padding: 0;
   cursor: pointer;
   background: transparent;
@@ -58,9 +58,9 @@
   width: 220px;
   max-width: calc(100vw - 2rem);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: #1b1b1b;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--hq-popover-border);
+  background: var(--hq-popover-bg);
+  box-shadow: var(--hq-popover-shadow);
   padding: 12px;
 }
 
@@ -70,15 +70,15 @@
   gap: 4px;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--hq-tab-bg);
+  border: 1px solid var(--hq-tab-border);
   margin-bottom: 12px;
 }
 
 .tabButton {
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--hq-tab-text);
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -88,8 +88,8 @@
 }
 
 .tabButtonActive {
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  background: var(--hq-tab-active-bg);
+  color: var(--hq-tab-active-text);
 }
 
 .tabContent {
@@ -175,8 +175,8 @@
 }
 
 .colorful :global(.react-colorful__pointer-fill) {
-  border: 3px solid #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  border: 3px solid var(--hq-swatch-border-strong);
+  box-shadow: 0 2px 6px var(--hq-black-35);
 }
 
 .specialRow {
@@ -209,7 +209,7 @@
   padding-right: 6px;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+  scrollbar-color: var(--hq-scrollbar-thumb) transparent;
 }
 
 .swatchGridScroll::-webkit-scrollbar {
@@ -217,7 +217,7 @@
 }
 
 .swatchGridScroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--hq-scrollbar-thumb);
   border-radius: 999px;
 }
 
@@ -229,23 +229,23 @@
   width: 34px;
   height: 34px;
   border-radius: 999px;
-  border: 2px solid rgba(255, 255, 255, 0.55);
+  border: 2px solid var(--hq-swatch-border);
   padding: 0;
   cursor: pointer;
   background: transparent;
 }
 
 .swatchSelected {
-  border-color: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+  border-color: var(--hq-swatch-border-strong);
+  box-shadow: 0 0 0 2px var(--hq-swatch-border-strong);
 }
 
 .noBorderSwatch {
   background-color: transparent;
-  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.18) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(255, 255, 255, 0.18) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.18) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.18) 75%);
+  background-image: linear-gradient(45deg, var(--hq-white-15) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--hq-white-15) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--hq-white-15) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--hq-white-15) 75%);
   background-size: 8px 8px;
   background-position: 0 0, 0 4px, 4px -4px, -4px 0;
 }
@@ -254,9 +254,9 @@
   width: 34px;
   height: 34px;
   border-radius: 999px;
-  border: 2px dashed rgba(255, 255, 255, 0.4);
+  border: 2px dashed var(--hq-white-15);
   background: transparent;
-  color: #f5f5f5;
+  color: var(--hq-text);
   font-size: 16px;
   line-height: 1;
   padding: 0;
@@ -265,8 +265,8 @@
 
 .swatchActionActive {
   border-style: solid;
-  border-color: rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--hq-swatch-border-strong);
+  background: var(--hq-white-08);
 }
 
 .swatchAction:disabled {
@@ -288,9 +288,9 @@
   height: 16px;
   padding: 0;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  background: #111;
-  color: #fff;
+  border: 1px solid var(--hq-white-15);
+  background: var(--hq-surface-900);
+  color: var(--hq-text);
   font-size: 10px;
   line-height: 1;
   opacity: 0;
@@ -307,7 +307,7 @@
   font-size: 12px;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--hq-text-muted);
   margin-bottom: 8px;
 }
 
@@ -334,14 +334,14 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--hq-text-muted);
 }
 
 .smartPopoverSwatch {
   width: 32px;
   height: 32px;
   border-radius: 999px;
-  border: 2px solid rgba(255, 255, 255, 0.8);
+  border: 2px solid var(--hq-swatch-border-strong);
   background: transparent;
   cursor: pointer;
   padding: 0;
@@ -349,5 +349,5 @@
 
 .smartPopoverHint {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--hq-text-muted);
 }

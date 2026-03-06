@@ -65,7 +65,7 @@ export function applyWatermarkToCanvas(canvas: HTMLCanvasElement): void {
   for (let offset = 0; offset < 5; offset += 1) {
     const dotX = x - offset * 2;
     if (dotX < 0 || dotX >= canvas.width) continue;
-    ctx.fillRect(dotX, y, 1, 1);
+    ctx.fillRect(dotX, y - 1, 1, 2);
   }
   ctx.restore();
 }

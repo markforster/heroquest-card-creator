@@ -9,7 +9,7 @@ jest.mock("@/lib/watermark", () => {
 });
 
 describe("applyWatermarkToCanvas", () => {
-  it("draws five horizontal dots at 25% alpha with 1px gaps", () => {
+  it("draws five vertical lines at 25% alpha with 1px gaps", () => {
     const fillCalls: Array<{ x: number; y: number; w: number; h: number }> = [];
     const save = jest.fn();
     const restore = jest.fn();
@@ -40,11 +40,12 @@ describe("applyWatermarkToCanvas", () => {
 
     const ys = new Set(fillCalls.map((call) => call.y));
     expect(ys.size).toBe(1);
+    expect([...ys][0]).toBe(8);
     const xs = fillCalls.map((call) => call.x);
     expect(xs).toEqual([9, 7, 5, 3, 1]);
     fillCalls.forEach((call) => {
       expect(call.w).toBe(1);
-      expect(call.h).toBe(1);
+      expect(call.h).toBe(2);
     });
   });
 });

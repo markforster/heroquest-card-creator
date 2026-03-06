@@ -43,6 +43,7 @@ import {
   LocalStorageProvider,
   useLocalStorageBoolean,
 } from "@/components/Providers/LocalStorageProvider";
+import { ThemeProvider } from "@/components/Providers/ThemeProvider";
 import {
   MissingAssetsProvider,
   useMissingAssets,
@@ -1193,25 +1194,27 @@ export default function IndexPage() {
       <CardEditorProvider>
         <AssetHashIndexProvider>
           <LocalStorageProvider>
-            <DebugVisualsProvider>
-              <PreviewRendererProvider>
-                <WebglPreviewSettingsProvider>
-                  <TextFittingPreferencesProvider>
-                    <MissingAssetsProvider>
-                      <HashRouter>
-                        <Routes>
-                          <Route path="/cards" element={<IndexPageInner />} />
-                          <Route path="/cards/new" element={<IndexPageInner />} />
-                          <Route path="/cards/:cardId" element={<IndexPageInner />} />
-                          <Route path="/assets" element={<IndexPageInner />} />
-                          <Route path="*" element={<Navigate to="/cards" replace />} />
-                        </Routes>
-                      </HashRouter>
-                    </MissingAssetsProvider>
-                  </TextFittingPreferencesProvider>
-                </WebglPreviewSettingsProvider>
-              </PreviewRendererProvider>
-            </DebugVisualsProvider>
+            <ThemeProvider>
+              <DebugVisualsProvider>
+                <PreviewRendererProvider>
+                  <WebglPreviewSettingsProvider>
+                    <TextFittingPreferencesProvider>
+                      <MissingAssetsProvider>
+                        <HashRouter>
+                          <Routes>
+                            <Route path="/cards" element={<IndexPageInner />} />
+                            <Route path="/cards/new" element={<IndexPageInner />} />
+                            <Route path="/cards/:cardId" element={<IndexPageInner />} />
+                            <Route path="/assets" element={<IndexPageInner />} />
+                            <Route path="*" element={<Navigate to="/cards" replace />} />
+                          </Routes>
+                        </HashRouter>
+                      </MissingAssetsProvider>
+                    </TextFittingPreferencesProvider>
+                  </WebglPreviewSettingsProvider>
+                </PreviewRendererProvider>
+              </DebugVisualsProvider>
+            </ThemeProvider>
           </LocalStorageProvider>
         </AssetHashIndexProvider>
       </CardEditorProvider>

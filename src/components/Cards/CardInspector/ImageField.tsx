@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ChevronUp,
   Crosshair,
+  Image,
   ImagePlus,
   Search,
   RotateCcw,
@@ -41,6 +42,7 @@ import {
   UI_ZOOM_BUTTON_STEP,
   UI_ZOOM_SLIDER_STEP,
 } from "@/lib/image-scale";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 
 type ImageFieldProps = {
   label: string;
@@ -490,7 +492,9 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
 
   return (
     <div className="mb-2">
-      <label className="form-label">{label}</label>
+      <div className={layoutStyles.inspectorFieldHeader}>
+        <FormLabelWithIcon label={label} icon={Image} className="form-label" />
+      </div>
       <div ref={inputWrapRef} className={layoutStyles.imageAutocompleteWrap}>
         <div className="input-group input-group-sm mb-2">
           <span className={`input-group-text ${layoutStyles.imageSearchAddon}`}>

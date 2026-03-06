@@ -62,6 +62,36 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="en">
       {/* {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null} */}
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function () {
+  try {
+    var stored = null;
+    try {
+      stored = window.localStorage.getItem("hqcc.theme");
+    } catch (_err) {
+      stored = null;
+    }
+    var systemDark = false;
+    if (window.matchMedia) {
+      systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    var resolved = "dark";
+    if (stored === "light" || stored === "dark") {
+      resolved = stored;
+    } else if (stored === "system") {
+      resolved = systemDark ? "dark" : "light";
+    } else {
+      resolved = "dark";
+    }
+    document.documentElement.dataset.theme = resolved;
+    document.documentElement.style.colorScheme = resolved;
+  } catch (_err) {}
+})();
+            `,
+          }}
+        />
         {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
         <script
           dangerouslySetInnerHTML={{
