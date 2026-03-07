@@ -5,13 +5,13 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import BlueprintRenderer from "@/components/BlueprintRenderer";
+import { measureCardTextMaxLineWidth } from "@/components/Cards/CardParts/CardTextBlock";
 import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getCopyrightBounds } from "@/data/blueprints";
+import { blueprintsByTemplateId, getCopyrightBounds } from "@/data/blueprints";
 import { computeAverageLuminance } from "@/lib/color-contrast";
-import {
-  resolveCardPreviewFileName,
-} from "@/lib/card-preview";
+import { getSvgImageHref } from "@/lib/dom";
+import { resolveCardPreviewFileName } from "@/lib/card-preview";
 import { collectCardAssetIds } from "@/lib/card-assets";
 import { buildAssetCache } from "@/lib/export-assets-cache";
 import {
@@ -27,11 +27,142 @@ import {
 } from "@/lib/export-logging";
 import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
+import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
+import { applyWatermarkToCanvas, shouldApplyWatermark } from "@/lib/watermark";
+import { ENABLE_WATERMARK, USE_ROUNDED_CARD_CLIP } from "@/config/flags";
+import { addPngTextChunk } from "@/lib/png-metadata";
+import { APP_VERSION } from "@/version";
+import {
+  composeBleedCanvas,
+  cloneSvgForBleed,
+  getBleedTrimOrigin,
+  setExportBackgroundFit,
+  setExportClip,
+  stripToBackgroundOnly,
+} from "@/lib/bleed-export";
 
 import styles from "./CardPreview.module.css";
 import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "./consts";
 
 import type { CardPreviewHandle, CardPreviewProps } from "./types";
+import {
+  DEVELOPER_CREDIT_BLEND_COLOR,
+  DEVELOPER_CREDIT_BLEND_MODE,
+  DEVELOPER_CREDIT_FONT_SCALE,
+  DEVELOPER_CREDIT_OPACITY,
+  DEVELOPER_CREDIT_RIGHT_INSET,
+  DEVELOPER_CREDIT_TOP_INSET,
+  DEVELOPER_CREDIT_TEXT,
+} from "@/config/developer-credit";
+import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
+import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
+
+function normalizeCopyrightColor(value?: string) {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function resolveCopyrightTextStyle(templateId?: CardPreviewProps["templateId"]) {
+  if (!templateId) {
+    return {
+      fontSize: 16,
+      fontWeight: undefined as number | string | undefined,
+      fontFamily: "Helvetica, Arial, sans-serif",
+      letterSpacingEm: undefined as number | undefined,
+      fill: DEFAULT_COPYRIGHT_COLOR,
+    };
+  }
+  const blueprint = blueprintsByTemplateId[templateId];
+  const layer = blueprint?.layers.find((entry) => entry.type === "copyright");
+  const layerProps = layer?.props ?? {};
+  const fontSize = typeof layerProps.fontSize === "number" ? layerProps.fontSize : 16;
+  const fontWeight =
+    typeof layerProps.fontWeight === "number" || typeof layerProps.fontWeight === "string"
+      ? layerProps.fontWeight
+      : undefined;
+  const fontFamily =
+    typeof layerProps.fontFamily === "string"
+      ? layerProps.fontFamily
+      : "Helvetica, Arial, sans-serif";
+  const letterSpacingEm =
+    typeof layerProps.letterSpacingEm === "number" ? layerProps.letterSpacingEm : undefined;
+  const fill = typeof layerProps.fill === "string" ? layerProps.fill : DEFAULT_COPYRIGHT_COLOR;
+  return { fontSize, fontWeight, fontFamily, letterSpacingEm, fill };
+}
+
+function removeDeveloperCreditLayer(svg: SVGSVGElement) {
+  svg.querySelectorAll('[data-layer-type="developer-credit"]').forEach((node) => node.remove());
+}
+
+function shouldShowDeveloperCredit(
+  templateId?: CardPreviewProps["templateId"],
+  cardData?: CardPreviewProps["cardData"],
+) {
+  return Boolean(templateId && cardData);
+}
+
+function drawDeveloperCredit({
+  canvas,
+  templateId,
+  cardData,
+  bleedPx,
+  cropMarks,
+  cutMarks,
+}: {
+  canvas: HTMLCanvasElement;
+  templateId?: CardPreviewProps["templateId"];
+  cardData?: CardPreviewProps["cardData"];
+  bleedPx: number;
+  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+  cutMarks?: { enabled: boolean; color: string };
+}) {
+  if (!shouldShowDeveloperCredit(templateId, cardData)) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const style = resolveCopyrightTextStyle(templateId);
+  const fontSize = Math.max(1, Math.round(style.fontSize * DEVELOPER_CREDIT_FONT_SCALE));
+  const effectiveTopInset = Math.max(DEVELOPER_CREDIT_TOP_INSET, CARD_CORNER_RADIUS + 2);
+  const fontWeight = "400";
+  const fontFamily = CARD_TEXT_FONT_FAMILY;
+  ctx.font = `${fontWeight ? `${fontWeight} ` : ""}${fontSize}px ${fontFamily}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "bottom";
+  ctx.fillStyle = DEVELOPER_CREDIT_BLEND_COLOR;
+
+  const { trimX, trimY } = getBleedTrimOrigin({
+    bleedPx,
+    cropMarks,
+    cutMarks,
+  });
+  const { maxLineWidth } = measureCardTextMaxLineWidth({
+    text: DEVELOPER_CREDIT_TEXT,
+    width: CARD_HEIGHT,
+    fontSize,
+    lineHeight: fontSize,
+    fontFamily,
+    fontWeight,
+    letterSpacingEm: undefined,
+    defaultAlign: "left",
+  });
+  const x = trimX + CARD_WIDTH - DEVELOPER_CREDIT_RIGHT_INSET;
+  const y = trimY + effectiveTopInset + Math.max(0, Math.floor(maxLineWidth));
+  ctx.save();
+  ctx.globalCompositeOperation = DEVELOPER_CREDIT_BLEND_MODE as GlobalCompositeOperation;
+  ctx.globalAlpha = DEVELOPER_CREDIT_OPACITY;
+  ctx.translate(x, y);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillText(DEVELOPER_CREDIT_TEXT, 0, 0);
+  ctx.restore();
+}
+
+const COPYRIGHT_LUMINANCE_THRESHOLD = 0.52;
+const COPYRIGHT_SAMPLE_INSET_RATIO = 0.2;
+const COPYRIGHT_SAMPLE_VERTICAL_SHIFT_MULTIPLIER = 1.5;
 
 const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
   (
@@ -45,16 +176,28 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
     ref,
   ) => {
     const { t } = useI18n();
+    const { defaultCopyright } = useCopyrightSettings();
+    const [developerCreditDisabled] = useLocalStorageBoolean("hqcc.developerCreditDisabled", false);
+    const developerCreditEnabled = !developerCreditDisabled;
     const background = backgroundSrc ?? parchmentBackground;
     const [backgroundLoaded, setBackgroundLoaded] = useState(false);
+    const normalizedCopyrightTextColorProp = normalizeCopyrightColor(copyrightTextColorProp);
     const [copyrightTextColor, setCopyrightTextColor] = useState<string | undefined>(
-      copyrightTextColorProp,
+      normalizedCopyrightTextColorProp,
     );
     const backgroundLoadedRef = useRef(false);
     const backgroundWaitersRef = useRef<(() => void)[]>([]);
     const svgRef = useRef<SVGSVGElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const backgroundSampleRef = useRef<{
+      src: string;
+      key: string;
+      width: number;
+      height: number;
+      canvas: HTMLCanvasElement;
+    } | null>(null);
+    const backgroundImageCacheRef = useRef<Map<string, Promise<HTMLImageElement>>>(new Map());
 
     useEffect(() => {
       setBackgroundLoaded(false);
@@ -85,6 +228,14 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           setCopyrightTextColor(undefined);
           return;
         }
+        if (normalizedCopyrightTextColorProp) {
+          setCopyrightTextColor(normalizedCopyrightTextColorProp);
+          return;
+        }
+        const showCopyright =
+          typeof (cardData as { showCopyright?: boolean }).showCopyright === "boolean"
+            ? (cardData as { showCopyright?: boolean }).showCopyright
+            : undefined;
         const width = options?.width ?? 300;
         const height = options?.height ?? 420;
         const svgElement = svgRef.current;
@@ -92,53 +243,387 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           setCopyrightTextColor(undefined);
           return;
         }
-        const canvas = await renderSvgToCanvas({
-          svgElement,
-          width,
-          height,
-          existingCanvas: sampleCanvasRef.current,
-          removeDebugBounds: true,
-        });
-        if (!canvas) {
+        const resolvedText = (() => {
+          const copyrightValue = (cardData as { copyright?: string }).copyright;
+          const overrideValue = typeof copyrightValue === "string" ? copyrightValue : "";
+          const normalizedOverride = overrideValue.trim();
+          const normalizedDefault = defaultCopyright.trim();
+          return normalizedOverride.length > 0
+            ? normalizedOverride
+            : normalizedDefault.length > 0
+              ? normalizedDefault
+              : "";
+        })();
+        const sampleLuminance = (
+          ctx: CanvasRenderingContext2D,
+          canvas: HTMLCanvasElement,
+          rectX: number,
+          rectY: number,
+          rectW: number,
+          rectH: number,
+        ) => {
+          if (rectW <= 1 || rectH <= 1) return null;
+          const shiftedY = Math.max(0, rectY);
+          const shiftedH = Math.min(rectH, rectY + rectH - shiftedY);
+          if (shiftedH <= 1) return null;
+          let targetX = rectX;
+          let targetY = shiftedY;
+          let targetW = rectW;
+          let targetH = shiftedH;
+          const insetX = Math.floor(rectW * COPYRIGHT_SAMPLE_INSET_RATIO);
+          const insetY = Math.floor(shiftedH * COPYRIGHT_SAMPLE_INSET_RATIO);
+          let sampleX = targetX + insetX;
+          let sampleY = targetY + insetY;
+          let sampleW = targetW - insetX * 2;
+          let sampleH = targetH - insetY * 2;
+          if (sampleW <= 1 || sampleH <= 1) {
+            sampleX = targetX;
+            sampleY = targetY;
+            sampleW = targetW;
+            sampleH = targetH;
+          }
+          if (sampleX < 0) {
+            sampleW += sampleX;
+            sampleX = 0;
+          }
+          if (sampleY < 0) {
+            sampleH += sampleY;
+            sampleY = 0;
+          }
+          if (sampleX + sampleW > canvas.width) {
+            sampleW = canvas.width - sampleX;
+          }
+          if (sampleY + sampleH > canvas.height) {
+            sampleH = canvas.height - sampleY;
+          }
+          if (sampleW <= 1 || sampleH <= 1) return null;
+          try {
+            const imageData = ctx.getImageData(
+              Math.floor(sampleX),
+              Math.floor(sampleY),
+              Math.floor(sampleW),
+              Math.floor(sampleH),
+            );
+            return computeAverageLuminance(imageData);
+          } catch {
+            return null;
+          }
+        };
+
+        const computeLuminanceFromCanvas = (
+          ctx: CanvasRenderingContext2D,
+          canvas: HTMLCanvasElement,
+          {
+            x,
+            y,
+            w,
+            h,
+            textLeft,
+            textWidthPx,
+          }: {
+            x: number;
+            y: number;
+            w: number;
+            h: number;
+            textLeft: number;
+            textWidthPx: number;
+          },
+        ) => {
+          const leftWidth = Math.max(0, Math.floor(textLeft - x));
+          const rightStart = Math.floor(textLeft + textWidthPx);
+          const rightWidth = Math.max(0, Math.floor(x + w - rightStart));
+          const leftLum = sampleLuminance(ctx, canvas, x, y, leftWidth, h);
+          const rightLum = sampleLuminance(ctx, canvas, rightStart, y, rightWidth, h);
+          return (
+            (leftLum != null && rightLum != null
+              ? (leftLum + rightLum) / 2
+              : (leftLum ?? rightLum)) ?? sampleLuminance(ctx, canvas, x, y, w, h)
+          );
+        };
+
+        const loadBackgroundImage = async (href: string) => {
+          const cache = backgroundImageCacheRef.current;
+          if (cache.has(href)) {
+            return cache.get(href) ?? null;
+          }
+          const promise = new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error("Failed to load background image"));
+            img.src = href;
+          });
+          cache.set(href, promise);
+          try {
+            return await promise;
+          } catch {
+            cache.delete(href);
+            return null;
+          }
+        };
+
+        const resolveBackgroundHref = (href: string) => {
+          if (href.startsWith("data:") || href.startsWith("blob:") || href.startsWith("http")) {
+            return href;
+          }
+          if (typeof window === "undefined") return href;
+          try {
+            return new URL(href, window.location.href).toString();
+          } catch {
+            return href;
+          }
+        };
+
+        const sampleTextContrastColor = async ({
+          bounds,
+          text,
+          fontSize,
+          lineHeight,
+          fontWeight,
+          fontFamily,
+          letterSpacingEm,
+          align,
+          allowBackgroundShortcut,
+          cacheKey,
+        }: {
+          bounds: { x: number; y: number; width: number; height: number };
+          text: string;
+          fontSize: number;
+          lineHeight?: number;
+          fontWeight?: number | string;
+          fontFamily: string;
+          letterSpacingEm?: number;
+          align: "left" | "center" | "right";
+          allowBackgroundShortcut: boolean;
+          cacheKey: string;
+        }) => {
+          const sampleSvg = (() => {
+            try {
+              const cloned = svgElement.cloneNode(true) as SVGSVGElement;
+              cloned.querySelector('[data-layer-type="copyright"]')?.remove();
+              cloned.querySelector('[data-layer-type="developer-credit"]')?.remove();
+              return cloned;
+            } catch {
+              return svgElement;
+            }
+          })();
+          const scaleX = width / CARD_WIDTH;
+          const scaleY = height / CARD_HEIGHT;
+          const resolvedLineHeight = lineHeight ?? fontSize;
+          const shiftY = Math.floor(
+            resolvedLineHeight * COPYRIGHT_SAMPLE_VERTICAL_SHIFT_MULTIPLIER * scaleY,
+          );
+          const x = Math.max(0, Math.floor(bounds.x * scaleX));
+          const y = Math.max(0, Math.floor(bounds.y * scaleY));
+          const w = Math.max(1, Math.floor(bounds.width * scaleX));
+          const h = Math.max(1, Math.floor(bounds.height * scaleY));
+          const { maxLineWidth } = measureCardTextMaxLineWidth({
+            text,
+            width: bounds.width,
+            fontSize,
+            lineHeight,
+            fontFamily,
+            fontWeight,
+            letterSpacingEm,
+            defaultAlign: align,
+          });
+          const textWidthPx = Math.min(w, Math.max(0, Math.floor(maxLineWidth * scaleX)));
+          const textLeft =
+            align === "right"
+              ? x + (w - textWidthPx)
+              : align === "center"
+                ? x + (w - textWidthPx) / 2
+                : x;
+
+          const sampleLuminanceShifted = (
+            ctx: CanvasRenderingContext2D,
+            canvas: HTMLCanvasElement,
+            rectX: number,
+            rectY: number,
+            rectW: number,
+            rectH: number,
+          ) => {
+            if (rectW <= 1 || rectH <= 1) return null;
+            const shiftedY = Math.max(0, rectY - shiftY);
+            const shiftedH = Math.min(rectH, rectY + rectH - shiftedY);
+            if (shiftedH <= 1) return null;
+            let targetX = rectX;
+            let targetY = shiftedY;
+            let targetW = rectW;
+            let targetH = shiftedH;
+            const insetX = Math.floor(rectW * COPYRIGHT_SAMPLE_INSET_RATIO);
+            const insetY = Math.floor(shiftedH * COPYRIGHT_SAMPLE_INSET_RATIO);
+            let sampleX = targetX + insetX;
+            let sampleY = targetY + insetY;
+            let sampleW = targetW - insetX * 2;
+            let sampleH = targetH - insetY * 2;
+            if (sampleW <= 1 || sampleH <= 1) {
+              sampleX = targetX;
+              sampleY = targetY;
+              sampleW = targetW;
+              sampleH = targetH;
+            }
+            if (sampleX < 0) {
+              sampleW += sampleX;
+              sampleX = 0;
+            }
+            if (sampleY < 0) {
+              sampleH += sampleY;
+              sampleY = 0;
+            }
+            if (sampleX + sampleW > canvas.width) {
+              sampleW = canvas.width - sampleX;
+            }
+            if (sampleY + sampleH > canvas.height) {
+              sampleH = canvas.height - sampleY;
+            }
+            if (sampleW <= 1 || sampleH <= 1) return null;
+            try {
+              const imageData = ctx.getImageData(
+                Math.floor(sampleX),
+                Math.floor(sampleY),
+                Math.floor(sampleW),
+                Math.floor(sampleH),
+              );
+              return computeAverageLuminance(imageData);
+            } catch {
+              return null;
+            }
+          };
+
+          const computeLuminance = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
+            const leftWidth = Math.max(0, Math.floor(textLeft - x));
+            const rightStart = Math.floor(textLeft + textWidthPx);
+            const rightWidth = Math.max(0, Math.floor(x + w - rightStart));
+            const leftLum = sampleLuminanceShifted(ctx, canvas, x, y, leftWidth, h);
+            const rightLum = sampleLuminanceShifted(ctx, canvas, rightStart, y, rightWidth, h);
+            return (
+              (leftLum != null && rightLum != null
+                ? (leftLum + rightLum) / 2
+                : (leftLum ?? rightLum)) ?? sampleLuminanceShifted(ctx, canvas, x, y, w, h)
+            );
+          };
+
+          if (allowBackgroundShortcut) {
+            const backgroundImageEl = sampleSvg.querySelector<SVGImageElement>(
+              'image[data-card-background="true"]',
+            );
+            const backgroundHref = backgroundImageEl ? getSvgImageHref(backgroundImageEl) : null;
+            if (backgroundHref) {
+              const resolvedHref = resolveBackgroundHref(backgroundHref);
+              const img = await loadBackgroundImage(resolvedHref);
+              if (img) {
+                const cached = backgroundSampleRef.current;
+                const reuse =
+                  cached &&
+                  cached.src === resolvedHref &&
+                  cached.key === cacheKey &&
+                  cached.width === width &&
+                  cached.height === height;
+                const canvas = reuse ? cached.canvas : document.createElement("canvas");
+                if (!reuse) {
+                  canvas.width = width;
+                  canvas.height = height;
+                }
+                const ctx = canvas.getContext("2d");
+                if (ctx) {
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+                  const boundsX = bounds.x * scaleX;
+                  const boundsY = bounds.y * scaleY;
+                  const boundsW = bounds.width * scaleX;
+                  const boundsH = bounds.height * scaleY;
+                  const scale = Math.min(boundsW / img.width, boundsH / img.height);
+                  const drawW = img.width * scale;
+                  const drawH = img.height * scale;
+                  const drawX = boundsX + (boundsW - drawW) / 2;
+                  const drawY = boundsY + (boundsH - drawH) / 2;
+                  ctx.drawImage(img, drawX, drawY, drawW, drawH);
+                  backgroundSampleRef.current = {
+                    src: resolvedHref,
+                    key: cacheKey,
+                    width,
+                    height,
+                    canvas,
+                  };
+                  const luminance = computeLuminance(ctx, canvas);
+                  if (luminance != null) {
+                    return luminance < COPYRIGHT_LUMINANCE_THRESHOLD ? "#f5efe1" : undefined;
+                  }
+                }
+              }
+            }
+          }
+
+          const canvas = await renderSvgToCanvas({
+            svgElement: sampleSvg,
+            width,
+            height,
+            existingCanvas: sampleCanvasRef.current,
+            removeDebugBounds: true,
+          });
+          if (!canvas) return undefined;
+          sampleCanvasRef.current = canvas;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return undefined;
+          const luminance = computeLuminance(ctx, canvas);
+          if (luminance == null) return undefined;
+          return luminance < COPYRIGHT_LUMINANCE_THRESHOLD ? "#f5efe1" : undefined;
+        };
+
+        const blueprint = blueprintsByTemplateId[templateId];
+        const copyrightLayer = blueprint?.layers.find((entry) => entry.type === "copyright");
+        const layerProps = copyrightLayer?.props ?? {};
+        const fontSize = typeof layerProps.fontSize === "number" ? layerProps.fontSize : 20;
+        const lineHeight =
+          typeof layerProps.lineHeight === "number" ? layerProps.lineHeight : undefined;
+        const fontWeight =
+          typeof layerProps.fontWeight === "number" || typeof layerProps.fontWeight === "string"
+            ? layerProps.fontWeight
+            : undefined;
+        const fontFamily =
+          typeof layerProps.fontFamily === "string"
+            ? layerProps.fontFamily
+            : "Helvetica, Arial, sans-serif";
+        const letterSpacingEm =
+          typeof layerProps.letterSpacingEm === "number" ? layerProps.letterSpacingEm : undefined;
+        const align =
+          layerProps.align === "left" ||
+          layerProps.align === "right" ||
+          layerProps.align === "center"
+            ? layerProps.align
+            : "center";
+
+        if (showCopyright === false || !resolvedText) {
           setCopyrightTextColor(undefined);
-          return;
-        }
-        sampleCanvasRef.current = canvas;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          setCopyrightTextColor(undefined);
-          return;
-        }
-        const bounds = getCopyrightBounds(templateId);
-        const scaleX = width / CARD_WIDTH;
-        const scaleY = height / CARD_HEIGHT;
-        const x = Math.max(0, Math.floor(bounds.x * scaleX));
-        const y = Math.max(0, Math.floor(bounds.y * scaleY));
-        const w = Math.max(1, Math.floor(bounds.width * scaleX));
-        const h = Math.max(1, Math.floor(bounds.height * scaleY));
-        const sampleWidth = Math.min(canvas.width - x, w);
-        const sampleHeight = Math.min(canvas.height - y, h);
-        if (sampleWidth <= 0 || sampleHeight <= 0) {
-          setCopyrightTextColor(undefined);
-          return;
-        }
-        const imageData = ctx.getImageData(x, y, sampleWidth, sampleHeight);
-        const luminance = computeAverageLuminance(imageData);
-        if (luminance < 0.35) {
-          setCopyrightTextColor("#f5efe1");
         } else {
-          setCopyrightTextColor(undefined);
+          const isFileProtocol =
+            typeof window !== "undefined" && window.location.protocol === "file:";
+          const bounds = getCopyrightBounds(templateId);
+          const copyrightColor = await sampleTextContrastColor({
+            bounds,
+            text: resolvedText,
+            fontSize,
+            lineHeight,
+            fontWeight,
+            fontFamily,
+            letterSpacingEm,
+            align,
+            allowBackgroundShortcut: !isFileProtocol,
+            cacheKey: `copyright-${bounds.x}-${bounds.y}-${bounds.width}-${bounds.height}`,
+          });
+          setCopyrightTextColor(copyrightColor);
         }
+
       };
-    }, [cardData, templateId]);
+    }, [
+      cardData,
+      templateId,
+      normalizedCopyrightTextColorProp,
+      defaultCopyright,
+    ]);
 
     useEffect(() => {
-      if (typeof copyrightTextColorProp === "string") {
-        setCopyrightTextColor(copyrightTextColorProp);
-      } else if (copyrightTextColorProp === undefined) {
-        setCopyrightTextColor(undefined);
-      }
-    }, [copyrightTextColorProp]);
+      setCopyrightTextColor(normalizedCopyrightTextColorProp);
+    }, [normalizedCopyrightTextColorProp]);
 
     useEffect(() => {
       if (!backgroundLoaded) return;
@@ -148,7 +633,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
     useImperativeHandle(
       ref,
       () => ({
-        async exportAsPng() {
+        async exportAsPng(options) {
           const session = startExportLogging({ mode: "single", totalCards: 1 });
           logDeviceInfo(session);
 
@@ -207,16 +692,14 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               failures += 1;
               const missingSummary = missingAssets
                 .map(
-                  (asset) =>
-                    `${asset.label} asset "${asset.name ?? "unknown"}" (id=${asset.id})`,
+                  (asset) => `${asset.label} asset "${asset.name ?? "unknown"}" (id=${asset.id})`,
                 )
                 .join(", ");
               logCardSkip(session, { reason: `Missing ${missingSummary}` });
               return;
             }
 
-            const now = () =>
-              typeof performance !== "undefined" ? performance.now() : Date.now();
+            const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
 
             const waitStart = now();
             if (assetIds.length) {
@@ -225,15 +708,48 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             logCardWait(session, { durationMs: now() - waitStart });
 
             const renderStart = now();
-            const canvas = await renderSvgToCanvas({
-              svgElement,
-              width: CARD_WIDTH,
-              height: CARD_HEIGHT,
-              existingCanvas: canvasRef.current,
-              removeDebugBounds: true,
-              loggingId: session.sessionId,
-              assetBlobsById: cache,
-            });
+            const bleedPx = options?.bleedPx ?? 0;
+            const cropMarks = options?.cropMarks;
+            const cutMarks = options?.cutMarks;
+            const requestedRounded = options?.roundedCorners ?? true;
+            const effectiveRounded = requestedRounded && bleedPx === 0 && !cropMarks?.enabled;
+            const canvas =
+              bleedPx > 0 || cropMarks?.enabled || cutMarks?.enabled
+                ? await renderBleedCanvas({
+                    svgElement,
+                    bleedPx,
+                    cropMarks: cropMarks
+                      ? {
+                          ...cropMarks,
+                          style: cropMarks.style ?? "lines",
+                        }
+                      : cropMarks,
+                    cutMarks: cutMarks
+                      ? {
+                          enabled: cutMarks.enabled,
+                          color: cutMarks.color,
+                        }
+                      : cutMarks,
+                    roundedCorners: effectiveRounded,
+                    loggingId: session.sessionId,
+                    assetBlobsById: cache,
+                    templateId,
+                    cardData,
+                    developerCreditEnabled,
+                  })
+                : await renderSvgToCanvas({
+                    svgElement,
+                    width: CARD_WIDTH,
+                    height: CARD_HEIGHT,
+                    existingCanvas: canvasRef.current,
+                    removeDebugBounds: true,
+                    loggingId: session.sessionId,
+                    assetBlobsById: cache,
+                    mutateSvg: (svg) => {
+                      setExportClip(svg, { rounded: effectiveRounded });
+                      removeDeveloperCreditLayer(svg);
+                    },
+                  });
             renders += 1;
             if (canvas) {
               canvasRef.current = canvas;
@@ -243,7 +759,24 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               logCardRender(session, { durationMs: now() - renderStart, success: false });
               return;
             }
-            const pngBlob: Blob | null = await new Promise((resolve) =>
+            if (
+              ENABLE_WATERMARK &&
+              shouldApplyWatermark(templateId, cardData) &&
+              !(bleedPx > 0 || cropMarks?.enabled)
+            ) {
+              applyWatermarkToCanvas(canvas);
+            }
+            if (developerCreditEnabled) {
+              drawDeveloperCredit({
+                canvas,
+                templateId,
+                cardData,
+                bleedPx,
+                cropMarks,
+                cutMarks,
+              });
+            }
+            let pngBlob: Blob | null = await new Promise((resolve) =>
               canvas.toBlob((blob) => resolve(blob), "image/png", 1),
             );
             const renderDuration = now() - renderStart;
@@ -253,12 +786,20 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               failures += 1;
               return;
             }
+            pngBlob = await addPngTextChunk(
+              pngBlob,
+              "Made using",
+              `HeroQuest Card Creator ${APP_VERSION}`,
+            );
 
             const pngUrl = URL.createObjectURL(pngBlob);
 
             const link = document.createElement("a");
             link.href = pngUrl;
-            link.download = resolveCardPreviewFileName(cardData as { title?: string }, templateName);
+            link.download = resolveCardPreviewFileName(
+              cardData as { title?: string },
+              templateName,
+            );
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -285,22 +826,78 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 
           const width = options?.width ?? CARD_WIDTH;
           const height = options?.height ?? CARD_HEIGHT;
+          const bleedPx = options?.bleedPx ?? 0;
+          const cropMarks = options?.cropMarks;
+          const cutMarks = options?.cutMarks;
+          const requestedRounded = options?.roundedCorners ?? true;
+          const effectiveRounded = requestedRounded && bleedPx === 0 && !cropMarks?.enabled;
 
-          const canvas = await renderSvgToCanvas({
-            svgElement,
-            width,
-            height,
-            existingCanvas: canvasRef.current,
-            removeDebugBounds: true,
-            loggingId: options?.loggingId,
-            assetBlobsById: options?.assetBlobsById,
-          });
+          const canvas =
+            bleedPx > 0 || cropMarks?.enabled || cutMarks?.enabled
+              ? await renderBleedCanvas({
+                  svgElement,
+                  bleedPx,
+                  cropMarks: cropMarks
+                    ? {
+                        ...cropMarks,
+                        style: cropMarks.style ?? "lines",
+                      }
+                    : cropMarks,
+                  cutMarks: cutMarks
+                    ? {
+                        enabled: cutMarks.enabled,
+                        color: cutMarks.color,
+                      }
+                    : cutMarks,
+                  roundedCorners: effectiveRounded,
+                  loggingId: options?.loggingId,
+                  assetBlobsById: options?.assetBlobsById,
+                  templateId,
+                  cardData,
+                  developerCreditEnabled,
+                })
+              : await renderSvgToCanvas({
+                  svgElement,
+                  width,
+                  height,
+                  existingCanvas: canvasRef.current,
+                  removeDebugBounds: true,
+                  loggingId: options?.loggingId,
+                  assetBlobsById: options?.assetBlobsById,
+                  mutateSvg: (svg) => {
+                    setExportClip(svg, { rounded: effectiveRounded });
+                    removeDeveloperCreditLayer(svg);
+                  },
+                });
           if (canvas) {
             canvasRef.current = canvas;
           }
           if (!canvas) return null;
-          const pngBlob: Blob | null = await new Promise((resolve) =>
+          if (
+            ENABLE_WATERMARK &&
+            shouldApplyWatermark(templateId, cardData) &&
+            !(bleedPx > 0 || cropMarks?.enabled)
+          ) {
+            applyWatermarkToCanvas(canvas);
+          }
+          if (developerCreditEnabled) {
+            drawDeveloperCredit({
+              canvas,
+              templateId,
+              cardData,
+              bleedPx,
+              cropMarks,
+              cutMarks,
+            });
+          }
+          let pngBlob: Blob | null = await new Promise((resolve) =>
             canvas.toBlob((blob) => resolve(blob), "image/png", 1),
+          );
+          if (!pngBlob) return null;
+          pngBlob = await addPngTextChunk(
+            pngBlob,
+            "Made using",
+            `HeroQuest Card Creator ${APP_VERSION}`,
           );
           return pngBlob ?? null;
         },
@@ -347,7 +944,14 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           });
         },
       }),
-      [cardData, templateName, syncCopyrightContrast],
+      [
+        cardData,
+        templateId,
+        templateName,
+        syncCopyrightContrast,
+        developerCreditEnabled,
+        copyrightTextColor,
+      ],
     );
 
     return (
@@ -374,8 +978,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   y={CARD_CLIP_INSET}
                   width={CARD_WIDTH - CARD_CLIP_INSET * 2}
                   height={CARD_HEIGHT - CARD_CLIP_INSET * 2}
-                  rx={CARD_CORNER_RADIUS}
-                  ry={CARD_CORNER_RADIUS}
+                  rx={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
+                  ry={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
                 />
               </clipPath>
             </defs>
@@ -387,6 +991,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                 backgroundLoaded={backgroundLoaded}
                 cardData={cardData}
                 copyrightTextColor={copyrightTextColor}
+                developerCreditEnabled={developerCreditEnabled}
               />
             </g>
             <rect
@@ -394,8 +999,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               y={CARD_CLIP_INSET}
               width={CARD_WIDTH - CARD_CLIP_INSET * 2}
               height={CARD_HEIGHT - CARD_CLIP_INSET * 2}
-              rx={CARD_CORNER_RADIUS}
-              ry={CARD_CORNER_RADIUS}
+              rx={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
+              ry={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
               fill="none"
               stroke="#fff0"
               strokeWidth={3}
@@ -413,6 +1018,87 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 );
 
 CardPreview.displayName = "CardPreview";
+
+async function renderBleedCanvas({
+  svgElement,
+  bleedPx,
+  cropMarks,
+  cutMarks,
+  roundedCorners,
+  loggingId,
+  assetBlobsById,
+  templateId,
+  cardData,
+  developerCreditEnabled,
+}: {
+  svgElement: SVGSVGElement;
+  bleedPx: number;
+  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+  cutMarks?: { enabled: boolean; color: string };
+  roundedCorners: boolean;
+  loggingId?: string;
+  assetBlobsById?: Map<string, Blob>;
+  templateId?: CardPreviewProps["templateId"];
+  cardData?: CardPreviewProps["cardData"];
+  developerCreditEnabled?: boolean;
+}): Promise<HTMLCanvasElement | null> {
+  const fullCanvas = await renderSvgToCanvas({
+    svgElement,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    removeDebugBounds: true,
+    loggingId,
+    assetBlobsById,
+    mutateSvg: (svg) => {
+      cloneSvgForBleed(svg);
+      if (bleedPx > 0 || cropMarks?.enabled) {
+        setExportBackgroundFit(svg, "slice");
+      }
+      setExportClip(svg, { rounded: roundedCorners });
+      if (developerCreditEnabled) {
+        removeDeveloperCreditLayer(svg);
+      }
+    },
+  });
+  if (!fullCanvas) return null;
+  if (ENABLE_WATERMARK && shouldApplyWatermark(templateId, cardData)) {
+    applyWatermarkToCanvas(fullCanvas);
+  }
+
+  let bleedSourceCanvas: HTMLCanvasElement | null = null;
+  if (bleedPx > 0) {
+    bleedSourceCanvas = await renderSvgToCanvas({
+      svgElement,
+      width: CARD_WIDTH,
+      height: CARD_HEIGHT,
+      removeDebugBounds: true,
+      loggingId,
+      assetBlobsById,
+      mutateSvg: (svg) => {
+        cloneSvgForBleed(svg);
+        if (bleedPx > 0 || cropMarks?.enabled) {
+          setExportBackgroundFit(svg, "slice");
+        }
+        if (developerCreditEnabled) {
+          removeDeveloperCreditLayer(svg);
+        }
+      },
+    });
+  }
+
+  return composeBleedCanvas({
+    fullCanvas,
+    backgroundCanvas: bleedSourceCanvas,
+    bleedPx,
+    cropMarks,
+    cutMarks: cutMarks
+      ? {
+          enabled: cutMarks.enabled,
+          color: cutMarks.color,
+        }
+      : cutMarks,
+  });
+}
 
 export default CardPreview;
 export type { CardPreviewHandle, CardPreviewProps } from "./types";

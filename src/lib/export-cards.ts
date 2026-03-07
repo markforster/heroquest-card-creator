@@ -42,6 +42,10 @@ export type BulkExportParams = {
   onZipStatus?: (mode: "worker" | "fallback") => void;
   skipCardIds?: Set<string>;
   skipCardNotes?: Map<string, string>;
+  bleedPx?: number;
+  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+  cutMarks?: { enabled: boolean; color: string };
+  roundedCorners?: boolean;
 };
 
 export const runBulkExport = async ({
@@ -56,6 +60,10 @@ export const runBulkExport = async ({
   onZipStatus,
   skipCardIds,
   skipCardNotes,
+  bleedPx,
+  cropMarks,
+  cutMarks,
+  roundedCorners,
 }: BulkExportParams): Promise<BulkExportResult> => {
   const session = startExportLogging({ mode: "bulk", totalCards: cards.length });
   logDeviceInfo(session);
@@ -174,6 +182,10 @@ export const runBulkExport = async ({
         const pngBlob = await previewRef.current?.renderToPngBlob({
           loggingId: session.sessionId,
           assetBlobsById: cache,
+          bleedPx,
+          cropMarks,
+          cutMarks,
+          roundedCorners,
         });
         renders += 1;
         const renderDuration = now() - renderStart;

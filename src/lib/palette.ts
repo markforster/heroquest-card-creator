@@ -1,6 +1,7 @@
 "use client";
 
 import { extractPaletteFromCanvas } from "@/lib/color-palette";
+import { clamp } from "@/lib/math";
 
 export type PaletteSource =
   | HTMLCanvasElement
@@ -256,10 +257,6 @@ function hslToRgb(h: number, s: number, l: number): Rgb {
     g: Math.round((g + m) * 255),
     b: Math.round((b + m) * 255),
   };
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
 }
 
 function colorDistance(a: Rgb, b: Rgb) {

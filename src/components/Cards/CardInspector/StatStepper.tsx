@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import type { LucideIcon } from "lucide-react";
 
 import layoutStyles from "@/app/page.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -13,6 +14,7 @@ import type { FieldValues, Path } from "react-hook-form";
 type StatStepperProps<TFormValues extends FieldValues> = {
   name: Path<TFormValues>;
   label: string;
+  icon?: LucideIcon;
   min?: number;
   max?: number;
   allowWildcard?: boolean;
@@ -21,6 +23,7 @@ type StatStepperProps<TFormValues extends FieldValues> = {
 export default function StatStepper<TFormValues extends FieldValues>({
   name,
   label,
+  icon: Icon,
   min = 0,
   max = 999,
   allowWildcard = false,
@@ -109,7 +112,10 @@ export default function StatStepper<TFormValues extends FieldValues>({
   return (
     <div className={layoutStyles.statCell}>
       <div className={`${layoutStyles.statControlRow} ${layoutStyles.uRowSm}`}>
-        <div className={layoutStyles.statSubLabel}>{label}</div>
+        <div className={layoutStyles.statSubLabel}>
+          {Icon ? <Icon className={layoutStyles.statSubLabelIcon} aria-hidden="true" size={14} /> : null}
+          <span>{label}</span>
+        </div>
         <div className={layoutStyles.statField}>
           <input
             className={layoutStyles.statValueInput}

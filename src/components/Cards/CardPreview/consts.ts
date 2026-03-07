@@ -1,6 +1,7 @@
 "use client";
 
-export const CARD_WIDTH = 750;
-export const CARD_HEIGHT = 1050;
-export const CARD_CLIP_INSET = 2;
-export const CARD_CORNER_RADIUS = 28;
+import { CARD_HEIGHT, CARD_WIDTH, savg } from "@/config/card-canvas";
+
+export { CARD_WIDTH, CARD_HEIGHT };
+export const CARD_CLIP_INSET = savg(2);
+export const CARD_CORNER_RADIUS = savg(28);

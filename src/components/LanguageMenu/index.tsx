@@ -1,12 +1,17 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useClickOutside } from "@/components/common/useClickOutside";
 import { useI18n } from "@/i18n/I18nProvider";
 import { languageFlags } from "@/i18n/language-flags";
-import { languageLabels, SupportedLanguage, supportedLanguages } from "@/i18n/messages";
+import {
+  languageLabels,
+  SupportedLanguage,
+  supportedLanguages,
+} from "@/i18n/messages";
+import { getDetectedLanguage, LANGUAGE_STORAGE_KEY } from "@/i18n/getInitialLanguage";
 
 import LanguageMenuButton from "./LanguageMenuButton";
 import LanguageMenuPopover from "./LanguageMenuPopover";
@@ -19,19 +24,48 @@ type LanguageOption = {
   code: string;
   label: string;
   flag: string;
+  isDetected?: boolean;
 };
 
-const getLanguageOptions = (): LanguageOption[] =>
-  supportedLanguages.map((code) => ({
+const getLanguageSortKey = (label: string): string => {
+  const trimmed = label.trim();
+  const firstSpace = trimmed.indexOf(" ");
+  if (firstSpace === -1) return trimmed;
+  return trimmed.slice(firstSpace + 1).trim();
+};
+
+const getLanguageOptions = (): LanguageOption[] => {
+  const options = supportedLanguages.map((code) => ({
     code,
     label: languageLabels[code] ?? code.toUpperCase(),
     flag: languageFlags[code] ?? "🏳️",
   }));
 
+  return options.sort((a, b) =>
+    getLanguageSortKey(a.label).localeCompare(getLanguageSortKey(b.label), undefined, {
+      sensitivity: "base",
+    }),
+  );
+};
+
 export default function LanguageMenu({ isCollapsed }: LanguageMenuProps) {
   const { language, setLanguage, t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
+  const [detectedLanguage, setDetectedLanguage] = useState<SupportedLanguage | null>(null);
+  const [hasStoredLanguage, setHasStoredLanguage] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+      if (stored && supportedLanguages.includes(stored as SupportedLanguage)) {
+        setHasStoredLanguage(true);
+      }
+    } catch {
+      // ignore
+    }
+    setDetectedLanguage(getDetectedLanguage());
+  }, []);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
@@ -44,6 +78,7 @@ export default function LanguageMenu({ isCollapsed }: LanguageMenuProps) {
   const handleSelect = useCallback(
     (code: string) => {
       setLanguage(code as SupportedLanguage);
+      setHasStoredLanguage(true);
       setIsOpen(false);
     },
     [setLanguage],
@@ -55,7 +90,20 @@ export default function LanguageMenu({ isCollapsed }: LanguageMenuProps) {
   const currentCode = language.toUpperCase();
   const currentLabel = languageLabels[language] ?? currentCode;
 
-  const options = useMemo(getLanguageOptions, []);
+  const options = useMemo(() => {
+    const baseOptions = getLanguageOptions();
+    const filteredOptions = baseOptions.filter((option) => option.code !== language);
+    if (!detectedLanguage || detectedLanguage === language) {
+      return filteredOptions;
+    }
+
+    const detectedOption = filteredOptions.find((option) => option.code === detectedLanguage);
+    if (!detectedOption) return filteredOptions;
+
+    const remaining = filteredOptions.filter((option) => option.code !== detectedLanguage);
+
+    return [...remaining, { ...detectedOption, isDetected: true }];
+  }, [detectedLanguage, language]);
 
   return (
     <div className={styles.leftNavMenu} ref={menuRef}>

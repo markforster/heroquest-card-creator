@@ -1,6 +1,9 @@
 import ribbon from "@/assets/card-parts/ribbon.png";
 import Layer from "@/components/Cards/CardPreview/Layer";
+import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useTextFittingPreferences } from "@/components/Providers/TextFittingPreferencesContext";
+import { CARD_WIDTH, savg, sx, sy } from "@/config/card-canvas";
+import { DEFAULT_TITLE_COLOR } from "@/config/colors";
 import {
   NONRIBBON_TITLE_WEIGHT,
   TITLE_VERTICAL_SCALE_Y,
@@ -10,8 +13,6 @@ import {
   USE_TITLE_STROKE,
   USE_TITLE_VERTICAL_COMPRESSION,
 } from "@/config/flags";
-import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
-import { DEFAULT_TITLE_COLOR } from "@/config/colors";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";
 
@@ -25,13 +26,13 @@ type RibbonTitleProps = {
   titleColor?: string;
 };
 
-const CARD_WIDTH = 750;
-const SCALE = 1.05;
-const RIBBON_WIDTH = 560 * SCALE;
-const RIBBON_HEIGHT = 143 * SCALE;
-const DEFAULT_Y = 46;
+const RIBBON_WIDTH = sx(560 * 1.05);
+const RIBBON_HEIGHT = sy(145 * 1.05);
+const DEFAULT_Y = sy(46);
+const RIBBON_IMAGE_INSET_X = sx(10);
+const RIBBON_IMAGE_INSET_Y = sy(1);
 
-const TITLE_LETTER_SPACING = -0.5;
+const TITLE_LETTER_SPACING = savg(-0.5);
 
 export default function RibbonTitle({
   title,
@@ -50,6 +51,12 @@ export default function RibbonTitle({
     height: RIBBON_HEIGHT,
   };
   const resolvedRibbonBounds = ribbonBounds ?? ribbonBox;
+  const ribbonImageBounds = {
+    x: resolvedRibbonBounds.x - RIBBON_IMAGE_INSET_X,
+    y: resolvedRibbonBounds.y - RIBBON_IMAGE_INSET_Y,
+    width: resolvedRibbonBounds.width + RIBBON_IMAGE_INSET_X * 2,
+    height: resolvedRibbonBounds.height + RIBBON_IMAGE_INSET_Y * 2,
+  };
   const resolvedTextBounds = showRibbon
     ? (textBounds ?? resolvedRibbonBounds)
     : (textBoundsNoRibbon ?? textBounds ?? resolvedRibbonBounds);
@@ -74,7 +81,9 @@ export default function RibbonTitle({
   const letterSpacing = USE_TIGHTER_TITLE_TRACKING ? TITLE_LETTER_SPACING : undefined;
   const scaleY = USE_TITLE_VERTICAL_COMPRESSION ? TITLE_VERTICAL_SCALE_Y : 1;
   const titleTransform =
-    scaleY === 1 ? undefined : `translate(${centerX} ${centerY}) scale(1 ${scaleY}) translate(${-centerX} ${-centerY})`;
+    scaleY === 1
+      ? undefined
+      : `translate(${centerX} ${centerY}) scale(1 ${scaleY}) translate(${-centerX} ${-centerY})`;
   const titleStroke = USE_TITLE_STROKE ? "transparent" : "none";
   const titleStrokeWidth = USE_TITLE_STROKE ? "1.5px" : undefined;
   const defaultTitleWeight = USE_BOLD_TITLE_WEIGHT ? 700 : 550;
@@ -90,10 +99,10 @@ export default function RibbonTitle({
         <>
           <image
             href={ribbon.src}
-            x={resolvedRibbonBounds.x}
-            y={resolvedRibbonBounds.y}
-            width={resolvedRibbonBounds.width}
-            height={resolvedRibbonBounds.height}
+            x={ribbonImageBounds.x}
+            y={ribbonImageBounds.y}
+            width={ribbonImageBounds.width}
+            height={ribbonImageBounds.height}
             preserveAspectRatio="xMidYMid meet"
           />
           <g transform={titleTransform}>
@@ -143,10 +152,10 @@ export default function RibbonTitle({
       </g>
       {showTextBounds && (
         <rect
-          x={resolvedRibbonBounds.x}
-          y={resolvedRibbonBounds.y}
-          width={resolvedRibbonBounds.width}
-          height={resolvedRibbonBounds.height}
+          x={ribbonImageBounds.x}
+          y={ribbonImageBounds.y}
+          width={ribbonImageBounds.width}
+          height={ribbonImageBounds.height}
           fill="transparent"
           stroke="#cd14e2ff"
           strokeWidth={2}

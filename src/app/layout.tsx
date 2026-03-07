@@ -1,5 +1,6 @@
-import { GoogleTagManager } from "@next/third-parties/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
+import { AnalyticsProvider } from "@/components/Providers/AnalyticsProvider";
 import I18nProviderClient from "@/components/Providers/I18nProviderClient";
 
 import type { Metadata, Viewport } from "next";
@@ -8,7 +9,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -59,8 +60,39 @@ type RootLayoutProps = Readonly<PropsWithChildren<unknown>>;
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
-      {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null}
+      {/* {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null} */}
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function () {
+  try {
+    var stored = null;
+    try {
+      stored = window.localStorage.getItem("hqcc.theme");
+    } catch (_err) {
+      stored = null;
+    }
+    var systemDark = false;
+    if (window.matchMedia) {
+      systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    var resolved = "dark";
+    if (stored === "light" || stored === "dark") {
+      resolved = stored;
+    } else if (stored === "system") {
+      resolved = systemDark ? "dark" : "light";
+    } else {
+      resolved = "dark";
+    }
+    document.documentElement.dataset.theme = resolved;
+    document.documentElement.style.colorScheme = resolved;
+  } catch (_err) {}
+})();
+            `,
+          }}
+        />
+        {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -139,7 +171,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
           `,
           }}
         />
-        <I18nProviderClient>{children}</I18nProviderClient>
+        <AnalyticsProvider gaId={gaId}>
+          <I18nProviderClient>{children}</I18nProviderClient>
+        </AnalyticsProvider>
       </body>
     </html>
   );

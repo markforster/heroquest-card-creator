@@ -5,8 +5,10 @@ import { AlertTriangle } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
+import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   getCachedCardThumbnailUrl,
   getLegacyCardThumbnailUrl,
@@ -53,10 +55,12 @@ function StockpileCardsGridItem({
   conflictPopoverCardId,
   dragEnabled,
 }: StockpileCardsGridItemProps) {
+  const { t } = useI18n();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
     disabled: !dragEnabled,
   });
+  const selectLabel = formatMessage(t("aria.selectCard"), { name: card.name });
   const { url: thumbUrl, onLoad: thumbOnLoad } = resolveThumb(card.id, card.thumbnailBlob);
   const pairedThumb = card.paired.back
     ? resolveThumb(card.paired.back.id, card.paired.back.thumbnailBlob ?? null)
@@ -222,7 +226,7 @@ function StockpileCardsGridItem({
                 }}
                 onClick={(event) => event.stopPropagation()}
                 onPointerDown={(event) => event.stopPropagation()}
-                aria-label={`Select ${card.name}`}
+                aria-label={selectLabel}
               />
             </div>
           )}
@@ -277,7 +281,7 @@ function StockpileCardsGridItem({
                   }}
                   onClick={(event) => event.stopPropagation()}
                   onPointerDown={(event) => event.stopPropagation()}
-                  aria-label={`Select ${card.name}`}
+                aria-label={selectLabel}
                 />
                 <div className={styles.cardsItemName} title={card.name}>
                   {card.name}

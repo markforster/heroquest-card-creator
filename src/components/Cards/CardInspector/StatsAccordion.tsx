@@ -1,9 +1,10 @@
 "use client";
 
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChartBarStacked, ChevronDown, ChevronUp } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import styles from "@/app/page.module.css";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 
 type StatsAccordionProps = {
   label: string;
@@ -34,7 +35,11 @@ export default function StatsAccordion({
             aria-controls={bodyId}
             onClick={() => setIsOpen((prev) => !prev)}
           >
-            <label className={styles.statAccordionLabel}>{label}</label>
+            <FormLabelWithIcon
+              label={label}
+              icon={ChartBarStacked}
+              className={styles.statAccordionLabel}
+            />
             <span
               className={`${styles.statAccordionPreview} ${
                 isOpen ? styles.statAccordionPreviewHidden : ""

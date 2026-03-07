@@ -85,7 +85,7 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
               browser, all without creating an account or touching a server.
             </li>
             <li>
-              Export the current card to a 750×1050 PNG with fonts and artwork baked in, ready to
+              Export the current card to a 756×1056 PNG with fonts and artwork baked in, ready to
               drop into a print layout or share online. The exported image is generated from the
               same SVG used for the on-screen preview.
             </li>

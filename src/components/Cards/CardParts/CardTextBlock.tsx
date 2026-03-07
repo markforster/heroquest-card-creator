@@ -880,6 +880,73 @@ function measureTokensWidth(
   }, 0);
 }
 
+export function measureCardTextMaxLineWidth({
+  text,
+  width,
+  fontSize = 22,
+  lineHeight,
+  fontFamily = CARD_TEXT_FONT_FAMILY,
+  fontWeight,
+  letterSpacingEm,
+  defaultAlign = "left",
+}: {
+  text?: string | null;
+  width: number;
+  fontSize?: number;
+  lineHeight?: number;
+  fontFamily?: string;
+  fontWeight?: number | string;
+  letterSpacingEm?: number;
+  defaultAlign?: "left" | "center" | "right";
+}): { maxLineWidth: number; lineHeight: number; lines: CardTextLayout["lines"] } {
+  const { lines, lineHeight: effectiveLineHeight } = layoutCardText({
+    text,
+    width,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    fontWeight,
+    letterSpacingEm,
+    defaultAlign,
+  });
+
+  if (!lines.length) {
+    return { maxLineWidth: 0, lineHeight: effectiveLineHeight, lines };
+  }
+
+  const baseWeight = fontWeight ?? "400";
+  const measureBase = createTextMeasurer(fontSize, fontFamily, baseWeight, "normal");
+  const letterSpacingPx = (letterSpacingEm ?? 0) * fontSize;
+  const measure = (textValue: string) => {
+    const base = measureBase(textValue);
+    if (letterSpacingPx <= 0 || textValue.length <= 1) return base;
+    return base + (textValue.length - 1) * letterSpacingPx;
+  };
+
+  let maxLineWidth = 0;
+
+  lines.forEach((line) => {
+    if (line.kind === "text") {
+      const widthValue = measureTokensWidth(line.tokens, measure);
+      maxLineWidth = Math.max(maxLineWidth, widthValue);
+      return;
+    }
+    if (line.kind === "leader-continuation") {
+      const valueWidth = measureTokensWidth(line.valueTokens, measure);
+      const widthValue = line.leaderLayout.valueStartOffset + valueWidth;
+      maxLineWidth = Math.max(maxLineWidth, widthValue);
+      return;
+    }
+    const labelWidth = measureTokensWidth(line.labelTokens, measure);
+    const valueWidth = measureTokensWidth(line.valueTokens, measure);
+    const leaderPadding = line.leaderLayout?.leaderPadding ?? fontSize * 0.25;
+    const widthValue = labelWidth + leaderPadding + valueWidth;
+    maxLineWidth = Math.max(maxLineWidth, widthValue);
+  });
+
+  return { maxLineWidth, lineHeight: effectiveLineHeight, lines };
+}
+
 function getMaskId(
   prefix: string,
   lineIndex: number,

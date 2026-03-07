@@ -4,23 +4,23 @@ import { useEffect, useRef, useState } from "react";
 
 import CardPreview, { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import WebglPreview from "@/components/Cards/CardPreview/WebglPreview";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { useTextFittingPreferences } from "@/components/Providers/TextFittingPreferencesContext";
+import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
 import { KEEP_WEBGL_MOUNTED } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
+import { collectCardAssetIds } from "@/lib/card-assets";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { getCard, listCards } from "@/lib/cards-db";
 import { listPairsForFace } from "@/lib/pairs-service";
-import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
-import { collectCardAssetIds } from "@/lib/card-assets";
 import type { CardDataByTemplate } from "@/types/card-data";
-import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
-import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import styles from "./CardPreviewContainer.module.css";
 
 import type { RefObject } from "react";
@@ -72,7 +72,7 @@ export default function CardPreviewContainer({
   const showWebgl = previewRenderer === "webgl";
   const activeCardId = activeCardIdByTemplate[selectedTemplateId as TemplateId];
   const noPairingLabel = t("label.webglNoPairing");
-  const effectiveFace = (cardData?.face ?? template.defaultFace) as CardFace;
+  const effectiveFace = resolveEffectiveFace(cardData?.face, template.defaultFace);
   const assetIds = collectCardAssetIds(cardData);
 
   useEffect(() => {
@@ -177,14 +177,14 @@ export default function CardPreviewContainer({
           let backId: string | null = null;
           if (activeCardId) {
             const pairs = await listPairsForFace(activeCardId);
-          const preferredMatch = preferredBackId
-            ? pairs.find((pair) => pair.backFaceId === preferredBackId)
-            : undefined;
-          const match =
-            preferredMatch ??
-            pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
-            pairs.find((pair) => pair.backFaceId);
-          backId = match?.backFaceId ?? null;
+            const preferredMatch = preferredBackId
+              ? pairs.find((pair) => pair.backFaceId === preferredBackId)
+              : undefined;
+            const match =
+              preferredMatch ??
+              pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
+              pairs.find((pair) => pair.backFaceId);
+            backId = match?.backFaceId ?? null;
           }
           if (!backId) {
             setReverseCard(null);
@@ -225,9 +225,7 @@ export default function CardPreviewContainer({
           const pairs = await listPairsForFace(activeCardId);
           if (!active) return;
           const frontIds = new Set(
-            pairs
-              .map((pair) => pair.frontFaceId)
-              .filter((id): id is string => Boolean(id)),
+            pairs.map((pair) => pair.frontFaceId).filter((id): id is string => Boolean(id)),
           );
           const matches = cards.filter((card) => frontIds.has(card.id));
           matches.sort((a, b) => {
@@ -356,6 +354,7 @@ export default function CardPreviewContainer({
           templateName={templateName}
           backgroundSrc={template.background}
           cardData={cardData}
+          copyrightTextColor={cardData?.copyrightColor}
         />
       </div>
       {showWebgl && reverseCard ? (
@@ -366,6 +365,7 @@ export default function CardPreviewContainer({
             templateName={reverseCard.templateName}
             backgroundSrc={cardTemplatesById[reverseCard.templateId]?.background}
             cardData={reverseCard.cardData}
+            copyrightTextColor={reverseCard.cardData?.copyrightColor}
           />
         </div>
       ) : null}

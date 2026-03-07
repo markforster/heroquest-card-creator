@@ -4,10 +4,11 @@ import { createContext, useContext, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import AssetsModal from "@/components/Assets/AssetsModal";
-import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import RecentCardsModal from "@/components/Modals/RecentCardsModal";
 import SettingsModal from "@/components/Modals/SettingsModal/SettingsModal";
+import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { StockpileModal } from "@/components/Stockpile";
 import TemplatePicker from "@/components/TemplatePicker";
 import { cardTemplatesById } from "@/data/card-templates";
@@ -57,6 +58,7 @@ type AppActionsProviderProps = {
 export function AppActionsProvider({ children }: AppActionsProviderProps) {
   const { t, language } = useI18n();
   const navigate = useNavigate();
+  const { track } = useAnalytics();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate, isDirtyByTemplate },
     setSelectedTemplateId,
@@ -158,6 +160,10 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
         currentTemplateId={selectedTemplateId}
         onApply={(templateId) => {
           const nextTemplateId = templateId as TemplateId;
+          track("template_selected", {
+            template_id: nextTemplateId,
+            source: "template_picker",
+          });
           const nextDraft = createDefaultCardData(nextTemplateId);
           setSelectedTemplateId(nextTemplateId);
           setSingleDraft(nextTemplateId, nextDraft);

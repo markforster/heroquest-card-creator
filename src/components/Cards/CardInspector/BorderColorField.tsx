@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { Palette } from "lucide-react";
 import { useController, useFormContext } from "react-hook-form";
 
 import { DEFAULT_BORDER_COLOR } from "@/components/Cards/CardParts/CardBorder";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
+import { usePopupState } from "@/hooks/usePopupState";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
+import { formatHexColor, isTransparentHex, parseHexColor } from "@/lib/color";
 import type { TemplateId } from "@/types/templates";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
+import layoutStyles from "@/app/page.module.css";
 
 const SMART_CANVAS_WIDTH = 300;
 const SMART_CANVAS_HEIGHT = 420;
@@ -31,7 +36,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     width: SMART_CANVAS_WIDTH,
     height: SMART_CANVAS_HEIGHT,
   });
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const popoverState = usePopupState();
 
   const { field } = useController({ name: "borderColor", control });
   const borderColor = typeof field.value === "string" ? field.value : "";
@@ -41,7 +46,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
   const inputValue =
     normalizedSelected === TRANSPARENT_BORDER_COLOR
       ? ""
-      : normalizeHex(normalizedSelected) ?? DEFAULT_BORDER_COLOR;
+      : (normalizeHexValue(normalizedSelected) ?? DEFAULT_BORDER_COLOR);
   const savedColorRef = useRef<string | undefined>(undefined);
   const draftColor =
     draftTemplateId === templateId && draft
@@ -73,16 +78,14 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     await requestSmart();
   };
 
-  const handleTogglePopover = () => {
-    setIsPopoverOpen((prev) => {
-      return !prev;
-    });
-  };
-
   return (
     <div className="mb-2">
+      <div className={layoutStyles.inspectorFieldHeader}>
+        <FormLabelWithIcon label={label} icon={Palette} className="form-label" />
+      </div>
       <ColorPickerField
         label={label}
+        showLabel={false}
         inputValue={inputValue}
         selectedValue={normalizedSelected}
         defaultColor={DEFAULT_BORDER_COLOR}
@@ -95,11 +98,9 @@ export default function BorderColorField({ label, templateId }: BorderColorField
         onSelectTransparent={() => field.onChange(TRANSPARENT_BORDER_COLOR)}
         canRevert={hasRevert(borderColor, savedColorRef.current)}
         onRevert={handleRevert}
-        isOpen={isPopoverOpen}
-        onToggleOpen={handleTogglePopover}
-        onClose={() => {
-          setIsPopoverOpen(false);
-        }}
+        isOpen={popoverState.isOpen}
+        onToggleOpen={popoverState.toggle}
+        onClose={popoverState.close}
         popoverAlign="auto"
         popoverVAlign="center"
       />
@@ -107,41 +108,21 @@ export default function BorderColorField({ label, templateId }: BorderColorField
   );
 }
 
-function normalizeHex(value: string | undefined): string | null {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-
-  const raw = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;
-  if (!/^[0-9a-fA-F]+$/.test(raw)) return null;
-
-  if (raw.length === 3 || raw.length === 4) {
-    const r = raw[0];
-    const g = raw[1];
-    const b = raw[2];
-    const a = raw.length === 4 ? raw[3] : "f";
-    const hex = `${r}${r}${g}${g}${b}${b}${a}${a}`.toUpperCase();
-    return raw.length === 4 ? `#${hex}` : `#${hex.slice(0, 6)}`;
-  }
-
-  if (raw.length === 6 || raw.length === 8) {
-    return `#${raw.toUpperCase()}`;
-  }
-
-  return null;
+function normalizeHexValue(value: string | undefined): string | null {
+  const parsed = parseHexColor(value);
+  if (!parsed) return null;
+  return formatHexColor(parsed, { alphaMode: "preserve", case: "upper" });
 }
 
 function isTransparentColor(value?: string) {
   if (!value) return false;
   if (value.trim().toLowerCase() === TRANSPARENT_BORDER_COLOR) return true;
-  const normalized = normalizeHex(value);
-  if (!normalized) return false;
-  return normalized.length === 9 && normalized.slice(7, 9) === "00";
+  return isTransparentHex(value);
 }
 
 function normalizeBorderColor(value?: string) {
   if (isTransparentColor(value)) return TRANSPARENT_BORDER_COLOR;
-  return normalizeHex(value) ?? DEFAULT_BORDER_COLOR;
+  return normalizeHexValue(value) ?? DEFAULT_BORDER_COLOR;
 }
 
 function hasRevert(current: string, saved: string | undefined) {

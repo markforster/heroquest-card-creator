@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
+import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -40,21 +41,20 @@ export default function CopyrightSettingsPanel() {
 
   return (
     <div className={styles.settingsPanelBody}>
-      <div className={`${styles.settingsPanelSection} d-flex flex-column gap-2`}>
-        <div className={styles.settingsPanelSectionTitle}>{t("heading.copyrightDefaults")}</div>
+      <SettingsGroup title={t("heading.copyrightDefaults")} className="d-flex flex-column gap-2">
         <label className="form-label" htmlFor="defaultCopyright">
           {t("form.defaultCopyright")}
         </label>
         <input
           id="defaultCopyright"
           type="text"
-          className="form-control form-control-sm"
+          className={`form-control form-control-sm ${styles.settingsPanelInput}`}
           placeholder={placeholder}
           value={draft}
           onChange={(event) => handleChange(event.target.value)}
         />
         <div className="form-text">{t("helper.defaultCopyright")}</div>
-      </div>
+      </SettingsGroup>
     </div>
   );
 }

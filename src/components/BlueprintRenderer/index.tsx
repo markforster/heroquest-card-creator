@@ -1,9 +1,14 @@
 "use client";
 
+import { AlertTriangle } from "lucide-react";
+
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
+import CardTextBlock, {
+  layoutCardText,
+  measureCardTextMaxLineWidth,
+} from "@/components/Cards/CardParts/CardTextBlock";
 import CardTexturedBorder from "@/components/Cards/CardParts/CardTexturedBorder";
-import CardTextBlock, { layoutCardText } from "@/components/Cards/CardParts/CardTextBlock";
 import HeroStatsBlock, {
   HERO_STATS_HEIGHT,
   type HeroStats,
@@ -14,19 +19,38 @@ import MonsterStatsBlock, {
 } from "@/components/Cards/CardParts/MonsterStatsBlock";
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import Layer from "@/components/Cards/CardPreview/Layer";
-import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
+import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
-import { cardTemplatesById } from "@/data/card-templates";
+import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
+import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
+import {
+  DEVELOPER_CREDIT_BLEND_COLOR,
+  DEVELOPER_CREDIT_BLEND_MODE,
+  DEVELOPER_CREDIT_FONT_SCALE,
+  DEVELOPER_CREDIT_OPACITY,
+  DEVELOPER_CREDIT_RIGHT_INSET,
+  DEVELOPER_CREDIT_TOP_INSET,
+  DEVELOPER_CREDIT_TEXT,
+} from "@/config/developer-credit";
 import { blueprintsByTemplateId } from "@/data/blueprints";
+import { cardTemplatesById } from "@/data/card-templates";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { useI18n } from "@/i18n/I18nProvider";
+import { resolveEffectiveFace } from "@/lib/card-face";
+import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { computeContainScale } from "@/lib/image-scale";
-import type { Blueprint, BlueprintBounds, BlueprintGroup, BlueprintLayer } from "@/types/blueprints";
+import { clamp } from "@/lib/math";
+import type {
+  Blueprint,
+  BlueprintBounds,
+  BlueprintGroup,
+  BlueprintLayer,
+} from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
-import { AlertTriangle } from "lucide-react";
 import type { StaticImageData } from "next/image";
 
 type BlueprintRendererProps = {
@@ -36,14 +60,11 @@ type BlueprintRendererProps = {
   backgroundLoaded?: boolean;
   cardData?: CardDataByTemplate[TemplateId];
   copyrightTextColor?: string;
+  developerCreditEnabled?: boolean;
 };
 
-const DEFAULT_CANVAS = { width: 750, height: 1050 };
+const DEFAULT_CANVAS = { width: CARD_WIDTH, height: CARD_HEIGHT };
 const MISSING_ARTWORK_COLOR = "#e0b15b";
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
 
 function getLayerBounds(blueprint: Blueprint, layer: BlueprintLayer) {
   return (
@@ -68,7 +89,7 @@ function resolveVisibleCopyrightBounds({
   if (!cardData) return null;
   const template = cardTemplatesById[blueprint.templateId];
   const effectiveFace = template
-    ? ((cardData as { face?: CardFace }).face ?? template.defaultFace)
+    ? resolveEffectiveFace((cardData as { face?: CardFace }).face, template.defaultFace)
     : (cardData as { face?: CardFace }).face;
   if (effectiveFace !== "front") return null;
   const showCopyright =
@@ -102,6 +123,31 @@ function truncateText(value: string, maxChars: number) {
   if (value.length <= maxChars) return value;
   if (maxChars <= 3) return value.slice(0, maxChars);
   return `${value.slice(0, maxChars - 3)}...`;
+}
+
+function resolveCopyrightTextStyle(blueprint: Blueprint) {
+  const copyrightLayer = blueprint.layers.find((entry) => entry.type === "copyright");
+  const layerProps = copyrightLayer?.props ?? {};
+  const fontSize = typeof layerProps.fontSize === "number" ? layerProps.fontSize : 16;
+  const fontWeight =
+    typeof layerProps.fontWeight === "number" || typeof layerProps.fontWeight === "string"
+      ? layerProps.fontWeight
+      : undefined;
+  const fontFamily =
+    typeof layerProps.fontFamily === "string"
+      ? layerProps.fontFamily
+      : "Helvetica, Arial, sans-serif";
+  const letterSpacingEm =
+    typeof layerProps.letterSpacingEm === "number" ? layerProps.letterSpacingEm : undefined;
+  const fill = typeof layerProps.fill === "string" ? layerProps.fill : DEFAULT_COPYRIGHT_COLOR;
+
+  return {
+    fontSize,
+    fontWeight,
+    fontFamily,
+    letterSpacingEm,
+    fill,
+  };
 }
 
 function MissingArtworkPlaceholder({
@@ -246,9 +292,7 @@ function renderBorderLayer({
   return (
     <CardBorder
       key={layer.id}
-      mask={
-        borderMask ?? (blueprint.templateId === "labelled-back" ? borderedMask : undefined)
-      }
+      mask={borderMask ?? (blueprint.templateId === "labelled-back" ? borderedMask : undefined)}
       backgroundLoaded={backgroundLoaded}
       color={borderColor}
       width={bounds.width}
@@ -392,22 +436,22 @@ function TextLayer({
   const hideTitle =
     blueprint.templateId === "labelled-back" ? labelledBackData.showTitle === false : false;
   const bodyTextEnabled =
-    blueprint.templateId === "labelled-back" ? labelledBackData.bodyTextStyle?.enabled ?? false : true;
+    blueprint.templateId === "labelled-back"
+      ? (labelledBackData.bodyTextStyle?.enabled ?? false)
+      : true;
   if (blueprint.templateId === "labelled-back" && !bodyTextEnabled) {
     return null;
   }
-  let baseBounds =
-    hideTitle
-      ? getPlacementBounds("hidden") ?? getLayerBounds(blueprint, layer)
-      : placement === "top"
-        ? getPlacementBounds("top") ?? getLayerBounds(blueprint, layer)
-        : getLayerBounds(blueprint, layer);
-  let flushBounds =
-    hideTitle
-      ? getPlacementBounds("flushHidden") ?? baseBounds
-      : placement === "top"
-        ? getPlacementBounds("flushTop") ?? baseBounds
-        : getPlacementBounds("flush") ?? baseBounds;
+  let baseBounds = hideTitle
+    ? (getPlacementBounds("hidden") ?? getLayerBounds(blueprint, layer))
+    : placement === "top"
+      ? (getPlacementBounds("top") ?? getLayerBounds(blueprint, layer))
+      : getLayerBounds(blueprint, layer);
+  let flushBounds = hideTitle
+    ? (getPlacementBounds("flushHidden") ?? baseBounds)
+    : placement === "top"
+      ? (getPlacementBounds("flushTop") ?? baseBounds)
+      : (getPlacementBounds("flush") ?? baseBounds);
   const fontSize = typeof layer.props?.fontSize === "number" ? layer.props.fontSize : undefined;
   const lineHeight =
     typeof layer.props?.lineHeight === "number" ? layer.props.lineHeight : undefined;
@@ -438,9 +482,7 @@ function TextLayer({
       ? layer.props.backdropOpacity
       : 0.2;
   const defaultBackdropRadius =
-    layer.props && typeof layer.props.backdropRadius === "number"
-      ? layer.props.backdropRadius
-      : 0;
+    layer.props && typeof layer.props.backdropRadius === "number" ? layer.props.backdropRadius : 0;
   const defaultBackdropInsetMode =
     layer.props && typeof layer.props.backdropInsetMode === "string"
       ? layer.props.backdropInsetMode
@@ -604,10 +646,7 @@ function TextLayer({
       placement === "bottom" && !hideTitle && effectiveBackdrop.insetMode === "flush"
         ? fontSizeResolved
         : 0;
-    const maxTextHeight = Math.max(
-      0,
-      backdropBounds.height - textPadding * 2 - minBottomPadding,
-    );
+    const maxTextHeight = Math.max(0, backdropBounds.height - textPadding * 2 - minBottomPadding);
     const maxLinesByHeight = Math.floor(maxTextHeight / effectiveLineHeight);
     const effectiveLines = Math.min(lines.length, Math.max(0, maxLinesByHeight));
     const textHeight = effectiveLines * effectiveLineHeight;
@@ -704,9 +743,10 @@ function TextLayer({
 
       const visibleLines = Math.min(lines.length, maxLines);
       const textHeight = visibleLines * resolvedLineHeight;
-      const bubbleHeight = isLastSegment && isFullHeight
-        ? availableForThisSegment
-        : bubbleTopPadding + textHeight + textPadding + minBottomPadding;
+      const bubbleHeight =
+        isLastSegment && isFullHeight
+          ? availableForThisSegment
+          : bubbleTopPadding + textHeight + textPadding + minBottomPadding;
 
       const textBounds = {
         x: textAreaX,
@@ -744,7 +784,8 @@ function TextLayer({
               ? effectiveCornerRadius
               : {
                   top: index === 0 ? effectiveCornerRadius.top : resolvedRadius,
-                  bottom: index === segmentCount - 1 ? effectiveCornerRadius.bottom : resolvedRadius,
+                  bottom:
+                    index === segmentCount - 1 ? effectiveCornerRadius.bottom : resolvedRadius,
                 };
 
           return (
@@ -778,11 +819,7 @@ function TextLayer({
   return (
     <Layer key={layer.id}>
       {shouldShowBackdrop ? (
-        <path
-          d={backdropPath}
-          fill={effectiveBackdrop.color}
-          opacity={effectiveBackdrop.opacity}
-        />
+        <path d={backdropPath} fill={effectiveBackdrop.color} opacity={effectiveBackdrop.opacity} />
       ) : null}
       <CardTextBlock
         text={text as string | null | undefined}
@@ -907,7 +944,9 @@ function TitleLayer({
 
   const showRibbonDefault =
     typeof layer.props?.showRibbon === "boolean" ? layer.props.showRibbon : true;
-  const titleStyle = cardData ? (cardData as { titleStyle?: "ribbon" | "plain" }).titleStyle : undefined;
+  const titleStyle = cardData
+    ? (cardData as { titleStyle?: "ribbon" | "plain" }).titleStyle
+    : undefined;
   const showRibbon =
     titleStyle === "ribbon" ? true : titleStyle === "plain" ? false : showRibbonDefault;
   const titleColor = cardData ? (cardData as { titleColor?: string }).titleColor : undefined;
@@ -959,14 +998,15 @@ function CopyrightLayer({
   cardData?: CardDataByTemplate[TemplateId];
   copyrightTextColor?: string;
 }) {
+  const { defaultCopyright } = useCopyrightSettings();
+  const { showTextBounds } = useDebugVisuals();
+
   if (layer.type !== "copyright") return null;
   if (!cardData) return null;
 
-  const { defaultCopyright } = useCopyrightSettings();
-  const { showTextBounds } = useDebugVisuals();
   const template = cardTemplatesById[blueprint.templateId];
   const effectiveFace = template
-    ? ((cardData as { face?: CardFace }).face ?? template.defaultFace)
+    ? resolveEffectiveFace((cardData as { face?: CardFace }).face, template.defaultFace)
     : (cardData as { face?: CardFace }).face;
   if (effectiveFace !== "front") return null;
   const showCopyright =
@@ -982,7 +1022,6 @@ function CopyrightLayer({
       : undefined;
   const normalizedOverride = typeof overrideValue === "string" ? overrideValue.trim() : "";
   const normalizedDefault = defaultCopyright.trim();
-
   const resolvedText =
     normalizedOverride.length > 0
       ? normalizedOverride
@@ -1001,7 +1040,8 @@ function CopyrightLayer({
       : undefined;
   const fontFamily =
     typeof layer.props?.fontFamily === "string" ? layer.props.fontFamily : undefined;
-  const fill = copyrightTextColor ?? (typeof layer.props?.fill === "string" ? layer.props.fill : undefined);
+  const fill =
+    copyrightTextColor ?? (typeof layer.props?.fill === "string" ? layer.props.fill : undefined);
   const letterSpacingEm =
     typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;
   const align =
@@ -1012,7 +1052,7 @@ function CopyrightLayer({
       : undefined;
 
   return (
-    <Layer key={layer.id}>
+    <Layer key={layer.id} data-layer-type="copyright">
       {showTextBounds ? (
         <rect
           x={bounds.x}
@@ -1036,6 +1076,57 @@ function CopyrightLayer({
         letterSpacingEm={letterSpacingEm}
         align={align}
       />
+    </Layer>
+  );
+}
+
+function DeveloperCreditLayer({
+  blueprint,
+  cardData,
+  developerCreditEnabled,
+}: {
+  blueprint: Blueprint;
+  cardData?: CardDataByTemplate[TemplateId];
+  developerCreditEnabled?: boolean;
+}) {
+  if (!developerCreditEnabled) return null;
+  if (!cardData) return null;
+
+  const style = resolveCopyrightTextStyle(blueprint);
+  const fontSize = Math.max(1, Math.round(style.fontSize * DEVELOPER_CREDIT_FONT_SCALE));
+  const fontFamily = CARD_TEXT_FONT_FAMILY;
+  const fontWeight = "400";
+  const x = CARD_WIDTH - DEVELOPER_CREDIT_RIGHT_INSET;
+  const effectiveTopInset = Math.max(DEVELOPER_CREDIT_TOP_INSET, CARD_CORNER_RADIUS + 2);
+  const { maxLineWidth } = measureCardTextMaxLineWidth({
+    text: DEVELOPER_CREDIT_TEXT,
+    width: CARD_HEIGHT,
+    fontSize,
+    lineHeight: fontSize,
+    fontFamily,
+    fontWeight,
+    letterSpacingEm: undefined,
+    defaultAlign: "left",
+  });
+  const y = effectiveTopInset + Math.max(0, Math.floor(maxLineWidth));
+
+  return (
+    <Layer data-layer-type="developer-credit">
+      <text
+        x={0}
+        y={0}
+        transform={`translate(${x} ${y}) rotate(-90)`}
+        fontSize={fontSize}
+        fontFamily={fontFamily}
+        fontWeight={fontWeight}
+        fill={DEVELOPER_CREDIT_BLEND_COLOR}
+        fillOpacity={DEVELOPER_CREDIT_OPACITY}
+        style={{ mixBlendMode: DEVELOPER_CREDIT_BLEND_MODE }}
+        textAnchor="start"
+        dominantBaseline="text-before-edge"
+      >
+        {DEVELOPER_CREDIT_TEXT}
+      </text>
     </Layer>
   );
 }
@@ -1471,6 +1562,11 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
         }
         return null;
       })}
+      <DeveloperCreditLayer
+        blueprint={blueprint}
+        cardData={props.cardData}
+        developerCreditEnabled={props.developerCreditEnabled}
+      />
       {renderGroups({ blueprint, cardData: props.cardData, showTextBounds })}
     </>
   );

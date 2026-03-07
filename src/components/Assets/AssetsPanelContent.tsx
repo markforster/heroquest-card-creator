@@ -851,13 +851,13 @@ export default function AssetsPanelContent({
       ) : null}
       <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
         <div className="input-group input-group-sm" style={{ maxWidth: 260 }}>
-          <span className="input-group-text">
+          <span className={`input-group-text ${styles.themedInputGroupText}`}>
             <Search className={styles.icon} aria-hidden="true" />
           </span>
           <input
             type="search"
             placeholder={t("placeholders.searchAssets")}
-            className={`form-control form-control-sm bg-white text-dark ${styles.assetsSearch}`}
+            className={`form-control form-control-sm ${styles.assetsSearch} ${styles.themedFormControl}`}
             title={t("tooltip.searchAssets")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}

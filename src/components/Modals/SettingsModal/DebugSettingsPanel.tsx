@@ -6,6 +6,7 @@ import styles from "@/app/page.module.css";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { clearAssetClassification } from "@/lib/assets-db";
 import { DangerNotice, SuccessNotice, WarningNotice } from "@/components/common/Notice";
+import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export default function DebugSettingsPanel() {
@@ -38,8 +39,7 @@ export default function DebugSettingsPanel() {
         Debug is enabled while we work through version 0.5.x and will be turned off in a future
         release.
       </WarningNotice>
-      <div className={`${styles.settingsPanelSection} d-flex flex-column gap-2`}>
-        <div className={styles.settingsPanelSectionTitle}>{t("label.debugVisuals")}</div>
+      <SettingsGroup title={t("label.debugVisuals")} className="d-flex flex-column gap-2">
         <label className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}>
           <input
             type="checkbox"
@@ -51,11 +51,11 @@ export default function DebugSettingsPanel() {
           />
           {t("label.debugTextBounds")}
         </label>
-      </div>
-      <div className={`${styles.settingsPanelSection} d-flex flex-column gap-3`}>
-        <div className={styles.settingsPanelSectionTitle}>
-          {t("actions.clearAssetClassification")}
-        </div>
+      </SettingsGroup>
+      <SettingsGroup
+        title={t("actions.clearAssetClassification")}
+        className="d-flex flex-column gap-3"
+      >
         <WarningNotice>
           {t("warning.clearAssetClassificationDestructive")}
         </WarningNotice>
@@ -73,7 +73,7 @@ export default function DebugSettingsPanel() {
         </div>
         {clearMessage ? <SuccessNotice>{clearMessage}</SuccessNotice> : null}
         {clearError ? <DangerNotice>{clearError}</DangerNotice> : null}
-      </div>
+      </SettingsGroup>
     </div>
   );
 }

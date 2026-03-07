@@ -1,11 +1,13 @@
 import { blueprintsByTemplateId } from "@/data/blueprints";
+import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 import type { BlueprintBounds } from "@/types/blueprints";
+import { clamp } from "@/lib/math";
 import type { TemplateId } from "@/types/templates";
 
 export const LEGACY_ABSOLUTE_IMAGE_SCALE_MIN = 0.2;
 export const LEGACY_ABSOLUTE_IMAGE_SCALE_MAX = 3;
-export const CARD_CANVAS_WIDTH = 750;
-export const CARD_CANVAS_HEIGHT = 1050;
+export const CARD_CANVAS_WIDTH = CARD_WIDTH;
+export const CARD_CANVAS_HEIGHT = CARD_HEIGHT;
 export const UI_ZOOM_MIN = 0.5;
 export const UI_ZOOM_FIT = 1;
 export const UI_ZOOM_MAX = 4;
@@ -177,8 +179,4 @@ export function computeSliderTickLeftPx(
   const t = max > min ? clamp((clampedValue - min) / (max - min), 0, 1) : 0;
   const travel = Math.max(0, sliderWidthPx - thumbSizePx);
   return thumbSizePx / 2 + t * travel;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }

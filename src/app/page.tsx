@@ -7,52 +7,59 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
   useMatch,
   useNavigate,
   useParams,
 } from "react-router-dom";
 
-import { AssetHashIndexProvider } from "@/components/Providers/AssetHashIndexProvider";
 import { AssetsRoutePanels } from "@/components/Assets";
-import { StockpileMainPanel } from "@/components/Stockpile";
-import { AppActionsProvider } from "@/components/Providers/AppActionsContext";
-import { AssetKindBackfillProvider } from "@/components/Providers/AssetKindBackfillProvider";
-import { CardEditorProvider, useCardEditor } from "@/components/Providers/CardEditorContext";
 import CardPreviewContainer from "@/components/Cards/CardEditor/CardPreviewContainer";
 import CardInspector from "@/components/Cards/CardInspector/CardInspector";
 import TemplateChooser from "@/components/Cards/CardInspector/TemplateChooser";
 import CardPreview, { type CardPreviewHandle } from "@/components/Cards/CardPreview";
 import CardThumbnail from "@/components/common/CardThumbnail";
+import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
+import { EscapeStackProvider, useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import { WarningNotice } from "@/components/common/Notice";
-import { PreviewCanvasProvider } from "@/components/Providers/PreviewCanvasContext";
 import DatabaseVersionGate from "@/components/DatabaseVersionGate";
-import { EditorSaveProvider } from "@/components/Providers/EditorSaveContext";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
-import { EscapeStackProvider } from "@/components/common/EscapeStackProvider";
-import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
 import HeaderWithTemplatePicker from "@/components/Layout/HeaderWithTemplatePicker";
-import { LibraryTransferProvider } from "@/components/Providers/LibraryTransferContext";
 import LeftNav from "@/components/Layout/LeftNav";
 import MainFooter from "@/components/Layout/MainFooter";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
+import ExportBleedPrompt, { type ExportPromptResult } from "@/components/Modals/ExportBleedPrompt";
+import WelcomeTemplateModal from "@/components/Modals/WelcomeTemplateModal";
+import { AppActionsProvider } from "@/components/Providers/AppActionsContext";
+import { AssetHashIndexProvider } from "@/components/Providers/AssetHashIndexProvider";
+import { AssetKindBackfillProvider } from "@/components/Providers/AssetKindBackfillProvider";
+import { CardEditorProvider, useCardEditor } from "@/components/Providers/CardEditorContext";
 import { DebugVisualsProvider } from "@/components/Providers/DebugVisualsContext";
+import { EditorSaveProvider } from "@/components/Providers/EditorSaveContext";
+import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
+import { LibraryTransferProvider } from "@/components/Providers/LibraryTransferContext";
 import {
   LocalStorageProvider,
   useLocalStorageBoolean,
 } from "@/components/Providers/LocalStorageProvider";
-import { PreviewRendererProvider } from "@/components/Providers/PreviewRendererContext";
-import { TextFittingPreferencesProvider } from "@/components/Providers/TextFittingPreferencesContext";
-import ToolsToolbar from "@/components/ToolsToolbar";
-import WelcomeTemplateModal from "@/components/Modals/WelcomeTemplateModal";
-import { WebglPreviewSettingsProvider } from "@/components/Providers/WebglPreviewSettingsContext";
+import { ThemeProvider } from "@/components/Providers/ThemeProvider";
 import {
   MissingAssetsProvider,
   useMissingAssets,
 } from "@/components/Providers/MissingAssetsContext";
+import { PreviewCanvasProvider } from "@/components/Providers/PreviewCanvasContext";
+import { PreviewRendererProvider } from "@/components/Providers/PreviewRendererContext";
+import { TextFittingPreferencesProvider } from "@/components/Providers/TextFittingPreferencesContext";
+import { WebglPreviewSettingsProvider } from "@/components/Providers/WebglPreviewSettingsContext";
+import { StockpileMainPanel } from "@/components/Stockpile";
+import { formatMessage } from "@/components/Stockpile/stockpile-utils";
+import ToolsToolbar from "@/components/ToolsToolbar";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
-import dungeonAtmosphere from "@/assets/dungeon atmostphere - 2.png";
 import { cardTemplatesById } from "@/data/card-templates";
+import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
+import { useI18n } from "@/i18n/I18nProvider";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
   createCard,
@@ -62,12 +69,10 @@ import {
   updateCard,
   updateCardThumbnail,
 } from "@/lib/cards-db";
-import { createPair, deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
-import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
-import { formatMessage } from "@/components/Stockpile/stockpile-utils";
-import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
-import { useI18n } from "@/i18n/I18nProvider";
+import { exportFaceIdsToZip } from "@/lib/export-face-ids";
+import type { ExportSettings } from "@/lib/export-settings";
+import { createPair, listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
 import { createDefaultCardData } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
@@ -80,14 +85,45 @@ function IndexPageInner() {
   const { t, language } = useI18n();
   const formatMessageWith = (key: string, vars: Record<string, string | number>) =>
     formatMessage(t(key as never), vars);
+  const { track } = useAnalytics();
   const navigate = useNavigate();
+  const location = useLocation();
   const { cardId } = useParams();
+  const normalizedCardId = cardId && cardId.trim().length > 0 ? cardId : null;
   const isAssetsRoute = Boolean(useMatch("/assets"));
   const isCardsListRoute = Boolean(useMatch("/cards"));
   const isDraftRoute = Boolean(useMatch("/cards/new"));
-  const isCardDetailRoute = Boolean(useMatch("/cards/:cardId"));
-  const isSavedCardDetailRoute = isCardDetailRoute && cardId !== "new";
+  const isCardDetailRoute = Boolean(useMatch("/cards/:cardId")) && Boolean(normalizedCardId);
+  const isSavedCardDetailRoute = isCardDetailRoute && normalizedCardId !== "new";
   const isEditorRoute = isDraftRoute || isSavedCardDetailRoute;
+
+  useEffect(() => {
+    let pagePath = "/cards";
+    let pageTitle = "Cards";
+
+    if (isAssetsRoute) {
+      pagePath = "/assets";
+      pageTitle = "Assets";
+    } else if (isDraftRoute) {
+      pagePath = "/cards/new";
+      pageTitle = "New Card";
+    } else if (isSavedCardDetailRoute) {
+      pagePath = "/cards/:id";
+      pageTitle = "Card Detail";
+    } else if (isCardsListRoute) {
+      pagePath = "/cards";
+      pageTitle = "Cards";
+    }
+
+    track("page_view", { page_path: pagePath, page_title: pageTitle });
+  }, [
+    track,
+    location.pathname,
+    isAssetsRoute,
+    isDraftRoute,
+    isSavedCardDetailRoute,
+    isCardsListRoute,
+  ]);
   const {
     state: {
       selectedTemplateId,
@@ -124,8 +160,7 @@ function IndexPageInner() {
       ? (draft as CardDataByTemplate[TemplateId])
       : undefined;
   const rawTitle =
-    (draftValue && "title" in draftValue && (draftValue as { title?: string | null }).title) ||
-    "";
+    (draftValue && "title" in draftValue && (draftValue as { title?: string | null }).title) || "";
   const hasTitle = Boolean(rawTitle && rawTitle.toString().trim().length > 0);
   const canSaveChanges = Boolean(
     currentTemplateId && hasTitle && (hasDraft || (activeCardId && activeStatus === "saved")),
@@ -151,6 +186,13 @@ function IndexPageInner() {
   );
   const [exportCancelled, setExportCancelled] = useState(false);
   const exportSecondaryModeRef = useRef<"worker" | "fallback" | null>(null);
+  const [exportPrompt, setExportPrompt] = useState<{
+    resolve: (result: ExportPromptResult | null) => void;
+    initial: ExportSettings;
+    token: number;
+  } | null>(null);
+  const { settings: exportSettings } = useExportSettingsState();
+  const exportPromptRef = useRef<number | null>(null);
   const [missingAssetsPrompt, setMissingAssetsPrompt] = useState<{
     report: MissingAssetReport[];
     skipIds: Set<string>;
@@ -165,10 +207,6 @@ function IndexPageInner() {
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [routeError, setRouteError] = useState<"not-found" | "load-failed" | null>(null);
   const lastLoadedRef = useRef<string | null>(null);
-  const activeCardKey =
-    cardId ??
-    (selectedTemplateId ? activeCardIdByTemplate[selectedTemplateId] : undefined) ??
-    "draft";
 
   useEscapeModalAware({
     id: "route:assets",
@@ -182,6 +220,10 @@ function IndexPageInner() {
       }
     },
   });
+
+  useEffect(() => {
+    exportPromptRef.current = exportPrompt ? exportPrompt.token : null;
+  }, [exportPrompt]);
 
   useEscapeModalAware({
     id: "route:cards",
@@ -202,9 +244,7 @@ function IndexPageInner() {
         : undefined;
     if (!draftValue) return;
     const draftTitle =
-      (draftValue &&
-        "title" in draftValue &&
-        (draftValue as { title?: string | null }).title) ||
+      (draftValue && "title" in draftValue && (draftValue as { title?: string | null }).title) ||
       "";
     if (!draftTitle || !draftTitle.toString().trim()) {
       return;
@@ -229,7 +269,9 @@ function IndexPageInner() {
 
     const patch = cardDataToCardRecordPatch(templateId, derivedName, draftValue as never);
     const saveFace =
-      (draftValue?.face ?? selectedTemplate?.defaultFace) === "back" ? "back" : "front";
+      resolveEffectiveFace(draftValue?.face, selectedTemplate?.defaultFace ?? "front") === "back"
+        ? "back"
+        : "front";
     const safePatch = patch;
     const viewedAt = Date.now();
 
@@ -250,9 +292,7 @@ function IndexPageInner() {
         if (saveFace === "front") {
           if (draftPairingBackIds?.length) {
             try {
-              await Promise.all(
-                draftPairingBackIds.map((backId) => createPair(record.id, backId)),
-              );
+              await Promise.all(draftPairingBackIds.map((backId) => createPair(record.id, backId)));
             } catch (error) {
               // eslint-disable-next-line no-console
               console.error("[page] Failed to apply draft back pairings", error);
@@ -320,13 +360,9 @@ function IndexPageInner() {
 
   const saveCurrentCard = async () => {
     if (!currentTemplateId) return false;
-    const mode =
-      activeCardId && activeStatus === "saved"
-        ? "update"
-        : hasDraft
-          ? "new"
-          : null;
+    const mode = activeCardId && activeStatus === "saved" ? "update" : hasDraft ? "new" : null;
     if (!mode) return false;
+    track("save_started", { mode });
     await handleSave(mode);
     return true;
   };
@@ -372,9 +408,7 @@ function IndexPageInner() {
     const templateId = currentTemplateId as TemplateId;
     if (!draftValue) return;
     const draftTitle =
-      (draftValue &&
-        "title" in draftValue &&
-        (draftValue as { title?: string | null }).title) ||
+      (draftValue && "title" in draftValue && (draftValue as { title?: string | null }).title) ||
       "";
     const nextDraft = {
       ...draftValue,
@@ -391,11 +425,7 @@ function IndexPageInner() {
         try {
           const pairs = await listPairsForFace(activeCardId);
           const backIds = Array.from(
-            new Set(
-              pairs
-                .map((pair) => pair.backFaceId)
-                .filter((id): id is string => Boolean(id)),
-            ),
+            new Set(pairs.map((pair) => pair.backFaceId).filter((id): id is string => Boolean(id))),
           );
           setDraftPairingBackIds(backIds.length ? backIds : null);
         } catch {
@@ -415,7 +445,7 @@ function IndexPageInner() {
 
   const effectiveFace = useMemo<CardFace | null>(() => {
     if (!selectedTemplate) return null;
-    return (draftValue?.face ?? selectedTemplate.defaultFace) as CardFace;
+    return resolveEffectiveFace(draftValue?.face, selectedTemplate.defaultFace);
   }, [draftValue?.face, selectedTemplate]);
 
   const sortByRecent = (cards: CardRecord[]) =>
@@ -460,7 +490,7 @@ function IndexPageInner() {
     };
   }, [
     activeCardIdByTemplate,
-    cardId,
+    normalizedCardId,
     draft,
     draftTemplateId,
     selectedTemplateId,
@@ -476,18 +506,18 @@ function IndexPageInner() {
       }
       return;
     }
-    if (!cardId) {
+    if (!normalizedCardId) {
       lastLoadedRef.current = null;
       setRouteError(null);
       return;
     }
-    if (lastLoadedRef.current === cardId) return;
-    lastLoadedRef.current = cardId;
+    if (lastLoadedRef.current === normalizedCardId) return;
+    lastLoadedRef.current = normalizedCardId;
     setRouteError(null);
     let active = true;
     (async () => {
       try {
-        const record = await getCard(cardId);
+        const record = await getCard(normalizedCardId);
         if (!active) return;
         if (!record) {
           setRouteError("not-found");
@@ -509,7 +539,7 @@ function IndexPageInner() {
       active = false;
     };
   }, [
-    cardId,
+    normalizedCardId,
     activeCardIdByTemplate,
     setActiveCard,
     loadCardIntoEditor,
@@ -535,9 +565,7 @@ function IndexPageInner() {
         const pairs = await listPairsForFace(activeCardId);
         if (!active) return;
         const frontIds = new Set(
-          pairs
-            .map((pair) => pair.frontFaceId)
-            .filter((id): id is string => Boolean(id)),
+          pairs.map((pair) => pair.frontFaceId).filter((id): id is string => Boolean(id)),
         );
         const matches = cards.filter((card) => frontIds.has(card.id));
         sortByRecent(matches);
@@ -622,6 +650,43 @@ function IndexPageInner() {
     return [];
   }, [effectiveFace, pairedBackId, pairedFrontCount, t]);
 
+  const requestExportOptions = async (): Promise<ExportPromptResult | null> => {
+    const settings = exportSettings;
+    const resolveFromSettings = (): ExportPromptResult => ({
+      bleedPx: settings.bleed.enabled ? settings.bleed.bleedPx : 0,
+      cropMarks: {
+        enabled: settings.bleed.enabled ? settings.cropMarks.enabled : false,
+        color: settings.cropMarks.color,
+        style: settings.cropMarks.style ?? "lines",
+      },
+      cutMarks: {
+        enabled: settings.cutMarks.enabled,
+        color: settings.cutMarks.color,
+      },
+      roundedCorners: settings.roundedCorners,
+    });
+    if (!settings.bleed.askBeforeExport) {
+      return resolveFromSettings();
+    }
+
+    return new Promise<ExportPromptResult | null>((resolve) => {
+      const token = Date.now() + Math.random();
+      setExportPrompt({ resolve, initial: settings, token });
+      let resolved = false;
+      const safeResolve = (result: ExportPromptResult) => {
+        if (resolved) return;
+        resolved = true;
+        resolve(result);
+      };
+      window.setTimeout(() => {
+        if (exportPromptRef.current !== token) {
+          setExportPrompt(null);
+          safeResolve(resolveFromSettings());
+        }
+      }, 0);
+    });
+  };
+
   const openCardInNewTab = (cardIdToOpen: string) => {
     if (typeof window === "undefined") return;
     const url = `${window.location.origin}${window.location.pathname}#/cards/${cardIdToOpen}`;
@@ -642,17 +707,38 @@ function IndexPageInner() {
     return notes;
   };
 
-  const exportCurrentFace = () => {
-    if (!activeCardId) {
-      previewRef.current?.exportAsPng();
-      return;
-    }
+  const isExportPromptResult = (value: unknown): value is ExportPromptResult => {
+    if (!value || typeof value !== "object") return false;
+    const candidate = value as Partial<ExportPromptResult>;
+    if (typeof candidate.bleedPx !== "number") return false;
+    const crop = candidate.cropMarks;
+    if (!crop || typeof crop !== "object") return false;
+    if (typeof crop.enabled !== "boolean") return false;
+    if (typeof crop.color !== "string") return false;
+    if (crop.style && crop.style !== "lines" && crop.style !== "squares") return false;
+    const cut = candidate.cutMarks;
+    if (!cut || typeof cut !== "object") return false;
+    if (typeof cut.enabled !== "boolean") return false;
+    if (typeof cut.color !== "string") return false;
+    if (typeof candidate.roundedCorners !== "boolean") return false;
+    return true;
+  };
 
+  const exportCurrentFace = (exportOptions?: ExportPromptResult | unknown) => {
+    const resolvedOptions = isExportPromptResult(exportOptions) ? exportOptions : undefined;
     void (async () => {
+      const resolved = resolvedOptions ?? (await requestExportOptions());
+      if (!resolved) return;
+
+      if (!activeCardId) {
+        previewRef.current?.exportAsPng(resolved);
+        return;
+      }
+
       try {
         const card = await getCard(activeCardId);
         if (!card) {
-          previewRef.current?.exportAsPng();
+          previewRef.current?.exportAsPng(resolved);
           return;
         }
         if (ENABLE_MISSING_ASSET_CHECKS) {
@@ -663,25 +749,33 @@ function IndexPageInner() {
               skipIds: new Set(report.map((entry) => entry.cardId)),
               skipNotes: buildSkipNotesFromReport(report),
               onProceed: () => {
-                previewRef.current?.exportAsPng();
+                previewRef.current?.exportAsPng(resolved);
               },
             });
             return;
           }
         }
-        previewRef.current?.exportAsPng();
+        previewRef.current?.exportAsPng(resolved);
       } catch {
-        previewRef.current?.exportAsPng();
+        previewRef.current?.exportAsPng(resolved);
       }
     })();
   };
 
   const exportFaceIds = async (
     faceIds: string[],
-    options?: { skipIds?: Set<string>; skipNotes?: Map<string, string>; skipPrecheck?: boolean },
+    options?: {
+      skipIds?: Set<string>;
+      skipNotes?: Map<string, string>;
+      skipPrecheck?: boolean;
+      exportOptions?: ExportPromptResult;
+    },
   ) => {
+    const resolvedExportOptions = options?.exportOptions ?? (await requestExportOptions());
+    if (!resolvedExportOptions) return;
+
     if (faceIds.length <= 1) {
-      exportCurrentFace();
+      exportCurrentFace(resolvedExportOptions);
       return;
     }
 
@@ -740,6 +834,10 @@ function IndexPageInner() {
         shouldCancel: () => exportCancelRef.current,
         skipCardIds: options?.skipIds,
         skipCardNotes: options?.skipNotes,
+        bleedPx: resolvedExportOptions.bleedPx,
+        cropMarks: resolvedExportOptions.cropMarks,
+        cutMarks: resolvedExportOptions.cutMarks,
+        roundedCorners: resolvedExportOptions.roundedCorners,
       });
       if (result.status === "empty") {
         window.alert(t("alert.selectCardToExport"));
@@ -813,154 +911,165 @@ function IndexPageInner() {
           <EscapeStackProvider>
             <AssetKindBackfillProvider>
               <AppActionsProvider>
-              <HeaderWithTemplatePicker
-                missingAssetsCount={missingAssetsReport.length}
-                showMissingAssetsReminder={
-                  missingAssetsDismissed && missingAssetsReport.length > 0
-                }
-              />
-              {ENABLE_MISSING_ASSET_CHECKS &&
-              missingAssetsReport.length > 0 &&
-              !missingAssetsDismissed ? (
-                <div className={styles.missingAssetsBanner}>
-                  <WarningNotice
-                    role="status"
-                    className="d-flex align-items-start gap-3"
-                  >
-                    <Link className={styles.missingAssetsBannerLink} to="/cards?missingartwork">
-                      <div className={styles.missingAssetsBannerBody}>
-                        <div className={styles.missingAssetsBannerTitle}>
-                          {t("warning.missingArtworkDetectedTitle")}
+                <HeaderWithTemplatePicker
+                  missingAssetsCount={missingAssetsReport.length}
+                  showMissingAssetsReminder={
+                    missingAssetsDismissed && missingAssetsReport.length > 0
+                  }
+                />
+                {ENABLE_MISSING_ASSET_CHECKS &&
+                missingAssetsReport.length > 0 &&
+                !missingAssetsDismissed ? (
+                  <div className={styles.missingAssetsBanner}>
+                    <WarningNotice role="status" className="d-flex align-items-start gap-3">
+                      <Link className={styles.missingAssetsBannerLink} to="/cards?missingartwork">
+                        <div className={styles.missingAssetsBannerBody}>
+                          <div className={styles.missingAssetsBannerTitle}>
+                            {t("warning.missingArtworkDetectedTitle")}
+                          </div>
+                          <div>
+                            {formatMessageWith("warning.missingArtworkDetectedBody", {
+                              count: missingAssetsReport.length,
+                            })}
+                          </div>
                         </div>
-                        <div>
-                          {formatMessageWith("warning.missingArtworkDetectedBody", {
-                            count: missingAssetsReport.length,
-                          })}
-                        </div>
-                      </div>
-                    </Link>
-                    <button
-                      type="button"
-                      className={`btn btn-outline-light btn-sm ${styles.missingAssetsBannerClose}`}
-                      onClick={() => setMissingAssetsDismissed(true)}
-                    >
-                      {t("actions.dismiss")}
-                    </button>
-                  </WarningNotice>
-                </div>
-              ) : null}
-              <main className={`${styles.main} d-flex`}>
-                <LeftNav />
-                {isAssetsRoute ? <AssetsRoutePanels /> : null}
-                {isCardsListRoute ? (
-                  <section className={`${styles.leftPanel} d-flex align-items-stretch`}>
-                    <StockpileMainPanel
-                      isOpen
-                      onClose={() => {}}
-                      onLoadCard={(card) => navigate(`/cards/${card.id}`)}
-                    />
-                  </section>
-                ) : null}
-                {isSavedCardDetailRoute && routeError ? (
-                  <section className={`${styles.routeErrorPanel} d-flex align-items-center justify-content-center`}>
-                    <div className={`${styles.routeErrorCard} ${styles.uStackLg}`}>
-                      <div className={styles.routeErrorTitle}>Card not found</div>
-                      <div className={styles.routeErrorBody}>
-                        {routeError === "not-found"
-                          ? "The card you requested does not exist or was deleted."
-                          : "We couldn't load this card right now."}
-                      </div>
+                      </Link>
                       <button
                         type="button"
-                        className="btn btn-primary btn-sm"
-                        onClick={() => navigate("/cards", { replace: true })}
+                        className={`btn btn-outline-light btn-sm ${styles.missingAssetsBannerClose}`}
+                        onClick={() => setMissingAssetsDismissed(true)}
                       >
-                        Back to cards
+                        {t("actions.dismiss")}
                       </button>
-                    </div>
-                  </section>
+                    </WarningNotice>
+                  </div>
                 ) : null}
-                <section
-                  className={`${styles.leftPanel} d-flex align-items-stretch gap-3 p-3 ${
-                    !isEditorRoute || routeError ? styles.routeHidden : ""
-                  }`}
-                  // style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
-                >
-                  {/* <div className={styles.templateSidebar}>
+                <main className={`${styles.main} d-flex`}>
+                  <LeftNav />
+                  {isAssetsRoute ? <AssetsRoutePanels /> : null}
+                  {isCardsListRoute ? (
+                    <section className={`${styles.leftPanel} d-flex align-items-stretch`}>
+                      <StockpileMainPanel
+                        isOpen
+                        onClose={() => {}}
+                        onLoadCard={(card) => navigate(`/cards/${card.id}`)}
+                      />
+                    </section>
+                  ) : null}
+                  {isSavedCardDetailRoute && routeError ? (
+                    <section
+                      className={`${styles.routeErrorPanel} d-flex align-items-center justify-content-center`}
+                    >
+                      <div className={`${styles.routeErrorCard} ${styles.uStackLg}`}>
+                        <div className={styles.routeErrorTitle}>
+                          {t("routeError.cardNotFoundTitle")}
+                        </div>
+                        <div className={styles.routeErrorBody}>
+                          {routeError === "not-found"
+                            ? t("routeError.cardNotFoundBody")
+                            : t("routeError.cardLoadFailedBody")}
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm"
+                          onClick={() => navigate("/cards", { replace: true })}
+                        >
+                          {t("actions.backToCards")}
+                        </button>
+                      </div>
+                    </section>
+                  ) : null}
+                  <section
+                    className={`${styles.leftPanel} d-flex align-items-stretch gap-3 p-3 ${
+                      !isEditorRoute || routeError ? styles.routeHidden : ""
+                    }`}
+                    // style={{ backgroundImage: `url("${dungeonAtmosphere.src}")` }}
+                  >
+                    {/* <div className={styles.templateSidebar}>
                     <TemplatesList
                       selectedId={selectedTemplateId}
                       onSelect={(id) => setSelectedTemplateId(id as TemplateId)}
                       variant="sidebar"
                     />
                   </div> */}
-                  <div
-                    className={`${styles.previewContainer} d-flex align-items-center justify-content-center`}
+                    <div
+                      className={`${styles.previewContainer} d-flex align-items-center justify-content-center`}
+                    >
+                      <ToolsToolbar />
+                      {selectedTemplate ? (
+                        <CardPreviewContainer
+                          previewRef={previewRef}
+                          preferredBackId={lastRememberedBackId}
+                        />
+                      ) : null}
+                    </div>
+                  </section>
+                  <aside
+                    className={`${styles.rightPanel} d-flex flex-column ${
+                      !isEditorRoute || routeError ? styles.routeHidden : ""
+                    }`}
                   >
-                    <ToolsToolbar />
-                    {selectedTemplate ? (
-                      <CardPreviewContainer
-                        previewRef={previewRef}
-                        preferredBackId={lastRememberedBackId}
+                    <div className={styles.inspectorTop}>
+                      <TemplateChooser />
+                      <WelcomeTemplateModal
+                        isOpen={isWelcomeOpen}
+                        onClose={() => setIsWelcomeOpen(false)}
+                        onSelect={(templateId) => {
+                          track("template_selected", {
+                            template_id: templateId,
+                            source: "welcome_modal",
+                          });
+                          const nextDraft = createDefaultCardData(templateId);
+                          setSelectedTemplateId(templateId);
+                          setSingleDraft(templateId, nextDraft);
+                          setActiveCard(templateId, null, null);
+                          setTemplateDirty(templateId, false);
+                          navigate("/cards/new", { replace: true });
+                          setIsWelcomeOpen(false);
+                        }}
                       />
-                    ) : null}
-                  </div>
-                </section>
-                <aside
-                  className={`${styles.rightPanel} d-flex flex-column ${
-                    !isEditorRoute || routeError ? styles.routeHidden : ""
-                  }`}
-                >
-                  <div className={styles.inspectorTop}>
-                    <TemplateChooser />
-                    <WelcomeTemplateModal
-                      isOpen={isWelcomeOpen}
-                      onClose={() => setIsWelcomeOpen(false)}
-                      onSelect={(templateId) => {
-                        const nextDraft = createDefaultCardData(templateId);
-                        setSelectedTemplateId(templateId);
-                        setSingleDraft(templateId, nextDraft);
-                        setActiveCard(templateId, null, null);
-                        setTemplateDirty(templateId, false);
-                        navigate("/cards/new", { replace: true });
-                        setIsWelcomeOpen(false);
+                    </div>
+                    <div className={styles.inspectorBody}>
+                      <PreviewCanvasProvider previewRef={previewRef}>
+                        <CardInspector
+                          activeFrontId={activeFrontId}
+                          autoOpenBackId={lastRememberedBackId}
+                          frontViewToken={frontViewToken}
+                          onRememberBackId={setLastRememberedBackId}
+                        />
+                      </PreviewCanvasProvider>
+                    </div>
+                    <EditorActionsToolbar
+                      canSaveChanges={canSaveChanges}
+                      canDuplicate={canDuplicate}
+                      savingMode={savingMode}
+                      onExportPng={() => {
+                        track("export_started", { scope: "editor_single" });
+                        exportCurrentFace();
                       }}
+                      exportMenuItems={exportMenuItems.map((item) => ({
+                        ...item,
+                        onClick: () => {
+                          if (item.id === "export-both-faces") {
+                            track("export_started", { scope: "editor_multi" });
+                            void handleExportBothFaces();
+                          } else if (item.id === "export-back-active-front") {
+                            track("export_started", { scope: "editor_multi" });
+                            void handleExportBackActiveFront();
+                          } else if (item.id === "export-back-all-fronts") {
+                            track("export_started", { scope: "editor_multi" });
+                            void handleExportBackAllFronts();
+                          }
+                        },
+                      }))}
+                      onSaveChanges={() => {
+                        void saveCurrentCard();
+                      }}
+                      onDuplicate={() => duplicateCurrentCard(false)}
+                      onDuplicateWithPairing={() => duplicateCurrentCard(true)}
                     />
-                  </div>
-                  <div className={styles.inspectorBody}>
-                    <PreviewCanvasProvider previewRef={previewRef}>
-                <CardInspector
-                  activeFrontId={activeFrontId}
-                  autoOpenBackId={lastRememberedBackId}
-                  frontViewToken={frontViewToken}
-                  onRememberBackId={setLastRememberedBackId}
-                />
-                    </PreviewCanvasProvider>
-                  </div>
-                  <EditorActionsToolbar
-                    canSaveChanges={canSaveChanges}
-                    canDuplicate={canDuplicate}
-                    savingMode={savingMode}
-                    onExportPng={exportCurrentFace}
-                    exportMenuItems={exportMenuItems.map((item) => ({
-                      ...item,
-                      onClick: () => {
-                        if (item.id === "export-both-faces") {
-                          void handleExportBothFaces();
-                        } else if (item.id === "export-back-active-front") {
-                          void handleExportBackActiveFront();
-                        } else if (item.id === "export-back-all-fronts") {
-                          void handleExportBackAllFronts();
-                        }
-                      },
-                    }))}
-                    onSaveChanges={() => {
-                      void saveCurrentCard();
-                    }}
-                    onDuplicate={() => duplicateCurrentCard(false)}
-                    onDuplicateWithPairing={() => duplicateCurrentCard(true)}
-                  />
-                </aside>
-              </main>
+                  </aside>
+                </main>
               </AppActionsProvider>
             </AssetKindBackfillProvider>
           </EscapeStackProvider>
@@ -1020,9 +1129,7 @@ function IndexPageInner() {
                     </div>
                     <div className={styles.assetsReportStatus}>
                       {t("label.missingAssets")}:{" "}
-                      {entry.missing
-                        .map((asset) => `${asset.label} \"${asset.name}\"`)
-                        .join(", ")}
+                      {entry.missing.map((asset) => `${asset.label} \"${asset.name}\"`).join(", ")}
                     </div>
                     <button
                       type="button"
@@ -1036,6 +1143,31 @@ function IndexPageInner() {
               })}
             </div>
           </ConfirmModal>
+        ) : null}
+        {exportPrompt ? (
+          <ExportBleedPrompt
+            isOpen={Boolean(exportPrompt)}
+            initialBleedEnabled={exportPrompt.initial.bleed.enabled}
+            initialBleedPx={exportPrompt.initial.bleed.bleedPx}
+            initialCropMarksEnabled={exportPrompt.initial.cropMarks.enabled}
+            initialCropMarkColor={exportPrompt.initial.cropMarks.color}
+            initialCropMarkStyle={exportPrompt.initial.cropMarks.style ?? "lines"}
+            initialCutMarksEnabled={exportPrompt.initial.cutMarks.enabled}
+            initialCutMarkColor={exportPrompt.initial.cutMarks.color}
+            initialRoundedCorners={exportPrompt.initial.roundedCorners}
+            onConfirm={(result) => {
+              const prompt = exportPrompt;
+              if (!prompt) return;
+              setExportPrompt(null);
+              prompt.resolve(result);
+            }}
+            onCancel={() => {
+              const prompt = exportPrompt;
+              if (!prompt) return;
+              setExportPrompt(null);
+              prompt.resolve(null);
+            }}
+          />
         ) : null}
         <ExportProgressOverlay
           isOpen={isExportingFaces}
@@ -1062,25 +1194,27 @@ export default function IndexPage() {
       <CardEditorProvider>
         <AssetHashIndexProvider>
           <LocalStorageProvider>
-            <DebugVisualsProvider>
-              <PreviewRendererProvider>
-                <WebglPreviewSettingsProvider>
-                  <TextFittingPreferencesProvider>
-                    <MissingAssetsProvider>
-                      <HashRouter>
-                        <Routes>
-                          <Route path="/cards" element={<IndexPageInner />} />
-                          <Route path="/cards/new" element={<IndexPageInner />} />
-                          <Route path="/cards/:cardId" element={<IndexPageInner />} />
-                          <Route path="/assets" element={<IndexPageInner />} />
-                          <Route path="*" element={<Navigate to="/cards" replace />} />
-                        </Routes>
-                      </HashRouter>
-                    </MissingAssetsProvider>
-                  </TextFittingPreferencesProvider>
-                </WebglPreviewSettingsProvider>
-              </PreviewRendererProvider>
-            </DebugVisualsProvider>
+            <ThemeProvider>
+              <DebugVisualsProvider>
+                <PreviewRendererProvider>
+                  <WebglPreviewSettingsProvider>
+                    <TextFittingPreferencesProvider>
+                      <MissingAssetsProvider>
+                        <HashRouter>
+                          <Routes>
+                            <Route path="/cards" element={<IndexPageInner />} />
+                            <Route path="/cards/new" element={<IndexPageInner />} />
+                            <Route path="/cards/:cardId" element={<IndexPageInner />} />
+                            <Route path="/assets" element={<IndexPageInner />} />
+                            <Route path="*" element={<Navigate to="/cards" replace />} />
+                          </Routes>
+                        </HashRouter>
+                      </MissingAssetsProvider>
+                    </TextFittingPreferencesProvider>
+                  </WebglPreviewSettingsProvider>
+                </PreviewRendererProvider>
+              </DebugVisualsProvider>
+            </ThemeProvider>
           </LocalStorageProvider>
         </AssetHashIndexProvider>
       </CardEditorProvider>

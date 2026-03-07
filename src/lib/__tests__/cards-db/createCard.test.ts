@@ -37,6 +37,7 @@ describe("createCard", () => {
       schemaVersion: 1,
       description: undefined,
       copyright: undefined,
+      copyrightColor: undefined,
       showCopyright: undefined,
       imageAssetId: undefined,
       imageAssetName: undefined,

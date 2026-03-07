@@ -1,1 +1,2 @@
 export const DEFAULT_TITLE_COLOR = "#502300";
+export const DEFAULT_COPYRIGHT_COLOR = "#3b1f04";

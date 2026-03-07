@@ -2,12 +2,11 @@
 
 import styles from "@/app/page.module.css";
 
-import type { ReactNode } from "react";
-
 type LanguageOption = {
   code: string;
   label: string;
   flag: string;
+  isDetected?: boolean;
 };
 
 type LanguageMenuPopoverProps = {
@@ -29,7 +28,11 @@ export default function LanguageMenuPopover({
         <button
           key={option.code}
           type="button"
-          className={styles.leftNavMenuItem}
+          className={
+            option.isDetected
+              ? `${styles.leftNavMenuItem} ${styles.leftNavMenuItemDetected}`
+              : styles.leftNavMenuItem
+          }
           role="menuitem"
           onClick={() => onSelect(option.code)}
         >

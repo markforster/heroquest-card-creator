@@ -75,7 +75,7 @@ export async function createCard(
     createdAt: now,
     updatedAt: now,
     nameLower: input.name.toLocaleLowerCase(),
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 
   const store = await getCardsStore("readwrite");

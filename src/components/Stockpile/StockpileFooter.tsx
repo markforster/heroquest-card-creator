@@ -67,7 +67,7 @@ export default function StockpileFooter({
     count: number;
   } | null>(null);
 
-  const fallbackTitle = "Untitled card";
+  const fallbackTitle = t("label.untitledCard");
 
   const resolveThumb = (id: string, blob: Blob | null) => {
     if (typeof window === "undefined") {

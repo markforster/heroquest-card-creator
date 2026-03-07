@@ -6,6 +6,7 @@ import {
   usePreviewRenderer,
 } from "@/components/Providers/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/Providers/WebglPreviewSettingsContext";
+import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { useWebglSupport } from "@/hooks/useWebglSupport";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -22,10 +23,11 @@ export default function PreviewSettingsPanel() {
 
   return (
     <div className={styles.settingsPanelBody}>
-      <div
-        className={`${styles.settingsPanelSection} d-flex flex-column gap-2${webglDisabled ? ` ${styles.settingsPanelSectionDisabled}` : ""}`}
+      <SettingsGroup
+        title={t("label.previewRenderer")}
+        className="d-flex flex-column gap-2"
+        disabled={webglDisabled}
       >
-        <div className={styles.settingsPanelSectionTitle}>{t("label.previewRenderer")}</div>
         <div className={styles.settingsPanelRow}>
           <label className={`${styles.settingsPanelOption} d-inline-flex align-items-center gap-2`}>
             <input
@@ -50,12 +52,13 @@ export default function PreviewSettingsPanel() {
             {t("label.previewRendererWebgl")}
           </label>
         </div>
-      </div>
+      </SettingsGroup>
 
-      <div
-        className={`${styles.settingsPanelSection} d-flex flex-column gap-2${webglDisabled ? ` ${styles.settingsPanelSectionDisabled}` : ""}`}
+      <SettingsGroup
+        title={t("label.webglInteraction")}
+        className="d-flex flex-column gap-2"
+        disabled={webglDisabled}
       >
-        <div className={styles.settingsPanelSectionTitle}>{t("label.webglInteraction")}</div>
         <div className={styles.settingsPanelRow}>
           <label className={`${styles.settingsPanelOption} d-inline-flex align-items-center gap-2`}>
             <input
@@ -80,12 +83,13 @@ export default function PreviewSettingsPanel() {
             {t("label.webglRotate")}
           </label>
         </div>
-      </div>
+      </SettingsGroup>
 
-      <div
-        className={`${styles.settingsPanelSection} d-flex flex-column gap-2${webglDisabled ? ` ${styles.settingsPanelSectionDisabled}` : ""}`}
+      <SettingsGroup
+        title={t("label.webglSheen")}
+        className="d-flex flex-column gap-2"
+        disabled={webglDisabled}
       >
-        <div className={styles.settingsPanelSectionTitle}>{t("label.webglSheen")}</div>
         <label className={styles.settingsPanelRange}>
           {t("label.webglSheenAngle")}: {sheenAngle.toFixed(2)}
           <input
@@ -110,7 +114,7 @@ export default function PreviewSettingsPanel() {
             disabled={webglDisabled}
           />
         </label>
-      </div>
+      </SettingsGroup>
     </div>
   );
 }

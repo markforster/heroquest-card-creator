@@ -14,7 +14,12 @@ export type CardPreviewProps = {
 };
 
 export type CardPreviewHandle = {
-  exportAsPng: () => Promise<void>;
+  exportAsPng: (options?: {
+    bleedPx?: number;
+    cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+    cutMarks?: { enabled: boolean; color: string };
+    roundedCorners?: boolean;
+  }) => Promise<void>;
   waitForBackgroundLoaded?: (timeoutMs?: number) => Promise<void>;
   syncCopyrightContrast?: (options?: { width?: number; height?: number }) => Promise<void>;
   renderToPngBlob: (options?: {
@@ -22,6 +27,10 @@ export type CardPreviewHandle = {
     height?: number;
     loggingId?: string;
     assetBlobsById?: Map<string, Blob>;
+    bleedPx?: number;
+    cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+    cutMarks?: { enabled: boolean; color: string };
+    roundedCorners?: boolean;
   }) => Promise<Blob | null>;
   renderToCanvas: (options?: {
     width?: number;

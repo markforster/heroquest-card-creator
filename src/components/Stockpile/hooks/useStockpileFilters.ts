@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import { cardTemplatesById } from "@/data/card-templates";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import type { CardRecord } from "@/types/cards-db";
 import type { CollectionRecord } from "@/types/collections-db";
 
@@ -46,7 +47,7 @@ export const useStockpileFilters = ({
       ? withViewed.filter((card) => {
           const template = cardTemplatesById[card.templateId];
           if (!template) return false;
-          const effectiveFace = card.face ?? template.defaultFace;
+          const effectiveFace = resolveEffectiveFace(card.face, template.defaultFace);
           return isPairBacks ? effectiveFace === "back" : effectiveFace === "front";
         })
       : withViewed;
@@ -76,13 +77,13 @@ export const useStockpileFilters = ({
     const isFrontCard = (card: CardRecord) => {
       const template = cardTemplatesById[card.templateId];
       if (!template) return false;
-      const effectiveFace = card.face ?? template.defaultFace;
+      const effectiveFace = resolveEffectiveFace(card.face, template.defaultFace);
       return effectiveFace === "front";
     };
     const isBackCard = (card: CardRecord) => {
       const template = cardTemplatesById[card.templateId];
       if (!template) return false;
-      const effectiveFace = card.face ?? template.defaultFace;
+      const effectiveFace = resolveEffectiveFace(card.face, template.defaultFace);
       return effectiveFace === "back";
     };
 
@@ -208,7 +209,7 @@ export const useStockpileFilters = ({
     filteredBase.forEach((card) => {
       const template = cardTemplatesById[card.templateId];
       if (!template) return;
-      const effectiveFace = card.face ?? template.defaultFace;
+      const effectiveFace = resolveEffectiveFace(card.face, template.defaultFace);
       if (effectiveFace === "front") {
         nextFaceCounts.front += 1;
       } else if (effectiveFace === "back") {
@@ -221,14 +222,14 @@ export const useStockpileFilters = ({
       filtered = filtered.filter((card) => {
         const template = cardTemplatesById[card.templateId];
         if (!template) return false;
-        const effectiveFace = card.face ?? template.defaultFace;
+        const effectiveFace = resolveEffectiveFace(card.face, template.defaultFace);
         return effectiveFace === "front";
       });
     } else if (templateFilter === "back") {
       filtered = filtered.filter((card) => {
         const template = cardTemplatesById[card.templateId];
         if (!template) return false;
-        const effectiveFace = card.face ?? template.defaultFace;
+        const effectiveFace = resolveEffectiveFace(card.face, template.defaultFace);
         return effectiveFace === "back";
       });
     } else if (templateFilter !== "all") {

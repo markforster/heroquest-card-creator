@@ -1,4 +1,5 @@
 import type { AssetKindInput, AssetKindResult } from "./types";
+import { clamp } from "@/lib/math";
 
 type LumaStats = {
   edgeDensity: number;
@@ -16,10 +17,6 @@ type TransparencyStats = {
   transparentRatio: number;
   borderTransparentRatio: number;
 };
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
-}
 
 function normalizeByteRatio(value: number, total: number): number {
   if (total <= 0) return 0;

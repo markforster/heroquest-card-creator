@@ -19,6 +19,7 @@ export async function renderSvgToCanvas({
   removeDebugBounds = true,
   loggingId,
   assetBlobsById,
+  mutateSvg,
 }: RenderSvgToCanvasOptions): Promise<HTMLCanvasElement | null> {
   const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
   const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
@@ -27,6 +28,10 @@ export async function renderSvgToCanvas({
     clonedSvg.querySelectorAll('[data-debug-bounds="true"]').forEach((node) => {
       node.remove();
     });
+  }
+
+  if (mutateSvg) {
+    mutateSvg(clonedSvg);
   }
 
   const { origin, isFileProtocol } = getLocationOriginInfo();

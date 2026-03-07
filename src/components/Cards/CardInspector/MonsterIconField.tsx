@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ChevronUp,
   Crosshair,
+  Image,
   ImagePlus,
   RotateCcw,
   Search,
@@ -27,7 +28,9 @@ import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getAllAssets, getAssetObjectUrl } from "@/lib/assets-db";
+import { clamp } from "@/lib/math";
 import type { AssetRecord } from "@/lib/assets-db";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 
 type MonsterIconFieldProps = {
   label: string;
@@ -81,8 +84,6 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
   const MIN_ROTATION = -180;
   const MAX_ROTATION = 180;
   const ROTATION_STEP = 1;
-
-  const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
   const currentDisplayValue = iconAssetId
     ? (iconAssetName ?? t("status.imageSelected"))
@@ -290,7 +291,9 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
 
   return (
     <div className="mb-2">
-      <label className="form-label">{label}</label>
+      <div className={layoutStyles.inspectorFieldHeader}>
+        <FormLabelWithIcon label={label} icon={Image} className="form-label" />
+      </div>
       <div ref={inputWrapRef} className={layoutStyles.imageAutocompleteWrap}>
         <div className="input-group input-group-sm">
           <span className={`input-group-text ${layoutStyles.imageSearchAddon}`}>

@@ -1,4 +1,5 @@
 import type { InspectorFieldsByTemplate } from "@/types/inspector";
+import { CARD_HEIGHT, CARD_WIDTH, sx, sy } from "@/config/card-canvas";
 
 export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
   hero: [
@@ -14,7 +15,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "image",
       bind: "imageAssetId",
       labelKey: "form.heroImage",
-      props: { boundsWidth: 730, boundsHeight: 730 },
+      props: { boundsWidth: sx(730), boundsHeight: sy(730) },
     },
     {
       fieldType: "stats",
@@ -50,7 +51,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "image",
       bind: "imageAssetId",
       labelKey: "form.monsterImage",
-      props: { boundsWidth: 730, boundsHeight: 730 },
+      props: { boundsWidth: sx(730), boundsHeight: sy(730) },
     },
     {
       fieldType: "monsterIcon",
@@ -91,7 +92,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "image",
       bind: "imageAssetId",
       labelKey: "form.cardImage",
-      props: { boundsWidth: 500, boundsHeight: 180 },
+      props: { boundsWidth: sx(500), boundsHeight: sy(180) },
     },
     {
       fieldType: "text",
@@ -124,7 +125,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "image",
       bind: "imageAssetId",
       labelKey: "form.cardImage",
-      props: { boundsWidth: 500, boundsHeight: 370 },
+      props: { boundsWidth: sx(500), boundsHeight: sy(370) },
     },
     {
       fieldType: "text",
@@ -183,7 +184,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "image",
       bind: "imageAssetId",
       labelKey: "form.backImage",
-      props: { boundsWidth: 750, boundsHeight: 1050 },
+      props: { boundsWidth: CARD_WIDTH, boundsHeight: CARD_HEIGHT },
     },
     {
       fieldType: "text",

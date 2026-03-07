@@ -5,5 +5,12 @@ export const languageFlags: Record<string, string> = {
   es: "🇪🇸",
   it: "🇮🇹",
   pt: "🇵🇹",
+  "pt-BR": "🇧🇷",
   nl: "🇳🇱",
+  el: "🇬🇷",
+  hu: "🇭🇺",
+  pl: "🇵🇱",
+  cs: "🇨🇿",
+  sv: "🇸🇪",
+  fi: "🇫🇮",
 };

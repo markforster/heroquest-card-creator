@@ -17,7 +17,7 @@ export interface CardRecord {
   lastViewedAt?: number;
   deletedAt?: number | null;
 
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
 
   title?: string;
   showTitle?: boolean;
@@ -28,6 +28,7 @@ export interface CardRecord {
   face?: CardFace;
   description?: string;
   copyright?: string;
+  copyrightColor?: string;
   showCopyright?: boolean;
 
   imageAssetId?: string;

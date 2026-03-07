@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import type { LucideIcon } from "lucide-react";
 
 import layoutStyles from "@/app/page.module.css";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
@@ -16,6 +17,7 @@ import type { FieldValues, Path } from "react-hook-form";
 type SplitStatStepperProps<TFormValues extends FieldValues> = {
   name: Path<TFormValues>;
   label: string;
+  icon?: LucideIcon;
   min?: number;
   max?: number;
   allowWildcard?: boolean;
@@ -41,6 +43,7 @@ function readSplitFormat(value: StatValue | undefined): StatSplitFormat {
 export default function SplitStatStepper<TFormValues extends FieldValues>({
   name,
   label,
+  icon: Icon,
   min = 0,
   max = 999,
   allowWildcard = false,
@@ -315,7 +318,10 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
   return (
     <div className={layoutStyles.statCell}>
       <div className={`${layoutStyles.statControlRow} ${layoutStyles.uRowSm}`}>
-        <div className={layoutStyles.statSubLabel}>{label}</div>
+        <div className={layoutStyles.statSubLabel}>
+          {Icon ? <Icon className={layoutStyles.statSubLabelIcon} aria-hidden="true" size={14} /> : null}
+          <span>{label}</span>
+        </div>
         <div className={layoutStyles.statSplitFields}>
           {renderStatField(primaryValue, "primary")}
           <div

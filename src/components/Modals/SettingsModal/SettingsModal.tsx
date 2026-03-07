@@ -1,17 +1,20 @@
 "use client";
 
-import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
-import { SETTINGS_AREAS, SETTINGS_NAV_CONFIG } from "@/components/Modals/SettingsModal/settings-areas";
+import NavActionButton from "@/components/Layout/LeftNav/NavActionButton";
+import {
+  SETTINGS_AREAS,
+  SETTINGS_NAV_CONFIG,
+} from "@/components/Modals/SettingsModal/settings-areas";
 import {
   SettingsModalProvider,
   SettingsPanelProvider,
   useSettingsModalControls,
 } from "@/components/Modals/SettingsModal/SettingsModalContext";
-import NavActionButton from "@/components/Layout/LeftNav/NavActionButton";
+import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { OpenCloseProps } from "@/types/ui";
 
@@ -26,6 +29,11 @@ function SettingsModalContent({
 }) {
   const { t } = useI18n();
   const { requestClose, requestAreaChange } = useSettingsModalControls();
+  const [developerCreditDisabled, setDeveloperCreditDisabled] = useLocalStorageBoolean(
+    "hqcc.developerCreditDisabled",
+    false,
+  );
+  const developerCreditEnabled = !developerCreditDisabled;
 
   const enabledAreas = SETTINGS_AREAS.filter((area) => area.isEnabled !== false);
   const activeArea =
@@ -70,13 +78,28 @@ function SettingsModalContent({
           </div>
         ) : null}
         <div className={styles.settingsPanel}>
-          <div className={styles.settingsPanelScroll}>
+          <div className={styles.settingsPanelScroll} data-panel-id={activeArea?.id ?? ""}>
             {activeArea ? (
               <SettingsPanelProvider panelId={activeArea.id} label={t(activeArea.labelKey)}>
                 {renderActivePanel()}
               </SettingsPanelProvider>
             ) : null}
           </div>
+        </div>
+      </div>
+      <div className={styles.settingsFooterRow}>
+        <div className={styles.settingsFooterRowToggle}>
+          <span className={styles.settingsFooterRowEmoji} aria-hidden="true">
+            {developerCreditEnabled ? "😊" : "😢"}
+          </span>
+          <input
+            id="developerCreditToggle"
+            type="checkbox"
+            className={`hq-toggle ${styles.settingsFooterRowInput}`}
+            checked={developerCreditEnabled}
+            onChange={(event) => setDeveloperCreditDisabled(!event.target.checked)}
+          />
+          <span className="form-check-label">{t("form.creditDeveloperCombined")}</span>
         </div>
       </div>
     </ModalShell>

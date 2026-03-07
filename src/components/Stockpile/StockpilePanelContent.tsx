@@ -20,6 +20,7 @@ import { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ModalShell from "@/components/common/ModalShell";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
+import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
@@ -38,6 +39,9 @@ import StockpileExportPairPrompt from "@/components/Stockpile/StockpileExportPai
 import StockpileFooter from "@/components/Stockpile/StockpileFooter";
 import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
+import ExportBleedPrompt, {
+  type ExportPromptResult,
+} from "@/components/Modals/ExportBleedPrompt";
 import StockpilePairPopover from "@/components/Stockpile/StockpilePairPopover";
 import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
 import StockpileTableThumbPopover from "@/components/Stockpile/StockpileTableThumbPopover";
@@ -56,6 +60,7 @@ import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
   getCachedCardThumbnailUrl,
@@ -71,6 +76,8 @@ import {
 } from "@/lib/collections-db";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { runBulkExport } from "@/lib/export-cards";
+import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
+import type { ExportSettings } from "@/lib/export-settings";
 import { deletePairsForFace, listAllPairs } from "@/lib/pairs-service";
 import { createDefaultCardData } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
@@ -114,6 +121,7 @@ export default function StockpilePanelContent({
   const { t, language } = useI18n();
   const formatMessageWith = (key: string, vars: Record<string, string | number>) =>
     formatMessage(t(key as never), vars);
+  const { track } = useAnalytics();
   const isPairFronts = mode === "pair-fronts";
   const isPairBacks = mode === "pair-backs";
   const isPairMode = isPairFronts || isPairBacks;
@@ -228,6 +236,11 @@ export default function StockpilePanelContent({
   );
   const exportSecondaryModeRef = useRef<"worker" | "fallback" | null>(null);
   const [exportCancelled, setExportCancelled] = useState(false);
+  const [exportPrompt, setExportPrompt] = useState<{
+    resolve: (result: ExportPromptResult | null) => void;
+    initial: ExportSettings;
+  } | null>(null);
+  const { settings: exportSettings } = useExportSettingsState();
   const [exportPairPrompt, setExportPairPrompt] = useState<{
     baseIds: string[];
     pairedIds: string[];
@@ -527,7 +540,10 @@ export default function StockpilePanelContent({
 
     return filteredCards.map((card) => {
       const templateMeta = cardTemplatesById[card.templateId];
-      const effectiveFace = (card.face ?? templateMeta?.defaultFace ?? "front") as "front" | "back";
+      const effectiveFace = resolveEffectiveFace(
+        card.face,
+        templateMeta?.defaultFace ?? "front",
+      );
       const pairedBackId = backByFrontId.get(card.id) ?? null;
       const pairedBack = pairedBackId ? (cardById.get(pairedBackId) ?? null) : null;
       const pairedFronts = pairedByTargetId.get(card.id) ?? [];
@@ -536,7 +552,7 @@ export default function StockpilePanelContent({
         isPairFronts && pairedBackId && pairedBackId !== activeBackId,
       );
       const conflictPairedName = isPairingConflict
-        ? (pairedBack?.title ?? pairedBack?.name ?? "Untitled card")
+        ? (pairedBack?.title ?? pairedBack?.name ?? t("label.untitledCard"))
         : undefined;
       const conflictLabel = isPairingConflict ? t("warning.alreadyPairedWith") : undefined;
       const updated = new Date(card.updatedAt);
@@ -850,6 +866,28 @@ export default function StockpilePanelContent({
     ? `${t("status.exportingImagesFrom")} ${exportCollectionName} (${exportTotal})`
     : `${t("status.exportingImages")} (${exportTotal})`;
 
+  const requestExportOptions = async (): Promise<ExportPromptResult | null> => {
+    const settings = exportSettings;
+    if (!settings.bleed.askBeforeExport) {
+      return {
+        bleedPx: settings.bleed.enabled ? settings.bleed.bleedPx : 0,
+        cropMarks: {
+          enabled: settings.bleed.enabled ? settings.cropMarks.enabled : false,
+          color: settings.cropMarks.color,
+          style: settings.cropMarks.style ?? "lines",
+        },
+        cutMarks: {
+          enabled: settings.cutMarks.enabled,
+          color: settings.cutMarks.color,
+        },
+        roundedCorners: settings.roundedCorners,
+      };
+    }
+    return new Promise<ExportPromptResult | null>((resolve) => {
+      setExportPrompt({ resolve, initial: settings });
+    });
+  };
+
   const handleExportCards = async (
     cardsToExport: CardRecord[],
     options?: { skipIds?: Set<string>; skipNotes?: Map<string, string>; skipPrecheck?: boolean },
@@ -885,6 +923,9 @@ export default function StockpilePanelContent({
         return;
       }
     }
+
+    const exportOptions = await requestExportOptions();
+    if (!exportOptions) return;
 
     const exportableCount = cardsToExport.filter((card) => !skipIds.has(card.id)).length;
     setIsExporting(true);
@@ -928,6 +969,10 @@ export default function StockpilePanelContent({
         },
         skipCardIds: skipIds,
         skipCardNotes: skipNotes,
+        bleedPx: exportOptions.bleedPx,
+        cropMarks: exportOptions.cropMarks,
+        cutMarks: exportOptions.cutMarks,
+        roundedCorners: exportOptions.roundedCorners,
       });
 
       if (result.status === "no-images") {
@@ -952,6 +997,16 @@ export default function StockpilePanelContent({
 
   const handleBulkExport = async () => {
     if (!canExport) return;
+
+    const exportScope =
+      activeFilter.type === "collection"
+        ? selectedVisibleCards.length === 0
+          ? "collection_all"
+          : "collection_selected"
+        : selectedVisibleCards.length === 0
+          ? "stockpile_all"
+          : "stockpile_selected";
+    track("export_started", { scope: exportScope });
 
     const { baseIds, pairedIds, previewRows } = resolvePairedExportPlan(exportCards);
     if (pairedIds.length > 0) {
@@ -1516,6 +1571,7 @@ export default function StockpilePanelContent({
             templateName={exportTemplate.name}
             backgroundSrc={exportTemplate.background}
             cardData={exportCardData}
+            copyrightTextColor={exportCardData?.copyrightColor}
           />
         </div>
       ) : null}
@@ -1527,6 +1583,31 @@ export default function StockpilePanelContent({
           void handleExportCards(cards);
         }}
       />
+      {exportPrompt ? (
+        <ExportBleedPrompt
+          isOpen={Boolean(exportPrompt)}
+          initialBleedEnabled={exportPrompt.initial.bleed.enabled}
+          initialBleedPx={exportPrompt.initial.bleed.bleedPx}
+          initialCropMarksEnabled={exportPrompt.initial.cropMarks.enabled}
+          initialCropMarkColor={exportPrompt.initial.cropMarks.color}
+          initialCropMarkStyle={exportPrompt.initial.cropMarks.style ?? "lines"}
+          initialCutMarksEnabled={exportPrompt.initial.cutMarks.enabled}
+          initialCutMarkColor={exportPrompt.initial.cutMarks.color}
+          initialRoundedCorners={exportPrompt.initial.roundedCorners}
+          onConfirm={(result) => {
+            const prompt = exportPrompt;
+            if (!prompt) return;
+            setExportPrompt(null);
+            prompt.resolve(result);
+          }}
+          onCancel={() => {
+            const prompt = exportPrompt;
+            if (!prompt) return;
+            setExportPrompt(null);
+            prompt.resolve(null);
+          }}
+        />
+      ) : null}
       <ExportProgressOverlay
         isOpen={isExporting}
         title={exportTitle}

@@ -1,67 +1,79 @@
 import smallLargeArtworkBorderMask from "@/assets/card-backgrounds/small-large-artwork-border-alpha-mask.png";
 import smallLargeArtworkBorderTexture from "@/assets/card-backgrounds/small-large-artwork-border-blend-texture.png";
 import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
+import { CARD_HEIGHT, CARD_WIDTH, savg, sx, sy } from "@/config/card-canvas";
+import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
 import { EMPHASIZED_LABEL_WEIGHT } from "@/config/typography";
 import type { Blueprint, BlueprintBounds } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
 
-const DESCRIPTION_FONT_SIZE = 32;
+const DESCRIPTION_FONT_SIZE = savg(32);
 const DESCRIPTION_LINE_HEIGHT = DESCRIPTION_FONT_SIZE * 1.25;
 const DESCRIPTION_LETTER_SPACING = 0.000015;
-const HERO_MONSTER_BODY_FONT_SIZE = 26;
+const HERO_MONSTER_BODY_FONT_SIZE = savg(26);
 const HERO_MONSTER_BODY_LINE_HEIGHT = HERO_MONSTER_BODY_FONT_SIZE * 1.05;
 const HERO_MONSTER_BODY_LETTER_SPACING = 0.000015;
-const COPYRIGHT_FONT_SIZE = 20;
-const COPYRIGHT_LINE_HEIGHT = 20;
-const COPYRIGHT_HEIGHT = 22;
-const COPYRIGHT_BOTTOM_MARGIN = 24;
-const COPYRIGHT_STACK_GAP = 8;
+const COPYRIGHT_FONT_SIZE = savg(20);
+const COPYRIGHT_LINE_HEIGHT = savg(20);
+const COPYRIGHT_HEIGHT = sy(22);
+const COPYRIGHT_BOTTOM_MARGIN = sy(24);
+const COPYRIGHT_STACK_GAP = sy(8);
 const COPYRIGHT_BOUNDS = {
-  x: 60,
-  y: 1050 - COPYRIGHT_BOTTOM_MARGIN - COPYRIGHT_HEIGHT,
-  width: 630,
+  x: sx(60),
+  y: CARD_HEIGHT - COPYRIGHT_BOTTOM_MARGIN - COPYRIGHT_HEIGHT,
+  width: sx(630),
   height: COPYRIGHT_HEIGHT,
 };
 const COPYRIGHT_BOUNDS_ARTWORK = {
   ...COPYRIGHT_BOUNDS,
-  y: COPYRIGHT_BOUNDS.y - 56,
+  y: COPYRIGHT_BOUNDS.y - sy(56),
 };
 const HERO_MONSTER_STACK_ORIGIN_Y = COPYRIGHT_BOUNDS.y - COPYRIGHT_STACK_GAP;
-const TREASURE_DESC_X = 120;
-const TREASURE_DESC_WIDTH = 515;
-const TREASURE_DESC_BOTTOM = 986;
+const TREASURE_DESC_X = sx(120);
+const TREASURE_DESC_WIDTH = sx(515);
+const TREASURE_DESC_BOTTOM = sy(986);
 const RIBBON_BOUNDS = { x: 86, y: 46, width: 578, height: 145.15 };
 const RIBBON_TEXT_BOUNDS = { x: 171, y: 66, width: 428, height: 58.15 };
 const RIBBON_TEXT_BOUNDS_NO_RIBBON = { x: 81, y: 82, width: 588, height: 60.15 };
 
-const makeRibbonBounds = (overrides?: Partial<typeof RIBBON_BOUNDS>) => ({
-  ...RIBBON_BOUNDS,
-  ...(overrides ?? {}),
+const scaleBounds = (bounds: BlueprintBounds): BlueprintBounds => ({
+  x: sx(bounds.x),
+  y: sy(bounds.y),
+  width: sx(bounds.width),
+  height: sy(bounds.height),
 });
 
-const makeRibbonTextBounds = (overrides?: Partial<typeof RIBBON_TEXT_BOUNDS>) => ({
-  ...RIBBON_TEXT_BOUNDS,
-  ...(overrides ?? {}),
-});
+const makeRibbonBounds = (overrides?: Partial<typeof RIBBON_BOUNDS>) =>
+  scaleBounds({
+    ...RIBBON_BOUNDS,
+    ...(overrides ?? {}),
+  });
+
+const makeRibbonTextBounds = (overrides?: Partial<typeof RIBBON_TEXT_BOUNDS>) =>
+  scaleBounds({
+    ...RIBBON_TEXT_BOUNDS,
+    ...(overrides ?? {}),
+  });
 
 const makeRibbonTextNoRibbonBounds = (
   overrides?: Partial<typeof RIBBON_TEXT_BOUNDS_NO_RIBBON>,
-) => ({
-  ...RIBBON_TEXT_BOUNDS_NO_RIBBON,
-  ...(overrides ?? {}),
-});
+) =>
+  scaleBounds({
+    ...RIBBON_TEXT_BOUNDS_NO_RIBBON,
+    ...(overrides ?? {}),
+  });
 
 const makeTreasureDescBounds = (topY: number) => ({
   x: TREASURE_DESC_X,
-  y: topY,
+  y: sy(topY),
   width: TREASURE_DESC_WIDTH,
-  height: TREASURE_DESC_BOTTOM - topY,
+  height: TREASURE_DESC_BOTTOM - sy(topY),
 });
 
 const SMALL_TREASURE_BLUEPRINT: Blueprint = {
   schemaVersion: 1,
   templateId: "small-treasure",
-  canvas: { width: 750, height: 1050 },
+  canvas: { width: CARD_WIDTH, height: CARD_HEIGHT },
   layers: [
     {
       id: "background-base",
@@ -72,12 +84,7 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
     {
       id: "artwork",
       type: "image",
-      bounds: {
-        x: 125,
-        y: 166,
-        width: 500,
-        height: 180,
-      },
+      bounds: scaleBounds({ x: 125, y: 166, width: 500, height: 180 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
     },
@@ -92,8 +99,8 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       mask: smallLargeArtworkBorderMask,
       texture: smallLargeArtworkBorderTexture,
       blendMode: "multiply",
-      offsetX: 1,
-      offsetY: -1,
+      offsetX: sx(1),
+      offsetY: sy(-1),
     },
     {
       id: "description",
@@ -112,7 +119,6 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       bind: { titleKey: "title" },
       props: {
         showRibbon: false,
-        // Known working values (previous)
         ribbonX: makeRibbonBounds({ y: 46 }).x,
         ribbonY: makeRibbonBounds({ y: 46 }).y,
         ribbonWidth: makeRibbonBounds().width,
@@ -125,19 +131,6 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
         textNoRibbonY: makeRibbonTextNoRibbonBounds({ y: 82 }).y,
         textNoRibbonWidth: makeRibbonTextNoRibbonBounds().width,
         textNoRibbonHeight: makeRibbonTextNoRibbonBounds().height,
-        // Trial values (multiline experiment)
-        // ribbonX: 81,
-        // ribbonY: 46,
-        // ribbonWidth: 588,
-        // ribbonHeight: 150.15,
-        // textX: 81,
-        // textY: 46,
-        // textWidth: 588,
-        // textHeight: 150.15,
-        // textNoRibbonX: 81,
-        // textNoRibbonY: 78,
-        // textNoRibbonWidth: 588,
-        // textNoRibbonHeight: 96.15,
       },
     },
     {
@@ -150,7 +143,7 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
         align: "center",
-        fill: "#3b1f04",
+        fill: DEFAULT_COPYRIGHT_COLOR,
         letterSpacingEm: -0.01,
         fontFamily: "Helvetica, Arial, sans-serif",
       },
@@ -161,7 +154,7 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
 const LARGE_TREASURE_BLUEPRINT: Blueprint = {
   schemaVersion: 1,
   templateId: "large-treasure",
-  canvas: { width: 750, height: 1050 },
+  canvas: { width: CARD_WIDTH, height: CARD_HEIGHT },
   layers: [
     {
       id: "background-base",
@@ -172,15 +165,10 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
     {
       id: "artwork",
       type: "image",
-      bounds: {
-        x: 135,
-        y: 158,
-        width: 480,
-        height: 352,
-      },
+      bounds: scaleBounds({ x: 135, y: 158, width: 480, height: 352 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
-      props: { offsetX: 0, offsetY: 14 },
+      props: { offsetX: sx(0), offsetY: sy(14) },
     },
     {
       id: "background-frame",
@@ -193,8 +181,8 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       mask: smallLargeArtworkBorderMask,
       texture: smallLargeArtworkBorderTexture,
       blendMode: "multiply",
-      offsetX: 1,
-      offsetY: -1,
+      offsetX: sx(1),
+      offsetY: sy(-1),
     },
     {
       id: "description",
@@ -213,7 +201,6 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       bind: { titleKey: "title" },
       props: {
         showRibbon: false,
-        // Known working values (previous)
         ribbonX: makeRibbonBounds({ y: 46 }).x,
         ribbonY: makeRibbonBounds({ y: 46 }).y,
         ribbonWidth: makeRibbonBounds().width,
@@ -226,19 +213,6 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
         textNoRibbonY: makeRibbonTextNoRibbonBounds({ y: 82 }).y,
         textNoRibbonWidth: makeRibbonTextNoRibbonBounds().width,
         textNoRibbonHeight: makeRibbonTextNoRibbonBounds().height,
-        // Trial values (multiline experiment)
-        // ribbonX: 81,
-        // ribbonY: 46,
-        // ribbonWidth: 588,
-        // ribbonHeight: 150.15,
-        // textX: 81,
-        // textY: 46,
-        // textWidth: 588,
-        // textHeight: 150.15,
-        // textNoRibbonX: 81,
-        // textNoRibbonY: 78,
-        // textNoRibbonWidth: 588,
-        // textNoRibbonHeight: 96.15,
       },
     },
     {
@@ -251,7 +225,7 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
         align: "center",
-        fill: "#3b1f04",
+        fill: DEFAULT_COPYRIGHT_COLOR,
         letterSpacingEm: -0.01,
         fontFamily: "Helvetica, Arial, sans-serif",
       },
@@ -262,7 +236,7 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
 const LABELLED_BACK_BLUEPRINT: Blueprint = {
   schemaVersion: 1,
   templateId: "labelled-back",
-  canvas: { width: 750, height: 1050 },
+  canvas: { width: CARD_WIDTH, height: CARD_HEIGHT },
   layers: [
     {
       id: "background-base",
@@ -273,12 +247,7 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
     {
       id: "artwork",
       type: "image",
-      bounds: {
-        x: 0,
-        y: 0,
-        width: 750,
-        height: 1050,
-      },
+      bounds: scaleBounds({ x: 0, y: 0, width: 750, height: 1050 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
     },
@@ -286,45 +255,45 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
       id: "description",
       type: "text",
       bounds: {
-        x: 26,
-        y: 24,
-        width: 696,
-        height: 784,
+        x: sx(26),
+        y: sy(24),
+        width: sx(696),
+        height: sy(784),
       },
       bind: { textKey: "description" },
       props: {
         fontSize: DESCRIPTION_FONT_SIZE,
         lineHeight: DESCRIPTION_LINE_HEIGHT,
         letterSpacingEm: DESCRIPTION_LETTER_SPACING,
-        topX: 26,
-        topY: 210,
-        topWidth: 696,
-        topHeight: 816,
-        flushX: 0,
-        flushY: 0,
-        flushWidth: 750,
-        flushHeight: 806,
-        flushTopX: 0,
-        flushTopY: 210,
-        flushTopWidth: 750,
-        flushTopHeight: 840,
-        hiddenX: 26,
-        hiddenY: 24,
-        hiddenWidth: 696,
-        hiddenHeight: 1002,
-        flushHiddenX: 0,
-        flushHiddenY: 0,
-        flushHiddenWidth: 750,
-        flushHiddenHeight: 1050,
+        topX: sx(26),
+        topY: sy(210),
+        topWidth: sx(696),
+        topHeight: sy(816),
+        flushX: sx(0),
+        flushY: sy(0),
+        flushWidth: CARD_WIDTH,
+        flushHeight: sy(806),
+        flushTopX: sx(0),
+        flushTopY: sy(210),
+        flushTopWidth: CARD_WIDTH,
+        flushTopHeight: sy(840),
+        hiddenX: sx(26),
+        hiddenY: sy(24),
+        hiddenWidth: sx(696),
+        hiddenHeight: sy(1002),
+        flushHiddenX: sx(0),
+        flushHiddenY: sy(0),
+        flushHiddenWidth: CARD_WIDTH,
+        flushHiddenHeight: CARD_HEIGHT,
         backdrop: true,
         backdropFill: "#ffffff",
         backdropOpacity: 0.55,
-        backdropRadius: 30,
+        backdropRadius: savg(30),
         backdropCornerMode: "opposite-title",
         backdropInsetMode: "matchBorder",
         backdropFitMode: "full",
         backdropWhenImageKey: "imageAssetId",
-        textPadding: 24,
+        textPadding: savg(24),
       },
     },
     {
@@ -332,7 +301,7 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
       type: "title",
       bind: { titleKey: "title" },
       props: {
-        y: 866,
+        y: sy(866),
         // Known working values (previous)
         ribbonX: makeRibbonBounds({ y: 866 }).x,
         ribbonY: makeRibbonBounds({ y: 866 }).y,
@@ -358,15 +327,6 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
         textTopY: makeRibbonTextBounds({ y: 68 }).y,
         textTopWidth: makeRibbonTextBounds().width,
         textTopHeight: makeRibbonTextBounds().height,
-        // Trial values (multiline experiment)
-        // ribbonX: 81,
-        // ribbonY: 850,
-        // ribbonWidth: 588,
-        // ribbonHeight: 150.15,
-        // textX: 171,
-        // textY: 853,
-        // textWidth: 428,
-        // textHeight: 96.15,
       },
     },
     {
@@ -383,7 +343,7 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
         align: "center",
-        fill: "#3b1f04",
+        fill: DEFAULT_COPYRIGHT_COLOR,
         letterSpacingEm: -0.01,
         fontFamily: "Helvetica, Arial, sans-serif",
       },
@@ -394,7 +354,7 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
 const HERO_BACK_BLUEPRINT: Blueprint = {
   schemaVersion: 1,
   templateId: "hero-back",
-  canvas: { width: 750, height: 1050 },
+  canvas: { width: CARD_WIDTH, height: CARD_HEIGHT },
   layers: [
     {
       id: "background",
@@ -404,12 +364,7 @@ const HERO_BACK_BLUEPRINT: Blueprint = {
     {
       id: "description",
       type: "text",
-      bounds: {
-        x: 85,
-        y: 303,
-        width: 580,
-        height: 480,
-      },
+      bounds: scaleBounds({ x: 85, y: 303, width: 580, height: 480 }),
       bind: { textKey: "description" },
       props: {
         fontSize: DESCRIPTION_FONT_SIZE,
@@ -429,7 +384,7 @@ const HERO_BACK_BLUEPRINT: Blueprint = {
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
         align: "center",
-        fill: "#3b1f04",
+        fill: DEFAULT_COPYRIGHT_COLOR,
         letterSpacingEm: -0.01,
         fontFamily: "Helvetica, Arial, sans-serif",
       },
@@ -440,7 +395,7 @@ const HERO_BACK_BLUEPRINT: Blueprint = {
 const HERO_BLUEPRINT: Blueprint = {
   schemaVersion: 1,
   templateId: "hero",
-  canvas: { width: 750, height: 1050 },
+  canvas: { width: CARD_WIDTH, height: CARD_HEIGHT },
   layers: [
     {
       id: "background",
@@ -450,12 +405,7 @@ const HERO_BLUEPRINT: Blueprint = {
     {
       id: "artwork",
       type: "image",
-      bounds: {
-        x: 10,
-        y: 120,
-        width: 730,
-        height: 730,
-      },
+      bounds: scaleBounds({ x: 10, y: 120, width: 730, height: 730 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
     },
@@ -464,7 +414,6 @@ const HERO_BLUEPRINT: Blueprint = {
       type: "title",
       bind: { titleKey: "title" },
       props: {
-        // Known working values (previous)
         ribbonX: makeRibbonBounds({ y: 46 }).x,
         ribbonY: makeRibbonBounds({ y: 46 }).y,
         ribbonWidth: makeRibbonBounds().width,
@@ -473,15 +422,6 @@ const HERO_BLUEPRINT: Blueprint = {
         textY: makeRibbonTextBounds({ y: 66 }).y,
         textWidth: makeRibbonTextBounds().width,
         textHeight: makeRibbonTextBounds().height,
-        // Trial values (multiline experiment)
-        // ribbonX: 81,
-        // ribbonY: 46,
-        // ribbonWidth: 588,
-        // ribbonHeight: 150.15,
-        // textX: 171,
-        // textY: 47,
-        // textWidth: 428,
-        // textHeight: 96.15,
       },
     },
     {
@@ -494,7 +434,7 @@ const HERO_BLUEPRINT: Blueprint = {
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
         align: "center",
-        fill: "#3b1f04",
+        fill: DEFAULT_COPYRIGHT_COLOR,
         letterSpacingEm: -0.01,
         fontFamily: "Helvetica, Arial, sans-serif",
       },
@@ -508,9 +448,9 @@ const HERO_BLUEPRINT: Blueprint = {
       direction: "up",
       // origin: { x: 65, y: 1020 },
       // width: 620,
-      origin: { x: 54, y: HERO_MONSTER_STACK_ORIGIN_Y },
-      width: 636,
-      gap: 2,
+      origin: { x: sx(54), y: HERO_MONSTER_STACK_ORIGIN_Y },
+      width: sx(636),
+      gap: sy(2),
       children: [
         {
           id: "hero-description",
@@ -526,7 +466,7 @@ const HERO_BLUEPRINT: Blueprint = {
         {
           id: "hero-stats",
           type: "stats-hero",
-          props: { height: 170 },
+          props: { height: sy(170) },
         },
       ],
     },
@@ -536,7 +476,7 @@ const HERO_BLUEPRINT: Blueprint = {
 const MONSTER_BLUEPRINT: Blueprint = {
   schemaVersion: 1,
   templateId: "monster",
-  canvas: { width: 750, height: 1050 },
+  canvas: { width: CARD_WIDTH, height: CARD_HEIGHT },
   layers: [
     {
       id: "background",
@@ -546,12 +486,7 @@ const MONSTER_BLUEPRINT: Blueprint = {
     {
       id: "artwork",
       type: "image",
-      bounds: {
-        x: 10,
-        y: 120,
-        width: 730,
-        height: 730,
-      },
+      bounds: scaleBounds({ x: 10, y: 120, width: 730, height: 730 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
     },
@@ -560,7 +495,6 @@ const MONSTER_BLUEPRINT: Blueprint = {
       type: "title",
       bind: { titleKey: "title" },
       props: {
-        // Known working values (previous)
         ribbonX: makeRibbonBounds({ y: 46 }).x,
         ribbonY: makeRibbonBounds({ y: 46 }).y,
         ribbonWidth: makeRibbonBounds().width,
@@ -569,15 +503,6 @@ const MONSTER_BLUEPRINT: Blueprint = {
         textY: makeRibbonTextBounds({ y: 66 }).y,
         textWidth: makeRibbonTextBounds().width,
         textHeight: makeRibbonTextBounds().height,
-        // Trial values (multiline experiment)
-        // ribbonX: 81,
-        // ribbonY: 46,
-        // ribbonWidth: 588,
-        // ribbonHeight: 150.15,
-        // textX: 171,
-        // textY: 47,
-        // textWidth: 428,
-        // textHeight: 96.15,
       },
     },
     {
@@ -590,7 +515,7 @@ const MONSTER_BLUEPRINT: Blueprint = {
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
         align: "center",
-        fill: "#3b1f04",
+        fill: DEFAULT_COPYRIGHT_COLOR,
         letterSpacingEm: -0.01,
         fontFamily: "Helvetica, Arial, sans-serif",
       },
@@ -602,9 +527,9 @@ const MONSTER_BLUEPRINT: Blueprint = {
       type: "stack",
       anchor: "bottom",
       direction: "up",
-      origin: { x: 48, y: HERO_MONSTER_STACK_ORIGIN_Y },
-      width: 652,
-      gap: 2,
+      origin: { x: sx(48), y: HERO_MONSTER_STACK_ORIGIN_Y },
+      width: sx(652),
+      gap: sy(2),
       children: [
         {
           id: "monster-description",
@@ -620,14 +545,14 @@ const MONSTER_BLUEPRINT: Blueprint = {
         {
           id: "monster-stats",
           type: "stats-monster",
-          props: { height: 179 },
+          props: { height: sy(179) },
         },
         {
           id: "monster-icon",
           type: "icon",
           bind: { iconKey: "iconAssetId" },
           when: { hasImage: "iconAssetId" },
-          props: { size: 126, offsetX: -4, offsetY: -10 },
+          props: { size: savg(126), offsetX: sx(-4), offsetY: sy(-10) },
         },
       ],
     },

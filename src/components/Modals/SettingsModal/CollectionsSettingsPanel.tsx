@@ -1,6 +1,7 @@
 "use client";
 
 import styles from "@/app/page.module.css";
+import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { useCollectionsTreeSettings } from "@/components/Providers/CollectionsTreeSettingsContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -10,10 +11,7 @@ export default function CollectionsSettingsPanel() {
 
   return (
     <div className={styles.settingsPanelBody}>
-      <div className={`${styles.settingsPanelSection} d-flex flex-column gap-2`}>
-        <div className={styles.settingsPanelSectionTitle}>
-          {t("heading.collectionsSettings")}
-        </div>
+      <SettingsGroup title={t("heading.collectionsSettings")} className="d-flex flex-column gap-2">
         <label className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}>
           <input
             type="checkbox"
@@ -25,15 +23,13 @@ export default function CollectionsSettingsPanel() {
         </label>
         <div className={styles.settingsPanelRow}>{t("label.collectionsTreeHelp")}</div>
         <div className={styles.settingsPanelRow}>
-          {t("label.collectionsTreeExampleSingle")}{" "}
-          <code>spells</code>
+          {t("label.collectionsTreeExampleSingle")} <code>spells</code>
         </div>
         <div className={styles.settingsPanelRow}>
-          {t("label.collectionsTreeExampleGrouped")}{" "}
-          <code>spells/fire</code> {t("label.collectionsTreeExampleAnd")}{" "}
-          <code>spells/air</code>
+          {t("label.collectionsTreeExampleGrouped")} <code>spells/fire</code>{" "}
+          {t("label.collectionsTreeExampleAnd")} <code>spells/air</code>
         </div>
-      </div>
+      </SettingsGroup>
     </div>
   );
 }

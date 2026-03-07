@@ -3,6 +3,7 @@
 import { useId } from "react";
 
 import Layer from "@/components/Cards/CardPreview/Layer";
+import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 
 import type { StaticImageData } from "next/image";
 
@@ -24,10 +25,9 @@ function normalizeMaskId(rawId: string) {
 
 export default function CardBorder({
   mask,
-  backgroundLoaded,
   color,
-  width = 750,
-  height = 1050,
+  width = CARD_WIDTH,
+  height = CARD_HEIGHT,
   offsetX = 0,
   offsetY = 0,
 }: CardBorderProps) {
@@ -44,11 +44,7 @@ export default function CardBorder({
   return (
     <Layer>
       <defs>
-        <mask
-          id={maskId}
-          maskUnits="userSpaceOnUse"
-          maskContentUnits="userSpaceOnUse"
-        >
+        <mask id={maskId} maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse">
           <image
             href={mask.src}
             data-template-asset="border-mask"

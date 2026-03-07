@@ -7,8 +7,8 @@ import type { StaticImageData } from "next/image";
 function mockStaticImage(src: string): StaticImageData {
   return {
     src,
-    width: 742,
-    height: 1045,
+    width: 756,
+    height: 1056,
   } as StaticImageData;
 }
 
@@ -22,8 +22,8 @@ describe("CardTexturedBorder", () => {
         <CardTexturedBorder
           alphaMask={alphaMask}
           textureMask={textureMask}
-          width={750}
-          height={1050}
+          width={756}
+          height={1056}
         />
       </svg>,
     );

@@ -117,6 +117,18 @@ export const ENABLE_CARD_THUMB_CACHE = true;
 export const ENABLE_ASSET_THUMB_THROTTLE = false;
 
 /**
+ * Adds a tiny export-only watermark pixel to front-facing cards.
+ */
+export const ENABLE_WATERMARK = true;
+
+/**
+ * Controls whether the card SVG clipPath uses rounded corners.
+ * Disable to allow straight-corner exports for bleed testing.
+ */
+export const USE_ROUNDED_CARD_CLIP = true;
+// export const USE_ROUNDED_CARD_CLIP = false;
+
+/**
  * Disables missing-asset checks to isolate performance issues.
  */
 export const ENABLE_MISSING_ASSET_CHECKS = true;

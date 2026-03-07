@@ -91,8 +91,8 @@ describe("ImageField zoom bounds", () => {
       imageAssetName: "Art",
       imageScale: 1,
       imageScaleMode: "relative",
-      imageOriginalWidth: 1050,
-      imageOriginalHeight: 750,
+      imageOriginalWidth: 1056,
+      imageOriginalHeight: 756,
       imageOffsetX: 0,
       imageOffsetY: 0,
       imageRotation: 0,
@@ -119,7 +119,7 @@ describe("ImageField zoom bounds", () => {
       expect(Number(scaleValue.textContent)).toBeCloseTo(3, 6);
     });
 
-    const model = computeImageZoomModel({ x: 0, y: 0, width: 100, height: 100 }, 1050, 750);
+    const model = computeImageZoomModel({ x: 0, y: 0, width: 100, height: 100 }, 1056, 756);
     expect(model.relativeCover).toBeGreaterThan(3);
     rectSpy.mockRestore();
   });

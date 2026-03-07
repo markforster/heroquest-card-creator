@@ -1,25 +1,27 @@
-import type { ReactNode } from "react";
-
-import type { LucideIcon } from "lucide-react";
 import {
   ALargeSmall,
   Bug,
   Copyright,
   FolderTree,
-  Monitor,
   TableCellsSplit,
   Image,
+  Download,
+  SunMoon,
 } from "lucide-react";
 
-import type { MessageKey } from "@/i18n/messages";
-import CopyrightSettingsPanel from "@/components/Modals/SettingsModal/CopyrightSettingsPanel";
+import AppearanceSettingsPanel from "@/components/Modals/SettingsModal/AppearanceSettingsPanel";
+import AssetsSettingsPanel from "@/components/Modals/SettingsModal/AssetsSettingsPanel";
 import CollectionsSettingsPanel from "@/components/Modals/SettingsModal/CollectionsSettingsPanel";
+import CopyrightSettingsPanel from "@/components/Modals/SettingsModal/CopyrightSettingsPanel";
 import DebugSettingsPanel from "@/components/Modals/SettingsModal/DebugSettingsPanel";
-import PreviewSettingsPanel from "@/components/Modals/SettingsModal/PreviewSettingsPanel";
+import ExportSettingsPanel from "@/components/Modals/SettingsModal/ExportSettingsPanel";
 import StatLabelOverridesPanel from "@/components/Modals/SettingsModal/StatLabelOverridesPanel";
 import TextFittingSettingsPanel from "@/components/Modals/SettingsModal/TextFittingSettingsPanel";
-import AssetsSettingsPanel from "@/components/Modals/SettingsModal/AssetsSettingsPanel";
+import type { MessageKey } from "@/i18n/messages";
 import { isDebugToolsEnabled } from "@/lib/env";
+
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
 const debugToolsEnabled = isDebugToolsEnabled();
 
@@ -43,10 +45,22 @@ export const SETTINGS_AREAS: SettingsAreaDefinition[] = [
     panel: () => <AssetsSettingsPanel />,
   },
   {
+    id: "appearance-settings",
+    labelKey: "heading.appearanceSettings",
+    icon: SunMoon,
+    panel: () => <AppearanceSettingsPanel />,
+  },
+  {
     id: "collections-settings",
     labelKey: "heading.collectionsSettings",
     icon: FolderTree,
     panel: () => <CollectionsSettingsPanel />,
+  },
+  {
+    id: "export-settings",
+    labelKey: "heading.exportSettings",
+    icon: Download,
+    panel: () => <ExportSettingsPanel />,
   },
   {
     id: "stat-label-overrides",

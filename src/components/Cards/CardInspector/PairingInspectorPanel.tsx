@@ -16,6 +16,7 @@ import { ENABLE_CARD_THUMB_CACHE, ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getCard, listCards } from "@/lib/cards-db";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import {
   getCachedCardThumbnailUrl,
   getLegacyCardThumbnailUrl,
@@ -29,8 +30,6 @@ import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
 
 import CollapsibleGroup from "./CollapsibleGroup";
-
-const FALLBACK_TITLE = "Untitled card";
 
 type PairingInspectorPanelProps = {
   activeFrontId?: string | null;
@@ -46,6 +45,7 @@ export default function PairingInspectorPanel({
   onRememberBackId,
 }: PairingInspectorPanelProps) {
   const { t } = useI18n();
+  const fallbackTitle = t("label.untitledCard");
   const formatMessageWith = useMemo(
     () => (key: string, vars: Record<string, string | number>) => formatMessage(t(key as never), vars),
     [t],
@@ -101,7 +101,7 @@ export default function PairingInspectorPanel({
 
   const effectiveFace = useMemo<CardFace | undefined>(() => {
     if (!template) return undefined;
-    return (draftValue?.face ?? template.defaultFace) as CardFace;
+    return resolveEffectiveFace(draftValue?.face, template.defaultFace);
   }, [draftValue?.face, template]);
 
   const sortByUpdated = (cards: CardRecord[]) =>
@@ -402,7 +402,10 @@ export default function PairingInspectorPanel({
                       }
                       const nextDraft = {
                         ...(draftValue ?? {}),
-                        face: draftValue?.face ?? template?.defaultFace,
+                        face: resolveEffectiveFace(
+                          draftValue?.face,
+                          template?.defaultFace ?? "front",
+                        ),
                       } as CardDataByTemplate[TemplateId];
                       setCardDraft(currentTemplateId, nextDraft);
                       setSingleDraft(currentTemplateId, nextDraft);
@@ -545,7 +548,7 @@ export default function PairingInspectorPanel({
               const backThumb = resolveThumb(backCard.id, backCard.thumbnailBlob ?? null);
               const backTemplateThumb = cardTemplatesById[backCard.templateId]?.thumbnail;
               const groupFrontCards = pairedBackFrontsMap.get(backCard.id) ?? [];
-              const backTitle = backCard.title ?? FALLBACK_TITLE;
+              const backTitle = backCard.title ?? fallbackTitle;
               const groupCountLabel =
                 groupFrontCards.length === 1
                   ? t("label.frontFacingCountSingle")
@@ -743,7 +746,7 @@ export default function PairingInspectorPanel({
       >
         {pendingUnpairBack
           ? formatMessageWith("warning.pairingLossSingle", {
-              back: pendingUnpairBack.title ?? FALLBACK_TITLE,
+              back: pendingUnpairBack.title ?? fallbackTitle,
             })
           : null}
       </ConfirmModal>
