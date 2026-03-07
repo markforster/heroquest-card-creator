@@ -297,13 +297,17 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             sampleH = canvas.height - sampleY;
           }
           if (sampleW <= 1 || sampleH <= 1) return null;
-          const imageData = ctx.getImageData(
-            Math.floor(sampleX),
-            Math.floor(sampleY),
-            Math.floor(sampleW),
-            Math.floor(sampleH),
-          );
-          return computeAverageLuminance(imageData);
+          try {
+            const imageData = ctx.getImageData(
+              Math.floor(sampleX),
+              Math.floor(sampleY),
+              Math.floor(sampleW),
+              Math.floor(sampleH),
+            );
+            return computeAverageLuminance(imageData);
+          } catch {
+            return null;
+          }
         };
 
         const computeLuminanceFromCanvas = (
@@ -473,13 +477,17 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               sampleH = canvas.height - sampleY;
             }
             if (sampleW <= 1 || sampleH <= 1) return null;
-            const imageData = ctx.getImageData(
-              Math.floor(sampleX),
-              Math.floor(sampleY),
-              Math.floor(sampleW),
-              Math.floor(sampleH),
-            );
-            return computeAverageLuminance(imageData);
+            try {
+              const imageData = ctx.getImageData(
+                Math.floor(sampleX),
+                Math.floor(sampleY),
+                Math.floor(sampleW),
+                Math.floor(sampleH),
+              );
+              return computeAverageLuminance(imageData);
+            } catch {
+              return null;
+            }
           };
 
           const computeLuminance = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
@@ -587,6 +595,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
         if (showCopyright === false || !resolvedText) {
           setCopyrightTextColor(undefined);
         } else {
+          const isFileProtocol =
+            typeof window !== "undefined" && window.location.protocol === "file:";
           const bounds = getCopyrightBounds(templateId);
           const copyrightColor = await sampleTextContrastColor({
             bounds,
@@ -597,7 +607,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             fontFamily,
             letterSpacingEm,
             align,
-            allowBackgroundShortcut: true,
+            allowBackgroundShortcut: !isFileProtocol,
             cacheKey: `copyright-${bounds.x}-${bounds.y}-${bounds.width}-${bounds.height}`,
           });
           setCopyrightTextColor(copyrightColor);
