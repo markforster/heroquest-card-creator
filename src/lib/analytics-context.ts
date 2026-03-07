@@ -1,5 +1,5 @@
 export type AnalyticsContextData = {
-  app_distribution: "itch" | "local" | "self_hosted" | "unknown";
+  app_distribution: "itch" | "local" | "self_hosted" | "unknown" | "npm";
   app_version: string;
   app_host: string;
   app_url?: string;
@@ -17,12 +17,15 @@ export function buildAnalyticsContext(
   location: LocationLike | null | undefined,
   appVersion: string,
 ): AnalyticsContextData {
+  const override = sanitizeOverride(process.env.NEXT_PUBLIC_APP_DISTRIBUTION);
   const protocol = location?.protocol ?? "";
   const hostname = location?.hostname ?? "";
   const isFile = protocol === "file:";
 
   let distribution: AnalyticsContextData["app_distribution"] = "unknown";
-  if (isFile) {
+  if (override) {
+    distribution = override;
+  } else if (isFile) {
     distribution = "local";
   } else if (hostname.includes("itch.io")) {
     distribution = "itch";
@@ -56,4 +59,21 @@ function resolveAppUrl(location: LocationLike | null | undefined): string | unde
   } catch (_err) {
     return undefined;
   }
+}
+
+function sanitizeOverride(value: string | undefined): AnalyticsContextData["app_distribution"] | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const allowed: AnalyticsContextData["app_distribution"][] = [
+    "itch",
+    "local",
+    "self_hosted",
+    "unknown",
+    "npm",
+  ];
+  if (allowed.includes(trimmed as AnalyticsContextData["app_distribution"])) {
+    return trimmed as AnalyticsContextData["app_distribution"];
+  }
+  return null;
 }

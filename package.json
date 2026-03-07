@@ -50,7 +50,7 @@
     "generate:embedded-assets": "node scripts/generate-embedded-assets.cjs",
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "predev": "npm run generate:embedded-assets && node scripts/copy-zip-worker.cjs",
-    "prepack": "cp README.npm.md README.md && npm run build && npm run verify:out",
+    "prepack": "cp README.npm.md README.md && NEXT_PUBLIC_APP_DISTRIBUTION=npm npm run build && npm run verify:out",
     "prebuild": "npm run generate:embedded-assets && node scripts/copy-zip-worker.cjs",
     "build": "NODE_ENV=production npm run verify:env && NODE_ENV=production next build",
     "build:download": "npm run build && node scripts/package-download.js",

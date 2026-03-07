@@ -57,6 +57,26 @@ describe("buildAnalyticsContext", () => {
     expect(context.app_url).toBe("https://example.com/tools/card-maker");
   });
 
+  it("uses build-time override for distribution when provided", () => {
+    const original = process.env.NEXT_PUBLIC_APP_DISTRIBUTION;
+    process.env.NEXT_PUBLIC_APP_DISTRIBUTION = "npm";
+
+    const context = buildAnalyticsContext(
+      {
+        protocol: "https:",
+        hostname: "example.com",
+        origin: "https://example.com",
+        pathname: "/tools/card-maker",
+        href: "https://example.com/tools/card-maker",
+      },
+      VERSION,
+    );
+
+    process.env.NEXT_PUBLIC_APP_DISTRIBUTION = original;
+
+    expect(context.app_distribution).toBe("npm");
+  });
+
   it("falls back to unknown distribution when hostname missing", () => {
     const context = buildAnalyticsContext(
       {
