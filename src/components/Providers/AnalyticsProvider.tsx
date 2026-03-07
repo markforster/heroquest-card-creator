@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo } from "react";
 
 import { APP_VERSION } from "@/version";
+import { buildAnalyticsContext } from "@/lib/analytics-context";
 type AnalyticsTrackParams = Record<string, string | number | boolean | null | undefined>;
 
 type AnalyticsContextValue = {
@@ -87,12 +88,17 @@ function sendPixel(event: string, params?: AnalyticsTrackParams) {
   const query = new URLSearchParams();
   const protocol = window.location.protocol;
   const isFile = protocol === "file:";
+  const context = buildAnalyticsContext(window.location, APP_VERSION);
 
   addParam(query, "e", event);
   addParam(query, "v", APP_VERSION);
   addParam(query, "src", isFile ? "file_install" : "web");
   addParam(query, "cid", getOrCreateCid());
   addParam(query, "k", PIXEL_KEY);
+  addParam(query, "app_distribution", context.app_distribution);
+  addParam(query, "app_version", context.app_version);
+  addParam(query, "app_host", context.app_host);
+  addParam(query, "app_url", context.app_url);
 
   const pagePath = params?.page_path;
   const pageTitle = params?.page_title;
@@ -139,6 +145,7 @@ export function AnalyticsProvider({ gaId, children }: AnalyticsProviderProps) {
       const isFile = window.location.protocol === "file:";
       const gtag = (window as typeof window & { gtag?: (...args: unknown[]) => void }).gtag;
       const hasGtag = typeof gtag === "function" && Boolean(gaId);
+      const context = buildAnalyticsContext(window.location, APP_VERSION);
 
       if (isFile || !hasGtag) {
         sendPixel(event, params);
@@ -146,8 +153,8 @@ export function AnalyticsProvider({ gaId, children }: AnalyticsProviderProps) {
       }
 
       gtag("event", event, {
-        app_version: APP_VERSION,
         ...(params ?? {}),
+        ...context,
         send_to: gaId,
       });
     },
@@ -155,6 +162,10 @@ export function AnalyticsProvider({ gaId, children }: AnalyticsProviderProps) {
   );
 
   const value = useMemo<AnalyticsContextValue>(() => ({ track }), [track]);
+
+  useEffect(() => {
+    track("app_open");
+  }, [track]);
 
   return <AnalyticsContext.Provider value={value}>{children}</AnalyticsContext.Provider>;
 }
