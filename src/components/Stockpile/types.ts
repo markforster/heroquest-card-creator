@@ -1,6 +1,7 @@
+import type { TemplateId } from "@/types/templates";
+
 import type { MouseEvent } from "react";
 
-import type { TemplateId } from "@/types/templates";
 
 export type StockpileCardThumb = {
   id: string;

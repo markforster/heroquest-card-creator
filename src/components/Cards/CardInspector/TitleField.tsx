@@ -5,11 +5,11 @@ import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
-import { DEFAULT_TITLE_COLOR } from "@/config/colors";
-import { useI18n } from "@/i18n/I18nProvider";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
+import { DEFAULT_TITLE_COLOR } from "@/config/colors";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
+import { useI18n } from "@/i18n/I18nProvider";
 
 import BaseInspectorField from "./BaseInspectorField";
 

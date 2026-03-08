@@ -3,12 +3,13 @@
 import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
+import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { cardTemplatesById } from "@/data/card-templates";
 import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
+import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { getImageLayerBounds } from "@/lib/image-scale";
-import { useI18n } from "@/i18n/I18nProvider";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -20,7 +21,6 @@ import ImageField from "./ImageField";
 import MonsterIconField from "./MonsterIconField";
 import MonsterStatsInspector from "./MonsterStatsInspector";
 import TitleField from "./TitleField";
-import styles from "@/app/page.module.css";
 
 type GenericInspectorFormProps = {
   templateId: TemplateId;

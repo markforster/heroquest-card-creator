@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
-import { AppActionsProvider, useAppActions } from "@/components/Providers/AppActionsContext";
 import { AnalyticsProvider } from "@/components/Providers/AnalyticsProvider";
+import { AppActionsProvider, useAppActions } from "@/components/Providers/AppActionsContext";
 
 const navigate = jest.fn();
 const setSelectedTemplateId = jest.fn();

@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
 import {
   BadgeHelp,
   TextCursorInput,
@@ -14,16 +12,18 @@ import {
   SquareRoundCorner,
   Shrink,
 } from "lucide-react";
+import { useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
+import FormattingHelpContent from "@/components/Cards/CardInspector/FormattingHelpContent";
 import ColorPickerField from "@/components/common/ColorPickerField";
+import ModalShell from "@/components/common/ModalShell";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 import { useI18n } from "@/i18n/I18nProvider";
 import { parseHexColor } from "@/lib/color";
 import type { BodyTextStyle } from "@/types/card-data";
-import ModalShell from "@/components/common/ModalShell";
-import FormattingHelpContent from "@/components/Cards/CardInspector/FormattingHelpContent";
 
 import BaseInspectorField from "./BaseInspectorField";
 

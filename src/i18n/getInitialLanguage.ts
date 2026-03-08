@@ -1,6 +1,7 @@
-import { supportedLanguages } from "./messages";
-import type { SupportedLanguage } from "./messages";
 import isSupportedLanguage from "./isSupportedLanguage";
+import { supportedLanguages } from "./messages";
+
+import type { SupportedLanguage } from "./messages";
 
 export const LANGUAGE_STORAGE_KEY = "hqcc.language";
 

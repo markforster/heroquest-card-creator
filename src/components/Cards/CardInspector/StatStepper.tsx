@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import type { LucideIcon } from "lucide-react";
+
 
 import layoutStyles from "@/app/page.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
 
 import { formatStatInputValue, parseStatInputValue } from "./stat-stepper-input";
 
+import type { LucideIcon } from "lucide-react";
 import type { FieldValues, Path } from "react-hook-form";
 
 type StatStepperProps<TFormValues extends FieldValues> = {

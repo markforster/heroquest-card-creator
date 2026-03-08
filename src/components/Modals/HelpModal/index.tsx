@@ -1,7 +1,7 @@
 "use client";
 
-import ModalShell from "@/components/common/ModalShell";
 import { DocList, DocParagraph, DocSection, docStyles } from "@/components/common/DocContent";
+import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { OpenCloseProps } from "@/types/ui";
 

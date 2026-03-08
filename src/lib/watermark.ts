@@ -1,7 +1,7 @@
 "use client";
 
-import { cardTemplatesById } from "@/data/card-templates";
 import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "@/components/Cards/CardPreview/consts";
+import { cardTemplatesById } from "@/data/card-templates";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 

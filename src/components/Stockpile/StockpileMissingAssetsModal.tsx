@@ -5,13 +5,13 @@ import CardThumbnail from "@/components/common/CardThumbnail";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
-import type { MissingAssetReport } from "@/lib/export-assets-cache";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   getCachedCardThumbnailUrl,
   getLegacyCardThumbnailUrl,
   releaseLegacyCardThumbnailUrl,
 } from "@/lib/card-thumbnail-cache";
+import type { MissingAssetReport } from "@/lib/export-assets-cache";
 
 type StockpileMissingAssetsModalProps = {
   prompt: {

@@ -1,8 +1,8 @@
+import { installMockIndexedDbCollections } from "@/lib/__testutils__/mockIndexedDbCollections";
+import { getCollection } from "@/lib/collections-db";
 import type { CollectionRecord } from "@/types/collections-db";
 
-import { getCollection } from "@/lib/collections-db";
 
-import { installMockIndexedDbCollections } from "@/lib/__testutils__/mockIndexedDbCollections";
 
 describe("getCollection", () => {
   it("returns null when the collection is missing", async () => {

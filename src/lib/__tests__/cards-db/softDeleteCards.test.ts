@@ -1,7 +1,7 @@
+import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
+import { listCards, softDeleteCards } from "@/lib/cards-db";
 import type { CardRecord } from "@/types/cards-db";
 
-import { listCards, softDeleteCards } from "@/lib/cards-db";
-import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
 
 describe("softDeleteCards", () => {
   afterEach(() => {

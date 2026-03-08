@@ -2,9 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import { messages } from "./messages";
 import { getInitialLanguage, LANGUAGE_STORAGE_KEY } from "./getInitialLanguage";
 import isSupportedLanguage from "./isSupportedLanguage";
+import { messages } from "./messages";
 
 import type { MessageKey, SupportedLanguage } from "./messages";
 

@@ -1,5 +1,5 @@
-import type { InspectorFieldsByTemplate } from "@/types/inspector";
 import { CARD_HEIGHT, CARD_WIDTH, sx, sy } from "@/config/card-canvas";
+import type { InspectorFieldsByTemplate } from "@/types/inspector";
 
 export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
   hero: [

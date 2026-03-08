@@ -7,8 +7,8 @@ import {
   ENABLE_MISSING_ASSET_INITIAL_SCAN,
   ENABLE_MISSING_ASSET_PERIODIC_SCAN,
 } from "@/config/flags";
-import { buildAssetCache } from "@/lib/export-assets-cache";
 import { listCards } from "@/lib/cards-db";
+import { buildAssetCache } from "@/lib/export-assets-cache";
 import type { MissingAssetReport } from "@/lib/export-assets-cache";
 import type { CardRecord } from "@/types/cards-db";
 

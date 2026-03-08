@@ -1,5 +1,6 @@
-import type { AssetKindInput, AssetKindResult } from "./types";
 import { clamp } from "@/lib/math";
+
+import type { AssetKindInput, AssetKindResult } from "./types";
 
 type LumaStats = {
   edgeDensity: number;

@@ -1,31 +1,28 @@
 "use client";
 
 import { Search, Trash2, Upload } from "lucide-react";
-import { createPortal } from "react-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
+import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
+import IconButton from "@/components/common/IconButton";
+import ModalShell from "@/components/common/ModalShell";
+import { WarningNotice } from "@/components/common/Notice";
+import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
-import IconButton from "@/components/common/IconButton";
-import { WarningNotice } from "@/components/common/Notice";
 import {
   ENABLE_MISSING_ASSET_CHECKS,
   ENABLE_MISSING_ASSET_DELETE_SCAN,
 } from "@/config/flags";
-import ModalShell from "@/components/common/ModalShell";
-import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
-import { useI18n } from "@/i18n/I18nProvider";
+import { ENABLE_ASSET_THUMB_THROTTLE } from "@/config/flags";
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
-import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
+import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
-import { ENABLE_ASSET_THUMB_THROTTLE } from "@/config/flags";
-import { isSafariBrowser } from "@/lib/browser";
-import type { AssetKindGroupId } from "@/lib/assets-grouping";
-import { groupAssetsByKind } from "@/lib/assets-grouping";
 import type { AssetRecord } from "@/lib/assets-db";
 import {
   addAsset,
@@ -34,14 +31,17 @@ import {
   getAssetObjectUrl,
   updateAssetMeta,
 } from "@/lib/assets-db";
+import type { AssetKindGroupId } from "@/lib/assets-grouping";
+import { groupAssetsByKind } from "@/lib/assets-grouping";
+import { isSafariBrowser } from "@/lib/browser";
 import { listCards, updateCard } from "@/lib/cards-db";
-import type { CardRecord } from "@/types/cards-db";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
 import type { CardDataByTemplate } from "@/types/card-data";
+import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
+import type { OpenCloseProps } from "@/types/ui";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { OpenCloseProps } from "@/types/ui";
 
 type AssetsPanelMode = "manage" | "select";
 

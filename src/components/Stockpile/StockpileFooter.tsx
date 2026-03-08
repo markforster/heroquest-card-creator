@@ -1,17 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { ReactNode } from "react";
+
 
 import styles from "@/app/page.module.css";
-import resolveThumb from "@/components/Stockpile/resolveThumb";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
+import resolveThumb from "@/components/Stockpile/resolveThumb";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   } from "@/lib/card-thumbnail-cache";
 import type { CardRecord } from "@/types/cards-db";
+
+import type { ReactNode } from "react";
 
 type StockpileFooterProps = {
   isPairMode: boolean;

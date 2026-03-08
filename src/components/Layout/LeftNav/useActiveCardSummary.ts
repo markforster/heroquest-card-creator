@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getCard } from "@/lib/cards-db";
 import {
   getCachedCardThumbnailUrl,
   getCardThumbnailUrl,
@@ -13,6 +12,7 @@ import {
   retainCardThumbnail,
   releaseCardThumbnail,
 } from "@/lib/card-thumbnail-cache";
+import { getCard } from "@/lib/cards-db";
 
 export function useActiveCardSummary(
   activeCardId?: string,

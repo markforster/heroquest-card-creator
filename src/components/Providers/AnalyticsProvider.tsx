@@ -2,8 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo } from "react";
 
-import { APP_VERSION } from "@/version";
 import { buildAnalyticsContext } from "@/lib/analytics-context";
+import { APP_VERSION } from "@/version";
+
 type AnalyticsTrackParams = Record<string, string | number | boolean | null | undefined>;
 
 type AnalyticsContextValue = {

@@ -1,7 +1,7 @@
+import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
+import { getCard } from "@/lib/cards-db";
 import type { CardRecord } from "@/types/cards-db";
 
-import { getCard } from "@/lib/cards-db";
-import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
 
 describe("getCard", () => {
   afterEach(() => {

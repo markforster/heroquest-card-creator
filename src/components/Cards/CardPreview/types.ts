@@ -1,9 +1,10 @@
 "use client";
 
-import type { StaticImageData } from "next/image";
 
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
+
+import type { StaticImageData } from "next/image";
 
 export type CardPreviewProps = {
   templateId?: TemplateId;

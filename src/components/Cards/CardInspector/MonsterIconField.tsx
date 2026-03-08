@@ -17,21 +17,22 @@ import {
   Pin,
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
 import { AssetsModal } from "@/components/Assets";
+import { addPinnedAsset, getAssetKindLabel } from "@/components/Cards/CardInspector/asset-utils";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 import IconButton from "@/components/common/IconButton";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getAllAssets, getAssetObjectUrl } from "@/lib/assets-db";
-import { clamp } from "@/lib/math";
 import type { AssetRecord } from "@/lib/assets-db";
-import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
-import { addPinnedAsset, getAssetKindLabel } from "@/components/Cards/CardInspector/asset-utils";
+import { clamp } from "@/lib/math";
+
+import type { CSSProperties } from "react";
 
 type MonsterIconFieldProps = {
   label: string;

@@ -3,9 +3,9 @@
 import { useId } from "react";
 
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
+import { tokenizeInlineDice, type InlineDiceSegment } from "@/lib/inline-dice";
 import { createTextMeasurer } from "@/lib/text-fitting/measure";
 import { runsToTokens, wrapTokens, type WrapToken } from "@/lib/text-fitting/wrap";
-import { tokenizeInlineDice, type InlineDiceSegment } from "@/lib/inline-dice";
 
 import type { CSSProperties } from "react";
 

@@ -4,8 +4,8 @@ import { BringToFront, SendToBack } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useEditorSave } from "@/components/Providers/EditorSaveContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
@@ -13,13 +13,13 @@ import { ENABLE_CARD_THUMB_CACHE, ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getCard, listCards } from "@/lib/cards-db";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import {
   getCachedCardThumbnailUrl,
   getLegacyCardThumbnailUrl,
   releaseLegacyCardThumbnailUrl,
 } from "@/lib/card-thumbnail-cache";
+import { getCard, listCards } from "@/lib/cards-db";
 import { deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";

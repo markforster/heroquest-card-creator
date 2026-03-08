@@ -4,11 +4,11 @@ import { AlertTriangle, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
+import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
+import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplates } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
-import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 
 type StockpileToolbarProps = {
   onOpenCollections: () => void;

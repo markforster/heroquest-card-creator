@@ -19,7 +19,6 @@ import CardInspector from "@/components/Cards/CardInspector/CardInspector";
 import TemplateChooser from "@/components/Cards/CardInspector/TemplateChooser";
 import CardPreview, { type CardPreviewHandle } from "@/components/Cards/CardPreview";
 import CardThumbnail from "@/components/common/CardThumbnail";
-import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { EscapeStackProvider, useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import { WarningNotice } from "@/components/common/Notice";
 import DatabaseVersionGate from "@/components/DatabaseVersionGate";
@@ -31,6 +30,7 @@ import MainFooter from "@/components/Layout/MainFooter";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import ExportBleedPrompt, { type ExportPromptResult } from "@/components/Modals/ExportBleedPrompt";
 import WelcomeTemplateModal from "@/components/Modals/WelcomeTemplateModal";
+import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { AppActionsProvider } from "@/components/Providers/AppActionsContext";
 import { AssetHashIndexProvider } from "@/components/Providers/AssetHashIndexProvider";
 import { AssetKindBackfillProvider } from "@/components/Providers/AssetKindBackfillProvider";
@@ -43,7 +43,6 @@ import {
   LocalStorageProvider,
   useLocalStorageBoolean,
 } from "@/components/Providers/LocalStorageProvider";
-import { ThemeProvider } from "@/components/Providers/ThemeProvider";
 import {
   MissingAssetsProvider,
   useMissingAssets,
@@ -51,6 +50,7 @@ import {
 import { PreviewCanvasProvider } from "@/components/Providers/PreviewCanvasContext";
 import { PreviewRendererProvider } from "@/components/Providers/PreviewRendererContext";
 import { TextFittingPreferencesProvider } from "@/components/Providers/TextFittingPreferencesContext";
+import { ThemeProvider } from "@/components/Providers/ThemeProvider";
 import { WebglPreviewSettingsProvider } from "@/components/Providers/WebglPreviewSettingsContext";
 import { StockpileMainPanel } from "@/components/Stockpile";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
@@ -70,9 +70,9 @@ import {
   updateCardThumbnail,
 } from "@/lib/cards-db";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
-import formatMessageWith from "@/lib/format-message-with";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import type { ExportSettings } from "@/lib/export-settings";
+import formatMessageWith from "@/lib/format-message-with";
 import { createPair, listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
 import { createDefaultCardData } from "@/types/card-data";

@@ -1,8 +1,8 @@
 "use client";
 
 import styles from "@/app/page.module.css";
-import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
 import { resolveStockpileThumb } from "@/components/Stockpile/stockpile-thumbs";
+import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
 
 export type StockpilePairIndicatorProps = {
   card: StockpileCardView;

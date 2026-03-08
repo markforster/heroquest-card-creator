@@ -1,8 +1,8 @@
+import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 import type { BodyTextStyle, CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { StatValue } from "@/types/stats";
 import type { TemplateId } from "@/types/templates";
-import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 
 function normalizeImageScale(
   record: CardRecord & { templateId: TemplateId },

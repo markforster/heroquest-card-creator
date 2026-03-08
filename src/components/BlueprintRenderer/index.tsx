@@ -18,8 +18,8 @@ import MonsterStatsBlock, {
   type MonsterStats,
 } from "@/components/Cards/CardParts/MonsterStatsBlock";
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
-import Layer from "@/components/Cards/CardPreview/Layer";
 import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
+import Layer from "@/components/Cards/CardPreview/Layer";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";

@@ -2,8 +2,8 @@
 
 import styles from "@/app/page.module.css";
 import ActionBar from "@/components/common/ActionBar";
-import ProgressBar from "@/components/common/ProgressBar";
 import ModalShell from "@/components/common/ModalShell";
+import ProgressBar from "@/components/common/ProgressBar";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type ExportProgressOverlayProps = {

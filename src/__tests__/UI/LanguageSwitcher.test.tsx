@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import LanguageSwitcher from "@/components/LanguageMenu/LanguageSwitcher";
-import { supportedLanguages } from "@/i18n/messages";
 import { useI18n } from "@/i18n/I18nProvider";
+import { supportedLanguages } from "@/i18n/messages";
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: jest.fn(),

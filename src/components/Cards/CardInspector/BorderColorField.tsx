@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
 import { Palette } from "lucide-react";
+import { useEffect, useMemo, useRef } from "react";
 import { useController, useFormContext } from "react-hook-form";
 
+import layoutStyles from "@/app/page.module.css";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 import { DEFAULT_BORDER_COLOR } from "@/components/Cards/CardParts/CardBorder";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
@@ -12,8 +14,6 @@ import { usePopupState } from "@/hooks/usePopupState";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 import { formatHexColor, isTransparentHex, parseHexColor } from "@/lib/color";
 import type { TemplateId } from "@/types/templates";
-import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
-import layoutStyles from "@/app/page.module.css";
 
 const SMART_CANVAS_WIDTH = 300;
 const SMART_CANVAS_HEIGHT = 420;

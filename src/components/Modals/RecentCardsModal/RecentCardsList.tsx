@@ -14,6 +14,7 @@ import {
   releaseLegacyCardThumbnailUrl,
 } from "@/lib/card-thumbnail-cache";
 import type { CardRecord } from "@/types/cards-db";
+
 import type { RecentCardGroup } from "./useRecentCards";
 
 type RecentCardsListProps = {

@@ -5,8 +5,8 @@ import { useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import resolveThumb from "@/components/Stockpile/resolveThumb";
-import StockpilePairOverflowPopover from "@/components/Stockpile/StockpilePairOverflowPopover";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
+import StockpilePairOverflowPopover from "@/components/Stockpile/StockpilePairOverflowPopover";
 import { ENABLE_CARD_THUMB_CACHE, USE_EXPORT_PAIR_JITTER } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";

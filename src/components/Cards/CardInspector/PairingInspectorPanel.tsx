@@ -2,22 +2,22 @@
 
 import { ChevronDown, ChevronUp, Combine, Unlink2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
-import resolveThumb from "@/components/Stockpile/resolveThumb";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useEditorSave } from "@/components/Providers/EditorSaveContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
+import resolveThumb from "@/components/Stockpile/resolveThumb";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { ENABLE_CARD_THUMB_CACHE, ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getCard, listCards } from "@/lib/cards-db";
 import { resolveEffectiveFace } from "@/lib/card-face";
+import { getCard, listCards } from "@/lib/cards-db";
 import {
   } from "@/lib/card-thumbnail-cache";
 import { createPair, deletePair, deletePairsForFront, replacePairsForBack } from "@/lib/pairs-service";

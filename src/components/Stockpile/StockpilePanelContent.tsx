@@ -1,8 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
-import { useLocation } from "react-router-dom";
 import {
   DndContext,
   DragOverlay,
@@ -11,8 +8,10 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import type { DragCancelEvent, DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
+import { FolderPlus, Pencil, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
 import CardPreview from "@/components/Cards/CardPreview";
@@ -20,11 +19,19 @@ import { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ModalShell from "@/components/common/ModalShell";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
+import ExportBleedPrompt, {
+  type ExportPromptResult,
+} from "@/components/Modals/ExportBleedPrompt";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
+import { getDeleteCollectionImpact } from "@/components/Stockpile/collection-delete-impact";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
+import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collections-merge";
+import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
 import {
   formatMessage,
   resolveExportFileName,
@@ -38,10 +45,6 @@ import StockpileContentPane from "@/components/Stockpile/StockpileContentPane";
 import StockpileExportPairPrompt from "@/components/Stockpile/StockpileExportPairPrompt";
 import StockpileFooter from "@/components/Stockpile/StockpileFooter";
 import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
-import ExportBleedPrompt, {
-  type ExportPromptResult,
-} from "@/components/Modals/ExportBleedPrompt";
 import StockpilePairPopover from "@/components/Stockpile/StockpilePairPopover";
 import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
 import StockpileTableThumbPopover from "@/components/Stockpile/StockpileTableThumbPopover";
@@ -51,10 +54,6 @@ import type {
   StockpileCardThumb,
   StockpileCardView,
 } from "@/components/Stockpile/types";
-import { getDeleteCollectionImpact } from "@/components/Stockpile/collection-delete-impact";
-import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collections-merge";
-import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
-import { FolderPlus, Pencil, X } from "lucide-react";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
@@ -76,13 +75,15 @@ import {
 } from "@/lib/collections-db";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { runBulkExport } from "@/lib/export-cards";
-import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
 import type { ExportSettings } from "@/lib/export-settings";
 import { deletePairsForFace, listAllPairs } from "@/lib/pairs-service";
 import { createDefaultCardData } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
 import type { OpenCloseProps } from "@/types/ui";
+
+import type { DragCancelEvent, DragEndEvent, DragStartEvent } from "@dnd-kit/core";
+import type { ReactNode } from "react";
 
 type StockpilePanelMode = "manage" | "pair-fronts" | "pair-backs";
 

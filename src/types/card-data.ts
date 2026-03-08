@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-import type { TemplateId } from "./templates";
-import type { StatValue } from "./stats";
 import type { CardFace } from "./card-face";
+import type { StatValue } from "./stats";
+import type { TemplateId } from "./templates";
 
 export interface BaseCardFields {
   title?: string;

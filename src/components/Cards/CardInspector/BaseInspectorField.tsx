@@ -1,10 +1,11 @@
 "use client";
 
-import type { ReactNode, InputHTMLAttributes } from "react";
-import type { LucideIcon } from "lucide-react";
 
 import layoutStyles from "@/app/page.module.css";
 import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
+
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode, InputHTMLAttributes } from "react";
 
 export type BaseInspectorFieldToggleProps = {
   id: string;

@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 
+import LanguageSwitcher from "@/components/LanguageMenu/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
 
 jest.mock("@/i18n/I18nProvider", () => ({
@@ -10,8 +11,6 @@ jest.mock("@/i18n/messages", () => ({
   supportedLanguages: ["xx"],
   languageLabels: {},
 }));
-
-import LanguageSwitcher from "@/components/LanguageMenu/LanguageSwitcher";
 
 describe("LanguageSwitcher (UI) - label fallback", () => {
   it("falls back to code.toUpperCase() when languageLabels has no entry", () => {
@@ -26,4 +25,3 @@ describe("LanguageSwitcher (UI) - label fallback", () => {
     expect(screen.getByRole("option", { name: "XX" })).toBeInTheDocument();
   });
 });
-

@@ -5,8 +5,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
-import getImageDimensions from "@/components/Assets/getImageDimensions";
 import AssetsMainPanel from "@/components/Assets/AssetsMainPanel";
+import getImageDimensions from "@/components/Assets/getImageDimensions";
 import ModalShell from "@/components/common/ModalShell";
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";

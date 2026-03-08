@@ -1,5 +1,6 @@
-import type { AssetKindInput, AssetKindResult } from "./types";
 import { heuristicStrategy } from "./heuristic";
+
+import type { AssetKindInput, AssetKindResult } from "./types";
 
 const activeStrategy = heuristicStrategy;
 

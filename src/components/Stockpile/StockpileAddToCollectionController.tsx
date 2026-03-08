@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 
-import { useI18n } from "@/i18n/I18nProvider";
-import StockpileAddToCollectionModal from "@/components/Stockpile/StockpileAddToCollectionModal";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
+import StockpileAddToCollectionModal from "@/components/Stockpile/StockpileAddToCollectionModal";
+import { useI18n } from "@/i18n/I18nProvider";
 import { listCollections, updateCollection } from "@/lib/collections-db";
 import type { CollectionRecord } from "@/types/collections-db";
 

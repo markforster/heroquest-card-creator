@@ -1,7 +1,7 @@
 "use client";
 
-import type { CardRecord } from "@/types/cards-db";
 import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
+import type { CardRecord } from "@/types/cards-db";
 import type { OpenCloseProps } from "@/types/ui";
 
 export type StockpileModalMode = "manage" | "pair-fronts" | "pair-backs";

@@ -1,5 +1,5 @@
-import { addAsset } from "@/lib/assets-db";
 import { installMockIndexedDbAssets } from "@/lib/__testutils__/mockIndexedDbAssets";
+import { addAsset } from "@/lib/assets-db";
 
 describe("addAsset", () => {
   afterEach(() => {

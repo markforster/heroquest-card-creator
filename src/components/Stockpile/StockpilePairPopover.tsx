@@ -3,9 +3,9 @@
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
+import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import {
   getCachedCardThumbnailUrl,

@@ -1,5 +1,5 @@
-import { getAssetObjectUrl } from "@/lib/assets-db";
 import { installMockIndexedDbAssets } from "@/lib/__testutils__/mockIndexedDbAssets";
+import { getAssetObjectUrl } from "@/lib/assets-db";
 
 describe("getAssetObjectUrl", () => {
   const originalCreateDescriptor = Object.getOwnPropertyDescriptor(URL, "createObjectURL");

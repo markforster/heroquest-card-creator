@@ -3,11 +3,11 @@
 import { useState } from "react";
 
 import styles from "@/app/page.module.css";
-import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
-import { clearAssetClassification } from "@/lib/assets-db";
 import { DangerNotice, SuccessNotice, WarningNotice } from "@/components/common/Notice";
 import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
+import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useI18n } from "@/i18n/I18nProvider";
+import { clearAssetClassification } from "@/lib/assets-db";
 
 export default function DebugSettingsPanel() {
   const { t } = useI18n();

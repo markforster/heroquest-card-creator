@@ -1,8 +1,9 @@
 "use client";
 
+import styles from "@/app/page.module.css";
+
 import type { ReactNode } from "react";
 
-import styles from "@/app/page.module.css";
 
 type SettingsGroupProps = {
   title?: string;

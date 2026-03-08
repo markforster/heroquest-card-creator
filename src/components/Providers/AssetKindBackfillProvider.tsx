@@ -1,14 +1,16 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
 
+
+import { getAssetAutoClassifyEnabled } from "@/lib/asset-auto-classify";
 import { classifyAssetBlob } from "@/lib/asset-kind/classify";
-import { compareAssetsByDefaultOrder } from "@/lib/assets-grouping";
 import type { AssetRecord } from "@/lib/assets-db";
 import { getAllAssets, getAssetBlob, updateAssetMeta } from "@/lib/assets-db";
-import { getAssetAutoClassifyEnabled } from "@/lib/asset-auto-classify";
+import { compareAssetsByDefaultOrder } from "@/lib/assets-grouping";
 import { isSafariBrowser } from "@/lib/browser";
+
+import type { ReactNode } from "react";
 
 type AssetKindQueueContextValue = {
   enqueueAsset: (id: string, meta?: { width?: number; height?: number }) => void;

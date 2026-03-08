@@ -32,6 +32,7 @@ import linenNormal3 from "@/assets/linen-5.png";
 import { spinnerBlueprintDataUrl } from "@/assets/spinner-blueprint-data";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/Providers/WebglPreviewSettingsContext";
+import { CARD_ASPECT, CARD_WIDTH, savg } from "@/config/card-canvas";
 import {
   ENABLE_WEBGL_EMISSIVE,
   ENABLE_WEBGL_SHEEN,
@@ -40,7 +41,6 @@ import {
 } from "@/config/flags";
 import { createMagicOverlayMaterial } from "@/lib/webgl/magicOverlayShader";
 import { createSparkleOverlayMaterial } from "@/lib/webgl/sparkleOverlayShader";
-import { CARD_ASPECT, CARD_WIDTH, savg } from "@/config/card-canvas";
 
 import styles from "./WebglPreview.module.css";
 

@@ -1,9 +1,11 @@
-import type { PreferencesByRole, TextBounds, TextLayoutResult, TextRole } from "./types";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
+
+import { statHeadingAlgorithm, titleAlgorithm } from "./algorithms";
+import { createTextMeasurer } from "./measure";
 import { ROLE_CONFIG, type StrategyId } from "./roleConfig";
 import { ellipsisStrategy, hyphenateStrategy, shrinkStrategy, wrapStrategy } from "./strategies";
-import { createTextMeasurer } from "./measure";
-import { statHeadingAlgorithm, titleAlgorithm } from "./algorithms";
+
+import type { PreferencesByRole, TextBounds, TextLayoutResult, TextRole } from "./types";
 
 export type EngineResult = {
   layout: TextLayoutResult;

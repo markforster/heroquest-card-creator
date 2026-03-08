@@ -1,7 +1,6 @@
-import type { AssetRecordWithBlob } from "@/lib/assets-db";
-
-import { deleteAssets, getAllAssetsWithBlobs } from "@/lib/assets-db";
 import { installMockIndexedDbAssets } from "@/lib/__testutils__/mockIndexedDbAssets";
+import type { AssetRecordWithBlob } from "@/lib/assets-db";
+import { deleteAssets, getAllAssetsWithBlobs } from "@/lib/assets-db";
 
 describe("deleteAssets", () => {
   afterEach(() => {

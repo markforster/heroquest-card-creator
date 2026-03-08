@@ -1,10 +1,10 @@
 "use client";
 
+import { getAssetBlob } from "@/lib/assets-db";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
 
-import { getAssetBlob } from "@/lib/assets-db";
 
 type AssetSource = {
   imageAssetId?: string;

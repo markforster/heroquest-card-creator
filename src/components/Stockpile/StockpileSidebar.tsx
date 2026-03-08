@@ -1,7 +1,6 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { Fragment, useEffect, useMemo, useRef } from "react";
 import {
   Folder,
   FolderDown,
@@ -11,10 +10,13 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { Fragment, useEffect, useMemo, useRef } from "react";
+
 import styles from "@/app/page.module.css";
-import { buildCollectionsTree } from "@/components/Stockpile/collections-tree";
 import { useCollectionsTreeSettings } from "@/components/Providers/CollectionsTreeSettingsContext";
+import { buildCollectionsTree } from "@/components/Stockpile/collections-tree";
 import { useI18n } from "@/i18n/I18nProvider";
+
 import type { ReactNode } from "react";
 
 type StockpileSidebarProps = {

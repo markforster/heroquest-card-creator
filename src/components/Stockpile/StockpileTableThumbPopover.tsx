@@ -3,9 +3,9 @@
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
-import { cardTemplatesById } from "@/data/card-templates";
 import CardThumbnail from "@/components/common/CardThumbnail";
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import { cardTemplatesById } from "@/data/card-templates";
 import {
   getCachedCardThumbnailUrl,
   getLegacyCardThumbnailUrl,

@@ -6,13 +6,34 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import BlueprintRenderer from "@/components/BlueprintRenderer";
 import { measureCardTextMaxLineWidth } from "@/components/Cards/CardParts/CardTextBlock";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
+import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
 import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
-import { useI18n } from "@/i18n/I18nProvider";
+import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
+import {
+  DEVELOPER_CREDIT_BLEND_COLOR,
+  DEVELOPER_CREDIT_BLEND_MODE,
+  DEVELOPER_CREDIT_FONT_SCALE,
+  DEVELOPER_CREDIT_OPACITY,
+  DEVELOPER_CREDIT_RIGHT_INSET,
+  DEVELOPER_CREDIT_TOP_INSET,
+  DEVELOPER_CREDIT_TEXT,
+} from "@/config/developer-credit";
+import { ENABLE_WATERMARK, USE_ROUNDED_CARD_CLIP } from "@/config/flags";
 import { blueprintsByTemplateId, getCopyrightBounds } from "@/data/blueprints";
+import { useI18n } from "@/i18n/I18nProvider";
+import {
+  composeBleedCanvas,
+  cloneSvgForBleed,
+  getBleedTrimOrigin,
+  setExportBackgroundFit,
+  setExportClip,
+  stripToBackgroundOnly,
+} from "@/lib/bleed-export";
+import { collectCardAssetIds } from "@/lib/card-assets";
+import { resolveCardPreviewFileName } from "@/lib/card-preview";
 import { computeAverageLuminance } from "@/lib/color-contrast";
 import { getSvgImageHref } from "@/lib/dom";
-import { resolveCardPreviewFileName } from "@/lib/card-preview";
-import { collectCardAssetIds } from "@/lib/card-assets";
 import { buildAssetCache } from "@/lib/export-assets-cache";
 import {
   endExportLogging,
@@ -25,39 +46,19 @@ import {
   logSummary,
   startExportLogging,
 } from "@/lib/export-logging";
-import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
-import { now } from "@/lib/time";
-import { openDownloadsFolderIfTauri } from "@/lib/tauri";
-import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
-import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
-import { applyWatermarkToCanvas, shouldApplyWatermark } from "@/lib/watermark";
-import { ENABLE_WATERMARK, USE_ROUNDED_CARD_CLIP } from "@/config/flags";
+import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { addPngTextChunk } from "@/lib/png-metadata";
+import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
+import { openDownloadsFolderIfTauri } from "@/lib/tauri";
+import { now } from "@/lib/time";
+import { applyWatermarkToCanvas, shouldApplyWatermark } from "@/lib/watermark";
 import { APP_VERSION } from "@/version";
-import {
-  composeBleedCanvas,
-  cloneSvgForBleed,
-  getBleedTrimOrigin,
-  setExportBackgroundFit,
-  setExportClip,
-  stripToBackgroundOnly,
-} from "@/lib/bleed-export";
 
 import styles from "./CardPreview.module.css";
 import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "./consts";
 
 import type { CardPreviewHandle, CardPreviewProps } from "./types";
-import {
-  DEVELOPER_CREDIT_BLEND_COLOR,
-  DEVELOPER_CREDIT_BLEND_MODE,
-  DEVELOPER_CREDIT_FONT_SCALE,
-  DEVELOPER_CREDIT_OPACITY,
-  DEVELOPER_CREDIT_RIGHT_INSET,
-  DEVELOPER_CREDIT_TOP_INSET,
-  DEVELOPER_CREDIT_TEXT,
-} from "@/config/developer-credit";
-import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
-import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
+
 
 function normalizeCopyrightColor(value?: string) {
   if (typeof value !== "string") return undefined;
@@ -272,10 +273,10 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           const shiftedY = Math.max(0, rectY);
           const shiftedH = Math.min(rectH, rectY + rectH - shiftedY);
           if (shiftedH <= 1) return null;
-          let targetX = rectX;
-          let targetY = shiftedY;
-          let targetW = rectW;
-          let targetH = shiftedH;
+          const targetX = rectX;
+          const targetY = shiftedY;
+          const targetW = rectW;
+          const targetH = shiftedH;
           const insetX = Math.floor(rectW * COPYRIGHT_SAMPLE_INSET_RATIO);
           const insetY = Math.floor(shiftedH * COPYRIGHT_SAMPLE_INSET_RATIO);
           let sampleX = targetX + insetX;
@@ -452,10 +453,10 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             const shiftedY = Math.max(0, rectY - shiftY);
             const shiftedH = Math.min(rectH, rectY + rectH - shiftedY);
             if (shiftedH <= 1) return null;
-            let targetX = rectX;
-            let targetY = shiftedY;
-            let targetW = rectW;
-            let targetH = shiftedH;
+            const targetX = rectX;
+            const targetY = shiftedY;
+            const targetW = rectW;
+            const targetH = shiftedH;
             const insetX = Math.floor(rectW * COPYRIGHT_SAMPLE_INSET_RATIO);
             const insetY = Math.floor(shiftedH * COPYRIGHT_SAMPLE_INSET_RATIO);
             let sampleX = targetX + insetX;

@@ -4,8 +4,8 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 import { touchCardLastViewed } from "@/lib/cards-db";
+import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardStatus, CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";

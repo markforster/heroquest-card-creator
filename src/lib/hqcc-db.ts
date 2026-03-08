@@ -1,9 +1,9 @@
 "use client";
 
-import { APP_VERSION } from "@/version";
+import { SCALE_X, SCALE_Y } from "@/config/card-canvas";
 import type { CardRecord } from "@/types/cards-db";
 import type { PairRecord } from "@/types/pairs-db";
-import { SCALE_X, SCALE_Y } from "@/config/card-canvas";
+import { APP_VERSION } from "@/version";
 
 import { generateId } from ".";
 
