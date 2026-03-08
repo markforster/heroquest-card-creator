@@ -26,6 +26,7 @@ import {
   startExportLogging,
 } from "@/lib/export-logging";
 import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
+import { now } from "@/lib/time";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
@@ -699,7 +700,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               return;
             }
 
-            const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
 
             const waitStart = now();
             if (assetIds.length) {

@@ -21,7 +21,6 @@ export async function renderSvgToCanvas({
   assetBlobsById,
   mutateSvg,
 }: RenderSvgToCanvasOptions): Promise<HTMLCanvasElement | null> {
-  const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
   const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
 
   if (removeDebugBounds) {
