@@ -1,5 +1,7 @@
 "use client";
 
+import { colorDistance } from "@/lib/color-utils";
+
 type PaletteOptions = {
   maxColors?: number;
   minSaturation?: number;
@@ -173,11 +175,4 @@ function rgbToHex(r: number, g: number, b: number) {
 
 function toHex(value: number) {
   return Math.max(0, Math.min(255, value)).toString(16).padStart(2, "0");
-}
-
-function colorDistance(a: { r: number; g: number; b: number }, b: { r: number; g: number; b: number }) {
-  const dr = a.r - b.r;
-  const dg = a.g - b.g;
-  const db = a.b - b.b;
-  return Math.sqrt(dr * dr + dg * dg + db * db);
 }
