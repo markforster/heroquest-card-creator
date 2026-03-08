@@ -4,16 +4,13 @@ import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import styles from "@/app/page.module.css";
+import resolveThumb from "@/components/Stockpile/resolveThumb";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import {
-  getCachedCardThumbnailUrl,
-  getLegacyCardThumbnailUrl,
-  releaseLegacyCardThumbnailUrl,
-} from "@/lib/card-thumbnail-cache";
+  } from "@/lib/card-thumbnail-cache";
 import type { CardRecord } from "@/types/cards-db";
 
 type StockpileFooterProps = {
@@ -68,17 +65,6 @@ export default function StockpileFooter({
   } | null>(null);
 
   const fallbackTitle = t("label.untitledCard");
-
-  const resolveThumb = (id: string, blob: Blob | null) => {
-    if (typeof window === "undefined") {
-      return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
-    }
-    if (ENABLE_CARD_THUMB_CACHE) {
-      return { url: getCachedCardThumbnailUrl(id, blob), onLoad: undefined };
-    }
-    const url = getLegacyCardThumbnailUrl(id, blob ?? null);
-    return { url, onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined };
-  };
 
   return (
     <>

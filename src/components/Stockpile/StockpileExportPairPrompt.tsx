@@ -4,16 +4,14 @@ import { Combine } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
+import resolveThumb from "@/components/Stockpile/resolveThumb";
 import StockpilePairOverflowPopover from "@/components/Stockpile/StockpilePairOverflowPopover";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { ENABLE_CARD_THUMB_CACHE, USE_EXPORT_PAIR_JITTER } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
-  getCachedCardThumbnailUrl,
-  getLegacyCardThumbnailUrl,
-  releaseLegacyCardThumbnailUrl,
-} from "@/lib/card-thumbnail-cache";
+  } from "@/lib/card-thumbnail-cache";
 import type { CardRecord } from "@/types/cards-db";
 
 type StockpileExportPairPromptProps = {
@@ -50,17 +48,6 @@ export default function StockpileExportPairPrompt({
   const exportPairVisibleCount = 9;
 
   if (!exportPairPrompt) return null;
-
-  const resolveThumb = (id: string, blob: Blob | null) => {
-    if (typeof window === "undefined") {
-      return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
-    }
-    if (ENABLE_CARD_THUMB_CACHE) {
-      return { url: getCachedCardThumbnailUrl(id, blob), onLoad: undefined };
-    }
-    const url = getLegacyCardThumbnailUrl(id, blob ?? null);
-    return { url, onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined };
-  };
 
   const resolveCardJitter = (id: string) => {
     let hash = 0;

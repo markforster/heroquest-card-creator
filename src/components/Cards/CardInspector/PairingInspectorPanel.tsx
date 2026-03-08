@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
+import resolveThumb from "@/components/Stockpile/resolveThumb";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
@@ -18,10 +19,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { getCard, listCards } from "@/lib/cards-db";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import {
-  getCachedCardThumbnailUrl,
-  getLegacyCardThumbnailUrl,
-  releaseLegacyCardThumbnailUrl,
-} from "@/lib/card-thumbnail-cache";
+  } from "@/lib/card-thumbnail-cache";
 import { createPair, deletePair, deletePairsForFront, replacePairsForBack } from "@/lib/pairs-service";
 import { listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -111,17 +109,6 @@ export default function PairingInspectorPanel({
       const bName = b.nameLower ?? b.name.toLocaleLowerCase();
       return aName.localeCompare(bName);
     });
-
-  const resolveThumb = (id: string, blob: Blob | null) => {
-    if (typeof window === "undefined") {
-      return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
-    }
-    if (ENABLE_CARD_THUMB_CACHE) {
-      return { url: getCachedCardThumbnailUrl(id, blob), onLoad: undefined };
-    }
-    const url = getLegacyCardThumbnailUrl(id, blob ?? null);
-    return { url, onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined };
-  };
 
   const openCard = async (cardId: string) => {
     navigate(`/cards/${cardId}`);
