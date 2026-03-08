@@ -97,6 +97,11 @@ function removeDeveloperCreditLayer(svg: SVGSVGElement) {
   svg.querySelectorAll('[data-layer-type="developer-credit"]').forEach((node) => node.remove());
 }
 
+function mutateSvgForStandardExport(svg: SVGSVGElement, rounded: boolean) {
+  setExportClip(svg, { rounded });
+  removeDeveloperCreditLayer(svg);
+}
+
 function shouldShowDeveloperCredit(
   templateId?: CardPreviewProps["templateId"],
   cardData?: CardPreviewProps["cardData"],
@@ -745,10 +750,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                     removeDebugBounds: true,
                     loggingId: session.sessionId,
                     assetBlobsById: cache,
-                    mutateSvg: (svg) => {
-                      setExportClip(svg, { rounded: effectiveRounded });
-                      removeDeveloperCreditLayer(svg);
-                    },
+                    mutateSvg: (svg) => mutateSvgForStandardExport(svg, effectiveRounded),
                   });
             renders += 1;
             if (canvas) {
@@ -864,10 +866,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   removeDebugBounds: true,
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
-                  mutateSvg: (svg) => {
-                    setExportClip(svg, { rounded: effectiveRounded });
-                    removeDeveloperCreditLayer(svg);
-                  },
+                  mutateSvg: (svg) => mutateSvgForStandardExport(svg, effectiveRounded),
                 });
           if (canvas) {
             canvasRef.current = canvas;

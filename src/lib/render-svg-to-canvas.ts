@@ -10,6 +10,7 @@ import {
 import { getSvgImageHref, insertSvgStyle, setSvgImageHref } from "@/lib/dom";
 import { logAssetInlineById } from "@/lib/export-logging";
 import type { RenderSvgToCanvasOptions } from "@/lib/render-svg-to-canvas.types";
+import { now } from "@/lib/time";
 
 export async function renderSvgToCanvas({
   svgElement,
