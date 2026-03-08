@@ -531,7 +531,7 @@ export default function StockpilePanelContent({
     [t],
   );
   const cardViews = useMemo<StockpileCardView[]>(() => {
-    const resolveThumb = (card: CardRecord): StockpileCardThumb => ({
+    const resolveCardThumb = (card: CardRecord): StockpileCardThumb => ({
       id: card.id,
       thumbnailBlob: card.thumbnailBlob ?? null,
       templateThumbSrc: cardTemplatesById[card.templateId]?.thumbnail?.src ?? null,
@@ -547,7 +547,7 @@ export default function StockpilePanelContent({
       const pairedBackId = backByFrontId.get(card.id) ?? null;
       const pairedBack = pairedBackId ? (cardById.get(pairedBackId) ?? null) : null;
       const pairedFronts = pairedByTargetId.get(card.id) ?? [];
-      const pairedFrontThumbs = pairedFronts.map((paired) => resolveThumb(paired));
+      const pairedFrontThumbs = pairedFronts.map((paired) => resolveCardThumb(paired));
       const isPairingConflict = Boolean(
         isPairFronts && pairedBackId && pairedBackId !== activeBackId,
       );
@@ -577,7 +577,7 @@ export default function StockpilePanelContent({
         thumbnailBlob: card.thumbnailBlob ?? null,
         templateThumbSrc: templateMeta?.thumbnail?.src ?? null,
         paired: {
-          back: pairedBack ? resolveThumb(pairedBack) : null,
+          back: pairedBack ? resolveCardThumb(pairedBack) : null,
           fronts: pairedFrontThumbs,
           frontsVisible: pairedFrontThumbs.slice(0, 3),
           frontsOverflow: Math.max(0, pairedFrontThumbs.length - 3),
