@@ -70,6 +70,7 @@ import {
   updateCardThumbnail,
 } from "@/lib/cards-db";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
+import formatMessageWith from "@/lib/format-message-with";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import type { ExportSettings } from "@/lib/export-settings";
 import { createPair, listPairsForFace } from "@/lib/pairs-service";
@@ -83,8 +84,6 @@ import styles from "./page.module.css";
 
 function IndexPageInner() {
   const { t, language } = useI18n();
-  const formatMessageWith = (key: string, vars: Record<string, string | number>) =>
-    formatMessage(t(key as never), vars);
   const { track } = useAnalytics();
   const navigate = useNavigate();
   const location = useLocation();

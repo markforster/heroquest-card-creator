@@ -119,8 +119,6 @@ export default function StockpilePanelContent({
   frame = "panel",
 }: StockpilePanelContentProps) {
   const { t, language } = useI18n();
-  const formatMessageWith = (key: string, vars: Record<string, string | number>) =>
-    formatMessage(t(key as never), vars);
   const { track } = useAnalytics();
   const isPairFronts = mode === "pair-fronts";
   const isPairBacks = mode === "pair-backs";

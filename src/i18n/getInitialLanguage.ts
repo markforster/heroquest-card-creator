@@ -1,3 +1,4 @@
+import { supportedLanguages } from "./messages";
 import type { SupportedLanguage } from "./messages";
 import isSupportedLanguage from "./isSupportedLanguage";
 
