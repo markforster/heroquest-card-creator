@@ -59,6 +59,7 @@
     "verify:env": "node scripts/verify-env.js",
     "verify:out": "node scripts/verify-out.cjs",
     "dup:report": "npx jscpd --reporters markdown,json --output ./artefacts/reports/jscpd ./src",
+    "dup:idents": "node scripts/find-dup-identifiers.cjs",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

@@ -43,6 +43,7 @@ import {
   UI_ZOOM_SLIDER_STEP,
 } from "@/lib/image-scale";
 import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
+import { addPinnedAsset, getAssetKindLabel } from "@/components/Cards/CardInspector/asset-utils";
 
 type ImageFieldProps = {
   label: string;
@@ -370,30 +371,13 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     }
     return 2;
   };
-  const getAssetKindLabel = (asset: AssetRecord) => {
-    if (asset.assetKindStatus === "classified") {
-      return asset.assetKind === "icon"
-        ? t("label.assetKindIcon")
-        : t("label.assetKindArtwork");
-    }
-    return t("label.assetKindFilterUnclassified");
-  };
-  const makeFallbackAsset = (assetId: string, assetName: string): AssetRecord => ({
-    id: assetId,
-    name: assetName,
-    mimeType: "image/*",
-    width: 0,
-    height: 0,
-    createdAt: 0,
+  addPinnedAsset({
+    assetId: imageAssetId,
+    assetName: imageAssetName,
+    assetsById,
+    pinnedIds,
+    pinnedAssets,
   });
-  const addPinnedAsset = (assetId?: string, assetName?: string) => {
-    if (!assetId || pinnedIds.has(assetId)) return;
-    const asset =
-      assetsById.get(assetId) ?? makeFallbackAsset(assetId, assetName ?? assetId);
-    pinnedAssets.push(asset);
-    pinnedIds.add(assetId);
-  };
-  addPinnedAsset(imageAssetId, imageAssetName);
 
   const rankedAssets = normalizedQuery
     ? assets
@@ -641,7 +625,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                                 : layoutStyles.imageAutocompleteKindUnknown
                             }`}
                           >
-                            {getAssetKindLabel(asset)}
+                            {getAssetKindLabel(t, asset)}
                           </span>
                         </button>
                       ))
@@ -675,7 +659,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                           : layoutStyles.imageAutocompleteKindUnknown
                       }`}
                     >
-                      {getAssetKindLabel(asset)}
+                      {getAssetKindLabel(t, asset)}
                     </span>
                   </button>
                 ))}
