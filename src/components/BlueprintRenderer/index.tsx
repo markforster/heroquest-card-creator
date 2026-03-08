@@ -540,6 +540,11 @@ function TextLayer({
     }
   }
 
+  const clampHeightToBottomLimit = (
+    bounds: { y: number; height: number },
+    bottomLimitY: number,
+  ) => Math.max(0, Math.min(bounds.height, bottomLimitY - bounds.y));
+
   if (blueprint.templateId === "labelled-back" && placement === "bottom" && !hideTitle) {
     const titleLayer = blueprint.layers.find((entry) => entry.type === "title");
     const titleProps = titleLayer?.props ?? {};
@@ -548,10 +553,14 @@ function TextLayer({
       const fontSizeResolved = fontSize ?? 22;
       const minBottomGap = fontSizeResolved;
       const bottomLimitY = ribbonBottomBounds.y - minBottomGap;
-      const clampHeight = (bounds: { y: number; height: number }) =>
-        Math.max(0, Math.min(bounds.height, bottomLimitY - bounds.y));
-      baseBounds = { ...baseBounds, height: clampHeight(baseBounds) };
-      flushBounds = { ...flushBounds, height: clampHeight(flushBounds) };
+      baseBounds = {
+        ...baseBounds,
+        height: clampHeightToBottomLimit(baseBounds, bottomLimitY),
+      };
+      flushBounds = {
+        ...flushBounds,
+        height: clampHeightToBottomLimit(flushBounds, bottomLimitY),
+      };
     }
   }
 
@@ -566,10 +575,14 @@ function TextLayer({
     });
     if (copyrightBounds) {
       const bottomLimitY = copyrightBounds.y - 2;
-      const clampHeight = (bounds: { y: number; height: number }) =>
-        Math.max(0, Math.min(bounds.height, bottomLimitY - bounds.y));
-      baseBounds = { ...baseBounds, height: clampHeight(baseBounds) };
-      flushBounds = { ...flushBounds, height: clampHeight(flushBounds) };
+      baseBounds = {
+        ...baseBounds,
+        height: clampHeightToBottomLimit(baseBounds, bottomLimitY),
+      };
+      flushBounds = {
+        ...flushBounds,
+        height: clampHeightToBottomLimit(flushBounds, bottomLimitY),
+      };
     }
   }
   const overrides = labelledBackData.bodyTextStyle?.backdrop ?? {};
