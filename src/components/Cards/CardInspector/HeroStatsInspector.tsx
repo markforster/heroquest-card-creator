@@ -1,16 +1,10 @@
 "use client";
 
-import { useWatch, useFormContext } from "react-hook-form";
 import { Brain, ShieldHalf, Swords, UserRound } from "lucide-react";
 
-import layoutStyles from "@/app/page.module.css";
-import { useI18n } from "@/i18n/I18nProvider";
-import { formatStatValue } from "@/lib/stat-values";
 import type { HeroCardData } from "@/types/card-data";
 
-import SplitStatStepper from "./SplitStatStepper";
-import StatStepper from "./StatStepper";
-import StatsAccordion from "./StatsAccordion";
+import BaseStatsInspector, { type BaseStatField } from "./BaseStatsInspector";
 
 type HeroStatsInspectorProps = {
   allowSplit?: boolean;
@@ -18,73 +12,24 @@ type HeroStatsInspectorProps = {
   splitSecondaryDefault?: number;
 };
 
+const HERO_FIELDS = [
+  { name: "attackDice", labelKey: "stats.attackDice", icon: Swords },
+  { name: "defendDice", labelKey: "stats.defendDice", icon: ShieldHalf },
+  { name: "bodyPoints", labelKey: "stats.bodyPoints", icon: UserRound },
+  { name: "mindPoints", labelKey: "stats.mindPoints", icon: Brain },
+] satisfies BaseStatField<HeroCardData>[];
+
 export default function HeroStatsInspector({
   allowSplit = false,
   allowWildcard = false,
   splitSecondaryDefault = 0,
 }: HeroStatsInspectorProps) {
-  const { t } = useI18n();
-  const { control } = useFormContext<HeroCardData>();
-  const StatControl = allowSplit ? SplitStatStepper<HeroCardData> : StatStepper<HeroCardData>;
-  const attackDice = useWatch({ control, name: "attackDice" });
-  const defendDice = useWatch({ control, name: "defendDice" });
-  const bodyPoints = useWatch({ control, name: "bodyPoints" });
-  const mindPoints = useWatch({ control, name: "mindPoints" });
-  const previewValues = [
-    formatStatValue(attackDice) ?? "0",
-    formatStatValue(defendDice) ?? "0",
-    formatStatValue(bodyPoints) ?? "0",
-    formatStatValue(mindPoints) ?? "0",
-  ];
-
   return (
-    <StatsAccordion label={t("form.stats")} previewValues={previewValues}>
-      <div className={layoutStyles.statRows}>
-        <div className={layoutStyles.statRow}>
-          <StatControl
-            name="attackDice"
-            label={t("stats.attackDice")}
-            icon={Swords}
-            min={0}
-            max={999}
-            allowWildcard={allowWildcard}
-            splitSecondaryDefault={splitSecondaryDefault}
-          />
-        </div>
-        <div className={layoutStyles.statRow}>
-          <StatControl
-            name="defendDice"
-            label={t("stats.defendDice")}
-            icon={ShieldHalf}
-            min={0}
-            max={999}
-            allowWildcard={allowWildcard}
-            splitSecondaryDefault={splitSecondaryDefault}
-          />
-        </div>
-        <div className={layoutStyles.statRow}>
-          <StatControl
-            name="bodyPoints"
-            label={t("stats.bodyPoints")}
-            icon={UserRound}
-            min={0}
-            max={999}
-            allowWildcard={allowWildcard}
-            splitSecondaryDefault={splitSecondaryDefault}
-          />
-        </div>
-        <div className={layoutStyles.statRow}>
-          <StatControl
-            name="mindPoints"
-            label={t("stats.mindPoints")}
-            icon={Brain}
-            min={0}
-            max={999}
-            allowWildcard={allowWildcard}
-            splitSecondaryDefault={splitSecondaryDefault}
-          />
-        </div>
-      </div>
-    </StatsAccordion>
+    <BaseStatsInspector<HeroCardData>
+      fields={HERO_FIELDS}
+      allowSplit={allowSplit}
+      allowWildcard={allowWildcard}
+      splitSecondaryDefault={splitSecondaryDefault}
+    />
   );
 }

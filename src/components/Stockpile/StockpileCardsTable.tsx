@@ -5,15 +5,12 @@ import { BringToFront, SendToBack } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
+import StockpilePairIndicator from "@/components/Stockpile/StockpilePairIndicator";
+import StockpileSelectCheckbox from "@/components/Stockpile/StockpileSelectCheckbox";
+import { resolveStockpileThumb } from "@/components/Stockpile/stockpile-thumbs";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
-import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { useI18n } from "@/i18n/I18nProvider";
-import {
-  getCachedCardThumbnailUrl,
-  getLegacyCardThumbnailUrl,
-  releaseLegacyCardThumbnailUrl,
-} from "@/lib/card-thumbnail-cache";
 
 type StockpileCardsTableProps = {
   items: StockpileCardView[];
@@ -36,33 +33,16 @@ type StockpileCardsTableRowProps = {
   dragEnabled: boolean;
 };
 
-const resolveThumb = (id: string, blob: Blob | null) => {
-  if (typeof window === "undefined") {
-    return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
-  }
-  if (ENABLE_CARD_THUMB_CACHE) {
-    return { url: getCachedCardThumbnailUrl(id, blob), onLoad: undefined };
-  }
-  const url = getLegacyCardThumbnailUrl(id, blob ?? null);
-  return {
-    url,
-    onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined,
-  };
-};
-
 function StockpileCardsTableRow({ card, actions, dragEnabled }: StockpileCardsTableRowProps) {
   const { t } = useI18n();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
     disabled: !dragEnabled,
   });
-  const { url: thumbUrl, onLoad: thumbOnLoad } = resolveThumb(card.id, card.thumbnailBlob);
-  const pairedThumb = card.paired.back
-    ? resolveThumb(card.paired.back.id, card.paired.back.thumbnailBlob ?? null)
-    : { url: null as string | null, onLoad: undefined as (() => void) | undefined };
-  const pairedTemplateThumb = card.paired.back?.templateThumbSrc ?? null;
-  const visiblePairedFronts = card.paired.frontsVisible;
-  const pairedFrontsOverflow = card.paired.frontsOverflow;
+  const { url: thumbUrl, onLoad: thumbOnLoad } = resolveStockpileThumb(
+    card.id,
+    card.thumbnailBlob,
+  );
 
   return (
     <div
@@ -133,79 +113,14 @@ function StockpileCardsTableRow({ card, actions, dragEnabled }: StockpileCardsTa
         {card.updatedLabel} {card.timeLabel}
       </div>
       <div className={`${styles.stockpileTableCell} ${styles.stockpileTablePairing}`} role="cell">
-        <div
-          className={styles.cardsPairIndicator}
-          onMouseEnter={(event) => {
-            actions.onPairHoverEnter(card.id, event.currentTarget.getBoundingClientRect());
-          }}
-          onMouseLeave={() => actions.onPairHoverLeave(card.id)}
-        >
-          {card.effectiveFace === "back" ? (
-            <div className={styles.cardsPairStack}>
-              {visiblePairedFronts.map((paired, index) => {
-                const stackThumb = resolveThumb(paired.id, paired.thumbnailBlob ?? null);
-                const stackTemplateThumb = paired.templateThumbSrc ?? null;
-                return (
-                  <div
-                    key={paired.id}
-                    className={styles.cardsPairStackItem}
-                    style={{ zIndex: index + 1 }}
-                  >
-                    <div className={styles.cardsPairIndicatorInner}>
-                      {stackThumb.url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={stackThumb.url} alt="" onLoad={stackThumb.onLoad} />
-                      ) : stackTemplateThumb ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={stackTemplateThumb} alt="" />
-                      ) : (
-                        <div className={styles.cardsPairIndicatorPlaceholder} />
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              {pairedFrontsOverflow > 0 ? (
-                <div
-                  className={styles.cardsPairStackItem}
-                  style={{ zIndex: visiblePairedFronts.length + 1 }}
-                >
-                  <div className={styles.cardsPairStackOverflow}>+{pairedFrontsOverflow}</div>
-                </div>
-              ) : null}
-              {card.paired.fronts.length === 0 ? (
-                <div className={styles.cardsPairIndicatorInner}>
-                  <div className={styles.cardsPairIndicatorPlaceholder} />
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <div className={styles.cardsPairIndicatorInner}>
-              {pairedThumb.url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={pairedThumb.url} alt="" onLoad={pairedThumb.onLoad} />
-              ) : pairedTemplateThumb ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={pairedTemplateThumb} alt="" />
-              ) : (
-                <div className={styles.cardsPairIndicatorPlaceholder} />
-              )}
-            </div>
-          )}
-        </div>
+        <StockpilePairIndicator card={card} actions={actions} variant="table" />
       </div>
       <div className={`${styles.stockpileTableCell} ${styles.stockpileTableSelectCell}`} role="cell">
-        <input
-          type="checkbox"
-          className={`form-check-input hq-checkbox ${styles.stockpileCardSelectCheckbox}`}
-          checked={card.isSelected}
-          onChange={(event) => {
-            event.stopPropagation();
-            actions.onCardSetSelected(card.id, event.target.checked, false, card.isPairingConflict);
-          }}
-          onClick={(event) => event.stopPropagation()}
-          onPointerDown={(event) => event.stopPropagation()}
-          aria-label={formatMessage(t("aria.selectCard"), { name: card.name })}
+        <StockpileSelectCheckbox
+          card={card}
+          actions={actions}
+          isPairMode={false}
+          label={formatMessage(t("aria.selectCard"), { name: card.name })}
         />
       </div>
     </div>

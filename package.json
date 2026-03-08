@@ -58,6 +58,7 @@
     "lint": "next lint",
     "verify:env": "node scripts/verify-env.js",
     "verify:out": "node scripts/verify-out.cjs",
+    "dup:report": "npx jscpd --reporters markdown,json --output ./artefacts/reports/jscpd ./src",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -86,6 +87,7 @@
     "@zip.js/zip.js": "^2.8.21",
     "chalk": "^4.1.2",
     "inquirer": "^9.3.7",
+    "jscpd": "^4.0.8",
     "mime": "^3.0.0",
     "yaml": "^2.8.0"
   },
