@@ -498,27 +498,28 @@ function TextLayer({
   const textPadding =
     layer.props && typeof layer.props.textPadding === "number" ? layer.props.textPadding : 0;
 
+  const getTitleBounds = (titleProps: Record<string, unknown>, prefix: string) => {
+    const x = titleProps[`${prefix}X`];
+    const y = titleProps[`${prefix}Y`];
+    const width = titleProps[`${prefix}Width`];
+    const height = titleProps[`${prefix}Height`];
+    if (
+      typeof x === "number" &&
+      typeof y === "number" &&
+      typeof width === "number" &&
+      typeof height === "number"
+    ) {
+      return { x, y, width, height };
+    }
+    return undefined;
+  };
+
   if (blueprint.templateId === "labelled-back" && placement === "bottom" && !hideTitle) {
     const titleLayer = blueprint.layers.find((entry) => entry.type === "title");
     const titleProps = titleLayer?.props ?? {};
-    const getTitleBounds = (prefix: string) => {
-      const x = titleProps[`${prefix}X`];
-      const y = titleProps[`${prefix}Y`];
-      const width = titleProps[`${prefix}Width`];
-      const height = titleProps[`${prefix}Height`];
-      if (
-        typeof x === "number" &&
-        typeof y === "number" &&
-        typeof width === "number" &&
-        typeof height === "number"
-      ) {
-        return { x, y, width, height };
-      }
-      return undefined;
-    };
 
-    const ribbonBottomBounds = getTitleBounds("ribbon");
-    const ribbonTopBounds = getTitleBounds("ribbonTop");
+    const ribbonBottomBounds = getTitleBounds(titleProps, "ribbon");
+    const ribbonTopBounds = getTitleBounds(titleProps, "ribbonTop");
     const textTopBounds = getPlacementBounds("top");
 
     if (ribbonBottomBounds && ribbonTopBounds && textTopBounds) {
@@ -542,23 +543,7 @@ function TextLayer({
   if (blueprint.templateId === "labelled-back" && placement === "bottom" && !hideTitle) {
     const titleLayer = blueprint.layers.find((entry) => entry.type === "title");
     const titleProps = titleLayer?.props ?? {};
-    const getTitleBounds = (prefix: string) => {
-      const x = titleProps[`${prefix}X`];
-      const y = titleProps[`${prefix}Y`];
-      const width = titleProps[`${prefix}Width`];
-      const height = titleProps[`${prefix}Height`];
-      if (
-        typeof x === "number" &&
-        typeof y === "number" &&
-        typeof width === "number" &&
-        typeof height === "number"
-      ) {
-        return { x, y, width, height };
-      }
-      return undefined;
-    };
-
-    const ribbonBottomBounds = getTitleBounds("ribbon");
+    const ribbonBottomBounds = getTitleBounds(titleProps, "ribbon");
     if (ribbonBottomBounds) {
       const fontSizeResolved = fontSize ?? 22;
       const minBottomGap = fontSizeResolved;
