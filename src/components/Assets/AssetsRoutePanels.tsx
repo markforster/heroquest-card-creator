@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
+import getImageDimensions from "@/components/Assets/getImageDimensions";
 import AssetsMainPanel from "@/components/Assets/AssetsMainPanel";
 import ModalShell from "@/components/common/ModalShell";
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
@@ -32,28 +33,6 @@ type AssetUsage = {
 
 function formatAssetDate(timestamp: number): string {
   return new Date(timestamp).toLocaleString();
-}
-
-async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
-  if (typeof createImageBitmap === "function") {
-    const bitmap = await createImageBitmap(file);
-    const dimensions = { width: bitmap.width, height: bitmap.height };
-    bitmap.close?.();
-    return dimensions;
-  }
-
-  const url = URL.createObjectURL(file);
-  try {
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Failed to load image"));
-      img.src = url;
-    });
-    return { width: img.naturalWidth, height: img.naturalHeight };
-  } finally {
-    URL.revokeObjectURL(url);
-  }
 }
 
 function AssetsInspector({

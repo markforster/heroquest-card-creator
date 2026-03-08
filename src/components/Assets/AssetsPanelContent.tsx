@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
+import getImageDimensions from "@/components/Assets/getImageDimensions";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import IconButton from "@/components/common/IconButton";
@@ -87,28 +88,6 @@ type UploadProgressState = {
 const ENABLE_UPLOAD_PROGRESS = true;
 const ENABLE_UPLOAD_DEBUG_DELAY = true;
 const UPLOAD_DEBUG_DELAY_MS = 1;
-
-async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
-  if (typeof createImageBitmap === "function") {
-    const bitmap = await createImageBitmap(file);
-    const dimensions = { width: bitmap.width, height: bitmap.height };
-    bitmap.close?.();
-    return dimensions;
-  }
-
-  const url = URL.createObjectURL(file);
-  try {
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Failed to load image"));
-      img.src = url;
-    });
-    return { width: img.naturalWidth, height: img.naturalHeight };
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
 
 async function maybeDelayUploadStep(): Promise<void> {
   if (!ENABLE_UPLOAD_DEBUG_DELAY) return;
