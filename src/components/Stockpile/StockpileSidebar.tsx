@@ -154,7 +154,7 @@ export default function StockpileSidebar({
       }
     }
     return paths;
-  }, [activeFilter, treeData?.folderPathIds, treeEnabled, visibleCollections]);
+  }, [activeFilter, treeData?.folderPathIds, treeData?.nodes, treeEnabled, visibleCollections]);
 
   useEffect(() => {
     if (!treeEnabled) return;

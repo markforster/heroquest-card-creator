@@ -412,6 +412,7 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                         >
                           <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true" />
                           <div className={layoutStyles.imageAutocompleteThumb}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
                           </div>
                           <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
@@ -441,13 +442,14 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                       resetSearchState();
                       inputRef.current?.blur();
                     }}
-                  >
-                    <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true">
-                      <Pin className={layoutStyles.icon} aria-hidden="true" />
-                    </div>
-                    <div className={layoutStyles.imageAutocompleteThumb}>
-                      {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
-                    </div>
+                    >
+                      <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true">
+                        <Pin className={layoutStyles.icon} aria-hidden="true" />
+                      </div>
+                      <div className={layoutStyles.imageAutocompleteThumb}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
+                      </div>
                     <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
                       {asset.name}
                     </div>

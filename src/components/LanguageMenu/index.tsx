@@ -69,7 +69,6 @@ export default function LanguageMenu({ isCollapsed }: LanguageMenuProps) {
   const handleSelect = useCallback(
     (code: string) => {
       setLanguage(code as SupportedLanguage);
-      setHasStoredLanguage(true);
       setIsOpen(false);
     },
     [setLanguage],

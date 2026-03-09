@@ -66,7 +66,7 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             <li>
               Add rules text using a simple markdown-style syntax for bold and italic, with
               automatic word wrapping inside the available text area. There&apos;s also a
-              lightweight "leader line" format for things like <code>[cost [...] 1gp]</code> that
+              lightweight &quot;leader line&quot; format for things like <code>[cost [...] 1gp]</code> that
               draws dotted lines between labels and values.
             </li>
             <li>

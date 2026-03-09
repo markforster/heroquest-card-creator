@@ -100,6 +100,11 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
     setStockpileRefreshToken((prev) => prev + 1);
   };
 
+  const templatePickerOpen = templatePicker.open;
+  const templatePickerIsOpen = templatePicker.isOpen;
+  const stockpileModalOpen = stockpileModal.open;
+  const stockpileModalIsOpen = stockpileModal.isOpen;
+
   const contextValue = useMemo(
     () => ({
       hasTemplate: Boolean(selectedTemplateId),
@@ -113,7 +118,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
           setIsDiscardConfirmOpen(true);
           return;
         }
-        templatePicker.open();
+        templatePickerOpen();
       },
       openAssets: assetsModal.open,
       openStockpile: (options?: StockpileOpenOptions) => {
@@ -125,13 +130,13 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
         setStockpileConfirmHandler(() => options?.onConfirmSelection ?? null);
         setStockpileInitialSelectedIds(options?.initialSelectedIds ?? []);
         setStockpileTitleOverride(options?.titleOverride ?? null);
-        stockpileModal.open();
+        stockpileModalOpen();
       },
       openRecent: recentModal.open,
       openSettings: settingsModal.open,
-      isTemplatePickerOpen: templatePicker.isOpen,
+      isTemplatePickerOpen: templatePickerIsOpen,
       isAssetsOpen: assetsModal.isOpen,
-      isStockpileOpen: stockpileModal.isOpen,
+      isStockpileOpen: stockpileModalIsOpen,
       isRecentOpen: recentModal.isOpen,
       isSettingsOpen: settingsModal.isOpen,
     }),
@@ -143,11 +148,12 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
       isDirtyByTemplate,
       settingsModal.open,
       settingsModal.isOpen,
-      stockpileModal.open,
-      stockpileModal.isOpen,
+      stockpileModalOpen,
+      stockpileModalIsOpen,
       recentModal.open,
       recentModal.isOpen,
-      templatePicker.isOpen,
+      templatePickerOpen,
+      templatePickerIsOpen,
     ],
   );
 

@@ -152,13 +152,15 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
         if (storedDrafts) {
           const parsed = JSON.parse(storedDrafts) as unknown;
           if (parsed && typeof parsed === "object") {
+            const parsedDrafts = parsed as CardDrafts;
             const safeDrafts: CardDrafts = {};
             (Object.keys(parsed) as TemplateId[]).forEach((key) => {
               if (cardTemplatesById[key]) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const draftForTemplate = parsedDrafts[key];
+                if (!draftForTemplate) return;
                 safeDrafts[key] = normalizeDraftImageScale(
                   key,
-                  (parsed as any)[key] as CardDataByTemplate[TemplateId],
+                  draftForTemplate as CardDataByTemplate[TemplateId],
                 );
               }
             });

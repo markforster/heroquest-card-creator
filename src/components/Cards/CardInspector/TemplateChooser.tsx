@@ -157,7 +157,7 @@ export default function TemplateChooser() {
     setCurrentThumbnailError(false);
     setCurrentThumbnailDataUrl(null);
     return undefined;
-  }, [currentCard?.thumbnailBlob, isDraftDirty]);
+  }, [currentCard?.id, currentCard?.thumbnailBlob, isDraftDirty]);
 
   const applyFaceChange = (nextFace: CardFace) => {
     if (!currentTemplateId) return;
@@ -255,8 +255,10 @@ export default function TemplateChooser() {
           <div className={styles.inspectorHeaderPreview} aria-hidden="true">
             <div className={styles.inspectorHeaderPreviewInner}>
               {currentThumbnailDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img src={currentThumbnailDataUrl} alt="" />
               ) : currentThumbnailUrl && !currentThumbnailError ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={currentThumbnailUrl}
                     alt=""
@@ -278,6 +280,7 @@ export default function TemplateChooser() {
                   }}
                 />
               ) : currentTemplateThumbnail?.src ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img src={currentTemplateThumbnail.src} alt="" />
               ) : (
                 <div className={styles.inspectorHeaderPreviewPlaceholder} />

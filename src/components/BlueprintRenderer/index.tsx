@@ -386,11 +386,11 @@ function TextLayer({
   cardData?: CardDataByTemplate[TemplateId];
   showTextBounds?: boolean;
 }) {
+  const { defaultCopyright } = useCopyrightSettings();
+
   if (layer.type !== "text") return null;
   if (!layer.bind?.textKey) return null;
   if (!cardData) return null;
-
-  const { defaultCopyright } = useCopyrightSettings();
 
   const text = (cardData as Record<string, unknown>)[layer.bind.textKey];
   if (typeof text !== "string" && text != null) return null;
@@ -1460,10 +1460,10 @@ function renderGroups({
 
 export default function BlueprintRenderer(props: BlueprintRendererProps) {
   const { templateId, templateName, background, backgroundLoaded } = props;
+  const { showTextBounds } = useDebugVisuals();
   if (!templateId) return null;
 
   const blueprint = blueprintsByTemplateId[templateId];
-  const { showTextBounds } = useDebugVisuals();
   if (!blueprint) {
     return (
       <Layer>

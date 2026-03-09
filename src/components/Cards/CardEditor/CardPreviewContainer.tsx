@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import CardPreview, { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import WebglPreview from "@/components/Cards/CardPreview/WebglPreview";
@@ -55,25 +55,27 @@ export default function CardPreviewContainer({
     cardData: CardDataByTemplate[TemplateId];
   } | null>(null);
 
-  if (!selectedTemplateId) {
-    return null;
-  }
-
-  const template = cardTemplatesById[selectedTemplateId as TemplateId];
-  if (!template) {
-    return null;
-  }
+  const template = selectedTemplateId
+    ? cardTemplatesById[selectedTemplateId as TemplateId]
+    : undefined;
+  const hasTemplate = Boolean(selectedTemplateId && template);
 
   const cardData =
-    draftTemplateId === selectedTemplateId && draft
+    selectedTemplateId && draftTemplateId === selectedTemplateId && draft
       ? (draft as CardDataByTemplate[TemplateId])
       : undefined;
-  const templateName = getTemplateNameLabel(language, template);
+  const templateId = template?.id ?? "";
+  const templateName = template ? getTemplateNameLabel(language, template) : "";
   const showWebgl = previewRenderer === "webgl";
-  const activeCardId = activeCardIdByTemplate[selectedTemplateId as TemplateId];
+  const activeCardId = selectedTemplateId
+    ? activeCardIdByTemplate[selectedTemplateId as TemplateId]
+    : undefined;
   const noPairingLabel = t("label.webglNoPairing");
-  const effectiveFace = resolveEffectiveFace(cardData?.face, template.defaultFace);
-  const assetIds = collectCardAssetIds(cardData);
+  const effectiveFace = resolveEffectiveFace(
+    cardData?.face,
+    template?.defaultFace ?? "front",
+  );
+  const assetIds = useMemo(() => collectCardAssetIds(cardData), [cardData]);
 
   useEffect(() => {
     if (!showWebgl || isDragging) return;
@@ -145,13 +147,14 @@ export default function CardPreviewContainer({
   }, [
     showWebgl,
     cardData,
-    template.id,
+    templateId,
     templateName,
     previewRef,
     preferencesKey,
     isDragging,
     showTextBounds,
     activeCardId,
+    assetIds,
   ]);
 
   useEffect(() => {
@@ -162,7 +165,7 @@ export default function CardPreviewContainer({
       void handle.syncCopyrightContrast?.();
     }, 60);
     return () => window.clearTimeout(timeoutId);
-  }, [cardData, template.id, templateName, previewRef]);
+  }, [cardData, templateId, templateName, previewRef]);
 
   useEffect(() => {
     if (!showWebgl) {
@@ -276,7 +279,10 @@ export default function CardPreviewContainer({
   const reverseRenderInFlightRef = useRef(false);
   const reverseRenderRequestIdRef = useRef(0);
   const reverseDebounceTimeoutRef = useRef<number | null>(null);
-  const reverseAssetIds = collectCardAssetIds(reverseCard?.cardData);
+  const reverseAssetIds = useMemo(
+    () => collectCardAssetIds(reverseCard?.cardData),
+    [reverseCard?.cardData],
+  );
 
   useEffect(() => {
     if (!showWebgl || !reverseCard || isDragging) {
@@ -337,13 +343,25 @@ export default function CardPreviewContainer({
         window.clearTimeout(reverseDebounceTimeoutRef.current);
       }
     };
-  }, [showWebgl, reverseCard, reversePreviewRef, preferencesKey, isDragging, showTextBounds]);
+  }, [
+    showWebgl,
+    reverseCard,
+    reversePreviewRef,
+    preferencesKey,
+    isDragging,
+    showTextBounds,
+    reverseAssetIds,
+  ]);
 
   useEffect(() => {
     if (!showWebgl) return;
     setTextureCanvas(null);
     setReverseTextureCanvas(null);
   }, [activeCardId, showWebgl]);
+
+  if (!hasTemplate || !template) {
+    return null;
+  }
 
   return (
     <div className={styles.previewSwap}>

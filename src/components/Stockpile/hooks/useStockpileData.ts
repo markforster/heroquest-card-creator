@@ -118,7 +118,7 @@ export const useStockpileData = ({
 
     window.localStorage.removeItem("hqcc.selectedCollectionId");
     setStoredCollectionId(null);
-  }, [activeFilter]);
+  }, [activeFilter, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;

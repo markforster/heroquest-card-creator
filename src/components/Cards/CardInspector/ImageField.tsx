@@ -16,7 +16,7 @@ import {
   ZoomOut,
   Pin,
 } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext, useWatch } from "react-hook-form";
 
@@ -126,8 +126,13 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const MAX_ROTATION = 180;
   const ROTATION_STEP = 1;
 
-  const imageBounds =
-    boundsWidth && boundsHeight ? { x: 0, y: 0, width: boundsWidth, height: boundsHeight } : undefined;
+  const imageBounds = useMemo(
+    () =>
+      boundsWidth && boundsHeight
+        ? { x: 0, y: 0, width: boundsWidth, height: boundsHeight }
+        : undefined,
+    [boundsWidth, boundsHeight],
+  );
 
   useEffect(() => {
     if (imageScaleModeWatch !== "absolute") return;
@@ -199,17 +204,30 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
       )
     : 0;
 
-  const getCurrentSnapshot = (): ImageSnapshot => ({
-    imageAssetId,
-    imageAssetName,
-    imageOriginalWidth,
-    imageOriginalHeight,
-    imageScale,
-    imageScaleMode,
-    imageOffsetX,
-    imageOffsetY,
-    imageRotation,
-  });
+  const getCurrentSnapshot = useCallback(
+    (): ImageSnapshot => ({
+      imageAssetId,
+      imageAssetName,
+      imageOriginalWidth,
+      imageOriginalHeight,
+      imageScale,
+      imageScaleMode,
+      imageOffsetX,
+      imageOffsetY,
+      imageRotation,
+    }),
+    [
+      imageAssetId,
+      imageAssetName,
+      imageOriginalWidth,
+      imageOriginalHeight,
+      imageScale,
+      imageScaleMode,
+      imageOffsetX,
+      imageOffsetY,
+      imageRotation,
+    ],
+  );
 
   const capturePreviousImageState = () => {
     previousImageRef.current = getCurrentSnapshot();
@@ -301,6 +319,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     imageOffsetX,
     imageOffsetY,
     imageRotation,
+    getCurrentSnapshot,
   ]);
 
   useEffect(() => {
@@ -611,6 +630,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                         >
                           <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true" />
                           <div className={layoutStyles.imageAutocompleteThumb}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
                           </div>
                           <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
@@ -640,13 +660,14 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                       resetSearchState();
                       inputRef.current?.blur();
                     }}
-                  >
-                    <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true">
-                      <Pin className={layoutStyles.icon} aria-hidden="true" />
-                    </div>
-                    <div className={layoutStyles.imageAutocompleteThumb}>
-                      {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
-                    </div>
+                    >
+                      <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true">
+                        <Pin className={layoutStyles.icon} aria-hidden="true" />
+                      </div>
+                      <div className={layoutStyles.imageAutocompleteThumb}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
+                      </div>
                     <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
                       {asset.name}
                     </div>

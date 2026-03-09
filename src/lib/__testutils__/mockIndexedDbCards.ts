@@ -198,8 +198,8 @@ type MockDb = {
   transaction: (
     name: string,
     mode: IDBTransactionMode,
-  ) => { objectStore: (store: string) => any };
-  createObjectStore: (name: string, options: { keyPath: string }) => any;
+  ) => { objectStore: (store: string) => IDBObjectStore };
+  createObjectStore: (name: string, options: { keyPath: string }) => IDBObjectStore;
 };
 
 export function installMockIndexedDbCards(options: {
@@ -224,12 +224,12 @@ export function installMockIndexedDbCards(options: {
   const db: MockDb = {
     objectStoreNames: { contains: (name) => stores.has(name) },
     transaction: () => ({
-      objectStore: () => cardsStore,
+      objectStore: () => cardsStore as unknown as IDBObjectStore,
     }),
     createObjectStore: (name) => {
       stores.add(name);
-      if (name === "assets") return assetsStore;
-      return {};
+      if (name === "assets") return assetsStore as unknown as IDBObjectStore;
+      return {} as IDBObjectStore;
     },
   };
 
@@ -253,10 +253,10 @@ export function installMockIndexedDbCards(options: {
   });
   Object.defineProperty(window, "indexedDB", { configurable: true, value: { open } });
 
-  const originalKeyRange = (globalThis as any).IDBKeyRange;
-  (globalThis as any).IDBKeyRange = {
+  const originalKeyRange = globalThis.IDBKeyRange;
+  globalThis.IDBKeyRange = {
     only: (value: unknown) => value,
-  };
+  } as unknown as typeof IDBKeyRange;
 
   return {
     db,
@@ -267,11 +267,10 @@ export function installMockIndexedDbCards(options: {
       if (originalIndexedDbDescriptor) {
         Object.defineProperty(window, "indexedDB", originalIndexedDbDescriptor);
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (window as any).indexedDB;
+        Reflect.deleteProperty(window, "indexedDB");
       }
 
-      (globalThis as any).IDBKeyRange = originalKeyRange;
+      globalThis.IDBKeyRange = originalKeyRange;
 
       debugSpy.mockRestore();
       errorSpy.mockRestore();

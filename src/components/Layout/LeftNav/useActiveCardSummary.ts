@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -26,7 +26,7 @@ export function useActiveCardSummary(
   const retainedCardRef = useRef<string | null>(null);
   const retryGuardRef = useRef<Set<string>>(new Set());
 
-  const loadCardSummary = async (cardId: string) => {
+  const loadCardSummary = useCallback(async (cardId: string) => {
     try {
       const record = await getCard(cardId);
       if (!record) {
@@ -72,7 +72,7 @@ export function useActiveCardSummary(
       currentCardThumbRef.current = null;
       setCurrentCardThumbUrl(null);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     if (!activeCardId) {
@@ -124,7 +124,7 @@ export function useActiveCardSummary(
         retainedCardRef.current = null;
       }
     };
-  }, [activeCardId]);
+  }, [activeCardId, loadCardSummary]);
 
   const retryThumbnail = () => {
     if (!activeCardId || !ENABLE_CARD_THUMB_CACHE) return;

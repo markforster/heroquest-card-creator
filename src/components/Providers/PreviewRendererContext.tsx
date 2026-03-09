@@ -79,7 +79,7 @@ export function PreviewRendererProvider({ children }: { children: React.ReactNod
     } catch {
       // Ignore localStorage errors.
     }
-  }, [previewRenderer, rotationMode]);
+  }, [hasHydrated, previewRenderer, rotationMode]);
 
   const value = useMemo<PreviewRendererContextValue>(
     () => ({

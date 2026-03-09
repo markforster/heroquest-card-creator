@@ -81,14 +81,22 @@ export function useLocalStorageValue<T>(
   options: UseLocalStorageValueOptions<T> = {},
 ) {
   const { values, ensureValue, setValue } = useLocalStorageContext();
-  const serialize = options.serialize ?? ((value: T) => JSON.stringify(value));
-  const parse = options.parse ?? ((raw: string) => {
-    try {
-      return JSON.parse(raw) as T;
-    } catch {
-      return null;
-    }
-  });
+  const serialize = useMemo(
+    () => options.serialize ?? ((value: T) => JSON.stringify(value)),
+    [options.serialize],
+  );
+  const parse = useMemo(
+    () =>
+      options.parse ??
+      ((raw: string) => {
+        try {
+          return JSON.parse(raw) as T;
+        } catch {
+          return null;
+        }
+      }),
+    [options.parse],
+  );
 
   useEffect(() => {
     ensureValue(key, serialize(defaultValue));

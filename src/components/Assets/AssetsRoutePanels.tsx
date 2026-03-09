@@ -237,7 +237,7 @@ function AssetsInspector({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [assets.length, currentIndex, onSelectIndex, showCarousel]);
+  }, [assets.length, currentIndex, onSelectIndex, safeIndex, showCarousel]);
 
   const kindStatus = asset.assetKindStatus ?? "unclassified";
   const kindLabel =

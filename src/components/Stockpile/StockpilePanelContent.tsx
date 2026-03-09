@@ -74,6 +74,7 @@ import {
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { runBulkExport } from "@/lib/export-cards";
 import type { ExportSettings } from "@/lib/export-settings";
+import formatMessageWith from "@/lib/format-message-with";
 import { deletePairsForFace, listAllPairs } from "@/lib/pairs-service";
 import { createDefaultCardData } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
@@ -1010,8 +1011,8 @@ export default function StockpilePanelContent({
       const baseCount = baseIds.length;
       const exportOnlyLabel =
         activeFilter.type === "collection" && selectedVisibleCards.length === 0
-          ? formatMessageWith("label.exportOnlyInCollection", { count: baseCount })
-          : formatMessageWith("label.exportOnlySelected", { count: baseCount });
+          ? formatMessageWith(t, "label.exportOnlyInCollection", { count: baseCount })
+          : formatMessageWith(t, "label.exportOnlySelected", { count: baseCount });
       setExportPairPrompt({
         baseIds,
         pairedIds,
@@ -1486,16 +1487,16 @@ export default function StockpilePanelContent({
             return (
               <div className="d-flex flex-column gap-2">
                 <div className="fw-semibold">
-                  {formatMessageWith("confirm.deleteCollectionHeading", { name: impact.name })}
+                  {formatMessageWith(t, "confirm.deleteCollectionHeading", { name: impact.name })}
                 </div>
                 <div>
-                  {formatMessageWith("confirm.deleteCollectionRemovedCount", {
+                  {formatMessageWith(t, "confirm.deleteCollectionRemovedCount", {
                     count: impact.removedCount,
                   })}
                 </div>
                 {impact.unfiledCount > 0 ? (
                   <div>
-                    {formatMessageWith("confirm.deleteCollectionMoveToUnfiled", {
+                    {formatMessageWith(t, "confirm.deleteCollectionMoveToUnfiled", {
                       count: impact.unfiledCount,
                     })}
                   </div>

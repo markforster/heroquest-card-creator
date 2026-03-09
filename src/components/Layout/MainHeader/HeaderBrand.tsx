@@ -10,6 +10,7 @@ export default function HeaderBrand() {
 
   return (
     <div className={`${styles.headerTitleRow} ${styles.uRowSm}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={APP_LOGO_SRC}
         alt={t("app.title")}

@@ -102,7 +102,7 @@ export default function ExportBleedPrompt({
       cutPad,
     );
     return `${CARD_WIDTH + pad * 2} x ${CARD_HEIGHT + pad * 2}px`;
-  }, [bleedEnabled, bleedPx, cropMarksEnabled]);
+  }, [bleedEnabled, bleedPx, cropMarksEnabled, cutMarksEnabled]);
 
   const handleConfirm = () => {
     onConfirm({

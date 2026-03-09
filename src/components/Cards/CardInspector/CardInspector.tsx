@@ -35,13 +35,12 @@ export default function CardInspector({
   const [trackStyle, setTrackStyle] = useState<React.CSSProperties>({});
 
   // TODO: Implement a more scalable way to map templates to inspector forms.
-  if (!selectedTemplateId) {
-    return <div className={styles.inspectorModeEmpty}>{t("empty.selectTemplate")}</div>;
-  }
-
-  const key = activeCardIdByTemplate[selectedTemplateId] ?? `${selectedTemplateId}-draft`;
+  const key = selectedTemplateId
+    ? activeCardIdByTemplate[selectedTemplateId] ?? `${selectedTemplateId}-draft`
+    : "no-template";
 
   useLayoutEffect(() => {
+    if (!selectedTemplateId) return;
     const updateTrack = () => {
       const container = segmentRef.current;
       const activeButton = mode === "form" ? formTabRef.current : pairingTabRef.current;
@@ -72,6 +71,10 @@ export default function CardInspector({
       if (observer) observer.disconnect();
     };
   }, [mode, selectedTemplateId, key]);
+
+  if (!selectedTemplateId) {
+    return <div className={styles.inspectorModeEmpty}>{t("empty.selectTemplate")}</div>;
+  }
 
   return (
     <div className={styles.inspectorMode}>

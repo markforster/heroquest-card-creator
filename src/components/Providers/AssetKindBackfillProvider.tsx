@@ -385,7 +385,7 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
       cancelled = true;
       processingRef.current = false;
     };
-  }, [isActive, queueToken]);
+  }, [enqueueAsset, isActive, isAutoClassifyEnabled, isSafari, queueToken]);
 
   const value = useMemo(
     () => ({

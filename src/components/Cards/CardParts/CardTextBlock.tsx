@@ -545,6 +545,7 @@ export default function CardTextBlock({
   align = "left",
   debug = false,
 }: CardTextBlockProps) {
+  const maskPrefix = useId().replace(/:/g, "");
   const { lines, lineHeight: effectiveLineHeight } = layoutCardText({
     text,
     width: bounds.width,
@@ -578,7 +579,6 @@ export default function CardTextBlock({
     if (letterSpacingPx <= 0 || text.length <= 1) return base;
     return base + (text.length - 1) * letterSpacingPx;
   };
-  const maskPrefix = useId().replace(/:/g, "");
 
   return (
     <g>

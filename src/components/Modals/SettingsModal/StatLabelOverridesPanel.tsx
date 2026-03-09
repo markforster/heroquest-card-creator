@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
@@ -133,7 +133,7 @@ export default function StatLabelOverridesPanel() {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     const next: StatLabelOverrides = {
       ...formState,
       statLabelsEnabled: Boolean(formState.statLabelsEnabled),
@@ -160,7 +160,7 @@ export default function StatLabelOverridesPanel() {
       }, 500),
     );
     // settingsPanel.requestClose();
-  };
+  }, [formState, setOverrides, settingsPanel]);
 
   const statLabelFooter = useMemo(
     () => (
@@ -189,7 +189,7 @@ export default function StatLabelOverridesPanel() {
         </div>
       </div>
     ),
-    [formState.statLabelsEnabled, handleSave, saveState, settingsPanel, t],
+    [formState.statLabelsEnabled, handleSave, saveState, t],
   );
 
   useEffect(() => {

@@ -652,7 +652,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                     loggingId: session.sessionId,
                     assetBlobsById: cache,
                     templateId,
-                    cardData,
                     developerCreditEnabled,
                   })
                 : await renderSvgToCanvas({
@@ -676,7 +675,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             }
             if (
               ENABLE_WATERMARK &&
-              shouldApplyWatermark(templateId, cardData) &&
+              shouldApplyWatermark(templateId) &&
               !(bleedPx > 0 || cropMarks?.enabled)
             ) {
               applyWatermarkToCanvas(canvas);
@@ -768,7 +767,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
                   templateId,
-                  cardData,
                   developerCreditEnabled,
                 })
               : await renderSvgToCanvas({
@@ -787,7 +785,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           if (!canvas) return null;
           if (
             ENABLE_WATERMARK &&
-            shouldApplyWatermark(templateId, cardData) &&
+            shouldApplyWatermark(templateId) &&
             !(bleedPx > 0 || cropMarks?.enabled)
           ) {
             applyWatermarkToCanvas(canvas);
@@ -862,7 +860,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
         templateName,
         syncCopyrightContrast,
         developerCreditEnabled,
-        copyrightTextColor,
       ],
     );
 
@@ -940,7 +937,6 @@ async function renderBleedCanvas({
   loggingId,
   assetBlobsById,
   templateId,
-  cardData,
   developerCreditEnabled,
 }: {
   svgElement: SVGSVGElement;
@@ -951,7 +947,6 @@ async function renderBleedCanvas({
   loggingId?: string;
   assetBlobsById?: Map<string, Blob>;
   templateId?: CardPreviewProps["templateId"];
-  cardData?: CardPreviewProps["cardData"];
   developerCreditEnabled?: boolean;
 }): Promise<HTMLCanvasElement | null> {
   const fullCanvas = await renderSvgToCanvas({
@@ -973,7 +968,7 @@ async function renderBleedCanvas({
     },
   });
   if (!fullCanvas) return null;
-  if (ENABLE_WATERMARK && shouldApplyWatermark(templateId, cardData)) {
+  if (ENABLE_WATERMARK && shouldApplyWatermark(templateId)) {
     applyWatermarkToCanvas(fullCanvas);
   }
 

@@ -724,7 +724,10 @@ export default function WebglPreview({
     ctx.shadowBlur = 8;
     ctx.shadowOffsetY = 2;
     ctx.fillStyle = "#2d6cc3";
-    ctx.font = "600 96px 'HeroQuest', 'Cinzel', 'Trajan Pro', serif";
+    const heroQuestFontReady = isHeroQuestFontReady;
+    ctx.font = heroQuestFontReady
+      ? "600 96px 'HeroQuest', 'Cinzel', 'Trajan Pro', serif"
+      : "600 96px 'Cinzel', 'Trajan Pro', serif";
     const words = unpairedLabel.split(/\s+/).filter(Boolean);
     const lines: string[] = [];
     let line = "";

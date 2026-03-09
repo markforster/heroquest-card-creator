@@ -926,7 +926,7 @@ function IndexPageInner() {
                             {t("warning.missingArtworkDetectedTitle")}
                           </div>
                           <div>
-                            {formatMessageWith("warning.missingArtworkDetectedBody", {
+                            {formatMessageWith(t, "warning.missingArtworkDetectedBody", {
                               count: missingAssetsReport.length,
                             })}
                           </div>
