@@ -16,8 +16,8 @@ import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import {
   ENABLE_MISSING_ASSET_CHECKS,
   ENABLE_MISSING_ASSET_DELETE_SCAN,
+  ENABLE_ASSET_THUMB_THROTTLE,
 } from "@/config/flags";
-import { ENABLE_ASSET_THUMB_THROTTLE } from "@/config/flags";
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
 import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
@@ -620,7 +620,6 @@ export default function AssetsPanelContent({
         }
 
         let nextName = name;
-        let isRename = false;
         if (
           existingNamesLower.has(nameLower) ||
           batchNamesLower.has(nameLower) ||
@@ -630,7 +629,6 @@ export default function AssetsPanelContent({
             new Set([...existingFileNames, ...batchNames]),
             name,
           );
-          isRename = true;
           renames.push({ original: name, renamed: nextName });
         }
 

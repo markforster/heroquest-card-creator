@@ -249,7 +249,6 @@ export function hyphenateStrategy(ctx: StrategyContext): StrategyResult {
       // Token is too long: hard split with hyphenation.
       let start = 0;
       while (start < token.length) {
-        const end = token.length;
         let best = "";
 
         // Find the longest substring that fits with a hyphen (if not last chunk).

@@ -56,7 +56,7 @@ function resolveAppUrl(location: LocationLike | null | undefined): string | unde
   try {
     const parsed = new URL(href);
     return `${parsed.origin}${parsed.pathname}`;
-  } catch (_err) {
+  } catch {
     return undefined;
   }
 }

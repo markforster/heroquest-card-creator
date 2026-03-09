@@ -53,7 +53,6 @@ import { TextFittingPreferencesProvider } from "@/components/Providers/TextFitti
 import { ThemeProvider } from "@/components/Providers/ThemeProvider";
 import { WebglPreviewSettingsProvider } from "@/components/Providers/WebglPreviewSettingsContext";
 import { StockpileMainPanel } from "@/components/Stockpile";
-import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import ToolsToolbar from "@/components/ToolsToolbar";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";

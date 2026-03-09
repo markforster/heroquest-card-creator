@@ -33,7 +33,6 @@ import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFi
 import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collections-merge";
 import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
 import {
-  formatMessage,
   resolveExportFileName,
   resolveZipFileName,
 } from "@/components/Stockpile/stockpile-utils";
@@ -54,8 +53,7 @@ import type {
   StockpileCardThumb,
   StockpileCardView,
 } from "@/components/Stockpile/types";
-import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
-import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import { ENABLE_CARD_THUMB_CACHE, ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -82,7 +80,7 @@ import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
 import type { OpenCloseProps } from "@/types/ui";
 
-import type { DragCancelEvent, DragEndEvent, DragStartEvent } from "@dnd-kit/core";
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import type { ReactNode } from "react";
 
 type StockpilePanelMode = "manage" | "pair-fronts" | "pair-backs";
@@ -663,7 +661,7 @@ export default function StockpilePanelContent({
     }
   };
 
-  const handleDragCancel = (_event: DragCancelEvent) => {
+  const handleDragCancel = () => {
     setDragActiveId(null);
     setDraggingIds([]);
   };

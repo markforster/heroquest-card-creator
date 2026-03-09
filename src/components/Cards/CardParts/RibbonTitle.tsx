@@ -74,9 +74,6 @@ export default function RibbonTitle({
   );
   const titleLines = titleLayout.lines.length ? titleLayout.lines : [""];
   const titleFontSize = titleLayout.fontSize;
-  const titleLineHeight = titleLayout.lineHeight ?? titleFontSize * 1.05;
-  const totalTitleHeight = titleLineHeight * titleLines.length;
-  const firstLineY = centerY - (totalTitleHeight - titleLineHeight) / 2;
   const { showTextBounds } = useDebugVisuals();
   const letterSpacing = USE_TIGHTER_TITLE_TRACKING ? TITLE_LETTER_SPACING : undefined;
   const scaleY = USE_TITLE_VERTICAL_COMPRESSION ? TITLE_VERTICAL_SCALE_Y : 1;

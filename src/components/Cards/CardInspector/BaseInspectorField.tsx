@@ -35,7 +35,6 @@ export default function BaseInspectorField({
   label,
   icon,
   error,
-  disabled = false,
   showToggle = false,
   toggleProps,
   toolbar,

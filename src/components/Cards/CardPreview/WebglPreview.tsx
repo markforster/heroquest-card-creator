@@ -596,7 +596,6 @@ export default function WebglPreview({
   fallbackTextureSrc,
   rotationResetToken = 0,
   recenterToken = 0,
-  activeCardId = null,
   unpairedLabel,
 }: WebglPreviewProps) {
   const rootClassName = className ? `${styles.root} ${className}` : styles.root;
@@ -717,7 +716,6 @@ export default function WebglPreview({
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
     const paddingX = 36;
-    const paddingY = 24;
     const maxWidth = canvas.width - paddingX * 2;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.textAlign = "center";

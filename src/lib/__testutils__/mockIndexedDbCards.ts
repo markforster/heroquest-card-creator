@@ -1,5 +1,4 @@
-import type { CardRecord } from "@/types/cards-db";
-import type { CardStatus } from "@/types/cards-db";
+import type { CardRecord, CardStatus } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
 
 type Request<T> = {
@@ -279,4 +278,3 @@ export function installMockIndexedDbCards(options: {
     },
   };
 }
-

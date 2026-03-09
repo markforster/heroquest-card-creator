@@ -573,7 +573,7 @@ export default function CardTextBlock({
 
   const measure = createTextMeasurer(fontSize, fontFamily);
   const letterSpacingPx = (letterSpacingEm ?? 0) * fontSize;
-  const measureWithSpacing = (text: string, _token?: Extract<WrapToken, { kind: "text" }>) => {
+  const measureWithSpacing = (text: string) => {
     const base = measure(text);
     if (letterSpacingPx <= 0 || text.length <= 1) return base;
     return base + (text.length - 1) * letterSpacingPx;
@@ -802,10 +802,8 @@ function segmentsToTokens(segments: InlineDiceSegment[], fontSize: number): Text
   const diceGap = fontSize * DICE_TEXT_GAP_RATIO + DICE_TEXT_GAP_PX;
   const diceAdvance = diceSize + diceGap * 2;
 
-  segments.forEach((segment, segmentIndex) => {
+  segments.forEach((segment) => {
     if (segment.kind === "dice") {
-      const prevSegment = segmentIndex > 0 ? segments[segmentIndex - 1] : null;
-      const nextSegment = segmentIndex < segments.length - 1 ? segments[segmentIndex + 1] : null;
       tokens.push({
         kind: "dice",
         dice: segment.token,

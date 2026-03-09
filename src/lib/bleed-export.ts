@@ -197,9 +197,6 @@ export function getBleedTrimOrigin({
   cutMarks?: CutMarksOptions;
 }) {
   const markLength = cropMarks?.enabled ? cropMarks.markLength ?? DEFAULT_CROP_MARK_LENGTH : 0;
-  const markThickness = cropMarks?.enabled
-    ? cropMarks.thickness ?? DEFAULT_CROP_MARK_THICKNESS
-    : 0;
   const cutOffset = cutMarks?.enabled ? cutMarks.offset ?? DEFAULT_CUT_MARK_OFFSET : 0;
   const cutThickness = cutMarks?.enabled ? cutMarks.thickness ?? DEFAULT_CROP_MARK_THICKNESS : 0;
   const cutPadding = cutMarks?.enabled ? cutOffset + cutThickness : 0;

@@ -28,7 +28,6 @@ import {
   getBleedTrimOrigin,
   setExportBackgroundFit,
   setExportClip,
-  stripToBackgroundOnly,
 } from "@/lib/bleed-export";
 import { collectCardAssetIds } from "@/lib/card-assets";
 import { resolveCardPreviewFileName } from "@/lib/card-preview";
@@ -261,93 +260,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               ? normalizedDefault
               : "";
         })();
-        const sampleLuminance = (
-          ctx: CanvasRenderingContext2D,
-          canvas: HTMLCanvasElement,
-          rectX: number,
-          rectY: number,
-          rectW: number,
-          rectH: number,
-        ) => {
-          if (rectW <= 1 || rectH <= 1) return null;
-          const shiftedY = Math.max(0, rectY);
-          const shiftedH = Math.min(rectH, rectY + rectH - shiftedY);
-          if (shiftedH <= 1) return null;
-          const targetX = rectX;
-          const targetY = shiftedY;
-          const targetW = rectW;
-          const targetH = shiftedH;
-          const insetX = Math.floor(rectW * COPYRIGHT_SAMPLE_INSET_RATIO);
-          const insetY = Math.floor(shiftedH * COPYRIGHT_SAMPLE_INSET_RATIO);
-          let sampleX = targetX + insetX;
-          let sampleY = targetY + insetY;
-          let sampleW = targetW - insetX * 2;
-          let sampleH = targetH - insetY * 2;
-          if (sampleW <= 1 || sampleH <= 1) {
-            sampleX = targetX;
-            sampleY = targetY;
-            sampleW = targetW;
-            sampleH = targetH;
-          }
-          if (sampleX < 0) {
-            sampleW += sampleX;
-            sampleX = 0;
-          }
-          if (sampleY < 0) {
-            sampleH += sampleY;
-            sampleY = 0;
-          }
-          if (sampleX + sampleW > canvas.width) {
-            sampleW = canvas.width - sampleX;
-          }
-          if (sampleY + sampleH > canvas.height) {
-            sampleH = canvas.height - sampleY;
-          }
-          if (sampleW <= 1 || sampleH <= 1) return null;
-          try {
-            const imageData = ctx.getImageData(
-              Math.floor(sampleX),
-              Math.floor(sampleY),
-              Math.floor(sampleW),
-              Math.floor(sampleH),
-            );
-            return computeAverageLuminance(imageData);
-          } catch {
-            return null;
-          }
-        };
-
-        const computeLuminanceFromCanvas = (
-          ctx: CanvasRenderingContext2D,
-          canvas: HTMLCanvasElement,
-          {
-            x,
-            y,
-            w,
-            h,
-            textLeft,
-            textWidthPx,
-          }: {
-            x: number;
-            y: number;
-            w: number;
-            h: number;
-            textLeft: number;
-            textWidthPx: number;
-          },
-        ) => {
-          const leftWidth = Math.max(0, Math.floor(textLeft - x));
-          const rightStart = Math.floor(textLeft + textWidthPx);
-          const rightWidth = Math.max(0, Math.floor(x + w - rightStart));
-          const leftLum = sampleLuminance(ctx, canvas, x, y, leftWidth, h);
-          const rightLum = sampleLuminance(ctx, canvas, rightStart, y, rightWidth, h);
-          return (
-            (leftLum != null && rightLum != null
-              ? (leftLum + rightLum) / 2
-              : (leftLum ?? rightLum)) ?? sampleLuminance(ctx, canvas, x, y, w, h)
-          );
-        };
-
         const loadBackgroundImage = async (href: string) => {
           const cache = backgroundImageCacheRef.current;
           if (cache.has(href)) {

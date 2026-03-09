@@ -27,7 +27,6 @@ function normalizeId(rawId: string) {
 export default function CardTexturedBorder({
   alphaMask,
   textureMask,
-  backgroundLoaded,
   color,
   width = CARD_WIDTH,
   height = CARD_HEIGHT,

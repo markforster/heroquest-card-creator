@@ -65,7 +65,6 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
     setSingleDraft,
     setActiveCard,
     setTemplateDirty,
-    loadCardIntoEditor,
   } = useCardEditor();
 
   const templatePicker = usePopupState(false);

@@ -13,15 +13,18 @@ import { useEditorSave } from "@/components/Providers/EditorSaveContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import resolveThumb from "@/components/Stockpile/resolveThumb";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
-import { ENABLE_CARD_THUMB_CACHE, ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
+import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { getCard, listCards } from "@/lib/cards-db";
 import {
-  } from "@/lib/card-thumbnail-cache";
-import { createPair, deletePair, deletePairsForFront, replacePairsForBack } from "@/lib/pairs-service";
-import { listPairsForFace } from "@/lib/pairs-service";
+  createPair,
+  deletePair,
+  deletePairsForFront,
+  listPairsForFace,
+  replacePairsForBack,
+} from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { CardRecord } from "@/types/cards-db";

@@ -36,7 +36,7 @@ function getOrCreateCid(): string {
         : `cid-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
     window.localStorage.setItem(CID_STORAGE_KEY, generated);
     return generated;
-  } catch (_err) {
+  } catch {
     return `cid-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
   }
 }
@@ -48,7 +48,7 @@ async function getOrFetchIp(): Promise<string | null> {
       if (PIXEL_DEBUG) console.log("[pixel] using cached ip", existing);
       return existing;
     }
-  } catch (_err) {}
+  } catch {}
 
   try {
     if (PIXEL_DEBUG) console.log("[pixel] fetching ip via ipify");
@@ -58,11 +58,11 @@ async function getOrFetchIp(): Promise<string | null> {
     if (data.ip && typeof data.ip === "string") {
       try {
         window.sessionStorage.setItem(IP_STORAGE_KEY, data.ip);
-      } catch (_err) {}
+      } catch {}
       if (PIXEL_DEBUG) console.log("[pixel] ipify success", data.ip);
       return data.ip;
     }
-  } catch (_err) {}
+  } catch {}
   if (PIXEL_DEBUG) console.log("[pixel] ipify failed");
   return null;
 }

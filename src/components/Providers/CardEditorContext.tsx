@@ -100,7 +100,6 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
     }
 
     let initialId: TemplateId | null = cardTemplates[0]?.id ?? null;
-    let initialDrafts: CardDrafts = {};
     let initialDraft: CardDataByTemplate[TemplateId] | null = null;
     let initialDraftTemplateId: TemplateId | null = null;
     let initialDraftPairingFrontIds: string[] | null = null;
@@ -163,7 +162,6 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
                 );
               }
             });
-            initialDrafts = safeDrafts;
             if (storedSelected && cardTemplatesById[storedSelected as TemplateId]) {
               const selectedKey = storedSelected as TemplateId;
               if (safeDrafts[selectedKey]) {

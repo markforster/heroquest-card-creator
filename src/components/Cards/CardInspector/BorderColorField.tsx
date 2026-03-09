@@ -40,8 +40,6 @@ export default function BorderColorField({ label, templateId }: BorderColorField
 
   const { field } = useController({ name: "borderColor", control });
   const borderColor = typeof field.value === "string" ? field.value : "";
-  const isTransparent = isTransparentColor(borderColor);
-  const colorValue = borderColor.trim() && !isTransparent ? borderColor : DEFAULT_BORDER_COLOR;
   const normalizedSelected = useMemo(() => normalizeBorderColor(borderColor), [borderColor]);
   const inputValue =
     normalizedSelected === TRANSPARENT_BORDER_COLOR

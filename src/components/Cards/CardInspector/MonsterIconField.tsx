@@ -240,7 +240,6 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
     const anchorRect = anchor.getBoundingClientRect();
     const padding = 12;
     const offset = 8;
-    const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
     const spaceLeft = anchorRect.left - padding - offset;
