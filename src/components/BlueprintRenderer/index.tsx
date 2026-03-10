@@ -1,7 +1,7 @@
 "use client";
 
-import { useId } from "react";
 import { AlertTriangle } from "lucide-react";
+import { useId } from "react";
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
@@ -564,7 +564,7 @@ function TextLayer({
   const layerFill = typeof layer.props?.fill === "string" ? layer.props.fill : undefined;
   const bodyTextColor =
     textKey === "description"
-      ? (cardData as { bodyTextColor?: string }).bodyTextColor ?? DEFAULT_BODY_TEXT_COLOR
+      ? ((cardData as { bodyTextColor?: string }).bodyTextColor ?? DEFAULT_BODY_TEXT_COLOR)
       : undefined;
   const fill = bodyTextColor ?? layerFill;
   const letterSpacingEm =
@@ -645,10 +645,8 @@ function TextLayer({
     }
   }
 
-  const clampHeightToBottomLimit = (
-    bounds: { y: number; height: number },
-    bottomLimitY: number,
-  ) => Math.max(0, Math.min(bounds.height, bottomLimitY - bounds.y));
+  const clampHeightToBottomLimit = (bounds: { y: number; height: number }, bottomLimitY: number) =>
+    Math.max(0, Math.min(bounds.height, bottomLimitY - bounds.y));
 
   if (blueprint.templateId === "labelled-back" && placement === "bottom" && !hideTitle) {
     const titleLayer = blueprint.layers.find((entry) => entry.type === "title");
@@ -1341,7 +1339,7 @@ function buildGroupItems({
       const layerFill = typeof child.props?.fill === "string" ? child.props.fill : undefined;
       const bodyTextColor =
         textKey === "description"
-          ? (cardData as { bodyTextColor?: string }).bodyTextColor ?? DEFAULT_BODY_TEXT_COLOR
+          ? ((cardData as { bodyTextColor?: string }).bodyTextColor ?? DEFAULT_BODY_TEXT_COLOR)
           : undefined;
       const fill = bodyTextColor ?? layerFill;
       const letterSpacingEm =
