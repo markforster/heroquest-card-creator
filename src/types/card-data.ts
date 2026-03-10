@@ -21,6 +21,7 @@ export interface BaseCardFields {
   imageOriginalHeight?: number;
   description?: string;
   borderColor?: string;
+  backgroundTint?: string;
   copyright?: string;
   copyrightColor?: string;
   showCopyright?: boolean;

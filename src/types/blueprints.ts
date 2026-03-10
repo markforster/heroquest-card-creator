@@ -42,6 +42,7 @@ export type BlueprintLayerBackground = BlueprintLayerBase & {
   source?: "template" | "asset";
   asset?: StaticImageData;
   cutoutBounds?: BlueprintBounds;
+  tintKey?: string;
 };
 
 export type BlueprintLayerBorder = BlueprintLayerBase & {

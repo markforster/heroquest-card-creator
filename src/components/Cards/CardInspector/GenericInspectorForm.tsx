@@ -14,6 +14,7 @@ import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
 import BorderColorField from "./BorderColorField";
+import BackgroundTintField from "./BackgroundTintField";
 import ContentField from "./ContentField";
 import CopyrightField from "./CopyrightField";
 import HeroStatsInspector from "./HeroStatsInspector";
@@ -175,6 +176,15 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
           if (field.fieldType === "borderColor") {
             return (
               <BorderColorField
+                key={`${field.bind}-${index}`}
+                label={t(field.labelKey)}
+                templateId={templateId}
+              />
+            );
+          }
+          if (field.fieldType === "backgroundTint") {
+            return (
+              <BackgroundTintField
                 key={`${field.bind}-${index}`}
                 label={t(field.labelKey)}
                 templateId={templateId}

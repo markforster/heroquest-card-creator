@@ -220,11 +220,13 @@ function renderBackgroundLayer({
   layer,
   background,
   backgroundLoaded,
+  cardData,
 }: {
   blueprint: Blueprint;
   layer: BlueprintLayer;
   background?: StaticImageData;
   backgroundLoaded?: boolean;
+  cardData?: CardDataByTemplate[TemplateId];
 }) {
   if (layer.type !== "background") return null;
 
@@ -234,6 +236,11 @@ function renderBackgroundLayer({
   if (!image) return null;
 
   const bounds = getLayerBounds(blueprint, layer);
+  const tintKey = "tintKey" in layer ? layer.tintKey : undefined;
+  const tintValue =
+    tintKey && cardData ? (cardData as Record<string, unknown>)[tintKey] : undefined;
+  const tint =
+    typeof tintValue === "string" && tintValue.trim().length > 0 ? tintValue.trim() : undefined;
   const cutoutBounds = "cutoutBounds" in layer ? layer.cutoutBounds : undefined;
   const maskId = cutoutBounds ? `${blueprint.templateId}-${layer.id}-cutout-mask` : undefined;
   const opacity = backgroundLoaded === false ? 0 : 1;
@@ -260,18 +267,31 @@ function renderBackgroundLayer({
           </mask>
         </defs>
       ) : null}
-      <image
-        href={image.src}
-        data-card-background="true"
-        data-template-asset="background"
-        x={bounds.x}
-        y={bounds.y}
-        width={bounds.width}
-        height={bounds.height}
-        preserveAspectRatio="xMidYMid meet"
-        style={{ opacity }}
-        mask={maskId ? `url(#${maskId})` : undefined}
-      />
+      <g style={tint ? { isolation: "isolate" } : undefined}>
+        <image
+          href={image.src}
+          data-card-background="true"
+          data-template-asset="background"
+          x={bounds.x}
+          y={bounds.y}
+          width={bounds.width}
+          height={bounds.height}
+          preserveAspectRatio="xMidYMid meet"
+          style={{ opacity }}
+          mask={maskId ? `url(#${maskId})` : undefined}
+        />
+        {tint ? (
+          <rect
+            x={bounds.x}
+            y={bounds.y}
+            width={bounds.width}
+            height={bounds.height}
+            fill={tint}
+            style={{ mixBlendMode: "multiply", opacity }}
+            mask={maskId ? `url(#${maskId})` : undefined}
+          />
+        ) : null}
+      </g>
     </Layer>
   );
 }
@@ -1582,7 +1602,13 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
     <>
       {blueprint.layers.map((layer) => {
         if (layer.type === "background") {
-          return renderBackgroundLayer({ blueprint, layer, background, backgroundLoaded });
+          return renderBackgroundLayer({
+            blueprint,
+            layer,
+            background,
+            backgroundLoaded,
+            cardData: props.cardData,
+          });
         }
         if (layer.type === "border") {
           return renderBorderLayer({

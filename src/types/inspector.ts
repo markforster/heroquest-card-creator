@@ -55,6 +55,12 @@ export type InspectorBorderColorField = {
   labelKey: MessageKey;
 };
 
+export type InspectorBackgroundTintField = {
+  fieldType: "backgroundTint";
+  bind: "backgroundTint";
+  labelKey: MessageKey;
+};
+
 export type InspectorCopyrightField = {
   fieldType: "copyright";
   bind: "copyright";
@@ -70,6 +76,7 @@ export type InspectorField =
   | InspectorImageField
   | InspectorMonsterIconField
   | InspectorBorderColorField
+  | InspectorBackgroundTintField
   | InspectorCopyrightField;
 
 export type InspectorFieldsByTemplate = Record<TemplateId, InspectorField[]>;

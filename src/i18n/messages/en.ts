@@ -122,6 +122,7 @@ export const en = {
   "label.titleStylePlain": "Plain",
   "label.resetColor": "Reset to default colour",
   "form.borderColor": "Border colour",
+  "form.backgroundTint": "Background tint",
   "form.copyright": "Copyright",
   "form.showCopyright": "Show copyright",
   "form.defaultCopyright": "Default copyright",

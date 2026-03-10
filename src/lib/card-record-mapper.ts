@@ -43,6 +43,7 @@ export function cardRecordToCardData<T extends TemplateId>(
     imageOriginalWidth: record.imageOriginalWidth,
     imageOriginalHeight: record.imageOriginalHeight,
     borderColor: record.borderColor,
+    backgroundTint: record.backgroundTint,
   };
 
   switch (record.templateId) {
@@ -134,6 +135,7 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     imageOriginalWidth: data.imageOriginalWidth,
     imageOriginalHeight: data.imageOriginalHeight,
     borderColor: data.borderColor,
+    backgroundTint: data.backgroundTint,
   };
 
   switch (templateId) {

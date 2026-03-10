@@ -105,6 +105,11 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       labelKey: "form.borderColor",
     },
     {
+      fieldType: "backgroundTint",
+      bind: "backgroundTint",
+      labelKey: "form.backgroundTint",
+    },
+    {
       fieldType: "copyright",
       bind: "copyright",
       labelKey: "form.copyright",
@@ -136,6 +141,11 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "borderColor",
       bind: "borderColor",
       labelKey: "form.borderColor",
+    },
+    {
+      fieldType: "backgroundTint",
+      bind: "backgroundTint",
+      labelKey: "form.backgroundTint",
     },
     {
       fieldType: "copyright",

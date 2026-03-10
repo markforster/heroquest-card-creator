@@ -41,6 +41,7 @@ export interface CardRecord {
   imageOriginalWidth?: number;
   imageOriginalHeight?: number;
   borderColor?: string;
+  backgroundTint?: string;
 
   heroAttackDice?: StatValue;
   heroDefendDice?: StatValue;

@@ -93,6 +93,7 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       type: "background",
       source: "template",
       cutoutBounds: scaleBounds({ x: 122, y: 166, width: 506, height: 180 }),
+      tintKey: "backgroundTint",
     },
     {
       id: "artwork",
@@ -186,6 +187,7 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       type: "background",
       source: "template",
       cutoutBounds: scaleBounds({ x: 123, y: 167, width: 509, height: 359 }),
+      tintKey: "backgroundTint",
     },
     {
       id: "artwork",
