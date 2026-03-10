@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { AlertTriangle } from "lucide-react";
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
@@ -65,6 +66,10 @@ type BlueprintRendererProps = {
 
 const DEFAULT_CANVAS = { width: CARD_WIDTH, height: CARD_HEIGHT };
 const MISSING_ARTWORK_COLOR = "#e0b15b";
+
+function normalizeClipId(rawId: string) {
+  return rawId.replace(/:/g, "");
+}
 
 function getLayerBounds(blueprint: Blueprint, layer: BlueprintLayer) {
   return (
@@ -229,10 +234,32 @@ function renderBackgroundLayer({
   if (!image) return null;
 
   const bounds = getLayerBounds(blueprint, layer);
+  const cutoutBounds = "cutoutBounds" in layer ? layer.cutoutBounds : undefined;
+  const maskId = cutoutBounds ? `${blueprint.templateId}-${layer.id}-cutout-mask` : undefined;
   const opacity = backgroundLoaded === false ? 0 : 1;
 
   return (
     <Layer key={layer.id}>
+      {cutoutBounds ? (
+        <defs>
+          <mask id={maskId} maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse">
+            <rect
+              x={bounds.x}
+              y={bounds.y}
+              width={bounds.width}
+              height={bounds.height}
+              fill="white"
+            />
+            <rect
+              x={cutoutBounds.x}
+              y={cutoutBounds.y}
+              width={cutoutBounds.width}
+              height={cutoutBounds.height}
+              fill="black"
+            />
+          </mask>
+        </defs>
+      ) : null}
       <image
         href={image.src}
         data-card-background="true"
@@ -243,6 +270,7 @@ function renderBackgroundLayer({
         height={bounds.height}
         preserveAspectRatio="xMidYMid meet"
         style={{ opacity }}
+        mask={maskId ? `url(#${maskId})` : undefined}
       />
     </Layer>
   );
@@ -303,6 +331,30 @@ function renderBorderLayer({
   );
 }
 
+function renderOverlayLayer({ blueprint, layer }: { blueprint: Blueprint; layer: BlueprintLayer }) {
+  if (layer.type !== "overlay") return null;
+
+  const bounds = getLayerBounds(blueprint, layer);
+  const preserveAspectRatio =
+    typeof layer.props?.preserveAspectRatio === "string"
+      ? layer.props.preserveAspectRatio
+      : "xMidYMid meet";
+
+  return (
+    <Layer key={layer.id}>
+      <image
+        href={layer.asset.src}
+        data-template-asset="overlay"
+        x={bounds.x}
+        y={bounds.y}
+        width={bounds.width}
+        height={bounds.height}
+        preserveAspectRatio={preserveAspectRatio}
+      />
+    </Layer>
+  );
+}
+
 function ImageLayer({
   blueprint,
   layer,
@@ -312,6 +364,7 @@ function ImageLayer({
   layer: BlueprintLayer;
   cardData?: CardDataByTemplate[TemplateId];
 }) {
+  const clipId = normalizeClipId(useId());
   const assetId =
     layer.type === "image" && layer.bind?.imageKey && cardData
       ? ((cardData as Record<string, unknown>)[layer.bind.imageKey] as string | undefined)
@@ -360,6 +413,11 @@ function ImageLayer({
 
   return (
     <Layer key={layer.id}>
+      <defs>
+        <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
+          <rect x={bounds.x} y={bounds.y} width={bounds.width} height={bounds.height} />
+        </clipPath>
+      </defs>
       <image
         href={imageUrl}
         data-user-asset-id={assetId}
@@ -370,6 +428,7 @@ function ImageLayer({
         height={scaledHeight}
         transform={transform}
         preserveAspectRatio="xMidYMid meet"
+        clipPath={`url(#${clipId})`}
       />
     </Layer>
   );
@@ -1514,6 +1573,9 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
             backgroundLoaded,
             cardData: props.cardData,
           });
+        }
+        if (layer.type === "overlay") {
+          return renderOverlayLayer({ blueprint, layer });
         }
         if (layer.type === "image") {
           return (

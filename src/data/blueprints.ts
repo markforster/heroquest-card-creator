@@ -1,5 +1,7 @@
 import smallLargeArtworkBorderMask from "@/assets/card-backgrounds/small-large-artwork-border-alpha-mask.png";
 import smallLargeArtworkBorderTexture from "@/assets/card-backgrounds/small-large-artwork-border-blend-texture.png";
+import largeWindowFrame from "@/assets/card-backgrounds/large-window-frame.png";
+import smallWindowFrame from "@/assets/card-backgrounds/small-window-frame.png";
 import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
 import { CARD_HEIGHT, CARD_WIDTH, savg, sx, sy } from "@/config/card-canvas";
 import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
@@ -61,6 +63,13 @@ const makeRibbonTextNoRibbonBounds = (overrides?: Partial<typeof RIBBON_TEXT_BOU
     ...(overrides ?? {}),
   });
 
+const expandBounds = (bounds: BlueprintBounds, inset: { x: number; y: number }) => ({
+  x: bounds.x - inset.x,
+  y: bounds.y - inset.y,
+  width: bounds.width + inset.x * 2,
+  height: bounds.height + inset.y * 2,
+});
+
 const makeTreasureDescBounds = (topY: number) => ({
   x: TREASURE_DESC_X,
   y: sy(topY),
@@ -80,16 +89,27 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       asset: whitePaperBackground,
     },
     {
+      id: "background-frame",
+      type: "background",
+      source: "template",
+      cutoutBounds: scaleBounds({ x: 122, y: 166, width: 506, height: 180 }),
+    },
+    {
       id: "artwork",
       type: "image",
-      bounds: scaleBounds({ x: 125, y: 166, width: 500, height: 180 }),
+      bounds: scaleBounds({ x: 122, y: 166, width: 506, height: 183 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
     },
     {
-      id: "background-frame",
-      type: "background",
-      source: "template",
+      id: "artwork-frame",
+      type: "overlay",
+      asset: smallWindowFrame,
+      bounds: expandBounds(scaleBounds({ x: 123, y: 167, width: 509, height: 180 }), {
+        x: sx(8),
+        y: sy(8),
+      }),
+      props: { preserveAspectRatio: "none" },
     },
     {
       id: "border-texture",
@@ -161,17 +181,28 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       asset: whitePaperBackground,
     },
     {
-      id: "artwork",
-      type: "image",
-      bounds: scaleBounds({ x: 135, y: 158, width: 480, height: 352 }),
-      bind: { imageKey: "imageAssetId" },
-      when: { hasImage: "imageAssetId" },
-      props: { offsetX: sx(0), offsetY: sy(14) },
-    },
-    {
       id: "background-frame",
       type: "background",
       source: "template",
+      cutoutBounds: scaleBounds({ x: 123, y: 167, width: 509, height: 359 }),
+    },
+    {
+      id: "artwork",
+      type: "image",
+      bounds: scaleBounds({ x: 123, y: 167, width: 509, height: 359 }),
+      bind: { imageKey: "imageAssetId" },
+      when: { hasImage: "imageAssetId" },
+      props: { offsetX: sx(0), offsetY: sy(0) },
+    },
+    {
+      id: "artwork-frame",
+      type: "overlay",
+      asset: largeWindowFrame,
+      bounds: expandBounds(scaleBounds({ x: 123, y: 167, width: 509, height: 359 }), {
+        x: sx(8),
+        y: sy(8),
+      }),
+      props: { preserveAspectRatio: "none" },
     },
     {
       id: "border-texture",

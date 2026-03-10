@@ -39,6 +39,7 @@ export type BlueprintLayerBackground = BlueprintLayerBase & {
   type: "background";
   source?: "template" | "asset";
   asset?: StaticImageData;
+  cutoutBounds?: BlueprintBounds;
 };
 
 export type BlueprintLayerBorder = BlueprintLayerBase & {
@@ -50,9 +51,15 @@ export type BlueprintLayerBorder = BlueprintLayerBase & {
   offsetY?: number;
 };
 
+export type BlueprintLayerOverlay = BlueprintLayerBase & {
+  type: "overlay";
+  asset: StaticImageData;
+};
+
 export type BlueprintLayer =
   | BlueprintLayerBackground
   | BlueprintLayerBorder
+  | BlueprintLayerOverlay
   | BlueprintLayerBase;
 
 export type BlueprintLayerType =
