@@ -55,9 +55,7 @@ const makeRibbonTextBounds = (overrides?: Partial<typeof RIBBON_TEXT_BOUNDS>) =>
     ...(overrides ?? {}),
   });
 
-const makeRibbonTextNoRibbonBounds = (
-  overrides?: Partial<typeof RIBBON_TEXT_BOUNDS_NO_RIBBON>,
-) =>
+const makeRibbonTextNoRibbonBounds = (overrides?: Partial<typeof RIBBON_TEXT_BOUNDS_NO_RIBBON>) =>
   scaleBounds({
     ...RIBBON_TEXT_BOUNDS_NO_RIBBON,
     ...(overrides ?? {}),
@@ -364,7 +362,8 @@ const HERO_BACK_BLUEPRINT: Blueprint = {
     {
       id: "description",
       type: "text",
-      bounds: scaleBounds({ x: 85, y: 303, width: 580, height: 480 }),
+      // bounds: scaleBounds({ x: 85, y: 303, width: 580, height: 664 }),
+      bounds: scaleBounds({ x: 85, y: 289, width: 580, height: 673 }),
       bind: { textKey: "description" },
       props: {
         fontSize: DESCRIPTION_FONT_SIZE,
