@@ -87,6 +87,7 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       type: "background",
       source: "asset",
       asset: whitePaperBackground,
+      tintKey: "backgroundTint",
     },
     {
       id: "background-frame",
@@ -181,6 +182,7 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       type: "background",
       source: "asset",
       asset: whitePaperBackground,
+      tintKey: "backgroundTint",
     },
     {
       id: "background-frame",
@@ -276,6 +278,7 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
       type: "background",
       source: "asset",
       asset: whitePaperBackground,
+      tintKey: "backgroundTint",
     },
     {
       id: "artwork",
@@ -393,6 +396,7 @@ const HERO_BACK_BLUEPRINT: Blueprint = {
       id: "background",
       type: "background",
       source: "template",
+      tintKey: "backgroundTint",
     },
     {
       id: "description",
@@ -435,6 +439,7 @@ const HERO_BLUEPRINT: Blueprint = {
       id: "background",
       type: "background",
       source: "template",
+      tintKey: "backgroundTint",
     },
     {
       id: "artwork",
@@ -517,6 +522,7 @@ const MONSTER_BLUEPRINT: Blueprint = {
       id: "background",
       type: "background",
       source: "template",
+      tintKey: "backgroundTint",
     },
     {
       id: "artwork",

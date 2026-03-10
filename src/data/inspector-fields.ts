@@ -18,6 +18,11 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       props: { boundsWidth: sx(730), boundsHeight: sy(730) },
     },
     {
+      fieldType: "backgroundTint",
+      bind: "backgroundTint",
+      labelKey: "form.backgroundTint",
+    },
+    {
       fieldType: "stats",
       statsType: "hero",
       labelKey: "form.stats",
@@ -52,6 +57,11 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "imageAssetId",
       labelKey: "form.monsterImage",
       props: { boundsWidth: sx(730), boundsHeight: sy(730) },
+    },
+    {
+      fieldType: "backgroundTint",
+      bind: "backgroundTint",
+      labelKey: "form.backgroundTint",
     },
     {
       fieldType: "monsterIcon",
@@ -165,6 +175,11 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       showTitleColor: true,
     },
     {
+      fieldType: "backgroundTint",
+      bind: "backgroundTint",
+      labelKey: "form.backgroundTint",
+    },
+    {
       fieldType: "text",
       bind: "description",
       labelKey: "form.backText",
@@ -207,6 +222,11 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "borderColor",
       bind: "borderColor",
       labelKey: "form.borderColor",
+    },
+    {
+      fieldType: "backgroundTint",
+      bind: "backgroundTint",
+      labelKey: "form.backgroundTint",
     },
     {
       fieldType: "copyright",
