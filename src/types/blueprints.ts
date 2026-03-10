@@ -35,6 +35,8 @@ export type BlueprintLayerBase = {
   props?: Record<string, string | number | boolean>;
 };
 
+export type BlueprintImageClip = "bounds" | "canvas" | "none";
+
 export type BlueprintLayerBackground = BlueprintLayerBase & {
   type: "background";
   source?: "template" | "asset";
@@ -56,10 +58,16 @@ export type BlueprintLayerOverlay = BlueprintLayerBase & {
   asset: StaticImageData;
 };
 
+export type BlueprintLayerImage = BlueprintLayerBase & {
+  type: "image";
+  clip?: BlueprintImageClip;
+};
+
 export type BlueprintLayer =
   | BlueprintLayerBackground
   | BlueprintLayerBorder
   | BlueprintLayerOverlay
+  | BlueprintLayerImage
   | BlueprintLayerBase;
 
 export type BlueprintLayerType =

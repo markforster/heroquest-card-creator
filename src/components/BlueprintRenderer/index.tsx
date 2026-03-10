@@ -410,14 +410,32 @@ function ImageLayer({
   const cx = x + scaledWidth / 2;
   const cy = y + scaledHeight / 2;
   const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
+  const clipMode = layer.clip ?? "bounds";
+  const shouldClip = clipMode !== "none";
+  const clipBounds =
+    clipMode === "canvas"
+      ? {
+          x: 0,
+          y: 0,
+          width: blueprint.canvas?.width ?? CARD_WIDTH,
+          height: blueprint.canvas?.height ?? CARD_HEIGHT,
+        }
+      : bounds;
 
   return (
     <Layer key={layer.id}>
-      <defs>
-        <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
-          <rect x={bounds.x} y={bounds.y} width={bounds.width} height={bounds.height} />
-        </clipPath>
-      </defs>
+      {shouldClip ? (
+        <defs>
+          <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
+            <rect
+              x={clipBounds.x}
+              y={clipBounds.y}
+              width={clipBounds.width}
+              height={clipBounds.height}
+            />
+          </clipPath>
+        </defs>
+      ) : null}
       <image
         href={imageUrl}
         data-user-asset-id={assetId}
@@ -428,7 +446,7 @@ function ImageLayer({
         height={scaledHeight}
         transform={transform}
         preserveAspectRatio="xMidYMid meet"
-        clipPath={`url(#${clipId})`}
+        clipPath={shouldClip ? `url(#${clipId})` : undefined}
       />
     </Layer>
   );

@@ -100,6 +100,7 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       bounds: scaleBounds({ x: 122, y: 166, width: 506, height: 183 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
+      clip: "bounds",
     },
     {
       id: "artwork-frame",
@@ -192,6 +193,7 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       bounds: scaleBounds({ x: 123, y: 167, width: 509, height: 359 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
+      clip: "bounds",
       props: { offsetX: sx(0), offsetY: sy(0) },
     },
     {
@@ -435,9 +437,10 @@ const HERO_BLUEPRINT: Blueprint = {
     {
       id: "artwork",
       type: "image",
-      bounds: scaleBounds({ x: 10, y: 120, width: 730, height: 730 }),
+      bounds: scaleBounds({ x: 0, y: 120, width: 750, height: 730 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
+      clip: "canvas",
     },
     {
       id: "title",
@@ -516,9 +519,10 @@ const MONSTER_BLUEPRINT: Blueprint = {
     {
       id: "artwork",
       type: "image",
-      bounds: scaleBounds({ x: 10, y: 120, width: 730, height: 730 }),
+      bounds: scaleBounds({ x: 0, y: 120, width: 750, height: 730 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
+      clip: "canvas",
     },
     {
       id: "title",
