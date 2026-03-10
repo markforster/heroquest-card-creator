@@ -353,6 +353,7 @@ function renderBorderLayer({
 
 function renderOverlayLayer({ blueprint, layer }: { blueprint: Blueprint; layer: BlueprintLayer }) {
   if (layer.type !== "overlay") return null;
+  const overlayLayer = layer as Extract<BlueprintLayer, { type: "overlay" }>;
 
   const bounds = getLayerBounds(blueprint, layer);
   const preserveAspectRatio =
@@ -363,7 +364,7 @@ function renderOverlayLayer({ blueprint, layer }: { blueprint: Blueprint; layer:
   return (
     <Layer key={layer.id}>
       <image
-        href={layer.asset.src}
+        href={overlayLayer.asset.src}
         data-template-asset="overlay"
         x={bounds.x}
         y={bounds.y}
@@ -396,6 +397,7 @@ function ImageLayer({
   const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
 
   if (layer.type !== "image") return null;
+  const imageLayer = layer as Extract<BlueprintLayer, { type: "image" }>;
   if (!layer.bind?.imageKey) return null;
   if (!cardData) return null;
   const bounds = getLayerBounds(blueprint, layer);
@@ -430,7 +432,7 @@ function ImageLayer({
   const cx = x + scaledWidth / 2;
   const cy = y + scaledHeight / 2;
   const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
-  const clipMode = layer.clip ?? "bounds";
+  const clipMode = imageLayer.clip ?? "bounds";
   const shouldClip = clipMode !== "none";
   const clipBounds =
     clipMode === "canvas"
