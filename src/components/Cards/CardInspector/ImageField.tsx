@@ -28,8 +28,8 @@ import IconButton from "@/components/common/IconButton";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getAllAssets, getAssetObjectUrl } from "@/lib/assets-db";
-import type { AssetRecord } from "@/lib/assets-db";
+import { apiClient } from "@/api/client";
+import type { AssetRecord } from "@/api/assets";
 import {
   computeSliderTickLeftPx,
   computeImageZoomModel,
@@ -327,7 +327,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
 
     let cancelled = false;
 
-    getAllAssets()
+    apiClient.listAssets()
       .then((records) => {
         if (!cancelled) {
           setAssets(records);
@@ -356,7 +356,9 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     (async () => {
       for (const asset of assets) {
         try {
-          const url = await getAssetObjectUrl(asset.id);
+          const url = await apiClient.getAssetObjectUrl({
+            params: { id: asset.id },
+          });
           if (!url) continue;
           localUrls[asset.id] = url;
         } catch {

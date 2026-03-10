@@ -350,6 +350,11 @@ export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecor
   return filtered;
 }
 
+export async function normalizeSelfPairings(): Promise<number> {
+  // Pairings are managed in a separate store in current versions.
+  return 0;
+}
+
 export async function softDeleteCards(
   ids: string[],
   deletedAt: number = Date.now(),

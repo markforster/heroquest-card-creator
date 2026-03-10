@@ -12,18 +12,10 @@ import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
+import { apiClient } from "@/api/client";
+import type { AssetRecord } from "@/api/assets";
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
-import type { AssetRecord } from "@/lib/assets-db";
-import {
-  addAsset,
-  getAllAssets,
-  getAssetBlob,
-  getAssetObjectUrl,
-  replaceAsset,
-  updateAssetMeta,
-} from "@/lib/assets-db";
-import { listCards } from "@/lib/cards-db";
 
 import type { ChangeEvent } from "react";
 
@@ -86,7 +78,7 @@ function AssetsInspector({
 
     (async () => {
       try {
-        url = await getAssetObjectUrl(asset.id);
+        url = await apiClient.getAssetObjectUrl({ params: { id: asset.id } });
       } catch {
         url = null;
       }
@@ -110,7 +102,7 @@ function AssetsInspector({
 
     (async () => {
       try {
-        const cards = await listCards();
+        const cards = await apiClient.listCards();
         if (cancelled) return;
         const total = cards.filter(
           (card) => card.imageAssetId === asset.id || card.monsterIconAssetId === asset.id,
@@ -147,14 +139,16 @@ function AssetsInspector({
     setIsReplacing(true);
     try {
       if (keepBackup) {
-        const existingBlob = await getAssetBlob(asset.id);
+        const existingBlob = await apiClient.getAssetBlob({ params: { id: asset.id } });
         if (existingBlob) {
-          const allAssets = await getAllAssets();
+          const allAssets = await apiClient.listAssets();
           const existingNames = new Set(allAssets.map((item) => item.name));
           const dateStamp = new Date().toISOString().slice(0, 10);
           const backupBase = `${asset.name} (backup ${dateStamp})`;
           const backupName = getNextAvailableFilename(existingNames, backupBase);
-          await addAsset(generateId(), existingBlob, {
+          await apiClient.addAsset({
+            id: generateId(),
+            blob: existingBlob,
             name: backupName,
             mimeType: asset.mimeType,
             width: asset.width,
@@ -165,24 +159,29 @@ function AssetsInspector({
         }
       }
 
-      await replaceAsset(
-        asset.id,
-        pendingReplace.file,
+      await apiClient.replaceAsset(
         {
+          blob: pendingReplace.file,
           name: asset.name,
           mimeType: pendingReplace.mimeType,
           width: pendingReplace.width,
           height: pendingReplace.height,
+          createdAt: asset.createdAt,
         },
-        asset.createdAt,
+        { params: { id: asset.id } },
       );
-      await updateAssetMeta(asset.id, {
-        assetKindStatus: "unclassified",
-        assetKind: undefined,
-        assetKindSource: undefined,
-        assetKindConfidence: undefined,
-        assetKindUpdatedAt: Date.now(),
-      });
+      await apiClient.updateAssetMetadata(
+        {
+          patch: {
+            assetKindStatus: "unclassified",
+            assetKind: undefined,
+            assetKindSource: undefined,
+            assetKindConfidence: undefined,
+            assetKindUpdatedAt: Date.now(),
+          },
+        },
+        { params: { id: asset.id } },
+      );
       enqueueAsset(asset.id, { width: pendingReplace.width, height: pendingReplace.height });
       onReplaceComplete();
     } catch (error) {
@@ -251,13 +250,18 @@ function AssetsInspector({
   const canOverride = kindStatus !== "classifying";
   const applyManualKind = async (kind: "icon" | "artwork") => {
     cancelAsset(asset.id);
-    await updateAssetMeta(asset.id, {
-      assetKindStatus: "classified",
-      assetKind: kind,
-      assetKindSource: "manual",
-      assetKindConfidence: 1,
-      assetKindUpdatedAt: Date.now(),
-    });
+    await apiClient.updateAssetMetadata(
+      {
+        patch: {
+          assetKindStatus: "classified",
+          assetKind: kind,
+          assetKindSource: "manual",
+          assetKindConfidence: 1,
+          assetKindUpdatedAt: Date.now(),
+        },
+      },
+      { params: { id: asset.id } },
+    );
     setIsKindPopoverOpen(false);
   };
 

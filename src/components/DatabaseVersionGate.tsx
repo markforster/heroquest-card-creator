@@ -3,12 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { useI18n } from "@/i18n/I18nProvider";
-import {
-  DB_VERSION,
-  openHqccDb,
-  readExistingHqccDbAppVersion,
-  readExistingHqccDbVersion,
-} from "@/lib/hqcc-db";
+import { apiClient } from "@/api/client";
+import { DB_VERSION } from "@/lib/hqcc-db";
 import { APP_VERSION } from "@/version";
 
 import styles from "./DatabaseVersionGate.module.css";
@@ -20,15 +16,6 @@ type GateStatus = "checking" | "ready" | "blocked";
 type Props = {
   children: ReactNode;
 };
-
-function isVersionError(error: unknown): boolean {
-  return Boolean(
-    error &&
-      typeof error === "object" &&
-      "name" in error &&
-      (error as { name?: string }).name === "VersionError",
-  );
-}
 
 export default function DatabaseVersionGate({ children }: Props) {
   const { t } = useI18n();
@@ -47,49 +34,18 @@ export default function DatabaseVersionGate({ children }: Props) {
     const check = async () => {
       try {
         log("starting DB version check");
-        const db = await openHqccDb();
-        log("openHqccDb resolved", {
+        const result = await apiClient.checkDbVersion();
+        log("checkDbVersion resolved", {
           ms: Math.round(performance.now() - startedAt),
-          version: db.version,
+          status: result.status,
+          version: result.dbVersion,
         });
-        const version = Number.isFinite(db.version) ? db.version : null;
-        db.close();
         if (!cancelled) {
-          setDbVersion(version);
-          setStatus("ready");
+          setDbVersion(result.dbVersion ?? null);
+          setDbAppVersion(result.dbAppVersion ?? null);
+          setStatus(result.status === "blocked" ? "blocked" : "ready");
         }
       } catch (error) {
-        if (cancelled) return;
-        if (isVersionError(error)) {
-          log("VersionError detected, reading existing DB version");
-          try {
-            const [version, appVersion] = await Promise.all([
-              readExistingHqccDbVersion(),
-              readExistingHqccDbAppVersion(),
-            ]);
-            log("existing DB version read", {
-              ms: Math.round(performance.now() - startedAt),
-              version,
-              appVersion,
-            });
-            if (!cancelled) {
-              setDbVersion(version);
-              setDbAppVersion(appVersion);
-              setStatus("blocked");
-            }
-          } catch {
-            log("failed to read existing DB version", {
-              ms: Math.round(performance.now() - startedAt),
-            });
-            if (!cancelled) {
-              setDbVersion(null);
-              setDbAppVersion(null);
-              setStatus("blocked");
-            }
-          }
-          return;
-        }
-
         // Fall back to letting the app load; other errors will surface where relevant.
         // eslint-disable-next-line no-console
         console.error("[DatabaseVersionGate] Failed to verify DB version", error);

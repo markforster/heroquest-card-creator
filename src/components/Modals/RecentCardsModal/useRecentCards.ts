@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import type { MessageKey } from "@/i18n/messages";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
 
 type UseRecentCardsArgs = {
   cards: CardRecord[];

@@ -12,7 +12,7 @@ import {
   retainCardThumbnail,
   releaseCardThumbnail,
 } from "@/lib/card-thumbnail-cache";
-import { getCard } from "@/lib/cards-db";
+import { apiClient } from "@/api/client";
 
 export function useActiveCardSummary(
   activeCardId?: string,
@@ -28,7 +28,7 @@ export function useActiveCardSummary(
 
   const loadCardSummary = useCallback(async (cardId: string) => {
     try {
-      const record = await getCard(cardId);
+      const record = await apiClient.getCard({ params: { id: cardId } });
       if (!record) {
         setCurrentCardName(null);
         currentCardThumbRef.current = null;

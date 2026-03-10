@@ -5,9 +5,12 @@ import IndexPage from "@/app/page";
 const createCard = jest.fn();
 const getCard = jest.fn();
 const listCards = jest.fn();
+const listPairs = jest.fn();
 const touchCardLastViewed = jest.fn();
 const updateCard = jest.fn();
 const updateCardThumbnail = jest.fn();
+const createPair = jest.fn();
+const deletePair = jest.fn();
 
 const mockSetActiveCard = jest.fn();
 const mockSetSelectedTemplateId = jest.fn();
@@ -44,14 +47,18 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
   useCardEditor: () => mockCardEditorContext,
 }));
 
-jest.mock("@/lib/cards-db", () => ({
-  __esModule: true,
-  createCard: (...args: unknown[]) => createCard(...args),
-  getCard: (...args: unknown[]) => getCard(...args),
-  listCards: (...args: unknown[]) => listCards(...args),
-  touchCardLastViewed: (...args: unknown[]) => touchCardLastViewed(...args),
-  updateCard: (...args: unknown[]) => updateCard(...args),
-  updateCardThumbnail: (...args: unknown[]) => updateCardThumbnail(...args),
+jest.mock("@/api/client", () => ({
+  apiClient: {
+    createCard: (...args: unknown[]) => createCard(...args),
+    getCard: (...args: unknown[]) => getCard(...args),
+    listCards: (...args: unknown[]) => listCards(...args),
+    listPairs: (...args: unknown[]) => listPairs(...args),
+    touchCardLastViewed: (...args: unknown[]) => touchCardLastViewed(...args),
+    updateCard: (...args: unknown[]) => updateCard(...args),
+    updateCardThumbnail: (...args: unknown[]) => updateCardThumbnail(...args),
+    createPair: (...args: unknown[]) => createPair(...args),
+    deletePair: (...args: unknown[]) => deletePair(...args),
+  },
 }));
 
 jest.mock("@/components/Providers/AssetHashIndexProvider", () => ({
@@ -165,12 +172,6 @@ jest.mock("@/components/common/Notice", () => ({
 }));
 jest.mock("@/components/ToolsToolbar", () => ({ __esModule: true, default: () => null }));
 
-jest.mock("@/lib/pairs-service", () => ({
-  __esModule: true,
-  createPair: jest.fn(),
-  deletePairsForFront: jest.fn(),
-  listPairsForFace: jest.fn().mockResolvedValue([]),
-}));
 jest.mock("@/lib/export-face-ids", () => ({
   __esModule: true,
   exportFaceIdsToZip: jest.fn(),
@@ -194,9 +195,12 @@ describe("IndexPage draft route", () => {
     createCard.mockReset();
     getCard.mockReset();
     listCards.mockReset();
+    listPairs.mockReset();
     touchCardLastViewed.mockReset();
     updateCard.mockReset();
     updateCardThumbnail.mockReset();
+    createPair.mockReset();
+    deletePair.mockReset();
 
     mockSetActiveCard.mockReset();
     mockSetSelectedTemplateId.mockReset();
@@ -207,6 +211,7 @@ describe("IndexPage draft route", () => {
     mockLoadCardIntoEditor.mockReset();
 
     listCards.mockResolvedValue([]);
+    listPairs.mockResolvedValue([]);
     getCard.mockResolvedValue(null);
     touchCardLastViewed.mockResolvedValue(null);
   });

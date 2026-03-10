@@ -7,7 +7,7 @@ import { DangerNotice, SuccessNotice, WarningNotice } from "@/components/common/
 import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useI18n } from "@/i18n/I18nProvider";
-import { clearAssetClassification } from "@/lib/assets-db";
+import { apiClient } from "@/api/client";
 
 export default function DebugSettingsPanel() {
   const { t } = useI18n();
@@ -22,7 +22,7 @@ export default function DebugSettingsPanel() {
     setClearMessage(null);
     setClearError(null);
     try {
-      const count = await clearAssetClassification();
+      const count = await apiClient.resetAssetClassificationAll(undefined);
       setClearMessage(
         t("label.assetClassificationCleared").replace("${count}", String(count)),
       );

@@ -2,12 +2,12 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
+import { apiClient } from "@/api/client";
+import type { CardRecord, CardStatus } from "@/api/cards";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { touchCardLastViewed } from "@/lib/cards-db";
 import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 import type { CardDataByTemplate } from "@/types/card-data";
-import type { CardStatus, CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
 
 import type { ReactNode } from "react";
@@ -322,7 +322,9 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
     const activeStatus = activeCardStatusByTemplate[selectedTemplateId];
     if (!activeId || activeStatus !== "saved") return;
 
-    touchCardLastViewed(activeId).catch(() => {
+    apiClient
+      .touchCardLastViewed({}, { params: { id: activeId } })
+      .catch(() => {
       // Ignore view updates; draft visibility should not fail the editor.
     });
   }, [

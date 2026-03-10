@@ -13,17 +13,16 @@ import { ENABLE_CARD_THUMB_CACHE, ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
+import { apiClient } from "@/api/client";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import {
   getCachedCardThumbnailUrl,
   getLegacyCardThumbnailUrl,
   releaseLegacyCardThumbnailUrl,
 } from "@/lib/card-thumbnail-cache";
-import { getCard, listCards } from "@/lib/cards-db";
-import { deletePairsForFront, listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
 
 type PendingFaceChange =
@@ -40,6 +39,21 @@ type PendingFaceChange =
     };
 
 const SHOW_TEMPLATE_THUMB = false;
+
+async function deletePairsForFrontId(frontId: string): Promise<void> {
+  const pairs = await apiClient.listPairs({ queries: { faceId: frontId } });
+  const deletions = pairs.filter(
+    (pair) => pair.frontFaceId === frontId && pair.backFaceId,
+  );
+  await Promise.all(
+    deletions.map((pair) =>
+      apiClient.deletePair({
+        frontFaceId: frontId,
+        backFaceId: pair.backFaceId as string,
+      }),
+    ),
+  );
+}
 
 export default function TemplateChooser() {
   const { t, language } = useI18n();
@@ -119,7 +133,8 @@ export default function TemplateChooser() {
       return;
     }
     let active = true;
-    getCard(activeCardId)
+    apiClient
+      .getCard({ params: { id: activeCardId } })
       .then((record) => {
         if (!active) return;
         setCurrentCard(record);
@@ -190,12 +205,14 @@ export default function TemplateChooser() {
 
       if (nextFace === "back") {
         if (activeCardId) {
-          const pairs = await listPairsForFace(activeCardId);
+          const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
           const match =
             pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
             pairs.find((pair) => pair.backFaceId);
           if (match?.backFaceId) {
-            const pairedRecord = await getCard(match.backFaceId);
+            const pairedRecord = await apiClient.getCard({
+              params: { id: match.backFaceId },
+            });
             const pairedTitle = pairedRecord?.title ?? fallbackTitle;
             setPendingChange({
               mode: "front-to-back",
@@ -208,16 +225,16 @@ export default function TemplateChooser() {
       }
 
       if (nextFace === "front" && effectiveFace === "back" && activeCardId) {
-        const pairs = await listPairsForFace(activeCardId);
+        const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
         const affectedIds = pairs
           .map((pair) => pair.frontFaceId)
           .filter((id): id is string => Boolean(id));
         const affected = affectedIds.length
-          ? (await listCards()).filter((card) => affectedIds.includes(card.id))
+          ? (await apiClient.listCards()).filter((card) => affectedIds.includes(card.id))
           : [];
         if (affected.length > 0) {
           if (affected.length <= 1) {
-            await Promise.all(affected.map((card) => deletePairsForFront(card.id)));
+            await Promise.all(affected.map((card) => deletePairsForFrontId(card.id)));
             applyFaceChange(nextFace);
             return;
           }
@@ -368,7 +385,9 @@ export default function TemplateChooser() {
           setIsConfirming(true);
           try {
             if (pendingChange.mode === "back-to-front") {
-              await Promise.all(pendingChange.affectedFrontIds.map((id) => deletePairsForFront(id)));
+              await Promise.all(
+                pendingChange.affectedFrontIds.map((id) => deletePairsForFrontId(id)),
+              );
             }
             applyFaceChange(pendingChange.nextFace);
           } finally {

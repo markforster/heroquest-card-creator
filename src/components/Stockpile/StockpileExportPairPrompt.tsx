@@ -12,7 +12,7 @@ import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   } from "@/lib/card-thumbnail-cache";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
 
 type StockpileExportPairPromptProps = {
   exportPairPrompt: {

@@ -2,9 +2,9 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 
+import { apiClient } from "@/api/client";
+import type { AssetRecordWithBlob } from "@/api/assets";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
-import type { AssetRecordWithBlob } from "@/lib/assets-db";
-import { getAllAssetsWithBlobs } from "@/lib/assets-db";
 import type { UploadScanReport, UploadScanReportItem } from "@/types/asset-duplicates";
 
 import type { ReactNode } from "react";
@@ -112,7 +112,7 @@ export function AssetHashIndexProvider({ children }: { children: ReactNode }) {
       setStatus("building");
       setProgress({ total: 0, hashed: 0 });
       try {
-        const records = await getAllAssetsWithBlobs();
+        const records = await apiClient.listAssetsWithBlobs();
         if (cancelled) return;
 
         const total = records.length;

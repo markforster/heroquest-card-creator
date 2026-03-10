@@ -1,18 +1,17 @@
 import { renderHook, waitFor } from "@testing-library/react";
 
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
-import type { CardRecord } from "@/types/cards-db";
-import type { CollectionRecord } from "@/types/collections-db";
+import type { CardRecord } from "@/api/cards";
+import type { CollectionRecord } from "@/api/collections";
 
 const mockListCards = jest.fn();
 const mockListCollections = jest.fn();
 
-jest.mock("@/lib/cards-db", () => ({
-  listCards: (...args: unknown[]) => mockListCards(...args),
-}));
-
-jest.mock("@/lib/collections-db", () => ({
-  listCollections: (...args: unknown[]) => mockListCollections(...args),
+jest.mock("@/api/client", () => ({
+  apiClient: {
+    listCards: (...args: unknown[]) => mockListCards(...args),
+    listCollections: (...args: unknown[]) => mockListCollections(...args),
+  },
 }));
 
 describe("useStockpileData", () => {
@@ -63,7 +62,9 @@ describe("useStockpileData", () => {
       expect(result.current.collections).toHaveLength(1);
     });
 
-    expect(mockListCards).toHaveBeenCalledWith({ status: "saved", deleted: "include" });
+    expect(mockListCards).toHaveBeenCalledWith({
+      queries: { status: "saved", deleted: "include" },
+    });
     expect(mockListCollections).toHaveBeenCalledTimes(1);
   });
 

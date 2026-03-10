@@ -10,6 +10,9 @@ import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
 import IconButton from "@/components/common/IconButton";
 import ModalShell from "@/components/common/ModalShell";
 import { WarningNotice } from "@/components/common/Notice";
+import { apiClient } from "@/api/client";
+import type { AssetRecord } from "@/api/assets";
+import type { CardRecord } from "@/api/cards";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
@@ -23,21 +26,11 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
-import type { AssetRecord } from "@/lib/assets-db";
-import {
-  addAsset,
-  deleteAssets,
-  getAllAssets,
-  getAssetObjectUrl,
-  updateAssetMeta,
-} from "@/lib/assets-db";
 import type { AssetKindGroupId } from "@/lib/assets-grouping";
 import { groupAssetsByKind } from "@/lib/assets-grouping";
 import { isSafariBrowser } from "@/lib/browser";
-import { listCards, updateCard } from "@/lib/cards-db";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
 import type { CardDataByTemplate } from "@/types/card-data";
-import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
 import type { OpenCloseProps } from "@/types/ui";
 
@@ -146,7 +139,7 @@ export default function AssetsPanelContent({
 
     let cancelled = false;
 
-    getAllAssets()
+    apiClient.listAssets()
       .then((records) => {
         if (!cancelled) {
           setAssets(records);
@@ -172,7 +165,7 @@ export default function AssetsPanelContent({
         window.clearTimeout(timeoutId);
       }
       timeoutId = window.setTimeout(() => {
-        getAllAssets()
+        apiClient.listAssets()
           .then((records) => setAssets(records))
           .catch(() => {
             // Ignore refresh errors.
@@ -302,7 +295,9 @@ export default function AssetsPanelContent({
             continue;
           }
           try {
-            const url = await getAssetObjectUrl(asset.id);
+            const url = await apiClient.getAssetObjectUrl({
+              params: { id: asset.id },
+            });
             if (url) {
               nextUrls[asset.id] = url;
               urlsChanged = true;
@@ -419,13 +414,13 @@ export default function AssetsPanelContent({
 
   const handleConfirmDelete = async (ids: string[]) => {
     try {
-      await deleteAssets(ids);
+      await apiClient.deleteAssets({ ids });
       removeFromIndex(ids);
-      const records = await getAllAssets();
+      const records = await apiClient.listAssets();
       setAssets(records);
 
       const idSet = new Set(ids);
-      const cards = await listCards();
+      const cards = await apiClient.listCards();
       await Promise.all(
         cards.map(async (card) => {
           const imageMatch = card.imageAssetId && idSet.has(card.imageAssetId);
@@ -453,7 +448,7 @@ export default function AssetsPanelContent({
             patch.monsterIconRotation = undefined;
           }
 
-          await updateCard(card.id, patch);
+          await apiClient.updateCard(patch, { params: { id: card.id } });
         }),
       );
       if (ENABLE_MISSING_ASSET_CHECKS && ENABLE_MISSING_ASSET_DELETE_SCAN) {
@@ -640,16 +635,23 @@ export default function AssetsPanelContent({
             // Ignore dimension read errors; fall back to 0.
           }
           const assetId = generateId();
-          await addAsset(assetId, file, {
+          await apiClient.addAsset({
+            id: assetId,
+            blob: file,
             name: nextName,
             mimeType: file.type,
             width: dimensions.width,
             height: dimensions.height,
           });
-          await updateAssetMeta(assetId, {
-            assetKindStatus: "unclassified",
-            assetKindUpdatedAt: Date.now(),
-          });
+          await apiClient.updateAssetMetadata(
+            {
+              patch: {
+                assetKindStatus: "unclassified",
+                assetKindUpdatedAt: Date.now(),
+              },
+            },
+            { params: { id: assetId } },
+          );
           enqueueAsset(assetId, { width: dimensions.width, height: dimensions.height });
           uploaded.add(assetId);
           existingNamesLower.add(nextName.toLowerCase());
@@ -749,7 +751,7 @@ export default function AssetsPanelContent({
       }
 
       try {
-        const records = await getAllAssets();
+        const records = await apiClient.listAssets();
         setAssets(records);
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -809,13 +811,18 @@ export default function AssetsPanelContent({
   const applyManualKind = async (kind: "icon" | "artwork") => {
     if (!activeKindAsset) return;
     cancelAsset(activeKindAsset.id);
-    await updateAssetMeta(activeKindAsset.id, {
-      assetKindStatus: "classified",
-      assetKind: kind,
-      assetKindSource: "manual",
-      assetKindConfidence: 1,
-      assetKindUpdatedAt: Date.now(),
-    });
+    await apiClient.updateAssetMetadata(
+      {
+        patch: {
+          assetKindStatus: "classified",
+          assetKind: kind,
+          assetKindSource: "manual",
+          assetKindConfidence: 1,
+          assetKindUpdatedAt: Date.now(),
+        },
+      },
+      { params: { id: activeKindAsset.id } },
+    );
     setActiveKindPopoverId(null);
   };
 
@@ -1289,7 +1296,7 @@ function AssetsModalFooter({
 
     (async () => {
       try {
-        const cards = await listCards();
+        const cards = await apiClient.listCards();
         if (cancelled) return;
         const affectedCards = new Set<string>();
 

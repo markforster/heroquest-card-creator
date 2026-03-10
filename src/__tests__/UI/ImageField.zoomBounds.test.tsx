@@ -16,10 +16,11 @@ jest.mock("@/components/Assets", () => ({
   AssetsModal: () => null,
 }));
 
-jest.mock("@/lib/assets-db", () => ({
-  __esModule: true,
-  getAllAssets: jest.fn(async () => []),
-  getAssetObjectUrl: jest.fn(async () => null),
+jest.mock("@/api/client", () => ({
+  apiClient: {
+    listAssets: jest.fn(async () => []),
+    getAssetObjectUrl: jest.fn(async () => null),
+  },
 }));
 
 type FormValues = {

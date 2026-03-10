@@ -85,12 +85,17 @@
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/modifiers": "^6.0.1",
+    "@tanstack/react-query": "^4.36.1",
+    "@zodios/core": "^10.3.1",
+    "@zodios/react": "^10.3.1",
     "@zip.js/zip.js": "^2.8.21",
+    "axios": "^1.7.7",
     "chalk": "^4.1.2",
     "inquirer": "^9.3.7",
     "jscpd": "^4.0.8",
     "mime": "^3.0.0",
-    "yaml": "^2.8.0"
+    "yaml": "^2.8.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@next/third-parties": "^16.1.0",

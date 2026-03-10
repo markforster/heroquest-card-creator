@@ -1,5 +1,5 @@
 import type { MessageKey } from "@/i18n/messages";
-import type { AssetRecord } from "@/lib/assets-db";
+import type { AssetRecord } from "@/api/assets";
 
 export type TranslateFn = (key: MessageKey) => string;
 

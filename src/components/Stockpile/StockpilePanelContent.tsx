@@ -64,20 +64,13 @@ import {
   getLegacyCardThumbnailUrl,
   releaseLegacyCardThumbnailUrl,
 } from "@/lib/card-thumbnail-cache";
-import { deleteCards, listCards, restoreCards, softDeleteCards } from "@/lib/cards-db";
-import {
-  createCollection,
-  deleteCollection,
-  listCollections,
-  updateCollection,
-} from "@/lib/collections-db";
+import { apiClient } from "@/api/client";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { runBulkExport } from "@/lib/export-cards";
 import type { ExportSettings } from "@/lib/export-settings";
 import formatMessageWith from "@/lib/format-message-with";
-import { deletePairsForFace, listAllPairs } from "@/lib/pairs-service";
 import { createDefaultCardData } from "@/types/card-data";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
 import type { OpenCloseProps } from "@/types/ui";
 
@@ -105,6 +98,21 @@ type MissingAssetsPrompt = {
 };
 
 const STOCKPILE_VIEW_STORAGE_KEY = "hqcc.stockpileView";
+
+async function deletePairsForFaceId(faceId: string): Promise<void> {
+  const pairs = await apiClient.listPairs({ queries: { faceId } });
+  const deletions = pairs.filter(
+    (pair) => pair.frontFaceId && pair.backFaceId && (pair.frontFaceId === faceId || pair.backFaceId === faceId),
+  );
+  await Promise.all(
+    deletions.map((pair) =>
+      apiClient.deletePair({
+        frontFaceId: pair.frontFaceId as string,
+        backFaceId: pair.backFaceId as string,
+      }),
+    ),
+  );
+}
 
 export default function StockpilePanelContent({
   isOpen,
@@ -353,7 +361,8 @@ export default function StockpilePanelContent({
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
-    listAllPairs()
+    apiClient
+      .listPairs()
       .then((pairs) => {
         if (!active) return;
         const nextPairsByBack = new Map<string, string[]>();
@@ -653,8 +662,11 @@ export default function StockpilePanelContent({
     const nextCardIds = mergeCollectionCardIds(target.cardIds, draggingIds);
     if (nextCardIds.length === target.cardIds.length) return;
     try {
-      await updateCollection(collectionId, { cardIds: nextCardIds });
-      const refreshed = await listCollections();
+      await apiClient.updateCollection(
+        { cardIds: nextCardIds },
+        { params: { id: collectionId } },
+      );
+      const refreshed = await apiClient.listCollections();
       setCollections(refreshed);
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -1099,8 +1111,11 @@ export default function StockpilePanelContent({
                         if (!target) return;
                         try {
                           const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
-                          await updateCollection(target.id, { cardIds: remaining });
-                          const refreshed = await listCollections();
+                          await apiClient.updateCollection(
+                            { cardIds: remaining },
+                            { params: { id: target.id } },
+                          );
+                          const refreshed = await apiClient.listCollections();
                           setCollections(refreshed);
                           setSelectedIds([]);
                         } catch (error) {
@@ -1114,10 +1129,9 @@ export default function StockpilePanelContent({
                               if (!selectedIds.length) return;
                               const ids = [...selectedIds];
                               try {
-                                await restoreCards(ids);
-                                const refreshed = await listCards({
-                                  status: "saved",
-                                  deleted: "include",
+                                await apiClient.restoreCards({ ids });
+                                const refreshed = await apiClient.listCards({
+                                  queries: { status: "saved", deleted: "include" },
                                 });
                                 setCards(refreshed);
                                 setSelectedIds([]);
@@ -1146,13 +1160,15 @@ export default function StockpilePanelContent({
                       };
 
                       const refreshSavedCards = async () => {
-                        const refreshed = await listCards({ status: "saved", deleted: "include" });
+                        const refreshed = await apiClient.listCards({
+                          queries: { status: "saved", deleted: "include" },
+                        });
                         setCards(refreshed);
                       };
 
                       const runHardDelete = async () => {
-                        await Promise.all(ids.map((id) => deletePairsForFace(id)));
-                        await deleteCards(ids);
+                        await Promise.all(ids.map((id) => deletePairsForFaceId(id)));
+                        await apiClient.deleteCards({ ids });
                         clearActiveCardsForDeletedIds();
                         const updates = collections
                           .map((collection) => {
@@ -1164,18 +1180,21 @@ export default function StockpilePanelContent({
                           .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
                         await Promise.all(
                           updates.map((update) =>
-                            updateCollection(update.id, { cardIds: update.cardIds }),
+                            apiClient.updateCollection(
+                              { cardIds: update.cardIds },
+                              { params: { id: update.id } },
+                            ),
                           ),
                         );
                         await refreshSavedCards();
-                        const refreshedCollections = await listCollections();
+                        const refreshedCollections = await apiClient.listCollections();
                         setCollections(refreshedCollections);
                         setSelectedIds([]);
                       };
 
                       const runSoftDelete = async () => {
-                        await Promise.all(ids.map((id) => deletePairsForFace(id)));
-                        await softDeleteCards(ids);
+                        await Promise.all(ids.map((id) => deletePairsForFaceId(id)));
+                        await apiClient.softDeleteCards({ ids });
                         clearActiveCardsForDeletedIds();
                         await refreshSavedCards();
                         setSelectedIds([]);
@@ -1419,9 +1438,9 @@ export default function StockpilePanelContent({
           collections={collections}
           onCreate={async (name, description) => {
             try {
-              const created = await createCollection({ name, description });
+              const created = await apiClient.createCollection({ name, description });
               setActiveFilter({ type: "collection", id: created.id });
-              const refreshed = await listCollections();
+              const refreshed = await apiClient.listCollections();
               setCollections(refreshed);
             } catch (error) {
               // eslint-disable-next-line no-console
@@ -1430,8 +1449,8 @@ export default function StockpilePanelContent({
           }}
           onUpdate={async (id, name, description) => {
             try {
-              await updateCollection(id, { name, description });
-              const refreshed = await listCollections();
+              await apiClient.updateCollection({ name, description }, { params: { id } });
+              const refreshed = await apiClient.listCollections();
               setCollections(refreshed);
             } catch (error) {
               // eslint-disable-next-line no-console
@@ -1452,8 +1471,10 @@ export default function StockpilePanelContent({
             setDeleteCollectionPrompt(null);
             if (!current) return;
             try {
-              await deleteCollection(current.collectionId);
-              const refreshed = await listCollections();
+              await apiClient.deleteCollection(undefined, {
+                params: { id: current.collectionId },
+              });
+              const refreshed = await apiClient.listCollections();
               setCollections(refreshed);
               if (activeFilter.type === "collection" && activeFilter.id === current.collectionId) {
                 setActiveFilter({ type: "all" });

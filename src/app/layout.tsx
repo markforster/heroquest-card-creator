@@ -2,6 +2,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 
 import { AnalyticsProvider } from "@/components/Providers/AnalyticsProvider";
 import I18nProviderClient from "@/components/Providers/I18nProviderClient";
+import QueryClientProviderClient from "@/components/QueryClientProviderClient";
 
 import type { Metadata, Viewport } from "next";
 import type { PropsWithChildren } from "react";
@@ -172,7 +173,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
           }}
         />
         <AnalyticsProvider gaId={gaId}>
-          <I18nProviderClient>{children}</I18nProviderClient>
+          <QueryClientProviderClient>
+            <I18nProviderClient>{children}</I18nProviderClient>
+          </QueryClientProviderClient>
         </AnalyticsProvider>
       </body>
     </html>

@@ -60,23 +60,15 @@ import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
-import {
-  createCard,
-  getCard,
-  listCards,
-  touchCardLastViewed,
-  updateCard,
-  updateCardThumbnail,
-} from "@/lib/cards-db";
+import { apiClient } from "@/api/client";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import type { ExportSettings } from "@/lib/export-settings";
 import formatMessageWith from "@/lib/format-message-with";
-import { createPair, listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
 import { createDefaultCardData } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
 
 import styles from "./page.module.css";
@@ -276,7 +268,7 @@ function IndexPageInner() {
     let didSave = false;
     try {
       if (mode === "new") {
-        const record = await createCard({
+        const record = await apiClient.createCard({
           ...safePatch,
           templateId,
           status: "saved",
@@ -290,20 +282,26 @@ function IndexPageInner() {
         if (saveFace === "front") {
           if (draftPairingBackIds?.length) {
             try {
-              await Promise.all(draftPairingBackIds.map((backId) => createPair(record.id, backId)));
+              await Promise.all(
+                draftPairingBackIds.map((backId) =>
+                  apiClient.createPair({ frontFaceId: record.id, backFaceId: backId }),
+                ),
+              );
             } catch (error) {
               // eslint-disable-next-line no-console
               console.error("[page] Failed to apply draft back pairings", error);
             }
             setDraftPairingBackIds(null);
           } else if (pairedBackId) {
-            await createPair(record.id, pairedBackId);
+            await apiClient.createPair({ frontFaceId: record.id, backFaceId: pairedBackId });
           }
         }
         if (draftPairingFrontIds?.length) {
           try {
             await Promise.all(
-              draftPairingFrontIds.map((frontId) => createPair(frontId, record.id)),
+              draftPairingFrontIds.map((frontId) =>
+                apiClient.createPair({ frontFaceId: frontId, backFaceId: record.id }),
+              ),
             );
           } catch (error) {
             // eslint-disable-next-line no-console
@@ -314,17 +312,18 @@ function IndexPageInner() {
         didSave = true;
       } else if (mode === "update") {
         if (!activeCardId || activeStatus !== "saved") return;
-        const record = await updateCard(activeCardId, {
-          ...safePatch,
-          thumbnailBlob,
-          lastViewedAt: viewedAt,
-        });
+        const record = await apiClient.updateCard(
+          { ...safePatch, thumbnailBlob, lastViewedAt: viewedAt },
+          { params: { id: activeCardId } },
+        );
         if (record) {
           if (saveFace === "front") {
             if (draftPairingBackIds?.length) {
               try {
                 await Promise.all(
-                  draftPairingBackIds.map((backId) => createPair(activeCardId, backId)),
+                  draftPairingBackIds.map((backId) =>
+                    apiClient.createPair({ frontFaceId: activeCardId, backFaceId: backId }),
+                  ),
                 );
               } catch (error) {
                 // eslint-disable-next-line no-console
@@ -332,7 +331,7 @@ function IndexPageInner() {
               }
               setDraftPairingBackIds(null);
             } else if (pairedBackId) {
-              await createPair(activeCardId, pairedBackId);
+              await apiClient.createPair({ frontFaceId: activeCardId, backFaceId: pairedBackId });
             }
           }
           setActiveCard(templateId, record.id, record.status);
@@ -380,7 +379,10 @@ function IndexPageInner() {
     }
     if (!thumbnailBlob) return false;
     try {
-      return await updateCardThumbnail(activeCardId, thumbnailBlob);
+      return await apiClient.updateCardThumbnail(
+        { thumbnailBlob },
+        { params: { id: activeCardId } },
+      );
     } catch {
       return false;
     }
@@ -421,7 +423,7 @@ function IndexPageInner() {
     if (withPairing && effectiveFace === "front") {
       if (activeCardId) {
         try {
-          const pairs = await listPairsForFace(activeCardId);
+          const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
           const backIds = Array.from(
             new Set(pairs.map((pair) => pair.backFaceId).filter((id): id is string => Boolean(id))),
           );
@@ -468,7 +470,7 @@ function IndexPageInner() {
 
     (async () => {
       try {
-        const cards = await listCards({ status: "saved" });
+        const cards = await apiClient.listCards({ queries: { status: "saved" } });
         if (cancelled) return;
         if (!cards.length) {
           setIsWelcomeOpen(true);
@@ -515,13 +517,16 @@ function IndexPageInner() {
     let active = true;
     (async () => {
       try {
-        const record = await getCard(normalizedCardId);
+        const record = await apiClient.getCard({ params: { id: normalizedCardId } });
         if (!active) return;
         if (!record) {
           setRouteError("not-found");
           return;
         }
-        const viewed = await touchCardLastViewed(record.id);
+        const viewed = await apiClient.touchCardLastViewed(
+          {},
+          { params: { id: record.id } },
+        );
         const nextRecord = viewed ?? record;
         setSelectedTemplateId(nextRecord.templateId as TemplateId);
         loadCardIntoEditor(nextRecord.templateId as TemplateId, nextRecord);
@@ -557,10 +562,11 @@ function IndexPageInner() {
     }
     setLastRememberedBackId(activeCardId);
     let active = true;
-    listCards({ status: "saved" })
+    apiClient
+      .listCards({ queries: { status: "saved" } })
       .then(async (cards) => {
         if (!active) return;
-        const pairs = await listPairsForFace(activeCardId);
+        const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
         if (!active) return;
         const frontIds = new Set(
           pairs.map((pair) => pair.frontFaceId).filter((id): id is string => Boolean(id)),
@@ -589,7 +595,7 @@ function IndexPageInner() {
     }
     let active = true;
     const loadPairedBack = async () => {
-      const pairs = await listPairsForFace(activeCardId);
+      const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
       if (!active) return;
       const match =
         pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
@@ -734,7 +740,7 @@ function IndexPageInner() {
       }
 
       try {
-        const card = await getCard(activeCardId);
+        const card = await apiClient.getCard({ params: { id: activeCardId } });
         if (!card) {
           previewRef.current?.exportAsPng(resolved);
           return;
@@ -781,7 +787,7 @@ function IndexPageInner() {
       const records = await Promise.all(
         faceIds.map(async (id) => {
           try {
-            return await getCard(id);
+            return await apiClient.getCard({ params: { id } });
           } catch {
             return null;
           }

@@ -913,6 +913,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               fill="none"
               stroke="#fff0"
               strokeWidth={3}
+              data-card-outline="true"
             />
           </svg>
           {!backgroundLoaded ? (
@@ -957,7 +958,19 @@ async function renderBleedCanvas({
     loggingId,
     assetBlobsById,
     mutateSvg: (svg) => {
-      cloneSvgForBleed(svg);
+      const cardClipGroup = svg.querySelector('g[clip-path="url(#cardClip)"]');
+      if (cardClipGroup) {
+        cardClipGroup.removeAttribute("clip-path");
+        cardClipGroup.removeAttribute("clipPath");
+      }
+      const cardClipDef = svg.querySelector("clipPath#cardClip");
+      if (cardClipDef) {
+        cardClipDef.remove();
+      }
+      const outline = svg.querySelector('[data-card-outline="true"]');
+      if (outline) {
+        outline.remove();
+      }
       if (bleedPx > 0 || cropMarks?.enabled) {
         setExportBackgroundFit(svg, "slice");
       }

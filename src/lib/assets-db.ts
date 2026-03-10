@@ -318,3 +318,41 @@ export async function clearAssetClassification(): Promise<number> {
     };
   });
 }
+
+export async function resetAssetClassificationForId(id: string): Promise<void> {
+  const db = await openHqccDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const request = store.get(id);
+
+    request.onsuccess = () => {
+      const record = request.result as (AssetRecord & { blob?: Blob }) | undefined;
+      if (!record) {
+        resolve();
+        return;
+      }
+      delete record.assetKind;
+      delete record.assetKindStatus;
+      delete record.assetKindSource;
+      delete record.assetKindConfidence;
+      delete record.assetKindUpdatedAt;
+      store.put(record as AssetRecord);
+    };
+
+    request.onerror = () => {
+      reject(request.error ?? new Error("Failed to load asset for classification reset"));
+    };
+
+    tx.oncomplete = () => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("hqcc-assets-updated"));
+      }
+      resolve();
+    };
+    tx.onerror = () => {
+      reject(tx.error ?? new Error("Failed to reset asset classification"));
+    };
+  });
+}

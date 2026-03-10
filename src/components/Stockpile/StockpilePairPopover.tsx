@@ -12,7 +12,7 @@ import {
   getLegacyCardThumbnailUrl,
   releaseLegacyCardThumbnailUrl,
 } from "@/lib/card-thumbnail-cache";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
 
 type StockpilePairPopoverProps = {
   hoveredPairCardId: string | null;

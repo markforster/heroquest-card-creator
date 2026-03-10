@@ -16,18 +16,11 @@ import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
+import { apiClient } from "@/api/client";
 import { resolveEffectiveFace } from "@/lib/card-face";
-import { getCard, listCards } from "@/lib/cards-db";
-import {
-  createPair,
-  deletePair,
-  deletePairsForFront,
-  listPairsForFace,
-  replacePairsForBack,
-} from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
 
 import CollapsibleGroup from "./CollapsibleGroup";
@@ -38,6 +31,45 @@ type PairingInspectorPanelProps = {
   frontViewToken?: number;
   onRememberBackId?: (backId: string) => void;
 };
+
+async function listPairsForFaceId(faceId: string) {
+  return apiClient.listPairs({ queries: { faceId } });
+}
+
+async function createPairFor(frontFaceId: string, backFaceId: string) {
+  return apiClient.createPair({ frontFaceId, backFaceId });
+}
+
+async function deletePairBy(frontFaceId: string, backFaceId: string) {
+  return apiClient.deletePair({ frontFaceId, backFaceId });
+}
+
+async function deletePairsForFrontId(frontFaceId: string) {
+  const pairs = await listPairsForFaceId(frontFaceId);
+  const deletions = pairs.filter(
+    (pair) => pair.frontFaceId === frontFaceId && pair.backFaceId,
+  );
+  await Promise.all(
+    deletions.map((pair) => deletePairBy(frontFaceId, pair.backFaceId as string)),
+  );
+}
+
+async function replacePairsForBackId(backFaceId: string, frontFaceIds: string[]) {
+  const existing = await listPairsForFaceId(backFaceId);
+  const currentFrontIds = existing
+    .filter((pair) => pair.backFaceId === backFaceId && pair.frontFaceId)
+    .map((pair) => pair.frontFaceId as string);
+  const nextFrontSet = new Set(frontFaceIds);
+  const toRemove = currentFrontIds.filter((frontId) => !nextFrontSet.has(frontId));
+  const toAdd = frontFaceIds.filter((frontId) => !currentFrontIds.includes(frontId));
+
+  if (toRemove.length) {
+    await Promise.all(toRemove.map((frontId) => deletePairBy(frontId, backFaceId)));
+  }
+  if (toAdd.length) {
+    await Promise.all(toAdd.map((frontId) => createPairFor(frontId, backFaceId)));
+  }
+}
 
 export default function PairingInspectorPanel({
   activeFrontId,
@@ -128,7 +160,7 @@ export default function PairingInspectorPanel({
   const requestOpenCard = async (cardId: string) => {
     const currentTemplate = selectedTemplateId;
     if (currentTemplate && isDirtyByTemplate[currentTemplate]) {
-      const record = await getCard(cardId);
+      const record = await apiClient.getCard({ params: { id: cardId } });
       if (!record) return;
       setPendingOpenCard(record);
       setIsSavePromptOpen(true);
@@ -147,14 +179,14 @@ export default function PairingInspectorPanel({
         return;
       }
 
-      const cards = await listCards({ status: "saved" });
+      const cards = await apiClient.listCards({ queries: { status: "saved" } });
       if (!active) return;
       const byId = new Map(cards.map((card) => [card.id, card]));
       setCardsById(byId);
 
       let backIds: string[] = [];
       if (activeCardId) {
-        const pairs = await listPairsForFace(activeCardId);
+        const pairs = await listPairsForFaceId(activeCardId);
         if (!active) return;
         backIds = Array.from(
           new Set(
@@ -202,12 +234,13 @@ export default function PairingInspectorPanel({
       const sorted = sortByUpdated([...cards]);
       setPairedFronts(sorted);
     };
-    listCards({ status: "saved" })
+    apiClient
+      .listCards({ queries: { status: "saved" } })
       .then((cards) => {
         if (!active) return;
         setCardsById(new Map(cards.map((card) => [card.id, card])));
         if (activeCardId) {
-          void listPairsForFace(activeCardId)
+          void listPairsForFaceId(activeCardId)
             .then((pairs) => {
               if (!active) return;
               const frontIds = new Set(
@@ -256,7 +289,7 @@ export default function PairingInspectorPanel({
       const nextMap = new Map<string, CardRecord[]>();
       await Promise.all(
         pairedBacks.map(async (back) => {
-          const pairs = await listPairsForFace(back.id);
+          const pairs = await listPairsForFaceId(back.id);
           if (!active) return;
           const frontIds = Array.from(
             new Set(
@@ -295,7 +328,7 @@ export default function PairingInspectorPanel({
 
   const handleUnpairAll = async () => {
     if (!activeCardId) return;
-    await deletePairsForFront(activeCardId);
+    await deletePairsForFrontId(activeCardId);
     setPairedBacks([]);
     if (currentTemplateId) {
       const nextDraft = {
@@ -310,7 +343,7 @@ export default function PairingInspectorPanel({
   const handleUnpairBack = async (backId: string) => {
     if (!activeCardId) return;
     try {
-      await deletePair(activeCardId, backId);
+      await deletePairBy(activeCardId, backId);
       setPairedBacksToken((prev) => prev + 1);
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -382,8 +415,8 @@ export default function PairingInspectorPanel({
                           const toRemove = [...existingIds].filter((id) => !nextIds.has(id));
                           const toAdd = [...nextIds].filter((id) => !existingIds.has(id));
                           await Promise.all([
-                            ...toRemove.map((id) => deletePair(activeCardId, id)),
-                            ...toAdd.map((id) => createPair(activeCardId, id)),
+                            ...toRemove.map((id) => deletePairBy(activeCardId, id)),
+                            ...toAdd.map((id) => createPairFor(activeCardId, id)),
                           ]);
                           setPairedBacksToken((prev) => prev + 1);
                         })();
@@ -457,7 +490,7 @@ export default function PairingInspectorPanel({
                   initialSelectedIds: pairedFronts.map((card) => card.id),
                   onConfirmSelection: async (cardIds) => {
                     try {
-                      await replacePairsForBack(activeCardId, cardIds);
+                      await replacePairsForBackId(activeCardId, cardIds);
                     } catch {
                       // Ignore pair update errors for now.
                     }

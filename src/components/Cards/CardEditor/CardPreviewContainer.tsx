@@ -13,11 +13,10 @@ import { KEEP_WEBGL_MOUNTED } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
+import { apiClient } from "@/api/client";
 import { collectCardAssetIds } from "@/lib/card-assets";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { getCard, listCards } from "@/lib/cards-db";
-import { listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -179,7 +178,7 @@ export default function CardPreviewContainer({
         try {
           let backId: string | null = null;
           if (activeCardId) {
-            const pairs = await listPairsForFace(activeCardId);
+            const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
             const preferredMatch = preferredBackId
               ? pairs.find((pair) => pair.backFaceId === preferredBackId)
               : undefined;
@@ -193,7 +192,7 @@ export default function CardPreviewContainer({
             setReverseCard(null);
             return;
           }
-          const record = await getCard(backId);
+          const record = await apiClient.getCard({ params: { id: backId } });
           if (!active || !record) {
             setReverseCard(null);
             return;
@@ -223,9 +222,9 @@ export default function CardPreviewContainer({
           return;
         }
         try {
-          const cards = await listCards({ status: "saved" });
+          const cards = await apiClient.listCards({ queries: { status: "saved" } });
           if (!active) return;
-          const pairs = await listPairsForFace(activeCardId);
+          const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
           if (!active) return;
           const frontIds = new Set(
             pairs.map((pair) => pair.frontFaceId).filter((id): id is string => Boolean(id)),

@@ -3,10 +3,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 
+import { apiClient } from "@/api/client";
+import type { AssetRecord } from "@/api/assets";
 import { getAssetAutoClassifyEnabled } from "@/lib/asset-auto-classify";
 import { classifyAssetBlob } from "@/lib/asset-kind/classify";
-import type { AssetRecord } from "@/lib/assets-db";
-import { getAllAssets, getAssetBlob, updateAssetMeta } from "@/lib/assets-db";
 import { compareAssetsByDefaultOrder } from "@/lib/assets-grouping";
 import { isSafariBrowser } from "@/lib/browser";
 
@@ -107,7 +107,8 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
   }, []);
 
   const seedQueue = useCallback(() => {
-    getAllAssets()
+    apiClient
+      .listAssets()
       .then((assets) => {
         const ordered = assets
           .filter((asset) => shouldEnqueue(asset))
@@ -125,11 +126,17 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
             asset.assetKindUpdatedAt &&
             Date.now() - asset.assetKindUpdatedAt > CLASSIFY_TIMEOUT_MS
           ) {
-            updateAssetMeta(asset.id, {
-              assetKindStatus: "unclassified",
-              assetKindSource: "auto",
-              assetKindUpdatedAt: Date.now(),
-            })
+            apiClient
+              .updateAssetMetadata(
+                {
+                  patch: {
+                    assetKindStatus: "unclassified",
+                    assetKindSource: "auto",
+                    assetKindUpdatedAt: Date.now(),
+                  },
+                },
+                { params: { id: asset.id } },
+              )
               .then(() => {
                 assetStatusRef.current.set(asset.id, {
                   status: "unclassified",
@@ -221,11 +228,17 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
           lastStatus.updatedAt &&
           startedAt - lastStatus.updatedAt > CLASSIFY_TIMEOUT_MS
         ) {
-          updateAssetMeta(id, {
-            assetKindStatus: "unclassified",
-            assetKindSource: "auto",
-            assetKindUpdatedAt: Date.now(),
-          })
+          apiClient
+            .updateAssetMetadata(
+              {
+                patch: {
+                  assetKindStatus: "unclassified",
+                  assetKindSource: "auto",
+                  assetKindUpdatedAt: Date.now(),
+                },
+              },
+              { params: { id } },
+            )
             .then(() => {
               assetStatusRef.current.set(id, {
                 status: "unclassified",
@@ -243,11 +256,16 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
           const assetMeta = assetDimensionsRef.current.get(id);
           classifyStartRef.current.set(id, startedAt);
           try {
-            await updateAssetMeta(id, {
-              assetKindStatus: "classifying",
-              assetKindSource: "auto",
-              assetKindUpdatedAt: Date.now(),
-            });
+            await apiClient.updateAssetMetadata(
+              {
+                patch: {
+                  assetKindStatus: "classifying",
+                  assetKindSource: "auto",
+                  assetKindUpdatedAt: Date.now(),
+                },
+              },
+              { params: { id } },
+            );
             assetStatusRef.current.set(id, {
               status: "classifying",
               updatedAt: Date.now(),
@@ -264,14 +282,19 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
             );
             continue;
           }
-          const blob = await getAssetBlob(id);
+          const blob = await apiClient.getAssetBlob({ params: { id } });
           if (!blob || cancelledRef.current.has(id)) {
             try {
-              await updateAssetMeta(id, {
-                assetKindStatus: "unclassified",
-                assetKindSource: "auto",
-                assetKindUpdatedAt: Date.now(),
-              });
+              await apiClient.updateAssetMetadata(
+                {
+                  patch: {
+                    assetKindStatus: "unclassified",
+                    assetKindSource: "auto",
+                    assetKindUpdatedAt: Date.now(),
+                  },
+                },
+                { params: { id } },
+              );
               assetStatusRef.current.set(id, {
                 status: "unclassified",
                 updatedAt: Date.now(),
@@ -301,12 +324,17 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
           }
           if (result.kind === "unknown") {
             try {
-              await updateAssetMeta(id, {
-                assetKindStatus: "unclassified",
-                assetKindSource: "auto",
-                assetKindConfidence: result.confidence,
-                assetKindUpdatedAt: Date.now(),
-              });
+              await apiClient.updateAssetMetadata(
+                {
+                  patch: {
+                    assetKindStatus: "unclassified",
+                    assetKindSource: "auto",
+                    assetKindConfidence: result.confidence,
+                    assetKindUpdatedAt: Date.now(),
+                  },
+                },
+                { params: { id } },
+              );
               assetStatusRef.current.set(id, {
                 status: "unclassified",
                 updatedAt: Date.now(),
@@ -323,13 +351,18 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
             }
           } else {
             try {
-              await updateAssetMeta(id, {
-                assetKindStatus: "classified",
-                assetKindSource: "auto",
-                assetKind: result.kind,
-                assetKindConfidence: result.confidence,
-                assetKindUpdatedAt: Date.now(),
-              });
+              await apiClient.updateAssetMetadata(
+                {
+                  patch: {
+                    assetKindStatus: "classified",
+                    assetKindSource: "auto",
+                    assetKind: result.kind,
+                    assetKindConfidence: result.confidence,
+                    assetKindUpdatedAt: Date.now(),
+                  },
+                },
+                { params: { id } },
+              );
               assetStatusRef.current.set(id, {
                 status: "classified",
                 updatedAt: Date.now(),
@@ -347,11 +380,16 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
           }
         } catch {
           try {
-            await updateAssetMeta(id, {
-              assetKindStatus: "unclassified",
-              assetKindSource: "auto",
-              assetKindUpdatedAt: Date.now(),
-            });
+            await apiClient.updateAssetMetadata(
+              {
+                patch: {
+                  assetKindStatus: "unclassified",
+                  assetKindSource: "auto",
+                  assetKindUpdatedAt: Date.now(),
+                },
+              },
+              { params: { id } },
+            );
             assetStatusRef.current.set(id, {
               status: "unclassified",
               updatedAt: Date.now(),

@@ -15,7 +15,7 @@ import { cardTemplatesById } from "@/data/card-templates";
 import { usePopupState } from "@/hooks/usePopupState";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getCard } from "@/lib/cards-db";
+import type { CardRecord } from "@/api/cards";
 import { createDefaultCardData } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -81,7 +81,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
   const [stockpileTitleOverride, setStockpileTitleOverride] = useState<string | null>(null);
   const settingsModal = usePopupState(false);
   const [stockpileRefreshToken, setStockpileRefreshToken] = useState(0);
-  const [pendingCard, setPendingCard] = useState<Awaited<ReturnType<typeof getCard>> | null>(null);
+  const [pendingCard, setPendingCard] = useState<CardRecord | null>(null);
   const [pendingCardSource, setPendingCardSource] = useState<"stockpile" | "recent" | null>(null);
   const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
   const [pendingNewTemplate, setPendingNewTemplate] = useState(false);
@@ -94,7 +94,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
   const activeCardId =
     currentTemplateId != null ? activeCardIdByTemplate[currentTemplateId] : undefined;
 
-  const handleLoadCard = async (card: Awaited<ReturnType<typeof getCard>> | null) => {
+  const handleLoadCard = async (card: CardRecord | null) => {
     if (!card) return;
     navigate(`/cards/${card.id}`);
     setStockpileRefreshToken((prev) => prev + 1);

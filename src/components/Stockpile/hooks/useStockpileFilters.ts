@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { cardTemplatesById } from "@/data/card-templates";
 import { resolveEffectiveFace } from "@/lib/card-face";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
 import type { CollectionRecord } from "@/types/collections-db";
 
 type ActiveFilter =

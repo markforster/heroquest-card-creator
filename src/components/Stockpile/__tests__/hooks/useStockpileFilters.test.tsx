@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
 import type { CollectionRecord } from "@/types/collections-db";
 
 jest.mock("@/data/card-templates", () => ({

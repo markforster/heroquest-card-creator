@@ -7,10 +7,10 @@ import {
   ENABLE_MISSING_ASSET_INITIAL_SCAN,
   ENABLE_MISSING_ASSET_PERIODIC_SCAN,
 } from "@/config/flags";
-import { listCards } from "@/lib/cards-db";
+import { apiClient } from "@/api/client";
+import type { CardRecord } from "@/api/cards";
 import { buildAssetCache } from "@/lib/export-assets-cache";
 import type { MissingAssetReport } from "@/lib/export-assets-cache";
-import type { CardRecord } from "@/types/cards-db";
 
 import type { ReactNode } from "react";
 
@@ -140,7 +140,7 @@ export function MissingAssetsProvider({ children }: { children: ReactNode }) {
     cancelIdle = scheduleIdle(() => {
       void (async () => {
         try {
-          const cards = await listCards();
+          const cards = await apiClient.listCards();
           if (cancelled) return;
           await runBatchedScan(cards);
         } catch {

@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
-import { listCards } from "@/lib/cards-db";
-import { listCollections } from "@/lib/collections-db";
-import type { CardRecord } from "@/types/cards-db";
-import type { CollectionRecord } from "@/types/collections-db";
+import { apiClient } from "@/api/client";
+import type { CardRecord } from "@/api/cards";
+import type { CollectionRecord } from "@/api/collections";
 
 type ActiveFilter =
   | { type: "all" }
@@ -37,7 +36,8 @@ export const useStockpileData = ({
 
     let cancelled = false;
 
-    listCards({ status: "saved", deleted: "include" })
+    apiClient
+      .listCards({ queries: { status: "saved", deleted: "include" } })
       .then((results) => {
         if (!cancelled) {
           setCards(results);
@@ -59,7 +59,8 @@ export const useStockpileData = ({
 
     let cancelled = false;
 
-    listCollections()
+    apiClient
+      .listCollections()
       .then((results) => {
         if (!cancelled) {
           setCollections(results);
