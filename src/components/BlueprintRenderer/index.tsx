@@ -24,7 +24,7 @@ import Layer from "@/components/Cards/CardPreview/Layer";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
-import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
+import { DEFAULT_BODY_TEXT_COLOR, DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
 import {
   DEVELOPER_CREDIT_BLEND_COLOR,
   DEVELOPER_CREDIT_BLEND_MODE,
@@ -489,7 +489,8 @@ function TextLayer({
   if (!layer.bind?.textKey) return null;
   if (!cardData) return null;
 
-  const text = (cardData as Record<string, unknown>)[layer.bind.textKey];
+  const textKey = layer.bind.textKey;
+  const text = (cardData as Record<string, unknown>)[textKey];
   if (typeof text !== "string" && text != null) return null;
 
   if (layer.when?.hasText) {
@@ -558,7 +559,12 @@ function TextLayer({
       : undefined;
   const fontFamily =
     typeof layer.props?.fontFamily === "string" ? layer.props.fontFamily : undefined;
-  const fill = typeof layer.props?.fill === "string" ? layer.props.fill : undefined;
+  const layerFill = typeof layer.props?.fill === "string" ? layer.props.fill : undefined;
+  const bodyTextColor =
+    textKey === "description"
+      ? (cardData as { bodyTextColor?: string }).bodyTextColor ?? DEFAULT_BODY_TEXT_COLOR
+      : undefined;
+  const fill = bodyTextColor ?? layerFill;
   const letterSpacingEm =
     typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;
   const align =
@@ -1330,7 +1336,12 @@ function buildGroupItems({
         typeof child.props?.fontWeight === "number" || typeof child.props?.fontWeight === "string"
           ? child.props.fontWeight
           : undefined;
-      const fill = typeof child.props?.fill === "string" ? child.props.fill : undefined;
+      const layerFill = typeof child.props?.fill === "string" ? child.props.fill : undefined;
+      const bodyTextColor =
+        textKey === "description"
+          ? (cardData as { bodyTextColor?: string }).bodyTextColor ?? DEFAULT_BODY_TEXT_COLOR
+          : undefined;
+      const fill = bodyTextColor ?? layerFill;
       const letterSpacingEm =
         typeof child.props?.letterSpacingEm === "number" ? child.props.letterSpacingEm : undefined;
       const align =

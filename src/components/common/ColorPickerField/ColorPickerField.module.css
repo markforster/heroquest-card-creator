@@ -45,11 +45,27 @@
   padding: 0;
   cursor: pointer;
   background: transparent;
+  position: relative;
+}
+
+.currentSwatchSquare {
+  border-radius: 8px;
 }
 
 .currentSwatchDisabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.swatchOverlayIcon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hq-swatch-icon, rgba(17, 17, 17, 0.8));
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35), 0 -1px 1px rgba(255, 255, 255, 0.2);
+  pointer-events: none;
 }
 
 .popover {

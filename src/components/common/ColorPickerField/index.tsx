@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { RgbaColorPicker } from "react-colorful";
 
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
@@ -13,7 +13,7 @@ import { clamp } from "@/lib/math";
 
 import styles from "./ColorPickerField.module.css";
 
-import type { ReactNode, RefObject } from "react";
+import type { CSSProperties, ReactNode, RefObject } from "react";
 
 type SmartGroup = { id: string; colors: string[] };
 type ActiveTab = "picker" | "saved" | "smart";
@@ -48,7 +48,42 @@ type ColorPickerFieldProps = {
   showRevertOption?: boolean;
   showSaveOption?: boolean;
   presetSwatches?: string[];
+  swatchShape?: "circle" | "square";
+  swatchIcon?: ReactNode;
 };
+
+const FALLBACK_PANEL_BG = "#202020";
+const ICON_LIGHT = "#f5f5f5";
+const ICON_DARK = "#111111";
+
+type Rgb = { r: number; g: number; b: number };
+
+function hexToRgb(hex: string): Rgb {
+  const raw = hex.startsWith("#") ? hex.slice(1) : hex;
+  const r = Number.parseInt(raw.slice(0, 2), 16);
+  const g = Number.parseInt(raw.slice(2, 4), 16);
+  const b = Number.parseInt(raw.slice(4, 6), 16);
+  return { r, g, b };
+}
+
+function computeRelativeLuminance({ r, g, b }: Rgb): number {
+  const sr = r / 255;
+  const sg = g / 255;
+  const sb = b / 255;
+  const rl = sr <= 0.03928 ? sr / 12.92 : Math.pow((sr + 0.055) / 1.055, 2.4);
+  const gl = sg <= 0.03928 ? sg / 12.92 : Math.pow((sg + 0.055) / 1.055, 2.4);
+  const bl = sb <= 0.03928 ? sb / 12.92 : Math.pow((sb + 0.055) / 1.055, 2.4);
+  return 0.2126 * rl + 0.7152 * gl + 0.0722 * bl;
+}
+
+function blendColors(foreground: Rgb, background: Rgb, alpha: number): Rgb {
+  const clamped = Math.min(1, Math.max(0, alpha));
+  return {
+    r: Math.round(foreground.r * clamped + background.r * (1 - clamped)),
+    g: Math.round(foreground.g * clamped + background.g * (1 - clamped)),
+    b: Math.round(foreground.b * clamped + background.b * (1 - clamped)),
+  };
+}
 
 export default function ColorPickerField({
   label,
@@ -80,6 +115,8 @@ export default function ColorPickerField({
   showRevertOption = true,
   showSaveOption = true,
   presetSwatches = [],
+  swatchShape = "circle",
+  swatchIcon,
 }: ColorPickerFieldProps) {
   const { t } = useI18n();
   const { swatches, saveSwatch, removeSwatch, maxSwatches } = useSharedColorSwatches();
@@ -208,6 +245,27 @@ export default function ColorPickerField({
     ? { r: 0, g: 0, b: 0, a: 0 }
     : hexToRgba(previewHex ?? normalizedInput);
 
+  const swatchIconColor = useMemo(() => {
+    if (!swatchIcon) return undefined;
+    if (typeof window === "undefined") return ICON_LIGHT;
+
+    const rootStyles = window.getComputedStyle(document.documentElement);
+    const panelBgRaw = rootStyles.getPropertyValue("--hq-panel-bg").trim();
+    const panelParsed = parseHexColor(panelBgRaw) ?? parseHexColor(FALLBACK_PANEL_BG);
+    const panelRgb = panelParsed ? hexToRgb(panelParsed.hex) : hexToRgb(FALLBACK_PANEL_BG);
+
+    const selectedParsed = parseHexColor(selectedValue, { allowTransparent: true });
+    if (!selectedParsed || selectedParsed.alpha <= 0) {
+      const luminance = computeRelativeLuminance(panelRgb);
+      return luminance >= 0.5 ? ICON_DARK : ICON_LIGHT;
+    }
+
+    const swatchRgb = hexToRgb(selectedParsed.hex);
+    const blended = blendColors(swatchRgb, panelRgb, selectedParsed.alpha);
+    const luminance = computeRelativeLuminance(blended);
+    return luminance >= 0.5 ? ICON_DARK : ICON_LIGHT;
+  }, [selectedValue, swatchIcon]);
+
   useEffect(() => {
     if (isEditingHex) return;
     setHexDraft(normalizedInput);
@@ -278,6 +336,16 @@ export default function ColorPickerField({
           </div>
         ) : null}
         <div className={styles.swatchWrap}>
+          {(() => {
+            const style: CSSProperties & Record<string, string> = {};
+            if (!isTransparent) {
+              style.backgroundColor = previewHex ?? normalizedSelected ?? selectedValue;
+            }
+            if (swatchIconColor) {
+              style["--hq-swatch-icon"] = swatchIconColor;
+            }
+            const swatchStyle = Object.keys(style).length > 0 ? style : undefined;
+            return (
           <button
             type="button"
             ref={swatchRef}
@@ -285,17 +353,15 @@ export default function ColorPickerField({
             title={selectedValue}
             className={`${styles.currentSwatch} ${isTransparent ? styles.noBorderSwatch : ""} ${
               isDisabled ? styles.currentSwatchDisabled : ""
-            }`}
-            style={
-              isTransparent
-                ? undefined
-                : {
-                    backgroundColor: previewHex ?? normalizedSelected ?? selectedValue,
-                  }
-            }
+            } ${swatchShape === "square" ? styles.currentSwatchSquare : ""}`}
+            style={swatchStyle}
             onClick={isDisabled ? undefined : onToggleOpen}
             disabled={isDisabled}
-          />
+          >
+            {swatchIcon ? <span className={styles.swatchOverlayIcon}>{swatchIcon}</span> : null}
+          </button>
+            );
+          })()}
         </div>
       </div>
       {isOpen && !isDisabled ? (

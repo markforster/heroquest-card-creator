@@ -21,6 +21,8 @@ export type InspectorTextField = {
   props?: {
     rows?: number;
     showToolbar?: boolean;
+    showTextColor?: boolean;
+    showBackdropColor?: boolean;
   };
 };
 

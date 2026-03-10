@@ -34,6 +34,9 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.cardText",
+      props: {
+        showTextColor: true,
+      },
     },
     {
       fieldType: "copyright",
@@ -80,6 +83,9 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.cardText",
+      props: {
+        showTextColor: true,
+      },
     },
     {
       fieldType: "copyright",
@@ -108,6 +114,9 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.cardText",
+      props: {
+        showTextColor: true,
+      },
     },
     {
       fieldType: "borderColor",
@@ -146,6 +155,9 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.cardText",
+      props: {
+        showTextColor: true,
+      },
     },
     {
       fieldType: "borderColor",
@@ -183,7 +195,11 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.backText",
-      props: { showToolbar: true },
+      props: {
+        showToolbar: true,
+        showTextColor: true,
+        showBackdropColor: true,
+      },
     },
     {
       fieldType: "copyright",
@@ -216,7 +232,11 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "description",
       labelKey: "form.backText",
       showToggle: true,
-      props: { showToolbar: true },
+      props: {
+        showToolbar: true,
+        showTextColor: true,
+        showBackdropColor: true,
+      },
     },
     {
       fieldType: "borderColor",
