@@ -97,9 +97,48 @@ function removeDeveloperCreditLayer(svg: SVGSVGElement) {
   svg.querySelectorAll('[data-layer-type="developer-credit"]').forEach((node) => node.remove());
 }
 
+function applyExportImageClip(svg: SVGSVGElement) {
+  const existing = svg.querySelector("clipPath#exportImageClip");
+  if (!existing) {
+    const svgNs = "http://www.w3.org/2000/svg";
+    const defs = svg.querySelector("defs") ?? svg.insertBefore(document.createElementNS(svgNs, "defs"), svg.firstChild);
+    const clipPath = document.createElementNS(svgNs, "clipPath");
+    clipPath.setAttribute("id", "exportImageClip");
+    clipPath.setAttribute("clipPathUnits", "userSpaceOnUse");
+    const rect = document.createElementNS(svgNs, "rect");
+    rect.setAttribute("x", "0");
+    rect.setAttribute("y", "0");
+    rect.setAttribute("width", String(CARD_WIDTH));
+    rect.setAttribute("height", String(CARD_HEIGHT));
+    clipPath.appendChild(rect);
+    defs.appendChild(clipPath);
+  }
+
+  svg
+    .querySelectorAll<SVGImageElement | SVGFEImageElement>("image, feImage")
+    .forEach((node) => {
+      if (node.hasAttribute("clip-path") || node.hasAttribute("clipPath")) {
+        return;
+      }
+      node.setAttribute("clip-path", "url(#exportImageClip)");
+    });
+}
+
 function mutateSvgForStandardExport(svg: SVGSVGElement, rounded: boolean) {
   setExportClip(svg, { rounded });
   removeDeveloperCreditLayer(svg);
+  applyExportImageClip(svg);
+}
+
+function zeroTreasureBorderOffsetsForExport(svg: SVGSVGElement) {
+  svg
+    .querySelectorAll<SVGImageElement | SVGFEImageElement>(
+      '[data-template-asset="border-mask"], [data-template-asset="border-texture"]',
+    )
+    .forEach((node) => {
+      node.setAttribute("x", "0");
+      node.setAttribute("y", "0");
+    });
 }
 
 function shouldShowDeveloperCredit(
@@ -958,14 +997,14 @@ async function renderBleedCanvas({
     loggingId,
     assetBlobsById,
     mutateSvg: (svg) => {
-      const cardClipGroup = svg.querySelector('g[clip-path="url(#cardClip)"]');
-      if (cardClipGroup) {
-        cardClipGroup.removeAttribute("clip-path");
-        cardClipGroup.removeAttribute("clipPath");
-      }
-      const cardClipDef = svg.querySelector("clipPath#cardClip");
-      if (cardClipDef) {
-        cardClipDef.remove();
+      const cardClipRect = svg.querySelector<SVGRectElement>("clipPath#cardClip rect");
+      if (cardClipRect) {
+        cardClipRect.setAttribute("x", "0");
+        cardClipRect.setAttribute("y", "0");
+        cardClipRect.setAttribute("width", String(CARD_WIDTH));
+        cardClipRect.setAttribute("height", String(CARD_HEIGHT));
+        cardClipRect.setAttribute("rx", "0");
+        cardClipRect.setAttribute("ry", "0");
       }
       const outline = svg.querySelector('[data-card-outline="true"]');
       if (outline) {
@@ -977,6 +1016,10 @@ async function renderBleedCanvas({
       setExportClip(svg, { rounded: roundedCorners });
       if (developerCreditEnabled) {
         removeDeveloperCreditLayer(svg);
+      }
+      applyExportImageClip(svg);
+      if (templateId === "small-treasure" || templateId === "large-treasure") {
+        zeroTreasureBorderOffsetsForExport(svg);
       }
     },
   });
@@ -995,12 +1038,28 @@ async function renderBleedCanvas({
       loggingId,
       assetBlobsById,
       mutateSvg: (svg) => {
-        cloneSvgForBleed(svg);
         if (bleedPx > 0 || cropMarks?.enabled) {
           setExportBackgroundFit(svg, "slice");
         }
         if (developerCreditEnabled) {
           removeDeveloperCreditLayer(svg);
+        }
+        const cardClipRect = svg.querySelector<SVGRectElement>("clipPath#cardClip rect");
+        if (cardClipRect) {
+          cardClipRect.setAttribute("x", "0");
+          cardClipRect.setAttribute("y", "0");
+          cardClipRect.setAttribute("width", String(CARD_WIDTH));
+          cardClipRect.setAttribute("height", String(CARD_HEIGHT));
+          cardClipRect.setAttribute("rx", "0");
+          cardClipRect.setAttribute("ry", "0");
+        }
+        const outline = svg.querySelector('[data-card-outline="true"]');
+        if (outline) {
+          outline.remove();
+        }
+        applyExportImageClip(svg);
+        if (templateId === "small-treasure" || templateId === "large-treasure") {
+          zeroTreasureBorderOffsetsForExport(svg);
         }
       },
     });
