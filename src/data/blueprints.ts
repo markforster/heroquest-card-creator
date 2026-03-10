@@ -1,5 +1,6 @@
 import smallLargeArtworkBorderMask from "@/assets/card-backgrounds/small-large-artwork-border-alpha-mask.png";
 import smallLargeArtworkBorderTexture from "@/assets/card-backgrounds/small-large-artwork-border-blend-texture.png";
+import heroBackBorderAndText from "@/assets/card-backgrounds/hero-back-border-and-text.png";
 import largeWindowFrame from "@/assets/card-backgrounds/large-window-frame.png";
 import smallWindowFrame from "@/assets/card-backgrounds/small-window-frame.png";
 import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
@@ -397,6 +398,12 @@ const HERO_BACK_BLUEPRINT: Blueprint = {
       type: "background",
       source: "template",
       tintKey: "backgroundTint",
+    },
+    {
+      id: "border-overlay",
+      type: "overlay",
+      asset: heroBackBorderAndText,
+      bounds: scaleBounds({ x: 0, y: 0, width: 750, height: 1050 }),
     },
     {
       id: "description",
