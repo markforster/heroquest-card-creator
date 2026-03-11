@@ -1,25 +1,18 @@
-import { getCard } from "@/lib/cards-db";
-import type { CardRecord } from "@/types/cards-db";
+import { getCardThumbnail } from "@/lib/cards-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
-export const getCardRequestPlugin: ZodiosPlugin = {
-  name: "local-get-card",
-  request: async (apiDefinitions, config) => {
+export const getCardThumbnailRequestPlugin: ZodiosPlugin = {
+  name: "local-get-card-thumbnail",
+  request: async (_apiDefinitions, config) => {
     const adapter = async (): Promise<AxiosResponse> => {
       const params = (config.params ?? {}) as Record<string, unknown>;
       const id = typeof params.id === "string" ? params.id : null;
       if (!id) {
-        throw new Error("[api:getCard] Missing id param");
+        throw new Error("[api:getCardThumbnail] Missing id param");
       }
-      const record = await getCard(id);
-      const data = record
-        ? (() => {
-            const { thumbnailBlob: _thumbnailBlob, ...rest } = record as CardRecord;
-            return rest;
-          })()
-        : null;
+      const data = await getCardThumbnail(id);
 
       return {
         data,

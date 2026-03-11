@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import IndexPage from "@/app/page";
+import { EditorFormProvider } from "@/components/Providers/EditorFormContext";
 
 const createCard = jest.fn();
 const getCard = jest.fn();
@@ -14,31 +15,15 @@ const deletePair = jest.fn();
 
 const mockSetActiveCard = jest.fn();
 const mockSetSelectedTemplateId = jest.fn();
-const mockSetSingleDraft = jest.fn();
-const mockSetDraftPairingFrontIds = jest.fn();
-const mockSetDraftPairingBackIds = jest.fn();
-const mockSetTemplateDirty = jest.fn();
-const mockLoadCardIntoEditor = jest.fn();
 
 const mockCardEditorContext = {
   state: {
     selectedTemplateId: "hero",
-    draftTemplateId: "hero",
-    draft: {
-      title: "Test draft",
-    },
-    draftPairingFrontIds: null,
-    draftPairingBackIds: null,
     activeCardIdByTemplate: {},
     activeCardStatusByTemplate: {},
   },
   setActiveCard: mockSetActiveCard,
   setSelectedTemplateId: mockSetSelectedTemplateId,
-  setSingleDraft: mockSetSingleDraft,
-  setDraftPairingFrontIds: mockSetDraftPairingFrontIds,
-  setDraftPairingBackIds: mockSetDraftPairingBackIds,
-  setTemplateDirty: mockSetTemplateDirty,
-  loadCardIntoEditor: mockLoadCardIntoEditor,
 };
 
 jest.mock("@/components/Providers/CardEditorContext", () => ({
@@ -59,6 +44,10 @@ jest.mock("@/api/client", () => ({
     createPair: (...args: unknown[]) => createPair(...args),
     deletePair: (...args: unknown[]) => deletePair(...args),
   },
+}));
+
+jest.mock("@/api/hooks", () => ({
+  useGetCard: () => ({ data: undefined, error: null }),
 }));
 
 jest.mock("@/components/Providers/AssetHashIndexProvider", () => ({
@@ -204,11 +193,6 @@ describe("IndexPage draft route", () => {
 
     mockSetActiveCard.mockReset();
     mockSetSelectedTemplateId.mockReset();
-    mockSetSingleDraft.mockReset();
-    mockSetDraftPairingFrontIds.mockReset();
-    mockSetDraftPairingBackIds.mockReset();
-    mockSetTemplateDirty.mockReset();
-    mockLoadCardIntoEditor.mockReset();
 
     listCards.mockResolvedValue([]);
     listPairs.mockResolvedValue([]);
@@ -217,7 +201,11 @@ describe("IndexPage draft route", () => {
   });
 
   it("does not attempt saved-card DB load on /cards/new", async () => {
-    render(<IndexPage />);
+    render(
+      <EditorFormProvider>
+        <IndexPage />
+      </EditorFormProvider>,
+    );
 
     await waitFor(() => {
       expect(screen.queryByText("Card not found")).not.toBeInTheDocument();
@@ -238,8 +226,14 @@ describe("IndexPage draft route", () => {
       data: {},
     });
 
-    render(<IndexPage />);
+    render(
+      <EditorFormProvider>
+        <IndexPage />
+      </EditorFormProvider>,
+    );
 
+    const inputs = screen.getAllByRole("textbox");
+    fireEvent.change(inputs[0], { target: { value: "Saved card" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => {

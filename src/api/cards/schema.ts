@@ -128,6 +128,8 @@ export const updateCardThumbnailInputSchema = z.object({
   thumbnailBlob: blobSchema.nullable(),
 });
 
+export const cardThumbnailResponseSchema = blobSchema.nullable();
+
 export const normalizeSelfPairingsInputSchema = z.object({});
 
 export const normalizeSelfPairingsResponseSchema = z.number();

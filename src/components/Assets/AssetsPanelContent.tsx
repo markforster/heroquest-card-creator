@@ -3,6 +3,7 @@
 import { Search, Trash2, Upload } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useFormContext } from "react-hook-form";
 
 import styles from "@/app/page.module.css";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
@@ -11,10 +12,10 @@ import IconButton from "@/components/common/IconButton";
 import ModalShell from "@/components/common/ModalShell";
 import { WarningNotice } from "@/components/common/Notice";
 import { apiClient } from "@/api/client";
+import { readApiConfig } from "@/api/config";
 import type { AssetRecord } from "@/api/assets";
 import type { CardRecord } from "@/api/cards";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
-import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import {
   ENABLE_MISSING_ASSET_CHECKS,
@@ -22,6 +23,7 @@ import {
   ENABLE_ASSET_THUMB_THROTTLE,
 } from "@/config/flags";
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
+import { useListAssets } from "@/api/hooks";
 import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
@@ -34,8 +36,6 @@ import type { AssetKindGroupId } from "@/lib/assets-grouping";
 import { groupAssetsByKind } from "@/lib/assets-grouping";
 import { isSafariBrowser } from "@/lib/browser";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
-import type { CardDataByTemplate } from "@/types/card-data";
-import type { TemplateId } from "@/types/templates";
 import type { OpenCloseProps } from "@/types/ui";
 
 import type { Dispatch, SetStateAction } from "react";
@@ -116,6 +116,7 @@ export default function AssetsPanelContent({
   const [uploadReview, setUploadReview] = useState<UploadNotice | null>(null);
   const reviewResolverRef = useRef<((shouldContinue: boolean) => void) | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const assetsGridRef = useRef<HTMLDivElement | null>(null);
   const [isKindFilterOpen, setIsKindFilterOpen] = useState(false);
   const kindFilterRef = useRef<HTMLDivElement | null>(null);
   const [activeKindPopoverId, setActiveKindPopoverId] = useState<string | null>(null);
@@ -126,6 +127,8 @@ export default function AssetsPanelContent({
   const [isThumbPrefetchEnabled, setIsThumbPrefetchEnabled] = useState(() =>
     getRemoteAssetThumbPrefetchEnabled(),
   );
+  const isRemoteMode = readApiConfig().mode === "remote";
+  const [isLoadingAssets, setIsLoadingAssets] = useState(false);
   const { runMissingAssetsScan } = useMissingAssets();
   const { enqueueAsset, cancelAsset, setIsActive } = useAssetKindQueue();
   const isSafari = typeof window !== "undefined" ? isSafariBrowser() : false;
@@ -154,27 +157,17 @@ export default function AssetsPanelContent({
     setThumbUrls({});
   }, [isThumbPrefetchEnabled]);
 
+  const listAssetsQuery = useListAssets(undefined, {
+    enabled: isOpen,
+    staleTime: 60_000,
+    keepPreviousData: true,
+  });
+
   useEffect(() => {
     if (!isOpen) return;
-
-    let cancelled = false;
-
-    apiClient.listAssets()
-      .then((records) => {
-        if (!cancelled) {
-          setAssets(records);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setAssets([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, refreshKey]);
+    setIsLoadingAssets(listAssetsQuery.isLoading);
+    setAssets(listAssetsQuery.data ?? []);
+  }, [isOpen, listAssetsQuery.data, listAssetsQuery.isLoading]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -185,11 +178,9 @@ export default function AssetsPanelContent({
         window.clearTimeout(timeoutId);
       }
       timeoutId = window.setTimeout(() => {
-        apiClient.listAssets()
-          .then((records) => setAssets(records))
-          .catch(() => {
-            // Ignore refresh errors.
-          });
+        listAssetsQuery.refetch().catch(() => {
+          // Ignore refresh errors.
+        });
       }, 250);
     };
     window.addEventListener("hqcc-assets-updated", handleUpdate);
@@ -199,7 +190,7 @@ export default function AssetsPanelContent({
         window.clearTimeout(timeoutId);
       }
     };
-  }, [isOpen]);
+  }, [isOpen, listAssetsQuery]);
 
   useEffect(() => {
     if (!isKindFilterOpen) return;
@@ -260,6 +251,7 @@ export default function AssetsPanelContent({
 
   useEffect(() => {
     if (!isThumbPrefetchEnabled) return;
+    if (isRemoteMode) return;
     if (!isOpen) {
       Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
       thumbUrlsRef.current = {};
@@ -322,6 +314,10 @@ export default function AssetsPanelContent({
             if (url) {
               nextUrls[asset.id] = url;
               urlsChanged = true;
+              if (!cancelled) {
+                thumbUrlsRef.current = { ...thumbUrlsRef.current, [asset.id]: url };
+                setThumbUrls(thumbUrlsRef.current);
+              }
             }
           } catch {
             // Ignore individual asset errors for now.
@@ -346,7 +342,7 @@ export default function AssetsPanelContent({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, assets, refreshKey, isThumbPrefetchEnabled]);
+  }, [isOpen, assets, refreshKey, isThumbPrefetchEnabled, isRemoteMode]);
 
   useEffect(() => {
     if (!isOpen && selectedIds.size > 0) {
@@ -354,6 +350,81 @@ export default function AssetsPanelContent({
       setSelectedOrder([]);
     }
   }, [isOpen, selectedIds]);
+
+  const [visibleAssetIds, setVisibleAssetIds] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    if (!isRemoteMode) return;
+    if (!isOpen) return;
+    if (!isThumbPrefetchEnabled) return;
+    if (typeof window === "undefined") return;
+    if (!assetsGridRef.current) return;
+    if (assets.length === 0) {
+      setVisibleAssetIds(new Set());
+      return;
+    }
+
+    let cancelled = false;
+    const nextVisible = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (cancelled) return;
+        let changed = false;
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const id = entry.target.getAttribute("data-asset-id");
+          if (id && !nextVisible.has(id)) {
+            nextVisible.add(id);
+            changed = true;
+          }
+        });
+        if (changed) {
+          setVisibleAssetIds(new Set(nextVisible));
+        }
+      },
+      { root: assetsGridRef.current, rootMargin: "200px 0px", threshold: 0.01 },
+    );
+
+    assets.forEach((asset) => {
+      const el = document.querySelector(`[data-asset-id="${asset.id}"]`);
+      if (el) observer.observe(el);
+    });
+
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
+  }, [assets, isOpen, isRemoteMode, isThumbPrefetchEnabled]);
+
+  useEffect(() => {
+    if (!isRemoteMode) return;
+    if (!isOpen) return;
+    if (!isThumbPrefetchEnabled) return;
+    if (visibleAssetIds.size === 0) return;
+
+    let cancelled = false;
+    const missing = Array.from(visibleAssetIds).filter((id) => !thumbUrlsRef.current[id]);
+    if (missing.length === 0) return;
+
+    (async () => {
+      for (const id of missing) {
+        if (cancelled) return;
+        try {
+          const url = await apiClient.getAssetObjectUrl({ params: { id } });
+          if (url && !cancelled) {
+            thumbUrlsRef.current = { ...thumbUrlsRef.current, [id]: url };
+            setThumbUrls(thumbUrlsRef.current);
+          }
+        } catch {
+          // Ignore individual asset errors.
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, isRemoteMode, isThumbPrefetchEnabled, visibleAssetIds]);
 
   useEffect(() => {
     if (selectedOrder.length === 0) return;
@@ -986,8 +1057,25 @@ export default function AssetsPanelContent({
           />
         </div>
       </div>
-      <div className={`${styles.assetsGridContainer} flex-grow-1 overflow-auto`}>
-        {filteredAssets.length === 0 ? (
+      <div
+        ref={assetsGridRef}
+        className={`${styles.assetsGridContainer} flex-grow-1 overflow-auto`}
+      >
+        {isLoadingAssets && assets.length === 0 ? (
+          <div className={styles.assetsGrid}>
+            {Array.from({ length: 12 }).map((_, index) => (
+              <div key={`asset-skeleton-${index}`} className={styles.assetsItem}>
+                <div className={styles.assetsThumbPlaceholder}>
+                  <div className={styles.spinner} />
+                </div>
+                <div className={styles.assetsItemMeta}>
+                  <div className={styles.assetsItemName}>Loading…</div>
+                  <div className={styles.assetsItemDetails}>—</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredAssets.length === 0 ? (
           <div className={styles.assetsEmptyState}>{t("empty.noAssets")}</div>
         ) : (
           <div className={styles.assetsGroups}>
@@ -1013,6 +1101,7 @@ export default function AssetsPanelContent({
                         className={`${styles.assetsItem} ${
                           isSelected ? styles.assetsItemSelected : ""
                         }`}
+                        data-asset-id={asset.id}
                         title={asset.name}
                         onClick={(event) => {
                           setSelectedIds((prev) => {
@@ -1299,11 +1388,7 @@ function AssetsModalFooter({
   setConfirmState: Dispatch<SetStateAction<ConfirmState | null>>;
 }) {
   const { t } = useI18n();
-  const {
-    state: { draftTemplateId, draft, activeCardIdByTemplate },
-    setCardDraft,
-    setSingleDraft,
-  } = useCardEditor();
+  const { getValues, setValue } = useFormContext();
   const [affectedCardCount, setAffectedCardCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -1372,20 +1457,8 @@ function AssetsModalFooter({
     const { assetIds, isDeleting } = confirmState;
     const assetCount = assetIds.length;
     const idSet = new Set(assetIds);
-
-    const affectedDrafts = new Set<TemplateId>();
-    if (draftTemplateId && draft && !activeCardIdByTemplate[draftTemplateId]) {
-      const imageMatch = draft.imageAssetId && idSet.has(draft.imageAssetId);
-      const iconMatch = "iconAssetId" in draft && draft.iconAssetId && idSet.has(draft.iconAssetId);
-      if (imageMatch || iconMatch) {
-        affectedDrafts.add(draftTemplateId);
-      }
-    }
-
-    const affectedDraftCount = affectedDrafts.size;
     const cardCountLabel = affectedCardCount === 1 ? t("label.card") : t("label.cards");
     const cardCountValue = affectedCardCount ?? "...";
-    const draftLabel = affectedDraftCount === 1 ? t("label.draft") : t("label.drafts");
 
     return (
       <>
@@ -1393,9 +1466,7 @@ function AssetsModalFooter({
           {t("confirm.deleteAssetsBody")} {assetCount}{" "}
           {assetCount === 1 ? t("label.asset") : t("label.assets")} {t("status.willClearImagesOn")}
           {" "}
-          {cardCountValue} {cardCountLabel}
-          {affectedDraftCount > 0 ? `, ${affectedDraftCount} ${draftLabel}` : ""}.{" "}
-          {t("actions.continue")}?
+          {cardCountValue} {cardCountLabel}. {t("actions.continue")}?
         </div>
         <button
           type="button"
@@ -1417,37 +1488,28 @@ function AssetsModalFooter({
 
             setConfirmState((prev) => (prev ? { ...prev, isDeleting: true } : prev));
 
-            // Clear image fields on any drafts that reference these assets.
-            if (draftTemplateId && draft) {
-              const imageMatch = draft.imageAssetId && idSet.has(draft.imageAssetId);
-              const iconMatch =
-                "iconAssetId" in draft && draft.iconAssetId && idSet.has(draft.iconAssetId);
-
-              if (imageMatch || iconMatch) {
-                const nextDraft = {
-                  ...draft,
-                } as CardDataByTemplate[TemplateId];
-
-                if (imageMatch) {
-                  nextDraft.imageAssetId = undefined;
-                  nextDraft.imageAssetName = undefined;
-                  nextDraft.imageScale = undefined;
-                  nextDraft.imageScaleMode = undefined;
-                  nextDraft.imageOriginalWidth = undefined;
-                  nextDraft.imageOriginalHeight = undefined;
-                  nextDraft.imageOffsetX = undefined;
-                  nextDraft.imageOffsetY = undefined;
-                  nextDraft.imageRotation = undefined;
-                }
-
-                if (iconMatch && "iconAssetId" in nextDraft) {
-                  nextDraft.iconAssetId = undefined;
-                  nextDraft.iconAssetName = undefined;
-                }
-
-                setCardDraft(draftTemplateId, nextDraft as never);
-                setSingleDraft(draftTemplateId, nextDraft as never);
-              }
+            // Clear image fields on the active editor form if they reference deleted assets.
+            const currentValues = getValues();
+            const imageMatch =
+              currentValues?.imageAssetId && idSet.has(currentValues.imageAssetId);
+            const iconMatch =
+              "iconAssetId" in (currentValues ?? {}) &&
+              (currentValues as { iconAssetId?: string }).iconAssetId &&
+              idSet.has((currentValues as { iconAssetId?: string }).iconAssetId as string);
+            if (imageMatch) {
+              setValue("imageAssetId", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageAssetName", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageScale", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageScaleMode", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageOriginalWidth", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageOriginalHeight", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
+            }
+            if (iconMatch) {
+              setValue("iconAssetId" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
+              setValue("iconAssetName" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
             }
 
             await onConfirmDelete(ids);

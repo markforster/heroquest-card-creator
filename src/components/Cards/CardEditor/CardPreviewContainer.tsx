@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 
 import CardPreview, { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import WebglPreview from "@/components/Cards/CardPreview/WebglPreview";
@@ -45,8 +46,9 @@ export default function CardPreviewContainer({
   const renderRequestIdRef = useRef(0);
   const debounceTimeoutRef = useRef<number | null>(null);
   const {
-    state: { selectedTemplateId, draftTemplateId, draft, activeCardIdByTemplate },
+    state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
+  const { control } = useFormContext();
   const reversePreviewRef = useRef<CardPreviewHandle | null>(null);
   const [reverseCard, setReverseCard] = useState<{
     templateId: TemplateId;
@@ -59,10 +61,7 @@ export default function CardPreviewContainer({
     : undefined;
   const hasTemplate = Boolean(selectedTemplateId && template);
 
-  const cardData =
-    selectedTemplateId && draftTemplateId === selectedTemplateId && draft
-      ? (draft as CardDataByTemplate[TemplateId])
-      : undefined;
+  const cardData = useWatch({ control }) as CardDataByTemplate[TemplateId] | undefined;
   const templateId = template?.id ?? "";
   const templateName = template ? getTemplateNameLabel(language, template) : "";
   const showWebgl = previewRenderer === "webgl";

@@ -4,8 +4,8 @@ import { useDraggable } from "@dnd-kit/core";
 import { AlertTriangle } from "lucide-react";
 
 import styles from "@/app/page.module.css";
-import CardThumbnail from "@/components/common/CardThumbnail";
-import { resolveStockpileThumb } from "@/components/Stockpile/stockpile-thumbs";
+import RemoteCardThumbnail from "@/components/common/CardThumbnail/RemoteCardThumbnail";
+import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import StockpilePairIndicator from "@/components/Stockpile/StockpilePairIndicator";
 import StockpileSelectCheckbox from "@/components/Stockpile/StockpileSelectCheckbox";
@@ -44,13 +44,6 @@ function StockpileCardsGridItem({
     disabled: !dragEnabled,
   });
   const selectLabel = formatMessage(t("aria.selectCard"), { name: card.name });
-  const { url: thumbUrl, onLoad: thumbOnLoad } = resolveStockpileThumb(
-    card.id,
-    card.thumbnailBlob,
-  );
-  const pairedThumb = card.paired.back
-    ? resolveStockpileThumb(card.paired.back.id, card.paired.back.thumbnailBlob ?? null)
-    : { url: null as string | null, onLoad: undefined as (() => void) | undefined };
   const pairedTemplateThumb = card.paired.back?.templateThumbSrc ?? null;
 
   return (
@@ -108,9 +101,14 @@ function StockpileCardsGridItem({
           <div className={styles.cardsConflictPopover}>
             <div className={styles.cardsConflictPopoverContent}>
               <div className={styles.cardsConflictPopoverThumb}>
-                {pairedThumb.url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={pairedThumb.url} alt="" onLoad={pairedThumb.onLoad} />
+                {card.paired.back ? (
+                  <StockpileThumbImage
+                    cardId={card.paired.back.id}
+                    thumbnailBlob={card.paired.back.thumbnailBlob ?? null}
+                    templateThumbSrc={pairedTemplateThumb}
+                    alt=""
+                    fallback={<div className={styles.cardsPairIndicatorPlaceholder} />}
+                  />
                 ) : pairedTemplateThumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={pairedTemplateThumb} alt="" />
@@ -143,12 +141,13 @@ function StockpileCardsGridItem({
           )}
           <div className={styles.stockpileGridRowBody}>
             <div className={styles.stockpileGridColumnThumb}>
-              <CardThumbnail
-                src={thumbUrl}
+              <RemoteCardThumbnail
+                cardId={card.id}
+                thumbnailBlob={card.thumbnailBlob}
+                templateThumbSrc={card.templateThumbSrc ?? null}
                 alt={card.name}
                 variant="md"
                 fit="contain"
-                onLoad={thumbOnLoad}
               />
             </div>
             {isPairMode ? null : (
@@ -200,12 +199,13 @@ function StockpileCardsGridItem({
               />
             </div>
           )}
-          <CardThumbnail
-            src={thumbUrl}
+          <RemoteCardThumbnail
+            cardId={card.id}
+            thumbnailBlob={card.thumbnailBlob}
+            templateThumbSrc={card.templateThumbSrc ?? null}
             alt={card.name}
             variant="md"
             fit="contain"
-            onLoad={thumbOnLoad}
           />
           {isPairMode ? null : (
             <div className={styles.cardsItemMeta}>

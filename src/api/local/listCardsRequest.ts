@@ -3,10 +3,16 @@ import { listCards } from "@/lib/cards-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import type { CardRecord } from "@/types/cards-db";
 
 function toListCardsFilter(params?: Record<string, unknown>) {
   const parsed = listCardsFilterSchema.safeParse(params ?? {});
   return parsed.success ? parsed.data : {};
+}
+
+function stripCardThumbnail(card: CardRecord): Omit<CardRecord, "thumbnailBlob"> {
+  const { thumbnailBlob: _thumbnailBlob, ...rest } = card;
+  return rest;
 }
 
 export const listCardsRequestPlugin: ZodiosPlugin = {
@@ -14,9 +20,10 @@ export const listCardsRequestPlugin: ZodiosPlugin = {
   request: async (apiDefinitions, config) => {
     const adapter = async (): Promise<AxiosResponse> => {
       const data = await listCards(toListCardsFilter(config.queries as Record<string, unknown>));
+      const response = data.map(stripCardThumbnail);
 
       return {
-        data,
+        data: response,
         status: 200,
         statusText: "OK",
         headers: {

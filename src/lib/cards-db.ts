@@ -224,6 +224,14 @@ export async function getCard(id: string): Promise<CardRecord | null> {
   });
 }
 
+export async function getCardThumbnail(id: string): Promise<Blob | null> {
+  const record = await getCard(id);
+  if (!record?.thumbnailBlob) {
+    return null;
+  }
+  return normalizeThumbnailBlob(record.thumbnailBlob) ?? null;
+}
+
 export async function touchCardLastViewed(
   id: string,
   viewedAt: number = Date.now(),
@@ -255,7 +263,7 @@ export async function touchCardLastViewed(
     putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update card view"));
   });
 
-  return next;
+  return normalizeCardRecord(next);
 }
 
 export async function updateCardThumbnail(

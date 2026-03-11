@@ -7,6 +7,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import {
   getCachedCardThumbnailUrl,
   getCardThumbnailUrl,
+  getCardThumbnailBlob,
   invalidateCardThumbnail,
   getLegacyCardThumbnailUrl,
   retainCardThumbnail,
@@ -59,13 +60,18 @@ export function useActiveCardSummary(
             retainedCardRef.current = record.id;
           }
         }
-      } else if (record.thumbnailBlob instanceof Blob) {
-        const nextUrl = getLegacyCardThumbnailUrl(record.id, record.thumbnailBlob);
-        currentCardThumbRef.current = nextUrl;
-        setCurrentCardThumbUrl(nextUrl);
       } else {
-        currentCardThumbRef.current = null;
-        setCurrentCardThumbUrl(null);
+        const thumbBlob = record.thumbnailBlob instanceof Blob
+          ? record.thumbnailBlob
+          : await getCardThumbnailBlob(record.id);
+        if (thumbBlob) {
+          const nextUrl = getLegacyCardThumbnailUrl(record.id, thumbBlob);
+          currentCardThumbRef.current = nextUrl;
+          setCurrentCardThumbUrl(nextUrl);
+        } else {
+          currentCardThumbRef.current = null;
+          setCurrentCardThumbUrl(null);
+        }
       }
     } catch {
       setCurrentCardName(null);

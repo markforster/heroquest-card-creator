@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { apiClient } from "@/api/client";
+import { useListCards, useListCollections } from "@/api/hooks";
 import type { CardRecord } from "@/api/cards";
 import type { CollectionRecord } from "@/api/collections";
 
@@ -30,54 +31,28 @@ export const useStockpileData = ({
   const hasHydratedStoredCollection = useRef(false);
   const hasResolvedStoredCollection = useRef(false);
   const hasLoadedCollections = useRef(false);
+  const listCardsQuery = useListCards(
+    { queries: { status: "saved", deleted: "include" } },
+    { enabled: isOpen, staleTime: 60_000, keepPreviousData: true },
+  );
+  const listCollectionsQuery = useListCollections(undefined, {
+    enabled: isOpen,
+    staleTime: 60_000,
+    keepPreviousData: true,
+  });
 
   useEffect(() => {
     if (!isOpen) return;
-
-    let cancelled = false;
-
-    apiClient
-      .listCards({ queries: { status: "saved", deleted: "include" } })
-      .then((results) => {
-        if (!cancelled) {
-          setCards(results);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCards([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, refreshToken]);
+    setCards(listCardsQuery.data ?? []);
+  }, [isOpen, listCardsQuery.data, refreshToken]);
 
   useEffect(() => {
     if (!isOpen) return;
-
-    let cancelled = false;
-
-    apiClient
-      .listCollections()
-      .then((results) => {
-        if (!cancelled) {
-          setCollections(results);
-          hasLoadedCollections.current = true;
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCollections([]);
-          hasLoadedCollections.current = true;
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, refreshToken]);
+    setCollections(listCollectionsQuery.data ?? []);
+    if (!listCollectionsQuery.isLoading) {
+      hasLoadedCollections.current = true;
+    }
+  }, [isOpen, listCollectionsQuery.data, listCollectionsQuery.isLoading, refreshToken]);
 
   useEffect(() => {
     if (!storedCollectionId) {
@@ -133,6 +108,25 @@ export const useStockpileData = ({
       }
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isOpen) return;
+    let timeoutId: number | null = null;
+    const handleUpdate = () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        listCardsQuery.refetch().catch(() => {
+          // Ignore refresh errors.
+        });
+      }, 250);
+    };
+    window.addEventListener("hqcc-cards-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("hqcc-cards-updated", handleUpdate);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [isOpen, listCardsQuery]);
 
   return {
     cards,

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useFormState } from "react-hook-form";
 
 import AssetsModal from "@/components/Assets/AssetsModal";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
@@ -9,6 +10,7 @@ import RecentCardsModal from "@/components/Modals/RecentCardsModal";
 import SettingsModal from "@/components/Modals/SettingsModal/SettingsModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { StockpileModal } from "@/components/Stockpile";
 import TemplatePicker from "@/components/TemplatePicker";
 import { cardTemplatesById } from "@/data/card-templates";
@@ -16,7 +18,7 @@ import { usePopupState } from "@/hooks/usePopupState";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardRecord } from "@/api/cards";
-import { createDefaultCardData } from "@/types/card-data";
+import { createEditorDefaultValues } from "@/lib/editor-form";
 import type { TemplateId } from "@/types/templates";
 
 type StockpileOpenOptions = {
@@ -60,12 +62,12 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
   const navigate = useNavigate();
   const { track } = useAnalytics();
   const {
-    state: { selectedTemplateId, activeCardIdByTemplate, isDirtyByTemplate },
+    state: { selectedTemplateId, activeCardIdByTemplate },
     setSelectedTemplateId,
-    setSingleDraft,
     setActiveCard,
-    setTemplateDirty,
   } = useCardEditor();
+  const { methods, resetWithSaved } = useEditorForm();
+  const { isDirty } = useFormState({ control: methods.control });
 
   const templatePicker = usePopupState(false);
   const assetsModal = usePopupState(false);
@@ -110,10 +112,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
       hasTemplate: Boolean(selectedTemplateId),
       currentTemplateName,
       openTemplatePicker: () => {
-        const currentTemplate = selectedTemplateId;
-        const dirty =
-          currentTemplate != null && Boolean(isDirtyByTemplate[currentTemplate as TemplateId]);
-        if (dirty) {
+        if (isDirty) {
           setPendingNewTemplate(true);
           setIsDiscardConfirmOpen(true);
           return;
@@ -145,7 +144,6 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
       assetsModal.isOpen,
       currentTemplateName,
       selectedTemplateId,
-      isDirtyByTemplate,
       settingsModal.open,
       settingsModal.isOpen,
       stockpileModalOpen,
@@ -154,6 +152,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
       recentModal.isOpen,
       templatePickerOpen,
       templatePickerIsOpen,
+      isDirty,
     ],
   );
 
@@ -169,11 +168,10 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
             template_id: nextTemplateId,
             source: "template_picker",
           });
-          const nextDraft = createDefaultCardData(nextTemplateId);
+          const nextDraft = createEditorDefaultValues(nextTemplateId);
           setSelectedTemplateId(nextTemplateId);
-          setSingleDraft(nextTemplateId, nextDraft);
+          resetWithSaved(nextDraft);
           setActiveCard(nextTemplateId, null, null);
-          setTemplateDirty(nextTemplateId, false);
           navigate("/cards/new");
         }}
         onClose={templatePicker.close}
@@ -200,10 +198,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
             : undefined
         }
         onLoadCard={async (card) => {
-          const currentTemplate = selectedTemplateId;
-          const dirty =
-            currentTemplate != null && Boolean(isDirtyByTemplate[currentTemplate as TemplateId]);
-          if (dirty) {
+          if (isDirty) {
             setPendingCard(card);
             setPendingCardSource("stockpile");
             setIsDiscardConfirmOpen(true);
@@ -216,10 +211,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
         isOpen={recentModal.isOpen}
         onClose={recentModal.close}
         onSelectCard={(card) => {
-          const currentTemplate = selectedTemplateId;
-          const dirty =
-            currentTemplate != null && Boolean(isDirtyByTemplate[currentTemplate as TemplateId]);
-          if (dirty) {
+          if (isDirty) {
             setPendingCard(card);
             setPendingCardSource("recent");
             setIsDiscardConfirmOpen(true);

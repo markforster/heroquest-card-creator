@@ -25,6 +25,7 @@ import ExportBleedPrompt, {
 } from "@/components/Modals/ExportBleedPrompt";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import { getDeleteCollectionImpact } from "@/components/Stockpile/collection-delete-impact";
@@ -58,6 +59,7 @@ import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
+import { createEditorDefaultValues } from "@/lib/editor-form";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
   getCachedCardThumbnailUrl,
@@ -69,7 +71,6 @@ import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-
 import { runBulkExport } from "@/lib/export-cards";
 import type { ExportSettings } from "@/lib/export-settings";
 import formatMessageWith from "@/lib/format-message-with";
-import { createDefaultCardData } from "@/types/card-data";
 import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
 import type { OpenCloseProps } from "@/types/ui";
@@ -173,11 +174,10 @@ export default function StockpilePanelContent({
     }),
   );
   const {
-    state: { activeCardIdByTemplate },
+    state: { activeCardIdByTemplate, selectedTemplateId },
     setActiveCard,
-    setCardDraft,
-    setTemplateDirty,
   } = useCardEditor();
+  const { resetWithSaved } = useEditorForm();
   const { cards, setCards, collections, setCollections } = useStockpileData({
     isOpen,
     refreshToken,
@@ -1153,8 +1153,9 @@ export default function StockpilePanelContent({
                             const activeId = activeCardIdByTemplate[templateId];
                             if (!activeId || !idSet.has(activeId)) return;
                             setActiveCard(templateId, null, null);
-                            setCardDraft(templateId, createDefaultCardData(templateId));
-                            setTemplateDirty(templateId, false);
+                            if (selectedTemplateId === templateId) {
+                              resetWithSaved(createEditorDefaultValues(templateId));
+                            }
                           },
                         );
                       };

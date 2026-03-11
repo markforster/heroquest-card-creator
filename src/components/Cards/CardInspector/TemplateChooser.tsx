@@ -2,6 +2,7 @@
 
 import { BringToFront, SendToBack } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
 
 import styles from "@/app/page.module.css";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
@@ -15,12 +16,7 @@ import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
 import { resolveEffectiveFace } from "@/lib/card-face";
-import {
-  getCachedCardThumbnailUrl,
-  getLegacyCardThumbnailUrl,
-  releaseLegacyCardThumbnailUrl,
-} from "@/lib/card-thumbnail-cache";
-import type { CardDataByTemplate } from "@/types/card-data";
+import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 import type { CardFace } from "@/types/card-face";
 import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
@@ -65,25 +61,19 @@ export default function TemplateChooser() {
   const { requestRecenter } = usePreviewRenderer();
   const recenterTimeoutRef = useRef<number | null>(null);
   const {
-    state: {
-      selectedTemplateId,
-      draftTemplateId,
-      draft,
-      activeCardIdByTemplate,
-      isDirtyByTemplate,
-    },
-    setCardDraft,
-    setSingleDraft,
-    setTemplateDirty,
+    state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
+  const { control, setValue } = useFormContext();
+  const { isDirty } = useFormState({ control });
   const { saveCurrentCard, saveToken } = useEditorSave();
   const [pendingChange, setPendingChange] = useState<PendingFaceChange | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isFaceMenuOpen, setIsFaceMenuOpen] = useState(false);
   const [currentCard, setCurrentCard] = useState<CardRecord | null>(null);
-  const [currentThumbnailUrl, setCurrentThumbnailUrl] = useState<string | null>(null);
-  const [currentThumbnailError, setCurrentThumbnailError] = useState(false);
-  const [currentThumbnailDataUrl, setCurrentThumbnailDataUrl] = useState<string | null>(null);
+  const currentThumbnailUrl = useCardThumbnailUrl(currentCard?.id ?? null, currentCard?.thumbnailBlob ?? null, {
+    enabled: true,
+    useCache: ENABLE_CARD_THUMB_CACHE,
+  });
   const [pendingFaceChange, setPendingFaceChange] = useState<CardFace | null>(null);
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
   const faceMenuRef = useRef<HTMLDivElement | null>(null);
@@ -101,15 +91,10 @@ export default function TemplateChooser() {
 
   const currentTemplateId = selectedTemplateId ?? null;
   const template = currentTemplateId ? cardTemplatesById[currentTemplateId] : undefined;
-  const draftValue =
-    currentTemplateId && draftTemplateId === currentTemplateId && draft
-      ? (draft as CardDataByTemplate[TemplateId])
-      : undefined;
+  const faceValue = useWatch({ control, name: "face" }) as CardFace | undefined;
   const activeCardId = currentTemplateId ? activeCardIdByTemplate[currentTemplateId] : undefined;
-  const isDraftDirty = Boolean(currentTemplateId && isDirtyByTemplate[currentTemplateId]);
-  const isDraft = Boolean(
-    currentTemplateId && draftTemplateId === currentTemplateId && draft && !activeCardId,
-  );
+  const isDraftDirty = Boolean(activeCardId && isDirty);
+  const isDraft = Boolean(currentTemplateId && !activeCardId);
   const statusLabel = isDraft
     ? t("label.draft")
     : isDraftDirty
@@ -123,9 +108,9 @@ export default function TemplateChooser() {
 
   const effectiveFace = useMemo<CardFace | undefined>(() => {
     if (!template) return undefined;
-    return resolveEffectiveFace(draftValue?.face, template.defaultFace);
-  }, [draftValue?.face, template]);
-  const isInferredFace = Boolean(template && draftValue?.face == null);
+    return resolveEffectiveFace(faceValue, template.defaultFace);
+  }, [faceValue, template]);
+  const isInferredFace = Boolean(template && faceValue == null);
 
   useEffect(() => {
     if (!activeCardId) {
@@ -148,41 +133,9 @@ export default function TemplateChooser() {
     };
   }, [activeCardId, saveToken]);
 
-  useEffect(() => {
-    if (currentCard?.thumbnailBlob instanceof Blob) {
-      if (ENABLE_CARD_THUMB_CACHE) {
-        const nextUrl = getCachedCardThumbnailUrl(
-          currentCard.id,
-          currentCard.thumbnailBlob ?? null,
-        );
-        setCurrentThumbnailUrl(nextUrl);
-      } else {
-        const nextUrl = getLegacyCardThumbnailUrl(
-          currentCard.id,
-          currentCard.thumbnailBlob ?? null,
-        );
-        setCurrentThumbnailUrl(nextUrl);
-      }
-      setCurrentThumbnailError(false);
-      setCurrentThumbnailDataUrl(null);
-      return undefined;
-    }
-
-    setCurrentThumbnailUrl(null);
-    setCurrentThumbnailError(false);
-    setCurrentThumbnailDataUrl(null);
-    return undefined;
-  }, [currentCard?.id, currentCard?.thumbnailBlob, isDraftDirty]);
-
   const applyFaceChange = (nextFace: CardFace) => {
     if (!currentTemplateId) return;
-    const nextDraft = {
-      ...(draftValue ?? {}),
-      face: nextFace,
-    } as CardDataByTemplate[TemplateId];
-    setCardDraft(currentTemplateId, nextDraft);
-    setSingleDraft(currentTemplateId, nextDraft);
-    setTemplateDirty(currentTemplateId, true);
+    setValue("face", nextFace, { shouldDirty: true, shouldTouch: true });
     if (ENABLE_WEBGL_RECENTER_ON_FACE_SELECT) {
       if (recenterTimeoutRef.current) {
         window.clearTimeout(recenterTimeoutRef.current);
@@ -197,7 +150,7 @@ export default function TemplateChooser() {
     try {
       if (!template || !currentTemplateId) return;
       if (!effectiveFace || nextFace === effectiveFace) return;
-      if (isDirtyByTemplate[currentTemplateId]) {
+      if (isDirty) {
         setPendingFaceChange(nextFace);
         setIsSavePromptOpen(true);
         return;
@@ -271,31 +224,9 @@ export default function TemplateChooser() {
         {SHOW_TEMPLATE_THUMB ? (
           <div className={styles.inspectorHeaderPreview} aria-hidden="true">
             <div className={styles.inspectorHeaderPreviewInner}>
-              {currentThumbnailDataUrl ? (
+              {currentThumbnailUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={currentThumbnailDataUrl} alt="" />
-              ) : currentThumbnailUrl && !currentThumbnailError ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={currentThumbnailUrl}
-                    alt=""
-                    onLoad={
-                      !ENABLE_CARD_THUMB_CACHE && currentThumbnailUrl
-                        ? () => releaseLegacyCardThumbnailUrl(currentThumbnailUrl)
-                        : undefined
-                    }
-                    onError={() => {
-                      setCurrentThumbnailError(true);
-                      if (!currentCard?.thumbnailBlob) return;
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      if (typeof reader.result === "string") {
-                        setCurrentThumbnailDataUrl(reader.result);
-                      }
-                    };
-                    reader.readAsDataURL(currentCard.thumbnailBlob);
-                  }}
-                />
+                <img src={currentThumbnailUrl} alt="" />
               ) : currentTemplateThumbnail?.src ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={currentTemplateThumbnail.src} alt="" />

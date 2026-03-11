@@ -5,12 +5,10 @@ import { useMemo, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
-import resolveThumb from "@/components/Stockpile/resolveThumb";
+import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import {
-  } from "@/lib/card-thumbnail-cache";
 import type { CardRecord } from "@/api/cards";
 
 import type { ReactNode } from "react";
@@ -197,23 +195,17 @@ export default function StockpileFooter({
                       {pairingConflict.cardIds.map((id) => {
                         const conflictCard = cardById.get(id);
                         if (!conflictCard) return null;
-                        const thumb = resolveThumb(
-                          conflictCard.id,
-                          conflictCard.thumbnailBlob ?? null,
-                        );
                         const templateThumb =
                           cardTemplatesById[conflictCard.templateId]?.thumbnail ?? null;
                         return (
                           <div key={id} className={styles.pairingConflictItem}>
-                            {thumb.url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={thumb.url} alt="" onLoad={thumb.onLoad} />
-                            ) : templateThumb?.src ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={templateThumb.src} alt="" />
-                            ) : (
-                              <div className={styles.cardsPairIndicatorPlaceholder} />
-                            )}
+                            <StockpileThumbImage
+                              cardId={conflictCard.id}
+                              thumbnailBlob={conflictCard.thumbnailBlob ?? null}
+                              templateThumbSrc={templateThumb?.src ?? null}
+                              alt=""
+                              fallback={<div className={styles.cardsPairIndicatorPlaceholder} />}
+                            />
                           </div>
                         );
                       })}
@@ -224,23 +216,17 @@ export default function StockpileFooter({
                       <div className={styles.pairingConflictTitle}>{t("heading.pairedWith")}</div>
                       <div className={styles.pairingConflictGrid}>
                         {pairedBacks.map((paired) => {
-                          const thumb = resolveThumb(
-                            paired.id,
-                            paired.thumbnailBlob ?? null,
-                          );
                           const templateThumb =
                             cardTemplatesById[paired.templateId]?.thumbnail ?? null;
                           return (
                             <div key={paired.id} className={styles.pairingConflictItem}>
-                              {thumb.url ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={thumb.url} alt="" onLoad={thumb.onLoad} />
-                              ) : templateThumb?.src ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={templateThumb.src} alt="" />
-                              ) : (
-                                <div className={styles.cardsPairIndicatorPlaceholder} />
-                              )}
+                              <StockpileThumbImage
+                                cardId={paired.id}
+                                thumbnailBlob={paired.thumbnailBlob ?? null}
+                                templateThumbSrc={templateThumb?.src ?? null}
+                                alt=""
+                                fallback={<div className={styles.cardsPairIndicatorPlaceholder} />}
+                              />
                             </div>
                           );
                         })}

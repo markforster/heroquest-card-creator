@@ -7,7 +7,7 @@ import { useController, useFormContext } from "react-hook-form";
 import layoutStyles from "@/app/page.module.css";
 import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 import ColorPickerField from "@/components/common/ColorPickerField";
-import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
@@ -26,10 +26,7 @@ type BackgroundTintFieldProps = {
 
 export default function BackgroundTintField({ label, templateId }: BackgroundTintFieldProps) {
   const { control, setValue } = useFormContext();
-  const {
-    state: { draftTemplateId, draft, isDirtyByTemplate },
-    setCardDraft,
-  } = useCardEditor();
+  const { savedValues } = useEditorForm();
   const { renderPreviewCanvas } = usePreviewCanvas();
   const { smartGroups, isSmartBusy, requestSmart } = useSmartSwatches({
     renderPreviewCanvas,
@@ -44,25 +41,16 @@ export default function BackgroundTintField({ label, templateId }: BackgroundTin
   const inputValue =
     normalizedSelected === TRANSPARENT_TINT ? "" : normalizeHexValue(normalizedSelected);
   const savedColorRef = useRef<string | undefined>(undefined);
-  const draftTint =
-    draftTemplateId === templateId && draft
-      ? (draft as { backgroundTint?: string } | undefined)?.backgroundTint
-      : undefined;
 
   useEffect(() => {
-    if (!isDirtyByTemplate[templateId]) {
-      savedColorRef.current = draftTint?.trim() ? draftTint.trim() : undefined;
-    }
-  }, [draftTint, isDirtyByTemplate, templateId]);
+    const saved = savedValues as { backgroundTint?: string } | null;
+    savedColorRef.current = saved?.backgroundTint?.trim() ? saved.backgroundTint.trim() : undefined;
+  }, [savedValues, templateId]);
 
   const handleRevert = () => {
     const saved = normalizeTintColor(savedColorRef.current);
     const nextColor = saved === TRANSPARENT_TINT ? TRANSPARENT_TINT : saved.toUpperCase();
     setValue("backgroundTint", nextColor, { shouldDirty: true, shouldTouch: true });
-
-    const currentDraft =
-      draftTemplateId === templateId && draft ? (draft as { backgroundTint?: string }) : {};
-    setCardDraft(templateId, { ...currentDraft, backgroundTint: nextColor } as never);
   };
 
   const handleSelectDefault = () => {

@@ -156,10 +156,11 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
         <DocSection title="Saved cards and the stockpile">
           <DocList>
             <li>
-              Use New in the left navigation to start a draft with a template.
+              Use New in the left navigation to start a new card with a template.
             </li>
             <li>
-              Save creates a new card from the draft. Save changes updates the active saved card.
+              Save creates a new card from the current editor state. Save changes updates the
+              active saved card.
             </li>
             <li>
               Open Cards to browse, search, and load saved cards.

@@ -14,6 +14,7 @@ import {
   touchCardLastViewedInputSchema,
   updateCardsInputSchema,
   updateCardThumbnailInputSchema,
+  cardThumbnailResponseSchema,
 } from "@/api/cards/schema";
 
 export const cardsApi = makeApi([
@@ -57,6 +58,19 @@ export const cardsApi = makeApi([
       },
     ],
     response: cardRecordSchema.nullable(),
+  },
+  {
+    method: "get",
+    path: "/cards/:id/thumbnail",
+    alias: "getCardThumbnail",
+    parameters: [
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string(),
+      },
+    ],
+    response: cardThumbnailResponseSchema,
   },
   {
     method: "post",

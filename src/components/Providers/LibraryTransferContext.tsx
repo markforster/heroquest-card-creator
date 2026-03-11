@@ -68,7 +68,9 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
     }
   };
 
-  const runRemoteImport = async (file: File) => {
+  const runRemoteImport = async (
+    file: File,
+  ): Promise<{ cardsCount: number; assetsCount: number; collectionsCount: number }> => {
     const apiConfig = readApiConfig();
     if (apiConfig.mode !== "remote" || !apiConfig.baseUrl) {
       throw new Error(t("alert.importFailed"));
@@ -96,7 +98,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
     setBackupProgressTotal(100);
     setBackupProgressCurrent(0);
 
-    await new Promise<{ cardsCount: number; assetsCount: number; collectionsCount: number }>(
+    return await new Promise<{ cardsCount: number; assetsCount: number; collectionsCount: number }>(
       (resolve, reject) => {
         let settled = false;
         let pollTimer: number | null = null;
@@ -143,7 +145,10 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
           pollTimer = window.setInterval(async () => {
             try {
               const res = await fetch(
-                new URL(`/library/import/${jobId}`, apiConfig.baseUrl).toString(),
+                new URL(
+                  `/library/import/${jobId}`,
+                  apiConfig.baseUrl ?? window.location.origin,
+                ).toString(),
               );
               if (!res.ok) return;
               const job = (await res.json()) as {
@@ -159,7 +164,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
           }, 1000);
         };
 
-        const ws = new WebSocket(resolveWsUrl(apiConfig.baseUrl));
+        const ws = new WebSocket(resolveWsUrl(apiConfig.baseUrl ?? window.location.origin));
         ws.addEventListener("open", () => {
           ws.send(JSON.stringify({ type: "subscribe", jobId }));
         });

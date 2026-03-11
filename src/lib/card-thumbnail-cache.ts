@@ -1,6 +1,7 @@
 "use client";
 
 import { apiClient } from "@/api/client";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type CacheEntry = {
   url: string;
@@ -91,9 +92,9 @@ export async function getCardThumbnailUrl(cardId: string): Promise<string | null
   const task = (async () => {
     for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
       try {
-        const record = await apiClient.getCard({ params: { id: cardId } });
-        if (record?.thumbnailBlob instanceof Blob) {
-          return getCachedCardThumbnailUrl(cardId, record.thumbnailBlob);
+        const blob = await getCardThumbnailBlob(cardId);
+        if (blob instanceof Blob) {
+          return getCachedCardThumbnailUrl(cardId, blob);
         }
       } catch {
         // Ignore read failures; retry below.
@@ -112,6 +113,109 @@ export async function getCardThumbnailUrl(cardId: string): Promise<string | null
   } finally {
     inflight.delete(cardId);
   }
+}
+
+export async function getCardThumbnailBlob(cardId: string): Promise<Blob | null> {
+  if (!cardId) return null;
+  try {
+    const blob = await apiClient.getCardThumbnail({ params: { id: cardId } });
+    return blob instanceof Blob ? blob : null;
+  } catch {
+    return null;
+  }
+}
+
+export function useCardThumbnailUrl(
+  cardId?: string | null,
+  blob?: Blob | null,
+  options?: { enabled?: boolean; useCache?: boolean },
+): string | null {
+  const enabled = options?.enabled ?? true;
+  const useCache = options?.useCache ?? true;
+  const [url, setUrl] = useState<string | null>(null);
+  const legacyUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!cardId) {
+      setUrl(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    if (useCache) {
+      const cached = getCachedCardThumbnailUrl(cardId, blob ?? null);
+      if (cached) {
+        setUrl(cached);
+        return () => {
+          active = false;
+        };
+      }
+      if (!enabled) {
+        setUrl(null);
+        return () => {
+          active = false;
+        };
+      }
+      void (async () => {
+        const next = await getCardThumbnailUrl(cardId);
+        if (!active) return;
+        setUrl(next);
+      })();
+      return () => {
+        active = false;
+      };
+    }
+
+    if (legacyUrlRef.current) {
+      releaseLegacyCardThumbnailUrl(legacyUrlRef.current);
+      legacyUrlRef.current = null;
+    }
+
+    if (blob) {
+      const legacyUrl = getLegacyCardThumbnailUrl(cardId, blob);
+      legacyUrlRef.current = legacyUrl;
+      setUrl(legacyUrl);
+      return () => {
+        if (legacyUrlRef.current) {
+          releaseLegacyCardThumbnailUrl(legacyUrlRef.current);
+          legacyUrlRef.current = null;
+        }
+        active = false;
+      };
+    }
+
+    if (!enabled) {
+      setUrl(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    void (async () => {
+      const fetched = await getCardThumbnailBlob(cardId);
+      if (!active) return;
+      if (fetched) {
+        const legacyUrl = getLegacyCardThumbnailUrl(cardId, fetched);
+        legacyUrlRef.current = legacyUrl;
+        setUrl(legacyUrl);
+      } else {
+        setUrl(null);
+      }
+    })();
+
+    return () => {
+      if (legacyUrlRef.current) {
+        releaseLegacyCardThumbnailUrl(legacyUrlRef.current);
+        legacyUrlRef.current = null;
+      }
+      active = false;
+    };
+  }, [blob, cardId, enabled, useCache]);
+
+  return useMemo(() => url, [url]);
 }
 
 export function invalidateCardThumbnail(cardId?: string): void {

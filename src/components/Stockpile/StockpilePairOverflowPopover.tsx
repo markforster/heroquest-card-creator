@@ -3,13 +3,8 @@
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
-import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
-import {
-  getCachedCardThumbnailUrl,
-  getLegacyCardThumbnailUrl,
-  releaseLegacyCardThumbnailUrl,
-} from "@/lib/card-thumbnail-cache";
+import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import type { CardRecord } from "@/api/cards";
 
 type StockpilePairOverflowPopoverProps = {
@@ -46,36 +41,16 @@ export default function StockpilePairOverflowPopover({
     >
       <div className={styles.inspectorStackOverflowGrid}>
         {anchor.cards.map((card) => {
-          const thumb =
-            typeof window !== "undefined"
-              ? ENABLE_CARD_THUMB_CACHE
-                ? {
-                    url: getCachedCardThumbnailUrl(card.id, card.thumbnailBlob ?? null),
-                    onLoad: undefined,
-                  }
-                : (() => {
-                    const url = getLegacyCardThumbnailUrl(
-                      card.id,
-                      card.thumbnailBlob ?? null,
-                    );
-                    return {
-                      url,
-                      onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined,
-                    };
-                  })()
-              : { url: null as string | null, onLoad: undefined as (() => void) | undefined };
           const templateThumb = cardTemplatesById[card.templateId]?.thumbnail;
           return (
             <div key={card.id} className={styles.inspectorStackOverflowGridItem}>
-              {thumb.url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={thumb.url} alt="" onLoad={thumb.onLoad} />
-              ) : templateThumb?.src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={templateThumb.src} alt="" />
-              ) : (
-                <div className={styles.inspectorStackPlaceholder} />
-              )}
+              <StockpileThumbImage
+                cardId={card.id}
+                thumbnailBlob={card.thumbnailBlob ?? null}
+                templateThumbSrc={templateThumb?.src ?? null}
+                alt=""
+                fallback={<div className={styles.inspectorStackPlaceholder} />}
+              />
             </div>
           );
         })}

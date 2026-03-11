@@ -4,8 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { BringToFront, SendToBack } from "lucide-react";
 
 import styles from "@/app/page.module.css";
-import CardThumbnail from "@/components/common/CardThumbnail";
-import { resolveStockpileThumb } from "@/components/Stockpile/stockpile-thumbs";
+import RemoteCardThumbnail from "@/components/common/CardThumbnail/RemoteCardThumbnail";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import StockpilePairIndicator from "@/components/Stockpile/StockpilePairIndicator";
 import StockpileSelectCheckbox from "@/components/Stockpile/StockpileSelectCheckbox";
@@ -39,10 +38,6 @@ function StockpileCardsTableRow({ card, actions, dragEnabled }: StockpileCardsTa
     id: card.id,
     disabled: !dragEnabled,
   });
-  const { url: thumbUrl, onLoad: thumbOnLoad } = resolveStockpileThumb(
-    card.id,
-    card.thumbnailBlob,
-  );
 
   return (
     <div
@@ -75,12 +70,13 @@ function StockpileCardsTableRow({ card, actions, dragEnabled }: StockpileCardsTa
         }}
         onMouseLeave={() => actions.onTableThumbLeave(card.id)}
       >
-        <CardThumbnail
-          src={thumbUrl}
+        <RemoteCardThumbnail
+          cardId={card.id}
+          thumbnailBlob={card.thumbnailBlob}
+          templateThumbSrc={card.templateThumbSrc ?? null}
           alt={card.name}
           variant="sm"
           fit="contain"
-          onLoad={thumbOnLoad}
         />
       </div>
       <div

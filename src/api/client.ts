@@ -19,6 +19,7 @@ import { getAssetBlobRequestPlugin } from "@/api/local/getAssetBlobRequest";
 import { getAssetObjectUrlRequestPlugin } from "@/api/local/getAssetObjectUrlRequest";
 import { getBorderSwatchesRequestPlugin } from "@/api/local/getBorderSwatchesRequest";
 import { getCardRequestPlugin } from "@/api/local/getCardRequest";
+import { getCardThumbnailRequestPlugin } from "@/api/local/getCardThumbnailRequest";
 import { getCollectionRequestPlugin } from "@/api/local/getCollectionRequest";
 import { getDefaultCopyrightRequestPlugin } from "@/api/local/getDefaultCopyrightRequest";
 import { importLibraryRequestPlugin } from "@/api/local/importLibraryRequest";
@@ -76,11 +77,14 @@ if (apiConfig.mode === "remote") {
   apiClient.use("getAssetBlob", blobTransportPlugin);
   apiClient.use("listAssetsWithBlobs", blobTransportPlugin);
   apiClient.use("getCard", blobTransportPlugin);
+  apiClient.use("getCardThumbnail", blobTransportPlugin);
   apiClient.use("listCards", blobTransportPlugin);
+  apiClient.use("touchCardLastViewed", blobTransportPlugin);
   apiClient.use("exportLibrary", blobTransportPlugin);
 } else {
   apiClient.use("listCards", listCardsRequestPlugin);
   apiClient.use("getCard", getCardRequestPlugin);
+  apiClient.use("getCardThumbnail", getCardThumbnailRequestPlugin);
   apiClient.use("createCard", createCardRequestPlugin);
   apiClient.use("updateCard", updateCardRequestPlugin);
   apiClient.use("updateCardThumbnail", updateCardThumbnailRequestPlugin);

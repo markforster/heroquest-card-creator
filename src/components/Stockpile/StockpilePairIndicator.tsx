@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "@/app/page.module.css";
-import { resolveStockpileThumb } from "@/components/Stockpile/stockpile-thumbs";
+import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
 
 export type StockpilePairIndicatorProps = {
@@ -20,9 +20,6 @@ export default function StockpilePairIndicator({
 }: StockpilePairIndicatorProps) {
   if (isPairMode) return null;
 
-  const pairedThumb = card.paired.back
-    ? resolveStockpileThumb(card.paired.back.id, card.paired.back.thumbnailBlob ?? null)
-    : { url: null as string | null, onLoad: undefined as (() => void) | undefined };
   const pairedTemplateThumb = card.paired.back?.templateThumbSrc ?? null;
   const visiblePairedFronts = card.paired.frontsVisible;
   const pairedFrontsOverflow = card.paired.frontsOverflow;
@@ -38,7 +35,6 @@ export default function StockpilePairIndicator({
       {card.effectiveFace === "back" ? (
         <div className={styles.cardsPairStack}>
           {visiblePairedFronts.map((paired, index) => {
-            const stackThumb = resolveStockpileThumb(paired.id, paired.thumbnailBlob ?? null);
             const stackTemplateThumb = paired.templateThumbSrc ?? null;
             return (
               <div
@@ -47,15 +43,13 @@ export default function StockpilePairIndicator({
                 style={{ zIndex: index + 1 }}
               >
                 <div className={styles.cardsPairIndicatorInner}>
-                  {stackThumb.url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={stackThumb.url} alt="" onLoad={stackThumb.onLoad} />
-                  ) : stackTemplateThumb ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={stackTemplateThumb} alt="" />
-                  ) : (
-                    <div className={styles.cardsPairIndicatorPlaceholder} />
-                  )}
+                  <StockpileThumbImage
+                    cardId={paired.id}
+                    thumbnailBlob={paired.thumbnailBlob ?? null}
+                    templateThumbSrc={stackTemplateThumb}
+                    alt=""
+                    fallback={<div className={styles.cardsPairIndicatorPlaceholder} />}
+                  />
                 </div>
               </div>
             );
@@ -76,9 +70,14 @@ export default function StockpilePairIndicator({
         </div>
       ) : (
         <div className={styles.cardsPairIndicatorInner}>
-          {pairedThumb.url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={pairedThumb.url} alt="" onLoad={pairedThumb.onLoad} />
+          {card.paired.back ? (
+            <StockpileThumbImage
+              cardId={card.paired.back.id}
+              thumbnailBlob={card.paired.back.thumbnailBlob ?? null}
+              templateThumbSrc={pairedTemplateThumb}
+              alt=""
+              fallback={<div className={styles.cardsPairIndicatorPlaceholder} />}
+            />
           ) : pairedTemplateThumb ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={pairedTemplateThumb} alt="" />

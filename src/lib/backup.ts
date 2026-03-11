@@ -567,12 +567,8 @@ async function applyBackupObject(
       exportCutMarksColor,
       exportRoundedCorners,
     } = exportData.localStorage;
-    if (typeof draftV1 === "string") {
-      window.localStorage.setItem("hqcc.draft.v1", draftV1);
-    }
-    if (typeof draftTemplateIdV1 === "string") {
-      window.localStorage.setItem("hqcc.draftTemplateId.v1", draftTemplateIdV1);
-    }
+    void draftV1;
+    void draftTemplateIdV1;
     if (typeof activeCardsV1 === "string") {
       window.localStorage.setItem("hqcc.activeCards.v1", activeCardsV1);
     }

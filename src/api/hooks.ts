@@ -17,6 +17,7 @@ export const useSoftDeleteCards = apiHooks.useSoftDeleteCards.bind(apiHooks);
 export const useRestoreCards = apiHooks.useRestoreCards.bind(apiHooks);
 export const useDeleteCard = apiHooks.useDeleteCard.bind(apiHooks);
 export const useGetCard = apiHooks.useGetCard.bind(apiHooks);
+export const useGetCardThumbnail = apiHooks.useGetCardThumbnail.bind(apiHooks);
 export const useUpdateCardThumbnail = apiHooks.useUpdateCardThumbnail.bind(apiHooks);
 export const useListAssets = apiHooks.useListAssets.bind(apiHooks);
 export const useListAssetsWithBlobs = apiHooks.useListAssetsWithBlobs.bind(apiHooks);
