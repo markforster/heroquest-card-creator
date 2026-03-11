@@ -124,12 +124,6 @@ function applyExportImageClip(svg: SVGSVGElement) {
     });
 }
 
-function mutateSvgForStandardExport(svg: SVGSVGElement, rounded: boolean) {
-  setExportClip(svg, { rounded });
-  removeDeveloperCreditLayer(svg);
-  applyExportImageClip(svg);
-}
-
 function zeroTreasureBorderOffsetsForExport(svg: SVGSVGElement) {
   svg
     .querySelectorAll<SVGImageElement | SVGFEImageElement>(
@@ -139,6 +133,62 @@ function zeroTreasureBorderOffsetsForExport(svg: SVGSVGElement) {
       node.setAttribute("x", "0");
       node.setAttribute("y", "0");
     });
+}
+
+type ExportSvgMutationOptions = {
+  mode: "standard" | "bleed-full" | "bleed-source";
+  roundedCorners?: boolean;
+  bleedPx?: number;
+  cropMarksEnabled?: boolean;
+  developerCreditEnabled?: boolean;
+  templateId?: CardPreviewProps["templateId"];
+};
+
+function mutateSvgForExport(
+  svg: SVGSVGElement,
+  {
+    mode,
+    roundedCorners = true,
+    bleedPx = 0,
+    cropMarksEnabled = false,
+    developerCreditEnabled = false,
+    templateId,
+  }: ExportSvgMutationOptions,
+) {
+  if (mode !== "standard") {
+    const cardClipRect = svg.querySelector<SVGRectElement>("clipPath#cardClip rect");
+    if (cardClipRect) {
+      cardClipRect.setAttribute("x", "0");
+      cardClipRect.setAttribute("y", "0");
+      cardClipRect.setAttribute("width", String(CARD_WIDTH));
+      cardClipRect.setAttribute("height", String(CARD_HEIGHT));
+      cardClipRect.setAttribute("rx", "0");
+      cardClipRect.setAttribute("ry", "0");
+    }
+  }
+
+  const outline = svg.querySelector('[data-card-outline="true"]');
+  if (outline) {
+    outline.remove();
+  }
+
+  if (bleedPx > 0 || cropMarksEnabled) {
+    setExportBackgroundFit(svg, "slice");
+  }
+
+  if (mode !== "bleed-source") {
+    setExportClip(svg, { rounded: roundedCorners });
+  }
+
+  if (developerCreditEnabled) {
+    removeDeveloperCreditLayer(svg);
+  }
+
+  applyExportImageClip(svg);
+
+  if (templateId === "small-treasure" || templateId === "large-treasure") {
+    zeroTreasureBorderOffsetsForExport(svg);
+  }
 }
 
 function shouldShowDeveloperCredit(
@@ -701,7 +751,13 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                     removeDebugBounds: true,
                     loggingId: session.sessionId,
                     assetBlobsById: cache,
-                    mutateSvg: (svg) => mutateSvgForStandardExport(svg, effectiveRounded),
+                    mutateSvg: (svg) =>
+                      mutateSvgForExport(svg, {
+                        mode: "standard",
+                        roundedCorners: effectiveRounded,
+                        developerCreditEnabled,
+                        templateId,
+                      }),
                   });
             renders += 1;
             if (canvas) {
@@ -816,7 +872,13 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   removeDebugBounds: true,
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
-                  mutateSvg: (svg) => mutateSvgForStandardExport(svg, effectiveRounded),
+                  mutateSvg: (svg) =>
+                    mutateSvgForExport(svg, {
+                      mode: "standard",
+                      roundedCorners: effectiveRounded,
+                      developerCreditEnabled,
+                      templateId,
+                    }),
                 });
           if (canvas) {
             canvasRef.current = canvas;
@@ -996,32 +1058,15 @@ async function renderBleedCanvas({
     removeDebugBounds: true,
     loggingId,
     assetBlobsById,
-    mutateSvg: (svg) => {
-      const cardClipRect = svg.querySelector<SVGRectElement>("clipPath#cardClip rect");
-      if (cardClipRect) {
-        cardClipRect.setAttribute("x", "0");
-        cardClipRect.setAttribute("y", "0");
-        cardClipRect.setAttribute("width", String(CARD_WIDTH));
-        cardClipRect.setAttribute("height", String(CARD_HEIGHT));
-        cardClipRect.setAttribute("rx", "0");
-        cardClipRect.setAttribute("ry", "0");
-      }
-      const outline = svg.querySelector('[data-card-outline="true"]');
-      if (outline) {
-        outline.remove();
-      }
-      if (bleedPx > 0 || cropMarks?.enabled) {
-        setExportBackgroundFit(svg, "slice");
-      }
-      setExportClip(svg, { rounded: roundedCorners });
-      if (developerCreditEnabled) {
-        removeDeveloperCreditLayer(svg);
-      }
-      applyExportImageClip(svg);
-      if (templateId === "small-treasure" || templateId === "large-treasure") {
-        zeroTreasureBorderOffsetsForExport(svg);
-      }
-    },
+    mutateSvg: (svg) =>
+      mutateSvgForExport(svg, {
+        mode: "bleed-full",
+        roundedCorners,
+        bleedPx,
+        cropMarksEnabled: Boolean(cropMarks?.enabled),
+        developerCreditEnabled,
+        templateId,
+      }),
   });
   if (!fullCanvas) return null;
   if (ENABLE_WATERMARK && shouldApplyWatermark(templateId)) {
@@ -1037,31 +1082,14 @@ async function renderBleedCanvas({
       removeDebugBounds: true,
       loggingId,
       assetBlobsById,
-      mutateSvg: (svg) => {
-        if (bleedPx > 0 || cropMarks?.enabled) {
-          setExportBackgroundFit(svg, "slice");
-        }
-        if (developerCreditEnabled) {
-          removeDeveloperCreditLayer(svg);
-        }
-        const cardClipRect = svg.querySelector<SVGRectElement>("clipPath#cardClip rect");
-        if (cardClipRect) {
-          cardClipRect.setAttribute("x", "0");
-          cardClipRect.setAttribute("y", "0");
-          cardClipRect.setAttribute("width", String(CARD_WIDTH));
-          cardClipRect.setAttribute("height", String(CARD_HEIGHT));
-          cardClipRect.setAttribute("rx", "0");
-          cardClipRect.setAttribute("ry", "0");
-        }
-        const outline = svg.querySelector('[data-card-outline="true"]');
-        if (outline) {
-          outline.remove();
-        }
-        applyExportImageClip(svg);
-        if (templateId === "small-treasure" || templateId === "large-treasure") {
-          zeroTreasureBorderOffsetsForExport(svg);
-        }
-      },
+      mutateSvg: (svg) =>
+        mutateSvgForExport(svg, {
+          mode: "bleed-source",
+          bleedPx,
+          cropMarksEnabled: Boolean(cropMarks?.enabled),
+          developerCreditEnabled,
+          templateId,
+        }),
     });
   }
 
