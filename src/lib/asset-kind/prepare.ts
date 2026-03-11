@@ -26,7 +26,7 @@ export async function prepareAssetKindInput(
     const canvas = document.createElement("canvas");
     canvas.width = TARGET_SIZE;
     canvas.height = TARGET_SIZE;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) {
       bitmap.close?.();
       throw new Error("Canvas context not available");
@@ -47,7 +47,7 @@ export async function prepareAssetKindInput(
   const canvas = document.createElement("canvas");
   canvas.width = TARGET_SIZE;
   canvas.height = TARGET_SIZE;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) {
     throw new Error("Canvas context not available");
   }

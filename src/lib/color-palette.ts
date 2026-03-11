@@ -51,7 +51,7 @@ function extractPalette(
   canvas: HTMLCanvasElement,
   options: Required<PaletteOptions>,
 ): string[] {
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) return [];
 
   const { width, height } = canvas;

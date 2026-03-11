@@ -532,7 +532,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   canvas.width = width;
                   canvas.height = height;
                 }
-                const ctx = canvas.getContext("2d");
+                const ctx = canvas.getContext("2d", { willReadFrequently: true });
                 if (ctx) {
                   ctx.clearRect(0, 0, canvas.width, canvas.height);
                   const boundsX = bounds.x * scaleX;

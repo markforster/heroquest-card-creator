@@ -52,7 +52,7 @@ export function resolveWatermarkColor(
 }
 
 export function applyWatermarkToCanvas(canvas: HTMLCanvasElement): void {
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) return;
   const { x, y } = resolveWatermarkPosition(canvas.width, canvas.height);
   ctx.fillStyle = resolveWatermarkColor(ctx, x, y);

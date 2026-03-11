@@ -4,6 +4,7 @@ import { Zodios } from "@zodios/core";
 import axios, { AxiosHeaders } from "axios";
 
 import { api } from "@/api";
+import { logFakeApiError, logFakeApiResponse, shouldLogFakeApi } from "@/api/apiDebug";
 import { addAssetRequestPlugin } from "@/api/local/addAssetRequest";
 import { checkDbVersionRequestPlugin } from "@/api/local/checkDbVersionRequest";
 import { createCardRequestPlugin } from "@/api/local/createCardRequest";
@@ -50,6 +51,10 @@ const apiConfig = readApiConfig();
 const axiosInstance = axios.create({
   baseURL: apiConfig.mode === "remote" ? apiConfig.baseUrl ?? "/" : "/",
 });
+
+if (shouldLogFakeApi()) {
+  axiosInstance.interceptors.response.use(logFakeApiResponse, logFakeApiError);
+}
 
 if (apiConfig.mode === "remote" && apiConfig.authToken) {
   axiosInstance.interceptors.request.use((config) => {
