@@ -9,8 +9,7 @@ export const createCollectionRequestPlugin: ZodiosPlugin = {
   request: async (apiDefinitions, config) => {
     const adapter = async (): Promise<AxiosResponse> => {
       const parsed = collectionCreateInputSchema.parse(config.data ?? {});
-      const { schemaVersion: _schemaVersion, ...input } = parsed;
-      const data = await createCollection(input);
+      const data = await createCollection(parsed);
 
       return {
         data,

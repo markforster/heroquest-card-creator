@@ -9,9 +9,7 @@ export const createCardRequestPlugin: ZodiosPlugin = {
   request: async (apiDefinitions, config) => {
     const adapter = async (): Promise<AxiosResponse> => {
       const parsed = cardCreateInputSchema.parse(config.data ?? {});
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { schemaVersion: _schemaVersion, ...input } = parsed;
-      const data = await createCard(input);
+      const data = await createCard(parsed);
 
       return {
         data,

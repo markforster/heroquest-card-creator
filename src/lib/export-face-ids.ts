@@ -2,7 +2,7 @@
 
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
-import { getCard } from "@/lib/cards-db";
+import { apiClient } from "@/api/client";
 import { runBulkExport, type BulkExportResult } from "@/lib/export-cards";
 import type { CardRecord } from "@/types/cards-db";
 
@@ -54,7 +54,7 @@ export const exportFaceIdsToZip = async (
   const records = await Promise.all(
     faceIds.map(async (id) => {
       try {
-        return await getCard(id);
+        return await apiClient.getCard({ params: { id } });
       } catch {
         return null;
       }

@@ -5,6 +5,7 @@ import { createContext, useContext, useRef, useState } from "react";
 import BackupProgressOverlay from "@/components/BackupProgressOverlay";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
+import { readApiConfig } from "@/api/config";
 import { createBackupHqcc, importBackupHqcc, importBackupJson } from "@/lib/backup";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 
@@ -45,6 +46,148 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
   const backupSecondaryModeRef = useRef<"worker" | "fallback" | null>(null);
   const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const resolveWsUrl = (baseUrl: string) => {
+    const url = new URL("/ws", baseUrl);
+    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    return url.toString();
+  };
+
+  const resolveImportStatus = (status?: string) => {
+    switch (status) {
+      case "queued":
+        return t("status.preparing");
+      case "running":
+        return t("status.importingData");
+      case "complete":
+        return t("status.importingData");
+      case "error":
+        return t("alert.importFailed");
+      default:
+        return t("status.preparing");
+    }
+  };
+
+  const runRemoteImport = async (file: File) => {
+    const apiConfig = readApiConfig();
+    if (apiConfig.mode !== "remote" || !apiConfig.baseUrl) {
+      throw new Error(t("alert.importFailed"));
+    }
+
+    const form = new FormData();
+    form.append("file", file);
+    form.append("fileName", file.name);
+
+    const response = await fetch(new URL("/library/import", apiConfig.baseUrl).toString(), {
+      method: "POST",
+      body: form,
+    });
+
+    if (!response.ok) {
+      throw new Error(t("alert.importFailed"));
+    }
+
+    const payload = (await response.json()) as { jobId?: string };
+    if (!payload.jobId) {
+      throw new Error(t("alert.importFailed"));
+    }
+
+    const jobId = payload.jobId;
+    setBackupProgressTotal(100);
+    setBackupProgressCurrent(0);
+
+    await new Promise<{ cardsCount: number; assetsCount: number; collectionsCount: number }>(
+      (resolve, reject) => {
+        let settled = false;
+        let pollTimer: number | null = null;
+
+        const finish = (result: { cardsCount: number; assetsCount: number; collectionsCount: number }) => {
+          if (settled) return;
+          settled = true;
+          if (pollTimer) {
+            window.clearInterval(pollTimer);
+          }
+          resolve(result);
+        };
+
+        const fail = (message?: string) => {
+          if (settled) return;
+          settled = true;
+          if (pollTimer) {
+            window.clearInterval(pollTimer);
+          }
+          reject(new Error(message || t("alert.importFailed")));
+        };
+
+        const handleJobUpdate = (job: {
+          status?: string;
+          progress?: number;
+          message?: string;
+          result?: { cardsCount: number; assetsCount: number; collectionsCount: number };
+        }) => {
+          const progress = typeof job.progress === "number" ? job.progress : 0;
+          setBackupProgressCurrent(progress);
+          setBackupProgressStatus(resolveImportStatus(job.status));
+          setBackupSecondaryLabel(null);
+          setBackupSecondaryPercent(null);
+
+          if (job.status === "complete") {
+            finish(job.result ?? { cardsCount: 0, assetsCount: 0, collectionsCount: 0 });
+          } else if (job.status === "error") {
+            fail(job.message);
+          }
+        };
+
+        const startPolling = () => {
+          if (pollTimer) return;
+          pollTimer = window.setInterval(async () => {
+            try {
+              const res = await fetch(
+                new URL(`/library/import/${jobId}`, apiConfig.baseUrl).toString(),
+              );
+              if (!res.ok) return;
+              const job = (await res.json()) as {
+                status?: string;
+                progress?: number;
+                message?: string;
+                result?: { cardsCount: number; assetsCount: number; collectionsCount: number };
+              };
+              handleJobUpdate(job);
+            } catch {
+              // ignore polling errors
+            }
+          }, 1000);
+        };
+
+        const ws = new WebSocket(resolveWsUrl(apiConfig.baseUrl));
+        ws.addEventListener("open", () => {
+          ws.send(JSON.stringify({ type: "subscribe", jobId }));
+        });
+        ws.addEventListener("message", (event) => {
+          try {
+            const data = JSON.parse(event.data as string) as {
+              status?: string;
+              progress?: number;
+              message?: string;
+              result?: { cardsCount: number; assetsCount: number; collectionsCount: number };
+            };
+            handleJobUpdate(data);
+          } catch {
+            // ignore parse errors
+          }
+        });
+        ws.addEventListener("error", () => {
+          ws.close();
+          startPolling();
+        });
+        ws.addEventListener("close", () => {
+          if (!settled) {
+            startPolling();
+          }
+        });
+      },
+    );
+  };
 
   const resolveImportErrorMessage = (message: string) => {
     switch (message) {
@@ -168,30 +311,17 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
       const useZip = lowerName.endsWith(".hqcc");
       const useJson = !useZip && lowerName.endsWith(".hqcc.json");
 
-      const result = useZip
-        ? await importBackupHqcc(file, {
-            onProgress: (current, total) => {
-              setBackupProgressCurrent(current);
-              setBackupProgressTotal(total);
-              setBackupProgressStatus(t("status.importingData"));
-              setBackupSecondaryLabel(null);
-              setBackupSecondaryPercent(null);
-            },
-            onStatus: (phase) => {
-              setBackupProgressStatus(
-                phase === "processing" ? t("status.importingData") : t("status.preparing"),
-              );
-              if (phase === "processing") {
-                setBackupSecondaryLabel(null);
-                setBackupSecondaryPercent(null);
-              } else {
-                setBackupSecondaryLabel(t("status.preparing"));
-                setBackupSecondaryPercent(null);
-              }
-            },
-          })
-        : useJson
-          ? await importBackupJson(file, {
+      let result: { cardsCount: number; assetsCount: number; collectionsCount: number };
+
+      const apiConfig = readApiConfig();
+      if (apiConfig.mode === "remote") {
+        if (!useZip && !useJson) {
+          throw new Error(t("alert.unsupportedBackupFile"));
+        }
+        result = await runRemoteImport(file);
+      } else {
+        result = useZip
+          ? await importBackupHqcc(file, {
               onProgress: (current, total) => {
                 setBackupProgressCurrent(current);
                 setBackupProgressTotal(total);
@@ -212,9 +342,32 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
                 }
               },
             })
-          : await (async () => {
-              throw new Error(t("alert.unsupportedBackupFile"));
-            })();
+          : useJson
+            ? await importBackupJson(file, {
+                onProgress: (current, total) => {
+                  setBackupProgressCurrent(current);
+                  setBackupProgressTotal(total);
+                  setBackupProgressStatus(t("status.importingData"));
+                  setBackupSecondaryLabel(null);
+                  setBackupSecondaryPercent(null);
+                },
+                onStatus: (phase) => {
+                  setBackupProgressStatus(
+                    phase === "processing" ? t("status.importingData") : t("status.preparing"),
+                  );
+                  if (phase === "processing") {
+                    setBackupSecondaryLabel(null);
+                    setBackupSecondaryPercent(null);
+                  } else {
+                    setBackupSecondaryLabel(t("status.preparing"));
+                    setBackupSecondaryPercent(null);
+                  }
+                },
+              })
+            : await (async () => {
+                throw new Error(t("alert.unsupportedBackupFile"));
+              })();
+      }
       await new Promise((resolve) => setTimeout(resolve, 250));
       window.alert(
         `${t("alert.importComplete")}\n${t("label.cards")}: ${result.cardsCount}\n${t(

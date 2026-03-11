@@ -19,6 +19,9 @@ export const collectionCreateInputSchema = collectionRecordSchema
   })
   .extend({
     cardIds: z.array(z.string()).optional(),
+    id: z.string().optional(),
+    createdAt: z.number().optional(),
+    updatedAt: z.number().optional(),
     schemaVersion: z.literal(1).optional(),
   });
 

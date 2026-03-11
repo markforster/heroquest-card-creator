@@ -5,7 +5,7 @@ import {
   createPairInputSchema,
   deletePairInputSchema,
   listPairsFilterSchema,
-  pairSummarySchema,
+  pairRecordSchema,
 } from "@/api/pairs/schema";
 
 export const pairsApi = makeApi([
@@ -20,7 +20,7 @@ export const pairsApi = makeApi([
         schema: listPairsFilterSchema.shape.faceId,
       },
     ],
-    response: z.array(pairSummarySchema),
+    response: z.array(pairRecordSchema),
   },
   {
     method: "post",
@@ -33,7 +33,7 @@ export const pairsApi = makeApi([
         schema: createPairInputSchema,
       },
     ],
-    response: pairSummarySchema,
+    response: pairRecordSchema,
   },
   {
     method: "delete",

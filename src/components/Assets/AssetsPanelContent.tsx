@@ -26,6 +26,10 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
+import {
+  getRemoteAssetThumbPrefetchEnabled,
+  subscribeRemoteAssetFlags,
+} from "@/lib/remote-asset-flags";
 import type { AssetKindGroupId } from "@/lib/assets-grouping";
 import { groupAssetsByKind } from "@/lib/assets-grouping";
 import { isSafariBrowser } from "@/lib/browser";
@@ -119,6 +123,9 @@ export default function AssetsPanelContent({
   const kindPopoverRef = useRef<HTMLDivElement | null>(null);
   const kindAnchorRef = useRef<HTMLElement | null>(null);
   const { scanFiles, addToIndex, removeFromIndex, existingNames } = useAssetHashIndex();
+  const [isThumbPrefetchEnabled, setIsThumbPrefetchEnabled] = useState(() =>
+    getRemoteAssetThumbPrefetchEnabled(),
+  );
   const { runMissingAssetsScan } = useMissingAssets();
   const { enqueueAsset, cancelAsset, setIsActive } = useAssetKindQueue();
   const isSafari = typeof window !== "undefined" ? isSafariBrowser() : false;
@@ -133,6 +140,19 @@ export default function AssetsPanelContent({
       setIsActive(false);
     };
   }, [isOpen, setIsActive]);
+
+  useEffect(() => {
+    return subscribeRemoteAssetFlags(() => {
+      setIsThumbPrefetchEnabled(getRemoteAssetThumbPrefetchEnabled());
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isThumbPrefetchEnabled) return;
+    Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
+    thumbUrlsRef.current = {};
+    setThumbUrls({});
+  }, [isThumbPrefetchEnabled]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -239,6 +259,7 @@ export default function AssetsPanelContent({
   }, [activeKindPopoverId]);
 
   useEffect(() => {
+    if (!isThumbPrefetchEnabled) return;
     if (!isOpen) {
       Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
       thumbUrlsRef.current = {};
@@ -325,7 +346,7 @@ export default function AssetsPanelContent({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, assets, refreshKey]);
+  }, [isOpen, assets, refreshKey, isThumbPrefetchEnabled]);
 
   useEffect(() => {
     if (!isOpen && selectedIds.size > 0) {

@@ -3,11 +3,11 @@ export {
   createPairInputSchema,
   deletePairInputSchema,
   listPairsFilterSchema,
-  pairSummarySchema,
+  pairRecordSchema,
 } from "@/api/pairs/schema";
 export type {
   CreatePairInput,
   DeletePairInput,
   ListPairsFilter,
-  PairSummary,
+  PairRecord,
 } from "@/api/pairs/types";

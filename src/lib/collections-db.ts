@@ -23,16 +23,22 @@ export async function createCollection(input: {
   name: string;
   description?: string;
   cardIds?: string[];
+  id?: string;
+  createdAt?: number;
+  updatedAt?: number;
+  schemaVersion?: 1;
 }): Promise<CollectionRecord> {
   const now = Date.now();
+  const createdAt = input.createdAt ?? now;
+  const updatedAt = input.updatedAt ?? createdAt;
   const record: CollectionRecord = {
-    id: generateId(),
+    id: input.id ?? generateId(),
     name: input.name,
     description: input.description,
     cardIds: input.cardIds ?? [],
-    createdAt: now,
-    updatedAt: now,
-    schemaVersion: 1,
+    createdAt,
+    updatedAt,
+    schemaVersion: input.schemaVersion ?? 1,
   };
 
   const store = await getCollectionsStore("readwrite");

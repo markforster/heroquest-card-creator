@@ -1,6 +1,6 @@
 "use client";
 
-import { getCard } from "@/lib/cards-db";
+import { apiClient } from "@/api/client";
 
 type CacheEntry = {
   url: string;
@@ -91,7 +91,7 @@ export async function getCardThumbnailUrl(cardId: string): Promise<string | null
   const task = (async () => {
     for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
       try {
-        const record = await getCard(cardId);
+        const record = await apiClient.getCard({ params: { id: cardId } });
         if (record?.thumbnailBlob instanceof Blob) {
           return getCachedCardThumbnailUrl(cardId, record.thumbnailBlob);
         }

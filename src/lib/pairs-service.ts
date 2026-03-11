@@ -8,10 +8,7 @@ import { openHqccDb } from "./hqcc-db";
 
 import { generateId } from ".";
 
-export type PairSummary = Pick<
-  PairRecord,
-  "id" | "name" | "nameLower" | "frontFaceId" | "backFaceId"
->;
+export type PairSummary = PairRecord;
 
 async function getPairsStore(mode: IDBTransactionMode): Promise<IDBObjectStore> {
   const db = await openHqccDb();
@@ -44,13 +41,7 @@ async function listPairsByIndex(
         return;
       }
       const value = cursor.value as PairRecord;
-      results.push({
-        id: value.id,
-        name: value.name,
-        nameLower: value.nameLower,
-        frontFaceId: value.frontFaceId,
-        backFaceId: value.backFaceId,
-      });
+      results.push(value);
       cursor.continue();
     };
 
@@ -66,15 +57,7 @@ async function listAllPairsFromStore(): Promise<PairSummary[]> {
     const request = store.getAll();
     request.onsuccess = () => {
       const values = (request.result as PairRecord[] | undefined) ?? [];
-      resolve(
-        values.map((value) => ({
-          id: value.id,
-          name: value.name,
-          nameLower: value.nameLower,
-          frontFaceId: value.frontFaceId,
-          backFaceId: value.backFaceId,
-        })),
-      );
+      resolve(values);
     };
     request.onerror = () => {
       reject(request.error ?? new Error("Failed to list pairs"));
@@ -112,41 +95,57 @@ async function listPairsForBack(backId: string): Promise<PairSummary[]> {
   return pairs.filter((pair) => pair.backFaceId === backId);
 }
 
-export async function createPair(frontFaceId: string, backFaceId: string): Promise<PairSummary> {
-  const existing = await listPairsForFace(frontFaceId);
+export async function createPair(
+  frontFaceId: string,
+  backFaceId: string,
+): Promise<PairSummary> {
+  return createPairWithOverrides({ frontFaceId, backFaceId });
+}
+
+export async function createPairWithOverrides(input: {
+  frontFaceId: string;
+  backFaceId: string;
+  id?: string;
+  name?: string;
+  nameLower?: string;
+  createdAt?: number;
+  updatedAt?: number;
+  schemaVersion?: 1;
+}): Promise<PairSummary> {
+  const existing = await listPairsForFace(input.frontFaceId);
   const match = existing.find(
-    (pair) => pair.frontFaceId === frontFaceId && pair.backFaceId === backFaceId,
+    (pair) =>
+      pair.frontFaceId === input.frontFaceId && pair.backFaceId === input.backFaceId,
   );
   if (match) return match;
 
-  const [front, back] = await Promise.all([getCard(frontFaceId), getCard(backFaceId)]);
-  const name = buildPairName(front, back);
+  const [front, back] = await Promise.all([
+    getCard(input.frontFaceId),
+    getCard(input.backFaceId),
+  ]);
+  const name = input.name ?? buildPairName(front, back);
   const now = Date.now();
+  const createdAt = input.createdAt ?? now;
+  const updatedAt = input.updatedAt ?? createdAt;
   const record: PairRecord = {
-    id: generateId(),
+    id: input.id ?? generateId(),
     name,
-    nameLower: name.toLocaleLowerCase(),
-    frontFaceId,
-    backFaceId,
-    createdAt: now,
-    updatedAt: now,
-    schemaVersion: 1,
+    nameLower: input.nameLower ?? name.toLocaleLowerCase(),
+    frontFaceId: input.frontFaceId,
+    backFaceId: input.backFaceId,
+    createdAt,
+    updatedAt,
+    schemaVersion: input.schemaVersion ?? 1,
   };
 
   const store = await getPairsStore("readwrite");
   await new Promise<void>((resolve, reject) => {
-    const request = store.add(record);
+    const request = store.put(record);
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to create pair"));
   });
 
-  return {
-    id: record.id,
-    name: record.name,
-    nameLower: record.nameLower,
-    frontFaceId: record.frontFaceId,
-    backFaceId: record.backFaceId,
-  };
+  return record;
 }
 
 export async function deletePairsForFront(frontFaceId: string): Promise<void> {

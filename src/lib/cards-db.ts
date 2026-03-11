@@ -61,10 +61,18 @@ function normalizeCardRecord(record: CardRecord): CardRecord {
 }
 
 export async function createCard(
-  input: Omit<CardRecord, "id" | "createdAt" | "updatedAt" | "nameLower" | "schemaVersion">,
+  input: Omit<CardRecord, "id" | "createdAt" | "updatedAt" | "nameLower" | "schemaVersion"> & {
+    id?: string;
+    createdAt?: number;
+    updatedAt?: number;
+    nameLower?: string;
+    schemaVersion?: 1 | 2;
+  },
 ): Promise<CardRecord> {
   const now = Date.now();
-  const id = generateId();
+  const createdAt = input.createdAt ?? now;
+  const updatedAt = input.updatedAt ?? createdAt;
+  const id = input.id ?? generateId();
   const normalizedThumbnail = normalizeThumbnailBlob(input.thumbnailBlob);
   const base: CardRecord = {
     ...input,
@@ -72,10 +80,10 @@ export async function createCard(
       ? { thumbnailBlob: normalizedThumbnail }
       : {}),
     id,
-    createdAt: now,
-    updatedAt: now,
-    nameLower: input.name.toLocaleLowerCase(),
-    schemaVersion: 2,
+    createdAt,
+    updatedAt,
+    nameLower: input.nameLower ?? input.name.toLocaleLowerCase(),
+    schemaVersion: input.schemaVersion ?? 2,
   };
 
   const store = await getCardsStore("readwrite");

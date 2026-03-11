@@ -80,6 +80,10 @@ export const cardCreateInputSchema = cardRecordSchema
     schemaVersion: true,
   })
   .extend({
+    id: z.string().optional(),
+    createdAt: z.number().optional(),
+    updatedAt: z.number().optional(),
+    nameLower: z.string().optional(),
     schemaVersion: cardSchemaVersionSchema.optional(),
   });
 

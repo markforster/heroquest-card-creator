@@ -5,15 +5,11 @@ import { BlobReader, TextWriter, ZipReader } from "@zip.js/zip.js";
 import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import { configureZipJs } from "@/lib/zip-config";
 import { createZipBlobWithProgress } from "@/lib/zip-utils";
+import type { AssetRecord } from "@/api/assets";
 import type { CardRecord } from "@/types/cards-db";
 import type { PairRecord } from "@/types/pairs-db";
 
-import { openHqccDb } from "./hqcc-db";
-
 import { generateId } from ".";
-
-import type { AssetRecord } from "./assets-db";
-import type { HqccDb } from "./hqcc-db";
 
 export const BACKUP_SCHEMA_VERSION = 2 as const;
 export const BACKUP_FILE_EXTENSION = ".hqcc.json" as const;
@@ -197,37 +193,22 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
   if (typeof window === "undefined") {
     throw new Error("Backup export is only available in the browser");
   }
-
-  const db: HqccDb = await openHqccDb();
-
-  const cardsTx = db.transaction("cards", "readonly");
-  const cardsStore = cardsTx.objectStore("cards");
-
-  const rawCards: CardRecord[] = await new Promise<CardRecord[]>((resolve, reject) => {
-    const request = cardsStore.getAll();
-    request.onsuccess = () => {
-      const results = (request.result as CardRecord[]) ?? [];
-      resolve(results);
-    };
-    request.onerror = () => {
-      reject(request.error ?? new Error("Failed to read cards for backup"));
-    };
-  });
-
-  const assetsTx = db.transaction("assets", "readonly");
-  const assetsStore = assetsTx.objectStore("assets");
-  const rawAssets: (AssetRecord & { blob?: Blob })[] = await new Promise<
-    (AssetRecord & { blob?: Blob })[]
-  >((resolve, reject) => {
-    const request = assetsStore.getAll();
-    request.onsuccess = () => {
-      const results = (request.result as (AssetRecord & { blob?: Blob })[]) ?? [];
-      resolve(results);
-    };
-    request.onerror = () => {
-      reject(request.error ?? new Error("Failed to read assets for backup"));
-    };
-  });
+  const { apiClient } = await import("@/api/client");
+  const [
+    rawCards,
+    rawAssets,
+    collections,
+    pairs,
+    borderSwatches,
+    defaultCopyright,
+  ] = await Promise.all([
+    apiClient.listCards({ queries: { deleted: "include" } }),
+    apiClient.listAssetsWithBlobs(),
+    apiClient.listCollections(),
+    apiClient.listPairs(),
+    apiClient.getBorderSwatches(),
+    apiClient.getDefaultCopyright(),
+  ]);
 
   const cards: CardRecordExportV1[] = [];
   const totalProgressCount = rawCards.length + rawAssets.length;
@@ -253,18 +234,13 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
 
   const assets: AssetRecordExportV1[] = [];
   for (const value of rawAssets) {
-    const { id, name, mimeType, width, height, createdAt, blob } = value;
+    const { blob, ...rest } = value;
 
     if (blob instanceof Blob) {
       try {
         const dataUrl = await blobToDataUrl(blob);
         assets.push({
-          id,
-          name,
-          mimeType,
-          width,
-          height,
-          createdAt,
+          ...rest,
           dataUrl,
         });
       } catch {
@@ -279,65 +255,15 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
     onProgress?.(totalProgressCount, totalProgressCount, "export");
   }
 
-  const collections: CollectionRecordExportV1[] = [];
-
-  if (db.objectStoreNames.contains("collections")) {
-    const collectionsTx = db.transaction("collections", "readonly");
-    const collectionsStore = collectionsTx.objectStore("collections");
-
-    const rawCollections: CollectionRecordExportV1[] = await new Promise<
-      CollectionRecordExportV1[]
-    >((resolve, reject) => {
-      const request = collectionsStore.getAll();
-      request.onsuccess = () => {
-        const results = (request.result as CollectionRecordExportV1[]) ?? [];
-        resolve(results);
-      };
-      request.onerror = () => {
-        reject(request.error ?? new Error("Failed to read collections for backup"));
-      };
-    });
-
-    collections.push(...rawCollections);
-  }
-
   let settings: HqccExportSettingsV1 | undefined;
-
-  if (db.objectStoreNames.contains("settings")) {
-    const settingsTx = db.transaction("settings", "readonly");
-    const settingsStore = settingsTx.objectStore("settings");
-    const borderRecord = await new Promise<{ value?: unknown } | undefined>((resolve, reject) => {
-      const request = settingsStore.get("borderSwatches");
-      request.onsuccess = () => {
-        resolve(request.result as { value?: unknown } | undefined);
-      };
-      request.onerror = () => {
-        reject(request.error ?? new Error("Failed to read settings for backup"));
-      };
-    });
-    const copyrightRecord = await new Promise<{ value?: unknown } | undefined>((resolve, reject) => {
-      const request = settingsStore.get("defaultCopyright");
-      request.onsuccess = () => {
-        resolve(request.result as { value?: unknown } | undefined);
-      };
-      request.onerror = () => {
-        reject(request.error ?? new Error("Failed to read settings for backup"));
-      };
-    });
-
-    const swatches = borderRecord?.value;
-    const defaultCopyright = copyrightRecord?.value;
-    if (Array.isArray(swatches)) {
-      settings = {
-        borderSwatches: swatches.filter((value) => typeof value === "string") as string[],
-        defaultCopyright:
-          typeof defaultCopyright === "string" ? defaultCopyright : undefined,
-      };
-    } else if (typeof defaultCopyright === "string") {
-      settings = {
-        defaultCopyright,
-      };
-    }
+  const hasBorderSwatches = Array.isArray(borderSwatches) && borderSwatches.length > 0;
+  const hasDefaultCopyright =
+    typeof defaultCopyright === "string" && defaultCopyright.trim().length > 0;
+  if (hasBorderSwatches || hasDefaultCopyright) {
+    settings = {
+      ...(hasBorderSwatches ? { borderSwatches } : {}),
+      ...(hasDefaultCopyright ? { defaultCopyright } : {}),
+    };
   }
 
   let draftV1: string | null | undefined;
@@ -444,29 +370,13 @@ async function buildExportObject(onProgress?: BackupProgressCallback): Promise<H
     exportRoundedCorners,
   };
 
-  let pairs: PairRecord[] | undefined;
-  if (db.objectStoreNames.contains("pairs")) {
-    const pairsTx = db.transaction("pairs", "readonly");
-    const pairsStore = pairsTx.objectStore("pairs");
-    pairs = await new Promise<PairRecord[]>((resolve, reject) => {
-      const request = pairsStore.getAll();
-      request.onsuccess = () => {
-        const results = (request.result as PairRecord[]) ?? [];
-        resolve(results);
-      };
-      request.onerror = () => {
-        reject(request.error ?? new Error("Failed to read pairs for backup"));
-      };
-    });
-  }
-
   const exportObject: HqccExportFileV1 = {
     schemaVersion: BACKUP_SCHEMA_VERSION,
     createdAt: new Date().toISOString(),
     cards,
     assets,
-    ...(pairs ? { pairs } : {}),
-    collections,
+    ...(pairs ? { pairs: pairs as PairRecord[] } : {}),
+    collections: collections as CollectionRecordExportV1[],
     settings,
     localStorage,
   };
@@ -494,39 +404,37 @@ async function applyBackupObject(
     throw new Error("Backup import is only available in the browser");
   }
 
-  const db: HqccDb = await openHqccDb();
+  const { apiClient } = await import("@/api/client");
+  const [existingCards, existingAssets, existingCollections, existingPairs] = await Promise.all([
+    apiClient.listCards({ queries: { deleted: "include" } }),
+    apiClient.listAssets(),
+    apiClient.listCollections(),
+    apiClient.listPairs(),
+  ]);
 
-  const hasCardsStore = db.objectStoreNames.contains("cards");
-  const hasAssetsStore = db.objectStoreNames.contains("assets");
-  const hasCollectionsStore = db.objectStoreNames.contains("collections");
-  const hasSettingsStore = db.objectStoreNames.contains("settings");
-  const hasPairsStore = db.objectStoreNames.contains("pairs");
-
-  async function clearStore(name: string): Promise<void> {
-    if (!db.objectStoreNames.contains(name)) return;
-    return new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(name, "readwrite");
-      const store = tx.objectStore(name);
-      store.clear();
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error ?? new Error(`Failed to clear ${name} store`));
-    });
+  if (existingCards.length > 0) {
+    await apiClient.deleteCards({ ids: existingCards.map((card) => card.id) });
   }
-
-  if (hasCardsStore) {
-    await clearStore("cards");
+  if (existingAssets.length > 0) {
+    await apiClient.deleteAssets({ ids: existingAssets.map((asset) => asset.id) });
   }
-  if (hasAssetsStore) {
-    await clearStore("assets");
+  if (existingCollections.length > 0) {
+    await Promise.all(
+      existingCollections.map((collection) =>
+        apiClient.deleteCollection(undefined, { params: { id: collection.id } }),
+      ),
+    );
   }
-  if (hasCollectionsStore) {
-    await clearStore("collections");
-  }
-  if (hasSettingsStore) {
-    await clearStore("settings");
-  }
-  if (hasPairsStore) {
-    await clearStore("pairs");
+  if (existingPairs.length > 0) {
+    await Promise.all(
+      existingPairs.map((pair) => {
+        if (!pair.frontFaceId || !pair.backFaceId) return Promise.resolve();
+        return apiClient.deletePair({
+          frontFaceId: pair.frontFaceId,
+          backFaceId: pair.backFaceId,
+        });
+      }),
+    );
   }
 
   let cardsCount = 0;
@@ -537,198 +445,109 @@ async function applyBackupObject(
     exportData.cards.length +
     (Array.isArray(exportData.collections) ? exportData.collections.length : 0);
 
-  if (hasAssetsStore && exportData.assets.length > 0) {
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction("assets", "readwrite");
-      const store = tx.objectStore("assets");
-
+  if (exportData.assets.length > 0) {
+    for (const assetExport of exportData.assets) {
       try {
-        exportData.assets.forEach((assetExport) => {
-          try {
-            const blob = dataUrlToBlob(assetExport.dataUrl);
-            const record: AssetRecord & { blob: Blob } = {
-              id: assetExport.id,
-              name: assetExport.name,
-              mimeType: assetExport.mimeType,
-              width: assetExport.width,
-              height: assetExport.height,
-              createdAt: assetExport.createdAt,
-              blob,
-            };
-            store.put(record);
-            assetsCount += 1;
-            onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
-          } catch {
-            // Skip invalid asset entries
-          }
-        });
-      } catch (error) {
-        reject(error instanceof Error ? error : new Error("Failed to import assets"));
-        return;
+        const { dataUrl, id, ...rest } = assetExport;
+        const blob = dataUrlToBlob(dataUrl);
+        await apiClient.replaceAsset(
+          {
+            ...rest,
+            blob,
+          },
+          { params: { id } },
+        );
+        assetsCount += 1;
+        onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
+      } catch {
+        // Skip invalid asset entries
       }
-
-      tx.oncomplete = () => resolve();
-      tx.onerror = () =>
-        reject(tx.error ?? new Error("Failed to write assets during backup import"));
-    });
+    }
   }
 
-  if (hasCardsStore && exportData.cards.length > 0) {
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction("cards", "readwrite");
-      const store = tx.objectStore("cards");
-
-      try {
-        exportData.cards.forEach((cardExport) => {
-          let thumbnailBlob: Blob | null = null;
-          if (cardExport.thumbnailDataUrl) {
-            try {
-              thumbnailBlob = dataUrlToBlob(cardExport.thumbnailDataUrl);
-            } catch {
-              thumbnailBlob = null;
-            }
-          }
-
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { thumbnailDataUrl, pairedWith, ...rest } = cardExport as CardRecordExportV1;
-          const record: CardRecord = {
-            ...(rest as CardRecord),
-            thumbnailBlob,
-          };
-          store.put(record);
-          cardsCount += 1;
-          onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
-        });
-      } catch (error) {
-        reject(error instanceof Error ? error : new Error("Failed to import cards"));
-        return;
-      }
-
-      tx.oncomplete = () => resolve();
-      tx.onerror = () =>
-        reject(tx.error ?? new Error("Failed to write cards during backup import"));
-    });
-  }
-
-  if (
-    hasCollectionsStore &&
-    Array.isArray(exportData.collections) &&
-    exportData.collections.length
-  ) {
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction("collections", "readwrite");
-      const store = tx.objectStore("collections");
-
-      try {
-        exportData.collections?.forEach((collection) => {
-          store.put(collection);
-          collectionsCount += 1;
-          onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
-        });
-      } catch (error) {
-        reject(error instanceof Error ? error : new Error("Failed to import collections"));
-        return;
-      }
-
-      tx.oncomplete = () => resolve();
-      tx.onerror = () =>
-        reject(tx.error ?? new Error("Failed to write collections during backup import"));
-    });
-  }
-
-  if (
-    hasSettingsStore &&
-    (exportData.settings?.borderSwatches ||
-      typeof exportData.settings?.defaultCopyright === "string")
-  ) {
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction("settings", "readwrite");
-      const store = tx.objectStore("settings");
-      try {
-        if (exportData.settings?.borderSwatches) {
-          store.put({
-            id: "borderSwatches",
-            value: exportData.settings?.borderSwatches,
-            updatedAt: Date.now(),
-            schemaVersion: 1,
-          });
-        }
-        if (typeof exportData.settings?.defaultCopyright === "string") {
-          store.put({
-            id: "defaultCopyright",
-            value: exportData.settings?.defaultCopyright,
-            updatedAt: Date.now(),
-            schemaVersion: 1,
-          });
-        }
-      } catch (error) {
-        reject(error instanceof Error ? error : new Error("Failed to import settings"));
-        return;
-      }
-      tx.oncomplete = () => resolve();
-      tx.onerror = () =>
-        reject(tx.error ?? new Error("Failed to write settings during backup import"));
-    });
-  }
-
-  if (hasPairsStore) {
-    if (Array.isArray(exportData.pairs) && exportData.pairs.length > 0) {
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction("pairs", "readwrite");
-        const store = tx.objectStore("pairs");
+  if (exportData.cards.length > 0) {
+    for (const cardExport of exportData.cards) {
+      let thumbnailBlob: Blob | null = null;
+      if (cardExport.thumbnailDataUrl) {
         try {
-          exportData.pairs?.forEach((pair) => {
-            store.put(pair);
-          });
-        } catch (error) {
-          reject(error instanceof Error ? error : new Error("Failed to import pairs"));
-          return;
+          thumbnailBlob = dataUrlToBlob(cardExport.thumbnailDataUrl);
+        } catch {
+          thumbnailBlob = null;
         }
-        tx.oncomplete = () => resolve();
-        tx.onerror = () =>
-          reject(tx.error ?? new Error("Failed to write pairs during backup import"));
-      });
-    } else {
-      const legacyPairs = exportData.cards
-        .filter((card) => card.pairedWith)
-        .map((card) => {
-          const back = exportData.cards.find((candidate) => candidate.id === card.pairedWith);
-          const frontName = card.name ?? card.title ?? "Untitled front";
-          const backName = back?.name ?? back?.title ?? "Untitled back";
-          return {
-            frontFaceId: card.id,
-            backFaceId: card.pairedWith as string,
-            name: `${frontName} - ${backName}`,
-          };
-        });
-      if (legacyPairs.length > 0) {
-        await new Promise<void>((resolve, reject) => {
-          const tx = db.transaction("pairs", "readwrite");
-          const store = tx.objectStore("pairs");
-          try {
-            legacyPairs.forEach((pair) => {
-              const now = Date.now();
-              const record: PairRecord = {
-                id: generateId(),
-                name: pair.name,
-                nameLower: pair.name.toLocaleLowerCase(),
-                frontFaceId: pair.frontFaceId,
-                backFaceId: pair.backFaceId,
-                createdAt: now,
-                updatedAt: now,
-                schemaVersion: 1,
-              };
-              store.put(record);
-            });
-          } catch (error) {
-            reject(error instanceof Error ? error : new Error("Failed to import legacy pairs"));
-            return;
-          }
-          tx.oncomplete = () => resolve();
-          tx.onerror = () =>
-            reject(tx.error ?? new Error("Failed to write legacy pairs during backup import"));
-        });
       }
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { thumbnailDataUrl, pairedWith, ...rest } = cardExport as CardRecordExportV1;
+      const record: CardRecord = {
+        ...(rest as CardRecord),
+        thumbnailBlob,
+      };
+      await apiClient.createCard(record);
+      cardsCount += 1;
+      onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
+    }
+  }
+
+  if (Array.isArray(exportData.collections) && exportData.collections.length) {
+    for (const collection of exportData.collections) {
+      await apiClient.createCollection(collection);
+      collectionsCount += 1;
+      onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
+    }
+  }
+
+  const borderSwatches = exportData.settings?.borderSwatches ?? [];
+  const defaultCopyright = exportData.settings?.defaultCopyright ?? "";
+  await Promise.all([
+    apiClient.setBorderSwatches({ swatches: borderSwatches }),
+    apiClient.setDefaultCopyright({ value: defaultCopyright }),
+  ]);
+
+  if (Array.isArray(exportData.pairs) && exportData.pairs.length > 0) {
+    await Promise.all(
+      exportData.pairs.map((pair) => {
+        if (!pair.frontFaceId || !pair.backFaceId) return Promise.resolve();
+        return apiClient.createPair({
+          frontFaceId: pair.frontFaceId,
+          backFaceId: pair.backFaceId,
+          id: pair.id,
+          name: pair.name,
+          nameLower: pair.nameLower,
+          createdAt: pair.createdAt,
+          updatedAt: pair.updatedAt,
+          schemaVersion: pair.schemaVersion,
+        });
+      }),
+    );
+  } else {
+    const legacyPairs = exportData.cards
+      .filter((card) => card.pairedWith)
+      .map((card) => {
+        const back = exportData.cards.find((candidate) => candidate.id === card.pairedWith);
+        const frontName = card.name ?? card.title ?? "Untitled front";
+        const backName = back?.name ?? back?.title ?? "Untitled back";
+        return {
+          frontFaceId: card.id,
+          backFaceId: card.pairedWith as string,
+          name: `${frontName} - ${backName}`,
+        };
+      });
+    if (legacyPairs.length > 0) {
+      await Promise.all(
+        legacyPairs.map((pair) => {
+          const now = Date.now();
+          return apiClient.createPair({
+            frontFaceId: pair.frontFaceId,
+            backFaceId: pair.backFaceId,
+            id: generateId(),
+            name: pair.name,
+            nameLower: pair.name.toLocaleLowerCase(),
+            createdAt: now,
+            updatedAt: now,
+            schemaVersion: 1,
+          });
+        }),
+      );
     }
   }
 
