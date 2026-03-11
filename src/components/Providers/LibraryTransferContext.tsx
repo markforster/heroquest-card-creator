@@ -7,7 +7,7 @@ import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { readApiConfig } from "@/api/config";
 import { createBackupHqcc, importBackupHqcc, importBackupJson } from "@/lib/backup";
-import { setDbEstimatePaused } from "@/lib/indexeddb-size-tracker";
+import { clearDbEstimateCache, setDbEstimatePaused } from "@/lib/indexeddb-size-tracker";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 
 import type { ChangeEvent, ReactNode } from "react";
@@ -306,6 +306,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
     if (!file) return;
 
     setDbEstimatePaused(true);
+    clearDbEstimateCache();
     setIsImporting(true);
     setBackupProgressMode("import");
     setBackupProgressCurrent(0);

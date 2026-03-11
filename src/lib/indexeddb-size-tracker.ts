@@ -135,6 +135,26 @@ export function setDbEstimatePaused(value: boolean) {
   }
 }
 
+export function clearDbEstimateCache() {
+  try {
+    window.localStorage.removeItem(QUEUE_KEY);
+    window.localStorage.removeItem(TOTALS_KEY);
+    window.localStorage.removeItem(RECORD_SIZES_KEY);
+  } catch {
+    // ignore storage failures
+  }
+  queue = [];
+  queueSet = new Set();
+  totals = {
+    totalBytes: 0,
+    recordsScanned: 0,
+    byStore: {},
+    lastUpdated: null,
+  };
+  recordSizes = {};
+  emitStatus();
+}
+
 export async function runFullDbEstimate(): Promise<void> {
   const estimate = await estimateIndexedDbSize({ includeRecordSizes: true });
   totals = {

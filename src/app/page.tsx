@@ -58,7 +58,7 @@ import ToolsToolbar from "@/components/ToolsToolbar";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
-import { runFullDbEstimate } from "@/lib/indexeddb-size-tracker";
+import { clearDbEstimateCache, runFullDbEstimate } from "@/lib/indexeddb-size-tracker";
 import { startThumbnailJpegMigration } from "@/lib/thumbnail-jpeg-migration";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
@@ -213,6 +213,7 @@ function IndexPageInner() {
 
   useEffect(() => {
     void startThumbnailJpegMigration();
+    clearDbEstimateCache();
     setTimeout(() => {
       void runFullDbEstimate();
     }, 0);
