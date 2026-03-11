@@ -16,6 +16,22 @@ import {
   setRemoteAssetThumbPrefetchEnabled,
   subscribeRemoteAssetFlags,
 } from "@/lib/remote-asset-flags";
+import {
+  getThumbnailJpegMigrationStatus,
+  subscribeThumbnailJpegMigration,
+} from "@/lib/thumbnail-jpeg-migration";
+
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes)) return "0 B";
+  const abs = Math.max(0, bytes);
+  if (abs < 1024) return `${Math.round(abs)} B`;
+  const kb = abs / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
+  const gb = mb / 1024;
+  return `${gb.toFixed(1)} GB`;
+}
 
 export default function DebugSettingsPanel() {
   const { t } = useI18n();
@@ -30,6 +46,9 @@ export default function DebugSettingsPanel() {
   const [isHashIndexEnabled, setIsHashIndexEnabled] = useState(() =>
     getRemoteAssetHashIndexEnabled(),
   );
+  const [thumbMigrationStatus, setThumbMigrationStatus] = useState(() =>
+    getThumbnailJpegMigrationStatus(),
+  );
 
   useEffect(() => {
     return subscribeRemoteAssetFlags(() => {
@@ -37,6 +56,24 @@ export default function DebugSettingsPanel() {
       setIsHashIndexEnabled(getRemoteAssetHashIndexEnabled());
     });
   }, []);
+
+  useEffect(() => {
+    return subscribeThumbnailJpegMigration((status) => {
+      setThumbMigrationStatus(status);
+    });
+  }, []);
+
+  const migrationProgress =
+    thumbMigrationStatus.total > 0
+      ? Math.min(
+          100,
+          Math.round((thumbMigrationStatus.processed / thumbMigrationStatus.total) * 100),
+        )
+      : 0;
+  const bytesSaved = Math.max(
+    0,
+    thumbMigrationStatus.bytesBefore - thumbMigrationStatus.bytesAfter,
+  );
 
   const handleClearAssetClassification = async () => {
     if (isClearing) return;
@@ -73,6 +110,44 @@ export default function DebugSettingsPanel() {
           />
           {t("label.debugTextBounds")}
         </label>
+      </SettingsGroup>
+      <SettingsGroup title="Thumbnail JPEG Migration" className="d-flex flex-column gap-2">
+        <div className="d-flex flex-column gap-2">
+          <div className={styles.settingsPanelOption}>
+            {thumbMigrationStatus.state === "running"
+              ? "Thumbnail JPEG migration is running in the background."
+              : thumbMigrationStatus.message ??
+                (thumbMigrationStatus.state === "done"
+                  ? "Thumbnail JPEG migration complete."
+                  : "Thumbnail JPEG migration is idle.")}
+          </div>
+          {thumbMigrationStatus.total > 0 ? (
+            <>
+              <div className="progress" style={{ height: "8px" }}>
+                <div
+                  className="progress-bar"
+                  role="progressbar"
+                  style={{ width: `${migrationProgress}%` }}
+                  aria-valuenow={migrationProgress}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                />
+              </div>
+              <div className={`d-flex flex-wrap gap-3 ${styles.settingsPanelOption}`}>
+                <span>
+                  Processed {thumbMigrationStatus.processed} / {thumbMigrationStatus.total}
+                </span>
+                <span>Converted {thumbMigrationStatus.converted}</span>
+                <span>Skipped {thumbMigrationStatus.skipped}</span>
+              </div>
+              <div className={`d-flex flex-wrap gap-3 ${styles.settingsPanelOption}`}>
+                <span>Start size {formatBytes(thumbMigrationStatus.bytesBefore)}</span>
+                <span>Current size {formatBytes(thumbMigrationStatus.bytesAfter)}</span>
+                <span>Saved {formatBytes(bytesSaved)}</span>
+              </div>
+            </>
+          ) : null}
+        </div>
       </SettingsGroup>
       {isRemoteMode ? (
         <SettingsGroup

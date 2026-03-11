@@ -3,6 +3,7 @@
 import type { CardRecord, CardStatus } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
 
+import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import { openHqccDb } from "./hqcc-db";
 
 import { generateId } from ".";
@@ -93,6 +94,7 @@ export async function createCard(
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to create card"));
   });
+  enqueueDbEstimateChange("cards", base.id);
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
   }
@@ -143,6 +145,7 @@ export async function updateCard(
     putRequest.onsuccess = () => resolve();
     putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update card"));
   });
+  enqueueDbEstimateChange("cards", next.id);
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
   }
@@ -204,6 +207,7 @@ export async function updateCards(
       };
     });
   });
+  ids.forEach((id) => enqueueDbEstimateChange("cards", id));
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
   }
@@ -298,6 +302,7 @@ export async function updateCardThumbnail(
     putRequest.onerror = () =>
       reject(putRequest.error ?? new Error("Failed to update card thumbnail"));
   });
+  enqueueDbEstimateChange("cards", next.id);
 
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
@@ -392,6 +397,7 @@ export async function deleteCard(id: string): Promise<void> {
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to delete card"));
   });
+  enqueueDbEstimateChange("cards", id);
 }
 
 export async function deleteCards(ids: string[]): Promise<void> {
@@ -408,4 +414,5 @@ export async function deleteCards(ids: string[]): Promise<void> {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error ?? new Error("Failed to delete cards"));
   });
+  ids.forEach((id) => enqueueDbEstimateChange("cards", id));
 }

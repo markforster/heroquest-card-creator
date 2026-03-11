@@ -37,11 +37,13 @@ function SettingsModalContent({
 
   const enabledAreas = SETTINGS_AREAS.filter((area) => area.isEnabled !== false);
   const activeArea =
-    enabledAreas.find((area) => area.id === activeAreaId) ?? enabledAreas[0] ?? null;
+    enabledAreas.find((area) => "panel" in area && area.id === activeAreaId) ??
+    enabledAreas.find((area) => "panel" in area) ??
+    null;
   const showAreaList = SETTINGS_NAV_CONFIG.forceShowAreaList || enabledAreas.length > 1;
 
   const renderActivePanel = () => {
-    if (!activeArea) {
+    if (!activeArea || !("panel" in activeArea)) {
       return null;
     }
     return activeArea.panel();
@@ -59,27 +61,58 @@ function SettingsModalContent({
       >
         {showAreaList ? (
           <div className={styles.settingsAreaList}>
-            {enabledAreas.map((area) => {
-              const Icon = area.icon;
-              const isActive = area.id === activeArea?.id;
-              return (
-                <NavActionButton
-                  key={area.id}
-                  label={t(area.labelKey)}
-                  icon={Icon}
-                  onClick={() => requestAreaChange(area.id)}
-                  isActive={isActive}
-                  ariaLabel={t(area.labelKey)}
-                  title={t(area.labelKey)}
-                  className={`${styles.settingsAreaButton} d-flex align-items-center gap-2`}
-                />
-              );
-            })}
+            <div className={styles.settingsAreaGroupTop}>
+              {enabledAreas
+                .filter((area) => !area.isBottomGroup)
+                .map((area) => {
+                  if ("type" in area && area.type === "separator") {
+                    return <div key={area.id} className={styles.settingsAreaDivider} />;
+                  }
+                  const Icon = area.icon;
+                  const isActive = area.id === activeArea?.id;
+                  return (
+                    <NavActionButton
+                      key={area.id}
+                      label={t(area.labelKey)}
+                      icon={Icon}
+                      onClick={() => requestAreaChange(area.id)}
+                      isActive={isActive}
+                      ariaLabel={t(area.labelKey)}
+                      title={t(area.labelKey)}
+                      className={`${styles.settingsAreaButton} d-flex align-items-center gap-2`}
+                    />
+                  );
+                })}
+            </div>
+            <div className={styles.settingsAreaSpacer} />
+            <div className={styles.settingsAreaGroupBottom}>
+              {enabledAreas
+                .filter((area) => area.isBottomGroup)
+                .map((area) => {
+                  if ("type" in area && area.type === "separator") {
+                    return <div key={area.id} className={styles.settingsAreaDivider} />;
+                  }
+                  const Icon = area.icon;
+                  const isActive = area.id === activeArea?.id;
+                  return (
+                    <NavActionButton
+                      key={area.id}
+                      label={t(area.labelKey)}
+                      icon={Icon}
+                      onClick={() => requestAreaChange(area.id)}
+                      isActive={isActive}
+                      ariaLabel={t(area.labelKey)}
+                      title={t(area.labelKey)}
+                      className={`${styles.settingsAreaButton} d-flex align-items-center gap-2`}
+                    />
+                  );
+                })}
+            </div>
           </div>
         ) : null}
         <div className={styles.settingsPanel}>
           <div className={styles.settingsPanelScroll} data-panel-id={activeArea?.id ?? ""}>
-            {activeArea ? (
+            {activeArea && "panel" in activeArea ? (
               <SettingsPanelProvider panelId={activeArea.id} label={t(activeArea.labelKey)}>
                 {renderActivePanel()}
               </SettingsPanelProvider>
@@ -111,7 +144,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   useEffect(() => {
     if (!isOpen) return;
-    const firstArea = SETTINGS_AREAS.find((area) => area.isEnabled !== false) ?? null;
+    const firstArea =
+      SETTINGS_AREAS.find((area) => area.isEnabled !== false && "panel" in area) ?? null;
     setActiveAreaId(firstArea?.id ?? null);
   }, [isOpen]);
 

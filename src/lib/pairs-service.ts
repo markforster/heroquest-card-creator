@@ -3,6 +3,7 @@
 import type { CardRecord } from "@/types/cards-db";
 import type { PairRecord } from "@/types/pairs-db";
 
+import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import { getCard } from "./cards-db";
 import { openHqccDb } from "./hqcc-db";
 
@@ -144,6 +145,7 @@ export async function createPairWithOverrides(input: {
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to create pair"));
   });
+  enqueueDbEstimateChange("pairs", record.id);
 
   return record;
 }
@@ -166,6 +168,7 @@ export async function deletePairsForFront(frontFaceId: string): Promise<void> {
       };
     });
   });
+  deletions.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
 }
 
 export async function deletePairsForBack(backFaceId: string): Promise<void> {
@@ -186,6 +189,7 @@ export async function deletePairsForBack(backFaceId: string): Promise<void> {
       };
     });
   });
+  deletions.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
 }
 
 export async function deletePairsForFace(faceId: string): Promise<void> {
@@ -205,6 +209,7 @@ export async function deletePairsForFace(faceId: string): Promise<void> {
       };
     });
   });
+  pairs.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
 }
 
 export async function deletePair(frontFaceId: string, backFaceId: string): Promise<void> {
@@ -227,6 +232,7 @@ export async function deletePair(frontFaceId: string, backFaceId: string): Promi
       };
     });
   });
+  matches.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
 }
 
 export async function replacePairsForBack(
@@ -258,6 +264,7 @@ export async function replacePairsForBack(
         };
       });
     });
+    toRemove.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
   }
 
   if (toAdd.length) {

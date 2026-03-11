@@ -1,5 +1,6 @@
 "use client";
 
+import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import { openHqccDb } from "./hqcc-db";
 
 export type SettingsRecord = {
@@ -51,7 +52,10 @@ export async function setBorderSwatches(swatches: string[]): Promise<void> {
     };
 
     const request = store.put(record);
-    request.onsuccess = () => resolve();
+    request.onsuccess = () => {
+      enqueueDbEstimateChange(SETTINGS_STORE, record.id);
+      resolve();
+    };
     request.onerror = () => reject(request.error ?? new Error("Failed to save border swatches"));
   });
 }
@@ -88,7 +92,10 @@ export async function setDefaultCopyright(value: string): Promise<void> {
     };
 
     const request = store.put(record);
-    request.onsuccess = () => resolve();
+    request.onsuccess = () => {
+      enqueueDbEstimateChange(SETTINGS_STORE, record.id);
+      resolve();
+    };
     request.onerror = () =>
       reject(request.error ?? new Error("Failed to save default copyright"));
   });

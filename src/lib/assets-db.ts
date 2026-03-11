@@ -1,5 +1,6 @@
 "use client";
 
+import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import { openHqccDb } from "./hqcc-db";
 
 export type AssetRecord = {
@@ -48,6 +49,7 @@ export async function addAsset(
     tx.oncomplete = () => {
       // eslint-disable-next-line no-console
       console.debug("[assets-db] addAsset complete", id);
+      enqueueDbEstimateChange(STORE_NAME, id);
       resolve();
     };
     tx.onerror = () => {
@@ -85,6 +87,7 @@ export async function replaceAsset(
     tx.oncomplete = () => {
       // eslint-disable-next-line no-console
       console.debug("[assets-db] replaceAsset complete", id);
+      enqueueDbEstimateChange(STORE_NAME, id);
       resolve();
     };
     tx.onerror = () => {
@@ -230,6 +233,7 @@ export async function deleteAssets(ids: string[]): Promise<void> {
     tx.oncomplete = () => {
       // eslint-disable-next-line no-console
       console.debug("[assets-db] deleteAssets complete", ids.length);
+      ids.forEach((id) => enqueueDbEstimateChange(STORE_NAME, id));
       resolve();
     };
 
@@ -274,6 +278,7 @@ export async function updateAssetMeta(
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("hqcc-assets-updated"));
       }
+      enqueueDbEstimateChange(STORE_NAME, id);
       resolve();
     };
     tx.onerror = () => {
@@ -310,6 +315,7 @@ export async function clearAssetClassification(): Promise<number> {
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("hqcc-assets-updated"));
       }
+      records.forEach((record) => enqueueDbEstimateChange(STORE_NAME, record.id));
       resolve((request.result as AssetRecord[] | undefined)?.length ?? 0);
     };
 
@@ -349,6 +355,7 @@ export async function resetAssetClassificationForId(id: string): Promise<void> {
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("hqcc-assets-updated"));
       }
+      enqueueDbEstimateChange(STORE_NAME, id);
       resolve();
     };
     tx.onerror = () => {

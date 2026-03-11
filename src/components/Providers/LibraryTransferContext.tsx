@@ -7,6 +7,7 @@ import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { readApiConfig } from "@/api/config";
 import { createBackupHqcc, importBackupHqcc, importBackupJson } from "@/lib/backup";
+import { setDbEstimatePaused } from "@/lib/indexeddb-size-tracker";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 
 import type { ChangeEvent, ReactNode } from "react";
@@ -304,6 +305,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setDbEstimatePaused(true);
     setIsImporting(true);
     setBackupProgressMode("import");
     setBackupProgressCurrent(0);
@@ -387,6 +389,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
         error instanceof Error ? resolveImportErrorMessage(error.message) : t("alert.importFailed"),
       );
     } finally {
+      setDbEstimatePaused(false);
       setIsImporting(false);
       setBackupProgressMode(null);
       setBackupProgressStatus(null);

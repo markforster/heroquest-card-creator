@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 
 
 type SettingsGroupProps = {
-  title?: string;
+  title?: ReactNode;
   className?: string;
   disabled?: boolean;
   children: ReactNode;

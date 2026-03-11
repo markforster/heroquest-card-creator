@@ -2531,6 +2531,8 @@
   background: var(--hq-settings-sidebar-bg);
   padding: var(--space-6);
   gap: var(--space-3);
+  display: flex;
+  flex-direction: column;
 }
 
 .settingsAreaButton {
@@ -2549,6 +2551,30 @@
     border-color 200ms ease,
     box-shadow 200ms ease,
     color 200ms ease;
+}
+
+.settingsAreaGroupTop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 0 1 auto;
+}
+
+.settingsAreaSpacer {
+  flex: 1 0 auto;
+}
+
+.settingsAreaGroupBottom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 0 1 auto;
+}
+
+.settingsAreaDivider {
+  height: 1px;
+  background: var(--hq-white-10);
+  margin: var(--space-4) 0;
 }
 
 .settingsPanel {
@@ -2608,6 +2634,18 @@
 .settingsGroupTitle {
   margin: 0 0 var(--space-3);
   font-size: 0.72rem;
+}
+
+.settingsGroupTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.settingsGroupMeta {
+  font-size: 0.72rem;
+  color: var(--hq-text-muted);
 }
 
 .settingsPanelSectionDisabled {

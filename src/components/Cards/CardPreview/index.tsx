@@ -912,6 +912,86 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           );
           return pngBlob ?? null;
         },
+        async renderToJpegBlob(options) {
+          const svgElement = svgRef.current;
+          if (!svgElement) return null;
+
+          await this.waitForBackgroundLoaded?.();
+          await this.syncCopyrightContrast?.();
+
+          const width = options?.width ?? CARD_WIDTH;
+          const height = options?.height ?? CARD_HEIGHT;
+          const bleedPx = options?.bleedPx ?? 0;
+          const cropMarks = options?.cropMarks;
+          const cutMarks = options?.cutMarks;
+          const requestedRounded = options?.roundedCorners ?? true;
+          const effectiveRounded = requestedRounded && bleedPx === 0 && !cropMarks?.enabled;
+
+          const canvas =
+            bleedPx > 0 || cropMarks?.enabled || cutMarks?.enabled
+              ? await renderBleedCanvas({
+                  svgElement,
+                  bleedPx,
+                  cropMarks: cropMarks
+                    ? {
+                        ...cropMarks,
+                        style: cropMarks.style ?? "lines",
+                      }
+                    : cropMarks,
+                  cutMarks: cutMarks
+                    ? {
+                        enabled: cutMarks.enabled,
+                        color: cutMarks.color,
+                      }
+                    : cutMarks,
+                  roundedCorners: effectiveRounded,
+                  loggingId: options?.loggingId,
+                  assetBlobsById: options?.assetBlobsById,
+                  templateId,
+                  developerCreditEnabled,
+                })
+              : await renderSvgToCanvas({
+                  svgElement,
+                  width,
+                  height,
+                  existingCanvas: canvasRef.current,
+                  removeDebugBounds: true,
+                  loggingId: options?.loggingId,
+                  assetBlobsById: options?.assetBlobsById,
+                  mutateSvg: (svg) =>
+                    mutateSvgForExport(svg, {
+                      mode: "standard",
+                      roundedCorners: effectiveRounded,
+                      developerCreditEnabled,
+                      templateId,
+                    }),
+                });
+          if (canvas) {
+            canvasRef.current = canvas;
+          }
+          if (!canvas) return null;
+          if (
+            ENABLE_WATERMARK &&
+            shouldApplyWatermark(templateId) &&
+            !(bleedPx > 0 || cropMarks?.enabled)
+          ) {
+            applyWatermarkToCanvas(canvas);
+          }
+          if (developerCreditEnabled) {
+            drawDeveloperCredit({
+              canvas,
+              templateId,
+              cardData,
+              bleedPx,
+              cropMarks,
+              cutMarks,
+            });
+          }
+          const jpegBlob: Blob | null = await new Promise((resolve) =>
+            canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.8),
+          );
+          return jpegBlob ?? null;
+        },
         async renderToCanvas(options) {
           const svgElement = svgRef.current;
           if (!svgElement) return null;

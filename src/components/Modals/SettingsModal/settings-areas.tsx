@@ -3,6 +3,7 @@ import {
   Bug,
   Copyright,
   FolderTree,
+  Info,
   TableCellsSplit,
   Image,
   Download,
@@ -17,6 +18,7 @@ import DebugSettingsPanel from "@/components/Modals/SettingsModal/DebugSettingsP
 import ExportSettingsPanel from "@/components/Modals/SettingsModal/ExportSettingsPanel";
 import StatLabelOverridesPanel from "@/components/Modals/SettingsModal/StatLabelOverridesPanel";
 import TextFittingSettingsPanel from "@/components/Modals/SettingsModal/TextFittingSettingsPanel";
+import SystemSettingsPanel from "@/components/Modals/SettingsModal/SystemSettingsPanel";
 import type { MessageKey } from "@/i18n/messages";
 import { isDebugToolsEnabled } from "@/lib/env";
 
@@ -30,32 +32,24 @@ export type SettingsAreaDefinition = {
   labelKey: MessageKey;
   icon: LucideIcon;
   isEnabled?: boolean;
+  isBottomGroup?: boolean;
   panel: () => ReactNode;
 };
+
+export type SettingsAreaSeparator = {
+  id: string;
+  type: "separator";
+  isBottomGroup?: boolean;
+  isEnabled?: boolean;
+};
+
+export type SettingsNavItem = SettingsAreaDefinition | SettingsAreaSeparator;
 
 export const SETTINGS_NAV_CONFIG = {
   forceShowAreaList: true,
 };
 
-export const SETTINGS_AREAS: SettingsAreaDefinition[] = [
-  {
-    id: "assets-settings",
-    labelKey: "heading.assetsSettings",
-    icon: Image,
-    panel: () => <AssetsSettingsPanel />,
-  },
-  {
-    id: "appearance-settings",
-    labelKey: "heading.appearanceSettings",
-    icon: SunMoon,
-    panel: () => <AppearanceSettingsPanel />,
-  },
-  {
-    id: "collections-settings",
-    labelKey: "heading.collectionsSettings",
-    icon: FolderTree,
-    panel: () => <CollectionsSettingsPanel />,
-  },
+export const SETTINGS_AREAS: SettingsNavItem[] = [
   {
     id: "export-settings",
     labelKey: "heading.exportSettings",
@@ -69,16 +63,34 @@ export const SETTINGS_AREAS: SettingsAreaDefinition[] = [
     panel: () => <StatLabelOverridesPanel />,
   },
   {
-    id: "copyright-defaults",
-    labelKey: "heading.copyrightDefaults",
-    icon: Copyright,
-    panel: () => <CopyrightSettingsPanel />,
+    id: "collections-settings",
+    labelKey: "heading.collectionsSettings",
+    icon: FolderTree,
+    panel: () => <CollectionsSettingsPanel />,
   },
   {
     id: "text-fitting-global",
     labelKey: "label.textFittingGlobal",
     icon: ALargeSmall,
     panel: () => <TextFittingSettingsPanel />,
+  },
+  {
+    id: "copyright-defaults",
+    labelKey: "heading.copyrightDefaults",
+    icon: Copyright,
+    panel: () => <CopyrightSettingsPanel />,
+  },
+  {
+    id: "assets-settings",
+    labelKey: "heading.assetsSettings",
+    icon: Image,
+    panel: () => <AssetsSettingsPanel />,
+  },
+  {
+    id: "appearance-settings",
+    labelKey: "heading.appearanceSettings",
+    icon: SunMoon,
+    panel: () => <AppearanceSettingsPanel />,
   },
   // {
   //   id: "preview-settings",
@@ -92,5 +104,13 @@ export const SETTINGS_AREAS: SettingsAreaDefinition[] = [
     icon: Bug,
     panel: () => <DebugSettingsPanel />,
     isEnabled: debugToolsEnabled,
+    isBottomGroup: true,
+  },
+  {
+    id: "system-settings",
+    labelKey: "heading.systemSettings",
+    icon: Info,
+    panel: () => <SystemSettingsPanel />,
+    isBottomGroup: true,
   },
 ];

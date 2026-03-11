@@ -280,6 +280,7 @@ export const en = {
   "heading.copyrightDefaults": "Copyright Defaults",
   "heading.previewSettings": "Preview Settings",
   "heading.debugTools": "Debug Tools",
+  "heading.systemSettings": "System",
   "heading.uploadProgress": "Upload Progress",
   "heading.editCollection": "Edit collection",
   "heading.newCollection": "New collection",

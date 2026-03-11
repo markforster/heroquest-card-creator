@@ -58,6 +58,8 @@ import ToolsToolbar from "@/components/ToolsToolbar";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
+import { runFullDbEstimate } from "@/lib/indexeddb-size-tracker";
+import { startThumbnailJpegMigration } from "@/lib/thumbnail-jpeg-migration";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
@@ -209,6 +211,13 @@ function IndexPageInner() {
     exportPromptRef.current = exportPrompt ? exportPrompt.token : null;
   }, [exportPrompt]);
 
+  useEffect(() => {
+    void startThumbnailJpegMigration();
+    setTimeout(() => {
+      void runFullDbEstimate();
+    }, 0);
+  }, []);
+
   useEscapeModalAware({
     id: "route:cards",
     isOpen: isCardsListRoute,
@@ -235,7 +244,7 @@ function IndexPageInner() {
 
     let thumbnailBlob: Blob | null = null;
     try {
-      const blob = await previewRef.current?.renderToPngBlob({
+      const blob = await previewRef.current?.renderToJpegBlob({
         width: 225,
         height: 315,
       });
@@ -308,7 +317,7 @@ function IndexPageInner() {
     if (!activeCardId) return false;
     let thumbnailBlob: Blob | null = null;
     try {
-      const blob = await previewRef.current?.renderToPngBlob({
+      const blob = await previewRef.current?.renderToJpegBlob({
         width: 225,
         height: 315,
       });

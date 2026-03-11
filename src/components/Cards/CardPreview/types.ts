@@ -33,6 +33,16 @@ export type CardPreviewHandle = {
     cutMarks?: { enabled: boolean; color: string };
     roundedCorners?: boolean;
   }) => Promise<Blob | null>;
+  renderToJpegBlob: (options?: {
+    width?: number;
+    height?: number;
+    loggingId?: string;
+    assetBlobsById?: Map<string, Blob>;
+    bleedPx?: number;
+    cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+    cutMarks?: { enabled: boolean; color: string };
+    roundedCorners?: boolean;
+  }) => Promise<Blob | null>;
   renderToCanvas: (options?: {
     width?: number;
     height?: number;

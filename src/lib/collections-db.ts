@@ -2,6 +2,7 @@
 
 import type { CollectionRecord } from "@/types/collections-db";
 
+import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import { openHqccDb } from "./hqcc-db";
 
 import { generateId } from ".";
@@ -48,6 +49,7 @@ export async function createCollection(input: {
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to create collection"));
   });
+  enqueueDbEstimateChange("collections", record.id);
 
   return record;
 }
@@ -84,6 +86,7 @@ export async function updateCollection(
     putRequest.onsuccess = () => resolve();
     putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update collection"));
   });
+  enqueueDbEstimateChange("collections", next.id);
 
   return next;
 }
@@ -137,4 +140,5 @@ export async function deleteCollection(id: string): Promise<void> {
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to delete collection"));
   });
+  enqueueDbEstimateChange("collections", id);
 }
