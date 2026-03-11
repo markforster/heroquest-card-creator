@@ -4,6 +4,8 @@ Thanks for downloading the HeroQuest Card Creator {version} bundle.
 
 This folder contains a **fully static build** of the app. You can use it in two main ways:
 
+If you prefer a printable version of this guide, open `README.pdf` in this folder.
+
 ---
 
 ## Option 1 – Open directly from your filesystem
@@ -30,6 +32,24 @@ If you’re comfortable running a small web server, you’ll get the most reliab
    - Or use any other static hosting (nginx, Apache, Netlify, GitHub Pages, etc.).
 
 Because the app is built as a **single‑page, static site** with relative asset paths, you can host it from **any folder or URL path**, not just the web root.
+
+### Bundled server (miniserve)
+
+This bundle includes prebuilt `miniserve-hqcc-*` binaries (based on the open source miniserve project) so you can run a lightweight local server without installing anything else. The binaries live in the `miniserve/` folder.
+
+To launch the server:
+
+- macOS: double-click `start-server.command`
+- macOS / Linux (Terminal): run `./start-server.sh`
+- Windows: run `start-server.bat`
+
+For more details and usage options, see:
+
+https://github.com/svenstaro/miniserve
+
+The launcher scripts start miniserve in SPA mode so any route will load `index.html`.
+
+On macOS, you may need to right-click `start-server.command` and choose **Open** the first time.
 
 ---
 

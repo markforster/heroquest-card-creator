@@ -121,9 +121,14 @@ When the app is opened via `file://`, analytics events are sent via an image req
 - Production build (static export):
   - `npm run build`
   - Output is written to `out/`.
-- Optional: generate a downloadable zip bundle:
+- Optional: generate a downloadable zip bundle for end users:
   - `npm run build:download`
   - Writes `artefacts/heroquest-card-maker.<version>.zip` (requires a `zip` binary).
+  - Contains the static site plus helper files (miniserve binaries, launcher scripts, and `README.pdf`) so users can double-click and run locally without extra setup.
+- Optional: generate a clean itch.io archive for uploading:
+  - `npm run build:itch`
+  - Writes `artefacts/heroquest-card-maker.<version>.itch.zip`.
+  - Contains **only** the `out/` folder contents, which is what itch.io expects for hosting the web build.
 - To preview locally, you can:
   - Serve `out/` with any static file server, or
   - Open `out/index.html` directly in a modern browser (Chrome is the primary target).
@@ -152,8 +157,6 @@ Notes:
   - If no port is supplied, the CLI tries 3000 first.
   - If 3000 is busy, it auto-selects a free port.
   - It stores recent ports in `~/.hqcc/info.yml` and may prompt you to reuse them.
-
----
 
 ## Optional: Tauri desktop build
 
@@ -207,6 +210,8 @@ Outputs are written under `src-tauri/target/release/bundle/`.
 - `npm run dev` – start local dev server.
 - `npm run build` – static production build into `out/`.
 - `npm run build:download` – build + package `out/` as a downloadable zip bundle in `artefacts/`.
+- `npm run build:itch` – build + package `out/` only for itch.io uploads.
+- `npm run download:miniserve` – fetch and cache miniserve binaries into `artefacts/miniserve/`.
 - `npm run serve:out` – serve `out/` locally for quick testing.
 - `npm run tauri:icons` – generate native app icons from `public/assets/web-app-manifest-512x512.png`.
 - `npm run tauri:build` – build the static export and bundle the Tauri desktop app.
