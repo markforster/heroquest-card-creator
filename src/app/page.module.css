@@ -3344,6 +3344,43 @@
   width: min(560px, 100% - 2rem);
 }
 
+.exportFormatBlock {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hq-border-mid);
+  background: var(--hq-settings-group-bg);
+  padding: var(--space-8) var(--space-10);
+}
+
+.exportFormatTitle {
+  margin: 0 0 var(--space-4);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hq-accent);
+}
+
+.exportFormatOptions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.exportFormatOption {
+  font-size: var(--text-lg);
+  color: var(--hq-text);
+}
+
+.exportFormatLabel {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.exportFormatHint {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--hq-text-muted);
+}
+
 .missingAssetsModal {
   width: min(75vw, 1100px);
 }

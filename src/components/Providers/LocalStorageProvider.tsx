@@ -10,6 +10,7 @@ type LocalStorageContextValue = {
   values: LocalStorageValues;
   ensureValue: (key: string, fallbackRaw: string) => void;
   setValue: (key: string, raw: string) => void;
+  rehydrate: (keys: string[]) => void;
 };
 
 const LocalStorageContext = createContext<LocalStorageContextValue | null>(null);
@@ -62,9 +63,26 @@ export function LocalStorageProvider({ children }: LocalStorageProviderProps) {
     }
   }, []);
 
+  const rehydrate = useCallback((keys: string[]) => {
+    if (typeof window === "undefined") return;
+    if (!Array.isArray(keys) || keys.length === 0) return;
+    const next: LocalStorageValues = {};
+    for (const key of keys) {
+      try {
+        next[key] = window.localStorage.getItem(key);
+      } catch {
+        next[key] = null;
+      }
+    }
+    setValues((prev) => ({
+      ...prev,
+      ...next,
+    }));
+  }, []);
+
   const value = useMemo<LocalStorageContextValue>(
-    () => ({ values, ensureValue, setValue }),
-    [values, ensureValue, setValue],
+    () => ({ values, ensureValue, setValue, rehydrate }),
+    [values, ensureValue, setValue, rehydrate],
   );
 
   return <LocalStorageContext.Provider value={value}>{children}</LocalStorageContext.Provider>;
@@ -132,4 +150,9 @@ export function useLocalStorageBoolean(key: string, defaultValue: boolean) {
     },
     serialize: (value) => (value ? "1" : "0"),
   });
+}
+
+export function useLocalStorageRehydrate() {
+  const { rehydrate } = useLocalStorageContext();
+  return rehydrate;
 }

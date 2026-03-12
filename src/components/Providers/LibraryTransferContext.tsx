@@ -7,8 +7,21 @@ import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { readApiConfig } from "@/api/config";
 import { createBackupHqcc, importBackupHqcc, importBackupJson } from "@/lib/backup";
+import {
+  BACKUP_FORMAT_STORAGE_KEY,
+  DEFAULT_BACKUP_FORMAT,
+  normalizeBackupFormat,
+  type BackupContainerFormat,
+} from "@/lib/backup-formats";
+import { invalidateCardThumbnail } from "@/lib/card-thumbnail-cache";
+import { EXPORT_SETTINGS_STORAGE_KEYS } from "@/lib/export-settings";
 import { clearDbEstimateCache, setDbEstimatePaused } from "@/lib/indexeddb-size-tracker";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
+import {
+  useLocalStorageRehydrate,
+  useLocalStorageValue,
+} from "@/components/Providers/LocalStorageProvider";
+import { useQueryClient } from "@tanstack/react-query";
 
 import type { ChangeEvent, ReactNode } from "react";
 
@@ -48,6 +61,16 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
   const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
   const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const queryClient = useQueryClient();
+  const rehydrateLocalStorage = useLocalStorageRehydrate();
+  const [backupFormat, setBackupFormat] = useLocalStorageValue<BackupContainerFormat>(
+    BACKUP_FORMAT_STORAGE_KEY,
+    DEFAULT_BACKUP_FORMAT,
+    {
+      parse: (raw) => normalizeBackupFormat(raw) ?? null,
+      serialize: (value) => value,
+    },
+  );
 
   const resolveWsUrl = (baseUrl: string) => {
     const url = new URL("/ws", baseUrl);
@@ -212,6 +235,8 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
         return t("alert.couldNotReadBackupFile");
       case "Could not read backup data from this file":
         return t("alert.couldNotReadBackupData");
+      case "Unsupported backup format":
+        return t("alert.unsupportedBackupFile");
       default:
         return message;
     }
@@ -229,6 +254,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
     backupSecondaryModeRef.current = null;
     try {
       const { blob, fileName } = await createBackupHqcc({
+        format: backupFormat,
         onProgress: (current, total) => {
           setBackupProgressCurrent(current);
           setBackupProgressTotal(total);
@@ -388,12 +414,23 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
               })();
       }
       await new Promise((resolve) => setTimeout(resolve, 250));
+      const exportSettingKeys = Object.values(EXPORT_SETTINGS_STORAGE_KEYS);
+      rehydrateLocalStorage([
+        "hqcc.activeCards.v1",
+        "hqcc.statLabels",
+        ...exportSettingKeys,
+      ]);
+      invalidateCardThumbnail();
+      queryClient.clear();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+        window.dispatchEvent(new CustomEvent("hqcc-assets-updated"));
+      }
       window.alert(
         `${t("alert.importComplete")}\n${t("label.cards")}: ${result.cardsCount}\n${t(
           "label.assets",
         )}: ${result.assetsCount}\n${t("label.collections")}: ${result.collectionsCount}`,
       );
-      window.location.reload();
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("[LibraryTransferProvider] Failed to import backup", error);
