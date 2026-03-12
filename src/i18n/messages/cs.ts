@@ -28,6 +28,8 @@ export const cs = {
   "actions.help": "Nápověda",
   "actions.about": "O aplikaci",
   "actions.download": "Stáhnout",
+  "actions.getTheApp": "Získat aplikaci",
+  "actions.checkForUpdates": "Zkontrolovat aktualizace?",
   "actions.rateOnItch": "Ohodnoťte na itch.io",
   "actions.rateOnItchHover": "Klikněte pro hodnocení",
   "actions.exportData": "Exportovat",

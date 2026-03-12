@@ -28,6 +28,8 @@ export const fi = {
   "actions.help": "Ohje",
   "actions.about": "Tietoja",
   "actions.download": "Lataa",
+  "actions.getTheApp": "Hanki sovellus",
+  "actions.checkForUpdates": "Tarkista päivitykset?",
   "actions.rateOnItch": "Arvostele itch.io:ssa",
   "actions.rateOnItchHover": "Napsauta arvioidaksesi",
   "actions.exportData": "Vie",

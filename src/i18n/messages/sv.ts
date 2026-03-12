@@ -28,6 +28,8 @@ export const sv = {
   "actions.help": "Hjälp",
   "actions.about": "Om",
   "actions.download": "Ladda ner",
+  "actions.getTheApp": "Hämta appen",
+  "actions.checkForUpdates": "Sök efter uppdateringar?",
   "actions.rateOnItch": "Betygsätt på itch.io",
   "actions.rateOnItchHover": "Klicka för att betygsätta",
   "actions.exportData": "Exportera",

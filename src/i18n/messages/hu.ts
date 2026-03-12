@@ -28,6 +28,8 @@ export const hu = {
   "actions.help": "Súgó",
   "actions.about": "Névjegy",
   "actions.download": "Letöltés",
+  "actions.getTheApp": "Szerezd meg az appot",
+  "actions.checkForUpdates": "Frissítések keresése?",
   "actions.rateOnItch": "Értékeld az itch.io-n",
   "actions.rateOnItchHover": "Kattints az értékeléshez",
   "actions.exportData": "Exportálás",

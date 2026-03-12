@@ -28,6 +28,8 @@ export const el = {
   "actions.help": "Βοήθεια",
   "actions.about": "Σχετικά",
   "actions.download": "Λήψη",
+  "actions.getTheApp": "Αποκτήστε την εφαρμογή",
+  "actions.checkForUpdates": "Έλεγχος για ενημερώσεις;",
   "actions.rateOnItch": "Βαθμολογήστε στο itch.io",
   "actions.rateOnItchHover": "Κάντε κλικ για βαθμολόγηση",
   "actions.exportData": "Εξαγωγή",

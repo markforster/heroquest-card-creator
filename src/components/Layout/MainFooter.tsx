@@ -18,6 +18,7 @@ export default function MainFooter() {
   const releaseNotesModal = usePopupState(false);
   const isTauriApp = useIsTauriApp();
   const downloadLinkRef = useRef<HTMLAnchorElement | null>(null);
+  const showDownloadLink = false;
 
   useEffect(() => {
     const link = downloadLinkRef.current;
@@ -55,18 +56,22 @@ export default function MainFooter() {
             >
               {t("actions.about")}
             </button>
-            <span>·</span>
-            <a
-              ref={downloadLinkRef}
-              href="#"
-              className={styles.footerLink}
-              onClickCapture={(event) => {
-                event.preventDefault();
-                track("page_view", { page_path: "/download", page_title: "Download" });
-              }}
-            >
-              {t("actions.download")}
-            </a>
+            {showDownloadLink ? (
+              <>
+                <span>·</span>
+                <a
+                  ref={downloadLinkRef}
+                  href="#"
+                  className={styles.footerLink}
+                  onClickCapture={(event) => {
+                    event.preventDefault();
+                    track("page_view", { page_path: "/download", page_title: "Download" });
+                  }}
+                >
+                  {t("actions.download")}
+                </a>
+              </>
+            ) : null}
           </div>
           <div className={styles.footerSpacer} aria-hidden="true" />
           <div

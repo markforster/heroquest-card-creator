@@ -28,6 +28,8 @@ export const ptBR = {
   "actions.help": "Ajuda",
   "actions.about": "Sobre",
   "actions.download": "Baixar",
+  "actions.getTheApp": "Obter o app",
+  "actions.checkForUpdates": "Verificar atualizações?",
   "actions.rateOnItch": "Avalie no itch.io",
   "actions.rateOnItchHover": "Clique para avaliar",
   "actions.exportData": "Exportar",

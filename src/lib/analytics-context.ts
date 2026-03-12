@@ -1,5 +1,5 @@
 export type AnalyticsContextData = {
-  app_distribution: "itch" | "local" | "self_hosted" | "unknown" | "npm";
+  app_distribution: "itch" | "local" | "self_hosted" | "unknown" | "npm" | "download";
   app_version: string;
   app_host: string;
   app_url?: string;
@@ -71,6 +71,7 @@ function sanitizeOverride(value: string | undefined): AnalyticsContextData["app_
     "self_hosted",
     "unknown",
     "npm",
+    "download",
   ];
   if (allowed.includes(trimmed as AnalyticsContextData["app_distribution"])) {
     return trimmed as AnalyticsContextData["app_distribution"];

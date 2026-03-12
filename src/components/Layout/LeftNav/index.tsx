@@ -6,8 +6,10 @@ import { useI18n } from "@/i18n/I18nProvider";
 import LeftNavBottom from "./LeftNavBottom";
 import LeftNavActionStrip from "./LeftNavActionStrip";
 import LeftNavCollapseToggle from "./LeftNavCollapseToggle";
+import LeftNavDownloadAction from "./LeftNavDownloadAction";
 import LeftNavMiddle from "./LeftNavMiddle";
 import LeftNavPrimaryActions from "./LeftNavPrimaryActions";
+import LeftNavSpacer from "./LeftNavSpacer";
 import { useLeftNavCollapse } from "./useLeftNavCollapse";
 
 export default function LeftNav() {
@@ -35,6 +37,8 @@ export default function LeftNav() {
         </LeftNavMiddle>
         <LeftNavBottom>
           <LeftNavActionStrip isCollapsed={isCollapsed} />
+          <LeftNavSpacer size="small" showLine={false} />
+          <LeftNavDownloadAction />
         </LeftNavBottom>
       </div>
     </nav>

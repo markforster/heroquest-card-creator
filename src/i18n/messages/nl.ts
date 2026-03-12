@@ -28,6 +28,8 @@ export const nl = {
   "actions.help": "Hulp",
   "actions.about": "Over",
   "actions.download": "Downloaden",
+  "actions.getTheApp": "Download de app",
+  "actions.checkForUpdates": "Controleren op updates?",
   "actions.rateOnItch": "Beoordeel op itch.io",
   "actions.rateOnItchHover": "Klik om te beoordelen",
   "actions.exportData": "Exporteer",

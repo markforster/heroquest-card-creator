@@ -28,6 +28,8 @@ export const de = {
   "actions.help": "Hilfe",
   "actions.about": "Über",
   "actions.download": "Herunterladen",
+  "actions.getTheApp": "App holen",
+  "actions.checkForUpdates": "Nach Updates suchen?",
   "actions.rateOnItch": "Auf itch.io bewerten",
   "actions.rateOnItchHover": "Zum Bewerten klicken",
   "actions.exportData": "Daten exportieren",
