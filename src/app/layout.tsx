@@ -11,6 +11,7 @@ import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const gaId = process.env.NEXT_PUBLIC_GA_ID;
+const isDev = process.env.NODE_ENV === "development";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -93,7 +94,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             `,
           }}
         />
-        {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
+        {!isDev && gaId ? <GoogleAnalytics gaId={gaId} /> : null}
         <script
           dangerouslySetInnerHTML={{
             __html: `
