@@ -23,6 +23,8 @@ type AssetUsage = {
   total: number;
 };
 
+const ASSET_PREVIEW_TILT_MAX_DEG = 8;
+
 function formatAssetDate(timestamp: number): string {
   return new Date(timestamp).toLocaleString();
 }
@@ -55,6 +57,10 @@ function AssetsInspector({
   const [keepBackup, setKeepBackup] = useState(false);
   const [isReplacing, setIsReplacing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const previewInnerRef = useRef<HTMLDivElement | null>(null);
+  const tiltFrameRef = useRef<number | null>(null);
+  const tiltPointRef = useRef<{ x: number; y: number } | null>(null);
+  const reduceMotionRef = useRef(false);
   const showCarousel = assets.length > 1;
   const [isKindPopoverOpen, setIsKindPopoverOpen] = useState(false);
   const kindAnchorRef = useRef<HTMLButtonElement | null>(null);
@@ -133,6 +139,69 @@ function AssetsInspector({
     setKeepBackup(false);
     setIsKindPopoverOpen(false);
   }, [asset.id]);
+
+  const resetPreviewTilt = () => {
+    const previewEl = previewInnerRef.current;
+    if (!previewEl) return;
+    previewEl.style.setProperty("--asset-preview-tilt-x", "0deg");
+    previewEl.style.setProperty("--asset-preview-tilt-y", "0deg");
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleChange = () => {
+      reduceMotionRef.current = media.matches;
+      if (media.matches) {
+        resetPreviewTilt();
+      }
+    };
+    handleChange();
+    if (media.addEventListener) {
+      media.addEventListener("change", handleChange);
+      return () => media.removeEventListener("change", handleChange);
+    }
+    media.addListener(handleChange);
+    return () => media.removeListener(handleChange);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (tiltFrameRef.current !== null) {
+        cancelAnimationFrame(tiltFrameRef.current);
+        tiltFrameRef.current = null;
+      }
+    };
+  }, []);
+
+  const handlePreviewMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (reduceMotionRef.current) return;
+    tiltPointRef.current = { x: event.clientX, y: event.clientY };
+    if (tiltFrameRef.current !== null) return;
+    tiltFrameRef.current = requestAnimationFrame(() => {
+      tiltFrameRef.current = null;
+      const previewEl = previewInnerRef.current;
+      const point = tiltPointRef.current;
+      if (!previewEl || !point) return;
+      const rect = previewEl.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const normX = (point.x - rect.left) / rect.width - 0.5;
+      const normY = (point.y - rect.top) / rect.height - 0.5;
+      const tiltX = normY * ASSET_PREVIEW_TILT_MAX_DEG;
+      const tiltY = -normX * ASSET_PREVIEW_TILT_MAX_DEG;
+      previewEl.style.setProperty("--asset-preview-tilt-x", `${tiltX.toFixed(2)}deg`);
+      previewEl.style.setProperty("--asset-preview-tilt-y", `${tiltY.toFixed(2)}deg`);
+    });
+  };
+
+  const handlePreviewMouseLeave = () => {
+    tiltPointRef.current = null;
+    if (tiltFrameRef.current !== null) {
+      cancelAnimationFrame(tiltFrameRef.current);
+      tiltFrameRef.current = null;
+    }
+    resetPreviewTilt();
+  };
 
   const handleReplaceConfirm = async () => {
     if (!pendingReplace) return;
@@ -352,6 +421,9 @@ function AssetsInspector({
         <div className={styles.assetsInspectorPreview}>
           <div
             className={styles.assetsInspectorPreviewInner}
+            ref={previewInnerRef}
+            onMouseMove={handlePreviewMouseMove}
+            onMouseLeave={handlePreviewMouseLeave}
             style={
               previewUrl
                 ? ({
@@ -455,13 +527,13 @@ function AssetsInspector({
             <dt>{t("label.dateAdded")}</dt>
             <dd>{formatAssetDate(asset.createdAt)}</dd>
           </div>
-        </dl>
-        <div className={styles.assetsInspectorUsage}>
-          <div className={styles.assetsInspectorSectionTitle}>{t("label.usedOnCards")}</div>
-          <div className={styles.assetsInspectorUsageCount}>
-            {usage.total} {usage.total === 1 ? t("label.card") : t("label.cards")}
+          <div className={styles.uRowLg}>
+            <dt>{t("label.usedOnCards")}</dt>
+            <dd>
+              {usage.total} {usage.total === 1 ? t("label.card") : t("label.cards")}
+            </dd>
           </div>
-        </div>
+        </dl>
       </div>
       <ModalShell
         isOpen={Boolean(pendingReplace)}

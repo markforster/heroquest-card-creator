@@ -1100,7 +1100,7 @@
 
 .toolsToolbarGroup .toolsToolbarButton:hover {
   background: var(--hq-surface-850);
-  color: var(--hq-white);
+  color: var(--hq-text);
 }
 
 .toolsToolbarGroup .toolsToolbarButton.active,
@@ -1445,6 +1445,8 @@
   --asset-preview-rock-duration: 13s;
   --asset-preview-pulse-easing: ease-in-out;
   --asset-preview-rock-easing: ease-in-out;
+  --asset-preview-tilt-x: 0deg;
+  --asset-preview-tilt-y: 0deg;
   background: rgba(8, 8, 8, 0.6);
   border: 1px solid var(--hq-black-60);
   border-radius: var(--radius-md);
@@ -1498,6 +1500,10 @@
   .assetsInspectorPreviewInner::before {
     animation: none;
   }
+  .assetsInspectorPreviewInner img {
+    transition: none;
+    transform: none;
+  }
 }
 
 .assetsInspectorPreviewInner img {
@@ -1508,6 +1514,10 @@
   position: relative;
   z-index: 1;
   filter: drop-shadow(0 0 6px var(--hq-white-15));
+  transform: perspective(900px) rotateX(var(--asset-preview-tilt-x))
+    rotateY(var(--asset-preview-tilt-y));
+  transition: transform 150ms ease-out;
+  will-change: transform;
 }
 
 .assetsInspectorPreviewPlaceholder {
@@ -1520,7 +1530,7 @@
   font-size: var(--text-2xl);
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: var(--hq-white);
+  color: var(--hq-text);
   max-width: 100%;
   min-width: 0;
   white-space: nowrap;
@@ -4173,6 +4183,47 @@
 .stockpileFooter {
   justify-content: space-between;
   width: 100%;
+}
+
+.stockpileFooterHints {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin-left: var(--space-10);
+  color: var(--hq-text-muted);
+}
+
+.stockpileFooterHint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+  opacity: 0;
+  transition: opacity 350ms ease;
+}
+
+.stockpileFooterHintVisible {
+  opacity: 1;
+}
+
+.stockpileFooterHintHidden {
+  opacity: 0;
+}
+
+.stockpileFooterHintIcon {
+  width: 16px;
+  height: 16px;
+  color: var(--hq-text-muted);
+  opacity: 0.85;
+  flex: 0 0 auto;
+}
+
+.stockpileFooterHintText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stockpileOverlayBackdrop {

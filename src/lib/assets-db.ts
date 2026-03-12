@@ -294,9 +294,10 @@ export async function clearAssetClassification(): Promise<number> {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
     const request = store.getAll();
+    let records: AssetRecord[] = [];
 
     request.onsuccess = () => {
-      const records = (request.result as AssetRecord[]) ?? [];
+      records = (request.result as AssetRecord[]) ?? [];
       records.forEach((record) => {
         delete record.assetKind;
         delete record.assetKindStatus;

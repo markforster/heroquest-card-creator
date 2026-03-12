@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { Lightbulb } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
@@ -63,8 +64,62 @@ export default function StockpileFooter({
   const [pairingRemovalPrompt, setPairingRemovalPrompt] = useState<{
     count: number;
   } | null>(null);
+  const [hintIndex, setHintIndex] = useState(0);
+  const [isHintVisible, setIsHintVisible] = useState(true);
 
   const fallbackTitle = t("label.untitledCard");
+  const hasSelection = selectedIds.length > 0;
+  const hints = useMemo(() => {
+    if (hasSelection) {
+      return [t("hint.stockpileDragCollection"), t("hint.stockpileExportSelected")];
+    }
+    return [
+      t("hint.stockpileSelect"),
+      t("hint.stockpileMultiSelect"),
+      t("hint.stockpileOpen"),
+    ];
+  }, [hasSelection, t]);
+
+  useEffect(() => {
+    setHintIndex(0);
+    setIsHintVisible(true);
+  }, [hints.length, hasSelection]);
+
+  useEffect(() => {
+    if (hints.length <= 1) return;
+    let cancelled = false;
+    let timeoutId: number | null = null;
+
+    const showHint = (index: number) => {
+      if (cancelled) return;
+      setHintIndex(index);
+      setIsHintVisible(true);
+      timeoutId = window.setTimeout(() => {
+        if (cancelled) return;
+        setIsHintVisible(false);
+        timeoutId = window.setTimeout(() => {
+          if (cancelled) return;
+          const nextIndex = index + 1;
+          if (nextIndex < hints.length) {
+            showHint(nextIndex);
+          } else {
+            timeoutId = window.setTimeout(() => {
+              showHint(0);
+            }, 10_000);
+          }
+        }, 400);
+      }, 8_000);
+    };
+
+    showHint(0);
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [hints.length]);
 
   return (
     <>
@@ -114,6 +169,16 @@ export default function StockpileFooter({
           <div className={`d-flex w-100 align-items-center ${styles.stockpileFooter} ${styles.uRowLg}`}>
             <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">
               {collectionControls ?? null}
+            </div>
+            <div className={styles.stockpileFooterHints}>
+              <div
+                className={`${styles.stockpileFooterHint} ${
+                  isHintVisible ? styles.stockpileFooterHintVisible : styles.stockpileFooterHintHidden
+                }`}
+              >
+                <Lightbulb className={styles.stockpileFooterHintIcon} aria-hidden="true" />
+                <span className={styles.stockpileFooterHintText}>{hints[hintIndex]}</span>
+              </div>
             </div>
             <div className="flex-grow-1 flex-shrink-0" />
             <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">

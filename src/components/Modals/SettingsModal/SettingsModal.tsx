@@ -68,6 +68,9 @@ function SettingsModalContent({
                   if ("type" in area && area.type === "separator") {
                     return <div key={area.id} className={styles.settingsAreaDivider} />;
                   }
+                  if (!("icon" in area)) {
+                    return null;
+                  }
                   const Icon = area.icon;
                   const isActive = area.id === activeArea?.id;
                   return (
@@ -91,6 +94,9 @@ function SettingsModalContent({
                 .map((area) => {
                   if ("type" in area && area.type === "separator") {
                     return <div key={area.id} className={styles.settingsAreaDivider} />;
+                  }
+                  if (!("icon" in area)) {
+                    return null;
                   }
                   const Icon = area.icon;
                   const isActive = area.id === activeArea?.id;

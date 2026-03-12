@@ -18,6 +18,13 @@ Key features:
 
 Highlights (v0.5.3): Stockpile workflow overhaul, richer Assets/Pairing UX, and export safety checks.
 
+**Itch.io**
+
+- Play in your browser: [https://mark-forster.itch.io/heroquest-card-creator](https://mark-forster.itch.io/heroquest-card-creator)
+- Download: [Download](https://mark-forster.itch.io/heroquest-card-creator/purchase)
+- Rate the app: [Rate](https://mark-forster.itch.io/heroquest-card-creator/rate?source=github)
+- Community and updates: [https://mark-forster.itch.io/heroquest-card-creator/community](https://mark-forster.itch.io/heroquest-card-creator/community)
+
 ---
 
 ## Project shape
@@ -52,9 +59,11 @@ Core feature areas:
   - `card-record-mapper.ts` – mapping between editor data and `CardRecord`s.
 
 ### Blueprint rendering (developer notes)
+
 The preview renderer uses **blueprints** as the single source of truth for card layout. Each template defines layout bounds and layers in blueprint data, and the `BlueprintRenderer` maps card data onto those layers.
 
 To tinker:
+
 - Start at `src/components/BlueprintRenderer/index.tsx` to see how layers are interpreted.
 - Blueprint definitions live in `src/data/blueprints.ts` (and related files). Update bounds, fonts, and layer config there.
 - Shared SVG parts (ribbons, stats blocks, text blocks) are in `src/components/CardParts/*`.
