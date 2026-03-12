@@ -14,7 +14,7 @@ import { embeddedImagesByFileName } from "@/generated/embeddedAssets";
 const CTA_SHIMMER_INTERVAL_MS = 8_000;
 const CTA_PULSE_INTERVAL_MS = 60_000;
 const CTA_PULSE_DURATION_MS = 1_000;
-const CTA_ACTIVE_TIME_THRESHOLD_MS = 1 * 60 * 1000;
+const CTA_ACTIVE_TIME_THRESHOLD_MS = 10 * 60 * 1000;
 const CTA_ACTIVE_TIME_STORAGE_KEY = "hqcc.rateAppActiveMs";
 const CTA_ACTIVE_TIME_FLUSH_MS = 30_000;
 
