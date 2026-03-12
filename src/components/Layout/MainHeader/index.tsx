@@ -8,6 +8,7 @@ import { useClickOutside } from "@/components/common/useClickOutside";
 import { useLibraryTransfer } from "@/components/Providers/LibraryTransferContext";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { useI18n } from "@/i18n/I18nProvider";
+import RateCta from "@/components/Layout/RateCta";
 
 import HeaderBrand from "./HeaderBrand";
 import HeaderMenu from "./HeaderMenu";
@@ -50,10 +51,15 @@ export default function MainHeader({
   useClickOutside(menuRef, handleCloseMenu);
 
   return (
-    <header className={`${styles.header} d-flex align-items-center justify-content-between`}>
+    <header className={`${styles.header} d-flex align-items-center`}>
       <div className={`${styles.headerLeft} d-flex flex-column`}>
         <HeaderBrand />
       </div>
+      <div className={styles.headerSpacer} aria-hidden="true" />
+      <div className={`${styles.headerCenter} d-flex align-items-center justify-content-center`}>
+        <RateCta />
+      </div>
+      <div className={styles.headerSpacer} aria-hidden="true" />
       <div className={`${styles.headerRight} d-flex align-items-center gap-2`}>
         {showMissingAssetsReminder ? (
           <div className={styles.missingAssetsHeaderToast} role="status">

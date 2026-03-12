@@ -1,4 +1,5 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
+import Script from "next/script";
 
 import { AnalyticsProvider } from "@/components/Providers/AnalyticsProvider";
 import I18nProviderClient from "@/components/Providers/I18nProviderClient";
@@ -95,6 +96,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           }}
         />
         {!isDev && gaId ? <GoogleAnalytics gaId={gaId} /> : null}
+        <Script src="https://static.itch.io/api.js" strategy="afterInteractive" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

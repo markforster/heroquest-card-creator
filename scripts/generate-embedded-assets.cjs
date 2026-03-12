@@ -111,9 +111,13 @@ function main() {
     path.join(rootDir, "src", "assets", "card-parts"),
     path.join(rootDir, "src", "assets", "dice"),
   ];
+  const extraImageFiles = [path.join(rootDir, "src", "assets", "avatar.jpeg")];
   const fontsDir = path.join(rootDir, "public", "fonts");
 
-  const imageFiles = imagesDirs.flatMap((dir) => readDirFilesRecursive(dir)).filter((file) => {
+  const imageFiles = [
+    ...imagesDirs.flatMap((dir) => readDirFilesRecursive(dir)),
+    ...extraImageFiles.filter((file) => fs.existsSync(file)),
+  ].filter((file) => {
     const ext = path.extname(file).toLowerCase();
     return ext === ".png" || ext === ".jpg" || ext === ".jpeg" || ext === ".webp" || ext === ".svg";
   });

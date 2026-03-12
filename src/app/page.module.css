@@ -9,9 +9,21 @@
   padding: var(--space-4) 1.25rem var(--space-7);
   font-size: var(--text-sm);
   color: var(--hq-text-muted);
+  position: relative;
+  z-index: 25;
+  overflow: visible;
 }
 
 .footerLeft {
+}
+
+.footerCenter {
+  flex: 0 0 auto;
+}
+
+.footerSpacer {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .footerHeart {
@@ -27,6 +39,250 @@
   text-decoration: underline;
 }
 
+.footerCtaWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.footerCtaClicked {
+  transform: scale(1.06);
+}
+
+.footerCtaClicked .footerCtaLink {
+  opacity: 0.2;
+}
+
+.footerCtaPulse {
+  animation: ctaPulse var(--cta-pulse-duration, 3000ms) ease-in-out;
+}
+
+.footerCtaLink {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.85rem;
+  white-space: nowrap;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--hq-accent);
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+.footerCtaTextWrap {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  text-align: center;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.footerCtaTextDefault,
+.footerCtaTextHover {
+  grid-area: 1 / 1;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.footerCtaTextShimmer {
+  position: relative;
+  color: var(--hq-accent);
+}
+
+.footerCtaTextShimmer::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background-image: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.75) 35%,
+    #ffb347 50%,
+    rgba(255, 255, 255, 0.75) 65%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 300% 100%;
+  background-position: 100% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: 0;
+  animation: ctaTextShimmer var(--cta-shimmer-interval, 14000ms) linear infinite;
+  pointer-events: none;
+}
+
+.footerCtaTextHover {
+  opacity: 0;
+  transform: translateY(2px);
+  pointer-events: none;
+}
+
+.footerCtaLink:hover .footerCtaTextDefault,
+.footerCtaLink:focus-visible .footerCtaTextDefault {
+  opacity: 0;
+  transform: translateY(-2px);
+}
+
+.footerCtaLink:hover .footerCtaTextHover,
+.footerCtaLink:focus-visible .footerCtaTextHover {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.footerCtaMuted {
+  opacity: 0.55;
+}
+
+.footerCtaMuted:hover,
+.footerCtaMuted:focus-visible {
+  opacity: 0.85;
+}
+
+.footerCtaLink:hover,
+.footerCtaLink:focus-visible {
+  text-decoration: none;
+  box-shadow: none;
+  outline: none;
+  border: none;
+  opacity: 1;
+}
+
+.footerCtaAttention {
+}
+
+.footerCtaAttention.footerCtaPulse {
+  animation: ctaPulse var(--cta-pulse-duration, 3000ms) ease-in-out;
+}
+
+.footerCtaTooltip {
+  position: absolute;
+  left: 50%;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  font-size: var(--text-xs);
+  color: var(--hq-text);
+  background: var(--hq-bg);
+  border: 1px solid var(--hq-border-strong);
+  box-shadow: var(--shadow-soft);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10000;
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.footerCtaTooltipTop {
+  bottom: calc(100% + 8px);
+  transform: translate(-50%, -4px);
+}
+
+.footerCtaTooltipBottom {
+  top: calc(100% + 8px);
+  transform: translate(-50%, 4px);
+}
+
+.footerCtaTooltipContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footerCtaAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--hq-accent);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.footerCtaWrapper:hover .footerCtaTooltip,
+.footerCtaWrapper:focus-within .footerCtaTooltip {
+  opacity: 1;
+}
+
+.footerCtaWrapper:hover .footerCtaTooltipTop,
+.footerCtaWrapper:focus-within .footerCtaTooltipTop {
+  transform: translate(-50%, -8px);
+}
+
+.footerCtaWrapper:hover .footerCtaTooltipBottom,
+.footerCtaWrapper:focus-within .footerCtaTooltipBottom {
+  transform: translate(-50%, 8px);
+}
+
+@keyframes ctaTextShimmer {
+  0% {
+    opacity: 0;
+    background-position: -120% 50%;
+  }
+  70% {
+    opacity: 0;
+    background-position: -120% 50%;
+  }
+  95% {
+    opacity: 1;
+    background-position: 120% 50%;
+  }
+  100% {
+    opacity: 0;
+    background-position: 120% 50%;
+  }
+}
+
+@keyframes ctaShimmer {
+  0% {
+    background-position: 0 0, 0% 50%;
+  }
+  2% {
+    background-position: 0 0, 100% 50%;
+  }
+  100% {
+    background-position: 0 0, 100% 50%;
+  }
+}
+
+@keyframes ctaPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  15%,
+  45%,
+  75% {
+    transform: scale(1.12);
+  }
+  30%,
+  60%,
+  90% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footerCtaAttention,
+  .footerCtaPulse,
+  .footerCtaTextShimmer::after {
+    animation: none;
+  }
+}
+
 .header {
   flex: 0 0 52px;
   padding: 0 var(--space-12);
@@ -34,10 +290,22 @@
   color: var(--hq-text);
   border-bottom: 1px solid var(--hq-border-strong);
   box-shadow: var(--shadow-soft);
+  position: relative;
+  z-index: 3000;
+  overflow: visible;
 }
 
 .headerLeft {
   gap: var(--space-1);
+  min-width: 0;
+}
+
+.headerCenter {
+  flex: 0 0 auto;
+}
+
+.headerSpacer {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
