@@ -28,8 +28,7 @@ export default function MainHeader({
   const menuRef = useRef<HTMLDivElement | null>(null);
   const { t } = useI18n();
   const formatMessageWith = useCallback(
-    (key: string, vars: Record<string, string | number>) =>
-      formatMessage(t(key as never), vars),
+    (key: string, vars: Record<string, string | number>) => formatMessage(t(key as never), vars),
     [t],
   );
 
@@ -104,7 +103,7 @@ export default function MainHeader({
             <Facebook className={styles.headerSocialIcon} />
           </a>
           <a
-            href="https://mark-forster.itch.io/heroquest-search-tracker/community"
+            href="https://mark-forster.itch.io/heroquest-card-creator/community"
             target="_blank"
             rel="noreferrer noopener"
             className={styles.headerSocialLink}
