@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { Facebook, MessageCircle, Twitter, UsersRound } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import { useClickOutside } from "@/components/common/useClickOutside";
@@ -81,6 +82,48 @@ export default function MainHeader({
           onImport={handleImport}
           menuRef={menuRef}
         />
+        <div className={styles.headerSocialLinks} aria-label="Social links">
+          <a
+            href="https://x.com/hqcardcreator"
+            target="_blank"
+            rel="noreferrer noopener"
+            className={styles.headerSocialLink}
+            aria-label="Twitter"
+            title={t("tooltip.socialTwitter")}
+          >
+            <Twitter className={styles.headerSocialIcon} />
+          </a>
+          <a
+            href="https://www.facebook.com/profile.php?id=61585886908868"
+            target="_blank"
+            rel="noreferrer noopener"
+            className={styles.headerSocialLink}
+            aria-label="Facebook"
+            title={t("tooltip.socialFacebook")}
+          >
+            <Facebook className={styles.headerSocialIcon} />
+          </a>
+          <a
+            href="https://mark-forster.itch.io/heroquest-search-tracker/community"
+            target="_blank"
+            rel="noreferrer noopener"
+            className={styles.headerSocialLink}
+            aria-label="Community"
+            title={t("tooltip.socialCommunity")}
+          >
+            <UsersRound className={styles.headerSocialIcon} />
+          </a>
+          <a
+            href="https://discord.gg/gkVPyRjJ95"
+            target="_blank"
+            rel="noreferrer noopener"
+            className={styles.headerSocialLink}
+            aria-label="Discord"
+            title={t("tooltip.socialDiscord")}
+          >
+            <MessageCircle className={styles.headerSocialIcon} />
+          </a>
+        </div>
       </div>
     </header>
   );

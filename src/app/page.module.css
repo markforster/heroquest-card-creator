@@ -39,6 +39,38 @@
   text-decoration: underline;
 }
 
+.footerSocialLinks {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: var(--space-3);
+}
+
+.footerSocialLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  color: var(--hq-text-muted);
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.footerSocialLink:hover {
+  color: var(--hq-text);
+  background: var(--hq-white-10);
+  box-shadow: 0 0 0 1px var(--hq-white-15);
+}
+
+.footerSocialIcon {
+  width: 12px;
+  height: 12px;
+}
+
 .footerCtaWrapper {
   position: relative;
   display: inline-flex;
@@ -331,6 +363,29 @@
 
 .headerRight {
   font-size: var(--text-xl);
+}
+
+.headerSocialLinks {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.headerSocialLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hq-text-muted);
+  text-decoration: none;
+}
+
+.headerSocialLink:hover {
+  color: var(--hq-text);
+}
+
+.headerSocialIcon {
+  width: 18px;
+  height: 18px;
 }
 
 .missingAssetsBanner {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Gamepad2, Twitter } from "lucide-react";
 import styles from "@/app/page.module.css";
 import HelpModal from "@/components/Modals/HelpModal";
 import ReleaseNotesModal from "@/components/Modals/ReleaseNotesModal";
@@ -104,6 +105,26 @@ export default function MainFooter() {
             >
               Mark Forster
             </a>
+            <div className={styles.footerSocialLinks} aria-label="Social links">
+              <a
+                href="https://x.com/markforster"
+                target="_blank"
+                rel="noreferrer noopener"
+                className={styles.footerSocialLink}
+                aria-label="Twitter"
+              >
+                <Twitter className={styles.footerSocialIcon} />
+              </a>
+              <a
+                href="https://mark-forster.itch.io/"
+                target="_blank"
+                rel="noreferrer noopener"
+                className={styles.footerSocialLink}
+                aria-label="Itch.io"
+              >
+                <Gamepad2 className={styles.footerSocialIcon} />
+              </a>
+            </div>
           </div>
         </div>
       </footer>

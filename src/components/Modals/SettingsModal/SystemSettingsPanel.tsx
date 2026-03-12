@@ -9,10 +9,11 @@ import {
   runFullDbEstimate,
   subscribeDbEstimateStatus,
 } from "@/lib/indexeddb-size-tracker";
+import { useI18n } from "@/i18n/I18nProvider";
 import { APP_VERSION } from "@/version";
 
-function formatBytes(bytes: number | null): string {
-  if (bytes == null || !Number.isFinite(bytes)) return "Unavailable";
+function formatBytes(bytes: number | null, fallback: string): string {
+  if (bytes == null || !Number.isFinite(bytes)) return fallback;
   const abs = Math.max(0, bytes);
   if (abs < 1024) return `${Math.round(abs)} B`;
   const kb = abs / 1024;
@@ -23,12 +24,13 @@ function formatBytes(bytes: number | null): string {
   return `${gb.toFixed(1)} GB`;
 }
 
-function formatBytesSafe(bytes: number | null): string {
-  if (bytes == null || !Number.isFinite(bytes)) return "Not yet calculated";
-  return formatBytes(bytes);
+function formatBytesSafe(bytes: number | null, fallback: string): string {
+  if (bytes == null || !Number.isFinite(bytes)) return fallback;
+  return formatBytes(bytes, fallback);
 }
 
 export default function SystemSettingsPanel() {
+  const { t } = useI18n();
   const [usageBytes, setUsageBytes] = useState<number | null>(null);
   const [quotaBytes, setQuotaBytes] = useState<number | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export default function SystemSettingsPanel() {
     if (typeof navigator === "undefined" || !navigator.storage?.estimate) {
       setUsageBytes(null);
       setQuotaBytes(null);
-      setLastUpdated("Unavailable");
+      setLastUpdated(t("label.unavailable"));
       return;
     }
 
@@ -53,11 +55,11 @@ export default function SystemSettingsPanel() {
     } catch {
       setUsageBytes(null);
       setQuotaBytes(null);
-      setLastUpdated("Unavailable");
+      setLastUpdated(t("label.unavailable"));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void refreshStorageEstimate();
@@ -82,20 +84,42 @@ export default function SystemSettingsPanel() {
 
   return (
     <div className={styles.settingsPanelBody}>
-      <SettingsGroup title="System Info" className="d-flex flex-column gap-2">
+      <SettingsGroup title={t("label.systemInfo")} className="d-flex flex-column gap-2">
         <div className="d-flex flex-column gap-2">
-          <div className={styles.settingsPanelOption}>App: HeroQuest Card Creator</div>
-          <div className={styles.settingsPanelOption}>Version: {APP_VERSION}</div>
-          <div className={styles.settingsPanelOption}>Developer: Mark Forster</div>
-          <div className={styles.settingsPanelOption}>Date: 2026</div>
+          <div className={styles.settingsPanelOption}>{t("label.app")}: HeroQuest Card Creator</div>
+          <div className={styles.settingsPanelOption}>
+            {t("label.version")}: {APP_VERSION}
+          </div>
+          <div className={styles.settingsPanelOption}>
+            {t("label.developer")}:{" "}
+            <a
+              href="https://mark-forster.itch.io/"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={styles.footerLink}
+            >
+              Mark Forster
+            </a>
+          </div>
+          <div className={styles.settingsPanelOption}>
+            {t("label.community")}:{" "}
+            <a
+              href="https://mark-forster.itch.io/heroquest-card-creator/community"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={styles.footerLink}
+            >
+              Reach out on itch.io
+            </a>
+          </div>
         </div>
       </SettingsGroup>
       <SettingsGroup
         title={
           <div className={styles.settingsGroupTitleRow}>
-            <span>Storage</span>
+            <span>{t("label.storage")}</span>
             <span className={styles.settingsGroupMeta}>
-              Last updated: {lastUpdated ?? "Pending"}
+              {t("label.lastUpdated")}: {lastUpdated ?? t("label.pending")}
             </span>
           </div>
         }
@@ -103,21 +127,28 @@ export default function SystemSettingsPanel() {
       >
         <div className="d-flex flex-column gap-2">
           <div className={styles.settingsPanelOption}>
-            Estimated total browser app usage: {formatBytes(usageBytes)}
+            {t("label.estimatedBrowserUsage")}: {formatBytes(usageBytes, t("label.unavailable"))}
           </div>
           <div className={styles.settingsPanelOption}>
-            Estimated Library Size:{" "}
-            {formatBytesSafe(dbEstimateStatus.lastUpdated ? dbEstimateStatus.totalBytes : null)}
+            {t("label.estimatedLibrarySize")}:{" "}
+            {formatBytesSafe(
+              dbEstimateStatus.lastUpdated ? dbEstimateStatus.totalBytes : null,
+              t("label.notYetCalculated"),
+            )}
           </div>
           <div className={styles.settingsPanelOption}>
-            Records scanned:{" "}
-            {dbEstimateStatus.lastUpdated ? dbEstimateStatus.recordsScanned : "Not yet calculated"}
+            {t("label.recordsScanned")}:{" "}
+            {dbEstimateStatus.lastUpdated
+              ? dbEstimateStatus.recordsScanned
+              : t("label.notYetCalculated")}
           </div>
           {Object.keys(dbEstimateStatus.byStore ?? {}).length > 0 ? (
             <div className="d-flex flex-column gap-1">
               {Object.entries(dbEstimateStatus.byStore).map(([store, value]) => (
                 <div key={store} className={styles.settingsPanelOption}>
-                  {store.charAt(0).toUpperCase() + store.slice(1)}: {formatBytes(value.bytes)} ({value.records} records)
+                  {store.charAt(0).toUpperCase() + store.slice(1)}:{" "}
+                  {formatBytes(value.bytes, t("label.unavailable"))} ({value.records}{" "}
+                  {t("label.records")})
                 </div>
               ))}
             </div>
@@ -130,7 +161,7 @@ export default function SystemSettingsPanel() {
             onClick={refreshDbEstimate}
             disabled={dbEstimateLoading}
           >
-            {dbEstimateLoading ? "Refreshing..." : "Refresh IndexedDB estimate"}
+            {dbEstimateLoading ? t("actions.refreshing") : t("actions.refreshStorageEstimate")}
           </button>
         </div>
       </SettingsGroup>
