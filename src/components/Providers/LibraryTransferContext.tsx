@@ -46,6 +46,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
   const [backupSecondaryPercent, setBackupSecondaryPercent] = useState<number | null>(null);
   const backupSecondaryModeRef = useRef<"worker" | "fallback" | null>(null);
   const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
+  const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const resolveWsUrl = (baseUrl: string) => {
@@ -287,6 +288,16 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
     }
   };
 
+  const handleExportClick = () => {
+    if (isExporting || isImporting) return;
+    setIsExportConfirmOpen(true);
+  };
+
+  const handleExportConfirm = () => {
+    setIsExportConfirmOpen(false);
+    void handleExport();
+  };
+
   const handleImportClick = () => {
     if (isExporting || isImporting) return;
     setIsImportConfirmOpen(true);
@@ -403,7 +414,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
     isBusy: isExporting || isImporting,
     isExporting,
     isImporting,
-    openExport: handleExport,
+    openExport: handleExportClick,
     openImport: handleImportClick,
   };
 
@@ -437,6 +448,16 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
         onCancel={() => setIsImportConfirmOpen(false)}
       >
         {t("confirm.importReplaceData")}
+      </ConfirmModal>
+      <ConfirmModal
+        isOpen={isExportConfirmOpen}
+        title={t("heading.exportData")}
+        confirmLabel={t("actions.export")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={handleExportConfirm}
+        onCancel={() => setIsExportConfirmOpen(false)}
+      >
+        {t("confirm.exportStart")}
       </ConfirmModal>
     </LibraryTransferContext.Provider>
   );

@@ -1,18 +1,15 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Facebook, MessageCircle, Twitter, UsersRound } from "lucide-react";
+import { Coffee, Facebook, MessageCircle, Twitter, UsersRound } from "lucide-react";
 
 import styles from "@/app/page.module.css";
-import { useClickOutside } from "@/components/common/useClickOutside";
-import { useLibraryTransfer } from "@/components/Providers/LibraryTransferContext";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { useI18n } from "@/i18n/I18nProvider";
 import RateCta from "@/components/Layout/RateCta";
 
 import HeaderBrand from "./HeaderBrand";
-import HeaderMenu from "./HeaderMenu";
 
 type MainHeaderProps = {
   missingAssetsCount?: number;
@@ -23,32 +20,11 @@ export default function MainHeader({
   missingAssetsCount = 0,
   showMissingAssetsReminder = false,
 }: MainHeaderProps) {
-  const { isBusy, isExporting, isImporting, openExport, openImport } = useLibraryTransfer();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
   const { t } = useI18n();
   const formatMessageWith = useCallback(
     (key: string, vars: Record<string, string | number>) => formatMessage(t(key as never), vars),
     [t],
   );
-
-  const handleCloseMenu = useCallback(() => {
-    setIsMenuOpen(false);
-  }, []);
-
-  const handleToggleMenu = useCallback(() => {
-    setIsMenuOpen((prev) => !prev);
-  }, []);
-
-  const handleExport = useCallback(() => {
-    openExport();
-  }, [openExport]);
-
-  const handleImport = useCallback(() => {
-    openImport();
-  }, [openImport]);
-
-  useClickOutside(menuRef, handleCloseMenu);
 
   return (
     <header className={`${styles.header} d-flex align-items-center`}>
@@ -70,17 +46,6 @@ export default function MainHeader({
             </Link>
           </div>
         ) : null}
-        <HeaderMenu
-          isMenuOpen={isMenuOpen}
-          isBusy={isBusy}
-          isExporting={isExporting}
-          isImporting={isImporting}
-          onToggle={handleToggleMenu}
-          onClose={handleCloseMenu}
-          onExport={handleExport}
-          onImport={handleImport}
-          menuRef={menuRef}
-        />
         <div className={styles.headerSocialLinks} aria-label="Social links">
           <a
             href="https://x.com/hqcardcreator"
@@ -121,6 +86,16 @@ export default function MainHeader({
             title={t("tooltip.socialDiscord")}
           >
             <MessageCircle className={styles.headerSocialIcon} />
+          </a>
+          <a
+            href="https://buymeacoffee.com/markforster"
+            target="_blank"
+            rel="noreferrer noopener"
+            className={styles.headerSocialLink}
+            aria-label="Buy me a coffee"
+            title={t("tooltip.socialBuyCoffee")}
+          >
+            <Coffee className={styles.headerSocialIcon} />
           </a>
         </div>
       </div>

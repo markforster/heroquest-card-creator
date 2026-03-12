@@ -60,6 +60,13 @@ function AssetsInspector({
   const previewInnerRef = useRef<HTMLDivElement | null>(null);
   const tiltFrameRef = useRef<number | null>(null);
   const tiltPointRef = useRef<{ x: number; y: number } | null>(null);
+  const idleFrameRef = useRef<number | null>(null);
+  const idleTargetRef = useRef<{ x: number; y: number } | null>(null);
+  const idleFromRef = useRef<{ x: number; y: number } | null>(null);
+  const idleStartRef = useRef<number | null>(null);
+  const idleDurationRef = useRef<number>(0);
+  const isHoveringRef = useRef(false);
+  const currentTiltRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const reduceMotionRef = useRef(false);
   const showCarousel = assets.length > 1;
   const [isKindPopoverOpen, setIsKindPopoverOpen] = useState(false);
@@ -145,6 +152,63 @@ function AssetsInspector({
     if (!previewEl) return;
     previewEl.style.setProperty("--asset-preview-tilt-x", "0deg");
     previewEl.style.setProperty("--asset-preview-tilt-y", "0deg");
+    currentTiltRef.current = { x: 0, y: 0 };
+  };
+
+  const stopIdleTilt = () => {
+    if (idleFrameRef.current !== null) {
+      cancelAnimationFrame(idleFrameRef.current);
+      idleFrameRef.current = null;
+    }
+    idleTargetRef.current = null;
+    idleFromRef.current = null;
+    idleStartRef.current = null;
+  };
+
+  const startIdleTilt = () => {
+    if (reduceMotionRef.current || isHoveringRef.current) return;
+    if (idleFrameRef.current !== null) return;
+    idleFrameRef.current = requestAnimationFrame(stepIdleTilt);
+  };
+
+  const stepIdleTilt = (timestamp: number) => {
+    idleFrameRef.current = null;
+    if (reduceMotionRef.current || isHoveringRef.current) {
+      stopIdleTilt();
+      return;
+    }
+    const previewEl = previewInnerRef.current;
+    if (!previewEl) return;
+
+    if (!idleTargetRef.current || idleStartRef.current === null) {
+      const maxTilt = 1.8;
+      const randTilt = () => (Math.random() * 2 - 1) * maxTilt;
+      idleFromRef.current = { ...currentTiltRef.current };
+      idleTargetRef.current = { x: randTilt(), y: randTilt() };
+      idleStartRef.current = timestamp;
+      idleDurationRef.current = 2800 + Math.random() * 2200;
+    }
+
+    const start = idleStartRef.current ?? timestamp;
+    const duration = idleDurationRef.current || 3000;
+    const progress = Math.min(1, (timestamp - start) / duration);
+    const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+    const target = idleTargetRef.current ?? { x: 0, y: 0 };
+    const from = idleFromRef.current ?? { x: 0, y: 0 };
+    const nextX = from.x + (target.x - from.x) * ease;
+    const nextY = from.y + (target.y - from.y) * ease;
+
+    previewEl.style.setProperty("--asset-preview-tilt-x", `${nextX.toFixed(2)}deg`);
+    previewEl.style.setProperty("--asset-preview-tilt-y", `${nextY.toFixed(2)}deg`);
+    currentTiltRef.current = { x: nextX, y: nextY };
+
+    if (progress >= 1) {
+      idleTargetRef.current = null;
+      idleFromRef.current = null;
+      idleStartRef.current = null;
+    }
+
+    idleFrameRef.current = requestAnimationFrame(stepIdleTilt);
   };
 
   useEffect(() => {
@@ -153,6 +217,7 @@ function AssetsInspector({
     const handleChange = () => {
       reduceMotionRef.current = media.matches;
       if (media.matches) {
+        stopIdleTilt();
         resetPreviewTilt();
       }
     };
@@ -171,11 +236,16 @@ function AssetsInspector({
         cancelAnimationFrame(tiltFrameRef.current);
         tiltFrameRef.current = null;
       }
+      stopIdleTilt();
     };
   }, []);
 
   const handlePreviewMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (reduceMotionRef.current) return;
+    if (!isHoveringRef.current) {
+      isHoveringRef.current = true;
+      stopIdleTilt();
+    }
     tiltPointRef.current = { x: event.clientX, y: event.clientY };
     if (tiltFrameRef.current !== null) return;
     tiltFrameRef.current = requestAnimationFrame(() => {
@@ -191,17 +261,31 @@ function AssetsInspector({
       const tiltY = -normX * ASSET_PREVIEW_TILT_MAX_DEG;
       previewEl.style.setProperty("--asset-preview-tilt-x", `${tiltX.toFixed(2)}deg`);
       previewEl.style.setProperty("--asset-preview-tilt-y", `${tiltY.toFixed(2)}deg`);
+      currentTiltRef.current = { x: tiltX, y: tiltY };
     });
   };
 
   const handlePreviewMouseLeave = () => {
+    isHoveringRef.current = false;
     tiltPointRef.current = null;
     if (tiltFrameRef.current !== null) {
       cancelAnimationFrame(tiltFrameRef.current);
       tiltFrameRef.current = null;
     }
     resetPreviewTilt();
+    startIdleTilt();
   };
+
+  useEffect(() => {
+    stopIdleTilt();
+    resetPreviewTilt();
+    if (!reduceMotionRef.current) {
+      startIdleTilt();
+    }
+    return () => {
+      stopIdleTilt();
+    };
+  }, [asset.id, previewUrl, refreshKey]);
 
   const handleReplaceConfirm = async () => {
     if (!pendingReplace) return;

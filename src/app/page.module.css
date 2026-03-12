@@ -743,6 +743,89 @@
 .leftNavBottom {
   flex: 0 1 auto;
 }
+.leftNavActionStrip {
+  --strip-gap: 2px;
+  --strip-padding: var(--space-2);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--strip-gap);
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--hq-black-60);
+  background: var(--hq-white-05);
+  border-radius: var(--radius-sm);
+  padding: var(--strip-padding);
+}
+
+.leftNavActionStripCollapsed {
+  --strip-gap: var(--space-5);
+  --strip-padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.leftNavActionStripCollapsed .leftNavStripButton {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+}
+
+.leftNavStripItem {
+  position: relative;
+}
+
+.leftNavStripButton {
+  border: 1px solid var(--hq-black-60);
+  background: var(--hq-white-05);
+  color: inherit;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.leftNavStripButton:hover:enabled {
+  background: var(--hq-white-12);
+}
+
+.leftNavStripButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.leftNavStripButtonActive {
+  border-color: var(--hq-accent);
+  box-shadow: inset 0 0 0 1px var(--hq-accent);
+}
+
+.leftNavStripIcon {
+  width: 78%;
+  height: 78%;
+}
+
+.leftNavStripFlag {
+  font-size: 95%;
+  line-height: 1;
+}
+
+.leftNavStripPopover {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + var(--space-4));
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hq-border-strong);
+  background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
+  box-shadow: var(--shadow-popover);
+  z-index: 20;
+}
 .leftNavList,
 /* Stat controls */
 
@@ -955,7 +1038,7 @@
   width: max-content;
   max-height: 50vh;
   background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
-  border: 1px solid var(--hq-black);
+  border: 1px solid var(--hq-border-strong);
   border-radius: var(--radius-md);
   padding: var(--space-4);
   padding-right: var(--space-4);
