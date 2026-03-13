@@ -267,6 +267,10 @@ export async function touchCardLastViewed(
     putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update card view"));
   });
 
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+  }
+
   return normalizeCardRecord(next);
 }
 

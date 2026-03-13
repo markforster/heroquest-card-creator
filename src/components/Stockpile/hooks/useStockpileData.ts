@@ -33,7 +33,13 @@ export const useStockpileData = ({
   const hasLoadedCollections = useRef(false);
   const listCardsQuery = useListCards(
     { queries: { status: "saved", deleted: "include" } },
-    { enabled: isOpen, staleTime: 60_000, keepPreviousData: true },
+    {
+      enabled: isOpen,
+      staleTime: 0,
+      keepPreviousData: false,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: true,
+    },
   );
   const listCollectionsQuery = useListCollections(undefined, {
     enabled: isOpen,
