@@ -8,6 +8,7 @@ import styles from "@/app/page.module.css";
 import AssetsMainPanel from "@/components/Assets/AssetsMainPanel";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
 import ModalShell from "@/components/common/ModalShell";
+import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
@@ -743,6 +744,18 @@ function AssetsInspector({
     }
   };
 
+  const closeReplaceModal = () => {
+    if (isReplacing) return;
+    setPendingReplace(null);
+    setKeepBackup(false);
+  };
+
+  useEscapeModalAware({
+    id: "assets:replace-modal",
+    isOpen: Boolean(pendingReplace),
+    onEscape: closeReplaceModal,
+  });
+
   const handleConvertOpen = () => {
     setIsConvertOpen(true);
     setConvertError(null);
@@ -880,6 +893,25 @@ function AssetsInspector({
       setIsApplyingConvert(false);
     }
   };
+
+  const closeConvertModal = () => {
+    if (isApplyingConvert) return;
+    if (convertPreview?.url) {
+      URL.revokeObjectURL(convertPreview.url);
+    }
+    setConvertPreview(null);
+    setConvertError(null);
+    setConvertInspect(false);
+    setConvertPan({ x: 0, y: 0 });
+    convertLastPointRef.current = null;
+    setIsConvertOpen(false);
+  };
+
+  useEscapeModalAware({
+    id: "assets:convert-modal",
+    isOpen: isConvertOpen,
+    onEscape: closeConvertModal,
+  });
 
   const handleOptimizeOpen = async () => {
     setIsOptimizeOpen(true);
@@ -1356,11 +1388,7 @@ function AssetsInspector({
       </div>
       <ModalShell
         isOpen={Boolean(pendingReplace)}
-        onClose={() => {
-          if (isReplacing) return;
-          setPendingReplace(null);
-          setKeepBackup(false);
-        }}
+        onClose={closeReplaceModal}
         title={t("heading.replaceImage")}
         contentClassName={styles.assetsReplacePopover}
         footer={
@@ -1369,9 +1397,7 @@ function AssetsInspector({
               type="button"
               className={styles.templateSecondaryButton}
               onClick={() => {
-                if (isReplacing) return;
-                setPendingReplace(null);
-                setKeepBackup(false);
+                closeReplaceModal();
               }}
               disabled={isReplacing}
             >
@@ -1695,18 +1721,7 @@ function AssetsInspector({
       </ModalShell>
       <ModalShell
         isOpen={isConvertOpen}
-        onClose={() => {
-          if (isApplyingConvert) return;
-          if (convertPreview?.url) {
-            URL.revokeObjectURL(convertPreview.url);
-          }
-          setConvertPreview(null);
-          setConvertError(null);
-          setConvertInspect(false);
-          setConvertPan({ x: 0, y: 0 });
-          convertLastPointRef.current = null;
-          setIsConvertOpen(false);
-        }}
+        onClose={closeConvertModal}
         title={t("heading.convertToJpeg")}
         contentClassName={styles.assetsOptimizePopover}
         footer={
@@ -1714,17 +1729,7 @@ function AssetsInspector({
             <button
               type="button"
               className={styles.templateSecondaryButton}
-              onClick={() => {
-                if (convertPreview?.url) {
-                  URL.revokeObjectURL(convertPreview.url);
-                }
-                setConvertPreview(null);
-                setConvertError(null);
-                setConvertInspect(false);
-                setConvertPan({ x: 0, y: 0 });
-                convertLastPointRef.current = null;
-                setIsConvertOpen(false);
-              }}
+              onClick={closeConvertModal}
               disabled={isApplyingConvert}
             >
               {t("actions.cancel")}
