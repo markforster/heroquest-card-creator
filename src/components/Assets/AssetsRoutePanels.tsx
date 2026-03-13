@@ -1392,10 +1392,10 @@ function AssetsInspector({
         title={t("heading.replaceImage")}
         contentClassName={styles.assetsReplacePopover}
         footer={
-          <>
+          <div className="d-flex gap-2 justify-content-end">
             <button
               type="button"
-              className={styles.templateSecondaryButton}
+              className="btn btn-outline-secondary btn-sm"
               onClick={() => {
                 closeReplaceModal();
               }}
@@ -1411,7 +1411,7 @@ function AssetsInspector({
             >
               {t("actions.replace")}
             </button>
-          </>
+          </div>
         }
       >
         <div className={styles.assetsOptimizeBody}>
@@ -1508,7 +1508,7 @@ function AssetsInspector({
             <div className={styles.assetsOptimizeFooterActions}>
               <button
                 type="button"
-                className={styles.templateSecondaryButton}
+                className="btn btn-outline-secondary btn-sm"
                 onClick={() => setIsOptimizeOpen(false)}
                 disabled={isApplyingOptimization}
               >
@@ -1725,10 +1725,10 @@ function AssetsInspector({
         title={t("heading.convertToJpeg")}
         contentClassName={styles.assetsOptimizePopover}
         footer={
-          <>
+          <div className="d-flex gap-2 justify-content-end">
             <button
               type="button"
-              className={styles.templateSecondaryButton}
+              className="btn btn-outline-secondary btn-sm"
               onClick={closeConvertModal}
               disabled={isApplyingConvert}
             >
@@ -1742,7 +1742,7 @@ function AssetsInspector({
             >
               {t("actions.apply")}
             </button>
-          </>
+          </div>
         }
       >
         <div className={styles.assetsOptimizeBody}>

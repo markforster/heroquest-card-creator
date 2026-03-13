@@ -1558,7 +1558,7 @@ function AssetsModalFooter({
         </div>
         <button
           type="button"
-          className={styles.templateSecondaryButton}
+          className="btn btn-outline-secondary btn-sm"
           disabled={isDeleting}
           onClick={() => setConfirmState(null)}
         >
