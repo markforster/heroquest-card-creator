@@ -44,7 +44,7 @@ export const hu = {
   "actions.collapseAll": "Összes összecsukása",
   "actions.expandAll": "Összes kibontása",
   "actions.replace": "Csere",
-  "actions.replaceImage": "Kép cseréje",
+  "actions.replaceImage": "Csere",
   "actions.load": "Betöltés",
   "actions.addToCollection": "Gyűjteményhez adás",
   "actions.removeFromCollection": "Eltávolítás a gyűjteményből",

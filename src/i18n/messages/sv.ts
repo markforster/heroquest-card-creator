@@ -44,7 +44,7 @@ export const sv = {
   "actions.collapseAll": "Fäll ihop alla",
   "actions.expandAll": "Expandera alla",
   "actions.replace": "Ersätt",
-  "actions.replaceImage": "Ersätt bild",
+  "actions.replaceImage": "Ersätt",
   "actions.load": "Ladda",
   "actions.addToCollection": "Lägg till i samling",
   "actions.removeFromCollection": "Ta bort från samling",

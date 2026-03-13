@@ -44,7 +44,7 @@ export const cs = {
   "actions.collapseAll": "Sbalit vše",
   "actions.expandAll": "Rozbalit vše",
   "actions.replace": "Nahradit",
-  "actions.replaceImage": "Nahradit obrázek",
+  "actions.replaceImage": "Nahradit",
   "actions.load": "Načíst",
   "actions.addToCollection": "Přidat do kolekce",
   "actions.removeFromCollection": "Odebrat z kolekce",

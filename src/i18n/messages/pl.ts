@@ -44,7 +44,7 @@ export const pl = {
   "actions.collapseAll": "Zwiń wszystko",
   "actions.expandAll": "Rozwiń wszystko",
   "actions.replace": "Zamień",
-  "actions.replaceImage": "Zamień obraz",
+  "actions.replaceImage": "Zamień",
   "actions.load": "Wczytaj",
   "actions.addToCollection": "Dodaj do kolekcji",
   "actions.removeFromCollection": "Usuń z kolekcji",

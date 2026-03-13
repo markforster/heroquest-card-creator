@@ -44,7 +44,7 @@ export const it = {
   "actions.collapseAll": "Comprimi tutto",
   "actions.expandAll": "Espandi tutto",
   "actions.replace": "Sostituisci",
-  "actions.replaceImage": "Sostituisci immagine",
+  "actions.replaceImage": "Sostituisci",
   "actions.load": "Carica",
   "actions.addToCollection": "Aggiungi a raccolta",
   "actions.removeFromCollection": "Rimuovi dalla raccolta",

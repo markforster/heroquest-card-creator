@@ -44,7 +44,7 @@ export const el = {
   "actions.collapseAll": "Σύμπτυξη όλων",
   "actions.expandAll": "Ανάπτυξη όλων",
   "actions.replace": "Αντικατάσταση",
-  "actions.replaceImage": "Αντικατάσταση εικόνας",
+  "actions.replaceImage": "Αντικατάσταση",
   "actions.load": "Φόρτωση",
   "actions.addToCollection": "Προσθήκη στη συλλογή",
   "actions.removeFromCollection": "Αφαίρεση από τη συλλογή",

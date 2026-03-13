@@ -1,7 +1,7 @@
 "use client";
 
 import { Search, Trash2, Upload } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext } from "react-hook-form";
 
@@ -106,6 +106,7 @@ export default function AssetsPanelContent({
   const [assetKindFilter, setAssetKindFilter] = useState<
     "all" | "artwork" | "icon" | "unclassified"
   >("all");
+  const [mimeTypeFilter, setMimeTypeFilter] = useState<string>("all");
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const thumbUrlsRef = useRef<Record<string, string>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -119,6 +120,8 @@ export default function AssetsPanelContent({
   const assetsGridRef = useRef<HTMLDivElement | null>(null);
   const [isKindFilterOpen, setIsKindFilterOpen] = useState(false);
   const kindFilterRef = useRef<HTMLDivElement | null>(null);
+  const [isMimeFilterOpen, setIsMimeFilterOpen] = useState(false);
+  const mimeFilterRef = useRef<HTMLDivElement | null>(null);
   const [activeKindPopoverId, setActiveKindPopoverId] = useState<string | null>(null);
   const [kindPopoverStyle, setKindPopoverStyle] = useState<React.CSSProperties | null>(null);
   const kindPopoverRef = useRef<HTMLDivElement | null>(null);
@@ -203,6 +206,18 @@ export default function AssetsPanelContent({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isKindFilterOpen]);
+
+  useEffect(() => {
+    if (!isMimeFilterOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!mimeFilterRef.current) return;
+      if (!mimeFilterRef.current.contains(event.target as Node)) {
+        setIsMimeFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMimeFilterOpen]);
 
   useEffect(() => {
     if (!activeKindPopoverId) return;
@@ -480,6 +495,9 @@ export default function AssetsPanelContent({
       return asset.assetKindStatus === "classified" && asset.assetKind === "icon";
     }
     return asset.assetKindStatus !== "classified";
+  }).filter((asset) => {
+    if (mimeTypeFilter === "all") return true;
+    return asset.mimeType === mimeTypeFilter;
   });
 
   const groupedAssets = groupAssetsByKind(filteredAssets, preferredKindOrder).filter(
@@ -494,6 +512,18 @@ export default function AssetsPanelContent({
     (asset) => asset.assetKindStatus === "classified" && asset.assetKind === "icon",
   ).length;
   const unclassifiedCount = assets.filter((asset) => asset.assetKindStatus !== "classified").length;
+  const mimeTypeCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    assets.forEach((asset) => {
+      const current = counts.get(asset.mimeType) ?? 0;
+      counts.set(asset.mimeType, current + 1);
+    });
+    return counts;
+  }, [assets]);
+  const mimeTypeList = useMemo(
+    () => Array.from(mimeTypeCounts.keys()).sort((a, b) => a.localeCompare(b)),
+    [mimeTypeCounts],
+  );
 
   const assetKindFilterLabel =
     assetKindFilter === "all"
@@ -503,6 +533,8 @@ export default function AssetsPanelContent({
         : assetKindFilter === "icon"
           ? t("label.assetKindFilterIcon")
           : t("label.assetKindFilterUnclassified");
+  const mimeTypeFilterLabel =
+    mimeTypeFilter === "all" ? t("label.mimeFilterAll") : mimeTypeFilter;
 
   const handleConfirmDelete = async (ids: string[]) => {
     try {
@@ -1008,6 +1040,54 @@ export default function AssetsPanelContent({
                   <span>{t("label.assetKindFilterUnclassified")}</span>
                   <span className={styles.cardsFilterCount}>{unclassifiedCount}</span>
                 </button>
+              </div>
+            ) : null}
+          </div>
+          <div className={styles.cardsFilterMenu} ref={mimeFilterRef}>
+            <button
+              type="button"
+              className={styles.cardsFilterButton}
+              title={t("tooltip.filterAssetsByType")}
+              aria-expanded={isMimeFilterOpen}
+              onClick={() => setIsMimeFilterOpen((prev) => !prev)}
+            >
+              <span>{mimeTypeFilterLabel}</span>
+            </button>
+            {isMimeFilterOpen ? (
+              <div className={styles.cardsFilterPopover} role="menu">
+                <button
+                  type="button"
+                  className={`${styles.cardsFilterItem} ${
+                    mimeTypeFilter === "all" ? styles.cardsFilterItemActive : ""
+                  }`}
+                  role="menuitem"
+                  onClick={() => {
+                    setMimeTypeFilter("all");
+                    setIsMimeFilterOpen(false);
+                  }}
+                >
+                  <span>{t("label.mimeFilterAll")}</span>
+                  <span className={styles.cardsFilterCount}>{totalCount}</span>
+                </button>
+                {mimeTypeList.map((mimeType) => (
+                  <button
+                    key={mimeType}
+                    type="button"
+                    className={`${styles.cardsFilterItem} ${
+                      mimeTypeFilter === mimeType ? styles.cardsFilterItemActive : ""
+                    }`}
+                    role="menuitem"
+                    onClick={() => {
+                      setMimeTypeFilter(mimeType);
+                      setIsMimeFilterOpen(false);
+                    }}
+                  >
+                    <span>{mimeType}</span>
+                    <span className={styles.cardsFilterCount}>
+                      {mimeTypeCounts.get(mimeType) ?? 0}
+                    </span>
+                  </button>
+                ))}
               </div>
             ) : null}
           </div>

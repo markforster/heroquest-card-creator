@@ -14,13 +14,22 @@ import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
 import type { AssetRecord } from "@/api/assets";
+import { blueprintsByTemplateId } from "@/data/blueprints";
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
+import { optimizeImageBlob } from "@/lib/image-optimization";
+import type { Blueprint, BlueprintBounds } from "@/types/blueprints";
+import type { TemplateId } from "@/types/templates";
 
 import type { ChangeEvent } from "react";
 
 type AssetUsage = {
   total: number;
+};
+
+type AssetUsageBounds = {
+  width: number;
+  height: number;
 };
 
 const ASSET_PREVIEW_TILT_MAX_DEG = 8;
@@ -29,17 +38,83 @@ function formatAssetDate(timestamp: number): string {
   return new Date(timestamp).toLocaleString();
 }
 
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes)) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  let value = Math.max(0, bytes);
+  let index = 0;
+  while (value >= 1024 && index < units.length - 1) {
+    value /= 1024;
+    index += 1;
+  }
+  const precision = value >= 100 || index === 0 ? 0 : value >= 10 ? 1 : 2;
+  return `${value.toFixed(precision)} ${units[index]}`;
+}
+
+const INSPECT_ZOOM = 2;
+
+type FrameSize = {
+  width: number;
+  height: number;
+};
+
+function getImageLayerBounds(blueprint: Blueprint | undefined): BlueprintBounds | null {
+  if (!blueprint) return null;
+  const candidates = blueprint.layers.filter(
+    (layer) =>
+      layer.type === "image" && layer.bind?.imageKey === "imageAssetId",
+  );
+  if (candidates.length === 0) return null;
+  const layerBounds = candidates.find((layer) => layer.bounds)?.bounds ?? null;
+  if (layerBounds) return layerBounds;
+  return {
+    x: 0,
+    y: 0,
+    width: blueprint.canvas.width,
+    height: blueprint.canvas.height,
+  };
+}
+
+function getIconLayerBounds(blueprint: Blueprint | undefined): BlueprintBounds | null {
+  if (!blueprint?.groups) return null;
+  for (const group of blueprint.groups) {
+    for (const child of group.children ?? []) {
+      if (child.type !== "icon") continue;
+      if (child.bind?.iconKey !== "iconAssetId") continue;
+      const size = typeof child.props?.size === "number" ? child.props.size : 140;
+      return { x: 0, y: 0, width: size, height: size };
+    }
+  }
+  return null;
+}
+
+function getUsageBoundsForTemplate(
+  templateId: TemplateId,
+  usageType: "image" | "icon",
+): AssetUsageBounds | null {
+  const blueprint = blueprintsByTemplateId[templateId];
+  if (!blueprint) return null;
+  const bounds =
+    usageType === "image"
+      ? getImageLayerBounds(blueprint)
+      : getIconLayerBounds(blueprint);
+  if (!bounds) return null;
+  return { width: bounds.width, height: bounds.height };
+}
+
 function AssetsInspector({
   assets,
   currentIndex,
   onSelectIndex,
   onReplaceComplete,
+  onOptimizeComplete,
   refreshKey,
 }: {
   assets: AssetRecord[];
   currentIndex: number;
   onSelectIndex: (index: number) => void;
   onReplaceComplete: () => void;
+  onOptimizeComplete: () => void;
   refreshKey: number;
 }) {
   const { t } = useI18n();
@@ -48,12 +123,36 @@ function AssetsInspector({
   const asset = assets[safeIndex];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [usage, setUsage] = useState<AssetUsage>({ total: 0 });
+  const [usageBounds, setUsageBounds] = useState<AssetUsageBounds | null>(null);
   const [pendingReplace, setPendingReplace] = useState<{
     file: File;
     width: number;
     height: number;
     mimeType: string;
   } | null>(null);
+  const [optimizeScalePercent, setOptimizeScalePercent] = useState(100);
+  const [optimizeQuality, setOptimizeQuality] = useState(0.85);
+  const [optimizeSource, setOptimizeSource] = useState<Blob | null>(null);
+  const [optimizePreview, setOptimizePreview] = useState<{
+    blob: Blob;
+    url: string;
+    width: number;
+    height: number;
+    bytes: number;
+  } | null>(null);
+  const [isOptimizeOpen, setIsOptimizeOpen] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [isApplyingOptimization, setIsApplyingOptimization] = useState(false);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
+  const optimizeRunRef = useRef(0);
+  const [inspectPan, setInspectPan] = useState({ x: 0, y: 0 });
+  const originalFrameRef = useRef<HTMLDivElement | null>(null);
+  const optimizedFrameRef = useRef<HTMLDivElement | null>(null);
+  const [originalFrameSize, setOriginalFrameSize] = useState<FrameSize>({ width: 0, height: 0 });
+  const [optimizedFrameSize, setOptimizedFrameSize] = useState<FrameSize>({
+    width: 0,
+    height: 0,
+  });
   const [keepBackup, setKeepBackup] = useState(false);
   const [isReplacing, setIsReplacing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -69,6 +168,38 @@ function AssetsInspector({
   const currentTiltRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const reduceMotionRef = useRef(false);
   const showCarousel = assets.length > 1;
+  const isJpegLike = asset.mimeType === "image/jpeg" || asset.mimeType === "image/jpg";
+  const maxEdge = Math.max(asset.width, asset.height);
+  const requiredWidth = usageBounds?.width ?? 0;
+  const requiredHeight = usageBounds?.height ?? 0;
+  const pixelationThresholdPercent =
+    requiredWidth > 0 && requiredHeight > 0 && asset.width > 0 && asset.height > 0
+      ? Math.min(
+          100,
+          Math.max(
+            10,
+            Math.ceil(
+              Math.max(requiredWidth / asset.width, requiredHeight / asset.height) * 100,
+            ),
+          ),
+        )
+      : null;
+  const minScaleByWidth =
+    requiredWidth > 0 && asset.width > 0
+      ? Math.ceil((requiredWidth / asset.width) * 100)
+      : 10;
+  const minScaleByHeight =
+    requiredHeight > 0 && asset.height > 0
+      ? Math.ceil((requiredHeight / asset.height) * 100)
+      : 10;
+  const recommendedMinScalePercent =
+    requiredWidth > 0 && requiredHeight > 0
+      ? Math.min(100, Math.max(10, Math.max(minScaleByWidth, minScaleByHeight)))
+      : 10;
+  const canShowResizeWarning =
+    requiredWidth > 0 &&
+    requiredHeight > 0 &&
+    optimizeScalePercent < recommendedMinScalePercent;
   const [isKindPopoverOpen, setIsKindPopoverOpen] = useState(false);
   const kindAnchorRef = useRef<HTMLButtonElement | null>(null);
   const kindPopoverRef = useRef<HTMLDivElement | null>(null);
@@ -117,13 +248,43 @@ function AssetsInspector({
       try {
         const cards = await apiClient.listCards();
         if (cancelled) return;
-        const total = cards.filter(
-          (card) => card.imageAssetId === asset.id || card.monsterIconAssetId === asset.id,
-        ).length;
+        let total = 0;
+        let maxWidth = 0;
+        let maxHeight = 0;
+        cards.forEach((card) => {
+          let used = false;
+          if (card.imageAssetId === asset.id) {
+            used = true;
+            const bounds = getUsageBoundsForTemplate(
+              card.templateId as TemplateId,
+              "image",
+            );
+            if (bounds) {
+              maxWidth = Math.max(maxWidth, bounds.width);
+              maxHeight = Math.max(maxHeight, bounds.height);
+            }
+          }
+          if (card.monsterIconAssetId === asset.id) {
+            used = true;
+            const bounds = getUsageBoundsForTemplate(
+              card.templateId as TemplateId,
+              "icon",
+            );
+            if (bounds) {
+              maxWidth = Math.max(maxWidth, bounds.width);
+              maxHeight = Math.max(maxHeight, bounds.height);
+            }
+          }
+          if (used) total += 1;
+        });
         setUsage({ total });
+        setUsageBounds(
+          maxWidth > 0 && maxHeight > 0 ? { width: maxWidth, height: maxHeight } : null,
+        );
       } catch {
         if (!cancelled) {
           setUsage({ total: 0 });
+          setUsageBounds(null);
         }
       }
     })();
@@ -145,7 +306,100 @@ function AssetsInspector({
     setPendingReplace(null);
     setKeepBackup(false);
     setIsKindPopoverOpen(false);
+    setIsOptimizeOpen(false);
+    setOptimizeSource(null);
+    setOptimizePreview((prev) => {
+      if (prev?.url) URL.revokeObjectURL(prev.url);
+      return null;
+    });
+    setOptimizeError(null);
+    setIsOptimizing(false);
+    setIsApplyingOptimization(false);
+    setOptimizeScalePercent(100);
+    setOptimizeQuality(0.85);
+    setInspectPan({ x: 0, y: 0 });
   }, [asset.id]);
+
+  useLayoutEffect(() => {
+    const updateSizes = () => {
+      const original = originalFrameRef.current;
+      const optimized = optimizedFrameRef.current;
+      if (original) {
+        const rect = original.getBoundingClientRect();
+        setOriginalFrameSize({ width: rect.width, height: rect.height });
+      }
+      if (optimized) {
+        const rect = optimized.getBoundingClientRect();
+        setOptimizedFrameSize({ width: rect.width, height: rect.height });
+      }
+    };
+    updateSizes();
+    window.addEventListener("resize", updateSizes);
+    return () => window.removeEventListener("resize", updateSizes);
+  }, []);
+
+  const handleInspectMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const original = originalFrameRef.current;
+    const optimized = optimizedFrameRef.current;
+    if (original) {
+      const originalRect = original.getBoundingClientRect();
+      setOriginalFrameSize((prev) =>
+        prev.width === originalRect.width && prev.height === originalRect.height
+          ? prev
+          : { width: originalRect.width, height: originalRect.height },
+      );
+    }
+    if (optimized) {
+      const optimizedRect = optimized.getBoundingClientRect();
+      setOptimizedFrameSize((prev) =>
+        prev.width === optimizedRect.width && prev.height === optimizedRect.height
+          ? prev
+          : { width: optimizedRect.width, height: optimizedRect.height },
+      );
+    }
+    const normX = (event.clientX - rect.left) / rect.width;
+    const normY = (event.clientY - rect.top) / rect.height;
+    const clampedX = Math.min(1, Math.max(0, normX));
+    const clampedY = Math.min(1, Math.max(0, normY));
+    setInspectPan({
+      x: (0.5 - clampedX) * 2,
+      y: (0.5 - clampedY) * 2,
+    });
+  };
+
+  const handleInspectLeave = () => {
+    setInspectPan({ x: 0, y: 0 });
+  };
+
+  const buildInspectStyle = (
+    frame: FrameSize,
+    image: { width: number; height: number } | null,
+  ): React.CSSProperties => {
+    if (!frame.width || !frame.height || !image) return { transform: `scale(${INSPECT_ZOOM})` };
+    const scale = Math.min(frame.width / image.width, frame.height / image.height);
+    const baseWidth = image.width * scale;
+    const baseHeight = image.height * scale;
+    const scaledWidth = baseWidth * INSPECT_ZOOM;
+    const scaledHeight = baseHeight * INSPECT_ZOOM;
+    const maxPanX = Math.max(0, (scaledWidth - frame.width) / 2);
+    const maxPanY = Math.max(0, (scaledHeight - frame.height) / 2);
+    const translateX = inspectPan.x * maxPanX;
+    const translateY = inspectPan.y * maxPanY;
+    return {
+      transform: `translate(${translateX}px, ${translateY}px) scale(${INSPECT_ZOOM})`,
+    };
+  };
+
+  useEffect(() => {
+    if (optimizeScalePercent < 10) {
+      setOptimizeScalePercent(10);
+    }
+    if (optimizeScalePercent > 100) {
+      setOptimizeScalePercent(100);
+    }
+  }, [optimizeScalePercent]);
 
   const resetPreviewTilt = () => {
     const previewEl = previewInnerRef.current;
@@ -348,6 +602,171 @@ function AssetsInspector({
     }
   };
 
+  const handleOptimizeOpen = async () => {
+    setIsOptimizeOpen(true);
+    setOptimizeError(null);
+    setOptimizePreview((prev) => {
+      if (prev?.url) URL.revokeObjectURL(prev.url);
+      return null;
+    });
+    setOptimizeSource(null);
+    try {
+      const blob = await apiClient.getAssetBlob({ params: { id: asset.id } });
+      if (!blob) {
+        setOptimizeError(t("alert.optimizeMissingSource"));
+        return;
+      }
+      setOptimizeSource(blob);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[assets] Failed to load asset blob for optimization", error);
+      setOptimizeError(t("alert.optimizeFailed"));
+    }
+  };
+
+  useEffect(() => {
+    if (!isOptimizeOpen || !optimizeSource) return;
+    const runId = optimizeRunRef.current + 1;
+    optimizeRunRef.current = runId;
+    const timeoutId = window.setTimeout(async () => {
+      setIsOptimizing(true);
+      setOptimizeError(null);
+      try {
+        const scalePercent = Math.min(100, Math.max(10, optimizeScalePercent));
+        const targetMax = Math.round((maxEdge * scalePercent) / 100);
+        const result = await optimizeImageBlob(optimizeSource, {
+          maxDimension: targetMax,
+          jpegQuality: optimizeQuality,
+        });
+        if (optimizeRunRef.current !== runId) return;
+        const url = URL.createObjectURL(result.blob);
+        setOptimizePreview((prev) => {
+          if (prev?.url) URL.revokeObjectURL(prev.url);
+          return {
+            blob: result.blob,
+            url,
+            width: result.width,
+            height: result.height,
+            bytes: result.optimizedBytes,
+          };
+        });
+      } catch (error) {
+        if (optimizeRunRef.current !== runId) return;
+        // eslint-disable-next-line no-console
+        console.error("[assets] Optimization failed", error);
+        setOptimizeError(t("alert.optimizeFailed"));
+      } finally {
+        if (optimizeRunRef.current === runId) {
+          setIsOptimizing(false);
+        }
+      }
+    }, 200);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    asset.height,
+    asset.width,
+    isOptimizeOpen,
+    optimizeQuality,
+    optimizeScalePercent,
+    optimizeSource,
+    t,
+  ]);
+
+  useEffect(() => {
+    if (!isOptimizeOpen) return;
+    return () => {
+      setOptimizePreview((prev) => {
+        if (prev?.url) URL.revokeObjectURL(prev.url);
+        return null;
+      });
+    };
+  }, [isOptimizeOpen]);
+
+  const handleOptimizeApply = async () => {
+    if (!optimizePreview) return;
+    setIsApplyingOptimization(true);
+    try {
+      await apiClient.replaceAsset(
+        {
+          blob: optimizePreview.blob,
+          name: asset.name,
+          mimeType: asset.mimeType,
+          width: optimizePreview.width,
+          height: optimizePreview.height,
+          createdAt: asset.createdAt,
+          assetKind: asset.assetKind,
+          assetKindStatus: asset.assetKindStatus,
+          assetKindSource: asset.assetKindSource,
+          assetKindConfidence: asset.assetKindConfidence,
+          assetKindUpdatedAt: asset.assetKindUpdatedAt,
+        },
+        { params: { id: asset.id } },
+      );
+      onOptimizeComplete();
+      setIsOptimizeOpen(false);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[assets] Failed to apply optimization", error);
+      window.alert(t("alert.optimizeApplyFailed"));
+    } finally {
+      setIsApplyingOptimization(false);
+    }
+  };
+
+  const optimizeDelta =
+    optimizeSource && optimizePreview ? optimizePreview.bytes - optimizeSource.size : null;
+  const hasSizeReduction = typeof optimizeDelta === "number" && optimizeDelta < 0;
+  const hasSizeIncrease = typeof optimizeDelta === "number" && optimizeDelta > 0;
+  const hasDimensionReduction =
+    optimizePreview &&
+    (optimizePreview.width < asset.width || optimizePreview.height < asset.height);
+  const canApplyOptimization =
+    Boolean(optimizePreview) && (hasSizeReduction || hasDimensionReduction);
+  const pixelationScale =
+    optimizePreview && requiredWidth > 0 && requiredHeight > 0
+      ? Math.max(
+          requiredWidth / Math.max(1, optimizePreview.width),
+          requiredHeight / Math.max(1, optimizePreview.height),
+        )
+      : null;
+  const hasPixelationRisk = typeof pixelationScale === "number" && pixelationScale > 1.01;
+  const optimizeReasons: string[] = [];
+  if (usageBounds) {
+    optimizeReasons.push(
+      t("helper.optimizeUsageMinimum")
+        .replace("{width}", String(Math.round(usageBounds.width)))
+        .replace("{height}", String(Math.round(usageBounds.height))),
+    );
+  }
+  if (hasPixelationRisk && usageBounds) {
+    optimizeReasons.push(
+      t("helper.optimizePixelationRisk")
+        .replace("{scale}", String(Math.round(pixelationScale * 100)))
+        .replace("{width}", String(Math.round(requiredWidth)))
+        .replace("{height}", String(Math.round(requiredHeight))),
+    );
+  }
+  if (canShowResizeWarning) {
+    optimizeReasons.push(
+      t("helper.optimizeBelowMinimum")
+        .replace("{width}", String(Math.round(requiredWidth)))
+        .replace("{height}", String(Math.round(requiredHeight))),
+    );
+  }
+  if (!canApplyOptimization && optimizePreview) {
+    optimizeReasons.push(t("helper.optimizeNoBenefit"));
+  }
+  const optimizeStatus =
+    !canApplyOptimization && optimizePreview
+      ? t("status.optimizeNoBenefit")
+      : hasPixelationRisk
+        ? t("status.optimizePixelationRisk")
+      : optimizePreview
+        ? t("status.optimizeReady")
+        : null;
+
   const handleReplaceFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
@@ -466,6 +885,20 @@ function AssetsInspector({
           >
             {t("actions.replaceImage")}
           </button>
+          {/*
+            Optimization UI is intentionally hidden for now. Do not re-enable without
+            addressing the remaining UX issues (comparison clarity, markers, guardrails).
+          */}
+          {false ? (
+            <button
+              type="button"
+              className="btn btn-outline-light btn-sm"
+              onClick={() => void handleOptimizeOpen()}
+              disabled={!isJpegLike}
+            >
+              {t("actions.optimizeImage")}
+            </button>
+          ) : null}
           <input
             ref={fileInputRef}
             type="file"
@@ -674,6 +1107,233 @@ function AssetsInspector({
           </label>
         </div>
       </ModalShell>
+      <ModalShell
+        isOpen={isOptimizeOpen}
+        onClose={() => {
+          if (isApplyingOptimization) return;
+          setIsOptimizeOpen(false);
+        }}
+        title={t("heading.optimizeImage")}
+        contentClassName={styles.assetsOptimizePopover}
+        footer={
+          <div className={styles.assetsOptimizeFooter}>
+            <div className={styles.assetsOptimizeFooterHint}>
+              {t("helper.optimizeOverwrite")}
+            </div>
+            <div className={styles.assetsOptimizeFooterActions}>
+              <button
+                type="button"
+                className={styles.templateSecondaryButton}
+                onClick={() => setIsOptimizeOpen(false)}
+                disabled={isApplyingOptimization}
+              >
+                {t("actions.cancel")}
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => void handleOptimizeApply()}
+                disabled={
+                  isOptimizing ||
+                  isApplyingOptimization ||
+                  !optimizePreview ||
+                  !canApplyOptimization
+                }
+              >
+                {t("actions.apply")}
+              </button>
+            </div>
+          </div>
+        }
+      >
+        <div className={styles.assetsOptimizeBody}>
+          <div className={styles.assetsOptimizeLayout}>
+            <div className={styles.assetsOptimizePreview}>
+              <div className={styles.assetsOptimizePanel}>
+                <div className={styles.assetsOptimizeLabel}>{t("label.original")}</div>
+                <div
+                  className={styles.assetsOptimizeFrame}
+                  ref={originalFrameRef}
+                  onMouseMove={handleInspectMove}
+                  onMouseLeave={handleInspectLeave}
+                >
+                  {previewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={previewUrl}
+                      alt={asset.name}
+                      style={buildInspectStyle(originalFrameSize, {
+                        width: asset.width,
+                        height: asset.height,
+                      })}
+                    />
+                  ) : (
+                    <div className={styles.assetsOptimizePlaceholder}>
+                      {t("empty.noPreview")}
+                    </div>
+                  )}
+                  <div className={styles.assetsOptimizeZoomBadge}>
+                    {t("label.zoom")} {INSPECT_ZOOM}×
+                  </div>
+                </div>
+              </div>
+              <div className={styles.assetsOptimizePanel}>
+                <div className={styles.assetsOptimizeLabel}>{t("label.optimized")}</div>
+                <div
+                  className={`${styles.assetsOptimizeFrame} ${styles.assetsOptimizeFrameFill}`}
+                  ref={optimizedFrameRef}
+                  onMouseMove={handleInspectMove}
+                  onMouseLeave={handleInspectLeave}
+                >
+                  {optimizePreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={optimizePreview.url}
+                      alt={asset.name}
+                      style={buildInspectStyle(optimizedFrameSize, {
+                        width: optimizePreview.width,
+                        height: optimizePreview.height,
+                      })}
+                    />
+                  ) : (
+                    <div className={styles.assetsOptimizePlaceholder}>
+                      {isOptimizing ? t("status.optimizing") : t("empty.noPreview")}
+                    </div>
+                  )}
+                  <div className={styles.assetsOptimizeZoomBadge}>
+                    {t("label.zoom")} {INSPECT_ZOOM}×
+                  </div>
+                </div>
+              </div>
+            </div>
+            <aside className={styles.assetsOptimizeSidebar}>
+              {optimizeStatus ? (
+                <div className={styles.assetsOptimizeStatus}>
+                  <span>{optimizeStatus}</span>
+                  {optimizeReasons.length > 0 ? (
+                    <span className={styles.assetsOptimizeInfo}>
+                      <span
+                        className={styles.assetsOptimizeInfoIcon}
+                        aria-label={t("label.moreInfo")}
+                      >
+                        i
+                      </span>
+                      <div className={styles.assetsOptimizeInfoPopover}>
+                        {optimizeReasons.map((reason) => (
+                          <div key={reason}>{reason}</div>
+                        ))}
+                      </div>
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+              <div className={styles.assetsOptimizeControls}>
+                <div className={styles.assetsOptimizeControlRow}>
+                  <label htmlFor="optimize-scale">{t("label.scale")}</label>
+                  <div className={styles.assetsOptimizeSlider}>
+                    <div className={styles.assetsOptimizeSliderTrack}>
+                      <input
+                        id="optimize-scale"
+                        type="range"
+                        min={10}
+                        max={100}
+                        step={1}
+                        value={optimizeScalePercent}
+                        onChange={(event) => {
+                          const nextValue = Number(event.target.value);
+                          if (!Number.isFinite(nextValue)) return;
+                          setOptimizeScalePercent(Math.min(100, Math.max(10, nextValue)));
+                        }}
+                      />
+                      {typeof pixelationThresholdPercent === "number" ? (
+                        <div
+                          className={styles.assetsOptimizeSliderMarker}
+                          style={{ left: `${pixelationThresholdPercent}%` }}
+                          title={t("label.pixelationThreshold")}
+                        />
+                      ) : null}
+                    </div>
+                    <span>{optimizeScalePercent}%</span>
+                  </div>
+                </div>
+                {isJpegLike ? (
+                  <div className={styles.assetsOptimizeControlRow}>
+                    <label htmlFor="optimize-quality">{t("label.quality")}</label>
+                    <div className={styles.assetsOptimizeSlider}>
+                      <div className={styles.assetsOptimizeSliderTrack}>
+                        <input
+                          id="optimize-quality"
+                          type="range"
+                          min={10}
+                          max={100}
+                          step={1}
+                          value={Math.round(optimizeQuality * 100)}
+                          onChange={(event) => {
+                            const nextValue = Number(event.target.value);
+                            if (!Number.isFinite(nextValue)) return;
+                            const clamped = Math.min(100, Math.max(10, nextValue));
+                            setOptimizeQuality(clamped / 100);
+                          }}
+                        />
+                      </div>
+                      <span>{Math.round(optimizeQuality * 100)}%</span>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+              <div className={styles.assetsOptimizeSummary}>
+                <div>
+                  {t("label.originalResolution")}: {asset.width}×{asset.height}
+                </div>
+                <div>
+                  {t("label.optimizedResolution")}:{" "}
+                  {optimizePreview
+                    ? `${optimizePreview.width}×${optimizePreview.height}`
+                    : "—"}
+                </div>
+                <div>
+                  {t("label.originalSize")}:{" "}
+                  {optimizeSource ? formatBytes(optimizeSource.size) : "—"}
+                </div>
+                <div>
+                  {t("label.optimizedSize")}:{" "}
+                  {optimizePreview ? formatBytes(optimizePreview.bytes) : "—"}
+                </div>
+            <div>
+              {t("label.sizeChange")}:{" "}
+              {optimizeSource && optimizePreview ? (
+                <span
+                  className={
+                    hasSizeReduction
+                      ? styles.assetsOptimizeDeltaGood
+                      : hasSizeIncrease
+                        ? styles.assetsOptimizeDeltaBad
+                        : undefined
+                  }
+                >
+                  {(() => {
+                    if (optimizeSource.size === 0) return "—";
+                    const diff = optimizePreview.bytes - optimizeSource.size;
+                    if (diff === 0) return t("label.sizeUnchanged");
+                    const percent = Math.abs(diff) / optimizeSource.size;
+                    const percentLabel = `${Math.round(percent * 100)}%`;
+                    return diff < 0
+                      ? `${t("label.sizeReduction")} ${percentLabel}`
+                      : `${t("label.sizeIncrease")} ${percentLabel}`;
+                  })()}
+                </span>
+              ) : (
+                "—"
+              )}
+            </div>
+          </div>
+              {optimizeError ? (
+                <div className={styles.assetsOptimizeError}>{optimizeError}</div>
+              ) : null}
+            </aside>
+          </div>
+        </div>
+      </ModalShell>
     </aside>
   );
 }
@@ -716,6 +1376,7 @@ export default function AssetsRoutePanels() {
           currentIndex={currentIndex}
           onSelectIndex={setCurrentIndex}
           onReplaceComplete={() => setRefreshKey((prev) => prev + 1)}
+          onOptimizeComplete={() => setRefreshKey((prev) => prev + 1)}
           refreshKey={refreshKey}
         />
       ) : null}

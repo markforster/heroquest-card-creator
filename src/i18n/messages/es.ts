@@ -44,7 +44,7 @@ export const es = {
   "actions.collapseAll": "Contraer todo",
   "actions.expandAll": "Expandir todo",
   "actions.replace": "Reemplazar",
-  "actions.replaceImage": "Reemplazar imagen",
+  "actions.replaceImage": "Reemplazar",
   "actions.load": "Cargar",
   "actions.addToCollection": "Añadir a colección",
   "actions.removeFromCollection": "Quitar de la colección",

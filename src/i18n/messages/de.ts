@@ -44,7 +44,7 @@ export const de = {
   "actions.collapseAll": "Alle einklappen",
   "actions.expandAll": "Alle ausklappen",
   "actions.replace": "Ersetzen",
-  "actions.replaceImage": "Bild ersetzen",
+  "actions.replaceImage": "Ersetzen",
   "actions.load": "Laden",
   "actions.addToCollection": "Zur Sammlung",
   "actions.removeFromCollection": "Aus Sammlung entfernen",

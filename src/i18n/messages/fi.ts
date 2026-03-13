@@ -44,7 +44,7 @@ export const fi = {
   "actions.collapseAll": "Supista kaikki",
   "actions.expandAll": "Laajenna kaikki",
   "actions.replace": "Korvaa",
-  "actions.replaceImage": "Korvaa kuva",
+  "actions.replaceImage": "Korvaa",
   "actions.load": "Lataa",
   "actions.addToCollection": "Lisää kokoelmaan",
   "actions.removeFromCollection": "Poista kokoelmasta",

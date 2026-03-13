@@ -44,7 +44,7 @@ export const nl = {
   "actions.collapseAll": "Alles inklappen",
   "actions.expandAll": "Alles uitklappen",
   "actions.replace": "Vervangen",
-  "actions.replaceImage": "Afbeelding vervangen",
+  "actions.replaceImage": "Vervangen",
   "actions.load": "Laden",
   "actions.addToCollection": "Aan collectie",
   "actions.removeFromCollection": "Uit collectie verwijderen",
