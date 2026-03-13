@@ -1491,6 +1491,8 @@
 
 .assetsInspectorActions {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--space-3);
 }
 .assetsInspectorCarousel,
@@ -1741,6 +1743,136 @@
   gap: var(--space-6);
   font-size: var(--text-lg);
   color: var(--hq-text);
+}
+
+.assetsReplaceLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(240px, 320px);
+  gap: var(--space-10);
+  width: 100%;
+  min-height: 0;
+}
+
+.assetsConvertLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: var(--space-10);
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+}
+
+.assetsReplacePanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+  height: 100%;
+}
+
+.assetsReplaceLabel {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hq-text-muted);
+}
+
+.assetsReplaceFrame {
+  flex: 1 1 auto;
+  min-height: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hq-white-10);
+  background: rgba(8, 8, 8, 0.6);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.assetsReplaceFrame::after {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px dotted rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+}
+
+.assetsReplaceImage {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: inherit;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 0 6px var(--hq-white-15));
+}
+
+.assetsReplaceImageInspect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  max-height: none;
+  object-fit: unset;
+  will-change: transform;
+  cursor: zoom-in;
+}
+
+.assetsConvertInspectOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  max-height: none;
+  object-fit: unset;
+  transform-origin: top left;
+  will-change: transform;
+  cursor: zoom-in;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.assetsInspectorPreviewInner img.assetsConvertInspectOverlay {
+  max-width: none;
+  max-height: none;
+  object-fit: unset;
+  filter: none;
+  transform: none;
+  transition: none;
+  border-radius: 0;
+}
+
+.assetsConvertInspectViewport {
+  position: absolute;
+  inset: var(--space-12);
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.assetsReplacePlaceholder {
+  font-size: var(--text-sm);
+  color: var(--hq-text-muted);
+}
+
+.assetsReplaceSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-height: 0;
+}
+
+.assetsReplaceSummary {
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--text-md);
+  color: var(--hq-text);
+}
+
+.assetsReplaceWarning {
+  color: rgba(255, 210, 140, 0.95);
+  font-size: var(--text-sm);
 }
 
 .assetsOptimizeBody {
@@ -3170,6 +3302,17 @@
 }
 
 .assetsOptimizePopover :global(.modal-body) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.assetsReplacePopover {
+  width: min(960px, 100% - 2rem);
+  max-height: calc(100% - 4rem);
+}
+
+.assetsReplacePopover :global(.modal-body) {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;

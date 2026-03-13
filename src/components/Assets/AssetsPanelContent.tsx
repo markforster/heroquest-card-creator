@@ -173,6 +173,14 @@ export default function AssetsPanelContent({
   }, [isOpen, listAssetsQuery.data, listAssetsQuery.isLoading]);
 
   useEffect(() => {
+    if (!isOpen) return;
+    if (refreshKey == null) return;
+    listAssetsQuery.refetch().catch(() => {
+      // Ignore refresh errors.
+    });
+  }, [isOpen, refreshKey, listAssetsQuery]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     if (!isOpen) return;
     let timeoutId: number | null = null;

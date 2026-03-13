@@ -122,6 +122,9 @@ function AssetsInspector({
   const safeIndex = Math.min(currentIndex, assets.length - 1);
   const asset = assets[safeIndex];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [assetBlob, setAssetBlob] = useState<Blob | null>(null);
+  const [isOpaquePng, setIsOpaquePng] = useState(false);
+  const [assetSizeBytes, setAssetSizeBytes] = useState<number | null>(null);
   const [usage, setUsage] = useState<AssetUsage>({ total: 0 });
   const [usageBounds, setUsageBounds] = useState<AssetUsageBounds | null>(null);
   const [pendingReplace, setPendingReplace] = useState<{
@@ -129,6 +132,8 @@ function AssetsInspector({
     width: number;
     height: number;
     mimeType: string;
+    sizeBytes: number;
+    previewUrl?: string | null;
   } | null>(null);
   const [optimizeScalePercent, setOptimizeScalePercent] = useState(100);
   const [optimizeQuality, setOptimizeQuality] = useState(0.85);
@@ -145,6 +150,27 @@ function AssetsInspector({
   const [isApplyingOptimization, setIsApplyingOptimization] = useState(false);
   const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const optimizeRunRef = useRef(0);
+  const [isConvertOpen, setIsConvertOpen] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [isApplyingConvert, setIsApplyingConvert] = useState(false);
+  const [convertQuality, setConvertQuality] = useState(0.85);
+  const [convertPreview, setConvertPreview] = useState<{
+    blob: Blob;
+    url: string;
+    bytes: number;
+  } | null>(null);
+  const [convertError, setConvertError] = useState<string | null>(null);
+  const [convertInspect, setConvertInspect] = useState(false);
+  const [convertPan, setConvertPan] = useState({ x: 0, y: 0 });
+  const [convertImageSize, setConvertImageSize] = useState<FrameSize>({
+    width: 0,
+    height: 0,
+  });
+  const convertFrameRef = useRef<HTMLDivElement | null>(null);
+  const convertImgRef = useRef<HTMLImageElement | null>(null);
+  const convertLastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const convertInspectRef = useRef<HTMLDivElement | null>(null);
+  const CONVERT_INSPECT_THRESHOLD_PX = 3;
   const [inspectPan, setInspectPan] = useState({ x: 0, y: 0 });
   const originalFrameRef = useRef<HTMLDivElement | null>(null);
   const optimizedFrameRef = useRef<HTMLDivElement | null>(null);
@@ -243,6 +269,99 @@ function AssetsInspector({
 
   useEffect(() => {
     let cancelled = false;
+    setAssetSizeBytes(null);
+    setAssetBlob(null);
+    setIsOpaquePng(false);
+    (async () => {
+      try {
+        const blob = await apiClient.getAssetBlob({ params: { id: asset.id } });
+        if (cancelled) return;
+        setAssetSizeBytes(blob?.size ?? null);
+        setAssetBlob(blob ?? null);
+      } catch {
+        if (!cancelled) {
+          setAssetSizeBytes(null);
+          setAssetBlob(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [asset.id, refreshKey]);
+
+  useEffect(() => {
+    if (!assetBlob || asset.mimeType !== "image/png") {
+      setIsOpaquePng(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        if (typeof createImageBitmap === "function") {
+          const bitmap = await createImageBitmap(assetBlob);
+          const canvas =
+            typeof OffscreenCanvas === "function"
+              ? new OffscreenCanvas(bitmap.width, bitmap.height)
+              : document.createElement("canvas");
+          canvas.width = bitmap.width;
+          canvas.height = bitmap.height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            bitmap.close?.();
+            return;
+          }
+          ctx.drawImage(bitmap, 0, 0);
+          bitmap.close?.();
+          const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+          let opaque = true;
+          for (let i = 3; i < data.length; i += 4) {
+            if (data[i] !== 255) {
+              opaque = false;
+              break;
+            }
+          }
+          if (!cancelled) setIsOpaquePng(opaque);
+          return;
+        }
+
+        const url = URL.createObjectURL(assetBlob);
+        try {
+          const img = new Image();
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error("Failed to load PNG"));
+            img.src = url;
+          });
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+          ctx.drawImage(img, 0, 0);
+          const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+          let opaque = true;
+          for (let i = 3; i < data.length; i += 4) {
+            if (data[i] !== 255) {
+              opaque = false;
+              break;
+            }
+          }
+          if (!cancelled) setIsOpaquePng(opaque);
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      } catch {
+        if (!cancelled) setIsOpaquePng(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [assetBlob, asset.mimeType]);
+
+  useEffect(() => {
+    let cancelled = false;
 
     (async () => {
       try {
@@ -297,16 +416,36 @@ function AssetsInspector({
   const dimensionsLabel = useMemo(() => {
     return `${asset.width}×${asset.height}`;
   }, [asset.height, asset.width]);
+  const sizeLabel = useMemo(
+    () => (assetSizeBytes != null ? formatBytes(assetSizeBytes) : "—"),
+    [assetSizeBytes],
+  );
 
   const pendingMismatch = pendingReplace
     ? pendingReplace.width !== asset.width || pendingReplace.height !== asset.height
     : false;
 
   useEffect(() => {
+    return () => {
+      if (pendingReplace?.previewUrl) {
+        URL.revokeObjectURL(pendingReplace.previewUrl);
+      }
+    };
+  }, [pendingReplace]);
+
+  useEffect(() => {
     setPendingReplace(null);
     setKeepBackup(false);
     setIsKindPopoverOpen(false);
     setIsOptimizeOpen(false);
+    setIsConvertOpen(false);
+    setConvertPreview((prev) => {
+      if (prev?.url) URL.revokeObjectURL(prev.url);
+      return null;
+    });
+    setIsConverting(false);
+    setIsApplyingConvert(false);
+    setConvertQuality(0.85);
     setOptimizeSource(null);
     setOptimizePreview((prev) => {
       if (prev?.url) URL.revokeObjectURL(prev.url);
@@ -590,6 +729,8 @@ function AssetsInspector({
         { params: { id: asset.id } },
       );
       enqueueAsset(asset.id, { width: pendingReplace.width, height: pendingReplace.height });
+      setAssetSizeBytes(pendingReplace.file.size);
+      setAssetBlob(pendingReplace.file);
       onReplaceComplete();
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -599,6 +740,144 @@ function AssetsInspector({
       setIsReplacing(false);
       setPendingReplace(null);
       setKeepBackup(false);
+    }
+  };
+
+  const handleConvertOpen = () => {
+    setIsConvertOpen(true);
+    setConvertError(null);
+    setConvertInspect(false);
+    setConvertPan({ x: 0, y: 0 });
+    convertLastPointRef.current = null;
+    setConvertPreview((prev) => {
+      if (prev?.url) URL.revokeObjectURL(prev.url);
+      return null;
+    });
+  };
+
+  useEffect(() => {
+    if (!isConvertOpen || !assetBlob) return;
+    let cancelled = false;
+    const run = async () => {
+      setIsConverting(true);
+      setConvertError(null);
+      try {
+        let bitmap: ImageBitmap | null = null;
+        if (typeof createImageBitmap === "function") {
+          try {
+            bitmap = await createImageBitmap(assetBlob);
+          } catch {
+            bitmap = null;
+          }
+        }
+        const width = bitmap ? bitmap.width : asset.width;
+        const height = bitmap ? bitmap.height : asset.height;
+        const canUseOffscreen =
+          typeof OffscreenCanvas === "function" &&
+          typeof OffscreenCanvas.prototype.convertToBlob === "function";
+        const canvas = canUseOffscreen
+          ? new OffscreenCanvas(width, height)
+          : document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          bitmap?.close?.();
+          return;
+        }
+        if (bitmap) {
+          ctx.drawImage(bitmap, 0, 0);
+          bitmap.close?.();
+        } else {
+          const url = URL.createObjectURL(assetBlob);
+          try {
+            const img = new Image();
+            await new Promise<void>((resolve, reject) => {
+              img.onload = () => resolve();
+              img.onerror = () => reject(new Error("Failed to load PNG"));
+              img.src = url;
+            });
+            ctx.drawImage(img, 0, 0);
+          } finally {
+            URL.revokeObjectURL(url);
+          }
+        }
+        let jpegBlob: Blob;
+        if (canvas instanceof OffscreenCanvas) {
+          jpegBlob = await canvas.convertToBlob({ type: "image/jpeg", quality: convertQuality });
+        } else {
+          jpegBlob = await new Promise<Blob>((resolve, reject) => {
+            const target = canvas as HTMLCanvasElement;
+            target.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error("Failed to encode JPEG"));
+                  return;
+                }
+                resolve(blob);
+              },
+              "image/jpeg",
+              convertQuality,
+            );
+          });
+        }
+        if (cancelled) return;
+        const url = URL.createObjectURL(jpegBlob);
+        setConvertPreview((prev) => {
+          if (prev?.url) URL.revokeObjectURL(prev.url);
+          return { blob: jpegBlob, url, bytes: jpegBlob.size };
+        });
+      } catch (error) {
+        if (!cancelled) {
+          setConvertPreview(null);
+          setConvertError(t("status.convertPreviewFailed"));
+        }
+      } finally {
+        if (!cancelled) setIsConverting(false);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [assetBlob, asset.height, asset.width, convertQuality, isConvertOpen]);
+
+  useEffect(() => {
+    setConvertInspect(false);
+    setConvertPan({ x: 0, y: 0 });
+    convertLastPointRef.current = null;
+  }, [convertPreview]);
+
+  const handleConvertApply = async () => {
+    if (!convertPreview) return;
+    setIsApplyingConvert(true);
+    try {
+      await apiClient.replaceAsset(
+        {
+          blob: convertPreview.blob,
+          name: asset.name,
+          mimeType: "image/jpeg",
+          width: asset.width,
+          height: asset.height,
+          createdAt: asset.createdAt,
+          assetKind: asset.assetKind,
+          assetKindStatus: asset.assetKindStatus,
+          assetKindSource: asset.assetKindSource,
+          assetKindConfidence: asset.assetKindConfidence,
+          assetKindUpdatedAt: asset.assetKindUpdatedAt,
+        },
+        { params: { id: asset.id } },
+      );
+      setAssetSizeBytes(convertPreview.bytes);
+      setAssetBlob(convertPreview.blob);
+      onReplaceComplete();
+      setIsConvertOpen(false);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[assets] Failed to convert asset", error);
+      window.alert(t("alert.replaceFailed"));
+    } finally {
+      setIsApplyingConvert(false);
     }
   };
 
@@ -782,8 +1061,18 @@ function AssetsInspector({
     }
 
     try {
+      if (pendingReplace?.previewUrl) {
+        URL.revokeObjectURL(pendingReplace.previewUrl);
+      }
       const { width, height } = await getImageDimensions(file);
-      setPendingReplace({ file, width, height, mimeType: file.type });
+      setPendingReplace({
+        file,
+        width,
+        height,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        previewUrl: URL.createObjectURL(file),
+      });
       setKeepBackup(false);
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -877,7 +1166,16 @@ function AssetsInspector({
   return (
     <aside className={styles.rightPanel}>
       <div className={styles.assetsInspectorBody}>
-        <div className={`${styles.assetsInspectorActions} d-flex justify-content-end`}>
+        <div className={styles.assetsInspectorActions}>
+          {isOpaquePng ? (
+            <button
+              type="button"
+              className="btn btn-outline-light btn-sm"
+              onClick={handleConvertOpen}
+            >
+              {t("actions.convertToJpeg")}
+            </button>
+          ) : null}
           <button
             type="button"
             className="btn btn-outline-light btn-sm"
@@ -1036,14 +1334,18 @@ function AssetsInspector({
             <dt>{t("label.fileType")}</dt>
             <dd>{asset.mimeType}</dd>
           </div>
-          <div className={styles.uRowLg}>
-            <dt>{t("label.dimensions")}</dt>
-            <dd>{dimensionsLabel}</dd>
-          </div>
-          <div className={styles.uRowLg}>
-            <dt>{t("label.dateAdded")}</dt>
-            <dd>{formatAssetDate(asset.createdAt)}</dd>
-          </div>
+        <div className={styles.uRowLg}>
+          <dt>{t("label.dimensions")}</dt>
+          <dd>{dimensionsLabel}</dd>
+        </div>
+        <div className={styles.uRowLg}>
+          <dt>{t("label.fileSize")}</dt>
+          <dd>{sizeLabel}</dd>
+        </div>
+        <div className={styles.uRowLg}>
+          <dt>{t("label.dateAdded")}</dt>
+          <dd>{formatAssetDate(asset.createdAt)}</dd>
+        </div>
           <div className={styles.uRowLg}>
             <dt>{t("label.usedOnCards")}</dt>
             <dd>
@@ -1060,6 +1362,7 @@ function AssetsInspector({
           setKeepBackup(false);
         }}
         title={t("heading.replaceImage")}
+        contentClassName={styles.assetsReplacePopover}
         footer={
           <>
             <button
@@ -1085,26 +1388,82 @@ function AssetsInspector({
           </>
         }
       >
-        <div className={`${styles.assetsInspectorReplaceBody} ${styles.uStackLg}`}>
-          {pendingMismatch ? (
-            <div className={styles.assetsInspectorReplaceWarning}>
-              {t("confirm.replaceDifferentDimensionsBody")
-                .replace("{old}", `${asset.width}×${asset.height}`)
-                .replace("{next}", `${pendingReplace?.width ?? 0}×${pendingReplace?.height ?? 0}`)}
+        <div className={styles.assetsOptimizeBody}>
+          <div className={styles.assetsReplaceLayout}>
+            <div className={styles.assetsReplacePanel}>
+              <div className={styles.assetsReplaceLabel}>{t("label.original")}</div>
+              <div className={styles.assetsReplaceFrame}>
+                {previewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={previewUrl} alt={asset.name} />
+                ) : (
+                  <div className={styles.assetsReplacePlaceholder}>
+                    {t("empty.noPreview")}
+                  </div>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className={styles.assetsInspectorReplaceInfo}>{t("confirm.replaceBody")}</div>
-          )}
-          <label className={styles.assetsInspectorReplaceToggle}>
-            <input
-              type="checkbox"
-              className="form-check-input hq-checkbox"
-              checked={keepBackup}
-              onChange={(event) => setKeepBackup(event.target.checked)}
-              disabled={isReplacing}
-            />
-            <span>{t("label.keepBackup")}</span>
-          </label>
+            <div className={styles.assetsReplacePanel}>
+              <div className={styles.assetsReplaceLabel}>{t("label.replacement")}</div>
+              <div className={styles.assetsReplaceFrame}>
+                {pendingReplace?.previewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={pendingReplace.previewUrl} alt={asset.name} />
+                ) : (
+                  <div className={styles.assetsReplacePlaceholder}>
+                    {t("empty.noPreview")}
+                  </div>
+                )}
+              </div>
+            </div>
+            <aside className={styles.assetsReplaceSidebar}>
+              {pendingMismatch ? (
+                <div className={styles.assetsReplaceWarning}>
+                  {t("confirm.replaceDifferentDimensionsBody")
+                    .replace("{old}", `${asset.width}×${asset.height}`)
+                    .replace(
+                      "{next}",
+                      `${pendingReplace?.width ?? 0}×${pendingReplace?.height ?? 0}`,
+                    )}
+                </div>
+              ) : (
+                <div className={styles.assetsInspectorReplaceInfo}>{t("confirm.replaceBody")}</div>
+              )}
+              <div className={styles.assetsReplaceSummary}>
+                <div>
+                  {t("label.originalResolution")}: {asset.width}×{asset.height}
+                </div>
+                <div>
+                  {t("label.replacementResolution")}:{" "}
+                  {pendingReplace ? `${pendingReplace.width}×${pendingReplace.height}` : "—"}
+                </div>
+                <div>
+                  {t("label.originalSize")}:{" "}
+                  {assetSizeBytes != null ? formatBytes(assetSizeBytes) : "—"}
+                </div>
+                <div>
+                  {t("label.replacementSize")}:{" "}
+                  {pendingReplace ? formatBytes(pendingReplace.sizeBytes) : "—"}
+                </div>
+                <div>
+                  {t("label.fileType")}: {asset.mimeType}
+                </div>
+                <div>
+                  {t("label.replacementType")}: {pendingReplace?.mimeType ?? "—"}
+                </div>
+              </div>
+              <label className={styles.assetsInspectorReplaceToggle}>
+                <input
+                  type="checkbox"
+                  className="form-check-input hq-checkbox"
+                  checked={keepBackup}
+                  onChange={(event) => setKeepBackup(event.target.checked)}
+                  disabled={isReplacing}
+                />
+                <span>{t("label.keepBackup")}</span>
+              </label>
+            </aside>
+          </div>
         </div>
       </ModalShell>
       <ModalShell
@@ -1114,7 +1473,7 @@ function AssetsInspector({
           setIsOptimizeOpen(false);
         }}
         title={t("heading.optimizeImage")}
-        contentClassName={styles.assetsOptimizePopover}
+        contentClassName={styles.assetsReplacePopover}
         footer={
           <div className={styles.assetsOptimizeFooter}>
             <div className={styles.assetsOptimizeFooterHint}>
@@ -1330,6 +1689,210 @@ function AssetsInspector({
               {optimizeError ? (
                 <div className={styles.assetsOptimizeError}>{optimizeError}</div>
               ) : null}
+            </aside>
+          </div>
+        </div>
+      </ModalShell>
+      <ModalShell
+        isOpen={isConvertOpen}
+        onClose={() => {
+          if (isApplyingConvert) return;
+          if (convertPreview?.url) {
+            URL.revokeObjectURL(convertPreview.url);
+          }
+          setConvertPreview(null);
+          setConvertError(null);
+          setConvertInspect(false);
+          setConvertPan({ x: 0, y: 0 });
+          convertLastPointRef.current = null;
+          setIsConvertOpen(false);
+        }}
+        title={t("heading.convertToJpeg")}
+        contentClassName={styles.assetsOptimizePopover}
+        footer={
+          <>
+            <button
+              type="button"
+              className={styles.templateSecondaryButton}
+              onClick={() => {
+                if (convertPreview?.url) {
+                  URL.revokeObjectURL(convertPreview.url);
+                }
+                setConvertPreview(null);
+                setConvertError(null);
+                setConvertInspect(false);
+                setConvertPan({ x: 0, y: 0 });
+                convertLastPointRef.current = null;
+                setIsConvertOpen(false);
+              }}
+              disabled={isApplyingConvert}
+            >
+              {t("actions.cancel")}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={handleConvertApply}
+              disabled={isApplyingConvert || isConverting || !convertPreview}
+            >
+              {t("actions.apply")}
+            </button>
+          </>
+        }
+      >
+        <div className={styles.assetsOptimizeBody}>
+          <div className={styles.assetsConvertLayout}>
+            <div className={styles.assetsReplacePanel}>
+              <div className={styles.assetsReplaceLabel}>{t("label.preview")}</div>
+              <div className={styles.assetsInspectorPreview}>
+                <div
+                  className={styles.assetsInspectorPreviewInner}
+                  ref={convertFrameRef}
+                  onMouseEnter={(event) => {
+                    convertLastPointRef.current = { x: event.clientX, y: event.clientY };
+                  }}
+                  onMouseMove={(event) => {
+                  if (!convertPreview || !convertFrameRef.current || !convertImgRef.current) {
+                    return;
+                  }
+                  if (!convertInspectRef.current) return;
+                  const rect = convertInspectRef.current.getBoundingClientRect();
+                  const width = convertImageSize.width || convertImgRef.current.naturalWidth;
+                  const height = convertImageSize.height || convertImgRef.current.naturalHeight;
+                  if (!width || !height) return;
+                  const viewportWidth = rect.width;
+                  const viewportHeight = rect.height;
+                  if (width <= viewportWidth && height <= viewportHeight) {
+                    setConvertInspect(false);
+                    setConvertPan({ x: 0, y: 0 });
+                    return;
+                  }
+                  const last = convertLastPointRef.current;
+                  const nextPoint = { x: event.clientX, y: event.clientY };
+                    convertLastPointRef.current = nextPoint;
+                  if (!convertInspect) {
+                    if (!last) return;
+                    const delta =
+                      Math.abs(nextPoint.x - last.x) + Math.abs(nextPoint.y - last.y);
+                    if (delta < CONVERT_INSPECT_THRESHOLD_PX) return;
+                    setConvertInspect(true);
+                  }
+                  const contentX = event.clientX - rect.left;
+                  const contentY = event.clientY - rect.top;
+                  const fx = Math.min(1, Math.max(0, contentX / viewportWidth));
+                  const fy = Math.min(1, Math.max(0, contentY / viewportHeight));
+                  const maxX = width - viewportWidth;
+                  const maxY = height - viewportHeight;
+                  setConvertPan({
+                    x: -fx * maxX,
+                    y: -fy * maxY,
+                  });
+                }}
+                onMouseLeave={() => {
+                  setConvertInspect(false);
+                  setConvertPan({ x: 0, y: 0 });
+                    convertLastPointRef.current = null;
+                  }}
+                  style={
+                    convertPreview
+                      ? ({
+                          ["--asset-preview-url" as const]: `url("${convertPreview.url}")`,
+                        } as React.CSSProperties)
+                      : undefined
+                  }
+                >
+                  {convertPreview ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        ref={convertImgRef}
+                        src={convertPreview.url}
+                        alt={asset.name}
+                        onLoad={(event) => {
+                          const target = event.currentTarget;
+                          if (!target.naturalWidth || !target.naturalHeight) return;
+                          setConvertImageSize({
+                            width: target.naturalWidth,
+                            height: target.naturalHeight,
+                          });
+                        }}
+                        style={convertInspect ? { opacity: 0 } : undefined}
+                      />
+                      <div
+                        className={styles.assetsConvertInspectViewport}
+                        ref={convertInspectRef}
+                      >
+                        {convertInspect ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={convertPreview.url}
+                            alt=""
+                            className={styles.assetsConvertInspectOverlay}
+                            style={{
+                              width: `${convertImageSize.width}px`,
+                              height: `${convertImageSize.height}px`,
+                              transform: `translate(${convertPan.x}px, ${convertPan.y}px)`,
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                    </>
+                  ) : (
+                    <div className={styles.assetsInspectorPreviewPlaceholder}>
+                      {isConverting
+                        ? t("status.optimizing")
+                        : convertError || t("empty.noPreview")}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <aside className={styles.assetsReplaceSidebar}>
+              <div className={styles.assetsReplaceSummary}>
+                <div>
+                  {t("label.originalSize")}:{" "}
+                  {assetSizeBytes != null ? formatBytes(assetSizeBytes) : "—"}
+                </div>
+                <div>
+                  {t("label.convertedSize")}:{" "}
+                  {convertPreview ? formatBytes(convertPreview.bytes) : "—"}
+                </div>
+                <div>
+                  {t("label.sizeChange")}:{" "}
+                  <strong>
+                    {assetSizeBytes != null && convertPreview
+                      ? (() => {
+                          if (assetSizeBytes === 0) return "—";
+                          const diff = assetSizeBytes - convertPreview.bytes;
+                          const percent = Math.round((diff / assetSizeBytes) * 100);
+                          return `${percent}%`;
+                        })()
+                      : "—"}
+                  </strong>
+                </div>
+              </div>
+              <div className={styles.assetsOptimizeControlRow}>
+                <label htmlFor="convert-quality">{t("label.quality")}</label>
+                <div className={styles.assetsOptimizeSlider}>
+                  <div className={styles.assetsOptimizeSliderTrack}>
+                    <input
+                      id="convert-quality"
+                      type="range"
+                      min={10}
+                      max={100}
+                      step={1}
+                      value={Math.round(convertQuality * 100)}
+                      onChange={(event) => {
+                        const nextValue = Number(event.target.value);
+                        if (!Number.isFinite(nextValue)) return;
+                        const clamped = Math.min(100, Math.max(10, nextValue));
+                        setConvertQuality(clamped / 100);
+                      }}
+                    />
+                  </div>
+                  <span>{Math.round(convertQuality * 100)}%</span>
+                </div>
+              </div>
             </aside>
           </div>
         </div>
