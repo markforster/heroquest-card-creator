@@ -7,7 +7,7 @@ import styles from "@/app/page.module.css";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 
-const ENABLE_GET_APP_GLOW = true;
+const ENABLE_GET_APP_GLOW = false;
 const WAIT_BEFORE_FIRST_MS = 10 * 60 * 1000;
 const ACTIVE_PULSE_EVERY_MS = 5 * 1000;
 const BURST_ACTIVE_MS = 60 * 1000;
