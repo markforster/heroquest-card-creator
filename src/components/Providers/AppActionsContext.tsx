@@ -19,6 +19,7 @@ import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardRecord } from "@/api/cards";
 import { createEditorDefaultValues } from "@/lib/editor-form";
+import { saveDraft } from "@/lib/draft-storage";
 import type { TemplateId } from "@/types/templates";
 
 type StockpileOpenOptions = {
@@ -170,6 +171,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
           });
           const nextDraft = createEditorDefaultValues(nextTemplateId);
           setSelectedTemplateId(nextTemplateId);
+          saveDraft(nextTemplateId, nextDraft, { sourceCardId: null });
           resetWithSaved(nextDraft);
           setActiveCard(nextTemplateId, null, null);
           navigate("/cards/new");

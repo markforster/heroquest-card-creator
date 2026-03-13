@@ -30,6 +30,7 @@ type PairingInspectorPanelProps = {
   autoOpenBackId?: string | null;
   frontViewToken?: number;
   onRememberBackId?: (backId: string) => void;
+  pairingReferenceId?: string | null;
 };
 
 async function listPairsForFaceId(faceId: string) {
@@ -108,6 +109,7 @@ export default function PairingInspectorPanel({
   autoOpenBackId,
   frontViewToken,
   onRememberBackId,
+  pairingReferenceId,
 }: PairingInspectorPanelProps) {
   const { t } = useI18n();
   const fallbackTitle = t("label.untitledCard");
@@ -146,6 +148,7 @@ export default function PairingInspectorPanel({
   const currentTemplateId = selectedTemplateId ?? null;
   const template = currentTemplateId ? cardTemplatesById[currentTemplateId] : undefined;
   const activeCardId = currentTemplateId ? activeCardIdByTemplate[currentTemplateId] : undefined;
+  const pairingSourceId = activeCardId ?? pairingReferenceId ?? null;
   const pairingDisabled = !activeCardId;
   const hoverThumbUrl = useCardThumbnailUrl(
     hoveredCard?.id ?? null,
@@ -209,13 +212,13 @@ export default function PairingInspectorPanel({
       setCardsById(byId);
 
       let backIds: string[] = [];
-      if (activeCardId) {
-        const pairs = await listPairsForFaceId(activeCardId);
+      if (pairingSourceId) {
+        const pairs = await listPairsForFaceId(pairingSourceId);
         if (!active) return;
         backIds = Array.from(
           new Set(
             pairs
-              .filter((pair) => pair.frontFaceId === activeCardId)
+              .filter((pair) => pair.frontFaceId === pairingSourceId)
               .map((pair) => pair.backFaceId)
               .filter((id): id is string => Boolean(id)),
           ),
@@ -242,7 +245,7 @@ export default function PairingInspectorPanel({
     return () => {
       active = false;
     };
-  }, [activeCardId, effectiveFace, pairedBacksToken, saveToken]);
+  }, [pairingSourceId, effectiveFace, pairedBacksToken, saveToken]);
 
   useEffect(() => {
     if (effectiveFace !== "back") {
@@ -260,8 +263,8 @@ export default function PairingInspectorPanel({
       .then((cards) => {
         if (!active) return;
         setCardsById(new Map(cards.map((card) => [card.id, card])));
-        if (activeCardId) {
-          void listPairsForFaceId(activeCardId)
+        if (pairingSourceId) {
+          void listPairsForFaceId(pairingSourceId)
             .then((pairs) => {
               if (!active) return;
               const frontIds = new Set(
@@ -288,7 +291,7 @@ export default function PairingInspectorPanel({
     return () => {
       active = false;
     };
-  }, [activeCardId, effectiveFace, pairedFrontsToken, saveToken]);
+  }, [pairingSourceId, effectiveFace, pairedFrontsToken, saveToken]);
 
   useEffect(() => {
     if (effectiveFace !== "front") {
@@ -516,7 +519,10 @@ export default function PairingInspectorPanel({
                   type="button"
                   className={`${styles.pairingPanelGridItem} ${
                     isSelected ? styles.pairingPanelSelected : ""
-                  } ${isLoaded ? styles.pairingPanelGridItemLoaded : ""}`}
+                  } ${isLoaded ? styles.pairingPanelGridItemLoaded : ""} ${
+                    pairingDisabled ? styles.pairingPanelGridItemDisabled : ""
+                  }`}
+                  disabled={pairingDisabled}
                   onMouseEnter={(event) => {
                     showHoverPreview(card, event.currentTarget);
                   }}
@@ -566,7 +572,10 @@ export default function PairingInspectorPanel({
                     <>
                       <button
                         type="button"
-                        className={styles.pairingPanelGroupThumb}
+                        className={`${styles.pairingPanelGroupThumb} ${
+                          pairingDisabled ? styles.pairingPanelGroupThumbDisabled : ""
+                        }`}
+                        disabled={pairingDisabled}
                         onMouseEnter={(event) => {
                           showHoverPreview(backCard, event.currentTarget);
                         }}
@@ -590,7 +599,10 @@ export default function PairingInspectorPanel({
                       <span className={styles.pairingPanelGroupControls} aria-hidden="true">
                       <button
                         type="button"
-                        className={styles.pairingPanelGroupUnpair}
+                        className={`${styles.pairingPanelGroupUnpair} ${
+                          pairingDisabled ? styles.pairingPanelGroupUnpairDisabled : ""
+                        }`}
+                        disabled={pairingDisabled}
                           title={
                             pairingDisabled
                               ? t("tooltip.saveBeforePairing")
@@ -629,7 +641,10 @@ export default function PairingInspectorPanel({
                           type="button"
                           className={`${styles.pairingPanelGridItem} ${
                             isSelected ? styles.pairingPanelSelected : ""
-                          } ${isLoaded ? styles.pairingPanelGridItemLoaded : ""}`}
+                          } ${isLoaded ? styles.pairingPanelGridItemLoaded : ""} ${
+                            pairingDisabled ? styles.pairingPanelGridItemDisabled : ""
+                          }`}
+                          disabled={pairingDisabled}
                           onMouseEnter={(event) => {
                             showHoverPreview(frontCard, event.currentTarget);
                           }}

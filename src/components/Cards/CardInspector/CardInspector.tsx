@@ -16,6 +16,7 @@ type CardInspectorProps = {
   autoOpenBackId?: string | null;
   frontViewToken?: number;
   onRememberBackId?: (backId: string) => void;
+  pairingReferenceId?: string | null;
 };
 
 export default function CardInspector({
@@ -23,6 +24,7 @@ export default function CardInspector({
   autoOpenBackId,
   frontViewToken,
   onRememberBackId,
+  pairingReferenceId,
 }: CardInspectorProps) {
   const { t } = useI18n();
   const {
@@ -119,6 +121,7 @@ export default function CardInspector({
             autoOpenBackId={autoOpenBackId}
             frontViewToken={frontViewToken}
             onRememberBackId={onRememberBackId}
+            pairingReferenceId={pairingReferenceId}
           />
         )}
       </div>

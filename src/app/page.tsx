@@ -63,6 +63,7 @@ import { startThumbnailJpegMigration } from "@/lib/thumbnail-jpeg-migration";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
+import { clearDraft, loadDraft, saveDraft } from "@/lib/draft-storage";
 import { applyInspectorDefaults, createEditorDefaultValues } from "@/lib/editor-form";
 import { useGetCard } from "@/api/hooks";
 import { apiClient } from "@/api/client";
@@ -193,6 +194,7 @@ function IndexPageInner() {
   );
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [routeError, setRouteError] = useState<"not-found" | "load-failed" | null>(null);
+  const [draftSourceCardId, setDraftSourceCardId] = useState<string | null>(null);
 
   useEscapeModalAware({
     id: "route:assets",
@@ -262,6 +264,7 @@ function IndexPageInner() {
     const viewedAt = Date.now();
 
     let didSave = false;
+    let didCreateNew = false;
     try {
       if (mode === "new") {
         const record = await apiClient.createCard({
@@ -277,6 +280,7 @@ function IndexPageInner() {
         const mapped = cardRecordToCardData(record as CardRecord & { templateId: TemplateId });
         resetWithSaved(applyInspectorDefaults(templateId, mapped));
         didSave = true;
+        didCreateNew = true;
       } else if (mode === "update") {
         if (!activeCardId || activeStatus !== "saved") return;
         const record = await apiClient.updateCard(
@@ -296,6 +300,10 @@ function IndexPageInner() {
     } finally {
       if (didSave) {
         setSaveToken((prev) => prev + 1);
+      }
+      if (didCreateNew) {
+        clearDraft();
+        setDraftSourceCardId(null);
       }
       const elapsed = Date.now() - startedAt;
       const remaining = Math.max(0, 300 - elapsed);
@@ -366,6 +374,8 @@ function IndexPageInner() {
       ...(draftTitle ? { title: nextDuplicateTitle(String(draftTitle)) } : {}),
     } as CardDataByTemplate[TemplateId];
     setSelectedTemplateId(templateId);
+    saveDraft(templateId, nextDraft, { sourceCardId: activeCardId ?? null });
+    setDraftSourceCardId(activeCardId ?? null);
     resetWithSaved(applyInspectorDefaults(templateId, nextDraft));
     setActiveCard(templateId, null, null);
     navigate("/cards/new", { replace: true });
@@ -488,15 +498,50 @@ function IndexPageInner() {
       draftInitKeyRef.current = null;
       return;
     }
-    if (!selectedTemplateId) return;
-    const key = `draft:${selectedTemplateId}`;
+    const storedDraft = loadDraft();
+    const storedTemplateId = storedDraft?.templateId ?? (selectedTemplateId as TemplateId | null);
+    if (!storedTemplateId) return;
+    const key = `draft:${storedTemplateId}`;
     if (draftInitKeyRef.current === key) return;
     draftInitKeyRef.current = key;
-    const templateId = selectedTemplateId as TemplateId;
+    if (storedDraft) {
+      setSelectedTemplateId(storedDraft.templateId);
+      resetWithSaved(storedDraft.data);
+      setActiveCard(storedDraft.templateId, null, null);
+      setDraftSourceCardId(storedDraft.sourceCardId ?? null);
+      return;
+    }
+    const templateId = storedTemplateId as TemplateId;
     const nextValues = createEditorDefaultValues(templateId);
     resetWithSaved(nextValues);
     setActiveCard(templateId, null, null);
-  }, [isDraftRoute, resetWithSaved, selectedTemplateId, setActiveCard]);
+    saveDraft(templateId, nextValues, { sourceCardId: null });
+    setDraftSourceCardId(null);
+  }, [isDraftRoute, resetWithSaved, selectedTemplateId, setActiveCard, setSelectedTemplateId]);
+
+  const autosaveTimeoutRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!isDraftRoute) {
+      if (autosaveTimeoutRef.current) {
+        window.clearTimeout(autosaveTimeoutRef.current);
+      }
+      return;
+    }
+    if (!selectedTemplateId) return;
+    if (activeCardId && activeStatus === "saved") return;
+    if (!editorValues) return;
+    if (autosaveTimeoutRef.current) {
+      window.clearTimeout(autosaveTimeoutRef.current);
+    }
+    autosaveTimeoutRef.current = window.setTimeout(() => {
+      saveDraft(selectedTemplateId as TemplateId, editorValues as CardDataByTemplate[TemplateId]);
+    }, 250);
+    return () => {
+      if (autosaveTimeoutRef.current) {
+        window.clearTimeout(autosaveTimeoutRef.current);
+      }
+    };
+  }, [isDraftRoute, selectedTemplateId, activeCardId, activeStatus, editorValues]);
 
   useEffect(() => {
     if (effectiveFace !== "back" || !activeCardId) {
@@ -970,6 +1015,8 @@ function IndexPageInner() {
                           });
                           const nextDraft = createEditorDefaultValues(templateId);
                           setSelectedTemplateId(templateId);
+                          saveDraft(templateId, nextDraft, { sourceCardId: null });
+                          setDraftSourceCardId(null);
                           resetWithSaved(nextDraft as CardDataByTemplate[TemplateId]);
                           setActiveCard(templateId, null, null);
                           navigate("/cards/new", { replace: true });
@@ -984,6 +1031,7 @@ function IndexPageInner() {
                           autoOpenBackId={lastRememberedBackId}
                           frontViewToken={frontViewToken}
                           onRememberBackId={setLastRememberedBackId}
+                          pairingReferenceId={draftSourceCardId}
                         />
                       </PreviewCanvasProvider>
                     </div>
