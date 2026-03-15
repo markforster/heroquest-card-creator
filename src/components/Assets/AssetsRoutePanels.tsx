@@ -308,7 +308,7 @@ function AssetsInspector({
           canvas.width = bitmap.width;
           canvas.height = bitmap.height;
           const ctx = canvas.getContext("2d");
-          if (!ctx) {
+          if (!ctx || !("drawImage" in ctx) || !("getImageData" in ctx)) {
             bitmap.close?.();
             return;
           }
@@ -794,7 +794,7 @@ function AssetsInspector({
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext("2d");
-        if (!ctx) {
+        if (!ctx || !("drawImage" in ctx)) {
           bitmap?.close?.();
           return;
         }

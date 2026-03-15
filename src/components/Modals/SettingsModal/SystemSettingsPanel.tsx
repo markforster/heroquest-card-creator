@@ -1,9 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
+import {
+  formatSystemSettingsTimestamp,
+  getSystemSettingsStoreLabel,
+} from "@/components/Modals/SettingsModal/systemSettingsI18n";
 import {
   getDbEstimateStatus,
   runFullDbEstimate,
@@ -11,6 +15,43 @@ import {
 } from "@/lib/indexeddb-size-tracker";
 import { useI18n } from "@/i18n/I18nProvider";
 import { APP_VERSION } from "@/version";
+
+type StoreBreakdownEntry = {
+  name: string;
+  bytes: number;
+  records: number;
+  share: number;
+  color: string;
+};
+
+const STORE_COLORS: Record<string, string> = {
+  assets: "#a8842a",
+  cards: "#b86a3a",
+  "everything-else": "#6f7f42",
+  "other-browser-storage": "#7b7368",
+  pairs: "#8d5537",
+  collections: "#4f7a88",
+  meta: "#58786d",
+  settings: "#68658d",
+};
+
+const FALLBACK_STORE_COLORS = ["#8d5537", "#6f7f42", "#4f7a88", "#58786d", "#68658d"];
+
+type StorageDetailRowsProps = {
+  title: string;
+  data: StoreBreakdownEntry[];
+  fallbackLabel: string;
+  recordsLabel: string;
+  t: ReturnType<typeof useI18n>["t"];
+};
+
+type StorageUsageBarProps = {
+  data: StoreBreakdownEntry[];
+  fallbackLabel: string;
+  sectionLabel: string;
+  recordsLabel: string;
+  t: ReturnType<typeof useI18n>["t"];
+};
 
 function formatBytes(bytes: number | null, fallback: string): string {
   if (bytes == null || !Number.isFinite(bytes)) return fallback;
@@ -24,13 +65,168 @@ function formatBytes(bytes: number | null, fallback: string): string {
   return `${gb.toFixed(1)} GB`;
 }
 
-function formatBytesSafe(bytes: number | null, fallback: string): string {
-  if (bytes == null || !Number.isFinite(bytes)) return fallback;
-  return formatBytes(bytes, fallback);
+function getStoreColor(store: string, fallbackIndex: number): string {
+  return STORE_COLORS[store] ?? FALLBACK_STORE_COLORS[fallbackIndex % FALLBACK_STORE_COLORS.length];
+}
+
+function buildStorageChartData(
+  byStore: Record<string, { bytes: number; records: number }>,
+): StoreBreakdownEntry[] {
+  const filtered = Object.entries(byStore)
+    .filter(([, value]) => value.bytes > 0)
+    .sort(([, a], [, b]) => b.bytes - a.bytes);
+
+  const totalBytes = filtered.reduce((sum, [, value]) => sum + value.bytes, 0);
+  if (totalBytes <= 0) return [];
+
+  return filtered.map(([name, value], index) => ({
+    name,
+    bytes: value.bytes,
+    records: value.records,
+    share: value.bytes / totalBytes,
+    color: getStoreColor(name, index),
+  }));
+}
+
+function getStoreEntries(byStore: Record<string, { bytes: number; records: number }>) {
+  return Object.entries(byStore) as Array<[string, { bytes: number; records: number }]>;
+}
+
+function clampToPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(100, Math.max(0, value));
+}
+
+function buildOverallStorageData(
+  totalBytes: number | null,
+  byStore: Record<string, { bytes: number; records: number }>,
+): StoreBreakdownEntry[] {
+  if (totalBytes == null || !Number.isFinite(totalBytes) || totalBytes <= 0) return [];
+
+  const assets = byStore.assets ?? { bytes: 0, records: 0 };
+  const cards = byStore.cards ?? { bytes: 0, records: 0 };
+  const otherEntries = getStoreEntries(byStore).filter(
+    ([store, value]) => store !== "assets" && store !== "cards" && value.bytes > 0,
+  );
+  const otherBytes = otherEntries.reduce((sum, [, value]) => sum + value.bytes, 0);
+  const otherRecords = otherEntries.reduce((sum, [, value]) => sum + value.records, 0);
+  const libraryBytes = assets.bytes + cards.bytes + otherBytes;
+  const nonLibraryBytes = Math.max(0, totalBytes - libraryBytes);
+
+  return [
+    {
+      name: "assets",
+      bytes: assets.bytes,
+      records: assets.records,
+      share: assets.bytes / totalBytes,
+      color: STORE_COLORS.assets,
+    },
+    {
+      name: "cards",
+      bytes: cards.bytes,
+      records: cards.records,
+      share: cards.bytes / totalBytes,
+      color: STORE_COLORS.cards,
+    },
+    {
+      name: "everything-else",
+      bytes: otherBytes,
+      records: otherRecords,
+      share: otherBytes / totalBytes,
+      color: STORE_COLORS["everything-else"],
+    },
+    {
+      name: "other-browser-storage",
+      bytes: nonLibraryBytes,
+      records: 0,
+      share: nonLibraryBytes / totalBytes,
+      color: STORE_COLORS["other-browser-storage"],
+    },
+  ].filter((entry) => entry.bytes > 0);
+}
+
+function buildRestDetailData(
+  byStore: Record<string, { bytes: number; records: number }>,
+): StoreBreakdownEntry[] {
+  const restStores = Object.fromEntries(
+    getStoreEntries(byStore).filter(
+      ([store, value]) => store !== "assets" && store !== "cards" && value.bytes > 0,
+    ),
+  ) as Record<string, { bytes: number; records: number }>;
+
+  return buildStorageChartData(restStores);
+}
+
+function StorageDetailRows({ title, data, fallbackLabel, recordsLabel, t }: StorageDetailRowsProps) {
+  if (data.length === 0) return null;
+
+  return (
+    <section className={styles.storageBreakdownSection} aria-label={title}>
+      <div className={styles.storageBreakdownSectionTitle}>{title}</div>
+      <div className={styles.storageDetailRows}>
+        {data.map((entry) => (
+          <div key={entry.name} className={styles.storageDetailRow}>
+            <div className={styles.storageDetailRowMain}>
+              <span
+                className={styles.storageBreakdownLegendSwatch}
+                style={{ backgroundColor: entry.color }}
+                aria-hidden="true"
+              />
+              <span className={styles.storageDetailRowLabel}>
+                {getSystemSettingsStoreLabel(entry.name, t)}: {formatBytes(entry.bytes, fallbackLabel)} (
+                {entry.records} {recordsLabel})
+              </span>
+            </div>
+            <span className={styles.storageUsageLegendShare}>{(entry.share * 100).toFixed(1)}%</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StorageUsageBar({
+  data,
+  fallbackLabel,
+  sectionLabel,
+  recordsLabel,
+  t,
+}: StorageUsageBarProps) {
+  if (data.length === 0) return null;
+
+  return (
+    <div className={styles.storageUsageSummary} aria-label={sectionLabel}>
+      <div className={styles.storageUsageBar} aria-hidden="true">
+        {data.map((entry) => (
+          <div
+            key={entry.name}
+            className={styles.storageUsageBarSegment}
+            style={{ width: `${clampToPercent(entry.share * 100)}%`, background: entry.color }}
+          />
+        ))}
+      </div>
+      <div className={styles.storageUsageLegend}>
+        {data.map((entry) => (
+          <div key={entry.name} className={styles.storageUsageLegendItem}>
+            <span
+              className={styles.storageBreakdownLegendSwatch}
+              style={{ backgroundColor: entry.color }}
+              aria-hidden="true"
+            />
+            <span className={styles.settingsPanelOption}>
+              {getSystemSettingsStoreLabel(entry.name, t)}: {formatBytes(entry.bytes, fallbackLabel)}
+              {entry.records > 0 ? ` (${entry.records} ${recordsLabel})` : ""}
+            </span>
+            <span className={styles.storageUsageLegendShare}>{(entry.share * 100).toFixed(1)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function SystemSettingsPanel() {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const [usageBytes, setUsageBytes] = useState<number | null>(null);
   const [quotaBytes, setQuotaBytes] = useState<number | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -51,7 +247,7 @@ export default function SystemSettingsPanel() {
       const estimate = await navigator.storage.estimate();
       setUsageBytes(typeof estimate.usage === "number" ? estimate.usage : null);
       setQuotaBytes(typeof estimate.quota === "number" ? estimate.quota : null);
-      setLastUpdated(new Date().toLocaleString());
+      setLastUpdated(formatSystemSettingsTimestamp(new Date(), language));
     } catch {
       setUsageBytes(null);
       setQuotaBytes(null);
@@ -59,7 +255,7 @@ export default function SystemSettingsPanel() {
     } finally {
       setIsLoading(false);
     }
-  }, [t]);
+  }, [language, t]);
 
   useEffect(() => {
     void refreshStorageEstimate();
@@ -81,6 +277,15 @@ export default function SystemSettingsPanel() {
       setDbEstimateLoading(false);
     }
   }, [refreshStorageEstimate]);
+
+  const overallStorageData = useMemo(
+    () => buildOverallStorageData(usageBytes, dbEstimateStatus.byStore ?? {}),
+    [usageBytes, dbEstimateStatus.byStore],
+  );
+  const restDetailData = useMemo(
+    () => buildRestDetailData(dbEstimateStatus.byStore ?? {}),
+    [dbEstimateStatus.byStore],
+  );
 
   return (
     <div className={styles.settingsPanelBody}>
@@ -109,7 +314,7 @@ export default function SystemSettingsPanel() {
               rel="noreferrer noopener"
               className={styles.footerLink}
             >
-              Reach out on itch.io
+              {t("label.reachOutOnItch")}
             </a>
           </div>
         </div>
@@ -126,31 +331,27 @@ export default function SystemSettingsPanel() {
         className="d-flex flex-column gap-3"
       >
         <div className="d-flex flex-column gap-2">
+          <StorageUsageBar
+            data={overallStorageData}
+            fallbackLabel={t("label.unavailable")}
+            sectionLabel={t("label.estimatedBrowserUsage")}
+            recordsLabel={t("label.records")}
+            t={t}
+          />
           <div className={styles.settingsPanelOption}>
             {t("label.estimatedBrowserUsage")}: {formatBytes(usageBytes, t("label.unavailable"))}
           </div>
-          <div className={styles.settingsPanelOption}>
-            {t("label.estimatedLibrarySize")}:{" "}
-            {formatBytesSafe(
-              dbEstimateStatus.lastUpdated ? dbEstimateStatus.totalBytes : null,
-              t("label.notYetCalculated"),
-            )}
-          </div>
-          <div className={styles.settingsPanelOption}>
-            {t("label.recordsScanned")}:{" "}
-            {dbEstimateStatus.lastUpdated
-              ? dbEstimateStatus.recordsScanned
-              : t("label.notYetCalculated")}
-          </div>
-          {Object.keys(dbEstimateStatus.byStore ?? {}).length > 0 ? (
-            <div className="d-flex flex-column gap-1">
-              {Object.entries(dbEstimateStatus.byStore).map(([store, value]) => (
-                <div key={store} className={styles.settingsPanelOption}>
-                  {store.charAt(0).toUpperCase() + store.slice(1)}:{" "}
-                  {formatBytes(value.bytes, t("label.unavailable"))} ({value.records}{" "}
-                  {t("label.records")})
-                </div>
-              ))}
+          {dbEstimateStatus.lastUpdated && restDetailData.length > 0 ? (
+            <div className={styles.storageBreakdownCharts} aria-label={t("label.storage")}>
+              {restDetailData.length > 0 ? (
+                <StorageDetailRows
+                  title={t("label.storageNonAssetBreakdown")}
+                  data={restDetailData}
+                  fallbackLabel={t("label.unavailable")}
+                  recordsLabel={t("label.records")}
+                  t={t}
+                />
+              ) : null}
             </div>
           ) : null}
         </div>

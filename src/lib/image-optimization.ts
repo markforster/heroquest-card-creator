@@ -131,7 +131,7 @@ export async function optimizeImageBlob(
     const destCanvas = document.createElement("canvas");
     destCanvas.width = targetSize.width;
     destCanvas.height = targetSize.height;
-    await picaInstance.resize(sourceCanvas, destCanvas, { alpha: true });
+    await picaInstance.resize(sourceCanvas, destCanvas);
     outputCanvas = destCanvas;
   }
 

@@ -3608,6 +3608,116 @@
   overflow: hidden;
 }
 
+.storageBreakdownCharts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  margin-top: var(--space-4);
+}
+
+.storageUsageSummary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin-bottom: var(--space-4);
+}
+
+.storageUsageBar {
+  display: flex;
+  width: 100%;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(64, 47, 35, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(64, 47, 35, 0.08);
+}
+
+.storageUsageBarSegment {
+  min-width: 0;
+}
+
+.storageUsageLegend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.storageUsageLegendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.storageUsageLegendShare {
+  margin-left: auto;
+  font-size: 0.82rem;
+  color: var(--hq-text-muted);
+  white-space: nowrap;
+}
+
+.storageBreakdownSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.storageBreakdownSectionTitle {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--hq-text-muted);
+}
+
+.storageBreakdownLegendSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+  box-shadow: inset 0 0 0 1px rgba(40, 24, 16, 0.18);
+}
+
+.storageDetailRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.storageDetailRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-6);
+  align-items: center;
+}
+
+.storageDetailRowMain {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.storageDetailRowLabel {
+  min-width: 0;
+  color: var(--hq-text);
+  font-size: var(--text-lg);
+}
+
+@media (max-width: 720px) {
+  .storageUsageLegendItem {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .storageUsageLegendShare {
+    width: 100%;
+    margin-left: calc(12px + var(--space-4));
+  }
+
+  .storageDetailRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .exportMarksGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

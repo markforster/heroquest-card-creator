@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useRef, useState } from "react";
 
+import styles from "@/app/page.module.css";
 import BackupProgressOverlay from "@/components/BackupProgressOverlay";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -494,7 +495,44 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
         onConfirm={handleExportConfirm}
         onCancel={() => setIsExportConfirmOpen(false)}
       >
-        {t("confirm.exportStart")}
+        <div className="d-flex flex-column gap-3">
+          <div>{t("confirm.exportStart")}</div>
+          <div className={styles.exportFormatBlock}>
+            <div className={styles.exportFormatTitle}>{t("label.backupFormat")}</div>
+            <div className={styles.exportFormatOptions}>
+              <label className={`${styles.exportFormatOption} d-flex align-items-start gap-3`}>
+                <input
+                  type="radio"
+                  className="form-check-input hq-checkbox"
+                  name="backup-format"
+                  value="compact-zip-v1"
+                  aria-label={t("label.backupFormatCompact")}
+                  checked={backupFormat === "compact-zip-v1"}
+                  onChange={() => setBackupFormat("compact-zip-v1")}
+                />
+                <span>
+                  <span className={styles.exportFormatLabel}>{t("label.backupFormatCompact")}</span>
+                  <span className={styles.exportFormatHint}>{t("helper.backupFormatCompact")}</span>
+                </span>
+              </label>
+              <label className={`${styles.exportFormatOption} d-flex align-items-start gap-3`}>
+                <input
+                  type="radio"
+                  className="form-check-input hq-checkbox"
+                  name="backup-format"
+                  value="legacy-zip-json"
+                  aria-label={t("label.backupFormatStandard")}
+                  checked={backupFormat === "legacy-zip-json"}
+                  onChange={() => setBackupFormat("legacy-zip-json")}
+                />
+                <span>
+                  <span className={styles.exportFormatLabel}>{t("label.backupFormatStandard")}</span>
+                  <span className={styles.exportFormatHint}>{t("helper.backupFormatStandard")}</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
       </ConfirmModal>
     </LibraryTransferContext.Provider>
   );
