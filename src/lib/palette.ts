@@ -1,6 +1,7 @@
 "use client";
 
 import { extractPaletteFromCanvas } from "@/lib/color-palette";
+import { colorDistance, type Rgb } from "@/lib/color-utils";
 import { clamp } from "@/lib/math";
 
 export type PaletteSource =
@@ -165,7 +166,6 @@ function buildComplementary(entries: { color: string; rgb: Rgb; hsl: Hsl }[]) {
   return results;
 }
 
-type Rgb = { r: number; g: number; b: number };
 type Hsl = { h: number; s: number; l: number };
 
 function hexToRgb(hex: string): Rgb {
@@ -257,11 +257,4 @@ function hslToRgb(h: number, s: number, l: number): Rgb {
     g: Math.round((g + m) * 255),
     b: Math.round((b + m) * 255),
   };
-}
-
-function colorDistance(a: Rgb, b: Rgb) {
-  const dr = a.r - b.r;
-  const dg = a.g - b.g;
-  const db = a.b - b.b;
-  return Math.sqrt(dr * dr + dg * dg + db * db);
 }

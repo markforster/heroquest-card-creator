@@ -17,20 +17,22 @@ import {
   Pin,
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
 import { AssetsModal } from "@/components/Assets";
+import { addPinnedAsset, getAssetKindLabel } from "@/components/Cards/CardInspector/asset-utils";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 import IconButton from "@/components/common/IconButton";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getAllAssets, getAssetObjectUrl } from "@/lib/assets-db";
+import { apiClient } from "@/api/client";
+import type { AssetRecord } from "@/api/assets";
 import { clamp } from "@/lib/math";
-import type { AssetRecord } from "@/lib/assets-db";
-import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
+
+import type { CSSProperties } from "react";
 
 type MonsterIconFieldProps = {
   label: string;
@@ -134,7 +136,7 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
 
     let cancelled = false;
 
-    getAllAssets()
+    apiClient.listAssets()
       .then((records) => {
         if (!cancelled) {
           setAssets(records);
@@ -163,7 +165,9 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
     (async () => {
       for (const asset of assets) {
         try {
-          const url = await getAssetObjectUrl(asset.id);
+          const url = await apiClient.getAssetObjectUrl({
+            params: { id: asset.id },
+          });
           if (!url) continue;
           localUrls[asset.id] = url;
         } catch {
@@ -198,30 +202,13 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
     }
     return 2;
   };
-  const getAssetKindLabel = (asset: AssetRecord) => {
-    if (asset.assetKindStatus === "classified") {
-      return asset.assetKind === "icon"
-        ? t("label.assetKindIcon")
-        : t("label.assetKindArtwork");
-    }
-    return t("label.assetKindFilterUnclassified");
-  };
-  const makeFallbackAsset = (assetId: string, assetName: string): AssetRecord => ({
-    id: assetId,
-    name: assetName,
-    mimeType: "image/*",
-    width: 0,
-    height: 0,
-    createdAt: 0,
+  addPinnedAsset({
+    assetId: iconAssetId,
+    assetName: iconAssetName,
+    assetsById,
+    pinnedIds,
+    pinnedAssets,
   });
-  const addPinnedAsset = (assetId?: string, assetName?: string) => {
-    if (!assetId || pinnedIds.has(assetId)) return;
-    const asset =
-      assetsById.get(assetId) ?? makeFallbackAsset(assetId, assetName ?? assetId);
-    pinnedAssets.push(asset);
-    pinnedIds.add(assetId);
-  };
-  addPinnedAsset(iconAssetId, iconAssetName);
 
   const rankedAssets = normalizedQuery
     ? assets
@@ -255,7 +242,6 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
     const anchorRect = anchor.getBoundingClientRect();
     const padding = 12;
     const offset = 8;
-    const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
     const spaceLeft = anchorRect.left - padding - offset;
@@ -428,6 +414,7 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                         >
                           <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true" />
                           <div className={layoutStyles.imageAutocompleteThumb}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
                           </div>
                           <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
@@ -442,7 +429,7 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                                 : layoutStyles.imageAutocompleteKindUnknown
                             }`}
                           >
-                            {getAssetKindLabel(asset)}
+                            {getAssetKindLabel(t, asset)}
                           </span>
                         </button>
                       ))
@@ -457,13 +444,14 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                       resetSearchState();
                       inputRef.current?.blur();
                     }}
-                  >
-                    <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true">
-                      <Pin className={layoutStyles.icon} aria-hidden="true" />
-                    </div>
-                    <div className={layoutStyles.imageAutocompleteThumb}>
-                      {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
-                    </div>
+                    >
+                      <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true">
+                        <Pin className={layoutStyles.icon} aria-hidden="true" />
+                      </div>
+                      <div className={layoutStyles.imageAutocompleteThumb}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
+                      </div>
                     <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
                       {asset.name}
                     </div>
@@ -476,7 +464,7 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                           : layoutStyles.imageAutocompleteKindUnknown
                       }`}
                     >
-                      {getAssetKindLabel(asset)}
+                      {getAssetKindLabel(t, asset)}
                     </span>
                   </button>
                 ))}

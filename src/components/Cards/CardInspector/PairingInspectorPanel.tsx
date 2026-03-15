@@ -2,31 +2,25 @@
 
 import { ChevronDown, ChevronUp, Combine, Unlink2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
 
 import styles from "@/app/page.module.css";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useEditorSave } from "@/components/Providers/EditorSaveContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { ENABLE_CARD_THUMB_CACHE, ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getCard, listCards } from "@/lib/cards-db";
+import { apiClient } from "@/api/client";
 import { resolveEffectiveFace } from "@/lib/card-face";
-import {
-  getCachedCardThumbnailUrl,
-  getLegacyCardThumbnailUrl,
-  releaseLegacyCardThumbnailUrl,
-} from "@/lib/card-thumbnail-cache";
-import { createPair, deletePair, deletePairsForFront, replacePairsForBack } from "@/lib/pairs-service";
-import { listPairsForFace } from "@/lib/pairs-service";
-import type { CardDataByTemplate } from "@/types/card-data";
+import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 import type { CardFace } from "@/types/card-face";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
 
 import CollapsibleGroup from "./CollapsibleGroup";
@@ -36,13 +30,86 @@ type PairingInspectorPanelProps = {
   autoOpenBackId?: string | null;
   frontViewToken?: number;
   onRememberBackId?: (backId: string) => void;
+  pairingReferenceId?: string | null;
 };
+
+async function listPairsForFaceId(faceId: string) {
+  return apiClient.listPairs({ queries: { faceId } });
+}
+
+async function createPairFor(frontFaceId: string, backFaceId: string) {
+  return apiClient.createPair({ frontFaceId, backFaceId });
+}
+
+type PairingThumbImageProps = {
+  cardId: string;
+  thumbnailBlob?: Blob | null;
+  templateThumbSrc?: string | null;
+  delayMs?: number;
+  onLoaded?: () => void;
+};
+
+function PairingThumbImage({
+  cardId,
+  thumbnailBlob,
+  templateThumbSrc,
+  delayMs,
+  onLoaded,
+}: PairingThumbImageProps) {
+  const thumbUrl = useCardThumbnailUrl(cardId, thumbnailBlob ?? null, {
+    enabled: true,
+    useCache: ENABLE_CARD_THUMB_CACHE,
+  });
+  const style = delayMs ? { ["--pairing-thumb-delay" as never]: `${delayMs}ms` } : undefined;
+
+  if (thumbUrl) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={thumbUrl} alt="" style={style} onLoad={onLoaded} />;
+  }
+  if (templateThumbSrc) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={templateThumbSrc} alt="" style={style} onLoad={onLoaded} />;
+  }
+  return <div className={styles.inspectorStackPlaceholder} />;
+}
+
+async function deletePairBy(frontFaceId: string, backFaceId: string) {
+  return apiClient.deletePair({ frontFaceId, backFaceId });
+}
+
+async function deletePairsForFrontId(frontFaceId: string) {
+  const pairs = await listPairsForFaceId(frontFaceId);
+  const deletions = pairs.filter(
+    (pair) => pair.frontFaceId === frontFaceId && pair.backFaceId,
+  );
+  await Promise.all(
+    deletions.map((pair) => deletePairBy(frontFaceId, pair.backFaceId as string)),
+  );
+}
+
+async function replacePairsForBackId(backFaceId: string, frontFaceIds: string[]) {
+  const existing = await listPairsForFaceId(backFaceId);
+  const currentFrontIds = existing
+    .filter((pair) => pair.backFaceId === backFaceId && pair.frontFaceId)
+    .map((pair) => pair.frontFaceId as string);
+  const nextFrontSet = new Set(frontFaceIds);
+  const toRemove = currentFrontIds.filter((frontId) => !nextFrontSet.has(frontId));
+  const toAdd = frontFaceIds.filter((frontId) => !currentFrontIds.includes(frontId));
+
+  if (toRemove.length) {
+    await Promise.all(toRemove.map((frontId) => deletePairBy(frontId, backFaceId)));
+  }
+  if (toAdd.length) {
+    await Promise.all(toAdd.map((frontId) => createPairFor(frontId, backFaceId)));
+  }
+}
 
 export default function PairingInspectorPanel({
   activeFrontId,
   autoOpenBackId,
   frontViewToken,
   onRememberBackId,
+  pairingReferenceId,
 }: PairingInspectorPanelProps) {
   const { t } = useI18n();
   const fallbackTitle = t("label.untitledCard");
@@ -55,20 +122,11 @@ export default function PairingInspectorPanel({
   const navigate = useNavigate();
   const { openStockpile } = useAppActions();
   const {
-    state: {
-      selectedTemplateId,
-      draftTemplateId,
-      draft,
-      draftPairingFrontIds,
-      draftPairingBackIds,
-      activeCardIdByTemplate,
-      isDirtyByTemplate,
-    },
-    setCardDraft,
-    setSingleDraft,
-    setTemplateDirty,
-    setDraftPairingBackIds,
+    state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
+  const { control } = useFormContext();
+  const { isDirty } = useFormState({ control });
+  const faceValue = useWatch({ control, name: "face" }) as CardFace | undefined;
   const { saveCurrentCard, saveToken } = useEditorSave();
 
   const [pairedBacks, setPairedBacks] = useState<CardRecord[]>([]);
@@ -89,20 +147,22 @@ export default function PairingInspectorPanel({
   const hoverTimeoutRef = useRef<number | null>(null);
   const currentTemplateId = selectedTemplateId ?? null;
   const template = currentTemplateId ? cardTemplatesById[currentTemplateId] : undefined;
-  const draftValue =
-    currentTemplateId && draftTemplateId === currentTemplateId && draft
-      ? (draft as CardDataByTemplate[TemplateId])
-      : undefined;
   const activeCardId = currentTemplateId ? activeCardIdByTemplate[currentTemplateId] : undefined;
-  const isDraft = Boolean(
-    currentTemplateId && draftTemplateId === currentTemplateId && draft && !activeCardId,
+  const pairingSourceId = activeCardId ?? pairingReferenceId ?? null;
+  const pairingDisabled = !activeCardId;
+  const hoverThumbUrl = useCardThumbnailUrl(
+    hoveredCard?.id ?? null,
+    hoveredCard?.thumbnailBlob ?? null,
+    {
+      enabled: Boolean(hoveredCard),
+      useCache: ENABLE_CARD_THUMB_CACHE,
+    },
   );
-  const pairingDisabled = isDraft;
 
   const effectiveFace = useMemo<CardFace | undefined>(() => {
     if (!template) return undefined;
-    return resolveEffectiveFace(draftValue?.face, template.defaultFace);
-  }, [draftValue?.face, template]);
+    return resolveEffectiveFace(faceValue, template.defaultFace);
+  }, [faceValue, template]);
 
   const sortByUpdated = (cards: CardRecord[]) =>
     cards.sort((a, b) => {
@@ -111,17 +171,6 @@ export default function PairingInspectorPanel({
       const bName = b.nameLower ?? b.name.toLocaleLowerCase();
       return aName.localeCompare(bName);
     });
-
-  const resolveThumb = (id: string, blob: Blob | null) => {
-    if (typeof window === "undefined") {
-      return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
-    }
-    if (ENABLE_CARD_THUMB_CACHE) {
-      return { url: getCachedCardThumbnailUrl(id, blob), onLoad: undefined };
-    }
-    const url = getLegacyCardThumbnailUrl(id, blob ?? null);
-    return { url, onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined };
-  };
 
   const openCard = async (cardId: string) => {
     navigate(`/cards/${cardId}`);
@@ -137,8 +186,8 @@ export default function PairingInspectorPanel({
 
   const requestOpenCard = async (cardId: string) => {
     const currentTemplate = selectedTemplateId;
-    if (currentTemplate && isDirtyByTemplate[currentTemplate]) {
-      const record = await getCard(cardId);
+    if (currentTemplate && isDirty) {
+      const record = await apiClient.getCard({ params: { id: cardId } });
       if (!record) return;
       setPendingOpenCard(record);
       setIsSavePromptOpen(true);
@@ -157,27 +206,24 @@ export default function PairingInspectorPanel({
         return;
       }
 
-      const cards = await listCards({ status: "saved" });
+      const cards = await apiClient.listCards({ queries: { status: "saved" } });
       if (!active) return;
       const byId = new Map(cards.map((card) => [card.id, card]));
       setCardsById(byId);
 
       let backIds: string[] = [];
-      if (activeCardId) {
-        const pairs = await listPairsForFace(activeCardId);
+      if (pairingSourceId) {
+        const pairs = await listPairsForFaceId(pairingSourceId);
         if (!active) return;
         backIds = Array.from(
           new Set(
             pairs
-              .filter((pair) => pair.frontFaceId === activeCardId)
+              .filter((pair) => pair.frontFaceId === pairingSourceId)
               .map((pair) => pair.backFaceId)
               .filter((id): id is string => Boolean(id)),
           ),
         );
-      } else if (draftPairingBackIds?.length) {
-        backIds = draftPairingBackIds;
       }
-
       if (!backIds.length) {
         setPairedBacks([]);
         setPairedBackFrontsMap(new Map());
@@ -199,7 +245,7 @@ export default function PairingInspectorPanel({
     return () => {
       active = false;
     };
-  }, [activeCardId, effectiveFace, pairedBacksToken, saveToken, draftPairingBackIds]);
+  }, [pairingSourceId, effectiveFace, pairedBacksToken, saveToken]);
 
   useEffect(() => {
     if (effectiveFace !== "back") {
@@ -212,12 +258,13 @@ export default function PairingInspectorPanel({
       const sorted = sortByUpdated([...cards]);
       setPairedFronts(sorted);
     };
-    listCards({ status: "saved" })
+    apiClient
+      .listCards({ queries: { status: "saved" } })
       .then((cards) => {
         if (!active) return;
         setCardsById(new Map(cards.map((card) => [card.id, card])));
-        if (activeCardId) {
-          void listPairsForFace(activeCardId)
+        if (pairingSourceId) {
+          void listPairsForFaceId(pairingSourceId)
             .then((pairs) => {
               if (!active) return;
               const frontIds = new Set(
@@ -234,12 +281,6 @@ export default function PairingInspectorPanel({
             });
           return;
         }
-        if (draftPairingFrontIds?.length) {
-          const idSet = new Set(draftPairingFrontIds);
-          const matches = cards.filter((card) => idSet.has(card.id));
-          void loadFronts(matches);
-          return;
-        }
         setPairedFronts([]);
       })
       .catch(() => {
@@ -250,7 +291,7 @@ export default function PairingInspectorPanel({
     return () => {
       active = false;
     };
-  }, [activeCardId, effectiveFace, pairedFrontsToken, draftPairingFrontIds, saveToken]);
+  }, [pairingSourceId, effectiveFace, pairedFrontsToken, saveToken]);
 
   useEffect(() => {
     if (effectiveFace !== "front") {
@@ -266,7 +307,7 @@ export default function PairingInspectorPanel({
       const nextMap = new Map<string, CardRecord[]>();
       await Promise.all(
         pairedBacks.map(async (back) => {
-          const pairs = await listPairsForFace(back.id);
+          const pairs = await listPairsForFaceId(back.id);
           if (!active) return;
           const frontIds = Array.from(
             new Set(
@@ -305,22 +346,14 @@ export default function PairingInspectorPanel({
 
   const handleUnpairAll = async () => {
     if (!activeCardId) return;
-    await deletePairsForFront(activeCardId);
+    await deletePairsForFrontId(activeCardId);
     setPairedBacks([]);
-    if (currentTemplateId) {
-      const nextDraft = {
-        ...(draftValue ?? {}),
-      } as CardDataByTemplate[TemplateId];
-      setCardDraft(currentTemplateId, nextDraft);
-      setSingleDraft(currentTemplateId, nextDraft);
-      setTemplateDirty(currentTemplateId, true);
-    }
   };
 
   const handleUnpairBack = async (backId: string) => {
     if (!activeCardId) return;
     try {
-      await deletePair(activeCardId, backId);
+      await deletePairBy(activeCardId, backId);
       setPairedBacksToken((prev) => prev + 1);
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -385,31 +418,18 @@ export default function PairingInspectorPanel({
                     initialSelectedIds: pairedBacks.map((card) => card.id),
                     onConfirmSelection: (cardIds) => {
                       if (!currentTemplateId) return;
-                      if (activeCardId) {
-                        void (async () => {
-                          const existingIds = new Set(pairedBacks.map((card) => card.id));
-                          const nextIds = new Set(cardIds ?? []);
-                          const toRemove = [...existingIds].filter((id) => !nextIds.has(id));
-                          const toAdd = [...nextIds].filter((id) => !existingIds.has(id));
-                          await Promise.all([
-                            ...toRemove.map((id) => deletePair(activeCardId, id)),
-                            ...toAdd.map((id) => createPair(activeCardId, id)),
-                          ]);
-                          setPairedBacksToken((prev) => prev + 1);
-                        })();
-                      } else {
-                        setDraftPairingBackIds(cardIds ?? []);
-                      }
-                      const nextDraft = {
-                        ...(draftValue ?? {}),
-                        face: resolveEffectiveFace(
-                          draftValue?.face,
-                          template?.defaultFace ?? "front",
-                        ),
-                      } as CardDataByTemplate[TemplateId];
-                      setCardDraft(currentTemplateId, nextDraft);
-                      setSingleDraft(currentTemplateId, nextDraft);
-                      setTemplateDirty(currentTemplateId, true);
+                      if (!activeCardId) return;
+                      void (async () => {
+                        const existingIds = new Set(pairedBacks.map((card) => card.id));
+                        const nextIds = new Set(cardIds ?? []);
+                        const toRemove = [...existingIds].filter((id) => !nextIds.has(id));
+                        const toAdd = [...nextIds].filter((id) => !existingIds.has(id));
+                        await Promise.all([
+                          ...toRemove.map((id) => deletePairBy(activeCardId, id)),
+                          ...toAdd.map((id) => createPairFor(activeCardId, id)),
+                        ]);
+                        setPairedBacksToken((prev) => prev + 1);
+                      })();
                     },
                   });
                 }}
@@ -467,7 +487,7 @@ export default function PairingInspectorPanel({
                   initialSelectedIds: pairedFronts.map((card) => card.id),
                   onConfirmSelection: async (cardIds) => {
                     try {
-                      await replacePairsForBack(activeCardId, cardIds);
+                      await replacePairsForBackId(activeCardId, cardIds);
                     } catch {
                       // Ignore pair update errors for now.
                     }
@@ -490,7 +510,6 @@ export default function PairingInspectorPanel({
         {effectiveFace === "back" ? (
           <div className={styles.pairingPanelGrid}>
             {pairedFronts.map((card, index) => {
-              const thumb = resolveThumb(card.id, card.thumbnailBlob ?? null);
               const templateThumb = cardTemplatesById[card.templateId]?.thumbnail;
               const isSelected = selectedFrontId === card.id;
               const isLoaded = Boolean(loadedThumbs[card.id]);
@@ -500,7 +519,10 @@ export default function PairingInspectorPanel({
                   type="button"
                   className={`${styles.pairingPanelGridItem} ${
                     isSelected ? styles.pairingPanelSelected : ""
-                  } ${isLoaded ? styles.pairingPanelGridItemLoaded : ""}`}
+                  } ${isLoaded ? styles.pairingPanelGridItemLoaded : ""} ${
+                    pairingDisabled ? styles.pairingPanelGridItemDisabled : ""
+                  }`}
+                  disabled={pairingDisabled}
                   onMouseEnter={(event) => {
                     showHoverPreview(card, event.currentTarget);
                   }}
@@ -510,30 +532,13 @@ export default function PairingInspectorPanel({
                     await requestOpenCard(card.id);
                   }}
                 >
-                  {thumb.url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={thumb.url}
-                      alt=""
-                      style={{ ["--pairing-thumb-delay" as never]: `${index * 25}ms` }}
-                      onLoad={() => {
-                        thumb.onLoad?.();
-                        markThumbLoaded(card.id);
-                      }}
-                    />
-                  ) : templateThumb?.src ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={templateThumb.src}
-                      alt=""
-                      style={{ ["--pairing-thumb-delay" as never]: `${index * 25}ms` }}
-                      onLoad={() => {
-                        markThumbLoaded(card.id);
-                      }}
-                    />
-                  ) : (
-                    <div className={styles.inspectorStackPlaceholder} />
-                  )}
+                  <PairingThumbImage
+                    cardId={card.id}
+                    thumbnailBlob={card.thumbnailBlob ?? null}
+                    templateThumbSrc={templateThumb?.src ?? null}
+                    delayMs={index * 25}
+                    onLoaded={() => markThumbLoaded(card.id)}
+                  />
                 </button>
               );
             })}
@@ -545,7 +550,6 @@ export default function PairingInspectorPanel({
             className={styles.pairingPanelGroups}
           >
             {pairedBacks.map((backCard) => {
-              const backThumb = resolveThumb(backCard.id, backCard.thumbnailBlob ?? null);
               const backTemplateThumb = cardTemplatesById[backCard.templateId]?.thumbnail;
               const groupFrontCards = pairedBackFrontsMap.get(backCard.id) ?? [];
               const backTitle = backCard.title ?? fallbackTitle;
@@ -568,7 +572,10 @@ export default function PairingInspectorPanel({
                     <>
                       <button
                         type="button"
-                        className={styles.pairingPanelGroupThumb}
+                        className={`${styles.pairingPanelGroupThumb} ${
+                          pairingDisabled ? styles.pairingPanelGroupThumbDisabled : ""
+                        }`}
+                        disabled={pairingDisabled}
                         onMouseEnter={(event) => {
                           showHoverPreview(backCard, event.currentTarget);
                         }}
@@ -579,15 +586,11 @@ export default function PairingInspectorPanel({
                           await requestOpenCard(backCard.id);
                         }}
                       >
-                      {backThumb.url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={backThumb.url} alt="" onLoad={backThumb.onLoad} />
-                        ) : backTemplateThumb?.src ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={backTemplateThumb.src} alt="" />
-                        ) : (
-                          <div className={styles.inspectorStackPlaceholder} />
-                        )}
+                        <PairingThumbImage
+                          cardId={backCard.id}
+                          thumbnailBlob={backCard.thumbnailBlob ?? null}
+                          templateThumbSrc={backTemplateThumb?.src ?? null}
+                        />
                       </button>
                       <div className={styles.pairingPanelGroupInfo}>
                         <div className={styles.pairingPanelGroupTitle}>{backTitle}</div>
@@ -596,7 +599,10 @@ export default function PairingInspectorPanel({
                       <span className={styles.pairingPanelGroupControls} aria-hidden="true">
                       <button
                         type="button"
-                        className={styles.pairingPanelGroupUnpair}
+                        className={`${styles.pairingPanelGroupUnpair} ${
+                          pairingDisabled ? styles.pairingPanelGroupUnpairDisabled : ""
+                        }`}
+                        disabled={pairingDisabled}
                           title={
                             pairingDisabled
                               ? t("tooltip.saveBeforePairing")
@@ -605,13 +611,7 @@ export default function PairingInspectorPanel({
                         onClick={async (event) => {
                           event.stopPropagation();
                           if (pairingDisabled) return;
-                          if (!activeCardId) {
-                            const nextDraftIds = (draftPairingBackIds ?? []).filter(
-                              (id) => id !== backCard.id,
-                            );
-                            setDraftPairingBackIds(nextDraftIds.length ? nextDraftIds : null);
-                            return;
-                          }
+                          if (!activeCardId) return;
                           if (pairedBackCount > 1) {
                             setPendingUnpairBack(backCard);
                             return;
@@ -631,10 +631,6 @@ export default function PairingInspectorPanel({
                 >
                   <div className={styles.pairingPanelGroupGrid}>
                     {groupFrontCards.map((frontCard, index) => {
-                      const frontThumb = resolveThumb(
-                        frontCard.id,
-                        frontCard.thumbnailBlob ?? null,
-                      );
                       const frontTemplateThumb =
                         cardTemplatesById[frontCard.templateId]?.thumbnail;
                       const isSelected = selectedFrontId === frontCard.id;
@@ -645,7 +641,10 @@ export default function PairingInspectorPanel({
                           type="button"
                           className={`${styles.pairingPanelGridItem} ${
                             isSelected ? styles.pairingPanelSelected : ""
-                          } ${isLoaded ? styles.pairingPanelGridItemLoaded : ""}`}
+                          } ${isLoaded ? styles.pairingPanelGridItemLoaded : ""} ${
+                            pairingDisabled ? styles.pairingPanelGridItemDisabled : ""
+                          }`}
+                          disabled={pairingDisabled}
                           onMouseEnter={(event) => {
                             showHoverPreview(frontCard, event.currentTarget);
                           }}
@@ -656,30 +655,13 @@ export default function PairingInspectorPanel({
                             await requestOpenCard(frontCard.id);
                           }}
                         >
-                          {frontThumb.url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={frontThumb.url}
-                              alt=""
-                              style={{ ["--pairing-thumb-delay" as never]: `${index * 25}ms` }}
-                              onLoad={() => {
-                                frontThumb.onLoad?.();
-                                markThumbLoaded(frontCard.id);
-                              }}
-                            />
-                          ) : frontTemplateThumb?.src ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={frontTemplateThumb.src}
-                              alt=""
-                              style={{ ["--pairing-thumb-delay" as never]: `${index * 25}ms` }}
-                              onLoad={() => {
-                                markThumbLoaded(frontCard.id);
-                              }}
-                            />
-                          ) : (
-                            <div className={styles.inspectorStackPlaceholder} />
-                          )}
+                          <PairingThumbImage
+                            cardId={frontCard.id}
+                            thumbnailBlob={frontCard.thumbnailBlob ?? null}
+                            templateThumbSrc={frontTemplateThumb?.src ?? null}
+                            delayMs={index * 25}
+                            onLoaded={() => markThumbLoaded(frontCard.id)}
+                          />
                         </button>
                       );
                     })}
@@ -753,10 +735,6 @@ export default function PairingInspectorPanel({
       {hoveredCard && hoverAnchor && typeof document !== "undefined"
           ? (() => {
             const templateThumb = cardTemplatesById[hoveredCard.templateId]?.thumbnail;
-            const hoverThumb = resolveThumb(
-              hoveredCard.id,
-              hoveredCard.thumbnailBlob ?? null,
-            );
             const popoverWidth = 120 + 16;
             const popoverHeight = 168 + 16;
             const left = Math.min(hoverAnchor.left, window.innerWidth - popoverWidth - 16);
@@ -776,9 +754,9 @@ export default function PairingInspectorPanel({
                 onMouseLeave={hideHoverPreview}
               >
                 <div className={styles.pairingPanelHoverCard}>
-                  {hoverThumb.url ? (
+                  {hoverThumbUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={hoverThumb.url} alt="" onLoad={hoverThumb.onLoad} />
+                    <img src={hoverThumbUrl} alt="" />
                   ) : templateThumb?.src ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={templateThumb.src} alt="" />

@@ -32,6 +32,7 @@ import linenNormal3 from "@/assets/linen-5.png";
 import { spinnerBlueprintDataUrl } from "@/assets/spinner-blueprint-data";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/Providers/WebglPreviewSettingsContext";
+import { CARD_ASPECT, CARD_WIDTH, savg } from "@/config/card-canvas";
 import {
   ENABLE_WEBGL_EMISSIVE,
   ENABLE_WEBGL_SHEEN,
@@ -40,7 +41,6 @@ import {
 } from "@/config/flags";
 import { createMagicOverlayMaterial } from "@/lib/webgl/magicOverlayShader";
 import { createSparkleOverlayMaterial } from "@/lib/webgl/sparkleOverlayShader";
-import { CARD_ASPECT, CARD_WIDTH, savg } from "@/config/card-canvas";
 
 import styles from "./WebglPreview.module.css";
 
@@ -596,7 +596,6 @@ export default function WebglPreview({
   fallbackTextureSrc,
   rotationResetToken = 0,
   recenterToken = 0,
-  activeCardId = null,
   unpairedLabel,
 }: WebglPreviewProps) {
   const rootClassName = className ? `${styles.root} ${className}` : styles.root;
@@ -717,7 +716,6 @@ export default function WebglPreview({
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
     const paddingX = 36;
-    const paddingY = 24;
     const maxWidth = canvas.width - paddingX * 2;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.textAlign = "center";
@@ -726,7 +724,10 @@ export default function WebglPreview({
     ctx.shadowBlur = 8;
     ctx.shadowOffsetY = 2;
     ctx.fillStyle = "#2d6cc3";
-    ctx.font = "600 96px 'HeroQuest', 'Cinzel', 'Trajan Pro', serif";
+    const heroQuestFontReady = isHeroQuestFontReady;
+    ctx.font = heroQuestFontReady
+      ? "600 96px 'HeroQuest', 'Cinzel', 'Trajan Pro', serif"
+      : "600 96px 'Cinzel', 'Trajan Pro', serif";
     const words = unpairedLabel.split(/\s+/).filter(Boolean);
     const lines: string[] = [];
     let line = "";

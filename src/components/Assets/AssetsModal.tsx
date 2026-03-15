@@ -4,7 +4,7 @@ import styles from "@/app/page.module.css";
 import AssetsPanelContent from "@/components/Assets/AssetsPanelContent";
 import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { AssetRecord } from "@/lib/assets-db";
+import type { AssetRecord } from "@/api/assets";
 import type { AssetKindGroupId } from "@/lib/assets-grouping";
 import type { OpenCloseProps } from "@/types/ui";
 

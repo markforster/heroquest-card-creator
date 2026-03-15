@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-import type { TemplateId } from "./templates";
-import type { StatValue } from "./stats";
 import type { CardFace } from "./card-face";
+import type { StatValue } from "./stats";
+import type { TemplateId } from "./templates";
+import { DEFAULT_BODY_TEXT_COLOR } from "@/config/colors";
 
 export interface BaseCardFields {
   title?: string;
   showTitle?: boolean;
   titleStyle?: "ribbon" | "plain";
   titleColor?: string;
+  bodyTextColor?: string;
   face?: CardFace;
   imageUrl?: string;
   imageAssetId?: string;
@@ -21,6 +23,7 @@ export interface BaseCardFields {
   imageOriginalHeight?: number;
   description?: string;
   borderColor?: string;
+  backgroundTint?: string;
   copyright?: string;
   copyrightColor?: string;
   showCopyright?: boolean;
@@ -88,26 +91,32 @@ export type AnyCard = {
 
 export function createDefaultCardData<T extends TemplateId>(templateId: T): CardDataByTemplate[T] {
   const id: TemplateId = templateId;
+  const base = { bodyTextColor: DEFAULT_BODY_TEXT_COLOR };
 
   switch (id) {
     case "hero":
       return {
+        ...base,
         attackDice: 3,
         defendDice: 2,
         bodyPoints: 8,
         mindPoints: 2,
       } as CardDataByTemplate[T];
     case "monster":
-      return {} as CardDataByTemplate[T];
+      return { ...base } as CardDataByTemplate[T];
     case "large-treasure":
-      return {} as CardDataByTemplate[T];
+      return { ...base } as CardDataByTemplate[T];
     case "small-treasure":
-      return {} as CardDataByTemplate[T];
+      return { ...base } as CardDataByTemplate[T];
     case "hero-back":
-      return {} as CardDataByTemplate[T];
+      return { ...base } as CardDataByTemplate[T];
     case "labelled-back":
-      return { titlePlacement: "bottom", titleStyle: "ribbon" } as CardDataByTemplate[T];
+      return {
+        ...base,
+        titlePlacement: "bottom",
+        titleStyle: "ribbon",
+      } as CardDataByTemplate[T];
     default:
-      return {} as CardDataByTemplate[T];
+      return { ...base } as CardDataByTemplate[T];
   }
 }

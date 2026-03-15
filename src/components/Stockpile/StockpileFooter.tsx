@@ -1,20 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { Lightbulb } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
+import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
-import {
-  getCachedCardThumbnailUrl,
-  getLegacyCardThumbnailUrl,
-  releaseLegacyCardThumbnailUrl,
-} from "@/lib/card-thumbnail-cache";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
+
+import type { ReactNode } from "react";
 
 type StockpileFooterProps = {
   isPairMode: boolean;
@@ -66,19 +64,62 @@ export default function StockpileFooter({
   const [pairingRemovalPrompt, setPairingRemovalPrompt] = useState<{
     count: number;
   } | null>(null);
+  const [hintIndex, setHintIndex] = useState(0);
+  const [isHintVisible, setIsHintVisible] = useState(true);
 
   const fallbackTitle = t("label.untitledCard");
+  const hasSelection = selectedIds.length > 0;
+  const hints = useMemo(() => {
+    if (hasSelection) {
+      return [t("hint.stockpileDragCollection"), t("hint.stockpileExportSelected")];
+    }
+    return [
+      t("hint.stockpileSelect"),
+      t("hint.stockpileMultiSelect"),
+      t("hint.stockpileOpen"),
+    ];
+  }, [hasSelection, t]);
 
-  const resolveThumb = (id: string, blob: Blob | null) => {
-    if (typeof window === "undefined") {
-      return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
-    }
-    if (ENABLE_CARD_THUMB_CACHE) {
-      return { url: getCachedCardThumbnailUrl(id, blob), onLoad: undefined };
-    }
-    const url = getLegacyCardThumbnailUrl(id, blob ?? null);
-    return { url, onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined };
-  };
+  useEffect(() => {
+    setHintIndex(0);
+    setIsHintVisible(true);
+  }, [hints.length, hasSelection]);
+
+  useEffect(() => {
+    if (hints.length <= 1) return;
+    let cancelled = false;
+    let timeoutId: number | null = null;
+
+    const showHint = (index: number) => {
+      if (cancelled) return;
+      setHintIndex(index);
+      setIsHintVisible(true);
+      timeoutId = window.setTimeout(() => {
+        if (cancelled) return;
+        setIsHintVisible(false);
+        timeoutId = window.setTimeout(() => {
+          if (cancelled) return;
+          const nextIndex = index + 1;
+          if (nextIndex < hints.length) {
+            showHint(nextIndex);
+          } else {
+            timeoutId = window.setTimeout(() => {
+              showHint(0);
+            }, 10_000);
+          }
+        }, 400);
+      }, 8_000);
+    };
+
+    showHint(0);
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [hints.length]);
 
   return (
     <>
@@ -128,6 +169,16 @@ export default function StockpileFooter({
           <div className={`d-flex w-100 align-items-center ${styles.stockpileFooter} ${styles.uRowLg}`}>
             <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">
               {collectionControls ?? null}
+            </div>
+            <div className={styles.stockpileFooterHints}>
+              <div
+                className={`${styles.stockpileFooterHint} ${
+                  isHintVisible ? styles.stockpileFooterHintVisible : styles.stockpileFooterHintHidden
+                }`}
+              >
+                <Lightbulb className={styles.stockpileFooterHintIcon} aria-hidden="true" />
+                <span className={styles.stockpileFooterHintText}>{hints[hintIndex]}</span>
+              </div>
             </div>
             <div className="flex-grow-1 flex-shrink-0" />
             <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">
@@ -209,23 +260,17 @@ export default function StockpileFooter({
                       {pairingConflict.cardIds.map((id) => {
                         const conflictCard = cardById.get(id);
                         if (!conflictCard) return null;
-                        const thumb = resolveThumb(
-                          conflictCard.id,
-                          conflictCard.thumbnailBlob ?? null,
-                        );
                         const templateThumb =
                           cardTemplatesById[conflictCard.templateId]?.thumbnail ?? null;
                         return (
                           <div key={id} className={styles.pairingConflictItem}>
-                            {thumb.url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={thumb.url} alt="" onLoad={thumb.onLoad} />
-                            ) : templateThumb?.src ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={templateThumb.src} alt="" />
-                            ) : (
-                              <div className={styles.cardsPairIndicatorPlaceholder} />
-                            )}
+                            <StockpileThumbImage
+                              cardId={conflictCard.id}
+                              thumbnailBlob={conflictCard.thumbnailBlob ?? null}
+                              templateThumbSrc={templateThumb?.src ?? null}
+                              alt=""
+                              fallback={<div className={styles.cardsPairIndicatorPlaceholder} />}
+                            />
                           </div>
                         );
                       })}
@@ -236,23 +281,17 @@ export default function StockpileFooter({
                       <div className={styles.pairingConflictTitle}>{t("heading.pairedWith")}</div>
                       <div className={styles.pairingConflictGrid}>
                         {pairedBacks.map((paired) => {
-                          const thumb = resolveThumb(
-                            paired.id,
-                            paired.thumbnailBlob ?? null,
-                          );
                           const templateThumb =
                             cardTemplatesById[paired.templateId]?.thumbnail ?? null;
                           return (
                             <div key={paired.id} className={styles.pairingConflictItem}>
-                              {thumb.url ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={thumb.url} alt="" onLoad={thumb.onLoad} />
-                              ) : templateThumb?.src ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={templateThumb.src} alt="" />
-                              ) : (
-                                <div className={styles.cardsPairIndicatorPlaceholder} />
-                              )}
+                              <StockpileThumbImage
+                                cardId={paired.id}
+                                thumbnailBlob={paired.thumbnailBlob ?? null}
+                                templateThumbSrc={templateThumb?.src ?? null}
+                                alt=""
+                                fallback={<div className={styles.cardsPairIndicatorPlaceholder} />}
+                              />
                             </div>
                           );
                         })}

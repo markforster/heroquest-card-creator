@@ -2,10 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import {
-  getDefaultCopyright,
-  setDefaultCopyright as persistDefaultCopyright,
-} from "@/lib/settings-db";
+import { apiClient } from "@/api/client";
 
 type CopyrightSettingsContextValue = {
   defaultCopyright: string;
@@ -21,7 +18,8 @@ export function CopyrightSettingsProvider({ children }: { children: React.ReactN
 
   useEffect(() => {
     let active = true;
-    getDefaultCopyright()
+    apiClient
+      .getDefaultCopyright()
       .then((value) => {
         if (!active) return;
         setDefaultCopyrightState(typeof value === "string" ? value : "");
@@ -42,7 +40,9 @@ export function CopyrightSettingsProvider({ children }: { children: React.ReactN
   const setDefaultCopyright = useCallback((value: string) => {
     const normalized = value.trim();
     setDefaultCopyrightState(normalized);
-    persistDefaultCopyright(normalized).catch(() => {
+    apiClient
+      .setDefaultCopyright({ value: normalized })
+      .catch(() => {
       // Ignore persistence failures; UI still reflects latest value.
     });
   }, []);

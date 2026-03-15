@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
+import { apiClient } from "@/api/client";
+import type { CardRecord } from "@/api/cards";
 import { useI18n } from "@/i18n/I18nProvider";
-import { listCards } from "@/lib/cards-db";
-import type { CardRecord } from "@/types/cards-db";
 import type { OpenCloseProps } from "@/types/ui";
 
 import LoadingMessage from "./LoadingMessage";
@@ -26,7 +26,8 @@ export default function RecentCardsModal({ isOpen, onClose, onSelectCard }: Rece
     if (!isOpen) return;
     let active = true;
     setIsLoading(true);
-    listCards({ status: "saved" })
+    apiClient
+      .listCards({ queries: { status: "saved" } })
       .then((items) => {
         if (!active) return;
         setCards(items);

@@ -5,22 +5,21 @@ import { useEffect, useMemo, useState } from "react";
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
 import ExportOptionsForm from "@/components/Export/ExportOptionsForm";
-import { useI18n } from "@/i18n/I18nProvider";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+import { useI18n } from "@/i18n/I18nProvider";
+import {
+  DEFAULT_CROP_MARK_LENGTH,
+  DEFAULT_CROP_MARK_THICKNESS,
+  DEFAULT_CUT_MARK_OFFSET,
+} from "@/lib/bleed-export";
 import {
   DEFAULT_BLEED_PX,
-  DEFAULT_CROP_MARK_COLOR,
   DEFAULT_CROP_MARK_STYLE,
   DEFAULT_CUT_MARK_COLOR,
   DEFAULT_EXPORT_ROUNDED_CORNERS,
   normalizeBleedPx,
   normalizeColor,
 } from "@/lib/export-settings";
-import {
-  DEFAULT_CROP_MARK_LENGTH,
-  DEFAULT_CROP_MARK_THICKNESS,
-  DEFAULT_CUT_MARK_OFFSET,
-} from "@/lib/bleed-export";
 
 export type ExportPromptResult = {
   bleedPx: number;
@@ -103,7 +102,7 @@ export default function ExportBleedPrompt({
       cutPad,
     );
     return `${CARD_WIDTH + pad * 2} x ${CARD_HEIGHT + pad * 2}px`;
-  }, [bleedEnabled, bleedPx, cropMarksEnabled]);
+  }, [bleedEnabled, bleedPx, cropMarksEnabled, cutMarksEnabled]);
 
   const handleConfirm = () => {
     onConfirm({

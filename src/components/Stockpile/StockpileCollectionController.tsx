@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react";
 
-import { useI18n } from "@/i18n/I18nProvider";
-import StockpileCollectionModal from "@/components/Stockpile/StockpileCollectionModal";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
-import { createCollection, listCollections, updateCollection } from "@/lib/collections-db";
-import type { CollectionRecord } from "@/types/collections-db";
+import StockpileCollectionModal from "@/components/Stockpile/StockpileCollectionModal";
+import { useI18n } from "@/i18n/I18nProvider";
+import { apiClient } from "@/api/client";
+import type { CollectionRecord } from "@/api/collections";
 
 type StockpileCollectionControllerProps = {
   activeFilter:
@@ -80,9 +80,9 @@ export default function StockpileCollectionController({
         collections={collections}
         onCreate={async (name, description) => {
           try {
-            const created = await createCollection({ name, description });
+            const created = await apiClient.createCollection({ name, description });
             onActiveFilterChange({ type: "collection", id: created.id });
-            const refreshed = await listCollections();
+            const refreshed = await apiClient.listCollections();
             onCollectionsUpdated(refreshed);
           } catch (error) {
             // eslint-disable-next-line no-console
@@ -91,8 +91,8 @@ export default function StockpileCollectionController({
         }}
         onUpdate={async (id, name, description) => {
           try {
-            await updateCollection(id, { name, description });
-            const refreshed = await listCollections();
+            await apiClient.updateCollection({ name, description }, { params: { id } });
+            const refreshed = await apiClient.listCollections();
             onCollectionsUpdated(refreshed);
           } catch (error) {
             // eslint-disable-next-line no-console

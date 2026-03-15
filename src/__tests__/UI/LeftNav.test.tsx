@@ -30,6 +30,9 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
       activeCardIdByTemplate: {
         hero: "card-1",
       },
+      activeCardStatusByTemplate: {
+        hero: "saved",
+      },
     },
   }),
 }));

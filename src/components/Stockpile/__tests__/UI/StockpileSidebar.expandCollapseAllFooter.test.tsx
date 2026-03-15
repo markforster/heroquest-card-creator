@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import * as React from "react";
 
 import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
 
@@ -9,8 +10,6 @@ jest.mock("@/components/Providers/CollectionsTreeSettingsContext", () => ({
   __esModule: true,
   useCollectionsTreeSettings: () => {
     // Provide a stateful mock so UI updates reflect expanded path changes.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const React = require("react") as typeof import("react");
     const [expandedPaths, setExpandedPathsState] = React.useState<Set<string>>(
       () => new Set<string>(["A", "A/B"]),
     );

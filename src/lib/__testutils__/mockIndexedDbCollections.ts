@@ -146,8 +146,8 @@ type MockDb = {
   transaction: (
     name: string,
     mode: IDBTransactionMode,
-  ) => { objectStore: (store: string) => any };
-  createObjectStore: (name: string, options: { keyPath: string }) => any;
+  ) => { objectStore: (store: string) => IDBObjectStore };
+  createObjectStore: (name: string, options: { keyPath: string }) => IDBObjectStore;
 };
 
 export function installMockIndexedDbCollections(options: {
@@ -171,12 +171,12 @@ export function installMockIndexedDbCollections(options: {
   const db: MockDb = {
     objectStoreNames: { contains: (name) => stores.has(name) },
     transaction: () => ({
-      objectStore: () => collectionsStore,
+      objectStore: () => collectionsStore as unknown as IDBObjectStore,
     }),
     createObjectStore: (name) => {
       stores.add(name);
-      if (name === "assets") return assetsStore;
-      return {};
+      if (name === "assets") return assetsStore as unknown as IDBObjectStore;
+      return {} as IDBObjectStore;
     },
   };
 
@@ -210,8 +210,7 @@ export function installMockIndexedDbCollections(options: {
       if (originalDescriptor) {
         Object.defineProperty(window, "indexedDB", originalDescriptor);
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (window as any).indexedDB;
+        Reflect.deleteProperty(window, "indexedDB");
       }
       debugSpy.mockRestore();
       errorSpy.mockRestore();

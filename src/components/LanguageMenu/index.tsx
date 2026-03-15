@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useClickOutside } from "@/components/common/useClickOutside";
+import { getDetectedLanguage } from "@/i18n/getInitialLanguage";
 import { useI18n } from "@/i18n/I18nProvider";
 import { languageFlags } from "@/i18n/language-flags";
 import {
@@ -11,7 +12,6 @@ import {
   SupportedLanguage,
   supportedLanguages,
 } from "@/i18n/messages";
-import { getDetectedLanguage, LANGUAGE_STORAGE_KEY } from "@/i18n/getInitialLanguage";
 
 import LanguageMenuButton from "./LanguageMenuButton";
 import LanguageMenuPopover from "./LanguageMenuPopover";
@@ -52,18 +52,9 @@ export default function LanguageMenu({ isCollapsed }: LanguageMenuProps) {
   const { language, setLanguage, t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [detectedLanguage, setDetectedLanguage] = useState<SupportedLanguage | null>(null);
-  const [hasStoredLanguage, setHasStoredLanguage] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-      if (stored && supportedLanguages.includes(stored as SupportedLanguage)) {
-        setHasStoredLanguage(true);
-      }
-    } catch {
-      // ignore
-    }
     setDetectedLanguage(getDetectedLanguage());
   }, []);
 
@@ -78,7 +69,6 @@ export default function LanguageMenu({ isCollapsed }: LanguageMenuProps) {
   const handleSelect = useCallback(
     (code: string) => {
       setLanguage(code as SupportedLanguage);
-      setHasStoredLanguage(true);
       setIsOpen(false);
     },
     [setLanguage],

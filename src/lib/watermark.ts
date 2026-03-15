@@ -1,8 +1,7 @@
 "use client";
 
-import { cardTemplatesById } from "@/data/card-templates";
 import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "@/components/Cards/CardPreview/consts";
-import type { CardDataByTemplate } from "@/types/card-data";
+import { cardTemplatesById } from "@/data/card-templates";
 import type { TemplateId } from "@/types/templates";
 
 export function resolveWatermarkPosition(width: number, height: number): { x: number; y: number } {
@@ -20,10 +19,7 @@ export function resolveWatermarkPosition(width: number, height: number): { x: nu
   return { x, y };
 }
 
-export function shouldApplyWatermark(
-  templateId?: TemplateId,
-  _cardData?: CardDataByTemplate[TemplateId],
-): boolean {
+export function shouldApplyWatermark(templateId?: TemplateId): boolean {
   if (!templateId) return false;
   return Boolean(cardTemplatesById[templateId]);
 }
@@ -56,7 +52,7 @@ export function resolveWatermarkColor(
 }
 
 export function applyWatermarkToCanvas(canvas: HTMLCanvasElement): void {
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) return;
   const { x, y } = resolveWatermarkPosition(canvas.width, canvas.height);
   ctx.fillStyle = resolveWatermarkColor(ctx, x, y);

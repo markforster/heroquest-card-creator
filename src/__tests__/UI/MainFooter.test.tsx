@@ -37,11 +37,10 @@ describe("MainFooter (UI)", () => {
     expect(screen.getByRole("link", { name: "v 0.0.0-test" })).toBeInTheDocument();
   });
 
-  it("renders help, about, and download links", () => {
+  it("renders help and about links", () => {
     renderMainFooter();
     expect(screen.getByRole("button", { name: "Help" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "About" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Download" })).toBeInTheDocument();
   });
 
   it("shows the web/tauri indicator", () => {

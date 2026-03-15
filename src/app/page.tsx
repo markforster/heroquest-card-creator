@@ -19,7 +19,6 @@ import CardInspector from "@/components/Cards/CardInspector/CardInspector";
 import TemplateChooser from "@/components/Cards/CardInspector/TemplateChooser";
 import CardPreview, { type CardPreviewHandle } from "@/components/Cards/CardPreview";
 import CardThumbnail from "@/components/common/CardThumbnail";
-import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { EscapeStackProvider, useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import { WarningNotice } from "@/components/common/Notice";
 import DatabaseVersionGate from "@/components/DatabaseVersionGate";
@@ -31,11 +30,13 @@ import MainFooter from "@/components/Layout/MainFooter";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import ExportBleedPrompt, { type ExportPromptResult } from "@/components/Modals/ExportBleedPrompt";
 import WelcomeTemplateModal from "@/components/Modals/WelcomeTemplateModal";
+import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { AppActionsProvider } from "@/components/Providers/AppActionsContext";
 import { AssetHashIndexProvider } from "@/components/Providers/AssetHashIndexProvider";
 import { AssetKindBackfillProvider } from "@/components/Providers/AssetKindBackfillProvider";
 import { CardEditorProvider, useCardEditor } from "@/components/Providers/CardEditorContext";
 import { DebugVisualsProvider } from "@/components/Providers/DebugVisualsContext";
+import { EditorFormProvider, useEditorForm } from "@/components/Providers/EditorFormContext";
 import { EditorSaveProvider } from "@/components/Providers/EditorSaveContext";
 import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
 import { LibraryTransferProvider } from "@/components/Providers/LibraryTransferContext";
@@ -43,7 +44,6 @@ import {
   LocalStorageProvider,
   useLocalStorageBoolean,
 } from "@/components/Providers/LocalStorageProvider";
-import { ThemeProvider } from "@/components/Providers/ThemeProvider";
 import {
   MissingAssetsProvider,
   useMissingAssets,
@@ -51,40 +51,36 @@ import {
 import { PreviewCanvasProvider } from "@/components/Providers/PreviewCanvasContext";
 import { PreviewRendererProvider } from "@/components/Providers/PreviewRendererContext";
 import { TextFittingPreferencesProvider } from "@/components/Providers/TextFittingPreferencesContext";
+import { ThemeProvider } from "@/components/Providers/ThemeProvider";
 import { WebglPreviewSettingsProvider } from "@/components/Providers/WebglPreviewSettingsContext";
 import { StockpileMainPanel } from "@/components/Stockpile";
-import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import ToolsToolbar from "@/components/ToolsToolbar";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
+import { clearDbEstimateCache, runFullDbEstimate } from "@/lib/indexeddb-size-tracker";
+import { startThumbnailJpegMigration } from "@/lib/thumbnail-jpeg-migration";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
-import {
-  createCard,
-  getCard,
-  listCards,
-  touchCardLastViewed,
-  updateCard,
-  updateCardThumbnail,
-} from "@/lib/cards-db";
+import { clearDraft, loadDraft, saveDraft } from "@/lib/draft-storage";
+import { applyInspectorDefaults, createEditorDefaultValues } from "@/lib/editor-form";
+import { useGetCard } from "@/api/hooks";
+import { apiClient } from "@/api/client";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import type { ExportSettings } from "@/lib/export-settings";
-import { createPair, listPairsForFace } from "@/lib/pairs-service";
+import formatMessageWith from "@/lib/format-message-with";
 import type { CardDataByTemplate } from "@/types/card-data";
-import { createDefaultCardData } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
+import { useFormState, useWatch } from "react-hook-form";
 
 import styles from "./page.module.css";
 
 function IndexPageInner() {
   const { t, language } = useI18n();
-  const formatMessageWith = (key: string, vars: Record<string, string | number>) =>
-    formatMessage(t(key as never), vars);
   const { track } = useAnalytics();
   const navigate = useNavigate();
   const location = useLocation();
@@ -127,21 +123,16 @@ function IndexPageInner() {
   const {
     state: {
       selectedTemplateId,
-      draftTemplateId,
-      draft,
-      draftPairingFrontIds,
-      draftPairingBackIds,
       activeCardIdByTemplate,
       activeCardStatusByTemplate,
     },
     setActiveCard,
     setSelectedTemplateId,
-    setSingleDraft,
-    setDraftPairingFrontIds,
-    setDraftPairingBackIds,
-    setTemplateDirty,
-    loadCardIntoEditor,
   } = useCardEditor();
+  const { methods, resetWithSaved } = useEditorForm();
+  const { control } = methods;
+  const { isDirty } = useFormState({ control });
+  const editorValues = useWatch({ control }) as CardDataByTemplate[TemplateId] | undefined;
 
   const selectedTemplate = selectedTemplateId ? cardTemplatesById[selectedTemplateId] : undefined;
   const previewRef = useRef<CardPreviewHandle>(null!);
@@ -153,17 +144,14 @@ function IndexPageInner() {
     currentTemplateId != null ? activeCardIdByTemplate[currentTemplateId] : undefined;
   const activeStatus =
     currentTemplateId != null ? activeCardStatusByTemplate[currentTemplateId] : undefined;
-
-  const hasDraft = Boolean(currentTemplateId && draftTemplateId === currentTemplateId && draft);
-  const draftValue =
-    currentTemplateId && draftTemplateId === currentTemplateId && draft
-      ? (draft as CardDataByTemplate[TemplateId])
-      : undefined;
+  const draftValue = editorValues;
   const rawTitle =
     (draftValue && "title" in draftValue && (draftValue as { title?: string | null }).title) || "";
   const hasTitle = Boolean(rawTitle && rawTitle.toString().trim().length > 0);
   const canSaveChanges = Boolean(
-    currentTemplateId && hasTitle && (hasDraft || (activeCardId && activeStatus === "saved")),
+    currentTemplateId &&
+      hasTitle &&
+      (activeCardId && activeStatus === "saved" ? isDirty : true),
   );
   const canDuplicate = Boolean(activeCardId && activeStatus === "saved");
 
@@ -206,7 +194,7 @@ function IndexPageInner() {
   );
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [routeError, setRouteError] = useState<"not-found" | "load-failed" | null>(null);
-  const lastLoadedRef = useRef<string | null>(null);
+  const [draftSourceCardId, setDraftSourceCardId] = useState<string | null>(null);
 
   useEscapeModalAware({
     id: "route:assets",
@@ -225,6 +213,14 @@ function IndexPageInner() {
     exportPromptRef.current = exportPrompt ? exportPrompt.token : null;
   }, [exportPrompt]);
 
+  useEffect(() => {
+    void startThumbnailJpegMigration();
+    clearDbEstimateCache();
+    setTimeout(() => {
+      void runFullDbEstimate();
+    }, 0);
+  }, []);
+
   useEscapeModalAware({
     id: "route:cards",
     isOpen: isCardsListRoute,
@@ -238,11 +234,7 @@ function IndexPageInner() {
   const handleSave = async (mode: "new" | "update") => {
     if (!currentTemplateId) return;
     const templateId = currentTemplateId as TemplateId;
-    const draftValue =
-      draftTemplateId === templateId && draft
-        ? (draft as CardDataByTemplate[TemplateId])
-        : undefined;
-    if (!draftValue) return;
+    const draftValue = methods.getValues() as CardDataByTemplate[TemplateId];
     const draftTitle =
       (draftValue && "title" in draftValue && (draftValue as { title?: string | null }).title) ||
       "";
@@ -255,7 +247,7 @@ function IndexPageInner() {
 
     let thumbnailBlob: Blob | null = null;
     try {
-      const blob = await previewRef.current?.renderToPngBlob({
+      const blob = await previewRef.current?.renderToJpegBlob({
         width: 225,
         height: 315,
       });
@@ -268,17 +260,14 @@ function IndexPageInner() {
     const derivedName = (draftTitle ?? "").toString().trim() || `${templateId} card`;
 
     const patch = cardDataToCardRecordPatch(templateId, derivedName, draftValue as never);
-    const saveFace =
-      resolveEffectiveFace(draftValue?.face, selectedTemplate?.defaultFace ?? "front") === "back"
-        ? "back"
-        : "front";
     const safePatch = patch;
     const viewedAt = Date.now();
 
     let didSave = false;
+    let didCreateNew = false;
     try {
       if (mode === "new") {
-        const record = await createCard({
+        const record = await apiClient.createCard({
           ...safePatch,
           templateId,
           status: "saved",
@@ -287,58 +276,21 @@ function IndexPageInner() {
           lastViewedAt: viewedAt,
         });
         setActiveCard(templateId, record.id, record.status);
-        setTemplateDirty(templateId, false);
         navigate(`/cards/${record.id}`, { replace: true });
-        if (saveFace === "front") {
-          if (draftPairingBackIds?.length) {
-            try {
-              await Promise.all(draftPairingBackIds.map((backId) => createPair(record.id, backId)));
-            } catch (error) {
-              // eslint-disable-next-line no-console
-              console.error("[page] Failed to apply draft back pairings", error);
-            }
-            setDraftPairingBackIds(null);
-          } else if (pairedBackId) {
-            await createPair(record.id, pairedBackId);
-          }
-        }
-        if (draftPairingFrontIds?.length) {
-          try {
-            await Promise.all(
-              draftPairingFrontIds.map((frontId) => createPair(frontId, record.id)),
-            );
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error("[page] Failed to apply draft pairings", error);
-          }
-          setDraftPairingFrontIds(null);
-        }
+        const mapped = cardRecordToCardData(record as CardRecord & { templateId: TemplateId });
+        resetWithSaved(applyInspectorDefaults(templateId, mapped));
         didSave = true;
+        didCreateNew = true;
       } else if (mode === "update") {
         if (!activeCardId || activeStatus !== "saved") return;
-        const record = await updateCard(activeCardId, {
-          ...safePatch,
-          thumbnailBlob,
-          lastViewedAt: viewedAt,
-        });
+        const record = await apiClient.updateCard(
+          { ...safePatch, thumbnailBlob, lastViewedAt: viewedAt },
+          { params: { id: activeCardId } },
+        );
         if (record) {
-          if (saveFace === "front") {
-            if (draftPairingBackIds?.length) {
-              try {
-                await Promise.all(
-                  draftPairingBackIds.map((backId) => createPair(activeCardId, backId)),
-                );
-              } catch (error) {
-                // eslint-disable-next-line no-console
-                console.error("[page] Failed to apply draft back pairings", error);
-              }
-              setDraftPairingBackIds(null);
-            } else if (pairedBackId) {
-              await createPair(activeCardId, pairedBackId);
-            }
-          }
           setActiveCard(templateId, record.id, record.status);
-          setTemplateDirty(templateId, false);
+          const mapped = cardRecordToCardData(record as CardRecord & { templateId: TemplateId });
+          resetWithSaved(applyInspectorDefaults(templateId, mapped));
           didSave = true;
         }
       }
@@ -348,6 +300,10 @@ function IndexPageInner() {
     } finally {
       if (didSave) {
         setSaveToken((prev) => prev + 1);
+      }
+      if (didCreateNew) {
+        clearDraft();
+        setDraftSourceCardId(null);
       }
       const elapsed = Date.now() - startedAt;
       const remaining = Math.max(0, 300 - elapsed);
@@ -360,8 +316,7 @@ function IndexPageInner() {
 
   const saveCurrentCard = async () => {
     if (!currentTemplateId) return false;
-    const mode = activeCardId && activeStatus === "saved" ? "update" : hasDraft ? "new" : null;
-    if (!mode) return false;
+    const mode = activeCardId && activeStatus === "saved" ? "update" : "new";
     track("save_started", { mode });
     await handleSave(mode);
     return true;
@@ -371,7 +326,7 @@ function IndexPageInner() {
     if (!activeCardId) return false;
     let thumbnailBlob: Blob | null = null;
     try {
-      const blob = await previewRef.current?.renderToPngBlob({
+      const blob = await previewRef.current?.renderToJpegBlob({
         width: 225,
         height: 315,
       });
@@ -382,7 +337,10 @@ function IndexPageInner() {
     }
     if (!thumbnailBlob) return false;
     try {
-      return await updateCardThumbnail(activeCardId, thumbnailBlob);
+      return await apiClient.updateCardThumbnail(
+        { thumbnailBlob },
+        { params: { id: activeCardId } },
+      );
     } catch {
       return false;
     }
@@ -406,41 +364,24 @@ function IndexPageInner() {
   const duplicateCurrentCard = async (withPairing: boolean) => {
     if (!currentTemplateId) return;
     const templateId = currentTemplateId as TemplateId;
-    if (!draftValue) return;
+    const currentValues = methods.getValues() as CardDataByTemplate[TemplateId];
     const draftTitle =
-      (draftValue && "title" in draftValue && (draftValue as { title?: string | null }).title) ||
-      "";
+      (currentValues && "title" in currentValues
+        ? (currentValues as { title?: string | null }).title
+        : "") || "";
     const nextDraft = {
-      ...draftValue,
+      ...currentValues,
       ...(draftTitle ? { title: nextDuplicateTitle(String(draftTitle)) } : {}),
     } as CardDataByTemplate[TemplateId];
-    if (withPairing && effectiveFace === "back" && pairedFrontIds.length > 0) {
-      setDraftPairingFrontIds(pairedFrontIds);
-    } else {
-      setDraftPairingFrontIds(null);
-    }
-
-    if (withPairing && effectiveFace === "front") {
-      if (activeCardId) {
-        try {
-          const pairs = await listPairsForFace(activeCardId);
-          const backIds = Array.from(
-            new Set(pairs.map((pair) => pair.backFaceId).filter((id): id is string => Boolean(id))),
-          );
-          setDraftPairingBackIds(backIds.length ? backIds : null);
-        } catch {
-          setDraftPairingBackIds(null);
-        }
-      } else {
-        setDraftPairingBackIds(draftPairingBackIds ?? null);
-      }
-    } else {
-      setDraftPairingBackIds(null);
-    }
     setSelectedTemplateId(templateId);
-    setSingleDraft(templateId, nextDraft);
+    saveDraft(templateId, nextDraft, { sourceCardId: activeCardId ?? null });
+    setDraftSourceCardId(activeCardId ?? null);
+    resetWithSaved(applyInspectorDefaults(templateId, nextDraft));
     setActiveCard(templateId, null, null);
-    setTemplateDirty(templateId, true);
+    navigate("/cards/new", { replace: true });
+    if (withPairing) {
+      // Pairing for new duplicates is not persisted; ignore for now.
+    }
   };
 
   const effectiveFace = useMemo<CardFace | null>(() => {
@@ -461,16 +402,23 @@ function IndexPageInner() {
 
   useEffect(() => {
     if (!isCardsListRoute) return;
-    if (draftTemplateId && draft) return;
     if (!selectedTemplateId) return;
     const currentTemplate = selectedTemplateId as TemplateId;
     if (activeCardIdByTemplate[currentTemplate]) return;
+
+    if (typeof window !== "undefined") {
+      const initialLoad = window.sessionStorage.getItem("hqcc.initialLoadCompleted");
+      if (initialLoad) {
+        return;
+      }
+      window.sessionStorage.setItem("hqcc.initialLoadCompleted", "1");
+    }
 
     let cancelled = false;
 
     (async () => {
       try {
-        const cards = await listCards({ status: "saved" });
+        const cards = await apiClient.listCards({ queries: { status: "saved" } });
         if (cancelled) return;
         if (!cards.length) {
           setIsWelcomeOpen(true);
@@ -491,64 +439,109 @@ function IndexPageInner() {
   }, [
     activeCardIdByTemplate,
     normalizedCardId,
-    draft,
-    draftTemplateId,
     selectedTemplateId,
     navigate,
     isCardsListRoute,
   ]);
 
+  const shouldLoadCard = Boolean(isSavedCardDetailRoute && normalizedCardId);
+  const getCardParams = useMemo(
+    () => ({ params: { id: normalizedCardId ?? "" } }),
+    [normalizedCardId],
+  );
+  const getCardOptions = useMemo(() => ({ enabled: shouldLoadCard }), [shouldLoadCard]);
+  const { data: loadedCard, error: loadError } = useGetCard(getCardParams, getCardOptions);
+  const lastLoadedRef = useRef<{ id: string; updatedAt?: number | null } | null>(null);
+
   useEffect(() => {
-    if (!isSavedCardDetailRoute) {
+    if (!shouldLoadCard) {
       if (isDraftRoute) {
-        lastLoadedRef.current = null;
         setRouteError(null);
       }
       return;
     }
-    if (!normalizedCardId) {
-      lastLoadedRef.current = null;
-      setRouteError(null);
+    if (loadError) {
+      setRouteError("load-failed");
       return;
     }
-    if (lastLoadedRef.current === normalizedCardId) return;
-    lastLoadedRef.current = normalizedCardId;
+    if (loadedCard === undefined) return;
+    if (!loadedCard) {
+      setRouteError("not-found");
+      return;
+    }
     setRouteError(null);
-    let active = true;
-    (async () => {
-      try {
-        const record = await getCard(normalizedCardId);
-        if (!active) return;
-        if (!record) {
-          setRouteError("not-found");
-          return;
-        }
-        const viewed = await touchCardLastViewed(record.id);
-        const nextRecord = viewed ?? record;
-        setSelectedTemplateId(nextRecord.templateId as TemplateId);
-        loadCardIntoEditor(nextRecord.templateId as TemplateId, nextRecord);
-        setActiveCard(nextRecord.templateId as TemplateId, nextRecord.id, nextRecord.status);
-      } catch {
-        if (active) {
-          setRouteError("load-failed");
-        }
-      }
-    })();
-
-    return () => {
-      active = false;
-    };
+    const templateId = loadedCard.templateId as TemplateId;
+    const lastLoaded = lastLoadedRef.current;
+    const updatedAt = loadedCard.updatedAt ?? null;
+    if (lastLoaded && lastLoaded.id === loadedCard.id && lastLoaded.updatedAt === updatedAt) {
+      return;
+    }
+    lastLoadedRef.current = { id: loadedCard.id, updatedAt };
+    const mapped = cardRecordToCardData(loadedCard as CardRecord & { templateId: TemplateId });
+    const nextValues = applyInspectorDefaults(templateId, mapped);
+    resetWithSaved(nextValues);
+    setSelectedTemplateId(templateId);
+    setActiveCard(templateId, loadedCard.id, loadedCard.status);
   }, [
-    normalizedCardId,
-    activeCardIdByTemplate,
+    shouldLoadCard,
+    loadedCard,
+    loadError,
+    resetWithSaved,
     setActiveCard,
-    loadCardIntoEditor,
-    navigate,
-    isDraftRoute,
-    isSavedCardDetailRoute,
-    selectedTemplateId,
     setSelectedTemplateId,
+    isDraftRoute,
   ]);
+
+  const draftInitKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isDraftRoute) {
+      draftInitKeyRef.current = null;
+      return;
+    }
+    const storedDraft = loadDraft();
+    const storedTemplateId = storedDraft?.templateId ?? (selectedTemplateId as TemplateId | null);
+    if (!storedTemplateId) return;
+    const key = `draft:${storedTemplateId}`;
+    if (draftInitKeyRef.current === key) return;
+    draftInitKeyRef.current = key;
+    if (storedDraft) {
+      setSelectedTemplateId(storedDraft.templateId);
+      resetWithSaved(storedDraft.data);
+      setActiveCard(storedDraft.templateId, null, null);
+      setDraftSourceCardId(storedDraft.sourceCardId ?? null);
+      return;
+    }
+    const templateId = storedTemplateId as TemplateId;
+    const nextValues = createEditorDefaultValues(templateId);
+    resetWithSaved(nextValues);
+    setActiveCard(templateId, null, null);
+    saveDraft(templateId, nextValues, { sourceCardId: null });
+    setDraftSourceCardId(null);
+  }, [isDraftRoute, resetWithSaved, selectedTemplateId, setActiveCard, setSelectedTemplateId]);
+
+  const autosaveTimeoutRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!isDraftRoute) {
+      if (autosaveTimeoutRef.current) {
+        window.clearTimeout(autosaveTimeoutRef.current);
+      }
+      return;
+    }
+    if (!selectedTemplateId) return;
+    if (activeCardId && activeStatus === "saved") return;
+    if (!editorValues) return;
+    if (autosaveTimeoutRef.current) {
+      window.clearTimeout(autosaveTimeoutRef.current);
+    }
+    autosaveTimeoutRef.current = window.setTimeout(() => {
+      saveDraft(selectedTemplateId as TemplateId, editorValues as CardDataByTemplate[TemplateId]);
+    }, 250);
+    return () => {
+      if (autosaveTimeoutRef.current) {
+        window.clearTimeout(autosaveTimeoutRef.current);
+      }
+    };
+  }, [isDraftRoute, selectedTemplateId, activeCardId, activeStatus, editorValues]);
 
   useEffect(() => {
     if (effectiveFace !== "back" || !activeCardId) {
@@ -559,10 +552,11 @@ function IndexPageInner() {
     }
     setLastRememberedBackId(activeCardId);
     let active = true;
-    listCards({ status: "saved" })
+    apiClient
+      .listCards({ queries: { status: "saved" } })
       .then(async (cards) => {
         if (!active) return;
-        const pairs = await listPairsForFace(activeCardId);
+        const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
         if (!active) return;
         const frontIds = new Set(
           pairs.map((pair) => pair.frontFaceId).filter((id): id is string => Boolean(id)),
@@ -591,7 +585,7 @@ function IndexPageInner() {
     }
     let active = true;
     const loadPairedBack = async () => {
-      const pairs = await listPairsForFace(activeCardId);
+      const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
       if (!active) return;
       const match =
         pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
@@ -736,7 +730,7 @@ function IndexPageInner() {
       }
 
       try {
-        const card = await getCard(activeCardId);
+        const card = await apiClient.getCard({ params: { id: activeCardId } });
         if (!card) {
           previewRef.current?.exportAsPng(resolved);
           return;
@@ -783,7 +777,7 @@ function IndexPageInner() {
       const records = await Promise.all(
         faceIds.map(async (id) => {
           try {
-            return await getCard(id);
+            return await apiClient.getCard({ params: { id } });
           } catch {
             return null;
           }
@@ -928,7 +922,7 @@ function IndexPageInner() {
                             {t("warning.missingArtworkDetectedTitle")}
                           </div>
                           <div>
-                            {formatMessageWith("warning.missingArtworkDetectedBody", {
+                            {formatMessageWith(t, "warning.missingArtworkDetectedBody", {
                               count: missingAssetsReport.length,
                             })}
                           </div>
@@ -1019,11 +1013,12 @@ function IndexPageInner() {
                             template_id: templateId,
                             source: "welcome_modal",
                           });
-                          const nextDraft = createDefaultCardData(templateId);
+                          const nextDraft = createEditorDefaultValues(templateId);
                           setSelectedTemplateId(templateId);
-                          setSingleDraft(templateId, nextDraft);
+                          saveDraft(templateId, nextDraft, { sourceCardId: null });
+                          setDraftSourceCardId(null);
+                          resetWithSaved(nextDraft as CardDataByTemplate[TemplateId]);
                           setActiveCard(templateId, null, null);
-                          setTemplateDirty(templateId, false);
                           navigate("/cards/new", { replace: true });
                           setIsWelcomeOpen(false);
                         }}
@@ -1036,6 +1031,7 @@ function IndexPageInner() {
                           autoOpenBackId={lastRememberedBackId}
                           frontViewToken={frontViewToken}
                           onRememberBackId={setLastRememberedBackId}
+                          pairingReferenceId={draftSourceCardId}
                         />
                       </PreviewCanvasProvider>
                     </div>
@@ -1192,31 +1188,33 @@ export default function IndexPage() {
   return (
     <DatabaseVersionGate>
       <CardEditorProvider>
-        <AssetHashIndexProvider>
-          <LocalStorageProvider>
-            <ThemeProvider>
-              <DebugVisualsProvider>
-                <PreviewRendererProvider>
-                  <WebglPreviewSettingsProvider>
-                    <TextFittingPreferencesProvider>
-                      <MissingAssetsProvider>
-                        <HashRouter>
-                          <Routes>
-                            <Route path="/cards" element={<IndexPageInner />} />
-                            <Route path="/cards/new" element={<IndexPageInner />} />
-                            <Route path="/cards/:cardId" element={<IndexPageInner />} />
-                            <Route path="/assets" element={<IndexPageInner />} />
-                            <Route path="*" element={<Navigate to="/cards" replace />} />
-                          </Routes>
-                        </HashRouter>
-                      </MissingAssetsProvider>
-                    </TextFittingPreferencesProvider>
-                  </WebglPreviewSettingsProvider>
-                </PreviewRendererProvider>
-              </DebugVisualsProvider>
-            </ThemeProvider>
-          </LocalStorageProvider>
-        </AssetHashIndexProvider>
+        <EditorFormProvider>
+          <AssetHashIndexProvider>
+            <LocalStorageProvider>
+              <ThemeProvider>
+                <DebugVisualsProvider>
+                  <PreviewRendererProvider>
+                    <WebglPreviewSettingsProvider>
+                      <TextFittingPreferencesProvider>
+                        <MissingAssetsProvider>
+                          <HashRouter>
+                            <Routes>
+                              <Route path="/cards" element={<IndexPageInner />} />
+                              <Route path="/cards/new" element={<IndexPageInner />} />
+                              <Route path="/cards/:cardId" element={<IndexPageInner />} />
+                              <Route path="/assets" element={<IndexPageInner />} />
+                              <Route path="*" element={<Navigate to="/cards" replace />} />
+                            </Routes>
+                          </HashRouter>
+                        </MissingAssetsProvider>
+                      </TextFittingPreferencesProvider>
+                    </WebglPreviewSettingsProvider>
+                  </PreviewRendererProvider>
+                </DebugVisualsProvider>
+              </ThemeProvider>
+            </LocalStorageProvider>
+          </AssetHashIndexProvider>
+        </EditorFormProvider>
       </CardEditorProvider>
     </DatabaseVersionGate>
   );

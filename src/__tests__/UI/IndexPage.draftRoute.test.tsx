@@ -1,41 +1,29 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import IndexPage from "@/app/page";
+import { EditorFormProvider } from "@/components/Providers/EditorFormContext";
 
 const createCard = jest.fn();
 const getCard = jest.fn();
 const listCards = jest.fn();
+const listPairs = jest.fn();
 const touchCardLastViewed = jest.fn();
 const updateCard = jest.fn();
 const updateCardThumbnail = jest.fn();
+const createPair = jest.fn();
+const deletePair = jest.fn();
 
 const mockSetActiveCard = jest.fn();
 const mockSetSelectedTemplateId = jest.fn();
-const mockSetSingleDraft = jest.fn();
-const mockSetDraftPairingFrontIds = jest.fn();
-const mockSetDraftPairingBackIds = jest.fn();
-const mockSetTemplateDirty = jest.fn();
-const mockLoadCardIntoEditor = jest.fn();
 
 const mockCardEditorContext = {
   state: {
     selectedTemplateId: "hero",
-    draftTemplateId: "hero",
-    draft: {
-      title: "Test draft",
-    },
-    draftPairingFrontIds: null,
-    draftPairingBackIds: null,
     activeCardIdByTemplate: {},
     activeCardStatusByTemplate: {},
   },
   setActiveCard: mockSetActiveCard,
   setSelectedTemplateId: mockSetSelectedTemplateId,
-  setSingleDraft: mockSetSingleDraft,
-  setDraftPairingFrontIds: mockSetDraftPairingFrontIds,
-  setDraftPairingBackIds: mockSetDraftPairingBackIds,
-  setTemplateDirty: mockSetTemplateDirty,
-  loadCardIntoEditor: mockLoadCardIntoEditor,
 };
 
 jest.mock("@/components/Providers/CardEditorContext", () => ({
@@ -44,14 +32,22 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
   useCardEditor: () => mockCardEditorContext,
 }));
 
-jest.mock("@/lib/cards-db", () => ({
-  __esModule: true,
-  createCard: (...args: unknown[]) => createCard(...args),
-  getCard: (...args: unknown[]) => getCard(...args),
-  listCards: (...args: unknown[]) => listCards(...args),
-  touchCardLastViewed: (...args: unknown[]) => touchCardLastViewed(...args),
-  updateCard: (...args: unknown[]) => updateCard(...args),
-  updateCardThumbnail: (...args: unknown[]) => updateCardThumbnail(...args),
+jest.mock("@/api/client", () => ({
+  apiClient: {
+    createCard: (...args: unknown[]) => createCard(...args),
+    getCard: (...args: unknown[]) => getCard(...args),
+    listCards: (...args: unknown[]) => listCards(...args),
+    listPairs: (...args: unknown[]) => listPairs(...args),
+    touchCardLastViewed: (...args: unknown[]) => touchCardLastViewed(...args),
+    updateCard: (...args: unknown[]) => updateCard(...args),
+    updateCardThumbnail: (...args: unknown[]) => updateCardThumbnail(...args),
+    createPair: (...args: unknown[]) => createPair(...args),
+    deletePair: (...args: unknown[]) => deletePair(...args),
+  },
+}));
+
+jest.mock("@/api/hooks", () => ({
+  useGetCard: () => ({ data: undefined, error: null }),
 }));
 
 jest.mock("@/components/Providers/AssetHashIndexProvider", () => ({
@@ -165,12 +161,6 @@ jest.mock("@/components/common/Notice", () => ({
 }));
 jest.mock("@/components/ToolsToolbar", () => ({ __esModule: true, default: () => null }));
 
-jest.mock("@/lib/pairs-service", () => ({
-  __esModule: true,
-  createPair: jest.fn(),
-  deletePairsForFront: jest.fn(),
-  listPairsForFace: jest.fn().mockResolvedValue([]),
-}));
 jest.mock("@/lib/export-face-ids", () => ({
   __esModule: true,
   exportFaceIdsToZip: jest.fn(),
@@ -194,25 +184,28 @@ describe("IndexPage draft route", () => {
     createCard.mockReset();
     getCard.mockReset();
     listCards.mockReset();
+    listPairs.mockReset();
     touchCardLastViewed.mockReset();
     updateCard.mockReset();
     updateCardThumbnail.mockReset();
+    createPair.mockReset();
+    deletePair.mockReset();
 
     mockSetActiveCard.mockReset();
     mockSetSelectedTemplateId.mockReset();
-    mockSetSingleDraft.mockReset();
-    mockSetDraftPairingFrontIds.mockReset();
-    mockSetDraftPairingBackIds.mockReset();
-    mockSetTemplateDirty.mockReset();
-    mockLoadCardIntoEditor.mockReset();
 
     listCards.mockResolvedValue([]);
+    listPairs.mockResolvedValue([]);
     getCard.mockResolvedValue(null);
     touchCardLastViewed.mockResolvedValue(null);
   });
 
   it("does not attempt saved-card DB load on /cards/new", async () => {
-    render(<IndexPage />);
+    render(
+      <EditorFormProvider>
+        <IndexPage />
+      </EditorFormProvider>,
+    );
 
     await waitFor(() => {
       expect(screen.queryByText("Card not found")).not.toBeInTheDocument();
@@ -233,8 +226,14 @@ describe("IndexPage draft route", () => {
       data: {},
     });
 
-    render(<IndexPage />);
+    render(
+      <EditorFormProvider>
+        <IndexPage />
+      </EditorFormProvider>,
+    );
 
+    const inputs = screen.getAllByRole("textbox");
+    fireEvent.change(inputs[0], { target: { value: "Saved card" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => {

@@ -1,8 +1,8 @@
+import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 import type { BodyTextStyle, CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { StatValue } from "@/types/stats";
 import type { TemplateId } from "@/types/templates";
-import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 
 function normalizeImageScale(
   record: CardRecord & { templateId: TemplateId },
@@ -26,6 +26,7 @@ export function cardRecordToCardData<T extends TemplateId>(
     showTitle: record.showTitle ?? true,
     titleStyle: record.titleStyle,
     titleColor: record.titleColor,
+    bodyTextColor: record.bodyTextColor,
     titlePlacement: record.titlePlacement,
     bodyTextStyle: record.bodyTextStyle,
     face: record.face,
@@ -43,6 +44,7 @@ export function cardRecordToCardData<T extends TemplateId>(
     imageOriginalWidth: record.imageOriginalWidth,
     imageOriginalHeight: record.imageOriginalHeight,
     borderColor: record.borderColor,
+    backgroundTint: record.backgroundTint,
   };
 
   switch (record.templateId) {
@@ -117,6 +119,7 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     showTitle: data.showTitle,
     titleStyle: data.titleStyle,
     titleColor: data.titleColor,
+    bodyTextColor: data.bodyTextColor,
     titlePlacement: (data as { titlePlacement?: "top" | "bottom" }).titlePlacement,
     bodyTextStyle: (data as { bodyTextStyle?: BodyTextStyle }).bodyTextStyle,
     face,
@@ -134,6 +137,7 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     imageOriginalWidth: data.imageOriginalWidth,
     imageOriginalHeight: data.imageOriginalHeight,
     borderColor: data.borderColor,
+    backgroundTint: data.backgroundTint,
   };
 
   switch (templateId) {

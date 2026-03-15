@@ -1,7 +1,7 @@
-import type { TemplateId } from "./templates";
-import type { StatValue } from "./stats";
-import type { CardFace } from "./card-face";
 import type { BodyTextStyle } from "./card-data";
+import type { CardFace } from "./card-face";
+import type { StatValue } from "./stats";
+import type { TemplateId } from "./templates";
 
 export type CardStatus = "draft" | "saved" | "archived";
 
@@ -23,6 +23,7 @@ export interface CardRecord {
   showTitle?: boolean;
   titleStyle?: "ribbon" | "plain";
   titleColor?: string;
+  bodyTextColor?: string;
   titlePlacement?: "top" | "bottom";
   bodyTextStyle?: BodyTextStyle;
   face?: CardFace;
@@ -41,6 +42,7 @@ export interface CardRecord {
   imageOriginalWidth?: number;
   imageOriginalHeight?: number;
   borderColor?: string;
+  backgroundTint?: string;
 
   heroAttackDice?: StatValue;
   heroDefendDice?: StatValue;

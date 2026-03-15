@@ -1,7 +1,7 @@
 "use client";
 
-import ModalShell from "@/components/common/ModalShell";
 import { DocList, DocParagraph, DocSection, docStyles } from "@/components/common/DocContent";
+import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { OpenCloseProps } from "@/types/ui";
 
@@ -156,10 +156,11 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
         <DocSection title="Saved cards and the stockpile">
           <DocList>
             <li>
-              Use New in the left navigation to start a draft with a template.
+              Use New in the left navigation to start a new card with a template.
             </li>
             <li>
-              Save creates a new card from the draft. Save changes updates the active saved card.
+              Save creates a new card from the current editor state. Save changes updates the
+              active saved card.
             </li>
             <li>
               Open Cards to browse, search, and load saved cards.

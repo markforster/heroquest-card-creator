@@ -2,8 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import { messages, supportedLanguages } from "./messages";
 import { getInitialLanguage, LANGUAGE_STORAGE_KEY } from "./getInitialLanguage";
+import isSupportedLanguage from "./isSupportedLanguage";
+import { messages } from "./messages";
 
 import type { MessageKey, SupportedLanguage } from "./messages";
 
@@ -57,9 +58,6 @@ export function I18nProvider({ children }: Props) {
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
-function isSupportedLanguage(value: string): value is SupportedLanguage {
-  return supportedLanguages.includes(value as SupportedLanguage);
-}
 
 export function useI18n(): I18nContextValue {
   const ctx = useContext(I18nContext);

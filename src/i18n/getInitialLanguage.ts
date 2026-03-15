@@ -1,12 +1,10 @@
+import isSupportedLanguage from "./isSupportedLanguage";
 import { supportedLanguages } from "./messages";
 
 import type { SupportedLanguage } from "./messages";
 
 export const LANGUAGE_STORAGE_KEY = "hqcc.language";
 
-function isSupportedLanguage(value: string): value is SupportedLanguage {
-  return supportedLanguages.includes(value as SupportedLanguage);
-}
 
 function normalizeLanguageTag(value: string): string {
   return value.trim().replace(/_/g, "-");

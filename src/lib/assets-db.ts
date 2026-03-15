@@ -1,5 +1,6 @@
 "use client";
 
+import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import { openHqccDb } from "./hqcc-db";
 
 export type AssetRecord = {
@@ -48,6 +49,7 @@ export async function addAsset(
     tx.oncomplete = () => {
       // eslint-disable-next-line no-console
       console.debug("[assets-db] addAsset complete", id);
+      enqueueDbEstimateChange(STORE_NAME, id);
       resolve();
     };
     tx.onerror = () => {
@@ -85,6 +87,7 @@ export async function replaceAsset(
     tx.oncomplete = () => {
       // eslint-disable-next-line no-console
       console.debug("[assets-db] replaceAsset complete", id);
+      enqueueDbEstimateChange(STORE_NAME, id);
       resolve();
     };
     tx.onerror = () => {
@@ -230,6 +233,7 @@ export async function deleteAssets(ids: string[]): Promise<void> {
     tx.oncomplete = () => {
       // eslint-disable-next-line no-console
       console.debug("[assets-db] deleteAssets complete", ids.length);
+      ids.forEach((id) => enqueueDbEstimateChange(STORE_NAME, id));
       resolve();
     };
 
@@ -274,6 +278,7 @@ export async function updateAssetMeta(
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("hqcc-assets-updated"));
       }
+      enqueueDbEstimateChange(STORE_NAME, id);
       resolve();
     };
     tx.onerror = () => {
@@ -289,9 +294,10 @@ export async function clearAssetClassification(): Promise<number> {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
     const request = store.getAll();
+    let records: AssetRecord[] = [];
 
     request.onsuccess = () => {
-      const records = (request.result as AssetRecord[]) ?? [];
+      records = (request.result as AssetRecord[]) ?? [];
       records.forEach((record) => {
         delete record.assetKind;
         delete record.assetKindStatus;
@@ -310,11 +316,51 @@ export async function clearAssetClassification(): Promise<number> {
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("hqcc-assets-updated"));
       }
+      records.forEach((record) => enqueueDbEstimateChange(STORE_NAME, record.id));
       resolve((request.result as AssetRecord[] | undefined)?.length ?? 0);
     };
 
     tx.onerror = () => {
       reject(tx.error ?? new Error("Failed to clear asset classification"));
+    };
+  });
+}
+
+export async function resetAssetClassificationForId(id: string): Promise<void> {
+  const db = await openHqccDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const request = store.get(id);
+
+    request.onsuccess = () => {
+      const record = request.result as (AssetRecord & { blob?: Blob }) | undefined;
+      if (!record) {
+        resolve();
+        return;
+      }
+      delete record.assetKind;
+      delete record.assetKindStatus;
+      delete record.assetKindSource;
+      delete record.assetKindConfidence;
+      delete record.assetKindUpdatedAt;
+      store.put(record as AssetRecord);
+    };
+
+    request.onerror = () => {
+      reject(request.error ?? new Error("Failed to load asset for classification reset"));
+    };
+
+    tx.oncomplete = () => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("hqcc-assets-updated"));
+      }
+      enqueueDbEstimateChange(STORE_NAME, id);
+      resolve();
+    };
+    tx.onerror = () => {
+      reject(tx.error ?? new Error("Failed to reset asset classification"));
     };
   });
 }

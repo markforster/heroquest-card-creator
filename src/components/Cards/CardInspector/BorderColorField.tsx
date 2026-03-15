@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
 import { Palette } from "lucide-react";
+import { useEffect, useMemo, useRef } from "react";
 import { useController, useFormContext } from "react-hook-form";
 
+import layoutStyles from "@/app/page.module.css";
+import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 import { DEFAULT_BORDER_COLOR } from "@/components/Cards/CardParts/CardBorder";
 import ColorPickerField from "@/components/common/ColorPickerField";
-import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 import { formatHexColor, isTransparentHex, parseHexColor } from "@/lib/color";
 import type { TemplateId } from "@/types/templates";
-import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
-import layoutStyles from "@/app/page.module.css";
 
 const SMART_CANVAS_WIDTH = 300;
 const SMART_CANVAS_HEIGHT = 420;
@@ -27,10 +27,7 @@ type BorderColorFieldProps = {
 export default function BorderColorField({ label, templateId }: BorderColorFieldProps) {
   const { control, setValue } = useFormContext();
   const { renderPreviewCanvas } = usePreviewCanvas();
-  const {
-    state: { draftTemplateId, draft, isDirtyByTemplate },
-    setCardDraft,
-  } = useCardEditor();
+  const { savedValues } = useEditorForm();
   const { smartGroups, isSmartBusy, requestSmart } = useSmartSwatches({
     renderPreviewCanvas,
     width: SMART_CANVAS_WIDTH,
@@ -40,33 +37,22 @@ export default function BorderColorField({ label, templateId }: BorderColorField
 
   const { field } = useController({ name: "borderColor", control });
   const borderColor = typeof field.value === "string" ? field.value : "";
-  const isTransparent = isTransparentColor(borderColor);
-  const colorValue = borderColor.trim() && !isTransparent ? borderColor : DEFAULT_BORDER_COLOR;
   const normalizedSelected = useMemo(() => normalizeBorderColor(borderColor), [borderColor]);
   const inputValue =
     normalizedSelected === TRANSPARENT_BORDER_COLOR
       ? ""
       : (normalizeHexValue(normalizedSelected) ?? DEFAULT_BORDER_COLOR);
   const savedColorRef = useRef<string | undefined>(undefined);
-  const draftColor =
-    draftTemplateId === templateId && draft
-      ? (draft as { borderColor?: string } | undefined)?.borderColor
-      : undefined;
   useEffect(() => {
-    if (!isDirtyByTemplate[templateId]) {
-      savedColorRef.current = draftColor?.trim() ? draftColor.trim() : undefined;
-    }
-  }, [draftColor, isDirtyByTemplate, templateId]);
+    const saved = savedValues as { borderColor?: string } | null;
+    savedColorRef.current = saved?.borderColor?.trim() ? saved.borderColor.trim() : undefined;
+  }, [savedValues, templateId]);
 
   const handleRevert = () => {
     const saved = normalizeBorderColor(savedColorRef.current);
     const nextColor =
       saved === TRANSPARENT_BORDER_COLOR ? TRANSPARENT_BORDER_COLOR : saved.toUpperCase();
     setValue("borderColor", nextColor, { shouldDirty: true, shouldTouch: true });
-
-    const currentDraft =
-      draftTemplateId === templateId && draft ? (draft as { borderColor?: string }) : {};
-    setCardDraft(templateId, { ...currentDraft, borderColor: nextColor } as never);
   };
 
   const handleSelectDefault = () => {

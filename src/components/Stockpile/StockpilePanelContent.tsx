@@ -1,8 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
-import { useLocation } from "react-router-dom";
 import {
   DndContext,
   DragOverlay,
@@ -11,8 +8,10 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import type { DragCancelEvent, DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
+import { FolderPlus, Pencil, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
 import CardPreview from "@/components/Cards/CardPreview";
@@ -20,13 +19,21 @@ import { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ModalShell from "@/components/common/ModalShell";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
+import ExportBleedPrompt, {
+  type ExportPromptResult,
+} from "@/components/Modals/ExportBleedPrompt";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useEditorForm } from "@/components/Providers/EditorFormContext";
+import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
+import { getDeleteCollectionImpact } from "@/components/Stockpile/collection-delete-impact";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
+import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collections-merge";
+import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
 import {
-  formatMessage,
   resolveExportFileName,
   resolveZipFileName,
 } from "@/components/Stockpile/stockpile-utils";
@@ -38,10 +45,6 @@ import StockpileContentPane from "@/components/Stockpile/StockpileContentPane";
 import StockpileExportPairPrompt from "@/components/Stockpile/StockpileExportPairPrompt";
 import StockpileFooter from "@/components/Stockpile/StockpileFooter";
 import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
-import ExportBleedPrompt, {
-  type ExportPromptResult,
-} from "@/components/Modals/ExportBleedPrompt";
 import StockpilePairPopover from "@/components/Stockpile/StockpilePairPopover";
 import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
 import StockpileTableThumbPopover from "@/components/Stockpile/StockpileTableThumbPopover";
@@ -51,38 +54,29 @@ import type {
   StockpileCardThumb,
   StockpileCardView,
 } from "@/components/Stockpile/types";
-import { getDeleteCollectionImpact } from "@/components/Stockpile/collection-delete-impact";
-import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collections-merge";
-import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
-import { FolderPlus, Pencil, X } from "lucide-react";
-import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
-import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import { ENABLE_CARD_THUMB_CACHE, ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
+import { createEditorDefaultValues } from "@/lib/editor-form";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
   getCachedCardThumbnailUrl,
   getLegacyCardThumbnailUrl,
   releaseLegacyCardThumbnailUrl,
 } from "@/lib/card-thumbnail-cache";
-import { deleteCards, listCards, restoreCards, softDeleteCards } from "@/lib/cards-db";
-import {
-  createCollection,
-  deleteCollection,
-  listCollections,
-  updateCollection,
-} from "@/lib/collections-db";
+import { apiClient } from "@/api/client";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { runBulkExport } from "@/lib/export-cards";
-import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
 import type { ExportSettings } from "@/lib/export-settings";
-import { deletePairsForFace, listAllPairs } from "@/lib/pairs-service";
-import { createDefaultCardData } from "@/types/card-data";
-import type { CardRecord } from "@/types/cards-db";
+import formatMessageWith from "@/lib/format-message-with";
+import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
 import type { OpenCloseProps } from "@/types/ui";
+
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
+import type { ReactNode } from "react";
 
 type StockpilePanelMode = "manage" | "pair-fronts" | "pair-backs";
 
@@ -106,6 +100,21 @@ type MissingAssetsPrompt = {
 
 const STOCKPILE_VIEW_STORAGE_KEY = "hqcc.stockpileView";
 
+async function deletePairsForFaceId(faceId: string): Promise<void> {
+  const pairs = await apiClient.listPairs({ queries: { faceId } });
+  const deletions = pairs.filter(
+    (pair) => pair.frontFaceId && pair.backFaceId && (pair.frontFaceId === faceId || pair.backFaceId === faceId),
+  );
+  await Promise.all(
+    deletions.map((pair) =>
+      apiClient.deletePair({
+        frontFaceId: pair.frontFaceId as string,
+        backFaceId: pair.backFaceId as string,
+      }),
+    ),
+  );
+}
+
 export default function StockpilePanelContent({
   isOpen,
   onClose,
@@ -119,8 +128,6 @@ export default function StockpilePanelContent({
   frame = "panel",
 }: StockpilePanelContentProps) {
   const { t, language } = useI18n();
-  const formatMessageWith = (key: string, vars: Record<string, string | number>) =>
-    formatMessage(t(key as never), vars);
   const { track } = useAnalytics();
   const isPairFronts = mode === "pair-fronts";
   const isPairBacks = mode === "pair-backs";
@@ -167,11 +174,10 @@ export default function StockpilePanelContent({
     }),
   );
   const {
-    state: { activeCardIdByTemplate },
+    state: { activeCardIdByTemplate, selectedTemplateId },
     setActiveCard,
-    setCardDraft,
-    setTemplateDirty,
   } = useCardEditor();
+  const { resetWithSaved } = useEditorForm();
   const { cards, setCards, collections, setCollections } = useStockpileData({
     isOpen,
     refreshToken,
@@ -355,7 +361,8 @@ export default function StockpilePanelContent({
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
-    listAllPairs()
+    apiClient
+      .listPairs()
       .then((pairs) => {
         if (!active) return;
         const nextPairsByBack = new Map<string, string[]>();
@@ -531,7 +538,7 @@ export default function StockpilePanelContent({
     [t],
   );
   const cardViews = useMemo<StockpileCardView[]>(() => {
-    const resolveThumb = (card: CardRecord): StockpileCardThumb => ({
+    const resolveCardThumb = (card: CardRecord): StockpileCardThumb => ({
       id: card.id,
       thumbnailBlob: card.thumbnailBlob ?? null,
       templateThumbSrc: cardTemplatesById[card.templateId]?.thumbnail?.src ?? null,
@@ -547,7 +554,7 @@ export default function StockpilePanelContent({
       const pairedBackId = backByFrontId.get(card.id) ?? null;
       const pairedBack = pairedBackId ? (cardById.get(pairedBackId) ?? null) : null;
       const pairedFronts = pairedByTargetId.get(card.id) ?? [];
-      const pairedFrontThumbs = pairedFronts.map((paired) => resolveThumb(paired));
+      const pairedFrontThumbs = pairedFronts.map((paired) => resolveCardThumb(paired));
       const isPairingConflict = Boolean(
         isPairFronts && pairedBackId && pairedBackId !== activeBackId,
       );
@@ -577,7 +584,7 @@ export default function StockpilePanelContent({
         thumbnailBlob: card.thumbnailBlob ?? null,
         templateThumbSrc: templateMeta?.thumbnail?.src ?? null,
         paired: {
-          back: pairedBack ? resolveThumb(pairedBack) : null,
+          back: pairedBack ? resolveCardThumb(pairedBack) : null,
           fronts: pairedFrontThumbs,
           frontsVisible: pairedFrontThumbs.slice(0, 3),
           frontsOverflow: Math.max(0, pairedFrontThumbs.length - 3),
@@ -655,8 +662,11 @@ export default function StockpilePanelContent({
     const nextCardIds = mergeCollectionCardIds(target.cardIds, draggingIds);
     if (nextCardIds.length === target.cardIds.length) return;
     try {
-      await updateCollection(collectionId, { cardIds: nextCardIds });
-      const refreshed = await listCollections();
+      await apiClient.updateCollection(
+        { cardIds: nextCardIds },
+        { params: { id: collectionId } },
+      );
+      const refreshed = await apiClient.listCollections();
       setCollections(refreshed);
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -664,7 +674,7 @@ export default function StockpilePanelContent({
     }
   };
 
-  const handleDragCancel = (_event: DragCancelEvent) => {
+  const handleDragCancel = () => {
     setDragActiveId(null);
     setDraggingIds([]);
   };
@@ -1013,8 +1023,8 @@ export default function StockpilePanelContent({
       const baseCount = baseIds.length;
       const exportOnlyLabel =
         activeFilter.type === "collection" && selectedVisibleCards.length === 0
-          ? formatMessageWith("label.exportOnlyInCollection", { count: baseCount })
-          : formatMessageWith("label.exportOnlySelected", { count: baseCount });
+          ? formatMessageWith(t, "label.exportOnlyInCollection", { count: baseCount })
+          : formatMessageWith(t, "label.exportOnlySelected", { count: baseCount });
       setExportPairPrompt({
         baseIds,
         pairedIds,
@@ -1101,8 +1111,11 @@ export default function StockpilePanelContent({
                         if (!target) return;
                         try {
                           const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
-                          await updateCollection(target.id, { cardIds: remaining });
-                          const refreshed = await listCollections();
+                          await apiClient.updateCollection(
+                            { cardIds: remaining },
+                            { params: { id: target.id } },
+                          );
+                          const refreshed = await apiClient.listCollections();
                           setCollections(refreshed);
                           setSelectedIds([]);
                         } catch (error) {
@@ -1116,10 +1129,9 @@ export default function StockpilePanelContent({
                               if (!selectedIds.length) return;
                               const ids = [...selectedIds];
                               try {
-                                await restoreCards(ids);
-                                const refreshed = await listCards({
-                                  status: "saved",
-                                  deleted: "include",
+                                await apiClient.restoreCards({ ids });
+                                const refreshed = await apiClient.listCards({
+                                  queries: { status: "saved", deleted: "include" },
                                 });
                                 setCards(refreshed);
                                 setSelectedIds([]);
@@ -1141,20 +1153,23 @@ export default function StockpilePanelContent({
                             const activeId = activeCardIdByTemplate[templateId];
                             if (!activeId || !idSet.has(activeId)) return;
                             setActiveCard(templateId, null, null);
-                            setCardDraft(templateId, createDefaultCardData(templateId));
-                            setTemplateDirty(templateId, false);
+                            if (selectedTemplateId === templateId) {
+                              resetWithSaved(createEditorDefaultValues(templateId));
+                            }
                           },
                         );
                       };
 
                       const refreshSavedCards = async () => {
-                        const refreshed = await listCards({ status: "saved", deleted: "include" });
+                        const refreshed = await apiClient.listCards({
+                          queries: { status: "saved", deleted: "include" },
+                        });
                         setCards(refreshed);
                       };
 
                       const runHardDelete = async () => {
-                        await Promise.all(ids.map((id) => deletePairsForFace(id)));
-                        await deleteCards(ids);
+                        await Promise.all(ids.map((id) => deletePairsForFaceId(id)));
+                        await apiClient.deleteCards({ ids });
                         clearActiveCardsForDeletedIds();
                         const updates = collections
                           .map((collection) => {
@@ -1166,18 +1181,21 @@ export default function StockpilePanelContent({
                           .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
                         await Promise.all(
                           updates.map((update) =>
-                            updateCollection(update.id, { cardIds: update.cardIds }),
+                            apiClient.updateCollection(
+                              { cardIds: update.cardIds },
+                              { params: { id: update.id } },
+                            ),
                           ),
                         );
                         await refreshSavedCards();
-                        const refreshedCollections = await listCollections();
+                        const refreshedCollections = await apiClient.listCollections();
                         setCollections(refreshedCollections);
                         setSelectedIds([]);
                       };
 
                       const runSoftDelete = async () => {
-                        await Promise.all(ids.map((id) => deletePairsForFace(id)));
-                        await softDeleteCards(ids);
+                        await Promise.all(ids.map((id) => deletePairsForFaceId(id)));
+                        await apiClient.softDeleteCards({ ids });
                         clearActiveCardsForDeletedIds();
                         await refreshSavedCards();
                         setSelectedIds([]);
@@ -1421,9 +1439,9 @@ export default function StockpilePanelContent({
           collections={collections}
           onCreate={async (name, description) => {
             try {
-              const created = await createCollection({ name, description });
+              const created = await apiClient.createCollection({ name, description });
               setActiveFilter({ type: "collection", id: created.id });
-              const refreshed = await listCollections();
+              const refreshed = await apiClient.listCollections();
               setCollections(refreshed);
             } catch (error) {
               // eslint-disable-next-line no-console
@@ -1432,8 +1450,8 @@ export default function StockpilePanelContent({
           }}
           onUpdate={async (id, name, description) => {
             try {
-              await updateCollection(id, { name, description });
-              const refreshed = await listCollections();
+              await apiClient.updateCollection({ name, description }, { params: { id } });
+              const refreshed = await apiClient.listCollections();
               setCollections(refreshed);
             } catch (error) {
               // eslint-disable-next-line no-console
@@ -1454,8 +1472,10 @@ export default function StockpilePanelContent({
             setDeleteCollectionPrompt(null);
             if (!current) return;
             try {
-              await deleteCollection(current.collectionId);
-              const refreshed = await listCollections();
+              await apiClient.deleteCollection(undefined, {
+                params: { id: current.collectionId },
+              });
+              const refreshed = await apiClient.listCollections();
               setCollections(refreshed);
               if (activeFilter.type === "collection" && activeFilter.id === current.collectionId) {
                 setActiveFilter({ type: "all" });
@@ -1489,16 +1509,16 @@ export default function StockpilePanelContent({
             return (
               <div className="d-flex flex-column gap-2">
                 <div className="fw-semibold">
-                  {formatMessageWith("confirm.deleteCollectionHeading", { name: impact.name })}
+                  {formatMessageWith(t, "confirm.deleteCollectionHeading", { name: impact.name })}
                 </div>
                 <div>
-                  {formatMessageWith("confirm.deleteCollectionRemovedCount", {
+                  {formatMessageWith(t, "confirm.deleteCollectionRemovedCount", {
                     count: impact.removedCount,
                   })}
                 </div>
                 {impact.unfiledCount > 0 ? (
                   <div>
-                    {formatMessageWith("confirm.deleteCollectionMoveToUnfiled", {
+                    {formatMessageWith(t, "confirm.deleteCollectionMoveToUnfiled", {
                       count: impact.unfiledCount,
                     })}
                   </div>

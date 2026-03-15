@@ -6,13 +6,12 @@ Create HeroQuest‑style cards (heroes, monsters, treasure, backs, and more) in 
 
 Layouts, typography, and proportions are tuned to match the classic cards, so you can focus on ideas instead of fighting fonts and spacing. Pick a template, drop in artwork, tweak framing, write rules text, and export print‑ready PNGs. Everything runs locally in your browser, and you can export a single `.hqcc` backup to move or restore your library.
 
-Prefer a hosted version? You can also run the app from itch.io:
+**Itch.io**
 
-<a href="https://mark-forster.itch.io/heroquest-card-creator" target="_blank" rel="noopener noreferrer">https://mark-forster.itch.io/heroquest-card-creator</a>
-
-Community and updates:
-
-<a href="https://mark-forster.itch.io/heroquest-card-creator/community" target="_blank" rel="noopener noreferrer">https://mark-forster.itch.io/heroquest-card-creator/community</a>
+- Play in your browser: [https://mark-forster.itch.io/heroquest-card-creator](https://mark-forster.itch.io/heroquest-card-creator)
+- Download: [Download](https://mark-forster.itch.io/heroquest-card-creator/purchase)
+- Rate the app: [Rate](https://mark-forster.itch.io/heroquest-card-creator/rate?source=npm)
+- Community and updates: [https://mark-forster.itch.io/heroquest-card-creator/community](https://mark-forster.itch.io/heroquest-card-creator/community)
 
 ## Highlights
 

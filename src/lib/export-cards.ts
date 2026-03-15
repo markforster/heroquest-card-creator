@@ -1,7 +1,13 @@
 "use client";
 
+import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import { waitForAssetElements, waitForFrame } from "@/components/Stockpile/stockpile-utils";
 import { USE_ZIP_COMPRESSION } from "@/config/flags";
+import {
+  buildAssetCache,
+  collectAssetIdsFromCard,
+  EXPORT_CHUNK_SIZE,
+} from "@/lib/export-assets-cache";
 import {
   endExportLogging,
   logAssetPrefetch,
@@ -14,14 +20,8 @@ import {
   logSummary,
   startExportLogging,
 } from "@/lib/export-logging";
-import {
-  buildAssetCache,
-  collectAssetIdsFromCard,
-  EXPORT_CHUNK_SIZE,
-} from "@/lib/export-assets-cache";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 import { createZipBlobWithProgress } from "@/lib/zip-utils";
-import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import type { CardRecord } from "@/types/cards-db";
 
 export type BulkExportResult =

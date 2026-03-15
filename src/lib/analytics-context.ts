@@ -1,5 +1,5 @@
 export type AnalyticsContextData = {
-  app_distribution: "itch" | "local" | "self_hosted" | "unknown" | "npm";
+  app_distribution: "itch" | "local" | "self_hosted" | "unknown" | "npm" | "download";
   app_version: string;
   app_host: string;
   app_url?: string;
@@ -56,7 +56,7 @@ function resolveAppUrl(location: LocationLike | null | undefined): string | unde
   try {
     const parsed = new URL(href);
     return `${parsed.origin}${parsed.pathname}`;
-  } catch (_err) {
+  } catch {
     return undefined;
   }
 }
@@ -71,6 +71,7 @@ function sanitizeOverride(value: string | undefined): AnalyticsContextData["app_
     "self_hosted",
     "unknown",
     "npm",
+    "download",
   ];
   if (allowed.includes(trimmed as AnalyticsContextData["app_distribution"])) {
     return trimmed as AnalyticsContextData["app_distribution"];

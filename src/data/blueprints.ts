@@ -1,5 +1,8 @@
 import smallLargeArtworkBorderMask from "@/assets/card-backgrounds/small-large-artwork-border-alpha-mask.png";
 import smallLargeArtworkBorderTexture from "@/assets/card-backgrounds/small-large-artwork-border-blend-texture.png";
+import heroBackBorderAndText from "@/assets/card-backgrounds/hero-back-border-and-text.png";
+import largeWindowFrame from "@/assets/card-backgrounds/large-window-frame.png";
+import smallWindowFrame from "@/assets/card-backgrounds/small-window-frame.png";
 import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
 import { CARD_HEIGHT, CARD_WIDTH, savg, sx, sy } from "@/config/card-canvas";
 import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
@@ -55,13 +58,18 @@ const makeRibbonTextBounds = (overrides?: Partial<typeof RIBBON_TEXT_BOUNDS>) =>
     ...(overrides ?? {}),
   });
 
-const makeRibbonTextNoRibbonBounds = (
-  overrides?: Partial<typeof RIBBON_TEXT_BOUNDS_NO_RIBBON>,
-) =>
+const makeRibbonTextNoRibbonBounds = (overrides?: Partial<typeof RIBBON_TEXT_BOUNDS_NO_RIBBON>) =>
   scaleBounds({
     ...RIBBON_TEXT_BOUNDS_NO_RIBBON,
     ...(overrides ?? {}),
   });
+
+const expandBounds = (bounds: BlueprintBounds, inset: { x: number; y: number }) => ({
+  x: bounds.x - inset.x,
+  y: bounds.y - inset.y,
+  width: bounds.width + inset.x * 2,
+  height: bounds.height + inset.y * 2,
+});
 
 const makeTreasureDescBounds = (topY: number) => ({
   x: TREASURE_DESC_X,
@@ -80,18 +88,32 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
       type: "background",
       source: "asset",
       asset: whitePaperBackground,
-    },
-    {
-      id: "artwork",
-      type: "image",
-      bounds: scaleBounds({ x: 125, y: 166, width: 500, height: 180 }),
-      bind: { imageKey: "imageAssetId" },
-      when: { hasImage: "imageAssetId" },
+      tintKey: "backgroundTint",
     },
     {
       id: "background-frame",
       type: "background",
       source: "template",
+      cutoutBounds: scaleBounds({ x: 122, y: 166, width: 506, height: 180 }),
+      tintKey: "backgroundTint",
+    },
+    {
+      id: "artwork",
+      type: "image",
+      bounds: scaleBounds({ x: 122, y: 166, width: 506, height: 183 }),
+      bind: { imageKey: "imageAssetId" },
+      when: { hasImage: "imageAssetId" },
+      clip: "bounds",
+    },
+    {
+      id: "artwork-frame",
+      type: "overlay",
+      asset: smallWindowFrame,
+      bounds: expandBounds(scaleBounds({ x: 123, y: 167, width: 509, height: 180 }), {
+        x: sx(8),
+        y: sy(8),
+      }),
+      props: { preserveAspectRatio: "none" },
     },
     {
       id: "border-texture",
@@ -161,19 +183,33 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       type: "background",
       source: "asset",
       asset: whitePaperBackground,
-    },
-    {
-      id: "artwork",
-      type: "image",
-      bounds: scaleBounds({ x: 135, y: 158, width: 480, height: 352 }),
-      bind: { imageKey: "imageAssetId" },
-      when: { hasImage: "imageAssetId" },
-      props: { offsetX: sx(0), offsetY: sy(14) },
+      tintKey: "backgroundTint",
     },
     {
       id: "background-frame",
       type: "background",
       source: "template",
+      cutoutBounds: scaleBounds({ x: 123, y: 167, width: 509, height: 359 }),
+      tintKey: "backgroundTint",
+    },
+    {
+      id: "artwork",
+      type: "image",
+      bounds: scaleBounds({ x: 123, y: 167, width: 509, height: 359 }),
+      bind: { imageKey: "imageAssetId" },
+      when: { hasImage: "imageAssetId" },
+      clip: "bounds",
+      props: { offsetX: sx(0), offsetY: sy(0) },
+    },
+    {
+      id: "artwork-frame",
+      type: "overlay",
+      asset: largeWindowFrame,
+      bounds: expandBounds(scaleBounds({ x: 123, y: 167, width: 509, height: 359 }), {
+        x: sx(8),
+        y: sy(8),
+      }),
+      props: { preserveAspectRatio: "none" },
     },
     {
       id: "border-texture",
@@ -243,6 +279,7 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
       type: "background",
       source: "asset",
       asset: whitePaperBackground,
+      tintKey: "backgroundTint",
     },
     {
       id: "artwork",
@@ -360,11 +397,19 @@ const HERO_BACK_BLUEPRINT: Blueprint = {
       id: "background",
       type: "background",
       source: "template",
+      tintKey: "backgroundTint",
+    },
+    {
+      id: "border-overlay",
+      type: "overlay",
+      asset: heroBackBorderAndText,
+      bounds: scaleBounds({ x: 0, y: 0, width: 750, height: 1050 }),
     },
     {
       id: "description",
       type: "text",
-      bounds: scaleBounds({ x: 85, y: 303, width: 580, height: 480 }),
+      // bounds: scaleBounds({ x: 85, y: 303, width: 580, height: 664 }),
+      bounds: scaleBounds({ x: 85, y: 289, width: 580, height: 673 }),
       bind: { textKey: "description" },
       props: {
         fontSize: DESCRIPTION_FONT_SIZE,
@@ -401,13 +446,15 @@ const HERO_BLUEPRINT: Blueprint = {
       id: "background",
       type: "background",
       source: "template",
+      tintKey: "backgroundTint",
     },
     {
       id: "artwork",
       type: "image",
-      bounds: scaleBounds({ x: 10, y: 120, width: 730, height: 730 }),
+      bounds: scaleBounds({ x: 0, y: 120, width: 750, height: 730 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
+      clip: "canvas",
     },
     {
       id: "title",
@@ -482,13 +529,15 @@ const MONSTER_BLUEPRINT: Blueprint = {
       id: "background",
       type: "background",
       source: "template",
+      tintKey: "backgroundTint",
     },
     {
       id: "artwork",
       type: "image",
-      bounds: scaleBounds({ x: 10, y: 120, width: 730, height: 730 }),
+      bounds: scaleBounds({ x: 0, y: 120, width: 750, height: 730 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
+      clip: "canvas",
     },
     {
       id: "title",

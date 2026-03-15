@@ -1,8 +1,8 @@
+import { installMockIndexedDbCollections } from "@/lib/__testutils__/mockIndexedDbCollections";
+import { updateCollection } from "@/lib/collections-db";
 import type { CollectionRecord } from "@/types/collections-db";
 
-import { updateCollection } from "@/lib/collections-db";
 
-import { installMockIndexedDbCollections } from "@/lib/__testutils__/mockIndexedDbCollections";
 
 describe("updateCollection", () => {
   afterEach(() => {

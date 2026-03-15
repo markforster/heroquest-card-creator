@@ -1,10 +1,10 @@
 import monsterStatsBg from "@/assets/card-parts/monster-stats.png";
 import Layer from "@/components/Cards/CardPreview/Layer";
-import { useStatLabelOverrides } from "@/components/Providers/StatLabelOverridesProvider";
-import { useI18n } from "@/i18n/I18nProvider";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
-import { getStatLabel } from "@/lib/stat-labels";
+import { useStatLabelOverrides } from "@/components/Providers/StatLabelOverridesProvider";
 import { CARD_WIDTH, sx, sy } from "@/config/card-canvas";
+import { useI18n } from "@/i18n/I18nProvider";
+import { getStatLabel } from "@/lib/stat-labels";
 import type { StatValue } from "@/types/stats";
 
 import StatsPair from "./StatsPair";

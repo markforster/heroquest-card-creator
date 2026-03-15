@@ -1,3 +1,4 @@
+import Layer from "@/components/Cards/CardPreview/Layer";
 import { useTextFittingPreferences } from "@/components/Providers/TextFittingPreferencesContext";
 import {
   STATS_VERTICAL_SCALE_Y,
@@ -11,7 +12,6 @@ import fitText from "@/lib/text-fitting/fitText";
 import { shrinkToFitSingleLine } from "@/lib/text-fitting/shrink";
 import type { StatValue } from "@/types/stats";
 
-import Layer from "@/components/Cards/CardPreview/Layer";
 
 type StatsPairProps = {
   header: string;

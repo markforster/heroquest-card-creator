@@ -5,8 +5,8 @@ import { useRef } from "react";
 
 import styles from "@/app/page.module.css";
 import { previewRendererFlags, usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
-import RendererToggleGroup from "@/components/ToolsToolbar/RendererToggleGroup";
 import TextFittingSettingsPopover from "@/components/TextFittingSettings/TextFittingSettingsPopover";
+import RendererToggleGroup from "@/components/ToolsToolbar/RendererToggleGroup";
 import ToolbarButton from "@/components/ToolsToolbar/ToolbarButton";
 import ToolbarButtonGroup from "@/components/ToolsToolbar/ToolbarButtonGroup";
 import WebglInteractionGroup from "@/components/ToolsToolbar/WebglInteractionGroup";

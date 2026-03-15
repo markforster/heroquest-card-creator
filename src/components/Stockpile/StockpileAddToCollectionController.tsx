@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react";
 
-import { useI18n } from "@/i18n/I18nProvider";
-import StockpileAddToCollectionModal from "@/components/Stockpile/StockpileAddToCollectionModal";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
-import { listCollections, updateCollection } from "@/lib/collections-db";
-import type { CollectionRecord } from "@/types/collections-db";
+import StockpileAddToCollectionModal from "@/components/Stockpile/StockpileAddToCollectionModal";
+import { useI18n } from "@/i18n/I18nProvider";
+import { apiClient } from "@/api/client";
+import type { CollectionRecord } from "@/api/collections";
 
 type StockpileAddToCollectionControllerProps = {
   collections: CollectionRecord[];
@@ -67,8 +67,11 @@ export default function StockpileAddToCollectionController({
             if (!target) return;
             const merged = new Set<string>(target.cardIds);
             cardIds.forEach((id) => merged.add(id));
-            await updateCollection(target.id, { cardIds: Array.from(merged) });
-            const refreshed = await listCollections();
+            await apiClient.updateCollection(
+              { cardIds: Array.from(merged) },
+              { params: { id: target.id } },
+            );
+            const refreshed = await apiClient.listCollections();
             onCollectionsUpdated(refreshed);
           } catch (error) {
             // eslint-disable-next-line no-console

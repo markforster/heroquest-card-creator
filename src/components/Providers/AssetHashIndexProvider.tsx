@@ -2,9 +2,13 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 
+import { apiClient } from "@/api/client";
+import type { AssetRecordWithBlob } from "@/api/assets";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
-import type { AssetRecordWithBlob } from "@/lib/assets-db";
-import { getAllAssetsWithBlobs } from "@/lib/assets-db";
+import {
+  getRemoteAssetHashIndexEnabled,
+  subscribeRemoteAssetFlags,
+} from "@/lib/remote-asset-flags";
 import type { UploadScanReport, UploadScanReportItem } from "@/types/asset-duplicates";
 
 import type { ReactNode } from "react";
@@ -60,6 +64,9 @@ async function yieldToBrowser(): Promise<void> {
 }
 
 export function AssetHashIndexProvider({ children }: { children: ReactNode }) {
+  const [isHashIndexEnabled, setIsHashIndexEnabled] = useState(() =>
+    getRemoteAssetHashIndexEnabled(),
+  );
   const [status, setStatus] = useState<AssetHashIndexStatus>("idle");
   const [progress, setProgress] = useState<AssetHashIndexProgress>({
     total: 0,
@@ -69,6 +76,12 @@ export function AssetHashIndexProvider({ children }: { children: ReactNode }) {
     () => new Map(),
   );
   const [existingNames, setExistingNames] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    return subscribeRemoteAssetFlags(() => {
+      setIsHashIndexEnabled(getRemoteAssetHashIndexEnabled());
+    });
+  }, []);
 
   const addToIndex = useCallback((hash: string, asset: ExistingAssetRef) => {
     setExistingByHash((prev) => {
@@ -109,10 +122,17 @@ export function AssetHashIndexProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     const buildIndex = async () => {
+      if (!isHashIndexEnabled) {
+        setStatus("idle");
+        setProgress({ total: 0, hashed: 0 });
+        setExistingByHash(new Map());
+        setExistingNames(new Set());
+        return;
+      }
       setStatus("building");
       setProgress({ total: 0, hashed: 0 });
       try {
-        const records = await getAllAssetsWithBlobs();
+        const records = await apiClient.listAssetsWithBlobs();
         if (cancelled) return;
 
         const total = records.length;
@@ -162,7 +182,7 @@ export function AssetHashIndexProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isHashIndexEnabled]);
 
   const value = useMemo<AssetHashIndexContextValue>(
     () => ({

@@ -1,10 +1,12 @@
 import { act, renderHook } from "@testing-library/react";
 
+import { apiClient } from "@/api/client";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
-import { getAssetObjectUrl } from "@/lib/assets-db";
 
-jest.mock("@/lib/assets-db", () => ({
-  getAssetObjectUrl: jest.fn(),
+jest.mock("@/api/client", () => ({
+  apiClient: {
+    getAssetObjectUrl: jest.fn(),
+  },
 }));
 
 function createDeferred<T>() {
@@ -49,20 +51,22 @@ describe("useAssetImageUrl", () => {
   it("returns null and does not fetch when assetId is missing", () => {
     const { result } = renderHook(() => useAssetImageUrl(undefined));
     expect(result.current).toEqual({ url: null, status: "idle" });
-    expect(getAssetObjectUrl).not.toHaveBeenCalled();
+    expect(apiClient.getAssetObjectUrl).not.toHaveBeenCalled();
   });
 
   it("loads an object URL for an asset id and revokes it on unmount", async () => {
     const revokeSpy = jest.spyOn(URL, "revokeObjectURL");
 
-    (getAssetObjectUrl as jest.Mock).mockResolvedValueOnce("blob:asset-1");
+    (apiClient.getAssetObjectUrl as jest.Mock).mockResolvedValueOnce("blob:asset-1");
 
     const { result, unmount } = renderHook(() => useAssetImageUrl("asset-1"));
     expect(result.current).toEqual({ url: null, status: "idle" });
 
     await flushMicrotasks();
     expect(result.current).toEqual({ url: "blob:asset-1", status: "ready" });
-    expect(getAssetObjectUrl).toHaveBeenCalledWith("asset-1");
+    expect(apiClient.getAssetObjectUrl).toHaveBeenCalledWith(undefined, {
+      params: { id: "asset-1" },
+    });
 
     unmount();
     expect(revokeSpy).toHaveBeenCalledWith("blob:asset-1");
@@ -73,7 +77,7 @@ describe("useAssetImageUrl", () => {
     const revokeSpy = jest.spyOn(URL, "revokeObjectURL");
 
     const deferred = createDeferred<string | null>();
-    (getAssetObjectUrl as jest.Mock).mockReturnValueOnce(deferred.promise);
+    (apiClient.getAssetObjectUrl as jest.Mock).mockReturnValueOnce(deferred.promise);
 
     const { result, rerender } = renderHook<ReturnType<typeof useAssetImageUrl>, { assetId?: string }>(
       ({ assetId }: { assetId?: string }) => {
@@ -96,7 +100,7 @@ describe("useAssetImageUrl", () => {
   });
 
   it("returns null when getAssetObjectUrl throws", async () => {
-    (getAssetObjectUrl as jest.Mock).mockRejectedValueOnce(new Error("boom"));
+    (apiClient.getAssetObjectUrl as jest.Mock).mockRejectedValueOnce(new Error("boom"));
 
     const { result } = renderHook(() => useAssetImageUrl("asset-1"));
     expect(result.current).toEqual({ url: null, status: "idle" });

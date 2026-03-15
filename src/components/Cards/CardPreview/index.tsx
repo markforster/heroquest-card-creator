@@ -6,13 +6,33 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import BlueprintRenderer from "@/components/BlueprintRenderer";
 import { measureCardTextMaxLineWidth } from "@/components/Cards/CardParts/CardTextBlock";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
+import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
 import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
-import { useI18n } from "@/i18n/I18nProvider";
+import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
+import {
+  DEVELOPER_CREDIT_BLEND_COLOR,
+  DEVELOPER_CREDIT_BLEND_MODE,
+  DEVELOPER_CREDIT_FONT_SCALE,
+  DEVELOPER_CREDIT_OPACITY,
+  DEVELOPER_CREDIT_RIGHT_INSET,
+  DEVELOPER_CREDIT_TOP_INSET,
+  DEVELOPER_CREDIT_TEXT,
+} from "@/config/developer-credit";
+import { ENABLE_WATERMARK, USE_ROUNDED_CARD_CLIP } from "@/config/flags";
 import { blueprintsByTemplateId, getCopyrightBounds } from "@/data/blueprints";
+import { useI18n } from "@/i18n/I18nProvider";
+import {
+  composeBleedCanvas,
+  cloneSvgForBleed,
+  getBleedTrimOrigin,
+  setExportBackgroundFit,
+  setExportClip,
+} from "@/lib/bleed-export";
+import { collectCardAssetIds } from "@/lib/card-assets";
+import { resolveCardPreviewFileName } from "@/lib/card-preview";
 import { computeAverageLuminance } from "@/lib/color-contrast";
 import { getSvgImageHref } from "@/lib/dom";
-import { resolveCardPreviewFileName } from "@/lib/card-preview";
-import { collectCardAssetIds } from "@/lib/card-assets";
 import { buildAssetCache } from "@/lib/export-assets-cache";
 import {
   endExportLogging,
@@ -25,38 +45,19 @@ import {
   logSummary,
   startExportLogging,
 } from "@/lib/export-logging";
+import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
+import { addPngTextChunk } from "@/lib/png-metadata";
 import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
-import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
-import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
+import { now } from "@/lib/time";
 import { applyWatermarkToCanvas, shouldApplyWatermark } from "@/lib/watermark";
-import { ENABLE_WATERMARK, USE_ROUNDED_CARD_CLIP } from "@/config/flags";
-import { addPngTextChunk } from "@/lib/png-metadata";
 import { APP_VERSION } from "@/version";
-import {
-  composeBleedCanvas,
-  cloneSvgForBleed,
-  getBleedTrimOrigin,
-  setExportBackgroundFit,
-  setExportClip,
-  stripToBackgroundOnly,
-} from "@/lib/bleed-export";
 
 import styles from "./CardPreview.module.css";
 import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "./consts";
 
 import type { CardPreviewHandle, CardPreviewProps } from "./types";
-import {
-  DEVELOPER_CREDIT_BLEND_COLOR,
-  DEVELOPER_CREDIT_BLEND_MODE,
-  DEVELOPER_CREDIT_FONT_SCALE,
-  DEVELOPER_CREDIT_OPACITY,
-  DEVELOPER_CREDIT_RIGHT_INSET,
-  DEVELOPER_CREDIT_TOP_INSET,
-  DEVELOPER_CREDIT_TEXT,
-} from "@/config/developer-credit";
-import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
-import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
+
 
 function normalizeCopyrightColor(value?: string) {
   if (typeof value !== "string") return undefined;
@@ -94,6 +95,100 @@ function resolveCopyrightTextStyle(templateId?: CardPreviewProps["templateId"]) 
 
 function removeDeveloperCreditLayer(svg: SVGSVGElement) {
   svg.querySelectorAll('[data-layer-type="developer-credit"]').forEach((node) => node.remove());
+}
+
+function applyExportImageClip(svg: SVGSVGElement) {
+  const existing = svg.querySelector("clipPath#exportImageClip");
+  if (!existing) {
+    const svgNs = "http://www.w3.org/2000/svg";
+    const defs = svg.querySelector("defs") ?? svg.insertBefore(document.createElementNS(svgNs, "defs"), svg.firstChild);
+    const clipPath = document.createElementNS(svgNs, "clipPath");
+    clipPath.setAttribute("id", "exportImageClip");
+    clipPath.setAttribute("clipPathUnits", "userSpaceOnUse");
+    const rect = document.createElementNS(svgNs, "rect");
+    rect.setAttribute("x", "0");
+    rect.setAttribute("y", "0");
+    rect.setAttribute("width", String(CARD_WIDTH));
+    rect.setAttribute("height", String(CARD_HEIGHT));
+    clipPath.appendChild(rect);
+    defs.appendChild(clipPath);
+  }
+
+  svg
+    .querySelectorAll<SVGImageElement | SVGFEImageElement>("image, feImage")
+    .forEach((node) => {
+      if (node.hasAttribute("clip-path") || node.hasAttribute("clipPath")) {
+        return;
+      }
+      node.setAttribute("clip-path", "url(#exportImageClip)");
+    });
+}
+
+function zeroTreasureBorderOffsetsForExport(svg: SVGSVGElement) {
+  svg
+    .querySelectorAll<SVGImageElement | SVGFEImageElement>(
+      '[data-template-asset="border-mask"], [data-template-asset="border-texture"]',
+    )
+    .forEach((node) => {
+      node.setAttribute("x", "0");
+      node.setAttribute("y", "0");
+    });
+}
+
+type ExportSvgMutationOptions = {
+  mode: "standard" | "bleed-full" | "bleed-source";
+  roundedCorners?: boolean;
+  bleedPx?: number;
+  cropMarksEnabled?: boolean;
+  developerCreditEnabled?: boolean;
+  templateId?: CardPreviewProps["templateId"];
+};
+
+function mutateSvgForExport(
+  svg: SVGSVGElement,
+  {
+    mode,
+    roundedCorners = true,
+    bleedPx = 0,
+    cropMarksEnabled = false,
+    developerCreditEnabled = false,
+    templateId,
+  }: ExportSvgMutationOptions,
+) {
+  if (mode !== "standard") {
+    const cardClipRect = svg.querySelector<SVGRectElement>("clipPath#cardClip rect");
+    if (cardClipRect) {
+      cardClipRect.setAttribute("x", "0");
+      cardClipRect.setAttribute("y", "0");
+      cardClipRect.setAttribute("width", String(CARD_WIDTH));
+      cardClipRect.setAttribute("height", String(CARD_HEIGHT));
+      cardClipRect.setAttribute("rx", "0");
+      cardClipRect.setAttribute("ry", "0");
+    }
+  }
+
+  const outline = svg.querySelector('[data-card-outline="true"]');
+  if (outline) {
+    outline.remove();
+  }
+
+  if (bleedPx > 0 || cropMarksEnabled) {
+    setExportBackgroundFit(svg, "slice");
+  }
+
+  if (mode !== "bleed-source") {
+    setExportClip(svg, { rounded: roundedCorners });
+  }
+
+  if (developerCreditEnabled) {
+    removeDeveloperCreditLayer(svg);
+  }
+
+  applyExportImageClip(svg);
+
+  if (templateId === "small-treasure" || templateId === "large-treasure") {
+    zeroTreasureBorderOffsetsForExport(svg);
+  }
 }
 
 function shouldShowDeveloperCredit(
@@ -254,93 +349,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               ? normalizedDefault
               : "";
         })();
-        const sampleLuminance = (
-          ctx: CanvasRenderingContext2D,
-          canvas: HTMLCanvasElement,
-          rectX: number,
-          rectY: number,
-          rectW: number,
-          rectH: number,
-        ) => {
-          if (rectW <= 1 || rectH <= 1) return null;
-          const shiftedY = Math.max(0, rectY);
-          const shiftedH = Math.min(rectH, rectY + rectH - shiftedY);
-          if (shiftedH <= 1) return null;
-          let targetX = rectX;
-          let targetY = shiftedY;
-          let targetW = rectW;
-          let targetH = shiftedH;
-          const insetX = Math.floor(rectW * COPYRIGHT_SAMPLE_INSET_RATIO);
-          const insetY = Math.floor(shiftedH * COPYRIGHT_SAMPLE_INSET_RATIO);
-          let sampleX = targetX + insetX;
-          let sampleY = targetY + insetY;
-          let sampleW = targetW - insetX * 2;
-          let sampleH = targetH - insetY * 2;
-          if (sampleW <= 1 || sampleH <= 1) {
-            sampleX = targetX;
-            sampleY = targetY;
-            sampleW = targetW;
-            sampleH = targetH;
-          }
-          if (sampleX < 0) {
-            sampleW += sampleX;
-            sampleX = 0;
-          }
-          if (sampleY < 0) {
-            sampleH += sampleY;
-            sampleY = 0;
-          }
-          if (sampleX + sampleW > canvas.width) {
-            sampleW = canvas.width - sampleX;
-          }
-          if (sampleY + sampleH > canvas.height) {
-            sampleH = canvas.height - sampleY;
-          }
-          if (sampleW <= 1 || sampleH <= 1) return null;
-          try {
-            const imageData = ctx.getImageData(
-              Math.floor(sampleX),
-              Math.floor(sampleY),
-              Math.floor(sampleW),
-              Math.floor(sampleH),
-            );
-            return computeAverageLuminance(imageData);
-          } catch {
-            return null;
-          }
-        };
-
-        const computeLuminanceFromCanvas = (
-          ctx: CanvasRenderingContext2D,
-          canvas: HTMLCanvasElement,
-          {
-            x,
-            y,
-            w,
-            h,
-            textLeft,
-            textWidthPx,
-          }: {
-            x: number;
-            y: number;
-            w: number;
-            h: number;
-            textLeft: number;
-            textWidthPx: number;
-          },
-        ) => {
-          const leftWidth = Math.max(0, Math.floor(textLeft - x));
-          const rightStart = Math.floor(textLeft + textWidthPx);
-          const rightWidth = Math.max(0, Math.floor(x + w - rightStart));
-          const leftLum = sampleLuminance(ctx, canvas, x, y, leftWidth, h);
-          const rightLum = sampleLuminance(ctx, canvas, rightStart, y, rightWidth, h);
-          return (
-            (leftLum != null && rightLum != null
-              ? (leftLum + rightLum) / 2
-              : (leftLum ?? rightLum)) ?? sampleLuminance(ctx, canvas, x, y, w, h)
-          );
-        };
-
         const loadBackgroundImage = async (href: string) => {
           const cache = backgroundImageCacheRef.current;
           if (cache.has(href)) {
@@ -446,10 +454,10 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             const shiftedY = Math.max(0, rectY - shiftY);
             const shiftedH = Math.min(rectH, rectY + rectH - shiftedY);
             if (shiftedH <= 1) return null;
-            let targetX = rectX;
-            let targetY = shiftedY;
-            let targetW = rectW;
-            let targetH = shiftedH;
+            const targetX = rectX;
+            const targetY = shiftedY;
+            const targetW = rectW;
+            const targetH = shiftedH;
             const insetX = Math.floor(rectW * COPYRIGHT_SAMPLE_INSET_RATIO);
             const insetY = Math.floor(shiftedH * COPYRIGHT_SAMPLE_INSET_RATIO);
             let sampleX = targetX + insetX;
@@ -524,7 +532,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   canvas.width = width;
                   canvas.height = height;
                 }
-                const ctx = canvas.getContext("2d");
+                const ctx = canvas.getContext("2d", { willReadFrequently: true });
                 if (ctx) {
                   ctx.clearRect(0, 0, canvas.width, canvas.height);
                   const boundsX = bounds.x * scaleX;
@@ -699,7 +707,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               return;
             }
 
-            const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
 
             const waitStart = now();
             if (assetIds.length) {
@@ -734,7 +741,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                     loggingId: session.sessionId,
                     assetBlobsById: cache,
                     templateId,
-                    cardData,
                     developerCreditEnabled,
                   })
                 : await renderSvgToCanvas({
@@ -745,10 +751,13 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                     removeDebugBounds: true,
                     loggingId: session.sessionId,
                     assetBlobsById: cache,
-                    mutateSvg: (svg) => {
-                      setExportClip(svg, { rounded: effectiveRounded });
-                      removeDeveloperCreditLayer(svg);
-                    },
+                    mutateSvg: (svg) =>
+                      mutateSvgForExport(svg, {
+                        mode: "standard",
+                        roundedCorners: effectiveRounded,
+                        developerCreditEnabled,
+                        templateId,
+                      }),
                   });
             renders += 1;
             if (canvas) {
@@ -761,7 +770,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             }
             if (
               ENABLE_WATERMARK &&
-              shouldApplyWatermark(templateId, cardData) &&
+              shouldApplyWatermark(templateId) &&
               !(bleedPx > 0 || cropMarks?.enabled)
             ) {
               applyWatermarkToCanvas(canvas);
@@ -853,7 +862,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
                   templateId,
-                  cardData,
                   developerCreditEnabled,
                 })
               : await renderSvgToCanvas({
@@ -864,10 +872,13 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   removeDebugBounds: true,
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
-                  mutateSvg: (svg) => {
-                    setExportClip(svg, { rounded: effectiveRounded });
-                    removeDeveloperCreditLayer(svg);
-                  },
+                  mutateSvg: (svg) =>
+                    mutateSvgForExport(svg, {
+                      mode: "standard",
+                      roundedCorners: effectiveRounded,
+                      developerCreditEnabled,
+                      templateId,
+                    }),
                 });
           if (canvas) {
             canvasRef.current = canvas;
@@ -875,7 +886,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           if (!canvas) return null;
           if (
             ENABLE_WATERMARK &&
-            shouldApplyWatermark(templateId, cardData) &&
+            shouldApplyWatermark(templateId) &&
             !(bleedPx > 0 || cropMarks?.enabled)
           ) {
             applyWatermarkToCanvas(canvas);
@@ -900,6 +911,86 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             `HeroQuest Card Creator ${APP_VERSION}`,
           );
           return pngBlob ?? null;
+        },
+        async renderToJpegBlob(options) {
+          const svgElement = svgRef.current;
+          if (!svgElement) return null;
+
+          await this.waitForBackgroundLoaded?.();
+          await this.syncCopyrightContrast?.();
+
+          const width = options?.width ?? CARD_WIDTH;
+          const height = options?.height ?? CARD_HEIGHT;
+          const bleedPx = options?.bleedPx ?? 0;
+          const cropMarks = options?.cropMarks;
+          const cutMarks = options?.cutMarks;
+          const requestedRounded = options?.roundedCorners ?? true;
+          const effectiveRounded = requestedRounded && bleedPx === 0 && !cropMarks?.enabled;
+
+          const canvas =
+            bleedPx > 0 || cropMarks?.enabled || cutMarks?.enabled
+              ? await renderBleedCanvas({
+                  svgElement,
+                  bleedPx,
+                  cropMarks: cropMarks
+                    ? {
+                        ...cropMarks,
+                        style: cropMarks.style ?? "lines",
+                      }
+                    : cropMarks,
+                  cutMarks: cutMarks
+                    ? {
+                        enabled: cutMarks.enabled,
+                        color: cutMarks.color,
+                      }
+                    : cutMarks,
+                  roundedCorners: effectiveRounded,
+                  loggingId: options?.loggingId,
+                  assetBlobsById: options?.assetBlobsById,
+                  templateId,
+                  developerCreditEnabled,
+                })
+              : await renderSvgToCanvas({
+                  svgElement,
+                  width,
+                  height,
+                  existingCanvas: canvasRef.current,
+                  removeDebugBounds: true,
+                  loggingId: options?.loggingId,
+                  assetBlobsById: options?.assetBlobsById,
+                  mutateSvg: (svg) =>
+                    mutateSvgForExport(svg, {
+                      mode: "standard",
+                      roundedCorners: effectiveRounded,
+                      developerCreditEnabled,
+                      templateId,
+                    }),
+                });
+          if (canvas) {
+            canvasRef.current = canvas;
+          }
+          if (!canvas) return null;
+          if (
+            ENABLE_WATERMARK &&
+            shouldApplyWatermark(templateId) &&
+            !(bleedPx > 0 || cropMarks?.enabled)
+          ) {
+            applyWatermarkToCanvas(canvas);
+          }
+          if (developerCreditEnabled) {
+            drawDeveloperCredit({
+              canvas,
+              templateId,
+              cardData,
+              bleedPx,
+              cropMarks,
+              cutMarks,
+            });
+          }
+          const jpegBlob: Blob | null = await new Promise((resolve) =>
+            canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.8),
+          );
+          return jpegBlob ?? null;
         },
         async renderToCanvas(options) {
           const svgElement = svgRef.current;
@@ -950,7 +1041,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
         templateName,
         syncCopyrightContrast,
         developerCreditEnabled,
-        copyrightTextColor,
       ],
     );
 
@@ -1004,6 +1094,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               fill="none"
               stroke="#fff0"
               strokeWidth={3}
+              data-card-outline="true"
             />
           </svg>
           {!backgroundLoaded ? (
@@ -1028,7 +1119,6 @@ async function renderBleedCanvas({
   loggingId,
   assetBlobsById,
   templateId,
-  cardData,
   developerCreditEnabled,
 }: {
   svgElement: SVGSVGElement;
@@ -1039,7 +1129,6 @@ async function renderBleedCanvas({
   loggingId?: string;
   assetBlobsById?: Map<string, Blob>;
   templateId?: CardPreviewProps["templateId"];
-  cardData?: CardPreviewProps["cardData"];
   developerCreditEnabled?: boolean;
 }): Promise<HTMLCanvasElement | null> {
   const fullCanvas = await renderSvgToCanvas({
@@ -1049,19 +1138,18 @@ async function renderBleedCanvas({
     removeDebugBounds: true,
     loggingId,
     assetBlobsById,
-    mutateSvg: (svg) => {
-      cloneSvgForBleed(svg);
-      if (bleedPx > 0 || cropMarks?.enabled) {
-        setExportBackgroundFit(svg, "slice");
-      }
-      setExportClip(svg, { rounded: roundedCorners });
-      if (developerCreditEnabled) {
-        removeDeveloperCreditLayer(svg);
-      }
-    },
+    mutateSvg: (svg) =>
+      mutateSvgForExport(svg, {
+        mode: "bleed-full",
+        roundedCorners,
+        bleedPx,
+        cropMarksEnabled: Boolean(cropMarks?.enabled),
+        developerCreditEnabled,
+        templateId,
+      }),
   });
   if (!fullCanvas) return null;
-  if (ENABLE_WATERMARK && shouldApplyWatermark(templateId, cardData)) {
+  if (ENABLE_WATERMARK && shouldApplyWatermark(templateId)) {
     applyWatermarkToCanvas(fullCanvas);
   }
 
@@ -1074,15 +1162,14 @@ async function renderBleedCanvas({
       removeDebugBounds: true,
       loggingId,
       assetBlobsById,
-      mutateSvg: (svg) => {
-        cloneSvgForBleed(svg);
-        if (bleedPx > 0 || cropMarks?.enabled) {
-          setExportBackgroundFit(svg, "slice");
-        }
-        if (developerCreditEnabled) {
-          removeDeveloperCreditLayer(svg);
-        }
-      },
+      mutateSvg: (svg) =>
+        mutateSvgForExport(svg, {
+          mode: "bleed-source",
+          bleedPx,
+          cropMarksEnabled: Boolean(cropMarks?.enabled),
+          developerCreditEnabled,
+          templateId,
+        }),
     });
   }
 

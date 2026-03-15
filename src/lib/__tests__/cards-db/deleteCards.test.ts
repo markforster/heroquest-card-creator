@@ -1,7 +1,7 @@
+import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
+import { deleteCards, getCard } from "@/lib/cards-db";
 import type { CardRecord } from "@/types/cards-db";
 
-import { deleteCards, getCard } from "@/lib/cards-db";
-import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
 
 async function flushMicrotasks() {
   for (let i = 0; i < 6; i += 1) {

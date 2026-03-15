@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
+import { useId } from "react";
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
@@ -18,12 +19,12 @@ import MonsterStatsBlock, {
   type MonsterStats,
 } from "@/components/Cards/CardParts/MonsterStatsBlock";
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
-import Layer from "@/components/Cards/CardPreview/Layer";
 import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
+import Layer from "@/components/Cards/CardPreview/Layer";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
-import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
+import { DEFAULT_BODY_TEXT_COLOR, DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
 import {
   DEVELOPER_CREDIT_BLEND_COLOR,
   DEVELOPER_CREDIT_BLEND_MODE,
@@ -65,6 +66,10 @@ type BlueprintRendererProps = {
 
 const DEFAULT_CANVAS = { width: CARD_WIDTH, height: CARD_HEIGHT };
 const MISSING_ARTWORK_COLOR = "#e0b15b";
+
+function normalizeClipId(rawId: string) {
+  return rawId.replace(/:/g, "");
+}
 
 function getLayerBounds(blueprint: Blueprint, layer: BlueprintLayer) {
   return (
@@ -215,11 +220,13 @@ function renderBackgroundLayer({
   layer,
   background,
   backgroundLoaded,
+  cardData,
 }: {
   blueprint: Blueprint;
   layer: BlueprintLayer;
   background?: StaticImageData;
   backgroundLoaded?: boolean;
+  cardData?: CardDataByTemplate[TemplateId];
 }) {
   if (layer.type !== "background") return null;
 
@@ -229,21 +236,62 @@ function renderBackgroundLayer({
   if (!image) return null;
 
   const bounds = getLayerBounds(blueprint, layer);
+  const tintKey = "tintKey" in layer ? layer.tintKey : undefined;
+  const tintValue =
+    tintKey && cardData ? (cardData as Record<string, unknown>)[tintKey] : undefined;
+  const tint =
+    typeof tintValue === "string" && tintValue.trim().length > 0 ? tintValue.trim() : undefined;
+  const cutoutBounds = "cutoutBounds" in layer ? layer.cutoutBounds : undefined;
+  const maskId = cutoutBounds ? `${blueprint.templateId}-${layer.id}-cutout-mask` : undefined;
   const opacity = backgroundLoaded === false ? 0 : 1;
 
   return (
     <Layer key={layer.id}>
-      <image
-        href={image.src}
-        data-card-background="true"
-        data-template-asset="background"
-        x={bounds.x}
-        y={bounds.y}
-        width={bounds.width}
-        height={bounds.height}
-        preserveAspectRatio="xMidYMid meet"
-        style={{ opacity }}
-      />
+      {cutoutBounds ? (
+        <defs>
+          <mask id={maskId} maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse">
+            <rect
+              x={bounds.x}
+              y={bounds.y}
+              width={bounds.width}
+              height={bounds.height}
+              fill="white"
+            />
+            <rect
+              x={cutoutBounds.x}
+              y={cutoutBounds.y}
+              width={cutoutBounds.width}
+              height={cutoutBounds.height}
+              fill="black"
+            />
+          </mask>
+        </defs>
+      ) : null}
+      <g style={tint ? { isolation: "isolate" } : undefined}>
+        <image
+          href={image.src}
+          data-card-background="true"
+          data-template-asset="background"
+          x={bounds.x}
+          y={bounds.y}
+          width={bounds.width}
+          height={bounds.height}
+          preserveAspectRatio="xMidYMid meet"
+          style={{ opacity }}
+          mask={maskId ? `url(#${maskId})` : undefined}
+        />
+        {tint ? (
+          <rect
+            x={bounds.x}
+            y={bounds.y}
+            width={bounds.width}
+            height={bounds.height}
+            fill={tint}
+            style={{ mixBlendMode: "multiply", opacity }}
+            mask={maskId ? `url(#${maskId})` : undefined}
+          />
+        ) : null}
+      </g>
     </Layer>
   );
 }
@@ -303,6 +351,31 @@ function renderBorderLayer({
   );
 }
 
+function renderOverlayLayer({ blueprint, layer }: { blueprint: Blueprint; layer: BlueprintLayer }) {
+  if (layer.type !== "overlay") return null;
+  const overlayLayer = layer as Extract<BlueprintLayer, { type: "overlay" }>;
+
+  const bounds = getLayerBounds(blueprint, layer);
+  const preserveAspectRatio =
+    typeof layer.props?.preserveAspectRatio === "string"
+      ? layer.props.preserveAspectRatio
+      : "xMidYMid meet";
+
+  return (
+    <Layer key={layer.id}>
+      <image
+        href={overlayLayer.asset.src}
+        data-template-asset="overlay"
+        x={bounds.x}
+        y={bounds.y}
+        width={bounds.width}
+        height={bounds.height}
+        preserveAspectRatio={preserveAspectRatio}
+      />
+    </Layer>
+  );
+}
+
 function ImageLayer({
   blueprint,
   layer,
@@ -312,6 +385,7 @@ function ImageLayer({
   layer: BlueprintLayer;
   cardData?: CardDataByTemplate[TemplateId];
 }) {
+  const clipId = normalizeClipId(useId());
   const assetId =
     layer.type === "image" && layer.bind?.imageKey && cardData
       ? ((cardData as Record<string, unknown>)[layer.bind.imageKey] as string | undefined)
@@ -323,6 +397,7 @@ function ImageLayer({
   const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
 
   if (layer.type !== "image") return null;
+  const imageLayer = layer as Extract<BlueprintLayer, { type: "image" }>;
   if (!layer.bind?.imageKey) return null;
   if (!cardData) return null;
   const bounds = getLayerBounds(blueprint, layer);
@@ -357,9 +432,32 @@ function ImageLayer({
   const cx = x + scaledWidth / 2;
   const cy = y + scaledHeight / 2;
   const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
+  const clipMode = imageLayer.clip ?? "bounds";
+  const shouldClip = clipMode !== "none";
+  const clipBounds =
+    clipMode === "canvas"
+      ? {
+          x: 0,
+          y: 0,
+          width: blueprint.canvas?.width ?? CARD_WIDTH,
+          height: blueprint.canvas?.height ?? CARD_HEIGHT,
+        }
+      : bounds;
 
   return (
     <Layer key={layer.id}>
+      {shouldClip ? (
+        <defs>
+          <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
+            <rect
+              x={clipBounds.x}
+              y={clipBounds.y}
+              width={clipBounds.width}
+              height={clipBounds.height}
+            />
+          </clipPath>
+        </defs>
+      ) : null}
       <image
         href={imageUrl}
         data-user-asset-id={assetId}
@@ -370,6 +468,7 @@ function ImageLayer({
         height={scaledHeight}
         transform={transform}
         preserveAspectRatio="xMidYMid meet"
+        clipPath={shouldClip ? `url(#${clipId})` : undefined}
       />
     </Layer>
   );
@@ -386,13 +485,14 @@ function TextLayer({
   cardData?: CardDataByTemplate[TemplateId];
   showTextBounds?: boolean;
 }) {
+  const { defaultCopyright } = useCopyrightSettings();
+
   if (layer.type !== "text") return null;
   if (!layer.bind?.textKey) return null;
   if (!cardData) return null;
 
-  const { defaultCopyright } = useCopyrightSettings();
-
-  const text = (cardData as Record<string, unknown>)[layer.bind.textKey];
+  const textKey = layer.bind.textKey;
+  const text = (cardData as Record<string, unknown>)[textKey];
   if (typeof text !== "string" && text != null) return null;
 
   if (layer.when?.hasText) {
@@ -461,7 +561,12 @@ function TextLayer({
       : undefined;
   const fontFamily =
     typeof layer.props?.fontFamily === "string" ? layer.props.fontFamily : undefined;
-  const fill = typeof layer.props?.fill === "string" ? layer.props.fill : undefined;
+  const layerFill = typeof layer.props?.fill === "string" ? layer.props.fill : undefined;
+  const bodyTextColor =
+    textKey === "description"
+      ? ((cardData as { bodyTextColor?: string }).bodyTextColor ?? DEFAULT_BODY_TEXT_COLOR)
+      : undefined;
+  const fill = bodyTextColor ?? layerFill;
   const letterSpacingEm =
     typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;
   const align =
@@ -498,27 +603,28 @@ function TextLayer({
   const textPadding =
     layer.props && typeof layer.props.textPadding === "number" ? layer.props.textPadding : 0;
 
+  const getTitleBounds = (titleProps: Record<string, unknown>, prefix: string) => {
+    const x = titleProps[`${prefix}X`];
+    const y = titleProps[`${prefix}Y`];
+    const width = titleProps[`${prefix}Width`];
+    const height = titleProps[`${prefix}Height`];
+    if (
+      typeof x === "number" &&
+      typeof y === "number" &&
+      typeof width === "number" &&
+      typeof height === "number"
+    ) {
+      return { x, y, width, height };
+    }
+    return undefined;
+  };
+
   if (blueprint.templateId === "labelled-back" && placement === "bottom" && !hideTitle) {
     const titleLayer = blueprint.layers.find((entry) => entry.type === "title");
     const titleProps = titleLayer?.props ?? {};
-    const getTitleBounds = (prefix: string) => {
-      const x = titleProps[`${prefix}X`];
-      const y = titleProps[`${prefix}Y`];
-      const width = titleProps[`${prefix}Width`];
-      const height = titleProps[`${prefix}Height`];
-      if (
-        typeof x === "number" &&
-        typeof y === "number" &&
-        typeof width === "number" &&
-        typeof height === "number"
-      ) {
-        return { x, y, width, height };
-      }
-      return undefined;
-    };
 
-    const ribbonBottomBounds = getTitleBounds("ribbon");
-    const ribbonTopBounds = getTitleBounds("ribbonTop");
+    const ribbonBottomBounds = getTitleBounds(titleProps, "ribbon");
+    const ribbonTopBounds = getTitleBounds(titleProps, "ribbonTop");
     const textTopBounds = getPlacementBounds("top");
 
     if (ribbonBottomBounds && ribbonTopBounds && textTopBounds) {
@@ -539,34 +645,25 @@ function TextLayer({
     }
   }
 
+  const clampHeightToBottomLimit = (bounds: { y: number; height: number }, bottomLimitY: number) =>
+    Math.max(0, Math.min(bounds.height, bottomLimitY - bounds.y));
+
   if (blueprint.templateId === "labelled-back" && placement === "bottom" && !hideTitle) {
     const titleLayer = blueprint.layers.find((entry) => entry.type === "title");
     const titleProps = titleLayer?.props ?? {};
-    const getTitleBounds = (prefix: string) => {
-      const x = titleProps[`${prefix}X`];
-      const y = titleProps[`${prefix}Y`];
-      const width = titleProps[`${prefix}Width`];
-      const height = titleProps[`${prefix}Height`];
-      if (
-        typeof x === "number" &&
-        typeof y === "number" &&
-        typeof width === "number" &&
-        typeof height === "number"
-      ) {
-        return { x, y, width, height };
-      }
-      return undefined;
-    };
-
-    const ribbonBottomBounds = getTitleBounds("ribbon");
+    const ribbonBottomBounds = getTitleBounds(titleProps, "ribbon");
     if (ribbonBottomBounds) {
       const fontSizeResolved = fontSize ?? 22;
       const minBottomGap = fontSizeResolved;
       const bottomLimitY = ribbonBottomBounds.y - minBottomGap;
-      const clampHeight = (bounds: { y: number; height: number }) =>
-        Math.max(0, Math.min(bounds.height, bottomLimitY - bounds.y));
-      baseBounds = { ...baseBounds, height: clampHeight(baseBounds) };
-      flushBounds = { ...flushBounds, height: clampHeight(flushBounds) };
+      baseBounds = {
+        ...baseBounds,
+        height: clampHeightToBottomLimit(baseBounds, bottomLimitY),
+      };
+      flushBounds = {
+        ...flushBounds,
+        height: clampHeightToBottomLimit(flushBounds, bottomLimitY),
+      };
     }
   }
 
@@ -581,10 +678,14 @@ function TextLayer({
     });
     if (copyrightBounds) {
       const bottomLimitY = copyrightBounds.y - 2;
-      const clampHeight = (bounds: { y: number; height: number }) =>
-        Math.max(0, Math.min(bounds.height, bottomLimitY - bounds.y));
-      baseBounds = { ...baseBounds, height: clampHeight(baseBounds) };
-      flushBounds = { ...flushBounds, height: clampHeight(flushBounds) };
+      baseBounds = {
+        ...baseBounds,
+        height: clampHeightToBottomLimit(baseBounds, bottomLimitY),
+      };
+      flushBounds = {
+        ...flushBounds,
+        height: clampHeightToBottomLimit(flushBounds, bottomLimitY),
+      };
     }
   }
   const overrides = labelledBackData.bodyTextStyle?.backdrop ?? {};
@@ -1235,7 +1336,12 @@ function buildGroupItems({
         typeof child.props?.fontWeight === "number" || typeof child.props?.fontWeight === "string"
           ? child.props.fontWeight
           : undefined;
-      const fill = typeof child.props?.fill === "string" ? child.props.fill : undefined;
+      const layerFill = typeof child.props?.fill === "string" ? child.props.fill : undefined;
+      const bodyTextColor =
+        textKey === "description"
+          ? ((cardData as { bodyTextColor?: string }).bodyTextColor ?? DEFAULT_BODY_TEXT_COLOR)
+          : undefined;
+      const fill = bodyTextColor ?? layerFill;
       const letterSpacingEm =
         typeof child.props?.letterSpacingEm === "number" ? child.props.letterSpacingEm : undefined;
       const align =
@@ -1462,10 +1568,10 @@ function renderGroups({
 
 export default function BlueprintRenderer(props: BlueprintRendererProps) {
   const { templateId, templateName, background, backgroundLoaded } = props;
+  const { showTextBounds } = useDebugVisuals();
   if (!templateId) return null;
 
   const blueprint = blueprintsByTemplateId[templateId];
-  const { showTextBounds } = useDebugVisuals();
   if (!blueprint) {
     return (
       <Layer>
@@ -1507,7 +1613,13 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
     <>
       {blueprint.layers.map((layer) => {
         if (layer.type === "background") {
-          return renderBackgroundLayer({ blueprint, layer, background, backgroundLoaded });
+          return renderBackgroundLayer({
+            blueprint,
+            layer,
+            background,
+            backgroundLoaded,
+            cardData: props.cardData,
+          });
         }
         if (layer.type === "border") {
           return renderBorderLayer({
@@ -1516,6 +1628,9 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
             backgroundLoaded,
             cardData: props.cardData,
           });
+        }
+        if (layer.type === "overlay") {
+          return renderOverlayLayer({ blueprint, layer });
         }
         if (layer.type === "image") {
           return (

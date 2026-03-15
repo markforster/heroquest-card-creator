@@ -30,7 +30,7 @@ type MockTx = {
   oncomplete: null | (() => void);
   onerror: null | (() => void);
   error?: unknown;
-  objectStore: (name: string) => any;
+  objectStore: (name: string) => IDBObjectStore;
 };
 
 class MockAssetsStore {
@@ -166,7 +166,7 @@ class MockAssetsStore {
 type MockDb = {
   objectStoreNames: { contains: (name: string) => boolean };
   transaction: (name: string, mode: TransactionMode) => MockTx;
-  createObjectStore: (name: string, options: { keyPath: string }) => any;
+  createObjectStore: (name: string, options: { keyPath: string }) => IDBObjectStore;
 };
 
 export function installMockIndexedDbAssets(options: {
@@ -191,7 +191,7 @@ export function installMockIndexedDbAssets(options: {
         oncomplete: null,
         onerror: null,
         error: undefined,
-        objectStore: () => assetsStore,
+        objectStore: () => assetsStore as unknown as IDBObjectStore,
       };
 
       // For readwrite flows, completion/error is driven by store.put/delete calls.
@@ -201,7 +201,7 @@ export function installMockIndexedDbAssets(options: {
     },
     createObjectStore: (name) => {
       stores.add(name);
-      return {};
+      return {} as IDBObjectStore;
     },
   };
 
@@ -229,8 +229,7 @@ export function installMockIndexedDbAssets(options: {
       if (originalIndexedDbDescriptor) {
         Object.defineProperty(window, "indexedDB", originalIndexedDbDescriptor);
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (window as any).indexedDB;
+        Reflect.deleteProperty(window, "indexedDB");
       }
 
       debugSpy.mockRestore();

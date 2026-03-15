@@ -1,12 +1,12 @@
 "use client";
 
 import styles from "@/app/page.module.css";
+import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import {
   previewRendererFlags,
   usePreviewRenderer,
 } from "@/components/Providers/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/Providers/WebglPreviewSettingsContext";
-import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { useWebglSupport } from "@/hooks/useWebglSupport";
 import { useI18n } from "@/i18n/I18nProvider";
 

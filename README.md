@@ -18,6 +18,13 @@ Key features:
 
 Highlights (v0.5.3): Stockpile workflow overhaul, richer Assets/Pairing UX, and export safety checks.
 
+**Itch.io**
+
+- Play in your browser: [https://mark-forster.itch.io/heroquest-card-creator](https://mark-forster.itch.io/heroquest-card-creator)
+- Download: [Download](https://mark-forster.itch.io/heroquest-card-creator/purchase)
+- Rate the app: [Rate](https://mark-forster.itch.io/heroquest-card-creator/rate?source=github)
+- Community and updates: [https://mark-forster.itch.io/heroquest-card-creator/community](https://mark-forster.itch.io/heroquest-card-creator/community)
+
 ---
 
 ## Project shape
@@ -52,9 +59,11 @@ Core feature areas:
   - `card-record-mapper.ts` – mapping between editor data and `CardRecord`s.
 
 ### Blueprint rendering (developer notes)
+
 The preview renderer uses **blueprints** as the single source of truth for card layout. Each template defines layout bounds and layers in blueprint data, and the `BlueprintRenderer` maps card data onto those layers.
 
 To tinker:
+
 - Start at `src/components/BlueprintRenderer/index.tsx` to see how layers are interpreted.
 - Blueprint definitions live in `src/data/blueprints.ts` (and related files). Update bounds, fonts, and layer config there.
 - Shared SVG parts (ribbons, stats blocks, text blocks) are in `src/components/CardParts/*`.
@@ -123,9 +132,14 @@ When the app is opened via `file://`, analytics events are sent via an image req
 - Production build (static export):
   - `npm run build`
   - Output is written to `out/`.
-- Optional: generate a downloadable zip bundle:
+- Optional: generate a downloadable zip bundle for end users:
   - `npm run build:download`
   - Writes `artefacts/heroquest-card-maker.<version>.zip` (requires a `zip` binary).
+  - Contains the static site plus helper files (miniserve binaries, launcher scripts, and `README.pdf`) so users can double-click and run locally without extra setup.
+- Optional: generate a clean itch.io archive for uploading:
+  - `npm run build:itch`
+  - Writes `artefacts/heroquest-card-maker.<version>.itch.zip`.
+  - Contains **only** the `out/` folder contents, which is what itch.io expects for hosting the web build.
 - To preview locally, you can:
   - Serve `out/` with any static file server, or
   - Open `out/index.html` directly in a modern browser (Chrome is the primary target).
@@ -154,8 +168,6 @@ Notes:
   - If no port is supplied, the CLI tries 3000 first.
   - If 3000 is busy, it auto-selects a free port.
   - It stores recent ports in `~/.hqcc/info.yml` and may prompt you to reuse them.
-
----
 
 ## Optional: Tauri desktop build
 
@@ -209,6 +221,8 @@ Outputs are written under `src-tauri/target/release/bundle/`.
 - `npm run dev` – start local dev server.
 - `npm run build` – static production build into `out/`.
 - `npm run build:download` – build + package `out/` as a downloadable zip bundle in `artefacts/`.
+- `npm run build:itch` – build + package `out/` only for itch.io uploads.
+- `npm run download:miniserve` – fetch and cache miniserve binaries into `artefacts/miniserve/`.
 - `npm run serve:out` – serve `out/` locally for quick testing.
 - `npm run tauri:icons` – generate native app icons from `public/assets/web-app-manifest-512x512.png`.
 - `npm run tauri:build` – build the static export and bundle the Tauri desktop app.

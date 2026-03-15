@@ -172,7 +172,7 @@ export function SettingsModalProvider({
       return;
     }
     void performClose();
-  }, [getBlockedPanel, performClose, t]);
+  }, [formatMessageWith, getBlockedPanel, performClose, t]);
 
   const requestAreaChange = useCallback(
     (nextAreaId: string) => {
@@ -190,7 +190,7 @@ export function SettingsModalProvider({
       }
       onAreaChange(nextAreaId);
     },
-    [getBlockedPanel, onAreaChange, t],
+    [formatMessageWith, getBlockedPanel, onAreaChange, t],
   );
 
   const handleConfirm = useCallback(async () => {

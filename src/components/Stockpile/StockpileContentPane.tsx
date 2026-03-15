@@ -5,7 +5,7 @@ import StockpileCardsGrid from "@/components/Stockpile/StockpileCardsGrid";
 import StockpileCardsTable from "@/components/Stockpile/StockpileCardsTable";
 import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { CardRecord } from "@/types/cards-db";
+import type { CardRecord } from "@/api/cards";
 
 type StockpileContentPaneProps = {
   filteredCards: CardRecord[];

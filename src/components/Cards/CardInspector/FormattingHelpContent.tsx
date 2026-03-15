@@ -3,16 +3,16 @@
 import { useId } from "react";
 
 import styles from "@/app/page.module.css";
-import { useI18n } from "@/i18n/I18nProvider";
-import combatSkullWhiteUrl from "@/assets/dice/combat_skull_white.svg?url";
-import combatShieldWhiteUrl from "@/assets/dice/combat_shield_white.svg?url";
-import combatMonsterWhiteUrl from "@/assets/dice/combat_monster_white.svg?url";
 import combatAdUrl from "@/assets/dice/combat_ad.svg?url";
 import combatDdUrl from "@/assets/dice/combat_dd.svg?url";
 import combatMdUrl from "@/assets/dice/combat_md.svg?url";
+import combatMonsterWhiteUrl from "@/assets/dice/combat_monster_white.svg?url";
+import combatShieldWhiteUrl from "@/assets/dice/combat_shield_white.svg?url";
+import combatSkullWhiteUrl from "@/assets/dice/combat_skull_white.svg?url";
 import d6Pips1Url from "@/assets/dice/d6_pips_1.svg?url";
 import d6Pips3Url from "@/assets/dice/d6_pips_3.svg?url";
 import d6Pips6Url from "@/assets/dice/d6_pips_6.svg?url";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type CheatRow = {
   code: string | string[];

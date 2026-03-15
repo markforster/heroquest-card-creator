@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 
 import CardPreview, { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import WebglPreview from "@/components/Cards/CardPreview/WebglPreview";
@@ -13,11 +14,10 @@ import { KEEP_WEBGL_MOUNTED } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
+import { apiClient } from "@/api/client";
 import { collectCardAssetIds } from "@/lib/card-assets";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { getCard, listCards } from "@/lib/cards-db";
-import { listPairsForFace } from "@/lib/pairs-service";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -46,8 +46,9 @@ export default function CardPreviewContainer({
   const renderRequestIdRef = useRef(0);
   const debounceTimeoutRef = useRef<number | null>(null);
   const {
-    state: { selectedTemplateId, draftTemplateId, draft, activeCardIdByTemplate },
+    state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
+  const { control } = useFormContext();
   const reversePreviewRef = useRef<CardPreviewHandle | null>(null);
   const [reverseCard, setReverseCard] = useState<{
     templateId: TemplateId;
@@ -55,25 +56,24 @@ export default function CardPreviewContainer({
     cardData: CardDataByTemplate[TemplateId];
   } | null>(null);
 
-  if (!selectedTemplateId) {
-    return null;
-  }
+  const template = selectedTemplateId
+    ? cardTemplatesById[selectedTemplateId as TemplateId]
+    : undefined;
+  const hasTemplate = Boolean(selectedTemplateId && template);
 
-  const template = cardTemplatesById[selectedTemplateId as TemplateId];
-  if (!template) {
-    return null;
-  }
-
-  const cardData =
-    draftTemplateId === selectedTemplateId && draft
-      ? (draft as CardDataByTemplate[TemplateId])
-      : undefined;
-  const templateName = getTemplateNameLabel(language, template);
+  const cardData = useWatch({ control }) as CardDataByTemplate[TemplateId] | undefined;
+  const templateId = template?.id ?? "";
+  const templateName = template ? getTemplateNameLabel(language, template) : "";
   const showWebgl = previewRenderer === "webgl";
-  const activeCardId = activeCardIdByTemplate[selectedTemplateId as TemplateId];
+  const activeCardId = selectedTemplateId
+    ? activeCardIdByTemplate[selectedTemplateId as TemplateId]
+    : undefined;
   const noPairingLabel = t("label.webglNoPairing");
-  const effectiveFace = resolveEffectiveFace(cardData?.face, template.defaultFace);
-  const assetIds = collectCardAssetIds(cardData);
+  const effectiveFace = resolveEffectiveFace(
+    cardData?.face,
+    template?.defaultFace ?? "front",
+  );
+  const assetIds = useMemo(() => collectCardAssetIds(cardData), [cardData]);
 
   useEffect(() => {
     if (!showWebgl || isDragging) return;
@@ -145,13 +145,14 @@ export default function CardPreviewContainer({
   }, [
     showWebgl,
     cardData,
-    template.id,
+    templateId,
     templateName,
     previewRef,
     preferencesKey,
     isDragging,
     showTextBounds,
     activeCardId,
+    assetIds,
   ]);
 
   useEffect(() => {
@@ -162,7 +163,7 @@ export default function CardPreviewContainer({
       void handle.syncCopyrightContrast?.();
     }, 60);
     return () => window.clearTimeout(timeoutId);
-  }, [cardData, template.id, templateName, previewRef]);
+  }, [cardData, templateId, templateName, previewRef]);
 
   useEffect(() => {
     if (!showWebgl) {
@@ -176,7 +177,7 @@ export default function CardPreviewContainer({
         try {
           let backId: string | null = null;
           if (activeCardId) {
-            const pairs = await listPairsForFace(activeCardId);
+            const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
             const preferredMatch = preferredBackId
               ? pairs.find((pair) => pair.backFaceId === preferredBackId)
               : undefined;
@@ -190,7 +191,7 @@ export default function CardPreviewContainer({
             setReverseCard(null);
             return;
           }
-          const record = await getCard(backId);
+          const record = await apiClient.getCard({ params: { id: backId } });
           if (!active || !record) {
             setReverseCard(null);
             return;
@@ -220,9 +221,9 @@ export default function CardPreviewContainer({
           return;
         }
         try {
-          const cards = await listCards({ status: "saved" });
+          const cards = await apiClient.listCards({ queries: { status: "saved" } });
           if (!active) return;
-          const pairs = await listPairsForFace(activeCardId);
+          const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
           if (!active) return;
           const frontIds = new Set(
             pairs.map((pair) => pair.frontFaceId).filter((id): id is string => Boolean(id)),
@@ -276,7 +277,10 @@ export default function CardPreviewContainer({
   const reverseRenderInFlightRef = useRef(false);
   const reverseRenderRequestIdRef = useRef(0);
   const reverseDebounceTimeoutRef = useRef<number | null>(null);
-  const reverseAssetIds = collectCardAssetIds(reverseCard?.cardData);
+  const reverseAssetIds = useMemo(
+    () => collectCardAssetIds(reverseCard?.cardData),
+    [reverseCard?.cardData],
+  );
 
   useEffect(() => {
     if (!showWebgl || !reverseCard || isDragging) {
@@ -337,13 +341,25 @@ export default function CardPreviewContainer({
         window.clearTimeout(reverseDebounceTimeoutRef.current);
       }
     };
-  }, [showWebgl, reverseCard, reversePreviewRef, preferencesKey, isDragging, showTextBounds]);
+  }, [
+    showWebgl,
+    reverseCard,
+    reversePreviewRef,
+    preferencesKey,
+    isDragging,
+    showTextBounds,
+    reverseAssetIds,
+  ]);
 
   useEffect(() => {
     if (!showWebgl) return;
     setTextureCanvas(null);
     setReverseTextureCanvas(null);
   }, [activeCardId, showWebgl]);
+
+  if (!hasTemplate || !template) {
+    return null;
+  }
 
   return (
     <div className={styles.previewSwap}>

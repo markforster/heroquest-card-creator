@@ -1,14 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
-import { AppActionsProvider, useAppActions } from "@/components/Providers/AppActionsContext";
 import { AnalyticsProvider } from "@/components/Providers/AnalyticsProvider";
+import { AppActionsProvider, useAppActions } from "@/components/Providers/AppActionsContext";
+import { EditorFormProvider } from "@/components/Providers/EditorFormContext";
 
 const navigate = jest.fn();
 const setSelectedTemplateId = jest.fn();
-const setSingleDraft = jest.fn();
 const setActiveCard = jest.fn();
-const setTemplateDirty = jest.fn();
 
 jest.mock("react-router-dom", () => {
   const actual = jest.requireActual("react-router-dom");
@@ -24,13 +23,9 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
     state: {
       selectedTemplateId: "hero",
       activeCardIdByTemplate: {},
-      isDirtyByTemplate: {},
     },
     setSelectedTemplateId,
-    setSingleDraft,
     setActiveCard,
-    setTemplateDirty,
-    loadCardIntoEditor: jest.fn(),
   }),
 }));
 
@@ -80,18 +75,18 @@ describe("AppActionsProvider openTemplatePicker", () => {
   beforeEach(() => {
     navigate.mockClear();
     setSelectedTemplateId.mockClear();
-    setSingleDraft.mockClear();
     setActiveCard.mockClear();
-    setTemplateDirty.mockClear();
   });
 
   it("navigates to /cards/new when applying a template", () => {
     render(
       <MemoryRouter>
         <AnalyticsProvider gaId={undefined}>
-          <AppActionsProvider>
-            <Harness />
-          </AppActionsProvider>
+          <EditorFormProvider>
+            <AppActionsProvider>
+              <Harness />
+            </AppActionsProvider>
+          </EditorFormProvider>
         </AnalyticsProvider>
       </MemoryRouter>,
     );
@@ -100,9 +95,7 @@ describe("AppActionsProvider openTemplatePicker", () => {
     fireEvent.click(screen.getByRole("button", { name: "Apply template" }));
 
     expect(setSelectedTemplateId).toHaveBeenCalledWith("monster");
-    expect(setSingleDraft).toHaveBeenCalledTimes(1);
     expect(setActiveCard).toHaveBeenCalledWith("monster", null, null);
-    expect(setTemplateDirty).toHaveBeenCalledWith("monster", false);
     expect(navigate).toHaveBeenCalledWith("/cards/new");
   });
 });

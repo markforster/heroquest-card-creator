@@ -1,5 +1,6 @@
-import type { PreferencesByRole, TextRole, TitlePreferences, StatHeadingPreferences } from "./types";
 import { ROLE_CONFIG } from "./roleConfig";
+
+import type { PreferencesByRole, TextRole, TitlePreferences, StatHeadingPreferences } from "./types";
 
 const STORAGE_KEYS: Record<TextRole, string> = {
   title: "hqcc.titleFittingPrefs",

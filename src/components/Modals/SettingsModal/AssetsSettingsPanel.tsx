@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { WarningNotice } from "@/components/common/Notice";
-import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
+import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getAssetAutoClassifyEnabled, setAssetAutoClassifyEnabled } from "@/lib/asset-auto-classify";
 import { isSafariBrowser } from "@/lib/browser";

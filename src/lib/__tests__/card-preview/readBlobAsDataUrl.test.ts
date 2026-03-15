@@ -5,7 +5,7 @@ class MockFileReader {
   onload: (() => void) | null = null;
   onerror: (() => void) | null = null;
 
-  readAsDataURL(_blob: Blob) {
+  readAsDataURL() {
     this.result = "data:mock";
     this.onload?.();
   }
@@ -15,7 +15,7 @@ class MockFileReaderError {
   onload: (() => void) | null = null;
   onerror: (() => void) | null = null;
 
-  readAsDataURL(_blob: Blob) {
+  readAsDataURL() {
     this.onerror?.();
   }
 }

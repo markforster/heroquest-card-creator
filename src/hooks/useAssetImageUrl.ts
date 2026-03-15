@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { getAssetObjectUrl } from "@/lib/assets-db";
+import { apiClient } from "@/api/client";
 
 export type AssetImageStatus = "idle" | "loading" | "ready" | "missing";
 
@@ -25,7 +25,7 @@ export function useAssetImageUrl(
     (async () => {
       try {
         setStatus("loading");
-        const next = await getAssetObjectUrl(assetId);
+        const next = await apiClient.getAssetObjectUrl({ params: { id: assetId } });
         localUrl = next;
         if (!cancelled) {
           setUrl(next);

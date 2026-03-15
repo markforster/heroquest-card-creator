@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 
-import { listCards } from "@/lib/cards-db";
-import { listCollections } from "@/lib/collections-db";
-import type { CardRecord } from "@/types/cards-db";
-import type { CollectionRecord } from "@/types/collections-db";
+import { apiClient } from "@/api/client";
+import { useListCards, useListCollections } from "@/api/hooks";
+import type { CardRecord } from "@/api/cards";
+import type { CollectionRecord } from "@/api/collections";
 
 type ActiveFilter =
   | { type: "all" }
@@ -31,52 +31,34 @@ export const useStockpileData = ({
   const hasHydratedStoredCollection = useRef(false);
   const hasResolvedStoredCollection = useRef(false);
   const hasLoadedCollections = useRef(false);
+  const listCardsQuery = useListCards(
+    { queries: { status: "saved", deleted: "include" } },
+    {
+      enabled: isOpen,
+      staleTime: 0,
+      keepPreviousData: false,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: true,
+    },
+  );
+  const listCollectionsQuery = useListCollections(undefined, {
+    enabled: isOpen,
+    staleTime: 60_000,
+    keepPreviousData: true,
+  });
 
   useEffect(() => {
     if (!isOpen) return;
-
-    let cancelled = false;
-
-    listCards({ status: "saved", deleted: "include" })
-      .then((results) => {
-        if (!cancelled) {
-          setCards(results);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCards([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, refreshToken]);
+    setCards(listCardsQuery.data ?? []);
+  }, [isOpen, listCardsQuery.data, refreshToken]);
 
   useEffect(() => {
     if (!isOpen) return;
-
-    let cancelled = false;
-
-    listCollections()
-      .then((results) => {
-        if (!cancelled) {
-          setCollections(results);
-          hasLoadedCollections.current = true;
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCollections([]);
-          hasLoadedCollections.current = true;
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, refreshToken]);
+    setCollections(listCollectionsQuery.data ?? []);
+    if (!listCollectionsQuery.isLoading) {
+      hasLoadedCollections.current = true;
+    }
+  }, [isOpen, listCollectionsQuery.data, listCollectionsQuery.isLoading, refreshToken]);
 
   useEffect(() => {
     if (!storedCollectionId) {
@@ -118,7 +100,7 @@ export const useStockpileData = ({
 
     window.localStorage.removeItem("hqcc.selectedCollectionId");
     setStoredCollectionId(null);
-  }, [activeFilter]);
+  }, [activeFilter, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -132,6 +114,25 @@ export const useStockpileData = ({
       }
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isOpen) return;
+    let timeoutId: number | null = null;
+    const handleUpdate = () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        listCardsQuery.refetch().catch(() => {
+          // Ignore refresh errors.
+        });
+      }, 250);
+    };
+    window.addEventListener("hqcc-cards-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("hqcc-cards-updated", handleUpdate);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [isOpen, listCardsQuery]);
 
   return {
     cards,

@@ -1,8 +1,7 @@
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
 import heroBackBackground from "@/assets/card-backgrounds/hero-back.png";
-import largeWindowBackground from "@/assets/card-backgrounds/large-window.png";
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
-import smallWindowBackground from "@/assets/card-backgrounds/small-window.png";
+import windowParchmentBackground from "@/assets/card-backgrounds/window-parchment.png";
 import heroBackThumbnail from "@/assets/template-thumbnails/hero-back.png";
 import heroThumbnail from "@/assets/template-thumbnails/hero.png";
 import labelledBackThumbnail from "@/assets/template-thumbnails/labelled-back.png";
@@ -36,7 +35,7 @@ export const cardTemplates: CardTemplateMeta[] = [
     kind: "treasure",
     description: "Card with smaller artwork window and large rules text area.",
     thumbnail: smallTreasureThumbnail,
-    background: smallWindowBackground,
+    background: windowParchmentBackground,
     defaultFace: "front",
   },
   {
@@ -45,7 +44,7 @@ export const cardTemplates: CardTemplateMeta[] = [
     kind: "treasure",
     description: "Card with large artwork area and supporting rules text.",
     thumbnail: largeTreasureThumbnail,
-    background: largeWindowBackground,
+    background: windowParchmentBackground,
     defaultFace: "front",
   },
   {

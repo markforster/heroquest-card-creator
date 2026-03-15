@@ -3,6 +3,7 @@
 import type { CardRecord, CardStatus } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
 
+import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import { openHqccDb } from "./hqcc-db";
 
 import { generateId } from ".";
@@ -61,10 +62,18 @@ function normalizeCardRecord(record: CardRecord): CardRecord {
 }
 
 export async function createCard(
-  input: Omit<CardRecord, "id" | "createdAt" | "updatedAt" | "nameLower" | "schemaVersion">,
+  input: Omit<CardRecord, "id" | "createdAt" | "updatedAt" | "nameLower" | "schemaVersion"> & {
+    id?: string;
+    createdAt?: number;
+    updatedAt?: number;
+    nameLower?: string;
+    schemaVersion?: 1 | 2;
+  },
 ): Promise<CardRecord> {
   const now = Date.now();
-  const id = generateId();
+  const createdAt = input.createdAt ?? now;
+  const updatedAt = input.updatedAt ?? createdAt;
+  const id = input.id ?? generateId();
   const normalizedThumbnail = normalizeThumbnailBlob(input.thumbnailBlob);
   const base: CardRecord = {
     ...input,
@@ -72,10 +81,10 @@ export async function createCard(
       ? { thumbnailBlob: normalizedThumbnail }
       : {}),
     id,
-    createdAt: now,
-    updatedAt: now,
-    nameLower: input.name.toLocaleLowerCase(),
-    schemaVersion: 2,
+    createdAt,
+    updatedAt,
+    nameLower: input.nameLower ?? input.name.toLocaleLowerCase(),
+    schemaVersion: input.schemaVersion ?? 2,
   };
 
   const store = await getCardsStore("readwrite");
@@ -85,6 +94,7 @@ export async function createCard(
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to create card"));
   });
+  enqueueDbEstimateChange("cards", base.id);
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
   }
@@ -135,6 +145,7 @@ export async function updateCard(
     putRequest.onsuccess = () => resolve();
     putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update card"));
   });
+  enqueueDbEstimateChange("cards", next.id);
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
   }
@@ -196,6 +207,7 @@ export async function updateCards(
       };
     });
   });
+  ids.forEach((id) => enqueueDbEstimateChange("cards", id));
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
   }
@@ -214,6 +226,14 @@ export async function getCard(id: string): Promise<CardRecord | null> {
       reject(request.error ?? new Error("Failed to load card"));
     };
   });
+}
+
+export async function getCardThumbnail(id: string): Promise<Blob | null> {
+  const record = await getCard(id);
+  if (!record?.thumbnailBlob) {
+    return null;
+  }
+  return normalizeThumbnailBlob(record.thumbnailBlob) ?? null;
 }
 
 export async function touchCardLastViewed(
@@ -247,7 +267,11 @@ export async function touchCardLastViewed(
     putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update card view"));
   });
 
-  return next;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+  }
+
+  return normalizeCardRecord(next);
 }
 
 export async function updateCardThumbnail(
@@ -282,6 +306,7 @@ export async function updateCardThumbnail(
     putRequest.onerror = () =>
       reject(putRequest.error ?? new Error("Failed to update card thumbnail"));
   });
+  enqueueDbEstimateChange("cards", next.id);
 
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
@@ -350,6 +375,11 @@ export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecor
   return filtered;
 }
 
+export async function normalizeSelfPairings(): Promise<number> {
+  // Pairings are managed in a separate store in current versions.
+  return 0;
+}
+
 export async function softDeleteCards(
   ids: string[],
   deletedAt: number = Date.now(),
@@ -371,6 +401,7 @@ export async function deleteCard(id: string): Promise<void> {
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to delete card"));
   });
+  enqueueDbEstimateChange("cards", id);
 }
 
 export async function deleteCards(ids: string[]): Promise<void> {
@@ -387,4 +418,5 @@ export async function deleteCards(ids: string[]): Promise<void> {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error ?? new Error("Failed to delete cards"));
   });
+  ids.forEach((id) => enqueueDbEstimateChange("cards", id));
 }

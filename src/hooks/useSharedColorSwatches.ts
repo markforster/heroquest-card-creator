@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { apiClient } from "@/api/client";
 import { isTransparentHex } from "@/lib/color";
-import { getBorderSwatches, setBorderSwatches } from "@/lib/settings-db";
 
 const MAX_SWATCHES = 10;
 const DEFAULT_BORDER_COLOR = "#310101";
@@ -13,7 +13,8 @@ export function useSharedColorSwatches() {
 
   useEffect(() => {
     let active = true;
-    getBorderSwatches()
+    apiClient
+      .getBorderSwatches()
       .then((values) => {
         if (!active) return;
         setSwatches(values.filter((value) => typeof value === "string"));
@@ -49,7 +50,7 @@ export function useSharedColorSwatches() {
       const next = [...capped, normalized].slice(-MAX_SWATCHES);
       setSwatches(next);
       try {
-        await setBorderSwatches(next);
+        await apiClient.setBorderSwatches({ swatches: next });
       } catch {
         // Ignore persistence errors; UI still reflects latest swatches.
       }
@@ -65,7 +66,7 @@ export function useSharedColorSwatches() {
       );
       setSwatches(next);
       try {
-        await setBorderSwatches(next);
+        await apiClient.setBorderSwatches({ swatches: next });
       } catch {
         // Ignore persistence errors; UI still reflects latest swatches.
       }

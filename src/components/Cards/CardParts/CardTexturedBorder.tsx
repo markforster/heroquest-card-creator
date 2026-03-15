@@ -2,8 +2,8 @@
 
 import { useId } from "react";
 
-import Layer from "@/components/Cards/CardPreview/Layer";
 import { DEFAULT_BORDER_COLOR, splitHexAlpha } from "@/components/Cards/CardParts/CardBorder";
+import Layer from "@/components/Cards/CardPreview/Layer";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 
 import type { StaticImageData } from "next/image";
@@ -27,7 +27,6 @@ function normalizeId(rawId: string) {
 export default function CardTexturedBorder({
   alphaMask,
   textureMask,
-  backgroundLoaded,
   color,
   width = CARD_WIDTH,
   height = CARD_HEIGHT,

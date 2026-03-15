@@ -3,15 +3,11 @@
 import { createPortal } from "react-dom";
 
 import styles from "@/app/page.module.css";
-import { cardTemplatesById } from "@/data/card-templates";
 import CardThumbnail from "@/components/common/CardThumbnail";
+import { cardTemplatesById } from "@/data/card-templates";
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
-import {
-  getCachedCardThumbnailUrl,
-  getLegacyCardThumbnailUrl,
-  releaseLegacyCardThumbnailUrl,
-} from "@/lib/card-thumbnail-cache";
-import type { CardRecord } from "@/types/cards-db";
+import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
+import type { CardRecord } from "@/api/cards";
 
 type StockpileTableThumbPopoverProps = {
   tableThumbAnchor: {
@@ -29,21 +25,13 @@ export default function StockpileTableThumbPopover({
   onMouseLeave,
   cardById,
 }: StockpileTableThumbPopoverProps) {
+  const hoveredCard = tableThumbAnchor ? cardById.get(tableThumbAnchor.id) ?? null : null;
+  const previewUrl = useCardThumbnailUrl(hoveredCard?.id ?? null, hoveredCard?.thumbnailBlob ?? null, {
+    enabled: Boolean(hoveredCard),
+    useCache: ENABLE_CARD_THUMB_CACHE,
+  });
   if (!tableThumbAnchor || typeof document === "undefined") return null;
-  const hoveredCard = cardById.get(tableThumbAnchor.id) ?? null;
   if (!hoveredCard) return null;
-  const previewThumb =
-    typeof window !== "undefined"
-      ? ENABLE_CARD_THUMB_CACHE
-        ? { url: getCachedCardThumbnailUrl(hoveredCard.id, hoveredCard.thumbnailBlob ?? null), onLoad: undefined }
-        : (() => {
-            const url = getLegacyCardThumbnailUrl(
-              hoveredCard.id,
-              hoveredCard.thumbnailBlob ?? null,
-            );
-            return { url, onLoad: url ? () => releaseLegacyCardThumbnailUrl(url) : undefined };
-          })()
-      : { url: null as string | null, onLoad: undefined as (() => void) | undefined };
   const templateThumb = cardTemplatesById[hoveredCard.templateId]?.thumbnail ?? null;
   const popoverWidth = 160;
   const popoverHeight = 224;
@@ -59,12 +47,11 @@ export default function StockpileTableThumbPopover({
       onMouseLeave={onMouseLeave}
     >
       <CardThumbnail
-        src={previewThumb.url ?? templateThumb?.src ?? null}
+        src={previewUrl ?? templateThumb?.src ?? null}
         alt={hoveredCard.name}
         variant="md"
         fit="contain"
         className={styles.stockpileTableThumbPreview}
-        onLoad={previewThumb.onLoad}
       />
     </div>,
     document.body,

@@ -1,8 +1,9 @@
 "use client";
 
+import styles from "@/app/page.module.css";
+
 import type { LucideIcon } from "lucide-react";
 
-import styles from "@/app/page.module.css";
 
 type FormLabelWithIconProps = {
   label: string;

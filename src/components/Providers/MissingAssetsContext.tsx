@@ -1,16 +1,16 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   ENABLE_MISSING_ASSET_CHECKS,
   ENABLE_MISSING_ASSET_INITIAL_SCAN,
   ENABLE_MISSING_ASSET_PERIODIC_SCAN,
 } from "@/config/flags";
+import { apiClient } from "@/api/client";
+import type { CardRecord } from "@/api/cards";
 import { buildAssetCache } from "@/lib/export-assets-cache";
-import { listCards } from "@/lib/cards-db";
 import type { MissingAssetReport } from "@/lib/export-assets-cache";
-import type { CardRecord } from "@/types/cards-db";
 
 import type { ReactNode } from "react";
 
@@ -41,20 +41,6 @@ const scheduleIdle = (cb: () => void) => {
 };
 
 export function MissingAssetsProvider({ children }: { children: ReactNode }) {
-  if (!ENABLE_MISSING_ASSET_CHECKS) {
-    return (
-      <MissingAssetsContext.Provider
-        value={{
-          missingAssetsReport: [],
-          missingArtworkIds: new Set(),
-          runMissingAssetsScan: () => {},
-        }}
-      >
-        {children}
-      </MissingAssetsContext.Provider>
-    );
-  }
-
   const [missingAssetsReport, setMissingAssetsReport] = useState<MissingAssetReport[]>([]);
   const scanInFlightRef = useRef(false);
   const queuedScanRef = useRef(false);
@@ -63,7 +49,7 @@ export function MissingAssetsProvider({ children }: { children: ReactNode }) {
     return new Set(missingAssetsReport.map((entry) => entry.cardId));
   }, [missingAssetsReport]);
 
-  const runMissingAssetsScan = (reason?: "initial" | "periodic" | "assets-deleted") => {
+  const runMissingAssetsScan = useCallback((reason?: "initial" | "periodic" | "assets-deleted") => {
     if (!ENABLE_MISSING_ASSET_CHECKS) {
       void reason;
       return;
@@ -154,7 +140,7 @@ export function MissingAssetsProvider({ children }: { children: ReactNode }) {
     cancelIdle = scheduleIdle(() => {
       void (async () => {
         try {
-          const cards = await listCards();
+          const cards = await apiClient.listCards();
           if (cancelled) return;
           await runBatchedScan(cards);
         } catch {
@@ -170,7 +156,16 @@ export function MissingAssetsProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       cancelIdle?.();
     };
-  };
+  }, []);
+
+  const disabledValue = useMemo<MissingAssetsContextValue>(
+    () => ({
+      missingAssetsReport: [],
+      missingArtworkIds: new Set(),
+      runMissingAssetsScan: () => {},
+    }),
+    [],
+  );
 
   useEffect(() => {
     if (!ENABLE_MISSING_ASSET_CHECKS) return;
@@ -188,15 +183,18 @@ export function MissingAssetsProvider({ children }: { children: ReactNode }) {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, []);
+  }, [runMissingAssetsScan]);
 
-  const value = useMemo(
-    () => ({
-      missingAssetsReport,
-      missingArtworkIds,
-      runMissingAssetsScan,
-    }),
-    [missingAssetsReport, missingArtworkIds],
+  const value = useMemo<MissingAssetsContextValue>(
+    () =>
+      ENABLE_MISSING_ASSET_CHECKS
+        ? {
+            missingAssetsReport,
+            missingArtworkIds,
+            runMissingAssetsScan,
+          }
+        : disabledValue,
+    [disabledValue, missingAssetsReport, missingArtworkIds, runMissingAssetsScan],
   );
 
   return <MissingAssetsContext.Provider value={value}>{children}</MissingAssetsContext.Provider>;

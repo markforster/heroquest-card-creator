@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import { useSettingsPanel } from "@/components/Modals/SettingsModal/SettingsModalContext";
 import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
+import { useSettingsPanel } from "@/components/Modals/SettingsModal/SettingsModalContext";
 import { useStatLabelOverrides } from "@/components/Providers/StatLabelOverridesProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { MessageKey } from "@/i18n/messages";
@@ -133,7 +133,7 @@ export default function StatLabelOverridesPanel() {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     const next: StatLabelOverrides = {
       ...formState,
       statLabelsEnabled: Boolean(formState.statLabelsEnabled),
@@ -160,7 +160,7 @@ export default function StatLabelOverridesPanel() {
       }, 500),
     );
     // settingsPanel.requestClose();
-  };
+  }, [formState, setOverrides, settingsPanel]);
 
   const statLabelFooter = useMemo(
     () => (
@@ -189,7 +189,7 @@ export default function StatLabelOverridesPanel() {
         </div>
       </div>
     ),
-    [formState.statLabelsEnabled, handleSave, saveState, settingsPanel, t],
+    [formState.statLabelsEnabled, handleSave, saveState, t],
   );
 
   useEffect(() => {

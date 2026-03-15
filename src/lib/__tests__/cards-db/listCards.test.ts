@@ -1,7 +1,7 @@
+import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
+import { listCards } from "@/lib/cards-db";
 import type { CardRecord } from "@/types/cards-db";
 
-import { listCards } from "@/lib/cards-db";
-import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
 
 function card(partial: Partial<CardRecord> & Pick<CardRecord, "id" | "templateId" | "status" | "name" | "nameLower">): CardRecord {
   return {

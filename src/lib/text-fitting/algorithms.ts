@@ -1,5 +1,6 @@
-import type { TextBounds, TextLayoutResult } from "./types";
 import { wrapHeaderLinesApprox } from "./legacy";
+
+import type { TextBounds, TextLayoutResult } from "./types";
 
 const TITLE_FONT_SIZE = 54;
 const TITLE_LINE_HEIGHT = TITLE_FONT_SIZE * 1.05;

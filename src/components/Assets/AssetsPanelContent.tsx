@@ -1,46 +1,44 @@
 "use client";
 
 import { Search, Trash2, Upload } from "lucide-react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useFormContext } from "react-hook-form";
 
 import styles from "@/app/page.module.css";
-import { useCardEditor } from "@/components/Providers/CardEditorContext";
-import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
+import getImageDimensions from "@/components/Assets/getImageDimensions";
+import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
 import IconButton from "@/components/common/IconButton";
+import ModalShell from "@/components/common/ModalShell";
 import { WarningNotice } from "@/components/common/Notice";
+import { apiClient } from "@/api/client";
+import { readApiConfig } from "@/api/config";
+import type { AssetRecord } from "@/api/assets";
+import type { CardRecord } from "@/api/cards";
+import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
+import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import {
   ENABLE_MISSING_ASSET_CHECKS,
   ENABLE_MISSING_ASSET_DELETE_SCAN,
+  ENABLE_ASSET_THUMB_THROTTLE,
 } from "@/config/flags";
-import ModalShell from "@/components/common/ModalShell";
-import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
-import { useI18n } from "@/i18n/I18nProvider";
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
-import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
+import { useListAssets } from "@/api/hooks";
+import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
-import { ENABLE_ASSET_THUMB_THROTTLE } from "@/config/flags";
-import { isSafariBrowser } from "@/lib/browser";
+import {
+  getRemoteAssetThumbPrefetchEnabled,
+  subscribeRemoteAssetFlags,
+} from "@/lib/remote-asset-flags";
 import type { AssetKindGroupId } from "@/lib/assets-grouping";
 import { groupAssetsByKind } from "@/lib/assets-grouping";
-import type { AssetRecord } from "@/lib/assets-db";
-import {
-  addAsset,
-  deleteAssets,
-  getAllAssets,
-  getAssetObjectUrl,
-  updateAssetMeta,
-} from "@/lib/assets-db";
-import { listCards, updateCard } from "@/lib/cards-db";
-import type { CardRecord } from "@/types/cards-db";
+import { isSafariBrowser } from "@/lib/browser";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
-import type { CardDataByTemplate } from "@/types/card-data";
-import type { TemplateId } from "@/types/templates";
+import type { OpenCloseProps } from "@/types/ui";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { OpenCloseProps } from "@/types/ui";
 
 type AssetsPanelMode = "manage" | "select";
 
@@ -88,28 +86,6 @@ const ENABLE_UPLOAD_PROGRESS = true;
 const ENABLE_UPLOAD_DEBUG_DELAY = true;
 const UPLOAD_DEBUG_DELAY_MS = 1;
 
-async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
-  if (typeof createImageBitmap === "function") {
-    const bitmap = await createImageBitmap(file);
-    const dimensions = { width: bitmap.width, height: bitmap.height };
-    bitmap.close?.();
-    return dimensions;
-  }
-
-  const url = URL.createObjectURL(file);
-  try {
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Failed to load image"));
-      img.src = url;
-    });
-    return { width: img.naturalWidth, height: img.naturalHeight };
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
 async function maybeDelayUploadStep(): Promise<void> {
   if (!ENABLE_UPLOAD_DEBUG_DELAY) return;
   await new Promise((resolve) => setTimeout(resolve, UPLOAD_DEBUG_DELAY_MS));
@@ -130,6 +106,7 @@ export default function AssetsPanelContent({
   const [assetKindFilter, setAssetKindFilter] = useState<
     "all" | "artwork" | "icon" | "unclassified"
   >("all");
+  const [mimeTypeFilter, setMimeTypeFilter] = useState<string>("all");
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const thumbUrlsRef = useRef<Record<string, string>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -140,13 +117,21 @@ export default function AssetsPanelContent({
   const [uploadReview, setUploadReview] = useState<UploadNotice | null>(null);
   const reviewResolverRef = useRef<((shouldContinue: boolean) => void) | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const assetsGridRef = useRef<HTMLDivElement | null>(null);
   const [isKindFilterOpen, setIsKindFilterOpen] = useState(false);
   const kindFilterRef = useRef<HTMLDivElement | null>(null);
+  const [isMimeFilterOpen, setIsMimeFilterOpen] = useState(false);
+  const mimeFilterRef = useRef<HTMLDivElement | null>(null);
   const [activeKindPopoverId, setActiveKindPopoverId] = useState<string | null>(null);
   const [kindPopoverStyle, setKindPopoverStyle] = useState<React.CSSProperties | null>(null);
   const kindPopoverRef = useRef<HTMLDivElement | null>(null);
   const kindAnchorRef = useRef<HTMLElement | null>(null);
   const { scanFiles, addToIndex, removeFromIndex, existingNames } = useAssetHashIndex();
+  const [isThumbPrefetchEnabled, setIsThumbPrefetchEnabled] = useState(() =>
+    getRemoteAssetThumbPrefetchEnabled(),
+  );
+  const isRemoteMode = readApiConfig().mode === "remote";
+  const [isLoadingAssets, setIsLoadingAssets] = useState(false);
   const { runMissingAssetsScan } = useMissingAssets();
   const { enqueueAsset, cancelAsset, setIsActive } = useAssetKindQueue();
   const isSafari = typeof window !== "undefined" ? isSafariBrowser() : false;
@@ -163,26 +148,37 @@ export default function AssetsPanelContent({
   }, [isOpen, setIsActive]);
 
   useEffect(() => {
+    return subscribeRemoteAssetFlags(() => {
+      setIsThumbPrefetchEnabled(getRemoteAssetThumbPrefetchEnabled());
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isThumbPrefetchEnabled) return;
+    Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
+    thumbUrlsRef.current = {};
+    setThumbUrls({});
+  }, [isThumbPrefetchEnabled]);
+
+  const listAssetsQuery = useListAssets(undefined, {
+    enabled: isOpen,
+    staleTime: 60_000,
+    keepPreviousData: true,
+  });
+
+  useEffect(() => {
     if (!isOpen) return;
+    setIsLoadingAssets(listAssetsQuery.isLoading);
+    setAssets(listAssetsQuery.data ?? []);
+  }, [isOpen, listAssetsQuery.data, listAssetsQuery.isLoading]);
 
-    let cancelled = false;
-
-    getAllAssets()
-      .then((records) => {
-        if (!cancelled) {
-          setAssets(records);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setAssets([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, refreshKey]);
+  useEffect(() => {
+    if (!isOpen) return;
+    if (refreshKey == null) return;
+    listAssetsQuery.refetch().catch(() => {
+      // Ignore refresh errors.
+    });
+  }, [isOpen, refreshKey, listAssetsQuery]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -193,11 +189,9 @@ export default function AssetsPanelContent({
         window.clearTimeout(timeoutId);
       }
       timeoutId = window.setTimeout(() => {
-        getAllAssets()
-          .then((records) => setAssets(records))
-          .catch(() => {
-            // Ignore refresh errors.
-          });
+        listAssetsQuery.refetch().catch(() => {
+          // Ignore refresh errors.
+        });
       }, 250);
     };
     window.addEventListener("hqcc-assets-updated", handleUpdate);
@@ -207,7 +201,7 @@ export default function AssetsPanelContent({
         window.clearTimeout(timeoutId);
       }
     };
-  }, [isOpen]);
+  }, [isOpen, listAssetsQuery]);
 
   useEffect(() => {
     if (!isKindFilterOpen) return;
@@ -220,6 +214,18 @@ export default function AssetsPanelContent({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isKindFilterOpen]);
+
+  useEffect(() => {
+    if (!isMimeFilterOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!mimeFilterRef.current) return;
+      if (!mimeFilterRef.current.contains(event.target as Node)) {
+        setIsMimeFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMimeFilterOpen]);
 
   useEffect(() => {
     if (!activeKindPopoverId) return;
@@ -267,6 +273,8 @@ export default function AssetsPanelContent({
   }, [activeKindPopoverId]);
 
   useEffect(() => {
+    if (!isThumbPrefetchEnabled) return;
+    if (isRemoteMode) return;
     if (!isOpen) {
       Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
       thumbUrlsRef.current = {};
@@ -323,10 +331,16 @@ export default function AssetsPanelContent({
             continue;
           }
           try {
-            const url = await getAssetObjectUrl(asset.id);
+            const url = await apiClient.getAssetObjectUrl({
+              params: { id: asset.id },
+            });
             if (url) {
               nextUrls[asset.id] = url;
               urlsChanged = true;
+              if (!cancelled) {
+                thumbUrlsRef.current = { ...thumbUrlsRef.current, [asset.id]: url };
+                setThumbUrls(thumbUrlsRef.current);
+              }
             }
           } catch {
             // Ignore individual asset errors for now.
@@ -351,7 +365,7 @@ export default function AssetsPanelContent({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, assets, refreshKey]);
+  }, [isOpen, assets, refreshKey, isThumbPrefetchEnabled, isRemoteMode]);
 
   useEffect(() => {
     if (!isOpen && selectedIds.size > 0) {
@@ -359,6 +373,81 @@ export default function AssetsPanelContent({
       setSelectedOrder([]);
     }
   }, [isOpen, selectedIds]);
+
+  const [visibleAssetIds, setVisibleAssetIds] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    if (!isRemoteMode) return;
+    if (!isOpen) return;
+    if (!isThumbPrefetchEnabled) return;
+    if (typeof window === "undefined") return;
+    if (!assetsGridRef.current) return;
+    if (assets.length === 0) {
+      setVisibleAssetIds(new Set());
+      return;
+    }
+
+    let cancelled = false;
+    const nextVisible = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (cancelled) return;
+        let changed = false;
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const id = entry.target.getAttribute("data-asset-id");
+          if (id && !nextVisible.has(id)) {
+            nextVisible.add(id);
+            changed = true;
+          }
+        });
+        if (changed) {
+          setVisibleAssetIds(new Set(nextVisible));
+        }
+      },
+      { root: assetsGridRef.current, rootMargin: "200px 0px", threshold: 0.01 },
+    );
+
+    assets.forEach((asset) => {
+      const el = document.querySelector(`[data-asset-id="${asset.id}"]`);
+      if (el) observer.observe(el);
+    });
+
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
+  }, [assets, isOpen, isRemoteMode, isThumbPrefetchEnabled]);
+
+  useEffect(() => {
+    if (!isRemoteMode) return;
+    if (!isOpen) return;
+    if (!isThumbPrefetchEnabled) return;
+    if (visibleAssetIds.size === 0) return;
+
+    let cancelled = false;
+    const missing = Array.from(visibleAssetIds).filter((id) => !thumbUrlsRef.current[id]);
+    if (missing.length === 0) return;
+
+    (async () => {
+      for (const id of missing) {
+        if (cancelled) return;
+        try {
+          const url = await apiClient.getAssetObjectUrl({ params: { id } });
+          if (url && !cancelled) {
+            thumbUrlsRef.current = { ...thumbUrlsRef.current, [id]: url };
+            setThumbUrls(thumbUrlsRef.current);
+          }
+        } catch {
+          // Ignore individual asset errors.
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, isRemoteMode, isThumbPrefetchEnabled, visibleAssetIds]);
 
   useEffect(() => {
     if (selectedOrder.length === 0) return;
@@ -414,6 +503,9 @@ export default function AssetsPanelContent({
       return asset.assetKindStatus === "classified" && asset.assetKind === "icon";
     }
     return asset.assetKindStatus !== "classified";
+  }).filter((asset) => {
+    if (mimeTypeFilter === "all") return true;
+    return asset.mimeType === mimeTypeFilter;
   });
 
   const groupedAssets = groupAssetsByKind(filteredAssets, preferredKindOrder).filter(
@@ -428,6 +520,18 @@ export default function AssetsPanelContent({
     (asset) => asset.assetKindStatus === "classified" && asset.assetKind === "icon",
   ).length;
   const unclassifiedCount = assets.filter((asset) => asset.assetKindStatus !== "classified").length;
+  const mimeTypeCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    assets.forEach((asset) => {
+      const current = counts.get(asset.mimeType) ?? 0;
+      counts.set(asset.mimeType, current + 1);
+    });
+    return counts;
+  }, [assets]);
+  const mimeTypeList = useMemo(
+    () => Array.from(mimeTypeCounts.keys()).sort((a, b) => a.localeCompare(b)),
+    [mimeTypeCounts],
+  );
 
   const assetKindFilterLabel =
     assetKindFilter === "all"
@@ -437,16 +541,18 @@ export default function AssetsPanelContent({
         : assetKindFilter === "icon"
           ? t("label.assetKindFilterIcon")
           : t("label.assetKindFilterUnclassified");
+  const mimeTypeFilterLabel =
+    mimeTypeFilter === "all" ? t("label.mimeFilterAll") : mimeTypeFilter;
 
   const handleConfirmDelete = async (ids: string[]) => {
     try {
-      await deleteAssets(ids);
+      await apiClient.deleteAssets({ ids });
       removeFromIndex(ids);
-      const records = await getAllAssets();
+      const records = await apiClient.listAssets();
       setAssets(records);
 
       const idSet = new Set(ids);
-      const cards = await listCards();
+      const cards = await apiClient.listCards();
       await Promise.all(
         cards.map(async (card) => {
           const imageMatch = card.imageAssetId && idSet.has(card.imageAssetId);
@@ -474,7 +580,7 @@ export default function AssetsPanelContent({
             patch.monsterIconRotation = undefined;
           }
 
-          await updateCard(card.id, patch);
+          await apiClient.updateCard(patch, { params: { id: card.id } });
         }),
       );
       if (ENABLE_MISSING_ASSET_CHECKS && ENABLE_MISSING_ASSET_DELETE_SCAN) {
@@ -641,7 +747,6 @@ export default function AssetsPanelContent({
         }
 
         let nextName = name;
-        let isRename = false;
         if (
           existingNamesLower.has(nameLower) ||
           batchNamesLower.has(nameLower) ||
@@ -651,7 +756,6 @@ export default function AssetsPanelContent({
             new Set([...existingFileNames, ...batchNames]),
             name,
           );
-          isRename = true;
           renames.push({ original: name, renamed: nextName });
         }
 
@@ -663,16 +767,23 @@ export default function AssetsPanelContent({
             // Ignore dimension read errors; fall back to 0.
           }
           const assetId = generateId();
-          await addAsset(assetId, file, {
+          await apiClient.addAsset({
+            id: assetId,
+            blob: file,
             name: nextName,
             mimeType: file.type,
             width: dimensions.width,
             height: dimensions.height,
           });
-          await updateAssetMeta(assetId, {
-            assetKindStatus: "unclassified",
-            assetKindUpdatedAt: Date.now(),
-          });
+          await apiClient.updateAssetMetadata(
+            {
+              patch: {
+                assetKindStatus: "unclassified",
+                assetKindUpdatedAt: Date.now(),
+              },
+            },
+            { params: { id: assetId } },
+          );
           enqueueAsset(assetId, { width: dimensions.width, height: dimensions.height });
           uploaded.add(assetId);
           existingNamesLower.add(nextName.toLowerCase());
@@ -772,7 +883,7 @@ export default function AssetsPanelContent({
       }
 
       try {
-        const records = await getAllAssets();
+        const records = await apiClient.listAssets();
         setAssets(records);
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -832,13 +943,18 @@ export default function AssetsPanelContent({
   const applyManualKind = async (kind: "icon" | "artwork") => {
     if (!activeKindAsset) return;
     cancelAsset(activeKindAsset.id);
-    await updateAssetMeta(activeKindAsset.id, {
-      assetKindStatus: "classified",
-      assetKind: kind,
-      assetKindSource: "manual",
-      assetKindConfidence: 1,
-      assetKindUpdatedAt: Date.now(),
-    });
+    await apiClient.updateAssetMetadata(
+      {
+        patch: {
+          assetKindStatus: "classified",
+          assetKind: kind,
+          assetKindSource: "manual",
+          assetKindConfidence: 1,
+          assetKindUpdatedAt: Date.now(),
+        },
+      },
+      { params: { id: activeKindAsset.id } },
+    );
     setActiveKindPopoverId(null);
   };
 
@@ -935,6 +1051,54 @@ export default function AssetsPanelContent({
               </div>
             ) : null}
           </div>
+          <div className={styles.cardsFilterMenu} ref={mimeFilterRef}>
+            <button
+              type="button"
+              className={styles.cardsFilterButton}
+              title={t("tooltip.filterAssetsByType")}
+              aria-expanded={isMimeFilterOpen}
+              onClick={() => setIsMimeFilterOpen((prev) => !prev)}
+            >
+              <span>{mimeTypeFilterLabel}</span>
+            </button>
+            {isMimeFilterOpen ? (
+              <div className={styles.cardsFilterPopover} role="menu">
+                <button
+                  type="button"
+                  className={`${styles.cardsFilterItem} ${
+                    mimeTypeFilter === "all" ? styles.cardsFilterItemActive : ""
+                  }`}
+                  role="menuitem"
+                  onClick={() => {
+                    setMimeTypeFilter("all");
+                    setIsMimeFilterOpen(false);
+                  }}
+                >
+                  <span>{t("label.mimeFilterAll")}</span>
+                  <span className={styles.cardsFilterCount}>{totalCount}</span>
+                </button>
+                {mimeTypeList.map((mimeType) => (
+                  <button
+                    key={mimeType}
+                    type="button"
+                    className={`${styles.cardsFilterItem} ${
+                      mimeTypeFilter === mimeType ? styles.cardsFilterItemActive : ""
+                    }`}
+                    role="menuitem"
+                    onClick={() => {
+                      setMimeTypeFilter(mimeType);
+                      setIsMimeFilterOpen(false);
+                    }}
+                  >
+                    <span>{mimeType}</span>
+                    <span className={styles.cardsFilterCount}>
+                      {mimeTypeCounts.get(mimeType) ?? 0}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
         <div className={styles.assetsToolbarSpacer} />
         <div className={`${styles.assetsActions} d-flex align-items-center gap-2`}>
@@ -981,8 +1145,25 @@ export default function AssetsPanelContent({
           />
         </div>
       </div>
-      <div className={`${styles.assetsGridContainer} flex-grow-1 overflow-auto`}>
-        {filteredAssets.length === 0 ? (
+      <div
+        ref={assetsGridRef}
+        className={`${styles.assetsGridContainer} flex-grow-1 overflow-auto`}
+      >
+        {isLoadingAssets && assets.length === 0 ? (
+          <div className={styles.assetsGrid}>
+            {Array.from({ length: 12 }).map((_, index) => (
+              <div key={`asset-skeleton-${index}`} className={styles.assetsItem}>
+                <div className={styles.assetsThumbPlaceholder}>
+                  <div className={styles.spinner} />
+                </div>
+                <div className={styles.assetsItemMeta}>
+                  <div className={styles.assetsItemName}>Loading…</div>
+                  <div className={styles.assetsItemDetails}>—</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredAssets.length === 0 ? (
           <div className={styles.assetsEmptyState}>{t("empty.noAssets")}</div>
         ) : (
           <div className={styles.assetsGroups}>
@@ -1008,6 +1189,7 @@ export default function AssetsPanelContent({
                         className={`${styles.assetsItem} ${
                           isSelected ? styles.assetsItemSelected : ""
                         }`}
+                        data-asset-id={asset.id}
                         title={asset.name}
                         onClick={(event) => {
                           setSelectedIds((prev) => {
@@ -1294,11 +1476,7 @@ function AssetsModalFooter({
   setConfirmState: Dispatch<SetStateAction<ConfirmState | null>>;
 }) {
   const { t } = useI18n();
-  const {
-    state: { draftTemplateId, draft, activeCardIdByTemplate },
-    setCardDraft,
-    setSingleDraft,
-  } = useCardEditor();
+  const { getValues, setValue } = useFormContext();
   const [affectedCardCount, setAffectedCardCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -1312,7 +1490,7 @@ function AssetsModalFooter({
 
     (async () => {
       try {
-        const cards = await listCards();
+        const cards = await apiClient.listCards();
         if (cancelled) return;
         const affectedCards = new Set<string>();
 
@@ -1367,20 +1545,8 @@ function AssetsModalFooter({
     const { assetIds, isDeleting } = confirmState;
     const assetCount = assetIds.length;
     const idSet = new Set(assetIds);
-
-    const affectedDrafts = new Set<TemplateId>();
-    if (draftTemplateId && draft && !activeCardIdByTemplate[draftTemplateId]) {
-      const imageMatch = draft.imageAssetId && idSet.has(draft.imageAssetId);
-      const iconMatch = "iconAssetId" in draft && draft.iconAssetId && idSet.has(draft.iconAssetId);
-      if (imageMatch || iconMatch) {
-        affectedDrafts.add(draftTemplateId);
-      }
-    }
-
-    const affectedDraftCount = affectedDrafts.size;
     const cardCountLabel = affectedCardCount === 1 ? t("label.card") : t("label.cards");
     const cardCountValue = affectedCardCount ?? "...";
-    const draftLabel = affectedDraftCount === 1 ? t("label.draft") : t("label.drafts");
 
     return (
       <>
@@ -1388,13 +1554,11 @@ function AssetsModalFooter({
           {t("confirm.deleteAssetsBody")} {assetCount}{" "}
           {assetCount === 1 ? t("label.asset") : t("label.assets")} {t("status.willClearImagesOn")}
           {" "}
-          {cardCountValue} {cardCountLabel}
-          {affectedDraftCount > 0 ? `, ${affectedDraftCount} ${draftLabel}` : ""}.{" "}
-          {t("actions.continue")}?
+          {cardCountValue} {cardCountLabel}. {t("actions.continue")}?
         </div>
         <button
           type="button"
-          className={styles.templateSecondaryButton}
+          className="btn btn-outline-secondary btn-sm"
           disabled={isDeleting}
           onClick={() => setConfirmState(null)}
         >
@@ -1412,37 +1576,28 @@ function AssetsModalFooter({
 
             setConfirmState((prev) => (prev ? { ...prev, isDeleting: true } : prev));
 
-            // Clear image fields on any drafts that reference these assets.
-            if (draftTemplateId && draft) {
-              const imageMatch = draft.imageAssetId && idSet.has(draft.imageAssetId);
-              const iconMatch =
-                "iconAssetId" in draft && draft.iconAssetId && idSet.has(draft.iconAssetId);
-
-              if (imageMatch || iconMatch) {
-                const nextDraft = {
-                  ...draft,
-                } as CardDataByTemplate[TemplateId];
-
-                if (imageMatch) {
-                  nextDraft.imageAssetId = undefined;
-                  nextDraft.imageAssetName = undefined;
-                  nextDraft.imageScale = undefined;
-                  nextDraft.imageScaleMode = undefined;
-                  nextDraft.imageOriginalWidth = undefined;
-                  nextDraft.imageOriginalHeight = undefined;
-                  nextDraft.imageOffsetX = undefined;
-                  nextDraft.imageOffsetY = undefined;
-                  nextDraft.imageRotation = undefined;
-                }
-
-                if (iconMatch && "iconAssetId" in nextDraft) {
-                  nextDraft.iconAssetId = undefined;
-                  nextDraft.iconAssetName = undefined;
-                }
-
-                setCardDraft(draftTemplateId, nextDraft as never);
-                setSingleDraft(draftTemplateId, nextDraft as never);
-              }
+            // Clear image fields on the active editor form if they reference deleted assets.
+            const currentValues = getValues();
+            const imageMatch =
+              currentValues?.imageAssetId && idSet.has(currentValues.imageAssetId);
+            const iconMatch =
+              "iconAssetId" in (currentValues ?? {}) &&
+              (currentValues as { iconAssetId?: string }).iconAssetId &&
+              idSet.has((currentValues as { iconAssetId?: string }).iconAssetId as string);
+            if (imageMatch) {
+              setValue("imageAssetId", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageAssetName", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageScale", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageScaleMode", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageOriginalWidth", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageOriginalHeight", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
+              setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
+            }
+            if (iconMatch) {
+              setValue("iconAssetId" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
+              setValue("iconAssetName" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
             }
 
             await onConfirmDelete(ids);

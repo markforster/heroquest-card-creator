@@ -1,7 +1,9 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
+import Script from "next/script";
 
 import { AnalyticsProvider } from "@/components/Providers/AnalyticsProvider";
 import I18nProviderClient from "@/components/Providers/I18nProviderClient";
+import QueryClientProviderClient from "@/components/QueryClientProviderClient";
 
 import type { Metadata, Viewport } from "next";
 import type { PropsWithChildren } from "react";
@@ -10,6 +12,7 @@ import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const gaId = process.env.NEXT_PUBLIC_GA_ID;
+const isDev = process.env.NODE_ENV === "development";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -92,7 +95,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
             `,
           }}
         />
-        {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
+        {!isDev && gaId ? <GoogleAnalytics gaId={gaId} /> : null}
+        <Script src="https://static.itch.io/api.js" strategy="afterInteractive" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -172,7 +176,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
           }}
         />
         <AnalyticsProvider gaId={gaId}>
-          <I18nProviderClient>{children}</I18nProviderClient>
+          <QueryClientProviderClient>
+            <I18nProviderClient>{children}</I18nProviderClient>
+          </QueryClientProviderClient>
         </AnalyticsProvider>
       </body>
     </html>

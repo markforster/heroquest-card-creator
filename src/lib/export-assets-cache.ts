@@ -1,10 +1,9 @@
 "use client";
 
+import { apiClient } from "@/api/client";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
-
-import { getAssetBlob } from "@/lib/assets-db";
 
 type AssetSource = {
   imageAssetId?: string;
@@ -58,7 +57,7 @@ export async function buildAssetCache(assetIds: string[]): Promise<{
   await Promise.all(
     uniqueIds.map(async (id) => {
       try {
-        const blob = await getAssetBlob(id);
+        const blob = await apiClient.getAssetBlob({ params: { id } });
         if (blob) {
           cache.set(id, blob);
         } else {

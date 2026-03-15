@@ -1,6 +1,6 @@
+import { installMockIndexedDbCollections } from "@/lib/__testutils__/mockIndexedDbCollections";
 import { createCollection } from "@/lib/collections-db";
 
-import { installMockIndexedDbCollections } from "@/lib/__testutils__/mockIndexedDbCollections";
 
 describe("createCollection", () => {
   afterEach(() => {

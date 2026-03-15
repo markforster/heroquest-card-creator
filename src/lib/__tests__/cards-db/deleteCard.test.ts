@@ -1,7 +1,7 @@
+import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
+import { deleteCard, getCard } from "@/lib/cards-db";
 import type { CardRecord } from "@/types/cards-db";
 
-import { deleteCard, getCard } from "@/lib/cards-db";
-import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
 
 describe("deleteCard", () => {
   it("deletes a card", async () => {

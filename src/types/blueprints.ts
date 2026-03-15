@@ -35,10 +35,14 @@ export type BlueprintLayerBase = {
   props?: Record<string, string | number | boolean>;
 };
 
+export type BlueprintImageClip = "bounds" | "canvas" | "none";
+
 export type BlueprintLayerBackground = BlueprintLayerBase & {
   type: "background";
   source?: "template" | "asset";
   asset?: StaticImageData;
+  cutoutBounds?: BlueprintBounds;
+  tintKey?: string;
 };
 
 export type BlueprintLayerBorder = BlueprintLayerBase & {
@@ -50,9 +54,21 @@ export type BlueprintLayerBorder = BlueprintLayerBase & {
   offsetY?: number;
 };
 
+export type BlueprintLayerOverlay = BlueprintLayerBase & {
+  type: "overlay";
+  asset: StaticImageData;
+};
+
+export type BlueprintLayerImage = BlueprintLayerBase & {
+  type: "image";
+  clip?: BlueprintImageClip;
+};
+
 export type BlueprintLayer =
   | BlueprintLayerBackground
   | BlueprintLayerBorder
+  | BlueprintLayerOverlay
+  | BlueprintLayerImage
   | BlueprintLayerBase;
 
 export type BlueprintLayerType =

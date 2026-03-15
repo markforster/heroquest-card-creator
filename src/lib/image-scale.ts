@@ -1,7 +1,7 @@
-import { blueprintsByTemplateId } from "@/data/blueprints";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
-import type { BlueprintBounds } from "@/types/blueprints";
+import { blueprintsByTemplateId } from "@/data/blueprints";
 import { clamp } from "@/lib/math";
+import type { BlueprintBounds } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
 
 export const LEGACY_ABSOLUTE_IMAGE_SCALE_MIN = 0.2;

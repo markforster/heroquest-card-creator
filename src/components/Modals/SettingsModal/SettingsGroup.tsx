@@ -1,11 +1,12 @@
 "use client";
 
-import type { ReactNode } from "react";
-
 import styles from "@/app/page.module.css";
 
+import type { ReactNode } from "react";
+
+
 type SettingsGroupProps = {
-  title?: string;
+  title?: ReactNode;
   className?: string;
   disabled?: boolean;
   children: ReactNode;

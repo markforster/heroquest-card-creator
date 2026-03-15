@@ -29,7 +29,7 @@ describe("applyWatermarkToCanvas", () => {
       width: 10,
       height: 10,
       getContext: () => context as CanvasRenderingContext2D,
-    } as HTMLCanvasElement;
+    } as unknown as HTMLCanvasElement;
 
     applyWatermarkToCanvas(canvas);
 

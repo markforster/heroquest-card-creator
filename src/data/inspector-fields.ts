@@ -1,5 +1,5 @@
-import type { InspectorFieldsByTemplate } from "@/types/inspector";
 import { CARD_HEIGHT, CARD_WIDTH, sx, sy } from "@/config/card-canvas";
+import type { InspectorFieldsByTemplate } from "@/types/inspector";
 
 export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
   hero: [
@@ -18,6 +18,11 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       props: { boundsWidth: sx(730), boundsHeight: sy(730) },
     },
     {
+      fieldType: "backgroundTint",
+      bind: "backgroundTint",
+      labelKey: "form.backgroundTint",
+    },
+    {
       fieldType: "stats",
       statsType: "hero",
       labelKey: "form.stats",
@@ -29,6 +34,9 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.cardText",
+      props: {
+        showTextColor: true,
+      },
     },
     {
       fieldType: "copyright",
@@ -54,6 +62,11 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       props: { boundsWidth: sx(730), boundsHeight: sy(730) },
     },
     {
+      fieldType: "backgroundTint",
+      bind: "backgroundTint",
+      labelKey: "form.backgroundTint",
+    },
+    {
       fieldType: "monsterIcon",
       bind: "iconAssetId",
       labelKey: "form.monsterIcon",
@@ -70,6 +83,9 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.cardText",
+      props: {
+        showTextColor: true,
+      },
     },
     {
       fieldType: "copyright",
@@ -98,11 +114,19 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.cardText",
+      props: {
+        showTextColor: true,
+      },
     },
     {
       fieldType: "borderColor",
       bind: "borderColor",
       labelKey: "form.borderColor",
+    },
+    {
+      fieldType: "backgroundTint",
+      bind: "backgroundTint",
+      labelKey: "form.backgroundTint",
     },
     {
       fieldType: "copyright",
@@ -131,11 +155,19 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       fieldType: "text",
       bind: "description",
       labelKey: "form.cardText",
+      props: {
+        showTextColor: true,
+      },
     },
     {
       fieldType: "borderColor",
       bind: "borderColor",
       labelKey: "form.borderColor",
+    },
+    {
+      fieldType: "backgroundTint",
+      bind: "backgroundTint",
+      labelKey: "form.backgroundTint",
     },
     {
       fieldType: "copyright",
@@ -155,10 +187,19 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       showTitleColor: true,
     },
     {
+      fieldType: "backgroundTint",
+      bind: "backgroundTint",
+      labelKey: "form.backgroundTint",
+    },
+    {
       fieldType: "text",
       bind: "description",
       labelKey: "form.backText",
-      props: { showToolbar: true },
+      props: {
+        showToolbar: true,
+        showTextColor: true,
+        showBackdropColor: true,
+      },
     },
     {
       fieldType: "copyright",
@@ -191,12 +232,21 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       bind: "description",
       labelKey: "form.backText",
       showToggle: true,
-      props: { showToolbar: true },
+      props: {
+        showToolbar: true,
+        showTextColor: true,
+        showBackdropColor: true,
+      },
     },
     {
       fieldType: "borderColor",
       bind: "borderColor",
       labelKey: "form.borderColor",
+    },
+    {
+      fieldType: "backgroundTint",
+      bind: "backgroundTint",
+      labelKey: "form.backgroundTint",
     },
     {
       fieldType: "copyright",

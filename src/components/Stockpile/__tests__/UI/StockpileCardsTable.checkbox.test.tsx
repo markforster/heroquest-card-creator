@@ -7,6 +7,19 @@ jest.mock("@/components/common/CardThumbnail", () => ({
   __esModule: true,
   default: ({ alt }: { alt: string }) => <div data-testid="thumb">{alt}</div>,
 }));
+jest.mock("@/i18n/I18nProvider", () => ({
+  __esModule: true,
+  useI18n: () => ({
+    language: "en",
+    t: (key: string) => {
+      const lookup: Record<string, string> = {
+        "aria.selectCard": "Select {name}",
+        "aria.selection": "Selection",
+      };
+      return lookup[key] ?? key;
+    },
+  }),
+}));
 
 describe("StockpileCardsTable (UI)", () => {
   it("renders checkbox reflecting selection and triggers onCardSetSelected", () => {

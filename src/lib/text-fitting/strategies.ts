@@ -1,5 +1,6 @@
-import type { TextBounds, TextLayoutResult, TextRole } from "./types";
 import { createTextMeasurer } from "./measure";
+
+import type { TextBounds, TextLayoutResult, TextRole } from "./types";
 
 export type StrategyContext = {
   role: TextRole;
@@ -248,7 +249,6 @@ export function hyphenateStrategy(ctx: StrategyContext): StrategyResult {
       // Token is too long: hard split with hyphenation.
       let start = 0;
       while (start < token.length) {
-        let end = token.length;
         let best = "";
 
         // Find the longest substring that fits with a hyphen (if not last chunk).

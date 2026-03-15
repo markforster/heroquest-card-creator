@@ -1,8 +1,8 @@
+import { installMockIndexedDbCollections } from "@/lib/__testutils__/mockIndexedDbCollections";
+import { deleteCollection, getCollection } from "@/lib/collections-db";
 import type { CollectionRecord } from "@/types/collections-db";
 
-import { deleteCollection, getCollection } from "@/lib/collections-db";
 
-import { installMockIndexedDbCollections } from "@/lib/__testutils__/mockIndexedDbCollections";
 
 describe("deleteCollection", () => {
   it("deletes an existing collection", async () => {

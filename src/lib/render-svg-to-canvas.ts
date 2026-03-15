@@ -10,6 +10,8 @@ import {
 import { getSvgImageHref, insertSvgStyle, setSvgImageHref } from "@/lib/dom";
 import { logAssetInlineById } from "@/lib/export-logging";
 import type { RenderSvgToCanvasOptions } from "@/lib/render-svg-to-canvas.types";
+import { now } from "@/lib/time";
+import { apiClient } from "@/api/client";
 
 export async function renderSvgToCanvas({
   svgElement,
@@ -21,7 +23,6 @@ export async function renderSvgToCanvas({
   assetBlobsById,
   mutateSvg,
 }: RenderSvgToCanvasOptions): Promise<HTMLCanvasElement | null> {
-  const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
   const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
 
   if (removeDebugBounds) {
@@ -92,8 +93,7 @@ export async function renderSvgToCanvas({
         const inlineStart = now();
         let didInline = false;
         try {
-          const { getAssetBlob } = await import("@/lib/assets-db");
-          const blob = await getAssetBlob(userAssetId);
+          const blob = await apiClient.getAssetBlob({ params: { id: userAssetId } });
           if (blob) {
             const dataUrl = await readBlobAsDataUrl(blob);
             setSvgImageHref(imgEl, dataUrl);

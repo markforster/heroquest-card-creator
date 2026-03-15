@@ -1,9 +1,10 @@
 "use client";
 
-import type { StaticImageData } from "next/image";
 
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
+
+import type { StaticImageData } from "next/image";
 
 export type CardPreviewProps = {
   templateId?: TemplateId;
@@ -23,6 +24,16 @@ export type CardPreviewHandle = {
   waitForBackgroundLoaded?: (timeoutMs?: number) => Promise<void>;
   syncCopyrightContrast?: (options?: { width?: number; height?: number }) => Promise<void>;
   renderToPngBlob: (options?: {
+    width?: number;
+    height?: number;
+    loggingId?: string;
+    assetBlobsById?: Map<string, Blob>;
+    bleedPx?: number;
+    cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+    cutMarks?: { enabled: boolean; color: string };
+    roundedCorners?: boolean;
+  }) => Promise<Blob | null>;
+  renderToJpegBlob: (options?: {
     width?: number;
     height?: number;
     loggingId?: string;

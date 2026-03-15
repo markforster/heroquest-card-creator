@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import type { LucideIcon } from "lucide-react";
+
 
 import layoutStyles from "@/app/page.module.css";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
@@ -12,6 +12,7 @@ import type { StatSplitFormat, StatValue } from "@/types/stats";
 
 import { formatStatInputValue, parseStatInputValue } from "./stat-stepper-input";
 
+import type { LucideIcon } from "lucide-react";
 import type { FieldValues, Path } from "react-hook-form";
 
 type SplitStatStepperProps<TFormValues extends FieldValues> = {
