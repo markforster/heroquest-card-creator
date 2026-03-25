@@ -8,15 +8,18 @@ import CardFan, { CARD_FAN_SIZES } from "@/components/Decks/CardFan";
 import type { CardFanVariant } from "@/components/Decks/CardFan";
 import DeckGroupGridItem from "@/components/Decks/DeckGroupGridItem";
 
-import type { CSSProperties, ReactNode } from "react";
+import { useState } from "react";
+import type { ReactNode } from "react";
 
 type DeckGroupGridListProps = {
   groups: DeckGroupRecord[];
   sets: DeckSetRecord[];
   selectedGroupId: string | null;
+  selectedSetId: string | null;
   isDropOver: boolean;
   emptyLabel: string;
   onSelectGroup: (groupId: string) => void;
+  onSelectSet: (set: DeckSetRecord) => void;
   groupTileVariant: CardFanVariant;
 };
 
@@ -48,15 +51,17 @@ export default function DeckGroupGridList({
   groups,
   sets,
   selectedGroupId,
+  selectedSetId,
   isDropOver,
   emptyLabel,
   onSelectGroup,
+  onSelectSet,
   groupTileVariant,
 }: DeckGroupGridListProps) {
   const tileSize = CARD_FAN_SIZES[groupTileVariant];
   const fanTilt = 0.6;
   const fanSpacing = 0.6;
-  const fanMaxOffsetPx = 8;
+  const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null);
   return (
     <GroupDropZoneArea isOver={isDropOver}>
       {groups.length === 0 ? (
@@ -75,20 +80,34 @@ export default function DeckGroupGridList({
               .sort((a, b) => a.sortIndex - b.sortIndex);
             const backIds = groupSets.map((set) => set.backFaceId);
             const previewIds = backIds.slice(0, 5);
-            const fanCount = previewIds.length > 0 ? previewIds.length : 5;
-            const fanWidth = tileSize.width + (fanCount - 1) * fanMaxOffsetPx * fanSpacing;
-            const itemStyle: CSSProperties = {
-              ["--card-fan-width" as string]: `${fanWidth}px`,
-            };
+            const isExpanded = selectedGroupId === group.id && groupSets.length > 1;
+            const isHovering = hoveredGroupId === group.id && !isExpanded && groupSets.length > 1;
+            const expandedIds = isExpanded || isHovering ? backIds : previewIds;
+            // const effectiveSpacing = isExpanded ? 1 : fanSpacing;
             const preview: ReactNode = (
-              <CardFan
-                cardIds={previewIds}
-                variant={groupTileVariant}
-                maxCount={5}
-                spacing={fanSpacing}
-                tilt={fanTilt}
-                showPlaceholdersWhenEmpty
+                <CardFan
+                  cardIds={expandedIds}
+                  variant={groupTileVariant}
+                  maxCount={isExpanded || isHovering ? expandedIds.length : 5}
+                  stableBaseCount={5}
+                  spacing={fanSpacing}
+                  tilt={fanTilt}
+                  showPlaceholdersWhenEmpty
                 className={styles.deckGroupPreviewFan}
+                expanded={isExpanded}
+                hovered={isHovering}
+                selectedCardId={
+                  selectedSetId
+                    ? (groupSets.find((set) => set.id === selectedSetId)?.backFaceId ?? null)
+                    : null
+                }
+                onSelectCard={(cardId) => {
+                  const target = groupSets.find((set) => set.backFaceId === cardId);
+                  if (target) {
+                    onSelectGroup(group.id);
+                    onSelectSet(target);
+                  }
+                }}
               />
             );
             return (
@@ -96,9 +115,14 @@ export default function DeckGroupGridList({
                 key={group.id}
                 group={group}
                 isSelected={selectedGroupId === group.id}
-                onSelect={() => onSelectGroup(group.id)}
+                onSelect={() => {
+                  onSelectGroup(group.id);
+                  if (groupSets.length > 0) {
+                    onSelectSet(groupSets[0]);
+                  }
+                }}
+                onHoverChange={(isHovering) => setHoveredGroupId(isHovering ? group.id : null)}
                 preview={preview}
-                style={itemStyle}
               />
             );
           })}

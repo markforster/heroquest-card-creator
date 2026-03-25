@@ -6706,35 +6706,47 @@ button.assetsKindBadge:disabled {
 }
 
 .cardFan {
-  display: grid;
-  place-items: center;
-  width: var(--card-fan-width, 100%);
-  height: var(--card-fan-h);
+  display: inline-block;
+  transition: width 180ms ease, height 180ms ease;
 }
 
-.cardFanCard {
-  grid-area: 1 / 1;
-  width: var(--card-fan-w);
-  height: var(--card-fan-h);
-  border-radius: 6px;
-  /* box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45); */
-  transform-origin: bottom center;
-  transform: translate(
-      calc(
-        var(--card-fan-center-shift, 0px) + (var(--card-fan-offset) * var(--card-fan-translate))
-      ),
-      0
-    )
-    rotate(calc(var(--card-fan-offset) * var(--card-fan-rotate)));
+.cardFanSvg {
+  display: block;
+  transition: width 180ms ease, height 180ms ease;
 }
 
-.cardFanPlaceholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--hq-surface-800);
-  border: 1px dashed var(--hq-border-strong);
-  box-shadow: var(--shadow-soft);
+.cardFanPlaceholderSvg {
+  fill: var(--hq-surface-800);
+  stroke: var(--hq-border-strong);
+  stroke-dasharray: 4 4;
+}
+
+.cardFanSelected {
+  fill: none;
+  stroke: var(--hq-accent);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px rgba(230, 179, 90, 0.45));
+}
+
+.cardFanCardSvg:hover .cardFanHover {
+  opacity: 1;
+}
+
+.cardFanHover {
+  fill: none;
+  stroke: rgba(230, 179, 90, 0.55);
+  stroke-width: 2;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+:root[data-theme="light"] .cardFanSelected {
+  stroke: #8a4b00;
+  filter: drop-shadow(0 0 6px rgba(138, 75, 0, 0.35));
+}
+
+:root[data-theme="light"] .cardFanHover {
+  stroke: rgba(138, 75, 0, 0.5);
 }
 
 .deckTileTitle {
@@ -6836,7 +6848,6 @@ button.assetsKindBadge:disabled {
   gap: var(--space-4);
   flex: 1 1 auto;
   min-height: 0;
-  border: 2px solid #ef4444;
   overflow: hidden;
 }
 
@@ -6975,8 +6986,8 @@ button.assetsKindBadge:disabled {
 }
 
 .deckGroupPreview {
-  width: var(--card-fan-width, var(--deck-set-w));
-  height: var(--card-fan-h, var(--deck-set-h));
+  width: auto;
+  height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7010,27 +7021,27 @@ button.assetsKindBadge:disabled {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  border: solid 1px red;
 }
 
 .deckNavItem {
   display: flex;
-  /* flex-direction: column; */
+  flex-direction: column;
   align-items: center;
   gap: var(--space-2);
   flex: 0 0 auto;
-  /* width: calc(var(--card-fan-width, var(--deck-set-w)) + var(--space-5)); */
-  /* height: calc(var(--card-fan-h, var(--deck-set-h)) + var(--space-5)); */
-  /* background: var(--hq-overlay-soft); */
-  border: 1px solid transparent;
+  width: auto;
+  height: auto;
   border-radius: var(--radius-md);
-  /* padding: var(--space-3); */
+  padding: var(--space-3);
   color: var(--hq-text);
   text-align: left;
   cursor: pointer;
   overflow: visible;
-  background: red;
-  padding: 0.5em;
+}
+
+.deckNavItemChrome {
+  background: var(--hq-overlay-soft);
+  border: 1px solid transparent;
 }
 
 .deckNavItemSelected {

@@ -189,9 +189,11 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
                       groups={orderedGroups}
                       sets={sets}
                       selectedGroupId={selectedGroupId}
+                      selectedSetId={selectedSetId}
                       isDropOver={isGroupDropOver}
                       emptyLabel={t("decks.emptyGroups")}
                       onSelectGroup={onSelectGroup}
+                      onSelectSet={onSelectSet}
                       groupTileVariant={groupTileVariant}
                     />
                     <div className={styles.deckGroupRowToolbar}>
@@ -220,23 +222,7 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
                     <div className={styles.decksEmpty}>CARDS GO HERE</div>
                   ) : (
                     <>
-                      {selectedGroupSets.length > 1 ? (
-                        <div
-                          className={styles.deckNavListRow}
-                          style={{
-                            ["--deck-set-w" as string]: `${
-                              CARD_FAN_SIZES[deckPreviewVariant].width
-                            }px`,
-                            ["--deck-set-h" as string]: `${
-                              CARD_FAN_SIZES[deckPreviewVariant].height
-                            }px`,
-                          }}
-                        >
-                          {selectedGroupSets.map((set) =>
-                            deckSetTile(set, selectedSetId === set.id, () => onSelectSet(set)),
-                          )}
-                        </div>
-                      ) : null}
+                      {null}
                       {!selectedSetId ? (
                         <div className={styles.decksEmpty}>{t("decks.noSetSelected")}</div>
                       ) : (

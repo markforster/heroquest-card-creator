@@ -26,7 +26,7 @@ import type { DragEndEvent, DragOverEvent, DragStartEvent } from "@dnd-kit/core"
 import type { ReactNode } from "react";
 
 const SET_TILE_VARIANT = "smMd";
-const GROUP_TILE_VARIANT = "sm";
+const GROUP_TILE_VARIANT = "smMd";
 const DECK_PREVIEW_FAN_COUNT = 5;
 const BACK_PANEL_TILE_VARIANT = "sm";
 
