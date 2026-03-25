@@ -19,6 +19,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
+import { isPairInUseError, type DeckUsageLocation } from "@/lib/decks-errors";
 import type { CardFace } from "@/types/card-face";
 import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
@@ -73,37 +74,6 @@ function PairingThumbImage({
   return <div className={styles.inspectorStackPlaceholder} />;
 }
 
-async function deletePairBy(frontFaceId: string, backFaceId: string) {
-  return apiClient.deletePair({ frontFaceId, backFaceId });
-}
-
-async function deletePairsForFrontId(frontFaceId: string) {
-  const pairs = await listPairsForFaceId(frontFaceId);
-  const deletions = pairs.filter(
-    (pair) => pair.frontFaceId === frontFaceId && pair.backFaceId,
-  );
-  await Promise.all(
-    deletions.map((pair) => deletePairBy(frontFaceId, pair.backFaceId as string)),
-  );
-}
-
-async function replacePairsForBackId(backFaceId: string, frontFaceIds: string[]) {
-  const existing = await listPairsForFaceId(backFaceId);
-  const currentFrontIds = existing
-    .filter((pair) => pair.backFaceId === backFaceId && pair.frontFaceId)
-    .map((pair) => pair.frontFaceId as string);
-  const nextFrontSet = new Set(frontFaceIds);
-  const toRemove = currentFrontIds.filter((frontId) => !nextFrontSet.has(frontId));
-  const toAdd = frontFaceIds.filter((frontId) => !currentFrontIds.includes(frontId));
-
-  if (toRemove.length) {
-    await Promise.all(toRemove.map((frontId) => deletePairBy(frontId, backFaceId)));
-  }
-  if (toAdd.length) {
-    await Promise.all(toAdd.map((frontId) => createPairFor(frontId, backFaceId)));
-  }
-}
-
 export default function PairingInspectorPanel({
   activeFrontId,
   autoOpenBackId,
@@ -141,6 +111,7 @@ export default function PairingInspectorPanel({
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
   const [isUnpairAllPromptOpen, setIsUnpairAllPromptOpen] = useState(false);
   const [pendingUnpairBack, setPendingUnpairBack] = useState<CardRecord | null>(null);
+  const [pairUsagePrompt, setPairUsagePrompt] = useState<DeckUsageLocation[] | null>(null);
   const [loadedThumbs, setLoadedThumbs] = useState<Record<string, boolean>>({});
   const [hoveredCard, setHoveredCard] = useState<CardRecord | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<DOMRect | null>(null);
@@ -344,16 +315,60 @@ export default function PairingInspectorPanel({
     return null;
   }
 
+  const deletePairBySafe = async (frontFaceId: string, backFaceId: string) => {
+    try {
+      await apiClient.deletePair({ frontFaceId, backFaceId });
+      return true;
+    } catch (error) {
+      if (isPairInUseError(error)) {
+        setPairUsagePrompt(error.usage);
+        return false;
+      }
+      throw error;
+    }
+  };
+
+  const deletePairsForFrontIdSafe = async (frontFaceId: string) => {
+    const pairs = await listPairsForFaceId(frontFaceId);
+    const deletions = pairs.filter(
+      (pair) => pair.frontFaceId === frontFaceId && pair.backFaceId,
+    );
+    for (const pair of deletions) {
+      const ok = await deletePairBySafe(frontFaceId, pair.backFaceId as string);
+      if (!ok) return false;
+    }
+    return true;
+  };
+
+  const replacePairsForBackIdSafe = async (backFaceId: string, frontFaceIds: string[]) => {
+    const existing = await listPairsForFaceId(backFaceId);
+    const currentFrontIds = existing
+      .filter((pair) => pair.backFaceId === backFaceId && pair.frontFaceId)
+      .map((pair) => pair.frontFaceId as string);
+    const nextFrontSet = new Set(frontFaceIds);
+    const toRemove = currentFrontIds.filter((frontId) => !nextFrontSet.has(frontId));
+    const toAdd = frontFaceIds.filter((frontId) => !currentFrontIds.includes(frontId));
+
+    for (const frontId of toRemove) {
+      const ok = await deletePairBySafe(frontId, backFaceId);
+      if (!ok) return false;
+    }
+    if (toAdd.length) {
+      await Promise.all(toAdd.map((frontId) => createPairFor(frontId, backFaceId)));
+    }
+    return true;
+  };
+
   const handleUnpairAll = async () => {
     if (!activeCardId) return;
-    await deletePairsForFrontId(activeCardId);
+    await deletePairsForFrontIdSafe(activeCardId);
     setPairedBacks([]);
   };
 
   const handleUnpairBack = async (backId: string) => {
     if (!activeCardId) return;
     try {
-      await deletePairBy(activeCardId, backId);
+      await deletePairBySafe(activeCardId, backId);
       setPairedBacksToken((prev) => prev + 1);
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -382,6 +397,13 @@ export default function PairingInspectorPanel({
     }
     setHoveredCard(null);
     setHoverAnchor(null);
+  };
+
+  const openUsageDeck = () => {
+    const first = pairUsagePrompt?.[0];
+    if (!first) return;
+    navigate(`/decks/${first.deckId}`);
+    setPairUsagePrompt(null);
   };
 
   return (
@@ -416,20 +438,21 @@ export default function PairingInspectorPanel({
                     mode: "pair-backs",
                     titleOverride: t("heading.selectBackCard"),
                     initialSelectedIds: pairedBacks.map((card) => card.id),
-                    onConfirmSelection: (cardIds) => {
+                    onConfirmSelection: async (cardIds) => {
                       if (!currentTemplateId) return;
                       if (!activeCardId) return;
-                      void (async () => {
-                        const existingIds = new Set(pairedBacks.map((card) => card.id));
-                        const nextIds = new Set(cardIds ?? []);
-                        const toRemove = [...existingIds].filter((id) => !nextIds.has(id));
-                        const toAdd = [...nextIds].filter((id) => !existingIds.has(id));
-                        await Promise.all([
-                          ...toRemove.map((id) => deletePairBy(activeCardId, id)),
-                          ...toAdd.map((id) => createPairFor(activeCardId, id)),
-                        ]);
-                        setPairedBacksToken((prev) => prev + 1);
-                      })();
+                      const existingIds = new Set(pairedBacks.map((card) => card.id));
+                      const nextIds = new Set(cardIds ?? []);
+                      const toRemove = [...existingIds].filter((id) => !nextIds.has(id));
+                      const toAdd = [...nextIds].filter((id) => !existingIds.has(id));
+                      for (const id of toRemove) {
+                        const ok = await deletePairBySafe(activeCardId, id);
+                        if (!ok) return;
+                      }
+                      if (toAdd.length) {
+                        await Promise.all(toAdd.map((id) => createPairFor(activeCardId, id)));
+                      }
+                      setPairedBacksToken((prev) => prev + 1);
                     },
                   });
                 }}
@@ -487,7 +510,7 @@ export default function PairingInspectorPanel({
                   initialSelectedIds: pairedFronts.map((card) => card.id),
                   onConfirmSelection: async (cardIds) => {
                     try {
-                      await replacePairsForBackId(activeCardId, cardIds);
+                      await replacePairsForBackIdSafe(activeCardId, cardIds);
                     } catch {
                       // Ignore pair update errors for now.
                     }
@@ -731,6 +754,25 @@ export default function PairingInspectorPanel({
               back: pendingUnpairBack.title ?? fallbackTitle,
             })
           : null}
+      </ConfirmModal>
+      <ConfirmModal
+        isOpen={Boolean(pairUsagePrompt?.length)}
+        title={t("decks.pairInUseTitle")}
+        confirmLabel={t("decks.openDeck")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={openUsageDeck}
+        onCancel={() => setPairUsagePrompt(null)}
+      >
+        <div className={styles.pairingUsageList}>
+          <div>{t("decks.pairInUseBody")}</div>
+          <ul className={styles.pairingUsageItems}>
+            {(pairUsagePrompt ?? []).map((usage) => (
+              <li key={`${usage.deckId}-${usage.setId}`}>
+                {`${usage.deckTitle} › ${usage.groupTitle} › ${usage.setTitle}`}
+              </li>
+            ))}
+          </ul>
+        </div>
       </ConfirmModal>
       {hoveredCard && hoverAnchor && typeof document !== "undefined"
           ? (() => {

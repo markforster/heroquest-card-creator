@@ -209,7 +209,7 @@
   color: var(--hq-text);
   background: var(--hq-bg);
   border: 1px solid var(--hq-border-strong);
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
   opacity: 0;
   pointer-events: none;
   white-space: nowrap;
@@ -280,13 +280,19 @@
 
 @keyframes ctaShimmer {
   0% {
-    background-position: 0 0, 0% 50%;
+    background-position:
+      0 0,
+      0% 50%;
   }
   2% {
-    background-position: 0 0, 100% 50%;
+    background-position:
+      0 0,
+      100% 50%;
   }
   100% {
-    background-position: 0 0, 100% 50%;
+    background-position:
+      0 0,
+      100% 50%;
   }
 }
 
@@ -1016,8 +1022,12 @@
     #5856d6,
     #ff3b30
   );
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
@@ -1208,11 +1218,7 @@
 .templateSidebarCard {
   border-radius: 4px;
   border: 1px solid var(--hq-border-mid);
-  background: radial-gradient(
-    circle at top,
-    var(--hq-surface-800),
-    var(--hq-surface-900)
-  );
+  background: radial-gradient(circle at top, var(--hq-surface-800), var(--hq-surface-900));
   padding: 2px;
   cursor: pointer;
   transition:
@@ -6612,4 +6618,723 @@ button.assetsKindBadge:disabled {
 .imageScaleTickStrong .imageScaleTickLabel {
   color: var(--hq-tick-text-strong);
   font-weight: 600;
+}
+
+/* Decks */
+
+.decksPanel {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-12) var(--space-12) var(--space-10);
+  gap: var(--space-10);
+  background: linear-gradient(135deg, var(--hq-surface-800), var(--hq-surface-900));
+  color: var(--hq-text);
+  min-height: 0;
+}
+
+.decksHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  justify-content: space-between;
+}
+
+.decksHeaderTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.decksHeaderIcon {
+  width: 18px;
+  height: 18px;
+  color: var(--hq-accent);
+}
+
+.decksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-16);
+  outline: none;
+}
+
+.decksEmpty {
+  padding: var(--space-8);
+  border-radius: var(--radius-lg);
+  background: var(--hq-overlay-soft);
+  border: 1px dashed var(--hq-border-strong);
+  text-align: center;
+  color: var(--hq-text-muted);
+}
+
+.deckTile {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-3);
+  background: var(--hq-surface-900);
+  border: 1px solid var(--hq-border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    transform 120ms ease,
+    box-shadow 160ms ease;
+  align-items: center;
+  text-align: center;
+}
+
+.deckTileSelected {
+  border-color: var(--hq-accent);
+  box-shadow: 0 0 0 2px rgba(230, 179, 90, 0.25);
+  transform: translateY(-1px);
+  align-items: center;
+  text-align: center;
+}
+
+.deckTilePreview {
+  position: relative;
+  width: 100%;
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cardFan {
+  display: grid;
+  place-items: center;
+  width: var(--card-fan-width, 100%);
+  height: var(--card-fan-h);
+}
+
+.cardFanCard {
+  grid-area: 1 / 1;
+  width: var(--card-fan-w);
+  height: var(--card-fan-h);
+  border-radius: 6px;
+  /* box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45); */
+  transform-origin: bottom center;
+  transform: translate(
+      calc(
+        var(--card-fan-center-shift, 0px) + (var(--card-fan-offset) * var(--card-fan-translate))
+      ),
+      0
+    )
+    rotate(calc(var(--card-fan-offset) * var(--card-fan-rotate)));
+}
+
+.cardFanPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--hq-surface-800);
+  border: 1px dashed var(--hq-border-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.deckTileTitle {
+  font-weight: 600;
+  font-size: var(--text-md);
+  width: 100%;
+}
+
+.deckTileMeta {
+  font-size: var(--text-sm);
+  color: var(--hq-text-muted);
+  width: 100%;
+}
+
+.deckPreviewThumb {
+  box-shadow: var(--shadow-soft);
+}
+
+.deckPreviewThumbFallback {
+  width: 46px;
+  height: 64px;
+  border-radius: 6px;
+  background: var(--hq-thumbnail-fallback);
+}
+
+.decksRightPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  min-height: 0;
+}
+
+.decksRightSection {
+  padding: var(--space-8) var(--space-10);
+  border-bottom: 1px solid var(--hq-border-strong);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.decksRightTitle {
+  font-size: var(--text-md);
+  font-weight: 600;
+  margin-bottom: var(--space-6);
+}
+
+.decksFormRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.decksLabel {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hq-text-muted);
+}
+
+.decksActionRow {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.decksActionColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.deckBreadcrumb {
+  background: none;
+  border: none;
+  color: var(--hq-accent);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.deckBreadcrumbDivider {
+  color: var(--hq-text-muted);
+}
+
+.deckBreadcrumbTitle {
+  font-weight: 600;
+  color: var(--hq-text);
+}
+
+.deckHeaderActions {
+  display: inline-flex;
+  gap: var(--space-3);
+}
+
+.deckRoutePanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 2px solid #ef4444;
+  overflow: hidden;
+}
+
+.deckRouteToolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  justify-content: space-between;
+  flex: 0 1 auto;
+}
+
+.deckRouteDetailsRow {
+  flex: 0 1 auto;
+  min-height: 48px;
+  border: 1px dashed var(--hq-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.deckRouteMiddle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.deckRouteFooter {
+  flex: 0 1 auto;
+  min-height: 32px;
+  border: 1px dashed rgba(239, 68, 68, 0.6);
+  border-radius: var(--radius-md);
+}
+
+.deckRouteRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 0 0 auto;
+  background: var(--hq-surface-900);
+  border: 1px solid var(--hq-border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.deckRouteRowToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex: 0 0 auto;
+}
+
+.deckRouteRowBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.deckRouteRowStrip {
+  border-style: dashed;
+  border-color: var(--hq-border-strong);
+}
+
+.deckRouteRowToolbarRight {
+  justify-content: flex-end;
+}
+
+.deckRouteRowBodyStrip {
+  flex: 0 0 var(--deck-set-h);
+  height: var(--deck-set-h);
+  min-height: var(--deck-set-h);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-direction: row;
+  align-items: center;
+}
+
+.deckGroupRow {
+  display: flex;
+  gap: var(--space-3);
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.deckGroupRowList {
+  flex: 1 0 0;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: calc(var(--deck-set-h) + var(--space-6));
+}
+
+.deckGroupRowListOver {
+  outline: 2px dashed var(--hq-accent);
+  outline-offset: 4px;
+}
+
+.deckGroupDropZone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(var(--deck-set-h) + var(--space-6));
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--hq-text-muted);
+}
+
+.deckGroupDropZoneOver {
+  border-color: var(--hq-accent);
+  color: var(--hq-text);
+}
+
+.deckGroupRowToolbar {
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.deckNavListRow {
+  display: flex;
+  gap: var(--space-6);
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  padding-bottom: var(--space-2);
+  min-width: max-content;
+}
+
+.deckGroupPreview {
+  width: var(--card-fan-width, var(--deck-set-w));
+  height: var(--card-fan-h, var(--deck-set-h));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.deckGroupPreviewPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deckGroupPreviewSingle {
+  width: 100%;
+  height: 100%;
+}
+
+.deckGroupPreviewFan {
+  width: 100%;
+}
+
+.deckRouteRowFooter {
+  flex: 0 0 auto;
+  min-height: 20px;
+}
+
+.deckNavList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border: solid 1px red;
+}
+
+.deckNavItem {
+  display: flex;
+  /* flex-direction: column; */
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+  /* width: calc(var(--card-fan-width, var(--deck-set-w)) + var(--space-5)); */
+  /* height: calc(var(--card-fan-h, var(--deck-set-h)) + var(--space-5)); */
+  /* background: var(--hq-overlay-soft); */
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  /* padding: var(--space-3); */
+  color: var(--hq-text);
+  text-align: left;
+  cursor: pointer;
+  overflow: visible;
+  background: red;
+  padding: 0.5em;
+}
+
+.deckNavItemSelected {
+  border-color: var(--hq-accent);
+  /* background: rgba(230, 179, 90, 0.12); */
+}
+
+.deckNavItemDropOver {
+  border-color: var(--hq-accent);
+}
+
+.deckNavItemTitle {
+  display: none;
+}
+
+.deckGroupsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  overflow-y: auto;
+  max-height: 100%;
+  padding-right: var(--space-2);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.deckGroupCard {
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hq-border-strong);
+  background: var(--hq-surface-900);
+}
+
+.deckGroupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.deckGroupTitle {
+  font-weight: 600;
+}
+
+.deckGroupTitleHidden {
+  min-height: 24px;
+}
+
+.deckGroupActions {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+
+.deckIconButton,
+.deckIconButtonDanger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--hq-border-strong);
+  background: var(--hq-surface-800);
+  color: var(--hq-text);
+  cursor: pointer;
+}
+
+.deckIconButtonDanger {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.deckSetsRow {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.deckSetTiles {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.deckSetTile {
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  padding: 0;
+  width: var(--deck-set-w);
+  height: var(--deck-set-h);
+  box-sizing: border-box;
+}
+
+.deckSetTileSelected {
+  outline: 2px solid var(--hq-accent);
+  box-shadow: 0 0 0 2px rgba(155, 81, 224, 0.15);
+}
+
+.deckSetTileDragging {
+  opacity: 0.2;
+  outline: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.deckSetTileOverlay {
+  border: none;
+  outline: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  background: rgba(8, 10, 12, 0.6);
+  padding: 0;
+  width: var(--deck-set-w);
+  height: var(--deck-set-h);
+  box-sizing: border-box;
+}
+
+.deckSetTileDropPlaceholder {
+  width: var(--deck-set-w);
+  height: var(--deck-set-h);
+  border-radius: 12px;
+  border: 2px dashed rgba(255, 255, 255, 0.35);
+  background: rgba(8, 10, 12, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.deckSetTileDropGhost {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.deckSetThumb {
+  border-radius: 6px;
+}
+
+.deckSetThumbFallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  background: rgba(15, 18, 22, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.deckSetTilePlaceholder {
+  width: var(--deck-set-w);
+  height: var(--deck-set-h);
+  border-radius: 6px;
+  border: 2px dashed rgba(255, 255, 255, 0.25);
+  background: rgba(10, 12, 15, 0.35);
+  color: var(--hq-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.deckSetTilePlaceholder:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(20, 24, 30, 0.55);
+  transform: translateY(-1px);
+}
+
+.deckSetsEmpty {
+  font-size: var(--text-sm);
+  color: var(--hq-text-muted);
+}
+
+.deckGroupPlaceholder {
+  display: flex;
+  align-items: center;
+}
+
+.deckAddGroupRow {
+  padding-top: var(--space-4);
+}
+
+.deckEntriesPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border: 1px solid var(--hq-border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.deckEntriesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.deckEntriesActions {
+  display: inline-flex;
+  gap: var(--space-3);
+}
+
+.deckEntriesGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: flex-start;
+}
+
+.deckEntryCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.deckEntrySelect {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.deckEntryThumb {
+  border-radius: 6px;
+  padding: 2px;
+  background: transparent;
+}
+
+.deckEntryThumbSelected {
+  background: rgba(230, 179, 90, 0.25);
+}
+
+.deckEntryThumbFrame {
+  box-shadow: var(--shadow-soft);
+}
+
+.deckEntryReorder {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+.deckEntryMissing {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--hq-border-strong);
+  color: var(--hq-text-muted);
+  text-align: center;
+}
+
+.decksBackPreview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.deckBacksSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.deckBacksList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-height: 100%;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+.deckBacksHeading {
+  font-weight: 600;
+  color: var(--hq-text);
+  position: sticky;
+  top: 0;
+  background: var(--hq-surface-900);
+  padding: var(--space-1) 0;
+  z-index: 1;
+}
+
+.deckBacksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: var(--space-3);
+}
+
+.deckBacksThumb {
+  display: inline-flex;
+}
+
+.deckBacksThumbDragging {
+  opacity: 0.6;
+}
+
+.pairingUsageList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.pairingUsageItems {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--hq-text-muted);
 }

@@ -1,6 +1,6 @@
 {
   "name": "@markforster/heroquest-card-creator",
-  "version": "0.5.6",
+  "version": "0.6.0",
   "description": "Browser-based tool to design HeroQuest-style cards with accurate layouts, asset library, and PNG export — runs locally.",
   "author": "Mark Forster (markforster)",
   "license": "GPL-3.0",
@@ -87,6 +87,7 @@
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/modifiers": "^6.0.1",
+    "@dnd-kit/sortable": "^10.0.0",
     "@msgpack/msgpack": "^3.1.3",
     "@tanstack/react-query": "^4.36.1",
     "@zip.js/zip.js": "^2.8.21",

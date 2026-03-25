@@ -25,7 +25,6 @@ export const importLibraryRequestPlugin: ZodiosPlugin = {
     const adapter = async (): Promise<AxiosResponse> => {
       const parsed = libraryImportInputSchema.parse(config.data ?? {});
       const handlers = (config as LibraryRequestConfig).hqcc;
-      const name = parsed.fileName.toLowerCase();
       const file =
         parsed.file instanceof File
           ? parsed.file
@@ -33,21 +32,26 @@ export const importLibraryRequestPlugin: ZodiosPlugin = {
               type: parsed.file.type || "application/octet-stream",
             });
 
-      const data = name.endsWith(".hqcc")
+      const header = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+      const isZip =
+        header.length >= 4 &&
+        header[0] === 0x50 &&
+        header[1] === 0x4b &&
+        ((header[2] === 0x03 && header[3] === 0x04) ||
+          (header[2] === 0x05 && header[3] === 0x06) ||
+          (header[2] === 0x07 && header[3] === 0x08));
+
+      const data = isZip
         ? await importBackupHqcc(file, {
             onProgress: handlers?.onProgress,
             onStatus: handlers?.onStatus,
             onSecondaryProgress: handlers?.onSecondaryProgress,
           })
-        : name.endsWith(".hqcc.json")
-          ? await importBackupJson(file, {
-              onProgress: handlers?.onProgress,
-              onStatus: handlers?.onStatus,
-              onSecondaryProgress: handlers?.onSecondaryProgress,
-            })
-          : await (async () => {
-              throw new Error("Unsupported backup file type. Please choose a .hqcc backup file.");
-            })();
+        : await importBackupJson(file, {
+            onProgress: handlers?.onProgress,
+            onStatus: handlers?.onStatus,
+            onSecondaryProgress: handlers?.onSecondaryProgress,
+          });
 
       return {
         data,

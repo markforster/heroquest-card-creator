@@ -8,7 +8,7 @@ import { APP_VERSION } from "@/version";
 import { generateId } from ".";
 
 export const DB_NAME = "hqcc";
-export const DB_VERSION = 5;
+export const DB_VERSION = 6;
 const META_STORE = "meta";
 const META_APP_VERSION_KEY = "appVersion";
 const META_PAIRS_MIGRATED_KEY = "pairsMigrated";
@@ -399,6 +399,43 @@ export async function openHqccDb(): Promise<HqccDb> {
 
       if (!db.objectStoreNames.contains("settings")) {
         db.createObjectStore("settings", { keyPath: "id" });
+      }
+
+      if (!db.objectStoreNames.contains("decks")) {
+        db.createObjectStore("decks", { keyPath: "id" });
+      }
+
+      if (!db.objectStoreNames.contains("deckGroups")) {
+        const groupsStore = db.createObjectStore("deckGroups", { keyPath: "id" });
+        if (!groupsStore.indexNames.contains("deckId")) {
+          groupsStore.createIndex("deckId", "deckId", { unique: false });
+        }
+      }
+
+      if (!db.objectStoreNames.contains("deckSets")) {
+        const setsStore = db.createObjectStore("deckSets", { keyPath: "id" });
+        if (!setsStore.indexNames.contains("deckId")) {
+          setsStore.createIndex("deckId", "deckId", { unique: false });
+        }
+        if (!setsStore.indexNames.contains("groupId")) {
+          setsStore.createIndex("groupId", "groupId", { unique: false });
+        }
+        if (!setsStore.indexNames.contains("backFaceId")) {
+          setsStore.createIndex("backFaceId", "backFaceId", { unique: false });
+        }
+      }
+
+      if (!db.objectStoreNames.contains("deckEntries")) {
+        const entriesStore = db.createObjectStore("deckEntries", { keyPath: "id" });
+        if (!entriesStore.indexNames.contains("deckId")) {
+          entriesStore.createIndex("deckId", "deckId", { unique: false });
+        }
+        if (!entriesStore.indexNames.contains("setId")) {
+          entriesStore.createIndex("setId", "setId", { unique: false });
+        }
+        if (!entriesStore.indexNames.contains("pairId")) {
+          entriesStore.createIndex("pairId", "pairId", { unique: false });
+        }
       }
 
       const metaStore = db.objectStoreNames.contains(META_STORE)

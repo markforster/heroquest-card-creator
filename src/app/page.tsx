@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useFormState, useWatch } from "react-hook-form";
 import {
   HashRouter,
   Link,
@@ -13,6 +14,9 @@ import {
   useParams,
 } from "react-router-dom";
 
+import type { CardRecord } from "@/api/cards";
+import { apiClient } from "@/api/client";
+import { useGetCard } from "@/api/hooks";
 import { AssetsRoutePanels } from "@/components/Assets";
 import CardPreviewContainer from "@/components/Cards/CardEditor/CardPreviewContainer";
 import CardInspector from "@/components/Cards/CardInspector/CardInspector";
@@ -22,6 +26,7 @@ import CardThumbnail from "@/components/common/CardThumbnail";
 import { EscapeStackProvider, useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import { WarningNotice } from "@/components/common/Notice";
 import DatabaseVersionGate from "@/components/DatabaseVersionGate";
+import DecksRoutePanels from "@/components/Decks/DecksRoutePanels";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import HeaderWithTemplatePicker from "@/components/Layout/HeaderWithTemplatePicker";
@@ -58,24 +63,20 @@ import ToolsToolbar from "@/components/ToolsToolbar";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
-import { clearDbEstimateCache, runFullDbEstimate } from "@/lib/indexeddb-size-tracker";
-import { startThumbnailJpegMigration } from "@/lib/thumbnail-jpeg-migration";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/draft-storage";
 import { applyInspectorDefaults, createEditorDefaultValues } from "@/lib/editor-form";
-import { useGetCard } from "@/api/hooks";
-import { apiClient } from "@/api/client";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import type { ExportSettings } from "@/lib/export-settings";
 import formatMessageWith from "@/lib/format-message-with";
+import { clearDbEstimateCache, runFullDbEstimate } from "@/lib/indexeddb-size-tracker";
+import { startThumbnailJpegMigration } from "@/lib/thumbnail-jpeg-migration";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
-import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
-import { useFormState, useWatch } from "react-hook-form";
 
 import styles from "./page.module.css";
 
@@ -87,6 +88,8 @@ function IndexPageInner() {
   const { cardId } = useParams();
   const normalizedCardId = cardId && cardId.trim().length > 0 ? cardId : null;
   const isAssetsRoute = Boolean(useMatch("/assets"));
+  const isDecksRoute = Boolean(useMatch("/decks"));
+  const isDeckDetailRoute = Boolean(useMatch("/decks/:deckId"));
   const isCardsListRoute = Boolean(useMatch("/cards"));
   const isDraftRoute = Boolean(useMatch("/cards/new"));
   const isCardDetailRoute = Boolean(useMatch("/cards/:cardId")) && Boolean(normalizedCardId);
@@ -100,6 +103,12 @@ function IndexPageInner() {
     if (isAssetsRoute) {
       pagePath = "/assets";
       pageTitle = "Assets";
+    } else if (isDeckDetailRoute) {
+      pagePath = "/decks/:id";
+      pageTitle = "Deck Detail";
+    } else if (isDecksRoute) {
+      pagePath = "/decks";
+      pageTitle = "Decks";
     } else if (isDraftRoute) {
       pagePath = "/cards/new";
       pageTitle = "New Card";
@@ -116,16 +125,14 @@ function IndexPageInner() {
     track,
     location.pathname,
     isAssetsRoute,
+    isDecksRoute,
+    isDeckDetailRoute,
     isDraftRoute,
     isSavedCardDetailRoute,
     isCardsListRoute,
   ]);
   const {
-    state: {
-      selectedTemplateId,
-      activeCardIdByTemplate,
-      activeCardStatusByTemplate,
-    },
+    state: { selectedTemplateId, activeCardIdByTemplate, activeCardStatusByTemplate },
     setActiveCard,
     setSelectedTemplateId,
   } = useCardEditor();
@@ -149,9 +156,7 @@ function IndexPageInner() {
     (draftValue && "title" in draftValue && (draftValue as { title?: string | null }).title) || "";
   const hasTitle = Boolean(rawTitle && rawTitle.toString().trim().length > 0);
   const canSaveChanges = Boolean(
-    currentTemplateId &&
-      hasTitle &&
-      (activeCardId && activeStatus === "saved" ? isDirty : true),
+    currentTemplateId && hasTitle && (activeCardId && activeStatus === "saved" ? isDirty : true),
   );
   const canDuplicate = Boolean(activeCardId && activeStatus === "saved");
 
@@ -436,13 +441,7 @@ function IndexPageInner() {
     return () => {
       cancelled = true;
     };
-  }, [
-    activeCardIdByTemplate,
-    normalizedCardId,
-    selectedTemplateId,
-    navigate,
-    isCardsListRoute,
-  ]);
+  }, [activeCardIdByTemplate, normalizedCardId, selectedTemplateId, navigate, isCardsListRoute]);
 
   const shouldLoadCard = Boolean(isSavedCardDetailRoute && normalizedCardId);
   const getCardParams = useMemo(
@@ -941,6 +940,7 @@ function IndexPageInner() {
                 <main className={`${styles.main} d-flex`}>
                   <LeftNav />
                   {isAssetsRoute ? <AssetsRoutePanels /> : null}
+                  {isDecksRoute || isDeckDetailRoute ? <DecksRoutePanels /> : null}
                   {isCardsListRoute ? (
                     <section className={`${styles.leftPanel} d-flex align-items-stretch`}>
                       <StockpileMainPanel
@@ -1203,6 +1203,8 @@ export default function IndexPage() {
                               <Route path="/cards/new" element={<IndexPageInner />} />
                               <Route path="/cards/:cardId" element={<IndexPageInner />} />
                               <Route path="/assets" element={<IndexPageInner />} />
+                              <Route path="/decks" element={<IndexPageInner />} />
+                              <Route path="/decks/:deckId" element={<IndexPageInner />} />
                               <Route path="*" element={<Navigate to="/cards" replace />} />
                             </Routes>
                           </HashRouter>

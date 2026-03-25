@@ -11,7 +11,7 @@ import {
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { FolderPlus, Pencil, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
 import CardPreview from "@/components/Cards/CardPreview";
@@ -67,6 +67,7 @@ import {
   releaseLegacyCardThumbnailUrl,
 } from "@/lib/card-thumbnail-cache";
 import { apiClient } from "@/api/client";
+import { isPairInUseError, type DeckUsageLocation } from "@/lib/decks-errors";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { runBulkExport } from "@/lib/export-cards";
 import type { ExportSettings } from "@/lib/export-settings";
@@ -128,6 +129,7 @@ export default function StockpilePanelContent({
   frame = "panel",
 }: StockpilePanelContentProps) {
   const { t, language } = useI18n();
+  const navigate = useNavigate();
   const { track } = useAnalytics();
   const isPairFronts = mode === "pair-fronts";
   const isPairBacks = mode === "pair-backs";
@@ -155,6 +157,7 @@ export default function StockpilePanelContent({
   } | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const selectedIdsRef = useRef<string[]>([]);
+  const [pairUsagePrompt, setPairUsagePrompt] = useState<DeckUsageLocation[] | null>(null);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
   const [draggingIds, setDraggingIds] = useState<string[]>([]);
   const [pairingBaselineIds, setPairingBaselineIds] = useState<string[]>([]);
@@ -1168,7 +1171,15 @@ export default function StockpilePanelContent({
                       };
 
                       const runHardDelete = async () => {
-                        await Promise.all(ids.map((id) => deletePairsForFaceId(id)));
+                        try {
+                          await Promise.all(ids.map((id) => deletePairsForFaceId(id)));
+                        } catch (error) {
+                          if (isPairInUseError(error)) {
+                            setPairUsagePrompt(error.usage);
+                            return;
+                          }
+                          throw error;
+                        }
                         await apiClient.deleteCards({ ids });
                         clearActiveCardsForDeletedIds();
                         const updates = collections
@@ -1194,7 +1205,15 @@ export default function StockpilePanelContent({
                       };
 
                       const runSoftDelete = async () => {
-                        await Promise.all(ids.map((id) => deletePairsForFaceId(id)));
+                        try {
+                          await Promise.all(ids.map((id) => deletePairsForFaceId(id)));
+                        } catch (error) {
+                          if (isPairInUseError(error)) {
+                            setPairUsagePrompt(error.usage);
+                            return;
+                          }
+                          throw error;
+                        }
                         await apiClient.softDeleteCards({ ids });
                         clearActiveCardsForDeletedIds();
                         await refreshSavedCards();
@@ -1528,6 +1547,31 @@ export default function StockpilePanelContent({
           })()}
         </ConfirmModal>
       ) : null}
+      <ConfirmModal
+        isOpen={Boolean(pairUsagePrompt?.length)}
+        title={t("decks.pairInUseTitle")}
+        confirmLabel={t("decks.openDeck")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={() => {
+          const usage = pairUsagePrompt?.[0];
+          if (usage) {
+            navigate(`/decks/${usage.deckId}`);
+          }
+          setPairUsagePrompt(null);
+        }}
+        onCancel={() => setPairUsagePrompt(null)}
+      >
+        <div className={styles.pairingUsageList}>
+          <div>{t("decks.pairInUseBody")}</div>
+          <ul className={styles.pairingUsageItems}>
+            {(pairUsagePrompt ?? []).map((usage) => (
+              <li key={`${usage.deckId}-${usage.setId}`}>
+                {`${usage.deckTitle} › ${usage.groupTitle} › ${usage.setTitle}`}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </ConfirmModal>
       <StockpilePairPopover
         hoveredPairCardId={hoveredPairCardId}
         pairPopoverAnchor={pairPopoverAnchor}

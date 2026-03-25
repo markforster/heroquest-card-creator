@@ -630,12 +630,14 @@ async function applyBackupObject(
   }
 
   const { apiClient } = await import("@/api/client");
-  const [existingCards, existingAssets, existingCollections, existingPairs] = await Promise.all([
-    apiClient.listCards({ queries: { deleted: "include" } }),
-    apiClient.listAssets(),
-    apiClient.listCollections(),
-    apiClient.listPairs(),
-  ]);
+  const [existingCards, existingAssets, existingCollections, existingPairs, existingDecks] =
+    await Promise.all([
+      apiClient.listCards({ queries: { deleted: "include" } }),
+      apiClient.listAssets(),
+      apiClient.listCollections(),
+      apiClient.listPairs(),
+      apiClient.listDecks({ queries: {} }),
+    ]);
 
   if (existingCards.length > 0) {
     await apiClient.deleteCards({ ids: existingCards.map((card) => card.id) });
@@ -648,6 +650,11 @@ async function applyBackupObject(
       existingCollections.map((collection) =>
         apiClient.deleteCollection(undefined, { params: { id: collection.id } }),
       ),
+    );
+  }
+  if (existingDecks.length > 0) {
+    await Promise.all(
+      existingDecks.map((deck) => apiClient.deleteDeck(undefined, { params: { deckId: deck.id } })),
     );
   }
   if (existingPairs.length > 0) {
@@ -862,12 +869,14 @@ async function applyCompactBackupObject(
   const entryByName = new Map(entries.map((entry) => [entry.filename, entry]));
 
   const { apiClient } = await import("@/api/client");
-  const [existingCards, existingAssets, existingCollections, existingPairs] = await Promise.all([
-    apiClient.listCards({ queries: { deleted: "include" } }),
-    apiClient.listAssets(),
-    apiClient.listCollections(),
-    apiClient.listPairs(),
-  ]);
+  const [existingCards, existingAssets, existingCollections, existingPairs, existingDecks] =
+    await Promise.all([
+      apiClient.listCards({ queries: { deleted: "include" } }),
+      apiClient.listAssets(),
+      apiClient.listCollections(),
+      apiClient.listPairs(),
+      apiClient.listDecks({ queries: {} }),
+    ]);
 
   if (existingCards.length > 0) {
     await apiClient.deleteCards({ ids: existingCards.map((card) => card.id) });
@@ -880,6 +889,11 @@ async function applyCompactBackupObject(
       existingCollections.map((collection) =>
         apiClient.deleteCollection(undefined, { params: { id: collection.id } }),
       ),
+    );
+  }
+  if (existingDecks.length > 0) {
+    await Promise.all(
+      existingDecks.map((deck) => apiClient.deleteDeck(undefined, { params: { deckId: deck.id } })),
     );
   }
   if (existingPairs.length > 0) {
