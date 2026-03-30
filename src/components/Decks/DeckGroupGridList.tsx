@@ -62,6 +62,7 @@ export default function DeckGroupGridList({
   const fanTilt = 0.6;
   const fanSpacing = 0.6;
   const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null);
+  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
   return (
     <GroupDropZoneArea isOver={isDropOver}>
       {groups.length === 0 ? (
@@ -79,27 +80,34 @@ export default function DeckGroupGridList({
               .filter((set) => set.groupId === group.id)
               .sort((a, b) => a.sortIndex - b.sortIndex);
             const backIds = groupSets.map((set) => set.backFaceId);
-            const previewIds = backIds.slice(0, 5);
+            const maxCount = Math.max(backIds.length, 1);
             const isExpanded = selectedGroupId === group.id && groupSets.length > 1;
             const isHovering = hoveredGroupId === group.id && !isExpanded && groupSets.length > 1;
-            const expandedIds = isExpanded || isHovering ? backIds : previewIds;
-            // const effectiveSpacing = isExpanded ? 1 : fanSpacing;
             const preview: ReactNode = (
-                <CardFan
-                  cardIds={expandedIds}
-                  variant={groupTileVariant}
-                  maxCount={isExpanded || isHovering ? expandedIds.length : 5}
-                  stableBaseCount={5}
-                  spacing={fanSpacing}
-                  tilt={fanTilt}
-                  showPlaceholdersWhenEmpty
+              <CardFan
+                cardIds={backIds}
+                variant={groupTileVariant}
+                maxCount={maxCount}
+                collapsedCoreCount={5}
+                spacing={fanSpacing}
+                tilt={fanTilt}
+                showPlaceholdersWhenEmpty
                 className={styles.deckGroupPreviewFan}
+                enableHoverBorder
                 expanded={isExpanded}
                 hovered={isHovering}
+                hoveredCardId={isHovering ? hoveredCardId : null}
                 selectedCardId={
                   selectedSetId
                     ? (groupSets.find((set) => set.id === selectedSetId)?.backFaceId ?? null)
                     : null
+                }
+                onHoverCard={
+                  isHovering
+                    ? (cardId) => {
+                        setHoveredCardId(cardId);
+                      }
+                    : undefined
                 }
                 onSelectCard={(cardId) => {
                   const target = groupSets.find((set) => set.backFaceId === cardId);
@@ -121,7 +129,15 @@ export default function DeckGroupGridList({
                     onSelectSet(groupSets[0]);
                   }
                 }}
-                onHoverChange={(isHovering) => setHoveredGroupId(isHovering ? group.id : null)}
+                onHoverChange={(isHovering) => {
+                  if (isHovering) {
+                    setHoveredGroupId(group.id);
+                    setHoveredCardId(null);
+                  } else {
+                    setHoveredGroupId(null);
+                    setHoveredCardId(null);
+                  }
+                }}
                 preview={preview}
               />
             );

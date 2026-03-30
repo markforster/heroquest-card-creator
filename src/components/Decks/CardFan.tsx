@@ -29,10 +29,11 @@ type CardFanProps = {
   fanType?: "centered" | "ltr" | "rtl";
   expanded?: boolean;
   hovered?: boolean;
-  hoverTilt?: number;
+  hoveredCardId?: string | null;
   hoverSpacing?: number;
-  stableBaseCount?: number;
+  collapsedCoreCount?: number;
   enableHoverBorder?: boolean;
+  onHoverCard?: (cardId: string | null) => void;
   onSelectCard?: (cardId: string, index: number) => void;
   selectedCardId?: string | null;
   className?: string;
@@ -89,39 +90,32 @@ function getOffsets(count: number, fanType: "centered" | "ltr" | "rtl"): number[
   return base;
 }
 
-function getStableOffsets(
+function getCollapsedOffsets(
   count: number,
-  baseCount: number,
+  coreCount: number,
   fanType: "centered" | "ltr" | "rtl",
 ): number[] {
-  const clampedBase = Math.max(0, Math.min(baseCount, count));
-  const baseOffsets = getOffsets(clampedBase, fanType);
-  if (count <= clampedBase) return baseOffsets;
-  if (baseOffsets.length === 0) return getOffsets(count, fanType);
+  const clampedCore = Math.max(1, Math.min(coreCount, count));
+  if (count <= clampedCore) return getOffsets(count, fanType);
 
-  const step =
-    baseOffsets.length > 1 ? Math.abs(baseOffsets[1] - baseOffsets[0]) : 1;
-  if (fanType === "ltr") {
-    const start = Math.max(...baseOffsets);
-    const extras = Array.from({ length: count - clampedBase }, (_, index) =>
-      start + step * (index + 1),
-    );
-    return baseOffsets.concat(extras);
-  }
-  if (fanType === "rtl") {
-    const start = Math.min(...baseOffsets);
-    const extras = Array.from({ length: count - clampedBase }, (_, index) =>
-      start - step * (index + 1),
-    );
-    return baseOffsets.concat(extras);
-  }
+  const start = Math.floor((count - clampedCore) / 2);
+  const end = start + clampedCore - 1;
+  const coreOffsets = getOffsets(clampedCore, fanType);
+  const leftEdge = Math.min(...coreOffsets);
+  const rightEdge = Math.max(...coreOffsets);
 
-  const maxAbs = Math.max(...baseOffsets.map((value) => Math.abs(value)));
-  const extras = Array.from({ length: count - clampedBase }, (_, index) => {
-    const depth = maxAbs + step * (Math.floor(index / 2) + 1);
-    return index % 2 === 0 ? depth : -depth;
+  return Array.from({ length: count }, (_, index) => {
+    if (index < start) return leftEdge;
+    if (index > end) return rightEdge;
+    return coreOffsets[index - start];
   });
-  return baseOffsets.concat(extras);
+}
+
+function getIndexZIndex(count: number, index: number): number {
+  const center = (count - 1) / 2;
+  const depth = Math.abs(index - center);
+  const sideBias = index > center ? 0.1 : index < center ? 0 : 0.2;
+  return Math.round((count - depth + sideBias) * 100);
 }
 
 function getZIndex(offset: number, maxDepth: number, fanType: "centered" | "ltr" | "rtl"): number {
@@ -146,14 +140,16 @@ export default function CardFan({
   fanType = "centered",
   expanded = false,
   hovered = false,
-  hoverTilt = DEFAULT_TILT,
-  hoverSpacing = 0.85,
-  stableBaseCount,
+  hoveredCardId = null,
+  hoverSpacing = 1,
+  collapsedCoreCount = 5,
   enableHoverBorder = false,
+  onHoverCard,
   onSelectCard,
   selectedCardId = null,
   className,
 }: CardFanProps) {
+  const HOVER_TOPMOST = false;
   const isHoverSpread = !expanded && hovered;
   const effectiveTilt = expanded ? 0 : tilt;
   const effectiveSpacing = expanded ? 1 : spacing;
@@ -165,25 +161,57 @@ export default function CardFan({
     return Array.from({ length: maxCount }).map(() => null);
   }, [maxCount, showPlaceholdersWhenEmpty, visibleIds]);
 
-  const offsets =
-    isHoverSpread && stableBaseCount && items.length > stableBaseCount
-      ? getStableOffsets(items.length, stableBaseCount, effectiveFanType)
-      : getOffsets(items.length, effectiveFanType);
+  const offsets = expanded
+    ? getOffsets(items.length, effectiveFanType)
+    : getCollapsedOffsets(items.length, collapsedCoreCount, effectiveFanType);
   const size = CARD_FAN_SIZES[variant];
   const maxDepth = offsets.length ? Math.max(...offsets.map((value) => Math.abs(value))) : 0;
   const rotateDeg = 6 * effectiveTilt;
-  const offsetPx = expanded
-    ? size.width + 8
-    : isHoverSpread
-      ? size.width * 0.5
-      : 8 * effectiveSpacing;
+  const offsetPx = expanded ? size.width + 8 : 8 * effectiveSpacing;
   const baselineY = size.height;
+  const hoveredIndex =
+    isHoverSpread && hoveredCardId ? items.findIndex((id) => id === hoveredCardId) : -1;
+  const hoverShiftPx = size.width * 0.25 * hoverSpacing;
+
+  const baseCenters = offsets.map((offset) => offset * offsetPx);
+  const hoverCenters =
+    hoveredIndex >= 0 && isHoverSpread
+      ? (() => {
+          const visualOrder = baseCenters
+            .map((center, index) => ({ center, index }))
+            .sort((a, b) => a.center - b.center || a.index - b.index);
+          const hoveredVisualIndex = visualOrder.findIndex(
+            (entry) => entry.index === hoveredIndex,
+          );
+          if (hoveredVisualIndex < 0) return baseCenters;
+          const visualIndexByCard = new Map(
+            visualOrder.map((entry, visualIndex) => [entry.index, visualIndex]),
+          );
+          return baseCenters.map((center, index) => {
+            const visualIndex = visualIndexByCard.get(index) ?? index;
+            const shift = (visualIndex - hoveredVisualIndex) * hoverShiftPx;
+            return center + shift;
+          });
+        })()
+      : baseCenters;
+  const baseCenterAvg = baseCenters.length
+    ? baseCenters.reduce((sum, value) => sum + value, 0) / baseCenters.length
+    : 0;
+  const hoverCenterAvg = hoverCenters.length
+    ? hoverCenters.reduce((sum, value) => sum + value, 0) / hoverCenters.length
+    : 0;
+  const centerDelta =
+    hoveredIndex >= 0 && isHoverSpread ? hoverCenterAvg - baseCenterAvg : 0;
 
   const layout = offsets.map((offset, index) => {
     const angle = offset * rotateDeg;
-    const centerX = offset * offsetPx;
+    const centerX = hoverCenters[index] - centerDelta;
     const centerY = baselineY;
-    const zIndex = getZIndex(offset, maxDepth, effectiveFanType);
+    const baseZIndex = expanded
+      ? getZIndex(offset, maxDepth, effectiveFanType)
+      : getIndexZIndex(items.length, index);
+    const zIndex =
+      HOVER_TOPMOST && hoveredIndex === index ? baseZIndex + 1000 : baseZIndex;
     return {
       cardId: items[index],
       offset,
@@ -243,6 +271,8 @@ export default function CardFan({
       style={style}
       data-expanded={expanded ? "true" : "false"}
       data-hovered={hovered ? "true" : "false"}
+      data-hover-border={enableHoverBorder ? "true" : "false"}
+      onMouseLeave={onHoverCard ? () => onHoverCard(null) : undefined}
     >
       <svg
         className={styles.cardFanSvg}
@@ -272,6 +302,20 @@ export default function CardFan({
                   transition: "transform 180ms ease",
                   cursor: canSelect ? "pointer" : "default",
                 }}
+                onMouseEnter={
+                  cardId && onHoverCard
+                    ? () => {
+                        onHoverCard(cardId);
+                      }
+                    : undefined
+                }
+                onMouseMove={
+                  cardId && onHoverCard
+                    ? () => {
+                        onHoverCard(cardId);
+                      }
+                    : undefined
+                }
                 onClick={
                   canSelect
                     ? (event) => {

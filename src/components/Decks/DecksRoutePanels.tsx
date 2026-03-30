@@ -18,6 +18,8 @@ import DecksGridPanel from "@/components/Decks/DecksGridPanel";
 import DeckDetailPanel from "@/components/Decks/DeckDetailPanel";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
+import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
+import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 import formatMessageWith from "@/lib/format-message-with";
@@ -92,28 +94,85 @@ function BackPanelDraggableThumb({ cardId }: { cardId: string }) {
   );
 }
 
-function BackCardsByCollection({
-  groups,
+type BackFilter =
+  | { type: "all" }
+  | { type: "recent" }
+  | { type: "unfiled" }
+  | { type: "recentlyDeleted" }
+  | { type: "collection"; id: string };
+
+function DeckBacksPanel({
+  collections,
+  cards,
   emptyLabel,
+  activeFilter,
+  onFilterChange,
 }: {
-  groups: Array<{ collection: CollectionRecord; cards: CardRecord[] }>;
+  collections: CollectionRecord[];
+  cards: CardRecord[];
   emptyLabel: string;
+  activeFilter: BackFilter;
+  onFilterChange: (next: BackFilter) => void;
 }) {
-  if (groups.length === 0) {
-    return <div className={styles.decksEmpty}>{emptyLabel}</div>;
-  }
+  const {
+    filteredCards,
+    collectionCounts,
+    unfiledCount,
+    visibleCollectionIds,
+    overallCount,
+    recentCards,
+    recentlyDeletedCount,
+    recentlyDeletedTotalCount,
+  } = useStockpileFilters({
+    cards,
+    collections,
+    search: "",
+    templateFilter: "back",
+    activeFilter,
+    isPairMode: true,
+    isPairBacks: true,
+    showUnpairedOnly: false,
+    showMissingArtworkOnly: false,
+  });
+
+  const visibleCollections = collections.filter((collection) =>
+    visibleCollectionIds.has(collection.id),
+  );
+
   return (
-    <div className={styles.deckBacksList}>
-      {groups.map(({ collection, cards }) => (
-        <div key={collection.id} className={styles.deckBacksSection}>
-          <div className={styles.deckBacksHeading}>{collection.name}</div>
+    <div className={styles.deckBacksPanel}>
+      <div className={styles.deckBacksToolbar}>Back faces</div>
+      <div className={styles.deckBacksFilter}>
+        <StockpileSidebar
+          dragEnabled={false}
+          activeFilter={activeFilter}
+          onFilterChange={onFilterChange}
+          isPairMode
+          showMissingArtworkOnly={false}
+          collectionsWithMissingArtwork={new Set()}
+          selectedIds={[]}
+          onClearSelection={() => {}}
+          recentCardsCount={recentCards.length}
+          recentlyDeletedCount={recentlyDeletedCount}
+          recentlyDeletedTotalCount={recentlyDeletedTotalCount}
+          overallCount={overallCount}
+          unfiledCount={unfiledCount}
+          visibleCollections={visibleCollections}
+          collectionCounts={collectionCounts}
+          selectedCountByCollection={new Map()}
+        />
+      </div>
+      <div className={styles.deckBacksGridPanel}>
+        {filteredCards.length === 0 ? (
+          <div className={styles.decksEmpty}>{emptyLabel}</div>
+        ) : (
           <div className={styles.deckBacksGrid}>
-            {cards.map((card) => (
+            {filteredCards.map((card) => (
               <BackPanelDraggableThumb key={card.id} cardId={card.id} />
             ))}
           </div>
-        </div>
-      ))}
+        )}
+      </div>
     </div>
   );
 }
@@ -216,9 +275,9 @@ export default function DecksRoutePanels() {
   const [setTitleDraft, setSetTitleDraft] = useState("");
   const [setDescriptionDraft, setSetDescriptionDraft] = useState("");
   const [isRightPanelVisible, setIsRightPanelVisible] = useState(false);
-  const [backCollections, setBackCollections] = useState<
-    Array<{ collection: CollectionRecord; cards: CardRecord[] }>
-  >([]);
+  const [backCollections, setBackCollections] = useState<CollectionRecord[]>([]);
+  const [backCards, setBackCards] = useState<CardRecord[]>([]);
+  const [backFilter, setBackFilter] = useState<BackFilter>({ type: "all" });
   const [isGroupDropOver, setIsGroupDropOver] = useState(false);
   const [backCard, setBackCard] = useState<CardRecord | null>(null);
   const [isRebuildConfirmOpen, setIsRebuildConfirmOpen] = useState(false);
@@ -461,27 +520,16 @@ export default function DecksRoutePanels() {
   useEffect(() => {
     if (!isRightPanelVisible) return;
     let active = true;
-    Promise.all([apiClient.listCollections(), apiClient.listPairs(), apiClient.listCards()])
-      .then(([collections, pairs, cards]) => {
+    Promise.all([apiClient.listCollections(), apiClient.listCards()])
+      .then(([collections, cards]) => {
         if (!active) return;
-        const backIds = new Set(
-          pairs.map((pair) => pair.backFaceId).filter((id): id is string => Boolean(id)),
-        );
-        const cardById = new Map(cards.map((card) => [card.id, card]));
-        const next = collections
-          .map((collection) => {
-            const collectionCards = collection.cardIds
-              .filter((id) => backIds.has(id))
-              .map((id) => cardById.get(id))
-              .filter((card): card is CardRecord => Boolean(card));
-            return { collection, cards: collectionCards };
-          })
-          .filter((entry) => entry.cards.length > 0);
-        setBackCollections(next);
+        setBackCards(cards);
+        setBackCollections(collections);
       })
       .catch(() => {
         if (!active) return;
         setBackCollections([]);
+        setBackCards([]);
       });
     return () => {
       active = false;
@@ -538,7 +586,9 @@ export default function DecksRoutePanels() {
     });
     const nextDecks = await fetchDecks();
     await refreshDeckPreviews(nextDecks);
-    navigate(`/decks/${created.id}`);
+    setSelectedDeckIds(new Set([created.id]));
+    setDeckTitleDraft("");
+    setDeckDescriptionDraft("");
   };
 
   const handleDeleteDecks = async () => {
@@ -1089,7 +1139,13 @@ export default function DecksRoutePanels() {
       )}
       deckSetThumb={(cardId) => <DeckSetThumb cardId={cardId} />}
       backCardsByCollection={
-        <BackCardsByCollection groups={backCollections} emptyLabel={t("decks.emptyEntries")} />
+        <DeckBacksPanel
+          collections={backCollections}
+          cards={backCards}
+          emptyLabel={t("empty.noBackCards")}
+          activeFilter={backFilter}
+          onFilterChange={(next) => setBackFilter(next)}
+        />
       }
     />
   );

@@ -6688,6 +6688,17 @@ button.assetsKindBadge:disabled {
   text-align: center;
 }
 
+.deckTileCreate {
+  border-style: dashed;
+  color: var(--hq-text-muted);
+  justify-content: center;
+}
+
+.deckTileCreateIcon {
+  width: 36px;
+  height: 36px;
+}
+
 .deckTileSelected {
   border-color: var(--hq-accent);
   box-shadow: 0 0 0 2px rgba(230, 179, 90, 0.25);
@@ -6732,6 +6743,10 @@ button.assetsKindBadge:disabled {
   opacity: 1;
 }
 
+.cardFan[data-hover-border="true"] .cardFanCardSvg:hover image {
+  filter: brightness(1.25) saturate(1.08);
+}
+
 .cardFanHover {
   fill: none;
   stroke: rgba(230, 179, 90, 0.55);
@@ -6759,6 +6774,10 @@ button.assetsKindBadge:disabled {
   font-size: var(--text-sm);
   color: var(--hq-text-muted);
   width: 100%;
+}
+
+.decksCreateModalBody {
+  padding: var(--space-8) var(--space-10);
 }
 
 .deckPreviewThumb {
@@ -7328,6 +7347,33 @@ button.assetsKindBadge:disabled {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
   gap: var(--space-3);
+}
+
+.deckBacksPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.deckBacksToolbar {
+  flex: 0 1 auto;
+  padding: var(--space-4) var(--space-6);
+  font-weight: 600;
+  border-bottom: 1px solid var(--hq-border-strong);
+}
+
+.deckBacksFilter {
+  flex: 1 0 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.deckBacksGridPanel {
+  flex: 1 0 0;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-4);
 }
 
 .deckBacksThumb {

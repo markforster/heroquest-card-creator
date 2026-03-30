@@ -307,7 +307,7 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
         </section>
         {isRightPanelVisible ? (
           <aside className={`${styles.rightPanel} ${styles.decksRightPanel}`}>
-            <div className={styles.decksRightSection}>{backCardsByCollection}</div>
+            {backCardsByCollection}
           </aside>
         ) : null}
       </DndContext>
