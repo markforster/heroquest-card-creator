@@ -16,7 +16,7 @@ export default function AssetsEmptyState() {
         </h2>
         <p className={styles.assetsEmptyStateBody}>{t("empty.assetsLibraryBody")}</p>
         <a
-          className={styles.assetsEmptyStateCta}
+          className="btn btn-primary btn-sm"
           href={OFFICIAL_ARTWORK_PACK_URL}
           target="_blank"
           rel="noopener noreferrer"
