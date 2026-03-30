@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Coffee, Facebook, MessageCircle, Twitter, UsersRound } from "lucide-react";
+import { Coffee, Facebook, MessageCircle, Twitter, UsersRound, Youtube } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
@@ -66,6 +66,16 @@ export default function MainHeader({
             title={t("tooltip.socialFacebook")}
           >
             <Facebook className={styles.headerSocialIcon} />
+          </a>
+          <a
+            href="https://www.youtube.com/@HeroQuestCardCreator"
+            target="_blank"
+            rel="noreferrer noopener"
+            className={styles.headerSocialLink}
+            aria-label="YouTube"
+            title={t("tooltip.socialYoutube")}
+          >
+            <Youtube className={styles.headerSocialIcon} />
           </a>
           <a
             href="https://mark-forster.itch.io/heroquest-card-creator/community"

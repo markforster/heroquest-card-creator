@@ -408,6 +408,7 @@ export const en = {
   "tooltip.appVersion": "App version",
   "tooltip.socialTwitter": "Visit us on Twitter",
   "tooltip.socialFacebook": "Visit us on Facebook",
+  "tooltip.socialYoutube": "Visit us on YouTube",
   "tooltip.socialCommunity": "Check out the community",
   "tooltip.socialDiscord": "Join our Discord",
   "tooltip.socialBuyCoffee": "Buy me a coffee",

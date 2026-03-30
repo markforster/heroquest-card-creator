@@ -368,6 +368,7 @@ export const sv = {
   "tooltip.appVersion": "Appversion",
   "tooltip.socialTwitter": "Besök oss på Twitter",
   "tooltip.socialFacebook": "Besök oss på Facebook",
+  "tooltip.socialYoutube": "Besök oss på YouTube",
   "tooltip.socialCommunity": "Kolla in communityn",
   "tooltip.socialDiscord": "Gå med i vår Discord",
   "tooltip.socialBuyCoffee": "Bjud mig på en kaffe",

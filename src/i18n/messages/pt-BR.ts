@@ -368,6 +368,7 @@ export const ptBR = {
   "tooltip.appVersion": "Versão do app",
   "tooltip.socialTwitter": "Visite-nos no Twitter",
   "tooltip.socialFacebook": "Visite-nos no Facebook",
+  "tooltip.socialYoutube": "Visite-nos no YouTube",
   "tooltip.socialCommunity": "Confira a comunidade",
   "tooltip.socialDiscord": "Entre no nosso Discord",
   "tooltip.socialBuyCoffee": "Me pague um cafezinho",

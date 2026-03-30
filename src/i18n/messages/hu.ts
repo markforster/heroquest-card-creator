@@ -368,6 +368,7 @@ export const hu = {
   "tooltip.appVersion": "App verzió",
   "tooltip.socialTwitter": "Látogass meg minket Twitteren",
   "tooltip.socialFacebook": "Látogass meg minket Facebookon",
+  "tooltip.socialYoutube": "Látogass meg minket YouTube-on",
   "tooltip.socialCommunity": "Nézd meg a közösséget",
   "tooltip.socialDiscord": "Csatlakozz a Discordunkhoz",
   "tooltip.socialBuyCoffee": "Vegyél nekem egy kávét",

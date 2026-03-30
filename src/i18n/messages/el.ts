@@ -368,6 +368,7 @@ export const el = {
   "tooltip.appVersion": "Έκδοση εφαρμογής",
   "tooltip.socialTwitter": "Επισκεφθείτε μας στο Twitter",
   "tooltip.socialFacebook": "Επισκεφθείτε μας στο Facebook",
+  "tooltip.socialYoutube": "Επισκεφθείτε μας στο YouTube",
   "tooltip.socialCommunity": "Δείτε την κοινότητα",
   "tooltip.socialDiscord": "Μπείτε στο Discord μας",
   "tooltip.socialBuyCoffee": "Κέρασέ με έναν καφέ",
