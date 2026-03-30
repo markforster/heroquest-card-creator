@@ -5139,6 +5139,152 @@
   text-align: center;
 }
 
+.assetsEmptyStateCard {
+  width: min(760px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: clamp(var(--space-5), 4vw, var(--space-8));
+  border: 1px solid var(--hq-surface-700);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, var(--hq-surface-card), color-mix(in srgb, var(--hq-surface-card) 82%, black));
+  box-shadow: var(--shadow-popover);
+  text-align: left;
+}
+
+.assetsEmptyStateTitle {
+  margin: 0;
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  line-height: 1.15;
+}
+
+.assetsEmptyStateBody {
+  margin: 0;
+  color: var(--hq-text-muted);
+  line-height: 1.6;
+}
+
+.assetsEmptyStateCta {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 var(--space-5);
+  border-radius: 999px;
+  border: 1px solid var(--hq-accent);
+  background: var(--hq-accent-soft);
+  color: var(--hq-accent);
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.assetsEmptyStateCta:hover,
+.assetsEmptyStateCta:focus-visible {
+  background: var(--hq-accent-soft-hover);
+  color: var(--hq-accent);
+  transform: translateY(-1px);
+}
+
+.assetsEmptyStateSteps {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  color: var(--hq-text);
+}
+
+.assetsEmptyStateSecondary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hq-surface-700);
+}
+
+.assetsEmptyStateSecondaryTitle {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.assetsEmptyStateSecondaryBody {
+  margin: 0;
+  color: var(--hq-text-muted);
+  line-height: 1.6;
+}
+
+.assetsEmptyStateGptList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--space-3);
+}
+
+.assetsEmptyStateGptCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--hq-surface-700);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--hq-surface-card) 88%, black);
+}
+
+.assetsEmptyStateGptCardTitle,
+.assetsEmptyStateGptCardMeta,
+.assetsEmptyStateGptCardBody {
+  margin: 0;
+}
+
+.assetsEmptyStateGptCardTitle {
+  font-size: var(--text-md);
+}
+
+.assetsEmptyStateGptCardMeta {
+  color: var(--hq-accent);
+  font-size: var(--text-sm);
+}
+
+.assetsEmptyStateGptCardBody {
+  color: var(--hq-text-muted);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.assetsEmptyStateGptCardLink {
+  color: var(--hq-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.assetsEmptyStateGptCardLink:hover,
+.assetsEmptyStateGptCardLink:focus-visible {
+  text-decoration: underline;
+}
+
+.assetsResourcesMenu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.assetsResourcesPopover {
+  right: 0;
+  left: auto;
+  width: max-content;
+  min-width: 220px;
+}
+
+.assetsResourcesMenuItem {
+  justify-content: flex-start;
+  gap: var(--space-4);
+}
+
 .assetsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));

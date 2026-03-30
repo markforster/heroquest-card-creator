@@ -424,6 +424,15 @@ export default function StockpilePanelContent({
     return selectedIds.filter((id) => visibleIds.has(id));
   }, [filteredCards, selectedIds]);
   const hasMultiSelection = selectedIds.length > 1;
+  const hasSavedCards = cards.some((card) => card.deletedAt == null);
+  const hasRecentlyDeletedCards = cards.some((card) => typeof card.deletedAt === "number");
+  const isLibraryEmpty = !hasSavedCards && !hasRecentlyDeletedCards;
+  const hasActiveNarrowing =
+    search.trim().length > 0 ||
+    templateFilter !== "all" ||
+    showUnpairedOnly ||
+    showMissingArtworkOnly ||
+    activeFilter.type !== "all";
   const templateFilterLabelMap = useMemo(() => {
     const map: Record<string, string> = {};
     cardTemplates.forEach((template) => {
@@ -1285,6 +1294,9 @@ export default function StockpilePanelContent({
                       templateFilter={templateFilter}
                       totalCount={totalCount}
                       filterLabel={filterLabel}
+                      frame={frame}
+                      isLibraryEmpty={isLibraryEmpty}
+                      hasActiveNarrowing={hasActiveNarrowing}
                       isTableView={isTableView}
                       cardViews={cardViews}
                       cardActions={cardActions}

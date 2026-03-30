@@ -3,6 +3,7 @@
 import styles from "@/app/page.module.css";
 import StockpileCardsGrid from "@/components/Stockpile/StockpileCardsGrid";
 import StockpileCardsTable from "@/components/Stockpile/StockpileCardsTable";
+import StockpileEmptyState from "@/components/Stockpile/StockpileEmptyState";
 import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardRecord } from "@/api/cards";
@@ -19,6 +20,9 @@ type StockpileContentPaneProps = {
   templateFilter: string;
   totalCount: number;
   filterLabel: string;
+  frame: "panel" | "modal";
+  isLibraryEmpty: boolean;
+  hasActiveNarrowing: boolean;
   isTableView: boolean;
   cardViews: StockpileCardView[];
   cardActions: StockpileCardActions;
@@ -43,6 +47,9 @@ export default function StockpileContentPane({
   templateFilter,
   totalCount,
   filterLabel,
+  frame,
+  isLibraryEmpty,
+  hasActiveNarrowing,
   isTableView,
   cardViews,
   cardActions,
@@ -53,6 +60,9 @@ export default function StockpileContentPane({
   tableHeaders,
 }: StockpileContentPaneProps) {
   const { t } = useI18n();
+  const shouldShowLibraryEmptyState =
+    frame === "panel" && !isPairMode && isLibraryEmpty && !hasActiveNarrowing;
+
   return (
     <div
       className={styles.assetsGridContainer}
@@ -62,21 +72,25 @@ export default function StockpileContentPane({
       }}
     >
       {filteredCards.length === 0 ? (
-        <div className={styles.assetsEmptyState}>
-          {search.trim()
-            ? t("empty.noCardsFound")
-            : activeFilter.type === "recent"
-              ? t("empty.noRecentCards")
-              : activeFilter.type === "recentlyDeleted"
-                ? t("empty.noRecentlyDeletedCards")
-              : activeFilter.type === "collection"
-                ? templateFilter !== "all" && totalCount > 0
-                  ? `${t("empty.collectionFilteredByType")} ${filterLabel}.`
-                  : t("empty.collectionEmpty")
-                : activeFilter.type === "unfiled"
-                  ? t("empty.nothingUnfiled")
-                  : t("empty.noSavedCards")}
-        </div>
+        shouldShowLibraryEmptyState ? (
+          <StockpileEmptyState />
+        ) : (
+          <div className={styles.assetsEmptyState}>
+            {search.trim()
+              ? t("empty.noCardsFound")
+              : activeFilter.type === "recent"
+                ? t("empty.noRecentCards")
+                : activeFilter.type === "recentlyDeleted"
+                  ? t("empty.noRecentlyDeletedCards")
+                : activeFilter.type === "collection"
+                  ? templateFilter !== "all" && totalCount > 0
+                    ? `${t("empty.collectionFilteredByType")} ${filterLabel}.`
+                    : t("empty.collectionEmpty")
+                  : activeFilter.type === "unfiled"
+                    ? t("empty.nothingUnfiled")
+                    : t("empty.noSavedCards")}
+          </div>
+        )
       ) : (
         <>
           {isTableView ? (
