@@ -368,6 +368,7 @@ export const cs = {
   "tooltip.appVersion": "Verze aplikace",
   "tooltip.socialTwitter": "Navštivte nás na Twitteru",
   "tooltip.socialFacebook": "Navštivte nás na Facebooku",
+  "tooltip.socialYoutube": "Navštivte nás na YouTube",
   "tooltip.socialCommunity": "Podívejte se na komunitu",
   "tooltip.socialDiscord": "Připojte se k našemu Discordu",
   "tooltip.socialBuyCoffee": "Pozvěte mě na kávu",

@@ -368,6 +368,7 @@ export const fi = {
   "tooltip.appVersion": "Sovellusversio",
   "tooltip.socialTwitter": "Vieraile Twitterissä",
   "tooltip.socialFacebook": "Vieraile Facebookissa",
+  "tooltip.socialYoutube": "Vieraile YouTubessa",
   "tooltip.socialCommunity": "Tutustu yhteisöön",
   "tooltip.socialDiscord": "Liity Discordiimme",
   "tooltip.socialBuyCoffee": "Tarjoa minulle kahvi",

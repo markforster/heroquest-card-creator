@@ -368,6 +368,7 @@ export const es = {
   "tooltip.appVersion": "Versión de la app",
   "tooltip.socialTwitter": "Visítanos en Twitter",
   "tooltip.socialFacebook": "Visítanos en Facebook",
+  "tooltip.socialYoutube": "Visítanos en YouTube",
   "tooltip.socialCommunity": "Descubre la comunidad",
   "tooltip.socialDiscord": "Únete a nuestro Discord",
   "tooltip.socialBuyCoffee": "Cómprame un café",

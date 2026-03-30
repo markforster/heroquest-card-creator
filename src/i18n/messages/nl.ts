@@ -368,6 +368,7 @@ export const nl = {
   "tooltip.appVersion": "App-versie",
   "tooltip.socialTwitter": "Bezoek ons op Twitter",
   "tooltip.socialFacebook": "Bezoek ons op Facebook",
+  "tooltip.socialYoutube": "Bezoek ons op YouTube",
   "tooltip.socialCommunity": "Bekijk de community",
   "tooltip.socialDiscord": "Word lid van onze Discord",
   "tooltip.socialBuyCoffee": "Trakteer me op een koffie",
