@@ -1,11 +1,21 @@
 "use client";
 
-import { Search, Trash2, Upload } from "lucide-react";
+import {
+  BookOpen,
+  CircleUserRound,
+  Download,
+  ImagePlus,
+  Search,
+  ScrollText,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext } from "react-hook-form";
 
 import styles from "@/app/page.module.css";
+import AssetsEmptyState from "@/components/Assets/AssetsEmptyState";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
 import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
 import IconButton from "@/components/common/IconButton";
@@ -37,8 +47,12 @@ import { groupAssetsByKind } from "@/lib/assets-grouping";
 import { isSafariBrowser } from "@/lib/browser";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
 import type { OpenCloseProps } from "@/types/ui";
+import {
+  RESOURCES_MENU_LINKS,
+  type ResourceMenuIcon,
+} from "@/components/Assets/assetsResources";
 
-import type { Dispatch, SetStateAction } from "react";
+import type { ComponentType, Dispatch, SetStateAction } from "react";
 
 type AssetsPanelMode = "manage" | "select";
 
@@ -85,6 +99,12 @@ type UploadProgressState = {
 const ENABLE_UPLOAD_PROGRESS = true;
 const ENABLE_UPLOAD_DEBUG_DELAY = true;
 const UPLOAD_DEBUG_DELAY_MS = 1;
+const RESOURCE_ICON_BY_KIND: Record<ResourceMenuIcon, ComponentType<{ className?: string }>> = {
+  download: Download,
+  "art-generator": ImagePlus,
+  "card-art": ScrollText,
+  "icon-generator": CircleUserRound,
+};
 
 async function maybeDelayUploadStep(): Promise<void> {
   if (!ENABLE_UPLOAD_DEBUG_DELAY) return;
@@ -122,6 +142,8 @@ export default function AssetsPanelContent({
   const kindFilterRef = useRef<HTMLDivElement | null>(null);
   const [isMimeFilterOpen, setIsMimeFilterOpen] = useState(false);
   const mimeFilterRef = useRef<HTMLDivElement | null>(null);
+  const [isResourcesMenuOpen, setIsResourcesMenuOpen] = useState(false);
+  const resourcesMenuRef = useRef<HTMLDivElement | null>(null);
   const [activeKindPopoverId, setActiveKindPopoverId] = useState<string | null>(null);
   const [kindPopoverStyle, setKindPopoverStyle] = useState<React.CSSProperties | null>(null);
   const kindPopoverRef = useRef<HTMLDivElement | null>(null);
@@ -226,6 +248,18 @@ export default function AssetsPanelContent({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMimeFilterOpen]);
+
+  useEffect(() => {
+    if (!isResourcesMenuOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!resourcesMenuRef.current) return;
+      if (!resourcesMenuRef.current.contains(event.target as Node)) {
+        setIsResourcesMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isResourcesMenuOpen]);
 
   useEffect(() => {
     if (!activeKindPopoverId) return;
@@ -374,6 +408,11 @@ export default function AssetsPanelContent({
     }
   }, [isOpen, selectedIds]);
 
+  useEffect(() => {
+    if (isOpen) return;
+    setIsResourcesMenuOpen(false);
+  }, [isOpen]);
+
   const [visibleAssetIds, setVisibleAssetIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
@@ -511,6 +550,7 @@ export default function AssetsPanelContent({
   const groupedAssets = groupAssetsByKind(filteredAssets, preferredKindOrder).filter(
     (group) => group.assets.length > 0,
   );
+  const isLibraryEmpty = assets.length === 0;
 
   const totalCount = assets.length;
   const artworkCount = assets.filter(
@@ -1131,6 +1171,42 @@ export default function AssetsPanelContent({
               {selectedIds.size > 1 ? ` (${selectedIds.size})` : ""}
             </IconButton>
           )}
+          <div className={styles.assetsResourcesMenu} ref={resourcesMenuRef}>
+            <IconButton
+              className="btn btn-outline-secondary btn-sm"
+              icon={BookOpen}
+              iconOnly
+              onClick={() => setIsResourcesMenuOpen((prev) => !prev)}
+              title={t("tooltip.assetsResources")}
+            >
+              {null}
+            </IconButton>
+            {isResourcesMenuOpen ? (
+              <div
+                className={`${styles.cardsFilterPopover} ${styles.assetsResourcesPopover}`}
+                role="menu"
+                aria-label={t("label.assetsResources")}
+              >
+                {RESOURCES_MENU_LINKS.map((link) => {
+                  const Icon = RESOURCE_ICON_BY_KIND[link.icon];
+                  return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${styles.cardsFilterItem} ${styles.assetsResourcesMenuItem}`}
+                    role="menuitem"
+                    onClick={() => setIsResourcesMenuOpen(false)}
+                  >
+                    <Icon className={styles.icon} aria-hidden="true" />
+                    <span>{t(link.labelKey)}</span>
+                  </a>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
           <input
             ref={fileInputRef}
             type="file"
@@ -1164,7 +1240,11 @@ export default function AssetsPanelContent({
             ))}
           </div>
         ) : filteredAssets.length === 0 ? (
-          <div className={styles.assetsEmptyState}>{t("empty.noAssets")}</div>
+          isLibraryEmpty ? (
+            <AssetsEmptyState />
+          ) : (
+            <div className={styles.assetsEmptyState}>{t("empty.noAssets")}</div>
+          )
         ) : (
           <div className={styles.assetsGroups}>
             {groupedAssets.map((group) => (
