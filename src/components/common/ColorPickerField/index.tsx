@@ -11,6 +11,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { formatHexColor, parseHexColor } from "@/lib/color";
 import { clamp } from "@/lib/math";
 
+import ColorInputField from "./ColorInputField";
 import styles from "./ColorPickerField.module.css";
 
 import type { CSSProperties, ReactNode, RefObject } from "react";
@@ -275,9 +276,12 @@ export default function ColorPickerField({
     const normalized = toNormalizedHex(value, allowAlpha);
     if (normalized) {
       onChange(normalized);
+      setHexDraft(normalized);
+      setIsEditingHex(false);
       return;
     }
     onChange(value);
+    setIsEditingHex(false);
   };
 
   const handleHexChange = (value: string) => {
@@ -294,6 +298,11 @@ export default function ColorPickerField({
     } else {
       setHexDraft(normalizedInput);
     }
+    setIsEditingHex(false);
+  };
+
+  const resetHexDraft = () => {
+    setHexDraft(normalizedInput);
     setIsEditingHex(false);
   };
 
@@ -315,23 +324,14 @@ export default function ColorPickerField({
       <div className={styles.fieldRow}>
         {showInput ? (
           <div className={styles.inputWrap}>
-            <input
+            <ColorInputField
               className={styles.hexInput}
-              type="text"
               value={hexDraft}
-              onChange={(event) => handleHexChange(event.target.value)}
+              onDraftChange={handleHexChange}
               disabled={isDisabled}
-              spellCheck={false}
-              autoCapitalize="none"
-              autoCorrect="off"
-              inputMode="text"
-              onBlur={commitHexDraft}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  commitHexDraft();
-                }
-              }}
+              allowAlpha={allowAlpha}
+              onCommit={commitHexDraft}
+              onCancelOrReset={resetHexDraft}
             />
           </div>
         ) : null}
@@ -407,10 +407,17 @@ export default function ColorPickerField({
                   onChange={(value) => {
                     const next = rgbaToHex(value);
                     handleChangeNormalized(next);
-                    setIsEditingHex(false);
-                    setHexDraft(next);
                   }}
                   className={styles.colorful}
+                />
+                <ColorInputField
+                  className={styles.hexInput}
+                  value={hexDraft}
+                  onDraftChange={handleHexChange}
+                  disabled={isDisabled}
+                  allowAlpha={allowAlpha}
+                  onCommit={commitHexDraft}
+                  onCancelOrReset={resetHexDraft}
                 />
                 {presetSwatches.length > 0 ? (
                   <div className={styles.presetSwatches}>
