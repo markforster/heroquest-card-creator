@@ -1,6 +1,7 @@
 "use client";
 
 import { DndContext, DragOverlay, pointerWithin } from "@dnd-kit/core";
+import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { ChevronLeft, ChevronRight, Copy, Trash2 } from "lucide-react";
 import { useMemo } from "react";
 
@@ -12,7 +13,13 @@ import DeckGroupGridList from "@/components/Decks/DeckGroupGridList";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import type { TFunction } from "@/i18n/types";
 
-import type { DragEndEvent, DragOverEvent, DragStartEvent, DndContextProps } from "@dnd-kit/core";
+import type {
+  DragEndEvent,
+  DragMoveEvent,
+  DragOverEvent,
+  DragStartEvent,
+  DndContextProps,
+} from "@dnd-kit/core";
 import type { ReactNode } from "react";
 
 type DeckDetailPanelProps = {
@@ -43,17 +50,25 @@ type DeckDetailPanelProps = {
   isDeleteGroupOpen: boolean;
   isRebuildConfirmOpen: boolean;
   pendingRebuildSetId: string | null;
-  dragActiveSetId: string | null;
-  setDragActiveSetId: (value: string | null) => void;
-  setDragOverId: (value: string | null) => void;
-  setIsGroupDropOver: (value: boolean) => void;
-  isGroupDropOver: boolean;
+  dragState: {
+    dragActiveSetId: string | null;
+    dragActiveBackFaceId: string | null;
+    groupDropIndex: number | null;
+    isGroupDropOver: boolean;
+    isBackFaceDragActive: boolean;
+    backFaceDropSucceeded: boolean;
+  };
+  groupRowRef: (node: HTMLDivElement | null) => void;
+  dndProps: {
+    sensors: DndContextProps["sensors"];
+    onDragStart: (event: DragStartEvent) => void;
+    onDragMove: (event: DragMoveEvent) => void;
+    onDragOver: (event: DragOverEvent) => void;
+    onDragEnd: (event: DragEndEvent) => void;
+    onDragCancel: () => void;
+  };
   isRightPanelVisible: boolean;
   setIsRightPanelVisible: (value: boolean | ((prev: boolean) => boolean)) => void;
-  sensors: DndContextProps["sensors"];
-  handleSetDragStart: (event: DragStartEvent) => void;
-  handleSetDragOver: (event: DragOverEvent) => void;
-  handleSetDragEnd: (event: DragEndEvent) => void;
   handleDuplicateDeck: (deckId: string) => void;
   handleDeleteSet: () => void;
   handleDeleteGroup: () => void;
@@ -68,6 +83,7 @@ type DeckDetailPanelProps = {
   deleteDeck: (deckId: string) => Promise<void>;
   deckSetTile: (set: DeckSetRecord, isSelected: boolean, onSelect: () => void) => ReactNode;
   deckSetThumb: (cardId: string) => ReactNode;
+  backPanelThumb: (cardId: string) => ReactNode;
   backCardsByCollection: ReactNode;
 };
 
@@ -100,17 +116,11 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
     isDeleteGroupOpen,
     isRebuildConfirmOpen,
     pendingRebuildSetId,
-    dragActiveSetId,
-    setDragActiveSetId,
-    setDragOverId,
-    setIsGroupDropOver,
-    isGroupDropOver,
+    dragState,
+    groupRowRef,
+    dndProps,
     isRightPanelVisible,
     setIsRightPanelVisible,
-    sensors,
-    handleSetDragStart,
-    handleSetDragOver,
-    handleSetDragEnd,
     handleDuplicateDeck,
     handleDeleteSet,
     handleDeleteGroup,
@@ -125,8 +135,18 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
     deleteDeck,
     deckSetTile,
     deckSetThumb,
+    backPanelThumb,
     backCardsByCollection,
   } = props;
+
+  const {
+    dragActiveSetId,
+    dragActiveBackFaceId,
+    groupDropIndex,
+    isGroupDropOver,
+    isBackFaceDragActive,
+    backFaceDropSucceeded,
+  } = dragState;
 
   const entriesSorted = useMemo(
     () => entries.slice().sort((a, b) => a.sortIndex - b.sortIndex),
@@ -136,16 +156,13 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
   return (
     <>
       <DndContext
-        sensors={sensors}
+        sensors={dndProps.sensors}
         collisionDetection={pointerWithin}
-        onDragStart={handleSetDragStart}
-        onDragOver={handleSetDragOver}
-        onDragEnd={handleSetDragEnd}
-        onDragCancel={() => {
-          setDragActiveSetId(null);
-          setDragOverId(null);
-          setIsGroupDropOver(false);
-        }}
+        onDragStart={dndProps.onDragStart}
+        onDragMove={dndProps.onDragMove}
+        onDragOver={dndProps.onDragOver}
+        onDragEnd={dndProps.onDragEnd}
+        onDragCancel={dndProps.onDragCancel}
       >
         <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
           <div className={styles.deckRoutePanel}>
@@ -184,18 +201,21 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
             <div className={styles.deckRouteMiddle}>
               <div className={styles.deckRouteRow}>
                 <div className={styles.deckRouteRowBody}>
-                  <div className={styles.deckGroupRow}>
-                    <DeckGroupGridList
-                      groups={orderedGroups}
-                      sets={sets}
-                      selectedGroupId={selectedGroupId}
-                      selectedSetId={selectedSetId}
-                      isDropOver={isGroupDropOver}
-                      emptyLabel={t("decks.emptyGroups")}
-                      onSelectGroup={onSelectGroup}
-                      onSelectSet={onSelectSet}
-                      groupTileVariant={groupTileVariant}
-                    />
+                <div className={styles.deckGroupRow}>
+                  <DeckGroupGridList
+                    groups={orderedGroups}
+                    sets={sets}
+                    selectedGroupId={selectedGroupId}
+                    selectedSetId={selectedSetId}
+                    isDropOver={isGroupDropOver}
+                    isBackFaceDragActive={isBackFaceDragActive}
+                    dropIndex={groupDropIndex}
+                    emptyLabel={t("decks.emptyGroups")}
+                    onSelectGroup={onSelectGroup}
+                    onSelectSet={onSelectSet}
+                    groupTileVariant={groupTileVariant}
+                    rowRef={groupRowRef}
+                  />
                     <div className={styles.deckGroupRowToolbar}>
                       <button
                         type="button"
@@ -289,8 +309,17 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
                 </div>
                 <div className={styles.deckRouteRowFooter} />
               </div>
-              <DragOverlay>
-                {dragActiveSetId ? (
+              <DragOverlay
+                modifiers={dragActiveBackFaceId ? [snapCenterToCursor] : undefined}
+                dropAnimation={
+                  dragActiveBackFaceId && backFaceDropSucceeded ? null : undefined
+                }
+              >
+                {dragActiveBackFaceId ? (
+                  <div className={styles.deckBacksDragOverlay}>
+                    {backPanelThumb(dragActiveBackFaceId)}
+                  </div>
+                ) : dragActiveSetId ? (
                   <div className={styles.deckSetTileOverlay}>
                     {(() => {
                       const set = setById.get(dragActiveSetId);

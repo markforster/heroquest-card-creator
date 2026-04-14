@@ -6970,6 +6970,12 @@ button.assetsKindBadge:disabled {
   outline-offset: 4px;
 }
 
+.deckGroupRowListActive {
+  border: 2px solid rgba(230, 179, 90, 0.7);
+  border-radius: var(--radius-md);
+  animation: deckDropPulse 1.2s ease-in-out infinite;
+}
+
 .deckGroupDropZone {
   display: flex;
   align-items: center;
@@ -7002,6 +7008,26 @@ button.assetsKindBadge:disabled {
   flex-wrap: nowrap;
   padding-bottom: var(--space-2);
   min-width: max-content;
+}
+
+.deckGroupDropPlaceholder {
+  width: var(--deck-set-w);
+  height: var(--deck-set-h);
+  border: 2px dashed var(--hq-accent);
+  border-radius: var(--radius-md);
+  flex: 0 0 auto;
+}
+
+@keyframes deckDropPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(230, 179, 90, 0.35);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(230, 179, 90, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(230, 179, 90, 0);
+  }
 }
 
 .deckGroupPreview {
@@ -7381,7 +7407,14 @@ button.assetsKindBadge:disabled {
 }
 
 .deckBacksThumbDragging {
-  opacity: 0.6;
+  opacity: 1;
+}
+
+.deckBacksDragOverlay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1);
 }
 
 .pairingUsageList {

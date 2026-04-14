@@ -8,7 +8,7 @@ import CardFan, { CARD_FAN_SIZES } from "@/components/Decks/CardFan";
 import type { CardFanVariant } from "@/components/Decks/CardFan";
 import DeckGroupGridItem from "@/components/Decks/DeckGroupGridItem";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import type { ReactNode } from "react";
 
 type DeckGroupGridListProps = {
@@ -21,6 +21,7 @@ type DeckGroupGridListProps = {
   onSelectGroup: (groupId: string) => void;
   onSelectSet: (set: DeckSetRecord) => void;
   groupTileVariant: CardFanVariant;
+  rowRef?: (node: HTMLDivElement | null) => void;
 };
 
 function GroupDropZoneEmpty({ isOver, label }: { isOver: boolean; label: string }) {
@@ -35,12 +36,27 @@ function GroupDropZoneEmpty({ isOver, label }: { isOver: boolean; label: string 
   );
 }
 
-function GroupDropZoneArea({ isOver, children }: { isOver: boolean; children: ReactNode }) {
+function GroupDropZoneArea({
+  isOver,
+  isBackFaceDragActive,
+  rowRef,
+  children,
+}: {
+  isOver: boolean;
+  isBackFaceDragActive: boolean;
+  rowRef?: (node: HTMLDivElement | null) => void;
+  children: ReactNode;
+}) {
   const { setNodeRef } = useDroppable({ id: "groups-area" });
   return (
     <div
-      ref={setNodeRef}
-      className={`${styles.deckGroupRowList} ${isOver ? styles.deckGroupRowListOver : ""}`}
+      ref={(node) => {
+        setNodeRef(node);
+        rowRef?.(node);
+      }}
+      className={`${styles.deckGroupRowList} ${
+        isOver && !isBackFaceDragActive ? styles.deckGroupRowListOver : ""
+      } ${isBackFaceDragActive ? styles.deckGroupRowListActive : ""}`}
     >
       {children}
     </div>
@@ -53,18 +69,25 @@ export default function DeckGroupGridList({
   selectedGroupId,
   selectedSetId,
   isDropOver,
+  isBackFaceDragActive = false,
+  dropIndex,
   emptyLabel,
   onSelectGroup,
   onSelectSet,
   groupTileVariant,
-}: DeckGroupGridListProps) {
+  rowRef,
+}: DeckGroupGridListProps & { isBackFaceDragActive?: boolean; dropIndex?: number | null }) {
   const tileSize = CARD_FAN_SIZES[groupTileVariant];
   const fanTilt = 0.6;
   const fanSpacing = 0.6;
   const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null);
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
   return (
-    <GroupDropZoneArea isOver={isDropOver}>
+    <GroupDropZoneArea
+      isOver={isDropOver}
+      isBackFaceDragActive={isBackFaceDragActive}
+      rowRef={rowRef}
+    >
       {groups.length === 0 ? (
         <GroupDropZoneEmpty isOver={isDropOver} label={emptyLabel} />
       ) : (
@@ -75,7 +98,7 @@ export default function DeckGroupGridList({
             ["--deck-set-h" as string]: `${tileSize.height}px`,
           }}
         >
-          {groups.map((group) => {
+          {groups.map((group, index) => {
             const groupSets = sets
               .filter((set) => set.groupId === group.id)
               .sort((a, b) => a.sortIndex - b.sortIndex);
@@ -119,29 +142,44 @@ export default function DeckGroupGridList({
               />
             );
             return (
-              <DeckGroupGridItem
-                key={group.id}
-                group={group}
-                isSelected={selectedGroupId === group.id}
-                onSelect={() => {
-                  onSelectGroup(group.id);
-                  if (groupSets.length > 0) {
-                    onSelectSet(groupSets[0]);
-                  }
-                }}
-                onHoverChange={(isHovering) => {
-                  if (isHovering) {
-                    setHoveredGroupId(group.id);
-                    setHoveredCardId(null);
-                  } else {
-                    setHoveredGroupId(null);
-                    setHoveredCardId(null);
-                  }
-                }}
-                preview={preview}
-              />
+              <React.Fragment key={group.id}>
+                {isBackFaceDragActive && dropIndex === index ? (
+                  <div
+                    className={styles.deckGroupDropPlaceholder}
+                    data-drop-index={dropIndex}
+                    aria-hidden="true"
+                  />
+                ) : null}
+                <DeckGroupGridItem
+                  group={group}
+                  isSelected={selectedGroupId === group.id}
+                  onSelect={() => {
+                    onSelectGroup(group.id);
+                    if (groupSets.length > 0) {
+                      onSelectSet(groupSets[0]);
+                    }
+                  }}
+                  onHoverChange={(isHovering) => {
+                    if (isHovering) {
+                      setHoveredGroupId(group.id);
+                      setHoveredCardId(null);
+                    } else {
+                      setHoveredGroupId(null);
+                      setHoveredCardId(null);
+                    }
+                  }}
+                  preview={preview}
+                />
+              </React.Fragment>
             );
           })}
+          {isBackFaceDragActive && (dropIndex ?? groups.length) >= groups.length ? (
+            <div
+              className={styles.deckGroupDropPlaceholder}
+              data-drop-index={dropIndex ?? groups.length}
+              aria-hidden="true"
+            />
+          ) : null}
         </div>
       )}
     </GroupDropZoneArea>

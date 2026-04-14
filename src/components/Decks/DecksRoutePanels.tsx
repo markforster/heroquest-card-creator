@@ -20,17 +20,18 @@ import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
+import { useDecksDragController } from "@/components/Decks/hooks/useDecksDragController";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 import formatMessageWith from "@/lib/format-message-with";
 
-import type { DragEndEvent, DragOverEvent, DragStartEvent } from "@dnd-kit/core";
 import type { ReactNode } from "react";
 
 const SET_TILE_VARIANT = "smMd";
 const GROUP_TILE_VARIANT = "smMd";
 const DECK_PREVIEW_FAN_COUNT = 5;
 const BACK_PANEL_TILE_VARIANT = "sm";
+const BACK_PANEL_DRAG_VARIANT = "smMd";
 
 function DeckEntryThumb({ cardId, isSelected }: { cardId: string; isSelected: boolean }) {
   const thumbUrl = useCardThumbnailUrl(cardId, null, { enabled: true, useCache: true });
@@ -62,13 +63,19 @@ function DeckSetThumb({ cardId }: { cardId: string }) {
   );
 }
 
-function BackPanelThumb({ cardId }: { cardId: string }) {
+function BackPanelThumb({
+  cardId,
+  variant = BACK_PANEL_TILE_VARIANT,
+}: {
+  cardId: string;
+  variant?: typeof BACK_PANEL_TILE_VARIANT | typeof BACK_PANEL_DRAG_VARIANT;
+}) {
   const thumbUrl = useCardThumbnailUrl(cardId, null, { enabled: true, useCache: true });
   return (
     <CardThumbnail
       src={thumbUrl}
       alt=""
-      variant={BACK_PANEL_TILE_VARIANT}
+      variant={variant}
       fit="cover"
       className={styles.deckSetThumb}
       fallback={<div className={styles.deckSetThumbFallback} />}
@@ -278,12 +285,9 @@ export default function DecksRoutePanels() {
   const [backCollections, setBackCollections] = useState<CollectionRecord[]>([]);
   const [backCards, setBackCards] = useState<CardRecord[]>([]);
   const [backFilter, setBackFilter] = useState<BackFilter>({ type: "all" });
-  const [isGroupDropOver, setIsGroupDropOver] = useState(false);
   const [backCard, setBackCard] = useState<CardRecord | null>(null);
   const [isRebuildConfirmOpen, setIsRebuildConfirmOpen] = useState(false);
   const [pendingRebuildSetId, setPendingRebuildSetId] = useState<string | null>(null);
-  const [dragActiveSetId, setDragActiveSetId] = useState<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -764,141 +768,6 @@ export default function DecksRoutePanels() {
     }
   };
 
-  const handleSetDragStart = ({ active }: DragStartEvent) => {
-    const activeType = active.data?.current?.type;
-    if (activeType === "back-face") return;
-    setDragActiveSetId(String(active.id));
-  };
-
-  const handleSetDragOver = ({ over, active }: DragOverEvent) => {
-    const overId = over ? String(over.id) : null;
-    const activeType = active.data?.current?.type;
-    setDragOverId(overId);
-    setIsGroupDropOver(Boolean(overId && (overId === "groups-empty" || overId === "groups-area")));
-    if (activeType !== "back-face" && overId?.startsWith("group:")) {
-      const groupId = overId.replace("group:", "");
-      if (groupId && groupId !== selectedGroupId) {
-        setSelectedGroupId(groupId);
-      }
-    }
-  };
-
-  const handleSetDragEnd = async ({ active, over }: DragEndEvent) => {
-    const activeType = active.data?.current?.type;
-    const backFaceId = active.data?.current?.backFaceId as string | undefined;
-    setDragActiveSetId(null);
-    setDragOverId(null);
-    setIsGroupDropOver(false);
-    if (activeType === "back-face") {
-      if (!over || !deckId || !backFaceId) return;
-      const overId = String(over.id);
-      const targetGroupId = overId.startsWith("group:") ? overId.replace("group:", "") : null;
-      if (targetGroupId) {
-        await createSetFromBackFace(deckId, targetGroupId, backFaceId);
-        return;
-      }
-      if (overId === "groups-empty" || overId === "groups-area") {
-        const group = await apiClient.createDeckGroup(
-          { title: t("decks.defaultGroupTitle") },
-          { params: { deckId } },
-        );
-        await createSetFromBackFace(deckId, group.id, backFaceId);
-      }
-      return;
-    }
-    if (!over) return;
-    const activeId = String(active.id);
-    const overId = String(over.id);
-    if (activeId === overId) return;
-    const sourceGroupId = groupBySetId.get(activeId);
-    if (!sourceGroupId) return;
-    const targetGroupId = overId.startsWith("group:")
-      ? overId.replace("group:", "")
-      : groupBySetId.get(overId);
-    if (!targetGroupId) return;
-
-    const sourceOrdered = sets
-      .filter((set) => set.groupId === sourceGroupId)
-      .sort((a, b) => a.sortIndex - b.sortIndex)
-      .map((set) => set.id);
-    const targetOrdered =
-      sourceGroupId === targetGroupId
-        ? sourceOrdered
-        : sets
-            .filter((set) => set.groupId === targetGroupId)
-            .sort((a, b) => a.sortIndex - b.sortIndex)
-            .map((set) => set.id);
-
-    const fromIndex = sourceOrdered.indexOf(activeId);
-    if (fromIndex < 0) return;
-    const nextSource = [...sourceOrdered];
-    nextSource.splice(fromIndex, 1);
-
-    const toIndex =
-      sourceGroupId === targetGroupId
-        ? Math.max(0, targetOrdered.indexOf(overId))
-        : overId.startsWith("group:")
-          ? targetOrdered.length
-          : Math.max(0, targetOrdered.indexOf(overId));
-    const nextTarget = sourceGroupId === targetGroupId ? nextSource : [...targetOrdered];
-    if (sourceGroupId === targetGroupId) {
-      nextTarget.splice(toIndex, 0, activeId);
-    } else {
-      nextTarget.splice(toIndex, 0, activeId);
-    }
-
-    const sourceSortIndexMap = new Map(nextSource.map((id, index) => [id, index]));
-    const targetSortIndexMap = new Map(nextTarget.map((id, index) => [id, index]));
-
-    setSets((prev) =>
-      prev.map((set) => {
-        if (set.id === activeId) {
-          return {
-            ...set,
-            groupId: targetGroupId,
-            sortIndex: targetSortIndexMap.get(set.id) ?? set.sortIndex,
-          };
-        }
-        if (set.groupId === sourceGroupId && sourceSortIndexMap.has(set.id)) {
-          return { ...set, sortIndex: sourceSortIndexMap.get(set.id) ?? set.sortIndex };
-        }
-        if (set.groupId === targetGroupId && targetSortIndexMap.has(set.id)) {
-          return { ...set, sortIndex: targetSortIndexMap.get(set.id) ?? set.sortIndex };
-        }
-        return set;
-      }),
-    );
-    try {
-      if (sourceGroupId !== targetGroupId) {
-        await apiClient.updateDeckSet({ groupId: targetGroupId }, { params: { setId: activeId } });
-      }
-      if (sourceGroupId === targetGroupId) {
-        await apiClient.reorderDeckSets(
-          { orderedSetIds: nextTarget },
-          { params: { setId: activeId } },
-        );
-      } else {
-        await apiClient.reorderDeckSets(
-          { orderedSetIds: nextTarget },
-          { params: { setId: activeId } },
-        );
-        if (nextSource.length > 0) {
-          await apiClient.reorderDeckSets(
-            { orderedSetIds: nextSource },
-            { params: { setId: nextSource[0] } },
-          );
-        }
-      }
-      if (activeId === selectedSetId && sourceGroupId !== targetGroupId) {
-        setSelectedGroupId(targetGroupId);
-      }
-    } catch (error) {
-      if (deckId) {
-        await loadDeckDetail(deckId, activeSetId);
-      }
-      throw error;
-    }
-  };
 
   const handleMoveEntry = async (setId: string, entryId: string, direction: "up" | "down") => {
     if (!entries.length) return;
@@ -983,6 +852,31 @@ export default function DecksRoutePanels() {
     }
     await loadDeckDetail(deckIdValue, createdSet.id);
   };
+
+  const { dragState, dndHandlers, groupRowRef } = useDecksDragController({
+    deckId,
+    orderedGroups,
+    sets,
+    groupBySetId,
+    selectedGroupId,
+    selectedSetId,
+    activeSetId,
+    setSets,
+    setSelectedGroupId,
+    createSetFromBackFace,
+    createDeckGroup: async (targetDeckId) =>
+      apiClient.createDeckGroup(
+        { title: t("decks.defaultGroupTitle") },
+        { params: { deckId: targetDeckId } },
+      ),
+    reorderDeckGroups: async (targetDeckId, orderedGroupIds) =>
+      apiClient.reorderDeckGroups({ orderedGroupIds }, { params: { deckId: targetDeckId } }),
+    reorderDeckSets: async (setIdForParams, orderedSetIds) =>
+      apiClient.reorderDeckSets({ orderedSetIds }, { params: { setId: setIdForParams } }),
+    updateDeckSetGroup: async (setId, groupId) =>
+      apiClient.updateDeckSet({ groupId }, { params: { setId } }),
+    loadDeckDetail,
+  });
 
   const handleSaveDeckMeta = async () => {
     if (!deckId) return;
@@ -1106,17 +1000,11 @@ export default function DecksRoutePanels() {
       isDeleteGroupOpen={isDeleteGroupOpen}
       isRebuildConfirmOpen={isRebuildConfirmOpen}
       pendingRebuildSetId={pendingRebuildSetId}
-      dragActiveSetId={dragActiveSetId}
-      setDragActiveSetId={setDragActiveSetId}
-      setDragOverId={setDragOverId}
-      setIsGroupDropOver={setIsGroupDropOver}
-      isGroupDropOver={isGroupDropOver}
+      dragState={dragState}
+      groupRowRef={groupRowRef}
+      dndProps={{ sensors, ...dndHandlers }}
       isRightPanelVisible={isRightPanelVisible}
       setIsRightPanelVisible={setIsRightPanelVisible}
-      sensors={sensors}
-      handleSetDragStart={handleSetDragStart}
-      handleSetDragOver={handleSetDragOver}
-      handleSetDragEnd={handleSetDragEnd}
       handleDuplicateDeck={handleDuplicateDeck}
       handleDeleteSet={handleDeleteSet}
       handleDeleteGroup={handleDeleteGroup}
@@ -1138,6 +1026,7 @@ export default function DecksRoutePanels() {
         <DeckSetTile set={set} isSelected={isSelected} onSelect={onSelect} />
       )}
       deckSetThumb={(cardId) => <DeckSetThumb cardId={cardId} />}
+      backPanelThumb={(cardId) => <BackPanelThumb cardId={cardId} variant={BACK_PANEL_DRAG_VARIANT} />}
       backCardsByCollection={
         <DeckBacksPanel
           collections={backCollections}

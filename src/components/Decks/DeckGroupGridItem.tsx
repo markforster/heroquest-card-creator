@@ -30,6 +30,7 @@ export default function DeckGroupGridItem({
   return (
     <div
       ref={setNodeRef}
+      data-group-id={group.id}
       className={`${styles.deckNavItem} ${isSelected ? styles.deckNavItemSelected : ""} ${
         isOver ? styles.deckNavItemDropOver : ""
       } ${SHOW_BORDER_AND_BACKGROUND ? styles.deckNavItemChrome : ""}`}
