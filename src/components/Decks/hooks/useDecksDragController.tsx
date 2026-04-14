@@ -28,6 +28,7 @@ type DecksDragControllerArgs = {
   reorderDeckGroups: (deckId: string, orderedGroupIds: string[]) => Promise<void>;
   reorderDeckSets: (setIdForParams: string, orderedSetIds: string[]) => Promise<void>;
   updateDeckSetGroup: (setId: string, groupId: string) => Promise<void>;
+  deleteDeckSet: (setId: string) => Promise<void>;
   loadDeckDetail: (deckId: string, preferredSetId?: string | null) => Promise<void>;
 };
 
@@ -46,14 +47,19 @@ export function useDecksDragController({
   reorderDeckGroups,
   reorderDeckSets,
   updateDeckSetGroup,
+  deleteDeckSet,
   loadDeckDetail,
 }: DecksDragControllerArgs) {
   const [dragType, setDragType] = useState<DragType>(null);
   const [dragActiveSetId, setDragActiveSetId] = useState<string | null>(null);
+  const [dragActiveGroupId, setDragActiveGroupId] = useState<string | null>(null);
   const [dragActiveBackFaceId, setDragActiveBackFaceId] = useState<string | null>(null);
   const [groupDropIndex, setGroupDropIndex] = useState<number | null>(null);
+  const [setDropIndex, setSetDropIndex] = useState<number | null>(null);
+  const [setDropGroupId, setSetDropGroupId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [isGroupDropOver, setIsGroupDropOver] = useState(false);
+  const [isRemoveZone, setIsRemoveZone] = useState(false);
   const [backFaceDropSucceeded, setBackFaceDropSucceeded] = useState(false);
   const groupRowRef = useRef<HTMLDivElement | null>(null);
   const backFaceResetTimerRef = useRef<number | null>(null);
@@ -62,10 +68,14 @@ export function useDecksDragController({
   const resetDragState = useCallback(() => {
     setDragType(null);
     setDragActiveSetId(null);
+    setDragActiveGroupId(null);
     setDragActiveBackFaceId(null);
     setGroupDropIndex(null);
+    setSetDropIndex(null);
+    setSetDropGroupId(null);
     setDragOverId(null);
     setIsGroupDropOver(false);
+    setIsRemoveZone(false);
     if (backFaceResetTimerRef.current != null) {
       window.clearTimeout(backFaceResetTimerRef.current);
       backFaceResetTimerRef.current = null;
@@ -88,25 +98,89 @@ export function useDecksDragController({
         setGroupDropIndex(orderedGroups.length);
         return;
       }
+      if (activeType === "group") {
+        const groupId = active.data?.current?.groupId as string | undefined;
+        setDragType("group");
+        setDragActiveGroupId(groupId ?? String(active.id));
+        const nextIndex = orderedGroups.findIndex((group) => group.id === (groupId ?? String(active.id)));
+        setGroupDropIndex(nextIndex >= 0 ? nextIndex : null);
+        return;
+      }
       setDragType("set");
-      setDragActiveSetId(String(active.id));
+      const setId = active.data?.current?.setId as string | undefined;
+      setDragActiveSetId(setId ?? String(active.id));
+      setIsRemoveZone(false);
+      setSetDropIndex(null);
+      setSetDropGroupId(null);
     },
-    [orderedGroups.length],
+    [orderedGroups],
   );
 
   const onDragMove = useCallback(
     (event: DragMoveEvent) => {
-      if (dragType !== "back-face") return;
+      if (dragType !== "back-face" && dragType !== "group" && dragType !== "set") return;
       const row = groupRowRef.current;
       if (!row) return;
       const tiles = Array.from(row.querySelectorAll("[data-group-id]"));
+      const activeRect = event.active.rect.current.translated ?? event.active.rect.current.initial;
+      if (!activeRect) return;
+      const pointerX = activeRect.left + activeRect.width / 2;
+      const pointerY = activeRect.top + activeRect.height / 2;
+
+      if (dragType === "set") {
+        const rowRect = row.getBoundingClientRect();
+        const outside =
+          pointerX < rowRect.left ||
+          pointerX > rowRect.right ||
+          pointerY < rowRect.top ||
+          pointerY > rowRect.bottom;
+        setIsRemoveZone(outside);
+        if (outside) {
+          setSetDropIndex(null);
+          setSetDropGroupId(null);
+          return;
+        }
+        const overId = dragOverId;
+        const rawGroupId =
+          overId && overId.startsWith("group:")
+            ? overId.replace("group:", "")
+            : overId && overId.startsWith("set:")
+              ? groupBySetId.get(overId.replace("set:", "")) ?? null
+              : overId
+                ? groupBySetId.get(overId) ?? null
+                : null;
+        if (!rawGroupId) {
+          setSetDropIndex(null);
+          setSetDropGroupId(null);
+          return;
+        }
+        const groupNode = row.querySelector(`[data-group-id=\"${rawGroupId}\"]`);
+        if (!groupNode) {
+          setSetDropIndex(null);
+          setSetDropGroupId(null);
+          return;
+        }
+        const setNodes = Array.from(groupNode.querySelectorAll("[data-set-id]"));
+        if (!setNodes.length) {
+          setSetDropIndex(0);
+          setSetDropGroupId(rawGroupId);
+          return;
+        }
+        const centers = setNodes.map((node) => {
+          const rect = (node as Element).getBoundingClientRect();
+          return rect.left + rect.width / 2;
+        });
+        let index = centers.findIndex((center) => pointerX < center);
+        if (index < 0) index = centers.length;
+        setSetDropIndex(index);
+        setSetDropGroupId(rawGroupId);
+        return;
+      }
+
       if (!tiles.length) {
         setGroupDropIndex(0);
         return;
       }
-      const activeRect = event.active.rect.current.translated ?? event.active.rect.current.initial;
-      if (!activeRect) return;
-      const pointerX = activeRect.left + activeRect.width / 2;
       const centers = tiles.map((node) => {
         const rect = (node as HTMLElement).getBoundingClientRect();
         return rect.left + rect.width / 2;
@@ -115,7 +189,7 @@ export function useDecksDragController({
       if (index < 0) index = centers.length;
       setGroupDropIndex(index);
     },
-    [dragType],
+    [dragType, dragOverId, groupBySetId],
   );
 
   const onDragOver = useCallback(
@@ -123,7 +197,13 @@ export function useDecksDragController({
       const overId = over ? String(over.id) : null;
       const activeType = active.data?.current?.type;
       setDragOverId(overId);
-      setIsGroupDropOver(Boolean(overId && (overId === "groups-empty" || overId === "groups-area")));
+      const isOverGroupRow = Boolean(
+        overId &&
+          (overId === "groups-empty" ||
+            overId === "groups-area" ||
+            (activeType === "group" && overId.startsWith("group:"))),
+      );
+      setIsGroupDropOver(isOverGroupRow);
       if (activeType === "back-face" && overId === "groups-empty") {
         setGroupDropIndex(0);
       }
@@ -173,15 +253,50 @@ export function useDecksDragController({
         resetDragState();
         return;
       }
-      if (!over) return;
-      const activeId = String(active.id);
+      if (activeType === "group") {
+        if (!over || !deckId || !dragActiveGroupId) {
+          resetDragState();
+          return;
+        }
+        const orderedGroupIds = orderedGroups.map((entry) => entry.id);
+        const fromIndex = orderedGroupIds.indexOf(dragActiveGroupId);
+        if (fromIndex < 0) {
+          resetDragState();
+          return;
+        }
+        const next = orderedGroupIds.filter((id) => id !== dragActiveGroupId);
+        let insertIndex = groupDropIndex ?? next.length;
+        insertIndex = Math.max(0, Math.min(insertIndex, next.length));
+        if (insertIndex > fromIndex) insertIndex -= 1;
+        next.splice(insertIndex, 0, dragActiveGroupId);
+        await reorderDeckGroups(deckId, next);
+        await loadDeckDetail(deckId, selectedSetId);
+        resetDragState();
+        return;
+      }
+      const activeId = dragActiveSetId ?? String(active.id);
+      const normalizedActiveId = activeId.startsWith("set:") ? activeId.replace("set:", "") : activeId;
+      if (isRemoveZone && normalizedActiveId) {
+        await deleteDeckSet(normalizedActiveId);
+        if (deckId) {
+          await loadDeckDetail(deckId);
+        }
+        setBackFaceDropSucceeded(false);
+        resetDragState();
+        return;
+      }
+      if (!over) {
+        resetDragState();
+        return;
+      }
       const overId = String(over.id);
       if (activeId === overId) return;
-      const sourceGroupId = groupBySetId.get(activeId);
+      const sourceGroupId = groupBySetId.get(normalizedActiveId);
       if (!sourceGroupId) return;
+      const normalizedOverId = overId.startsWith("set:") ? overId.replace("set:", "") : overId;
       const targetGroupId = overId.startsWith("group:")
         ? overId.replace("group:", "")
-        : groupBySetId.get(overId);
+        : groupBySetId.get(normalizedOverId);
       if (!targetGroupId) return;
 
       const sourceOrdered = sets
@@ -196,26 +311,28 @@ export function useDecksDragController({
               .sort((a, b) => a.sortIndex - b.sortIndex)
               .map((set) => set.id);
 
-      const fromIndex = sourceOrdered.indexOf(activeId);
+      const fromIndex = sourceOrdered.indexOf(normalizedActiveId);
       if (fromIndex < 0) return;
       const nextSource = [...sourceOrdered];
       nextSource.splice(fromIndex, 1);
 
       const toIndex =
-        sourceGroupId === targetGroupId
-          ? Math.max(0, targetOrdered.indexOf(overId))
-          : overId.startsWith("group:")
-            ? targetOrdered.length
-            : Math.max(0, targetOrdered.indexOf(overId));
+        setDropGroupId === targetGroupId && setDropIndex != null
+          ? setDropIndex
+          : sourceGroupId === targetGroupId
+            ? Math.max(0, targetOrdered.indexOf(normalizedOverId))
+            : overId.startsWith("group:")
+              ? targetOrdered.length
+              : Math.max(0, targetOrdered.indexOf(normalizedOverId));
       const nextTarget = sourceGroupId === targetGroupId ? nextSource : [...targetOrdered];
-      nextTarget.splice(toIndex, 0, activeId);
+      nextTarget.splice(toIndex, 0, normalizedActiveId);
 
       const sourceSortIndexMap = new Map(nextSource.map((id, index) => [id, index]));
       const targetSortIndexMap = new Map(nextTarget.map((id, index) => [id, index]));
 
       setSets((prev) =>
         prev.map((set) => {
-          if (set.id === activeId) {
+          if (set.id === normalizedActiveId) {
             return {
               ...set,
               groupId: targetGroupId,
@@ -234,17 +351,17 @@ export function useDecksDragController({
 
       try {
         if (sourceGroupId !== targetGroupId) {
-          await updateDeckSetGroup(activeId, targetGroupId);
+          await updateDeckSetGroup(normalizedActiveId, targetGroupId);
         }
         if (sourceGroupId === targetGroupId) {
-          await reorderDeckSets(activeId, nextTarget);
+          await reorderDeckSets(normalizedActiveId, nextTarget);
         } else {
-          await reorderDeckSets(activeId, nextTarget);
+          await reorderDeckSets(normalizedActiveId, nextTarget);
           if (nextSource.length > 0) {
             await reorderDeckSets(nextSource[0], nextSource);
           }
         }
-        if (activeId === selectedSetId && sourceGroupId !== targetGroupId) {
+        if (normalizedActiveId === selectedSetId && sourceGroupId !== targetGroupId) {
           setSelectedGroupId(targetGroupId);
         }
       } catch (error) {
@@ -260,6 +377,10 @@ export function useDecksDragController({
       resetDragState,
       deckId,
       groupDropIndex,
+      dragActiveGroupId,
+      setDropIndex,
+      setDropGroupId,
+      isRemoveZone,
       orderedGroups,
       groupBySetId,
       sets,
@@ -273,6 +394,7 @@ export function useDecksDragController({
       reorderDeckGroups,
       reorderDeckSets,
       updateDeckSetGroup,
+      deleteDeckSet,
       loadDeckDetail,
     ],
   );
@@ -280,17 +402,27 @@ export function useDecksDragController({
   const dragState = useMemo(
     () => ({
       dragActiveSetId,
+      dragActiveGroupId,
       dragActiveBackFaceId,
       groupDropIndex,
+      setDropIndex,
+      setDropGroupId,
       isGroupDropOver,
+      isRemoveZone,
       isBackFaceDragActive: dragType === "back-face",
+      isGroupDragActive: dragType === "group",
+      isSetDragActive: dragType === "set",
       backFaceDropSucceeded,
     }),
     [
       dragActiveSetId,
+      dragActiveGroupId,
       dragActiveBackFaceId,
       groupDropIndex,
+      setDropIndex,
+      setDropGroupId,
       isGroupDropOver,
+      isRemoveZone,
       dragType,
       backFaceDropSucceeded,
     ],

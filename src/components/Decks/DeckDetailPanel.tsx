@@ -52,10 +52,16 @@ type DeckDetailPanelProps = {
   pendingRebuildSetId: string | null;
   dragState: {
     dragActiveSetId: string | null;
+    dragActiveGroupId: string | null;
     dragActiveBackFaceId: string | null;
     groupDropIndex: number | null;
+    setDropIndex: number | null;
+    setDropGroupId: string | null;
     isGroupDropOver: boolean;
+    isRemoveZone: boolean;
     isBackFaceDragActive: boolean;
+    isGroupDragActive: boolean;
+    isSetDragActive: boolean;
     backFaceDropSucceeded: boolean;
   };
   groupRowRef: (node: HTMLDivElement | null) => void;
@@ -143,8 +149,13 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
     dragActiveSetId,
     dragActiveBackFaceId,
     groupDropIndex,
+    setDropIndex,
+    setDropGroupId,
     isGroupDropOver,
+    isRemoveZone,
     isBackFaceDragActive,
+    isGroupDragActive,
+    isSetDragActive,
     backFaceDropSucceeded,
   } = dragState;
 
@@ -209,7 +220,12 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
                     selectedSetId={selectedSetId}
                     isDropOver={isGroupDropOver}
                     isBackFaceDragActive={isBackFaceDragActive}
+                    isGroupDragActive={isGroupDragActive}
+                    isSetDragActive={isSetDragActive}
                     dropIndex={groupDropIndex}
+                    setDropIndex={setDropIndex}
+                    setDropGroupId={setDropGroupId}
+                    isRemoveZone={isRemoveZone}
                     emptyLabel={t("decks.emptyGroups")}
                     onSelectGroup={onSelectGroup}
                     onSelectSet={onSelectSet}
@@ -320,12 +336,19 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
                     {backPanelThumb(dragActiveBackFaceId)}
                   </div>
                 ) : dragActiveSetId ? (
-                  <div className={styles.deckSetTileOverlay}>
+                  <div
+                    className={`${styles.deckSetTileOverlay} ${
+                      isRemoveZone ? styles.deckSetTileOverlayRemove : ""
+                    }`}
+                  >
                     {(() => {
                       const set = setById.get(dragActiveSetId);
                       if (!set) return null;
                       return deckSetThumb(set.backFaceId);
                     })()}
+                    {isRemoveZone ? (
+                      <div className={styles.deckSetRemoveBadge}>×</div>
+                    ) : null}
                   </div>
                 ) : null}
               </DragOverlay>

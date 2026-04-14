@@ -875,6 +875,8 @@ export default function DecksRoutePanels() {
       apiClient.reorderDeckSets({ orderedSetIds }, { params: { setId: setIdForParams } }),
     updateDeckSetGroup: async (setId, groupId) =>
       apiClient.updateDeckSet({ groupId }, { params: { setId } }),
+    deleteDeckSet: async (setId) =>
+      apiClient.deleteDeckSet(undefined, { params: { setId } }),
     loadDeckDetail,
   });
 

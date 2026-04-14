@@ -6755,6 +6755,10 @@ button.assetsKindBadge:disabled {
   transition: opacity 120ms ease;
 }
 
+.cardFanCardDragging {
+  opacity: 0.4;
+}
+
 :root[data-theme="light"] .cardFanSelected {
   stroke: #8a4b00;
   filter: drop-shadow(0 0 6px rgba(138, 75, 0, 0.35));
@@ -6951,18 +6955,22 @@ button.assetsKindBadge:disabled {
 .deckGroupRow {
   display: flex;
   gap: var(--space-3);
-  align-items: stretch;
+  align-items: center;
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .deckGroupRowList {
+  display: flex;
+  align-items: center;
   flex: 1 0 0;
   min-width: 0;
+  width: 100%;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
   min-height: calc(var(--deck-set-h) + var(--space-6));
+  height: 100%;
 }
 
 .deckGroupRowListOver {
@@ -7008,6 +7016,8 @@ button.assetsKindBadge:disabled {
   flex-wrap: nowrap;
   padding-bottom: var(--space-2);
   min-width: max-content;
+  min-height: calc(var(--deck-set-h) + var(--space-6));
+  height: 100%;
 }
 
 .deckGroupDropPlaceholder {
@@ -7082,6 +7092,10 @@ button.assetsKindBadge:disabled {
   text-align: left;
   cursor: pointer;
   overflow: visible;
+}
+
+.deckNavItemDragging {
+  opacity: 0.6;
 }
 
 .deckNavItemChrome {
@@ -7202,6 +7216,29 @@ button.assetsKindBadge:disabled {
   width: var(--deck-set-w);
   height: var(--deck-set-h);
   box-sizing: border-box;
+  position: relative;
+}
+
+.deckSetTileOverlayRemove {
+  outline-color: rgba(248, 113, 113, 0.75);
+  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.25);
+}
+
+.deckSetRemoveBadge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(248, 113, 113, 0.9);
+  color: #1a0909;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.5);
 }
 
 .deckSetTileDropPlaceholder {

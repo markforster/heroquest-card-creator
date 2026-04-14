@@ -17,6 +17,11 @@ type DeckGroupGridListProps = {
   selectedGroupId: string | null;
   selectedSetId: string | null;
   isDropOver: boolean;
+  isGroupDragActive?: boolean;
+  isSetDragActive?: boolean;
+  setDropIndex?: number | null;
+  setDropGroupId?: string | null;
+  isRemoveZone?: boolean;
   emptyLabel: string;
   onSelectGroup: (groupId: string) => void;
   onSelectSet: (set: DeckSetRecord) => void;
@@ -70,7 +75,12 @@ export default function DeckGroupGridList({
   selectedSetId,
   isDropOver,
   isBackFaceDragActive = false,
+  isGroupDragActive = false,
+  isSetDragActive = false,
   dropIndex,
+  setDropIndex,
+  setDropGroupId,
+  isRemoveZone = false,
   emptyLabel,
   onSelectGroup,
   onSelectSet,
@@ -106,6 +116,13 @@ export default function DeckGroupGridList({
             const maxCount = Math.max(backIds.length, 1);
             const isExpanded = selectedGroupId === group.id && groupSets.length > 1;
             const isHovering = hoveredGroupId === group.id && !isExpanded && groupSets.length > 1;
+            const dropPlaceholderIndex =
+              isSetDragActive &&
+              !isRemoveZone &&
+              setDropGroupId === group.id &&
+              groupSets.length > 0
+                ? setDropIndex ?? groupSets.length
+                : null;
             const preview: ReactNode = (
               <CardFan
                 cardIds={backIds}
@@ -120,6 +137,20 @@ export default function DeckGroupGridList({
                 expanded={isExpanded}
                 hovered={isHovering}
                 hoveredCardId={isHovering ? hoveredCardId : null}
+                dropPlaceholderIndex={dropPlaceholderIndex}
+                getDragMeta={(cardId) => {
+                  const target = groupSets.find((set) => set.backFaceId === cardId);
+                  if (!target) return null;
+                  return {
+                    id: `set:${target.id}`,
+                    data: {
+                      type: "set",
+                      setId: target.id,
+                      groupId: target.groupId,
+                      backFaceId: target.backFaceId,
+                    },
+                  };
+                }}
                 selectedCardId={
                   selectedSetId
                     ? (groupSets.find((set) => set.id === selectedSetId)?.backFaceId ?? null)
@@ -143,7 +174,7 @@ export default function DeckGroupGridList({
             );
             return (
               <React.Fragment key={group.id}>
-                {isBackFaceDragActive && dropIndex === index ? (
+                {(isBackFaceDragActive || isGroupDragActive) && dropIndex === index ? (
                   <div
                     className={styles.deckGroupDropPlaceholder}
                     data-drop-index={dropIndex}
@@ -173,7 +204,8 @@ export default function DeckGroupGridList({
               </React.Fragment>
             );
           })}
-          {isBackFaceDragActive && (dropIndex ?? groups.length) >= groups.length ? (
+          {(isBackFaceDragActive || isGroupDragActive) &&
+          (dropIndex ?? groups.length) >= groups.length ? (
             <div
               className={styles.deckGroupDropPlaceholder}
               data-drop-index={dropIndex ?? groups.length}
