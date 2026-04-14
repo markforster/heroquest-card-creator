@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
 import type {
@@ -11,7 +11,7 @@ import type {
 } from "@dnd-kit/core";
 import type { DeckGroupRecord, DeckSetRecord } from "@/api/decks";
 
-type DragType = "set" | "group" | "back-face" | null;
+type DragType = "set" | "group" | "back-face" | "front-face" | null;
 
 type DecksDragControllerArgs = {
   deckId: string | null;
@@ -24,6 +24,7 @@ type DecksDragControllerArgs = {
   setSets: Dispatch<SetStateAction<DeckSetRecord[]>>;
   setSelectedGroupId: (groupId: string | null) => void;
   createSetFromBackFace: (deckId: string, groupId: string, backFaceId: string) => Promise<void>;
+  addFrontFaceToSet: (setId: string, frontFaceId: string) => Promise<void>;
   createDeckGroup: (deckId: string) => Promise<DeckGroupRecord>;
   reorderDeckGroups: (deckId: string, orderedGroupIds: string[]) => Promise<void>;
   reorderDeckSets: (setIdForParams: string, orderedSetIds: string[]) => Promise<void>;
@@ -43,6 +44,7 @@ export function useDecksDragController({
   setSets,
   setSelectedGroupId,
   createSetFromBackFace,
+  addFrontFaceToSet,
   createDeckGroup,
   reorderDeckGroups,
   reorderDeckSets,
@@ -54,28 +56,54 @@ export function useDecksDragController({
   const [dragActiveSetId, setDragActiveSetId] = useState<string | null>(null);
   const [dragActiveGroupId, setDragActiveGroupId] = useState<string | null>(null);
   const [dragActiveBackFaceId, setDragActiveBackFaceId] = useState<string | null>(null);
+  const [dragActiveFrontFaceId, setDragActiveFrontFaceId] = useState<string | null>(null);
   const [groupDropIndex, setGroupDropIndex] = useState<number | null>(null);
   const [setDropIndex, setSetDropIndex] = useState<number | null>(null);
   const [setDropGroupId, setSetDropGroupId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [isGroupDropOver, setIsGroupDropOver] = useState(false);
+  const [isFrontDropOver, setIsFrontDropOver] = useState(false);
   const [isRemoveZone, setIsRemoveZone] = useState(false);
-  const [backFaceDropSucceeded, setBackFaceDropSucceeded] = useState(false);
+  const [faceDropSucceeded, setFaceDropSucceeded] = useState(false);
   const groupRowRef = useRef<HTMLDivElement | null>(null);
   const backFaceResetTimerRef = useRef<number | null>(null);
+  const dragOverIdRef = useRef<string | null>(null);
+  const isFrontDropOverRef = useRef(false);
+  const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const selectedSetIdRef = useRef<string | null>(selectedSetId);
+  const selectedGroupIdRef = useRef<string | null>(selectedGroupId);
+  const dragStartSelectedSetIdRef = useRef<string | null>(null);
+  const dragStartSelectedGroupIdRef = useRef<string | null>(null);
+  const frontDropInFlightRef = useRef(false);
+  const frontDropInFlightKeyRef = useRef<string | null>(null);
   const BACK_FACE_DROP_RETURN_MS = 180;
+
+  useEffect(() => {
+    selectedSetIdRef.current = selectedSetId;
+  }, [selectedSetId]);
+
+  useEffect(() => {
+    selectedGroupIdRef.current = selectedGroupId;
+  }, [selectedGroupId]);
 
   const resetDragState = useCallback(() => {
     setDragType(null);
     setDragActiveSetId(null);
     setDragActiveGroupId(null);
     setDragActiveBackFaceId(null);
+    setDragActiveFrontFaceId(null);
     setGroupDropIndex(null);
     setSetDropIndex(null);
     setSetDropGroupId(null);
     setDragOverId(null);
+    dragOverIdRef.current = null;
     setIsGroupDropOver(false);
+    setIsFrontDropOver(false);
+    isFrontDropOverRef.current = false;
     setIsRemoveZone(false);
+    dragStartSelectedSetIdRef.current = null;
+    dragStartSelectedGroupIdRef.current = null;
+    lastPointerRef.current = null;
     if (backFaceResetTimerRef.current != null) {
       window.clearTimeout(backFaceResetTimerRef.current);
       backFaceResetTimerRef.current = null;
@@ -89,13 +117,28 @@ export function useDecksDragController({
         window.clearTimeout(backFaceResetTimerRef.current);
         backFaceResetTimerRef.current = null;
       }
-      setBackFaceDropSucceeded(false);
+      setFaceDropSucceeded(false);
       if (activeType === "back-face") {
         const backFaceId = active.data?.current?.backFaceId as string | undefined;
         setDragType("back-face");
         setDragActiveBackFaceId(backFaceId ?? null);
         setIsGroupDropOver(true);
         setGroupDropIndex(orderedGroups.length);
+        return;
+      }
+      if (activeType === "front-face") {
+        const frontFaceId = active.data?.current?.frontFaceId as string | undefined;
+        setDragType("front-face");
+        setDragActiveFrontFaceId(frontFaceId ?? null);
+        dragStartSelectedSetIdRef.current = selectedSetIdRef.current;
+        dragStartSelectedGroupIdRef.current = selectedGroupIdRef.current;
+        const activeRect = active.rect.current.translated ?? active.rect.current.initial;
+        if (activeRect) {
+          lastPointerRef.current = {
+            x: activeRect.left + activeRect.width / 2,
+            y: activeRect.top + activeRect.height / 2,
+          };
+        }
         return;
       }
       if (activeType === "group") {
@@ -118,7 +161,24 @@ export function useDecksDragController({
 
   const onDragMove = useCallback(
     (event: DragMoveEvent) => {
-      if (dragType !== "back-face" && dragType !== "group" && dragType !== "set") return;
+      if (
+        dragType !== "back-face" &&
+        dragType !== "group" &&
+        dragType !== "set" &&
+        dragType !== "front-face"
+      ) {
+        return;
+      }
+      if (dragType === "front-face") {
+        const activeRect = event.active.rect.current.translated ?? event.active.rect.current.initial;
+        if (activeRect) {
+          lastPointerRef.current = {
+            x: activeRect.left + activeRect.width / 2,
+            y: activeRect.top + activeRect.height / 2,
+          };
+        }
+        return;
+      }
       const row = groupRowRef.current;
       if (!row) return;
       const tiles = Array.from(row.querySelectorAll("[data-group-id]"));
@@ -197,17 +257,25 @@ export function useDecksDragController({
       const overId = over ? String(over.id) : null;
       const activeType = active.data?.current?.type;
       setDragOverId(overId);
-      const isOverGroupRow = Boolean(
-        overId &&
-          (overId === "groups-empty" ||
-            overId === "groups-area" ||
-            (activeType === "group" && overId.startsWith("group:"))),
-      );
+      dragOverIdRef.current = overId;
+      const isOverGroupRow =
+        activeType !== "front-face" &&
+        Boolean(
+          overId &&
+            (overId === "groups-empty" ||
+              overId === "groups-area" ||
+              (activeType === "group" && overId.startsWith("group:"))),
+        );
       setIsGroupDropOver(isOverGroupRow);
+      const nextFrontDropOver = Boolean(
+        activeType === "front-face" && overId?.startsWith("entries-area"),
+      );
+      setIsFrontDropOver(nextFrontDropOver);
+      isFrontDropOverRef.current = nextFrontDropOver;
       if (activeType === "back-face" && overId === "groups-empty") {
         setGroupDropIndex(0);
       }
-      if (activeType !== "back-face" && overId?.startsWith("group:")) {
+      if ((activeType === "set" || activeType === "group") && overId?.startsWith("group:")) {
         const groupId = overId.replace("group:", "");
         if (groupId && groupId !== selectedGroupId) {
           setSelectedGroupId(groupId);
@@ -223,7 +291,7 @@ export function useDecksDragController({
       const backFaceId = active.data?.current?.backFaceId as string | undefined;
       if (activeType === "back-face") {
         if (!over || !deckId || !backFaceId) {
-          setBackFaceDropSucceeded(false);
+          setFaceDropSucceeded(false);
           backFaceResetTimerRef.current = window.setTimeout(() => {
             resetDragState();
           }, BACK_FACE_DROP_RETURN_MS);
@@ -232,7 +300,7 @@ export function useDecksDragController({
         const overId = String(over.id);
         const isSuccess =
           overId.startsWith("group:") || overId === "groups-area" || overId === "groups-empty";
-        setBackFaceDropSucceeded(isSuccess);
+        setFaceDropSucceeded(isSuccess);
         const targetGroupId = overId.startsWith("group:") ? overId.replace("group:", "") : null;
         if (targetGroupId) {
           await createSetFromBackFace(deckId, targetGroupId, backFaceId);
@@ -252,6 +320,87 @@ export function useDecksDragController({
         }
         resetDragState();
         return;
+      }
+      if (activeType === "front-face") {
+        const frontFaceId = active.data?.current?.frontFaceId as string | undefined;
+        const currentSelectedSetId = selectedSetIdRef.current;
+        const currentSelectedGroupId = selectedGroupIdRef.current;
+        const dragStartSelectedSetId = dragStartSelectedSetIdRef.current;
+        const dragStartSelectedGroupId = dragStartSelectedGroupIdRef.current;
+        const fallbackSetId =
+          activeSetId &&
+          currentSelectedGroupId &&
+          currentSelectedGroupId === dragStartSelectedGroupId &&
+          groupBySetId.get(activeSetId) === currentSelectedGroupId
+            ? activeSetId
+            : null;
+        const targetSetId = dragStartSelectedSetId ?? currentSelectedSetId ?? fallbackSetId;
+        if (!targetSetId || !frontFaceId) {
+          console.debug("[decks:dnd] front drop ignored: missing target/front", {
+            targetSetId,
+            frontFaceId,
+          });
+          setFaceDropSucceeded(false);
+          backFaceResetTimerRef.current = window.setTimeout(() => {
+            resetDragState();
+          }, BACK_FACE_DROP_RETURN_MS);
+          return;
+        }
+        const overId = over ? String(over.id) : dragOverIdRef.current;
+        const activeRect = active.rect.current.translated ?? active.rect.current.initial;
+        const pointerX = activeRect
+          ? activeRect.left + activeRect.width / 2
+          : (lastPointerRef.current?.x ?? null);
+        const pointerY = activeRect
+          ? activeRect.top + activeRect.height / 2
+          : (lastPointerRef.current?.y ?? null);
+        const isPointerOverEntries =
+          pointerX != null &&
+          pointerY != null &&
+          typeof document !== "undefined" &&
+          document
+            .elementsFromPoint(pointerX, pointerY)
+            .some((el) => Boolean(el.closest('[data-deck-entries-dropzone="true"]')));
+        const isSuccess = Boolean(
+          (overId && overId.startsWith("entries-area")) ||
+            isFrontDropOverRef.current ||
+            isPointerOverEntries,
+        );
+        setFaceDropSucceeded(isSuccess);
+        if (!isSuccess) {
+          console.debug("[decks:dnd] front drop ignored: invalid target", { overId });
+          backFaceResetTimerRef.current = window.setTimeout(() => {
+            resetDragState();
+          }, BACK_FACE_DROP_RETURN_MS);
+          return;
+        }
+        const inFlightKey = `${targetSetId}:${frontFaceId}`;
+        if (frontDropInFlightRef.current && frontDropInFlightKeyRef.current === inFlightKey) {
+          resetDragState();
+          return;
+        }
+        frontDropInFlightRef.current = true;
+        frontDropInFlightKeyRef.current = inFlightKey;
+        try {
+          console.debug("[decks:dnd] front drop add start", { targetSetId, frontFaceId, overId });
+          await addFrontFaceToSet(targetSetId, frontFaceId);
+          console.debug("[decks:dnd] front drop add success", { targetSetId, frontFaceId });
+          resetDragState();
+          return;
+        } catch (error) {
+          console.error("[decks:dnd] Failed to add front face to set on drop", {
+            targetSetId,
+            frontFaceId,
+            overId,
+            error,
+          });
+          setFaceDropSucceeded(false);
+          resetDragState();
+          return;
+        } finally {
+          frontDropInFlightRef.current = false;
+          frontDropInFlightKeyRef.current = null;
+        }
       }
       if (activeType === "group") {
         if (!over || !deckId || !dragActiveGroupId) {
@@ -281,7 +430,7 @@ export function useDecksDragController({
         if (deckId) {
           await loadDeckDetail(deckId);
         }
-        setBackFaceDropSucceeded(false);
+        setFaceDropSucceeded(false);
         resetDragState();
         return;
       }
@@ -370,7 +519,7 @@ export function useDecksDragController({
         }
         throw error;
       }
-      setBackFaceDropSucceeded(false);
+      setFaceDropSucceeded(false);
       resetDragState();
     },
     [
@@ -390,6 +539,7 @@ export function useDecksDragController({
       setSets,
       setSelectedGroupId,
       createSetFromBackFace,
+      addFrontFaceToSet,
       createDeckGroup,
       reorderDeckGroups,
       reorderDeckSets,
@@ -404,32 +554,37 @@ export function useDecksDragController({
       dragActiveSetId,
       dragActiveGroupId,
       dragActiveBackFaceId,
+      dragActiveFrontFaceId,
       groupDropIndex,
       setDropIndex,
       setDropGroupId,
       isGroupDropOver,
+      isFrontDropOver,
       isRemoveZone,
       isBackFaceDragActive: dragType === "back-face",
+      isFrontFaceDragActive: dragType === "front-face",
       isGroupDragActive: dragType === "group",
       isSetDragActive: dragType === "set",
-      backFaceDropSucceeded,
+      faceDropSucceeded,
     }),
     [
       dragActiveSetId,
       dragActiveGroupId,
       dragActiveBackFaceId,
+      dragActiveFrontFaceId,
       groupDropIndex,
       setDropIndex,
       setDropGroupId,
       isGroupDropOver,
+      isFrontDropOver,
       isRemoveZone,
       dragType,
-      backFaceDropSucceeded,
+      faceDropSucceeded,
     ],
   );
 
   const onDragCancel = useCallback(() => {
-    setBackFaceDropSucceeded(false);
+    setFaceDropSucceeded(false);
     resetDragState();
   }, [resetDragState]);
 

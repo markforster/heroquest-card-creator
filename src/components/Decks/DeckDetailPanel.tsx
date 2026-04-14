@@ -1,9 +1,9 @@
 "use client";
 
-import { DndContext, DragOverlay, pointerWithin } from "@dnd-kit/core";
+import { DndContext, DragOverlay, pointerWithin, useDroppable } from "@dnd-kit/core";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { ChevronLeft, ChevronRight, Copy, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/api/decks";
 import type { PairRecord } from "@/api/pairs";
@@ -54,15 +54,18 @@ type DeckDetailPanelProps = {
     dragActiveSetId: string | null;
     dragActiveGroupId: string | null;
     dragActiveBackFaceId: string | null;
+    dragActiveFrontFaceId: string | null;
     groupDropIndex: number | null;
     setDropIndex: number | null;
     setDropGroupId: string | null;
     isGroupDropOver: boolean;
+    isFrontDropOver: boolean;
     isRemoveZone: boolean;
     isBackFaceDragActive: boolean;
+    isFrontFaceDragActive: boolean;
     isGroupDragActive: boolean;
     isSetDragActive: boolean;
-    backFaceDropSucceeded: boolean;
+    faceDropSucceeded: boolean;
   };
   groupRowRef: (node: HTMLDivElement | null) => void;
   dndProps: {
@@ -85,6 +88,7 @@ type DeckDetailPanelProps = {
   groupTileVariant: "xs" | "sm" | "smMd" | "lg";
   setById: Map<string, DeckSetRecord>;
   deckEntryThumb: (cardId: string, isSelected: boolean) => ReactNode;
+  addFrontToSet: (setId: string, frontFaceId: string) => Promise<void>;
   removeEntry: (entryId: string, setId: string) => Promise<void>;
   deleteDeck: (deckId: string) => Promise<void>;
   deckSetTile: (set: DeckSetRecord, isSelected: boolean, onSelect: () => void) => ReactNode;
@@ -137,6 +141,7 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
     groupTileVariant,
     setById,
     deckEntryThumb,
+    addFrontToSet,
     removeEntry,
     deleteDeck,
     deckSetTile,
@@ -148,21 +153,46 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
   const {
     dragActiveSetId,
     dragActiveBackFaceId,
+    dragActiveFrontFaceId,
     groupDropIndex,
     setDropIndex,
     setDropGroupId,
     isGroupDropOver,
+    isFrontDropOver,
     isRemoveZone,
     isBackFaceDragActive,
+    isFrontFaceDragActive,
     isGroupDragActive,
     isSetDragActive,
-    backFaceDropSucceeded,
+    faceDropSucceeded,
   } = dragState;
+  const { setNodeRef: setEntriesDropRef } = useDroppable({ id: "entries-area" });
 
   const entriesSorted = useMemo(
     () => entries.slice().sort((a, b) => a.sortIndex - b.sortIndex),
     [entries],
   );
+  const [entriesViewMode, setEntriesViewMode] = useState<"in-set" | "paired-not-in-set">("in-set");
+  const selectedSet = useMemo(
+    () => (selectedSetId ? (setById.get(selectedSetId) ?? null) : null),
+    [selectedSetId, setById],
+  );
+  const pairedNotInSetFrontIds = useMemo(() => {
+    if (!selectedSet) return [];
+    const entryPairIds = new Set(entries.map((entry) => entry.pairId));
+    const frontIds: string[] = [];
+    pairsById.forEach((pair) => {
+      if (!pair.frontFaceId || !pair.backFaceId) return;
+      if (pair.backFaceId !== selectedSet.backFaceId) return;
+      if (entryPairIds.has(pair.id)) return;
+      frontIds.push(pair.frontFaceId);
+    });
+    return frontIds;
+  }, [entries, pairsById, selectedSet]);
+  useEffect(() => {
+    setEntriesViewMode("in-set");
+  }, [selectedSetId]);
+  const entryDropTileSize = CARD_FAN_SIZES[deckPreviewVariant];
 
   return (
     <>
@@ -262,8 +292,69 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
                       {!selectedSetId ? (
                         <div className={styles.decksEmpty}>{t("decks.noSetSelected")}</div>
                       ) : (
-                        <div className={styles.deckEntriesPanel}>
-                          {entriesSorted.length === 0 ? (
+                        <div
+                          ref={setEntriesDropRef}
+                          data-deck-entries-dropzone="true"
+                          className={`${styles.deckEntriesPanel} ${
+                            isFrontFaceDragActive ? styles.deckEntriesPanelDropActive : ""
+                          } ${isFrontDropOver ? styles.deckEntriesPanelDropOver : ""}`}
+                          style={{
+                            ["--deck-set-w" as string]: `${entryDropTileSize.width}px`,
+                            ["--deck-set-h" as string]: `${entryDropTileSize.height}px`,
+                          }}
+                        >
+                          <div className={styles.deckFacesSegment} role="tablist" aria-label="Set cards mode">
+                            <button
+                              type="button"
+                              className={`${styles.deckFacesSegmentBtn} ${
+                                entriesViewMode === "in-set" ? styles.deckFacesSegmentBtnActive : ""
+                              }`}
+                              aria-pressed={entriesViewMode === "in-set"}
+                              onClick={() => setEntriesViewMode("in-set")}
+                            >
+                              In Set ({entriesSorted.length})
+                            </button>
+                            <button
+                              type="button"
+                              className={`${styles.deckFacesSegmentBtn} ${
+                                entriesViewMode === "paired-not-in-set" ? styles.deckFacesSegmentBtnActive : ""
+                              }`}
+                              aria-pressed={entriesViewMode === "paired-not-in-set"}
+                              onClick={() => setEntriesViewMode("paired-not-in-set")}
+                            >
+                              Paired (Not In Set) ({pairedNotInSetFrontIds.length})
+                            </button>
+                          </div>
+                          {isFrontFaceDragActive ? (
+                            <div
+                              className={`${styles.deckEntriesDropPlaceholder} ${
+                                isFrontDropOver ? styles.deckEntriesDropPlaceholderOver : ""
+                              }`}
+                              aria-hidden="true"
+                            />
+                          ) : null}
+                          {entriesViewMode === "paired-not-in-set" ? (
+                            pairedNotInSetFrontIds.length === 0 ? (
+                              <div className={styles.decksEmpty}>No paired cards pending add.</div>
+                            ) : (
+                              <div className={styles.deckEntriesGrid}>
+                                {pairedNotInSetFrontIds.map((frontId) => (
+                                  <div key={frontId} className={styles.deckEntryCard}>
+                                    <button
+                                      type="button"
+                                      className={styles.deckEntrySelect}
+                                      onClick={async () => {
+                                        if (!selectedSetId) return;
+                                        await addFrontToSet(selectedSetId, frontId);
+                                      }}
+                                    >
+                                      {deckEntryThumb(frontId, false)}
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )
+                          ) : entriesSorted.length === 0 ? (
                             <div className={styles.decksEmpty}>{t("decks.emptyEntries")}</div>
                           ) : (
                             <div className={styles.deckEntriesGrid}>
@@ -326,14 +417,16 @@ export default function DeckDetailPanel(props: DeckDetailPanelProps) {
                 <div className={styles.deckRouteRowFooter} />
               </div>
               <DragOverlay
-                modifiers={dragActiveBackFaceId ? [snapCenterToCursor] : undefined}
-                dropAnimation={
-                  dragActiveBackFaceId && backFaceDropSucceeded ? null : undefined
-                }
+                modifiers={dragActiveBackFaceId || dragActiveFrontFaceId ? [snapCenterToCursor] : undefined}
+                dropAnimation={(dragActiveBackFaceId || dragActiveFrontFaceId) && faceDropSucceeded ? null : undefined}
               >
                 {dragActiveBackFaceId ? (
                   <div className={styles.deckBacksDragOverlay}>
                     {backPanelThumb(dragActiveBackFaceId)}
+                  </div>
+                ) : dragActiveFrontFaceId ? (
+                  <div className={styles.deckBacksDragOverlay}>
+                    {backPanelThumb(dragActiveFrontFaceId)}
                   </div>
                 ) : dragActiveSetId ? (
                   <div

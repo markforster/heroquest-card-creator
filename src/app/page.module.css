@@ -7313,6 +7313,33 @@ button.assetsKindBadge:disabled {
   border: 1px solid var(--hq-border-strong);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.deckEntriesPanelDropActive {
+  border-color: rgba(230, 179, 90, 0.65);
+  box-shadow: 0 0 0 1px rgba(230, 179, 90, 0.25);
+}
+
+.deckEntriesPanelDropOver {
+  border-color: var(--hq-accent);
+  box-shadow: 0 0 0 2px rgba(230, 179, 90, 0.3);
+}
+
+.deckEntriesDropPlaceholder {
+  width: var(--deck-set-w, 105px);
+  height: var(--deck-set-h, 147px);
+  border-radius: 8px;
+  border: 2px dashed var(--hq-accent);
+  background: rgba(230, 179, 90, 0.08);
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-self: flex-start;
+}
+
+.deckEntriesDropPlaceholderOver {
+  border-color: color-mix(in srgb, var(--hq-accent) 90%, #fff 10%);
+  background: rgba(230, 179, 90, 0.18);
 }
 
 .deckEntriesHeader {
@@ -7422,8 +7449,37 @@ button.assetsKindBadge:disabled {
 .deckBacksToolbar {
   flex: 0 1 auto;
   padding: var(--space-4) var(--space-6);
-  font-weight: 600;
   border-bottom: 1px solid var(--hq-border-strong);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.deckFacesSegment {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--hq-border-strong);
+  background: var(--hq-white-06);
+  padding: 2px;
+  gap: 2px;
+}
+
+.deckFacesSegmentBtn {
+  border: 0;
+  background: transparent;
+  color: var(--hq-text-muted);
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-6);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.deckFacesSegmentBtnActive {
+  color: var(--hq-text);
+  background: var(--hq-white-15);
 }
 
 .deckBacksFilter {

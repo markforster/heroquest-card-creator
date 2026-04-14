@@ -636,9 +636,8 @@ export async function addFrontsToSet(
   });
   if (!set) return [];
 
-  const deckEntries = await listByIndex<DeckEntryRecord>(ENTRIES_STORE, "deckId", set.deckId);
-  const deckPairIdSet = new Set(deckEntries.map((entry) => entry.pairId));
   const existingEntries = await listEntriesForSet(setId);
+  const setPairIdSet = new Set(existingEntries.map((entry) => entry.pairId));
   let sortIndex = nextSortIndex(existingEntries);
   const created: DeckEntryRecord[] = [];
   const now = Date.now();
@@ -647,7 +646,7 @@ export async function addFrontsToSet(
     if (!pair.backFaceId || pair.backFaceId !== set.backFaceId) {
       continue;
     }
-    if (deckPairIdSet.has(pair.id)) {
+    if (setPairIdSet.has(pair.id)) {
       continue;
     }
     const entry: DeckEntryRecord = {
@@ -661,7 +660,7 @@ export async function addFrontsToSet(
       schemaVersion: 1,
     };
     sortIndex += 1;
-    deckPairIdSet.add(pair.id);
+    setPairIdSet.add(pair.id);
     created.push(entry);
   }
 

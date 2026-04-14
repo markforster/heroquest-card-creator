@@ -83,10 +83,20 @@ function BackPanelThumb({
   );
 }
 
-function BackPanelDraggableThumb({ cardId }: { cardId: string }) {
+function BackPanelDraggableThumb({
+  cardId,
+  faceMode,
+}: {
+  cardId: string;
+  faceMode: RightPanelFaceMode;
+}) {
+  const dragType = faceMode === "back" ? "back-face" : "front-face";
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `back:${cardId}`,
-    data: { type: "back-face", backFaceId: cardId },
+    id: `${faceMode}:${cardId}`,
+    data:
+      faceMode === "back"
+        ? { type: dragType, backFaceId: cardId }
+        : { type: dragType, frontFaceId: cardId },
   });
   return (
     <div
@@ -108,18 +118,24 @@ type BackFilter =
   | { type: "recentlyDeleted" }
   | { type: "collection"; id: string };
 
+type RightPanelFaceMode = "back" | "front";
+
 function DeckBacksPanel({
   collections,
   cards,
   emptyLabel,
   activeFilter,
   onFilterChange,
+  faceMode,
+  onFaceModeChange,
 }: {
   collections: CollectionRecord[];
   cards: CardRecord[];
   emptyLabel: string;
   activeFilter: BackFilter;
   onFilterChange: (next: BackFilter) => void;
+  faceMode: RightPanelFaceMode;
+  onFaceModeChange: (next: RightPanelFaceMode) => void;
 }) {
   const {
     filteredCards,
@@ -134,10 +150,10 @@ function DeckBacksPanel({
     cards,
     collections,
     search: "",
-    templateFilter: "back",
+    templateFilter: faceMode,
     activeFilter,
     isPairMode: true,
-    isPairBacks: true,
+    isPairBacks: faceMode === "back",
     showUnpairedOnly: false,
     showMissingArtworkOnly: false,
   });
@@ -148,7 +164,30 @@ function DeckBacksPanel({
 
   return (
     <div className={styles.deckBacksPanel}>
-      <div className={styles.deckBacksToolbar}>Back faces</div>
+      <div className={styles.deckBacksToolbar}>
+        <div className={styles.deckFacesSegment} role="tablist" aria-label="Face mode">
+          <button
+            type="button"
+            className={`${styles.deckFacesSegmentBtn} ${
+              faceMode === "back" ? styles.deckFacesSegmentBtnActive : ""
+            }`}
+            aria-pressed={faceMode === "back"}
+            onClick={() => onFaceModeChange("back")}
+          >
+            Back faces
+          </button>
+          <button
+            type="button"
+            className={`${styles.deckFacesSegmentBtn} ${
+              faceMode === "front" ? styles.deckFacesSegmentBtnActive : ""
+            }`}
+            aria-pressed={faceMode === "front"}
+            onClick={() => onFaceModeChange("front")}
+          >
+            Front faces
+          </button>
+        </div>
+      </div>
       <div className={styles.deckBacksFilter}>
         <StockpileSidebar
           dragEnabled={false}
@@ -175,7 +214,7 @@ function DeckBacksPanel({
         ) : (
           <div className={styles.deckBacksGrid}>
             {filteredCards.map((card) => (
-              <BackPanelDraggableThumb key={card.id} cardId={card.id} />
+              <BackPanelDraggableThumb key={card.id} cardId={card.id} faceMode={faceMode} />
             ))}
           </div>
         )}
@@ -285,6 +324,7 @@ export default function DecksRoutePanels() {
   const [backCollections, setBackCollections] = useState<CollectionRecord[]>([]);
   const [backCards, setBackCards] = useState<CardRecord[]>([]);
   const [backFilter, setBackFilter] = useState<BackFilter>({ type: "all" });
+  const [rightPanelFaceMode, setRightPanelFaceMode] = useState<RightPanelFaceMode>("back");
   const [backCard, setBackCard] = useState<CardRecord | null>(null);
   const [isRebuildConfirmOpen, setIsRebuildConfirmOpen] = useState(false);
   const [pendingRebuildSetId, setPendingRebuildSetId] = useState<string | null>(null);
@@ -854,7 +894,7 @@ export default function DecksRoutePanels() {
   };
 
   const { dragState, dndHandlers, groupRowRef } = useDecksDragController({
-    deckId,
+    deckId: deckId ?? null,
     orderedGroups,
     sets,
     groupBySetId,
@@ -864,6 +904,17 @@ export default function DecksRoutePanels() {
     setSets,
     setSelectedGroupId,
     createSetFromBackFace,
+    addFrontFaceToSet: async (setId, frontFaceId) => {
+      await apiClient.addDeckEntries({ frontFaceIds: [frontFaceId] }, { params: { setId } });
+      const [nextEntries, pairData] = await Promise.all([
+        apiClient.listDeckEntries({ params: { setId } }),
+        apiClient.listPairs(),
+      ]);
+      setEntries(nextEntries);
+      const pairMap = new Map<string, PairRecord>();
+      pairData.forEach((pair) => pairMap.set(pair.id, pair));
+      setPairsById(pairMap);
+    },
     createDeckGroup: async (targetDeckId) =>
       apiClient.createDeckGroup(
         { title: t("decks.defaultGroupTitle") },
@@ -873,8 +924,9 @@ export default function DecksRoutePanels() {
       apiClient.reorderDeckGroups({ orderedGroupIds }, { params: { deckId: targetDeckId } }),
     reorderDeckSets: async (setIdForParams, orderedSetIds) =>
       apiClient.reorderDeckSets({ orderedSetIds }, { params: { setId: setIdForParams } }),
-    updateDeckSetGroup: async (setId, groupId) =>
-      apiClient.updateDeckSet({ groupId }, { params: { setId } }),
+    updateDeckSetGroup: async (setId, groupId) => {
+      await apiClient.updateDeckSet({ groupId }, { params: { setId } });
+    },
     deleteDeckSet: async (setId) =>
       apiClient.deleteDeckSet(undefined, { params: { setId } }),
     loadDeckDetail,
@@ -987,7 +1039,6 @@ export default function DecksRoutePanels() {
       pairsById={pairsById}
       selectedEntryIds={selectedEntryIds}
       setSelectedEntryIds={setSelectedEntryIds}
-      setEntries={setEntries}
       onSelectGroup={handleSelectGroup}
       onSelectSet={handleSelectSet}
       setIsDeleteDeckOpen={setIsDeleteDeckOpen}
@@ -1015,9 +1066,19 @@ export default function DecksRoutePanels() {
       onOpenCardEditor={(cardId) => navigate(`/cards/${cardId}`)}
       deckPreviewVariant={SET_TILE_VARIANT}
       groupTileVariant={GROUP_TILE_VARIANT}
-      deckPreviewFanCount={DECK_PREVIEW_FAN_COUNT}
       setById={setById}
       deckEntryThumb={(cardId, isSelected) => <DeckEntryThumb cardId={cardId} isSelected={isSelected} />}
+      addFrontToSet={async (setId, frontFaceId) => {
+        await apiClient.addDeckEntries({ frontFaceIds: [frontFaceId] }, { params: { setId } });
+        const [nextEntries, pairData] = await Promise.all([
+          apiClient.listDeckEntries({ params: { setId } }),
+          apiClient.listPairs(),
+        ]);
+        setEntries(nextEntries);
+        const pairMap = new Map<string, PairRecord>();
+        pairData.forEach((pair) => pairMap.set(pair.id, pair));
+        setPairsById(pairMap);
+      }}
       removeEntry={async (entryId, setId) => {
         await apiClient.removeDeckEntries({ entryIds: [entryId] }, { params: { setId } });
         const nextEntries = await apiClient.listDeckEntries({ params: { setId } });
@@ -1033,9 +1094,11 @@ export default function DecksRoutePanels() {
         <DeckBacksPanel
           collections={backCollections}
           cards={backCards}
-          emptyLabel={t("empty.noBackCards")}
+          emptyLabel={rightPanelFaceMode === "back" ? t("empty.noBackCards") : t("empty.noCardsFound")}
           activeFilter={backFilter}
           onFilterChange={(next) => setBackFilter(next)}
+          faceMode={rightPanelFaceMode}
+          onFaceModeChange={setRightPanelFaceMode}
         />
       }
     />
