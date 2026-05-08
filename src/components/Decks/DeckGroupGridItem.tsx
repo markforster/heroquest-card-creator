@@ -64,8 +64,6 @@ export default function DeckGroupGridItem({
           onSelect();
         }
       }}
-      role="button"
-      tabIndex={0}
       {...attributes}
       {...listeners}
     >

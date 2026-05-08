@@ -1,290 +1,19 @@
 "use client";
 
-import { PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { useEffect, useMemo, useState } from "react";
+import { PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import type { CardRecord } from "@/api/cards";
-import { apiClient } from "@/api/client";
-import type { CollectionRecord } from "@/api/collections";
-import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/api/decks";
-import type { PairRecord } from "@/api/pairs";
-import styles from "@/app/page.module.css";
-import CardThumbnail from "@/components/common/CardThumbnail";
-import { CARD_FAN_SIZES } from "@/components/Decks/CardFan";
-import DecksGridPanel from "@/components/Decks/DecksGridPanel";
 import DeckDetailPanel from "@/components/Decks/DeckDetailPanel";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
-import { useAppActions } from "@/components/Providers/AppActionsContext";
-import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
-import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
+import DecksGridPanel from "@/components/Decks/DecksGridPanel";
+import { useDeckDetailSelectionModel } from "@/components/Decks/hooks/useDeckDetailSelectionModel";
+import { useDeckDetailState } from "@/components/Decks/hooks/useDeckDetailState";
+import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useDecksDragController } from "@/components/Decks/hooks/useDecksDragController";
+import { useDeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
+import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 import formatMessageWith from "@/lib/format-message-with";
-
-import type { ReactNode } from "react";
-
-const SET_TILE_VARIANT = "smMd";
-const GROUP_TILE_VARIANT = "smMd";
-const DECK_PREVIEW_FAN_COUNT = 5;
-const BACK_PANEL_TILE_VARIANT = "sm";
-const BACK_PANEL_DRAG_VARIANT = "smMd";
-
-function DeckEntryThumb({ cardId, isSelected }: { cardId: string; isSelected: boolean }) {
-  const thumbUrl = useCardThumbnailUrl(cardId, null, { enabled: true, useCache: true });
-  return (
-    <div className={`${styles.deckEntryThumb} ${isSelected ? styles.deckEntryThumbSelected : ""}`}>
-      <CardThumbnail
-        src={thumbUrl}
-        alt=""
-        variant={SET_TILE_VARIANT}
-        fit="cover"
-        className={styles.deckEntryThumbFrame}
-        fallback={<div className={styles.deckPreviewThumbFallback} />}
-      />
-    </div>
-  );
-}
-
-function DeckSetThumb({ cardId }: { cardId: string }) {
-  const thumbUrl = useCardThumbnailUrl(cardId, null, { enabled: true, useCache: true });
-  return (
-    <CardThumbnail
-      src={thumbUrl}
-      alt=""
-      variant={SET_TILE_VARIANT}
-      fit="cover"
-      className={styles.deckSetThumb}
-      fallback={<div className={styles.deckSetThumbFallback} />}
-    />
-  );
-}
-
-function BackPanelThumb({
-  cardId,
-  variant = BACK_PANEL_TILE_VARIANT,
-}: {
-  cardId: string;
-  variant?: typeof BACK_PANEL_TILE_VARIANT | typeof BACK_PANEL_DRAG_VARIANT;
-}) {
-  const thumbUrl = useCardThumbnailUrl(cardId, null, { enabled: true, useCache: true });
-  return (
-    <CardThumbnail
-      src={thumbUrl}
-      alt=""
-      variant={variant}
-      fit="cover"
-      className={styles.deckSetThumb}
-      fallback={<div className={styles.deckSetThumbFallback} />}
-    />
-  );
-}
-
-function BackPanelDraggableThumb({
-  cardId,
-  faceMode,
-}: {
-  cardId: string;
-  faceMode: RightPanelFaceMode;
-}) {
-  const dragType = faceMode === "back" ? "back-face" : "front-face";
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `${faceMode}:${cardId}`,
-    data:
-      faceMode === "back"
-        ? { type: dragType, backFaceId: cardId }
-        : { type: dragType, frontFaceId: cardId },
-  });
-  return (
-    <div
-      ref={setNodeRef}
-      className={`${styles.deckBacksThumb} ${isDragging ? styles.deckBacksThumbDragging : ""}`}
-      style={{ touchAction: "none" }}
-      {...attributes}
-      {...listeners}
-    >
-      <BackPanelThumb cardId={cardId} />
-    </div>
-  );
-}
-
-type BackFilter =
-  | { type: "all" }
-  | { type: "recent" }
-  | { type: "unfiled" }
-  | { type: "recentlyDeleted" }
-  | { type: "collection"; id: string };
-
-type RightPanelFaceMode = "back" | "front";
-
-function DeckBacksPanel({
-  collections,
-  cards,
-  emptyLabel,
-  activeFilter,
-  onFilterChange,
-  faceMode,
-  onFaceModeChange,
-}: {
-  collections: CollectionRecord[];
-  cards: CardRecord[];
-  emptyLabel: string;
-  activeFilter: BackFilter;
-  onFilterChange: (next: BackFilter) => void;
-  faceMode: RightPanelFaceMode;
-  onFaceModeChange: (next: RightPanelFaceMode) => void;
-}) {
-  const {
-    filteredCards,
-    collectionCounts,
-    unfiledCount,
-    visibleCollectionIds,
-    overallCount,
-    recentCards,
-    recentlyDeletedCount,
-    recentlyDeletedTotalCount,
-  } = useStockpileFilters({
-    cards,
-    collections,
-    search: "",
-    templateFilter: faceMode,
-    activeFilter,
-    isPairMode: true,
-    isPairBacks: faceMode === "back",
-    showUnpairedOnly: false,
-    showMissingArtworkOnly: false,
-  });
-
-  const visibleCollections = collections.filter((collection) =>
-    visibleCollectionIds.has(collection.id),
-  );
-
-  return (
-    <div className={styles.deckBacksPanel}>
-      <div className={styles.deckBacksToolbar}>
-        <div className={styles.deckFacesSegment} role="tablist" aria-label="Face mode">
-          <button
-            type="button"
-            className={`${styles.deckFacesSegmentBtn} ${
-              faceMode === "back" ? styles.deckFacesSegmentBtnActive : ""
-            }`}
-            aria-pressed={faceMode === "back"}
-            onClick={() => onFaceModeChange("back")}
-          >
-            Back faces
-          </button>
-          <button
-            type="button"
-            className={`${styles.deckFacesSegmentBtn} ${
-              faceMode === "front" ? styles.deckFacesSegmentBtnActive : ""
-            }`}
-            aria-pressed={faceMode === "front"}
-            onClick={() => onFaceModeChange("front")}
-          >
-            Front faces
-          </button>
-        </div>
-      </div>
-      <div className={styles.deckBacksFilter}>
-        <StockpileSidebar
-          dragEnabled={false}
-          activeFilter={activeFilter}
-          onFilterChange={onFilterChange}
-          isPairMode
-          showMissingArtworkOnly={false}
-          collectionsWithMissingArtwork={new Set()}
-          selectedIds={[]}
-          onClearSelection={() => {}}
-          recentCardsCount={recentCards.length}
-          recentlyDeletedCount={recentlyDeletedCount}
-          recentlyDeletedTotalCount={recentlyDeletedTotalCount}
-          overallCount={overallCount}
-          unfiledCount={unfiledCount}
-          visibleCollections={visibleCollections}
-          collectionCounts={collectionCounts}
-          selectedCountByCollection={new Map()}
-        />
-      </div>
-      <div className={styles.deckBacksGridPanel}>
-        {filteredCards.length === 0 ? (
-          <div className={styles.decksEmpty}>{emptyLabel}</div>
-        ) : (
-          <div className={styles.deckBacksGrid}>
-            {filteredCards.map((card) => (
-              <BackPanelDraggableThumb key={card.id} cardId={card.id} faceMode={faceMode} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function DeckSetTile({
-  set,
-  isSelected,
-  onSelect,
-}: {
-  set: DeckSetRecord;
-  isSelected: boolean;
-  onSelect: () => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: set.id,
-  });
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <button
-      ref={setNodeRef}
-      type="button"
-      style={style}
-      className={`${styles.deckSetTile} ${isSelected ? styles.deckSetTileSelected : ""} ${
-        isDragging ? styles.deckSetTileDragging : ""
-      }`}
-      onClick={onSelect}
-      {...attributes}
-      {...listeners}
-    >
-      <DeckSetThumb cardId={set.backFaceId} />
-    </button>
-  );
-}
-
-function DeckSetDropPlaceholder({ cardId }: { cardId?: string | null }) {
-  return (
-    <div className={styles.deckSetTileDropPlaceholder}>
-      {cardId ? (
-        <div className={styles.deckSetTileDropGhost}>
-          <DeckSetThumb cardId={cardId} />
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function GroupDroppableRow({ groupId, children }: { groupId: string; children: ReactNode }) {
-  const { setNodeRef } = useDroppable({ id: `group:${groupId}` });
-  const tileSize = CARD_FAN_SIZES[SET_TILE_VARIANT];
-  return (
-    <div
-      className={styles.deckSetsRow}
-      ref={setNodeRef}
-      style={{
-        ["--deck-set-w" as string]: `${tileSize.width}px`,
-        ["--deck-set-h" as string]: `${tileSize.height}px`,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
 
 export default function DecksRoutePanels() {
   const { t } = useI18n();
@@ -296,434 +25,80 @@ export default function DecksRoutePanels() {
   const navigate = useNavigate();
   const { deckId } = useParams();
   const { openStockpile } = useAppActions();
+  const mutations = useDeckMutations();
 
-  const [decks, setDecks] = useState<DeckRecord[]>([]);
-  const [deckPreviews, setDeckPreviews] = useState<Record<string, string[]>>({});
-  const [selectedDeckIds, setSelectedDeckIds] = useState<Set<string>>(new Set());
-  const [isDeleteDeckOpen, setIsDeleteDeckOpen] = useState(false);
-  const [isDeleteSetOpen, setIsDeleteSetOpen] = useState(false);
-  const [isDeleteGroupOpen, setIsDeleteGroupOpen] = useState(false);
-  const [pendingDeleteGroup, setPendingDeleteGroup] = useState<DeckGroupRecord | null>(null);
-  const [pendingDeleteSet, setPendingDeleteSet] = useState<DeckSetRecord | null>(null);
+  const isDeckDetail = Boolean(deckId);
+  const isDecksIndex = !isDeckDetail;
 
-  const [activeDeck, setActiveDeck] = useState<DeckRecord | null>(null);
-  const [groups, setGroups] = useState<DeckGroupRecord[]>([]);
-  const [sets, setSets] = useState<DeckSetRecord[]>([]);
-  const [entries, setEntries] = useState<DeckEntryRecord[]>([]);
-  const [pairsById, setPairsById] = useState<Map<string, PairRecord>>(new Map());
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
-  const [activeSetId, setActiveSetId] = useState<string | null>(null);
-  const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set());
-  const [deckTitleDraft, setDeckTitleDraft] = useState("");
-  const [deckDescriptionDraft, setDeckDescriptionDraft] = useState("");
-  const [groupTitleDraft, setGroupTitleDraft] = useState("");
-  const [setTitleDraft, setSetTitleDraft] = useState("");
-  const [setDescriptionDraft, setSetDescriptionDraft] = useState("");
-  const [isRightPanelVisible, setIsRightPanelVisible] = useState(false);
-  const [backCollections, setBackCollections] = useState<CollectionRecord[]>([]);
-  const [backCards, setBackCards] = useState<CardRecord[]>([]);
-  const [backFilter, setBackFilter] = useState<BackFilter>({ type: "all" });
-  const [rightPanelFaceMode, setRightPanelFaceMode] = useState<RightPanelFaceMode>("back");
-  const [backCard, setBackCard] = useState<CardRecord | null>(null);
-  const [isRebuildConfirmOpen, setIsRebuildConfirmOpen] = useState(false);
-  const [pendingRebuildSetId, setPendingRebuildSetId] = useState<string | null>(null);
+  const detail = useDeckDetailState(deckId ?? null);
+  const selectionModel = useDeckDetailSelectionModel(deckId ?? null);
+  const entriesModel = useDeckSetEntriesModel(selectionModel.selectedSetId);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
     }),
   );
 
-  const isDeckDetail = Boolean(deckId);
-
-  const selectedDeckId = useMemo(() => {
-    if (selectedDeckIds.size === 1) {
-      return Array.from(selectedDeckIds)[0];
-    }
-    return null;
-  }, [selectedDeckIds]);
-
-  const selectedGroup = useMemo(
-    () => (selectedGroupId ? (groups.find((group) => group.id === selectedGroupId) ?? null) : null),
-    [groups, selectedGroupId],
-  );
-
-  const selectedSet = useMemo(
-    () => (activeSetId ? (sets.find((set) => set.id === activeSetId) ?? null) : null),
-    [activeSetId, sets],
-  );
-
-  const selectedEntryFrontIds = useMemo(() => {
-    const ids: string[] = [];
-    entries.forEach((entry) => {
-      if (!selectedEntryIds.has(entry.id)) return;
-      const pair = pairsById.get(entry.pairId);
-      if (pair?.frontFaceId) ids.push(pair.frontFaceId);
-    });
-    return ids;
-  }, [entries, pairsById, selectedEntryIds]);
-
-  const setById = useMemo(() => new Map(sets.map((set) => [set.id, set])), [sets]);
-  const groupBySetId = useMemo(() => {
-    const map = new Map<string, string>();
-    sets.forEach((set) => map.set(set.id, set.groupId));
-    return map;
-  }, [sets]);
-  const orderedGroups = useMemo(
-    () => [...groups].sort((a, b) => a.sortIndex - b.sortIndex),
-    [groups],
-  );
-  const selectedGroupSets = useMemo(() => {
-    if (!selectedGroupId) return [];
-    return sets
-      .filter((set) => set.groupId === selectedGroupId)
-      .sort((a, b) => a.sortIndex - b.sortIndex);
-  }, [sets, selectedGroupId]);
-
-  const isDecksIndex = !isDeckDetail;
-
-  const fetchDecks = async () => {
-    const data = await apiClient.listDecks({ queries: {} });
-    setDecks(data);
-    return data;
-  };
-
-  const buildDeckPreview = async (deck: DeckRecord, pairMap: Map<string, PairRecord>) => {
-    const groupsData = await apiClient.listDeckGroups({ params: { deckId: deck.id } });
-    const setsData = await apiClient.listDeckSets({ params: { deckId: deck.id } });
-    const setsByGroup = new Map<string, DeckSetRecord[]>();
-    setsData.forEach((set) => {
-      const list = setsByGroup.get(set.groupId) ?? [];
-      list.push(set);
-      setsByGroup.set(set.groupId, list);
-    });
-    setsByGroup.forEach((list, key) => {
-      list.sort((a, b) => a.sortIndex - b.sortIndex);
-      setsByGroup.set(key, list);
-    });
-
-    const orderedGroups = [...groupsData].sort((a, b) => a.sortIndex - b.sortIndex);
-    const previewIds: string[] = [];
-    const seen = new Set<string>();
-
-    for (const group of orderedGroups) {
-      const groupSets = setsByGroup.get(group.id) ?? [];
-      for (const set of groupSets) {
-        if (!seen.has(set.backFaceId)) {
-          previewIds.push(set.backFaceId);
-          seen.add(set.backFaceId);
-        }
-        if (previewIds.length >= DECK_PREVIEW_FAN_COUNT) break;
-      }
-      if (previewIds.length >= DECK_PREVIEW_FAN_COUNT) break;
-    }
-
-    for (const group of orderedGroups) {
-      const groupSets = setsByGroup.get(group.id) ?? [];
-      for (const set of groupSets) {
-        const setEntries = await apiClient.listDeckEntries({ params: { setId: set.id } });
-        const orderedEntries = [...setEntries].sort((a, b) => a.sortIndex - b.sortIndex);
-        for (const entry of orderedEntries) {
-          const pair = pairMap.get(entry.pairId);
-          if (!pair?.frontFaceId) continue;
-          if (seen.has(pair.frontFaceId)) continue;
-          previewIds.push(pair.frontFaceId);
-          seen.add(pair.frontFaceId);
-          if (previewIds.length >= DECK_PREVIEW_FAN_COUNT) break;
-        }
-        if (previewIds.length >= DECK_PREVIEW_FAN_COUNT) break;
-      }
-      if (previewIds.length >= DECK_PREVIEW_FAN_COUNT) break;
-    }
-
-    return previewIds.slice(0, DECK_PREVIEW_FAN_COUNT);
-  };
-
-  const refreshDeckPreviews = async (deckList: DeckRecord[]) => {
-    const pairs = await apiClient.listPairs();
-    const pairMap = new Map<string, PairRecord>();
-    pairs.forEach((pair) => pairMap.set(pair.id, pair));
-
-    const nextPreviews: Record<string, string[]> = {};
-    for (const deck of deckList) {
-      nextPreviews[deck.id] = await buildDeckPreview(deck, pairMap);
-    }
-    setDeckPreviews(nextPreviews);
-  };
-
-  useEffect(() => {
-    if (!isDecksIndex) return;
-    setDeckTitleDraft("");
-    setDeckDescriptionDraft("");
-    let active = true;
-    fetchDecks()
-      .then((list) => {
-        if (!active) return;
-        void refreshDeckPreviews(list);
-      })
-      .catch(() => {
-        if (!active) return;
-        setDecks([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, [isDecksIndex]);
-
-  const loadDeckDetail = async (id: string, preferredSetId?: string | null) => {
-    const [deck, groupData, setData, pairData] = await Promise.all([
-      apiClient.getDeck({ params: { deckId: id } }),
-      apiClient.listDeckGroups({ params: { deckId: id } }),
-      apiClient.listDeckSets({ params: { deckId: id } }),
-      apiClient.listPairs(),
-    ]);
-    setActiveDeck(deck);
-    setGroups(groupData);
-    setSets(setData);
-    const pairMap = new Map<string, PairRecord>();
-    pairData.forEach((pair) => pairMap.set(pair.id, pair));
-    setPairsById(pairMap);
-    setDeckTitleDraft(deck?.title ?? "");
-    setDeckDescriptionDraft(deck?.description ?? "");
-
-    const orderedGroups = [...groupData].sort((a, b) => a.sortIndex - b.sortIndex);
-    const groupById = new Map(groupData.map((group) => [group.id, group]));
-    const getFirstSetId = (groupId: string | null) => {
-      if (!groupId) return null;
-      const groupSets = setData
-        .filter((set) => set.groupId === groupId)
-        .sort((a, b) => a.sortIndex - b.sortIndex);
-      return groupSets[0]?.id ?? null;
-    };
-
-    const preferredSet = preferredSetId
-      ? (setData.find((set) => set.id === preferredSetId) ?? null)
-      : null;
-    const nextSelectedGroupId =
-      preferredSet?.groupId ??
-      (selectedGroupId && groupById.has(selectedGroupId) ? selectedGroupId : null) ??
-      orderedGroups[0]?.id ??
-      null;
-    const nextGroupSets = nextSelectedGroupId
-      ? setData
-          .filter((set) => set.groupId === nextSelectedGroupId)
-          .sort((a, b) => a.sortIndex - b.sortIndex)
-      : [];
-    const nextSelectedSetId =
-      preferredSet?.id ??
-      (nextGroupSets.length === 1
-        ? (nextGroupSets[0]?.id ?? null)
-        : selectedSetId &&
-            nextSelectedGroupId &&
-            setData.some((set) => set.id === selectedSetId && set.groupId === nextSelectedGroupId)
-          ? selectedSetId
-          : null);
-    setSelectedGroupId(nextSelectedGroupId);
-    setSelectedSetId(nextSelectedSetId);
-    setActiveSetId(nextSelectedSetId);
-  };
-
-  useEffect(() => {
-    if (!deckId) return;
-    let active = true;
-    loadDeckDetail(deckId).catch(() => {
-      if (!active) return;
-      setActiveDeck(null);
-      setGroups([]);
-      setSets([]);
-      setEntries([]);
-    });
-    return () => {
-      active = false;
-    };
-  }, [deckId]);
-
-  useEffect(() => {
-    if (!selectedSetId) {
-      setEntries([]);
-      setSelectedEntryIds(new Set());
-      return;
-    }
-    let active = true;
-    apiClient
-      .listDeckEntries({ params: { setId: selectedSetId } })
-      .then((data) => {
-        if (!active) return;
-        setEntries(data);
-        setSelectedEntryIds(new Set());
-      })
-      .catch(() => {
-        if (!active) return;
-        setEntries([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, [selectedSetId]);
-
-  useEffect(() => {
-    if (!isRightPanelVisible) return;
-    let active = true;
-    Promise.all([apiClient.listCollections(), apiClient.listCards()])
-      .then(([collections, cards]) => {
-        if (!active) return;
-        setBackCards(cards);
-        setBackCollections(collections);
-      })
-      .catch(() => {
-        if (!active) return;
-        setBackCollections([]);
-        setBackCards([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, [isRightPanelVisible]);
-
-  useEffect(() => {
-    if (!activeSetId) {
-      setBackCard(null);
-      setSetTitleDraft("");
-      setSetDescriptionDraft("");
-      return;
-    }
-    let active = true;
-    const set = sets.find((candidate) => candidate.id === activeSetId) ?? null;
-    if (set) {
-      setSetTitleDraft(set.title);
-      setSetDescriptionDraft(set.description ?? "");
-      apiClient
-        .getCard({ params: { id: set.backFaceId } })
-        .then((card) => {
-          if (!active) return;
-          setBackCard(card ?? null);
-        })
-        .catch(() => {
-          if (!active) return;
-          setBackCard(null);
-        });
-    }
-    return () => {
-      active = false;
-    };
-  }, [activeSetId, sets]);
-
-  useEffect(() => {
-    if (!selectedGroupId) {
-      setGroupTitleDraft("");
-      return;
-    }
-    const group = groups.find((candidate) => candidate.id === selectedGroupId) ?? null;
-    if (!group) {
-      setGroupTitleDraft("");
-      return;
-    }
-    setGroupTitleDraft(group.title);
-  }, [groups, selectedGroupId]);
-
-  const handleCreateDeck = async (title: string, description: string) => {
-    const trimmed = title.trim();
-    const nextTitle = trimmed || t("decks.untitledDeck");
-    const created = await apiClient.createDeck({
-      title: nextTitle,
-      description: description || null,
-    });
-    const nextDecks = await fetchDecks();
-    await refreshDeckPreviews(nextDecks);
-    setSelectedDeckIds(new Set([created.id]));
-    setDeckTitleDraft("");
-    setDeckDescriptionDraft("");
-  };
-
-  const handleDeleteDecks = async () => {
-    const ids = Array.from(selectedDeckIds);
-    await Promise.all(ids.map((id) => apiClient.deleteDeck(undefined, { params: { deckId: id } })));
-    setSelectedDeckIds(new Set());
-    const nextDecks = await fetchDecks();
-    await refreshDeckPreviews(nextDecks);
-  };
-
-  const handleDuplicateDeck = async (id: string) => {
-    const result = await apiClient.duplicateDeck(undefined, { params: { deckId: id } });
-    const nextDecks = await fetchDecks();
-    await refreshDeckPreviews(nextDecks);
-    if (result?.id) {
-      navigate(`/decks/${result.id}`);
-    }
-  };
-
-  const handleCreateGroup = async () => {
-    if (!deckId) return;
-    const created = await apiClient.createDeckGroup(
-      { title: t("decks.defaultGroupTitle") },
-      { params: { deckId } },
+  const createSetFromBackFace = async (
+    deckIdValue: string,
+    groupId: string,
+    backFaceId: string,
+  ) => {
+    return mutations.createSetFromBackFace(
+      deckIdValue,
+      groupId,
+      backFaceId,
+      t("decks.defaultSetTitle"),
     );
-    await loadDeckDetail(deckId);
-    setSelectedGroupId(created.id);
-    setSelectedSetId(null);
-    setActiveSetId(null);
   };
 
-  const handleCreateSet = async (group: DeckGroupRecord) => {
-    if (!deckId) return;
-    openStockpile({
-      mode: "pair-backs",
-      titleOverride: formatMessage("decks.chooseBackTitle", {
-        title: t("decks.defaultSetTitle"),
-      }),
-      onConfirmSelection: async (cardIds) => {
-        const backFaceId = cardIds[0];
-        if (!backFaceId) return;
-        const createdSet = await apiClient.createDeckSet({
-          deckId,
-          groupId: group.id,
-          title: t("decks.defaultSetTitle"),
-          backFaceId,
-          description: null,
-        });
-        const pairedFrontIds = (await apiClient.listPairs({ queries: { faceId: backFaceId } }))
-          .filter((pair) => pair.backFaceId === backFaceId && pair.frontFaceId)
-          .map((pair) => pair.frontFaceId as string);
-        if (pairedFrontIds.length > 0) {
-          await apiClient.addDeckEntries(
-            { frontFaceIds: pairedFrontIds },
-            { params: { setId: createdSet.id } },
-          );
-        }
-        await loadDeckDetail(deckId, createdSet.id);
-      },
-    });
+  const { dragState, dndHandlers, groupRowRef, entriesRowRef } = useDecksDragController({
+    deckId: deckId ?? null,
+    orderedGroups: selectionModel.orderedGroups,
+    sets: selectionModel.sets,
+    groupBySetId: selectionModel.groupBySetId,
+    selectedGroupId: selectionModel.selectedGroupId,
+    selectedSetId: selectionModel.selectedSetId,
+    activeSetId: selectionModel.selectedSetId,
+    entries: entriesModel.entries,
+    entryFrontIdByEntryId: entriesModel.entryFrontIdByEntryId,
+    setSelectedGroupId: selectionModel.setSelectedGroupId,
+    createSetFromBackFace,
+    addFrontFaceToSet: async (setId, frontFaceId) => entriesModel.addFront(frontFaceId, setId),
+    reorderSetEntries: mutations.reorderEntries,
+    createDeckGroup: async (targetDeckId) =>
+      mutations.createGroup(targetDeckId, t("decks.defaultGroupTitle")),
+    reorderDeckGroups: mutations.reorderGroups,
+    reorderDeckSets: mutations.reorderSets,
+    updateDeckSetGroup: mutations.updateSetGroup,
+    deleteDeckSet: mutations.deleteSet,
+    deleteDeckGroup: mutations.deleteGroup,
+    reloadStructure: selectionModel.reloadStructure,
+    refreshSetEntries: async (setId) => entriesModel.refreshEntries(setId),
+  });
+
+  const handleDeleteSet = async () => {
+    if (!detail.pendingDeleteSet) return;
+    await mutations.deleteSet(detail.pendingDeleteSet.id);
+    detail.setPendingDeleteSet(null);
+    detail.setIsDeleteSetOpen(false);
+    await selectionModel.reloadStructure();
   };
 
-  const handleAddCardsToSet = async (set: DeckSetRecord) => {
-    openStockpile({
-      mode: "pair-fronts",
-      titleOverride: formatMessage("decks.addCardsTitle", { title: set.title }),
-      onConfirmSelection: async (cardIds) => {
-        await apiClient.addDeckEntries({ frontFaceIds: cardIds }, { params: { setId: set.id } });
-        const nextEntries = await apiClient.listDeckEntries({ params: { setId: set.id } });
-        if (selectedSetId === set.id) {
-          setEntries(nextEntries);
-          setSelectedEntryIds(new Set());
-        }
-        const pairData = await apiClient.listPairs();
-        const pairMap = new Map<string, PairRecord>();
-        pairData.forEach((pair) => pairMap.set(pair.id, pair));
-        setPairsById(pairMap);
-      },
-    });
-  };
-
-  const handleChangeBack = (set: DeckSetRecord) => {
-    setPendingRebuildSetId(set.id);
-    setIsRebuildConfirmOpen(true);
+  const handleDeleteGroup = async () => {
+    if (!detail.pendingDeleteGroup) return;
+    await mutations.deleteGroup(detail.pendingDeleteGroup.id);
+    detail.setPendingDeleteGroup(null);
+    detail.setIsDeleteGroupOpen(false);
+    await selectionModel.reloadStructure();
   };
 
   const startRebuildFlow = () => {
-    const setId = pendingRebuildSetId;
+    const setId = detail.pendingRebuildSetId;
     if (!setId) return;
-    setIsRebuildConfirmOpen(false);
-    const currentSet = sets.find((set) => set.id === setId);
+    detail.setIsRebuildConfirmOpen(false);
+    const currentSet = selectionModel.sets.find((set) => set.id === setId);
     if (!currentSet) return;
 
     openStockpile({
@@ -736,371 +111,52 @@ export default function DecksRoutePanels() {
           mode: "pair-fronts",
           titleOverride: formatMessage("decks.rebuildSelectFronts", { title: currentSet.title }),
           onConfirmSelection: async (frontIds) => {
-            await apiClient.rebuildDeckSetBack(
-              { newBackFaceId, frontFaceIds: frontIds },
-              { params: { setId: currentSet.id } },
-            );
-            await loadDeckDetail(currentSet.deckId);
+            await mutations.rebuildSetBack(currentSet.id, newBackFaceId, frontIds);
+            await selectionModel.reloadStructure(currentSet.id);
           },
         });
       },
     });
   };
 
-  const handleDeleteSet = async () => {
-    if (!pendingDeleteSet) return;
-    await apiClient.deleteDeckSet(undefined, { params: { setId: pendingDeleteSet.id } });
-    setPendingDeleteSet(null);
-    setIsDeleteSetOpen(false);
-    if (deckId) {
-      await loadDeckDetail(deckId);
-    }
-  };
-
-  const handleDeleteGroup = async () => {
-    if (!pendingDeleteGroup) return;
-    await apiClient.deleteDeckGroup(undefined, { params: { groupId: pendingDeleteGroup.id } });
-    setPendingDeleteGroup(null);
-    setIsDeleteGroupOpen(false);
-    if (deckId) {
-      await loadDeckDetail(deckId);
-    }
-  };
-
-  const handleRemoveEntries = async (setId: string) => {
-    if (selectedEntryIds.size === 0) return;
-    await apiClient.removeDeckEntries(
-      { entryIds: Array.from(selectedEntryIds) },
-      { params: { setId } },
-    );
-    const nextEntries = await apiClient.listDeckEntries({ params: { setId } });
-    setEntries(nextEntries);
-    setSelectedEntryIds(new Set());
-  };
-
-  const handleMoveGroup = async (groupId: string, direction: "up" | "down") => {
-    if (!deckId) return;
-    const ordered = [...groups].sort((a, b) => a.sortIndex - b.sortIndex).map((g) => g.id);
-    const index = ordered.indexOf(groupId);
-    const nextIndex = direction === "up" ? index - 1 : index + 1;
-    if (index < 0 || nextIndex < 0 || nextIndex >= ordered.length) return;
-    const next = [...ordered];
-    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
-    await apiClient.reorderDeckGroups({ orderedGroupIds: next }, { params: { deckId } });
-    await loadDeckDetail(deckId);
-  };
-
-  const handleMoveSet = async (setId: string, direction: "up" | "down") => {
-    const set = sets.find((candidate) => candidate.id === setId);
-    if (!set) return;
-    const groupSets = sets
-      .filter((candidate) => candidate.groupId === set.groupId)
-      .sort((a, b) => a.sortIndex - b.sortIndex)
-      .map((candidate) => candidate.id);
-    const index = groupSets.indexOf(setId);
-    const nextIndex = direction === "up" ? index - 1 : index + 1;
-    if (index < 0 || nextIndex < 0 || nextIndex >= groupSets.length) return;
-    const next = [...groupSets];
-    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
-    await apiClient.reorderDeckSets({ orderedSetIds: next }, { params: { setId } });
-    if (deckId) {
-      await loadDeckDetail(deckId);
-    }
-  };
-
-
-  const handleMoveEntry = async (setId: string, entryId: string, direction: "up" | "down") => {
-    if (!entries.length) return;
-    const ordered = [...entries].sort((a, b) => a.sortIndex - b.sortIndex).map((entry) => entry.id);
-    const index = ordered.indexOf(entryId);
-    const nextIndex = direction === "up" ? index - 1 : index + 1;
-    if (index < 0 || nextIndex < 0 || nextIndex >= ordered.length) return;
-    const next = [...ordered];
-    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
-    await apiClient.reorderDeckEntries({ orderedEntryIds: next }, { params: { setId } });
-    const nextEntries = await apiClient.listDeckEntries({ params: { setId } });
-    setEntries(nextEntries);
-  };
-
-  const resolveDropTarget = (
-    activeId: string | null,
-    overId: string | null,
-    groupId: string,
-    groupSets: DeckSetRecord[],
-  ) => {
-    if (!activeId || !overId) return null;
-    const sourceGroupId = groupBySetId.get(activeId);
-    const targetGroupId = overId.startsWith("group:")
-      ? overId.replace("group:", "")
-      : groupBySetId.get(overId);
-    if (!targetGroupId || targetGroupId !== groupId) return null;
-    if (sourceGroupId === targetGroupId) return null;
-    const filtered = groupSets.filter((set) => set.id !== activeId);
-    const index = overId.startsWith("group:")
-      ? filtered.length
-      : Math.max(
-          0,
-          filtered.findIndex((set) => set.id === overId),
-        );
-    return { index, filtered };
-  };
-
-  const getFirstSetIdForGroup = (groupId: string | null) => {
-    if (!groupId) return null;
-    const groupSets = sets
-      .filter((set) => set.groupId === groupId)
-      .sort((a, b) => a.sortIndex - b.sortIndex);
-    return groupSets[0]?.id ?? null;
-  };
-
-  const handleSelectGroup = (groupId: string) => {
-    const groupSets = sets
-      .filter((set) => set.groupId === groupId)
-      .sort((a, b) => a.sortIndex - b.sortIndex);
-    const nextSetId = groupSets.length === 1 ? groupSets[0].id : null;
-    setSelectedGroupId(groupId);
-    setSelectedSetId(nextSetId);
-    setActiveSetId(nextSetId);
-  };
-
-  const handleSelectSet = (set: DeckSetRecord) => {
-    setSelectedGroupId(set.groupId);
-    setSelectedSetId(set.id);
-    setActiveSetId(set.id);
-  };
-
-  const createSetFromBackFace = async (
-    deckIdValue: string,
-    groupId: string,
-    backFaceId: string,
-  ) => {
-    const createdSet = await apiClient.createDeckSet({
-      deckId: deckIdValue,
-      groupId,
-      title: t("decks.defaultSetTitle"),
-      backFaceId,
-      description: null,
-    });
-    const pairedFrontIds = (await apiClient.listPairs({ queries: { faceId: backFaceId } }))
-      .filter((pair) => pair.backFaceId === backFaceId && pair.frontFaceId)
-      .map((pair) => pair.frontFaceId as string);
-    if (pairedFrontIds.length > 0) {
-      await apiClient.addDeckEntries(
-        { frontFaceIds: pairedFrontIds },
-        { params: { setId: createdSet.id } },
-      );
-    }
-    await loadDeckDetail(deckIdValue, createdSet.id);
-  };
-
-  const { dragState, dndHandlers, groupRowRef } = useDecksDragController({
-    deckId: deckId ?? null,
-    orderedGroups,
-    sets,
-    groupBySetId,
-    selectedGroupId,
-    selectedSetId,
-    activeSetId,
-    setSets,
-    setSelectedGroupId,
-    createSetFromBackFace,
-    addFrontFaceToSet: async (setId, frontFaceId) => {
-      await apiClient.addDeckEntries({ frontFaceIds: [frontFaceId] }, { params: { setId } });
-      const [nextEntries, pairData] = await Promise.all([
-        apiClient.listDeckEntries({ params: { setId } }),
-        apiClient.listPairs(),
-      ]);
-      setEntries(nextEntries);
-      const pairMap = new Map<string, PairRecord>();
-      pairData.forEach((pair) => pairMap.set(pair.id, pair));
-      setPairsById(pairMap);
-    },
-    createDeckGroup: async (targetDeckId) =>
-      apiClient.createDeckGroup(
-        { title: t("decks.defaultGroupTitle") },
-        { params: { deckId: targetDeckId } },
-      ),
-    reorderDeckGroups: async (targetDeckId, orderedGroupIds) =>
-      apiClient.reorderDeckGroups({ orderedGroupIds }, { params: { deckId: targetDeckId } }),
-    reorderDeckSets: async (setIdForParams, orderedSetIds) =>
-      apiClient.reorderDeckSets({ orderedSetIds }, { params: { setId: setIdForParams } }),
-    updateDeckSetGroup: async (setId, groupId) => {
-      await apiClient.updateDeckSet({ groupId }, { params: { setId } });
-    },
-    deleteDeckSet: async (setId) =>
-      apiClient.deleteDeckSet(undefined, { params: { setId } }),
-    loadDeckDetail,
-  });
-
-  const handleSaveDeckMeta = async () => {
-    if (!deckId) return;
-    await apiClient.updateDeck(
-      {
-        title: deckTitleDraft.trim() || t("decks.untitledDeck"),
-        description: deckDescriptionDraft || null,
-      },
-      { params: { deckId } },
-    );
-    await loadDeckDetail(deckId);
-  };
-
-  const handleSaveSetMeta = async () => {
-    if (!selectedSet) return;
-    await apiClient.updateDeckSet(
-      {
-        title: setTitleDraft.trim() || t("decks.untitledSet"),
-        description: setDescriptionDraft || null,
-      },
-      { params: { setId: selectedSet.id } },
-    );
-    if (deckId) {
-      await loadDeckDetail(deckId);
-    }
-  };
-
-  const handleSaveGroupMeta = async () => {
-    if (!selectedGroup) return;
-    await apiClient.updateDeckGroup(
-      {
-        title: groupTitleDraft.trim() || t("decks.defaultGroupTitle"),
-      },
-      { params: { groupId: selectedGroup.id } },
-    );
-    if (deckId) {
-      await loadDeckDetail(deckId, selectedSetId);
-    }
-  };
-
   if (isDecksIndex) {
-    return (
-      <>
-        <DecksGridPanel
-          t={t}
-          decks={decks}
-          deckPreviews={deckPreviews}
-          selectedDeckIds={selectedDeckIds}
-          selectedDeckId={selectedDeckId}
-          selectedDeckIdsCount={selectedDeckIds.size}
-          onSelectDeck={(deckId, hasModifier) => {
-            setSelectedDeckIds((prev) => {
-              if (hasModifier) {
-                const next = new Set(prev);
-                if (next.has(deckId)) next.delete(deckId);
-                else next.add(deckId);
-                return next;
-              }
-              if (prev.size === 1 && prev.has(deckId)) {
-                return new Set();
-              }
-              return new Set([deckId]);
-            });
-          }}
-          onOpenDeck={(deckId) => navigate(`/decks/${deckId}`)}
-          onOpenSelected={() => selectedDeckId && navigate(`/decks/${selectedDeckId}`)}
-          onDuplicateSelected={() => selectedDeckId && handleDuplicateDeck(selectedDeckId)}
-          onDeleteSelected={() => setIsDeleteDeckOpen(true)}
-          onCreateDeck={() => handleCreateDeck(deckTitleDraft, deckDescriptionDraft)}
-          deckTitleDraft={deckTitleDraft}
-          deckDescriptionDraft={deckDescriptionDraft}
-          setDeckTitleDraft={setDeckTitleDraft}
-          setDeckDescriptionDraft={setDeckDescriptionDraft}
-          deckPreviewFanCount={DECK_PREVIEW_FAN_COUNT}
-          previewVariant={SET_TILE_VARIANT}
-        />
-        <ConfirmModal
-          isOpen={isDeleteDeckOpen}
-          title={t("decks.deleteDeckTitle")}
-          confirmLabel={t("actions.delete")}
-          cancelLabel={t("actions.cancel")}
-          onConfirm={async () => {
-            setIsDeleteDeckOpen(false);
-            await handleDeleteDecks();
-          }}
-          onCancel={() => setIsDeleteDeckOpen(false)}
-        >
-          <div>{t("decks.deleteDeckBody")}</div>
-        </ConfirmModal>
-      </>
-    );
+    return <DecksGridPanel />;
   }
 
   return (
     <DeckDetailPanel
-      t={t}
       deckId={deckId ?? null}
-      activeDeck={activeDeck}
-      orderedGroups={orderedGroups}
-      sets={sets}
-      selectedGroupId={selectedGroupId}
-      selectedGroup={selectedGroup}
-      selectedGroupSets={selectedGroupSets}
-      selectedSetId={selectedSetId}
-      entries={entries}
-      pairsById={pairsById}
-      selectedEntryIds={selectedEntryIds}
-      setSelectedEntryIds={setSelectedEntryIds}
-      onSelectGroup={handleSelectGroup}
-      onSelectSet={handleSelectSet}
-      setIsDeleteDeckOpen={setIsDeleteDeckOpen}
-      setIsDeleteSetOpen={setIsDeleteSetOpen}
-      setIsDeleteGroupOpen={setIsDeleteGroupOpen}
-      setPendingDeleteSet={setPendingDeleteSet}
-      setPendingDeleteGroup={setPendingDeleteGroup}
-      setIsRebuildConfirmOpen={setIsRebuildConfirmOpen}
-      setPendingRebuildSetId={setPendingRebuildSetId}
-      isDeleteDeckOpen={isDeleteDeckOpen}
-      isDeleteSetOpen={isDeleteSetOpen}
-      isDeleteGroupOpen={isDeleteGroupOpen}
-      isRebuildConfirmOpen={isRebuildConfirmOpen}
-      pendingRebuildSetId={pendingRebuildSetId}
-      dragState={dragState}
-      groupRowRef={groupRowRef}
+      actions={{
+        handleDeleteSet,
+        handleDeleteGroup,
+        startRebuildFlow,
+        navigateToDecks: () => navigate("/decks"),
+        onOpenCardEditor: (cardId) => navigate(`/cards/${cardId}`),
+        deleteDeck: async (id) => {
+          await mutations.deleteDecks([id]);
+        },
+      }}
+      drag={dragState}
       dndProps={{ sensors, ...dndHandlers }}
-      isRightPanelVisible={isRightPanelVisible}
-      setIsRightPanelVisible={setIsRightPanelVisible}
-      handleDuplicateDeck={handleDuplicateDeck}
-      handleDeleteSet={handleDeleteSet}
-      handleDeleteGroup={handleDeleteGroup}
-      startRebuildFlow={startRebuildFlow}
-      navigateToDecks={() => navigate("/decks")}
-      onOpenCardEditor={(cardId) => navigate(`/cards/${cardId}`)}
-      deckPreviewVariant={SET_TILE_VARIANT}
-      groupTileVariant={GROUP_TILE_VARIANT}
-      setById={setById}
-      deckEntryThumb={(cardId, isSelected) => <DeckEntryThumb cardId={cardId} isSelected={isSelected} />}
-      addFrontToSet={async (setId, frontFaceId) => {
-        await apiClient.addDeckEntries({ frontFaceIds: [frontFaceId] }, { params: { setId } });
-        const [nextEntries, pairData] = await Promise.all([
-          apiClient.listDeckEntries({ params: { setId } }),
-          apiClient.listPairs(),
-        ]);
-        setEntries(nextEntries);
-        const pairMap = new Map<string, PairRecord>();
-        pairData.forEach((pair) => pairMap.set(pair.id, pair));
-        setPairsById(pairMap);
+      modalState={{
+        isDeleteDeckOpen: detail.isDeleteDeckOpen,
+        isDeleteSetOpen: detail.isDeleteSetOpen,
+        isDeleteGroupOpen: detail.isDeleteGroupOpen,
+        isRebuildConfirmOpen: detail.isRebuildConfirmOpen,
       }}
-      removeEntry={async (entryId, setId) => {
-        await apiClient.removeDeckEntries({ entryIds: [entryId] }, { params: { setId } });
-        const nextEntries = await apiClient.listDeckEntries({ params: { setId } });
-        setEntries(nextEntries);
+      modalActions={{
+        setIsDeleteDeckOpen: detail.setIsDeleteDeckOpen,
+        setIsDeleteSetOpen: detail.setIsDeleteSetOpen,
+        setIsDeleteGroupOpen: detail.setIsDeleteGroupOpen,
+        setPendingDeleteSet: detail.setPendingDeleteSet,
+        setPendingDeleteGroup: detail.setPendingDeleteGroup,
+        setIsRebuildConfirmOpen: detail.setIsRebuildConfirmOpen,
+        setPendingRebuildSetId: detail.setPendingRebuildSetId,
       }}
-      deleteDeck={(id) => apiClient.deleteDeck(undefined, { params: { deckId: id } })}
-      deckSetTile={(set, isSelected, onSelect) => (
-        <DeckSetTile set={set} isSelected={isSelected} onSelect={onSelect} />
-      )}
-      deckSetThumb={(cardId) => <DeckSetThumb cardId={cardId} />}
-      backPanelThumb={(cardId) => <BackPanelThumb cardId={cardId} variant={BACK_PANEL_DRAG_VARIANT} />}
-      backCardsByCollection={
-        <DeckBacksPanel
-          collections={backCollections}
-          cards={backCards}
-          emptyLabel={rightPanelFaceMode === "back" ? t("empty.noBackCards") : t("empty.noCardsFound")}
-          activeFilter={backFilter}
-          onFilterChange={(next) => setBackFilter(next)}
-          faceMode={rightPanelFaceMode}
-          onFaceModeChange={setRightPanelFaceMode}
-        />
-      }
+      groupRowRef={groupRowRef}
+      entriesRowRef={entriesRowRef}
+      selectionModel={selectionModel}
+      entriesModel={entriesModel}
     />
   );
 }

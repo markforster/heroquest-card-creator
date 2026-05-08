@@ -6727,9 +6727,11 @@ button.assetsKindBadge:disabled {
 }
 
 .cardFanPlaceholderSvg {
-  fill: var(--hq-surface-800);
-  stroke: var(--hq-border-strong);
-  stroke-dasharray: 4 4;
+  fill: rgba(230, 179, 90, 0.18);
+  stroke: rgba(230, 179, 90, 0.95);
+  stroke-width: 2.5;
+  stroke-dasharray: 6 4;
+  filter: drop-shadow(0 0 6px rgba(230, 179, 90, 0.55));
 }
 
 .cardFanSelected {
@@ -6965,12 +6967,21 @@ button.assetsKindBadge:disabled {
   display: flex;
   align-items: center;
   flex: 1 0 0;
+  gap: var(--space-4);
   min-width: 0;
   width: 100%;
   overflow-x: auto;
   overflow-y: visible;
   min-height: calc(var(--deck-set-h) + var(--space-6));
   height: 100%;
+}
+
+.deckGroupRowContent {
+  display: flex;
+  align-items: center;
+  min-width: max-content;
+  flex: 1 0 auto;
+  min-height: inherit;
 }
 
 .deckGroupRowListOver {
@@ -7018,6 +7029,50 @@ button.assetsKindBadge:disabled {
   min-width: max-content;
   min-height: calc(var(--deck-set-h) + var(--space-6));
   height: 100%;
+}
+
+.deckGroupPinnedNewGroupZone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: calc(var(--deck-set-w) + var(--space-4));
+  min-width: calc(var(--deck-set-w) + var(--space-4));
+  min-height: calc(var(--deck-set-h) + var(--space-6));
+  border-radius: var(--radius-md);
+  border: 2px dashed rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.deckGroupInlineNewGroupZone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: calc(var(--deck-set-w) + var(--space-4));
+  min-width: calc(var(--deck-set-w) + var(--space-4));
+  min-height: calc(var(--deck-set-h) + var(--space-6));
+  border-radius: var(--radius-md);
+  border: 2px dashed rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.deckGroupInlineNewGroupZoneHidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.deckGroupPinnedNewGroupZoneActive {
+  border-color: var(--hq-accent);
+  background: rgba(230, 179, 90, 0.08);
+}
+
+.deckGroupPinnedNewGroupPlaceholder {
+  width: var(--deck-set-w);
+  height: var(--deck-set-h);
+  border: 2px dashed var(--hq-accent);
+  border-radius: var(--radius-md);
+  opacity: 0.7;
 }
 
 .deckGroupDropPlaceholder {

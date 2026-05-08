@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useCallback, useMemo } from "react";
 
 import styles from "@/app/page.module.css";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
@@ -33,10 +34,21 @@ type CardFanProps = {
   hoverSpacing?: number;
   collapsedCoreCount?: number;
   enableHoverBorder?: boolean;
+  dropPlaceholderIndex?: number | null;
+  getDragMeta?: (cardId: string) => {
+    id: string;
+    data: Record<string, unknown>;
+  } | null;
   onHoverCard?: (cardId: string | null) => void;
   onSelectCard?: (cardId: string, index: number) => void;
   selectedCardId?: string | null;
   className?: string;
+};
+
+type CardFanRenderItem = {
+  key: string;
+  cardId: string | null;
+  isDropPlaceholder?: boolean;
 };
 
 function CardFanThumbSvg({
@@ -130,6 +142,159 @@ function getZIndex(offset: number, maxDepth: number, fanType: "centered" | "ltr"
   return Math.round((maxDepth - depth + sideBias) * 100);
 }
 
+function CardFanItem({
+  itemKey,
+  cardId,
+  isDropPlaceholder = false,
+  x,
+  y,
+  size,
+  transform,
+  canSelect,
+  enableHoverBorder,
+  isSelected,
+  onHoverCard,
+  onSelectCard,
+  itemIndex,
+  dragMeta,
+}: {
+  itemKey: string;
+  cardId: string | null;
+  isDropPlaceholder?: boolean;
+  x: number;
+  y: number;
+  size: { width: number; height: number };
+  transform: string;
+  canSelect: boolean;
+  enableHoverBorder: boolean;
+  isSelected: boolean;
+  onHoverCard?: (cardId: string | null) => void;
+  onSelectCard?: (cardId: string, index: number) => void;
+  itemIndex: number;
+  dragMeta: { id: string; data: Record<string, unknown> } | null;
+}) {
+  const isSetCard = dragMeta?.data.type === "set" && typeof dragMeta?.data.setId === "string";
+  const { setNodeRef: setDropNodeRef } = useDroppable({
+    id: dragMeta?.id ?? `cardfan-static-drop:${itemKey}`,
+    disabled: !isSetCard,
+  });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    isDragging,
+  } = useDraggable({
+    id: dragMeta?.id ?? `cardfan-static:${itemKey}`,
+    data: dragMeta?.data,
+    disabled: !dragMeta,
+  });
+  const draggableRef = useCallback(
+    (node: SVGGElement | null) => {
+      setDropNodeRef(node as unknown as HTMLElement | null);
+      setNodeRef(node as unknown as HTMLElement | null);
+    },
+    [setDropNodeRef, setNodeRef],
+  );
+
+  return (
+    <g
+      ref={draggableRef}
+      transform={transform}
+      className={styles.cardFanCardSvg}
+      data-set-id={
+        dragMeta && typeof dragMeta.data.setId === "string" ? dragMeta.data.setId : undefined
+      }
+      style={{
+        transition: "transform 180ms ease",
+        cursor: canSelect || dragMeta ? "pointer" : "default",
+        opacity: isDragging ? 0.4 : 1,
+        touchAction: "none",
+      }}
+      // Allow dnd-kit draggable listeners on this node to see the pointer event,
+      // but prevent parent draggables (e.g. group tile) from also activating.
+      onPointerDown={dragMeta ? (event) => event.stopPropagation() : undefined}
+      onMouseEnter={
+        cardId && onHoverCard
+          ? () => {
+              onHoverCard(cardId);
+            }
+          : undefined
+      }
+      onMouseMove={
+        cardId && onHoverCard
+          ? () => {
+              onHoverCard(cardId);
+            }
+          : undefined
+      }
+      onClick={
+        canSelect
+          ? (event) => {
+              event.stopPropagation();
+              if (cardId) onSelectCard?.(cardId, itemIndex);
+            }
+          : undefined
+      }
+      {...attributes}
+      {...listeners}
+    >
+      {isDropPlaceholder ? (
+        <rect
+          x={x}
+          y={y}
+          width={size.width}
+          height={size.height}
+          rx={6}
+          ry={6}
+          className={styles.cardFanPlaceholderSvg}
+        />
+      ) : cardId ? (
+        <>
+          <CardFanThumbSvg
+            cardId={cardId}
+            x={x}
+            y={y}
+            width={size.width}
+            height={size.height}
+          />
+          {enableHoverBorder ? (
+            <rect
+              x={x}
+              y={y}
+              width={size.width}
+              height={size.height}
+              rx={6}
+              ry={6}
+              className={styles.cardFanHover}
+            />
+          ) : null}
+          {isSelected ? (
+            <rect
+              x={x}
+              y={y}
+              width={size.width}
+              height={size.height}
+              rx={6}
+              ry={6}
+              className={styles.cardFanSelected}
+            />
+          ) : null}
+        </>
+      ) : (
+        <rect
+          x={x}
+          y={y}
+          width={size.width}
+          height={size.height}
+          rx={6}
+          ry={6}
+          className={styles.cardFanPlaceholderSvg}
+        />
+      )}
+    </g>
+  );
+}
+
 export default function CardFan({
   cardIds,
   variant,
@@ -144,6 +309,8 @@ export default function CardFan({
   hoverSpacing = 1,
   collapsedCoreCount = 5,
   enableHoverBorder = false,
+  dropPlaceholderIndex = null,
+  getDragMeta,
   onHoverCard,
   onSelectCard,
   selectedCardId = null,
@@ -154,23 +321,47 @@ export default function CardFan({
   const effectiveTilt = expanded ? 0 : tilt;
   const effectiveSpacing = expanded ? 1 : spacing;
   const effectiveFanType = expanded ? "ltr" : fanType;
-  const visibleIds = cardIds.slice(0, maxCount);
-  const items = useMemo(() => {
-    if (visibleIds.length > 0) return visibleIds;
+  const renderItems = useMemo<CardFanRenderItem[]>(() => {
+    const visibleIds = cardIds.slice(0, maxCount);
+    const baseItems: CardFanRenderItem[] =
+      visibleIds.length > 0
+        ? visibleIds.map((cardId, index) => ({
+            key: `card-${cardId}-${index}`,
+            cardId,
+          }))
+        : showPlaceholdersWhenEmpty
+          ? Array.from({ length: maxCount }, (_, index) => ({
+              key: `empty-${index}`,
+              cardId: null,
+            }))
+          : [];
+    if (dropPlaceholderIndex == null) return baseItems;
+    const boundedIndex = Math.max(0, Math.min(dropPlaceholderIndex, baseItems.length));
+    const nextItems = [...baseItems];
+    nextItems.splice(boundedIndex, 0, {
+      key: `drop-placeholder-${boundedIndex}`,
+      cardId: null,
+      isDropPlaceholder: true,
+    });
+    return nextItems;
+  }, [cardIds, dropPlaceholderIndex, maxCount, showPlaceholdersWhenEmpty]);
+
+  const itemCardIds = useMemo(() => {
+    if (renderItems.length > 0) return renderItems.map((item) => item.cardId);
     if (!showPlaceholdersWhenEmpty) return [];
     return Array.from({ length: maxCount }).map(() => null);
-  }, [maxCount, showPlaceholdersWhenEmpty, visibleIds]);
+  }, [maxCount, renderItems, showPlaceholdersWhenEmpty]);
 
   const offsets = expanded
-    ? getOffsets(items.length, effectiveFanType)
-    : getCollapsedOffsets(items.length, collapsedCoreCount, effectiveFanType);
+    ? getOffsets(renderItems.length, effectiveFanType)
+    : getCollapsedOffsets(renderItems.length, collapsedCoreCount, effectiveFanType);
   const size = CARD_FAN_SIZES[variant];
   const maxDepth = offsets.length ? Math.max(...offsets.map((value) => Math.abs(value))) : 0;
   const rotateDeg = 6 * effectiveTilt;
   const offsetPx = expanded ? size.width + 8 : 8 * effectiveSpacing;
   const baselineY = size.height;
   const hoveredIndex =
-    isHoverSpread && hoveredCardId ? items.findIndex((id) => id === hoveredCardId) : -1;
+    isHoverSpread && hoveredCardId ? itemCardIds.findIndex((id) => id === hoveredCardId) : -1;
   const hoverShiftPx = size.width * 0.25 * hoverSpacing;
 
   const baseCenters = offsets.map((offset) => offset * offsetPx);
@@ -209,11 +400,12 @@ export default function CardFan({
     const centerY = baselineY;
     const baseZIndex = expanded
       ? getZIndex(offset, maxDepth, effectiveFanType)
-      : getIndexZIndex(items.length, index);
+      : getIndexZIndex(renderItems.length, index);
     const zIndex =
       HOVER_TOPMOST && hoveredIndex === index ? baseZIndex + 1000 : baseZIndex;
     return {
-      cardId: items[index],
+      cardId: itemCardIds[index],
+      item: renderItems[index],
       offset,
       angle,
       centerX,
@@ -285,7 +477,7 @@ export default function CardFan({
           .slice()
           .sort((a, b) => a.zIndex - b.zIndex)
           .map((item) => {
-            const cardId = item.cardId;
+            const cardId = item.item.cardId;
             const canSelect = Boolean(cardId && onSelectCard);
             const pivotX = item.centerX;
             const pivotY = item.centerY;
@@ -293,82 +485,25 @@ export default function CardFan({
             const y = -size.height;
             const transform = `translate(${pivotX} ${pivotY}) rotate(${item.angle})`;
             const isSelected = selectedCardId ? cardId === selectedCardId : false;
+            const dragMeta = cardId && getDragMeta ? getDragMeta(cardId) : null;
             return (
-              <g
-                key={cardId ? `${cardId}-${item.index}` : `placeholder-${item.index}`}
+              <CardFanItem
+                key={item.item.key}
+                itemKey={item.item.key}
+                cardId={cardId}
+                isDropPlaceholder={item.item.isDropPlaceholder}
+                x={x}
+                y={y}
+                size={size}
                 transform={transform}
-                className={styles.cardFanCardSvg}
-                style={{
-                  transition: "transform 180ms ease",
-                  cursor: canSelect ? "pointer" : "default",
-                }}
-                onMouseEnter={
-                  cardId && onHoverCard
-                    ? () => {
-                        onHoverCard(cardId);
-                      }
-                    : undefined
-                }
-                onMouseMove={
-                  cardId && onHoverCard
-                    ? () => {
-                        onHoverCard(cardId);
-                      }
-                    : undefined
-                }
-                onClick={
-                  canSelect
-                    ? (event) => {
-                        event.stopPropagation();
-                        if (cardId) onSelectCard?.(cardId, item.index);
-                      }
-                    : undefined
-                }
-              >
-                {cardId ? (
-                  <>
-                    <CardFanThumbSvg
-                      cardId={cardId}
-                      x={x}
-                      y={y}
-                      width={size.width}
-                      height={size.height}
-                    />
-                    {enableHoverBorder ? (
-                      <rect
-                        x={x}
-                        y={y}
-                        width={size.width}
-                        height={size.height}
-                        rx={6}
-                        ry={6}
-                        className={styles.cardFanHover}
-                      />
-                    ) : null}
-                    {isSelected ? (
-                      <rect
-                        x={x}
-                        y={y}
-                        width={size.width}
-                        height={size.height}
-                        rx={6}
-                        ry={6}
-                        className={styles.cardFanSelected}
-                      />
-                    ) : null}
-                  </>
-                ) : (
-                  <rect
-                    x={x}
-                    y={y}
-                    width={size.width}
-                    height={size.height}
-                    rx={6}
-                    ry={6}
-                    className={styles.cardFanPlaceholderSvg}
-                  />
-                )}
-              </g>
+                canSelect={canSelect}
+                enableHoverBorder={enableHoverBorder}
+                isSelected={isSelected}
+                onHoverCard={onHoverCard}
+                onSelectCard={onSelectCard}
+                itemIndex={item.index}
+                dragMeta={dragMeta}
+              />
             );
           })}
       </svg>

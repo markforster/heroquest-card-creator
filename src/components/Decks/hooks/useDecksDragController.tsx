@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Dispatch, SetStateAction } from "react";
 
 import type {
   DragEndEvent,
@@ -9,9 +8,9 @@ import type {
   DragOverEvent,
   DragStartEvent,
 } from "@dnd-kit/core";
-import type { DeckGroupRecord, DeckSetRecord } from "@/api/decks";
+import type { DeckEntryRecord, DeckGroupRecord, DeckSetRecord } from "@/api/decks";
 
-type DragType = "set" | "group" | "back-face" | "front-face" | null;
+type DragType = "set" | "group" | "back-face" | "front-face" | "entry" | null;
 
 type DecksDragControllerArgs = {
   deckId: string | null;
@@ -21,16 +20,24 @@ type DecksDragControllerArgs = {
   selectedGroupId: string | null;
   selectedSetId: string | null;
   activeSetId: string | null;
-  setSets: Dispatch<SetStateAction<DeckSetRecord[]>>;
+  entries: DeckEntryRecord[];
+  entryFrontIdByEntryId: Map<string, string>;
   setSelectedGroupId: (groupId: string | null) => void;
-  createSetFromBackFace: (deckId: string, groupId: string, backFaceId: string) => Promise<void>;
-  addFrontFaceToSet: (setId: string, frontFaceId: string) => Promise<void>;
+  createSetFromBackFace: (
+    deckId: string,
+    groupId: string,
+    backFaceId: string,
+  ) => Promise<DeckSetRecord>;
+  addFrontFaceToSet: (setId: string, frontFaceId: string) => Promise<DeckEntryRecord[]>;
+  reorderSetEntries: (setId: string, orderedEntryIds: string[]) => Promise<void>;
   createDeckGroup: (deckId: string) => Promise<DeckGroupRecord>;
   reorderDeckGroups: (deckId: string, orderedGroupIds: string[]) => Promise<void>;
   reorderDeckSets: (setIdForParams: string, orderedSetIds: string[]) => Promise<void>;
   updateDeckSetGroup: (setId: string, groupId: string) => Promise<void>;
   deleteDeckSet: (setId: string) => Promise<void>;
-  loadDeckDetail: (deckId: string, preferredSetId?: string | null) => Promise<void>;
+  deleteDeckGroup: (groupId: string) => Promise<void>;
+  reloadStructure: (preferredSetId?: string | null) => Promise<void>;
+  refreshSetEntries: (setId: string) => Promise<void>;
 };
 
 export function useDecksDragController({
@@ -41,42 +48,81 @@ export function useDecksDragController({
   selectedGroupId,
   selectedSetId,
   activeSetId,
-  setSets,
+  entries,
+  entryFrontIdByEntryId,
   setSelectedGroupId,
   createSetFromBackFace,
   addFrontFaceToSet,
+  reorderSetEntries,
   createDeckGroup,
   reorderDeckGroups,
   reorderDeckSets,
   updateDeckSetGroup,
   deleteDeckSet,
-  loadDeckDetail,
+  deleteDeckGroup,
+  reloadStructure,
+  refreshSetEntries,
 }: DecksDragControllerArgs) {
   const [dragType, setDragType] = useState<DragType>(null);
   const [dragActiveSetId, setDragActiveSetId] = useState<string | null>(null);
   const [dragActiveGroupId, setDragActiveGroupId] = useState<string | null>(null);
   const [dragActiveBackFaceId, setDragActiveBackFaceId] = useState<string | null>(null);
   const [dragActiveFrontFaceId, setDragActiveFrontFaceId] = useState<string | null>(null);
+  const [dragActiveEntryId, setDragActiveEntryId] = useState<string | null>(null);
+  const [dragTargetGroupId, setDragTargetGroupId] = useState<string | null>(null);
+  const [backFaceDropGroupId, setBackFaceDropGroupId] = useState<string | null>(null);
+  const [backFaceDropIndex, setBackFaceDropIndex] = useState<number | null>(null);
+  const [isBackFaceNewGroupEdgeTarget, setIsBackFaceNewGroupEdgeTarget] = useState(false);
   const [groupDropIndex, setGroupDropIndex] = useState<number | null>(null);
   const [setDropIndex, setSetDropIndex] = useState<number | null>(null);
   const [setDropGroupId, setSetDropGroupId] = useState<string | null>(null);
+  const [entryDropIndex, setEntryDropIndex] = useState<number | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [isGroupDropOver, setIsGroupDropOver] = useState(false);
   const [isFrontDropOver, setIsFrontDropOver] = useState(false);
+  const [isEntriesDropOver, setIsEntriesDropOver] = useState(false);
   const [isRemoveZone, setIsRemoveZone] = useState(false);
   const [faceDropSucceeded, setFaceDropSucceeded] = useState(false);
   const groupRowRef = useRef<HTMLDivElement | null>(null);
+  const entriesRowRef = useRef<HTMLDivElement | null>(null);
   const backFaceResetTimerRef = useRef<number | null>(null);
   const dragOverIdRef = useRef<string | null>(null);
   const isFrontDropOverRef = useRef(false);
-  const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const isEntriesDropOverRef = useRef(false);
+  const entryDropIndexRef = useRef<number | null>(null);
   const selectedSetIdRef = useRef<string | null>(selectedSetId);
   const selectedGroupIdRef = useRef<string | null>(selectedGroupId);
   const dragStartSelectedSetIdRef = useRef<string | null>(null);
   const dragStartSelectedGroupIdRef = useRef<string | null>(null);
   const frontDropInFlightRef = useRef(false);
   const frontDropInFlightKeyRef = useRef<string | null>(null);
+  const pendingEntryOverIdRef = useRef<string | null>(null);
+  const entryOverCommitTimerRef = useRef<number | null>(null);
   const BACK_FACE_DROP_RETURN_MS = 180;
+  const ENTRY_OVER_COMMIT_MS = 40;
+  const resolveEntryDropIndexFromOverId = useCallback(
+    (overId: string | null, activeType: "front-face" | "entry", activeEntryId?: string | null) => {
+      if (!overId) return null;
+      const orderedCurrent = entries
+        .slice()
+        .sort((a, b) => a.sortIndex - b.sortIndex)
+        .map((entry) => entry.id);
+      const visibleOrdered =
+        activeType === "entry" && activeEntryId
+          ? orderedCurrent.filter((id) => id !== activeEntryId)
+          : orderedCurrent;
+      if (overId.startsWith("entry:")) {
+        const overEntryId = overId.replace("entry:", "");
+        const index = visibleOrdered.indexOf(overEntryId);
+        return index >= 0 ? index : visibleOrdered.length;
+      }
+      if (overId === "entries-tail" || overId === "entries-area") {
+        return visibleOrdered.length;
+      }
+      return null;
+    },
+    [entries],
+  );
 
   useEffect(() => {
     selectedSetIdRef.current = selectedSetId;
@@ -86,28 +132,57 @@ export function useDecksDragController({
     selectedGroupIdRef.current = selectedGroupId;
   }, [selectedGroupId]);
 
+  useEffect(
+    () => () => {
+      if (entryOverCommitTimerRef.current != null) {
+        window.clearTimeout(entryOverCommitTimerRef.current);
+        entryOverCommitTimerRef.current = null;
+      }
+    },
+    [],
+  );
+
   const resetDragState = useCallback(() => {
     setDragType(null);
     setDragActiveSetId(null);
     setDragActiveGroupId(null);
     setDragActiveBackFaceId(null);
     setDragActiveFrontFaceId(null);
+    setDragActiveEntryId(null);
+    setDragTargetGroupId(null);
+    setBackFaceDropGroupId(null);
+    setBackFaceDropIndex(null);
+    setIsBackFaceNewGroupEdgeTarget(false);
     setGroupDropIndex(null);
     setSetDropIndex(null);
     setSetDropGroupId(null);
+    setEntryDropIndex(null);
+    entryDropIndexRef.current = null;
     setDragOverId(null);
     dragOverIdRef.current = null;
     setIsGroupDropOver(false);
     setIsFrontDropOver(false);
+    setIsEntriesDropOver(false);
+    isEntriesDropOverRef.current = false;
     isFrontDropOverRef.current = false;
     setIsRemoveZone(false);
     dragStartSelectedSetIdRef.current = null;
     dragStartSelectedGroupIdRef.current = null;
-    lastPointerRef.current = null;
+    pendingEntryOverIdRef.current = null;
+    if (entryOverCommitTimerRef.current != null) {
+      window.clearTimeout(entryOverCommitTimerRef.current);
+      entryOverCommitTimerRef.current = null;
+    }
     if (backFaceResetTimerRef.current != null) {
       window.clearTimeout(backFaceResetTimerRef.current);
       backFaceResetTimerRef.current = null;
     }
+  }, []);
+
+  const setEntryDropIndexState = useCallback((next: number | null) => {
+    if (entryDropIndexRef.current === next) return;
+    entryDropIndexRef.current = next;
+    setEntryDropIndex(next);
   }, []);
 
   const onDragStart = useCallback(
@@ -132,13 +207,12 @@ export function useDecksDragController({
         setDragActiveFrontFaceId(frontFaceId ?? null);
         dragStartSelectedSetIdRef.current = selectedSetIdRef.current;
         dragStartSelectedGroupIdRef.current = selectedGroupIdRef.current;
-        const activeRect = active.rect.current.translated ?? active.rect.current.initial;
-        if (activeRect) {
-          lastPointerRef.current = {
-            x: activeRect.left + activeRect.width / 2,
-            y: activeRect.top + activeRect.height / 2,
-          };
-        }
+        return;
+      }
+      if (activeType === "entry") {
+        const entryId = active.data?.current?.entryId as string | undefined;
+        setDragType("entry");
+        setDragActiveEntryId(entryId ?? String(active.id));
         return;
       }
       if (activeType === "group") {
@@ -165,75 +239,81 @@ export function useDecksDragController({
         dragType !== "back-face" &&
         dragType !== "group" &&
         dragType !== "set" &&
-        dragType !== "front-face"
+        dragType !== "front-face" &&
+        dragType !== "entry"
       ) {
         return;
       }
-      if (dragType === "front-face") {
-        const activeRect = event.active.rect.current.translated ?? event.active.rect.current.initial;
-        if (activeRect) {
-          lastPointerRef.current = {
-            x: activeRect.left + activeRect.width / 2,
-            y: activeRect.top + activeRect.height / 2,
-          };
-        }
+      if (dragType === "front-face" || dragType === "entry") {
         return;
       }
       const row = groupRowRef.current;
       if (!row) return;
       const tiles = Array.from(row.querySelectorAll("[data-group-id]"));
-      const activeRect = event.active.rect.current.translated ?? event.active.rect.current.initial;
-      if (!activeRect) return;
-      const pointerX = activeRect.left + activeRect.width / 2;
-      const pointerY = activeRect.top + activeRect.height / 2;
+      const initialRect = event.active.rect.current.initial;
+      const translatedRect = event.active.rect.current.translated;
+      const pointerX =
+        initialRect != null
+          ? initialRect.left + initialRect.width / 2 + (event.delta?.x ?? 0)
+          : translatedRect
+            ? translatedRect.left + translatedRect.width / 2
+            : null;
+      const pointerY =
+        initialRect != null
+          ? initialRect.top + initialRect.height / 2 + (event.delta?.y ?? 0)
+          : translatedRect
+            ? translatedRect.top + translatedRect.height / 2
+            : null;
+      if (pointerX == null || pointerY == null) return;
+
+      if (dragType === "back-face") {
+        if (dragOverId === "groups-new-group-right-edge") {
+          setBackFaceDropGroupId(null);
+          setBackFaceDropIndex(null);
+          setGroupDropIndex(orderedGroups.length);
+          setIsBackFaceNewGroupEdgeTarget(true);
+          return;
+        }
+
+        if (dragOverId?.startsWith("group:")) {
+          const rawGroupId = dragOverId.replace("group:", "");
+          const groupNode = row.querySelector(`[data-group-id=\"${rawGroupId}\"]`);
+          if (!groupNode) {
+            setBackFaceDropGroupId(null);
+            setBackFaceDropIndex(null);
+            setIsBackFaceNewGroupEdgeTarget(false);
+            return;
+          }
+          const setNodes = Array.from(groupNode.querySelectorAll("[data-set-id]"));
+          if (!setNodes.length) {
+            setBackFaceDropGroupId(rawGroupId);
+            setBackFaceDropIndex(0);
+            setGroupDropIndex(null);
+            setIsBackFaceNewGroupEdgeTarget(false);
+            return;
+          }
+          const centers = setNodes.map((node) => {
+            const rect = (node as Element).getBoundingClientRect();
+            return rect.left + rect.width / 2;
+          });
+          let index = centers.findIndex((center) => pointerX < center);
+          if (index < 0) index = centers.length;
+          setBackFaceDropGroupId(rawGroupId);
+          setBackFaceDropIndex(index);
+          setGroupDropIndex(null);
+          setIsBackFaceNewGroupEdgeTarget(false);
+          return;
+        }
+
+        setBackFaceDropGroupId(null);
+        setBackFaceDropIndex(null);
+        setIsBackFaceNewGroupEdgeTarget(false);
+      }
 
       if (dragType === "set") {
-        const rowRect = row.getBoundingClientRect();
-        const outside =
-          pointerX < rowRect.left ||
-          pointerX > rowRect.right ||
-          pointerY < rowRect.top ||
-          pointerY > rowRect.bottom;
-        setIsRemoveZone(outside);
-        if (outside) {
-          setSetDropIndex(null);
-          setSetDropGroupId(null);
-          return;
-        }
-        const overId = dragOverId;
-        const rawGroupId =
-          overId && overId.startsWith("group:")
-            ? overId.replace("group:", "")
-            : overId && overId.startsWith("set:")
-              ? groupBySetId.get(overId.replace("set:", "")) ?? null
-              : overId
-                ? groupBySetId.get(overId) ?? null
-                : null;
-        if (!rawGroupId) {
-          setSetDropIndex(null);
-          setSetDropGroupId(null);
-          return;
-        }
-        const groupNode = row.querySelector(`[data-group-id=\"${rawGroupId}\"]`);
-        if (!groupNode) {
-          setSetDropIndex(null);
-          setSetDropGroupId(null);
-          return;
-        }
-        const setNodes = Array.from(groupNode.querySelectorAll("[data-set-id]"));
-        if (!setNodes.length) {
-          setSetDropIndex(0);
-          setSetDropGroupId(rawGroupId);
-          return;
-        }
-        const centers = setNodes.map((node) => {
-          const rect = (node as Element).getBoundingClientRect();
-          return rect.left + rect.width / 2;
-        });
-        let index = centers.findIndex((center) => pointerX < center);
-        if (index < 0) index = centers.length;
-        setSetDropIndex(index);
-        setSetDropGroupId(rawGroupId);
+        // Phase 3B: do not treat outside-row drags as destructive deletes.
+        // Placeholder targeting for set drags is derived from onDragOver droppable ids.
+        setIsRemoveZone(false);
         return;
       }
 
@@ -249,40 +329,180 @@ export function useDecksDragController({
       if (index < 0) index = centers.length;
       setGroupDropIndex(index);
     },
-    [dragType, dragOverId, groupBySetId],
+    [
+      dragType,
+      dragOverId,
+      groupBySetId,
+      orderedGroups.length,
+    ],
   );
 
   const onDragOver = useCallback(
-    ({ over, active }: DragOverEvent) => {
+    ({ over, active, delta }: DragOverEvent) => {
       const overId = over ? String(over.id) : null;
       const activeType = active.data?.current?.type;
+      const activeSetId =
+        activeType === "set"
+          ? ((active.data?.current?.setId as string | undefined) ?? String(active.id))
+          : null;
+      const normalizedActiveSetId =
+        activeSetId && activeSetId.startsWith("set:") ? activeSetId.replace("set:", "") : activeSetId;
       setDragOverId(overId);
       dragOverIdRef.current = overId;
+      const nextDragTargetGroupId =
+        activeType === "back-face" || activeType === "set" || activeType === "group"
+          ? overId?.startsWith("group:")
+            ? overId.replace("group:", "")
+            : activeType === "set" && overId?.startsWith("set:")
+              ? groupBySetId.get(overId.replace("set:", "")) ?? null
+              : null
+          : null;
+      setDragTargetGroupId(nextDragTargetGroupId);
       const isOverGroupRow =
         activeType !== "front-face" &&
         Boolean(
           overId &&
             (overId === "groups-empty" ||
               overId === "groups-area" ||
-              (activeType === "group" && overId.startsWith("group:"))),
+              overId === "groups-new-group-right-edge" ||
+              ((activeType === "group" || activeType === "set") && overId.startsWith("group:"))),
         );
-      setIsGroupDropOver(isOverGroupRow);
+      setIsGroupDropOver((prev) => (prev === isOverGroupRow ? prev : isOverGroupRow));
       const nextFrontDropOver = Boolean(
-        activeType === "front-face" && overId?.startsWith("entries-area"),
+        activeType === "front-face" &&
+          overId &&
+          (overId === "entries-area" || overId === "entries-tail" || overId.startsWith("entry:")),
       );
-      setIsFrontDropOver(nextFrontDropOver);
+      setIsFrontDropOver((prev) => (prev === nextFrontDropOver ? prev : nextFrontDropOver));
       isFrontDropOverRef.current = nextFrontDropOver;
-      if (activeType === "back-face" && overId === "groups-empty") {
-        setGroupDropIndex(0);
-      }
-      if ((activeType === "set" || activeType === "group") && overId?.startsWith("group:")) {
-        const groupId = overId.replace("group:", "");
-        if (groupId && groupId !== selectedGroupId) {
-          setSelectedGroupId(groupId);
+      const nextEntriesDropOver = Boolean(
+        (activeType === "front-face" || activeType === "entry") &&
+          overId &&
+          (overId === "entries-area" || overId === "entries-tail" || overId.startsWith("entry:")),
+      );
+      setIsEntriesDropOver((prev) => (prev === nextEntriesDropOver ? prev : nextEntriesDropOver));
+      isEntriesDropOverRef.current = nextEntriesDropOver;
+      if (activeType === "front-face" || activeType === "entry") {
+        const nextIndex = resolveEntryDropIndexFromOverId(
+          overId,
+          activeType,
+          activeType === "entry" ? ((active.data?.current?.entryId as string | undefined) ?? null) : null,
+        );
+        const trackedOverId = overId ?? "__null__";
+        if (pendingEntryOverIdRef.current !== trackedOverId) {
+          pendingEntryOverIdRef.current = trackedOverId;
+          if (entryOverCommitTimerRef.current != null) {
+            window.clearTimeout(entryOverCommitTimerRef.current);
+            entryOverCommitTimerRef.current = null;
+          }
+          entryOverCommitTimerRef.current = window.setTimeout(() => {
+            setEntryDropIndexState(nextIndex);
+            entryOverCommitTimerRef.current = null;
+          }, ENTRY_OVER_COMMIT_MS);
+        } else if (entryOverCommitTimerRef.current == null) {
+          setEntryDropIndexState(nextIndex);
         }
       }
+      if (activeType === "set") {
+        // Derive set placeholder from the hovered droppable target.
+        // This keeps same-group reorder stable and independent of overlay offset.
+        if (!overId) {
+          setSetDropGroupId(null);
+          setSetDropIndex(null);
+          setGroupDropIndex(null);
+          return;
+        }
+        if (
+          overId === "groups-area" ||
+          overId === "groups-empty" ||
+          overId === "groups-new-group-right-edge"
+        ) {
+          setSetDropGroupId(null);
+          setSetDropIndex(null);
+          const row = groupRowRef.current;
+          if (!row) {
+            setGroupDropIndex(null);
+            return;
+          }
+          const tiles = Array.from(row.querySelectorAll("[data-group-id]"));
+          const activeRectCurrent = active.rect?.current;
+          const activeInitialRect = activeRectCurrent?.initial ?? null;
+          const activeTranslatedRect = activeRectCurrent?.translated ?? null;
+          const pointerX =
+            activeInitialRect != null
+              ? activeInitialRect.left + activeInitialRect.width / 2 + (delta?.x ?? 0)
+              : activeTranslatedRect
+                ? activeTranslatedRect.left + activeTranslatedRect.width / 2
+                : null;
+          if (pointerX == null) {
+            setGroupDropIndex(tiles.length);
+            return;
+          }
+          const centers = tiles.map((node) => {
+            const rect = (node as HTMLElement).getBoundingClientRect();
+            return rect.left + rect.width / 2;
+          });
+          let index = centers.findIndex((center) => pointerX < center);
+          if (index < 0) index = centers.length;
+          setGroupDropIndex(index);
+          return;
+        }
+        if (overId.startsWith("group:")) {
+          const targetGroupId = overId.replace("group:", "");
+          const targetOrdered = sets
+            .filter((set) => set.groupId === targetGroupId)
+            .sort((a, b) => a.sortIndex - b.sortIndex)
+            .map((set) => set.id)
+            .filter((setId) => setId !== normalizedActiveSetId);
+          setSetDropGroupId(targetGroupId);
+          setSetDropIndex(targetOrdered.length);
+          setGroupDropIndex(null);
+          return;
+        }
+        if (overId.startsWith("set:")) {
+          const overSetId = overId.replace("set:", "");
+          const targetGroupId = groupBySetId.get(overSetId) ?? null;
+          if (!targetGroupId) {
+            setSetDropGroupId(null);
+            setSetDropIndex(null);
+            setGroupDropIndex(null);
+            return;
+          }
+          const targetOrdered = sets
+            .filter((set) => set.groupId === targetGroupId)
+            .sort((a, b) => a.sortIndex - b.sortIndex)
+            .map((set) => set.id)
+            .filter((setId) => setId !== normalizedActiveSetId);
+          const baseIndex = Math.max(0, targetOrdered.indexOf(overSetId));
+          const activeRectCurrent = active.rect?.current;
+          const activeInitialRect = activeRectCurrent?.initial ?? null;
+          const activeTranslatedRect = activeRectCurrent?.translated ?? null;
+          const pointerX =
+            activeInitialRect != null
+              ? activeInitialRect.left + activeInitialRect.width / 2 + (delta?.x ?? 0)
+              : activeTranslatedRect
+                ? activeTranslatedRect.left + activeTranslatedRect.width / 2
+                : null;
+          const overMidX = over?.rect ? over.rect.left + over.rect.width / 2 : null;
+          const insertAfter = pointerX != null && overMidX != null && pointerX >= overMidX;
+          const nextIndex = baseIndex + (insertAfter ? 1 : 0);
+          setSetDropGroupId(targetGroupId);
+          setSetDropIndex(Math.max(0, Math.min(nextIndex, targetOrdered.length)));
+          setGroupDropIndex(null);
+          return;
+        }
+        setSetDropGroupId(null);
+        setSetDropIndex(null);
+        setGroupDropIndex(null);
+      }
+      if (activeType === "back-face" && overId === "groups-empty") {
+        setBackFaceDropGroupId(null);
+        setBackFaceDropIndex(null);
+        setGroupDropIndex(0);
+        setIsBackFaceNewGroupEdgeTarget(false);
+      }
     },
-    [selectedGroupId, setSelectedGroupId],
+    [groupBySetId, resolveEntryDropIndexFromOverId, setEntryDropIndexState, sets],
   );
 
   const onDragEnd = useCallback(
@@ -297,26 +517,56 @@ export function useDecksDragController({
           }, BACK_FACE_DROP_RETURN_MS);
           return;
         }
-        const overId = String(over.id);
-        const isSuccess =
-          overId.startsWith("group:") || overId === "groups-area" || overId === "groups-empty";
-        setFaceDropSucceeded(isSuccess);
-        const targetGroupId = overId.startsWith("group:") ? overId.replace("group:", "") : null;
-        if (targetGroupId) {
-          await createSetFromBackFace(deckId, targetGroupId, backFaceId);
+        if (sets.some((set) => set.backFaceId === backFaceId)) {
+          setFaceDropSucceeded(false);
           resetDragState();
           return;
         }
-        if (overId === "groups-empty" || overId === "groups-area") {
-          const group = await createDeckGroup(deckId);
-          if (groupDropIndex != null) {
-            const orderedGroupIds = [...orderedGroups.map((entry) => entry.id)];
-            const nextIndex = Math.max(0, Math.min(groupDropIndex, orderedGroupIds.length));
-            orderedGroupIds.splice(nextIndex, 0, group.id);
-            await reorderDeckGroups(deckId, orderedGroupIds);
+        const overId = String(over.id);
+        const isSuccess =
+          overId.startsWith("group:") ||
+          overId === "groups-area" ||
+          overId === "groups-empty" ||
+          overId === "groups-new-group-right-edge";
+        setFaceDropSucceeded(isSuccess);
+        const targetGroupId = overId.startsWith("group:") ? overId.replace("group:", "") : null;
+        if (targetGroupId) {
+          const createdSet = await createSetFromBackFace(deckId, targetGroupId, backFaceId);
+          if (backFaceDropGroupId === targetGroupId && backFaceDropIndex != null) {
+            const targetOrdered = sets
+              .filter((set) => set.groupId === targetGroupId)
+              .sort((a, b) => a.sortIndex - b.sortIndex)
+              .map((set) => set.id);
+            const ordered = [...targetOrdered];
+            const boundedIndex = Math.max(0, Math.min(backFaceDropIndex, ordered.length));
+            ordered.splice(boundedIndex, 0, createdSet.id);
+            await reorderDeckSets(createdSet.id, ordered);
           }
-          await createSetFromBackFace(deckId, group.id, backFaceId);
-          await loadDeckDetail(deckId);
+          resetDragState();
+          await reloadStructure(createdSet.id);
+          return;
+        }
+        if (
+          overId === "groups-empty" ||
+          overId === "groups-area" ||
+          overId === "groups-new-group-right-edge"
+        ) {
+          const group = await createDeckGroup(deckId);
+          try {
+            if (groupDropIndex != null) {
+              const orderedGroupIds = [...orderedGroups.map((entry) => entry.id)];
+              const nextIndex = Math.max(0, Math.min(groupDropIndex, orderedGroupIds.length));
+              orderedGroupIds.splice(nextIndex, 0, group.id);
+              await reorderDeckGroups(deckId, orderedGroupIds);
+            }
+            const createdSet = await createSetFromBackFace(deckId, group.id, backFaceId);
+            resetDragState();
+            await reloadStructure(createdSet.id);
+          } catch (error) {
+            await deleteDeckGroup(group.id);
+            await reloadStructure();
+            throw error;
+          }
         }
         resetDragState();
         return;
@@ -347,24 +597,9 @@ export function useDecksDragController({
           return;
         }
         const overId = over ? String(over.id) : dragOverIdRef.current;
-        const activeRect = active.rect.current.translated ?? active.rect.current.initial;
-        const pointerX = activeRect
-          ? activeRect.left + activeRect.width / 2
-          : (lastPointerRef.current?.x ?? null);
-        const pointerY = activeRect
-          ? activeRect.top + activeRect.height / 2
-          : (lastPointerRef.current?.y ?? null);
-        const isPointerOverEntries =
-          pointerX != null &&
-          pointerY != null &&
-          typeof document !== "undefined" &&
-          document
-            .elementsFromPoint(pointerX, pointerY)
-            .some((el) => Boolean(el.closest('[data-deck-entries-dropzone="true"]')));
         const isSuccess = Boolean(
-          (overId && overId.startsWith("entries-area")) ||
-            isFrontDropOverRef.current ||
-            isPointerOverEntries,
+          overId &&
+            (overId === "entries-area" || overId === "entries-tail" || overId.startsWith("entry:")),
         );
         setFaceDropSucceeded(isSuccess);
         if (!isSuccess) {
@@ -383,7 +618,24 @@ export function useDecksDragController({
         frontDropInFlightKeyRef.current = inFlightKey;
         try {
           console.debug("[decks:dnd] front drop add start", { targetSetId, frontFaceId, overId });
-          await addFrontFaceToSet(targetSetId, frontFaceId);
+          const prevEntries = entries.slice().sort((a, b) => a.sortIndex - b.sortIndex);
+          const prevIds = new Set(prevEntries.map((entry) => entry.id));
+          const nextEntries = await addFrontFaceToSet(targetSetId, frontFaceId);
+          const nextSorted = nextEntries.slice().sort((a, b) => a.sortIndex - b.sortIndex);
+          const dropIndex =
+            entryDropIndex == null ? nextSorted.length : Math.max(0, Math.min(entryDropIndex, nextSorted.length));
+          let moveEntryId = nextSorted.find((entry) => !prevIds.has(entry.id))?.id ?? null;
+          if (!moveEntryId) {
+            moveEntryId =
+              prevEntries.find((entry) => entryFrontIdByEntryId.get(entry.id) === frontFaceId)?.id ?? null;
+          }
+          if (moveEntryId) {
+            const ordered = nextSorted.map((entry) => entry.id).filter((id) => id !== moveEntryId);
+            const boundedIndex = Math.max(0, Math.min(dropIndex, ordered.length));
+            ordered.splice(boundedIndex, 0, moveEntryId);
+            await reorderSetEntries(targetSetId, ordered);
+            await refreshSetEntries(targetSetId);
+          }
           console.debug("[decks:dnd] front drop add success", { targetSetId, frontFaceId });
           resetDragState();
           return;
@@ -402,6 +654,51 @@ export function useDecksDragController({
           frontDropInFlightKeyRef.current = null;
         }
       }
+      if (activeType === "entry") {
+      const entryId = active.data?.current?.entryId as string | undefined;
+        const targetSetId = selectedSetIdRef.current ?? activeSetId;
+        if (!entryId || !targetSetId) {
+          resetDragState();
+          return;
+        }
+        const overId = over ? String(over.id) : dragOverIdRef.current;
+        const isSuccess = Boolean(
+          overId &&
+            (overId === "entries-area" || overId === "entries-tail" || overId.startsWith("entry:")),
+        );
+        if (!isSuccess) {
+          resetDragState();
+          return;
+        }
+        const orderedCurrent = entries.slice().sort((a, b) => a.sortIndex - b.sortIndex).map((entry) => entry.id);
+        const resolvedDropIndex =
+          entryDropIndexRef.current ??
+          resolveEntryDropIndexFromOverId(overId, "entry", entryId);
+        if (resolvedDropIndex == null) {
+          resetDragState();
+          return;
+        }
+        if (!orderedCurrent.includes(entryId)) {
+          resetDragState();
+          return;
+        }
+        const next = orderedCurrent.filter((id) => id !== entryId);
+        const toIndex = Math.max(0, Math.min(resolvedDropIndex, next.length));
+        next.splice(toIndex, 0, entryId);
+        if (next.join("|") === orderedCurrent.join("|")) {
+          resetDragState();
+          return;
+        }
+        try {
+          await reorderSetEntries(targetSetId, next);
+          await refreshSetEntries(targetSetId);
+        } catch {
+          await refreshSetEntries(targetSetId);
+        } finally {
+          resetDragState();
+        }
+        return;
+      }
       if (activeType === "group") {
         if (!over || !deckId || !dragActiveGroupId) {
           resetDragState();
@@ -419,21 +716,14 @@ export function useDecksDragController({
         if (insertIndex > fromIndex) insertIndex -= 1;
         next.splice(insertIndex, 0, dragActiveGroupId);
         await reorderDeckGroups(deckId, next);
-        await loadDeckDetail(deckId, selectedSetId);
+        await reloadStructure(selectedSetId);
         resetDragState();
         return;
       }
       const activeId = dragActiveSetId ?? String(active.id);
       const normalizedActiveId = activeId.startsWith("set:") ? activeId.replace("set:", "") : activeId;
-      if (isRemoveZone && normalizedActiveId) {
-        await deleteDeckSet(normalizedActiveId);
-        if (deckId) {
-          await loadDeckDetail(deckId);
-        }
-        setFaceDropSucceeded(false);
-        resetDragState();
-        return;
-      }
+      // Phase 3B: do not delete sets by dragging outside the row bounds.
+      // Deletion is an explicit action (Phase 3A), not an implicit drag-outside behavior.
       if (!over) {
         resetDragState();
         return;
@@ -445,8 +735,60 @@ export function useDecksDragController({
       const normalizedOverId = overId.startsWith("set:") ? overId.replace("set:", "") : overId;
       const targetGroupId = overId.startsWith("group:")
         ? overId.replace("group:", "")
-        : groupBySetId.get(normalizedOverId);
-      if (!targetGroupId) return;
+        : (groupBySetId.get(normalizedOverId) ?? null);
+      const isNewGroupDropTarget =
+        overId === "groups-area" ||
+        overId === "groups-empty" ||
+        overId === "groups-new-group-right-edge";
+      if (!targetGroupId && !isNewGroupDropTarget) {
+        resetDragState();
+        return;
+      }
+
+      if (!targetGroupId && isNewGroupDropTarget && deckId) {
+        const sourceOrdered = sets
+          .filter((set) => set.groupId === sourceGroupId)
+          .sort((a, b) => a.sortIndex - b.sortIndex)
+          .map((set) => set.id);
+        const fromIndex = sourceOrdered.indexOf(normalizedActiveId);
+        if (fromIndex < 0) {
+          resetDragState();
+          return;
+        }
+        const nextSource = [...sourceOrdered];
+        nextSource.splice(fromIndex, 1);
+        const group = await createDeckGroup(deckId);
+        try {
+          if (groupDropIndex != null) {
+            const orderedGroupIds = [...orderedGroups.map((entry) => entry.id)];
+            const nextIndex = Math.max(0, Math.min(groupDropIndex, orderedGroupIds.length));
+            orderedGroupIds.splice(nextIndex, 0, group.id);
+            await reorderDeckGroups(deckId, orderedGroupIds);
+          }
+          await updateDeckSetGroup(normalizedActiveId, group.id);
+          await reorderDeckSets(normalizedActiveId, [normalizedActiveId]);
+          if (nextSource.length > 0) {
+            await reorderDeckSets(nextSource[0], nextSource);
+          } else {
+            await deleteDeckGroup(sourceGroupId);
+          }
+          if (normalizedActiveId === selectedSetId) {
+            setSelectedGroupId(group.id);
+          }
+          await reloadStructure(normalizedActiveId);
+        } catch (error) {
+          await deleteDeckGroup(group.id);
+          await reloadStructure(activeSetId);
+          throw error;
+        }
+        setFaceDropSucceeded(false);
+        resetDragState();
+        return;
+      }
+      if (!targetGroupId) {
+        resetDragState();
+        return;
+      }
 
       const sourceOrdered = sets
         .filter((set) => set.groupId === sourceGroupId)
@@ -465,7 +807,7 @@ export function useDecksDragController({
       const nextSource = [...sourceOrdered];
       nextSource.splice(fromIndex, 1);
 
-      const toIndex =
+      let toIndex =
         setDropGroupId === targetGroupId && setDropIndex != null
           ? setDropIndex
           : sourceGroupId === targetGroupId
@@ -473,30 +815,12 @@ export function useDecksDragController({
             : overId.startsWith("group:")
               ? targetOrdered.length
               : Math.max(0, targetOrdered.indexOf(normalizedOverId));
+      if (sourceGroupId === targetGroupId && toIndex > fromIndex) {
+        toIndex -= 1;
+      }
+      toIndex = Math.max(0, Math.min(toIndex, nextSource.length));
       const nextTarget = sourceGroupId === targetGroupId ? nextSource : [...targetOrdered];
       nextTarget.splice(toIndex, 0, normalizedActiveId);
-
-      const sourceSortIndexMap = new Map(nextSource.map((id, index) => [id, index]));
-      const targetSortIndexMap = new Map(nextTarget.map((id, index) => [id, index]));
-
-      setSets((prev) =>
-        prev.map((set) => {
-          if (set.id === normalizedActiveId) {
-            return {
-              ...set,
-              groupId: targetGroupId,
-              sortIndex: targetSortIndexMap.get(set.id) ?? set.sortIndex,
-            };
-          }
-          if (set.groupId === sourceGroupId && sourceSortIndexMap.has(set.id)) {
-            return { ...set, sortIndex: sourceSortIndexMap.get(set.id) ?? set.sortIndex };
-          }
-          if (set.groupId === targetGroupId && targetSortIndexMap.has(set.id)) {
-            return { ...set, sortIndex: targetSortIndexMap.get(set.id) ?? set.sortIndex };
-          }
-          return set;
-        }),
-      );
 
       try {
         if (sourceGroupId !== targetGroupId) {
@@ -508,15 +832,16 @@ export function useDecksDragController({
           await reorderDeckSets(normalizedActiveId, nextTarget);
           if (nextSource.length > 0) {
             await reorderDeckSets(nextSource[0], nextSource);
+          } else {
+            await deleteDeckGroup(sourceGroupId);
           }
         }
         if (normalizedActiveId === selectedSetId && sourceGroupId !== targetGroupId) {
           setSelectedGroupId(targetGroupId);
         }
+        await reloadStructure(sourceGroupId === targetGroupId ? normalizedActiveId : selectedSetId);
       } catch (error) {
-        if (deckId) {
-          await loadDeckDetail(deckId, activeSetId);
-        }
+        await reloadStructure(activeSetId);
         throw error;
       }
       setFaceDropSucceeded(false);
@@ -526,17 +851,20 @@ export function useDecksDragController({
       resetDragState,
       deckId,
       groupDropIndex,
+      backFaceDropGroupId,
+      backFaceDropIndex,
       dragActiveGroupId,
       setDropIndex,
       setDropGroupId,
+      entryDropIndex,
       isRemoveZone,
+      isEntriesDropOver,
       orderedGroups,
       groupBySetId,
       sets,
       selectedSetId,
       selectedGroupId,
       activeSetId,
-      setSets,
       setSelectedGroupId,
       createSetFromBackFace,
       addFrontFaceToSet,
@@ -545,7 +873,13 @@ export function useDecksDragController({
       reorderDeckSets,
       updateDeckSetGroup,
       deleteDeckSet,
-      loadDeckDetail,
+      deleteDeckGroup,
+      reloadStructure,
+      entries,
+      entryFrontIdByEntryId,
+      reorderSetEntries,
+      refreshSetEntries,
+      resolveEntryDropIndexFromOverId,
     ],
   );
 
@@ -555,14 +889,22 @@ export function useDecksDragController({
       dragActiveGroupId,
       dragActiveBackFaceId,
       dragActiveFrontFaceId,
+      dragActiveEntryId,
+      dragTargetGroupId,
+      backFaceDropGroupId,
+      backFaceDropIndex,
+      isBackFaceNewGroupEdgeTarget,
       groupDropIndex,
       setDropIndex,
       setDropGroupId,
+      entryDropIndex,
       isGroupDropOver,
       isFrontDropOver,
+      isEntriesDropOver,
       isRemoveZone,
       isBackFaceDragActive: dragType === "back-face",
       isFrontFaceDragActive: dragType === "front-face",
+      isEntryDragActive: dragType === "entry",
       isGroupDragActive: dragType === "group",
       isSetDragActive: dragType === "set",
       faceDropSucceeded,
@@ -572,11 +914,18 @@ export function useDecksDragController({
       dragActiveGroupId,
       dragActiveBackFaceId,
       dragActiveFrontFaceId,
+      dragActiveEntryId,
+      dragTargetGroupId,
+      backFaceDropGroupId,
+      backFaceDropIndex,
+      isBackFaceNewGroupEdgeTarget,
       groupDropIndex,
       setDropIndex,
       setDropGroupId,
+      entryDropIndex,
       isGroupDropOver,
       isFrontDropOver,
+      isEntriesDropOver,
       isRemoveZone,
       dragType,
       faceDropSucceeded,
@@ -602,10 +951,14 @@ export function useDecksDragController({
   const groupRowRefSetter = useCallback((node: HTMLDivElement | null) => {
     groupRowRef.current = node;
   }, []);
+  const entriesRowRefSetter = useCallback((node: HTMLDivElement | null) => {
+    entriesRowRef.current = node;
+  }, []);
 
   return {
     dragState,
     dndHandlers,
     groupRowRef: groupRowRefSetter,
+    entriesRowRef: entriesRowRefSetter,
   };
 }

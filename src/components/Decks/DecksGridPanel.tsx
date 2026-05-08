@@ -2,57 +2,29 @@
 
 import { Layers, Plus } from "lucide-react";
 
-import type { DeckRecord } from "@/api/decks";
 import styles from "@/app/page.module.css";
 import CardFan from "@/components/Decks/CardFan";
+import { useDecksGridModel } from "@/components/Decks/hooks/useDecksGridModel";
 import ModalShell from "@/components/common/ModalShell";
-import type { TFunction } from "@/i18n/types";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
+import { useI18n } from "@/i18n/I18nProvider";
+import { useNavigate } from "react-router-dom";
 
 import { useState } from "react";
 
-type DecksGridPanelProps = {
-  t: TFunction;
-  decks: DeckRecord[];
-  deckPreviews: Record<string, string[]>;
-  selectedDeckIds: Set<string>;
-  selectedDeckId: string | null;
-  selectedDeckIdsCount: number;
-  onSelectDeck: (deckId: string, hasModifier: boolean) => void;
-  onOpenDeck: (deckId: string) => void;
-  onOpenSelected: () => void;
-  onDuplicateSelected: () => void;
-  onDeleteSelected: () => void;
-  onCreateDeck: () => Promise<void> | void;
-  deckTitleDraft: string;
-  deckDescriptionDraft: string;
-  setDeckTitleDraft: (value: string) => void;
-  setDeckDescriptionDraft: (value: string) => void;
-  deckPreviewFanCount: number;
-  previewVariant: "xs" | "sm" | "smMd" | "lg";
-};
+const PREVIEW_FAN_COUNT = 5;
+const PREVIEW_VARIANT = "smMd";
 
-export default function DecksGridPanel({
-  t,
-  decks,
-  deckPreviews,
-  selectedDeckIds,
-  selectedDeckId,
-  selectedDeckIdsCount,
-  onSelectDeck,
-  onOpenDeck,
-  onOpenSelected,
-  onDuplicateSelected,
-  onDeleteSelected,
-  onCreateDeck,
-  deckTitleDraft,
-  deckDescriptionDraft,
-  setDeckTitleDraft,
-  setDeckDescriptionDraft,
-  deckPreviewFanCount,
-  previewVariant,
-}: DecksGridPanelProps) {
+export default function DecksGridPanel() {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const model = useDecksGridModel({
+    previewFanCount: PREVIEW_FAN_COUNT,
+    untitledDeckLabel: t("decks.untitledDeck"),
+  });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const closeCreateModal = () => setIsCreateOpen(false);
+
   return (
     <>
       <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
@@ -65,9 +37,25 @@ export default function DecksGridPanel({
         <div
           className={styles.decksGrid}
           tabIndex={0}
-          onKeyDown={(event) => {
-            if (event.key !== "Enter") return;
-            if (selectedDeckId) onOpenDeck(selectedDeckId);
+          onKeyDown={async (event) => {
+            if (event.key === "Enter") {
+              if (model.selectedDeckId) navigate(`/decks/${model.selectedDeckId}`);
+              return;
+            }
+            if ((event.key === "Delete" || event.key === "Backspace") && model.selectedDeckIds.size > 0) {
+              event.preventDefault();
+              model.setIsDeleteDeckOpen(true);
+              return;
+            }
+            if (
+              (event.metaKey || event.ctrlKey) &&
+              event.key.toLowerCase() === "d" &&
+              model.selectedDeckId
+            ) {
+              event.preventDefault();
+              const duplicatedId = await model.duplicateDeck(model.selectedDeckId);
+              if (duplicatedId) navigate(`/decks/${duplicatedId}`);
+            }
           }}
         >
           <button
@@ -77,22 +65,22 @@ export default function DecksGridPanel({
           >
             <Plus className={styles.deckTileCreateIcon} />
           </button>
-          {decks.map((deck) => {
-            const isSelected = selectedDeckIds.has(deck.id);
-            const previewIds = deckPreviews[deck.id] ?? [];
+          {model.decks.map((deck) => {
+            const isSelected = model.selectedDeckIds.has(deck.id);
+            const previewIds = model.deckPreviews[deck.id] ?? [];
             return (
               <button
                 key={deck.id}
                 type="button"
                 className={`${styles.deckTile} ${isSelected ? styles.deckTileSelected : ""}`}
-                onClick={(event) => onSelectDeck(deck.id, event.metaKey || event.ctrlKey)}
-                onDoubleClick={() => onOpenDeck(deck.id)}
+                onClick={(event) => model.selectDeck(deck.id, event.metaKey || event.ctrlKey)}
+                onDoubleClick={() => navigate(`/decks/${deck.id}`)}
               >
                 <div className={styles.deckTilePreview}>
                   <CardFan
                     cardIds={previewIds}
-                    variant={previewVariant}
-                    maxCount={deckPreviewFanCount}
+                    variant={PREVIEW_VARIANT}
+                    maxCount={PREVIEW_FAN_COUNT}
                     showPlaceholdersWhenEmpty
                     spacing={1}
                     tilt={1}
@@ -120,7 +108,7 @@ export default function DecksGridPanel({
               type="button"
               className="btn btn-primary"
               onClick={async () => {
-                await onCreateDeck();
+                await model.createDeck();
                 closeCreateModal();
               }}
             >
@@ -134,21 +122,34 @@ export default function DecksGridPanel({
             <label className={styles.decksLabel}>{t("decks.title")}</label>
             <input
               type="text"
-              value={deckTitleDraft}
-              onChange={(event) => setDeckTitleDraft(event.target.value)}
+              value={model.deckTitleDraft}
+              onChange={(event) => model.setDeckTitleDraft(event.target.value)}
               placeholder={t("decks.untitledDeck")}
             />
           </div>
           <div className={styles.decksFormRow}>
             <label className={styles.decksLabel}>{t("decks.description")}</label>
             <textarea
-              value={deckDescriptionDraft}
-              onChange={(event) => setDeckDescriptionDraft(event.target.value)}
+              value={model.deckDescriptionDraft}
+              onChange={(event) => model.setDeckDescriptionDraft(event.target.value)}
               placeholder={t("decks.descriptionPlaceholder")}
             />
           </div>
         </div>
       </ModalShell>
+      <ConfirmModal
+        isOpen={model.isDeleteDeckOpen}
+        title={t("decks.deleteDeckTitle")}
+        confirmLabel={t("actions.delete")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={async () => {
+          model.setIsDeleteDeckOpen(false);
+          await model.deleteSelectedDecks();
+        }}
+        onCancel={() => model.setIsDeleteDeckOpen(false)}
+      >
+        <div>{t("decks.deleteDeckBody")}</div>
+      </ConfirmModal>
     </>
   );
 }

@@ -154,6 +154,15 @@ export const decksApi = makeApi([
     response: deckSetRecordSchema,
   },
   {
+    method: "get",
+    path: "/deckSets/:setId",
+    alias: "getDeckSet",
+    parameters: [
+      { name: "setId", type: "Path", schema: z.string() },
+    ],
+    response: deckSetRecordSchema.nullable(),
+  },
+  {
     method: "patch",
     path: "/deckSets/:setId",
     alias: "updateDeckSet",

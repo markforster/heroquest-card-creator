@@ -24,6 +24,7 @@ import { deletePairRequestPlugin } from "@/api/local/deletePairRequest";
 import { duplicateDeckRequestPlugin } from "@/api/local/duplicateDeckRequest";
 import { exportLibraryRequestPlugin } from "@/api/local/exportLibraryRequest";
 import { getDeckRequestPlugin } from "@/api/local/getDeckRequest";
+import { getDeckSetRequestPlugin } from "@/api/local/getDeckSetRequest";
 import { getAssetBlobRequestPlugin } from "@/api/local/getAssetBlobRequest";
 import { getAssetObjectUrlRequestPlugin } from "@/api/local/getAssetObjectUrlRequest";
 import { getBorderSwatchesRequestPlugin } from "@/api/local/getBorderSwatchesRequest";
@@ -151,6 +152,7 @@ if (apiConfig.mode === "remote") {
   apiClient.use("reorderDeckGroups", reorderDeckGroupsRequestPlugin);
   apiClient.use("deleteDeckGroup", deleteDeckGroupRequestPlugin);
   apiClient.use("listDeckSets", listDeckSetsRequestPlugin);
+  apiClient.use("getDeckSet", getDeckSetRequestPlugin);
   apiClient.use("createDeckSet", createDeckSetRequestPlugin);
   apiClient.use("updateDeckSet", updateDeckSetRequestPlugin);
   apiClient.use("reorderDeckSets", reorderDeckSetsRequestPlugin);

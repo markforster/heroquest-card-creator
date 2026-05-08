@@ -49,6 +49,7 @@ export const useUpdateDeckGroup = apiHooks.useUpdateDeckGroup.bind(apiHooks);
 export const useReorderDeckGroups = apiHooks.useReorderDeckGroups.bind(apiHooks);
 export const useDeleteDeckGroup = apiHooks.useDeleteDeckGroup.bind(apiHooks);
 export const useListDeckSets = apiHooks.useListDeckSets.bind(apiHooks);
+export const useGetDeckSet = apiHooks.useGetDeckSet.bind(apiHooks);
 export const useCreateDeckSet = apiHooks.useCreateDeckSet.bind(apiHooks);
 export const useUpdateDeckSet = apiHooks.useUpdateDeckSet.bind(apiHooks);
 export const useReorderDeckSets = apiHooks.useReorderDeckSets.bind(apiHooks);
