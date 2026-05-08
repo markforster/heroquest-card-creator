@@ -108,6 +108,61 @@ describe("useDecksDragController front/entry drop index targeting", () => {
     expect(result.current.dragState.entryDropIndex).toBe(1);
   });
 
+  it("keeps committed front-face placeholder index stable through transient over-null flaps", () => {
+    const { result } = renderController();
+
+    act(() => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "entry:entry-2" },
+      } as never);
+    });
+    expect(result.current.dragState.entryDropIndex).toBe(1);
+
+    act(() => {
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: null,
+      } as never);
+      jest.advanceTimersByTime(10);
+    });
+    expect(result.current.dragState.entryDropIndex).toBe(1);
+
+    act(() => {
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "entry:entry-2" },
+      } as never);
+      jest.advanceTimersByTime(40);
+    });
+    expect(result.current.dragState.entryDropIndex).toBe(1);
+  });
+
+  it("clears pending over-stability timer on drag cancel", () => {
+    const { result } = renderController();
+
+    act(() => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "entry:entry-2" },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: null,
+      } as never);
+      result.current.dndHandlers.onDragCancel();
+      jest.advanceTimersByTime(50);
+    });
+
+    expect(result.current.dragState.entryDropIndex).toBe(null);
+  });
+
   it("ignores front-face drop outside entries namespace", async () => {
     const { result, addFrontFaceToSet } = renderController();
 

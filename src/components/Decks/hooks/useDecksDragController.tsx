@@ -96,7 +96,14 @@ export function useDecksDragController({
   const dragStartSelectedGroupIdRef = useRef<string | null>(null);
   const frontDropInFlightRef = useRef(false);
   const frontDropInFlightKeyRef = useRef<string | null>(null);
+  const rawOverIdRef = useRef<string | null>(null);
+  const committedOverIdRef = useRef<string | null>(null);
+  const overStabilityTimerRef = useRef<number | null>(null);
+  const lastCommittedAtRef = useRef<number>(0);
+  const lastCommittedPointerXRef = useRef<number | null>(null);
   const BACK_FACE_DROP_RETURN_MS = 180;
+  const OVER_STABILITY_MS = 32;
+  const FRONT_FACE_INDEX_SWITCH_MIN_PX = 14;
   const isEntriesOverTarget = useCallback(
     (overId: string | null, activeType: "front-face" | "entry", activeEntryId?: string | null) => {
       if (!overId) return false;
@@ -150,6 +157,16 @@ export function useDecksDragController({
     selectedGroupIdRef.current = selectedGroupId;
   }, [selectedGroupId]);
 
+  useEffect(
+    () => () => {
+      if (overStabilityTimerRef.current != null) {
+        window.clearTimeout(overStabilityTimerRef.current);
+        overStabilityTimerRef.current = null;
+      }
+    },
+    [],
+  );
+
   const resetDragState = useCallback(() => {
     setDragType(null);
     setDragActiveSetId(null);
@@ -168,6 +185,10 @@ export function useDecksDragController({
     entryDropIndexRef.current = null;
     setDragOverId(null);
     dragOverIdRef.current = null;
+    rawOverIdRef.current = null;
+    committedOverIdRef.current = null;
+    lastCommittedAtRef.current = 0;
+    lastCommittedPointerXRef.current = null;
     setIsGroupDropOver(false);
     setIsFrontDropOver(false);
     setIsEntriesDropOver(false);
@@ -179,6 +200,10 @@ export function useDecksDragController({
     if (backFaceResetTimerRef.current != null) {
       window.clearTimeout(backFaceResetTimerRef.current);
       backFaceResetTimerRef.current = null;
+    }
+    if (overStabilityTimerRef.current != null) {
+      window.clearTimeout(overStabilityTimerRef.current);
+      overStabilityTimerRef.current = null;
     }
   }, []);
 
@@ -196,6 +221,14 @@ export function useDecksDragController({
         backFaceResetTimerRef.current = null;
       }
       setFaceDropSucceeded(false);
+      rawOverIdRef.current = null;
+      committedOverIdRef.current = null;
+      lastCommittedAtRef.current = 0;
+      lastCommittedPointerXRef.current = null;
+      if (overStabilityTimerRef.current != null) {
+        window.clearTimeout(overStabilityTimerRef.current);
+        overStabilityTimerRef.current = null;
+      }
       if (activeType === "back-face") {
         const backFaceId = active.data?.current?.backFaceId as string | undefined;
         setDragType("back-face");
@@ -343,14 +376,26 @@ export function useDecksDragController({
   const onDragOver = useCallback(
     ({ over, active, delta }: DragOverEvent) => {
       const overId = over ? String(over.id) : null;
+      rawOverIdRef.current = overId;
       const activeType = active.data?.current?.type;
+      const activeEntryId =
+        activeType === "entry" ? ((active.data?.current?.entryId as string | undefined) ?? null) : null;
       const activeSetId =
         activeType === "set"
           ? ((active.data?.current?.setId as string | undefined) ?? String(active.id))
           : null;
       const normalizedActiveSetId =
         activeSetId && activeSetId.startsWith("set:") ? activeSetId.replace("set:", "") : activeSetId;
-      setDragOverId(overId);
+      const activeRectCurrent = active.rect?.current;
+      const activeInitialRect = activeRectCurrent?.initial ?? null;
+      const activeTranslatedRect = activeRectCurrent?.translated ?? null;
+      const pointerX =
+        activeInitialRect != null
+          ? activeInitialRect.left + activeInitialRect.width / 2 + (delta?.x ?? 0)
+          : activeTranslatedRect
+            ? activeTranslatedRect.left + activeTranslatedRect.width / 2
+            : null;
+      setDragOverId((prev) => (prev === overId ? prev : overId));
       dragOverIdRef.current = overId;
       const nextDragTargetGroupId =
         activeType === "back-face" || activeType === "set" || activeType === "group"
@@ -360,7 +405,7 @@ export function useDecksDragController({
               ? groupBySetId.get(overId.replace("set:", "")) ?? null
               : null
           : null;
-      setDragTargetGroupId(nextDragTargetGroupId);
+      setDragTargetGroupId((prev) => (prev === nextDragTargetGroupId ? prev : nextDragTargetGroupId));
       const isOverGroupRow =
         activeType !== "front-face" &&
         Boolean(
@@ -371,31 +416,80 @@ export function useDecksDragController({
               ((activeType === "group" || activeType === "set") && overId.startsWith("group:"))),
         );
       setIsGroupDropOver((prev) => (prev === isOverGroupRow ? prev : isOverGroupRow));
-      const nextFrontDropOver = Boolean(
-        activeType === "front-face" &&
-          overId &&
-          isEntriesOverTarget(overId, "front-face"),
-      );
-      setIsFrontDropOver((prev) => (prev === nextFrontDropOver ? prev : nextFrontDropOver));
-      isFrontDropOverRef.current = nextFrontDropOver;
-      const nextEntriesDropOver = Boolean(
-        (activeType === "front-face" || activeType === "entry") &&
-          overId &&
-          isEntriesOverTarget(
-            overId,
-            activeType,
-            activeType === "entry" ? ((active.data?.current?.entryId as string | undefined) ?? null) : null,
-          ),
-      );
-      setIsEntriesDropOver((prev) => (prev === nextEntriesDropOver ? prev : nextEntriesDropOver));
-      isEntriesDropOverRef.current = nextEntriesDropOver;
-      if (activeType === "front-face" || activeType === "entry") {
-        const nextIndex = resolveEntryDropIndexFromOverId(
-          overId,
-          activeType,
-          activeType === "entry" ? ((active.data?.current?.entryId as string | undefined) ?? null) : null,
-        );
+      const isFrontOrEntryDrag = activeType === "front-face" || activeType === "entry";
+      const commitEntryOver = (nextCommittedOverId: string | null) => {
+        committedOverIdRef.current = nextCommittedOverId;
+        lastCommittedAtRef.current = Date.now();
+        lastCommittedPointerXRef.current = pointerX;
+        const activeKind: "front-face" | "entry" = activeType === "entry" ? "entry" : "front-face";
+        const nextIndex = resolveEntryDropIndexFromOverId(nextCommittedOverId, activeKind, activeEntryId);
         setEntryDropIndexState(nextIndex);
+        const nextFront = Boolean(activeType === "front-face" && isEntriesOverTarget(nextCommittedOverId, "front-face"));
+        const nextEntries = Boolean(
+          isEntriesOverTarget(nextCommittedOverId, activeKind, activeEntryId),
+        );
+        setIsFrontDropOver((prev) => (prev === nextFront ? prev : nextFront));
+        isFrontDropOverRef.current = nextFront;
+        setIsEntriesDropOver((prev) => (prev === nextEntries ? prev : nextEntries));
+        isEntriesDropOverRef.current = nextEntries;
+      };
+      if (isFrontOrEntryDrag) {
+        const activeKind: "front-face" | "entry" = activeType === "entry" ? "entry" : "front-face";
+        const validNow = isEntriesOverTarget(overId, activeKind, activeEntryId);
+        if (overStabilityTimerRef.current != null) {
+          window.clearTimeout(overStabilityTimerRef.current);
+          overStabilityTimerRef.current = null;
+        }
+        if (validNow) {
+          const nextIndex = resolveEntryDropIndexFromOverId(overId, activeKind, activeEntryId);
+          const currentIndex = resolveEntryDropIndexFromOverId(
+            committedOverIdRef.current,
+            activeKind,
+            activeEntryId,
+          );
+          const canSwitchIndexByPointer =
+            activeType !== "front-face" ||
+            pointerX == null ||
+            lastCommittedPointerXRef.current == null ||
+            Math.abs(pointerX - lastCommittedPointerXRef.current) >= FRONT_FACE_INDEX_SWITCH_MIN_PX;
+          if (nextIndex === currentIndex || canSwitchIndexByPointer) {
+            if (committedOverIdRef.current !== overId) {
+              commitEntryOver(overId);
+            }
+          }
+        } else if (committedOverIdRef.current != null) {
+          overStabilityTimerRef.current = window.setTimeout(() => {
+            const latestRaw = rawOverIdRef.current;
+            if (!isEntriesOverTarget(latestRaw, activeKind, activeEntryId)) {
+              commitEntryOver(null);
+            }
+            overStabilityTimerRef.current = null;
+          }, OVER_STABILITY_MS);
+        } else {
+          setEntryDropIndexState(null);
+          setIsFrontDropOver((prev) => (prev ? false : prev));
+          isFrontDropOverRef.current = false;
+          setIsEntriesDropOver((prev) => (prev ? false : prev));
+          isEntriesDropOverRef.current = false;
+        }
+      }
+      if (!isFrontOrEntryDrag) {
+        const nextFrontDropOver = Boolean(
+          activeType === "front-face" &&
+            isEntriesOverTarget(committedOverIdRef.current, "front-face"),
+        );
+        setIsFrontDropOver((prev) => (prev === nextFrontDropOver ? prev : nextFrontDropOver));
+        isFrontDropOverRef.current = nextFrontDropOver;
+        const nextEntriesDropOver = Boolean(
+          (activeType === "front-face" || activeType === "entry") &&
+            isEntriesOverTarget(
+              committedOverIdRef.current,
+              activeType === "entry" ? "entry" : "front-face",
+              activeEntryId,
+            ),
+        );
+        setIsEntriesDropOver((prev) => (prev === nextEntriesDropOver ? prev : nextEntriesDropOver));
+        isEntriesDropOverRef.current = nextEntriesDropOver;
       }
       if (activeType === "set") {
         // Derive set placeholder from the hovered droppable target.
@@ -419,9 +513,6 @@ export function useDecksDragController({
             return;
           }
           const tiles = Array.from(row.querySelectorAll("[data-group-id]"));
-          const activeRectCurrent = active.rect?.current;
-          const activeInitialRect = activeRectCurrent?.initial ?? null;
-          const activeTranslatedRect = activeRectCurrent?.translated ?? null;
           const pointerX =
             activeInitialRect != null
               ? activeInitialRect.left + activeInitialRect.width / 2 + (delta?.x ?? 0)
@@ -590,7 +681,7 @@ export function useDecksDragController({
           }, BACK_FACE_DROP_RETURN_MS);
           return;
         }
-        const overId = over ? String(over.id) : dragOverIdRef.current;
+        const overId = over ? String(over.id) : committedOverIdRef.current ?? dragOverIdRef.current;
         const isSuccess = Boolean(
           isEntriesOverTarget(overId, "front-face"),
         );
@@ -667,7 +758,7 @@ export function useDecksDragController({
           resetDragState();
           return;
         }
-        const overId = over ? String(over.id) : dragOverIdRef.current;
+        const overId = over ? String(over.id) : committedOverIdRef.current ?? dragOverIdRef.current;
         const isSuccess = Boolean(
           isEntriesOverTarget(overId, "entry", entryId),
         );

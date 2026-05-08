@@ -224,6 +224,40 @@ describe("DeckEntriesSection guidance states", () => {
     expect(container.querySelector('[data-entry-id="entry-1"]')).not.toBeNull();
   });
 
+  it("renders placeholder for front-face insert at hovered index", () => {
+    mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: "set-1" });
+    mockUseDeckSetEntries.mockReturnValue({
+      entriesSorted: [
+        { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0 },
+        { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 1 },
+      ],
+      pairsById: new Map([
+        ["pair-1", { id: "pair-1", frontFaceId: "front-1" }],
+        ["pair-2", { id: "pair-2", frontFaceId: "front-2" }],
+      ]),
+      pairedNotInSetFrontIds: [],
+      addFront: jest.fn(),
+      removeEntry: jest.fn(),
+    });
+
+    const { container } = render(
+      <DeckEntriesSection
+        drag={
+          {
+            ...(baseDrag as object),
+            isFrontFaceDragActive: true,
+            entryDropIndex: 1,
+          } as never
+        }
+        entriesRowRef={jest.fn()}
+        onOpenCardEditor={jest.fn()}
+        deckEntryThumb={(cardId) => <span>{cardId}</span>}
+      />,
+    );
+
+    expect(container.querySelectorAll('[data-entry-placeholder="true"]').length).toBe(1);
+  });
+
   it("resets to in-set tab when selected set changes", async () => {
     currentSelectedSetId = "set-1";
     mockUseDeckSetEntries.mockReturnValue({
