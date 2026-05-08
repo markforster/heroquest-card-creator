@@ -619,23 +619,36 @@ export function useDecksDragController({
         try {
           console.debug("[decks:dnd] front drop add start", { targetSetId, frontFaceId, overId });
           const prevEntries = entries.slice().sort((a, b) => a.sortIndex - b.sortIndex);
-          const prevIds = new Set(prevEntries.map((entry) => entry.id));
-          const nextEntries = await addFrontFaceToSet(targetSetId, frontFaceId);
-          const nextSorted = nextEntries.slice().sort((a, b) => a.sortIndex - b.sortIndex);
-          const dropIndex =
-            entryDropIndex == null ? nextSorted.length : Math.max(0, Math.min(entryDropIndex, nextSorted.length));
-          let moveEntryId = nextSorted.find((entry) => !prevIds.has(entry.id))?.id ?? null;
-          if (!moveEntryId) {
-            moveEntryId =
-              prevEntries.find((entry) => entryFrontIdByEntryId.get(entry.id) === frontFaceId)?.id ?? null;
-          }
-          if (moveEntryId) {
-            const ordered = nextSorted.map((entry) => entry.id).filter((id) => id !== moveEntryId);
-            const boundedIndex = Math.max(0, Math.min(dropIndex, ordered.length));
-            ordered.splice(boundedIndex, 0, moveEntryId);
-            await reorderSetEntries(targetSetId, ordered);
+          const createdEntries = await addFrontFaceToSet(targetSetId, frontFaceId);
+          if (!createdEntries.length) {
             await refreshSetEntries(targetSetId);
+            console.debug("[decks:dnd] front drop add no-op", { targetSetId, frontFaceId, overId });
+            resetDragState();
+            return;
           }
+          if (createdEntries.length > 1) {
+            console.warn("[decks:dnd] front drop add returned multiple entries; using first", {
+              targetSetId,
+              frontFaceId,
+              createdCount: createdEntries.length,
+            });
+          }
+          const newEntryId = createdEntries[0]?.id ?? null;
+          if (!newEntryId) {
+            await refreshSetEntries(targetSetId);
+            resetDragState();
+            return;
+          }
+          const ordered = prevEntries.map((entry) => entry.id).filter((id) => id !== newEntryId);
+          const resolvedDropIndex =
+            entryDropIndexRef.current ?? resolveEntryDropIndexFromOverId(overId, "front-face");
+          const dropIndex =
+            resolvedDropIndex == null
+              ? ordered.length
+              : Math.max(0, Math.min(resolvedDropIndex, ordered.length));
+          ordered.splice(dropIndex, 0, newEntryId);
+          await reorderSetEntries(targetSetId, ordered);
+          await refreshSetEntries(targetSetId);
           console.debug("[decks:dnd] front drop add success", { targetSetId, frontFaceId });
           resetDragState();
           return;

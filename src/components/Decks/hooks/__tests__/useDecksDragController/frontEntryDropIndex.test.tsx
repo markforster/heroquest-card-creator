@@ -17,11 +17,9 @@ describe("useDecksDragController front/entry drop index targeting", () => {
   function renderController() {
     const reorderSetEntries = jest.fn().mockResolvedValue(undefined);
     const refreshSetEntries = jest.fn().mockResolvedValue(undefined);
-    const addFrontFaceToSet = jest.fn().mockResolvedValue([
-      { id: "entry-1", sortIndex: 0, setId: "set-1", pairId: "pair-1" },
-      { id: "entry-2", sortIndex: 1, setId: "set-1", pairId: "pair-2" },
-      { id: "entry-3", sortIndex: 2, setId: "set-1", pairId: "pair-3" },
-    ]);
+    const addFrontFaceToSet = jest
+      .fn()
+      .mockResolvedValue([{ id: "entry-3", sortIndex: 2, setId: "set-1", pairId: "pair-3" }]);
 
     const hook = renderHook(() =>
       useDecksDragController({
@@ -99,6 +97,94 @@ describe("useDecksDragController front/entry drop index targeting", () => {
     });
 
     expect(addFrontFaceToSet).not.toHaveBeenCalled();
+  });
+
+  it("inserts newly added front-face entry at hovered middle index", async () => {
+    const { result, reorderSetEntries, refreshSetEntries } = renderController();
+
+    await act(async () => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "entry:entry-2" },
+      } as never);
+      jest.advanceTimersByTime(60);
+      await result.current.dndHandlers.onDragEnd({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "entry:entry-2" },
+      } as never);
+    });
+
+    expect(reorderSetEntries).toHaveBeenCalledWith("set-1", ["entry-1", "entry-3", "entry-2"]);
+    expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
+  });
+
+  it("inserts newly added front-face entry at tail when dropped on entries tail", async () => {
+    const { result, reorderSetEntries, refreshSetEntries } = renderController();
+
+    await act(async () => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "entries-tail" },
+      } as never);
+      jest.advanceTimersByTime(60);
+      await result.current.dndHandlers.onDragEnd({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "entries-tail" },
+      } as never);
+    });
+
+    expect(reorderSetEntries).toHaveBeenCalledWith("set-1", ["entry-1", "entry-2", "entry-3"]);
+    expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
+  });
+
+  it("skips reorder and refreshes when add returns no created entries", async () => {
+    const { result, addFrontFaceToSet, reorderSetEntries, refreshSetEntries } = renderController();
+    addFrontFaceToSet.mockResolvedValueOnce([]);
+
+    await act(async () => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+      } as never);
+      await result.current.dndHandlers.onDragEnd({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "entries-tail" },
+      } as never);
+    });
+
+    expect(reorderSetEntries).not.toHaveBeenCalled();
+    expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
+  });
+
+  it("uses first created entry when add returns multiple entries", async () => {
+    const { result, addFrontFaceToSet, reorderSetEntries, refreshSetEntries } = renderController();
+    addFrontFaceToSet.mockResolvedValueOnce([
+      { id: "entry-a", sortIndex: 2, setId: "set-1", pairId: "pair-a" },
+      { id: "entry-b", sortIndex: 3, setId: "set-1", pairId: "pair-b" },
+    ]);
+
+    await act(async () => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "entry:entry-2" },
+      } as never);
+      jest.advanceTimersByTime(60);
+      await result.current.dndHandlers.onDragEnd({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "entry:entry-2" },
+      } as never);
+    });
+
+    expect(reorderSetEntries).toHaveBeenCalledWith("set-1", ["entry-1", "entry-a", "entry-2"]);
+    expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
   });
 
   it("reorders entry using over-id derived tail index with active entry excluded", async () => {
