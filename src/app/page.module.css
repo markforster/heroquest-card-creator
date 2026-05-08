@@ -7423,6 +7423,18 @@ button.assetsKindBadge:disabled {
   align-items: center;
 }
 
+.deckEntryCardDraggingSelf {
+  flex: 0 0 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .deckEntrySelect {
   background: none;
   border: none;

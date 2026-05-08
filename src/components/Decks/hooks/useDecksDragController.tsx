@@ -96,10 +96,24 @@ export function useDecksDragController({
   const dragStartSelectedGroupIdRef = useRef<string | null>(null);
   const frontDropInFlightRef = useRef(false);
   const frontDropInFlightKeyRef = useRef<string | null>(null);
-  const pendingEntryOverIdRef = useRef<string | null>(null);
-  const entryOverCommitTimerRef = useRef<number | null>(null);
   const BACK_FACE_DROP_RETURN_MS = 180;
-  const ENTRY_OVER_COMMIT_MS = 40;
+  const isEntriesOverTarget = useCallback(
+    (overId: string | null, activeType: "front-face" | "entry", activeEntryId?: string | null) => {
+      if (!overId) return false;
+      if (overId === "entries-area" || overId === "entries-tail") return true;
+      if (overId.startsWith("entry:")) return true;
+      const orderedCurrent = entries
+        .slice()
+        .sort((a, b) => a.sortIndex - b.sortIndex)
+        .map((entry) => entry.id);
+      const visibleOrdered =
+        activeType === "entry" && activeEntryId
+          ? orderedCurrent.filter((id) => id !== activeEntryId)
+          : orderedCurrent;
+      return visibleOrdered.includes(overId);
+    },
+    [entries],
+  );
   const resolveEntryDropIndexFromOverId = useCallback(
     (overId: string | null, activeType: "front-face" | "entry", activeEntryId?: string | null) => {
       if (!overId) return null;
@@ -116,6 +130,10 @@ export function useDecksDragController({
         const index = visibleOrdered.indexOf(overEntryId);
         return index >= 0 ? index : visibleOrdered.length;
       }
+      const plainIndex = visibleOrdered.indexOf(overId);
+      if (plainIndex >= 0) {
+        return plainIndex;
+      }
       if (overId === "entries-tail" || overId === "entries-area") {
         return visibleOrdered.length;
       }
@@ -131,16 +149,6 @@ export function useDecksDragController({
   useEffect(() => {
     selectedGroupIdRef.current = selectedGroupId;
   }, [selectedGroupId]);
-
-  useEffect(
-    () => () => {
-      if (entryOverCommitTimerRef.current != null) {
-        window.clearTimeout(entryOverCommitTimerRef.current);
-        entryOverCommitTimerRef.current = null;
-      }
-    },
-    [],
-  );
 
   const resetDragState = useCallback(() => {
     setDragType(null);
@@ -168,11 +176,6 @@ export function useDecksDragController({
     setIsRemoveZone(false);
     dragStartSelectedSetIdRef.current = null;
     dragStartSelectedGroupIdRef.current = null;
-    pendingEntryOverIdRef.current = null;
-    if (entryOverCommitTimerRef.current != null) {
-      window.clearTimeout(entryOverCommitTimerRef.current);
-      entryOverCommitTimerRef.current = null;
-    }
     if (backFaceResetTimerRef.current != null) {
       window.clearTimeout(backFaceResetTimerRef.current);
       backFaceResetTimerRef.current = null;
@@ -371,14 +374,18 @@ export function useDecksDragController({
       const nextFrontDropOver = Boolean(
         activeType === "front-face" &&
           overId &&
-          (overId === "entries-area" || overId === "entries-tail" || overId.startsWith("entry:")),
+          isEntriesOverTarget(overId, "front-face"),
       );
       setIsFrontDropOver((prev) => (prev === nextFrontDropOver ? prev : nextFrontDropOver));
       isFrontDropOverRef.current = nextFrontDropOver;
       const nextEntriesDropOver = Boolean(
         (activeType === "front-face" || activeType === "entry") &&
           overId &&
-          (overId === "entries-area" || overId === "entries-tail" || overId.startsWith("entry:")),
+          isEntriesOverTarget(
+            overId,
+            activeType,
+            activeType === "entry" ? ((active.data?.current?.entryId as string | undefined) ?? null) : null,
+          ),
       );
       setIsEntriesDropOver((prev) => (prev === nextEntriesDropOver ? prev : nextEntriesDropOver));
       isEntriesDropOverRef.current = nextEntriesDropOver;
@@ -388,20 +395,7 @@ export function useDecksDragController({
           activeType,
           activeType === "entry" ? ((active.data?.current?.entryId as string | undefined) ?? null) : null,
         );
-        const trackedOverId = overId ?? "__null__";
-        if (pendingEntryOverIdRef.current !== trackedOverId) {
-          pendingEntryOverIdRef.current = trackedOverId;
-          if (entryOverCommitTimerRef.current != null) {
-            window.clearTimeout(entryOverCommitTimerRef.current);
-            entryOverCommitTimerRef.current = null;
-          }
-          entryOverCommitTimerRef.current = window.setTimeout(() => {
-            setEntryDropIndexState(nextIndex);
-            entryOverCommitTimerRef.current = null;
-          }, ENTRY_OVER_COMMIT_MS);
-        } else if (entryOverCommitTimerRef.current == null) {
-          setEntryDropIndexState(nextIndex);
-        }
+        setEntryDropIndexState(nextIndex);
       }
       if (activeType === "set") {
         // Derive set placeholder from the hovered droppable target.
@@ -502,7 +496,7 @@ export function useDecksDragController({
         setIsBackFaceNewGroupEdgeTarget(false);
       }
     },
-    [groupBySetId, resolveEntryDropIndexFromOverId, setEntryDropIndexState, sets],
+    [groupBySetId, isEntriesOverTarget, resolveEntryDropIndexFromOverId, setEntryDropIndexState, sets],
   );
 
   const onDragEnd = useCallback(
@@ -598,8 +592,7 @@ export function useDecksDragController({
         }
         const overId = over ? String(over.id) : dragOverIdRef.current;
         const isSuccess = Boolean(
-          overId &&
-            (overId === "entries-area" || overId === "entries-tail" || overId.startsWith("entry:")),
+          isEntriesOverTarget(overId, "front-face"),
         );
         setFaceDropSucceeded(isSuccess);
         if (!isSuccess) {
@@ -676,8 +669,7 @@ export function useDecksDragController({
         }
         const overId = over ? String(over.id) : dragOverIdRef.current;
         const isSuccess = Boolean(
-          overId &&
-            (overId === "entries-area" || overId === "entries-tail" || overId.startsWith("entry:")),
+          isEntriesOverTarget(overId, "entry", entryId),
         );
         if (!isSuccess) {
           resetDragState();

@@ -5,14 +5,20 @@ import DeckEntriesSection from "@/components/Decks/detail/DeckEntriesSection";
 const mockUseDeckDetailSelection = jest.fn();
 const mockUseDeckSetEntries = jest.fn();
 const mockDndUseDroppable = jest.fn();
+const mockDndUseSortable = jest.fn();
 
 jest.mock("@dnd-kit/core", () => ({
   useDroppable: (...args: unknown[]) => mockDndUseDroppable(...args),
-  useDraggable: () => ({
-    attributes: {},
-    listeners: {},
-    setNodeRef: jest.fn(),
-  }),
+}));
+
+jest.mock("@dnd-kit/sortable", () => ({
+  SortableContext: ({ children }: { children: unknown }) => children,
+  rectSortingStrategy: jest.fn(),
+  useSortable: (...args: unknown[]) => mockDndUseSortable(...args),
+}));
+
+jest.mock("@dnd-kit/utilities", () => ({
+  CSS: { Transform: { toString: () => undefined } },
 }));
 
 jest.mock("@/components/Decks/detail/context/DeckDetailSelectionContext", () => ({
@@ -43,6 +49,14 @@ describe("DeckEntriesSection guidance states", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockDndUseDroppable.mockReturnValue({ setNodeRef: jest.fn() });
+    mockDndUseSortable.mockReturnValue({
+      attributes: {},
+      listeners: {},
+      setNodeRef: jest.fn(),
+      transform: null,
+      transition: undefined,
+      isDragging: false,
+    });
     currentSelectedSetId = null;
     mockUseDeckDetailSelection.mockImplementation(() => ({
       selectedGroupId: "group-1",
@@ -132,6 +146,82 @@ describe("DeckEntriesSection guidance states", () => {
     expect(container.querySelector("[data-deck-entries-dropzone]")).not.toBeNull();
     expect(container.querySelector('[data-entry-id="entry-1"]')).not.toBeNull();
     expect(container.querySelector('[data-entry-tail-dropzone="true"]')).not.toBeNull();
+  });
+
+  it("keeps entries mounted during in-set entry drag", () => {
+    mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: "set-1" });
+    mockUseDeckSetEntries.mockReturnValue({
+      entriesSorted: [
+        { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0 },
+        { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 1 },
+      ],
+      pairsById: new Map([
+        ["pair-1", { id: "pair-1", frontFaceId: "front-1" }],
+        ["pair-2", { id: "pair-2", frontFaceId: "front-2" }],
+      ]),
+      pairedNotInSetFrontIds: [],
+      addFront: jest.fn(),
+      removeEntry: jest.fn(),
+    });
+
+    const { container } = render(
+      <DeckEntriesSection
+        drag={
+          {
+            ...(baseDrag as object),
+            isEntryDragActive: true,
+            dragActiveEntryId: "entry-1",
+            entryDropIndex: 0,
+          } as never
+        }
+        entriesRowRef={jest.fn()}
+        onOpenCardEditor={jest.fn()}
+        deckEntryThumb={(cardId) => <span>{cardId}</span>}
+      />,
+    );
+
+    expect(container.querySelectorAll('[data-entry-placeholder="true"]').length).toBe(0);
+    expect(screen.getByText("front-1")).toBeInTheDocument();
+    expect(screen.getByText("front-2")).toBeInTheDocument();
+    expect(container.querySelector('[data-entry-id="entry-1"]')).not.toBeNull();
+  });
+
+  it("does not render bespoke placeholder for entry drag when index is unresolved", () => {
+    mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: "set-1" });
+    mockUseDeckSetEntries.mockReturnValue({
+      entriesSorted: [
+        { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0 },
+        { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 1 },
+      ],
+      pairsById: new Map([
+        ["pair-1", { id: "pair-1", frontFaceId: "front-1" }],
+        ["pair-2", { id: "pair-2", frontFaceId: "front-2" }],
+      ]),
+      pairedNotInSetFrontIds: [],
+      addFront: jest.fn(),
+      removeEntry: jest.fn(),
+    });
+
+    const { container } = render(
+      <DeckEntriesSection
+        drag={
+          {
+            ...(baseDrag as object),
+            isEntryDragActive: true,
+            dragActiveEntryId: "entry-1",
+            entryDropIndex: null,
+          } as never
+        }
+        entriesRowRef={jest.fn()}
+        onOpenCardEditor={jest.fn()}
+        deckEntryThumb={(cardId) => <span>{cardId}</span>}
+      />,
+    );
+
+    expect(container.querySelectorAll('[data-entry-placeholder="true"]').length).toBe(0);
+    expect(screen.getByText("front-1")).toBeInTheDocument();
+    expect(screen.getByText("front-2")).toBeInTheDocument();
+    expect(container.querySelector('[data-entry-id="entry-1"]')).not.toBeNull();
   });
 
   it("resets to in-set tab when selected set changes", async () => {

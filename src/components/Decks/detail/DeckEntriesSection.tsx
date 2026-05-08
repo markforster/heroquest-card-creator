@@ -1,6 +1,8 @@
 "use client";
 
-import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import styles from "@/app/page.module.css";
@@ -26,24 +28,22 @@ function DeckEntryCard({
   onOpenCardEditor: (cardId: string) => void;
   deckEntryThumb: (cardId: string, isSelected: boolean) => ReactNode;
 }) {
-  const { setNodeRef: setDropRef } = useDroppable({ id: `entry:${entryId}` });
-  const { attributes, listeners, setNodeRef: setDragRef } = useDraggable({
-    id: `entry-drag:${entryId}`,
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: entryId,
     data: { type: "entry", entryId },
   });
-  const setEntryNodeRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      setDropRef(node);
-      setDragRef(node);
-    },
-    [setDropRef, setDragRef],
-  );
+  const style = {
+    touchAction: "none" as const,
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0 : 1,
+  };
   return (
     <div
-      ref={setEntryNodeRef}
+      ref={setNodeRef}
       data-entry-id={entryId}
       className={styles.deckEntryCard}
-      style={{ touchAction: "none" }}
+      style={style}
     >
       <button
         type="button"
@@ -83,10 +83,8 @@ export default function DeckEntriesSection({
     },
     [entriesRowRef, setEntriesDropRef],
   );
-  const visibleEntries = useMemo(() => {
-    if (!drag.isEntryDragActive || !drag.dragActiveEntryId) return entriesSorted;
-    return entriesSorted.filter((entry) => entry.id !== drag.dragActiveEntryId);
-  }, [entriesSorted, drag.isEntryDragActive, drag.dragActiveEntryId]);
+  const visibleEntries = entriesSorted;
+  const entryIds = useMemo(() => entriesSorted.map((entry) => entry.id), [entriesSorted]);
 
   const [entriesViewMode, setEntriesViewMode] = useState<"in-set" | "paired-not-in-set">("in-set");
   const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set());
@@ -114,6 +112,7 @@ export default function DeckEntriesSection({
   const renderEntryPlaceholder = (key: string) => (
     <div key={key} className={styles.deckEntryCard} aria-hidden="true">
       <div
+        data-entry-placeholder="true"
         className={`${styles.deckEntriesDropPlaceholder} ${
           drag.isFrontDropOver || drag.isEntriesDropOver ? styles.deckEntriesDropPlaceholderOver : ""
         }`}
@@ -180,8 +179,7 @@ export default function DeckEntriesSection({
                 </div>
               )
             ) : entriesSorted.length === 0 ? (
-              (drag.isFrontFaceDragActive || drag.isEntryDragActive) &&
-              drag.entryDropIndex === 0 ? (
+              drag.isFrontFaceDragActive && drag.entryDropIndex === 0 ? (
                 <div className={styles.deckEntriesGrid}>
                   {renderEntryPlaceholder("entry-placeholder-empty")}
                 </div>
@@ -189,63 +187,61 @@ export default function DeckEntriesSection({
                 <div className={styles.decksEmpty}>{t("decks.emptyEntries")}</div>
               )
             ) : (
-              <div className={styles.deckEntriesGrid}>
-                {visibleEntries.flatMap((entry, index) => {
-                  const rendered: ReactNode[] = [];
-                  if (
-                    (drag.isFrontFaceDragActive || drag.isEntryDragActive) &&
-                    drag.entryDropIndex != null &&
-                    drag.entryDropIndex === index
-                  ) {
-                    rendered.push(renderEntryPlaceholder(`entry-placeholder-${index}`));
-                  }
-                  const pair = pairsById.get(entry.pairId);
-                  const frontId = pair?.frontFaceId ?? null;
-                  const isSelected = selectedEntryIds.has(entry.id);
-                  if (!frontId) {
+              <SortableContext items={entryIds} strategy={rectSortingStrategy}>
+                <div className={styles.deckEntriesGrid}>
+                  {visibleEntries.flatMap((entry, index) => {
+                    const rendered: ReactNode[] = [];
+                    if (drag.isFrontFaceDragActive && drag.entryDropIndex != null && drag.entryDropIndex === index) {
+                      rendered.push(renderEntryPlaceholder(`entry-placeholder-${index}`));
+                    }
+                    const pair = pairsById.get(entry.pairId);
+                    const frontId = pair?.frontFaceId ?? null;
+                    const isSelected = selectedEntryIds.has(entry.id);
+                    if (!frontId) {
+                      rendered.push(
+                        <div key={entry.id} className={styles.deckEntryMissing}>
+                          <div>{t("decks.missingEntry")}</div>
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger btn-sm"
+                            onClick={async () => {
+                              await removeEntry(entry.id, entry.setId);
+                              setSelectedEntryIds(() => new Set());
+                            }}
+                          >
+                            {t("actions.remove")}
+                          </button>
+                        </div>,
+                      );
+                      return rendered;
+                    }
                     rendered.push(
-                      <div key={entry.id} className={styles.deckEntryMissing}>
-                        <div>{t("decks.missingEntry")}</div>
-                        <button
-                          type="button"
-                          className="btn btn-outline-danger btn-sm"
-                          onClick={async () => {
-                            await removeEntry(entry.id, entry.setId);
-                            setSelectedEntryIds(() => new Set());
-                          }}
-                        >
-                          {t("actions.remove")}
-                        </button>
-                      </div>,
+                      <DeckEntryCard
+                        key={entry.id}
+                        entryId={entry.id}
+                        frontId={frontId}
+                        isSelected={isSelected}
+                        onSelectEntry={selectEntry}
+                        onOpenCardEditor={onOpenCardEditor}
+                        deckEntryThumb={deckEntryThumb}
+                      />,
                     );
                     return rendered;
-                  }
-                  rendered.push(
-                    <DeckEntryCard
-                      key={entry.id}
-                      entryId={entry.id}
-                      frontId={frontId}
-                      isSelected={isSelected}
-                      onSelectEntry={selectEntry}
-                      onOpenCardEditor={onOpenCardEditor}
-                      deckEntryThumb={deckEntryThumb}
-                    />,
-                  );
-                  return rendered;
-                })}
-                {(drag.isFrontFaceDragActive || drag.isEntryDragActive) &&
-                drag.entryDropIndex != null &&
-                drag.entryDropIndex >= visibleEntries.length ? (
-                  renderEntryPlaceholder("entry-placeholder-tail")
-                ) : null}
-                <div
-                  ref={setTailDropRef}
-                  data-entry-tail-dropzone="true"
-                  className={styles.deckEntryCard}
-                  aria-hidden="true"
-                  style={{ width: 1, height: 1, opacity: 0 }}
-                />
-              </div>
+                  })}
+                  {drag.isFrontFaceDragActive &&
+                  drag.entryDropIndex != null &&
+                  drag.entryDropIndex >= visibleEntries.length ? (
+                    renderEntryPlaceholder("entry-placeholder-tail")
+                  ) : null}
+                  <div
+                    ref={setTailDropRef}
+                    data-entry-tail-dropzone="true"
+                    className={styles.deckEntryCard}
+                    aria-hidden="true"
+                    style={{ width: 1, height: 1, opacity: 0 }}
+                  />
+                </div>
+              </SortableContext>
             )}
           </div>
         )}
@@ -254,4 +250,3 @@ export default function DeckEntriesSection({
     </div>
   );
 }
-

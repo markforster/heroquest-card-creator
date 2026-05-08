@@ -14,7 +14,9 @@ describe("useDecksDragController front/entry drop index targeting", () => {
     jest.useRealTimers();
   });
 
-  function renderController() {
+  function renderController(
+    options?: { entries?: Array<{ id: string; sortIndex: number; setId: string; pairId: string }> },
+  ) {
     const reorderSetEntries = jest.fn().mockResolvedValue(undefined);
     const refreshSetEntries = jest.fn().mockResolvedValue(undefined);
     const addFrontFaceToSet = jest
@@ -30,10 +32,11 @@ describe("useDecksDragController front/entry drop index targeting", () => {
         selectedGroupId: "group-1",
         selectedSetId: "set-1",
         activeSetId: "set-1",
-        entries: [
-          { id: "entry-1", sortIndex: 0, setId: "set-1", pairId: "pair-1" },
-          { id: "entry-2", sortIndex: 1, setId: "set-1", pairId: "pair-2" },
-        ] as never,
+        entries:
+          (options?.entries ?? [
+            { id: "entry-1", sortIndex: 0, setId: "set-1", pairId: "pair-1" },
+            { id: "entry-2", sortIndex: 1, setId: "set-1", pairId: "pair-2" },
+          ]) as never,
         entryFrontIdByEntryId: new Map([
           ["entry-1", "front-1"],
           ["entry-2", "front-2"],
@@ -81,6 +84,28 @@ describe("useDecksDragController front/entry drop index targeting", () => {
     });
 
     expect(result.current.dragState.entryDropIndex).toBe(2);
+  });
+
+  it("updates entry drop index immediately on drag-over (no debounce)", () => {
+    const { result } = renderController({
+      entries: [
+        { id: "entry-1", sortIndex: 0, setId: "set-1", pairId: "pair-1" },
+        { id: "entry-2", sortIndex: 1, setId: "set-1", pairId: "pair-2" },
+        { id: "entry-3", sortIndex: 2, setId: "set-1", pairId: "pair-3" },
+      ],
+    });
+
+    act(() => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "entry", entryId: "entry-3" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "entry", entryId: "entry-3" } } },
+        over: { id: "entry-2" },
+      } as never);
+    });
+
+    expect(result.current.dragState.entryDropIndex).toBe(1);
   });
 
   it("ignores front-face drop outside entries namespace", async () => {
@@ -207,5 +232,72 @@ describe("useDecksDragController front/entry drop index targeting", () => {
 
     expect(reorderSetEntries).toHaveBeenCalledWith("set-1", ["entry-2", "entry-1"]);
     expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
+  });
+
+  it("reorders entry to hovered middle index", async () => {
+    const { result, reorderSetEntries, refreshSetEntries } = renderController({
+      entries: [
+        { id: "entry-1", sortIndex: 0, setId: "set-1", pairId: "pair-1" },
+        { id: "entry-2", sortIndex: 1, setId: "set-1", pairId: "pair-2" },
+        { id: "entry-3", sortIndex: 2, setId: "set-1", pairId: "pair-3" },
+      ],
+    });
+
+    await act(async () => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "entry", entryId: "entry-3" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "entry", entryId: "entry-3" } } },
+        over: { id: "entry-2" },
+      } as never);
+      jest.advanceTimersByTime(60);
+      await result.current.dndHandlers.onDragEnd({
+        active: { data: { current: { type: "entry", entryId: "entry-3" } } },
+        over: { id: "entry-2" },
+      } as never);
+    });
+
+    expect(reorderSetEntries).toHaveBeenCalledWith("set-1", ["entry-1", "entry-3", "entry-2"]);
+    expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
+  });
+
+  it("ignores entry drop outside entries namespace", async () => {
+    const { result, reorderSetEntries, refreshSetEntries } = renderController();
+
+    await act(async () => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "entry", entryId: "entry-1" } } },
+      } as never);
+      await result.current.dndHandlers.onDragEnd({
+        active: { data: { current: { type: "entry", entryId: "entry-1" } } },
+        over: { id: "group:group-1" },
+      } as never);
+    });
+
+    expect(reorderSetEntries).not.toHaveBeenCalled();
+    expect(refreshSetEntries).not.toHaveBeenCalled();
+  });
+
+  it("no-ops entry reorder when order does not change", async () => {
+    const { result, reorderSetEntries, refreshSetEntries } = renderController();
+
+    await act(async () => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "entry", entryId: "entry-2" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "entry", entryId: "entry-2" } } },
+        over: { id: "entries-tail" },
+      } as never);
+      jest.advanceTimersByTime(60);
+      await result.current.dndHandlers.onDragEnd({
+        active: { data: { current: { type: "entry", entryId: "entry-2" } } },
+        over: { id: "entries-tail" },
+      } as never);
+    });
+
+    expect(reorderSetEntries).not.toHaveBeenCalled();
+    expect(refreshSetEntries).not.toHaveBeenCalled();
   });
 });
