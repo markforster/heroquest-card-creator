@@ -12,7 +12,6 @@ const SHOW_BORDER_AND_BACKGROUND = false;
 
 type DeckGroupGridItemProps = {
   group: DeckGroupRecord;
-  setCount: number;
   isSelected: boolean;
   onSelect: () => void;
   onHoverChange?: (isHovering: boolean) => void;
@@ -22,7 +21,6 @@ type DeckGroupGridItemProps = {
 
 export default function DeckGroupGridItem({
   group,
-  setCount,
   isSelected,
   onSelect,
   onHoverChange,
@@ -47,7 +45,6 @@ export default function DeckGroupGridItem({
   const dragStyle: CSSProperties = transform
     ? { transform: CSS.Translate.toString(transform) }
     : {};
-  const showBaseline = setCount > 1;
   return (
     <div
       ref={combinedRef}
@@ -71,15 +68,6 @@ export default function DeckGroupGridItem({
       {...listeners}
     >
       <div className={styles.deckGroupPreview}>{preview}</div>
-      {showBaseline ? (
-        <div
-          data-group-baseline="true"
-          className={`${styles.deckGroupBaseline} ${
-            isSelected ? styles.deckGroupBaselineActive : styles.deckGroupBaselineInactive
-          }`}
-          aria-hidden="true"
-        />
-      ) : null}
       <div className={styles.deckNavItemTitle}>{group.title}</div>
     </div>
   );

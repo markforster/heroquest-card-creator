@@ -44,6 +44,9 @@ type CardFanProps = {
   onRemoveCard?: (cardId: string) => void;
   selectedCardId?: string | null;
   className?: string;
+  fixedFrameWidth?: number;
+  fixedFrameHeight?: number;
+  placeholderVariant?: "default" | "deck-group-drop";
 };
 
 type CardFanRenderItem = {
@@ -159,6 +162,7 @@ function CardFanItem({
   onRemoveCard,
   itemIndex,
   dragMeta,
+  placeholderVariant,
 }: {
   itemKey: string;
   cardId: string | null;
@@ -175,6 +179,7 @@ function CardFanItem({
   onRemoveCard?: () => void;
   itemIndex: number;
   dragMeta: { id: string; data: Record<string, unknown> } | null;
+  placeholderVariant: "default" | "deck-group-drop";
 }) {
   const isSetCard = dragMeta?.data.type === "set" && typeof dragMeta?.data.setId === "string";
   const { setNodeRef: setDropNodeRef } = useDroppable({
@@ -249,7 +254,11 @@ function CardFanItem({
           height={size.height}
           rx={6}
           ry={6}
-          className={styles.cardFanPlaceholderSvg}
+          className={
+            placeholderVariant === "deck-group-drop"
+              ? styles.cardFanDeckGroupDropPlaceholderSvg
+              : styles.cardFanPlaceholderSvg
+          }
         />
       ) : cardId ? (
         <>
@@ -334,6 +343,9 @@ export default function CardFan({
   onRemoveCard,
   selectedCardId = null,
   className,
+  fixedFrameWidth,
+  fixedFrameHeight,
+  placeholderVariant = "default",
 }: CardFanProps) {
   const HOVER_TOPMOST = false;
   const isHoverSpread = !expanded && hovered;
@@ -468,12 +480,14 @@ export default function CardFan({
   const borderPad = 6;
   const svgWidth = Math.max(size.width, safeBounds.maxX - safeBounds.minX) + borderPad * 2;
   const svgHeight = Math.max(size.height, safeBounds.maxY - safeBounds.minY) + borderPad * 2;
-  const viewMinX = safeBounds.minX - borderPad;
-  const viewMinY = safeBounds.minY - borderPad;
+  const frameWidth = Math.max(svgWidth, fixedFrameWidth ?? 0);
+  const frameHeight = Math.max(svgHeight, fixedFrameHeight ?? 0);
+  const viewMinX = safeBounds.minX - borderPad - (frameWidth - svgWidth) / 2;
+  const viewMinY = safeBounds.minY - borderPad - (frameHeight - svgHeight) / 2;
 
   const style: CSSProperties = {
-    width: `${svgWidth}px`,
-    height: `${svgHeight}px`,
+    width: `${frameWidth}px`,
+    height: `${frameHeight}px`,
   };
 
   return (
@@ -487,9 +501,9 @@ export default function CardFan({
     >
       <svg
         className={styles.cardFanSvg}
-        width={svgWidth}
-        height={svgHeight}
-        viewBox={`${viewMinX} ${viewMinY} ${svgWidth} ${svgHeight}`}
+        width={frameWidth}
+        height={frameHeight}
+        viewBox={`${viewMinX} ${viewMinY} ${frameWidth} ${frameHeight}`}
         role="img"
       >
         {layout
@@ -523,6 +537,7 @@ export default function CardFan({
                 onRemoveCard={cardId && onRemoveCard ? () => onRemoveCard(cardId) : undefined}
                 itemIndex={item.index}
                 dragMeta={dragMeta}
+                placeholderVariant={placeholderVariant}
               />
             );
           })}

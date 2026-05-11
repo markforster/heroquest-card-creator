@@ -21,7 +21,11 @@ export default function DeckGroupsSection({
   const { orderedGroups, sets, selectedGroupId, selectedSetId, selectGroup, selectSet } =
     useDeckDetailSelection();
   return (
-    <div className={styles.deckRouteRow}>
+    <div
+      className={`${styles.deckRouteRow} ${
+        drag.isBackFaceDragActive ? styles.deckRouteRowGroupDragActive : ""
+      }`}
+    >
       <div className={styles.deckRouteRowBody}>
         <div className={styles.deckGroupRow}>
           <DeckGroupGridList
@@ -50,7 +54,6 @@ export default function DeckGroupsSection({
           />
         </div>
       </div>
-      <div className={styles.deckRouteRowFooter} />
     </div>
   );
 }

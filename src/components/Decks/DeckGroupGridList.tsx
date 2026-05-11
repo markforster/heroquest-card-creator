@@ -63,7 +63,7 @@ function GroupDropZoneArea({
       data-group-row-list="true"
       className={`${styles.deckGroupRowList} ${
         isOver && !isBackFaceDragActive ? styles.deckGroupRowListOver : ""
-      } ${isBackFaceDragActive ? styles.deckGroupRowListActive : ""}`}
+      }`}
     >
       <div
         ref={(node) => {
@@ -102,6 +102,7 @@ export default function DeckGroupGridList({
   rowRef,
 }: DeckGroupGridListProps & { isBackFaceDragActive?: boolean; dropIndex?: number | null }) {
   const tileSize = CARD_FAN_SIZES[groupTileVariant];
+  const fixedPreviewHeight = Math.round(tileSize.height + 28);
   const fanTilt = 0.6;
   const fanSpacing = 0.6;
   const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null);
@@ -158,7 +159,9 @@ export default function DeckGroupGridList({
                 expanded={isExpanded || dragExpanded}
                 hovered={isHovering}
                 hoveredCardId={isHovering ? hoveredCardId : null}
+                fixedFrameHeight={fixedPreviewHeight}
                 dropPlaceholderIndex={dropPlaceholderIndex}
+                placeholderVariant={dropPlaceholderIndex != null ? "deck-group-drop" : "default"}
                 getDragMeta={(cardId) => {
                   const target = groupSets.find((set) => set.backFaceId === cardId);
                   if (!target) return null;
@@ -214,7 +217,6 @@ export default function DeckGroupGridList({
                 ) : null}
                 <DeckGroupGridItem
                   group={group}
-                  setCount={groupSets.length}
                   isSelected={selectedGroupId === group.id}
                   onSelect={() => {
                     onSelectGroup(group.id);

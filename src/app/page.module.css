@@ -1420,7 +1420,7 @@
 
 .rightPanel {
   flex: 0 0 auto;
-  width: 354px;
+  width: 520px;
   background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
   padding: 0;
   border-left: 1px solid var(--hq-border-strong);
@@ -6734,6 +6734,14 @@ button.assetsKindBadge:disabled {
   filter: drop-shadow(0 0 6px rgba(230, 179, 90, 0.55));
 }
 
+.cardFanDeckGroupDropPlaceholderSvg {
+  fill: rgba(8, 10, 12, 0.4);
+  stroke: var(--hq-accent);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+
 .cardFanSelected {
   fill: none;
   stroke: var(--hq-accent);
@@ -6835,6 +6843,7 @@ button.assetsKindBadge:disabled {
 .decksRightPanel {
   display: flex;
   flex-direction: column;
+  width: 354px;
   gap: var(--space-10);
   min-height: 0;
 }
@@ -6932,7 +6941,7 @@ button.assetsKindBadge:disabled {
   gap: var(--space-4);
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .deckRouteFooter {
@@ -6953,6 +6962,16 @@ button.assetsKindBadge:disabled {
   padding: var(--space-4);
 }
 
+.deckRouteRowGroupDragActive {
+  border-color: rgba(230, 179, 90, 0.7);
+  animation: deckDropPulse 1.2s ease-in-out infinite;
+}
+
+.deckRouteRowFill {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .deckRouteRowToolbar {
   display: flex;
   align-items: center;
@@ -6964,10 +6983,14 @@ button.assetsKindBadge:disabled {
 .deckRouteRowBody {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.deckRouteRowBodyFill {
+  overflow: hidden;
 }
 
 .deckRouteRowStrip {
@@ -7005,8 +7028,12 @@ button.assetsKindBadge:disabled {
   gap: var(--space-4);
   min-width: 0;
   width: 100%;
+  box-sizing: border-box;
   overflow-x: auto;
   overflow-y: visible;
+  padding: var(--space-3);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
   min-height: calc(var(--deck-set-h) + var(--space-6));
   height: 100%;
 }
@@ -7022,12 +7049,6 @@ button.assetsKindBadge:disabled {
 .deckGroupRowListOver {
   outline: 2px dashed var(--hq-accent);
   outline-offset: 4px;
-}
-
-.deckGroupRowListActive {
-  border: 2px solid rgba(230, 179, 90, 0.7);
-  border-radius: var(--radius-md);
-  animation: deckDropPulse 1.2s ease-in-out infinite;
 }
 
 .deckGroupDropZone {
@@ -7060,7 +7081,6 @@ button.assetsKindBadge:disabled {
   flex-direction: row;
   align-items: center;
   flex-wrap: nowrap;
-  padding-bottom: var(--space-2);
   min-width: max-content;
   min-height: calc(var(--deck-set-h) + var(--space-6));
   height: 100%;
@@ -7116,6 +7136,7 @@ button.assetsKindBadge:disabled {
   border: 2px dashed var(--hq-accent);
   border-radius: var(--radius-md);
   flex: 0 0 auto;
+  align-self: center;
 }
 
 @keyframes deckDropPulse {
@@ -7154,7 +7175,8 @@ button.assetsKindBadge:disabled {
 }
 
 .deckGroupPreviewFan {
-  width: 100%;
+  width: auto;
+  display: inline-block;
 }
 
 .deckGroupPreviewWrap {
@@ -7260,9 +7282,14 @@ button.assetsKindBadge:disabled {
   border-radius: var(--radius-md);
   padding: var(--space-3);
   color: var(--hq-text);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   text-align: left;
   cursor: pointer;
   overflow: visible;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
 }
 
 .deckNavItem:focus {
@@ -7284,8 +7311,8 @@ button.assetsKindBadge:disabled {
 }
 
 .deckNavItemSelected {
-  border-color: var(--hq-accent);
-  /* background: rgba(230, 179, 90, 0.12); */
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.075);
 }
 
 .deckNavItemDropOver {
@@ -7511,6 +7538,9 @@ button.assetsKindBadge:disabled {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   border: 1px solid var(--hq-border-strong);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
@@ -7558,7 +7588,7 @@ button.assetsKindBadge:disabled {
 .deckEntriesGrid {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-4);
+  gap: var(--space-5);
   justify-content: flex-start;
 }
 

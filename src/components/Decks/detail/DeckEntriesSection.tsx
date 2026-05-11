@@ -207,9 +207,9 @@ export default function DeckEntriesSection({
   };
 
   return (
-    <div className={styles.deckRouteRow}>
+    <div className={`${styles.deckRouteRow} ${styles.deckRouteRowFill}`}>
       <div className={styles.deckRouteRowToolbar} />
-      <div className={styles.deckRouteRowBody}>
+      <div className={`${styles.deckRouteRowBody} ${styles.deckRouteRowBodyFill}`}>
         {!selectedGroupId ? (
           <div className={styles.decksEmpty}>{t("decks.noGroupSelectedEntries")}</div>
         ) : !selectedSetId ? (
