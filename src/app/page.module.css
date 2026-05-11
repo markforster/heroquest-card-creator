@@ -2181,44 +2181,20 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: var(--space-2);
+  padding: var(--space-1);
   border-radius: var(--radius-pill);
   background: var(--hq-white-06);
   border: 1px solid var(--hq-white-12);
-  position: relative;
-  --segment-track-left: 0px;
-  --segment-track-top: 0px;
-  --segment-track-width: 0px;
-  --segment-track-height: 0px;
-}
-
-.inspectorModeSegment::before {
-  content: "";
-  position: absolute;
-  left: var(--segment-track-left);
-  top: var(--segment-track-top);
-  width: var(--segment-track-width);
-  height: var(--segment-track-height);
-  border-radius: var(--radius-pill);
-  background: var(--hq-white-15);
-  box-shadow: 0 0 0 1px var(--hq-white-15);
-  transition:
-    left 160ms ease,
-    top 160ms ease,
-    width 160ms ease,
-    height 160ms ease,
-    background-color 160ms ease,
-    box-shadow 160ms ease;
-  z-index: 0;
 }
 
 .inspectorModeTab {
   border: 0;
   background: transparent;
   color: var(--hq-text-muted);
-  padding: var(--space-3) var(--space-12);
+  padding: 0.35rem 0.9rem;
   border-radius: var(--radius-pill);
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
@@ -2226,8 +2202,6 @@
     background-color 160ms ease,
     color 160ms ease,
     box-shadow 160ms ease;
-  position: relative;
-  z-index: 1;
 }
 
 .inspectorModeTab:hover {
@@ -2236,6 +2210,8 @@
 
 .inspectorModeTabActive {
   color: var(--hq-white);
+  background: var(--hq-white-15);
+  box-shadow: 0 0 0 1px var(--hq-white-15);
 }
 
 .inspectorModeBody {
@@ -6735,11 +6711,18 @@ button.assetsKindBadge:disabled {
 }
 
 .cardFanDeckGroupDropPlaceholderSvg {
-  fill: rgba(8, 10, 12, 0.4);
+  fill: var(--hq-drop-surface);
   stroke: var(--hq-accent);
   stroke-width: 2;
   stroke-dasharray: 4 3;
   vector-effect: non-scaling-stroke;
+}
+
+.cardFanEmptyDeckPlaceholderSvg {
+  fill: var(--hq-cardfan-empty-fill);
+  stroke: var(--hq-cardfan-empty-stroke);
+  stroke-width: 2.5;
+  stroke-dasharray: 6 4;
 }
 
 .cardFanSelected {
@@ -7282,8 +7265,8 @@ button.assetsKindBadge:disabled {
   border-radius: var(--radius-md);
   padding: var(--space-3);
   color: var(--hq-text);
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--hq-group-tile-bg);
+  border: 1px solid var(--hq-group-tile-border);
   text-align: left;
   cursor: pointer;
   overflow: visible;
@@ -7311,8 +7294,8 @@ button.assetsKindBadge:disabled {
 }
 
 .deckNavItemSelected {
-  border-color: rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.075);
+  border-color: var(--hq-group-tile-border-selected);
+  background: var(--hq-group-tile-bg-selected);
 }
 
 .deckNavItemDropOver {
@@ -7473,8 +7456,8 @@ button.assetsKindBadge:disabled {
   width: var(--deck-set-w);
   height: var(--deck-set-h);
   border-radius: 12px;
-  border: 2px dashed rgba(255, 255, 255, 0.35);
-  background: rgba(8, 10, 12, 0.4);
+  border: 2px dashed var(--hq-selected-border);
+  background: var(--hq-drop-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7502,8 +7485,8 @@ button.assetsKindBadge:disabled {
   width: var(--deck-set-w);
   height: var(--deck-set-h);
   border-radius: 6px;
-  border: 2px dashed rgba(255, 255, 255, 0.25);
-  background: rgba(10, 12, 15, 0.35);
+  border: 2px dashed var(--hq-selected-border);
+  background: var(--hq-drop-surface);
   color: var(--hq-text-muted);
   display: inline-flex;
   align-items: center;
@@ -7515,8 +7498,8 @@ button.assetsKindBadge:disabled {
 }
 
 .deckSetTilePlaceholder:hover {
-  border-color: rgba(255, 255, 255, 0.5);
-  background: rgba(20, 24, 30, 0.55);
+  border-color: var(--hq-accent);
+  background: color-mix(in srgb, var(--hq-drop-surface) 82%, var(--hq-accent) 18%);
   transform: translateY(-1px);
 }
 
@@ -7534,6 +7517,14 @@ button.assetsKindBadge:disabled {
   padding-top: var(--space-4);
 }
 
+.deckEntriesSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .deckEntriesPanel {
   display: flex;
   flex-direction: column;
@@ -7548,13 +7539,13 @@ button.assetsKindBadge:disabled {
 }
 
 .deckEntriesPanelDropActive {
-  border-color: rgba(230, 179, 90, 0.65);
-  box-shadow: 0 0 0 1px rgba(230, 179, 90, 0.25);
+  border-color: color-mix(in srgb, var(--hq-accent) 80%, var(--hq-border-strong) 20%);
+  box-shadow: 0 0 0 1px var(--hq-accent-ring-soft);
 }
 
 .deckEntriesPanelDropOver {
   border-color: var(--hq-accent);
-  box-shadow: 0 0 0 2px rgba(230, 179, 90, 0.3);
+  box-shadow: 0 0 0 2px var(--hq-accent-ring-soft);
 }
 
 .deckEntriesDropPlaceholder {
@@ -7562,7 +7553,7 @@ button.assetsKindBadge:disabled {
   height: var(--deck-set-h, 147px);
   border-radius: 8px;
   border: 2px dashed var(--hq-accent);
-  background: rgba(230, 179, 90, 0.08);
+  background: color-mix(in srgb, var(--hq-drop-surface) 70%, var(--hq-accent) 30%);
   display: inline-flex;
   flex: 0 0 auto;
   align-self: flex-start;
@@ -7570,7 +7561,7 @@ button.assetsKindBadge:disabled {
 
 .deckEntriesDropPlaceholderOver {
   border-color: color-mix(in srgb, var(--hq-accent) 90%, #fff 10%);
-  background: rgba(230, 179, 90, 0.18);
+  background: color-mix(in srgb, var(--hq-drop-surface) 55%, var(--hq-accent) 45%);
 }
 
 .deckEntriesHeader {
@@ -7668,7 +7659,7 @@ button.assetsKindBadge:disabled {
 .deckEntryThumbSelected {
   box-shadow:
     0 0 0 3px var(--hq-accent),
-    0 0 6px rgba(230, 179, 90, 0.45);
+    0 0 6px var(--hq-accent-ring-soft);
 }
 
 .deckEntryThumbFrame {
@@ -7677,7 +7668,7 @@ button.assetsKindBadge:disabled {
 
 .deckEntryCard:hover .deckEntryThumb,
 .deckEntrySelect:focus-visible .deckEntryThumb {
-  box-shadow: 0 0 0 2px rgba(230, 179, 90, 0.55);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--hq-accent) 88%, transparent);
 }
 
 .deckEntryCard:hover .deckEntryThumbFrame,
@@ -7760,11 +7751,11 @@ button.assetsKindBadge:disabled {
 .deckFacesSegment {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
   border-radius: var(--radius-pill);
-  border: 1px solid var(--hq-border-strong);
+  border: 1px solid var(--hq-white-12);
   background: var(--hq-white-06);
-  padding: 2px;
-  gap: 2px;
 }
 
 .deckFacesSegmentBtn {
@@ -7772,16 +7763,26 @@ button.assetsKindBadge:disabled {
   background: transparent;
   color: var(--hq-text-muted);
   border-radius: var(--radius-pill);
-  padding: var(--space-2) var(--space-6);
+  padding: 0.35rem 0.9rem;
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.deckFacesSegmentBtn:hover {
+  color: var(--hq-text);
 }
 
 .deckFacesSegmentBtnActive {
-  color: var(--hq-text);
+  color: var(--hq-white);
   background: var(--hq-white-15);
+  box-shadow: 0 0 0 1px var(--hq-white-15);
 }
 
 .deckBacksFilter {

@@ -82,6 +82,7 @@ export default function DecksGridPanel() {
                     variant={PREVIEW_VARIANT}
                     maxCount={PREVIEW_FAN_COUNT}
                     showPlaceholdersWhenEmpty
+                    emptyPlaceholderVariant="deck-empty"
                     spacing={1}
                     tilt={1}
                   />

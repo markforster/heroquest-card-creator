@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import { useDeckRightPanel } from "@/components/Decks/detail/context/DeckRightPanelContext";
@@ -23,7 +23,7 @@ export default function DeckDetailHeader({
           onClick={toggleRightPanel}
           title={t("decks.sourcePanelToggle")}
         >
-          {isRightPanelVisible ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          {isRightPanelVisible ? <ChevronRight size={16} /> : <Plus size={16} />}
         </button>
       </div>
     </div>

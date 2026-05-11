@@ -201,7 +201,6 @@ function DeckDetailPanelContent({
               </DeckSetEntriesProvider>
             </DeckDetailSelectionProvider>
 
-            <div className={styles.deckRouteFooter} />
           </div>
         </section>
         {isRightPanelVisible ? (

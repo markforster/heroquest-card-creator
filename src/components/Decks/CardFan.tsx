@@ -47,6 +47,7 @@ type CardFanProps = {
   fixedFrameWidth?: number;
   fixedFrameHeight?: number;
   placeholderVariant?: "default" | "deck-group-drop";
+  emptyPlaceholderVariant?: "default" | "deck-empty";
 };
 
 type CardFanRenderItem = {
@@ -163,6 +164,7 @@ function CardFanItem({
   itemIndex,
   dragMeta,
   placeholderVariant,
+  emptyPlaceholderVariant,
 }: {
   itemKey: string;
   cardId: string | null;
@@ -180,6 +182,7 @@ function CardFanItem({
   itemIndex: number;
   dragMeta: { id: string; data: Record<string, unknown> } | null;
   placeholderVariant: "default" | "deck-group-drop";
+  emptyPlaceholderVariant: "default" | "deck-empty";
 }) {
   const isSetCard = dragMeta?.data.type === "set" && typeof dragMeta?.data.setId === "string";
   const { setNodeRef: setDropNodeRef } = useDroppable({
@@ -315,7 +318,11 @@ function CardFanItem({
           height={size.height}
           rx={6}
           ry={6}
-          className={styles.cardFanPlaceholderSvg}
+          className={
+            emptyPlaceholderVariant === "deck-empty"
+              ? styles.cardFanEmptyDeckPlaceholderSvg
+              : styles.cardFanPlaceholderSvg
+          }
         />
       )}
     </g>
@@ -346,6 +353,7 @@ export default function CardFan({
   fixedFrameWidth,
   fixedFrameHeight,
   placeholderVariant = "default",
+  emptyPlaceholderVariant = "default",
 }: CardFanProps) {
   const HOVER_TOPMOST = false;
   const isHoverSpread = !expanded && hovered;
@@ -538,6 +546,7 @@ export default function CardFan({
                 itemIndex={item.index}
                 dragMeta={dragMeta}
                 placeholderVariant={placeholderVariant}
+                emptyPlaceholderVariant={emptyPlaceholderVariant}
               />
             );
           })}

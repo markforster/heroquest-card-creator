@@ -215,13 +215,7 @@ export default function DeckEntriesSection({
         ) : !selectedSetId ? (
           <div className={styles.decksEmpty}>{t("decks.noSetSelected")}</div>
         ) : (
-          <div
-            ref={setEntriesPanelRef}
-            data-deck-entries-dropzone="true"
-            className={`${styles.deckEntriesPanel} ${
-              drag.isFrontFaceDragActive || drag.isEntryDragActive ? styles.deckEntriesPanelDropActive : ""
-            } ${drag.isFrontDropOver || drag.isEntriesDropOver ? styles.deckEntriesPanelDropOver : ""}`}
-          >
+          <div className={styles.deckEntriesSection}>
             <div className={styles.deckFacesSegment} role="tablist" aria-label="Set cards mode">
               <button
                 type="button"
@@ -244,6 +238,13 @@ export default function DeckEntriesSection({
                 Paired (Not In Set) ({pairedNotInSetFrontIds.length})
               </button>
             </div>
+            <div
+              ref={setEntriesPanelRef}
+              data-deck-entries-dropzone="true"
+              className={`${styles.deckEntriesPanel} ${
+                drag.isFrontFaceDragActive || drag.isEntryDragActive ? styles.deckEntriesPanelDropActive : ""
+              } ${drag.isFrontDropOver || drag.isEntriesDropOver ? styles.deckEntriesPanelDropOver : ""}`}
+            >
             {entriesViewMode === "paired-not-in-set" ? (
               pairedNotInSetFrontIds.length === 0 ? (
                 <div className={styles.decksEmpty}>No paired cards pending add.</div>
@@ -381,6 +382,7 @@ export default function DeckEntriesSection({
                 </div>
               </SortableContext>
             )}
+            </div>
           </div>
         )}
       </div>
