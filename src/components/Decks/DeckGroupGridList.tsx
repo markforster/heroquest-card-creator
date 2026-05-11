@@ -205,6 +205,7 @@ export default function DeckGroupGridList({
                 ) : null}
                 <DeckGroupGridItem
                   group={group}
+                  setCount={groupSets.length}
                   isSelected={selectedGroupId === group.id}
                   onSelect={() => {
                     onSelectGroup(group.id);

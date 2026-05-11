@@ -1420,7 +1420,7 @@
 
 .rightPanel {
   flex: 0 0 auto;
-  width: 416px;
+  width: 354px;
   background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
   padding: 0;
   border-left: 1px solid var(--hq-border-strong);
@@ -7171,6 +7171,27 @@ button.assetsKindBadge:disabled {
   display: none;
 }
 
+.deckGroupBaseline {
+  width: calc(100% - var(--space-4));
+  border-radius: 999px;
+  transition:
+    opacity 140ms ease,
+    filter 140ms ease;
+}
+
+.deckGroupBaselineInactive {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.28);
+  opacity: 0.8;
+}
+
+.deckGroupBaselineActive {
+  height: 5px;
+  background: rgba(230, 179, 90, 0.9);
+  box-shadow: 0 0 10px rgba(230, 179, 90, 0.45);
+  opacity: 1;
+}
+
 .deckGroupsList {
   display: flex;
   flex-direction: column;
@@ -7502,7 +7523,8 @@ button.assetsKindBadge:disabled {
 
 .deckBacksGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(105px, 105px));
+  justify-content: start;
   gap: var(--space-3);
 }
 

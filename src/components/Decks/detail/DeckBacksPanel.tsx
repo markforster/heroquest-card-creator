@@ -14,7 +14,7 @@ import type { RightPanelFaceMode } from "@/components/Decks/types/deck-backs";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 
-const BACK_PANEL_TILE_VARIANT = "sm";
+const BACK_PANEL_TILE_VARIANT = "smMd";
 const DECK_FACE_FILTER_MODE: "select" | "tree" = "select";
 
 function BackPanelThumb({
@@ -30,7 +30,7 @@ function BackPanelThumb({
       src={thumbUrl}
       alt=""
       variant={variant}
-      fit="cover"
+      fit="contain"
       className={styles.deckSetThumb}
       fallback={<div className={styles.deckSetThumbFallback} />}
     />

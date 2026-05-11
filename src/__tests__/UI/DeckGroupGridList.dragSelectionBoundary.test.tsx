@@ -71,6 +71,7 @@ describe("DeckGroupGridList drag selection boundary", () => {
         ] as never}
         sets={[
           { id: "set-1", groupId: "group-1", sortIndex: 0, backFaceId: "back-1" },
+          { id: "set-4", groupId: "group-1", sortIndex: 1, backFaceId: "back-4" },
           { id: "set-2", groupId: "group-2", sortIndex: 0, backFaceId: "back-2" },
           { id: "set-3", groupId: "group-2", sortIndex: 1, backFaceId: "back-3" },
         ] as never}
@@ -96,6 +97,10 @@ describe("DeckGroupGridList drag selection boundary", () => {
 
     expect(selectedGroup?.className).toContain("deckNavItemSelected");
     expect(temporaryTargetGroup?.className).not.toContain("deckNavItemSelected");
+    const selectedBaseline = selectedGroup?.querySelector('[data-group-baseline="true"]');
+    const targetBaseline = temporaryTargetGroup?.querySelector('[data-group-baseline="true"]');
+    expect(selectedBaseline?.className).toContain("deckGroupBaselineActive");
+    expect(targetBaseline?.className).toContain("deckGroupBaselineInactive");
     expect(targetFan?.getAttribute("data-expanded")).toBe("true");
     expect(targetFan?.getAttribute("data-drop-placeholder-index")).toBe("1");
   });
@@ -118,6 +123,8 @@ describe("DeckGroupGridList drag selection boundary", () => {
     );
     const fan = container.querySelector('[data-testid="mock-card-fan"]');
     expect(fan?.getAttribute("data-expanded")).toBe("false");
+    const group = screen.getByText("Group 1").closest("[data-group-id]");
+    expect(group?.querySelector('[data-group-baseline="true"]')).toBeNull();
   });
 
   it("fully expands a collapsed multi-set destination group during set drag hover", () => {
