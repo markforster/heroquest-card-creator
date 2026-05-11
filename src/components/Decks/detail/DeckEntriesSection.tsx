@@ -5,7 +5,9 @@ import { SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sort
 import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
 import type { DeckDetailDragState } from "@/components/Decks/types/deck-detail";
@@ -17,6 +19,7 @@ function DeckEntryCard({
   entryId,
   frontId,
   isSelected,
+  onRequestRemove,
   onSelectEntry,
   onOpenCardEditor,
   deckEntryThumb,
@@ -24,6 +27,7 @@ function DeckEntryCard({
   entryId: string;
   frontId: string;
   isSelected: boolean;
+  onRequestRemove?: (entryId: string, frontId: string) => void;
   onSelectEntry: (entryId: string, hasModifier: boolean) => void;
   onOpenCardEditor: (cardId: string) => void;
   deckEntryThumb: (cardId: string, isSelected: boolean) => ReactNode;
@@ -55,6 +59,21 @@ function DeckEntryCard({
       >
         {deckEntryThumb(frontId, isSelected)}
       </button>
+      {onRequestRemove ? (
+        <button
+          type="button"
+          className={styles.deckCardRemoveButton}
+          aria-label="Remove front from set"
+          title="Remove front from set"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRequestRemove(entryId, frontId);
+          }}
+        >
+          ×
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -118,9 +137,16 @@ export default function DeckEntriesSection({
 
   const [entriesViewMode, setEntriesViewMode] = useState<"in-set" | "paired-not-in-set">("in-set");
   const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set());
+  const [pendingFrontRemoval, setPendingFrontRemoval] = useState<{
+    entryId: string;
+    setId: string;
+    frontFaceId: string;
+    backFaceId: string;
+  } | null>(null);
   useEffect(() => {
     setEntriesViewMode("in-set");
     setSelectedEntryIds(new Set());
+    setPendingFrontRemoval(null);
   }, [selectedSetId]);
 
   const selectEntry = (entryId: string, hasModifier: boolean) => {
@@ -149,6 +175,36 @@ export default function DeckEntriesSection({
       />
     </div>
   );
+
+  const removeFromSetOnly = async () => {
+    const pending = pendingFrontRemoval;
+    setPendingFrontRemoval(null);
+    if (!pending) return;
+    await removeEntry(pending.entryId, pending.setId);
+    setSelectedEntryIds((prev) => {
+      if (!prev.has(pending.entryId)) return prev;
+      const next = new Set(prev);
+      next.delete(pending.entryId);
+      return next;
+    });
+  };
+
+  const removeAndUnpair = async () => {
+    const pending = pendingFrontRemoval;
+    setPendingFrontRemoval(null);
+    if (!pending) return;
+    await removeEntry(pending.entryId, pending.setId);
+    await apiClient.deletePair({
+      frontFaceId: pending.frontFaceId,
+      backFaceId: pending.backFaceId,
+    });
+    setSelectedEntryIds((prev) => {
+      if (!prev.has(pending.entryId)) return prev;
+      const next = new Set(prev);
+      next.delete(pending.entryId);
+      return next;
+    });
+  };
 
   return (
     <div className={styles.deckRouteRow}>
@@ -298,6 +354,17 @@ export default function DeckEntriesSection({
                         entryId={entry.id}
                         frontId={frontId}
                         isSelected={isSelected}
+                        onRequestRemove={(entryId, targetFrontId) => {
+                          if (!selectedSetId) return;
+                          const backFaceId = pairsById.get(entry.pairId)?.backFaceId;
+                          if (!backFaceId) return;
+                          setPendingFrontRemoval({
+                            entryId,
+                            setId: selectedSetId,
+                            frontFaceId: targetFrontId,
+                            backFaceId,
+                          });
+                        }}
                         onSelectEntry={selectEntry}
                         onOpenCardEditor={onOpenCardEditor}
                         deckEntryThumb={deckEntryThumb}
@@ -318,6 +385,18 @@ export default function DeckEntriesSection({
         )}
       </div>
       <div className={styles.deckRouteRowFooter} />
+      <ConfirmModal
+        isOpen={Boolean(pendingFrontRemoval)}
+        title={t("decks.removeFrontPromptTitle")}
+        confirmLabel={t("decks.removeFromSet")}
+        extraLabel={t("decks.removeAndUnpair")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={removeFromSetOnly}
+        onExtra={removeAndUnpair}
+        onCancel={() => setPendingFrontRemoval(null)}
+      >
+        {t("decks.removeFrontPromptBody")}
+      </ConfirmModal>
     </div>
   );
 }

@@ -41,6 +41,7 @@ type CardFanProps = {
   } | null;
   onHoverCard?: (cardId: string | null) => void;
   onSelectCard?: (cardId: string, index: number) => void;
+  onRemoveCard?: (cardId: string) => void;
   selectedCardId?: string | null;
   className?: string;
 };
@@ -155,6 +156,7 @@ function CardFanItem({
   isSelected,
   onHoverCard,
   onSelectCard,
+  onRemoveCard,
   itemIndex,
   dragMeta,
 }: {
@@ -170,6 +172,7 @@ function CardFanItem({
   isSelected: boolean;
   onHoverCard?: (cardId: string | null) => void;
   onSelectCard?: (cardId: string, index: number) => void;
+  onRemoveCard?: () => void;
   itemIndex: number;
   dragMeta: { id: string; data: Record<string, unknown> } | null;
 }) {
@@ -279,6 +282,21 @@ function CardFanItem({
               className={styles.cardFanSelected}
             />
           ) : null}
+          {onRemoveCard ? (
+            <g
+              className={styles.cardFanRemoveButtonSvg}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                onRemoveCard();
+              }}
+            >
+              <circle cx={x + size.width - 9} cy={y + 9} r={9} />
+              <text x={x + size.width - 9} y={y + 12} textAnchor="middle" aria-hidden="true">
+                ×
+              </text>
+            </g>
+          ) : null}
         </>
       ) : (
         <rect
@@ -313,6 +331,7 @@ export default function CardFan({
   getDragMeta,
   onHoverCard,
   onSelectCard,
+  onRemoveCard,
   selectedCardId = null,
   className,
 }: CardFanProps) {
@@ -501,6 +520,7 @@ export default function CardFan({
                 isSelected={isSelected}
                 onHoverCard={onHoverCard}
                 onSelectCard={onSelectCard}
+                onRemoveCard={cardId && onRemoveCard ? () => onRemoveCard(cardId) : undefined}
                 itemIndex={item.index}
                 dragMeta={dragMeta}
               />

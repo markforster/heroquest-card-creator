@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import DeckGroupGridList from "@/components/Decks/DeckGroupGridList";
 
@@ -18,10 +18,12 @@ jest.mock("@/components/Decks/CardFan", () => {
     cardIds,
     expanded,
     dropPlaceholderIndex,
+    onRemoveCard,
   }: {
     cardIds: string[];
     expanded?: boolean;
     dropPlaceholderIndex?: number | null;
+    onRemoveCard?: (cardId: string) => void;
   }) => (
     <div
       data-testid="mock-card-fan"
@@ -30,6 +32,16 @@ jest.mock("@/components/Decks/CardFan", () => {
       data-drop-placeholder-index={dropPlaceholderIndex == null ? "" : String(dropPlaceholderIndex)}
     >
       {cardIds.join(",")}
+      {cardIds.map((cardId) => (
+        <button
+          key={cardId}
+          type="button"
+          title={`Remove ${cardId}`}
+          onClick={() => onRemoveCard?.(cardId)}
+        >
+          ×
+        </button>
+      ))}
     </div>
   );
 
@@ -54,6 +66,7 @@ describe("DeckGroupGridList drag selection boundary", () => {
         emptyLabel="Drag a back face from the right panel to create your first group."
         onSelectGroup={jest.fn()}
         onSelectSet={jest.fn()}
+        onDeleteSetFromGroupCard={jest.fn()}
         groupTileVariant="smMd"
       />,
     );
@@ -85,6 +98,7 @@ describe("DeckGroupGridList drag selection boundary", () => {
         emptyLabel="Empty"
         onSelectGroup={jest.fn()}
         onSelectSet={jest.fn()}
+        onDeleteSetFromGroupCard={jest.fn()}
         groupTileVariant="smMd"
       />,
     );
@@ -118,6 +132,7 @@ describe("DeckGroupGridList drag selection boundary", () => {
         emptyLabel="Empty"
         onSelectGroup={jest.fn()}
         onSelectSet={jest.fn()}
+        onDeleteSetFromGroupCard={jest.fn()}
         groupTileVariant="smMd"
       />,
     );
@@ -149,6 +164,7 @@ describe("DeckGroupGridList drag selection boundary", () => {
         emptyLabel="Empty"
         onSelectGroup={jest.fn()}
         onSelectSet={jest.fn()}
+        onDeleteSetFromGroupCard={jest.fn()}
         groupTileVariant="smMd"
       />,
     );
@@ -179,6 +195,7 @@ describe("DeckGroupGridList drag selection boundary", () => {
       emptyLabel: "Empty",
       onSelectGroup: jest.fn(),
       onSelectSet: jest.fn(),
+      onDeleteSetFromGroupCard: jest.fn(),
       groupTileVariant: "smMd" as const,
     };
     const { container, rerender } = render(
@@ -209,11 +226,35 @@ describe("DeckGroupGridList drag selection boundary", () => {
         emptyLabel="Empty"
         onSelectGroup={jest.fn()}
         onSelectSet={jest.fn()}
+        onDeleteSetFromGroupCard={jest.fn()}
         groupTileVariant="smMd"
       />,
     );
 
     expect(container.querySelector('[data-pinned-new-group-zone="true"]')).toBeNull();
     expect(container.querySelectorAll("[data-drop-index]")).toHaveLength(1);
+  });
+
+  it("shows set remove action on hover and deletes the hovered single-set group card", async () => {
+    const onDeleteSetFromGroupCard = jest.fn().mockResolvedValue(undefined);
+    render(
+      <DeckGroupGridList
+        groups={[{ id: "group-1", title: "Group 1", sortIndex: 0 }] as never}
+        sets={[{ id: "set-1", groupId: "group-1", sortIndex: 0, backFaceId: "back-1" }] as never}
+        selectedGroupId={null}
+        selectedSetId={null}
+        isDropOver={false}
+        emptyLabel="Empty"
+        onSelectGroup={jest.fn()}
+        onSelectSet={jest.fn()}
+        onDeleteSetFromGroupCard={onDeleteSetFromGroupCard}
+        groupTileVariant="smMd"
+      />,
+    );
+    const group = screen.getByText("Group 1").closest("[data-group-id]");
+    expect(group).not.toBeNull();
+    fireEvent.mouseEnter(group as Element);
+    fireEvent.click(screen.getByTitle("Remove back-1"));
+    expect(onDeleteSetFromGroupCard).toHaveBeenCalledWith("set-1");
   });
 });

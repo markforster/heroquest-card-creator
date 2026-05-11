@@ -10,10 +10,12 @@ export default function DeckGroupsSection({
   groupTileVariant,
   drag,
   rowRef,
+  onDeleteSetFromGroupCard,
 }: {
   groupTileVariant: "xs" | "sm" | "smMd" | "lg";
   drag: DeckDetailDragState;
   rowRef: (node: HTMLDivElement | null) => void;
+  onDeleteSetFromGroupCard: (setId: string) => Promise<void>;
 }) {
   const { t } = useI18n();
   const { orderedGroups, sets, selectedGroupId, selectedSetId, selectGroup, selectSet } =
@@ -42,6 +44,7 @@ export default function DeckGroupsSection({
             emptyLabel={t("decks.emptyGroups")}
             onSelectGroup={selectGroup}
             onSelectSet={selectSet}
+            onDeleteSetFromGroupCard={onDeleteSetFromGroupCard}
             groupTileVariant={groupTileVariant}
             rowRef={rowRef}
           />

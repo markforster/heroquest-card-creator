@@ -6757,6 +6757,30 @@ button.assetsKindBadge:disabled {
   transition: opacity 120ms ease;
 }
 
+.cardFanRemoveButtonSvg {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.cardFanCardSvg:hover .cardFanRemoveButtonSvg {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cardFanRemoveButtonSvg circle {
+  fill: #ef4444;
+  stroke: rgba(0, 0, 0, 0.45);
+  stroke-width: 1;
+}
+
+.cardFanRemoveButtonSvg text {
+  fill: #0a0a0a;
+  font-size: 13px;
+  font-weight: 700;
+  dominant-baseline: middle;
+}
+
 .cardFanCardDragging {
   opacity: 0.4;
 }
@@ -7122,6 +7146,13 @@ button.assetsKindBadge:disabled {
   width: 100%;
 }
 
+.deckGroupPreviewWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .deckRouteRowFooter {
   flex: 0 0 auto;
   min-height: 20px;
@@ -7147,6 +7178,15 @@ button.assetsKindBadge:disabled {
   text-align: left;
   cursor: pointer;
   overflow: visible;
+}
+
+.deckNavItem:focus {
+  outline: none;
+}
+
+.deckNavItem:focus-visible {
+  outline: 2px solid var(--hq-accent);
+  outline-offset: 3px;
 }
 
 .deckNavItemDragging {
@@ -7442,6 +7482,44 @@ button.assetsKindBadge:disabled {
   flex-direction: column;
   gap: var(--space-2);
   align-items: center;
+  position: relative;
+}
+
+.deckCardRemoveButton {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.38);
+  background: #ef4444;
+  color: #0a0a0a;
+  font-size: 14px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: var(--shadow-soft);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease,
+    background-color 120ms ease;
+  z-index: 5;
+}
+
+.deckGroupPreviewWrap:hover .deckCardRemoveButton,
+.deckEntryCard:hover .deckCardRemoveButton {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.deckCardRemoveButton:hover {
+  background: #dc2626;
+  transform: scale(1.05);
 }
 
 .deckEntryCardDraggingSelf {
@@ -7464,16 +7542,36 @@ button.assetsKindBadge:disabled {
 
 .deckEntryThumb {
   border-radius: 6px;
-  padding: 2px;
+  padding: 0;
   background: transparent;
+  box-shadow: none;
+  transition:
+    box-shadow 120ms ease,
+    filter 120ms ease;
 }
 
 .deckEntryThumbSelected {
-  background: rgba(230, 179, 90, 0.25);
+  box-shadow:
+    0 0 0 3px var(--hq-accent),
+    0 0 6px rgba(230, 179, 90, 0.45);
 }
 
 .deckEntryThumbFrame {
   box-shadow: var(--shadow-soft);
+}
+
+.deckEntryCard:hover .deckEntryThumb,
+.deckEntrySelect:focus-visible .deckEntryThumb {
+  box-shadow: 0 0 0 2px rgba(230, 179, 90, 0.55);
+}
+
+.deckEntryCard:hover .deckEntryThumbFrame,
+.deckEntrySelect:focus-visible .deckEntryThumbFrame {
+  filter: brightness(1.25) saturate(1.08);
+}
+
+.deckEntrySelect:focus {
+  outline: none;
 }
 
 .deckEntryReorder {

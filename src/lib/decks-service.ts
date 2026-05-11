@@ -491,13 +491,19 @@ export async function deleteSet(setId: string): Promise<void> {
   });
   if (!set) return;
   const entries = await listByIndex<DeckEntryRecord>(ENTRIES_STORE, "setId", setId);
+  const groupSets = await listByIndex<DeckSetRecord>(SETS_STORE, "groupId", set.groupId);
+  const shouldDeleteGroup = groupSets.length === 1;
 
   const db = await openHqccDb();
-  const tx = db.transaction([SETS_STORE, ENTRIES_STORE], "readwrite");
+  const tx = db.transaction([SETS_STORE, ENTRIES_STORE, GROUPS_STORE], "readwrite");
   const txSetStore = tx.objectStore(SETS_STORE);
   const txEntryStore = tx.objectStore(ENTRIES_STORE);
+  const txGroupStore = tx.objectStore(GROUPS_STORE);
   entries.forEach((entry) => txEntryStore.delete(entry.id));
   txSetStore.delete(setId);
+  if (shouldDeleteGroup) {
+    txGroupStore.delete(set.groupId);
+  }
 
   await new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => resolve();
@@ -506,6 +512,9 @@ export async function deleteSet(setId: string): Promise<void> {
 
   enqueueDbEstimateChange(SETS_STORE, setId);
   entries.forEach((entry) => enqueueDbEstimateChange(ENTRIES_STORE, entry.id));
+  if (shouldDeleteGroup) {
+    enqueueDbEstimateChange(GROUPS_STORE, set.groupId);
+  }
 }
 
 export async function reorderSets(

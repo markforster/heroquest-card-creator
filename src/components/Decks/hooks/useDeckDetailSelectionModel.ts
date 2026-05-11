@@ -16,6 +16,7 @@ export type DeckDetailSelectionModel = {
   selectedGroupId: string | null;
   selectedSetId: string | null;
   setSelectedGroupId: (groupId: string | null) => void;
+  clearSelection: () => void;
   selectGroup: (groupId: string) => void;
   selectSet: (set: DeckSetRecord) => void;
   reloadStructure: (preferredSetId?: string | null) => Promise<void>;
@@ -118,6 +119,12 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
     setSelectedSetId(set.id);
   }, []);
 
+  const clearSelection = useCallback(() => {
+    preferredSetIdRef.current = null;
+    setSelectedGroupId(null);
+    setSelectedSetId(null);
+  }, []);
+
   const reloadStructure = useCallback(
     async (preferredSetId?: string | null) => {
       preferredSetIdRef.current = preferredSetId ?? null;
@@ -142,6 +149,7 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
     selectedGroupId,
     selectedSetId,
     setSelectedGroupId,
+    clearSelection,
     selectGroup,
     selectSet,
     reloadStructure,

@@ -174,6 +174,7 @@ function DeckDetailPanelContent({
                     groupTileVariant={GROUP_TILE_VARIANT}
                     drag={drag}
                     rowRef={groupRowRef}
+                    onDeleteSetFromGroupCard={actions.deleteSetFromGroupCard}
                   />
 
                   <DeckEntriesSection

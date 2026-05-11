@@ -102,6 +102,10 @@ export const en = {
   "decks.emptySets": "No sets yet.",
   "decks.entries": "Entries",
   "decks.removeFromSet": "Remove from set",
+  "decks.removeAndUnpair": "Remove and unpair",
+  "decks.removeFrontPromptTitle": "Remove front from set?",
+  "decks.removeFrontPromptBody":
+    "Remove this front card from the set. You can optionally also unpair it from this set's back face.",
   "decks.openCard": "Open card",
   "decks.emptyEntries": "Drag front faces from the right panel into this set.",
   "decks.missingEntry": "Missing card unit",

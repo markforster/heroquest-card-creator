@@ -29,6 +29,7 @@ type DeckGroupGridListProps = {
   emptyLabel: string;
   onSelectGroup: (groupId: string) => void;
   onSelectSet: (set: DeckSetRecord) => void;
+  onDeleteSetFromGroupCard: (setId: string) => Promise<void>;
   groupTileVariant: CardFanVariant;
   rowRef?: (node: HTMLDivElement | null) => void;
 };
@@ -96,6 +97,7 @@ export default function DeckGroupGridList({
   emptyLabel,
   onSelectGroup,
   onSelectSet,
+  onDeleteSetFromGroupCard,
   groupTileVariant,
   rowRef,
 }: DeckGroupGridListProps & { isBackFaceDragActive?: boolean; dropIndex?: number | null }) {
@@ -175,13 +177,9 @@ export default function DeckGroupGridList({
                     ? (groupSets.find((set) => set.id === selectedSetId)?.backFaceId ?? null)
                     : null
                 }
-                onHoverCard={
-                  isHovering
-                    ? (cardId) => {
-                        setHoveredCardId(cardId);
-                      }
-                    : undefined
-                }
+                onHoverCard={(cardId) => {
+                  setHoveredCardId(cardId);
+                }}
                 onSelectCard={(cardId) => {
                   const target = groupSets.find((set) => set.backFaceId === cardId);
                   if (target) {
@@ -189,6 +187,17 @@ export default function DeckGroupGridList({
                     onSelectSet(target);
                   }
                 }}
+                onRemoveCard={
+                  isSetDragActive || isBackFaceDragActive || isGroupDragActive
+                    ? undefined
+                    : (cardId: string) => {
+                        const target = groupSets.find((set) => set.backFaceId === cardId);
+                        if (!target) return;
+                        setHoveredCardId(null);
+                        setHoveredGroupId(null);
+                        void onDeleteSetFromGroupCard(target.id);
+                      }
+                }
               />
             );
             return (
