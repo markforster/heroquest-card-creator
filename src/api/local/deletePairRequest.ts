@@ -1,6 +1,4 @@
-import { deletePair, listPairsForFace } from "@/lib/pairs-service";
-import { createPairInUseError } from "@/lib/decks-errors";
-import { getDeckUsageForPair } from "@/lib/decks-service";
+import { deletePair } from "@/lib/pairs-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
@@ -12,17 +10,6 @@ export const deletePairRequestPlugin: ZodiosPlugin = {
       const body = (config.data ?? {}) as { frontFaceId?: string; backFaceId?: string };
       if (!body.frontFaceId || !body.backFaceId) {
         throw new Error("[api:deletePair] Missing frontFaceId/backFaceId");
-      }
-      const pairs = await listPairsForFace(body.frontFaceId);
-      const pair = pairs.find(
-        (candidate) =>
-          candidate.frontFaceId === body.frontFaceId && candidate.backFaceId === body.backFaceId,
-      );
-      if (pair) {
-        const usage = await getDeckUsageForPair(pair.id);
-        if (usage.length > 0) {
-          throw createPairInUseError(usage);
-        }
       }
       await deletePair(body.frontFaceId, body.backFaceId);
 

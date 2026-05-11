@@ -47,7 +47,7 @@ export default function DeckDragOverlay({
       ) : drag.dragActiveFrontFaceId ? (
         <div className={styles.deckBacksDragOverlay}>{backPanelThumb(drag.dragActiveFrontFaceId)}</div>
       ) : drag.dragActiveEntryId ? (
-        <div className={styles.deckBacksDragOverlay}>
+        <div className={`${styles.deckBacksDragOverlay} ${styles.deckEntryDragOverlay}`}>
           {(() => {
             const entry = entries.find((candidate) => candidate.id === drag.dragActiveEntryId);
             const frontId = entry ? (pairsById.get(entry.pairId)?.frontFaceId ?? null) : null;

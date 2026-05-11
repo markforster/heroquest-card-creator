@@ -317,6 +317,130 @@ describe("useDecksDragController front/entry drop index targeting", () => {
     expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
   });
 
+  it("reorders entry forward to 4th position when dropping on right half of the 4th card", async () => {
+    const { result, reorderSetEntries, refreshSetEntries } = renderController({
+      entries: [
+        { id: "entry-1", sortIndex: 0, setId: "set-1", pairId: "pair-1" },
+        { id: "entry-2", sortIndex: 1, setId: "set-1", pairId: "pair-2" },
+        { id: "entry-3", sortIndex: 2, setId: "set-1", pairId: "pair-3" },
+        { id: "entry-4", sortIndex: 3, setId: "set-1", pairId: "pair-4" },
+        { id: "entry-5", sortIndex: 4, setId: "set-1", pairId: "pair-5" },
+      ],
+    });
+
+    await act(async () => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "entry", entryId: "entry-2" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: {
+          data: { current: { type: "entry", entryId: "entry-2" } },
+          rect: { current: { translated: { left: 121, width: 20 } } },
+        },
+        over: { id: "entry-4", rect: { left: 100, width: 20 } },
+      } as never);
+      await result.current.dndHandlers.onDragEnd({
+        active: {
+          data: { current: { type: "entry", entryId: "entry-2" } },
+          rect: { current: { translated: { left: 121, width: 20 } } },
+        },
+        over: { id: "entry-4", rect: { left: 100, width: 20 } },
+      } as never);
+    });
+
+    expect(reorderSetEntries).toHaveBeenCalledWith(
+      "set-1",
+      ["entry-1", "entry-3", "entry-4", "entry-2", "entry-5"],
+    );
+    expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
+  });
+
+  it("reorders entry forward to 7th position when dropping on right half of the 7th card", async () => {
+    const { result, reorderSetEntries, refreshSetEntries } = renderController({
+      entries: [
+        { id: "entry-1", sortIndex: 0, setId: "set-1", pairId: "pair-1" },
+        { id: "entry-2", sortIndex: 1, setId: "set-1", pairId: "pair-2" },
+        { id: "entry-3", sortIndex: 2, setId: "set-1", pairId: "pair-3" },
+        { id: "entry-4", sortIndex: 3, setId: "set-1", pairId: "pair-4" },
+        { id: "entry-5", sortIndex: 4, setId: "set-1", pairId: "pair-5" },
+        { id: "entry-6", sortIndex: 5, setId: "set-1", pairId: "pair-6" },
+        { id: "entry-7", sortIndex: 6, setId: "set-1", pairId: "pair-7" },
+      ],
+    });
+
+    await act(async () => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "entry", entryId: "entry-3" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: {
+          data: { current: { type: "entry", entryId: "entry-3" } },
+          rect: { current: { translated: { left: 211, width: 20 } } },
+        },
+        over: { id: "entry-7", rect: { left: 190, width: 20 } },
+      } as never);
+      await result.current.dndHandlers.onDragEnd({
+        active: {
+          data: { current: { type: "entry", entryId: "entry-3" } },
+          rect: { current: { translated: { left: 211, width: 20 } } },
+        },
+        over: { id: "entry-7", rect: { left: 190, width: 20 } },
+      } as never);
+    });
+
+    expect(reorderSetEntries).toHaveBeenCalledWith(
+      "set-1",
+      ["entry-1", "entry-2", "entry-4", "entry-5", "entry-6", "entry-7", "entry-3"],
+    );
+    expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
+  });
+
+  it("updates entry drop index when over target is unchanged but pointer context changes to right-half", async () => {
+    const { result, reorderSetEntries, refreshSetEntries } = renderController({
+      entries: [
+        { id: "entry-1", sortIndex: 0, setId: "set-1", pairId: "pair-1" },
+        { id: "entry-2", sortIndex: 1, setId: "set-1", pairId: "pair-2" },
+        { id: "entry-3", sortIndex: 2, setId: "set-1", pairId: "pair-3" },
+        { id: "entry-4", sortIndex: 3, setId: "set-1", pairId: "pair-4" },
+      ],
+    });
+
+    await act(async () => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "entry", entryId: "entry-1" } } },
+      } as never);
+
+      // First hover commits with no pointer/rect context (defaults to before entry-3).
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "entry", entryId: "entry-1" } } },
+        over: { id: "entry-3" },
+      } as never);
+
+      // Same overId, but now with right-half pointer context: should switch to after entry-3.
+      result.current.dndHandlers.onDragOver({
+        active: {
+          data: { current: { type: "entry", entryId: "entry-1" } },
+          rect: { current: { translated: { left: 131, width: 20 } } },
+        },
+        over: { id: "entry-3", rect: { left: 110, width: 20 } },
+      } as never);
+
+      await result.current.dndHandlers.onDragEnd({
+        active: {
+          data: { current: { type: "entry", entryId: "entry-1" } },
+          rect: { current: { translated: { left: 131, width: 20 } } },
+        },
+        over: { id: "entry-3", rect: { left: 110, width: 20 } },
+      } as never);
+    });
+
+    expect(reorderSetEntries).toHaveBeenCalledWith(
+      "set-1",
+      ["entry-2", "entry-3", "entry-1", "entry-4"],
+    );
+    expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
+  });
+
   it("ignores entry drop outside entries namespace", async () => {
     const { result, reorderSetEntries, refreshSetEntries } = renderController();
 

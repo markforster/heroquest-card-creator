@@ -51,7 +51,7 @@ function DeckEntryCard({
     >
       <button
         type="button"
-        className={styles.deckEntrySelect}
+        className={`${styles.deckEntrySelect} ${isDragging ? styles.deckEntrySelectDragging : ""}`}
         onClick={(event) => onSelectEntry(entryId, event.metaKey || event.ctrlKey)}
         onDoubleClick={() => onOpenCardEditor(frontId)}
         {...attributes}
@@ -60,19 +60,34 @@ function DeckEntryCard({
         {deckEntryThumb(frontId, isSelected)}
       </button>
       {onRequestRemove ? (
-        <button
-          type="button"
-          className={styles.deckCardRemoveButton}
-          aria-label="Remove front from set"
-          title="Remove front from set"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            onRequestRemove(entryId, frontId);
-          }}
-        >
-          ×
-        </button>
+        <div className={styles.deckEntryCardActions}>
+          <button
+            type="button"
+            className={styles.deckCardEditButton}
+            aria-label="Edit front card"
+            title="Edit front card"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenCardEditor(frontId);
+            }}
+          >
+            ✎
+          </button>
+          <button
+            type="button"
+            className={styles.deckCardRemoveButton}
+            aria-label="Remove front from set"
+            title="Remove front from set"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onRequestRemove(entryId, frontId);
+            }}
+          >
+            ×
+          </button>
+        </div>
       ) : null}
     </div>
   );
@@ -121,7 +136,7 @@ export default function DeckEntriesSection({
 }) {
   const { t } = useI18n();
   const { selectedGroupId, selectedSetId } = useDeckDetailSelection();
-  const { entriesSorted, pairsById, pairedNotInSetFrontIds, addFront, removeEntry } =
+  const { entriesSorted, pairsById, pairedNotInSetFrontIds, addFront, removeEntry, refreshEntries } =
     useDeckSetEntries();
   const { setNodeRef: setEntriesDropRef } = useDroppable({ id: "entries-area" });
   const { setNodeRef: setTailDropRef } = useDroppable({ id: "entries-tail" });
@@ -138,16 +153,114 @@ export default function DeckEntriesSection({
   const [entriesViewMode, setEntriesViewMode] = useState<"in-set" | "paired-not-in-set">("in-set");
   const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set());
   const [pendingFrontRemoval, setPendingFrontRemoval] = useState<{
-    entryId: string;
-    setId: string;
-    frontFaceId: string;
-    backFaceId: string;
+    items: Array<{
+      entryId: string;
+      setId: string;
+      frontFaceId: string;
+      backFaceId: string;
+    }>;
   } | null>(null);
+  const [isPendingRemovalBusy, setIsPendingRemovalBusy] = useState(false);
   useEffect(() => {
     setEntriesViewMode("in-set");
     setSelectedEntryIds(new Set());
     setPendingFrontRemoval(null);
+    setIsPendingRemovalBusy(false);
   }, [selectedSetId]);
+
+  const buildRemovalItems = useCallback(
+    (entryIdsToRemove: Iterable<string>) => {
+      const ids = new Set(entryIdsToRemove);
+      const items: Array<{
+        entryId: string;
+        setId: string;
+        frontFaceId: string;
+        backFaceId: string;
+      }> = [];
+      for (const entry of entriesSorted) {
+        if (!ids.has(entry.id)) continue;
+        const pair = pairsById.get(entry.pairId);
+        if (!pair?.frontFaceId || !pair.backFaceId) continue;
+        items.push({
+          entryId: entry.id,
+          setId: entry.setId,
+          frontFaceId: pair.frontFaceId,
+          backFaceId: pair.backFaceId,
+        });
+      }
+      return items;
+    },
+    [entriesSorted, pairsById],
+  );
+
+  const openBulkRemoval = useCallback(() => {
+    const items = buildRemovalItems(selectedEntryIds);
+    if (items.length === 0) return;
+    setPendingFrontRemoval({ items });
+  }, [buildRemovalItems, selectedEntryIds]);
+
+  const openSingleRemoval = useCallback(
+    (entryId: string) => {
+      const items = buildRemovalItems([entryId]);
+      if (items.length === 0) return;
+      setPendingFrontRemoval({ items });
+    },
+    [buildRemovalItems],
+  );
+
+  const removePending = useCallback(
+    async (withUnpair: boolean) => {
+      const pending = pendingFrontRemoval;
+      if (!pending || isPendingRemovalBusy) return;
+      setIsPendingRemovalBusy(true);
+      try {
+        for (const item of pending.items) {
+          await removeEntry(item.entryId, item.setId);
+          if (withUnpair) {
+            await apiClient.deletePair({
+              frontFaceId: item.frontFaceId,
+              backFaceId: item.backFaceId,
+            });
+          }
+        }
+        if (withUnpair) {
+          await refreshEntries(selectedSetId);
+        }
+        const removedIds = new Set(pending.items.map((item) => item.entryId));
+        setSelectedEntryIds((prev) => {
+          if (removedIds.size === 0 || prev.size === 0) return prev;
+          const next = new Set(prev);
+          let changed = false;
+          for (const entryId of removedIds) {
+            if (next.delete(entryId)) changed = true;
+          }
+          return changed ? next : prev;
+        });
+        setPendingFrontRemoval(null);
+      } finally {
+        setIsPendingRemovalBusy(false);
+      }
+    },
+    [isPendingRemovalBusy, pendingFrontRemoval, refreshEntries, removeEntry, selectedSetId],
+  );
+
+  const removeFromSetOnly = useCallback(async () => {
+    await removePending(false);
+  }, [removePending]);
+
+  const removeAndUnpair = useCallback(async () => {
+    await removePending(true);
+  }, [removePending]);
+
+  const canBulkDelete = entriesViewMode === "in-set" && selectedEntryIds.size > 0;
+
+  const requestRemoveForEntry = useCallback(
+    (entryId: string) => {
+      if (!selectedSetId) return;
+      openSingleRemoval(entryId);
+    },
+    [openSingleRemoval, selectedSetId],
+  );
 
   const selectEntry = (entryId: string, hasModifier: boolean) => {
     setSelectedEntryIds((prev) => {
@@ -176,39 +289,42 @@ export default function DeckEntriesSection({
     </div>
   );
 
-  const removeFromSetOnly = async () => {
-    const pending = pendingFrontRemoval;
-    setPendingFrontRemoval(null);
-    if (!pending) return;
-    await removeEntry(pending.entryId, pending.setId);
-    setSelectedEntryIds((prev) => {
-      if (!prev.has(pending.entryId)) return prev;
-      const next = new Set(prev);
-      next.delete(pending.entryId);
-      return next;
-    });
-  };
-
-  const removeAndUnpair = async () => {
-    const pending = pendingFrontRemoval;
-    setPendingFrontRemoval(null);
-    if (!pending) return;
-    await removeEntry(pending.entryId, pending.setId);
-    await apiClient.deletePair({
-      frontFaceId: pending.frontFaceId,
-      backFaceId: pending.backFaceId,
-    });
-    setSelectedEntryIds((prev) => {
-      if (!prev.has(pending.entryId)) return prev;
-      const next = new Set(prev);
-      next.delete(pending.entryId);
-      return next;
-    });
-  };
-
   return (
     <div className={`${styles.deckRouteRow} ${styles.deckRouteRowFill}`}>
-      <div className={styles.deckRouteRowToolbar} />
+      <div
+        className={`${styles.deckRouteRowToolbar} ${styles.assetsToolbar} d-flex align-items-center justify-content-between gap-2 px-2 py-2`}
+      >
+        <div className={styles.deckFacesSegment} role="tablist" aria-label="Set cards mode">
+          <button
+            type="button"
+            className={`${styles.deckFacesSegmentBtn} ${
+              entriesViewMode === "in-set" ? styles.deckFacesSegmentBtnActive : ""
+            }`}
+            aria-pressed={entriesViewMode === "in-set"}
+            onClick={() => setEntriesViewMode("in-set")}
+          >
+            In Set ({entriesSorted.length})
+          </button>
+          <button
+            type="button"
+            className={`${styles.deckFacesSegmentBtn} ${
+              entriesViewMode === "paired-not-in-set" ? styles.deckFacesSegmentBtnActive : ""
+            }`}
+            aria-pressed={entriesViewMode === "paired-not-in-set"}
+            onClick={() => setEntriesViewMode("paired-not-in-set")}
+          >
+            Paired (Not In Set) ({pairedNotInSetFrontIds.length})
+          </button>
+        </div>
+        <button
+          type="button"
+          className="btn btn-outline-danger btn-sm"
+          onClick={openBulkRemoval}
+          disabled={!canBulkDelete}
+        >
+          Delete Selected
+        </button>
+      </div>
       <div className={`${styles.deckRouteRowBody} ${styles.deckRouteRowBodyFill}`}>
         {!selectedGroupId ? (
           <div className={styles.deckEntriesEmptyFill}>
@@ -220,28 +336,6 @@ export default function DeckEntriesSection({
           </div>
         ) : (
           <div className={styles.deckEntriesSection}>
-            <div className={styles.deckFacesSegment} role="tablist" aria-label="Set cards mode">
-              <button
-                type="button"
-                className={`${styles.deckFacesSegmentBtn} ${
-                  entriesViewMode === "in-set" ? styles.deckFacesSegmentBtnActive : ""
-                }`}
-                aria-pressed={entriesViewMode === "in-set"}
-                onClick={() => setEntriesViewMode("in-set")}
-              >
-                In Set ({entriesSorted.length})
-              </button>
-              <button
-                type="button"
-                className={`${styles.deckFacesSegmentBtn} ${
-                  entriesViewMode === "paired-not-in-set" ? styles.deckFacesSegmentBtnActive : ""
-                }`}
-                aria-pressed={entriesViewMode === "paired-not-in-set"}
-                onClick={() => setEntriesViewMode("paired-not-in-set")}
-              >
-                Paired (Not In Set) ({pairedNotInSetFrontIds.length})
-              </button>
-            </div>
             <div
               ref={setEntriesPanelRef}
               data-deck-entries-dropzone="true"
@@ -363,17 +457,7 @@ export default function DeckEntriesSection({
                         entryId={entry.id}
                         frontId={frontId}
                         isSelected={isSelected}
-                        onRequestRemove={(entryId, targetFrontId) => {
-                          if (!selectedSetId) return;
-                          const backFaceId = pairsById.get(entry.pairId)?.backFaceId;
-                          if (!backFaceId) return;
-                          setPendingFrontRemoval({
-                            entryId,
-                            setId: selectedSetId,
-                            frontFaceId: targetFrontId,
-                            backFaceId,
-                          });
-                        }}
+                        onRequestRemove={(entryId) => requestRemoveForEntry(entryId)}
                         onSelectEntry={selectEntry}
                         onOpenCardEditor={onOpenCardEditor}
                         deckEntryThumb={deckEntryThumb}
@@ -402,7 +486,10 @@ export default function DeckEntriesSection({
         cancelLabel={t("actions.cancel")}
         onConfirm={removeFromSetOnly}
         onExtra={removeAndUnpair}
-        onCancel={() => setPendingFrontRemoval(null)}
+        onCancel={() => {
+          if (isPendingRemovalBusy) return;
+          setPendingFrontRemoval(null);
+        }}
       >
         {t("decks.removeFrontPromptBody")}
       </ConfirmModal>

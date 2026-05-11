@@ -1,19 +1,21 @@
 "use client";
 
-import { Layers, Plus } from "lucide-react";
+import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import CardFan from "@/components/Decks/CardFan";
 import { useDecksGridModel } from "@/components/Decks/hooks/useDecksGridModel";
+import IconButton from "@/components/common/IconButton";
 import ModalShell from "@/components/common/ModalShell";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useNavigate } from "react-router-dom";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const PREVIEW_FAN_COUNT = 5;
 const PREVIEW_VARIANT = "smMd";
+const DECK_GRID_TITLE_INPUT_ID = "deck-grid-title-input";
 
 export default function DecksGridPanel() {
   const { t } = useI18n();
@@ -24,6 +26,13 @@ export default function DecksGridPanel() {
   });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const closeCreateModal = () => setIsCreateOpen(false);
+  const deckNameInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!model.isDeckTitleEditing) return;
+    deckNameInputRef.current?.focus();
+    deckNameInputRef.current?.select();
+  }, [model.isDeckTitleEditing]);
 
   return (
     <>
@@ -87,7 +96,9 @@ export default function DecksGridPanel() {
                     tilt={1}
                   />
                 </div>
-                <div className={styles.deckTileTitle}>{deck.title}</div>
+                <div className={styles.deckTileTitle}>
+                  {model.effectiveDeckTitleById[deck.id] ?? deck.title}
+                </div>
                 <div className={styles.deckTileMeta}>
                   {new Date(deck.updatedAt).toLocaleDateString()}
                 </div>
@@ -96,6 +107,80 @@ export default function DecksGridPanel() {
           })}
         </div>
       </section>
+      <aside className={`${styles.rightPanel} ${styles.decksRightPanel}`}>
+        <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
+          <IconButton
+            className="btn btn-primary btn-sm"
+            icon={Pencil}
+            title="Edit"
+            disabled={!model.canRenameDeck}
+            onClick={() => {
+              if (!model.selectedDeckId) return;
+              navigate(`/decks/${model.selectedDeckId}`);
+            }}
+          >
+            Edit
+          </IconButton>
+          <IconButton
+            className="btn btn-outline-danger btn-sm"
+            icon={Trash2}
+            title={t("actions.delete")}
+            disabled={!model.canDeleteDecks}
+            onClick={() => model.setIsDeleteDeckOpen(true)}
+          >
+            {t("actions.delete")}
+          </IconButton>
+        </div>
+        <div className={styles.decksRightSection}>
+          {model.selectedDeckIds.size === 0 ? (
+            <div className={styles.decksEmpty}>{t("decks.noDeckSelected")}</div>
+          ) : (
+            <div className={styles.decksFormRow}>
+              <label className={styles.decksLabel} htmlFor={DECK_GRID_TITLE_INPUT_ID}>
+                {t("decks.title")}
+              </label>
+              <input
+                id={DECK_GRID_TITLE_INPUT_ID}
+                ref={deckNameInputRef}
+                type="text"
+                value={model.selectedDeckTitleDraft}
+                disabled={!model.canRenameDeck}
+                placeholder={t("decks.untitledDeck")}
+                onChange={(event) => {
+                  model.onDeckTitleDraftChangeLive(event.target.value);
+                }}
+                onFocus={() => {
+                  if (!model.canRenameDeck) return;
+                  if (!model.isDeckTitleEditing) {
+                    model.startDeckTitleEdit();
+                  }
+                }}
+                onBlur={async () => {
+                  if (!model.isDeckTitleEditing) return;
+                  await model.commitDeckTitleEdit();
+                }}
+                onKeyDown={async (event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    await model.commitDeckTitleEdit();
+                    return;
+                  }
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    model.cancelDeckTitleEdit();
+                    deckNameInputRef.current?.blur();
+                  }
+                }}
+              />
+            </div>
+          )}
+        </div>
+        <div className={styles.decksGridRightMiddle} />
+        <div
+          className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}
+          aria-hidden="true"
+        />
+      </aside>
       <ModalShell
         isOpen={isCreateOpen}
         onClose={closeCreateModal}

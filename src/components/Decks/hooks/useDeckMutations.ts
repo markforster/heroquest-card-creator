@@ -17,6 +17,13 @@ export function useDeckMutations(): DeckMutationCommands {
         });
         return created?.id ?? null;
       },
+      updateDeckTitle: async (deckId, title, fallbackTitle) => {
+        void fallbackTitle;
+        await apiClient.updateDeck(
+          { title },
+          { params: { deckId } },
+        );
+      },
       deleteDecks: async (ids) => {
         await Promise.all(ids.map((id) => apiClient.deleteDeck(undefined, { params: { deckId: id } })));
       },

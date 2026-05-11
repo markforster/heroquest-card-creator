@@ -6834,9 +6834,15 @@ button.assetsKindBadge:disabled {
 .decksRightSection {
   padding: var(--space-8) var(--space-10);
   border-bottom: 1px solid var(--hq-border-strong);
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.decksGridRightMiddle {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  border-top: 1px solid var(--hq-border-strong);
+  border-bottom: 1px solid var(--hq-border-strong);
 }
 
 .decksRightTitle {
@@ -7600,9 +7606,6 @@ button.assetsKindBadge:disabled {
 }
 
 .deckCardRemoveButton {
-  position: absolute;
-  top: 0;
-  right: 0;
   width: 20px;
   height: 20px;
   border-radius: 999px;
@@ -7615,20 +7618,54 @@ button.assetsKindBadge:disabled {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
   box-shadow: var(--shadow-soft);
   transition:
-    opacity 120ms ease,
     transform 120ms ease,
     background-color 120ms ease;
   z-index: 5;
 }
 
-.deckGroupPreviewWrap:hover .deckCardRemoveButton,
-.deckEntryCard:hover .deckCardRemoveButton {
+.deckEntryCardActions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+  z-index: 5;
+}
+
+.deckCardEditButton {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.38);
+  background: var(--hq-accent);
+  color: #0a0a0a;
+  font-size: 12px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 120ms ease,
+    filter 120ms ease;
+}
+
+.deckGroupPreviewWrap:hover .deckEntryCardActions,
+.deckEntryCard:hover .deckEntryCardActions {
   opacity: 1;
   pointer-events: auto;
+}
+
+.deckCardEditButton:hover {
+  filter: brightness(1.08);
+  transform: scale(1.05);
 }
 
 .deckCardRemoveButton:hover {
@@ -7652,6 +7689,18 @@ button.assetsKindBadge:disabled {
   background: none;
   border: none;
   padding: 0;
+  cursor: grab;
+  cursor: -webkit-grab;
+}
+
+.deckEntrySelect:hover {
+  cursor: grab;
+  cursor: -webkit-grab;
+}
+
+.deckEntrySelectDragging {
+  cursor: grabbing !important;
+  cursor: -webkit-grabbing !important;
 }
 
 .deckEntryThumb {
@@ -7899,6 +7948,11 @@ button.assetsKindBadge:disabled {
   align-items: center;
   justify-content: center;
   padding: var(--space-1);
+}
+
+.deckEntryDragOverlay {
+  cursor: grabbing !important;
+  cursor: -webkit-grabbing !important;
 }
 
 .pairingUsageList {

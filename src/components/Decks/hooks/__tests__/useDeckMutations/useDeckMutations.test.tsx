@@ -3,6 +3,7 @@ import { renderHook } from "@testing-library/react";
 jest.mock("@/api/client", () => ({
   apiClient: {
     createDeck: jest.fn(),
+    updateDeck: jest.fn(),
     deleteDeck: jest.fn(),
     duplicateDeck: jest.fn(),
     createDeckSet: jest.fn(),
@@ -96,5 +97,17 @@ describe("useDeckMutations", () => {
     expect(mockApiClient.deleteDeck).toHaveBeenCalledTimes(2);
     expect(mockApiClient.deleteDeck).toHaveBeenNthCalledWith(1, undefined, { params: { deckId: "d1" } });
     expect(mockApiClient.deleteDeck).toHaveBeenNthCalledWith(2, undefined, { params: { deckId: "d2" } });
+  });
+
+  it("updateDeckTitle preserves empty string titles", async () => {
+    mockApiClient.updateDeck.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useDeckMutations());
+
+    await result.current.updateDeckTitle("d1", "", "Untitled");
+
+    expect(mockApiClient.updateDeck).toHaveBeenCalledWith(
+      { title: "" },
+      { params: { deckId: "d1" } },
+    );
   });
 });

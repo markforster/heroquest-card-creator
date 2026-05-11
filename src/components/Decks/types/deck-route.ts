@@ -3,6 +3,7 @@ import type { PairRecord } from "@/api/pairs";
 
 export type DeckMutationCommands = {
   createDeck: (title: string, description: string, fallbackTitle: string) => Promise<string | null>;
+  updateDeckTitle: (deckId: string, title: string, fallbackTitle: string) => Promise<void>;
   deleteDecks: (ids: string[]) => Promise<void>;
   duplicateDeck: (deckId: string) => Promise<string | null>;
   createSetFromBackFace: (

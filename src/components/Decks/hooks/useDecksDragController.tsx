@@ -149,6 +149,35 @@ export function useDecksDragController({
     [entries],
   );
 
+  const resolveEntryDropIndexFromOverIdWithPointer = useCallback(
+    (
+      overId: string | null,
+      activeType: "front-face" | "entry",
+      activeEntryId: string | null | undefined,
+      pointerX: number | null,
+      overRect: { left: number; width: number } | null,
+    ) => {
+      const fallback = resolveEntryDropIndexFromOverId(overId, activeType, activeEntryId);
+      if (activeType !== "entry" || !overId || pointerX == null || !overRect) {
+        return fallback;
+      }
+      const overEntryId = overId.startsWith("entry:") ? overId.replace("entry:", "") : overId;
+      const orderedCurrent = entries
+        .slice()
+        .sort((a, b) => a.sortIndex - b.sortIndex)
+        .map((entry) => entry.id);
+      const visibleOrdered = activeEntryId
+        ? orderedCurrent.filter((id) => id !== activeEntryId)
+        : orderedCurrent;
+      const baseIndex = visibleOrdered.indexOf(overEntryId);
+      if (baseIndex < 0) return fallback;
+      const overMidX = overRect.left + overRect.width / 2;
+      const insertAfter = pointerX >= overMidX;
+      return Math.max(0, Math.min(baseIndex + (insertAfter ? 1 : 0), visibleOrdered.length));
+    },
+    [entries, resolveEntryDropIndexFromOverId],
+  );
+
   useEffect(() => {
     selectedSetIdRef.current = selectedSetId;
   }, [selectedSetId]);
@@ -422,7 +451,13 @@ export function useDecksDragController({
         lastCommittedAtRef.current = Date.now();
         lastCommittedPointerXRef.current = pointerX;
         const activeKind: "front-face" | "entry" = activeType === "entry" ? "entry" : "front-face";
-        const nextIndex = resolveEntryDropIndexFromOverId(nextCommittedOverId, activeKind, activeEntryId);
+        const nextIndex = resolveEntryDropIndexFromOverIdWithPointer(
+          nextCommittedOverId,
+          activeKind,
+          activeEntryId,
+          pointerX,
+          over?.rect ? { left: over.rect.left, width: over.rect.width } : null,
+        );
         setEntryDropIndexState(nextIndex);
         const nextFront = Boolean(activeType === "front-face" && isEntriesOverTarget(nextCommittedOverId, "front-face"));
         const nextEntries = Boolean(
@@ -441,21 +476,32 @@ export function useDecksDragController({
           overStabilityTimerRef.current = null;
         }
         if (validNow) {
-          const nextIndex = resolveEntryDropIndexFromOverId(overId, activeKind, activeEntryId);
-          const currentIndex = resolveEntryDropIndexFromOverId(
-            committedOverIdRef.current,
+          const nextIndex = resolveEntryDropIndexFromOverIdWithPointer(
+            overId,
             activeKind,
             activeEntryId,
+            pointerX,
+            over?.rect ? { left: over.rect.left, width: over.rect.width } : null,
           );
+          const currentIndex =
+            entryDropIndexRef.current ??
+            resolveEntryDropIndexFromOverIdWithPointer(
+              committedOverIdRef.current,
+              activeKind,
+              activeEntryId,
+              pointerX,
+              over?.rect ? { left: over.rect.left, width: over.rect.width } : null,
+            );
           const canSwitchIndexByPointer =
             activeType !== "front-face" ||
             pointerX == null ||
             lastCommittedPointerXRef.current == null ||
             Math.abs(pointerX - lastCommittedPointerXRef.current) >= FRONT_FACE_INDEX_SWITCH_MIN_PX;
-          if (nextIndex === currentIndex || canSwitchIndexByPointer) {
-            if (committedOverIdRef.current !== overId) {
-              commitEntryOver(overId);
-            }
+          if (
+            committedOverIdRef.current !== overId ||
+            (nextIndex !== currentIndex && canSwitchIndexByPointer)
+          ) {
+            commitEntryOver(overId);
           }
         } else if (committedOverIdRef.current != null) {
           overStabilityTimerRef.current = window.setTimeout(() => {
@@ -767,20 +813,32 @@ export function useDecksDragController({
           return;
         }
         const orderedCurrent = entries.slice().sort((a, b) => a.sortIndex - b.sortIndex).map((entry) => entry.id);
-        const resolvedDropIndex =
-          entryDropIndexRef.current ??
-          resolveEntryDropIndexFromOverId(overId, "entry", entryId);
-        if (resolvedDropIndex == null) {
+        const fromIndex = orderedCurrent.indexOf(entryId);
+        if (fromIndex < 0) {
           resetDragState();
           return;
         }
-        if (!orderedCurrent.includes(entryId)) {
+        let overEntryId: string | null = null;
+        if (overId?.startsWith("entry:")) {
+          overEntryId = overId.replace("entry:", "");
+        } else if (overId && orderedCurrent.includes(overId)) {
+          overEntryId = overId;
+        }
+        let toIndex: number | null = null;
+        if (overId === "entries-tail" || overId === "entries-area") {
+          toIndex = Math.max(0, orderedCurrent.length - 1);
+        } else if (overEntryId) {
+          const overIndex = orderedCurrent.indexOf(overEntryId);
+          toIndex = overIndex >= 0 ? overIndex : null;
+        }
+        if (toIndex == null) {
           resetDragState();
           return;
         }
-        const next = orderedCurrent.filter((id) => id !== entryId);
-        const toIndex = Math.max(0, Math.min(resolvedDropIndex, next.length));
-        next.splice(toIndex, 0, entryId);
+        const next = [...orderedCurrent];
+        const [moved] = next.splice(fromIndex, 1);
+        const boundedTo = Math.max(0, Math.min(toIndex, next.length));
+        next.splice(boundedTo, 0, moved);
         if (next.join("|") === orderedCurrent.join("|")) {
           resetDragState();
           return;
@@ -976,6 +1034,7 @@ export function useDecksDragController({
       reorderSetEntries,
       refreshSetEntries,
       resolveEntryDropIndexFromOverId,
+      resolveEntryDropIndexFromOverIdWithPointer,
     ],
   );
 
