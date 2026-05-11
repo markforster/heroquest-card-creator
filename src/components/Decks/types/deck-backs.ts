@@ -1,4 +1,4 @@
-export type BackFilter =
+export type DeckFaceFilter =
   | { type: "all" }
   | { type: "recent" }
   | { type: "unfiled" }

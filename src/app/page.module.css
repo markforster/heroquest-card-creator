@@ -1420,7 +1420,7 @@
 
 .rightPanel {
   flex: 0 0 auto;
-  width: 520px;
+  width: 416px;
   background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
   padding: 0;
   border-left: 1px solid var(--hq-border-strong);
@@ -7550,16 +7550,96 @@ button.assetsKindBadge:disabled {
 }
 
 .deckBacksFilter {
-  flex: 1 0 0;
+  flex: 0 0 auto;
   min-height: 0;
+  overflow: visible;
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+.deckBacksFilterTreeMode {
+  flex: 1 0 0;
   overflow: auto;
+  padding: 0;
 }
 
 .deckBacksGridPanel {
-  flex: 1 0 0;
+  flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
   padding: var(--space-4);
+}
+
+.deckFaceCardsFilterSelect {
+  width: 100%;
+}
+
+.deckFaceCardsFilterStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.deckFaceCardsSearchInput {
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 auto;
+}
+
+.deckFaceCardsFilterOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-4) var(--space-6);
+  padding-left: calc(var(--space-6) + var(--deck-filter-depth, 0) * var(--space-10));
+}
+
+.deckFaceCardsFilterOptionStart {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.deckFaceCardsFilterLeafIcon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.8;
+  flex: 0 0 auto;
+}
+
+.deckFaceCardsFilterFolderIcon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.8;
+  flex: 0 0 auto;
+}
+
+.deckFaceCardsFilterOptionLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deckFaceCardsFilterOptionCountBadge {
+  font-size: var(--text-lg);
+  line-height: 1;
+  color: var(--hq-text);
+  border: 1px solid var(--hq-accent);
+  background: transparent;
+  border-radius: var(--radius-pill);
+  padding: 0.1rem 0.5rem;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.deckFaceCardsFilterDivider {
+  height: 1px;
+  background: var(--hq-white-08);
+  margin: var(--space-3) 0;
 }
 
 .deckBacksThumb {

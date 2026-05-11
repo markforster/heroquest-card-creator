@@ -3,13 +3,13 @@
 import { useMemo, useState } from "react";
 
 import { useListCards, useListCollections } from "@/api/hooks";
-import type { BackFilter, RightPanelFaceMode } from "@/components/Decks/types/deck-backs";
+import type { DeckFaceFilter, RightPanelFaceMode } from "@/components/Decks/types/deck-backs";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export function useDeckRightPanelModel() {
   const { t } = useI18n();
   const [isRightPanelVisible, setIsRightPanelVisible] = useState(false);
-  const [backFilter, setBackFilter] = useState<BackFilter>({ type: "all" });
+  const [backFilter, setBackFilter] = useState<DeckFaceFilter>({ type: "all" });
   const [rightPanelFaceMode, setRightPanelFaceMode] = useState<RightPanelFaceMode>("back");
 
   const collectionsQuery = useListCollections(undefined, {

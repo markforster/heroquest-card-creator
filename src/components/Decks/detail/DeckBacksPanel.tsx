@@ -1,17 +1,21 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import { useMemo } from "react";
+import { Search } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
+import DeckFaceCardsFilterSelect from "@/components/Decks/detail/DeckFaceCardsFilterSelect";
 import { useDeckRightPanel } from "@/components/Decks/detail/context/DeckRightPanelContext";
 import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
 import type { RightPanelFaceMode } from "@/components/Decks/types/deck-backs";
+import { useI18n } from "@/i18n/I18nProvider";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 
 const BACK_PANEL_TILE_VARIANT = "sm";
+const DECK_FACE_FILTER_MODE: "select" | "tree" = "select";
 
 function BackPanelThumb({
   cardId,
@@ -68,6 +72,9 @@ export default function DeckBacksPanel({
   usedBackFaceIds: Set<string>;
   usedFrontFaceIds: Set<string>;
 }) {
+  const { t } = useI18n();
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const [search, setSearch] = useState("");
   const {
     backCollections: collections,
     backCards: cards,
@@ -97,7 +104,7 @@ export default function DeckBacksPanel({
   } = useStockpileFilters({
     cards: sourceCards,
     collections,
-    search: "",
+    search,
     templateFilter: faceMode,
     activeFilter,
     isPairMode: true,
@@ -136,25 +143,69 @@ export default function DeckBacksPanel({
           </button>
         </div>
       </div>
-      <div className={styles.deckBacksFilter}>
-        <StockpileSidebar
-          dragEnabled={false}
-          activeFilter={activeFilter}
-          onFilterChange={onFilterChange}
-          isPairMode
-          showMissingArtworkOnly={false}
-          collectionsWithMissingArtwork={new Set()}
-          selectedIds={[]}
-          onClearSelection={() => {}}
-          recentCardsCount={recentCards.length}
-          recentlyDeletedCount={recentlyDeletedCount}
-          recentlyDeletedTotalCount={recentlyDeletedTotalCount}
-          overallCount={overallCount}
-          unfiledCount={unfiledCount}
-          visibleCollections={visibleCollections}
-          collectionCounts={collectionCounts}
-          selectedCountByCollection={new Map()}
-        />
+      <div
+        className={`${styles.deckBacksFilter} ${
+          DECK_FACE_FILTER_MODE === "tree" ? styles.deckBacksFilterTreeMode : ""
+        }`}
+      >
+        {DECK_FACE_FILTER_MODE === "select" ? (
+          <div className={styles.deckFaceCardsFilterStack}>
+            <div className={`input-group input-group-sm ${styles.cardsSearchGroup}`}>
+              <span className={`input-group-text ${styles.themedInputGroupText}`}>
+                <Search className={styles.icon} aria-hidden="true" />
+              </span>
+              <input
+                ref={searchInputRef}
+                type="search"
+                placeholder={t("placeholders.searchCards")}
+                className={`form-control form-control-sm ${styles.assetsSearch} ${styles.themedFormControl} ${styles.cardsSearchInputWithClear} ${styles.deckFaceCardsSearchInput}`}
+                title={t("tooltip.searchCards")}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              {search.trim().length > 0 ? (
+                <button
+                  type="button"
+                  className={`btn-close ${styles.cardsSearchClearButton}`}
+                  aria-label={t("actions.clear")}
+                  title={t("actions.clear")}
+                  onClick={() => {
+                    setSearch("");
+                    searchInputRef.current?.focus();
+                  }}
+                />
+              ) : null}
+            </div>
+            <DeckFaceCardsFilterSelect
+              activeFilter={activeFilter}
+              onFilterChange={onFilterChange}
+              visibleCollections={visibleCollections}
+              collectionCounts={collectionCounts}
+              recentCardsCount={recentCards.length}
+              overallCount={overallCount}
+              unfiledCount={unfiledCount}
+            />
+          </div>
+        ) : (
+          <StockpileSidebar
+            dragEnabled={false}
+            activeFilter={activeFilter}
+            onFilterChange={onFilterChange}
+            isPairMode
+            showMissingArtworkOnly={false}
+            collectionsWithMissingArtwork={new Set()}
+            selectedIds={[]}
+            onClearSelection={() => {}}
+            recentCardsCount={recentCards.length}
+            recentlyDeletedCount={recentlyDeletedCount}
+            recentlyDeletedTotalCount={recentlyDeletedTotalCount}
+            overallCount={overallCount}
+            unfiledCount={unfiledCount}
+            visibleCollections={visibleCollections}
+            collectionCounts={collectionCounts}
+            selectedCountByCollection={new Map()}
+          />
+        )}
       </div>
       <div className={styles.deckBacksGridPanel}>
         {filteredCards.length === 0 ? (

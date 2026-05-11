@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import DeckBacksPanel from "@/components/Decks/detail/DeckBacksPanel";
 
@@ -8,12 +8,40 @@ const mockUseStockpileFilters = jest.fn();
 jest.mock("@/components/Decks/detail/context/DeckRightPanelContext", () => ({
   useDeckRightPanel: () => mockUseDeckRightPanel(),
 }));
+jest.mock("@/i18n/I18nProvider", () => ({
+  useI18n: () => ({
+    t: (key: string) => {
+      if (key === "placeholders.searchCards") return "Search cards...";
+      if (key === "tooltip.searchCards") return "Search saved cards by name";
+      if (key === "actions.clear") return "Clear";
+      return key;
+    },
+  }),
+}));
 
 jest.mock("@/components/Stockpile/hooks/useStockpileFilters", () => ({
   useStockpileFilters: (...args: unknown[]) => mockUseStockpileFilters(...args),
 }));
 
 jest.mock("@/components/Stockpile/StockpileSidebar", () => () => <div data-testid="sidebar" />);
+jest.mock(
+  "@/components/Decks/detail/DeckFaceCardsFilterSelect",
+  () =>
+    ({
+      onFilterChange,
+    }: {
+      onFilterChange: (next: { type: "all" } | { type: "collection"; id: string }) => void;
+    }) =>
+      (
+        <button
+          type="button"
+          data-testid="deck-face-cards-filter-select"
+          onClick={() => onFilterChange({ type: "collection", id: "collection-1" })}
+        >
+          select filter
+        </button>
+      ),
+);
 
 jest.mock("@dnd-kit/core", () => ({
   useDraggable: () => ({
@@ -103,5 +131,50 @@ describe("DeckBacksPanel used back-face availability", () => {
     const callArg = mockUseStockpileFilters.mock.calls[0][0];
     expect(callArg.cards.map((card: { id: string }) => card.id)).toEqual(["back-a"]);
     expect(screen.getAllByTestId("card-thumb")).toHaveLength(1);
+  });
+
+  it("passes filter changes through to right panel filter setter", async () => {
+    const setBackFilter = jest.fn();
+    mockUseDeckRightPanel.mockReturnValue({
+      backCollections: [],
+      backCards: cards,
+      rightPanelEmptyLabel: "No backs",
+      backFilter: { type: "all" },
+      setBackFilter,
+      rightPanelFaceMode: "back",
+      setRightPanelFaceMode: jest.fn(),
+    });
+
+    render(<DeckBacksPanel usedBackFaceIds={new Set()} usedFrontFaceIds={new Set()} />);
+    fireEvent.click(screen.getByTestId("deck-face-cards-filter-select"));
+    expect(setBackFilter).toHaveBeenCalledWith({ type: "collection", id: "collection-1" });
+  });
+
+  it("passes search text through to stockpile filters", () => {
+    render(<DeckBacksPanel usedBackFaceIds={new Set()} usedFrontFaceIds={new Set()} />);
+
+    const searchInput = screen.getByPlaceholderText("Search cards...");
+    fireEvent.change(searchInput, { target: { value: "dragon" } });
+
+    const firstCallArg = mockUseStockpileFilters.mock.calls[0][0];
+    const secondCallArg = mockUseStockpileFilters.mock.calls[1][0];
+    expect(firstCallArg.search).toBe("");
+    expect(secondCallArg.search).toBe("dragon");
+  });
+
+  it("shows clear button for non-empty search and clears search", () => {
+    render(<DeckBacksPanel usedBackFaceIds={new Set()} usedFrontFaceIds={new Set()} />);
+
+    const searchInput = screen.getByPlaceholderText("Search cards...");
+    fireEvent.change(searchInput, { target: { value: "goblin" } });
+
+    const clearButton = screen.getByRole("button", { name: "Clear" });
+    expect(clearButton).toBeInTheDocument();
+
+    fireEvent.click(clearButton);
+    expect((screen.getByPlaceholderText("Search cards...") as HTMLInputElement).value).toBe("");
+
+    const lastCallArg = mockUseStockpileFilters.mock.calls[mockUseStockpileFilters.mock.calls.length - 1][0];
+    expect(lastCallArg.search).toBe("");
   });
 });
