@@ -6745,6 +6745,17 @@ button.assetsKindBadge:disabled {
   opacity: 1;
 }
 
+.cardFanCardSvg:focus,
+.cardFanCardSvg:focus-visible {
+  outline: none;
+}
+
+.cardFanCardSvg:focus-visible .cardFanHover {
+  opacity: 1;
+  stroke: var(--hq-accent);
+  stroke-width: 3;
+}
+
 .cardFan[data-hover-border="true"] .cardFanCardSvg:hover image {
   filter: brightness(1.25) saturate(1.08);
 }
@@ -7151,6 +7162,80 @@ button.assetsKindBadge:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.deckGroupHybridPreview {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: var(--deck-set-w);
+  min-height: var(--deck-set-h);
+}
+
+.deckGroupHybridFanLayer {
+  position: relative;
+  z-index: 1;
+}
+
+.deckGroupHybridDomLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+  transition:
+    width 220ms ease,
+    opacity 180ms ease;
+}
+
+.deckGroupHybridDomLayerActive {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.deckGroupHybridDomSettled {
+  position: relative;
+}
+
+.deckGroupHybridLayerHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.deckGroupDomRow {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  white-space: nowrap;
+}
+
+.deckSetDomCard {
+  position: relative;
+  width: var(--deck-set-w);
+  min-width: var(--deck-set-w);
+  height: var(--deck-set-h);
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    box-shadow 120ms ease;
+}
+
+.deckSetDomCardSelected {
+  box-shadow:
+    0 0 0 3px var(--hq-accent),
+    0 0 6px rgba(230, 179, 90, 0.45);
+}
+
+.deckSetDomCard:hover .deckSetThumb {
+  box-shadow: 0 0 0 2px rgba(230, 179, 90, 0.55);
+}
+
+.deckSetDomCard:hover .deckSetThumb img {
+  filter: brightness(1.25) saturate(1.08);
 }
 
 .deckRouteRowFooter {
