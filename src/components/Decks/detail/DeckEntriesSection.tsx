@@ -211,9 +211,13 @@ export default function DeckEntriesSection({
       <div className={styles.deckRouteRowToolbar} />
       <div className={`${styles.deckRouteRowBody} ${styles.deckRouteRowBodyFill}`}>
         {!selectedGroupId ? (
-          <div className={styles.decksEmpty}>{t("decks.noGroupSelectedEntries")}</div>
+          <div className={styles.deckEntriesEmptyFill}>
+            <div className={styles.decksEmpty}>{t("decks.noGroupSelectedEntries")}</div>
+          </div>
         ) : !selectedSetId ? (
-          <div className={styles.decksEmpty}>{t("decks.noSetSelected")}</div>
+          <div className={styles.deckEntriesEmptyFill}>
+            <div className={styles.decksEmpty}>{t("decks.noSetSelected")}</div>
+          </div>
         ) : (
           <div className={styles.deckEntriesSection}>
             <div className={styles.deckFacesSegment} role="tablist" aria-label="Set cards mode">
@@ -247,7 +251,9 @@ export default function DeckEntriesSection({
             >
             {entriesViewMode === "paired-not-in-set" ? (
               pairedNotInSetFrontIds.length === 0 ? (
-                <div className={styles.decksEmpty}>No paired cards pending add.</div>
+                <div className={styles.deckEntriesEmptyFill}>
+                  <div className={styles.decksEmpty}>No paired cards pending add.</div>
+                </div>
               ) : (
                 <div className={styles.deckEntriesGrid}>
                   {pairedNotInSetFrontIds.map((frontId) => (
@@ -271,7 +277,9 @@ export default function DeckEntriesSection({
                   {renderEntryPlaceholder("entry-placeholder-empty")}
                 </div>
               ) : (
-                <div className={styles.decksEmpty}>{t("decks.emptyEntries")}</div>
+                <div className={styles.deckEntriesEmptyFill}>
+                  <div className={styles.decksEmpty}>{t("decks.emptyEntries")}</div>
+                </div>
               )
             ) : drag.isFrontFaceDragActive ? (
               <div className={styles.deckEntriesGrid}>
@@ -386,7 +394,6 @@ export default function DeckEntriesSection({
           </div>
         )}
       </div>
-      <div className={styles.deckRouteRowFooter} />
       <ConfirmModal
         isOpen={Boolean(pendingFrontRemoval)}
         title={t("decks.removeFrontPromptTitle")}
