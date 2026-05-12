@@ -19,6 +19,11 @@ export type DeckSetEntriesModel = {
   addFront: (frontFaceId: string, targetSetId?: string | null) => Promise<DeckEntryRecord[]>;
   removeEntry: (entryId: string, targetSetId?: string | null) => Promise<void>;
   reorderEntries: (orderedEntryIds: string[], targetSetId?: string | null) => Promise<void>;
+  updateEntryCount: (
+    entryId: string,
+    count: number,
+    targetSetId?: string | null,
+  ) => Promise<void>;
   refreshEntries: (targetSetId?: string | null) => Promise<void>;
 };
 
@@ -180,6 +185,19 @@ export function useDeckSetEntriesModel(setId: string | null): DeckSetEntriesMode
     [invalidateEntriesForSet, setId],
   );
 
+  const updateEntryCount = useCallback(
+    async (entryId: string, count: number, targetSetId?: string | null) => {
+      const resolved = resolveTargetSetId(setId, targetSetId);
+      if (!resolved) return;
+      await apiClient.updateDeckEntryCount(
+        { entryId, count },
+        { params: { setId: resolved } },
+      );
+      await invalidateEntriesForSet();
+    },
+    [invalidateEntriesForSet, setId],
+  );
+
   return {
     setId,
     backFaceId,
@@ -191,6 +209,7 @@ export function useDeckSetEntriesModel(setId: string | null): DeckSetEntriesMode
     addFront,
     removeEntry,
     reorderEntries,
+    updateEntryCount,
     refreshEntries,
   };
 }

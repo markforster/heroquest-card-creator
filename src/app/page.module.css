@@ -7603,16 +7603,25 @@ button.assetsKindBadge:disabled {
   gap: var(--space-2);
   align-items: center;
   position: relative;
+  padding-top: 17px;
+  padding-bottom: 8px;
+}
+
+.deckEntryCardOverlayAnchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .deckCardRemoveButton {
-  width: 20px;
-  height: 20px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   border: 1px solid rgba(0, 0, 0, 0.38);
   background: #ef4444;
   color: #0a0a0a;
-  font-size: 14px;
+  font-size: 20px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -7628,7 +7637,8 @@ button.assetsKindBadge:disabled {
 .deckEntryCardActions {
   position: absolute;
   top: 0;
-  right: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
@@ -7638,14 +7648,100 @@ button.assetsKindBadge:disabled {
   z-index: 5;
 }
 
+.deckEntryCardBottomActions {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.deckEntryQuantityControl {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.deckEntryCountValue {
+  min-width: 52px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid #000;
+  background: #000;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-soft);
+}
+
+.deckEntryCountButton {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.38);
+  color: #f5f1e6;
+  font-size: 16px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-soft);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease,
+    filter 120ms ease;
+}
+
+.deckEntryCountButton:disabled {
+  background: var(--hq-surface-700) !important;
+  border-color: var(--hq-white-25) !important;
+  color: var(--hq-text-muted) !important;
+  cursor: default;
+}
+
+.deckEntryCountButtonMinus {
+  background: var(--hq-stat-minus);
+}
+
+.deckEntryCountButtonPlus {
+  background: var(--hq-stat-plus);
+}
+
+.deckEntryCountButtonMinus:hover:enabled {
+  background: var(--hq-stat-minus-hover);
+  transform: scale(1.05);
+}
+
+.deckEntryCountButtonPlus:hover:enabled {
+  background: var(--hq-stat-plus-hover);
+  transform: scale(1.05);
+}
+
+.deckEntryCardOverlayAnchor:hover .deckEntryCountButton {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .deckCardEditButton {
-  width: 20px;
-  height: 20px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   border: 1px solid rgba(0, 0, 0, 0.38);
   background: var(--hq-accent);
   color: #0a0a0a;
-  font-size: 12px;
+  font-size: 18px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -7658,7 +7754,9 @@ button.assetsKindBadge:disabled {
 }
 
 .deckGroupPreviewWrap:hover .deckEntryCardActions,
-.deckEntryCard:hover .deckEntryCardActions {
+.deckEntryCard:hover .deckEntryCardActions,
+.deckEntryCardOverlayAnchor:hover .deckEntryCardActions,
+.deckEntrySelect:focus-visible + .deckEntryCardActions {
   opacity: 1;
   pointer-events: auto;
 }

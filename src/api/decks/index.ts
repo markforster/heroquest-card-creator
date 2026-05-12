@@ -16,6 +16,7 @@ export {
   deckEntryAddFrontsInputSchema,
   deckEntryRemoveInputSchema,
   deckEntryReorderInputSchema,
+  deckEntryCountUpdateInputSchema,
 } from "@/api/decks/schema";
 export type {
   DeckRecord,
@@ -34,4 +35,5 @@ export type {
   DeckEntryAddFrontsInput,
   DeckEntryRemoveInput,
   DeckEntryReorderInput,
+  DeckEntryCountUpdateInput,
 } from "@/api/decks/types";

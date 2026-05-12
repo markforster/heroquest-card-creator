@@ -7,6 +7,7 @@ import {
   deckEntryRecordSchema,
   deckEntryRemoveInputSchema,
   deckEntryReorderInputSchema,
+  deckEntryCountUpdateInputSchema,
   deckGroupCreateInputSchema,
   deckGroupRecordSchema,
   deckGroupReorderInputSchema,
@@ -240,5 +241,15 @@ export const decksApi = makeApi([
       { name: "body", type: "Body", schema: deckEntryReorderInputSchema },
     ],
     response: z.void(),
+  },
+  {
+    method: "post",
+    path: "/deckSets/:setId/entries/count",
+    alias: "updateDeckEntryCount",
+    parameters: [
+      { name: "setId", type: "Path", schema: z.string() },
+      { name: "body", type: "Body", schema: deckEntryCountUpdateInputSchema },
+    ],
+    response: deckEntryRecordSchema,
   },
 ]);

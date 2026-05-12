@@ -65,6 +65,7 @@ import { updateCollectionRequestPlugin } from "@/api/local/updateCollectionReque
 import { updateDeckRequestPlugin } from "@/api/local/updateDeckRequest";
 import { updateDeckGroupRequestPlugin } from "@/api/local/updateDeckGroupRequest";
 import { updateDeckSetRequestPlugin } from "@/api/local/updateDeckSetRequest";
+import { updateDeckEntryCountRequestPlugin } from "@/api/local/updateDeckEntryCountRequest";
 import { readApiConfig } from "@/api/config";
 import { blobTransportPlugin } from "@/api/remote/blobTransport";
 
@@ -162,6 +163,7 @@ if (apiConfig.mode === "remote") {
   apiClient.use("addDeckEntries", addDeckEntriesRequestPlugin);
   apiClient.use("removeDeckEntries", removeDeckEntriesRequestPlugin);
   apiClient.use("reorderDeckEntries", reorderDeckEntriesRequestPlugin);
+  apiClient.use("updateDeckEntryCount", updateDeckEntryCountRequestPlugin);
 
   apiClient.use("listPairs", listPairsRequestPlugin);
   apiClient.use("createPair", createPairRequestPlugin);

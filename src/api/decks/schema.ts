@@ -37,6 +37,7 @@ export const deckEntryRecordSchema = z.object({
   deckId: z.string(),
   setId: z.string(),
   pairId: z.string(),
+  count: z.number().int().min(1).max(12),
   sortIndex: z.number(),
   createdAt: z.number(),
   updatedAt: z.number(),
@@ -98,6 +99,11 @@ export const deckEntryRemoveInputSchema = z.object({
 
 export const deckEntryReorderInputSchema = z.object({
   orderedEntryIds: z.array(z.string()),
+});
+
+export const deckEntryCountUpdateInputSchema = z.object({
+  entryId: z.string(),
+  count: z.number().int(),
 });
 
 export const deckListFilterSchema = z.object({

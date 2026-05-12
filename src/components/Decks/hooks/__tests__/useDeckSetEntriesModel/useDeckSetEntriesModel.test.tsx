@@ -9,6 +9,7 @@ const mockUseQueryClient = jest.fn();
 const mockAddDeckEntries = jest.fn();
 const mockRemoveDeckEntries = jest.fn();
 const mockReorderDeckEntries = jest.fn();
+const mockUpdateDeckEntryCount = jest.fn();
 
 jest.mock("@/api/hooks", () => ({
   useGetDeckSet: (...args: unknown[]) => mockUseGetDeckSet(...args),
@@ -21,6 +22,7 @@ jest.mock("@/api/client", () => ({
     addDeckEntries: (...args: unknown[]) => mockAddDeckEntries(...args),
     removeDeckEntries: (...args: unknown[]) => mockRemoveDeckEntries(...args),
     reorderDeckEntries: (...args: unknown[]) => mockReorderDeckEntries(...args),
+    updateDeckEntryCount: (...args: unknown[]) => mockUpdateDeckEntryCount(...args),
   },
 }));
 
@@ -41,6 +43,7 @@ describe("useDeckSetEntriesModel", () => {
     mockAddDeckEntries.mockResolvedValue([]);
     mockRemoveDeckEntries.mockResolvedValue(undefined);
     mockReorderDeckEntries.mockResolvedValue(undefined);
+    mockUpdateDeckEntryCount.mockResolvedValue(undefined);
     invalidateQueries.mockResolvedValue(undefined);
     refetchQueries.mockResolvedValue(undefined);
   });
@@ -65,7 +68,7 @@ describe("useDeckSetEntriesModel", () => {
   it("derives paired-not-in-set front ids from backFaceId + entries", () => {
     mockUseGetDeckSet.mockReturnValue({ data: { id: "set-1", backFaceId: "back-1" } });
     mockUseListDeckEntries.mockReturnValue({
-      data: [{ id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0 }],
+      data: [{ id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0, count: 1 }],
     });
     mockUseListPairs.mockReturnValue({
       data: [
@@ -83,7 +86,7 @@ describe("useDeckSetEntriesModel", () => {
 
   it("add/remove/reorder invalidate and refetch deck entries exactly once", async () => {
     mockAddDeckEntries.mockResolvedValue([
-      { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 0 },
+      { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 0, count: 1 },
     ]);
 
     const { result } = renderHook(() => useDeckSetEntriesModel("set-1"));
@@ -106,7 +109,13 @@ describe("useDeckSetEntriesModel", () => {
       { params: { setId: "set-1" } },
     );
 
-    expect(invalidateQueries).toHaveBeenCalledTimes(6);
-    expect(refetchQueries).toHaveBeenCalledTimes(6);
+    await result.current.updateEntryCount("entry-2", 3);
+    expect(mockUpdateDeckEntryCount).toHaveBeenCalledWith(
+      { entryId: "entry-2", count: 3 },
+      { params: { setId: "set-1" } },
+    );
+
+    expect(invalidateQueries).toHaveBeenCalledTimes(8);
+    expect(refetchQueries).toHaveBeenCalledTimes(8);
   });
 });

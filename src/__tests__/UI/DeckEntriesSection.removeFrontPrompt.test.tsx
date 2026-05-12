@@ -6,9 +6,10 @@ const removeEntry = jest.fn();
 const addFront = jest.fn();
 const deletePair = jest.fn();
 const refreshEntries = jest.fn();
+const updateEntryCount = jest.fn();
 const onOpenCardEditor = jest.fn();
 let sortableIsDragging = false;
-let entriesSortedMock: Array<{ id: string; setId: string; pairId: string; sortIndex: number }> = [];
+let entriesSortedMock: Array<{ id: string; setId: string; pairId: string; sortIndex: number; count: number }> = [];
 let pairsByIdMock = new Map<
   string,
   {
@@ -49,6 +50,7 @@ jest.mock("@/components/Decks/detail/context/DeckSetEntriesContext", () => ({
     pairedNotInSetFrontIds: [],
     addFront,
     removeEntry,
+    updateEntryCount,
     refreshEntries,
   }),
 }));
@@ -100,7 +102,7 @@ jest.mock("@dnd-kit/utilities", () => ({
 
 describe("DeckEntriesSection front remove prompt", () => {
   beforeEach(() => {
-    entriesSortedMock = [{ id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0 }];
+    entriesSortedMock = [{ id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 }];
     pairsByIdMock = new Map([
       [
         "pair-1",
@@ -120,11 +122,13 @@ describe("DeckEntriesSection front remove prompt", () => {
     addFront.mockReset();
     deletePair.mockReset();
     refreshEntries.mockReset();
+    updateEntryCount.mockReset();
     onOpenCardEditor.mockReset();
     sortableIsDragging = false;
     removeEntry.mockResolvedValue(undefined);
     deletePair.mockResolvedValue(undefined);
     refreshEntries.mockResolvedValue(undefined);
+    updateEntryCount.mockResolvedValue(undefined);
   });
 
   it("applies grab cursor class by default and grabbing class while dragging", () => {
@@ -210,6 +214,68 @@ describe("DeckEntriesSection front remove prompt", () => {
     fireEvent.click(screen.getByTitle("Edit front card"));
 
     expect(onOpenCardEditor).toHaveBeenCalledWith("front-1");
+  });
+
+  it("renders top centered actions and bottom quantity control scaffold", () => {
+    const { container } = render(
+      <DeckEntriesSection
+        drag={{
+          isFrontFaceDragActive: false,
+          isEntryDragActive: false,
+          isFrontDropOver: false,
+          isEntriesDropOver: false,
+          entryDropIndex: null,
+        } as never}
+        entriesRowRef={jest.fn()}
+        onOpenCardEditor={onOpenCardEditor}
+        deckEntryThumb={() => <div>thumb</div>}
+      />,
+    );
+
+    expect(screen.getByLabelText("Quantity 1")).toBeInTheDocument();
+    const anchor = container.querySelector(".deckEntryCardOverlayAnchor");
+    expect(anchor).not.toBeNull();
+    expect(anchor?.querySelector(".deckEntryCardActions")).not.toBeNull();
+    expect(anchor?.querySelector(".deckEntryCardBottomActions")).not.toBeNull();
+  });
+
+  it("updates entry count via +/- and respects min/max disabled states", async () => {
+    entriesSortedMock = [{ id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 }];
+    const { rerender } = render(
+      <DeckEntriesSection
+        drag={{
+          isFrontFaceDragActive: false,
+          isEntryDragActive: false,
+          isFrontDropOver: false,
+          isEntriesDropOver: false,
+          entryDropIndex: null,
+        } as never}
+        entriesRowRef={jest.fn()}
+        onOpenCardEditor={onOpenCardEditor}
+        deckEntryThumb={() => <div>thumb</div>}
+      />,
+    );
+
+    expect(screen.getByLabelText("Decrease quantity")).toBeDisabled();
+    fireEvent.click(screen.getByLabelText("Increase quantity"));
+    await waitFor(() => expect(updateEntryCount).toHaveBeenCalledWith("entry-1", 2));
+
+    entriesSortedMock = [{ id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 12 }];
+    rerender(
+      <DeckEntriesSection
+        drag={{
+          isFrontFaceDragActive: false,
+          isEntryDragActive: false,
+          isFrontDropOver: false,
+          isEntriesDropOver: false,
+          entryDropIndex: null,
+        } as never}
+        entriesRowRef={jest.fn()}
+        onOpenCardEditor={onOpenCardEditor}
+        deckEntryThumb={() => <div>thumb</div>}
+      />,
+    );
+    expect(screen.getByLabelText("Increase quantity")).toBeDisabled();
   });
 
   it("removes from set only when confirm is clicked", async () => {

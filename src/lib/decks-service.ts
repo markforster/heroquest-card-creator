@@ -20,6 +20,8 @@ const GROUPS_STORE = "deckGroups";
 const SETS_STORE = "deckSets";
 const ENTRIES_STORE = "deckEntries";
 const PAIRS_STORE = "pairs";
+const ENTRY_COUNT_MIN = 1;
+const ENTRY_COUNT_MAX = 12;
 
 async function getStore(name: string, mode: IDBTransactionMode): Promise<IDBObjectStore> {
   const db = await openHqccDb();
@@ -41,6 +43,19 @@ async function getPairsStore(mode: IDBTransactionMode): Promise<IDBObjectStore> 
 
 function sortByIndex<T extends { sortIndex: number }>(items: T[]): T[] {
   return [...items].sort((a, b) => a.sortIndex - b.sortIndex);
+}
+
+function clampEntryCount(value: number): number {
+  return Math.max(ENTRY_COUNT_MIN, Math.min(ENTRY_COUNT_MAX, Math.trunc(value)));
+}
+
+function normalizeDeckEntryRecord(
+  entry: DeckEntryRecord & { count?: number | null },
+): DeckEntryRecord {
+  const raw = entry.count;
+  const count =
+    typeof raw === "number" && Number.isFinite(raw) ? clampEntryCount(raw) : ENTRY_COUNT_MIN;
+  return { ...entry, count };
 }
 
 async function listByIndex<T>(
@@ -155,7 +170,9 @@ export async function updateDeck(
 export async function deleteDeck(deckId: string): Promise<void> {
   const groups = await listByIndex<DeckGroupRecord>(GROUPS_STORE, "deckId", deckId);
   const sets = await listByIndex<DeckSetRecord>(SETS_STORE, "deckId", deckId);
-  const entries = await listByIndex<DeckEntryRecord>(ENTRIES_STORE, "deckId", deckId);
+  const entries = (
+    await listByIndex<DeckEntryRecord & { count?: number | null }>(ENTRIES_STORE, "deckId", deckId)
+  ).map(normalizeDeckEntryRecord);
 
   const db = await openHqccDb();
   const tx = db.transaction([DECKS_STORE, GROUPS_STORE, SETS_STORE, ENTRIES_STORE], "readwrite");
@@ -189,7 +206,9 @@ export async function duplicateDeck(deckId: string): Promise<DeckRecord | null> 
   );
   const sets = sortByIndex(await listByIndex<DeckSetRecord>(SETS_STORE, "deckId", deckId));
   const entries = sortByIndex(
-    await listByIndex<DeckEntryRecord>(ENTRIES_STORE, "deckId", deckId),
+    (
+      await listByIndex<DeckEntryRecord & { count?: number | null }>(ENTRIES_STORE, "deckId", deckId)
+    ).map(normalizeDeckEntryRecord),
   );
 
   const db = await openHqccDb();
@@ -595,6 +614,7 @@ export async function rebuildSetBack(
       deckId: set.deckId,
       setId: setId,
       pairId: pair.id,
+      count: ENTRY_COUNT_MIN,
       sortIndex,
       createdAt: now,
       updatedAt: now,
@@ -629,8 +649,12 @@ export async function rebuildSetBack(
 }
 
 export async function listEntriesForSet(setId: string): Promise<DeckEntryRecord[]> {
-  const entries = await listByIndex<DeckEntryRecord>(ENTRIES_STORE, "setId", setId);
-  return sortByIndex(entries);
+  const entries = await listByIndex<DeckEntryRecord & { count?: number | null }>(
+    ENTRIES_STORE,
+    "setId",
+    setId,
+  );
+  return sortByIndex(entries.map(normalizeDeckEntryRecord));
 }
 
 export async function addFrontsToSet(
@@ -663,6 +687,7 @@ export async function addFrontsToSet(
       deckId: set.deckId,
       setId: set.id,
       pairId: pair.id,
+      count: ENTRY_COUNT_MIN,
       sortIndex,
       createdAt: now,
       updatedAt: now,
@@ -735,6 +760,34 @@ export async function reorderEntries(setId: string, orderedEntryIds: string[]): 
   orderedEntryIds.forEach((id) => enqueueDbEstimateChange(ENTRIES_STORE, id));
 }
 
+export async function updateEntryCount(
+  setId: string,
+  entryId: string,
+  count: number,
+): Promise<DeckEntryRecord | null> {
+  const store = await getStore(ENTRIES_STORE, "readwrite");
+  const existing = await new Promise<(DeckEntryRecord & { count?: number | null }) | null>((resolve, reject) => {
+    const request = store.get(entryId);
+    request.onsuccess = () =>
+      resolve((request.result as (DeckEntryRecord & { count?: number | null }) | undefined) ?? null);
+    request.onerror = () => reject(request.error ?? new Error("Failed to load entry"));
+  });
+  if (!existing || existing.setId !== setId) return null;
+  const normalized = normalizeDeckEntryRecord(existing);
+  const next: DeckEntryRecord = {
+    ...normalized,
+    count: clampEntryCount(count),
+    updatedAt: Date.now(),
+  };
+  await new Promise<void>((resolve, reject) => {
+    const request = store.put(next);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error ?? new Error("Failed to update entry count"));
+  });
+  enqueueDbEstimateChange(ENTRIES_STORE, next.id);
+  return next;
+}
+
 async function getPairById(pairId: string): Promise<PairRecord | null> {
   const store = await getPairsStore("readonly");
   return new Promise<PairRecord | null>((resolve, reject) => {
@@ -745,7 +798,9 @@ async function getPairById(pairId: string): Promise<PairRecord | null> {
 }
 
 export async function getDeckUsageForPair(pairId: string): Promise<DeckUsageLocation[]> {
-  const entries = await listByIndex<DeckEntryRecord>(ENTRIES_STORE, "pairId", pairId);
+  const entries = (
+    await listByIndex<DeckEntryRecord & { count?: number | null }>(ENTRIES_STORE, "pairId", pairId)
+  ).map(normalizeDeckEntryRecord);
   if (!entries.length) return [];
 
   const setIds = new Set(entries.map((entry) => entry.setId));

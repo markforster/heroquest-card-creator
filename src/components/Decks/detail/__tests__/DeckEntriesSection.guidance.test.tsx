@@ -35,6 +35,12 @@ jest.mock("@/i18n/I18nProvider", () => ({
   }),
 }));
 
+jest.mock("@/api/client", () => ({
+  apiClient: {
+    deletePair: jest.fn(),
+  },
+}));
+
 describe("DeckEntriesSection guidance states", () => {
   let currentSelectedSetId: string | null;
   const baseDrag = {
@@ -68,6 +74,8 @@ describe("DeckEntriesSection guidance states", () => {
       pairedNotInSetFrontIds: [],
       addFront: jest.fn(),
       removeEntry: jest.fn(),
+      updateEntryCount: jest.fn(),
+      refreshEntries: jest.fn(),
     });
   });
 
@@ -120,8 +128,8 @@ describe("DeckEntriesSection guidance states", () => {
     mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: "set-1" });
     mockUseDeckSetEntries.mockReturnValue({
       entriesSorted: [
-        { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0 },
-        { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 1 },
+        { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0, count: 1 },
+        { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 1, count: 1 },
       ],
       pairsById: new Map([
         ["pair-1", { id: "pair-1", frontFaceId: "front-1" }],
@@ -130,6 +138,8 @@ describe("DeckEntriesSection guidance states", () => {
       pairedNotInSetFrontIds: [],
       addFront: jest.fn(),
       removeEntry: jest.fn(),
+      updateEntryCount: jest.fn(),
+      refreshEntries: jest.fn(),
     });
 
     const { container } = render(
@@ -152,8 +162,8 @@ describe("DeckEntriesSection guidance states", () => {
     mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: "set-1" });
     mockUseDeckSetEntries.mockReturnValue({
       entriesSorted: [
-        { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0 },
-        { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 1 },
+        { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0, count: 1 },
+        { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 1, count: 1 },
       ],
       pairsById: new Map([
         ["pair-1", { id: "pair-1", frontFaceId: "front-1" }],
@@ -162,6 +172,8 @@ describe("DeckEntriesSection guidance states", () => {
       pairedNotInSetFrontIds: [],
       addFront: jest.fn(),
       removeEntry: jest.fn(),
+      updateEntryCount: jest.fn(),
+      refreshEntries: jest.fn(),
     });
 
     const { container } = render(
@@ -190,8 +202,8 @@ describe("DeckEntriesSection guidance states", () => {
     mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: "set-1" });
     mockUseDeckSetEntries.mockReturnValue({
       entriesSorted: [
-        { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0 },
-        { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 1 },
+        { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0, count: 1 },
+        { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 1, count: 1 },
       ],
       pairsById: new Map([
         ["pair-1", { id: "pair-1", frontFaceId: "front-1" }],
@@ -200,6 +212,8 @@ describe("DeckEntriesSection guidance states", () => {
       pairedNotInSetFrontIds: [],
       addFront: jest.fn(),
       removeEntry: jest.fn(),
+      updateEntryCount: jest.fn(),
+      refreshEntries: jest.fn(),
     });
 
     const { container } = render(
@@ -228,8 +242,8 @@ describe("DeckEntriesSection guidance states", () => {
     mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: "set-1" });
     mockUseDeckSetEntries.mockReturnValue({
       entriesSorted: [
-        { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0 },
-        { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 1 },
+        { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0, count: 1 },
+        { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 1, count: 1 },
       ],
       pairsById: new Map([
         ["pair-1", { id: "pair-1", frontFaceId: "front-1" }],
@@ -238,6 +252,8 @@ describe("DeckEntriesSection guidance states", () => {
       pairedNotInSetFrontIds: [],
       addFront: jest.fn(),
       removeEntry: jest.fn(),
+      updateEntryCount: jest.fn(),
+      refreshEntries: jest.fn(),
     });
 
     const { container } = render(
@@ -261,11 +277,13 @@ describe("DeckEntriesSection guidance states", () => {
   it("resets to in-set tab when selected set changes", async () => {
     currentSelectedSetId = "set-1";
     mockUseDeckSetEntries.mockReturnValue({
-      entriesSorted: [{ id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0 }],
+      entriesSorted: [{ id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0, count: 1 }],
       pairsById: new Map([["pair-1", { id: "pair-1", frontFaceId: "front-1" }]]),
       pairedNotInSetFrontIds: ["front-2"],
       addFront: jest.fn(),
       removeEntry: jest.fn(),
+      updateEntryCount: jest.fn(),
+      refreshEntries: jest.fn(),
     });
 
     const { rerender } = render(

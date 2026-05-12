@@ -35,6 +35,7 @@ export type DeckEntryRecord = {
   deckId: string;
   setId: string;
   pairId: string;
+  count?: number | null;
   sortIndex: number;
   createdAt: number;
   updatedAt: number;

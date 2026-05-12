@@ -4,6 +4,7 @@ import {
   deckEntryRecordSchema,
   deckEntryRemoveInputSchema,
   deckEntryReorderInputSchema,
+  deckEntryCountUpdateInputSchema,
   deckGroupCreateInputSchema,
   deckGroupRecordSchema,
   deckGroupReorderInputSchema,
@@ -41,3 +42,4 @@ export type DeckSetRebuildBackInput = z.infer<typeof deckSetRebuildBackInputSche
 export type DeckEntryAddFrontsInput = z.infer<typeof deckEntryAddFrontsInputSchema>;
 export type DeckEntryRemoveInput = z.infer<typeof deckEntryRemoveInputSchema>;
 export type DeckEntryReorderInput = z.infer<typeof deckEntryReorderInputSchema>;
+export type DeckEntryCountUpdateInput = z.infer<typeof deckEntryCountUpdateInputSchema>;

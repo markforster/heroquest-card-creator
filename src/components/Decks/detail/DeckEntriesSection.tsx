@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
+import DeckEntryQuantityControl from "@/components/Decks/detail/DeckEntryQuantityControl";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
 import type { DeckDetailDragState } from "@/components/Decks/types/deck-detail";
@@ -20,6 +21,8 @@ function DeckEntryCard({
   frontId,
   isSelected,
   onRequestRemove,
+  count,
+  onUpdateCount,
   onSelectEntry,
   onOpenCardEditor,
   deckEntryThumb,
@@ -28,6 +31,8 @@ function DeckEntryCard({
   frontId: string;
   isSelected: boolean;
   onRequestRemove?: (entryId: string, frontId: string) => void;
+  count: number;
+  onUpdateCount: (entryId: string, nextCount: number) => Promise<void>;
   onSelectEntry: (entryId: string, hasModifier: boolean) => void;
   onOpenCardEditor: (cardId: string) => void;
   deckEntryThumb: (cardId: string, isSelected: boolean) => ReactNode;
@@ -49,46 +54,57 @@ function DeckEntryCard({
       className={styles.deckEntryCard}
       style={style}
     >
-      <button
-        type="button"
-        className={`${styles.deckEntrySelect} ${isDragging ? styles.deckEntrySelectDragging : ""}`}
-        onClick={(event) => onSelectEntry(entryId, event.metaKey || event.ctrlKey)}
-        onDoubleClick={() => onOpenCardEditor(frontId)}
-        {...attributes}
-        {...listeners}
-      >
-        {deckEntryThumb(frontId, isSelected)}
-      </button>
-      {onRequestRemove ? (
-        <div className={styles.deckEntryCardActions}>
-          <button
-            type="button"
-            className={styles.deckCardEditButton}
-            aria-label="Edit front card"
-            title="Edit front card"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpenCardEditor(frontId);
-            }}
-          >
-            ✎
-          </button>
-          <button
-            type="button"
-            className={styles.deckCardRemoveButton}
-            aria-label="Remove front from set"
-            title="Remove front from set"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => {
-              event.stopPropagation();
-              onRequestRemove(entryId, frontId);
-            }}
-          >
-            ×
-          </button>
-        </div>
-      ) : null}
+      <div className={styles.deckEntryCardOverlayAnchor}>
+        <button
+          type="button"
+          className={`${styles.deckEntrySelect} ${isDragging ? styles.deckEntrySelectDragging : ""}`}
+          onClick={(event) => onSelectEntry(entryId, event.metaKey || event.ctrlKey)}
+          onDoubleClick={() => onOpenCardEditor(frontId)}
+          {...attributes}
+          {...listeners}
+        >
+          {deckEntryThumb(frontId, isSelected)}
+        </button>
+        {onRequestRemove ? (
+          <>
+            <div className={styles.deckEntryCardActions}>
+              <button
+                type="button"
+                className={styles.deckCardEditButton}
+                aria-label="Edit front card"
+                title="Edit front card"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onOpenCardEditor(frontId);
+                }}
+              >
+                ✎
+              </button>
+              <button
+                type="button"
+                className={styles.deckCardRemoveButton}
+                aria-label="Remove front from set"
+                title="Remove front from set"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onRequestRemove(entryId, frontId);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.deckEntryCardBottomActions}>
+              <DeckEntryQuantityControl
+                count={count}
+                onDecrement={() => void onUpdateCount(entryId, count - 1)}
+                onIncrement={() => void onUpdateCount(entryId, count + 1)}
+              />
+            </div>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -136,7 +152,15 @@ export default function DeckEntriesSection({
 }) {
   const { t } = useI18n();
   const { selectedGroupId, selectedSetId } = useDeckDetailSelection();
-  const { entriesSorted, pairsById, pairedNotInSetFrontIds, addFront, removeEntry, refreshEntries } =
+  const {
+    entriesSorted,
+    pairsById,
+    pairedNotInSetFrontIds,
+    addFront,
+    removeEntry,
+    updateEntryCount,
+    refreshEntries,
+  } =
     useDeckSetEntries();
   const { setNodeRef: setEntriesDropRef } = useDroppable({ id: "entries-area" });
   const { setNodeRef: setTailDropRef } = useDroppable({ id: "entries-tail" });
@@ -457,6 +481,8 @@ export default function DeckEntriesSection({
                         entryId={entry.id}
                         frontId={frontId}
                         isSelected={isSelected}
+                        count={entry.count}
+                        onUpdateCount={updateEntryCount}
                         onRequestRemove={(entryId) => requestRemoveForEntry(entryId)}
                         onSelectEntry={selectEntry}
                         onOpenCardEditor={onOpenCardEditor}
