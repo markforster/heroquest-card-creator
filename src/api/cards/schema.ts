@@ -133,3 +133,8 @@ export const cardThumbnailResponseSchema = blobSchema.nullable();
 export const normalizeSelfPairingsInputSchema = z.object({});
 
 export const normalizeSelfPairingsResponseSchema = z.number();
+
+export const cardDeckMembershipSchema = z.object({
+  deckId: z.string(),
+  deckTitle: z.string(),
+});

@@ -7,6 +7,8 @@ import type {
   DeckSetRecord,
 } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
+import type { CardDeckMembership } from "@/api/cards";
+import type { CardFace } from "@/types/card-face";
 
 import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import { getCard } from "@/lib/cards-db";
@@ -14,6 +16,8 @@ import { createPair } from "@/lib/pairs-service";
 import { generateId } from "@/lib";
 import { openHqccDb } from "@/lib/hqcc-db";
 import type { DeckUsageLocation } from "@/lib/decks-errors";
+import { cardTemplatesById } from "@/data/card-templates";
+import { resolveEffectiveFace } from "@/lib/card-face";
 
 const DECKS_STORE = "decks";
 const GROUPS_STORE = "deckGroups";
@@ -97,11 +101,77 @@ function nextSortIndex(items: { sortIndex: number }[]): number {
   return Math.max(...items.map((item) => item.sortIndex)) + 1;
 }
 
+function resolveCardFace(templateId: string, cardFace: CardFace | undefined): CardFace {
+  const template = cardTemplatesById[templateId as keyof typeof cardTemplatesById];
+  if (!template) return cardFace ?? "front";
+  return resolveEffectiveFace(cardFace, template.defaultFace);
+}
+
 export async function listDecks({ search }: { search?: string } = {}): Promise<DeckRecord[]> {
   const decks = await listAll<DeckRecord>(DECKS_STORE);
   if (!search) return decks;
   const q = search.toLocaleLowerCase();
   return decks.filter((deck) => deck.title.toLocaleLowerCase().includes(q));
+}
+
+export async function listCardDeckMembership(cardId: string): Promise<CardDeckMembership[]> {
+  const card = await getCard(cardId);
+  if (!card || card.status !== "saved" || card.deletedAt != null) {
+    return [];
+  }
+
+  const effectiveFace = resolveCardFace(card.templateId, card.face);
+  const deckById = new Map<string, DeckRecord>();
+
+  if (effectiveFace === "back") {
+    const sets = await listAll<DeckSetRecord>(SETS_STORE);
+    const matchingSets = sets.filter((set) => set.backFaceId === cardId);
+    if (!matchingSets.length) return [];
+    const decks = await listAll<DeckRecord>(DECKS_STORE);
+    const decksMap = new Map(decks.map((deck) => [deck.id, deck]));
+    matchingSets.forEach((set) => {
+      const deck = decksMap.get(set.deckId);
+      if (deck) deckById.set(deck.id, deck);
+    });
+  } else {
+    const pairs = await listAll<PairRecord>(PAIRS_STORE);
+    const pairIds = new Set(
+      pairs
+        .filter((pair) => pair.frontFaceId === cardId)
+        .map((pair) => pair.id),
+    );
+    if (!pairIds.size) return [];
+
+    const entries = await listAll<DeckEntryRecord & { count?: number | null }>(ENTRIES_STORE);
+    const matchingEntries = entries
+      .map(normalizeDeckEntryRecord)
+      .filter((entry) => pairIds.has(entry.pairId));
+    if (!matchingEntries.length) return [];
+
+    const setIds = new Set(matchingEntries.map((entry) => entry.setId));
+    const sets = await listAll<DeckSetRecord>(SETS_STORE);
+    const decks = await listAll<DeckRecord>(DECKS_STORE);
+    const setMap = new Map(sets.map((set) => [set.id, set]));
+    const deckMap = new Map(decks.map((deck) => [deck.id, deck]));
+
+    setIds.forEach((setId) => {
+      const set = setMap.get(setId);
+      if (!set) return;
+      const deck = deckMap.get(set.deckId);
+      if (deck) deckById.set(deck.id, deck);
+    });
+  }
+
+  return Array.from(deckById.values())
+    .map((deck) => ({
+      deckId: deck.id,
+      deckTitle: deck.title,
+    }))
+    .sort((a, b) => {
+      const byTitle = a.deckTitle.localeCompare(b.deckTitle);
+      if (byTitle !== 0) return byTitle;
+      return a.deckId.localeCompare(b.deckId);
+    });
 }
 
 export async function getDeck(deckId: string): Promise<DeckRecord | null> {

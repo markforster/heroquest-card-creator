@@ -36,6 +36,7 @@ import { importLibraryRequestPlugin } from "@/api/local/importLibraryRequest";
 import { listAssetsRequestPlugin } from "@/api/local/listAssetsRequest";
 import { listAssetsWithBlobsRequestPlugin } from "@/api/local/listAssetsWithBlobsRequest";
 import { listCardsRequestPlugin } from "@/api/local/listCardsRequest";
+import { listCardDecksRequestPlugin } from "@/api/local/listCardDecksRequest";
 import { listCollectionsRequestPlugin } from "@/api/local/listCollectionsRequest";
 import { listDeckEntriesRequestPlugin } from "@/api/local/listDeckEntriesRequest";
 import { listDeckGroupsRequestPlugin } from "@/api/local/listDeckGroupsRequest";
@@ -111,6 +112,7 @@ if (apiConfig.mode === "remote") {
   apiClient.use("exportLibrary", blobTransportPlugin);
 } else {
   apiClient.use("listCards", listCardsRequestPlugin);
+  apiClient.use("listCardDecks", listCardDecksRequestPlugin);
   apiClient.use("getCard", getCardRequestPlugin);
   apiClient.use("getCardThumbnail", getCardThumbnailRequestPlugin);
   apiClient.use("createCard", createCardRequestPlugin);

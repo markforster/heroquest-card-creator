@@ -623,5 +623,11 @@ export const nl = {
   "label.expectedDatabaseVersion": "Verwachte databaseversie",
   "label.databaseAppVersion": "Database gemaakt met app-versie",
   "label.lastEdited": "Laatst bewerkt",
-  "label.unknownVersion": "Onbekend"
+  "label.unknownVersion": "Onbekend",
+  "heading.decksForCard": "Decks for this card",
+  "label.decksView": "Decks",
+  "empty.saveCardToViewDecks": "Save this card to view deck membership.",
+  "empty.cardNotInDecks": "This card is not in any deck.",
+  "status.loadingDecks": "Loading decks...",
+  "error.failedToLoadDecks": "Unable to load decks right now.",
 } as const;

@@ -623,5 +623,11 @@ export const fr = {
   "label.expectedDatabaseVersion": "Version de base attendue",
   "label.databaseAppVersion": "Version de l’app ayant créé la base",
   "label.lastEdited": "Dernière modification",
-  "label.unknownVersion": "Inconnue"
+  "label.unknownVersion": "Inconnue",
+  "heading.decksForCard": "Decks for this card",
+  "label.decksView": "Decks",
+  "empty.saveCardToViewDecks": "Save this card to view deck membership.",
+  "empty.cardNotInDecks": "This card is not in any deck.",
+  "status.loadingDecks": "Loading decks...",
+  "error.failedToLoadDecks": "Unable to load decks right now.",
 } as const;

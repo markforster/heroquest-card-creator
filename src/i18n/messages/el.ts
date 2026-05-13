@@ -623,5 +623,11 @@ export const el = {
   "label.expectedDatabaseVersion": "Αναμενόμενη έκδοση βάσης δεδομένων",
   "label.databaseAppVersion": "Βάση δεδομένων δημιουργήθηκε με έκδοση εφαρμογής",
   "label.lastEdited": "Τελευταία επεξεργασία",
-  "label.unknownVersion": "Άγνωστο"
+  "label.unknownVersion": "Άγνωστο",
+  "heading.decksForCard": "Decks for this card",
+  "label.decksView": "Decks",
+  "empty.saveCardToViewDecks": "Save this card to view deck membership.",
+  "empty.cardNotInDecks": "This card is not in any deck.",
+  "status.loadingDecks": "Loading decks...",
+  "error.failedToLoadDecks": "Unable to load decks right now.",
 } as const;

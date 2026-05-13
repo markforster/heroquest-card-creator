@@ -7,9 +7,10 @@ import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
 import GenericInspectorForm from "./GenericInspectorForm";
+import DecksInspectorPanel from "./DecksInspectorPanel";
 import PairingInspectorPanel from "./PairingInspectorPanel";
 
-type InspectorMode = "form" | "pairing";
+type InspectorMode = "form" | "pairing" | "decks";
 
 type CardInspectorProps = {
   activeFrontId?: string | null;
@@ -69,12 +70,22 @@ export default function CardInspector({
           >
             {t("label.pairingView")}
           </button>
+          <button
+            type="button"
+            className={`${styles.inspectorModeTab} ${
+              mode === "decks" ? styles.inspectorModeTabActive : ""
+            }`}
+            aria-pressed={mode === "decks"}
+            onClick={() => setMode("decks")}
+          >
+            {t("label.decksView")}
+          </button>
         </div>
       </div>
       <div className={styles.inspectorModeBody}>
         {mode === "form" ? (
           <GenericInspectorForm key={key} templateId={selectedTemplateId} />
-        ) : (
+        ) : mode === "pairing" ? (
           <PairingInspectorPanel
             activeFrontId={activeFrontId}
             autoOpenBackId={autoOpenBackId}
@@ -82,6 +93,8 @@ export default function CardInspector({
             onRememberBackId={onRememberBackId}
             pairingReferenceId={pairingReferenceId}
           />
+        ) : (
+          <DecksInspectorPanel />
         )}
       </div>
     </div>
