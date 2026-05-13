@@ -8,6 +8,7 @@ import { useFormContext, useFormState, useWatch } from "react-hook-form";
 
 import styles from "@/app/page.module.css";
 import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
+import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
@@ -821,7 +822,13 @@ export default function PairingInspectorPanel({
         onExtra={() => {
           const first = pendingUnpairImpact?.decks[0];
           if (!first) return;
-          navigate(`/decks/${first.deckId}`);
+          const location = first.locations[0];
+          navigate(
+            buildDeckDeepLink({
+              deckId: first.deckId,
+              setId: location?.setId ?? null,
+            }),
+          );
           setPendingUnpairImpact(null);
         }}
         onCancel={() => setPendingUnpairImpact(null)}
@@ -876,7 +883,7 @@ export default function PairingInspectorPanel({
         onExtra={() => {
           const first = pairUsagePrompt?.cascadePlan.usage[0];
           if (!first) return;
-          navigate(`/decks/${first.deckId}`);
+          navigate(buildDeckDeepLink({ deckId: first.deckId, setId: first.setId }));
           setPairUsagePrompt(null);
         }}
         onCancel={() => setPairUsagePrompt(null)}

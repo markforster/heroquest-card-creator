@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "@/app/page.module.css";
 import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
 import type { CardDeckMembership } from "@/api/cards";
@@ -85,7 +86,15 @@ export default function DecksInspectorPanel() {
               key={membership.deckId}
               type="button"
               className={`list-group-item list-group-item-action ${styles.inspectorDeckMembershipRow}`}
-              onClick={() => navigate(`/decks/${membership.deckId}`)}
+              onClick={() =>
+                navigate(
+                  buildDeckDeepLink({
+                    deckId: membership.deckId,
+                    setId: membership.setId,
+                    entryId: membership.entryId,
+                  }),
+                )
+              }
             >
               <span className={styles.inspectorDeckMembershipFan}>
                 <DeckFanByDeckId

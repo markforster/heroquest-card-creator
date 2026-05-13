@@ -94,8 +94,8 @@ describe("DecksInspectorPanel", () => {
       },
     });
     mockListCardDecks.mockResolvedValue([
-      { deckId: "deck-1", deckTitle: "Dungeon Deck", count: 2 },
-      { deckId: "deck-2", deckTitle: "Boss Deck", count: 5 },
+      { deckId: "deck-1", deckTitle: "Dungeon Deck", count: 2, setId: "set-1" },
+      { deckId: "deck-2", deckTitle: "Boss Deck", count: 5, setId: "set-9", entryId: "entry-3" },
     ]);
 
     render(<DecksInspectorPanel />);
@@ -119,6 +119,6 @@ describe("DecksInspectorPanel", () => {
     expect(screen.getByText("5")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Boss Deck"));
 
-    expect(mockNavigate).toHaveBeenCalledWith("/decks/deck-2");
+    expect(mockNavigate).toHaveBeenCalledWith("/decks/deck-2/set/set-9/entry/entry-3");
   });
 });

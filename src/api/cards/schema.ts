@@ -138,4 +138,6 @@ export const cardDeckMembershipSchema = z.object({
   deckId: z.string(),
   deckTitle: z.string(),
   count: z.number().int().nonnegative(),
+  setId: z.string().optional(),
+  entryId: z.string().optional(),
 });

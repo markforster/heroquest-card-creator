@@ -6,6 +6,20 @@ const mockUseDeckDetailSelection = jest.fn();
 const mockUseDeckSetEntries = jest.fn();
 const mockDndUseDroppable = jest.fn();
 const mockDndUseSortable = jest.fn();
+const mockNavigate = jest.fn();
+const mockSetSelectedEntryId = jest.fn();
+
+const buildSelectionState = (groupId: string | null, setId: string | null) => ({
+  deckId: "deck-1",
+  selectedGroupId: groupId,
+  selectedSetId: setId,
+  selectedEntryId: null,
+  setSelectedEntryId: mockSetSelectedEntryId,
+});
+
+jest.mock("react-router-dom", () => ({
+  useNavigate: () => mockNavigate,
+}));
 
 jest.mock("@dnd-kit/core", () => ({
   useDroppable: (...args: unknown[]) => mockDndUseDroppable(...args),
@@ -64,10 +78,9 @@ describe("DeckEntriesSection guidance states", () => {
       isDragging: false,
     });
     currentSelectedSetId = null;
-    mockUseDeckDetailSelection.mockImplementation(() => ({
-      selectedGroupId: "group-1",
-      selectedSetId: currentSelectedSetId,
-    }));
+    mockUseDeckDetailSelection.mockImplementation(() =>
+      buildSelectionState("group-1", currentSelectedSetId),
+    );
     mockUseDeckSetEntries.mockReturnValue({
       entriesSorted: [],
       pairsById: new Map(),
@@ -80,7 +93,7 @@ describe("DeckEntriesSection guidance states", () => {
   });
 
   it("shows explicit no-group guidance", () => {
-    mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: null, selectedSetId: null });
+    mockUseDeckDetailSelection.mockReturnValue(buildSelectionState(null, null));
 
     render(
       <DeckEntriesSection
@@ -95,7 +108,7 @@ describe("DeckEntriesSection guidance states", () => {
   });
 
   it("shows no-set-selected guidance when group exists", () => {
-    mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: null });
+    mockUseDeckDetailSelection.mockReturnValue(buildSelectionState("group-1", null));
 
     render(
       <DeckEntriesSection
@@ -110,7 +123,7 @@ describe("DeckEntriesSection guidance states", () => {
   });
 
   it("shows empty-set guidance when set is selected with no entries", () => {
-    mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: "set-1" });
+    mockUseDeckDetailSelection.mockReturnValue(buildSelectionState("group-1", "set-1"));
 
     render(
       <DeckEntriesSection
@@ -125,7 +138,7 @@ describe("DeckEntriesSection guidance states", () => {
   });
 
   it("renders set entries from entriesSorted and exposes dnd dropzone markers", () => {
-    mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: "set-1" });
+    mockUseDeckDetailSelection.mockReturnValue(buildSelectionState("group-1", "set-1"));
     mockUseDeckSetEntries.mockReturnValue({
       entriesSorted: [
         { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0, count: 1 },
@@ -159,7 +172,7 @@ describe("DeckEntriesSection guidance states", () => {
   });
 
   it("keeps entries mounted during in-set entry drag", () => {
-    mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: "set-1" });
+    mockUseDeckDetailSelection.mockReturnValue(buildSelectionState("group-1", "set-1"));
     mockUseDeckSetEntries.mockReturnValue({
       entriesSorted: [
         { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0, count: 1 },
@@ -199,7 +212,7 @@ describe("DeckEntriesSection guidance states", () => {
   });
 
   it("does not render bespoke placeholder for entry drag when index is unresolved", () => {
-    mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: "set-1" });
+    mockUseDeckDetailSelection.mockReturnValue(buildSelectionState("group-1", "set-1"));
     mockUseDeckSetEntries.mockReturnValue({
       entriesSorted: [
         { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0, count: 1 },
@@ -239,7 +252,7 @@ describe("DeckEntriesSection guidance states", () => {
   });
 
   it("renders placeholder for front-face insert at hovered index", () => {
-    mockUseDeckDetailSelection.mockReturnValue({ selectedGroupId: "group-1", selectedSetId: "set-1" });
+    mockUseDeckDetailSelection.mockReturnValue(buildSelectionState("group-1", "set-1"));
     mockUseDeckSetEntries.mockReturnValue({
       entriesSorted: [
         { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0, count: 1 },

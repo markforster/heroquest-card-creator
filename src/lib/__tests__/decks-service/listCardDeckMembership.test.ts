@@ -203,8 +203,8 @@ describe("listCardDeckMembership", () => {
     const result = await listCardDeckMembership("front-1");
 
     expect(result).toEqual([
-      { deckId: "deck-a", deckTitle: "Alpha", count: 3 },
-      { deckId: "deck-b", deckTitle: "Beta", count: 4 },
+      { deckId: "deck-a", deckTitle: "Alpha", count: 3, setId: "set-1", entryId: "entry-1" },
+      { deckId: "deck-b", deckTitle: "Beta", count: 4, setId: "set-2", entryId: "entry-3" },
     ]);
   });
 
@@ -264,8 +264,8 @@ describe("listCardDeckMembership", () => {
 
     const result = await listCardDeckMembership("back-9");
     expect(result).toEqual([
-      { deckId: "deck-2", deckTitle: "Arena Deck", count: 3 },
-      { deckId: "deck-1", deckTitle: "Quest Deck", count: 3 },
+      { deckId: "deck-2", deckTitle: "Arena Deck", count: 3, setId: "set-3" },
+      { deckId: "deck-1", deckTitle: "Quest Deck", count: 3, setId: "set-1" },
     ]);
   });
 
@@ -293,12 +293,61 @@ describe("listCardDeckMembership", () => {
     openHqccDb.mockResolvedValue(fixture.db);
 
     const result = await listCardDeckMembership("back-zero");
-    expect(result).toEqual([{ deckId: "deck-1", deckTitle: "Quest Deck", count: 0 }]);
+    expect(result).toEqual([{ deckId: "deck-1", deckTitle: "Quest Deck", count: 0, setId: "set-1" }]);
   });
 
   it("returns empty for soft-deleted cards", async () => {
     getCard.mockResolvedValue(createSavedCard({ id: "front-3", deletedAt: 12 }));
     const result = await listCardDeckMembership("front-3");
     expect(result).toEqual([]);
+  });
+
+  it("chooses first set in a deck when a front card appears in multiple sets", async () => {
+    getCard.mockResolvedValue(createSavedCard({ id: "front-multi", templateId: "hero", face: "front" }));
+    const fixture = createDbFixture({
+      decks: [
+        { id: "deck-1", title: "Quest Deck", description: null, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
+      ],
+      sets: [
+        {
+          id: "set-a",
+          deckId: "deck-1",
+          groupId: "group-1",
+          title: "First",
+          description: null,
+          backFaceId: "back-a",
+          sortIndex: 0,
+          createdAt: 1,
+          updatedAt: 1,
+          schemaVersion: 1,
+        },
+        {
+          id: "set-b",
+          deckId: "deck-1",
+          groupId: "group-1",
+          title: "Second",
+          description: null,
+          backFaceId: "back-b",
+          sortIndex: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          schemaVersion: 1,
+        },
+      ],
+      entries: [
+        { id: "entry-b", deckId: "deck-1", setId: "set-b", pairId: "pair-front", sortIndex: 0, count: 1, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
+        { id: "entry-a", deckId: "deck-1", setId: "set-a", pairId: "pair-front", sortIndex: 0, count: 1, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
+      ],
+      pairs: [
+        { id: "pair-front", name: "PF", nameLower: "pf", frontFaceId: "front-multi", backFaceId: "back-a", createdAt: 1, updatedAt: 1, schemaVersion: 1 },
+      ],
+    });
+    openHqccDb.mockResolvedValue(fixture.db);
+
+    const result = await listCardDeckMembership("front-multi");
+
+    expect(result).toEqual([
+      { deckId: "deck-1", deckTitle: "Quest Deck", count: 2, setId: "set-a", entryId: "entry-a" },
+    ]);
   });
 });

@@ -4,11 +4,13 @@ import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import DeckEntryQuantityControl from "@/components/Decks/detail/DeckEntryQuantityControl";
+import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
 import type { DeckDetailDragState } from "@/components/Decks/types/deck-detail";
@@ -152,7 +154,13 @@ export default function DeckEntriesSection({
   deckEntryThumb: (cardId: string, isSelected: boolean) => ReactNode;
 }) {
   const { t } = useI18n();
-  const { selectedGroupId, selectedSetId } = useDeckDetailSelection();
+  const navigate = useNavigate();
+  const {
+    selectedGroupId,
+    selectedSetId,
+    selectedEntryId,
+    setSelectedEntryId,
+  } = useDeckDetailSelection();
   const {
     entriesSorted,
     pairsById,
@@ -190,9 +198,18 @@ export default function DeckEntriesSection({
   useEffect(() => {
     setEntriesViewMode("in-set");
     setSelectedEntryIds(new Set());
+    setSelectedEntryId(null);
     setPendingFrontRemoval(null);
     setIsPendingRemovalBusy(false);
-  }, [selectedSetId]);
+  }, [selectedSetId, setSelectedEntryId]);
+
+  useEffect(() => {
+    if (!selectedEntryId) return;
+    const exists = entriesSorted.some((entry) => entry.id === selectedEntryId);
+    if (!exists) {
+      setSelectedEntryId(null);
+    }
+  }, [entriesSorted, selectedEntryId, setSelectedEntryId]);
 
   const buildRemovalItems = useCallback(
     (entryIdsToRemove: Iterable<string>) => {
@@ -274,12 +291,25 @@ export default function DeckEntriesSection({
           }
           return changed ? next : prev;
         });
+        if (
+          pending.items.some((item) => item.entryId === selectedEntryId)
+        ) {
+          setSelectedEntryId(null);
+        }
         setPendingFrontRemoval(null);
       } finally {
         setIsPendingRemovalBusy(false);
       }
     },
-    [isPendingRemovalBusy, pendingFrontRemoval, refreshEntries, removeEntry, selectedSetId],
+    [
+      isPendingRemovalBusy,
+      pendingFrontRemoval,
+      refreshEntries,
+      removeEntry,
+      selectedEntryId,
+      selectedSetId,
+      setSelectedEntryId,
+    ],
   );
 
   const removeFromSetOnly = useCallback(async () => {
@@ -311,6 +341,16 @@ export default function DeckEntriesSection({
       } else {
         next.clear();
         next.add(entryId);
+      }
+      if (next.size === 0) {
+        setSelectedEntryId(null);
+      } else if (next.has(entryId)) {
+        setSelectedEntryId(entryId);
+      } else if (selectedEntryId && next.has(selectedEntryId)) {
+        setSelectedEntryId(selectedEntryId);
+      } else {
+        const [first] = Array.from(next.values());
+        setSelectedEntryId(first ?? null);
       }
       return next;
     });
@@ -433,6 +473,7 @@ export default function DeckEntriesSection({
                           onClick={async () => {
                             await removeEntry(entry.id, entry.setId);
                             setSelectedEntryIds(() => new Set());
+                            if (selectedEntryId === entry.id) setSelectedEntryId(null);
                           }}
                         >
                           {t("actions.remove")}
@@ -482,6 +523,7 @@ export default function DeckEntriesSection({
                             onClick={async () => {
                               await removeEntry(entry.id, entry.setId);
                               setSelectedEntryIds(() => new Set());
+                              if (selectedEntryId === entry.id) setSelectedEntryId(null);
                             }}
                           >
                             {t("actions.remove")}
@@ -562,7 +604,7 @@ export default function DeckEntriesSection({
         onExtra={() => {
           const usage = pairUsagePrompt?.cascadePlan.usage[0];
           if (usage) {
-            window.location.hash = `#/decks/${usage.deckId}`;
+            navigate(buildDeckDeepLink({ deckId: usage.deckId, setId: usage.setId }));
           }
           setPairUsagePrompt(null);
         }}

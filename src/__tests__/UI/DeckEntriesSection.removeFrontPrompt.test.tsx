@@ -23,6 +23,12 @@ let pairsByIdMock = new Map<
     schemaVersion: number;
   }
 >();
+const mockNavigate = jest.fn();
+const mockSetSelectedEntryId = jest.fn();
+
+jest.mock("react-router-dom", () => ({
+  useNavigate: () => mockNavigate,
+}));
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
@@ -40,7 +46,13 @@ jest.mock("@/i18n/I18nProvider", () => ({
 }));
 
 jest.mock("@/components/Decks/detail/context/DeckDetailSelectionContext", () => ({
-  useDeckDetailSelection: () => ({ selectedGroupId: "group-1", selectedSetId: "set-1" }),
+  useDeckDetailSelection: () => ({
+    deckId: "deck-1",
+    selectedGroupId: "group-1",
+    selectedSetId: "set-1",
+    selectedEntryId: null,
+    setSelectedEntryId: mockSetSelectedEntryId,
+  }),
 }));
 
 jest.mock("@/components/Decks/detail/context/DeckSetEntriesContext", () => ({
@@ -124,6 +136,8 @@ describe("DeckEntriesSection front remove prompt", () => {
     refreshEntries.mockReset();
     updateEntryCount.mockReset();
     onOpenCardEditor.mockReset();
+    mockNavigate.mockReset();
+    mockSetSelectedEntryId.mockReset();
     sortableIsDragging = false;
     removeEntry.mockResolvedValue(undefined);
     deletePair.mockResolvedValue(undefined);

@@ -90,7 +90,12 @@ function IndexPageInner() {
   const normalizedCardId = cardId && cardId.trim().length > 0 ? cardId : null;
   const isAssetsRoute = Boolean(useMatch("/assets"));
   const isDecksRoute = Boolean(useMatch("/decks"));
-  const isDeckDetailRoute = Boolean(useMatch("/decks/:deckId"));
+  const decksDetailBaseMatch = useMatch("/decks/:deckId");
+  const decksDetailSetMatch = useMatch("/decks/:deckId/set/:setId");
+  const decksDetailEntryMatch = useMatch("/decks/:deckId/set/:setId/entry/:entryId");
+  const isDeckDetailRoute = Boolean(
+    decksDetailBaseMatch || decksDetailSetMatch || decksDetailEntryMatch,
+  );
   const isCardsListRoute = Boolean(useMatch("/cards"));
   const isDraftRoute = Boolean(useMatch("/cards/new"));
   const isCardDetailRoute = Boolean(useMatch("/cards/:cardId")) && Boolean(normalizedCardId);
@@ -1209,6 +1214,11 @@ export default function IndexPage() {
                               <Route path="/assets" element={<IndexPageInner />} />
                               <Route path="/decks" element={<IndexPageInner />} />
                               <Route path="/decks/:deckId" element={<IndexPageInner />} />
+                              <Route path="/decks/:deckId/set/:setId" element={<IndexPageInner />} />
+                              <Route
+                                path="/decks/:deckId/set/:setId/entry/:entryId"
+                                element={<IndexPageInner />}
+                              />
                               <Route path="*" element={<Navigate to="/cards" replace />} />
                             </Routes>
                           </HashRouter>

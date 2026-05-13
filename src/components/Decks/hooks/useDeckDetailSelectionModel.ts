@@ -15,7 +15,9 @@ export type DeckDetailSelectionModel = {
   setById: Map<string, DeckSetRecord>;
   selectedGroupId: string | null;
   selectedSetId: string | null;
+  selectedEntryId: string | null;
   setSelectedGroupId: (groupId: string | null) => void;
+  setSelectedEntryId: (entryId: string | null) => void;
   clearSelection: () => void;
   selectGroup: (groupId: string) => void;
   selectSet: (set: DeckSetRecord) => void;
@@ -27,6 +29,7 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
   const preferredSetIdRef = useRef<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const deckStructureQueryPredicate = useCallback(
     (query: { queryKey: ReadonlyArray<unknown> }) =>
       Array.isArray(query.queryKey) &&
@@ -66,6 +69,7 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
     if (!deckId) {
       setSelectedGroupId(null);
       setSelectedSetId(null);
+      setSelectedEntryId(null);
       preferredSetIdRef.current = null;
       return;
     }
@@ -99,7 +103,10 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
           : null);
 
     if (nextGroupId !== selectedGroupId) setSelectedGroupId(nextGroupId);
-    if (nextSetId !== selectedSetId) setSelectedSetId(nextSetId);
+    if (nextSetId !== selectedSetId) {
+      setSelectedSetId(nextSetId);
+      setSelectedEntryId(null);
+    }
   }, [deckId, orderedGroups, selectedGroupId, selectedSetId, setById, sets]);
 
   const selectGroup = useCallback(
@@ -110,6 +117,7 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
       const nextSetId = groupSets.length === 1 ? (groupSets[0]?.id ?? null) : null;
       setSelectedGroupId(groupId);
       setSelectedSetId(nextSetId);
+      setSelectedEntryId(null);
     },
     [sets],
   );
@@ -117,12 +125,14 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
   const selectSet = useCallback((set: DeckSetRecord) => {
     setSelectedGroupId(set.groupId);
     setSelectedSetId(set.id);
+    setSelectedEntryId(null);
   }, []);
 
   const clearSelection = useCallback(() => {
     preferredSetIdRef.current = null;
     setSelectedGroupId(null);
     setSelectedSetId(null);
+    setSelectedEntryId(null);
   }, []);
 
   const reloadStructure = useCallback(
@@ -148,7 +158,9 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
     setById,
     selectedGroupId,
     selectedSetId,
+    selectedEntryId,
     setSelectedGroupId,
+    setSelectedEntryId,
     clearSelection,
     selectGroup,
     selectSet,

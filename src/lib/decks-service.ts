@@ -122,24 +122,60 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
 
   const effectiveFace = resolveCardFace(card.templateId, card.face);
   const deckCountById = new Map<string, number>();
+  const locationByDeckId = new Map<string, { setId: string; entryId?: string }>();
+  const groups = await listAll<DeckGroupRecord>(GROUPS_STORE);
+  const sets = await listAll<DeckSetRecord>(SETS_STORE);
+  const entries = (await listAll<DeckEntryRecord & { count?: number | null }>(ENTRIES_STORE)).map(
+    normalizeDeckEntryRecord,
+  );
+  const groupById = new Map(groups.map((group) => [group.id, group]));
+  const setById = new Map(sets.map((set) => [set.id, set]));
+  const getGroupSort = (setId: string) => {
+    const set = setById.get(setId);
+    const group = set ? groupById.get(set.groupId) : null;
+    return group?.sortIndex ?? Number.MAX_SAFE_INTEGER;
+  };
+  const compareSetOrder = (a: DeckSetRecord, b: DeckSetRecord) => {
+    const groupCmp = getGroupSort(a.id) - getGroupSort(b.id);
+    if (groupCmp !== 0) return groupCmp;
+    if (a.sortIndex !== b.sortIndex) return a.sortIndex - b.sortIndex;
+    return a.id.localeCompare(b.id);
+  };
+  const compareEntryOrder = (a: DeckEntryRecord, b: DeckEntryRecord) => {
+    const aSet = setById.get(a.setId);
+    const bSet = setById.get(b.setId);
+    const setCmp =
+      aSet && bSet
+        ? compareSetOrder(aSet, bSet)
+        : aSet
+          ? -1
+          : bSet
+            ? 1
+            : 0;
+    if (setCmp !== 0) return setCmp;
+    if (a.sortIndex !== b.sortIndex) return a.sortIndex - b.sortIndex;
+    return a.id.localeCompare(b.id);
+  };
   const addDeckCount = (deckId: string, count: number) => {
     const nextCount = Math.max(0, Math.trunc(count));
     deckCountById.set(deckId, (deckCountById.get(deckId) ?? 0) + nextCount);
   };
 
   if (effectiveFace === "back") {
-    const sets = await listAll<DeckSetRecord>(SETS_STORE);
     const matchingSets = sets.filter((set) => set.backFaceId === cardId);
     if (!matchingSets.length) return [];
+    const sortedMatchingSets = [...matchingSets].sort(compareSetOrder);
     matchingSets.forEach((set) => {
       if (!deckCountById.has(set.deckId)) deckCountById.set(set.deckId, 0);
     });
-    const setIds = new Set(matchingSets.map((set) => set.id));
-    const entries = await listAll<DeckEntryRecord & { count?: number | null }>(ENTRIES_STORE);
-    const matchingEntries = entries
-      .map(normalizeDeckEntryRecord)
-      .filter((entry) => setIds.has(entry.setId));
+    const setIds = new Set(sortedMatchingSets.map((set) => set.id));
+    const matchingEntries = entries.filter((entry) => setIds.has(entry.setId));
     matchingEntries.forEach((entry) => addDeckCount(entry.deckId, entry.count ?? 1));
+    sortedMatchingSets.forEach((set) => {
+      if (!locationByDeckId.has(set.deckId)) {
+        locationByDeckId.set(set.deckId, { setId: set.id });
+      }
+    });
   } else {
     const pairs = await listAll<PairRecord>(PAIRS_STORE);
     const pairIds = new Set(
@@ -149,13 +185,53 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
     );
     if (!pairIds.size) return [];
 
-    const entries = await listAll<DeckEntryRecord & { count?: number | null }>(ENTRIES_STORE);
-    const matchingEntries = entries
-      .map(normalizeDeckEntryRecord)
-      .filter((entry) => pairIds.has(entry.pairId));
+    const matchingEntries = entries.filter((entry) => pairIds.has(entry.pairId));
     if (!matchingEntries.length) return [];
-
-    matchingEntries.forEach((entry) => addDeckCount(entry.deckId, entry.count ?? 1));
+    const resolvedEntries = matchingEntries
+      .map((entry) => {
+        const set = setById.get(entry.setId);
+        if (!set) return null;
+        return {
+          entryId: entry.id,
+          setId: set.id,
+          deckId: set.deckId,
+          sortIndex: entry.sortIndex,
+          count: entry.count ?? 1,
+        };
+      })
+      .filter(
+        (entry): entry is { entryId: string; setId: string; deckId: string; sortIndex: number; count: number } =>
+          Boolean(entry),
+      );
+    if (!resolvedEntries.length) return [];
+    resolvedEntries.forEach((entry) => addDeckCount(entry.deckId, entry.count));
+    const entriesByDeckId = new Map<
+      string,
+      Array<{ entryId: string; setId: string; deckId: string; sortIndex: number }>
+    >();
+    resolvedEntries.forEach((entry) => {
+      const bucket = entriesByDeckId.get(entry.deckId) ?? [];
+      bucket.push(entry);
+      entriesByDeckId.set(entry.deckId, bucket);
+    });
+    entriesByDeckId.forEach((deckEntries, deckId) => {
+      const deckSetsOrdered = sets
+        .filter((set) => set.deckId === deckId)
+        .sort(compareSetOrder);
+      for (const set of deckSetsOrdered) {
+        const inSet = deckEntries
+          .filter((entry) => entry.setId === set.id)
+          .sort((a, b) => {
+            if (a.sortIndex !== b.sortIndex) return a.sortIndex - b.sortIndex;
+            return a.entryId.localeCompare(b.entryId);
+          });
+        const firstEntry = inSet[0];
+        if (firstEntry) {
+          locationByDeckId.set(deckId, { setId: set.id, entryId: firstEntry.entryId });
+          return;
+        }
+      }
+    });
   }
 
   if (!deckCountById.size) return [];
@@ -163,22 +239,27 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
   const decks = await listAll<DeckRecord>(DECKS_STORE);
   const deckMap = new Map(decks.map((deck) => [deck.id, deck]));
 
-  return Array.from(deckCountById.entries())
-    .map(([deckId, count]) => {
-      const deck = deckMap.get(deckId);
-      if (!deck) return null;
-      return {
-        deckId: deck.id,
-        deckTitle: deck.title,
-        count,
-      };
-    })
-    .filter((membership): membership is CardDeckMembership => membership !== null)
-    .sort((a, b) => {
-      const byTitle = a.deckTitle.localeCompare(b.deckTitle);
-      if (byTitle !== 0) return byTitle;
-      return a.deckId.localeCompare(b.deckId);
+  const memberships: CardDeckMembership[] = [];
+  Array.from(deckCountById.entries()).forEach(([deckId, count]) => {
+    const deck = deckMap.get(deckId);
+    if (!deck) return;
+    const location = locationByDeckId.get(deckId);
+    memberships.push({
+      deckId: deck.id,
+      deckTitle: deck.title,
+      count,
+      setId: location?.setId,
+      entryId: location?.entryId,
     });
+  });
+
+  memberships.sort((a, b) => {
+    const byTitle = a.deckTitle.localeCompare(b.deckTitle);
+    if (byTitle !== 0) return byTitle;
+    return a.deckId.localeCompare(b.deckId);
+  });
+
+  return memberships;
 }
 
 export async function getDeck(deckId: string): Promise<DeckRecord | null> {

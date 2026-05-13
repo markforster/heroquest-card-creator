@@ -1,8 +1,8 @@
 "use client";
 
 import { PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { useCallback, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { apiClient } from "@/api/client";
 import DeckDetailPanel from "@/components/Decks/DeckDetailPanel";
@@ -14,6 +14,7 @@ import { useDeckDetailState } from "@/components/Decks/hooks/useDeckDetailState"
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useDecksDragController } from "@/components/Decks/hooks/useDecksDragController";
 import { useDeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
+import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import {
   useBulkCardExport,
   type MissingAssetsExportPrompt,
@@ -34,7 +35,8 @@ export default function DecksRoutePanels() {
     [t],
   );
   const navigate = useNavigate();
-  const { deckId } = useParams();
+  const location = useLocation();
+  const { deckId, setId: routeSetId, entryId: routeEntryId } = useParams();
   const { openStockpile } = useAppActions();
   const mutations = useDeckMutations();
   const exportFlow = useBulkCardExport();
@@ -52,6 +54,9 @@ export default function DecksRoutePanels() {
   const detail = useDeckDetailState(deckId ?? null);
   const selectionModel = useDeckDetailSelectionModel(deckId ?? null);
   const entriesModel = useDeckSetEntriesModel(selectionModel.selectedSetId);
+  const isSelectionPathSyncDisabledRef = useRef(false);
+  const hydratedSetRouteKeyRef = useRef<string | null>(null);
+  const hydratedEntryRouteKeyRef = useRef<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -139,6 +144,113 @@ export default function DecksRoutePanels() {
     reloadStructure: selectionModel.reloadStructure,
     refreshSetEntries: async (setId) => entriesModel.refreshEntries(setId),
   });
+  const isDraggingAny =
+    dragState.isBackFaceDragActive ||
+    dragState.isFrontFaceDragActive ||
+    dragState.isEntryDragActive ||
+    dragState.isGroupDragActive ||
+    dragState.isSetDragActive;
+
+  useEffect(() => {
+    if (!deckId || !routeSetId) {
+      hydratedSetRouteKeyRef.current = null;
+      return;
+    }
+    if (!deckId || isDraggingAny) return;
+    const routeKey = `${deckId}:${routeSetId}`;
+    if (hydratedSetRouteKeyRef.current === routeKey) return;
+    const routeSet = selectionModel.setById.get(routeSetId);
+    if (!routeSet) {
+      if (selectionModel.sets.length > 0) {
+        navigate(buildDeckDeepLink({ deckId }), { replace: true });
+        hydratedSetRouteKeyRef.current = routeKey;
+      }
+      return;
+    }
+    if (selectionModel.selectedSetId !== routeSet.id) {
+      isSelectionPathSyncDisabledRef.current = true;
+      selectionModel.selectSet(routeSet);
+      return;
+    }
+    hydratedSetRouteKeyRef.current = routeKey;
+  }, [
+    deckId,
+    isDraggingAny,
+    navigate,
+    routeSetId,
+    selectionModel.sets.length,
+    selectionModel,
+  ]);
+
+  useEffect(() => {
+    if (!deckId || !routeSetId || !routeEntryId) {
+      hydratedEntryRouteKeyRef.current = null;
+      return;
+    }
+    if (!deckId || isDraggingAny) return;
+    if (!selectionModel.selectedSetId) return;
+    if (selectionModel.selectedSetId !== routeSetId) return;
+    const routeKey = `${deckId}:${routeSetId}:${routeEntryId}`;
+    if (hydratedEntryRouteKeyRef.current === routeKey) return;
+    const matched = entriesModel.entriesSorted.some((entry) => entry.id === routeEntryId);
+    if (!matched) {
+      navigate(
+        buildDeckDeepLink({ deckId, setId: routeSetId }),
+        { replace: true },
+      );
+      hydratedEntryRouteKeyRef.current = routeKey;
+      return;
+    }
+    if (selectionModel.selectedEntryId !== routeEntryId) {
+      isSelectionPathSyncDisabledRef.current = true;
+      selectionModel.setSelectedEntryId(routeEntryId);
+      return;
+    }
+    hydratedEntryRouteKeyRef.current = routeKey;
+  }, [
+    deckId,
+    entriesModel.entriesSorted,
+    isDraggingAny,
+    navigate,
+    routeSetId,
+    routeEntryId,
+    selectionModel,
+  ]);
+
+  useEffect(() => {
+    if (!deckId || isDraggingAny) return;
+    if (routeSetId) {
+      const expectedSetHydrationKey = `${deckId}:${routeSetId}`;
+      if (hydratedSetRouteKeyRef.current !== expectedSetHydrationKey) {
+        return;
+      }
+    }
+    if (routeSetId && routeEntryId) {
+      const expectedEntryHydrationKey = `${deckId}:${routeSetId}:${routeEntryId}`;
+      if (hydratedEntryRouteKeyRef.current !== expectedEntryHydrationKey) {
+        return;
+      }
+    }
+    if (isSelectionPathSyncDisabledRef.current) {
+      isSelectionPathSyncDisabledRef.current = false;
+      return;
+    }
+    const target = buildDeckDeepLink({
+      deckId,
+      setId: selectionModel.selectedSetId,
+      entryId: selectionModel.selectedEntryId,
+    });
+    if (location.pathname !== target) {
+      navigate(target, { replace: true });
+    }
+  }, [
+    deckId,
+    isDraggingAny,
+    location.pathname,
+    navigate,
+    selectionModel.selectedEntryId,
+    selectionModel.selectedSetId,
+  ]);
 
   const handleDeleteSet = async () => {
     if (!detail.pendingDeleteSet) return;

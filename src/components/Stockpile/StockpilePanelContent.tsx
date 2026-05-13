@@ -31,6 +31,7 @@ import {
   resolveExportFileName,
   resolveZipFileName,
 } from "@/components/Stockpile/stockpile-utils";
+import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import StockpileActionsBar from "@/components/Stockpile/StockpileActionsBar";
 import StockpileAddToCollectionController from "@/components/Stockpile/StockpileAddToCollectionController";
 import StockpileCollectionModal from "@/components/Stockpile/StockpileCollectionModal";
@@ -1432,7 +1433,7 @@ export default function StockpilePanelContent({
         }}
         onExtra={() => {
           const usage = pairUsagePrompt?.cascadePlan.usage[0];
-          if (usage) navigate(`/decks/${usage.deckId}`);
+          if (usage) navigate(buildDeckDeepLink({ deckId: usage.deckId, setId: usage.setId }));
           setPairUsagePrompt(null);
           setPairUsagePendingDeleteIds([]);
         }}
