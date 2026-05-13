@@ -6845,6 +6845,40 @@ button.assetsKindBadge:disabled {
   border-bottom: 1px solid var(--hq-border-strong);
 }
 
+.inspectorDeckMembershipRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.inspectorDeckMembershipFan {
+  flex: 0 0 auto;
+  width: 90px;
+  height: 84px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inspectorDeckMembershipTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-2xl);
+  letter-spacing: 0.03em;
+  color: var(--hq-text);
+}
+
+.inspectorDeckMembershipCount {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-size: var(--text-sm);
+  color: var(--hq-text-muted);
+  font-weight: 500;
+}
+
 .decksRightTitle {
   font-size: var(--text-md);
   font-weight: 600;

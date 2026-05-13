@@ -137,4 +137,5 @@ export const normalizeSelfPairingsResponseSchema = z.number();
 export const cardDeckMembershipSchema = z.object({
   deckId: z.string(),
   deckTitle: z.string(),
+  count: z.number().int().nonnegative(),
 });

@@ -3,7 +3,7 @@
 import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
 
 import styles from "@/app/page.module.css";
-import CardFan from "@/components/Decks/CardFan";
+import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import { useDecksGridModel } from "@/components/Decks/hooks/useDecksGridModel";
 import IconButton from "@/components/common/IconButton";
 import ModalShell from "@/components/common/ModalShell";
@@ -86,8 +86,9 @@ export default function DecksGridPanel() {
                 onDoubleClick={() => navigate(`/decks/${deck.id}`)}
               >
                 <div className={styles.deckTilePreview}>
-                  <CardFan
-                    cardIds={previewIds}
+                  <DeckFanByDeckId
+                    deckId={deck.id}
+                    previewIds={previewIds}
                     variant={PREVIEW_VARIANT}
                     maxCount={PREVIEW_FAN_COUNT}
                     showPlaceholdersWhenEmpty

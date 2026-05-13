@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
+import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
@@ -83,10 +84,22 @@ export default function DecksInspectorPanel() {
             <button
               key={membership.deckId}
               type="button"
-              className="list-group-item list-group-item-action"
+              className={`list-group-item list-group-item-action ${styles.inspectorDeckMembershipRow}`}
               onClick={() => navigate(`/decks/${membership.deckId}`)}
             >
-              {membership.deckTitle}
+              <span className={styles.inspectorDeckMembershipFan}>
+                <DeckFanByDeckId
+                  deckId={membership.deckId}
+                  maxCount={6}
+                  variant="inspector"
+                  spacing={0.7}
+                  tilt={0.5}
+                  showPlaceholdersWhenEmpty
+                  emptyPlaceholderVariant="deck-empty"
+                />
+              </span>
+              <span className={styles.inspectorDeckMembershipTitle}>{membership.deckTitle}</span>
+              <span className={styles.inspectorDeckMembershipCount}>{membership.count}</span>
             </button>
           ))}
         </div>

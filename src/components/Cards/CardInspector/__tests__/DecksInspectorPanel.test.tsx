@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 const mockNavigate = jest.fn();
 const mockListCardDecks = jest.fn();
 const mockUseCardEditor = jest.fn();
+const mockDeckFanByDeckId = jest.fn();
 
 jest.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -33,6 +34,14 @@ jest.mock("@/i18n/I18nProvider", () => ({
   }),
 }));
 
+jest.mock("@/components/Decks/DeckFanByDeckId", () => ({
+  __esModule: true,
+  default: (props: unknown) => {
+    mockDeckFanByDeckId(props);
+    return <div data-testid="deck-fan-mini" />;
+  },
+}));
+
 import DecksInspectorPanel from "@/components/Cards/CardInspector/DecksInspectorPanel";
 
 describe("DecksInspectorPanel", () => {
@@ -40,6 +49,7 @@ describe("DecksInspectorPanel", () => {
     mockNavigate.mockReset();
     mockListCardDecks.mockReset();
     mockUseCardEditor.mockReset();
+    mockDeckFanByDeckId.mockReset();
   });
 
   it("shows save-first state when active card is not saved", () => {
@@ -84,13 +94,29 @@ describe("DecksInspectorPanel", () => {
       },
     });
     mockListCardDecks.mockResolvedValue([
-      { deckId: "deck-1", deckTitle: "Dungeon Deck" },
-      { deckId: "deck-2", deckTitle: "Boss Deck" },
+      { deckId: "deck-1", deckTitle: "Dungeon Deck", count: 2 },
+      { deckId: "deck-2", deckTitle: "Boss Deck", count: 5 },
     ]);
 
     render(<DecksInspectorPanel />);
 
     expect(await screen.findByText("Dungeon Deck")).toBeInTheDocument();
+    expect(mockDeckFanByDeckId).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deckId: "deck-1",
+        maxCount: 6,
+        variant: "inspector",
+      }),
+    );
+    expect(mockDeckFanByDeckId).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deckId: "deck-2",
+        maxCount: 6,
+        variant: "inspector",
+      }),
+    );
+    expect(screen.getByText("2")).toBeInTheDocument();
+    expect(screen.getByText("5")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Boss Deck"));
 
     expect(mockNavigate).toHaveBeenCalledWith("/decks/deck-2");

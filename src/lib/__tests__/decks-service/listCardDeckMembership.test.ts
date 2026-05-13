@@ -155,7 +155,7 @@ describe("listCardDeckMembership", () => {
     expect(result).toEqual([]);
   });
 
-  it("resolves unique decks for front cards via pair -> entry -> set -> deck", async () => {
+  it("resolves deck counts for front cards via pair -> entry -> set -> deck", async () => {
     getCard.mockResolvedValue(createSavedCard({ id: "front-1", templateId: "hero", face: "front" }));
     const fixture = createDbFixture({
       decks: [
@@ -189,9 +189,9 @@ describe("listCardDeckMembership", () => {
         },
       ],
       entries: [
-        { id: "entry-1", deckId: "deck-a", setId: "set-1", pairId: "pair-1", sortIndex: 0, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
-        { id: "entry-2", deckId: "deck-a", setId: "set-1", pairId: "pair-1", sortIndex: 1, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
-        { id: "entry-3", deckId: "deck-b", setId: "set-2", pairId: "pair-2", sortIndex: 0, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
+        { id: "entry-1", deckId: "deck-a", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 2, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
+        { id: "entry-2", deckId: "deck-a", setId: "set-1", pairId: "pair-1", sortIndex: 1, count: 1, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
+        { id: "entry-3", deckId: "deck-b", setId: "set-2", pairId: "pair-2", sortIndex: 0, count: 4, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
       ],
       pairs: [
         { id: "pair-1", name: "P1", nameLower: "p1", frontFaceId: "front-1", backFaceId: "back-1", createdAt: 1, updatedAt: 1, schemaVersion: 1 },
@@ -203,16 +203,17 @@ describe("listCardDeckMembership", () => {
     const result = await listCardDeckMembership("front-1");
 
     expect(result).toEqual([
-      { deckId: "deck-a", deckTitle: "Alpha" },
-      { deckId: "deck-b", deckTitle: "Beta" },
+      { deckId: "deck-a", deckTitle: "Alpha", count: 3 },
+      { deckId: "deck-b", deckTitle: "Beta", count: 4 },
     ]);
   });
 
-  it("resolves decks for back cards via sets", async () => {
+  it("resolves deck counts for back cards via sets + entries", async () => {
     getCard.mockResolvedValue(createSavedCard({ id: "back-9", templateId: "labelled-back", face: "back" }));
     const fixture = createDbFixture({
       decks: [
         { id: "deck-1", title: "Quest Deck", description: null, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
+        { id: "deck-2", title: "Arena Deck", description: null, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
       ],
       sets: [
         {
@@ -227,14 +228,72 @@ describe("listCardDeckMembership", () => {
           updatedAt: 1,
           schemaVersion: 1,
         },
+        {
+          id: "set-2",
+          deckId: "deck-1",
+          groupId: "group-1",
+          title: "Set 2",
+          description: null,
+          backFaceId: "back-9",
+          sortIndex: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          schemaVersion: 1,
+        },
+        {
+          id: "set-3",
+          deckId: "deck-2",
+          groupId: "group-2",
+          title: "Set 3",
+          description: null,
+          backFaceId: "back-9",
+          sortIndex: 0,
+          createdAt: 1,
+          updatedAt: 1,
+          schemaVersion: 1,
+        },
+      ],
+      entries: [
+        { id: "entry-1", deckId: "deck-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 2, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
+        { id: "entry-2", deckId: "deck-1", setId: "set-2", pairId: "pair-2", sortIndex: 1, count: 1, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
+        { id: "entry-3", deckId: "deck-2", setId: "set-3", pairId: "pair-3", sortIndex: 0, count: 3, createdAt: 1, updatedAt: 1, schemaVersion: 1 },
+      ],
+      pairs: [],
+    });
+    openHqccDb.mockResolvedValue(fixture.db);
+
+    const result = await listCardDeckMembership("back-9");
+    expect(result).toEqual([
+      { deckId: "deck-2", deckTitle: "Arena Deck", count: 3 },
+      { deckId: "deck-1", deckTitle: "Quest Deck", count: 3 },
+    ]);
+  });
+
+  it("returns zero count for back cards with matching sets but no entries", async () => {
+    getCard.mockResolvedValue(createSavedCard({ id: "back-zero", templateId: "labelled-back", face: "back" }));
+    const fixture = createDbFixture({
+      decks: [{ id: "deck-1", title: "Quest Deck", description: null, createdAt: 1, updatedAt: 1, schemaVersion: 1 }],
+      sets: [
+        {
+          id: "set-1",
+          deckId: "deck-1",
+          groupId: "group-1",
+          title: "Set",
+          description: null,
+          backFaceId: "back-zero",
+          sortIndex: 0,
+          createdAt: 1,
+          updatedAt: 1,
+          schemaVersion: 1,
+        },
       ],
       entries: [],
       pairs: [],
     });
     openHqccDb.mockResolvedValue(fixture.db);
 
-    const result = await listCardDeckMembership("back-9");
-    expect(result).toEqual([{ deckId: "deck-1", deckTitle: "Quest Deck" }]);
+    const result = await listCardDeckMembership("back-zero");
+    expect(result).toEqual([{ deckId: "deck-1", deckTitle: "Quest Deck", count: 0 }]);
   });
 
   it("returns empty for soft-deleted cards", async () => {

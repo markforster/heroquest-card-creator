@@ -11,14 +11,22 @@ import type { CSSProperties } from "react";
 const DEFAULT_TILT = 0.2;
 const DEFAULT_SPACING = 0.6;
 
-export type CardFanVariant = "xs" | "sm" | "smMd" | "lg";
+export type CardFanVariant = "xs" | "sm" | "inspector" | "smMd" | "lg";
 
 export const CARD_FAN_SIZES: Record<CardFanVariant, { width: number; height: number }> = {
   xs: { width: 22.5, height: 31.5 },
   sm: { width: 46, height: 64 },
+  inspector: { width: 56, height: 80 },
   smMd: { width: 105, height: 147 },
   lg: { width: 150, height: 210 },
 };
+
+function computeCornerRadius(size: { width: number; height: number }): number {
+  const base = Math.min(size.width, size.height);
+  // Keep large cards close to legacy appearance while reducing rounding on tiny cards.
+  const scaled = base * 0.085;
+  return Math.max(2.2, Math.min(6, scaled));
+}
 
 type CardFanProps = {
   cardIds: string[];
@@ -62,17 +70,27 @@ function CardFanThumbSvg({
   y,
   width,
   height,
+  cornerRadius,
 }: {
   cardId: string;
   x: number;
   y: number;
   width: number;
   height: number;
+  cornerRadius: number;
 }) {
   const thumbUrl = useCardThumbnailUrl(cardId, null, { enabled: true, useCache: true });
   if (!thumbUrl) {
     return (
-      <rect x={x} y={y} width={width} height={height} rx={6} ry={6} fill="transparent" />
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        rx={cornerRadius}
+        ry={cornerRadius}
+        fill="transparent"
+      />
     );
   }
   const clipId = `cardfan-clip-${cardId}-${Math.round(x)}-${Math.round(y)}`;
@@ -80,7 +98,14 @@ function CardFanThumbSvg({
     <>
       <defs>
         <clipPath id={clipId}>
-          <rect x={x} y={y} width={width} height={height} rx={6} ry={6} />
+          <rect
+            x={x}
+            y={y}
+            width={width}
+            height={height}
+            rx={cornerRadius}
+            ry={cornerRadius}
+          />
         </clipPath>
       </defs>
       <image
@@ -154,6 +179,7 @@ function CardFanItem({
   x,
   y,
   size,
+  cornerRadius,
   transform,
   canSelect,
   enableHoverBorder,
@@ -172,6 +198,7 @@ function CardFanItem({
   x: number;
   y: number;
   size: { width: number; height: number };
+  cornerRadius: number;
   transform: string;
   canSelect: boolean;
   enableHoverBorder: boolean;
@@ -255,8 +282,8 @@ function CardFanItem({
           y={y}
           width={size.width}
           height={size.height}
-          rx={6}
-          ry={6}
+          rx={cornerRadius}
+          ry={cornerRadius}
           className={
             placeholderVariant === "deck-group-drop"
               ? styles.cardFanDeckGroupDropPlaceholderSvg
@@ -271,6 +298,7 @@ function CardFanItem({
             y={y}
             width={size.width}
             height={size.height}
+            cornerRadius={cornerRadius}
           />
           {enableHoverBorder ? (
             <rect
@@ -278,8 +306,8 @@ function CardFanItem({
               y={y}
               width={size.width}
               height={size.height}
-              rx={6}
-              ry={6}
+              rx={cornerRadius}
+              ry={cornerRadius}
               className={styles.cardFanHover}
             />
           ) : null}
@@ -289,8 +317,8 @@ function CardFanItem({
               y={y}
               width={size.width}
               height={size.height}
-              rx={6}
-              ry={6}
+              rx={cornerRadius}
+              ry={cornerRadius}
               className={styles.cardFanSelected}
             />
           ) : null}
@@ -316,8 +344,8 @@ function CardFanItem({
           y={y}
           width={size.width}
           height={size.height}
-          rx={6}
-          ry={6}
+          rx={cornerRadius}
+          ry={cornerRadius}
           className={
             emptyPlaceholderVariant === "deck-empty"
               ? styles.cardFanEmptyDeckPlaceholderSvg
@@ -395,6 +423,7 @@ export default function CardFan({
     ? getOffsets(renderItems.length, effectiveFanType)
     : getCollapsedOffsets(renderItems.length, collapsedCoreCount, effectiveFanType);
   const size = CARD_FAN_SIZES[variant];
+  const cornerRadius = computeCornerRadius(size);
   const maxDepth = offsets.length ? Math.max(...offsets.map((value) => Math.abs(value))) : 0;
   const rotateDeg = 6 * effectiveTilt;
   const offsetPx = expanded ? size.width + 8 : 8 * effectiveSpacing;
@@ -536,6 +565,7 @@ export default function CardFan({
                 x={x}
                 y={y}
                 size={size}
+                cornerRadius={cornerRadius}
                 transform={transform}
                 canSelect={canSelect}
                 enableHoverBorder={enableHoverBorder}

@@ -121,18 +121,25 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
   }
 
   const effectiveFace = resolveCardFace(card.templateId, card.face);
-  const deckById = new Map<string, DeckRecord>();
+  const deckCountById = new Map<string, number>();
+  const addDeckCount = (deckId: string, count: number) => {
+    const nextCount = Math.max(0, Math.trunc(count));
+    deckCountById.set(deckId, (deckCountById.get(deckId) ?? 0) + nextCount);
+  };
 
   if (effectiveFace === "back") {
     const sets = await listAll<DeckSetRecord>(SETS_STORE);
     const matchingSets = sets.filter((set) => set.backFaceId === cardId);
     if (!matchingSets.length) return [];
-    const decks = await listAll<DeckRecord>(DECKS_STORE);
-    const decksMap = new Map(decks.map((deck) => [deck.id, deck]));
     matchingSets.forEach((set) => {
-      const deck = decksMap.get(set.deckId);
-      if (deck) deckById.set(deck.id, deck);
+      if (!deckCountById.has(set.deckId)) deckCountById.set(set.deckId, 0);
     });
+    const setIds = new Set(matchingSets.map((set) => set.id));
+    const entries = await listAll<DeckEntryRecord & { count?: number | null }>(ENTRIES_STORE);
+    const matchingEntries = entries
+      .map(normalizeDeckEntryRecord)
+      .filter((entry) => setIds.has(entry.setId));
+    matchingEntries.forEach((entry) => addDeckCount(entry.deckId, entry.count));
   } else {
     const pairs = await listAll<PairRecord>(PAIRS_STORE);
     const pairIds = new Set(
@@ -148,25 +155,25 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
       .filter((entry) => pairIds.has(entry.pairId));
     if (!matchingEntries.length) return [];
 
-    const setIds = new Set(matchingEntries.map((entry) => entry.setId));
-    const sets = await listAll<DeckSetRecord>(SETS_STORE);
-    const decks = await listAll<DeckRecord>(DECKS_STORE);
-    const setMap = new Map(sets.map((set) => [set.id, set]));
-    const deckMap = new Map(decks.map((deck) => [deck.id, deck]));
-
-    setIds.forEach((setId) => {
-      const set = setMap.get(setId);
-      if (!set) return;
-      const deck = deckMap.get(set.deckId);
-      if (deck) deckById.set(deck.id, deck);
-    });
+    matchingEntries.forEach((entry) => addDeckCount(entry.deckId, entry.count));
   }
 
-  return Array.from(deckById.values())
-    .map((deck) => ({
-      deckId: deck.id,
-      deckTitle: deck.title,
-    }))
+  if (!deckCountById.size) return [];
+
+  const decks = await listAll<DeckRecord>(DECKS_STORE);
+  const deckMap = new Map(decks.map((deck) => [deck.id, deck]));
+
+  return Array.from(deckCountById.entries())
+    .map(([deckId, count]) => {
+      const deck = deckMap.get(deckId);
+      if (!deck) return null;
+      return {
+        deckId: deck.id,
+        deckTitle: deck.title,
+        count,
+      };
+    })
+    .filter((membership): membership is CardDeckMembership => membership !== null)
     .sort((a, b) => {
       const byTitle = a.deckTitle.localeCompare(b.deckTitle);
       if (byTitle !== 0) return byTitle;

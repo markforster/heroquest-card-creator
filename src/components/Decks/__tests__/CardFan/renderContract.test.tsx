@@ -76,4 +76,53 @@ describe("CardFan render contract", () => {
     expect(dropNodes).toHaveLength(1);
     expect(emptyNodes).toHaveLength(0);
   });
+
+  it("scales corner radius by variant size", () => {
+    const { container: xsContainer } = render(
+      <CardFan cardIds={["card-xs"]} variant="xs" />,
+    );
+    const { container: lgContainer } = render(
+      <CardFan cardIds={["card-lg"]} variant="lg" />,
+    );
+
+    const xsClipRect = xsContainer.querySelector("clipPath rect");
+    const lgClipRect = lgContainer.querySelector("clipPath rect");
+    expect(xsClipRect).not.toBeNull();
+    expect(lgClipRect).not.toBeNull();
+
+    const xsRadius = Number(xsClipRect?.getAttribute("rx") ?? "0");
+    const lgRadius = Number(lgClipRect?.getAttribute("rx") ?? "0");
+
+    expect(xsRadius).toBeGreaterThan(0);
+    expect(xsRadius).toBeLessThan(lgRadius);
+  });
+
+  it("uses the same radius for clip, hover, selected, and placeholder rects", () => {
+    const { container } = render(
+      <CardFan
+        cardIds={["card-a"]}
+        variant="sm"
+        selectedCardId="card-a"
+        enableHoverBorder
+        showPlaceholdersWhenEmpty={false}
+      />,
+    );
+
+    const clipRect = container.querySelector("clipPath rect");
+    const hoverRect = container.querySelector(".cardFanHover");
+    const selectedRect = container.querySelector(".cardFanSelected");
+    expect(clipRect).not.toBeNull();
+    expect(hoverRect).not.toBeNull();
+    expect(selectedRect).not.toBeNull();
+
+    const clipRadius = clipRect?.getAttribute("rx");
+    expect(hoverRect?.getAttribute("rx")).toBe(clipRadius);
+    expect(selectedRect?.getAttribute("rx")).toBe(clipRadius);
+
+    const { container: emptyContainer } = render(
+      <CardFan cardIds={[]} variant="sm" maxCount={1} showPlaceholdersWhenEmpty emptyPlaceholderVariant="deck-empty" />,
+    );
+    const emptyRect = emptyContainer.querySelector(".cardFanEmptyDeckPlaceholderSvg");
+    expect(emptyRect?.getAttribute("rx")).toBe(clipRadius);
+  });
 });

@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 
 import { apiClient } from "@/api/client";
+import { listPairsMap } from "@/components/Decks/deck-preview";
 import type { DeckMutationCommands } from "@/components/Decks/types/deck-route";
-import type { PairRecord } from "@/api/pairs";
 
 export function useDeckMutations(): DeckMutationCommands {
   return useMemo(
@@ -93,11 +93,4 @@ export function useDeckMutations(): DeckMutationCommands {
     }),
     [],
   );
-}
-
-async function listPairsMap(): Promise<Map<string, PairRecord>> {
-  const pairs = await apiClient.listPairs();
-  const map = new Map<string, PairRecord>();
-  pairs.forEach((pair) => map.set(pair.id, pair));
-  return map;
 }

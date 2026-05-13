@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { DeckRecord, DeckSetRecord } from "@/api/decks";
-import { apiClient } from "@/api/client";
+import type { DeckRecord } from "@/api/decks";
 import { useListDecks } from "@/api/hooks";
-import type { PairRecord } from "@/api/pairs";
+import { resolveDeckPreviewMap } from "@/components/Decks/deck-preview";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { getSelectedDeckId } from "@/components/Decks/selectors/deckDetailSelectors";
 
@@ -57,70 +56,17 @@ export function useDecksGridModel({ previewFanCount, untitledDeckLabel }: UseDec
     return next;
   }, [decks, isSingleSelection, selectedDeckId, selectedDeckTitleDraft, untitledDeckLabel]);
 
-  const buildDeckPreview = useCallback(
-    async (deck: DeckRecord, pairMap: Map<string, PairRecord>) => {
-      const groupsData = await apiClient.listDeckGroups({ params: { deckId: deck.id } });
-      const setsData = await apiClient.listDeckSets({ params: { deckId: deck.id } });
-      const setsByGroup = new Map<string, DeckSetRecord[]>();
-      setsData.forEach((set) => {
-        const list = setsByGroup.get(set.groupId) ?? [];
-        list.push(set);
-        setsByGroup.set(set.groupId, list);
-      });
-      setsByGroup.forEach((list, key) => {
-        list.sort((a, b) => a.sortIndex - b.sortIndex);
-        setsByGroup.set(key, list);
-      });
-
-      const orderedGroups = [...groupsData].sort((a, b) => a.sortIndex - b.sortIndex);
-      const previewIds: string[] = [];
-      const seen = new Set<string>();
-
-      for (const group of orderedGroups) {
-        const groupSets = setsByGroup.get(group.id) ?? [];
-        for (const set of groupSets) {
-          if (!seen.has(set.backFaceId)) {
-            previewIds.push(set.backFaceId);
-            seen.add(set.backFaceId);
-          }
-          if (previewIds.length >= previewFanCount) break;
-        }
-        if (previewIds.length >= previewFanCount) break;
-      }
-
-      for (const group of orderedGroups) {
-        const groupSets = setsByGroup.get(group.id) ?? [];
-        for (const set of groupSets) {
-          const setEntries = await apiClient.listDeckEntries({ params: { setId: set.id } });
-          const orderedEntries = [...setEntries].sort((a, b) => a.sortIndex - b.sortIndex);
-          for (const entry of orderedEntries) {
-            const pair = pairMap.get(entry.pairId);
-            if (!pair?.frontFaceId) continue;
-            if (seen.has(pair.frontFaceId)) continue;
-            previewIds.push(pair.frontFaceId);
-            seen.add(pair.frontFaceId);
-            if (previewIds.length >= previewFanCount) break;
-          }
-          if (previewIds.length >= previewFanCount) break;
-        }
-        if (previewIds.length >= previewFanCount) break;
-      }
-
-      return previewIds.slice(0, previewFanCount);
-    },
-    [previewFanCount],
-  );
-
   const refreshDeckPreviews = useCallback(
     async (deckList: DeckRecord[]) => {
       const pairMap = await mutations.listPairsMap();
-      const nextPreviews: Record<string, string[]> = {};
-      for (const deck of deckList) {
-        nextPreviews[deck.id] = await buildDeckPreview(deck, pairMap);
-      }
+      const nextPreviews = await resolveDeckPreviewMap({
+        decks: deckList,
+        maxCount: previewFanCount,
+        pairMap,
+      });
       setDeckPreviews(nextPreviews);
     },
-    [buildDeckPreview, mutations],
+    [mutations, previewFanCount],
   );
 
   const refresh = useCallback(async () => {

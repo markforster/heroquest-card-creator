@@ -18,7 +18,7 @@ describe("listCardDecksRequestPlugin", () => {
   });
 
   it("returns deck membership from service", async () => {
-    listCardDeckMembership.mockResolvedValue([{ deckId: "d1", deckTitle: "Deck One" }]);
+    listCardDeckMembership.mockResolvedValue([{ deckId: "d1", deckTitle: "Deck One", count: 3 }]);
 
     const resolved = await listCardDecksRequestPlugin.request?.([], { params: { id: "card-1" } } as never);
     const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
@@ -26,7 +26,7 @@ describe("listCardDecksRequestPlugin", () => {
 
     expect(listCardDeckMembership).toHaveBeenCalledWith("card-1");
     expect(response?.status).toBe(200);
-    expect(response?.data).toEqual([{ deckId: "d1", deckTitle: "Deck One" }]);
+    expect(response?.data).toEqual([{ deckId: "d1", deckTitle: "Deck One", count: 3 }]);
     expect(response?.headers?.["x-hqcc-source"]).toBe("indexeddb");
   });
 });
