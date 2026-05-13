@@ -139,7 +139,7 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
     const matchingEntries = entries
       .map(normalizeDeckEntryRecord)
       .filter((entry) => setIds.has(entry.setId));
-    matchingEntries.forEach((entry) => addDeckCount(entry.deckId, entry.count));
+    matchingEntries.forEach((entry) => addDeckCount(entry.deckId, entry.count ?? 1));
   } else {
     const pairs = await listAll<PairRecord>(PAIRS_STORE);
     const pairIds = new Set(
@@ -155,7 +155,7 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
       .filter((entry) => pairIds.has(entry.pairId));
     if (!matchingEntries.length) return [];
 
-    matchingEntries.forEach((entry) => addDeckCount(entry.deckId, entry.count));
+    matchingEntries.forEach((entry) => addDeckCount(entry.deckId, entry.count ?? 1));
   }
 
   if (!deckCountById.size) return [];
@@ -933,4 +933,44 @@ export async function validatePairEntry(setId: string, pairId: string): Promise<
   if (pair.backFaceId !== set.backFaceId) {
     throw new Error("Pair back does not match set back");
   }
+}
+
+export async function repairOrphanDeckEntries(): Promise<number> {
+  const db = await openHqccDb();
+  if (!db.objectStoreNames.contains(ENTRIES_STORE) || !db.objectStoreNames.contains(PAIRS_STORE)) {
+    return 0;
+  }
+
+  const readTx = db.transaction([ENTRIES_STORE, PAIRS_STORE], "readonly");
+  const entriesStore = readTx.objectStore(ENTRIES_STORE);
+  const pairsStore = readTx.objectStore(PAIRS_STORE);
+  const [entries, pairs] = await Promise.all([
+    new Promise<DeckEntryRecord[]>((resolve, reject) => {
+      const request = entriesStore.getAll();
+      request.onsuccess = () => resolve((request.result as DeckEntryRecord[] | undefined) ?? []);
+      request.onerror = () => reject(request.error ?? new Error("Failed to load deck entries"));
+    }),
+    new Promise<PairRecord[]>((resolve, reject) => {
+      const request = pairsStore.getAll();
+      request.onsuccess = () => resolve((request.result as PairRecord[] | undefined) ?? []);
+      request.onerror = () => reject(request.error ?? new Error("Failed to load pairs"));
+    }),
+  ]);
+
+  const pairIds = new Set(pairs.map((pair) => pair.id));
+  const orphans = entries.filter((entry) => !pairIds.has(entry.pairId));
+  if (!orphans.length) return 0;
+
+  const writeTx = db.transaction(ENTRIES_STORE, "readwrite");
+  const writeEntriesStore = writeTx.objectStore(ENTRIES_STORE);
+  orphans.forEach((entry) => writeEntriesStore.delete(entry.id));
+  await new Promise<void>((resolve, reject) => {
+    writeTx.oncomplete = () => resolve();
+    writeTx.onerror = () => reject(writeTx.error ?? new Error("Failed to repair orphan entries"));
+    writeTx.onabort = () => reject(writeTx.error ?? new Error("Failed to repair orphan entries"));
+  });
+  orphans.forEach((entry) => enqueueDbEstimateChange(ENTRIES_STORE, entry.id));
+  // eslint-disable-next-line no-console
+  console.info(`[decks] Repaired orphan deck entries: ${orphans.length}`);
+  return orphans.length;
 }

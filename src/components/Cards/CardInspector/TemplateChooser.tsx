@@ -17,6 +17,10 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
+import {
+  type PairUsageReport,
+} from "@/lib/decks-errors";
+import { previewDeletePair } from "@/lib/pairs-service";
 import type { CardFace } from "@/types/card-face";
 import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
@@ -26,30 +30,17 @@ type PendingFaceChange =
       mode: "front-to-back";
       nextFace: CardFace;
       pairedTitle: string;
+      cascadeOps: Array<{ frontFaceId: string; backFaceId: string }>;
     }
   | {
       mode: "back-to-front";
       nextFace: CardFace;
       affectedFrontIds: string[];
       affectedCount: number;
+      cascadeOps: Array<{ frontFaceId: string; backFaceId: string }>;
     };
 
 const SHOW_TEMPLATE_THUMB = false;
-
-async function deletePairsForFrontId(frontId: string): Promise<void> {
-  const pairs = await apiClient.listPairs({ queries: { faceId: frontId } });
-  const deletions = pairs.filter(
-    (pair) => pair.frontFaceId === frontId && pair.backFaceId,
-  );
-  await Promise.all(
-    deletions.map((pair) =>
-      apiClient.deletePair({
-        frontFaceId: frontId,
-        backFaceId: pair.backFaceId as string,
-      }),
-    ),
-  );
-}
 
 export default function TemplateChooser() {
   const { t, language } = useI18n();
@@ -76,6 +67,11 @@ export default function TemplateChooser() {
   });
   const [pendingFaceChange, setPendingFaceChange] = useState<CardFace | null>(null);
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
+  const [pairUsagePrompt, setPairUsagePrompt] = useState<{
+    nextFace: CardFace;
+    cascadeOps: Array<{ frontFaceId: string; backFaceId: string }>;
+    report: PairUsageReport;
+  } | null>(null);
   const faceMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -171,6 +167,9 @@ export default function TemplateChooser() {
               mode: "front-to-back",
               nextFace,
               pairedTitle,
+              cascadeOps: match.backFaceId
+                ? [{ frontFaceId: activeCardId, backFaceId: match.backFaceId }]
+                : [],
             });
             return;
           }
@@ -186,16 +185,15 @@ export default function TemplateChooser() {
           ? (await apiClient.listCards()).filter((card) => affectedIds.includes(card.id))
           : [];
         if (affected.length > 0) {
-          if (affected.length <= 1) {
-            await Promise.all(affected.map((card) => deletePairsForFrontId(card.id)));
-            applyFaceChange(nextFace);
-            return;
-          }
           setPendingChange({
             mode: "back-to-front",
             nextFace,
             affectedFrontIds: affected.map((card) => card.id),
             affectedCount: affected.length,
+            cascadeOps: affected.map((card) => ({
+              frontFaceId: card.id,
+              backFaceId: activeCardId,
+            })),
           });
           return;
         }
@@ -315,10 +313,28 @@ export default function TemplateChooser() {
           if (!pendingChange) return;
           setIsConfirming(true);
           try {
-            if (pendingChange.mode === "back-to-front") {
-              await Promise.all(
-                pendingChange.affectedFrontIds.map((id) => deletePairsForFrontId(id)),
-              );
+            if (pendingChange.cascadeOps.length > 0) {
+              for (const op of pendingChange.cascadeOps) {
+                const report = await previewDeletePair(op.frontFaceId, op.backFaceId, {
+                  mode: "confirmable-cascade",
+                });
+                if (report.cascadePlan.usage.length > 0) {
+                  setPairUsagePrompt({
+                    nextFace: pendingChange.nextFace,
+                    cascadeOps: pendingChange.cascadeOps,
+                    report,
+                  });
+                  return;
+                }
+              }
+              for (const op of pendingChange.cascadeOps) {
+                await apiClient.deletePair({
+                  frontFaceId: op.frontFaceId,
+                  backFaceId: op.backFaceId,
+                  mode: "confirmable-cascade",
+                  confirmCascade: true,
+                });
+              }
             }
             applyFaceChange(pendingChange.nextFace);
           } finally {
@@ -353,6 +369,40 @@ export default function TemplateChooser() {
         }}
       >
         {t("confirm.saveBeforeViewBody")}
+      </ConfirmModal>
+      <ConfirmModal
+        isOpen={Boolean(pairUsagePrompt)}
+        title={t("decks.pairInUseTitle")}
+        confirmLabel={t("actions.confirm")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={async () => {
+          const pending = pairUsagePrompt;
+          setPairUsagePrompt(null);
+          if (!pending) return;
+          for (const op of pending.cascadeOps) {
+            await apiClient.deletePair({
+              frontFaceId: op.frontFaceId,
+              backFaceId: op.backFaceId,
+              mode: "confirmable-cascade",
+              confirmCascade: true,
+            });
+          }
+          applyFaceChange(pending.nextFace);
+        }}
+        onCancel={() => {
+          setPairUsagePrompt(null);
+        }}
+      >
+        <div>
+          This will unpair and remove dependent deck entries from the following locations:
+        </div>
+        <ul>
+          {(pairUsagePrompt?.report.cascadePlan.usage ?? []).map((usage) => (
+            <li key={`${usage.deckId}-${usage.groupId}-${usage.setId}`}>
+              {`${usage.deckTitle} › ${usage.groupTitle} › ${usage.setTitle}`}
+            </li>
+          ))}
+        </ul>
       </ConfirmModal>
     </>
   );

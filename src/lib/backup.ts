@@ -664,6 +664,8 @@ async function applyBackupObject(
         return apiClient.deletePair({
           frontFaceId: pair.frontFaceId,
           backFaceId: pair.backFaceId,
+          mode: "confirmable-cascade",
+          confirmCascade: true,
         });
       }),
     );
@@ -903,6 +905,8 @@ async function applyCompactBackupObject(
         return apiClient.deletePair({
           frontFaceId: pair.frontFaceId,
           backFaceId: pair.backFaceId,
+          mode: "confirmable-cascade",
+          confirmCascade: true,
         });
       }),
     );

@@ -8098,3 +8098,76 @@ button.assetsKindBadge:disabled {
   padding-left: 1.25rem;
   color: var(--hq-text-muted);
 }
+
+.pairingUsageDecks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.pairingUsageDeckRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.pairingUsageDeckMeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.pairingUsageDeckTitle {
+  font-weight: 700;
+  color: var(--hq-text);
+}
+
+.pairingUsageDeckRowInspector {
+  align-items: center;
+}
+
+.pairingUsageDeckFan {
+  display: inline-flex;
+}
+
+.pairFrontsModalSectionTitle {
+  color: var(--hq-accent-500);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.pairFrontsDeckRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pairFrontsDeckNameRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pairFrontsModalThumbImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  opacity: 1;
+  transform: none;
+}
+
+.pairFrontsModalThumbItem {
+  width: 56px;
+  height: 80px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--hq-surface-700);
+  background: var(--hq-surface-850);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

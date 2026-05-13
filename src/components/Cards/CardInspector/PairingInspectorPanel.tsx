@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 
 import styles from "@/app/page.module.css";
+import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
@@ -19,7 +20,12 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
-import { isPairInUseError, type DeckUsageLocation } from "@/lib/decks-errors";
+import {
+  isPairDeleteConfirmRequiredError,
+  isPairInUseError,
+  type PairUsageReport,
+} from "@/lib/decks-errors";
+import { previewDeletePair } from "@/lib/pairs-service";
 import type { CardFace } from "@/types/card-face";
 import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
@@ -32,6 +38,23 @@ type PairingInspectorPanelProps = {
   frontViewToken?: number;
   onRememberBackId?: (backId: string) => void;
   pairingReferenceId?: string | null;
+};
+
+type UnpairTarget = {
+  frontFaceId: string;
+  backFaceId: string;
+  backTitle: string;
+};
+
+type PendingUnpairImpact = {
+  targets: UnpairTarget[];
+  usage: PairUsageReport["cascadePlan"]["usage"];
+  decks: Array<{
+    deckId: string;
+    deckTitle: string;
+    locations: Array<{ groupId: string; groupTitle: string; setId: string; setTitle: string }>;
+  }>;
+  message: string;
 };
 
 async function listPairsForFaceId(faceId: string) {
@@ -109,9 +132,8 @@ export default function PairingInspectorPanel({
   const [pairedFrontsToken, setPairedFrontsToken] = useState(0);
   const [pendingOpenCard, setPendingOpenCard] = useState<CardRecord | null>(null);
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
-  const [isUnpairAllPromptOpen, setIsUnpairAllPromptOpen] = useState(false);
-  const [pendingUnpairBack, setPendingUnpairBack] = useState<CardRecord | null>(null);
-  const [pairUsagePrompt, setPairUsagePrompt] = useState<DeckUsageLocation[] | null>(null);
+  const [pendingUnpairImpact, setPendingUnpairImpact] = useState<PendingUnpairImpact | null>(null);
+  const [pairUsagePrompt, setPairUsagePrompt] = useState<PairUsageReport | null>(null);
   const [loadedThumbs, setLoadedThumbs] = useState<Record<string, boolean>>({});
   const [hoveredCard, setHoveredCard] = useState<CardRecord | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<DOMRect | null>(null);
@@ -315,13 +337,31 @@ export default function PairingInspectorPanel({
     return null;
   }
 
-  const deletePairBySafe = async (frontFaceId: string, backFaceId: string) => {
+  const deletePairBySafe = async (
+    frontFaceId: string,
+    backFaceId: string,
+    confirmCascade = false,
+  ) => {
     try {
-      await apiClient.deletePair({ frontFaceId, backFaceId });
+      await apiClient.deletePair({
+        frontFaceId,
+        backFaceId,
+        mode: "confirmable-cascade",
+        confirmCascade,
+      });
       return true;
     } catch (error) {
+      if (isPairDeleteConfirmRequiredError(error)) {
+        setPairUsagePrompt(error.report);
+        return false;
+      }
       if (isPairInUseError(error)) {
-        setPairUsagePrompt(error.usage);
+        setPairUsagePrompt({
+          frontFaceId,
+          backFaceId,
+          mode: "block",
+          cascadePlan: { pairIds: [], entryIds: [], usage: error.usage },
+        });
         return false;
       }
       throw error;
@@ -359,21 +399,60 @@ export default function PairingInspectorPanel({
     return true;
   };
 
-  const handleUnpairAll = async () => {
-    if (!activeCardId) return;
-    await deletePairsForFrontIdSafe(activeCardId);
-    setPairedBacks([]);
+  const buildPendingUnpairImpact = async (targets: UnpairTarget[]): Promise<PendingUnpairImpact> => {
+    const usageRows: PairUsageReport["cascadePlan"]["usage"] = [];
+    for (const target of targets) {
+      const report = await previewDeletePair(target.frontFaceId, target.backFaceId, {
+        mode: "confirmable-cascade",
+      });
+      usageRows.push(...report.cascadePlan.usage);
+    }
+
+    const usageByKey = new Map<string, PairUsageReport["cascadePlan"]["usage"][number]>();
+    usageRows.forEach((usage) => {
+      const key = `${usage.deckId}:${usage.groupId}:${usage.setId}`;
+      if (!usageByKey.has(key)) usageByKey.set(key, usage);
+    });
+    const usage = Array.from(usageByKey.values());
+
+    const deckMap = new Map<
+      string,
+      { deckId: string; deckTitle: string; locations: PendingUnpairImpact["decks"][number]["locations"] }
+    >();
+    usage.forEach((row) => {
+      const current = deckMap.get(row.deckId) ?? {
+        deckId: row.deckId,
+        deckTitle: row.deckTitle,
+        locations: [],
+      };
+      if (!current.locations.some((loc) => loc.groupId === row.groupId && loc.setId === row.setId)) {
+        current.locations.push({
+          groupId: row.groupId,
+          groupTitle: row.groupTitle,
+          setId: row.setId,
+          setTitle: row.setTitle,
+        });
+      }
+      deckMap.set(row.deckId, current);
+    });
+
+    const message =
+      targets.length === 1
+        ? formatMessageWith("warning.pairingLossSingle", { back: targets[0].backTitle || fallbackTitle })
+        : formatMessageWith("warning.pairingLossMultipleBacks", { backCount: targets.length });
+
+    return {
+      targets,
+      usage,
+      decks: Array.from(deckMap.values()),
+      message,
+    };
   };
 
-  const handleUnpairBack = async (backId: string) => {
-    if (!activeCardId) return;
-    try {
-      await deletePairBySafe(activeCardId, backId);
-      setPairedBacksToken((prev) => prev + 1);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("[pairing] Failed to unpair back", error);
-    }
+  const requestUnpairImpact = async (targets: UnpairTarget[]) => {
+    if (!targets.length) return;
+    const impact = await buildPendingUnpairImpact(targets);
+    setPendingUnpairImpact(impact);
   };
 
   const markThumbLoaded = (cardId: string) => {
@@ -397,13 +476,6 @@ export default function PairingInspectorPanel({
     }
     setHoveredCard(null);
     setHoverAnchor(null);
-  };
-
-  const openUsageDeck = () => {
-    const first = pairUsagePrompt?.[0];
-    if (!first) return;
-    navigate(`/decks/${first.deckId}`);
-    setPairUsagePrompt(null);
   };
 
   return (
@@ -470,11 +542,13 @@ export default function PairingInspectorPanel({
                   onClick={() => {
                     if (pairingDisabled) return;
                     if (!activeCardId) return;
-                    if (pairedBackCount > 1) {
-                      setIsUnpairAllPromptOpen(true);
-                      return;
-                    }
-                    void handleUnpairAll();
+                    void requestUnpairImpact(
+                      pairedBacks.map((back) => ({
+                        frontFaceId: activeCardId,
+                        backFaceId: back.id,
+                        backTitle: back.title ?? fallbackTitle,
+                      })),
+                    );
                   }}
                 >
                   <Unlink2 size={18} aria-hidden="true" />
@@ -635,11 +709,13 @@ export default function PairingInspectorPanel({
                           event.stopPropagation();
                           if (pairingDisabled) return;
                           if (!activeCardId) return;
-                          if (pairedBackCount > 1) {
-                            setPendingUnpairBack(backCard);
-                            return;
-                          }
-                          await handleUnpairBack(backCard.id);
+                          await requestUnpairImpact([
+                            {
+                              frontFaceId: activeCardId,
+                              backFaceId: backCard.id,
+                              backTitle: backCard.title ?? fallbackTitle,
+                            },
+                          ]);
                         }}
                       >
                         <Unlink2 size={18} aria-hidden="true" />
@@ -718,55 +794,99 @@ export default function PairingInspectorPanel({
         {t("confirm.saveBeforeViewBody")}
       </ConfirmModal>
       <ConfirmModal
-        isOpen={isUnpairAllPromptOpen}
-        title={t("actions.confirm")}
+        isOpen={Boolean(pendingUnpairImpact)}
+        title={pendingUnpairImpact?.usage.length ? t("decks.pairInUseTitle") : "Confirm unpair"}
         confirmLabel={t("actions.confirm")}
+        extraLabel={pendingUnpairImpact?.usage.length ? t("decks.openDeck") : undefined}
         cancelLabel={t("actions.cancel")}
         onConfirm={async () => {
-          setIsUnpairAllPromptOpen(false);
-          await handleUnpairAll();
-        }}
-        onCancel={() => {
-          setIsUnpairAllPromptOpen(false);
-        }}
-      >
-        {formatMessageWith("warning.pairingLossMultipleBacks", {
-          backCount: pairedBackCount,
-        })}
-      </ConfirmModal>
-      <ConfirmModal
-        isOpen={Boolean(pendingUnpairBack)}
-        title={t("actions.confirm")}
-        confirmLabel={t("actions.confirm")}
-        cancelLabel={t("actions.cancel")}
-        onConfirm={async () => {
-          const pending = pendingUnpairBack;
-          setPendingUnpairBack(null);
+          const pending = pendingUnpairImpact;
+          setPendingUnpairImpact(null);
           if (!pending) return;
-          await handleUnpairBack(pending.id);
+          const seen = new Set<string>();
+          for (const target of pending.targets) {
+            const key = `${target.frontFaceId}|${target.backFaceId}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            await apiClient.deletePair({
+              frontFaceId: target.frontFaceId,
+              backFaceId: target.backFaceId,
+              mode: "confirmable-cascade",
+              confirmCascade: true,
+            });
+          }
+          setPairedBacksToken((prev) => prev + 1);
+          setPairedFrontsToken((prev) => prev + 1);
         }}
-        onCancel={() => {
-          setPendingUnpairBack(null);
+        onExtra={() => {
+          const first = pendingUnpairImpact?.decks[0];
+          if (!first) return;
+          navigate(`/decks/${first.deckId}`);
+          setPendingUnpairImpact(null);
         }}
+        onCancel={() => setPendingUnpairImpact(null)}
       >
-        {pendingUnpairBack
-          ? formatMessageWith("warning.pairingLossSingle", {
-              back: pendingUnpairBack.title ?? fallbackTitle,
-            })
-          : null}
+        <div className={styles.pairingUsageList}>
+          {pendingUnpairImpact?.usage.length ? (
+            <>
+              <div>
+                This will unpair and remove dependent deck entries from the following locations:
+              </div>
+              <div className={styles.pairingUsageDecks}>
+                {pendingUnpairImpact.decks.map((deck) => (
+                  <div
+                    key={deck.deckId}
+                    className={`${styles.pairingUsageDeckRow} ${styles.pairingUsageDeckRowInspector}`}
+                  >
+                    <div className={styles.pairingUsageDeckTitle}>{deck.deckTitle}</div>
+                    <div className={styles.pairingUsageDeckFan}>
+                      <DeckFanByDeckId
+                        deckId={deck.deckId}
+                        maxCount={6}
+                        variant="inspector"
+                        spacing={0.7}
+                        tilt={0.5}
+                        showPlaceholdersWhenEmpty
+                        emptyPlaceholderVariant="deck-empty"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div>{pendingUnpairImpact?.message ?? null}</div>
+          )}
+        </div>
       </ConfirmModal>
       <ConfirmModal
-        isOpen={Boolean(pairUsagePrompt?.length)}
+        isOpen={Boolean(pairUsagePrompt)}
         title={t("decks.pairInUseTitle")}
-        confirmLabel={t("decks.openDeck")}
+        confirmLabel={t("actions.confirm")}
+        extraLabel={t("decks.openDeck")}
         cancelLabel={t("actions.cancel")}
-        onConfirm={openUsageDeck}
+        onConfirm={async () => {
+          const pending = pairUsagePrompt;
+          setPairUsagePrompt(null);
+          if (!pending) return;
+          await deletePairBySafe(pending.frontFaceId, pending.backFaceId, true);
+          setPairedBacksToken((prev) => prev + 1);
+          setPairedFrontsToken((prev) => prev + 1);
+        }}
+        onExtra={() => {
+          const first = pairUsagePrompt?.cascadePlan.usage[0];
+          if (!first) return;
+          navigate(`/decks/${first.deckId}`);
+          setPairUsagePrompt(null);
+        }}
         onCancel={() => setPairUsagePrompt(null)}
       >
         <div className={styles.pairingUsageList}>
-          <div>{t("decks.pairInUseBody")}</div>
+          <div>
+            This will unpair and remove dependent deck entries from the following locations:
+          </div>
           <ul className={styles.pairingUsageItems}>
-            {(pairUsagePrompt ?? []).map((usage) => (
+            {(pairUsagePrompt?.cascadePlan.usage ?? []).map((usage) => (
               <li key={`${usage.deckId}-${usage.setId}`}>
                 {`${usage.deckTitle} › ${usage.groupTitle} › ${usage.setTitle}`}
               </li>

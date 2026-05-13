@@ -13,6 +13,7 @@ import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDe
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
 import type { DeckDetailDragState } from "@/components/Decks/types/deck-detail";
 import { useI18n } from "@/i18n/I18nProvider";
+import { isPairDeleteConfirmRequiredError, type PairUsageReport } from "@/lib/decks-errors";
 
 import type { ReactNode } from "react";
 
@@ -185,6 +186,7 @@ export default function DeckEntriesSection({
     }>;
   } | null>(null);
   const [isPendingRemovalBusy, setIsPendingRemovalBusy] = useState(false);
+  const [pairUsagePrompt, setPairUsagePrompt] = useState<PairUsageReport | null>(null);
   useEffect(() => {
     setEntriesViewMode("in-set");
     setSelectedEntryIds(new Set());
@@ -238,16 +240,28 @@ export default function DeckEntriesSection({
       if (!pending || isPendingRemovalBusy) return;
       setIsPendingRemovalBusy(true);
       try {
-        for (const item of pending.items) {
-          await removeEntry(item.entryId, item.setId);
-          if (withUnpair) {
-            await apiClient.deletePair({
-              frontFaceId: item.frontFaceId,
-              backFaceId: item.backFaceId,
-            });
-          }
-        }
         if (withUnpair) {
+          for (const item of pending.items) {
+            try {
+              await apiClient.deletePair({
+                frontFaceId: item.frontFaceId,
+                backFaceId: item.backFaceId,
+                mode: "confirmable-cascade",
+                confirmCascade: false,
+              });
+            } catch (error) {
+              if (isPairDeleteConfirmRequiredError(error)) {
+                setPairUsagePrompt(error.report);
+                return;
+              }
+              throw error;
+            }
+          }
+          await refreshEntries(selectedSetId);
+        } else {
+          for (const item of pending.items) {
+            await removeEntry(item.entryId, item.setId);
+          }
           await refreshEntries(selectedSetId);
         }
         const removedIds = new Set(pending.items.map((item) => item.entryId));
@@ -518,6 +532,54 @@ export default function DeckEntriesSection({
         }}
       >
         {t("decks.removeFrontPromptBody")}
+      </ConfirmModal>
+      <ConfirmModal
+        isOpen={Boolean(pairUsagePrompt)}
+        title={t("decks.pairInUseTitle")}
+        confirmLabel={t("actions.confirm")}
+        extraLabel={t("decks.openDeck")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={async () => {
+          const pending = pairUsagePrompt;
+          const pendingRemoval = pendingFrontRemoval;
+          setPairUsagePrompt(null);
+          if (!pending || !pendingRemoval) return;
+          const seen = new Set<string>();
+          for (const item of pendingRemoval.items) {
+            const key = `${item.frontFaceId}|${item.backFaceId}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            await apiClient.deletePair({
+              frontFaceId: item.frontFaceId,
+              backFaceId: item.backFaceId,
+              mode: "confirmable-cascade",
+              confirmCascade: true,
+            });
+          }
+          await refreshEntries(selectedSetId);
+          setPendingFrontRemoval(null);
+        }}
+        onExtra={() => {
+          const usage = pairUsagePrompt?.cascadePlan.usage[0];
+          if (usage) {
+            window.location.hash = `#/decks/${usage.deckId}`;
+          }
+          setPairUsagePrompt(null);
+        }}
+        onCancel={() => setPairUsagePrompt(null)}
+      >
+        <div className={styles.pairingUsageList}>
+          <div>
+            This will unpair and remove dependent deck entries from the following locations:
+          </div>
+          <ul className={styles.pairingUsageItems}>
+            {(pairUsagePrompt?.cascadePlan.usage ?? []).map((usage) => (
+              <li key={`${usage.deckId}-${usage.groupId}-${usage.setId}`}>
+                {`${usage.deckTitle} › ${usage.groupTitle} › ${usage.setTitle}`}
+              </li>
+            ))}
+          </ul>
+        </div>
       </ConfirmModal>
     </div>
   );

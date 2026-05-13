@@ -73,6 +73,7 @@ import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import type { ExportSettings } from "@/lib/export-settings";
 import formatMessageWith from "@/lib/format-message-with";
 import { clearDbEstimateCache, runFullDbEstimate } from "@/lib/indexeddb-size-tracker";
+import { repairOrphanDeckEntries } from "@/lib/decks-service";
 import { startThumbnailJpegMigration } from "@/lib/thumbnail-jpeg-migration";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
@@ -220,6 +221,9 @@ function IndexPageInner() {
 
   useEffect(() => {
     void startThumbnailJpegMigration();
+    void repairOrphanDeckEntries().catch(() => {
+      // Ignore startup repair failures.
+    });
     clearDbEstimateCache();
     setTimeout(() => {
       void runFullDbEstimate();

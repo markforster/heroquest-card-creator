@@ -1,22 +1,33 @@
 "use client";
 
 import { PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { apiClient } from "@/api/client";
 import DeckDetailPanel from "@/components/Decks/DeckDetailPanel";
+import { DeckExportProvider } from "@/components/Decks/context/DeckExportContext";
+import { resolveDeckExportFaceIds } from "@/components/Decks/deck-export";
 import DecksGridPanel from "@/components/Decks/DecksGridPanel";
 import { useDeckDetailSelectionModel } from "@/components/Decks/hooks/useDeckDetailSelectionModel";
 import { useDeckDetailState } from "@/components/Decks/hooks/useDeckDetailState";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useDecksDragController } from "@/components/Decks/hooks/useDecksDragController";
 import { useDeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
+import {
+  useBulkCardExport,
+  type MissingAssetsExportPrompt,
+} from "@/components/Export/hooks/useBulkCardExport";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
+import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
+import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
+import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
 import { useI18n } from "@/i18n/I18nProvider";
 import formatMessageWith from "@/lib/format-message-with";
 
 export default function DecksRoutePanels() {
   const { t } = useI18n();
+  const { track } = useAnalytics();
   const formatMessage = useMemo(
     () => (key: string, vars: Record<string, string | number>) =>
       formatMessageWith(t as never, key as never, vars),
@@ -26,6 +37,14 @@ export default function DecksRoutePanels() {
   const { deckId } = useParams();
   const { openStockpile } = useAppActions();
   const mutations = useDeckMutations();
+  const exportFlow = useBulkCardExport();
+  const [missingAssetsPrompt, setMissingAssetsPrompt] = useState<MissingAssetsExportPrompt | null>(
+    null,
+  );
+  const [pendingExportContext, setPendingExportContext] = useState<{
+    deckId: string;
+    scope: "decks_grid" | "deck_detail";
+  } | null>(null);
 
   const isDeckDetail = Boolean(deckId);
   const isDecksIndex = !isDeckDetail;
@@ -38,6 +57,49 @@ export default function DecksRoutePanels() {
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
     }),
+  );
+
+  const startDeckExport = useCallback(
+    async (
+      deckIdValue: string,
+      scope: "decks_grid" | "deck_detail",
+      options?: { skipIds?: Set<string>; skipNotes?: Map<string, string>; skipPrecheck?: boolean },
+    ) => {
+      const { faceIds } = await resolveDeckExportFaceIds(deckIdValue);
+      if (!faceIds.length) {
+        window.alert(t("alert.selectCardToExport"));
+        return;
+      }
+      const records = await Promise.all(
+        faceIds.map(async (id) => {
+          try {
+            return await apiClient.getCard({ params: { id } });
+          } catch {
+            return null;
+          }
+        }),
+      );
+      const cards = records.filter((card): card is NonNullable<typeof card> => Boolean(card));
+      if (!cards.length) {
+        window.alert(t("alert.noImagesExported"));
+        return;
+      }
+      track("export_started", { scope });
+      const result = await exportFlow.startBulkCardExport({
+        cards,
+        skipIds: options?.skipIds,
+        skipNotes: options?.skipNotes,
+        skipPrecheck: options?.skipPrecheck,
+        resolveName: (card, usedNames) =>
+          resolveExportFileName(card.name || card.title || card.templateId, usedNames),
+        resolveZipName: () => resolveZipFileName(() => null),
+      });
+      if (result.status === "missing-assets") {
+        setPendingExportContext({ deckId: deckIdValue, scope });
+        setMissingAssetsPrompt(result.prompt);
+      }
+    },
+    [exportFlow, t, track],
   );
 
   const createSetFromBackFace = async (
@@ -123,52 +185,76 @@ export default function DecksRoutePanels() {
     });
   };
 
-  if (isDecksIndex) {
-    return <DecksGridPanel />;
-  }
+  const exportProviderValue = useMemo(() => ({ exportDeck: startDeckExport }), [startDeckExport]);
 
   return (
-    <DeckDetailPanel
-      deckId={deckId ?? null}
-      actions={{
-        handleDeleteSet,
-        handleDeleteGroup,
-        startRebuildFlow,
-        navigateToDecks: () => navigate("/decks"),
-        onOpenCardEditor: (cardId) => navigate(`/cards/${cardId}`),
-        deleteSetFromGroupCard: async (setId) => {
-          const wasSelected = selectionModel.selectedSetId === setId;
-          await mutations.deleteSet(setId);
-          await selectionModel.reloadStructure();
-          if (wasSelected) {
-            selectionModel.clearSelection();
-          }
-        },
-        deleteDeck: async (id) => {
-          await mutations.deleteDecks([id]);
-        },
-      }}
-      drag={dragState}
-      dndProps={{ sensors, ...dndHandlers }}
-      modalState={{
-        isDeleteDeckOpen: detail.isDeleteDeckOpen,
-        isDeleteSetOpen: detail.isDeleteSetOpen,
-        isDeleteGroupOpen: detail.isDeleteGroupOpen,
-        isRebuildConfirmOpen: detail.isRebuildConfirmOpen,
-      }}
-      modalActions={{
-        setIsDeleteDeckOpen: detail.setIsDeleteDeckOpen,
-        setIsDeleteSetOpen: detail.setIsDeleteSetOpen,
-        setIsDeleteGroupOpen: detail.setIsDeleteGroupOpen,
-        setPendingDeleteSet: detail.setPendingDeleteSet,
-        setPendingDeleteGroup: detail.setPendingDeleteGroup,
-        setIsRebuildConfirmOpen: detail.setIsRebuildConfirmOpen,
-        setPendingRebuildSetId: detail.setPendingRebuildSetId,
-      }}
-      groupRowRef={groupRowRef}
-      entriesRowRef={entriesRowRef}
-      selectionModel={selectionModel}
-      entriesModel={entriesModel}
-    />
+    <DeckExportProvider value={exportProviderValue}>
+      {isDecksIndex ? (
+        <DecksGridPanel />
+      ) : (
+        <DeckDetailPanel
+          deckId={deckId ?? null}
+          actions={{
+            handleDeleteSet,
+            handleDeleteGroup,
+            startRebuildFlow,
+            navigateToDecks: () => navigate("/decks"),
+            onOpenCardEditor: (cardId) => navigate(`/cards/${cardId}`),
+            deleteSetFromGroupCard: async (setId) => {
+              const wasSelected = selectionModel.selectedSetId === setId;
+              await mutations.deleteSet(setId);
+              await selectionModel.reloadStructure();
+              if (wasSelected) {
+                selectionModel.clearSelection();
+              }
+            },
+            deleteDeck: async (id) => {
+              await mutations.deleteDecks([id]);
+            },
+          }}
+          drag={dragState}
+          dndProps={{ sensors, ...dndHandlers }}
+          modalState={{
+            isDeleteDeckOpen: detail.isDeleteDeckOpen,
+            isDeleteSetOpen: detail.isDeleteSetOpen,
+            isDeleteGroupOpen: detail.isDeleteGroupOpen,
+            isRebuildConfirmOpen: detail.isRebuildConfirmOpen,
+          }}
+          modalActions={{
+            setIsDeleteDeckOpen: detail.setIsDeleteDeckOpen,
+            setIsDeleteSetOpen: detail.setIsDeleteSetOpen,
+            setIsDeleteGroupOpen: detail.setIsDeleteGroupOpen,
+            setPendingDeleteSet: detail.setPendingDeleteSet,
+            setPendingDeleteGroup: detail.setPendingDeleteGroup,
+            setIsRebuildConfirmOpen: detail.setIsRebuildConfirmOpen,
+            setPendingRebuildSetId: detail.setPendingRebuildSetId,
+          }}
+          groupRowRef={groupRowRef}
+          entriesRowRef={entriesRowRef}
+          selectionModel={selectionModel}
+          entriesModel={entriesModel}
+        />
+      )}
+      {exportFlow.exportUi}
+      <StockpileMissingAssetsModal
+        prompt={missingAssetsPrompt}
+        onConfirm={async () => {
+          const prompt = missingAssetsPrompt;
+          const pending = pendingExportContext;
+          if (!prompt || !pending) return;
+          setMissingAssetsPrompt(null);
+          setPendingExportContext(null);
+          await startDeckExport(pending.deckId, pending.scope, {
+            skipIds: prompt.skipIds,
+            skipNotes: prompt.skipNotes,
+            skipPrecheck: true,
+          });
+        }}
+        onCancel={() => {
+          setMissingAssetsPrompt(null);
+          setPendingExportContext(null);
+        }}
+      />
+    </DeckExportProvider>
   );
 }

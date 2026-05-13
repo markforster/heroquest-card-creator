@@ -320,14 +320,21 @@ describe("DeckEntriesSection front remove prompt", () => {
     fireEvent.click(screen.getByTitle("Remove front from set"));
     fireEvent.click(screen.getByText("Remove and unpair"));
 
-    await waitFor(() => expect(removeEntry).toHaveBeenCalledWith("entry-1", "set-1"));
-    expect(deletePair).toHaveBeenCalledWith({ frontFaceId: "front-1", backFaceId: "back-1" });
+    await waitFor(() =>
+      expect(deletePair).toHaveBeenCalledWith({
+        frontFaceId: "front-1",
+        backFaceId: "back-1",
+        mode: "confirmable-cascade",
+        confirmCascade: false,
+      }),
+    );
+    expect(removeEntry).not.toHaveBeenCalled();
   });
 
   it("bulk Remove from set removes every selected entry without unpairing", async () => {
     entriesSortedMock = [
-      { id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0 },
-      { id: "entry-2", setId: "set-1", pairId: "pair-2", sortIndex: 1 },
+      { id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 },
+      { id: "entry-2", setId: "set-1", pairId: "pair-2", sortIndex: 1, count: 1 },
     ];
     pairsByIdMock = new Map([
       [
@@ -389,8 +396,8 @@ describe("DeckEntriesSection front remove prompt", () => {
 
   it("bulk Remove and unpair removes and unpairs every selected entry", async () => {
     entriesSortedMock = [
-      { id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0 },
-      { id: "entry-2", setId: "set-1", pairId: "pair-2", sortIndex: 1 },
+      { id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 },
+      { id: "entry-2", setId: "set-1", pairId: "pair-2", sortIndex: 1, count: 1 },
     ];
     pairsByIdMock = new Map([
       [
@@ -444,10 +451,19 @@ describe("DeckEntriesSection front remove prompt", () => {
     fireEvent.click(screen.getByText("Remove and unpair"));
 
     await waitFor(() => {
-      expect(removeEntry).toHaveBeenCalledWith("entry-1", "set-1");
-      expect(removeEntry).toHaveBeenCalledWith("entry-2", "set-1");
+      expect(deletePair).toHaveBeenCalledWith({
+        frontFaceId: "front-1",
+        backFaceId: "back-1",
+        mode: "confirmable-cascade",
+        confirmCascade: false,
+      });
+      expect(deletePair).toHaveBeenCalledWith({
+        frontFaceId: "front-2",
+        backFaceId: "back-2",
+        mode: "confirmable-cascade",
+        confirmCascade: false,
+      });
     });
-    expect(deletePair).toHaveBeenCalledWith({ frontFaceId: "front-1", backFaceId: "back-1" });
-    expect(deletePair).toHaveBeenCalledWith({ frontFaceId: "front-2", backFaceId: "back-2" });
+    expect(removeEntry).not.toHaveBeenCalled();
   });
 });

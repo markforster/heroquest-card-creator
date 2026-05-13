@@ -3,6 +3,7 @@
 import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
 
 import styles from "@/app/page.module.css";
+import DeckExportButton from "@/components/Decks/DeckExportButton";
 import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import { useDecksGridModel } from "@/components/Decks/hooks/useDecksGridModel";
 import IconButton from "@/components/common/IconButton";
@@ -177,10 +178,14 @@ export default function DecksGridPanel() {
           )}
         </div>
         <div className={styles.decksGridRightMiddle} />
-        <div
-          className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}
-          aria-hidden="true"
-        />
+        <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
+          <DeckExportButton
+            deckId={model.selectedDeckId ?? null}
+            scope="decks_grid"
+            disabled={!model.selectedDeckId}
+            label={t("actions.export")}
+          />
+        </div>
       </aside>
       <ModalShell
         isOpen={isCreateOpen}

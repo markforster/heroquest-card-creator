@@ -163,7 +163,7 @@ function DeckDetailPanelContent({
       >
         <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
           <div className={styles.deckRoutePanel}>
-            <DeckDetailHeader deckTitle={deckTitle} />
+            <DeckDetailHeader deckId={deckId} deckTitle={deckTitle} />
 
             {/* <div className={styles.deckRouteDetailsRow} /> */}
 
