@@ -1,5 +1,11 @@
 import { renderHook } from "@testing-library/react";
 
+const mockUseQueryClient = jest.fn();
+
+jest.mock("@tanstack/react-query", () => ({
+  useQueryClient: () => mockUseQueryClient(),
+}));
+
 jest.mock("@/api/client", () => ({
   apiClient: {
     createDeck: jest.fn(),
@@ -28,8 +34,18 @@ import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 const mockApiClient = apiClient as unknown as Record<string, jest.Mock>;
 
 describe("useDeckMutations", () => {
+  const invalidateQueries = jest.fn();
+  const refetchQueries = jest.fn();
+  const setQueriesData = jest.fn();
+
   beforeEach(() => {
     Object.values(mockApiClient).forEach((fn) => fn.mockReset());
+    invalidateQueries.mockReset();
+    refetchQueries.mockReset();
+    setQueriesData.mockReset();
+    invalidateQueries.mockResolvedValue(undefined);
+    refetchQueries.mockResolvedValue(undefined);
+    mockUseQueryClient.mockReturnValue({ invalidateQueries, refetchQueries, setQueriesData });
   });
 
   it("addFrontToSetAndRefresh refreshes entries and pairs", async () => {
@@ -109,5 +125,20 @@ describe("useDeckMutations", () => {
       { title: "" },
       { params: { deckId: "d1" } },
     );
+  });
+
+  it("setDeckKeySet updates cache then invalidates deck queries", async () => {
+    mockApiClient.updateDeck.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useDeckMutations());
+
+    await result.current.setDeckKeySet("d1", "set-22");
+
+    expect(setQueriesData).toHaveBeenCalledTimes(1);
+    expect(mockApiClient.updateDeck).toHaveBeenCalledWith(
+      { keySetId: "set-22" },
+      { params: { deckId: "d1" } },
+    );
+    expect(invalidateQueries).toHaveBeenCalledTimes(1);
+    expect(refetchQueries).toHaveBeenCalledTimes(1);
   });
 });

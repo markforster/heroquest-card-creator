@@ -88,13 +88,14 @@ export default function DeckDetailPanel({
   selectionModel,
   entriesModel,
 }: DeckDetailPanelProps) {
-  const { deckTitle } = useDeckHeaderModel(deckId);
+  const { deckTitle, keySetId } = useDeckHeaderModel(deckId);
 
   return (
     <DeckRightPanelProvider>
       <DeckDetailPanelContent
         deckId={deckId}
         deckTitle={deckTitle}
+        keySetId={keySetId}
         actions={actions}
         drag={drag}
         dndProps={dndProps}
@@ -112,6 +113,7 @@ export default function DeckDetailPanel({
 function DeckDetailPanelContent({
   deckId,
   deckTitle,
+  keySetId,
   actions,
   drag,
   dndProps,
@@ -124,6 +126,7 @@ function DeckDetailPanelContent({
 }: {
   deckId: string | null;
   deckTitle: string;
+  keySetId: string | null;
   actions: DeckDetailActionHandlers;
   drag: DeckDetailDragState;
   dndProps: DeckDetailDndProps;
@@ -163,7 +166,21 @@ function DeckDetailPanelContent({
       >
         <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
           <div className={styles.deckRoutePanel}>
-            <DeckDetailHeader deckId={deckId} deckTitle={deckTitle} />
+            <DeckDetailHeader
+              deckId={deckId}
+              deckTitle={deckTitle}
+              selectedSetId={selectionModel.selectedSetId}
+              keySetId={keySetId}
+              selectedSetBackFaceId={
+                selectionModel.selectedSetId
+                  ? (selectionModel.setById.get(selectionModel.selectedSetId)?.backFaceId ?? null)
+                  : null
+              }
+              onConfirmMakeKeyCard={async () => {
+                if (!selectionModel.selectedSetId || !deckId) return;
+                await actions.makeSelectedSetKeyCard(selectionModel.selectedSetId);
+              }}
+            />
 
             {/* <div className={styles.deckRouteDetailsRow} /> */}
 
@@ -172,6 +189,7 @@ function DeckDetailPanelContent({
                 <div className={styles.deckRouteMiddle}>
                   <DeckGroupsSection
                     groupTileVariant={GROUP_TILE_VARIANT}
+                    keySetId={keySetId}
                     drag={drag}
                     rowRef={groupRowRef}
                     onDeleteSetFromGroupCard={actions.deleteSetFromGroupCard}

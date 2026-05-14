@@ -6725,9 +6725,16 @@ button.assetsKindBadge:disabled {
 
 .cardFanSelected {
   fill: none;
-  stroke: var(--hq-accent);
+  stroke: var(--hq-deck-set-selected-ring);
   stroke-width: 3;
-  filter: drop-shadow(0 0 6px rgba(230, 179, 90, 0.45));
+  filter: drop-shadow(0 0 6px var(--hq-deck-set-selected-glow));
+}
+
+.cardFanKeyCard {
+  fill: none;
+  stroke: #2f6dff;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 7px rgba(47, 109, 255, 0.5));
 }
 
 .cardFanCardSvg:hover .cardFanHover {
@@ -6741,7 +6748,7 @@ button.assetsKindBadge:disabled {
 
 .cardFanCardSvg:focus-visible .cardFanHover {
   opacity: 1;
-  stroke: var(--hq-accent);
+  stroke: var(--hq-deck-set-selected-ring);
   stroke-width: 3;
 }
 
@@ -6751,7 +6758,7 @@ button.assetsKindBadge:disabled {
 
 .cardFanHover {
   fill: none;
-  stroke: rgba(230, 179, 90, 0.55);
+  stroke: var(--hq-deck-set-hover-ring);
   stroke-width: 2;
   opacity: 0;
   transition: opacity 120ms ease;
@@ -6786,12 +6793,17 @@ button.assetsKindBadge:disabled {
 }
 
 :root[data-theme="light"] .cardFanSelected {
-  stroke: #8a4b00;
-  filter: drop-shadow(0 0 6px rgba(138, 75, 0, 0.35));
+  stroke: var(--hq-deck-set-selected-ring);
+  filter: drop-shadow(0 0 6px var(--hq-deck-set-selected-glow));
+}
+
+:root[data-theme="light"] .cardFanKeyCard {
+  stroke: #1653dd;
+  filter: drop-shadow(0 0 6px rgba(22, 83, 221, 0.35));
 }
 
 :root[data-theme="light"] .cardFanHover {
-  stroke: rgba(138, 75, 0, 0.5);
+  stroke: var(--hq-deck-set-hover-ring);
 }
 
 :root[data-theme="light"] .cardFanThumbFallbackSvg {
@@ -6979,6 +6991,16 @@ button.assetsKindBadge:disabled {
 .deckHeaderActions {
   display: inline-flex;
   gap: var(--space-3);
+}
+
+.deckKeyCardConfirmBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.deckKeyCardConfirmThumb {
+  align-self: center;
 }
 
 .deckRoutePanel {
@@ -7241,6 +7263,23 @@ button.assetsKindBadge:disabled {
   flex: 0 0 auto;
 }
 
+.deckKeySetBadge {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: #2f6dff;
+  color: #f8fbff;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+  z-index: 2;
+}
+
 .deckGroupPreviewPlaceholder {
   width: 100%;
   height: 100%;
@@ -7328,12 +7367,12 @@ button.assetsKindBadge:disabled {
 
 .deckSetDomCardSelected {
   box-shadow:
-    0 0 0 3px var(--hq-accent),
-    0 0 6px rgba(230, 179, 90, 0.45);
+    0 0 0 3px var(--hq-deck-set-selected-ring),
+    0 0 6px var(--hq-deck-set-selected-glow);
 }
 
 .deckSetDomCard:hover .deckSetThumb {
-  box-shadow: 0 0 0 2px rgba(230, 179, 90, 0.55);
+  box-shadow: 0 0 0 2px var(--hq-deck-set-hover-ring);
 }
 
 .deckSetDomCard:hover .deckSetThumb img {
@@ -7506,8 +7545,8 @@ button.assetsKindBadge:disabled {
 }
 
 .deckSetTileSelected {
-  outline: 2px solid var(--hq-accent);
-  box-shadow: 0 0 0 2px rgba(155, 81, 224, 0.15);
+  outline: 2px solid var(--hq-deck-set-selected-ring);
+  box-shadow: 0 0 0 2px var(--hq-deck-set-selected-glow);
 }
 
 .deckSetTileDragging {
@@ -7913,8 +7952,8 @@ button.assetsKindBadge:disabled {
 
 .deckEntryThumbSelected {
   box-shadow:
-    0 0 0 3px var(--hq-accent),
-    0 0 6px var(--hq-accent-ring-soft);
+    0 0 0 3px var(--hq-deck-set-selected-ring),
+    0 0 6px var(--hq-deck-set-selected-glow);
 }
 
 .deckEntryThumbFrame {
@@ -7923,7 +7962,7 @@ button.assetsKindBadge:disabled {
 
 .deckEntryCard:hover .deckEntryThumb,
 .deckEntrySelect:focus-visible .deckEntryThumb {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--hq-accent) 88%, transparent);
+  box-shadow: 0 0 0 2px var(--hq-deck-set-hover-ring);
 }
 
 .deckEntryCard:hover .deckEntryThumbFrame,

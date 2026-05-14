@@ -108,7 +108,10 @@ function resolveCardFace(templateId: string, cardFace: CardFace | undefined): Ca
 }
 
 export async function listDecks({ search }: { search?: string } = {}): Promise<DeckRecord[]> {
-  const decks = await listAll<DeckRecord>(DECKS_STORE);
+  const decks = (await listAll<DeckRecord>(DECKS_STORE)).map((deck) => ({
+    ...deck,
+    keySetId: deck.keySetId ?? null,
+  }));
   if (!search) return decks;
   const q = search.toLocaleLowerCase();
   return decks.filter((deck) => deck.title.toLocaleLowerCase().includes(q));
@@ -267,7 +270,12 @@ export async function getDeck(deckId: string): Promise<DeckRecord | null> {
   return new Promise<DeckRecord | null>((resolve, reject) => {
     const request = store.get(deckId);
     request.onsuccess = () => {
-      resolve((request.result as DeckRecord | undefined) ?? null);
+      const deck = (request.result as DeckRecord | undefined) ?? null;
+      if (!deck) {
+        resolve(null);
+        return;
+      }
+      resolve({ ...deck, keySetId: deck.keySetId ?? null });
     };
     request.onerror = () => reject(request.error ?? new Error("Failed to load deck"));
   });
@@ -276,6 +284,7 @@ export async function getDeck(deckId: string): Promise<DeckRecord | null> {
 export async function createDeck(input: {
   title: string;
   description?: string | null;
+  keySetId?: string | null;
   id?: string;
   createdAt?: number;
   updatedAt?: number;
@@ -286,6 +295,7 @@ export async function createDeck(input: {
     id: input.id ?? generateId(),
     title: input.title,
     description: input.description ?? null,
+    keySetId: input.keySetId ?? null,
     createdAt: input.createdAt ?? now,
     updatedAt: input.updatedAt ?? now,
     schemaVersion: input.schemaVersion ?? 1,
@@ -302,7 +312,7 @@ export async function createDeck(input: {
 
 export async function updateDeck(
   deckId: string,
-  patch: Partial<Pick<DeckRecord, "title" | "description">>,
+  patch: Partial<Pick<DeckRecord, "title" | "description" | "keySetId">>,
 ): Promise<DeckRecord | null> {
   const store = await getStore(DECKS_STORE, "readwrite");
   const existing = await new Promise<DeckRecord | null>((resolve, reject) => {
@@ -314,6 +324,7 @@ export async function updateDeck(
   const next: DeckRecord = {
     ...existing,
     ...patch,
+    keySetId: patch.keySetId === undefined ? existing.keySetId ?? null : patch.keySetId,
     updatedAt: Date.now(),
   };
   await new Promise<void>((resolve, reject) => {
@@ -381,6 +392,7 @@ export async function duplicateDeck(deckId: string): Promise<DeckRecord | null> 
     ...existingDeck,
     id: generateId(),
     title: `${existingDeck.title} (Copy)`,
+    keySetId: existingDeck.keySetId ?? null,
     createdAt: now,
     updatedAt: now,
     schemaVersion: 1,
@@ -417,6 +429,11 @@ export async function duplicateDeck(deckId: string): Promise<DeckRecord | null> 
     };
     setsStore.add(copy);
   });
+
+  if (deckCopy.keySetId) {
+    deckCopy.keySetId = setIdMap.get(deckCopy.keySetId) ?? null;
+  }
+  decksStore.put(deckCopy);
 
   entries.forEach((entry) => {
     const copy: DeckEntryRecord = {
@@ -631,6 +648,10 @@ export async function createSet(
     request.onerror = () => reject(request.error ?? new Error("Failed to create set"));
   });
   enqueueDbEstimateChange(SETS_STORE, record.id);
+
+  if (existingSets.length === 0) {
+    await updateDeck(deckId, { keySetId: record.id });
+  }
   return record;
 }
 
@@ -671,15 +692,30 @@ export async function deleteSet(setId: string): Promise<void> {
   const groupSets = await listByIndex<DeckSetRecord>(SETS_STORE, "groupId", set.groupId);
   const shouldDeleteGroup = groupSets.length === 1;
 
+  const deckStore = await getStore(DECKS_STORE, "readwrite");
+  const deck = await new Promise<DeckRecord | null>((resolve, reject) => {
+    const request = deckStore.get(set.deckId);
+    request.onsuccess = () => resolve((request.result as DeckRecord | undefined) ?? null);
+    request.onerror = () => reject(request.error ?? new Error("Failed to load deck"));
+  });
+
   const db = await openHqccDb();
-  const tx = db.transaction([SETS_STORE, ENTRIES_STORE, GROUPS_STORE], "readwrite");
+  const tx = db.transaction([SETS_STORE, ENTRIES_STORE, GROUPS_STORE, DECKS_STORE], "readwrite");
   const txSetStore = tx.objectStore(SETS_STORE);
   const txEntryStore = tx.objectStore(ENTRIES_STORE);
   const txGroupStore = tx.objectStore(GROUPS_STORE);
+  const txDeckStore = tx.objectStore(DECKS_STORE);
   entries.forEach((entry) => txEntryStore.delete(entry.id));
   txSetStore.delete(setId);
   if (shouldDeleteGroup) {
     txGroupStore.delete(set.groupId);
+  }
+  if (deck && (deck.keySetId ?? null) === setId) {
+    txDeckStore.put({
+      ...deck,
+      keySetId: null,
+      updatedAt: Date.now(),
+    });
   }
 
   await new Promise<void>((resolve, reject) => {

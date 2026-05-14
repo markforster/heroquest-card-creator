@@ -2,6 +2,7 @@ export type DeckRecord = {
   id: string;
   title: string;
   description: string | null;
+  keySetId?: string | null;
   createdAt: number;
   updatedAt: number;
   schemaVersion: 1;

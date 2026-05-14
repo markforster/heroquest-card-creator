@@ -1,12 +1,33 @@
 "use client";
 
 import { useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { apiClient } from "@/api/client";
 import { listPairsMap } from "@/components/Decks/deck-preview";
 import type { DeckMutationCommands } from "@/components/Decks/types/deck-route";
 
 export function useDeckMutations(): DeckMutationCommands {
+  const queryClient = useQueryClient();
+  const isDeckScopedQuery = (query: { queryKey: ReadonlyArray<unknown> }, deckId: string) =>
+    Array.isArray(query.queryKey) &&
+    query.queryKey.some((segment) => {
+      if (typeof segment === "string") {
+        return segment.includes(`/decks/${deckId}`);
+      }
+      if (typeof segment !== "object" || segment === null || !("path" in segment)) {
+        return false;
+      }
+      const path = (segment as { path?: unknown }).path;
+      const params = (segment as { params?: unknown }).params;
+      const paramDeckId =
+        typeof params === "object" && params !== null && "deckId" in params
+          ? (params as { deckId?: unknown }).deckId
+          : undefined;
+      if (path !== "/decks/:deckId" && path !== "/decks") return false;
+      return typeof paramDeckId === "undefined" || paramDeckId === deckId;
+    });
+
   return useMemo(
     () => ({
       createDeck: async (title, description, fallbackTitle) => {
@@ -23,6 +44,25 @@ export function useDeckMutations(): DeckMutationCommands {
           { title },
           { params: { deckId } },
         );
+      },
+      setDeckKeySet: async (deckId, keySetId) => {
+        queryClient.setQueriesData(
+          {
+            predicate: (query: { queryKey: ReadonlyArray<unknown> }) => isDeckScopedQuery(query, deckId),
+          },
+          (current: unknown) => {
+            if (!current || typeof current !== "object") return current;
+            return { ...(current as Record<string, unknown>), keySetId };
+          },
+        );
+        await apiClient.updateDeck({ keySetId }, { params: { deckId } });
+        await queryClient.invalidateQueries({
+          predicate: (query: { queryKey: ReadonlyArray<unknown> }) => isDeckScopedQuery(query, deckId),
+        });
+        await queryClient.refetchQueries({
+          predicate: (query: { queryKey: ReadonlyArray<unknown> }) => isDeckScopedQuery(query, deckId),
+          type: "active",
+        });
       },
       deleteDecks: async (ids) => {
         await Promise.all(ids.map((id) => apiClient.deleteDeck(undefined, { params: { deckId: id } })));
@@ -91,6 +131,6 @@ export function useDeckMutations(): DeckMutationCommands {
       },
       listPairsMap,
     }),
-    [],
+    [queryClient],
   );
 }

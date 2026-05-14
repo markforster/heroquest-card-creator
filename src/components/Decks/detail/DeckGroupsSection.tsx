@@ -8,11 +8,13 @@ import { useI18n } from "@/i18n/I18nProvider";
 
 export default function DeckGroupsSection({
   groupTileVariant,
+  keySetId,
   drag,
   rowRef,
   onDeleteSetFromGroupCard,
 }: {
   groupTileVariant: "xs" | "sm" | "smMd" | "lg";
+  keySetId: string | null;
   drag: DeckDetailDragState;
   rowRef: (node: HTMLDivElement | null) => void;
   onDeleteSetFromGroupCard: (setId: string) => Promise<void>;
@@ -33,6 +35,7 @@ export default function DeckGroupsSection({
             sets={sets}
             selectedGroupId={selectedGroupId}
             selectedSetId={selectedSetId}
+            keySetId={keySetId}
             isDropOver={drag.isGroupDropOver}
             isBackFaceDragActive={drag.isBackFaceDragActive}
             isGroupDragActive={drag.isGroupDragActive}

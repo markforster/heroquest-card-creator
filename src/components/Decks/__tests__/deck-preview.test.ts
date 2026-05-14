@@ -4,6 +4,7 @@ const mockGetDeck = jest.fn();
 const mockListDeckGroups = jest.fn();
 const mockListDeckSets = jest.fn();
 const mockListDeckEntries = jest.fn();
+const mockUpdateDeck = jest.fn();
 
 jest.mock("@/api/client", () => ({
   apiClient: {
@@ -11,6 +12,7 @@ jest.mock("@/api/client", () => ({
     listDeckGroups: (...args: unknown[]) => mockListDeckGroups(...args),
     listDeckSets: (...args: unknown[]) => mockListDeckSets(...args),
     listDeckEntries: (...args: unknown[]) => mockListDeckEntries(...args),
+    updateDeck: (...args: unknown[]) => mockUpdateDeck(...args),
     listPairs: jest.fn(),
   },
 }));
@@ -20,6 +22,7 @@ describe("resolveDeckPreviewIds visual prioritization", () => {
     jest.clearAllMocks();
     mockGetDeck.mockResolvedValue({ id: "deck-1" });
     mockListDeckGroups.mockResolvedValue([{ id: "g1", sortIndex: 0 }]);
+    mockUpdateDeck.mockResolvedValue(null);
   });
 
   it("places first back in center slot for odd count", async () => {
@@ -110,5 +113,41 @@ describe("resolveDeckPreviewIds visual prioritization", () => {
 
     expect(ids).toEqual(["f1", "b1", "b2"]);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("prioritizes deck key set back face as primary", async () => {
+    mockGetDeck.mockResolvedValue({ id: "deck-1", keySetId: "s2" });
+    mockListDeckSets.mockResolvedValue([
+      { id: "s1", groupId: "g1", backFaceId: "b1", sortIndex: 0 },
+      { id: "s2", groupId: "g1", backFaceId: "b2", sortIndex: 1 },
+      { id: "s3", groupId: "g1", backFaceId: "b3", sortIndex: 2 },
+    ]);
+    mockListDeckEntries.mockResolvedValue([]);
+
+    const ids = await resolveDeckPreviewIds({
+      deckId: "deck-1",
+      maxCount: 3,
+      pairMap: new Map(),
+    });
+
+    expect(ids).toEqual(["b3", "b2", "b1"]);
+  });
+
+  it("clears stale keySetId and falls back to default order", async () => {
+    mockGetDeck.mockResolvedValue({ id: "deck-1", keySetId: "missing-set" });
+    mockListDeckSets.mockResolvedValue([
+      { id: "s1", groupId: "g1", backFaceId: "b1", sortIndex: 0 },
+      { id: "s2", groupId: "g1", backFaceId: "b2", sortIndex: 1 },
+    ]);
+    mockListDeckEntries.mockResolvedValue([]);
+
+    const ids = await resolveDeckPreviewIds({
+      deckId: "deck-1",
+      maxCount: 2,
+      pairMap: new Map(),
+    });
+
+    expect(mockUpdateDeck).toHaveBeenCalledWith({ keySetId: null }, { params: { deckId: "deck-1" } });
+    expect(ids).toEqual(["b2", "b1"]);
   });
 });

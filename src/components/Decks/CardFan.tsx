@@ -51,6 +51,7 @@ type CardFanProps = {
   onSelectCard?: (cardId: string, index: number) => void;
   onRemoveCard?: (cardId: string) => void;
   selectedCardId?: string | null;
+  keyCardId?: string | null;
   className?: string;
   fixedFrameWidth?: number;
   fixedFrameHeight?: number;
@@ -201,6 +202,7 @@ function CardFanItem({
   canSelect,
   enableHoverBorder,
   isSelected,
+  isKeyCard,
   onHoverCard,
   onSelectCard,
   onRemoveCard,
@@ -222,6 +224,7 @@ function CardFanItem({
   canSelect: boolean;
   enableHoverBorder: boolean;
   isSelected: boolean;
+  isKeyCard: boolean;
   onHoverCard?: (cardId: string | null) => void;
   onSelectCard?: (cardId: string, index: number) => void;
   onRemoveCard?: () => void;
@@ -346,6 +349,17 @@ function CardFanItem({
               className={styles.cardFanSelected}
             />
           ) : null}
+          {isKeyCard ? (
+            <rect
+              x={x}
+              y={y}
+              width={size.width}
+              height={size.height}
+              rx={cornerRadius}
+              ry={cornerRadius}
+              className={styles.cardFanKeyCard}
+            />
+          ) : null}
           {onRemoveCard ? (
             <g
               className={styles.cardFanRemoveButtonSvg}
@@ -401,6 +415,7 @@ export default function CardFan({
   onSelectCard,
   onRemoveCard,
   selectedCardId = null,
+  keyCardId = null,
   className,
   fixedFrameWidth,
   fixedFrameHeight,
@@ -600,6 +615,7 @@ export default function CardFan({
             const y = -size.height;
             const transform = `translate(${pivotX} ${pivotY}) rotate(${item.angle})`;
             const isSelected = selectedCardId ? cardId === selectedCardId : false;
+            const isKeyCard = keyCardId ? cardId === keyCardId : false;
             const dragMeta = cardId && getDragMeta ? getDragMeta(cardId) : null;
             return (
               <CardFanItem
@@ -615,6 +631,7 @@ export default function CardFan({
                 canSelect={canSelect}
                 enableHoverBorder={enableHoverBorder}
                 isSelected={isSelected}
+                isKeyCard={isKeyCard}
                 onHoverCard={onHoverCard}
                 onSelectCard={onSelectCard}
                 onRemoveCard={cardId && onRemoveCard ? () => onRemoveCard(cardId) : undefined}

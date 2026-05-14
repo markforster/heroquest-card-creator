@@ -315,6 +315,10 @@ export default function DecksRoutePanels() {
             startRebuildFlow,
             navigateToDecks: () => navigate("/decks"),
             onOpenCardEditor: (cardId) => navigate(`/cards/${cardId}`),
+            makeSelectedSetKeyCard: async (setId) => {
+              if (!deckId) return;
+              await mutations.setDeckKeySet(deckId, setId);
+            },
             deleteSetFromGroupCard: async (setId) => {
               const wasSelected = selectionModel.selectedSetId === setId;
               await mutations.deleteSet(setId);

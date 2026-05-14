@@ -16,8 +16,10 @@ export function useDeckHeaderModel(deckId: string | null) {
     () => deckQuery.data?.title ?? t("decks.untitledDeck"),
     [deckQuery.data?.title, t],
   );
+  const keySetId = deckQuery.data?.keySetId ?? null;
 
   return {
     deckTitle,
+    keySetId,
   };
 }

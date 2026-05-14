@@ -61,18 +61,24 @@ async function buildDeckPreview(
   });
 
   const orderedGroups = [...groupsData].sort((a, b) => a.sortIndex - b.sortIndex);
+  const orderedSets = orderedGroups.flatMap((group) => setsByGroup.get(group.id) ?? []);
+  const keySet = deck.keySetId
+    ? (orderedSets.find((set) => set.id === deck.keySetId) ?? null)
+    : null;
   const backIds: string[] = [];
   const frontIds: string[] = [];
   const seen = new Set<string>();
 
-  for (const group of orderedGroups) {
-    const groupSets = setsByGroup.get(group.id) ?? [];
-    for (const set of groupSets) {
-      if (!seen.has(set.backFaceId)) {
-        backIds.push(set.backFaceId);
-        seen.add(set.backFaceId);
-      }
-      if (backIds.length >= previewFanCount) break;
+  if (keySet && !seen.has(keySet.backFaceId)) {
+    backIds.push(keySet.backFaceId);
+    seen.add(keySet.backFaceId);
+  }
+
+  for (const set of orderedSets) {
+    if (set.id === keySet?.id) continue;
+    if (!seen.has(set.backFaceId)) {
+      backIds.push(set.backFaceId);
+      seen.add(set.backFaceId);
     }
     if (backIds.length >= previewFanCount) break;
   }
@@ -113,6 +119,18 @@ export async function resolveDeckPreviewIds(options: {
   const { deckId, maxCount, pairMap } = options;
   const deck = await apiClient.getDeck({ params: { deckId } });
   if (!deck) return [];
+  if (deck.keySetId) {
+    const sets = await apiClient.listDeckSets({ params: { deckId } });
+    const hasKeySet = sets.some((set) => set.id === deck.keySetId);
+    if (!hasKeySet) {
+      try {
+        await apiClient.updateDeck({ keySetId: null }, { params: { deckId } });
+      } catch {
+        // Ignore persistence errors; preview fallback still works.
+      }
+      deck.keySetId = null;
+    }
+  }
   const pairsById = pairMap ?? (await listPairsMap());
   return buildDeckPreview(deck, pairsById, maxCount);
 }

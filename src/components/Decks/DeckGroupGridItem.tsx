@@ -13,6 +13,7 @@ const SHOW_BORDER_AND_BACKGROUND = false;
 type DeckGroupGridItemProps = {
   group: DeckGroupRecord;
   isSelected: boolean;
+  hasKeySet?: boolean;
   onSelect: () => void;
   onHoverChange?: (isHovering: boolean) => void;
   preview: ReactNode;
@@ -22,6 +23,7 @@ type DeckGroupGridItemProps = {
 export default function DeckGroupGridItem({
   group,
   isSelected,
+  hasKeySet = false,
   onSelect,
   onHoverChange,
   preview,
@@ -67,7 +69,10 @@ export default function DeckGroupGridItem({
       {...attributes}
       {...listeners}
     >
-      <div className={styles.deckGroupPreview}>{preview}</div>
+      <div className={styles.deckGroupPreview}>
+        {preview}
+        {hasKeySet ? <span className={styles.deckKeySetBadge}>Key</span> : null}
+      </div>
       <div className={styles.deckNavItemTitle}>{group.title}</div>
     </div>
   );

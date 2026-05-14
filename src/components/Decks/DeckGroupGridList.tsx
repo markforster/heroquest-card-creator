@@ -16,6 +16,7 @@ type DeckGroupGridListProps = {
   sets: DeckSetRecord[];
   selectedGroupId: string | null;
   selectedSetId: string | null;
+  keySetId?: string | null;
   isDropOver: boolean;
   isGroupDragActive?: boolean;
   isSetDragActive?: boolean;
@@ -90,6 +91,7 @@ export default function DeckGroupGridList({
   sets,
   selectedGroupId,
   selectedSetId,
+  keySetId = null,
   isDropOver,
   isBackFaceDragActive = false,
   isGroupDragActive = false,
@@ -140,6 +142,10 @@ export default function DeckGroupGridList({
               .sort((a, b) => a.sortIndex - b.sortIndex);
             const backIds = groupSets.map((set) => set.backFaceId);
             const maxCount = Math.max(backIds.length, 1);
+            const keySetInGroup = keySetId
+              ? groupSets.find((set) => set.id === keySetId) ?? null
+              : null;
+            const keyBackFaceId = keySetInGroup?.backFaceId ?? null;
             const isExpanded = selectedGroupId === group.id && groupSets.length > 1;
             const dragExpanded =
               (isBackFaceDragActive || isSetDragActive) &&
@@ -215,6 +221,7 @@ export default function DeckGroupGridList({
                         void onDeleteSetFromGroupCard(target.id);
                       }
                 }
+                keyCardId={keyBackFaceId}
               />
             );
             return (
@@ -232,6 +239,7 @@ export default function DeckGroupGridList({
                 <DeckGroupGridItem
                   group={group}
                   isSelected={selectedGroupId === group.id}
+                  hasKeySet={Boolean(keySetInGroup)}
                   onSelect={() => {
                     onSelectGroup(group.id);
                     if (groupSets.length > 0) {

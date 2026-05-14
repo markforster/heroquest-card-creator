@@ -53,6 +53,7 @@ export type DeckDetailActionHandlers = {
   startRebuildFlow: () => void;
   navigateToDecks: () => void;
   onOpenCardEditor: (cardId: string) => void;
+  makeSelectedSetKeyCard: (setId: string) => Promise<void>;
   deleteSetFromGroupCard: (setId: string) => Promise<void>;
   deleteDeck: (deckId: string) => Promise<void>;
 };

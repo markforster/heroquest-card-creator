@@ -4,6 +4,7 @@ export const deckRecordSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().nullable(),
+  keySetId: z.string().nullable().optional().default(null),
   createdAt: z.number(),
   updatedAt: z.number(),
   schemaVersion: z.literal(1),
@@ -47,11 +48,13 @@ export const deckEntryRecordSchema = z.object({
 export const deckCreateInputSchema = z.object({
   title: z.string().min(1),
   description: z.string().nullable().optional(),
+  keySetId: z.string().nullable().optional(),
 });
 
 export const deckUpdateInputSchema = z.object({
   title: z.string().min(1).optional(),
   description: z.string().nullable().optional(),
+  keySetId: z.string().nullable().optional(),
 });
 
 export const deckGroupCreateInputSchema = z.object({
