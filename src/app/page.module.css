@@ -6709,6 +6709,20 @@ button.assetsKindBadge:disabled {
   stroke-dasharray: 6 4;
 }
 
+.cardFanThumbFallbackSvg {
+  fill: var(--hq-black-35);
+}
+
+.cardFanThumbImage,
+.cardFanThumbImageLoaded {
+  opacity: 0;
+  transition: opacity 240ms ease;
+}
+
+.cardFanThumbImageLoaded {
+  opacity: 1;
+}
+
 .cardFanSelected {
   fill: none;
   stroke: var(--hq-accent);
@@ -6778,6 +6792,10 @@ button.assetsKindBadge:disabled {
 
 :root[data-theme="light"] .cardFanHover {
   stroke: rgba(138, 75, 0, 0.5);
+}
+
+:root[data-theme="light"] .cardFanThumbFallbackSvg {
+  fill: var(--hq-white);
 }
 
 .deckTileTitle {

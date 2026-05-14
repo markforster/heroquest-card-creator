@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 
 import CardFan from "@/components/Decks/CardFan";
 
@@ -124,5 +124,18 @@ describe("CardFan render contract", () => {
     );
     const emptyRect = emptyContainer.querySelector(".cardFanEmptyDeckPlaceholderSvg");
     expect(emptyRect?.getAttribute("rx")).toBe(clipRadius);
+  });
+
+  it("renders thumbnail fallback and fades image in after load", () => {
+    const { container } = render(<CardFan cardIds={["card-a"]} variant="sm" />);
+
+    const fallbackRect = container.querySelector(".cardFanThumbFallbackSvg");
+    const imageNode = container.querySelector("image");
+    expect(fallbackRect).not.toBeNull();
+    expect(imageNode).not.toBeNull();
+    expect(imageNode?.getAttribute("class")).toContain("cardFanThumbImage");
+
+    fireEvent.load(imageNode as Element);
+    expect(imageNode?.getAttribute("class")).toContain("cardFanThumbImageLoaded");
   });
 });

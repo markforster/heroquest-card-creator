@@ -1,7 +1,7 @@
 "use client";
 
 import { useDraggable, useDroppable } from "@dnd-kit/core";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
@@ -66,18 +66,24 @@ type CardFanRenderItem = {
 
 function CardFanThumbSvg({
   cardId,
+  itemKey,
   x,
   y,
   width,
   height,
   cornerRadius,
+  isLoaded,
+  onLoaded,
 }: {
   cardId: string;
+  itemKey: string;
   x: number;
   y: number;
   width: number;
   height: number;
   cornerRadius: number;
+  isLoaded: boolean;
+  onLoaded: (key: string) => void;
 }) {
   const thumbUrl = useCardThumbnailUrl(cardId, null, { enabled: true, useCache: true });
   if (!thumbUrl) {
@@ -96,6 +102,15 @@ function CardFanThumbSvg({
   const clipId = `cardfan-clip-${cardId}-${Math.round(x)}-${Math.round(y)}`;
   return (
     <>
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        rx={cornerRadius}
+        ry={cornerRadius}
+        className={styles.cardFanThumbFallbackSvg}
+      />
       <defs>
         <clipPath id={clipId}>
           <rect
@@ -114,7 +129,9 @@ function CardFanThumbSvg({
         y={y}
         width={width}
         height={height}
+        className={isLoaded ? styles.cardFanThumbImageLoaded : styles.cardFanThumbImage}
         clipPath={`url(#${clipId})`}
+        onLoad={() => onLoaded(itemKey)}
       />
     </>
   );
@@ -191,6 +208,8 @@ function CardFanItem({
   dragMeta,
   placeholderVariant,
   emptyPlaceholderVariant,
+  isThumbLoaded,
+  onThumbLoaded,
 }: {
   itemKey: string;
   cardId: string | null;
@@ -210,6 +229,8 @@ function CardFanItem({
   dragMeta: { id: string; data: Record<string, unknown> } | null;
   placeholderVariant: "default" | "deck-group-drop";
   emptyPlaceholderVariant: "default" | "deck-empty";
+  isThumbLoaded: (itemKey: string) => boolean;
+  onThumbLoaded: (itemKey: string) => void;
 }) {
   const isSetCard = dragMeta?.data.type === "set" && typeof dragMeta?.data.setId === "string";
   const { setNodeRef: setDropNodeRef } = useDroppable({
@@ -294,11 +315,14 @@ function CardFanItem({
         <>
           <CardFanThumbSvg
             cardId={cardId}
+            itemKey={itemKey}
             x={x}
             y={y}
             width={size.width}
             height={size.height}
             cornerRadius={cornerRadius}
+            isLoaded={isThumbLoaded(itemKey)}
+            onLoaded={onThumbLoaded}
           />
           {enableHoverBorder ? (
             <rect
@@ -418,6 +442,27 @@ export default function CardFan({
     if (!showPlaceholdersWhenEmpty) return [];
     return Array.from({ length: maxCount }).map(() => null);
   }, [maxCount, renderItems, showPlaceholdersWhenEmpty]);
+  const [loadedThumbKeys, setLoadedThumbKeys] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const nextKeys = new Set(renderItems.filter((item) => item.cardId).map((item) => item.key));
+    setLoadedThumbKeys((prev) => {
+      const next: Record<string, boolean> = {};
+      nextKeys.forEach((key) => {
+        if (prev[key]) next[key] = true;
+      });
+      return next;
+    });
+  }, [renderItems]);
+
+  const isThumbLoaded = useCallback(
+    (itemKey: string) => Boolean(loadedThumbKeys[itemKey]),
+    [loadedThumbKeys],
+  );
+
+  const handleThumbLoaded = useCallback((itemKey: string) => {
+    setLoadedThumbKeys((prev) => (prev[itemKey] ? prev : { ...prev, [itemKey]: true }));
+  }, []);
 
   const offsets = expanded
     ? getOffsets(renderItems.length, effectiveFanType)
@@ -577,6 +622,8 @@ export default function CardFan({
                 dragMeta={dragMeta}
                 placeholderVariant={placeholderVariant}
                 emptyPlaceholderVariant={emptyPlaceholderVariant}
+                isThumbLoaded={isThumbLoaded}
+                onThumbLoaded={handleThumbLoaded}
               />
             );
           })}
