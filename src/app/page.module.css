@@ -6730,11 +6730,21 @@ button.assetsKindBadge:disabled {
   filter: drop-shadow(0 0 6px var(--hq-deck-set-selected-glow));
 }
 
-.cardFanKeyCard {
-  fill: none;
-  stroke: #2f6dff;
-  stroke-width: 3;
-  filter: drop-shadow(0 0 7px rgba(47, 109, 255, 0.5));
+.cardFanKeyBadgeSvg {
+  pointer-events: none;
+}
+
+.cardFanKeyBadgeRect {
+  fill: #2f6dff;
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 1;
+}
+
+.cardFanKeyBadgeText {
+  fill: #f8fbff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .cardFanCardSvg:hover .cardFanHover {
@@ -6797,9 +6807,13 @@ button.assetsKindBadge:disabled {
   filter: drop-shadow(0 0 6px var(--hq-deck-set-selected-glow));
 }
 
-:root[data-theme="light"] .cardFanKeyCard {
-  stroke: #1653dd;
-  filter: drop-shadow(0 0 6px rgba(22, 83, 221, 0.35));
+:root[data-theme="light"] .cardFanKeyBadgeRect {
+  fill: #3f86ff;
+  stroke: rgba(15, 35, 80, 0.35);
+}
+
+:root[data-theme="light"] .cardFanKeyBadgeText {
+  fill: #f8fbff;
 }
 
 :root[data-theme="light"] .cardFanHover {
@@ -7264,20 +7278,7 @@ button.assetsKindBadge:disabled {
 }
 
 .deckKeySetBadge {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  background: #2f6dff;
-  color: #f8fbff;
-  border-radius: 999px;
-  padding: 2px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
-  pointer-events: none;
-  z-index: 2;
+  display: none;
 }
 
 .deckGroupPreviewPlaceholder {

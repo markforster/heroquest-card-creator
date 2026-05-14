@@ -350,15 +350,27 @@ function CardFanItem({
             />
           ) : null}
           {isKeyCard ? (
-            <rect
-              x={x}
-              y={y}
-              width={size.width}
-              height={size.height}
-              rx={cornerRadius}
-              ry={cornerRadius}
-              className={styles.cardFanKeyCard}
-            />
+            <>
+              <g className={styles.cardFanKeyBadgeSvg} aria-hidden="true">
+                <rect
+                  x={x + size.width - 35}
+                  y={y + size.height - 20}
+                  width={31}
+                  height={16}
+                  rx={8}
+                  ry={8}
+                  className={styles.cardFanKeyBadgeRect}
+                />
+                <text
+                  x={x + size.width - 19.5}
+                  y={y + size.height - 10}
+                  textAnchor="middle"
+                  className={styles.cardFanKeyBadgeText}
+                >
+                  Key
+                </text>
+              </g>
+            </>
           ) : null}
           {onRemoveCard ? (
             <g

@@ -239,7 +239,6 @@ export default function DeckGroupGridList({
                 <DeckGroupGridItem
                   group={group}
                   isSelected={selectedGroupId === group.id}
-                  hasKeySet={Boolean(keySetInGroup)}
                   onSelect={() => {
                     onSelectGroup(group.id);
                     if (groupSets.length > 0) {
