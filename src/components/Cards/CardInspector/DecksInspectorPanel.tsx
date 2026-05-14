@@ -10,6 +10,7 @@ import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
 import type { CardDeckMembership } from "@/api/cards";
+import InspectorEntityRow from "./InspectorEntityRow";
 
 export default function DecksInspectorPanel() {
   const { t } = useI18n();
@@ -80,12 +81,16 @@ export default function DecksInspectorPanel() {
         <div className={styles.inspectorModeEmpty}>{t("empty.cardNotInDecks")}</div>
       ) : null}
       {!isLoading && !error && memberships.length > 0 ? (
-        <div className="list-group" data-testid="decks-inspector-list">
+        <div className="d-flex flex-column gap-2" data-testid="decks-inspector-list">
           {memberships.map((membership) => (
-            <button
+            <InspectorEntityRow
               key={membership.deckId}
-              type="button"
-              className={`list-group-item list-group-item-action ${styles.inspectorDeckMembershipRow}`}
+              as="button"
+              interactive
+              className={styles.inspectorDeckMembershipRow}
+              title={membership.deckTitle}
+              subtitle={undefined}
+              right={<span className={styles.inspectorDeckMembershipCount}>{membership.count}</span>}
               onClick={() =>
                 navigate(
                   buildDeckDeepLink({
@@ -95,21 +100,21 @@ export default function DecksInspectorPanel() {
                   }),
                 )
               }
-            >
-              <span className={styles.inspectorDeckMembershipFan}>
-                <DeckFanByDeckId
-                  deckId={membership.deckId}
-                  maxCount={6}
-                  variant="inspector"
-                  spacing={0.7}
-                  tilt={0.5}
-                  showPlaceholdersWhenEmpty
-                  emptyPlaceholderVariant="deck-empty"
-                />
-              </span>
-              <span className={styles.inspectorDeckMembershipTitle}>{membership.deckTitle}</span>
-              <span className={styles.inspectorDeckMembershipCount}>{membership.count}</span>
-            </button>
+              left={
+                <span className={styles.inspectorDeckMembershipFan}>
+                  <DeckFanByDeckId
+                    deckId={membership.deckId}
+                    maxCount={6}
+                    variant="inspector"
+                    className={styles.inspectorDeckMembershipFanInner}
+                    spacing={0.7}
+                    tilt={0.5}
+                    showPlaceholdersWhenEmpty
+                    emptyPlaceholderVariant="deck-empty"
+                  />
+                </span>
+              }
+            />
           ))}
         </div>
       ) : null}

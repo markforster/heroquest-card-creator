@@ -2576,13 +2576,16 @@
 
 .pairingPanelGroupHeaderButton {
   width: 100%;
-  background: var(--hq-white-06);
-  border: 1px solid var(--hq-white-08);
-  border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-6);
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: inherit;
   cursor: pointer;
   text-align: left;
+}
+
+.pairingPanelGroupHeaderRow {
+  width: 100%;
 }
 
 .pairingPanelGroupChevron {
@@ -2669,25 +2672,6 @@
   height: 100%;
   object-fit: contain;
   display: block;
-}
-
-.pairingPanelGroupTitle {
-  font-size: var(--text-2xl);
-  letter-spacing: 0.03em;
-  color: var(--hq-text);
-}
-
-.pairingPanelGroupInfo {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.pairingPanelGroupCount {
-  font-size: var(--text-sm);
-  color: var(--hq-text-muted);
 }
 
 .pairingPanelHoverPopover {
@@ -6845,23 +6829,41 @@ button.assetsKindBadge:disabled {
   border-bottom: 1px solid var(--hq-border-strong);
 }
 
-.inspectorDeckMembershipRow {
+.inspectorEntityRow {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  width: 100%;
+  background: var(--hq-white-06);
+  border: 1px solid var(--hq-white-08);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-6);
+  color: inherit;
+  text-align: left;
 }
 
-.inspectorDeckMembershipFan {
+.inspectorEntityRowInteractive {
+  cursor: pointer;
+}
+
+.inspectorEntityRowLeft {
   flex: 0 0 auto;
-  width: 90px;
-  height: 84px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.inspectorDeckMembershipTitle {
+.inspectorEntityRowInfo {
   flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.inspectorEntityRowTitle {
+  width: 100%;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -6871,9 +6873,36 @@ button.assetsKindBadge:disabled {
   color: var(--hq-text);
 }
 
-.inspectorDeckMembershipCount {
+.inspectorEntityRowSubtitle {
+  font-size: var(--text-sm);
+  color: var(--hq-text-muted);
+}
+
+.inspectorEntityRowRight {
   flex: 0 0 auto;
   margin-left: auto;
+}
+
+.inspectorDeckMembershipFan {
+  width: 90px;
+  height: 84px;
+  position: relative;
+  overflow: hidden;
+}
+
+.inspectorDeckMembershipFanInner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  transform-origin: center;
+}
+
+.inspectorDeckMembershipRow {
+  appearance: none;
+}
+
+.inspectorDeckMembershipCount {
   font-size: var(--text-sm);
   color: var(--hq-text-muted);
   font-weight: 500;

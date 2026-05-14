@@ -32,6 +32,7 @@ import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
 
 import CollapsibleGroup from "./CollapsibleGroup";
+import InspectorEntityRow from "./InspectorEntityRow";
 
 type PairingInspectorPanelProps = {
   activeFrontId?: string | null;
@@ -667,34 +668,36 @@ export default function PairingInspectorPanel({
                   bodyClassName={styles.pairingPanelGroupBody}
                   defaultOpen={autoOpenBackId === backCard.id}
                   headerContent={
-                    <>
-                      <button
-                        type="button"
-                        className={`${styles.pairingPanelGroupThumb} ${
-                          pairingDisabled ? styles.pairingPanelGroupThumbDisabled : ""
-                        }`}
-                        disabled={pairingDisabled}
-                        onMouseEnter={(event) => {
-                          showHoverPreview(backCard, event.currentTarget);
-                        }}
-                        onMouseLeave={hideHoverPreview}
-                        onClick={async (event) => {
-                          event.stopPropagation();
-                          if (pairingDisabled) return;
-                          await requestOpenCard(backCard.id);
-                        }}
-                      >
-                        <PairingThumbImage
-                          cardId={backCard.id}
-                          thumbnailBlob={backCard.thumbnailBlob ?? null}
-                          templateThumbSrc={backTemplateThumb?.src ?? null}
-                        />
-                      </button>
-                      <div className={styles.pairingPanelGroupInfo}>
-                        <div className={styles.pairingPanelGroupTitle}>{backTitle}</div>
-                        <div className={styles.pairingPanelGroupCount}>{groupCountLabel}</div>
-                      </div>
-                      <span className={styles.pairingPanelGroupControls} aria-hidden="true">
+                    <InspectorEntityRow
+                      as="div"
+                      className={styles.pairingPanelGroupHeaderRow}
+                      title={backTitle}
+                      subtitle={groupCountLabel}
+                      left={
+                        <button
+                          type="button"
+                          className={`${styles.pairingPanelGroupThumb} ${
+                            pairingDisabled ? styles.pairingPanelGroupThumbDisabled : ""
+                          }`}
+                          disabled={pairingDisabled}
+                          onMouseEnter={(event) => {
+                            showHoverPreview(backCard, event.currentTarget);
+                          }}
+                          onMouseLeave={hideHoverPreview}
+                          onClick={async (event) => {
+                            event.stopPropagation();
+                            if (pairingDisabled) return;
+                            await requestOpenCard(backCard.id);
+                          }}
+                        >
+                          <PairingThumbImage
+                            cardId={backCard.id}
+                            thumbnailBlob={backCard.thumbnailBlob ?? null}
+                            templateThumbSrc={backTemplateThumb?.src ?? null}
+                          />
+                        </button>
+                      }
+                      right={<span className={styles.pairingPanelGroupControls} aria-hidden="true">
                       <button
                         type="button"
                         className={`${styles.pairingPanelGroupUnpair} ${
@@ -725,8 +728,8 @@ export default function PairingInspectorPanel({
                         <ChevronDown size={18} className={styles.pairingPanelGroupChevronDown} />
                         <ChevronUp size={18} className={styles.pairingPanelGroupChevronUp} />
                       </span>
-                      </span>
-                    </>
+                      </span>}
+                    />
                   }
                 >
                   <div className={styles.pairingPanelGroupGrid}>
