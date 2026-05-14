@@ -43,7 +43,6 @@ describe("DecksGridPanel right panel", () => {
   const createModel = (overrides: Record<string, unknown> = {}) => ({
     decks: [{ id: "d1", title: "Deck 1", updatedAt: Date.now() }],
     effectiveDeckTitleById: { d1: "Deck 1" },
-    deckPreviews: { d1: [] },
     selectedDeckIds: new Set<string>(["d1"]),
     selectedDeckId: "d1",
     selectedDeckTitleDraft: "Deck 1",

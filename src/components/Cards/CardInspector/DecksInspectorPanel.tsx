@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
 import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
+import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -104,7 +105,7 @@ export default function DecksInspectorPanel() {
                 <span className={styles.inspectorDeckMembershipFan}>
                   <DeckFanByDeckId
                     deckId={membership.deckId}
-                    maxCount={6}
+                    maxCount={DEFAULT_DECK_FAN_PREVIEW_COUNT}
                     variant="inspector"
                     className={styles.inspectorDeckMembershipFanInner}
                     spacing={0.7}

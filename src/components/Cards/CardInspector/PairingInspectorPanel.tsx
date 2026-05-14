@@ -8,6 +8,7 @@ import { useFormContext, useFormState, useWatch } from "react-hook-form";
 
 import styles from "@/app/page.module.css";
 import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
+import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
 import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
@@ -852,7 +853,7 @@ export default function PairingInspectorPanel({
                     <div className={styles.pairingUsageDeckFan}>
                       <DeckFanByDeckId
                         deckId={deck.deckId}
-                        maxCount={6}
+                        maxCount={DEFAULT_DECK_FAN_PREVIEW_COUNT}
                         variant="inspector"
                         spacing={0.7}
                         tilt={0.5}

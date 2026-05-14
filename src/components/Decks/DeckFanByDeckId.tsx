@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import CardFan from "@/components/Decks/CardFan";
 import type { CardFanVariant } from "@/components/Decks/CardFan";
+import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
 import { resolveDeckPreviewIds } from "@/components/Decks/deck-preview";
 
 type DeckFanByDeckIdProps = {
@@ -15,31 +16,22 @@ type DeckFanByDeckIdProps = {
   spacing?: number;
   emptyPlaceholderVariant?: "default" | "deck-empty";
   className?: string;
-  previewIds?: string[];
 };
 
 export default function DeckFanByDeckId({
   deckId,
-  maxCount = 6,
+  maxCount = DEFAULT_DECK_FAN_PREVIEW_COUNT,
   variant = "sm",
   showPlaceholdersWhenEmpty = true,
   tilt,
   spacing,
   emptyPlaceholderVariant = "default",
   className,
-  previewIds,
 }: DeckFanByDeckIdProps) {
-  const [resolvedPreviewIds, setResolvedPreviewIds] = useState<string[]>(previewIds ?? []);
+  const [resolvedPreviewIds, setResolvedPreviewIds] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
-
-    if (previewIds) {
-      setResolvedPreviewIds(previewIds);
-      return () => {
-        cancelled = true;
-      };
-    }
 
     const loadPreview = async () => {
       try {
@@ -59,7 +51,7 @@ export default function DeckFanByDeckId({
     return () => {
       cancelled = true;
     };
-  }, [deckId, maxCount, previewIds]);
+  }, [deckId, maxCount]);
 
   return (
     <CardFan

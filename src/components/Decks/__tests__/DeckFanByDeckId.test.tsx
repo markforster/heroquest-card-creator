@@ -16,6 +16,7 @@ jest.mock("@/components/Decks/CardFan", () => ({
 }));
 
 import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
+import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
 
 describe("DeckFanByDeckId", () => {
   beforeEach(() => {
@@ -23,18 +24,21 @@ describe("DeckFanByDeckId", () => {
     mockCardFan.mockReset();
   });
 
-  it("resolves preview ids with default maxCount=6", async () => {
+  it("resolves preview ids with default maxCount", async () => {
     mockResolveDeckPreviewIds.mockResolvedValue(["b1", "f1"]);
 
     render(<DeckFanByDeckId deckId="deck-1" />);
 
     await waitFor(() => {
-      expect(mockResolveDeckPreviewIds).toHaveBeenCalledWith({ deckId: "deck-1", maxCount: 6 });
+      expect(mockResolveDeckPreviewIds).toHaveBeenCalledWith({
+        deckId: "deck-1",
+        maxCount: DEFAULT_DECK_FAN_PREVIEW_COUNT,
+      });
     });
 
     const latestProps = mockCardFan.mock.calls.at(-1)?.[0] as Record<string, unknown>;
     expect(latestProps.variant).toBe("sm");
-    expect(latestProps.maxCount).toBe(6);
+    expect(latestProps.maxCount).toBe(DEFAULT_DECK_FAN_PREVIEW_COUNT);
     expect(latestProps.cardIds).toEqual(["b1", "f1"]);
   });
 
@@ -50,16 +54,6 @@ describe("DeckFanByDeckId", () => {
     const latestProps = mockCardFan.mock.calls.at(-1)?.[0] as Record<string, unknown>;
     expect(latestProps.maxCount).toBe(4);
     expect(latestProps.variant).toBe("xs");
-  });
-
-  it("uses provided previewIds without resolving", async () => {
-    render(<DeckFanByDeckId deckId="deck-3" previewIds={["p1", "p2"]} maxCount={5} />);
-
-    expect(mockResolveDeckPreviewIds).not.toHaveBeenCalled();
-
-    const latestProps = mockCardFan.mock.calls.at(-1)?.[0] as Record<string, unknown>;
-    expect(latestProps.cardIds).toEqual(["p1", "p2"]);
-    expect(latestProps.maxCount).toBe(5);
   });
 
   it("falls back to empty ids on resolver error", async () => {

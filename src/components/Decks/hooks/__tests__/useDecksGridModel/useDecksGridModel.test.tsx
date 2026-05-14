@@ -4,9 +4,6 @@ import { useDecksGridModel } from "@/components/Decks/hooks/useDecksGridModel";
 
 const mockUseListDecks = jest.fn();
 const mockUseDeckMutations = jest.fn();
-const mockListDeckGroups = jest.fn();
-const mockListDeckSets = jest.fn();
-const mockListDeckEntries = jest.fn();
 
 jest.mock("@/api/hooks", () => ({
   useListDecks: (...args: unknown[]) => mockUseListDecks(...args),
@@ -16,21 +13,12 @@ jest.mock("@/components/Decks/hooks/useDeckMutations", () => ({
   useDeckMutations: (...args: unknown[]) => mockUseDeckMutations(...args),
 }));
 
-jest.mock("@/api/client", () => ({
-  apiClient: {
-    listDeckGroups: (...args: unknown[]) => mockListDeckGroups(...args),
-    listDeckSets: (...args: unknown[]) => mockListDeckSets(...args),
-    listDeckEntries: (...args: unknown[]) => mockListDeckEntries(...args),
-  },
-}));
-
 describe("useDecksGridModel", () => {
   const refetch = jest.fn();
   const createDeck = jest.fn();
   const updateDeckTitle = jest.fn();
   const deleteDecks = jest.fn();
   const duplicateDeck = jest.fn();
-  const listPairsMap = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -45,12 +33,7 @@ describe("useDecksGridModel", () => {
       updateDeckTitle,
       deleteDecks,
       duplicateDeck,
-      listPairsMap,
     });
-    listPairsMap.mockResolvedValue(new Map([["p1", { id: "p1", frontFaceId: "f1" }]]));
-    mockListDeckGroups.mockResolvedValue([{ id: "g1", sortIndex: 0 }]);
-    mockListDeckSets.mockResolvedValue([{ id: "s1", groupId: "g1", backFaceId: "b1", sortIndex: 0 }]);
-    mockListDeckEntries.mockResolvedValue([{ id: "e1", pairId: "p1", sortIndex: 0 }]);
     refetch.mockResolvedValue({
       data: [{ id: "d1", title: "Deck 1", updatedAt: 1 }],
     });
@@ -61,23 +44,20 @@ describe("useDecksGridModel", () => {
     jest.useRealTimers();
   });
 
-  it("loads decks and computes previews", async () => {
+  it("loads decks", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ previewFanCount: 5, untitledDeckLabel: "Untitled" }),
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
     );
 
     await waitFor(() => {
-      expect(result.current.deckPreviews.d1).toEqual(["b1", "f1"]);
+      expect(result.current.decks).toEqual([{ id: "d1", title: "Deck 1", updatedAt: 1 }]);
     });
   });
 
   it("preserves single-select and modifier toggle behavior", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ previewFanCount: 5, untitledDeckLabel: "Untitled" }),
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
     );
-    await waitFor(() => {
-      expect(listPairsMap).toHaveBeenCalled();
-    });
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -97,11 +77,8 @@ describe("useDecksGridModel", () => {
     });
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ previewFanCount: 5, untitledDeckLabel: "Untitled" }),
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
     );
-    await waitFor(() => {
-      expect(listPairsMap).toHaveBeenCalled();
-    });
 
     await act(async () => {
       await result.current.createDeck();
@@ -114,11 +91,8 @@ describe("useDecksGridModel", () => {
 
   it("initializes rename draft from single selected deck and gates actions by selection", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ previewFanCount: 5, untitledDeckLabel: "Untitled" }),
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
     );
-    await waitFor(() => {
-      expect(listPairsMap).toHaveBeenCalled();
-    });
 
     expect(result.current.canRenameDeck).toBe(false);
     expect(result.current.canDeleteDecks).toBe(false);
@@ -135,11 +109,8 @@ describe("useDecksGridModel", () => {
 
   it("commits title updates and falls back to untitled when blank", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ previewFanCount: 5, untitledDeckLabel: "Untitled" }),
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
     );
-    await waitFor(() => {
-      expect(listPairsMap).toHaveBeenCalled();
-    });
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -162,11 +133,8 @@ describe("useDecksGridModel", () => {
 
   it("cancels title edits and resets draft", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ previewFanCount: 5, untitledDeckLabel: "Untitled" }),
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
     );
-    await waitFor(() => {
-      expect(listPairsMap).toHaveBeenCalled();
-    });
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -191,11 +159,8 @@ describe("useDecksGridModel", () => {
     });
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ previewFanCount: 5, untitledDeckLabel: "Untitled" }),
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
     );
-    await waitFor(() => {
-      expect(listPairsMap).toHaveBeenCalled();
-    });
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -209,11 +174,8 @@ describe("useDecksGridModel", () => {
 
   it("updates effective title immediately and persists with debounce", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ previewFanCount: 5, untitledDeckLabel: "Untitled" }),
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
     );
-    await waitFor(() => {
-      expect(listPairsMap).toHaveBeenCalled();
-    });
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -239,11 +201,8 @@ describe("useDecksGridModel", () => {
 
   it("shows untitled label in effective map when selected draft is empty", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ previewFanCount: 5, untitledDeckLabel: "Untitled deck" }),
+      useDecksGridModel({ untitledDeckLabel: "Untitled deck" }),
     );
-    await waitFor(() => {
-      expect(listPairsMap).toHaveBeenCalled();
-    });
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -261,11 +220,8 @@ describe("useDecksGridModel", () => {
 
   it("debounced save uses latest draft value only", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ previewFanCount: 5, untitledDeckLabel: "Untitled" }),
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
     );
-    await waitFor(() => {
-      expect(listPairsMap).toHaveBeenCalled();
-    });
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -299,11 +255,8 @@ describe("useDecksGridModel", () => {
     }));
 
     const { result, rerender } = renderHook(() =>
-      useDecksGridModel({ previewFanCount: 5, untitledDeckLabel: "Untitled" }),
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
     );
-    await waitFor(() => {
-      expect(listPairsMap).toHaveBeenCalled();
-    });
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -334,11 +287,8 @@ describe("useDecksGridModel", () => {
     });
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ previewFanCount: 5, untitledDeckLabel: "Untitled" }),
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
     );
-    await waitFor(() => {
-      expect(listPairsMap).toHaveBeenCalled();
-    });
 
     act(() => {
       result.current.selectDeck("d1", false);

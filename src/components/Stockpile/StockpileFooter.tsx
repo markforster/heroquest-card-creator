@@ -6,6 +6,7 @@ import { Lightbulb } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
+import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import { cardTemplatesById } from "@/data/card-templates";
@@ -317,7 +318,11 @@ export default function StockpileFooter({
                   >
                     <div className={styles.pairFrontsDeckNameRow}>
                       <span className={styles.pairingUsageDeckTitle}>{deck.deckTitle}</span>
-                      <DeckFanByDeckId deckId={deck.deckId} variant="xs" maxCount={4} />
+                      <DeckFanByDeckId
+                        deckId={deck.deckId}
+                        variant="xs"
+                        maxCount={DEFAULT_DECK_FAN_PREVIEW_COUNT}
+                      />
                     </div>
                     <ul className={styles.pairingUsageItems}>
                       {deck.locations.map((location) => (

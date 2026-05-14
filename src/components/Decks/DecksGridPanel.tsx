@@ -5,6 +5,7 @@ import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import styles from "@/app/page.module.css";
 import DeckExportButton from "@/components/Decks/DeckExportButton";
 import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
+import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
 import { useDecksGridModel } from "@/components/Decks/hooks/useDecksGridModel";
 import IconButton from "@/components/common/IconButton";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
@@ -13,7 +14,6 @@ import { useNavigate } from "react-router-dom";
 
 import { useEffect, useRef, useState } from "react";
 
-const PREVIEW_FAN_COUNT = 5;
 const PREVIEW_VARIANT = "smMd";
 const DECK_GRID_TITLE_INPUT_ID = "deck-grid-title-input";
 
@@ -21,7 +21,6 @@ export default function DecksGridPanel() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const model = useDecksGridModel({
-    previewFanCount: PREVIEW_FAN_COUNT,
     untitledDeckLabel: t("decks.untitledDeck"),
   });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -76,7 +75,6 @@ export default function DecksGridPanel() {
           </button>
           {model.decks.map((deck) => {
             const isSelected = model.selectedDeckIds.has(deck.id);
-            const previewIds = model.deckPreviews[deck.id] ?? [];
             return (
               <button
                 key={deck.id}
@@ -88,9 +86,8 @@ export default function DecksGridPanel() {
                 <div className={styles.deckTilePreview}>
                   <DeckFanByDeckId
                     deckId={deck.id}
-                    previewIds={previewIds}
                     variant={PREVIEW_VARIANT}
-                    maxCount={PREVIEW_FAN_COUNT}
+                    maxCount={DEFAULT_DECK_FAN_PREVIEW_COUNT}
                     showPlaceholdersWhenEmpty
                     emptyPlaceholderVariant="deck-empty"
                     spacing={1}

@@ -2,25 +2,21 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { DeckRecord } from "@/api/decks";
 import { useListDecks } from "@/api/hooks";
-import { resolveDeckPreviewMap } from "@/components/Decks/deck-preview";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { getSelectedDeckId } from "@/components/Decks/selectors/deckDetailSelectors";
 
 type UseDecksGridModelArgs = {
-  previewFanCount: number;
   untitledDeckLabel: string;
 };
 
-export function useDecksGridModel({ previewFanCount, untitledDeckLabel }: UseDecksGridModelArgs) {
+export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) {
   const mutations = useDeckMutations();
   const decksQuery = useListDecks(
     { queries: {} },
     { enabled: true, staleTime: 0, refetchOnMount: "always" },
   );
 
-  const [deckPreviews, setDeckPreviews] = useState<Record<string, string[]>>({});
   const [selectedDeckIds, setSelectedDeckIds] = useState<Set<string>>(new Set());
   const [isDeleteDeckOpen, setIsDeleteDeckOpen] = useState(false);
   const [deckTitleDraft, setDeckTitleDraft] = useState("");
@@ -56,36 +52,10 @@ export function useDecksGridModel({ previewFanCount, untitledDeckLabel }: UseDec
     return next;
   }, [decks, isSingleSelection, selectedDeckId, selectedDeckTitleDraft, untitledDeckLabel]);
 
-  const refreshDeckPreviews = useCallback(
-    async (deckList: DeckRecord[]) => {
-      const pairMap = await mutations.listPairsMap();
-      const nextPreviews = await resolveDeckPreviewMap({
-        decks: deckList,
-        maxCount: previewFanCount,
-        pairMap,
-      });
-      setDeckPreviews(nextPreviews);
-    },
-    [mutations, previewFanCount],
-  );
-
   const refresh = useCallback(async () => {
     const response = await decksQuery.refetch();
-    const nextDecks = response.data ?? [];
-    await refreshDeckPreviews(nextDecks);
-    return nextDecks;
-  }, [decksQuery, refreshDeckPreviews]);
-
-  useEffect(() => {
-    let active = true;
-    refreshDeckPreviews(decks).catch(() => {
-      if (!active) return;
-      setDeckPreviews({});
-    });
-    return () => {
-      active = false;
-    };
-  }, [decks, refreshDeckPreviews]);
+    return response.data ?? [];
+  }, [decksQuery]);
 
   useEffect(() => {
     if (!isSingleSelection || !selectedDeckId) {
@@ -243,7 +213,6 @@ export function useDecksGridModel({ previewFanCount, untitledDeckLabel }: UseDec
 
   return {
     decks,
-    deckPreviews,
     selectedDeckIds,
     selectedDeckId,
     isDeleteDeckOpen,
