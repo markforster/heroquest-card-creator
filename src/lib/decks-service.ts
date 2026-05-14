@@ -999,6 +999,102 @@ export async function getDeckUsageForPair(pairId: string): Promise<DeckUsageLoca
   return usage;
 }
 
+export async function getDeckUsageForBackFaceIds(
+  backFaceIds: string[],
+): Promise<Array<DeckUsageLocation & { backFaceId: string }>> {
+  if (!backFaceIds.length) return [];
+  const backIdSet = new Set(backFaceIds);
+  const sets = await listAll<DeckSetRecord>(SETS_STORE);
+  const matchedSets = sets.filter((set) => backIdSet.has(set.backFaceId));
+  if (!matchedSets.length) return [];
+
+  const groups = await listAll<DeckGroupRecord>(GROUPS_STORE);
+  const decks = await listAll<DeckRecord>(DECKS_STORE);
+  const groupMap = new Map(groups.map((group) => [group.id, group]));
+  const deckMap = new Map(decks.map((deck) => [deck.id, deck]));
+  const usage: Array<DeckUsageLocation & { backFaceId: string }> = [];
+
+  matchedSets.forEach((set) => {
+    const group = groupMap.get(set.groupId);
+    const deck = deckMap.get(set.deckId);
+    if (!group || !deck) return;
+    usage.push({
+      deckId: deck.id,
+      deckTitle: deck.title,
+      groupId: group.id,
+      groupTitle: group.title,
+      setId: set.id,
+      setTitle: set.title,
+      backFaceId: set.backFaceId,
+    });
+  });
+
+  return usage;
+}
+
+export async function cascadeDeleteDeckDataForBackFaceIds(backFaceIds: string[]): Promise<{
+  deletedEntries: number;
+  deletedSets: number;
+  deletedGroups: number;
+  deletedDecks: number;
+}> {
+  if (!backFaceIds.length) {
+    return { deletedEntries: 0, deletedSets: 0, deletedGroups: 0, deletedDecks: 0 };
+  }
+  const backIdSet = new Set(backFaceIds);
+  const sets = await listAll<DeckSetRecord>(SETS_STORE);
+  const groups = await listAll<DeckGroupRecord>(GROUPS_STORE);
+  const decks = await listAll<DeckRecord>(DECKS_STORE);
+  const entries = (await listAll<DeckEntryRecord & { count?: number | null }>(ENTRIES_STORE)).map(
+    normalizeDeckEntryRecord,
+  );
+
+  const setsToDelete = sets.filter((set) => backIdSet.has(set.backFaceId));
+  if (!setsToDelete.length) {
+    return { deletedEntries: 0, deletedSets: 0, deletedGroups: 0, deletedDecks: 0 };
+  }
+  const setIdSet = new Set(setsToDelete.map((set) => set.id));
+  const entriesToDelete = entries.filter((entry) => setIdSet.has(entry.setId));
+
+  const remainingSets = sets.filter((set) => !setIdSet.has(set.id));
+  const remainingSetGroupIds = new Set(remainingSets.map((set) => set.groupId));
+  const groupsToDelete = groups.filter((group) => !remainingSetGroupIds.has(group.id));
+  const groupIdSetToDelete = new Set(groupsToDelete.map((group) => group.id));
+  const remainingGroups = groups.filter((group) => !groupIdSetToDelete.has(group.id));
+  const remainingGroupDeckIds = new Set(remainingGroups.map((group) => group.deckId));
+  const decksToDelete = decks.filter((deck) => !remainingGroupDeckIds.has(deck.id));
+
+  const db = await openHqccDb();
+  const tx = db.transaction([ENTRIES_STORE, SETS_STORE, GROUPS_STORE, DECKS_STORE], "readwrite");
+  const entriesStore = tx.objectStore(ENTRIES_STORE);
+  const setsStore = tx.objectStore(SETS_STORE);
+  const groupsStore = tx.objectStore(GROUPS_STORE);
+  const decksStore = tx.objectStore(DECKS_STORE);
+
+  entriesToDelete.forEach((entry) => entriesStore.delete(entry.id));
+  setsToDelete.forEach((set) => setsStore.delete(set.id));
+  groupsToDelete.forEach((group) => groupsStore.delete(group.id));
+  decksToDelete.forEach((deck) => decksStore.delete(deck.id));
+
+  await new Promise<void>((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error("Failed to cascade delete deck data"));
+    tx.onabort = () => reject(tx.error ?? new Error("Failed to cascade delete deck data"));
+  });
+
+  entriesToDelete.forEach((entry) => enqueueDbEstimateChange(ENTRIES_STORE, entry.id));
+  setsToDelete.forEach((set) => enqueueDbEstimateChange(SETS_STORE, set.id));
+  groupsToDelete.forEach((group) => enqueueDbEstimateChange(GROUPS_STORE, group.id));
+  decksToDelete.forEach((deck) => enqueueDbEstimateChange(DECKS_STORE, deck.id));
+
+  return {
+    deletedEntries: entriesToDelete.length,
+    deletedSets: setsToDelete.length,
+    deletedGroups: groupsToDelete.length,
+    deletedDecks: decksToDelete.length,
+  };
+}
+
 export async function validatePairEntry(setId: string, pairId: string): Promise<void> {
   const setStore = await getStore(SETS_STORE, "readonly");
   const set = await new Promise<DeckSetRecord | null>((resolve, reject) => {

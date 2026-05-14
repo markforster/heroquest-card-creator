@@ -30,6 +30,27 @@ export type PairDeleteConfirmRequiredError = {
   report: PairUsageReport;
 };
 
+export type CardDeleteMode = "block" | "confirmable-cascade";
+
+export type CardDeleteCascadePlan = {
+  cardIds: string[];
+  deckSetIds: string[];
+  deckEntryIds: string[];
+  deletedDeckUsage: DeckUsageLocation[];
+  pairUsage: DeckUsageLocation[];
+};
+
+export type CardDeleteUsageReport = {
+  cardIds: string[];
+  mode: CardDeleteMode;
+  cascadePlan: CardDeleteCascadePlan;
+};
+
+export type CardDeleteConfirmRequiredError = {
+  code: "CARD_DELETE_CONFIRM_REQUIRED";
+  report: CardDeleteUsageReport;
+};
+
 export type PairDeleteResolution =
   | {
       kind: "no-impact";
@@ -45,6 +66,7 @@ export type PairDeleteResolution =
 export type DecksError =
   | PairInUseError
   | PairDeleteConfirmRequiredError
+  | CardDeleteConfirmRequiredError
   | { code: "DECK_SET_BACK_ALREADY_USED"; deckId: string; backFaceId: string; existingSetId: string }
   | { code: "DECK_ENTRY_PAIR_ALREADY_USED"; deckId: string; pairId: string; existingEntryId: string };
 
@@ -71,4 +93,20 @@ export function createPairDeleteConfirmRequiredError(
   report: PairUsageReport,
 ): PairDeleteConfirmRequiredError {
   return { code: "PAIR_DELETE_CONFIRM_REQUIRED", report };
+}
+
+export function isCardDeleteConfirmRequiredError(
+  error: unknown,
+): error is CardDeleteConfirmRequiredError {
+  if (!error || typeof error !== "object") return false;
+  return (
+    "code" in error &&
+    (error as { code?: string }).code === "CARD_DELETE_CONFIRM_REQUIRED"
+  );
+}
+
+export function createCardDeleteConfirmRequiredError(
+  report: CardDeleteUsageReport,
+): CardDeleteConfirmRequiredError {
+  return { code: "CARD_DELETE_CONFIRM_REQUIRED", report };
 }

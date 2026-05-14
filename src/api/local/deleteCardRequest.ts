@@ -1,4 +1,4 @@
-import { deleteCard } from "@/lib/cards-db";
+import { deleteCardsWithCascade } from "@/lib/cards-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
@@ -12,7 +12,7 @@ export const deleteCardRequestPlugin: ZodiosPlugin = {
       if (!id) {
         throw new Error("[api:deleteCard] Missing id param");
       }
-      await deleteCard(id);
+      await deleteCardsWithCascade([id], { mode: "confirmable-cascade", confirmCascade: true });
 
       return {
         data: undefined,

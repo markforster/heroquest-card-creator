@@ -14,6 +14,10 @@ export const libraryExportResultSchema = z.object({
     cardsCount: z.number(),
     assetsCount: z.number(),
     collectionsCount: z.number(),
+    decksCount: z.number(),
+    deckGroupsCount: z.number(),
+    deckSetsCount: z.number(),
+    deckEntriesCount: z.number(),
   }),
 });
 
@@ -21,4 +25,8 @@ export const libraryImportResultSchema = z.object({
   cardsCount: z.number(),
   assetsCount: z.number(),
   collectionsCount: z.number(),
+  decksCount: z.number(),
+  deckGroupsCount: z.number(),
+  deckSetsCount: z.number(),
+  deckEntriesCount: z.number(),
 });

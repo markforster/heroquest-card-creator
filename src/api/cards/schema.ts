@@ -104,6 +104,8 @@ export const listCardsFilterSchema = z.object({
 
 export const deleteCardsInputSchema = z.object({
   ids: z.array(z.string()).min(1),
+  mode: z.enum(["block", "confirmable-cascade"]).optional(),
+  confirmCascade: z.boolean().optional(),
 });
 
 export const softDeleteCardsInputSchema = z.object({

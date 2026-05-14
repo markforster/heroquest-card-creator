@@ -62,7 +62,9 @@ import {
 } from "@/lib/card-thumbnail-cache";
 import { apiClient } from "@/api/client";
 import {
+  isCardDeleteConfirmRequiredError,
   isPairDeleteConfirmRequiredError,
+  type CardDeleteUsageReport,
   type PairUsageReport,
 } from "@/lib/decks-errors";
 import type { MissingAssetReport } from "@/lib/export-assets-cache";
@@ -140,6 +142,10 @@ export default function StockpilePanelContent({
   const selectedIdsRef = useRef<string[]>([]);
   const [pairUsagePrompt, setPairUsagePrompt] = useState<PairUsageReport | null>(null);
   const [pairUsagePendingDeleteIds, setPairUsagePendingDeleteIds] = useState<string[]>([]);
+  const [cardDeleteUsagePrompt, setCardDeleteUsagePrompt] = useState<CardDeleteUsageReport | null>(
+    null,
+  );
+  const [cardDeletePendingIds, setCardDeletePendingIds] = useState<string[]>([]);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
   const [draggingIds, setDraggingIds] = useState<string[]>([]);
   const [pairingBaselineIds, setPairingBaselineIds] = useState<string[]>([]);
@@ -763,10 +769,14 @@ export default function StockpilePanelContent({
       return aName.localeCompare(bName);
     });
 
-  const finalizeHardDelete = async (ids: string[]) => {
+  const finalizeHardDelete = async (ids: string[], confirmCascade = false) => {
     if (!ids.length) return;
     const idSet = new Set(ids);
-    await apiClient.deleteCards({ ids });
+    await apiClient.deleteCards({
+      ids,
+      mode: "confirmable-cascade",
+      confirmCascade,
+    });
 
     (Object.keys(activeCardIdByTemplate) as TemplateId[]).forEach((templateId) => {
       const activeId = activeCardIdByTemplate[templateId];
@@ -1064,19 +1074,23 @@ export default function StockpilePanelContent({
 
                       const runHardDelete = async (confirmCascade: boolean) => {
                         try {
-                          await deletePairsForFaces(ids, {
-                            mode: "confirmable-cascade",
-                            confirmCascade,
-                          });
+                          await finalizeHardDelete(ids, confirmCascade);
                         } catch (error) {
-                          if (isPairDeleteConfirmRequiredError(error)) {
-                            setPairUsagePendingDeleteIds(ids);
-                            setPairUsagePrompt(error.report);
+                          if (
+                            isCardDeleteConfirmRequiredError(error) ||
+                            isPairDeleteConfirmRequiredError(error)
+                          ) {
+                            if (isCardDeleteConfirmRequiredError(error)) {
+                              setCardDeletePendingIds(ids);
+                              setCardDeleteUsagePrompt(error.report);
+                            } else {
+                              setPairUsagePendingDeleteIds(ids);
+                              setPairUsagePrompt(error.report);
+                            }
                             return;
                           }
                           throw error;
                         }
-                        await finalizeHardDelete(ids);
                       };
 
                       const runSoftDelete = async () => {
@@ -1413,6 +1427,67 @@ export default function StockpilePanelContent({
           })()}
         </ConfirmModal>
       ) : null}
+      <ConfirmModal
+        isOpen={Boolean(cardDeleteUsagePrompt)}
+        title={t("decks.pairInUseTitle")}
+        confirmLabel={t("actions.confirm")}
+        extraLabel={t("decks.openDeck")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={async () => {
+          const pending = cardDeleteUsagePrompt;
+          setCardDeleteUsagePrompt(null);
+          const allIds = cardDeletePendingIds;
+          setCardDeletePendingIds([]);
+          if (!pending || !allIds.length) return;
+          await finalizeHardDelete(allIds, true);
+        }}
+        onExtra={() => {
+          const usage =
+            cardDeleteUsagePrompt?.cascadePlan.deletedDeckUsage[0] ??
+            cardDeleteUsagePrompt?.cascadePlan.pairUsage[0];
+          if (usage) {
+            navigate(buildDeckDeepLink({ deckId: usage.deckId, setId: usage.setId }));
+          }
+          setCardDeleteUsagePrompt(null);
+          setCardDeletePendingIds([]);
+        }}
+        onCancel={() => {
+          setCardDeleteUsagePrompt(null);
+          setCardDeletePendingIds([]);
+        }}
+      >
+        <div className={styles.pairingUsageList}>
+          {(() => {
+            const merged = [
+              ...(cardDeleteUsagePrompt?.cascadePlan.deletedDeckUsage ?? []),
+              ...(cardDeleteUsagePrompt?.cascadePlan.pairUsage ?? []),
+            ];
+            const deduped = Array.from(
+              new Map(
+                merged.map((usage) => [
+                  `${usage.deckId}:${usage.groupId}:${usage.setId}`,
+                  usage,
+                ]),
+              ).values(),
+            );
+            return (
+              <>
+                <div>
+                  Deleting these cards will remove dependent deck sets and deck entries from the
+                  following locations:
+                </div>
+                <ul className={styles.pairingUsageItems}>
+                  {deduped.map((usage) => (
+                    <li key={`${usage.deckId}-${usage.setId}`}>
+                      {`${usage.deckTitle} › ${usage.groupTitle} › ${usage.setTitle}`}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            );
+          })()}
+        </div>
+      </ConfirmModal>
       <ConfirmModal
         isOpen={Boolean(pairUsagePrompt)}
         title={t("decks.pairInUseTitle")}

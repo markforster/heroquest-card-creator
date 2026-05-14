@@ -56,7 +56,7 @@ function BackPanelDraggableThumb({
     <div
       ref={setNodeRef}
       className={`${styles.deckBacksThumb} ${isDragging ? styles.deckBacksThumbDragging : ""}`}
-      style={{ touchAction: "none" }}
+      style={{ touchAction: "none", cursor: isDragging ? "grabbing" : "grab" }}
       {...attributes}
       {...listeners}
     >

@@ -36,16 +36,19 @@ export default function DeckDragOverlay({
           : undefined
       }
       dropAnimation={
-        ((drag.dragActiveBackFaceId || drag.dragActiveFrontFaceId) && drag.faceDropSucceeded) ||
-        drag.dragActiveEntryId
+        drag.dragActiveBackFaceId || drag.dragActiveFrontFaceId || drag.dragActiveEntryId
           ? null
           : undefined
       }
     >
       {drag.dragActiveBackFaceId ? (
-        <div className={styles.deckBacksDragOverlay}>{backPanelThumb(drag.dragActiveBackFaceId)}</div>
+        <div className={`${styles.deckBacksDragOverlay} ${styles.deckFaceDragOverlay}`}>
+          {backPanelThumb(drag.dragActiveBackFaceId)}
+        </div>
       ) : drag.dragActiveFrontFaceId ? (
-        <div className={styles.deckBacksDragOverlay}>{backPanelThumb(drag.dragActiveFrontFaceId)}</div>
+        <div className={`${styles.deckBacksDragOverlay} ${styles.deckFaceDragOverlay}`}>
+          {backPanelThumb(drag.dragActiveFrontFaceId)}
+        </div>
       ) : drag.dragActiveEntryId ? (
         <div className={`${styles.deckBacksDragOverlay} ${styles.deckEntryDragOverlay}`}>
           {(() => {
