@@ -3,6 +3,14 @@ import { act, renderHook } from "@testing-library/react";
 import { useDecksDragController } from "@/components/Decks/hooks/useDecksDragController";
 
 describe("useDecksDragController onDragOver selection boundary", () => {
+  function deferred<T>() {
+    let resolve!: (value: T) => void;
+    const promise = new Promise<T>((res) => {
+      resolve = res;
+    });
+    return { promise, resolve };
+  }
+
   function renderController(overrides?: {
     sets?: Array<{ id: string; groupId: string; backFaceId: string; sortIndex: number }>;
     groupBySetId?: Map<string, string>;
@@ -202,5 +210,57 @@ describe("useDecksDragController onDragOver selection boundary", () => {
     expect(result.current.dragState.isBackFaceDragActive).toBe(false);
     expect(result.current.dragState.backFaceDropGroupId).toBeNull();
     expect(result.current.dragState.isBackFaceNewGroupEdgeTarget).toBe(false);
+  });
+
+  it("clears back-face drag state immediately on valid drop before async mutations resolve", async () => {
+    const { result, createSetFromBackFace } = renderController();
+    const pendingCreate = deferred<{ id: string; groupId: string; backFaceId: string }>();
+    createSetFromBackFace.mockImplementationOnce(() => pendingCreate.promise);
+
+    await act(async () => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "back-face", backFaceId: "back-2" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "back-face", backFaceId: "back-2" } } },
+        over: { id: "group:group-2" },
+      } as never);
+      void result.current.dndHandlers.onDragEnd({
+        active: { data: { current: { type: "back-face", backFaceId: "back-2" } } },
+        over: { id: "group:group-2" },
+      } as never);
+    });
+
+    expect(result.current.dragState.isBackFaceDragActive).toBe(false);
+    expect(result.current.dragState.dragActiveBackFaceId).toBeNull();
+    expect(result.current.dragState.groupDropIndex).toBeNull();
+
+    await act(async () => {
+      pendingCreate.resolve({
+        id: "created-set-2",
+        groupId: "group-2",
+        backFaceId: "back-2",
+      });
+      await pendingCreate.promise;
+    });
+  });
+
+  it("clears back-face drag state immediately on invalid drop", async () => {
+    const { result, createSetFromBackFace } = renderController();
+
+    await act(async () => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "back-face", backFaceId: "back-3" } } },
+      } as never);
+      void result.current.dndHandlers.onDragEnd({
+        active: { data: { current: { type: "back-face", backFaceId: "back-3" } } },
+        over: null,
+      } as never);
+    });
+
+    expect(result.current.dragState.isBackFaceDragActive).toBe(false);
+    expect(result.current.dragState.dragActiveBackFaceId).toBeNull();
+    expect(result.current.dragState.groupDropIndex).toBeNull();
+    expect(createSetFromBackFace).not.toHaveBeenCalled();
   });
 });

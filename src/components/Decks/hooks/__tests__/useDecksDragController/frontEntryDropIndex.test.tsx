@@ -3,6 +3,14 @@ import { act, renderHook } from "@testing-library/react";
 import { useDecksDragController } from "@/components/Decks/hooks/useDecksDragController";
 
 describe("useDecksDragController front/entry drop index targeting", () => {
+  function deferred<T>() {
+    let resolve!: (value: T) => void;
+    const promise = new Promise<T>((res) => {
+      resolve = res;
+    });
+    return { promise, resolve };
+  }
+
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -179,6 +187,54 @@ describe("useDecksDragController front/entry drop index targeting", () => {
     expect(addFrontFaceToSet).not.toHaveBeenCalled();
   });
 
+  it("clears front-face drag state immediately on valid drop before async mutations resolve", async () => {
+    const { result, addFrontFaceToSet } = renderController();
+    const pendingAdd = deferred<Array<{ id: string; sortIndex: number; setId: string; pairId: string }>>();
+    addFrontFaceToSet.mockImplementationOnce(() => pendingAdd.promise);
+
+    act(() => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "entries-tail" },
+      } as never);
+      void result.current.dndHandlers.onDragEnd({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "entries-tail" },
+      } as never);
+    });
+
+    expect(result.current.dragState.isFrontFaceDragActive).toBe(false);
+    expect(result.current.dragState.dragActiveFrontFaceId).toBeNull();
+    expect(result.current.dragState.entryDropIndex).toBeNull();
+
+    await act(async () => {
+      pendingAdd.resolve([{ id: "entry-3", sortIndex: 2, setId: "set-1", pairId: "pair-3" }]);
+      await pendingAdd.promise;
+    });
+  });
+
+  it("clears front-face drag state immediately on invalid drop", async () => {
+    const { result, addFrontFaceToSet } = renderController();
+
+    act(() => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+      } as never);
+      void result.current.dndHandlers.onDragEnd({
+        active: { data: { current: { type: "front-face", frontFaceId: "front-new" } } },
+        over: { id: "group:group-1" },
+      } as never);
+    });
+
+    expect(result.current.dragState.isFrontFaceDragActive).toBe(false);
+    expect(result.current.dragState.dragActiveFrontFaceId).toBeNull();
+    expect(result.current.dragState.entryDropIndex).toBeNull();
+    expect(addFrontFaceToSet).not.toHaveBeenCalled();
+  });
+
   it("inserts newly added front-face entry at hovered middle index", async () => {
     const { result, reorderSetEntries, refreshSetEntries } = renderController();
 
@@ -315,6 +371,35 @@ describe("useDecksDragController front/entry drop index targeting", () => {
 
     expect(reorderSetEntries).toHaveBeenCalledWith("set-1", ["entry-1", "entry-3", "entry-2"]);
     expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
+  });
+
+  it("clears entry-drag state immediately on reorder drop before async reorder resolves", async () => {
+    const { result, reorderSetEntries } = renderController();
+    const pending = deferred<void>();
+    reorderSetEntries.mockImplementationOnce(() => pending.promise);
+
+    act(() => {
+      result.current.dndHandlers.onDragStart({
+        active: { data: { current: { type: "entry", entryId: "entry-1" } } },
+      } as never);
+      result.current.dndHandlers.onDragOver({
+        active: { data: { current: { type: "entry", entryId: "entry-1" } } },
+        over: { id: "entry-2" },
+      } as never);
+      void result.current.dndHandlers.onDragEnd({
+        active: { data: { current: { type: "entry", entryId: "entry-1" } } },
+        over: { id: "entry-2" },
+      } as never);
+    });
+
+    expect(result.current.dragState.isEntryDragActive).toBe(false);
+    expect(result.current.dragState.dragActiveEntryId).toBeNull();
+    expect(result.current.dragState.entryDropIndex).toBeNull();
+
+    await act(async () => {
+      pending.resolve();
+      await pending.promise;
+    });
   });
 
   it("reorders entry forward to 4th position when dropping on right half of the 4th card", async () => {

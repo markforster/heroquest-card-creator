@@ -30,6 +30,8 @@ type DecksDragControllerArgs = {
   ) => Promise<DeckSetRecord>;
   addFrontFaceToSet: (setId: string, frontFaceId: string) => Promise<DeckEntryRecord[]>;
   reorderSetEntries: (setId: string, orderedEntryIds: string[]) => Promise<void>;
+  reorderSetEntriesOptimistic?: (setId: string, orderedEntryIds: string[]) => Promise<void>;
+  applyOptimisticSets?: (nextSets: DeckSetRecord[]) => () => void;
   createDeckGroup: (deckId: string) => Promise<DeckGroupRecord>;
   reorderDeckGroups: (deckId: string, orderedGroupIds: string[]) => Promise<void>;
   reorderDeckSets: (setIdForParams: string, orderedSetIds: string[]) => Promise<void>;
@@ -54,6 +56,8 @@ export function useDecksDragController({
   createSetFromBackFace,
   addFrontFaceToSet,
   reorderSetEntries,
+  reorderSetEntriesOptimistic,
+  applyOptimisticSets,
   createDeckGroup,
   reorderDeckGroups,
   reorderDeckSets,
@@ -85,7 +89,6 @@ export function useDecksDragController({
   const [faceDropSucceeded, setFaceDropSucceeded] = useState(false);
   const groupRowRef = useRef<HTMLDivElement | null>(null);
   const entriesRowRef = useRef<HTMLDivElement | null>(null);
-  const backFaceResetTimerRef = useRef<number | null>(null);
   const dragOverIdRef = useRef<string | null>(null);
   const isFrontDropOverRef = useRef(false);
   const isEntriesDropOverRef = useRef(false);
@@ -101,7 +104,6 @@ export function useDecksDragController({
   const overStabilityTimerRef = useRef<number | null>(null);
   const lastCommittedAtRef = useRef<number>(0);
   const lastCommittedPointerXRef = useRef<number | null>(null);
-  const BACK_FACE_DROP_RETURN_MS = 180;
   const OVER_STABILITY_MS = 32;
   const FRONT_FACE_INDEX_SWITCH_MIN_PX = 14;
   const isEntriesOverTarget = useCallback(
@@ -226,10 +228,6 @@ export function useDecksDragController({
     setIsRemoveZone(false);
     dragStartSelectedSetIdRef.current = null;
     dragStartSelectedGroupIdRef.current = null;
-    if (backFaceResetTimerRef.current != null) {
-      window.clearTimeout(backFaceResetTimerRef.current);
-      backFaceResetTimerRef.current = null;
-    }
     if (overStabilityTimerRef.current != null) {
       window.clearTimeout(overStabilityTimerRef.current);
       overStabilityTimerRef.current = null;
@@ -245,10 +243,6 @@ export function useDecksDragController({
   const onDragStart = useCallback(
     ({ active }: DragStartEvent) => {
       const activeType = active.data?.current?.type;
-      if (backFaceResetTimerRef.current != null) {
-        window.clearTimeout(backFaceResetTimerRef.current);
-        backFaceResetTimerRef.current = null;
-      }
       setFaceDropSucceeded(false);
       rawOverIdRef.current = null;
       committedOverIdRef.current = null;
@@ -641,39 +635,48 @@ export function useDecksDragController({
       const activeType = active.data?.current?.type;
       const backFaceId = active.data?.current?.backFaceId as string | undefined;
       if (activeType === "back-face") {
-        if (!over || !deckId || !backFaceId) {
-          setFaceDropSucceeded(false);
-          backFaceResetTimerRef.current = window.setTimeout(() => {
-            resetDragState();
-          }, BACK_FACE_DROP_RETURN_MS);
-          return;
-        }
-        if (sets.some((set) => set.backFaceId === backFaceId)) {
+        const overId = over ? String(over.id) : null;
+        const snapshotBackFaceDropGroupId = backFaceDropGroupId;
+        const snapshotBackFaceDropIndex = backFaceDropIndex;
+        const snapshotGroupDropIndex = groupDropIndex;
+        const snapshotOrderedGroupIds = [...orderedGroups.map((entry) => entry.id)];
+        const snapshotSets = [...sets];
+
+        if (!overId || !deckId || !backFaceId) {
           setFaceDropSucceeded(false);
           resetDragState();
           return;
         }
-        const overId = String(over.id);
+        if (snapshotSets.some((set) => set.backFaceId === backFaceId)) {
+          setFaceDropSucceeded(false);
+          resetDragState();
+          return;
+        }
         const isSuccess =
           overId.startsWith("group:") ||
           overId === "groups-area" ||
           overId === "groups-empty" ||
           overId === "groups-new-group-right-edge";
         setFaceDropSucceeded(isSuccess);
+        resetDragState();
+
+        if (!isSuccess) {
+          return;
+        }
+
         const targetGroupId = overId.startsWith("group:") ? overId.replace("group:", "") : null;
         if (targetGroupId) {
           const createdSet = await createSetFromBackFace(deckId, targetGroupId, backFaceId);
-          if (backFaceDropGroupId === targetGroupId && backFaceDropIndex != null) {
-            const targetOrdered = sets
+          if (snapshotBackFaceDropGroupId === targetGroupId && snapshotBackFaceDropIndex != null) {
+            const targetOrdered = snapshotSets
               .filter((set) => set.groupId === targetGroupId)
               .sort((a, b) => a.sortIndex - b.sortIndex)
               .map((set) => set.id);
             const ordered = [...targetOrdered];
-            const boundedIndex = Math.max(0, Math.min(backFaceDropIndex, ordered.length));
+            const boundedIndex = Math.max(0, Math.min(snapshotBackFaceDropIndex, ordered.length));
             ordered.splice(boundedIndex, 0, createdSet.id);
             await reorderDeckSets(createdSet.id, ordered);
           }
-          resetDragState();
           await reloadStructure(createdSet.id);
           return;
         }
@@ -684,14 +687,13 @@ export function useDecksDragController({
         ) {
           const group = await createDeckGroup(deckId);
           try {
-            if (groupDropIndex != null) {
-              const orderedGroupIds = [...orderedGroups.map((entry) => entry.id)];
-              const nextIndex = Math.max(0, Math.min(groupDropIndex, orderedGroupIds.length));
+            if (snapshotGroupDropIndex != null) {
+              const orderedGroupIds = [...snapshotOrderedGroupIds];
+              const nextIndex = Math.max(0, Math.min(snapshotGroupDropIndex, orderedGroupIds.length));
               orderedGroupIds.splice(nextIndex, 0, group.id);
               await reorderDeckGroups(deckId, orderedGroupIds);
             }
             const createdSet = await createSetFromBackFace(deckId, group.id, backFaceId);
-            resetDragState();
             await reloadStructure(createdSet.id);
           } catch (error) {
             await deleteDeckGroup(group.id);
@@ -699,10 +701,12 @@ export function useDecksDragController({
             throw error;
           }
         }
-        resetDragState();
         return;
       }
       if (activeType === "front-face") {
+        const overId = over ? String(over.id) : committedOverIdRef.current ?? dragOverIdRef.current;
+        const resolvedDropIndex =
+          entryDropIndexRef.current ?? resolveEntryDropIndexFromOverId(overId, "front-face");
         const frontFaceId = active.data?.current?.frontFaceId as string | undefined;
         const currentSelectedSetId = selectedSetIdRef.current;
         const currentSelectedGroupId = selectedGroupIdRef.current;
@@ -716,27 +720,21 @@ export function useDecksDragController({
             ? activeSetId
             : null;
         const targetSetId = dragStartSelectedSetId ?? currentSelectedSetId ?? fallbackSetId;
+        const isSuccess = Boolean(isEntriesOverTarget(overId, "front-face"));
+
+        resetDragState();
+
         if (!targetSetId || !frontFaceId) {
           console.debug("[decks:dnd] front drop ignored: missing target/front", {
             targetSetId,
             frontFaceId,
           });
           setFaceDropSucceeded(false);
-          backFaceResetTimerRef.current = window.setTimeout(() => {
-            resetDragState();
-          }, BACK_FACE_DROP_RETURN_MS);
           return;
         }
-        const overId = over ? String(over.id) : committedOverIdRef.current ?? dragOverIdRef.current;
-        const isSuccess = Boolean(
-          isEntriesOverTarget(overId, "front-face"),
-        );
         setFaceDropSucceeded(isSuccess);
         if (!isSuccess) {
           console.debug("[decks:dnd] front drop ignored: invalid target", { overId });
-          backFaceResetTimerRef.current = window.setTimeout(() => {
-            resetDragState();
-          }, BACK_FACE_DROP_RETURN_MS);
           return;
         }
         const inFlightKey = `${targetSetId}:${frontFaceId}`;
@@ -766,12 +764,9 @@ export function useDecksDragController({
           const newEntryId = createdEntries[0]?.id ?? null;
           if (!newEntryId) {
             await refreshSetEntries(targetSetId);
-            resetDragState();
             return;
           }
           const ordered = prevEntries.map((entry) => entry.id).filter((id) => id !== newEntryId);
-          const resolvedDropIndex =
-            entryDropIndexRef.current ?? resolveEntryDropIndexFromOverId(overId, "front-face");
           const dropIndex =
             resolvedDropIndex == null
               ? ordered.length
@@ -780,7 +775,6 @@ export function useDecksDragController({
           await reorderSetEntries(targetSetId, ordered);
           await refreshSetEntries(targetSetId);
           console.debug("[decks:dnd] front drop add success", { targetSetId, frontFaceId });
-          resetDragState();
           return;
         } catch (error) {
           console.error("[decks:dnd] Failed to add front face to set on drop", {
@@ -790,7 +784,6 @@ export function useDecksDragController({
             error,
           });
           setFaceDropSucceeded(false);
-          resetDragState();
           return;
         } finally {
           frontDropInFlightRef.current = false;
@@ -798,13 +791,14 @@ export function useDecksDragController({
         }
       }
       if (activeType === "entry") {
-      const entryId = active.data?.current?.entryId as string | undefined;
+        const entryId = active.data?.current?.entryId as string | undefined;
         const targetSetId = selectedSetIdRef.current ?? activeSetId;
+        const overId = over ? String(over.id) : committedOverIdRef.current ?? dragOverIdRef.current;
+        const snapshotEntries = entries.slice().sort((a, b) => a.sortIndex - b.sortIndex).map((entry) => entry.id);
         if (!entryId || !targetSetId) {
           resetDragState();
           return;
         }
-        const overId = over ? String(over.id) : committedOverIdRef.current ?? dragOverIdRef.current;
         const isSuccess = Boolean(
           isEntriesOverTarget(overId, "entry", entryId),
         );
@@ -812,8 +806,7 @@ export function useDecksDragController({
           resetDragState();
           return;
         }
-        const orderedCurrent = entries.slice().sort((a, b) => a.sortIndex - b.sortIndex).map((entry) => entry.id);
-        const fromIndex = orderedCurrent.indexOf(entryId);
+        const fromIndex = snapshotEntries.indexOf(entryId);
         if (fromIndex < 0) {
           resetDragState();
           return;
@@ -821,35 +814,38 @@ export function useDecksDragController({
         let overEntryId: string | null = null;
         if (overId?.startsWith("entry:")) {
           overEntryId = overId.replace("entry:", "");
-        } else if (overId && orderedCurrent.includes(overId)) {
+        } else if (overId && snapshotEntries.includes(overId)) {
           overEntryId = overId;
         }
         let toIndex: number | null = null;
         if (overId === "entries-tail" || overId === "entries-area") {
-          toIndex = Math.max(0, orderedCurrent.length - 1);
+          toIndex = Math.max(0, snapshotEntries.length - 1);
         } else if (overEntryId) {
-          const overIndex = orderedCurrent.indexOf(overEntryId);
+          const overIndex = snapshotEntries.indexOf(overEntryId);
           toIndex = overIndex >= 0 ? overIndex : null;
         }
         if (toIndex == null) {
           resetDragState();
           return;
         }
-        const next = [...orderedCurrent];
+        const next = [...snapshotEntries];
         const [moved] = next.splice(fromIndex, 1);
         const boundedTo = Math.max(0, Math.min(toIndex, next.length));
         next.splice(boundedTo, 0, moved);
-        if (next.join("|") === orderedCurrent.join("|")) {
+        if (next.join("|") === snapshotEntries.join("|")) {
           resetDragState();
           return;
         }
+        resetDragState();
         try {
-          await reorderSetEntries(targetSetId, next);
-          await refreshSetEntries(targetSetId);
+          if (reorderSetEntriesOptimistic) {
+            await reorderSetEntriesOptimistic(targetSetId, next);
+          } else {
+            await reorderSetEntries(targetSetId, next);
+            await refreshSetEntries(targetSetId);
+          }
         } catch {
           await refreshSetEntries(targetSetId);
-        } finally {
-          resetDragState();
         }
         return;
       }
@@ -874,7 +870,13 @@ export function useDecksDragController({
         resetDragState();
         return;
       }
-      const activeId = dragActiveSetId ?? String(active.id);
+      const snapshotDragActiveSetId = dragActiveSetId;
+      const snapshotSetDropGroupId = setDropGroupId;
+      const snapshotSetDropIndex = setDropIndex;
+      const snapshotGroupDropIndex = groupDropIndex;
+      const snapshotOrderedGroups = [...orderedGroups];
+      const snapshotSets = [...sets];
+      const activeId = snapshotDragActiveSetId ?? String(active.id);
       const normalizedActiveId = activeId.startsWith("set:") ? activeId.replace("set:", "") : activeId;
       // Phase 3B: do not delete sets by dragging outside the row bounds.
       // Deletion is an explicit action (Phase 3A), not an implicit drag-outside behavior.
@@ -883,9 +885,15 @@ export function useDecksDragController({
         return;
       }
       const overId = String(over.id);
-      if (activeId === overId) return;
+      if (activeId === overId) {
+        resetDragState();
+        return;
+      }
       const sourceGroupId = groupBySetId.get(normalizedActiveId);
-      if (!sourceGroupId) return;
+      if (!sourceGroupId) {
+        resetDragState();
+        return;
+      }
       const normalizedOverId = overId.startsWith("set:") ? overId.replace("set:", "") : overId;
       const targetGroupId = overId.startsWith("group:")
         ? overId.replace("group:", "")
@@ -900,7 +908,7 @@ export function useDecksDragController({
       }
 
       if (!targetGroupId && isNewGroupDropTarget && deckId) {
-        const sourceOrdered = sets
+        const sourceOrdered = snapshotSets
           .filter((set) => set.groupId === sourceGroupId)
           .sort((a, b) => a.sortIndex - b.sortIndex)
           .map((set) => set.id);
@@ -911,11 +919,19 @@ export function useDecksDragController({
         }
         const nextSource = [...sourceOrdered];
         nextSource.splice(fromIndex, 1);
+        resetDragState();
         const group = await createDeckGroup(deckId);
+        const nextSetsAfterMove = snapshotSets.map((set) => {
+          if (set.id === normalizedActiveId) {
+            return { ...set, groupId: group.id, sortIndex: 0 };
+          }
+          return set;
+        });
+        const rollbackOptimistic = applyOptimisticSets ? applyOptimisticSets(nextSetsAfterMove) : null;
         try {
-          if (groupDropIndex != null) {
-            const orderedGroupIds = [...orderedGroups.map((entry) => entry.id)];
-            const nextIndex = Math.max(0, Math.min(groupDropIndex, orderedGroupIds.length));
+          if (snapshotGroupDropIndex != null) {
+            const orderedGroupIds = [...snapshotOrderedGroups.map((entry) => entry.id)];
+            const nextIndex = Math.max(0, Math.min(snapshotGroupDropIndex, orderedGroupIds.length));
             orderedGroupIds.splice(nextIndex, 0, group.id);
             await reorderDeckGroups(deckId, orderedGroupIds);
           }
@@ -931,12 +947,12 @@ export function useDecksDragController({
           }
           await reloadStructure(normalizedActiveId);
         } catch (error) {
+          rollbackOptimistic?.();
           await deleteDeckGroup(group.id);
           await reloadStructure(activeSetId);
           throw error;
         }
         setFaceDropSucceeded(false);
-        resetDragState();
         return;
       }
       if (!targetGroupId) {
@@ -944,7 +960,7 @@ export function useDecksDragController({
         return;
       }
 
-      const sourceOrdered = sets
+      const sourceOrdered = snapshotSets
         .filter((set) => set.groupId === sourceGroupId)
         .sort((a, b) => a.sortIndex - b.sortIndex)
         .map((set) => set.id);
@@ -962,8 +978,8 @@ export function useDecksDragController({
       nextSource.splice(fromIndex, 1);
 
       let toIndex =
-        setDropGroupId === targetGroupId && setDropIndex != null
-          ? setDropIndex
+        snapshotSetDropGroupId === targetGroupId && snapshotSetDropIndex != null
+          ? snapshotSetDropIndex
           : sourceGroupId === targetGroupId
             ? Math.max(0, targetOrdered.indexOf(normalizedOverId))
             : overId.startsWith("group:")
@@ -975,6 +991,29 @@ export function useDecksDragController({
       toIndex = Math.max(0, Math.min(toIndex, nextSource.length));
       const nextTarget = sourceGroupId === targetGroupId ? nextSource : [...targetOrdered];
       nextTarget.splice(toIndex, 0, normalizedActiveId);
+      const nextSetsOptimistic = snapshotSets.map((set) => {
+        if (sourceGroupId === targetGroupId) {
+          if (set.groupId !== sourceGroupId) return set;
+          const nextIndex = nextTarget.indexOf(set.id);
+          return nextIndex >= 0 ? { ...set, sortIndex: nextIndex } : set;
+        }
+        if (set.id === normalizedActiveId) {
+          return { ...set, groupId: targetGroupId };
+        }
+        return set;
+      }).map((set) => {
+        if (sourceGroupId !== targetGroupId && set.groupId === sourceGroupId) {
+          const nextIndex = nextSource.indexOf(set.id);
+          return nextIndex >= 0 ? { ...set, sortIndex: nextIndex } : set;
+        }
+        if (set.groupId === targetGroupId) {
+          const nextIndex = nextTarget.indexOf(set.id);
+          return nextIndex >= 0 ? { ...set, sortIndex: nextIndex } : set;
+        }
+        return set;
+      });
+      const rollbackOptimistic = applyOptimisticSets ? applyOptimisticSets(nextSetsOptimistic) : null;
+      resetDragState();
 
       try {
         if (sourceGroupId !== targetGroupId) {
@@ -995,11 +1034,11 @@ export function useDecksDragController({
         }
         await reloadStructure(sourceGroupId === targetGroupId ? normalizedActiveId : selectedSetId);
       } catch (error) {
+        rollbackOptimistic?.();
         await reloadStructure(activeSetId);
         throw error;
       }
       setFaceDropSucceeded(false);
-      resetDragState();
     },
     [
       resetDragState,
@@ -1032,7 +1071,9 @@ export function useDecksDragController({
       entries,
       entryFrontIdByEntryId,
       reorderSetEntries,
+      reorderSetEntriesOptimistic,
       refreshSetEntries,
+      applyOptimisticSets,
       resolveEntryDropIndexFromOverId,
       resolveEntryDropIndexFromOverIdWithPointer,
     ],

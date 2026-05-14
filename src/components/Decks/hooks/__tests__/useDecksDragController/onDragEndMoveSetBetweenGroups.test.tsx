@@ -3,6 +3,14 @@ import { act, renderHook } from "@testing-library/react";
 import { useDecksDragController } from "@/components/Decks/hooks/useDecksDragController";
 
 describe("useDecksDragController onDragEnd set cross-group move", () => {
+  function deferred<T>() {
+    let resolve!: (value: T) => void;
+    const promise = new Promise<T>((res) => {
+      resolve = res;
+    });
+    return { promise, resolve };
+  }
+
   function renderController({
     sets,
     selectedSetId = null,
@@ -100,5 +108,32 @@ describe("useDecksDragController onDragEnd set cross-group move", () => {
 
     expect(deleteDeckGroup).not.toHaveBeenCalled();
   });
-});
 
+  it("clears set-drag state immediately on drop before async move resolves", async () => {
+    const { result, updateDeckSetGroup } = renderController({
+      sets: [{ id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 }],
+      selectedSetId: "set-1",
+    });
+    const pendingMove = deferred<void>();
+    updateDeckSetGroup.mockImplementationOnce(() => pendingMove.promise);
+
+    act(() => {
+      result.current.dndHandlers.onDragStart({
+        active: { id: "set:set-1", data: { current: { type: "set", setId: "set-1" } } },
+      } as never);
+      void result.current.dndHandlers.onDragEnd({
+        active: { id: "set:set-1", data: { current: { type: "set", setId: "set-1" } } },
+        over: { id: "group:group-2" },
+      } as never);
+    });
+
+    expect(result.current.dragState.isSetDragActive).toBe(false);
+    expect(result.current.dragState.dragActiveSetId).toBeNull();
+    expect(result.current.dragState.setDropIndex).toBeNull();
+
+    await act(async () => {
+      pendingMove.resolve();
+      await pendingMove.promise;
+    });
+  });
+});

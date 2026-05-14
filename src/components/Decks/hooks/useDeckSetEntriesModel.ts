@@ -19,6 +19,10 @@ export type DeckSetEntriesModel = {
   addFront: (frontFaceId: string, targetSetId?: string | null) => Promise<DeckEntryRecord[]>;
   removeEntry: (entryId: string, targetSetId?: string | null) => Promise<void>;
   reorderEntries: (orderedEntryIds: string[], targetSetId?: string | null) => Promise<void>;
+  reorderEntriesOptimistic: (
+    orderedEntryIds: string[],
+    targetSetId?: string | null,
+  ) => Promise<void>;
   updateEntryCount: (
     entryId: string,
     count: number,
@@ -43,6 +47,24 @@ export function useDeckSetEntriesModel(setId: string | null): DeckSetEntriesMode
           "path" in segment &&
           segment.path === "/deckSets/:setId/entries",
       ),
+    [],
+  );
+  const deckEntriesForSetQueryPredicate = useCallback(
+    (resolvedSetId: string) =>
+      (query: { queryKey: ReadonlyArray<unknown> }) =>
+        Array.isArray(query.queryKey) &&
+        query.queryKey.some(
+          (segment) =>
+            typeof segment === "object" &&
+            segment !== null &&
+            "path" in segment &&
+            segment.path === "/deckSets/:setId/entries" &&
+            "params" in segment &&
+            typeof segment.params === "object" &&
+            segment.params !== null &&
+            "setId" in segment.params &&
+            segment.params.setId === resolvedSetId,
+        ),
     [],
   );
   const pairsQueryPredicate = useCallback(
@@ -185,6 +207,46 @@ export function useDeckSetEntriesModel(setId: string | null): DeckSetEntriesMode
     [invalidateEntriesForSet, setId],
   );
 
+  const reorderEntriesOptimistic = useCallback(
+    async (orderedEntryIds: string[], targetSetId?: string | null) => {
+      const resolved = resolveTargetSetId(setId, targetSetId);
+      if (!resolved) return;
+      const predicate = deckEntriesForSetQueryPredicate(resolved);
+      const snapshots = queryClient.getQueriesData<DeckEntryRecord[]>({
+        predicate,
+      });
+
+      queryClient.setQueriesData<DeckEntryRecord[]>({ predicate }, (old) => {
+        if (!Array.isArray(old) || old.length === 0) return old;
+        const byId = new Map(old.map((entry) => [entry.id, entry]));
+        const reordered: DeckEntryRecord[] = [];
+        orderedEntryIds.forEach((id, index) => {
+          const current = byId.get(id);
+          if (!current) return;
+          reordered.push({ ...current, sortIndex: index });
+        });
+        if (reordered.length === 0) return old;
+        return reordered;
+      });
+
+      try {
+        await apiClient.reorderDeckEntries(
+          { orderedEntryIds },
+          { params: { setId: resolved } },
+        );
+      } catch (error) {
+        snapshots.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+        await invalidateEntriesForSet();
+        throw error;
+      }
+
+      await invalidateEntriesForSet();
+    },
+    [deckEntriesForSetQueryPredicate, invalidateEntriesForSet, queryClient, setId],
+  );
+
   const updateEntryCount = useCallback(
     async (entryId: string, count: number, targetSetId?: string | null) => {
       const resolved = resolveTargetSetId(setId, targetSetId);
@@ -209,6 +271,7 @@ export function useDeckSetEntriesModel(setId: string | null): DeckSetEntriesMode
     addFront,
     removeEntry,
     reorderEntries,
+    reorderEntriesOptimistic,
     updateEntryCount,
     refreshEntries,
   };

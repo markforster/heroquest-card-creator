@@ -40,14 +40,14 @@ function DeckEntryCard({
   onOpenCardEditor: (cardId: string) => void;
   deckEntryThumb: (cardId: string, isSelected: boolean) => ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({
     id: entryId,
     data: { type: "entry", entryId },
   });
   const style = {
     touchAction: "none" as const,
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: undefined,
     opacity: isDragging ? 0 : 1,
   };
   return (

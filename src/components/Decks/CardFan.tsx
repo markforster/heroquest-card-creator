@@ -243,7 +243,7 @@ function CardFanItem({
         dragMeta && typeof dragMeta.data.setId === "string" ? dragMeta.data.setId : undefined
       }
       style={{
-        transition: "transform 180ms ease",
+        transition: isSetCard ? undefined : "transform 180ms ease",
         cursor: canSelect || dragMeta ? "pointer" : "default",
         opacity: isDragging ? 0.4 : 1,
         touchAction: "none",

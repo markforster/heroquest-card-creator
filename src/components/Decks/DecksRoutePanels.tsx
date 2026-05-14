@@ -134,6 +134,9 @@ export default function DecksRoutePanels() {
     createSetFromBackFace,
     addFrontFaceToSet: async (setId, frontFaceId) => entriesModel.addFront(frontFaceId, setId),
     reorderSetEntries: mutations.reorderEntries,
+    reorderSetEntriesOptimistic: async (setId, orderedEntryIds) =>
+      entriesModel.reorderEntriesOptimistic(orderedEntryIds, setId),
+    applyOptimisticSets: selectionModel.applyOptimisticSets,
     createDeckGroup: async (targetDeckId) =>
       mutations.createGroup(targetDeckId, t("decks.defaultGroupTitle")),
     reorderDeckGroups: mutations.reorderGroups,

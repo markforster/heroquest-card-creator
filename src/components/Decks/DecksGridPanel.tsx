@@ -7,7 +7,6 @@ import DeckExportButton from "@/components/Decks/DeckExportButton";
 import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import { useDecksGridModel } from "@/components/Decks/hooks/useDecksGridModel";
 import IconButton from "@/components/common/IconButton";
-import ModalShell from "@/components/common/ModalShell";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useNavigate } from "react-router-dom";
@@ -187,48 +186,61 @@ export default function DecksGridPanel() {
           />
         </div>
       </aside>
-      <ModalShell
-        isOpen={isCreateOpen}
-        onClose={closeCreateModal}
-        title={t("decks.createDeck")}
-        footer={
-          <>
-            <button type="button" className="btn btn-outline-light" onClick={closeCreateModal}>
-              {t("actions.cancel")}
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={async () => {
+      {isCreateOpen ? (
+        <div className={styles.stockpileOverlayBackdrop} onClick={closeCreateModal}>
+          <div className={styles.stockpileOverlayPanel} onClick={(event) => event.stopPropagation()}>
+            <div className={styles.stockpileOverlayHeader}>
+              <h3 className={styles.stockpileOverlayTitle}>{t("decks.createDeck")}</h3>
+              <button type="button" className={styles.modalCloseButton} onClick={closeCreateModal}>
+                <span className="visually-hidden">{t("actions.close")}</span>✕
+              </button>
+            </div>
+            <form
+              onSubmit={async (event) => {
+                event.preventDefault();
                 await model.createDeck();
                 closeCreateModal();
               }}
             >
-              {t("decks.createDeck")}
-            </button>
-          </>
-        }
-      >
-        <div className={styles.decksCreateModalBody}>
-          <div className={styles.decksFormRow}>
-            <label className={styles.decksLabel}>{t("decks.title")}</label>
-            <input
-              type="text"
-              value={model.deckTitleDraft}
-              onChange={(event) => model.setDeckTitleDraft(event.target.value)}
-              placeholder={t("decks.untitledDeck")}
-            />
-          </div>
-          <div className={styles.decksFormRow}>
-            <label className={styles.decksLabel}>{t("decks.description")}</label>
-            <textarea
-              value={model.deckDescriptionDraft}
-              onChange={(event) => model.setDeckDescriptionDraft(event.target.value)}
-              placeholder={t("decks.descriptionPlaceholder")}
-            />
+              <div className="d-flex flex-column gap-2">
+                <label className="d-flex flex-column gap-1">
+                  <span>{t("decks.title")}</span>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={model.deckTitleDraft}
+                    onChange={(event) => model.setDeckTitleDraft(event.target.value)}
+                    placeholder={t("decks.untitledDeck")}
+                    autoFocus
+                  />
+                </label>
+                <label className="d-flex flex-column gap-1">
+                  <span>{t("decks.description")}</span>
+                  <textarea
+                    className="form-control form-control-sm"
+                    value={model.deckDescriptionDraft}
+                    onChange={(event) => model.setDeckDescriptionDraft(event.target.value)}
+                    placeholder={t("decks.descriptionPlaceholder")}
+                    rows={3}
+                  />
+                </label>
+              </div>
+              <div className={styles.stockpileOverlayActions}>
+                <button type="submit" className="btn btn-primary btn-sm">
+                  {t("decks.createDeck")}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={closeCreateModal}
+                >
+                  {t("actions.cancel")}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      </ModalShell>
+      ) : null}
       <ConfirmModal
         isOpen={model.isDeleteDeckOpen}
         title={t("decks.deleteDeckTitle")}

@@ -22,6 +22,7 @@ export type DeckDetailSelectionModel = {
   selectGroup: (groupId: string) => void;
   selectSet: (set: DeckSetRecord) => void;
   reloadStructure: (preferredSetId?: string | null) => Promise<void>;
+  applyOptimisticSets: (nextSets: DeckSetRecord[]) => () => void;
 };
 
 export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSelectionModel {
@@ -39,6 +40,18 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
           segment !== null &&
           "path" in segment &&
           (segment.path === "/decks/:deckId/groups" || segment.path === "/decks/:deckId/sets"),
+      ),
+    [],
+  );
+  const deckSetsQueryPredicate = useCallback(
+    (query: { queryKey: ReadonlyArray<unknown> }) =>
+      Array.isArray(query.queryKey) &&
+      query.queryKey.some(
+        (segment) =>
+          typeof segment === "object" &&
+          segment !== null &&
+          "path" in segment &&
+          segment.path === "/decks/:deckId/sets",
       ),
     [],
   );
@@ -149,6 +162,24 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
     [deckStructureQueryPredicate, queryClient],
   );
 
+  const applyOptimisticSets = useCallback(
+    (nextSets: DeckSetRecord[]) => {
+      const snapshots = queryClient.getQueriesData<DeckSetRecord[]>({
+        predicate: deckSetsQueryPredicate,
+      });
+      queryClient.setQueriesData<DeckSetRecord[]>({ predicate: deckSetsQueryPredicate }, (old) => {
+        if (!Array.isArray(old)) return old;
+        return nextSets;
+      });
+      return () => {
+        snapshots.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      };
+    },
+    [deckSetsQueryPredicate, queryClient],
+  );
+
   return {
     deckId,
     groups,
@@ -165,5 +196,6 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
     selectGroup,
     selectSet,
     reloadStructure,
+    applyOptimisticSets,
   };
 }

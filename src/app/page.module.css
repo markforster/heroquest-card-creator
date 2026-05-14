@@ -8087,6 +8087,11 @@ button.assetsKindBadge:disabled {
   cursor: -webkit-grabbing !important;
 }
 
+.deckFaceDragOverlay {
+  cursor: grabbing !important;
+  cursor: -webkit-grabbing !important;
+}
+
 .pairingUsageList {
   display: flex;
   flex-direction: column;

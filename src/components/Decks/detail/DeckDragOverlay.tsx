@@ -36,7 +36,10 @@ export default function DeckDragOverlay({
           : undefined
       }
       dropAnimation={
-        drag.dragActiveBackFaceId || drag.dragActiveFrontFaceId || drag.dragActiveEntryId
+        drag.dragActiveBackFaceId ||
+        drag.dragActiveFrontFaceId ||
+        drag.dragActiveEntryId ||
+        drag.dragActiveSetId
           ? null
           : undefined
       }
