@@ -68,9 +68,13 @@ function BackPanelDraggableThumb({
 export default function DeckBacksPanel({
   usedBackFaceIds,
   usedFrontFaceIds,
+  finalizingBackFaceId,
+  finalizingFrontFaceId,
 }: {
   usedBackFaceIds: Set<string>;
   usedFrontFaceIds: Set<string>;
+  finalizingBackFaceId: string | null;
+  finalizingFrontFaceId: string | null;
 }) {
   const { t } = useI18n();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -87,9 +91,9 @@ export default function DeckBacksPanel({
   const sourceCards = useMemo(
     () =>
       faceMode === "back"
-        ? cards.filter((card) => !usedBackFaceIds.has(card.id))
-        : cards.filter((card) => !usedFrontFaceIds.has(card.id)),
-    [cards, faceMode, usedBackFaceIds, usedFrontFaceIds],
+        ? cards.filter((card) => !usedBackFaceIds.has(card.id) && card.id !== finalizingBackFaceId)
+        : cards.filter((card) => !usedFrontFaceIds.has(card.id) && card.id !== finalizingFrontFaceId),
+    [cards, faceMode, usedBackFaceIds, usedFrontFaceIds, finalizingBackFaceId, finalizingFrontFaceId],
   );
 
   const {

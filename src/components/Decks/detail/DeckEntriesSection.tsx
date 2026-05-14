@@ -180,7 +180,13 @@ export default function DeckEntriesSection({
     },
     [entriesRowRef, setEntriesDropRef],
   );
-  const visibleEntries = entriesSorted;
+  const visibleEntries = useMemo(
+    () =>
+      drag.finalizingEntryId
+        ? entriesSorted.filter((entry) => entry.id !== drag.finalizingEntryId)
+        : entriesSorted,
+    [drag.finalizingEntryId, entriesSorted],
+  );
   const entryIds = useMemo(() => entriesSorted.map((entry) => entry.id), [entriesSorted]);
 
   const [entriesViewMode, setEntriesViewMode] = useState<"in-set" | "paired-not-in-set">("in-set");

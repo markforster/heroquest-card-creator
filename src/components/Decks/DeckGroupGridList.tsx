@@ -25,6 +25,7 @@ type DeckGroupGridListProps = {
   dragTargetGroupId?: string | null;
   setDropIndex?: number | null;
   setDropGroupId?: string | null;
+  finalizingSetId?: string | null;
   isRemoveZone?: boolean;
   emptyLabel: string;
   onSelectGroup: (groupId: string) => void;
@@ -93,6 +94,7 @@ export default function DeckGroupGridList({
   dropIndex,
   setDropIndex,
   setDropGroupId,
+  finalizingSetId = null,
   isRemoveZone = false,
   emptyLabel,
   onSelectGroup,
@@ -122,6 +124,7 @@ export default function DeckGroupGridList({
         >
           {groups.map((group, index) => {
             const groupSets = sets
+              .filter((set) => set.id !== finalizingSetId)
               .filter((set) => set.groupId === group.id)
               .sort((a, b) => a.sortIndex - b.sortIndex);
             const backIds = groupSets.map((set) => set.backFaceId);

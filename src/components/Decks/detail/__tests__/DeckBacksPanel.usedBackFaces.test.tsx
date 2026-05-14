@@ -90,7 +90,14 @@ describe("DeckBacksPanel used back-face availability", () => {
   });
 
   it("filters already-used back faces out of the addable grid", () => {
-    render(<DeckBacksPanel usedBackFaceIds={new Set(["back-a"])} usedFrontFaceIds={new Set()} />);
+    render(
+      <DeckBacksPanel
+        usedBackFaceIds={new Set(["back-a"])}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+      />,
+    );
 
     const callArg = mockUseStockpileFilters.mock.calls[0][0];
     expect(callArg.cards.map((card: { id: string }) => card.id)).toEqual(["back-b"]);
@@ -99,12 +106,24 @@ describe("DeckBacksPanel used back-face availability", () => {
 
   it("restores availability when a back face is no longer used", () => {
     const { rerender } = render(
-      <DeckBacksPanel usedBackFaceIds={new Set(["back-a"])} usedFrontFaceIds={new Set()} />,
+      <DeckBacksPanel
+        usedBackFaceIds={new Set(["back-a"])}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+      />,
     );
     let callArg = mockUseStockpileFilters.mock.calls[0][0];
     expect(callArg.cards.map((card: { id: string }) => card.id)).toEqual(["back-b"]);
 
-    rerender(<DeckBacksPanel usedBackFaceIds={new Set()} usedFrontFaceIds={new Set()} />);
+    rerender(
+      <DeckBacksPanel
+        usedBackFaceIds={new Set()}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+      />,
+    );
     callArg = mockUseStockpileFilters.mock.calls[1][0];
     expect(callArg.cards.map((card: { id: string }) => card.id)).toEqual(["back-a", "back-b"]);
     expect(screen.getAllByTestId("card-thumb")).toHaveLength(2);
@@ -125,6 +144,8 @@ describe("DeckBacksPanel used back-face availability", () => {
       <DeckBacksPanel
         usedBackFaceIds={new Set()}
         usedFrontFaceIds={new Set(["back-b"])}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
       />,
     );
 
@@ -145,13 +166,27 @@ describe("DeckBacksPanel used back-face availability", () => {
       setRightPanelFaceMode: jest.fn(),
     });
 
-    render(<DeckBacksPanel usedBackFaceIds={new Set()} usedFrontFaceIds={new Set()} />);
+    render(
+      <DeckBacksPanel
+        usedBackFaceIds={new Set()}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+      />,
+    );
     fireEvent.click(screen.getByTestId("deck-face-cards-filter-select"));
     expect(setBackFilter).toHaveBeenCalledWith({ type: "collection", id: "collection-1" });
   });
 
   it("passes search text through to stockpile filters", () => {
-    render(<DeckBacksPanel usedBackFaceIds={new Set()} usedFrontFaceIds={new Set()} />);
+    render(
+      <DeckBacksPanel
+        usedBackFaceIds={new Set()}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+      />,
+    );
 
     const searchInput = screen.getByPlaceholderText("Search cards...");
     fireEvent.change(searchInput, { target: { value: "dragon" } });
@@ -163,7 +198,14 @@ describe("DeckBacksPanel used back-face availability", () => {
   });
 
   it("shows clear button for non-empty search and clears search", () => {
-    render(<DeckBacksPanel usedBackFaceIds={new Set()} usedFrontFaceIds={new Set()} />);
+    render(
+      <DeckBacksPanel
+        usedBackFaceIds={new Set()}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+      />,
+    );
 
     const searchInput = screen.getByPlaceholderText("Search cards...");
     fireEvent.change(searchInput, { target: { value: "goblin" } });

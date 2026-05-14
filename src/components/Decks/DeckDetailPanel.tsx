@@ -208,6 +208,8 @@ function DeckDetailPanelContent({
             <DeckBacksPanel
               usedBackFaceIds={usedBackFaceIds}
               usedFrontFaceIds={usedFrontFaceIds}
+              finalizingBackFaceId={drag.finalizingBackFaceId}
+              finalizingFrontFaceId={drag.finalizingFrontFaceId}
             />
           </aside>
         ) : null}

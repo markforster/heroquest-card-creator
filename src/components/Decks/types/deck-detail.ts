@@ -32,6 +32,10 @@ export type DeckDetailDragState = {
   isGroupDragActive: boolean;
   isSetDragActive: boolean;
   faceDropSucceeded: boolean;
+  finalizingEntryId: string | null;
+  finalizingSetId: string | null;
+  finalizingFrontFaceId: string | null;
+  finalizingBackFaceId: string | null;
 };
 
 export type DeckDetailDndProps = {

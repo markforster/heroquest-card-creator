@@ -44,6 +44,7 @@ export default function DeckGroupsSection({
             dropIndex={drag.groupDropIndex}
             setDropIndex={drag.setDropIndex}
             setDropGroupId={drag.setDropGroupId}
+            finalizingSetId={drag.finalizingSetId}
             isRemoveZone={drag.isRemoveZone}
             emptyLabel={t("decks.emptyGroups")}
             onSelectGroup={selectGroup}

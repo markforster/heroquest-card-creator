@@ -44,6 +44,10 @@ function buildDragState(overrides?: Partial<DeckDetailDragState>): DeckDetailDra
     isGroupDragActive: false,
     isSetDragActive: false,
     faceDropSucceeded: false,
+    finalizingEntryId: null,
+    finalizingSetId: null,
+    finalizingFrontFaceId: null,
+    finalizingBackFaceId: null,
     ...overrides,
   };
 }
