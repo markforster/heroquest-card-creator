@@ -48,6 +48,8 @@ jest.mock("@/i18n/I18nProvider", () => ({
 jest.mock("@/components/Decks/detail/context/DeckDetailSelectionContext", () => ({
   useDeckDetailSelection: () => ({
     deckId: "deck-1",
+    orderedGroups: [{ id: "group-1", title: "Group 1", sortIndex: 0 }],
+    sets: [{ id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 }],
     selectedGroupId: "group-1",
     selectedSetId: "set-1",
     selectedEntryId: null,

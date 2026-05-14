@@ -11,6 +11,8 @@ const mockSetSelectedEntryId = jest.fn();
 
 const buildSelectionState = (groupId: string | null, setId: string | null) => ({
   deckId: "deck-1",
+  orderedGroups: groupId ? [{ id: groupId, title: "Group", sortIndex: 0 }] : [],
+  sets: setId ? [{ id: setId, groupId: groupId ?? "group-1", backFaceId: "back-1", sortIndex: 0 }] : [],
   selectedGroupId: groupId,
   selectedSetId: setId,
   selectedEntryId: null,
@@ -92,10 +94,10 @@ describe("DeckEntriesSection guidance states", () => {
     });
   });
 
-  it("shows explicit no-group guidance", () => {
+  it("hides entries section when no groups/sets exist", () => {
     mockUseDeckDetailSelection.mockReturnValue(buildSelectionState(null, null));
 
-    render(
+    const { container } = render(
       <DeckEntriesSection
         drag={baseDrag}
         entriesRowRef={jest.fn()}
@@ -104,11 +106,19 @@ describe("DeckEntriesSection guidance states", () => {
       />,
     );
 
-    expect(screen.getByText("decks.noGroupSelectedEntries")).toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
   });
 
   it("shows no-set-selected guidance when group exists", () => {
-    mockUseDeckDetailSelection.mockReturnValue(buildSelectionState("group-1", null));
+    mockUseDeckDetailSelection.mockReturnValue({
+      deckId: "deck-1",
+      orderedGroups: [{ id: "group-1", title: "Group 1", sortIndex: 0 }],
+      sets: [{ id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 }],
+      selectedGroupId: "group-1",
+      selectedSetId: null,
+      selectedEntryId: null,
+      setSelectedEntryId: mockSetSelectedEntryId,
+    });
 
     render(
       <DeckEntriesSection

@@ -156,6 +156,8 @@ export default function DeckEntriesSection({
   const { t } = useI18n();
   const navigate = useNavigate();
   const {
+    orderedGroups,
+    sets,
     selectedGroupId,
     selectedSetId,
     selectedEntryId,
@@ -373,8 +375,12 @@ export default function DeckEntriesSection({
     </div>
   );
 
+  if (orderedGroups.length === 0 || sets.length === 0) {
+    return null;
+  }
+
   return (
-    <div className={`${styles.deckRouteRow} ${styles.deckRouteRowFill}`}>
+    <div className={`${styles.deckRouteRow} ${styles.deckRouteRowFill} ${styles.deckEntriesRouteRow}`}>
       <div
         className={`${styles.deckRouteRowToolbar} ${styles.assetsToolbar} d-flex align-items-center justify-content-between gap-2 px-2 py-2`}
       >
@@ -456,7 +462,9 @@ export default function DeckEntriesSection({
                 </div>
               ) : (
                 <div className={styles.deckEntriesEmptyFill}>
-                  <div className={styles.decksEmpty}>{t("decks.emptyEntries")}</div>
+                  <div className={`${styles.decksEmpty} ${styles.deckEntriesEmptyMessageFull}`}>
+                    {t("decks.emptyEntries")}
+                  </div>
                 </div>
               )
             ) : drag.isFrontFaceDragActive ? (

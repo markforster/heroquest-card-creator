@@ -6995,6 +6995,13 @@ button.assetsKindBadge:disabled {
   min-height: 0;
 }
 
+.deckEntriesRouteRow {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+
 .deckRouteRowToolbar {
   display: flex;
   align-items: center;
@@ -7078,10 +7085,13 @@ button.assetsKindBadge:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(var(--deck-set-h) + var(--space-6));
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: calc(var(--deck-set-h, 147px) + var(--space-6));
   border: 2px dashed rgba(255, 255, 255, 0.3);
   border-radius: var(--radius-md);
   color: var(--hq-text-muted);
+  text-align: center;
 }
 
 .deckGroupDropZoneOver {
@@ -7105,7 +7115,7 @@ button.assetsKindBadge:disabled {
   align-items: center;
   flex-wrap: nowrap;
   min-width: max-content;
-  min-height: calc(var(--deck-set-h) + var(--space-6));
+  min-height: calc(var(--deck-set-h, 147px) + var(--space-6));
   height: 100%;
 }
 
@@ -7571,6 +7581,15 @@ button.assetsKindBadge:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.deckEntriesEmptyMessageFull {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .deckEntriesPanel {

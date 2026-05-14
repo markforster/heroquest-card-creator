@@ -50,11 +50,13 @@ function GroupDropZoneEmpty({ isOver, label }: { isOver: boolean; label: string 
 function GroupDropZoneArea({
   isOver,
   isBackFaceDragActive,
+  tileSize,
   rowRef,
   children,
 }: {
   isOver: boolean;
   isBackFaceDragActive: boolean;
+  tileSize: { width: number; height: number };
   rowRef?: (node: HTMLDivElement | null) => void;
   children: ReactNode;
 }) {
@@ -72,6 +74,10 @@ function GroupDropZoneArea({
           rowRef?.(node);
         }}
         className={styles.deckGroupRowContent}
+        style={{
+          ["--deck-set-w" as string]: `${tileSize.width}px`,
+          ["--deck-set-h" as string]: `${tileSize.height}px`,
+        }}
       >
         {children}
       </div>
@@ -111,7 +117,12 @@ export default function DeckGroupGridList({
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
   return (
-    <GroupDropZoneArea isOver={isDropOver} isBackFaceDragActive={isBackFaceDragActive} rowRef={rowRef}>
+    <GroupDropZoneArea
+      isOver={isDropOver}
+      isBackFaceDragActive={isBackFaceDragActive}
+      tileSize={tileSize}
+      rowRef={rowRef}
+    >
       {groups.length === 0 ? (
         <GroupDropZoneEmpty isOver={isDropOver} label={emptyLabel} />
       ) : (
