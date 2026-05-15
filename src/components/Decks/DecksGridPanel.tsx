@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { LayersPlus, Pencil, Trash2 } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import DeckExportButton from "@/components/Decks/DeckExportButton";
@@ -65,7 +65,7 @@ export default function DecksGridPanel() {
             className={`${styles.deckTile} ${styles.deckTileCreate}`}
             onClick={() => setIsCreateOpen(true)}
           >
-            <Plus className={styles.deckTileCreateIcon} />
+            <LayersPlus className={styles.deckTileCreateIcon} />
           </button>
           {model.decks.map((deck) => {
             const isSelected = model.selectedDeckIds.has(deck.id);

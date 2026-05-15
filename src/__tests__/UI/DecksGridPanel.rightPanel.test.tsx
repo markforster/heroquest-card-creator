@@ -88,6 +88,12 @@ describe("DecksGridPanel right panel", () => {
     expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
   });
 
+  it("uses LayersPlus for the create-deck tile icon", () => {
+    const { container } = render(<DecksGridPanel />);
+    expect(container.querySelector(".lucide-layers-plus")).toBeTruthy();
+    expect(container.querySelector(".lucide-plus")).toBeFalsy();
+  });
+
   it("disables edit and input for multi-select while keeping delete enabled", () => {
     mockUseDecksGridModel.mockReturnValue(
       createModel({
