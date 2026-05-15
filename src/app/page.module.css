@@ -6854,7 +6854,7 @@ button.assetsKindBadge:disabled {
 .decksRightPanel {
   display: flex;
   flex-direction: column;
-  width: 354px;
+  width: 460px;
   gap: var(--space-10);
   min-height: 0;
 }
@@ -8032,6 +8032,65 @@ button.assetsKindBadge:disabled {
   flex-direction: column;
   min-height: 0;
   height: 100%;
+}
+
+.deckBacksContent {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.deckBacksTabRail {
+  flex: 0 0 46px;
+  min-width: 46px;
+  padding: var(--space-4) var(--space-2);
+  border-right: 1px solid var(--hq-border-strong);
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--hq-surface-900);
+}
+
+.deckBacksTabButton {
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--hq-white-08) !important;
+  background: transparent !important;
+  color: var(--hq-text-muted) !important;
+  width: 100%;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem !important;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.deckBacksTabButton:hover {
+  background: var(--hq-white-06) !important;
+  color: var(--hq-text) !important;
+}
+
+.deckBacksTabButtonActive {
+  color: var(--hq-white) !important;
+  background: var(--hq-white-12) !important;
+  box-shadow: inset 2px 0 0 var(--hq-accent);
+}
+
+.deckBacksTabIcon {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2;
+}
+
+.deckBacksMain {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .deckBacksToolbar {

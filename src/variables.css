@@ -241,8 +241,10 @@
   --hq-group-tile-border-selected: rgba(60, 52, 45, 0.32);
   --hq-cardfan-empty-fill: rgba(255, 255, 255, 0.94);
   --hq-cardfan-empty-stroke: var(--hq-accent);
-  --hq-deck-set-hover-ring: rgba(112, 168, 255, 0.72);
-  --hq-deck-set-selected-ring: #9bc6ff;
+  /* --hq-deck-set-hover-ring: rgba(112, 168, 255, 0.72); */
+  --hq-deck-set-hover-ring: #f8a66b;
+  /* --hq-deck-set-selected-ring: #9bc6ff; */
+  --hq-deck-set-selected-ring: #f67920;
   --hq-deck-set-selected-glow: rgba(155, 198, 255, 0.42);
   --shadow-soft: 0 6px 16px rgba(40, 30, 20, 0.16);
   --shadow-popover: 0 12px 28px rgba(40, 30, 20, 0.18);

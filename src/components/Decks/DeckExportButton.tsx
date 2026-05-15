@@ -19,7 +19,7 @@ export default function DeckExportButton({
   deckId,
   scope,
   disabled,
-  label = "Export",
+  label = "Export Deck",
   className = "btn btn-outline-light btn-sm",
 }: DeckExportButtonProps) {
   const exportContext = useDeckExport();

@@ -1,6 +1,6 @@
 "use client";
 
-import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import DeckExportButton from "@/components/Decks/DeckExportButton";
@@ -36,12 +36,6 @@ export default function DecksGridPanel() {
   return (
     <>
       <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
-        <div className={styles.decksHeader}>
-          <div className={styles.decksHeaderTitle}>
-            <Layers className={styles.decksHeaderIcon} />
-            {t("actions.decks")}
-          </div>
-        </div>
         <div
           className={styles.decksGrid}
           tabIndex={0}

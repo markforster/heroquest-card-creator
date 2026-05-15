@@ -1,7 +1,7 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import { Search } from "lucide-react";
+import { BringToFront, Search, SendToBack } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
@@ -92,8 +92,17 @@ export default function DeckBacksPanel({
     () =>
       faceMode === "back"
         ? cards.filter((card) => !usedBackFaceIds.has(card.id) && card.id !== finalizingBackFaceId)
-        : cards.filter((card) => !usedFrontFaceIds.has(card.id) && card.id !== finalizingFrontFaceId),
-    [cards, faceMode, usedBackFaceIds, usedFrontFaceIds, finalizingBackFaceId, finalizingFrontFaceId],
+        : cards.filter(
+            (card) => !usedFrontFaceIds.has(card.id) && card.id !== finalizingFrontFaceId,
+          ),
+    [
+      cards,
+      faceMode,
+      usedBackFaceIds,
+      usedFrontFaceIds,
+      finalizingBackFaceId,
+      finalizingFrontFaceId,
+    ],
   );
 
   const {
@@ -123,104 +132,119 @@ export default function DeckBacksPanel({
 
   return (
     <div className={styles.deckBacksPanel}>
-      <div className={styles.deckBacksToolbar}>
-        <div className={styles.deckFacesSegment} role="tablist" aria-label="Face mode">
+      <div className={styles.deckBacksContent}>
+        <div
+          className={`nav nav-pills flex-column ${styles.deckBacksTabRail}`}
+          role="tablist"
+          aria-label="Face mode"
+          aria-orientation="vertical"
+        >
           <button
             type="button"
-            className={`${styles.deckFacesSegmentBtn} ${
-              faceMode === "back" ? styles.deckFacesSegmentBtnActive : ""
+            role="tab"
+            className={`nav-link ${styles.deckBacksTabButton} ${
+              faceMode === "back" ? `active ${styles.deckBacksTabButtonActive}` : ""
             }`}
+            aria-selected={faceMode === "back"}
             aria-pressed={faceMode === "back"}
+            aria-label="Back faces"
+            title="Back faces"
             onClick={() => onFaceModeChange("back")}
           >
-            Back faces
+            <SendToBack size={12} className={styles.deckBacksTabIcon} aria-hidden="true" />
           </button>
           <button
             type="button"
-            className={`${styles.deckFacesSegmentBtn} ${
-              faceMode === "front" ? styles.deckFacesSegmentBtnActive : ""
+            role="tab"
+            className={`nav-link ${styles.deckBacksTabButton} ${
+              faceMode === "front" ? `active ${styles.deckBacksTabButtonActive}` : ""
             }`}
+            aria-selected={faceMode === "front"}
             aria-pressed={faceMode === "front"}
+            aria-label="Front faces"
+            title="Front faces"
             onClick={() => onFaceModeChange("front")}
           >
-            Front faces
+            <BringToFront size={12} className={styles.deckBacksTabIcon} aria-hidden="true" />
           </button>
         </div>
-      </div>
-      <div
-        className={`${styles.deckBacksFilter} ${
-          DECK_FACE_FILTER_MODE === "tree" ? styles.deckBacksFilterTreeMode : ""
-        }`}
-      >
-        {DECK_FACE_FILTER_MODE === "select" ? (
-          <div className={styles.deckFaceCardsFilterStack}>
-            <div className={`input-group input-group-sm ${styles.cardsSearchGroup}`}>
-              <span className={`input-group-text ${styles.themedInputGroupText}`}>
-                <Search className={styles.icon} aria-hidden="true" />
-              </span>
-              <input
-                ref={searchInputRef}
-                type="search"
-                placeholder={t("placeholders.searchCards")}
-                className={`form-control form-control-sm ${styles.assetsSearch} ${styles.themedFormControl} ${styles.cardsSearchInputWithClear} ${styles.deckFaceCardsSearchInput}`}
-                title={t("tooltip.searchCards")}
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-              {search.trim().length > 0 ? (
-                <button
-                  type="button"
-                  className={`btn-close ${styles.cardsSearchClearButton}`}
-                  aria-label={t("actions.clear")}
-                  title={t("actions.clear")}
-                  onClick={() => {
-                    setSearch("");
-                    searchInputRef.current?.focus();
-                  }}
+        <div className={styles.deckBacksMain}>
+          <div
+            className={`${styles.deckBacksFilter} ${
+              DECK_FACE_FILTER_MODE === "tree" ? styles.deckBacksFilterTreeMode : ""
+            }`}
+          >
+            {DECK_FACE_FILTER_MODE === "select" ? (
+              <div className={styles.deckFaceCardsFilterStack}>
+                <div className={`input-group input-group-sm ${styles.cardsSearchGroup}`}>
+                  <span className={`input-group-text ${styles.themedInputGroupText}`}>
+                    <Search className={styles.icon} aria-hidden="true" />
+                  </span>
+                  <input
+                    ref={searchInputRef}
+                    type="search"
+                    placeholder={t("placeholders.searchCards")}
+                    className={`form-control form-control-sm ${styles.assetsSearch} ${styles.themedFormControl} ${styles.cardsSearchInputWithClear} ${styles.deckFaceCardsSearchInput}`}
+                    title={t("tooltip.searchCards")}
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                  />
+                  {search.trim().length > 0 ? (
+                    <button
+                      type="button"
+                      className={`btn-close ${styles.cardsSearchClearButton}`}
+                      aria-label={t("actions.clear")}
+                      title={t("actions.clear")}
+                      onClick={() => {
+                        setSearch("");
+                        searchInputRef.current?.focus();
+                      }}
+                    />
+                  ) : null}
+                </div>
+                <DeckFaceCardsFilterSelect
+                  activeFilter={activeFilter}
+                  onFilterChange={onFilterChange}
+                  visibleCollections={visibleCollections}
+                  collectionCounts={collectionCounts}
+                  recentCardsCount={recentCards.length}
+                  overallCount={overallCount}
+                  unfiledCount={unfiledCount}
                 />
-              ) : null}
-            </div>
-            <DeckFaceCardsFilterSelect
-              activeFilter={activeFilter}
-              onFilterChange={onFilterChange}
-              visibleCollections={visibleCollections}
-              collectionCounts={collectionCounts}
-              recentCardsCount={recentCards.length}
-              overallCount={overallCount}
-              unfiledCount={unfiledCount}
-            />
+              </div>
+            ) : (
+              <StockpileSidebar
+                dragEnabled={false}
+                activeFilter={activeFilter}
+                onFilterChange={onFilterChange}
+                isPairMode
+                showMissingArtworkOnly={false}
+                collectionsWithMissingArtwork={new Set()}
+                selectedIds={[]}
+                onClearSelection={() => {}}
+                recentCardsCount={recentCards.length}
+                recentlyDeletedCount={recentlyDeletedCount}
+                recentlyDeletedTotalCount={recentlyDeletedTotalCount}
+                overallCount={overallCount}
+                unfiledCount={unfiledCount}
+                visibleCollections={visibleCollections}
+                collectionCounts={collectionCounts}
+                selectedCountByCollection={new Map()}
+              />
+            )}
           </div>
-        ) : (
-          <StockpileSidebar
-            dragEnabled={false}
-            activeFilter={activeFilter}
-            onFilterChange={onFilterChange}
-            isPairMode
-            showMissingArtworkOnly={false}
-            collectionsWithMissingArtwork={new Set()}
-            selectedIds={[]}
-            onClearSelection={() => {}}
-            recentCardsCount={recentCards.length}
-            recentlyDeletedCount={recentlyDeletedCount}
-            recentlyDeletedTotalCount={recentlyDeletedTotalCount}
-            overallCount={overallCount}
-            unfiledCount={unfiledCount}
-            visibleCollections={visibleCollections}
-            collectionCounts={collectionCounts}
-            selectedCountByCollection={new Map()}
-          />
-        )}
-      </div>
-      <div className={styles.deckBacksGridPanel}>
-        {filteredCards.length === 0 ? (
-          <div className={styles.decksEmpty}>{emptyLabel}</div>
-        ) : (
-          <div className={styles.deckBacksGrid}>
-            {filteredCards.map((card) => (
-              <BackPanelDraggableThumb key={card.id} cardId={card.id} faceMode={faceMode} />
-            ))}
+          <div className={styles.deckBacksGridPanel}>
+            {filteredCards.length === 0 ? (
+              <div className={styles.decksEmpty}>{emptyLabel}</div>
+            ) : (
+              <div className={styles.deckBacksGrid}>
+                {filteredCards.map((card) => (
+                  <BackPanelDraggableThumb key={card.id} cardId={card.id} faceMode={faceMode} />
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

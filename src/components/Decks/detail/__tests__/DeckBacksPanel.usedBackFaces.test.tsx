@@ -219,4 +219,43 @@ describe("DeckBacksPanel used back-face availability", () => {
     const lastCallArg = mockUseStockpileFilters.mock.calls[mockUseStockpileFilters.mock.calls.length - 1][0];
     expect(lastCallArg.search).toBe("");
   });
+
+  it("renders icon-only face tabs with accessible labels", () => {
+    render(
+      <DeckBacksPanel
+        usedBackFaceIds={new Set()}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+      />,
+    );
+
+    expect(screen.getByRole("tab", { name: "Back faces" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Front faces" })).toBeInTheDocument();
+  });
+
+  it("switches face mode when icon tabs are clicked", () => {
+    const setRightPanelFaceMode = jest.fn();
+    mockUseDeckRightPanel.mockReturnValue({
+      backCollections: [],
+      backCards: cards,
+      rightPanelEmptyLabel: "No backs",
+      backFilter: { type: "all" },
+      setBackFilter: jest.fn(),
+      rightPanelFaceMode: "back",
+      setRightPanelFaceMode,
+    });
+
+    render(
+      <DeckBacksPanel
+        usedBackFaceIds={new Set()}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Front faces" }));
+    expect(setRightPanelFaceMode).toHaveBeenCalledWith("front");
+  });
 });
