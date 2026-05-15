@@ -156,45 +156,6 @@ export default function DeckBacksPanel({
           )}
         </button>
         <div
-          className={`nav nav-pills flex-column ${styles.deckBacksTabRail}`}
-          role="tablist"
-          aria-label="Face mode"
-          aria-orientation="vertical"
-        >
-          <button
-            type="button"
-            role="tab"
-            className={`${styles.leftNavItem} ${styles.deckBacksTabButton} ${
-              faceMode === "back" ? styles.leftNavItemActive : ""
-            }`}
-            aria-selected={faceMode === "back"}
-            aria-pressed={faceMode === "back"}
-            aria-label="Back faces"
-            title="Back faces"
-            onClick={() => handleFaceModeChange("back")}
-          >
-            <span className={styles.leftNavGlyph} aria-hidden="true">
-              <SendToBack className={styles.deckBacksTabIcon} aria-hidden="true" />
-            </span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={`${styles.leftNavItem} ${styles.deckBacksTabButton} ${
-              faceMode === "front" ? styles.leftNavItemActive : ""
-            }`}
-            aria-selected={faceMode === "front"}
-            aria-pressed={faceMode === "front"}
-            aria-label="Front faces"
-            title="Front faces"
-            onClick={() => handleFaceModeChange("front")}
-          >
-            <span className={styles.leftNavGlyph} aria-hidden="true">
-              <BringToFront className={styles.deckBacksTabIcon} aria-hidden="true" />
-            </span>
-          </button>
-        </div>
-        <div
           className={`${styles.deckBacksMain} ${
             isViewOpen ? styles.deckBacksMainOpen : styles.deckBacksMainClosed
           }`}
@@ -277,6 +238,45 @@ export default function DeckBacksPanel({
               </div>
             )}
           </div>
+        </div>
+        <div
+          className={`nav nav-pills flex-column ${styles.deckBacksTabRail}`}
+          role="tablist"
+          aria-label="Face mode"
+          aria-orientation="vertical"
+        >
+          <button
+            type="button"
+            role="tab"
+            className={`${styles.leftNavItem} ${styles.deckBacksTabButton} ${
+              faceMode === "back" ? styles.leftNavItemActive : ""
+            }`}
+            aria-selected={faceMode === "back"}
+            aria-pressed={faceMode === "back"}
+            aria-label="Back faces"
+            title="Back faces"
+            onClick={() => handleFaceModeChange("back")}
+          >
+            <span className={styles.leftNavGlyph} aria-hidden="true">
+              <SendToBack className={styles.deckBacksTabIcon} aria-hidden="true" />
+            </span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            className={`${styles.leftNavItem} ${styles.deckBacksTabButton} ${
+              faceMode === "front" ? styles.leftNavItemActive : ""
+            }`}
+            aria-selected={faceMode === "front"}
+            aria-pressed={faceMode === "front"}
+            aria-label="Front faces"
+            title="Front faces"
+            onClick={() => handleFaceModeChange("front")}
+          >
+            <span className={styles.leftNavGlyph} aria-hidden="true">
+              <BringToFront className={styles.deckBacksTabIcon} aria-hidden="true" />
+            </span>
+          </button>
         </div>
       </div>
     </div>
