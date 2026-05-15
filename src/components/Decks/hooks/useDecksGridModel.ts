@@ -167,6 +167,11 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
     });
   }, []);
 
+
+  const clearSelectedDecks = useCallback(() => {
+    setSelectedDeckIds(new Set());
+  }, []);
+
   const createDeck = useCallback(async () => {
     const createdId = await mutations.createDeck(deckTitleDraft, deckDescriptionDraft, untitledDeckLabel);
     await refresh();
@@ -417,6 +422,7 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
     commitDeckTitleEdit,
     onDeckTitleDraftChangeLive,
     selectDeck,
+    clearSelectedDecks,
     createDeck,
     beginCreateDeckDraft,
     beginEditDeckDraft,

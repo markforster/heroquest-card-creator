@@ -109,9 +109,16 @@ export default function DecksGridPanel() {
         </div>
         <div
           ref={decksGridRef}
-          className={styles.decksGrid}
-          tabIndex={0}
-          onKeyDown={async (event) => {
+          className={styles.decksGridScroll}
+          onClick={(event) => {
+            if ((event.target as HTMLElement).closest(`[data-deck-id]`)) return;
+            model.clearSelectedDecks();
+          }}
+        >
+          <div
+            className={styles.decksGrid}
+            tabIndex={0}
+            onKeyDown={async (event) => {
             if (event.key === "Enter") {
               if (model.selectedDeckId) navigate(`/decks/${model.selectedDeckId}`);
               return;
@@ -130,107 +137,108 @@ export default function DecksGridPanel() {
               const duplicatedId = await model.duplicateDeck(model.selectedDeckId);
               if (duplicatedId) navigate(`/decks/${duplicatedId}`);
             }
-          }}
-        >
-          {!model.hasAnyDecks ? (
-            <div className={styles.decksEmpty}>{t("decks.empty")}</div>
-          ) : !model.hasVisibleResults ? (
-            <div className={styles.decksEmpty}>
-              {t("decks.noResults").replace("{query}", model.searchDraft.trim())}
-            </div>
-          ) : null}
-          {model.filteredDecks.map((deck) => {
-            const isSelected = model.selectedDeckIds.has(deck.id);
-            return (
-              <div
-                key={deck.id}
-                data-deck-id={deck.id}
-                className={`${styles.deckTile} ${isSelected ? styles.deckTileSelected : ""}`}
-                style={
-                  model.deckBackgroundUrlByDeckId[deck.id]
-                    ? ({
-                        "--deck-preview-url": `url("${model.deckBackgroundUrlByDeckId[deck.id]}")`,
-                      } as CSSProperties)
-                    : undefined
-                }
-                role="button"
-                tabIndex={0}
-                onClick={(event) => model.selectDeck(deck.id, event.metaKey || event.ctrlKey)}
-                onDoubleClick={() => navigate(`/decks/${deck.id}`)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") navigate(`/decks/${deck.id}`);
-                }}
-              >
-                {model.deckBackgroundUrlByDeckId[deck.id] ? (
-                  <div className={styles.deckTileAtmosphereFrame} aria-hidden="true">
-                    <div className={styles.deckTileAtmosphere} />
-                  </div>
-                ) : null}
-                <div className={styles.deckTilePreview}>
-                  <DeckFanByDeckId
-                    deckId={deck.id}
-                    variant={PREVIEW_VARIANT}
-                    maxCount={DEFAULT_DECK_FAN_PREVIEW_COUNT}
-                    showPlaceholdersWhenEmpty
-                    emptyPlaceholderVariant="deck-empty"
-                    spacing={1}
-                    tilt={1}
-                  />
-                </div>
-                <div className={styles.deckTileBottom}>
-                  <div className={styles.deckTileMetaSlot}>
-                    <div className={styles.deckTileTitle}>
-                      {model.effectiveDeckTitleById[deck.id] ?? deck.title}
-                    </div>
-                    <div className={styles.deckTileMeta}>
-                      {new Date(deck.updatedAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <div className={styles.deckTileActionsSlot}>
-                    <div className={styles.deckTileActions}>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${styles.deckTileOpenButton}`}
-                        title={t("decks.openDeck")}
-                        aria-label={t("decks.openDeck")}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          navigate(`/decks/${deck.id}`);
-                        }}
-                      >
-                        <Eye className={styles.icon} aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-outline-light btn-sm"
-                        title={t("actions.edit")}
-                        aria-label={t("actions.edit")}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          openEditDeckModal(deck.id);
-                        }}
-                      >
-                        <Pencil className={styles.icon} aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-outline-danger btn-sm"
-                        title={t("actions.delete")}
-                        aria-label={t("actions.delete")}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          model.selectDeck(deck.id, false);
-                          model.setIsDeleteDeckOpen(true);
-                        }}
-                      >
-                        <Trash2 className={styles.icon} aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+            }}
+          >
+            {!model.hasAnyDecks ? (
+              <div className={styles.decksEmpty}>{t("decks.empty")}</div>
+            ) : !model.hasVisibleResults ? (
+              <div className={styles.decksEmpty}>
+                {t("decks.noResults").replace("{query}", model.searchDraft.trim())}
               </div>
-            );
-          })}
+            ) : null}
+            {model.filteredDecks.map((deck) => {
+              const isSelected = model.selectedDeckIds.has(deck.id);
+              return (
+                <div
+                  key={deck.id}
+                  data-deck-id={deck.id}
+                  className={`${styles.deckTile} ${isSelected ? styles.deckTileSelected : ""}`}
+                  style={
+                    model.deckBackgroundUrlByDeckId[deck.id]
+                      ? ({
+                          "--deck-preview-url": `url("${model.deckBackgroundUrlByDeckId[deck.id]}")`,
+                        } as CSSProperties)
+                      : undefined
+                  }
+                  role="button"
+                  tabIndex={0}
+                  onClick={(event) => model.selectDeck(deck.id, event.metaKey || event.ctrlKey)}
+                  onDoubleClick={() => navigate(`/decks/${deck.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") navigate(`/decks/${deck.id}`);
+                  }}
+                >
+                  {model.deckBackgroundUrlByDeckId[deck.id] ? (
+                    <div className={styles.deckTileAtmosphereFrame} aria-hidden="true">
+                      <div className={styles.deckTileAtmosphere} />
+                    </div>
+                  ) : null}
+                  <div className={styles.deckTilePreview}>
+                    <DeckFanByDeckId
+                      deckId={deck.id}
+                      variant={PREVIEW_VARIANT}
+                      maxCount={DEFAULT_DECK_FAN_PREVIEW_COUNT}
+                      showPlaceholdersWhenEmpty
+                      emptyPlaceholderVariant="deck-empty"
+                      spacing={1}
+                      tilt={1}
+                    />
+                  </div>
+                  <div className={styles.deckTileBottom}>
+                    <div className={styles.deckTileMetaSlot}>
+                      <div className={styles.deckTileTitle}>
+                        {model.effectiveDeckTitleById[deck.id] ?? deck.title}
+                      </div>
+                      <div className={styles.deckTileMeta}>
+                        {new Date(deck.updatedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className={styles.deckTileActionsSlot}>
+                      <div className={styles.deckTileActions}>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${styles.deckTileOpenButton}`}
+                          title={t("decks.openDeck")}
+                          aria-label={t("decks.openDeck")}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            navigate(`/decks/${deck.id}`);
+                          }}
+                        >
+                          <Eye className={styles.icon} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-outline-light btn-sm"
+                          title={t("actions.edit")}
+                          aria-label={t("actions.edit")}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openEditDeckModal(deck.id);
+                          }}
+                        >
+                          <Pencil className={styles.icon} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger btn-sm"
+                          title={t("actions.delete")}
+                          aria-label={t("actions.delete")}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            model.selectDeck(deck.id, false);
+                            model.setIsDeleteDeckOpen(true);
+                          }}
+                        >
+                          <Trash2 className={styles.icon} aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
       <ModalShell

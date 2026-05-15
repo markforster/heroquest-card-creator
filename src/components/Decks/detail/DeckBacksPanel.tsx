@@ -137,6 +137,7 @@ export default function DeckBacksPanel({
   const visibleCollections = collections.filter((collection) =>
     visibleCollectionIds.has(collection.id),
   );
+  const faceModeTitle = faceMode === "back" ? "Back faces" : "Front faces";
 
   return (
     <div className={styles.deckBacksPanel}>
@@ -201,6 +202,9 @@ export default function DeckBacksPanel({
           >
             {DECK_FACE_FILTER_MODE === "select" ? (
               <div className={styles.deckFaceCardsFilterStack}>
+                <div className={styles.deckFaceModeHeader}>
+                  <div className={styles.deckFaceModeTitle}>{faceModeTitle}</div>
+                </div>
                 <div className={`input-group input-group-sm ${styles.cardsSearchGroup}`}>
                   <span className={`input-group-text ${styles.themedInputGroupText}`}>
                     <Search className={styles.icon} aria-hidden="true" />

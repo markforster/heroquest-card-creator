@@ -122,7 +122,7 @@ export const en = {
   "decks.addCards": "Add cards…",
   "decks.changeBack": "Change back…",
   "decks.deleteSet": "Delete set",
-  "decks.noSetSelected": "Select a set to start adding front faces.",
+  "decks.noSetSelected": "Select a set to add and manage front faces.",
   "decks.noGroupSelectedEntries": "Select a group, then drop a back face from the right panel to start.",
   "decks.noDeckSelected": "Select a deck to view and edit its details.",
   "decks.sourcePanelToggle": "Toggle source faces panel",

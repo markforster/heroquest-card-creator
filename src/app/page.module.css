@@ -6591,6 +6591,7 @@ button.assetsKindBadge:disabled {
   background: linear-gradient(135deg, var(--hq-surface-800), var(--hq-surface-900));
   color: var(--hq-text);
   min-height: 0;
+  overflow: hidden;
 }
 
 .decksHeader {
@@ -6621,7 +6622,16 @@ button.assetsKindBadge:disabled {
   outline: none;
 }
 
+.decksGridScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px;
+}
+
 .decksGridToolbar {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -6650,7 +6660,7 @@ button.assetsKindBadge:disabled {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: var(--space-3);
+  gap: var(--space-2);
   background: var(--hq-surface-900);
   border: 1px solid var(--hq-border-strong);
   border-radius: var(--radius-lg);
@@ -6663,15 +6673,29 @@ button.assetsKindBadge:disabled {
     box-shadow 160ms ease;
   align-items: center;
   text-align: center;
-  min-height: 260px;
+  min-height: 220px;
   position: relative;
   overflow: visible;
-  --deck-preview-bg-opacity: 0.38;
+  --deck-preview-bg-opacity: 0.5;
   --deck-preview-blur: 5px;
   --deck-preview-scale: 1.28;
   --deck-preview-rotate: -1deg;
   --deck-preview-translate-x: -2%;
   --deck-preview-translate-y: -1%;
+}
+
+:root[data-theme="light"] .deckTile:hover {
+  border-color: var(--hq-deck-set-hover-ring);
+  box-shadow: 0 0 0 1px var(--hq-deck-set-hover-ring);
+}
+
+:root[data-theme="dark"] .deckTile:hover {
+  border-color: color-mix(in srgb, var(--hq-accent) 55%, var(--hq-border-strong) 45%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hq-accent) 28%, transparent 72%);
+}
+
+:root[data-theme="light"] .deckTile {
+  border-color: color-mix(in srgb, var(--hq-border-strong) 60%, #2a2218 40%);
 }
 
 :root[data-theme="dark"] .deckTile {
@@ -6692,15 +6716,30 @@ button.assetsKindBadge:disabled {
 
 .deckTileSelected {
   border-color: var(--hq-accent);
-  box-shadow: inset 0 0 0 1px var(--hq-accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hq-accent) 82%, #ffffff 18%);
   transform: translateY(-1px);
   align-items: center;
   text-align: center;
 }
 
+:root[data-theme="light"] .deckTileSelected {
+  border-color: var(--hq-deck-set-selected-ring);
+  box-shadow: 0 0 0 1px var(--hq-deck-set-selected-ring);
+}
+
+:root[data-theme="light"] .deckTileSelected:hover {
+  border-color: var(--hq-deck-set-selected-ring);
+  box-shadow: 0 0 0 1px var(--hq-deck-set-selected-ring);
+}
+
 :root[data-theme="dark"] .deckTileSelected {
   border-color: var(--hq-accent);
-  box-shadow: inset 0 0 0 1px var(--hq-accent);
+  box-shadow: 0 0 0 1px var(--hq-accent);
+}
+
+:root[data-theme="dark"] .deckTileSelected:hover {
+  border-color: var(--hq-accent);
+  box-shadow: 0 0 0 1px var(--hq-accent);
 }
 
 .deckTileSelected .cardFanSvg {
@@ -6927,8 +6966,8 @@ button.assetsKindBadge:disabled {
 
 .deckTileAtmosphereFrame {
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
+  inset: 1px;
+  border-radius: calc(var(--radius-lg) - 1px);
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
@@ -8393,6 +8432,20 @@ button.assetsKindBadge:disabled {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.deckFaceModeHeader {
+  padding: var(--space-6) var(--space-4);
+  border-bottom: 1px solid var(--hq-border-strong);
+}
+
+.deckFaceModeTitle {
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--hq-text);
 }
 
 .deckFaceCardsSearchInput {

@@ -410,40 +410,42 @@ export default function DeckEntriesSection({
 
   return (
     <div className={`${styles.deckRouteRow} ${styles.deckRouteRowFill} ${styles.deckEntriesRouteRow}`}>
-      <div
-        className={`${styles.deckRouteRowToolbar} ${styles.assetsToolbar} d-flex align-items-center justify-content-between gap-2 px-2 py-2`}
-      >
-        <div className={styles.deckFacesSegment} role="tablist" aria-label="Set cards mode">
+      {selectedSetId ? (
+        <div
+          className={`${styles.deckRouteRowToolbar} ${styles.assetsToolbar} d-flex align-items-center justify-content-between gap-2 px-2 py-2`}
+        >
+          <div className={styles.deckFacesSegment} role="tablist" aria-label="Set cards mode">
+            <button
+              type="button"
+              className={`${styles.deckFacesSegmentBtn} ${
+                entriesViewMode === "in-set" ? styles.deckFacesSegmentBtnActive : ""
+              }`}
+              aria-pressed={entriesViewMode === "in-set"}
+              onClick={() => setEntriesViewMode("in-set")}
+            >
+              In Set ({entriesSorted.length})
+            </button>
+            <button
+              type="button"
+              className={`${styles.deckFacesSegmentBtn} ${
+                entriesViewMode === "paired-not-in-set" ? styles.deckFacesSegmentBtnActive : ""
+              }`}
+              aria-pressed={entriesViewMode === "paired-not-in-set"}
+              onClick={() => setEntriesViewMode("paired-not-in-set")}
+            >
+              Paired (Not In Set) ({pairedNotInSetFrontIds.length})
+            </button>
+          </div>
           <button
             type="button"
-            className={`${styles.deckFacesSegmentBtn} ${
-              entriesViewMode === "in-set" ? styles.deckFacesSegmentBtnActive : ""
-            }`}
-            aria-pressed={entriesViewMode === "in-set"}
-            onClick={() => setEntriesViewMode("in-set")}
+            className="btn btn-outline-danger btn-sm"
+            onClick={openBulkRemoval}
+            disabled={!canBulkDelete}
           >
-            In Set ({entriesSorted.length})
-          </button>
-          <button
-            type="button"
-            className={`${styles.deckFacesSegmentBtn} ${
-              entriesViewMode === "paired-not-in-set" ? styles.deckFacesSegmentBtnActive : ""
-            }`}
-            aria-pressed={entriesViewMode === "paired-not-in-set"}
-            onClick={() => setEntriesViewMode("paired-not-in-set")}
-          >
-            Paired (Not In Set) ({pairedNotInSetFrontIds.length})
+            Delete Selected
           </button>
         </div>
-        <button
-          type="button"
-          className="btn btn-outline-danger btn-sm"
-          onClick={openBulkRemoval}
-          disabled={!canBulkDelete}
-        >
-          Delete Selected
-        </button>
-      </div>
+      ) : null}
       <div className={`${styles.deckRouteRowBody} ${styles.deckRouteRowBodyFill}`}>
         {!selectedGroupId ? (
           <div className={styles.deckEntriesEmptyFill}>

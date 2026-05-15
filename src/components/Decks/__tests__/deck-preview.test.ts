@@ -60,7 +60,7 @@ describe("resolveDeckPreviewIds visual prioritization", () => {
     expect(ids).toEqual(["b4", "b2", "b1", "b3"]);
   });
 
-  it("fills with fronts only after all available backs", async () => {
+  it("renders only back faces when SHOW_FRONT_FACES is false", async () => {
     const pairMap = new Map([
       ["p1", { id: "p1", frontFaceId: "f1" }],
       ["p2", { id: "p2", frontFaceId: "f2" }],
@@ -87,7 +87,7 @@ describe("resolveDeckPreviewIds visual prioritization", () => {
       pairMap,
     });
 
-    expect(ids).toEqual(["f3", "f1", "b1", "b2", "f2"]);
+    expect(ids).toEqual(["b2", "b1"]);
   });
 
   it("deduplicates faces and enforces maxCount", async () => {
@@ -111,7 +111,7 @@ describe("resolveDeckPreviewIds visual prioritization", () => {
       pairMap,
     });
 
-    expect(ids).toEqual(["f1", "b1", "b2"]);
+    expect(ids).toEqual(["b2", "b1"]);
     expect(new Set(ids).size).toBe(ids.length);
   });
 

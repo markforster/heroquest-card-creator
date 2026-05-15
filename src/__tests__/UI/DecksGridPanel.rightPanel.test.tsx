@@ -68,6 +68,7 @@ describe("DecksGridPanel grid refresh", () => {
     deckDescriptionDraft: "",
     setDeckDescriptionDraft: jest.fn(),
     selectDeck: jest.fn(),
+    clearSelectedDecks: jest.fn(),
     createDeck: jest.fn().mockResolvedValue("d1"),
     submitDeckDraft: jest.fn().mockResolvedValue("d1"),
     beginCreateDeckDraft: jest.fn(),
@@ -119,6 +120,17 @@ describe("DecksGridPanel grid refresh", () => {
     expect(container.querySelector(".deckTileAtmosphereFrame")).toBeTruthy();
     expect(container.querySelector(".deckTileAtmosphere")).toBeTruthy();
     expect(screen.getByText("Deck 1")).toBeInTheDocument();
+  });
+
+  it("clicking empty grid space clears selection", () => {
+    const model = createModel();
+    mockUseDecksGridModel.mockReturnValue(model);
+    const { container } = render(<DecksGridPanel />);
+
+    const scroll = container.querySelector(`.${"decksGridScroll"}`) as HTMLDivElement;
+    fireEvent.click(scroll);
+
+    expect(model.clearSelectedDecks).toHaveBeenCalled();
   });
 
   it("shows no-results state", () => {

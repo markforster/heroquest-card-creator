@@ -4,6 +4,8 @@ import { apiClient } from "@/api/client";
 import type { DeckRecord, DeckSetRecord } from "@/api/decks";
 import type { PairRecord } from "@/api/pairs";
 
+const SHOW_FRONT_FACES = false;
+
 function buildVisualPrioritySlotOrder(count: number): number[] {
   if (count <= 0) return [];
   const order: number[] = [];
@@ -83,20 +85,22 @@ async function buildDeckPreview(
     if (backIds.length >= previewFanCount) break;
   }
 
-  for (const group of orderedGroups) {
-    if (backIds.length + frontIds.length >= previewFanCount) break;
-    const groupSets = setsByGroup.get(group.id) ?? [];
-    for (const set of groupSets) {
+  if (SHOW_FRONT_FACES) {
+    for (const group of orderedGroups) {
       if (backIds.length + frontIds.length >= previewFanCount) break;
-      const setEntries = await apiClient.listDeckEntries({ params: { setId: set.id } });
-      const orderedEntries = [...setEntries].sort((a, b) => a.sortIndex - b.sortIndex);
-      for (const entry of orderedEntries) {
-        const pair = pairMap.get(entry.pairId);
-        if (!pair?.frontFaceId) continue;
-        if (seen.has(pair.frontFaceId)) continue;
-        frontIds.push(pair.frontFaceId);
-        seen.add(pair.frontFaceId);
+      const groupSets = setsByGroup.get(group.id) ?? [];
+      for (const set of groupSets) {
         if (backIds.length + frontIds.length >= previewFanCount) break;
+        const setEntries = await apiClient.listDeckEntries({ params: { setId: set.id } });
+        const orderedEntries = [...setEntries].sort((a, b) => a.sortIndex - b.sortIndex);
+        for (const entry of orderedEntries) {
+          const pair = pairMap.get(entry.pairId);
+          if (!pair?.frontFaceId) continue;
+          if (seen.has(pair.frontFaceId)) continue;
+          frontIds.push(pair.frontFaceId);
+          seen.add(pair.frontFaceId);
+          if (backIds.length + frontIds.length >= previewFanCount) break;
+        }
       }
     }
   }
