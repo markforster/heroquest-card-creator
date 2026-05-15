@@ -1,12 +1,10 @@
 "use client";
 
-import { ChevronRight, Plus } from "lucide-react";
 import { useState } from "react";
 
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
 import DeckExportButton from "@/components/Decks/DeckExportButton";
-import { useDeckRightPanel } from "@/components/Decks/detail/context/DeckRightPanelContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
@@ -27,7 +25,6 @@ export default function DeckDetailHeader({
   onConfirmMakeKeyCard: () => Promise<void>;
 }) {
   const { t } = useI18n();
-  const { isRightPanelVisible, toggleRightPanel } = useDeckRightPanel();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const selectedBackThumbUrl = useCardThumbnailUrl(selectedSetBackFaceId, null, {
     enabled: Boolean(selectedSetBackFaceId),
@@ -54,15 +51,6 @@ export default function DeckDetailHeader({
             label={t("actions.export")}
             className="btn btn-outline-light btn-sm"
           />
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={toggleRightPanel}
-            title={t("decks.sourcePanelToggle")}
-            aria-label={t("decks.sourcePanelToggle")}
-          >
-            {isRightPanelVisible ? <ChevronRight size={16} /> : <Plus size={16} />}
-          </button>
         </div>
       </div>
       <ConfirmModal

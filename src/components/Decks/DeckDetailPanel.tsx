@@ -221,16 +221,18 @@ function DeckDetailPanelContent({
 
           </div>
         </section>
-        {isRightPanelVisible ? (
-          <aside className={`${styles.rightPanel} ${styles.decksRightPanel}`}>
-            <DeckBacksPanel
-              usedBackFaceIds={usedBackFaceIds}
-              usedFrontFaceIds={usedFrontFaceIds}
-              finalizingBackFaceId={drag.finalizingBackFaceId}
-              finalizingFrontFaceId={drag.finalizingFrontFaceId}
-            />
-          </aside>
-        ) : null}
+        <aside
+          className={`${styles.rightPanel} ${styles.decksRightPanel} ${
+            isRightPanelVisible ? styles.decksRightPanelExpanded : styles.decksRightPanelCollapsed
+          }`}
+        >
+          <DeckBacksPanel
+            usedBackFaceIds={usedBackFaceIds}
+            usedFrontFaceIds={usedFrontFaceIds}
+            finalizingBackFaceId={drag.finalizingBackFaceId}
+            finalizingFrontFaceId={drag.finalizingFrontFaceId}
+          />
+        </aside>
       </DndContext>
 
       <DeckDetailModals

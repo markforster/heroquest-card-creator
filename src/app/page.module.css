@@ -6678,12 +6678,16 @@ button.assetsKindBadge:disabled {
 
 .cardFan {
   display: inline-block;
-  transition: width 180ms ease, height 180ms ease;
+  transition:
+    width 180ms ease,
+    height 180ms ease;
 }
 
 .cardFanSvg {
   display: block;
-  transition: width 180ms ease, height 180ms ease;
+  transition:
+    width 180ms ease,
+    height 180ms ease;
 }
 
 .cardFanPlaceholderSvg {
@@ -6854,9 +6858,18 @@ button.assetsKindBadge:disabled {
 .decksRightPanel {
   display: flex;
   flex-direction: column;
-  width: 460px;
+  width: 320px;
   gap: var(--space-10);
   min-height: 0;
+  transition: width 180ms ease;
+}
+
+.decksRightPanelExpanded {
+  width: 390px;
+}
+
+.decksRightPanelCollapsed {
+  width: 46px;
 }
 
 .decksRightSection {
@@ -7689,7 +7702,9 @@ button.assetsKindBadge:disabled {
   border: 1px solid var(--hq-border-strong);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .deckEntriesPanelDropActive {
@@ -8032,6 +8047,7 @@ button.assetsKindBadge:disabled {
   flex-direction: column;
   min-height: 0;
   height: 100%;
+  position: relative;
 }
 
 .deckBacksContent {
@@ -8040,14 +8056,42 @@ button.assetsKindBadge:disabled {
   min-height: 0;
 }
 
+.deckBacksToggle {
+  flex: 0 0 auto;
+  border: 1px solid var(--hq-border-strong);
+  background: var(--hq-surface-750);
+  color: inherit;
+  border-radius: var(--radius-pill);
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: absolute;
+  top: var(--space-10);
+  left: -11px;
+  z-index: 5;
+  box-shadow: var(--shadow-soft);
+}
+
+.deckBacksToggle:hover {
+  background: var(--hq-surface-700);
+}
+
+.deckBacksToggleIcon {
+  width: 12px;
+  height: 12px;
+}
+
 .deckBacksTabRail {
   flex: 0 0 46px;
   min-width: 46px;
-  padding: var(--space-4) var(--space-2);
+  padding: calc(var(--space-10) + 22px + var(--space-4)) 0 var(--space-4) var(--space-3);
   border-right: 1px solid var(--hq-border-strong);
   display: flex;
   align-items: stretch;
-  gap: 0;
+  gap: var(--space-3);
   background: var(--hq-surface-900);
 }
 
@@ -8063,6 +8107,7 @@ button.assetsKindBadge:disabled {
   align-items: center;
   justify-content: center;
   padding: 0.25rem !important;
+  margin-right: -1px !important;
   transition:
     background-color 160ms ease,
     color 160ms ease,
@@ -8091,6 +8136,19 @@ button.assetsKindBadge:disabled {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.deckBacksMainOpen {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.deckBacksMainClosed {
+  width: 0;
+  min-width: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .deckBacksToolbar {

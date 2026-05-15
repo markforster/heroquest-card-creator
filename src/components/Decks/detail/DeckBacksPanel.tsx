@@ -1,7 +1,7 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import { BringToFront, Search, SendToBack } from "lucide-react";
+import { BringToFront, ChevronLeft, ChevronRight, Search, SendToBack } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
@@ -80,6 +80,9 @@ export default function DeckBacksPanel({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [search, setSearch] = useState("");
   const {
+    isRightPanelVisible,
+    setIsRightPanelVisible,
+    toggleRightPanel,
     backCollections: collections,
     backCards: cards,
     rightPanelEmptyLabel: emptyLabel,
@@ -88,6 +91,11 @@ export default function DeckBacksPanel({
     rightPanelFaceMode: faceMode,
     setRightPanelFaceMode: onFaceModeChange,
   } = useDeckRightPanel();
+  const isViewOpen = isRightPanelVisible;
+  const handleFaceModeChange = (nextMode: RightPanelFaceMode) => {
+    onFaceModeChange(nextMode);
+    if (!isViewOpen) setIsRightPanelVisible(true);
+  };
   const sourceCards = useMemo(
     () =>
       faceMode === "back"
@@ -133,6 +141,19 @@ export default function DeckBacksPanel({
   return (
     <div className={styles.deckBacksPanel}>
       <div className={styles.deckBacksContent}>
+        <button
+          type="button"
+          className={styles.deckBacksToggle}
+          onClick={toggleRightPanel}
+          title={t("decks.sourcePanelToggle")}
+          aria-label={t("decks.sourcePanelToggle")}
+        >
+          {isViewOpen ? (
+            <ChevronRight className={styles.deckBacksToggleIcon} aria-hidden="true" />
+          ) : (
+            <ChevronLeft className={styles.deckBacksToggleIcon} aria-hidden="true" />
+          )}
+        </button>
         <div
           className={`nav nav-pills flex-column ${styles.deckBacksTabRail}`}
           role="tablist"
@@ -149,7 +170,7 @@ export default function DeckBacksPanel({
             aria-pressed={faceMode === "back"}
             aria-label="Back faces"
             title="Back faces"
-            onClick={() => onFaceModeChange("back")}
+            onClick={() => handleFaceModeChange("back")}
           >
             <SendToBack size={12} className={styles.deckBacksTabIcon} aria-hidden="true" />
           </button>
@@ -163,12 +184,16 @@ export default function DeckBacksPanel({
             aria-pressed={faceMode === "front"}
             aria-label="Front faces"
             title="Front faces"
-            onClick={() => onFaceModeChange("front")}
+            onClick={() => handleFaceModeChange("front")}
           >
             <BringToFront size={12} className={styles.deckBacksTabIcon} aria-hidden="true" />
           </button>
         </div>
-        <div className={styles.deckBacksMain}>
+        <div
+          className={`${styles.deckBacksMain} ${
+            isViewOpen ? styles.deckBacksMainOpen : styles.deckBacksMainClosed
+          }`}
+        >
           <div
             className={`${styles.deckBacksFilter} ${
               DECK_FACE_FILTER_MODE === "tree" ? styles.deckBacksFilterTreeMode : ""

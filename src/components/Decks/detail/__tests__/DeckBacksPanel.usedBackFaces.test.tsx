@@ -69,6 +69,9 @@ describe("DeckBacksPanel used back-face availability", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseDeckRightPanel.mockReturnValue({
+      isRightPanelVisible: true,
+      setIsRightPanelVisible: jest.fn(),
+      toggleRightPanel: jest.fn(),
       backCollections: [],
       backCards: cards,
       rightPanelEmptyLabel: "No backs",
@@ -131,6 +134,9 @@ describe("DeckBacksPanel used back-face availability", () => {
 
   it("filters already-used front faces out of the addable grid in front mode", () => {
     mockUseDeckRightPanel.mockReturnValue({
+      isRightPanelVisible: true,
+      setIsRightPanelVisible: jest.fn(),
+      toggleRightPanel: jest.fn(),
       backCollections: [],
       backCards: cards,
       rightPanelEmptyLabel: "No fronts",
@@ -157,6 +163,9 @@ describe("DeckBacksPanel used back-face availability", () => {
   it("passes filter changes through to right panel filter setter", async () => {
     const setBackFilter = jest.fn();
     mockUseDeckRightPanel.mockReturnValue({
+      isRightPanelVisible: true,
+      setIsRightPanelVisible: jest.fn(),
+      toggleRightPanel: jest.fn(),
       backCollections: [],
       backCards: cards,
       rightPanelEmptyLabel: "No backs",
@@ -236,7 +245,11 @@ describe("DeckBacksPanel used back-face availability", () => {
 
   it("switches face mode when icon tabs are clicked", () => {
     const setRightPanelFaceMode = jest.fn();
+    const setIsRightPanelVisible = jest.fn();
     mockUseDeckRightPanel.mockReturnValue({
+      isRightPanelVisible: true,
+      setIsRightPanelVisible,
+      toggleRightPanel: jest.fn(),
       backCollections: [],
       backCards: cards,
       rightPanelEmptyLabel: "No backs",
@@ -257,5 +270,65 @@ describe("DeckBacksPanel used back-face availability", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Front faces" }));
     expect(setRightPanelFaceMode).toHaveBeenCalledWith("front");
+    expect(setIsRightPanelVisible).not.toHaveBeenCalled();
+  });
+
+  it("auto-expands the view pane when switching tabs while collapsed", () => {
+    const setRightPanelFaceMode = jest.fn();
+    const setIsRightPanelVisible = jest.fn();
+    mockUseDeckRightPanel.mockReturnValue({
+      isRightPanelVisible: false,
+      setIsRightPanelVisible,
+      toggleRightPanel: jest.fn(),
+      backCollections: [],
+      backCards: cards,
+      rightPanelEmptyLabel: "No backs",
+      backFilter: { type: "all" },
+      setBackFilter: jest.fn(),
+      rightPanelFaceMode: "back",
+      setRightPanelFaceMode,
+    });
+
+    render(
+      <DeckBacksPanel
+        usedBackFaceIds={new Set()}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Front faces" }));
+    expect(setRightPanelFaceMode).toHaveBeenCalledWith("front");
+    expect(setIsRightPanelVisible).toHaveBeenCalledWith(true);
+  });
+
+  it("keeps tabs visible and toggles view pane with floating control", () => {
+    const toggleRightPanel = jest.fn();
+    mockUseDeckRightPanel.mockReturnValue({
+      isRightPanelVisible: false,
+      setIsRightPanelVisible: jest.fn(),
+      toggleRightPanel,
+      backCollections: [],
+      backCards: cards,
+      rightPanelEmptyLabel: "No backs",
+      backFilter: { type: "all" },
+      setBackFilter: jest.fn(),
+      rightPanelFaceMode: "back",
+      setRightPanelFaceMode: jest.fn(),
+    });
+
+    render(
+      <DeckBacksPanel
+        usedBackFaceIds={new Set()}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+      />,
+    );
+
+    expect(screen.getByRole("tab", { name: "Back faces" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "decks.sourcePanelToggle" }));
+    expect(toggleRightPanel).toHaveBeenCalledTimes(1);
   });
 });
