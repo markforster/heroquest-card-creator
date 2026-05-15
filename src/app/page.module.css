@@ -8311,11 +8311,11 @@ button.assetsKindBadge:disabled {
   background: var(--hq-white-05) !important;
   color: var(--hq-text-muted) !important;
   width: 100%;
-  min-height: 54px;
+  min-height: 46px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-2) !important;
+  padding: var(--space-1) !important;
   margin-left: -1px !important;
   border-left: 0 !important;
   border-top-left-radius: 0 !important;
@@ -8343,16 +8343,6 @@ button.assetsKindBadge:disabled {
   border-color: var(--hq-accent) !important;
   box-shadow: inset 0 0 0 1px var(--hq-accent) !important;
   background: var(--hq-white-08) !important;
-}
-
-.deckBacksTabButton::before {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  border: 1px solid var(--hq-black-60);
-  border-radius: calc(var(--radius-lg) - 6px);
-  border-left: 0;
-  pointer-events: none;
 }
 
 .deckBacksTabIcon {
