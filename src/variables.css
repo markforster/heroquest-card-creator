@@ -123,6 +123,7 @@
   --hq-surface-850: #151515;
   --hq-surface-800: #1a1a1a;
   --hq-surface-750: #1e1b16;
+  --hq-right-panel-bg-start: var(--hq-surface-750);
   --hq-surface-700: #2b2b2b;
   --hq-border-strong: #333333;
   --hq-border-mid: #444444;
@@ -220,6 +221,7 @@
   --hq-surface-850: #f5f0e6;
   --hq-surface-800: #f7f2e8;
   --hq-surface-750: #f3ede3;
+  --hq-right-panel-bg-start: #e7ddce;
   --hq-surface-700: #efe8dc;
   --hq-border-strong: #cfc6b7;
   --hq-border-mid: #d8d0c3;

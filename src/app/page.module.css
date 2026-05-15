@@ -1422,7 +1422,7 @@
 .rightPanel {
   flex: 0 0 auto;
   width: 520px;
-  background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
+  background: linear-gradient(135deg, var(--hq-right-panel-bg-start), var(--hq-surface-900));
   padding: 0;
   border-left: 1px solid var(--hq-border-strong);
   color: var(--hq-text);
@@ -4453,8 +4453,8 @@
   flex-direction: column;
   position: relative;
   z-index: 2;
-  background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
-  border-left: 1px solid var(--hq-black);
+  background: linear-gradient(135deg, var(--hq-right-panel-bg-start), var(--hq-surface-900));
+  border-left: 1px solid var(--hq-border-strong);
   box-shadow: inset 1px 0 0 var(--hq-white-05);
 }
 
