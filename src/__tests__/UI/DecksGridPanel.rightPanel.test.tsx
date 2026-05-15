@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import DecksGridPanel from "@/components/Decks/DecksGridPanel";
 
@@ -34,9 +34,14 @@ jest.mock("@/components/Decks/hooks/useDecksGridModel", () => ({
   useDecksGridModel: (...args: unknown[]) => mockUseDecksGridModel(...args),
 }));
 
-jest.mock("@/components/Decks/CardFan", () => ({
+jest.mock("@/components/Decks/DeckFanByDeckId", () => ({
   __esModule: true,
   default: () => <div data-testid="card-fan" />,
+}));
+
+jest.mock("@/components/Decks/DeckExportButton", () => ({
+  __esModule: true,
+  default: () => <button type="button">Export</button>,
 }));
 
 describe("DecksGridPanel right panel", () => {
@@ -169,5 +174,45 @@ describe("DecksGridPanel right panel", () => {
     render(<DecksGridPanel />);
     expect(screen.getByText("Select a deck to view and edit its details.")).toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: "Title" })).not.toBeInTheDocument();
+  });
+
+  it("opens and closes the create deck modal via create tile and Cancel", () => {
+    render(<DecksGridPanel />);
+
+    const createTile = document.querySelector(`.${"deckTileCreate"}`) as HTMLButtonElement | null;
+    expect(createTile).toBeTruthy();
+    fireEvent.click(createTile as HTMLButtonElement);
+
+    expect(screen.getByRole("heading", { name: "Create deck" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("heading", { name: "Create deck" })).not.toBeInTheDocument();
+  });
+
+  it("closes the create deck modal on Escape", () => {
+    render(<DecksGridPanel />);
+    const createTile = document.querySelector(`.${"deckTileCreate"}`) as HTMLButtonElement | null;
+    expect(createTile).toBeTruthy();
+    fireEvent.click(createTile as HTMLButtonElement);
+
+    expect(screen.getByRole("heading", { name: "Create deck" })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("heading", { name: "Create deck" })).not.toBeInTheDocument();
+  });
+
+  it("submits create deck form and closes modal", async () => {
+    const model = createModel();
+    mockUseDecksGridModel.mockReturnValue(model);
+    render(<DecksGridPanel />);
+
+    const createTile = document.querySelector(`.${"deckTileCreate"}`) as HTMLButtonElement | null;
+    expect(createTile).toBeTruthy();
+    fireEvent.click(createTile as HTMLButtonElement);
+
+    fireEvent.click(screen.getByRole("button", { name: "Create deck" }));
+
+    await waitFor(() => expect(model.createDeck).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(screen.queryByRole("heading", { name: "Create deck" })).not.toBeInTheDocument(),
+    );
   });
 });
