@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/out/**",
+    "**/artefacts/**",
+    "**/src/generated/**",
+    "**/*.d.ts",
+    "bin/clear asset type classification in indexdb.ts",
+    "bin/i18n-audit.js",
+    "public/zip/zip-web-worker.js",
+    "scripts/jscpd-to-checklist.cjs",
+    "src/api/library/client.ts",
+    "src/components/Layout/LeftNav/SettingsAction.tsx",
+    "src/components/Modals/SettingsModal/PreviewSettingsPanel.tsx",
+    "src/components/Stockpile/StockpileCollectionController.tsx",
+    "src/components/Stockpile/resolveThumb.ts",
+    "src/components/Stockpile/stockpile-thumbs.ts",
+    "src/i18n/types.ts",
+    "src/lib/debug-flags.ts",
+    "static.next.config.mjs"
+  ],
+  "rules": {
+    "unused-files": "warn",
+    "unused-exports": "warn",
+    "unused-types": "off",
+    "test-only-dependencies": "warn"
+  },
+  "duplicates": {
+    "mode": "mild",
+    "minTokens": 60,
+    "minLines": 6,
+    "threshold": 0
+  }
+}

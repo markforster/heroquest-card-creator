@@ -8244,9 +8244,11 @@ button.assetsKindBadge:disabled {
 
 .deckBacksGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(105px, 105px));
+  grid-template-columns: repeat(3, 105px);
   justify-content: start;
-  gap: var(--space-3);
+  column-gap: 14px;
+  row-gap: 14px;
+  width: max-content;
 }
 
 .deckBacksPanel {
@@ -8297,7 +8299,7 @@ button.assetsKindBadge:disabled {
   min-width: var(--deck-right-rail-w);
   flex-shrink: 0;
   padding: calc(var(--space-10) + 22px + var(--space-8)) var(--space-3) var(--space-4) 0;
-  border-left: 1px solid var(--hq-border-strong);
+  border-left: 0;
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
@@ -8322,6 +8324,7 @@ button.assetsKindBadge:disabled {
   border-left: 0 !important;
   border-top-left-radius: 0 !important;
   border-bottom-left-radius: 0 !important;
+  border-left-color: var(--hq-border-strong) !important;
   position: relative;
   z-index: 1;
   transition:
@@ -8334,6 +8337,7 @@ button.assetsKindBadge:disabled {
 .deckBacksTabButton:hover {
   background: var(--hq-white-08) !important;
   color: var(--hq-text) !important;
+  border-left-color: transparent !important;
 }
 
 .deckBacksTabButton[aria-selected="true"] {
@@ -8380,6 +8384,7 @@ button.assetsKindBadge:disabled {
   flex-direction: column;
   overflow: visible;
   background: var(--deck-backs-view-bg);
+  border-right: 1px solid var(--hq-border-strong);
 }
 
 .deckBacksMainOpen {
@@ -8461,7 +8466,7 @@ button.assetsKindBadge:disabled {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  padding: var(--space-4);
+  padding: var(--space-4) 0 var(--space-4) var(--space-4);
 }
 
 .deckFaceCardsFilterSelect {
