@@ -8,7 +8,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 
 export function useDeckRightPanelModel() {
   const { t } = useI18n();
-  const [isRightPanelVisible, setIsRightPanelVisible] = useState(false);
+  const [isRightPanelVisible, setIsRightPanelVisible] = useState(true);
   const [backFilter, setBackFilter] = useState<DeckFaceFilter>({ type: "all" });
   const [rightPanelFaceMode, setRightPanelFaceMode] = useState<RightPanelFaceMode>("back");
 

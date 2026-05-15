@@ -27,22 +27,22 @@ describe("useDeckRightPanelModel", () => {
     mockUseListCards.mockReturnValue({ data: [] });
   });
 
-  it("disables list queries when right panel is hidden", () => {
+  it("enables list queries by default with right panel open", () => {
     const { result } = renderHook(() => useDeckRightPanelModel());
 
-    expect(result.current.isRightPanelVisible).toBe(false);
+    expect(result.current.isRightPanelVisible).toBe(true);
 
     expect(mockUseListCollections).toHaveBeenCalledWith(
       undefined,
-      expect.objectContaining({ enabled: false }),
+      expect.objectContaining({ enabled: true }),
     );
     expect(mockUseListCards).toHaveBeenCalledWith(
       undefined,
-      expect.objectContaining({ enabled: false }),
+      expect.objectContaining({ enabled: true }),
     );
   });
 
-  it("enables list queries when right panel is visible", () => {
+  it("disables list queries when right panel is toggled closed", () => {
     const { result, rerender } = renderHook(() => useDeckRightPanelModel());
 
     act(() => {
@@ -52,11 +52,11 @@ describe("useDeckRightPanelModel", () => {
 
     expect(mockUseListCollections).toHaveBeenLastCalledWith(
       undefined,
-      expect.objectContaining({ enabled: true }),
+      expect.objectContaining({ enabled: false }),
     );
     expect(mockUseListCards).toHaveBeenLastCalledWith(
       undefined,
-      expect.objectContaining({ enabled: true }),
+      expect.objectContaining({ enabled: false }),
     );
   });
 
