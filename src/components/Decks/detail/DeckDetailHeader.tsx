@@ -1,5 +1,6 @@
 "use client";
 
+import { Gem } from "lucide-react";
 import { useState } from "react";
 
 import styles from "@/app/page.module.css";
@@ -38,10 +39,11 @@ export default function DeckDetailHeader({
         <div className={styles.deckHeaderActions}>
           <button
             type="button"
-            className="btn btn-outline-light btn-sm"
+            className={`btn btn-sm ${styles.deckKeyButton}`}
             disabled={!canMakeKey}
             onClick={() => setIsConfirmOpen(true)}
           >
+            <Gem size={14} aria-hidden="true" />
             Make Key Card
           </button>
           <DeckExportButton

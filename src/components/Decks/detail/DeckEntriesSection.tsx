@@ -156,6 +156,7 @@ export default function DeckEntriesSection({
   const { t } = useI18n();
   const navigate = useNavigate();
   const {
+    deckId,
     orderedGroups,
     sets,
     selectedGroupId,
@@ -203,6 +204,16 @@ export default function DeckEntriesSection({
   } | null>(null);
   const [isPendingRemovalBusy, setIsPendingRemovalBusy] = useState(false);
   const [pairUsagePrompt, setPairUsagePrompt] = useState<PairUsageReport | null>(null);
+  const pairUsagePromptExternal = useMemo(() => {
+    if (!pairUsagePrompt) return null;
+    return {
+      ...pairUsagePrompt,
+      cascadePlan: {
+        ...pairUsagePrompt.cascadePlan,
+        usage: pairUsagePrompt.cascadePlan.usage.filter((usage) => usage.deckId !== deckId),
+      },
+    };
+  }, [deckId, pairUsagePrompt]);
   useEffect(() => {
     setEntriesViewMode("in-set");
     setSelectedEntryIds(new Set());
@@ -276,7 +287,25 @@ export default function DeckEntriesSection({
               });
             } catch (error) {
               if (isPairDeleteConfirmRequiredError(error)) {
-                setPairUsagePrompt(error.report);
+                const externalUsage = error.report.cascadePlan.usage.filter(
+                  (usage) => usage.deckId !== deckId,
+                );
+                if (externalUsage.length === 0) {
+                  await apiClient.deletePair({
+                    frontFaceId: item.frontFaceId,
+                    backFaceId: item.backFaceId,
+                    mode: "confirmable-cascade",
+                    confirmCascade: true,
+                  });
+                  continue;
+                }
+                setPairUsagePrompt({
+                  ...error.report,
+                  cascadePlan: {
+                    ...error.report.cascadePlan,
+                    usage: externalUsage,
+                  },
+                });
                 return;
               }
               throw error;
@@ -590,7 +619,7 @@ export default function DeckEntriesSection({
         {t("decks.removeFrontPromptBody")}
       </ConfirmModal>
       <ConfirmModal
-        isOpen={Boolean(pairUsagePrompt)}
+        isOpen={Boolean(pairUsagePromptExternal?.cascadePlan.usage.length)}
         title={t("decks.pairInUseTitle")}
         confirmLabel={t("actions.confirm")}
         extraLabel={t("decks.openDeck")}
@@ -616,7 +645,7 @@ export default function DeckEntriesSection({
           setPendingFrontRemoval(null);
         }}
         onExtra={() => {
-          const usage = pairUsagePrompt?.cascadePlan.usage[0];
+          const usage = pairUsagePromptExternal?.cascadePlan.usage[0];
           if (usage) {
             navigate(buildDeckDeepLink({ deckId: usage.deckId, setId: usage.setId }));
           }
@@ -629,7 +658,7 @@ export default function DeckEntriesSection({
             This will unpair and remove dependent deck entries from the following locations:
           </div>
           <ul className={styles.pairingUsageItems}>
-            {(pairUsagePrompt?.cascadePlan.usage ?? []).map((usage) => (
+            {(pairUsagePromptExternal?.cascadePlan.usage ?? []).map((usage) => (
               <li key={`${usage.deckId}-${usage.groupId}-${usage.setId}`}>
                 {`${usage.deckTitle} › ${usage.groupTitle} › ${usage.setTitle}`}
               </li>

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import DeckEntriesSection from "@/components/Decks/detail/DeckEntriesSection";
+import { createPairDeleteConfirmRequiredError } from "@/lib/decks-errors";
 
 const removeEntry = jest.fn();
 const addFront = jest.fn();
@@ -481,5 +482,183 @@ describe("DeckEntriesSection front remove prompt", () => {
       });
     });
     expect(removeEntry).not.toHaveBeenCalled();
+  });
+
+  it("auto-confirms unpair when usage is only in current deck", async () => {
+    deletePair.mockImplementation(({ confirmCascade }: { confirmCascade?: boolean }) => {
+      if (confirmCascade) return Promise.resolve(undefined);
+      throw createPairDeleteConfirmRequiredError({
+        frontFaceId: "front-1",
+        backFaceId: "back-1",
+        mode: "confirmable-cascade",
+        cascadePlan: {
+          pairIds: ["pair-1"],
+          entryIds: ["entry-1"],
+          usage: [
+            {
+              deckId: "deck-1",
+              deckTitle: "Current Deck",
+              groupId: "group-1",
+              groupTitle: "Group 1",
+              setId: "set-1",
+              setTitle: "Set 1",
+            },
+          ],
+        },
+      });
+    });
+
+    render(
+      <DeckEntriesSection
+        drag={{
+          isFrontFaceDragActive: false,
+          isEntryDragActive: false,
+          isFrontDropOver: false,
+          isEntriesDropOver: false,
+          entryDropIndex: null,
+        } as never}
+        entriesRowRef={jest.fn()}
+        onOpenCardEditor={onOpenCardEditor}
+        deckEntryThumb={() => <div>thumb</div>}
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle("Remove front from set"));
+    fireEvent.click(screen.getByText("Remove and unpair"));
+
+    await waitFor(() => {
+      expect(deletePair).toHaveBeenNthCalledWith(1, {
+        frontFaceId: "front-1",
+        backFaceId: "back-1",
+        mode: "confirmable-cascade",
+        confirmCascade: false,
+      });
+      expect(deletePair).toHaveBeenNthCalledWith(2, {
+        frontFaceId: "front-1",
+        backFaceId: "back-1",
+        mode: "confirmable-cascade",
+        confirmCascade: true,
+      });
+    });
+    expect(screen.queryByRole("button", { name: "actions.confirm" })).not.toBeInTheDocument();
+  });
+
+  it("shows Pairing in use modal with only external deck usage when mixed", async () => {
+    deletePair.mockImplementation(({ confirmCascade }: { confirmCascade?: boolean }) => {
+      if (confirmCascade) return Promise.resolve(undefined);
+      throw createPairDeleteConfirmRequiredError({
+        frontFaceId: "front-1",
+        backFaceId: "back-1",
+        mode: "confirmable-cascade",
+        cascadePlan: {
+          pairIds: ["pair-1"],
+          entryIds: ["entry-1"],
+          usage: [
+            {
+              deckId: "deck-1",
+              deckTitle: "Current Deck",
+              groupId: "group-1",
+              groupTitle: "Group 1",
+              setId: "set-1",
+              setTitle: "Set 1",
+            },
+            {
+              deckId: "deck-2",
+              deckTitle: "Other Deck",
+              groupId: "group-2",
+              groupTitle: "Other Group",
+              setId: "set-2",
+              setTitle: "Other Set",
+            },
+          ],
+        },
+      });
+    });
+
+    render(
+      <DeckEntriesSection
+        drag={{
+          isFrontFaceDragActive: false,
+          isEntryDragActive: false,
+          isFrontDropOver: false,
+          isEntriesDropOver: false,
+          entryDropIndex: null,
+        } as never}
+        entriesRowRef={jest.fn()}
+        onOpenCardEditor={onOpenCardEditor}
+        deckEntryThumb={() => <div>thumb</div>}
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle("Remove front from set"));
+    fireEvent.click(screen.getByText("Remove and unpair"));
+
+    await waitFor(() => {
+      expect(screen.getByText("actions.confirm")).toBeInTheDocument();
+    });
+    expect(deletePair).toHaveBeenCalledTimes(1);
+    expect(deletePair).toHaveBeenNthCalledWith(1, {
+      frontFaceId: "front-1",
+      backFaceId: "back-1",
+      mode: "confirmable-cascade",
+      confirmCascade: false,
+    });
+  });
+
+  it("navigates Open deck to first external usage entry", async () => {
+    deletePair.mockImplementation(({ confirmCascade }: { confirmCascade?: boolean }) => {
+      if (confirmCascade) return Promise.resolve(undefined);
+      throw createPairDeleteConfirmRequiredError({
+        frontFaceId: "front-1",
+        backFaceId: "back-1",
+        mode: "confirmable-cascade",
+        cascadePlan: {
+          pairIds: ["pair-1"],
+          entryIds: ["entry-1"],
+          usage: [
+            {
+              deckId: "deck-1",
+              deckTitle: "Current Deck",
+              groupId: "group-1",
+              groupTitle: "Group 1",
+              setId: "set-1",
+              setTitle: "Set 1",
+            },
+            {
+              deckId: "deck-2",
+              deckTitle: "Other Deck",
+              groupId: "group-2",
+              groupTitle: "Other Group",
+              setId: "set-2",
+              setTitle: "Other Set",
+            },
+          ],
+        },
+      });
+    });
+
+    render(
+      <DeckEntriesSection
+        drag={{
+          isFrontFaceDragActive: false,
+          isEntryDragActive: false,
+          isFrontDropOver: false,
+          isEntriesDropOver: false,
+          entryDropIndex: null,
+        } as never}
+        entriesRowRef={jest.fn()}
+        onOpenCardEditor={onOpenCardEditor}
+        deckEntryThumb={() => <div>thumb</div>}
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle("Remove front from set"));
+    fireEvent.click(screen.getByText("Remove and unpair"));
+    await waitFor(() => expect(screen.getByText("decks.openDeck")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("decks.openDeck"));
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith("/decks/deck-2/set/set-2"),
+    );
   });
 });

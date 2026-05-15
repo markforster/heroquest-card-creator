@@ -353,22 +353,22 @@ function CardFanItem({
             <>
               <g className={styles.cardFanKeyBadgeSvg} aria-hidden="true">
                 <rect
-                  x={x + size.width - 35}
-                  y={y + size.height - 20}
-                  width={31}
-                  height={16}
-                  rx={8}
-                  ry={8}
+                  x={x + size.width - 28}
+                  y={y + size.height - 25}
+                  width={22}
+                  height={22}
+                  rx={11}
+                  ry={11}
                   className={styles.cardFanKeyBadgeRect}
                 />
-                <text
-                  x={x + size.width - 19.5}
-                  y={y + size.height - 10}
-                  textAnchor="middle"
-                  className={styles.cardFanKeyBadgeText}
+                <g
+                  transform={`translate(${x + size.width - 17} ${y + size.height - 14}) scale(0.44) translate(-12 -12)`}
+                  className={styles.cardFanKeyBadgeIcon}
                 >
-                  Key
-                </text>
+                  <path d="M6 3h12l4 6-10 13L2 9Z" />
+                  <path d="M11 3 8 9l4 13 4-13-3-6" />
+                  <path d="M2 9h20" />
+                </g>
               </g>
             </>
           ) : null}

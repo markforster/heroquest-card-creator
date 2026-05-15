@@ -6753,6 +6753,15 @@ button.assetsKindBadge:disabled {
   letter-spacing: 0.02em;
 }
 
+.cardFanKeyBadgeIcon {
+  fill: none;
+  color: #f8fbff;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .cardFanCardSvg:hover .cardFanHover {
   opacity: 1;
 }
@@ -6820,6 +6829,10 @@ button.assetsKindBadge:disabled {
 
 :root[data-theme="light"] .cardFanKeyBadgeText {
   fill: #f8fbff;
+}
+
+:root[data-theme="light"] .cardFanKeyBadgeIcon {
+  color: #f8fbff;
 }
 
 :root[data-theme="light"] .cardFanHover {
@@ -7020,6 +7033,27 @@ button.assetsKindBadge:disabled {
 .deckHeaderActions {
   display: inline-flex;
   gap: var(--space-3);
+}
+
+.deckKeyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-color: #3f86ff !important;
+  color: #3f86ff !important;
+}
+
+.deckKeyButton:hover:enabled,
+.deckKeyButton:focus-visible:enabled,
+.deckKeyButton:active:enabled {
+  border-color: #5a98ff !important;
+  color: #5a98ff !important;
+  background: rgba(63, 134, 255, 0.1) !important;
+}
+
+.deckKeyButton:disabled {
+  border-color: color-mix(in srgb, #3f86ff 45%, var(--hq-border-strong) 55%) !important;
+  color: color-mix(in srgb, #3f86ff 45%, var(--hq-text-muted) 55%) !important;
 }
 
 .deckKeyCardConfirmBody {
