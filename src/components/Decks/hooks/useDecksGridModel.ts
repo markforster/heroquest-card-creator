@@ -30,7 +30,10 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
   const latestSaveTitleRef = useRef("");
   const previousSelectedDeckIdRef = useRef<string | null>(null);
 
-  const decks = decksQuery.data ?? [];
+  const decks = useMemo(() => {
+    if (Array.isArray(decksQuery.data)) return decksQuery.data;
+    return [];
+  }, [decksQuery.data]);
   const selectedDeckId = useMemo(() => getSelectedDeckId(selectedDeckIds), [selectedDeckIds]);
   const selectedDeck = useMemo(
     () => (selectedDeckId ? decks.find((deck) => deck.id === selectedDeckId) ?? null : null),
@@ -54,7 +57,8 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
 
   const refresh = useCallback(async () => {
     const response = await decksQuery.refetch();
-    return response.data ?? [];
+    if (Array.isArray(response.data)) return response.data;
+    return [];
   }, [decksQuery]);
 
   useEffect(() => {

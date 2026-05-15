@@ -27,6 +27,8 @@ export default function DecksGridPanel() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const closeCreateModal = () => setIsCreateOpen(false);
   const deckNameInputRef = useRef<HTMLInputElement | null>(null);
+  const decksGridRef = useRef<HTMLDivElement | null>(null);
+  const pendingScrollDeckIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!model.isDeckTitleEditing) return;
@@ -34,10 +36,24 @@ export default function DecksGridPanel() {
     deckNameInputRef.current?.select();
   }, [model.isDeckTitleEditing]);
 
+  useEffect(() => {
+    const pendingId = pendingScrollDeckIdRef.current;
+    if (!pendingId) return;
+    if (model.selectedDeckId !== pendingId) return;
+    if (!model.decks.some((deck) => deck.id === pendingId)) return;
+    const target = decksGridRef.current?.querySelector<HTMLButtonElement>(
+      `[data-deck-id="${pendingId}"]`,
+    );
+    if (!target) return;
+    target.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+    pendingScrollDeckIdRef.current = null;
+  }, [model.decks, model.selectedDeckId]);
+
   return (
     <>
       <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
         <div
+          ref={decksGridRef}
           className={styles.decksGrid}
           tabIndex={0}
           onKeyDown={async (event) => {
@@ -73,6 +89,7 @@ export default function DecksGridPanel() {
             return (
               <button
                 key={deck.id}
+                data-deck-id={deck.id}
                 type="button"
                 className={`${styles.deckTile} ${isSelected ? styles.deckTileSelected : ""}`}
                 onClick={(event) => model.selectDeck(deck.id, event.metaKey || event.ctrlKey)}
@@ -187,7 +204,8 @@ export default function DecksGridPanel() {
         <form
           onSubmit={async (event) => {
             event.preventDefault();
-            await model.createDeck();
+            const createdId = await model.createDeck();
+            pendingScrollDeckIdRef.current = createdId ?? null;
             closeCreateModal();
           }}
         >

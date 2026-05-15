@@ -307,4 +307,23 @@ describe("useDecksGridModel", () => {
 
     expect(updateDeckTitle).not.toHaveBeenCalled();
   });
+
+  it("treats non-array query data as empty decks instead of crashing", async () => {
+    mockUseListDecks.mockReturnValue({
+      data: { deckId: "unexpected-shape" },
+      isLoading: false,
+      refetch,
+    });
+    refetch.mockResolvedValue({ data: { deckId: "unexpected-shape" } });
+
+    const { result } = renderHook(() =>
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+    );
+
+    expect(result.current.decks).toEqual([]);
+    await act(async () => {
+      const refreshed = await result.current.refresh();
+      expect(refreshed).toEqual([]);
+    });
+  });
 });
