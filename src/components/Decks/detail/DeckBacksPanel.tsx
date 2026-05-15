@@ -164,8 +164,8 @@ export default function DeckBacksPanel({
           <button
             type="button"
             role="tab"
-            className={`nav-link ${styles.deckBacksTabButton} ${
-              faceMode === "back" ? `active ${styles.deckBacksTabButtonActive}` : ""
+            className={`${styles.leftNavItem} ${styles.deckBacksTabButton} ${
+              faceMode === "back" ? styles.leftNavItemActive : ""
             }`}
             aria-selected={faceMode === "back"}
             aria-pressed={faceMode === "back"}
@@ -173,13 +173,15 @@ export default function DeckBacksPanel({
             title="Back faces"
             onClick={() => handleFaceModeChange("back")}
           >
-            <SendToBack size={12} className={styles.deckBacksTabIcon} aria-hidden="true" />
+            <span className={styles.leftNavGlyph} aria-hidden="true">
+              <SendToBack className={styles.deckBacksTabIcon} aria-hidden="true" />
+            </span>
           </button>
           <button
             type="button"
             role="tab"
-            className={`nav-link ${styles.deckBacksTabButton} ${
-              faceMode === "front" ? `active ${styles.deckBacksTabButtonActive}` : ""
+            className={`${styles.leftNavItem} ${styles.deckBacksTabButton} ${
+              faceMode === "front" ? styles.leftNavItemActive : ""
             }`}
             aria-selected={faceMode === "front"}
             aria-pressed={faceMode === "front"}
@@ -187,7 +189,9 @@ export default function DeckBacksPanel({
             title="Front faces"
             onClick={() => handleFaceModeChange("front")}
           >
-            <BringToFront size={12} className={styles.deckBacksTabIcon} aria-hidden="true" />
+            <span className={styles.leftNavGlyph} aria-hidden="true">
+              <BringToFront className={styles.deckBacksTabIcon} aria-hidden="true" />
+            </span>
           </button>
         </div>
         <div
