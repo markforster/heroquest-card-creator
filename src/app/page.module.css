@@ -8261,6 +8261,7 @@ button.assetsKindBadge:disabled {
   display: flex;
   flex: 1 1 auto;
   min-height: 0;
+  --deck-backs-view-bg: var(--hq-right-panel-bg-start);
 }
 
 .deckBacksToggle {
@@ -8310,7 +8311,8 @@ button.assetsKindBadge:disabled {
   border-radius: var(--radius-lg) !important;
   background: var(--hq-white-05) !important;
   color: var(--hq-text-muted) !important;
-  width: 100%;
+  width: 46px;
+  min-width: 46px;
   min-height: 46px;
   display: inline-flex;
   align-items: center;
@@ -8321,6 +8323,7 @@ button.assetsKindBadge:disabled {
   border-top-left-radius: 0 !important;
   border-bottom-left-radius: 0 !important;
   position: relative;
+  z-index: 1;
   transition:
     background-color 160ms ease,
     border-color 160ms ease,
@@ -8334,15 +8337,34 @@ button.assetsKindBadge:disabled {
 }
 
 .deckBacksTabButton[aria-selected="true"] {
-  border-color: var(--hq-accent) !important;
-  box-shadow: inset 0 0 0 1px var(--hq-accent) !important;
-  background: var(--hq-white-08) !important;
+  border-color: var(--hq-border-strong) !important;
+  border-left-color: transparent !important;
+  box-shadow: none !important;
+  background: var(--deck-backs-view-bg) !important;
+  z-index: 2;
 }
 
 .deckBacksTabButton[aria-selected="true"]:hover {
-  border-color: var(--hq-accent) !important;
-  box-shadow: inset 0 0 0 1px var(--hq-accent) !important;
-  background: var(--hq-white-08) !important;
+  border-color: var(--hq-border-strong) !important;
+  border-left-color: transparent !important;
+  box-shadow: none !important;
+  background: var(--deck-backs-view-bg) !important;
+}
+
+.deckBacksTabButton[aria-selected="true"] .deckBacksTabIcon,
+.deckBacksTabButton[aria-selected="true"]:hover .deckBacksTabIcon {
+  color: var(--hq-accent);
+}
+
+.deckBacksTabButton[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  background: var(--deck-backs-view-bg);
+  pointer-events: none;
 }
 
 .deckBacksTabIcon {
@@ -8357,6 +8379,7 @@ button.assetsKindBadge:disabled {
   display: flex;
   flex-direction: column;
   overflow: visible;
+  background: var(--deck-backs-view-bg);
 }
 
 .deckBacksMainOpen {
@@ -8368,10 +8391,11 @@ button.assetsKindBadge:disabled {
 }
 
 .deckBacksMainClosed {
-  width: 0;
-  min-width: 0;
-  opacity: 0;
+  width: 3px;
+  min-width: 3px;
+  opacity: 1;
   pointer-events: none;
+  overflow: hidden;
 }
 
 .deckBacksToolbar {
