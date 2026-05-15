@@ -38,6 +38,17 @@ export function useDeckMutations(): DeckMutationCommands {
         });
         return created?.id ?? null;
       },
+      updateDeck: async (deckId, title, description, fallbackTitle) => {
+        const trimmedTitle = title.trim();
+        const normalizedDescription = description.trim() === "" ? null : description;
+        await apiClient.updateDeck(
+          {
+            title: trimmedTitle || fallbackTitle,
+            description: normalizedDescription,
+          },
+          { params: { deckId } },
+        );
+      },
       updateDeckTitle: async (deckId, title, fallbackTitle) => {
         void fallbackTitle;
         await apiClient.updateDeck(

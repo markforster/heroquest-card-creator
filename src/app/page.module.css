@@ -6621,7 +6621,23 @@ button.assetsKindBadge:disabled {
   outline: none;
 }
 
+.decksGridToolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.decksGridSearch {
+  width: 280px;
+  max-width: 100%;
+}
+
+.decksGridToolbarSpacer {
+  flex: 1 1 auto;
+}
+
 .decksEmpty {
+  grid-column: 1 / -1;
   padding: var(--space-8);
   border-radius: var(--radius-lg);
   background: var(--hq-overlay-soft);
@@ -6647,6 +6663,8 @@ button.assetsKindBadge:disabled {
     box-shadow 160ms ease;
   align-items: center;
   text-align: center;
+  min-height: 260px;
+  position: relative;
 }
 
 .deckTileCreate {
@@ -6853,6 +6871,73 @@ button.assetsKindBadge:disabled {
   font-size: var(--text-sm);
   color: var(--hq-text-muted);
   width: 100%;
+}
+
+.deckTileActions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.deckTileOpenButton {
+  background: var(--hq-accent-soft);
+  color: var(--hq-accent);
+  border-color: color-mix(in srgb, var(--hq-accent) 70%, transparent 30%);
+}
+
+.deckTileOpenButton:hover:enabled,
+.deckTileOpenButton:focus-visible:enabled,
+.deckTileOpenButton:active:enabled {
+  background: var(--hq-accent-soft-hover);
+  color: var(--hq-accent);
+  border-color: var(--hq-accent);
+}
+
+.deckTileBottom {
+  width: 100%;
+  position: relative;
+  min-height: 56px;
+  margin-top: auto;
+}
+
+.deckTileMetaSlot,
+.deckTileActionsSlot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  transition:
+    opacity 140ms ease,
+    visibility 140ms ease;
+}
+
+.deckTileMetaSlot {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.deckTileActionsSlot {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.deckTile:hover .deckTileMetaSlot,
+.deckTile:focus-within .deckTileMetaSlot {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.deckTile:hover .deckTileActionsSlot,
+.deckTile:focus-within .deckTileActionsSlot {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .decksCreateModalBody {

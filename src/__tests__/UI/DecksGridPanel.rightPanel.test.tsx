@@ -14,17 +14,24 @@ jest.mock("@/i18n/I18nProvider", () => ({
     t: (key: string) =>
       (
         {
-          "actions.decks": "Decks",
           "actions.cancel": "Cancel",
           "actions.delete": "Delete",
+          "actions.edit": "Edit",
+          "actions.save": "Save",
           "decks.createDeck": "Create deck",
+          "decks.editDeck": "Edit deck",
           "decks.untitledDeck": "Untitled deck",
           "decks.deleteDeckTitle": "Delete deck?",
-          "decks.deleteDeckBody": "Delete body",
+          "decks.deleteSelectedBody": "Delete {count} selected deck(s)?",
+          "decks.deleteSelected": "Delete selected",
+          "decks.searchLabel": "Search decks",
+          "decks.searchPlaceholder": "Search decks or card titles...",
+          "decks.openDeck": "Open deck",
+          "decks.noResults": "No decks match \"{query}\".",
+          "decks.empty": "No decks yet.",
           "decks.title": "Title",
           "decks.description": "Description",
           "decks.descriptionPlaceholder": "Description placeholder",
-          "decks.noDeckSelected": "Select a deck to view and edit its details.",
         } as Record<string, string>
       )[key] ?? key,
   }),
@@ -39,28 +46,20 @@ jest.mock("@/components/Decks/DeckFanByDeckId", () => ({
   default: () => <div data-testid="card-fan" />,
 }));
 
-jest.mock("@/components/Decks/DeckExportButton", () => ({
-  __esModule: true,
-  default: () => <button type="button">Export</button>,
-}));
-
-describe("DecksGridPanel right panel", () => {
+describe("DecksGridPanel grid refresh", () => {
   const createModel = (overrides: Record<string, unknown> = {}) => ({
     decks: [{ id: "d1", title: "Deck 1", updatedAt: Date.now() }],
-    effectiveDeckTitleById: { d1: "Deck 1" },
+    filteredDecks: [{ id: "d1", title: "Deck 1", updatedAt: Date.now() }],
     selectedDeckIds: new Set<string>(["d1"]),
     selectedDeckId: "d1",
-    selectedDeckTitleDraft: "Deck 1",
-    setSelectedDeckTitleDraft: jest.fn(),
-    onDeckTitleDraftChangeLive: jest.fn(),
-    isDeckTitleEditing: false,
-    isDeckTitleSaving: false,
-    deckTitleSaveError: null,
-    canRenameDeck: true,
-    canDeleteDecks: true,
-    startDeckTitleEdit: jest.fn().mockReturnValue(true),
-    commitDeckTitleEdit: jest.fn().mockResolvedValue(true),
-    cancelDeckTitleEdit: jest.fn(),
+    selectedCount: 1,
+    visibleDeckCount: 1,
+    hasVisibleResults: true,
+    hasAnyDecks: true,
+    isDeleteSelectedEnabled: true,
+    searchDraft: "",
+    setSearchDraft: jest.fn(),
+    effectiveDeckTitleById: { d1: "Deck 1" },
     isDeleteDeckOpen: false,
     setIsDeleteDeckOpen: jest.fn(),
     deckTitleDraft: "",
@@ -69,6 +68,10 @@ describe("DecksGridPanel right panel", () => {
     setDeckDescriptionDraft: jest.fn(),
     selectDeck: jest.fn(),
     createDeck: jest.fn().mockResolvedValue("d1"),
+    submitDeckDraft: jest.fn().mockResolvedValue("d1"),
+    beginCreateDeckDraft: jest.fn(),
+    beginEditDeckDraft: jest.fn().mockReturnValue(true),
+    cancelDeckDraft: jest.fn(),
     deleteSelectedDecks: jest.fn().mockResolvedValue(undefined),
     duplicateDeck: jest.fn().mockResolvedValue("d2"),
     ...overrides,
@@ -79,140 +82,104 @@ describe("DecksGridPanel right panel", () => {
     mockUseDecksGridModel.mockReturnValue(createModel());
   });
 
-  it("renders right panel scaffold containers and top actions", () => {
+  it("renders top toolbar and does not render right panel or export", () => {
     const { container } = render(<DecksGridPanel />);
-    const rightPanel = container.querySelector("aside");
-    expect(rightPanel).toBeTruthy();
 
-    const toolbars = rightPanel?.querySelectorAll(".assetsToolbar");
-    expect(toolbars?.length).toBe(2);
-    expect(rightPanel?.querySelector(".decksRightSection")).toBeTruthy();
-    expect(rightPanel?.querySelector(".decksGridRightMiddle")).toBeTruthy();
+    expect(screen.getByRole("searchbox", { name: "Search decks" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create deck" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete selected" })).toBeEnabled();
 
-    expect(screen.getByRole("button", { name: "Edit" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
+    expect(container.querySelector("aside")).toBeFalsy();
+    expect(screen.queryByRole("button", { name: "Export" })).not.toBeInTheDocument();
+    expect(container.querySelector(".deckTileCreate")).toBeFalsy();
   });
 
-  it("uses LayersPlus for the create-deck tile icon", () => {
-    const { container } = render(<DecksGridPanel />);
-    expect(container.querySelector(".lucide-layers-plus")).toBeTruthy();
-    expect(container.querySelector(".lucide-plus")).toBeFalsy();
-  });
-
-  it("disables edit and input for multi-select while keeping delete enabled", () => {
-    mockUseDecksGridModel.mockReturnValue(
-      createModel({
-      selectedDeckIds: new Set<string>(["d1", "d2"]),
-      selectedDeckId: null,
-      selectedDeckTitleDraft: "",
-      canRenameDeck: false,
-      canDeleteDecks: true,
-      }),
-    );
-    render(<DecksGridPanel />);
-
-    expect(screen.getByRole("button", { name: "Edit" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
-    expect(screen.getByRole("textbox", { name: "Title" })).toBeDisabled();
-  });
-
-  it("wires title input events to rename handlers", async () => {
+  it("wires search input to model setter", () => {
     const model = createModel();
     mockUseDecksGridModel.mockReturnValue(model);
     render(<DecksGridPanel />);
 
-    const input = screen.getByRole("textbox", { name: "Title" });
-    fireEvent.focus(input);
-    fireEvent.change(input, { target: { value: "Deck Name 2" } });
-    fireEvent.keyDown(input, { key: "Enter" });
-    fireEvent.blur(input);
-    fireEvent.keyDown(input, { key: "Escape" });
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search decks" }), {
+      target: { value: "wizard" },
+    });
 
-    expect(model.startDeckTitleEdit).toHaveBeenCalled();
-    expect(model.onDeckTitleDraftChangeLive).toHaveBeenCalledWith("Deck Name 2");
-    expect(model.commitDeckTitleEdit).toHaveBeenCalled();
-    expect(model.cancelDeckTitleEdit).toHaveBeenCalled();
+    expect(model.setSearchDraft).toHaveBeenCalledWith("wizard");
   });
 
-  it("renders tile title from effective live title map", () => {
+  it("renders icon action buttons on each deck card", () => {
+    const { container } = render(<DecksGridPanel />);
+
+    expect(screen.getAllByRole("button", { name: "Open deck" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Edit" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Delete" }).length).toBeGreaterThan(0);
+    expect(container.querySelector(".deckTileBottom")).toBeTruthy();
+    expect(container.querySelector(".deckTileMetaSlot")).toBeTruthy();
+    expect(container.querySelector(".deckTileActionsSlot")).toBeTruthy();
+    expect(screen.getByText("Deck 1")).toBeInTheDocument();
+  });
+
+  it("shows no-results state", () => {
     mockUseDecksGridModel.mockReturnValue(
       createModel({
-        effectiveDeckTitleById: { d1: "Live Deck Title" },
-      }),
-    );
-    render(<DecksGridPanel />);
-    expect(screen.getByText("Live Deck Title")).toBeInTheDocument();
-  });
-
-  it("shows 'Untitled deck' in grid tile when effective title is empty", () => {
-    mockUseDecksGridModel.mockReturnValue(
-      createModel({
-        decks: [{ id: "d1", title: "", updatedAt: Date.now() }],
-        effectiveDeckTitleById: { d1: "Untitled deck" },
-      }),
-    );
-    render(<DecksGridPanel />);
-    expect(screen.getByText("Untitled deck")).toBeInTheDocument();
-  });
-
-  it("navigates to deck route when Edit is clicked", () => {
-    render(<DecksGridPanel />);
-    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-    expect(mockNavigate).toHaveBeenCalledWith("/decks/d1");
-  });
-
-  it("shows no-selection message box when nothing is selected", () => {
-    mockUseDecksGridModel.mockReturnValue(
-      createModel({
-        selectedDeckIds: new Set<string>(),
-        selectedDeckId: null,
-        canRenameDeck: false,
-        canDeleteDecks: false,
+        filteredDecks: [],
+        hasVisibleResults: false,
+        searchDraft: "wizard",
       }),
     );
 
     render(<DecksGridPanel />);
-    expect(screen.getByText("Select a deck to view and edit its details.")).toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: "Title" })).not.toBeInTheDocument();
+    expect(screen.getByText('No decks match "wizard".')).toBeInTheDocument();
   });
 
-  it("opens and closes the create deck modal via create tile and Cancel", () => {
+  it("shows no-decks state", () => {
+    mockUseDecksGridModel.mockReturnValue(
+      createModel({
+        decks: [],
+        filteredDecks: [],
+        hasAnyDecks: false,
+        hasVisibleResults: false,
+      }),
+    );
+
     render(<DecksGridPanel />);
-
-    const createTile = document.querySelector(`.${"deckTileCreate"}`) as HTMLButtonElement | null;
-    expect(createTile).toBeTruthy();
-    fireEvent.click(createTile as HTMLButtonElement);
-
-    expect(screen.getByRole("heading", { name: "Create deck" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(screen.queryByRole("heading", { name: "Create deck" })).not.toBeInTheDocument();
+    expect(screen.getByText("No decks yet.")).toBeInTheDocument();
   });
 
-  it("closes the create deck modal on Escape", () => {
+  it("includes selected count in delete confirmation copy", async () => {
+    const model = createModel({
+      isDeleteDeckOpen: true,
+      selectedCount: 3,
+    });
+    mockUseDecksGridModel.mockReturnValue(model);
+
     render(<DecksGridPanel />);
-    const createTile = document.querySelector(`.${"deckTileCreate"}`) as HTMLButtonElement | null;
-    expect(createTile).toBeTruthy();
-    fireEvent.click(createTile as HTMLButtonElement);
+    expect(screen.getByText("Delete 3 selected deck(s)?")).toBeInTheDocument();
 
-    expect(screen.getByRole("heading", { name: "Create deck" })).toBeInTheDocument();
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByRole("heading", { name: "Create deck" })).not.toBeInTheDocument();
+    const confirmButton = screen.getAllByRole("button", { name: "Delete" }).at(-1) as HTMLButtonElement;
+    fireEvent.click(confirmButton);
+    await waitFor(() => expect(model.deleteSelectedDecks).toHaveBeenCalled());
   });
 
-  it("submits create deck form and closes modal", async () => {
+  it("opens edit mode modal from deck card edit action", () => {
     const model = createModel();
     mockUseDecksGridModel.mockReturnValue(model);
     render(<DecksGridPanel />);
 
-    const createTile = document.querySelector(`.${"deckTileCreate"}`) as HTMLButtonElement | null;
-    expect(createTile).toBeTruthy();
-    fireEvent.click(createTile as HTMLButtonElement);
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]);
+    expect(model.beginEditDeckDraft).toHaveBeenCalledWith("d1");
+    expect(screen.getByRole("heading", { name: "Edit deck" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: "Create deck" }));
+  it("submit in edit mode uses submitDeckDraft and not navigation", async () => {
+    const model = createModel();
+    mockUseDecksGridModel.mockReturnValue(model);
+    render(<DecksGridPanel />);
 
-    await waitFor(() => expect(model.createDeck).toHaveBeenCalled());
-    await waitFor(() =>
-      expect(screen.queryByRole("heading", { name: "Create deck" })).not.toBeInTheDocument(),
-    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(model.submitDeckDraft).toHaveBeenCalled());
+    expect(mockNavigate).not.toHaveBeenCalledWith("/decks/d1");
   });
 });

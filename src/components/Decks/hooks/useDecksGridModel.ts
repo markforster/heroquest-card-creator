@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { useListDecks } from "@/api/hooks";
+import { useListCards, useListDecks, useListPairs } from "@/api/hooks";
+import { apiClient } from "@/api/client";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { getSelectedDeckId } from "@/components/Decks/selectors/deckDetailSelectors";
 
@@ -18,6 +19,10 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
   );
 
   const [selectedDeckIds, setSelectedDeckIds] = useState<Set<string>>(new Set());
+  const [searchDraft, setSearchDraft] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deckSearchTextsByDeckId, setDeckSearchTextsByDeckId] = useState<Record<string, string[]>>({});
+  const [deckDraftTargetId, setDeckDraftTargetId] = useState<string | null>(null);
   const [isDeleteDeckOpen, setIsDeleteDeckOpen] = useState(false);
   const [deckTitleDraft, setDeckTitleDraft] = useState("");
   const [deckDescriptionDraft, setDeckDescriptionDraft] = useState("");
@@ -26,6 +31,8 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
   const [isDeckTitleSaving, setIsDeckTitleSaving] = useState(false);
   const [deckTitleSaveError, setDeckTitleSaveError] = useState<string | null>(null);
   const pendingSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchDebounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deckTitlesRequestIdRef = useRef(0);
   const latestSaveDeckIdRef = useRef<string | null>(null);
   const latestSaveTitleRef = useRef("");
   const previousSelectedDeckIdRef = useRef<string | null>(null);
@@ -34,6 +41,14 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
     if (Array.isArray(decksQuery.data)) return decksQuery.data;
     return [];
   }, [decksQuery.data]);
+  const cardsQuery = useListCards(
+    { queries: {} },
+    { enabled: true, staleTime: 0, refetchOnMount: "always" },
+  );
+  const pairsQuery = useListPairs(
+    { queries: {} },
+    { enabled: true, staleTime: 0, refetchOnMount: "always" },
+  );
   const selectedDeckId = useMemo(() => getSelectedDeckId(selectedDeckIds), [selectedDeckIds]);
   const selectedDeck = useMemo(
     () => (selectedDeckId ? decks.find((deck) => deck.id === selectedDeckId) ?? null : null),
@@ -43,6 +58,23 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
   const isSingleSelection = selectedDeckIds.size === 1;
   const canRenameDeck = isSingleSelection;
   const canDeleteDecks = hasSelection;
+  const isDeleteSelectedEnabled = hasSelection;
+  const hasAnyDecks = decks.length > 0;
+
+  const normalizedSearchQuery = useMemo(() => searchQuery.trim().toLowerCase(), [searchQuery]);
+  const filteredDecks = useMemo(() => {
+    if (normalizedSearchQuery === "") return decks;
+
+    return decks.filter((deck) => {
+      const titleMatch = deck.title.toLowerCase().includes(normalizedSearchQuery);
+      if (titleMatch) return true;
+      const searchTexts = deckSearchTextsByDeckId[deck.id] ?? [];
+      return searchTexts.some((text) => text.toLowerCase().includes(normalizedSearchQuery));
+    });
+  }, [deckSearchTextsByDeckId, decks, normalizedSearchQuery]);
+  const visibleDeckCount = filteredDecks.length;
+  const selectedCount = selectedDeckIds.size;
+  const hasVisibleResults = visibleDeckCount > 0;
   const effectiveDeckTitleById = useMemo(() => {
     const next: Record<string, string> = {};
     decks.forEach((deck) => {
@@ -142,6 +174,52 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
     return createdId;
   }, [deckDescriptionDraft, deckTitleDraft, mutations, refresh, untitledDeckLabel]);
 
+  const beginCreateDeckDraft = useCallback(() => {
+    setDeckDraftTargetId(null);
+    setDeckTitleDraft("");
+    setDeckDescriptionDraft("");
+  }, []);
+
+  const beginEditDeckDraft = useCallback(
+    (deckId: string) => {
+      const deck = decks.find((item) => item.id === deckId);
+      if (!deck) return false;
+      setDeckDraftTargetId(deckId);
+      setDeckTitleDraft(deck.title);
+      setDeckDescriptionDraft(deck.description ?? "");
+      return true;
+    },
+    [decks],
+  );
+
+  const cancelDeckDraft = useCallback(() => {
+    setDeckDraftTargetId(null);
+    setDeckTitleDraft("");
+    setDeckDescriptionDraft("");
+  }, []);
+
+  const submitDeckDraft = useCallback(async () => {
+    if (!deckDraftTargetId) {
+      return createDeck();
+    }
+    await mutations.updateDeck(
+      deckDraftTargetId,
+      deckTitleDraft,
+      deckDescriptionDraft,
+      untitledDeckLabel,
+    );
+    await refresh();
+    return deckDraftTargetId;
+  }, [
+    createDeck,
+    deckDescriptionDraft,
+    deckDraftTargetId,
+    deckTitleDraft,
+    mutations,
+    refresh,
+    untitledDeckLabel,
+  ]);
+
   const deleteSelectedDecks = useCallback(async () => {
     await mutations.deleteDecks(Array.from(selectedDeckIds));
     setSelectedDeckIds(new Set());
@@ -197,9 +275,84 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
   );
 
   useEffect(() => {
+    if (searchDebounceTimeoutRef.current) {
+      clearTimeout(searchDebounceTimeoutRef.current);
+    }
+    searchDebounceTimeoutRef.current = setTimeout(() => {
+      setSearchQuery(searchDraft);
+    }, 200);
+    return () => {
+      if (searchDebounceTimeoutRef.current) {
+        clearTimeout(searchDebounceTimeoutRef.current);
+      }
+    };
+  }, [searchDraft]);
+
+  useEffect(() => {
+    let isCancelled = false;
+    const requestId = deckTitlesRequestIdRef.current + 1;
+    deckTitlesRequestIdRef.current = requestId;
+
+    const cards = Array.isArray(cardsQuery.data) ? cardsQuery.data : [];
+    const pairs = Array.isArray(pairsQuery.data) ? pairsQuery.data : [];
+
+    if (!decks.length || !cards.length) {
+      setDeckSearchTextsByDeckId({});
+      return () => {
+        isCancelled = true;
+      };
+    }
+
+    const cardTitleById = new Map<string, string>();
+    cards.forEach((card) => {
+      cardTitleById.set(card.id, card.title ?? card.name ?? "");
+    });
+    const frontFaceIdByPairId = new Map<string, string>();
+    pairs.forEach((pair) => {
+      if (pair.frontFaceId) frontFaceIdByPairId.set(pair.id, pair.frontFaceId);
+    });
+
+    void (async () => {
+      const next: Record<string, string[]> = {};
+      for (const deck of decks) {
+        const sets = await apiClient.listDeckSets({ params: { deckId: deck.id } });
+        const frontIds = new Set<string>();
+        const searchable = new Set<string>();
+        await Promise.all(
+          sets.map(async (set) => {
+            const backFaceTitle = cardTitleById.get(set.backFaceId) ?? "";
+            if (backFaceTitle !== "") searchable.add(backFaceTitle);
+            const entries = await apiClient.listDeckEntries({ params: { setId: set.id } });
+            entries.forEach((entry) => {
+              const frontFaceId = frontFaceIdByPairId.get(entry.pairId);
+              if (frontFaceId) frontIds.add(frontFaceId);
+            });
+          }),
+        );
+        Array.from(frontIds).forEach((id) => {
+          const title = cardTitleById.get(id) ?? "";
+          if (title !== "") searchable.add(title);
+        });
+        next[deck.id] = Array.from(searchable);
+      }
+
+      if (isCancelled) return;
+      if (deckTitlesRequestIdRef.current !== requestId) return;
+      setDeckSearchTextsByDeckId(next);
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [cardsQuery.data, decks, pairsQuery.data]);
+
+  useEffect(() => {
     return () => {
       if (pendingSaveTimeoutRef.current) {
         clearTimeout(pendingSaveTimeoutRef.current);
+      }
+      if (searchDebounceTimeoutRef.current) {
+        clearTimeout(searchDebounceTimeoutRef.current);
       }
     };
   }, []);
@@ -217,8 +370,17 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
 
   return {
     decks,
+    filteredDecks,
+    deckDraftTargetId,
     selectedDeckIds,
     selectedDeckId,
+    selectedCount,
+    visibleDeckCount,
+    hasVisibleResults,
+    hasAnyDecks,
+    searchDraft,
+    setSearchDraft,
+    isDeleteSelectedEnabled,
     isDeleteDeckOpen,
     setIsDeleteDeckOpen,
     deckTitleDraft,
@@ -240,6 +402,10 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
     onDeckTitleDraftChangeLive,
     selectDeck,
     createDeck,
+    beginCreateDeckDraft,
+    beginEditDeckDraft,
+    cancelDeckDraft,
+    submitDeckDraft,
     deleteSelectedDecks,
     duplicateDeck,
     refresh,

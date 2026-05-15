@@ -127,6 +127,18 @@ describe("useDeckMutations", () => {
     );
   });
 
+  it("updateDeck normalizes title fallback and blank description", async () => {
+    mockApiClient.updateDeck.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useDeckMutations());
+
+    await result.current.updateDeck("d1", "   ", "   ", "Untitled");
+
+    expect(mockApiClient.updateDeck).toHaveBeenCalledWith(
+      { title: "Untitled", description: null },
+      { params: { deckId: "d1" } },
+    );
+  });
+
   it("setDeckKeySet updates cache then invalidates deck queries", async () => {
     mockApiClient.updateDeck.mockResolvedValue(undefined);
     const { result } = renderHook(() => useDeckMutations());
