@@ -441,7 +441,7 @@
   box-shadow: var(--hq-toast-shadow);
   max-width: 40vw;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
 }
 
@@ -533,7 +533,7 @@
   display: inline-flex;
   align-items: center;
   border-radius: var(--radius-pill);
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--hq-border-mid);
   background: var(--hq-white-05);
 }
@@ -687,7 +687,7 @@
 .leftNavTop {
   flex: 0 1 auto;
   height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .leftNavBrand {
@@ -708,7 +708,7 @@
 }
 .leftNavTitle,
 .leftNavLabel {
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -961,7 +961,7 @@
   line-height: 1.2;
   font-weight: 600;
   color: var(--hq-text);
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1240,7 +1240,7 @@
   aspect-ratio: 756 / 1056;
   background: var(--hq-surface-900);
   border-radius: 3px;
-  overflow: hidden;
+  overflow: visible;
 }
 .templateSidebarThumb,
 .templateCardThumb,
@@ -1273,7 +1273,7 @@
   background: var(--hq-surface-850);
   border: 1px solid var(--hq-border-strong);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: visible;
   animation: toolsToolbarReveal 160ms ease-out;
   transform-origin: top right;
 }
@@ -1535,7 +1535,7 @@
 .inspectorBody {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   padding: 0 var(--space-14) var(--space-6);
 }
 
@@ -1614,7 +1614,7 @@
   flex: 1 1 0;
   min-height: 0;
   display: flex;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .assetsInspectorPreviewInner {
@@ -1651,7 +1651,7 @@
   background: rgba(8, 8, 8, 0.6);
   border: 1px solid var(--hq-black-60);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: visible;
   padding: var(--space-12);
 }
 
@@ -1735,7 +1735,7 @@
   max-width: 100%;
   min-width: 0;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
   padding-right: var(--space-2);
   flex: 0 0 auto;
@@ -1845,7 +1845,7 @@
   display: grid;
   place-items: center;
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
 }
 
@@ -1905,7 +1905,7 @@
 .assetsConvertInspectViewport {
   position: absolute;
   inset: var(--space-12);
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
   z-index: 2;
 }
@@ -1975,7 +1975,7 @@
   display: grid;
   place-items: center;
   padding: var(--space-8);
-  overflow: hidden;
+  overflow: visible;
   position: relative;
 }
 
@@ -2257,7 +2257,7 @@
   border-radius: var(--radius-sm);
   border: 1px solid var(--hq-surface-700);
   background: var(--hq-surface-850);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2453,7 +2453,7 @@
   width: 100%;
   height: 100%;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2499,7 +2499,7 @@
 
 .pairingPanel {
   height: 100%;
-  overflow: hidden;
+  overflow: visible;
 }
 .pairingPanelGrid,
 .pairingPanelGroupGrid {
@@ -2512,7 +2512,7 @@
   width: 56px;
   height: 80px;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--hq-surface-700);
   background: var(--hq-surface-850);
   display: flex;
@@ -2657,7 +2657,7 @@
   width: 56px;
   height: 80px;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--hq-surface-700);
   background: var(--hq-surface-850);
   display: flex;
@@ -2689,7 +2689,7 @@
   width: 120px;
   height: 168px;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--hq-surface-700);
   background: var(--hq-surface-850);
   display: flex;
@@ -2725,7 +2725,7 @@
   border-radius: 4px;
   border: 1px solid var(--hq-border-mid);
   background: var(--hq-surface-850);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2756,7 +2756,7 @@
   width: 60px;
   height: 84px;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--hq-surface-700);
   background: var(--hq-surface-850);
   display: flex;
@@ -2816,7 +2816,7 @@
   border-radius: 4px;
   border: 1px solid var(--hq-surface-700);
   background: var(--hq-surface-850);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2860,7 +2860,7 @@
   width: 100px;
   height: 140px;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--hq-surface-700);
   background: var(--hq-surface-850);
   display: flex;
@@ -3572,7 +3572,7 @@
 }
 
 .settingsPanelBodyNoScroll {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .storageBreakdownCharts {
@@ -3593,7 +3593,7 @@
   display: flex;
   width: 100%;
   height: 14px;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 999px;
   background: rgba(64, 47, 35, 0.12);
   box-shadow: inset 0 0 0 1px rgba(64, 47, 35, 0.08);
@@ -3717,7 +3717,7 @@
 }
 
 .settingsPanelScroll[data-panel-id="stat-label-overrides"] {
-  overflow: hidden;
+  overflow: visible;
   padding-right: 0;
 }
 
@@ -3924,7 +3924,7 @@
   width: 72px;
   height: 100px;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--hq-surface-700);
   background: var(--hq-surface-850);
   display: flex;
@@ -4041,7 +4041,7 @@
   position: relative;
   background: var(--hq-surface-900);
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   margin-bottom: var(--space-6);
 }
 
@@ -4311,7 +4311,7 @@
   width: 22.5px;
   height: 31.5px;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   margin-left: -11px;
   border: 1px solid var(--hq-surface-700);
   background: var(--hq-surface-850);
@@ -4442,7 +4442,7 @@
 }
 
 .stockpileCenterResultsNoScroll .assetsGridContainer {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .stockpileRightPanel {
@@ -4795,7 +4795,7 @@
   font-size: 0.75rem;
   color: var(--hq-text-muted);
   max-width: 14ch;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -4925,7 +4925,7 @@
 
 .stockpileFooterHintText {
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
 }
 
@@ -4951,7 +4951,7 @@
 
 .uploadProgressFilename {
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
 }
 
@@ -5058,7 +5058,7 @@
   width: 96px;
   height: 132px;
   border-radius: 0.5rem;
-  overflow: hidden;
+  overflow: visible;
   background: rgba(10, 10, 10, 0.6);
   border: 1px solid var(--hq-white-08);
 }
@@ -5095,7 +5095,7 @@
   height: 1px;
   opacity: 0;
   pointer-events: none;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .assetsEmptyState {
@@ -5195,7 +5195,7 @@
 .stockpileTableNameLabel {
   min-width: 0;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
 }
 
@@ -5281,7 +5281,7 @@
   height: 10px;
   border-radius: var(--radius-pill);
   background: var(--hq-white-12);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .exportProgressFill {
@@ -5438,7 +5438,7 @@ button.assetsKindBadge:disabled {
   border-radius: 4px;
   background: var(--hq-surface-sunken);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .assetsItemMeta {
@@ -5447,7 +5447,7 @@ button.assetsKindBadge:disabled {
 
 .assetsItemName {
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
   font-weight: 500;
   color: var(--hq-gray-200);
@@ -5517,7 +5517,7 @@ button.assetsKindBadge:disabled {
   display: block;
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -5567,7 +5567,7 @@ button.assetsKindBadge:disabled {
   margin-bottom: var(--space-2);
   padding-left: var(--space-1);
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .stockpileCardDragging {
@@ -5644,7 +5644,7 @@ button.assetsKindBadge:disabled {
   height: 100%;
   border-radius: 6px;
   border: 1px solid var(--hq-white-12);
-  overflow: hidden;
+  overflow: visible;
   background: var(--hq-surface-sunken);
   box-shadow: var(--shadow-soft);
 }
@@ -5783,7 +5783,7 @@ button.assetsKindBadge:disabled {
   width: 36px;
   height: 50px;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--hq-surface-700);
   background: var(--hq-surface-850);
   display: flex;
@@ -5827,7 +5827,7 @@ button.assetsKindBadge:disabled {
   font-weight: 600;
   color: var(--hq-gray-200);
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
 }
 
@@ -5837,7 +5837,7 @@ button.assetsKindBadge:disabled {
   gap: var(--space-3);
   min-width: 0;
   flex: 1 1 auto;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .stockpileCardSelectCheckbox {
@@ -5938,7 +5938,7 @@ button.assetsKindBadge:disabled {
 .assetsReportName {
   font-size: var(--text-lg);
   color: var(--hq-gray-200);
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -6078,7 +6078,7 @@ button.assetsKindBadge:disabled {
   border: 1px solid var(--hq-border-strong);
   border-radius: 0;
   background: var(--hq-panel-bg);
-  overflow: hidden;
+  overflow: visible;
   color: var(--hq-text);
   font-weight: 600;
   font-size: var(--text-sm);
@@ -6309,7 +6309,7 @@ button.assetsKindBadge:disabled {
   font-size: var(--text-md);
   color: var(--hq-gray-300);
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
 }
 
@@ -6384,7 +6384,7 @@ button.assetsKindBadge:disabled {
   height: 36px;
   border-radius: 6px;
   background: var(--hq-surface-sunken);
-  overflow: hidden;
+  overflow: visible;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -6402,7 +6402,7 @@ button.assetsKindBadge:disabled {
   flex: 1 1 auto;
   min-width: 0;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
   font-size: var(--text-sm);
 }
@@ -6665,6 +6665,18 @@ button.assetsKindBadge:disabled {
   text-align: center;
   min-height: 260px;
   position: relative;
+  overflow: visible;
+  --deck-preview-bg-opacity: 0.38;
+  --deck-preview-blur: 5px;
+  --deck-preview-scale: 1.28;
+  --deck-preview-rotate: -1deg;
+  --deck-preview-translate-x: -2%;
+  --deck-preview-translate-y: -1%;
+}
+
+:root[data-theme="dark"] .deckTile {
+  border-color: color-mix(in srgb, var(--hq-border-strong) 75%, #ffffff 25%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.025);
 }
 
 .deckTileCreate {
@@ -6680,10 +6692,19 @@ button.assetsKindBadge:disabled {
 
 .deckTileSelected {
   border-color: var(--hq-accent);
-  box-shadow: 0 0 0 2px rgba(230, 179, 90, 0.25);
+  box-shadow: inset 0 0 0 1px var(--hq-accent);
   transform: translateY(-1px);
   align-items: center;
   text-align: center;
+}
+
+:root[data-theme="dark"] .deckTileSelected {
+  border-color: var(--hq-accent);
+  box-shadow: inset 0 0 0 1px var(--hq-accent);
+}
+
+.deckTileSelected .cardFanSvg {
+  filter: brightness(1.14) saturate(1.08);
 }
 
 .deckTilePreview {
@@ -6693,6 +6714,7 @@ button.assetsKindBadge:disabled {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1;
 }
 
 .cardFan {
@@ -6899,6 +6921,32 @@ button.assetsKindBadge:disabled {
   position: relative;
   min-height: 56px;
   margin-top: auto;
+  z-index: 1;
+}
+
+
+.deckTileAtmosphereFrame {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.deckTileAtmosphere {
+  position: absolute;
+  inset: 0;
+  background-image: var(--deck-preview-url);
+  background-size: cover;
+  background-position: center;
+  opacity: var(--deck-preview-bg-opacity);
+  filter: blur(var(--deck-preview-blur));
+  transform: scale(var(--deck-preview-scale)) rotate(var(--deck-preview-rotate))
+    translate(var(--deck-preview-translate-x), var(--deck-preview-translate-y));
+  transform-origin: center;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .deckTileMetaSlot,
@@ -7022,7 +7070,7 @@ button.assetsKindBadge:disabled {
 .inspectorEntityRowTitle {
   width: 100%;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: var(--text-2xl);
@@ -7044,7 +7092,7 @@ button.assetsKindBadge:disabled {
   width: 90px;
   height: 84px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .inspectorDeckMembershipFanInner {
@@ -7157,7 +7205,7 @@ button.assetsKindBadge:disabled {
   gap: var(--space-4);
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .deckRouteToolbar {
@@ -7181,7 +7229,7 @@ button.assetsKindBadge:disabled {
   gap: var(--space-4);
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .deckRouteFooter {
@@ -7237,7 +7285,7 @@ button.assetsKindBadge:disabled {
 }
 
 .deckRouteRowBodyFill {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .deckRouteRowStrip {
@@ -7460,7 +7508,7 @@ button.assetsKindBadge:disabled {
   top: 0;
   opacity: 0;
   z-index: 2;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
   transition:
     width 220ms ease,
@@ -8055,7 +8103,7 @@ button.assetsKindBadge:disabled {
   margin: 0;
   padding: 0;
   border: 0;
-  overflow: hidden;
+  overflow: visible;
   opacity: 0;
   pointer-events: none;
 }
@@ -8258,7 +8306,7 @@ button.assetsKindBadge:disabled {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .deckBacksMainOpen {
@@ -8389,7 +8437,7 @@ button.assetsKindBadge:disabled {
 
 .deckFaceCardsFilterOptionLabel {
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -8514,7 +8562,7 @@ button.assetsKindBadge:disabled {
   width: 56px;
   height: 80px;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--hq-surface-700);
   background: var(--hq-surface-850);
   display: flex;

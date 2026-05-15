@@ -6,6 +6,7 @@ import { useListCards, useListDecks, useListPairs } from "@/api/hooks";
 import { apiClient } from "@/api/client";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { getSelectedDeckId } from "@/components/Decks/selectors/deckDetailSelectors";
+import { getCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 
 type UseDecksGridModelArgs = {
   untitledDeckLabel: string;
@@ -22,6 +23,7 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
   const [searchDraft, setSearchDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [deckSearchTextsByDeckId, setDeckSearchTextsByDeckId] = useState<Record<string, string[]>>({});
+  const [deckBackgroundUrlByDeckId, setDeckBackgroundUrlByDeckId] = useState<Record<string, string | null>>({});
   const [deckDraftTargetId, setDeckDraftTargetId] = useState<string | null>(null);
   const [isDeleteDeckOpen, setIsDeleteDeckOpen] = useState(false);
   const [deckTitleDraft, setDeckTitleDraft] = useState("");
@@ -298,6 +300,7 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
 
     if (!decks.length || !cards.length) {
       setDeckSearchTextsByDeckId({});
+      setDeckBackgroundUrlByDeckId({});
       return () => {
         isCancelled = true;
       };
@@ -314,10 +317,12 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
 
     void (async () => {
       const next: Record<string, string[]> = {};
+      const nextBackgroundUrls: Record<string, string | null> = {};
       for (const deck of decks) {
         const sets = await apiClient.listDeckSets({ params: { deckId: deck.id } });
         const frontIds = new Set<string>();
         const searchable = new Set<string>();
+        const keySet = deck.keySetId ? sets.find((set) => set.id === deck.keySetId) ?? null : null;
         await Promise.all(
           sets.map(async (set) => {
             const backFaceTitle = cardTitleById.get(set.backFaceId) ?? "";
@@ -334,11 +339,21 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
           if (title !== "") searchable.add(title);
         });
         next[deck.id] = Array.from(searchable);
+
+        const primaryBackgroundCardId = keySet?.backFaceId ?? null;
+        const fallbackBackgroundCardId = Array.from(frontIds)[0] ?? null;
+        const backgroundCardId = primaryBackgroundCardId ?? fallbackBackgroundCardId;
+        if (!backgroundCardId) {
+          nextBackgroundUrls[deck.id] = null;
+        } else {
+          nextBackgroundUrls[deck.id] = await getCardThumbnailUrl(backgroundCardId);
+        }
       }
 
       if (isCancelled) return;
       if (deckTitlesRequestIdRef.current !== requestId) return;
       setDeckSearchTextsByDeckId(next);
+      setDeckBackgroundUrlByDeckId(nextBackgroundUrls);
     })();
 
     return () => {
@@ -372,6 +387,7 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
     decks,
     filteredDecks,
     deckDraftTargetId,
+    deckBackgroundUrlByDeckId,
     selectedDeckIds,
     selectedDeckId,
     selectedCount,

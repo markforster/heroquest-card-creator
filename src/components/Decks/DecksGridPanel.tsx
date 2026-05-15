@@ -12,6 +12,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { useNavigate } from "react-router-dom";
 
 import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 
 const PREVIEW_VARIANT = "smMd";
 
@@ -145,6 +146,13 @@ export default function DecksGridPanel() {
                 key={deck.id}
                 data-deck-id={deck.id}
                 className={`${styles.deckTile} ${isSelected ? styles.deckTileSelected : ""}`}
+                style={
+                  model.deckBackgroundUrlByDeckId[deck.id]
+                    ? ({
+                        "--deck-preview-url": `url("${model.deckBackgroundUrlByDeckId[deck.id]}")`,
+                      } as CSSProperties)
+                    : undefined
+                }
                 role="button"
                 tabIndex={0}
                 onClick={(event) => model.selectDeck(deck.id, event.metaKey || event.ctrlKey)}
@@ -153,6 +161,11 @@ export default function DecksGridPanel() {
                   if (event.key === "Enter") navigate(`/decks/${deck.id}`);
                 }}
               >
+                {model.deckBackgroundUrlByDeckId[deck.id] ? (
+                  <div className={styles.deckTileAtmosphereFrame} aria-hidden="true">
+                    <div className={styles.deckTileAtmosphere} />
+                  </div>
+                ) : null}
                 <div className={styles.deckTilePreview}>
                   <DeckFanByDeckId
                     deckId={deck.id}

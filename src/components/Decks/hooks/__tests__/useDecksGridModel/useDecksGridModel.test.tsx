@@ -8,6 +8,7 @@ const mockUseListPairs = jest.fn();
 const mockUseDeckMutations = jest.fn();
 const mockListDeckSets = jest.fn();
 const mockListDeckEntries = jest.fn();
+const mockGetCardThumbnailUrl = jest.fn();
 
 jest.mock("@/api/hooks", () => ({
   useListDecks: (...args: unknown[]) => mockUseListDecks(...args),
@@ -20,6 +21,10 @@ jest.mock("@/api/client", () => ({
     listDeckSets: (...args: unknown[]) => mockListDeckSets(...args),
     listDeckEntries: (...args: unknown[]) => mockListDeckEntries(...args),
   },
+}));
+
+jest.mock("@/lib/card-thumbnail-cache", () => ({
+  getCardThumbnailUrl: (...args: unknown[]) => mockGetCardThumbnailUrl(...args),
 }));
 
 jest.mock("@/components/Decks/hooks/useDeckMutations", () => ({
@@ -61,6 +66,7 @@ describe("useDecksGridModel", () => {
     });
     mockListDeckSets.mockResolvedValue([]);
     mockListDeckEntries.mockResolvedValue([]);
+    mockGetCardThumbnailUrl.mockResolvedValue(null);
     refetch.mockResolvedValue({
       data: [{ id: "d1", title: "Deck 1", updatedAt: 1 }],
     });
@@ -582,5 +588,65 @@ describe("useDecksGridModel", () => {
       expect(ids).toContain("d3");
       expect(ids).not.toContain("d4");
     });
+  });
+
+  it("uses key-set back face thumbnail as deck background source when available", async () => {
+    mockUseListDecks.mockReturnValue({
+      data: [{ id: "d1", title: "Deck 1", keySetId: "s1", updatedAt: 1 }],
+      isLoading: false,
+      refetch,
+    });
+    mockUseListCards.mockReturnValue({
+      data: [{ id: "b1", title: "Back 1", name: "Back 1" }],
+      isLoading: false,
+      refetch,
+    });
+    mockUseListPairs.mockReturnValue({
+      data: [],
+      isLoading: false,
+      refetch,
+    });
+    mockListDeckSets.mockResolvedValue([{ id: "s1", backFaceId: "b1" }]);
+    mockListDeckEntries.mockResolvedValue([]);
+    mockGetCardThumbnailUrl.mockResolvedValue("blob:key-back");
+
+    const { result } = renderHook(() =>
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.deckBackgroundUrlByDeckId.d1).toBe("blob:key-back");
+    });
+    expect(mockGetCardThumbnailUrl).toHaveBeenCalledWith("b1");
+  });
+
+  it("falls back to first front card thumbnail when key set is unavailable", async () => {
+    mockUseListDecks.mockReturnValue({
+      data: [{ id: "d1", title: "Deck 1", keySetId: null, updatedAt: 1 }],
+      isLoading: false,
+      refetch,
+    });
+    mockUseListCards.mockReturnValue({
+      data: [{ id: "f1", title: "Front 1", name: "Front 1" }],
+      isLoading: false,
+      refetch,
+    });
+    mockUseListPairs.mockReturnValue({
+      data: [{ id: "p1", frontFaceId: "f1" }],
+      isLoading: false,
+      refetch,
+    });
+    mockListDeckSets.mockResolvedValue([{ id: "s1", backFaceId: "unknown-back" }]);
+    mockListDeckEntries.mockResolvedValue([{ id: "e1", pairId: "p1" }]);
+    mockGetCardThumbnailUrl.mockResolvedValue("blob:fallback-front");
+
+    const { result } = renderHook(() =>
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.deckBackgroundUrlByDeckId.d1).toBe("blob:fallback-front");
+    });
+    expect(mockGetCardThumbnailUrl).toHaveBeenCalledWith("f1");
   });
 });

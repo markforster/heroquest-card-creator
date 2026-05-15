@@ -59,6 +59,7 @@ describe("DecksGridPanel grid refresh", () => {
     isDeleteSelectedEnabled: true,
     searchDraft: "",
     setSearchDraft: jest.fn(),
+    deckBackgroundUrlByDeckId: { d1: "blob:deck-bg-1" },
     effectiveDeckTitleById: { d1: "Deck 1" },
     isDeleteDeckOpen: false,
     setIsDeleteDeckOpen: jest.fn(),
@@ -115,6 +116,8 @@ describe("DecksGridPanel grid refresh", () => {
     expect(container.querySelector(".deckTileBottom")).toBeTruthy();
     expect(container.querySelector(".deckTileMetaSlot")).toBeTruthy();
     expect(container.querySelector(".deckTileActionsSlot")).toBeTruthy();
+    expect(container.querySelector(".deckTileAtmosphereFrame")).toBeTruthy();
+    expect(container.querySelector(".deckTileAtmosphere")).toBeTruthy();
     expect(screen.getByText("Deck 1")).toBeInTheDocument();
   });
 
