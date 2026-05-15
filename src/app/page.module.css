@@ -6974,15 +6974,13 @@ button.assetsKindBadge:disabled {
   pointer-events: none;
 }
 
-.deckTile:hover .deckTileMetaSlot,
-.deckTile:focus-within .deckTileMetaSlot {
+.deckTile:hover .deckTileMetaSlot {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
 }
 
-.deckTile:hover .deckTileActionsSlot,
-.deckTile:focus-within .deckTileActionsSlot {
+.deckTile:hover .deckTileActionsSlot {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
