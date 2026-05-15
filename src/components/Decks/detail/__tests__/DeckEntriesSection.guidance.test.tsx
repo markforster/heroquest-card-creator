@@ -297,6 +297,45 @@ describe("DeckEntriesSection guidance states", () => {
     expect(container.querySelectorAll('[data-entry-placeholder="true"]').length).toBe(1);
   });
 
+  it("applies over-state class to front-face placeholder while dropzone is hovered", () => {
+    mockUseDeckDetailSelection.mockReturnValue(buildSelectionState("group-1", "set-1"));
+    mockUseDeckSetEntries.mockReturnValue({
+      entriesSorted: [
+        { id: "entry-1", pairId: "pair-1", setId: "set-1", sortIndex: 0, count: 1 },
+        { id: "entry-2", pairId: "pair-2", setId: "set-1", sortIndex: 1, count: 1 },
+      ],
+      pairsById: new Map([
+        ["pair-1", { id: "pair-1", frontFaceId: "front-1" }],
+        ["pair-2", { id: "pair-2", frontFaceId: "front-2" }],
+      ]),
+      pairedNotInSetFrontIds: [],
+      addFront: jest.fn(),
+      removeEntry: jest.fn(),
+      updateEntryCount: jest.fn(),
+      refreshEntries: jest.fn(),
+    });
+
+    const { container } = render(
+      <DeckEntriesSection
+        drag={
+          {
+            ...(baseDrag as object),
+            isFrontFaceDragActive: true,
+            isFrontDropOver: true,
+            entryDropIndex: 1,
+          } as never
+        }
+        entriesRowRef={jest.fn()}
+        onOpenCardEditor={jest.fn()}
+        deckEntryThumb={(cardId) => <span>{cardId}</span>}
+      />,
+    );
+
+    const placeholder = container.querySelector('[data-entry-placeholder="true"]');
+    expect(placeholder).not.toBeNull();
+    expect(placeholder).toHaveClass("deckEntriesDropPlaceholderOver");
+  });
+
   it("resets to in-set tab when selected set changes", async () => {
     currentSelectedSetId = "set-1";
     mockUseDeckSetEntries.mockReturnValue({

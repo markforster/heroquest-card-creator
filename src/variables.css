@@ -139,6 +139,13 @@
   --hq-selected-border: rgba(255, 255, 255, 0.14);
   --hq-accent-ring-soft: rgba(230, 179, 90, 0.32);
   --hq-drop-surface: rgba(8, 10, 12, 0.4);
+  --hq-drop-placeholder-fill: transparent;
+  --hq-drop-placeholder-stroke: var(--hq-accent);
+  --hq-drop-placeholder-stroke-width: 2px;
+  --hq-drop-placeholder-dash: 4 3;
+  --hq-drop-placeholder-radius: 8px;
+  --hq-drop-placeholder-over-fill: transparent;
+  --hq-drop-placeholder-over-stroke: var(--hq-drop-placeholder-stroke);
   --hq-group-tile-bg: rgba(255, 255, 255, 0.035);
   --hq-group-tile-border: rgba(255, 255, 255, 0.08);
   --hq-group-tile-bg-selected: var(--hq-selected-surface);
@@ -237,6 +244,13 @@
   --hq-selected-border: rgba(60, 52, 45, 0.28);
   --hq-accent-ring-soft: rgba(178, 118, 44, 0.3);
   --hq-drop-surface: rgba(60, 52, 45, 0.1);
+  --hq-drop-placeholder-fill: transparent;
+  --hq-drop-placeholder-stroke: var(--hq-accent);
+  --hq-drop-placeholder-stroke-width: 2px;
+  --hq-drop-placeholder-dash: 4 3;
+  --hq-drop-placeholder-radius: 8px;
+  --hq-drop-placeholder-over-fill: transparent;
+  --hq-drop-placeholder-over-stroke: var(--hq-drop-placeholder-stroke);
   --hq-group-tile-bg: rgba(60, 52, 45, 0.08);
   --hq-group-tile-border: rgba(60, 52, 45, 0.22);
   --hq-group-tile-bg-selected: rgba(60, 52, 45, 0.14);

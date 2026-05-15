@@ -6700,10 +6700,11 @@ button.assetsKindBadge:disabled {
 }
 
 .cardFanDeckGroupDropPlaceholderSvg {
-  fill: var(--hq-drop-surface);
-  stroke: var(--hq-accent);
-  stroke-width: 2;
-  stroke-dasharray: 4 3;
+  /* Keep visual parity with .deckEntriesDropPlaceholder (HTML). */
+  fill: var(--hq-drop-placeholder-fill);
+  stroke: var(--hq-drop-placeholder-stroke);
+  stroke-width: var(--hq-drop-placeholder-stroke-width);
+  stroke-dasharray: var(--hq-drop-placeholder-dash);
   vector-effect: non-scaling-stroke;
 }
 
@@ -7721,17 +7722,18 @@ button.assetsKindBadge:disabled {
 .deckEntriesDropPlaceholder {
   width: var(--deck-set-w, 105px);
   height: var(--deck-set-h, 147px);
-  border-radius: 8px;
-  border: 2px dashed var(--hq-accent);
-  background: color-mix(in srgb, var(--hq-drop-surface) 70%, var(--hq-accent) 30%);
+  /* Keep visual parity with .cardFanDeckGroupDropPlaceholderSvg (SVG). */
+  border-radius: var(--hq-drop-placeholder-radius);
+  border: var(--hq-drop-placeholder-stroke-width) dashed var(--hq-drop-placeholder-stroke);
+  background: var(--hq-drop-placeholder-fill);
   display: inline-flex;
   flex: 0 0 auto;
   align-self: flex-start;
 }
 
 .deckEntriesDropPlaceholderOver {
-  border-color: color-mix(in srgb, var(--hq-accent) 90%, #fff 10%);
-  background: color-mix(in srgb, var(--hq-drop-surface) 55%, var(--hq-accent) 45%);
+  border-color: var(--hq-drop-placeholder-over-stroke);
+  background: var(--hq-drop-placeholder-over-fill);
 }
 
 .deckEntriesHeader {
