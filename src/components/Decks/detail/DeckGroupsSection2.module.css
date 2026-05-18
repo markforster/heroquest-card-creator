@@ -91,12 +91,12 @@
 }
 
 .group {
-  min-width: 80px;
-  width: max-content;
+  min-width: 96px;
+  width: fit-content;
   border-radius: 6px;
   background: rgba(235, 236, 244, 0.76);
   border: 1px solid #d2d5df;
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
   transition: width 160ms ease, min-width 160ms ease;
 }
@@ -111,6 +111,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   min-height: 34px;
   padding: 8px 9px;
   border-bottom: 1px solid #dddfe8;
@@ -119,6 +120,13 @@
   font-size: 18px;
   font-weight: 500;
   color: #242a33;
+}
+
+.groupHeader > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .groupBody {

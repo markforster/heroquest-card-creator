@@ -2,7 +2,7 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import { BringToFront, ChevronLeft, ChevronRight, Search, SendToBack } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 
 import styles from "@/app/page.module.css";
@@ -81,7 +81,6 @@ export default function DeckBacksPanel({
 }) {
   const { t } = useI18n();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const [search, setSearch] = useState("");
   const {
     isRightPanelVisible,
     setIsRightPanelVisible,
@@ -93,6 +92,8 @@ export default function DeckBacksPanel({
     setBackFilter: onFilterChange,
     rightPanelFaceMode: faceMode,
     setRightPanelFaceMode: onFaceModeChange,
+    sourceSearch: search,
+    setSourceSearch: setSearch,
   } = useDeckRightPanel();
   const isViewOpen = isRightPanelVisible;
   const handleFaceModeChange = (nextMode: RightPanelFaceMode) => {

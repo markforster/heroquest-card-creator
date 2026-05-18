@@ -11,11 +11,13 @@ import {
 } from "@dnd-kit/react";
 import { move } from "@dnd-kit/helpers";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { createContext, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+
 
 import styles from "./DeckGroupsSection2.module.css";
 
-type BoardId = "groups" | "entries" | "source";
+export type BoardId = "groups" | "entries" | "source";
 type GroupId = string;
 type SetId = string;
 type LayoutMode = "content" | "fill-parent";
@@ -36,9 +38,58 @@ type DnDState = {
   groupToBoard: Record<GroupId, BoardId>;
 };
 
+type SetMovedPayload = {
+  setId: string;
+  sourceGroupId: string;
+  targetGroupId: string;
+  sourceGroupEmptyAfterDrop: boolean;
+};
+
+type GroupsSetsReorderedPayload = {
+  setId: string;
+  sourceGroupId: string;
+  targetGroupId: string;
+  orderedTargetSetIds: string[];
+  orderedSourceSetIds: string[];
+  sourceGroupEmptyAfterDrop: boolean;
+};
+
+type SourceSetDroppedToGroupPayload = {
+  backFaceId: string;
+  targetGroupId: string;
+  targetIndex: number;
+};
+
+type SetDroppedToNewGroupPayload = {
+  setId: string;
+  sourceGroupId: string;
+  targetGroupIndex: number;
+  orderedSourceSetIds: string[];
+  sourceGroupEmptyAfterDrop: boolean;
+};
+
+type SourceSetDroppedToNewGroupPayload = {
+  backFaceId: string;
+  targetGroupIndex: number;
+};
+
+export type BoardSeedModel = {
+  boardId: BoardId;
+  groupIds: GroupId[];
+  itemsByGroup: Record<GroupId, SetId[]>;
+  groupLabelsById: Record<GroupId, string>;
+  setLabelsById: Record<SetId, string>;
+  emitToken: DragRouteToken;
+  acceptTokens: DragRouteToken[];
+};
+
 type DeckMockDndContextValue = {
   state: DnDState;
+  setLabelsById: Record<SetId, string>;
+  groupLabelsById: Record<GroupId, string>;
   activeSetId: SetId | null;
+  sourcePreviewTargetGroupId: GroupId | null;
+  sourcePreviewTargetIndex: number | null;
   hoverBoundaryByBoard: Record<BoardId, number | null>;
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
   handleHoverBoundary: (boardId: BoardId, clientX: number) => void;
@@ -52,7 +103,11 @@ type DeckSortableBoardViewModel = {
   acceptTokens: DragRouteToken[];
   groupIds: GroupId[];
   itemsByGroup: Record<GroupId, SetId[]>;
+  groupLabelsById: Record<GroupId, string>;
+  setLabelsById: Record<SetId, string>;
   activeSetId: SetId | null;
+  sourcePreviewTargetGroupId: GroupId | null;
+  sourcePreviewTargetIndex: number | null;
   hoverBoundaryIndex: number | null;
   onHoverBoundary: (clientX: number) => void;
   onLeaveBoard: () => void;
@@ -98,25 +153,64 @@ const BOARD_ROUTING_META_BY_ID: Record<BoardId, BoardRoutingMeta> = {
   source: { emitToken: "source", acceptTokens: [] },
 };
 
-const INITIAL_STATE: DnDState = {
-  groupOrderByBoard: {
-    groups: ["groups:A", "groups:B", "groups:C"],
-    entries: ["entries:E1"],
-    source: ["source:S1"],
+const DEFAULT_BOARD_SEEDS: Record<BoardId, BoardSeedModel> = {
+  groups: {
+    boardId: "groups",
+    groupIds: ["groups:A", "groups:B", "groups:C"],
+    itemsByGroup: {
+      "groups:A": ["g-A1", "g-A2", "g-A3"],
+      "groups:B": ["g-B1", "g-B2"],
+      "groups:C": ["g-C1"],
+    },
+    groupLabelsById: { "groups:A": "A", "groups:B": "B", "groups:C": "C" },
+    setLabelsById: {
+      "g-A1": "A1",
+      "g-A2": "A2",
+      "g-A3": "A3",
+      "g-B1": "B1",
+      "g-B2": "B2",
+      "g-C1": "C1",
+    },
+    emitToken: "set",
+    acceptTokens: ["source"],
   },
-  groupToBoard: {
-    "groups:A": "groups",
-    "groups:B": "groups",
-    "groups:C": "groups",
-    "entries:E1": "entries",
-    "source:S1": "source",
+  entries: {
+    boardId: "entries",
+    groupIds: ["entries:E1"],
+    itemsByGroup: {
+      "entries:E1": ["e-1", "e-2", "e-3", "e-4", "e-5", "e-6", "e-7", "e-8", "e-9", "e-10"],
+    },
+    groupLabelsById: { "entries:E1": "Entries" },
+    setLabelsById: {
+      "e-1": "E-1",
+      "e-2": "E-2",
+      "e-3": "E-3",
+      "e-4": "E-4",
+      "e-5": "E-5",
+      "e-6": "E-6",
+      "e-7": "E-7",
+      "e-8": "E-8",
+      "e-9": "E-9",
+      "e-10": "E-10",
+    },
+    emitToken: "entry",
+    acceptTokens: ["source"],
   },
-  itemsByGroup: {
-    "groups:A": ["g-A1", "g-A2", "g-A3"],
-    "groups:B": ["g-B1", "g-B2"],
-    "groups:C": ["g-C1"],
-    "entries:E1": ["e-1", "e-2", "e-3", "e-4", "e-5", "e-6", "e-7", "e-8", "e-9", "e-10"],
-    "source:S1": ["src-1", "src-2", "src-3", "src-4"],
+  source: {
+    boardId: "source",
+    groupIds: ["source:S1"],
+    itemsByGroup: {
+      "source:S1": ["src-1", "src-2", "src-3", "src-4"],
+    },
+    groupLabelsById: { "source:S1": "Source" },
+    setLabelsById: {
+      "src-1": "SRC-1",
+      "src-2": "SRC-2",
+      "src-3": "SRC-3",
+      "src-4": "SRC-4",
+    },
+    emitToken: "source",
+    acceptTokens: [],
   },
 };
 
@@ -141,6 +235,38 @@ function parseGroupLabel(groupId: GroupId): string {
 function parseSetLabel(setId: SetId): string {
   if (setId.startsWith("g-")) return setId.slice(2).toUpperCase();
   return setId.toUpperCase();
+}
+
+function createDnDStateFromSeeds(boardSeeds: Record<BoardId, BoardSeedModel>): DnDState {
+  const groupOrderByBoard: Record<BoardId, GroupId[]> = {
+    groups: boardSeeds.groups.groupIds.slice(),
+    entries: boardSeeds.entries.groupIds.slice(),
+    source: boardSeeds.source.groupIds.slice(),
+  };
+  const itemsByGroup: Record<GroupId, SetId[]> = {};
+  const groupToBoard: Record<GroupId, BoardId> = {};
+
+  (Object.keys(boardSeeds) as BoardId[]).forEach((boardId) => {
+    const seed = boardSeeds[boardId];
+    seed.groupIds.forEach((groupId) => {
+      itemsByGroup[groupId] = (seed.itemsByGroup[groupId] ?? []).slice();
+      groupToBoard[groupId] = boardId;
+    });
+  });
+
+  return { groupOrderByBoard, itemsByGroup, groupToBoard };
+}
+
+function collectLabels(boardSeeds: Record<BoardId, BoardSeedModel>) {
+  const groupLabelsById: Record<GroupId, string> = {};
+  const setLabelsById: Record<SetId, string> = {};
+
+  (Object.keys(boardSeeds) as BoardId[]).forEach((boardId) => {
+    Object.assign(groupLabelsById, boardSeeds[boardId].groupLabelsById);
+    Object.assign(setLabelsById, boardSeeds[boardId].setLabelsById);
+  });
+
+  return { groupLabelsById, setLabelsById };
 }
 
 function canMove(_sourceGroupId: GroupId, _targetGroupId: GroupId, _setId: SetId): boolean {
@@ -170,6 +296,9 @@ function canRouteDrag({
 }): boolean {
   if (!sourceBoardId || !sourceGroupId || !targetBoardId || !targetGroupId) return false;
   if (sameGroup) return sourceAllowInGroupSort;
+  if (sourceBoardId === targetBoardId) {
+    return sourceAllowInGroupSort && targetAllowDropTarget;
+  }
   if (!targetAllowDropTarget) return false;
   if (!sourceEmitToken) return false;
   if (!targetAcceptTokens) return false;
@@ -181,6 +310,15 @@ function findGroupIdBySetId(itemsByGroup: Record<GroupId, SetId[]>, setId: SetId
     itemsByGroup[candidate]?.includes(setId),
   );
   return groupId ?? null;
+}
+
+function extractGroupIdFromOperationEntity(entity: unknown): string {
+  if (!entity || typeof entity !== "object") return "";
+  const maybeEntity = entity as {
+    group?: string;
+    data?: { group?: string };
+  };
+  return String(maybeEntity.group ?? maybeEntity.data?.group ?? "");
 }
 
 function getBlockedBoundaries(
@@ -228,11 +366,13 @@ function normalizeAfterDrop(current: DnDState): DnDState {
 
 function GroupColumn({
   groupId,
+  label,
   children,
   fillParent,
   canReceiveDrops,
 }: {
   groupId: GroupId;
+  label?: string;
   children: React.ReactNode;
   fillParent: boolean;
   canReceiveDrops: boolean;
@@ -250,7 +390,7 @@ function GroupColumn({
       data-testid={`group-${groupId}`}
     >
       <header className={styles.groupHeader}>
-        <span>{parseGroupLabel(groupId)}</span>
+        <span>{label ?? parseGroupLabel(groupId)}</span>
         <span className={styles.grip} aria-hidden="true">
           ⠿
         </span>
@@ -268,10 +408,12 @@ function GroupColumn({
 
 function SortableSetCard({
   setId,
+  label,
   index,
   groupId,
 }: {
   setId: SetId;
+  label?: string;
   index: number;
   groupId: GroupId;
 }) {
@@ -302,7 +444,7 @@ function SortableSetCard({
           .filter(Boolean)
           .join(" ")}
       >
-        <span>{parseSetLabel(setId)}</span>
+        <span>{label ?? parseSetLabel(setId)}</span>
         <span className={styles.grip} aria-hidden="true">
           ⠿
         </span>
@@ -311,7 +453,7 @@ function SortableSetCard({
   );
 }
 
-function DraggableSetCard({ setId, groupId }: { setId: SetId; groupId: GroupId }) {
+function DraggableSetCard({ setId, label, groupId }: { setId: SetId; label?: string; groupId: GroupId }) {
   const { ref, handleRef, isDragging } = useDraggable({
     id: setId,
     type: "set",
@@ -337,7 +479,7 @@ function DraggableSetCard({ setId, groupId }: { setId: SetId; groupId: GroupId }
           .join(" ")}
         ref={handleRef}
       >
-        <span>{parseSetLabel(setId)}</span>
+        <span>{label ?? parseSetLabel(setId)}</span>
         <span className={styles.grip} aria-hidden="true">
           ⠿
         </span>
@@ -346,11 +488,24 @@ function DraggableSetCard({ setId, groupId }: { setId: SetId; groupId: GroupId }
   );
 }
 
-function OverlayCard({ setId }: { setId: SetId }) {
+function SourcePreviewGhost({ label }: { label: string }) {
+  return (
+    <div className={styles.setShell} aria-hidden="true">
+      <div className={[styles.setCard, styles.setCardGhost].join(" ")}>
+        <span>{label}</span>
+        <span className={styles.grip} aria-hidden="true">
+          ⠿
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function OverlayCard({ setId, label }: { setId: SetId; label?: string }) {
   return (
     <div className={styles.overlay}>
       <div className={[styles.setCard, styles.setCardDragging].join(" ")}>
-        <span>{parseSetLabel(setId)}</span>
+        <span>{label ?? parseSetLabel(setId)}</span>
         <span className={styles.grip} aria-hidden="true">
           ⠿
         </span>
@@ -387,7 +542,15 @@ function DeckSortableBoardView({
   model: DeckSortableBoardViewModel;
   layoutMode?: LayoutMode;
 }) {
-  const { config, groupIds, itemsByGroup, activeSetId, hoverBoundaryIndex } = model;
+  const {
+    config,
+    groupIds,
+    itemsByGroup,
+    activeSetId,
+    hoverBoundaryIndex,
+    sourcePreviewTargetGroupId,
+    sourcePreviewTargetIndex,
+  } = model;
   const useFillParent = layoutMode === "fill-parent" && !config.allowMultipleGroups;
   const blockedBoundaries = useMemo(
     () => getBlockedBoundaries(groupIds, itemsByGroup),
@@ -427,16 +590,63 @@ function DeckSortableBoardView({
             >
               <GroupColumn
                 groupId={groupId}
+                label={model.groupLabelsById[groupId]}
                 fillParent={useFillParent}
                 canReceiveDrops={config.allowDropTarget}
               >
-                {(itemsByGroup[groupId] ?? []).map((setId, setIndex) =>
-                  config.allowInGroupSort ? (
-                    <SortableSetCard key={setId} setId={setId} index={setIndex} groupId={groupId} />
-                  ) : (
-                    <DraggableSetCard key={setId} setId={setId} groupId={groupId} />
-                  ),
-                )}
+                {(() => {
+                  const groupSetIds = itemsByGroup[groupId] ?? [];
+                  const shouldRenderSourcePreview =
+                    config.boardId === "groups" &&
+                    sourcePreviewTargetGroupId === groupId &&
+                    activeSetId?.startsWith("source:");
+                  const previewIndex = shouldRenderSourcePreview
+                    ? clamp(sourcePreviewTargetIndex ?? groupSetIds.length, 0, groupSetIds.length)
+                    : -1;
+                  const previewLabel = activeSetId
+                    ? model.setLabelsById[activeSetId] ?? parseSetLabel(activeSetId)
+                    : "";
+
+                  return groupSetIds.map((setId, setIndex) => (
+                    <div key={setId}>
+                      {shouldRenderSourcePreview && previewIndex === setIndex ? (
+                        <SourcePreviewGhost label={previewLabel} />
+                      ) : null}
+                      {config.allowInGroupSort ? (
+                        <SortableSetCard
+                          setId={setId}
+                          label={model.setLabelsById[setId]}
+                          index={setIndex}
+                          groupId={groupId}
+                        />
+                      ) : (
+                        <DraggableSetCard
+                          setId={setId}
+                          label={model.setLabelsById[setId]}
+                          groupId={groupId}
+                        />
+                      )}
+                    </div>
+                  ));
+                })()}
+                {config.boardId === "groups" &&
+                sourcePreviewTargetGroupId === groupId &&
+                activeSetId?.startsWith("source:") &&
+                (itemsByGroup[groupId] ?? []).length === 0 ? (
+                  <SourcePreviewGhost
+                    label={model.setLabelsById[activeSetId] ?? parseSetLabel(activeSetId)}
+                  />
+                ) : null}
+                {config.boardId === "groups" &&
+                sourcePreviewTargetGroupId === groupId &&
+                activeSetId?.startsWith("source:") &&
+                (itemsByGroup[groupId] ?? []).length > 0 &&
+                (sourcePreviewTargetIndex ?? (itemsByGroup[groupId] ?? []).length) >=
+                  (itemsByGroup[groupId] ?? []).length ? (
+                  <SourcePreviewGhost
+                    label={model.setLabelsById[activeSetId] ?? parseSetLabel(activeSetId)}
+                  />
+                ) : null}
               </GroupColumn>
             </div>
           </div>
@@ -456,20 +666,86 @@ function DeckSortableBoardView({
   );
 }
 
-export function DeckMockDndProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<DnDState>(INITIAL_STATE);
+export function DeckMockDndProvider({
+  children,
+  boardSeeds,
+  onSetMovedAcrossGroups,
+  onSourceSetDroppedToGroup,
+  onGroupsSetsReordered,
+  onSetDroppedToNewGroup,
+  onSourceSetDroppedToNewGroup,
+}: {
+  children: React.ReactNode;
+  boardSeeds?: Record<BoardId, BoardSeedModel>;
+  onSetMovedAcrossGroups?: (payload: SetMovedPayload) => Promise<void> | void;
+  onSourceSetDroppedToGroup?: (payload: SourceSetDroppedToGroupPayload) => Promise<void> | void;
+  onGroupsSetsReordered?: (payload: GroupsSetsReorderedPayload) => Promise<void> | void;
+  onSetDroppedToNewGroup?: (payload: SetDroppedToNewGroupPayload) => Promise<void> | void;
+  onSourceSetDroppedToNewGroup?: (payload: SourceSetDroppedToNewGroupPayload) => Promise<void> | void;
+}) {
+  const resolvedBoardSeeds = boardSeeds ?? DEFAULT_BOARD_SEEDS;
+  const initialState = useMemo(() => createDnDStateFromSeeds(resolvedBoardSeeds), [resolvedBoardSeeds]);
+  const initialLabels = useMemo(() => collectLabels(resolvedBoardSeeds), [resolvedBoardSeeds]);
+  const [state, setState] = useState<DnDState>(initialState);
+  const [groupLabelsById, setGroupLabelsById] = useState<Record<GroupId, string>>(
+    initialLabels.groupLabelsById,
+  );
+  const [setLabelsById, setSetLabelsById] = useState<Record<SetId, string>>(initialLabels.setLabelsById);
   const [activeSetId, setActiveSetId] = useState<SetId | null>(null);
+  const [sourcePreviewTargetGroupId, setSourcePreviewTargetGroupId] = useState<GroupId | null>(null);
+  const [sourcePreviewTargetIndex, setSourcePreviewTargetIndex] = useState<number | null>(null);
   const [hoverBoundaryByBoard, setHoverBoundaryByBoard] = useState<Record<BoardId, number | null>>({
     groups: null,
     entries: null,
     source: null,
   });
   const [ephemeralEmptyGroupId, setEphemeralEmptyGroupId] = useState<GroupId | null>(null);
-  const boardRoutingById = useRef<Record<BoardId, BoardRoutingMeta>>(BOARD_ROUTING_META_BY_ID);
+  const boardRoutingById = useRef<Record<BoardId, BoardRoutingMeta>>({
+    groups: {
+      emitToken: resolvedBoardSeeds.groups.emitToken,
+      acceptTokens: resolvedBoardSeeds.groups.acceptTokens,
+    },
+    entries: {
+      emitToken: resolvedBoardSeeds.entries.emitToken,
+      acceptTokens: resolvedBoardSeeds.entries.acceptTokens,
+    },
+    source: {
+      emitToken: resolvedBoardSeeds.source.emitToken,
+      acceptTokens: resolvedBoardSeeds.source.acceptTokens,
+    },
+  });
 
-  const previousState = useRef<DnDState>(INITIAL_STATE);
+  const previousState = useRef<DnDState>(initialState);
+  const sourceGroupIdAtDragStartRef = useRef<GroupId | null>(null);
   const nextGroupIdRef = useRef<number>(1);
   const groupRefs = useRef<Map<GroupId, HTMLElement>>(new Map());
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    boardRoutingById.current = {
+      groups: {
+        emitToken: resolvedBoardSeeds.groups.emitToken,
+        acceptTokens: resolvedBoardSeeds.groups.acceptTokens,
+      },
+      entries: {
+        emitToken: resolvedBoardSeeds.entries.emitToken,
+        acceptTokens: resolvedBoardSeeds.entries.acceptTokens,
+      },
+      source: {
+        emitToken: resolvedBoardSeeds.source.emitToken,
+        acceptTokens: resolvedBoardSeeds.source.acceptTokens,
+      },
+    };
+    setGroupLabelsById(initialLabels.groupLabelsById);
+    setSetLabelsById(initialLabels.setLabelsById);
+    if (activeSetId) return;
+    setState(initialState);
+    previousState.current = initialState;
+  }, [activeSetId, resolvedBoardSeeds, initialLabels.groupLabelsById, initialLabels.setLabelsById, initialState]);
 
   const registerGroupRef = (groupId: GroupId, node: HTMLElement | null) => {
     if (node) {
@@ -552,8 +828,15 @@ export function DeckMockDndProvider({ children }: { children: React.ReactNode })
 
   const handleDragStart = (event: DragStartEvent) => {
     if (event.operation.source?.type !== "set") return;
+    const sourceSetId = String(event.operation.source.id);
+    sourceGroupIdAtDragStartRef.current =
+      extractGroupIdFromOperationEntity(event.operation.source) ||
+      findGroupIdBySetId(state.itemsByGroup, sourceSetId) ||
+      null;
     previousState.current = state;
     setActiveSetId(String(event.operation.source.id));
+    setSourcePreviewTargetGroupId(null);
+    setSourcePreviewTargetIndex(null);
     setHoverBoundaryByBoard({ groups: null, entries: null, source: null });
   };
 
@@ -562,14 +845,14 @@ export function DeckMockDndProvider({ children }: { children: React.ReactNode })
 
     const sourceSetId = String(event.operation.source.id);
     const sourceGroupId =
-      String(event.operation.source.group ?? "") ||
+      extractGroupIdFromOperationEntity(event.operation.source) ||
       findGroupIdBySetId(state.itemsByGroup, sourceSetId) ||
       "";
     const targetId = String(event.operation.target?.id ?? "");
     const targetGroupId =
       event.operation.target?.type === "group"
         ? targetId
-        : String(event.operation.target?.group ?? "") ||
+        : extractGroupIdFromOperationEntity(event.operation.target) ||
           (targetId ? findGroupIdBySetId(state.itemsByGroup, targetId) || "" : "");
 
     if (!sourceGroupId || !targetGroupId) return;
@@ -591,13 +874,38 @@ export function DeckMockDndProvider({ children }: { children: React.ReactNode })
       targetAcceptTokens: targetRouting?.acceptTokens ?? null,
     });
     if (!canRoute) {
+      setSourcePreviewTargetGroupId(null);
+      setSourcePreviewTargetIndex(null);
       event.preventDefault?.();
       return;
     }
     if (!canMove(sourceGroupId, targetGroupId, sourceSetId)) {
+      setSourcePreviewTargetGroupId(null);
+      setSourcePreviewTargetIndex(null);
       event.preventDefault?.();
       return;
     }
+
+    // Source items are templates for persisted create operations.
+    // Do not mutate in-memory board placement during hover.
+    if (sourceBoardId === "source") {
+      if (targetBoardId === "groups") {
+        const targetItems = state.itemsByGroup[targetGroupId] ?? [];
+        const targetIndex =
+          event.operation.target?.type === "group"
+            ? targetItems.length
+            : Math.max(0, targetItems.indexOf(targetId));
+        setSourcePreviewTargetGroupId(targetGroupId);
+        setSourcePreviewTargetIndex(targetIndex);
+      } else {
+        setSourcePreviewTargetGroupId(null);
+        setSourcePreviewTargetIndex(null);
+      }
+      return;
+    }
+
+    setSourcePreviewTargetGroupId(null);
+    setSourcePreviewTargetIndex(null);
 
     setState((current) => ({
       ...current,
@@ -614,8 +922,24 @@ export function DeckMockDndProvider({ children }: { children: React.ReactNode })
     if (event.canceled) {
       setState(previousState.current);
       setActiveSetId(null);
+      setSourcePreviewTargetGroupId(null);
+      setSourcePreviewTargetIndex(null);
+      sourceGroupIdAtDragStartRef.current = null;
       return;
     }
+
+    const sourceSetId = String(event.operation.source.id);
+    const sourceGroupId =
+      sourceGroupIdAtDragStartRef.current ||
+      extractGroupIdFromOperationEntity(event.operation.source) ||
+      findGroupIdBySetId(state.itemsByGroup, sourceSetId) ||
+      "";
+    const targetId = String(event.operation.target?.id ?? "");
+    const targetGroupId =
+      event.operation.target?.type === "group"
+        ? targetId
+        : extractGroupIdFromOperationEntity(event.operation.target) ||
+          (targetId ? findGroupIdBySetId(state.itemsByGroup, targetId) || "" : "");
 
     setState((current) => {
       const next = normalizeAfterDrop(current);
@@ -631,18 +955,120 @@ export function DeckMockDndProvider({ children }: { children: React.ReactNode })
     });
 
     setActiveSetId(null);
-  };
+    setSourcePreviewTargetGroupId(null);
+    setSourcePreviewTargetIndex(null);
+    sourceGroupIdAtDragStartRef.current = null;
 
-  const handleDragCancel = () => {
-    setState(previousState.current);
-    setActiveSetId(null);
+    const normalizedSetId = sourceSetId.startsWith("set:") ? sourceSetId.slice(4) : "";
+    const normalizedSourceGroupId = sourceGroupId.startsWith("group:") ? sourceGroupId.slice(6) : "";
+    const normalizedTargetGroupId = targetGroupId.startsWith("group:") ? targetGroupId.slice(6) : "";
+    const isTempTargetGroup = targetGroupId.startsWith("groups:N");
+    const sourceBoardId = sourceGroupId ? state.groupToBoard[sourceGroupId] ?? null : null;
+    const targetBoardId = targetGroupId ? state.groupToBoard[targetGroupId] ?? null : null;
+    const targetGroupIndex = state.groupOrderByBoard.groups.findIndex((groupId) => groupId === targetGroupId);
+    const normalizedTargetSetIds = (state.itemsByGroup[targetGroupId] ?? [])
+      .filter((id) => id.startsWith("set:"))
+      .map((id) => id.slice(4));
+    const normalizedSourceSetIds = (state.itemsByGroup[sourceGroupId] ?? [])
+      .filter((id) => id.startsWith("set:"))
+      .map((id) => id.slice(4));
+
+    if (
+      normalizedSetId &&
+      normalizedSourceGroupId &&
+      normalizedTargetGroupId &&
+      normalizedSourceGroupId !== normalizedTargetGroupId
+    ) {
+      const payload: SetMovedPayload = {
+        setId: normalizedSetId,
+        sourceGroupId: normalizedSourceGroupId,
+        targetGroupId: normalizedTargetGroupId,
+        sourceGroupEmptyAfterDrop:
+          sourceBoardId === "groups" &&
+          targetBoardId === "groups" &&
+          normalizedSourceGroupId !== normalizedTargetGroupId &&
+          normalizedSourceSetIds.length === 0,
+      };
+      void onSetMovedAcrossGroups?.(payload);
+    }
+
+    if (
+      isTempTargetGroup &&
+      sourceBoardId === "groups" &&
+      targetBoardId === "groups" &&
+      normalizedSetId &&
+      normalizedSourceGroupId
+    ) {
+      void onSetDroppedToNewGroup?.({
+        setId: normalizedSetId,
+        sourceGroupId: normalizedSourceGroupId,
+        targetGroupIndex: targetGroupIndex < 0 ? state.groupOrderByBoard.groups.length : targetGroupIndex,
+        orderedSourceSetIds: normalizedSourceSetIds,
+        sourceGroupEmptyAfterDrop: normalizedSourceSetIds.length === 0,
+      });
+    }
+
+    if (
+      normalizedSetId &&
+      normalizedSourceGroupId &&
+      normalizedTargetGroupId &&
+      sourceBoardId === "groups" &&
+      targetBoardId === "groups" &&
+      !isTempTargetGroup
+    ) {
+      void onGroupsSetsReordered?.({
+        setId: normalizedSetId,
+        sourceGroupId: normalizedSourceGroupId,
+        targetGroupId: normalizedTargetGroupId,
+        orderedTargetSetIds: normalizedTargetSetIds,
+        orderedSourceSetIds:
+          normalizedSourceGroupId === normalizedTargetGroupId
+            ? normalizedTargetSetIds
+            : normalizedSourceSetIds,
+        sourceGroupEmptyAfterDrop:
+          normalizedSourceGroupId !== normalizedTargetGroupId &&
+          normalizedSourceSetIds.length === 0,
+      });
+    }
+
+    const normalizedBackFaceId = sourceSetId.startsWith("source:") ? sourceSetId.slice(7) : "";
+    if (
+      normalizedBackFaceId &&
+      sourceBoardId === "source" &&
+      targetBoardId === "groups" &&
+      normalizedTargetGroupId &&
+      !isTempTargetGroup
+    ) {
+      const payload: SourceSetDroppedToGroupPayload = {
+        backFaceId: normalizedBackFaceId,
+        targetGroupId: normalizedTargetGroupId,
+        targetIndex: sourcePreviewTargetIndex ?? (state.itemsByGroup[targetGroupId]?.length ?? 0),
+      };
+      void onSourceSetDroppedToGroup?.(payload);
+    }
+
+    if (
+      normalizedBackFaceId &&
+      sourceBoardId === "source" &&
+      targetBoardId === "groups" &&
+      isTempTargetGroup
+    ) {
+      void onSourceSetDroppedToNewGroup?.({
+        backFaceId: normalizedBackFaceId,
+        targetGroupIndex: targetGroupIndex < 0 ? state.groupOrderByBoard.groups.length : targetGroupIndex,
+      });
+    }
   };
 
   return (
     <DeckMockDndContext.Provider
       value={{
         state,
+        setLabelsById,
+        groupLabelsById,
         activeSetId,
+        sourcePreviewTargetGroupId,
+        sourcePreviewTargetIndex,
         hoverBoundaryByBoard,
         registerGroupRef,
         handleHoverBoundary,
@@ -654,10 +1080,18 @@ export function DeckMockDndProvider({ children }: { children: React.ReactNode })
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
       >
         {children}
-        <DragOverlay>{activeSetId ? <OverlayCard setId={activeSetId} /> : null}</DragOverlay>
+        {isClient
+          ? createPortal(
+              <DragOverlay>
+                {activeSetId ? (
+                  <OverlayCard setId={activeSetId} label={setLabelsById[activeSetId]} />
+                ) : null}
+              </DragOverlay>,
+              document.body,
+            )
+          : null}
       </DragDropProvider>
     </DeckMockDndContext.Provider>
   );
@@ -669,7 +1103,11 @@ function useDeckSortableBoardViewModel(
 ): DeckSortableBoardViewModel {
   const {
     state,
+    setLabelsById,
+    groupLabelsById,
     activeSetId,
+    sourcePreviewTargetGroupId,
+    sourcePreviewTargetIndex,
     hoverBoundaryByBoard,
     registerGroupRef,
     handleHoverBoundary,
@@ -683,7 +1121,11 @@ function useDeckSortableBoardViewModel(
     acceptTokens: routing.acceptTokens,
     groupIds: state.groupOrderByBoard[boardId],
     itemsByGroup: state.itemsByGroup,
+    groupLabelsById,
+    setLabelsById,
     activeSetId,
+    sourcePreviewTargetGroupId,
+    sourcePreviewTargetIndex,
     hoverBoundaryIndex: hoverBoundaryByBoard[boardId],
     onHoverBoundary: (clientX: number) => handleHoverBoundary(boardId, clientX),
     onLeaveBoard: () => handleLeaveBoard(boardId),
@@ -692,12 +1134,99 @@ function useDeckSortableBoardViewModel(
   };
 }
 
-export default function DeckGroupsBoardMock() {
+type GroupsAdapterInput = {
+  orderedGroups: Array<{ id: string; title: string }>;
+  sets: Array<{ id: string; groupId: string; sortIndex: number; title: string; backFaceId: string }>;
+  cardNameById: Map<string, string>;
+};
+
+type EntriesAdapterInput = {
+  entriesSorted: Array<{ id: string; sortIndex: number }>;
+  entryFrontIdByEntryId: Map<string, string>;
+};
+
+type SourceAdapterInput = {
+  cards: Array<{ id: string; name: string }>;
+};
+
+export function toGroupsBoardModel(input: GroupsAdapterInput): BoardSeedModel {
+  const groupIds = input.orderedGroups.map((group) => `group:${group.id}`);
+  const groupLabelsById: Record<GroupId, string> = {};
+  const itemsByGroup: Record<GroupId, SetId[]> = {};
+  const setLabelsById: Record<SetId, string> = {};
+
+  input.orderedGroups.forEach((group) => {
+    const gid = `group:${group.id}`;
+    groupLabelsById[gid] = group.id;
+    itemsByGroup[gid] = input.sets
+      .filter((set) => set.groupId === group.id)
+      .sort((a, b) => a.sortIndex - b.sortIndex)
+      .map((set) => {
+        const sid = `set:${set.id}`;
+        setLabelsById[sid] =
+          input.cardNameById.get(set.backFaceId)?.trim() || set.title?.trim() || set.id;
+        return sid;
+      });
+  });
+
+  return {
+    boardId: "groups",
+    groupIds,
+    itemsByGroup,
+    groupLabelsById,
+    setLabelsById,
+    emitToken: "set",
+    acceptTokens: ["source"],
+  };
+}
+
+export function toEntriesBoardModel(input: EntriesAdapterInput): BoardSeedModel {
+  const groupId = "entries:lane";
+  const setLabelsById: Record<SetId, string> = {};
+  const itemIds = input.entriesSorted.map((entry, index) => {
+    const sid = `entry:${entry.id}`;
+    const frontId = input.entryFrontIdByEntryId.get(entry.id);
+    setLabelsById[sid] = frontId ? `Entry ${index + 1} (${frontId.slice(0, 8)})` : `Entry ${index + 1}`;
+    return sid;
+  });
+
+  return {
+    boardId: "entries",
+    groupIds: [groupId],
+    itemsByGroup: { [groupId]: itemIds },
+    groupLabelsById: { [groupId]: "Entries" },
+    setLabelsById,
+    emitToken: "entry",
+    acceptTokens: ["source"],
+  };
+}
+
+export function toSourceBoardModel(input: SourceAdapterInput): BoardSeedModel {
+  const groupId = "source:lane";
+  const setLabelsById: Record<SetId, string> = {};
+  const itemIds = input.cards.map((card) => {
+    const sid = `source:${card.id}`;
+    setLabelsById[sid] = card.name?.trim() || card.id;
+    return sid;
+  });
+
+  return {
+    boardId: "source",
+    groupIds: [groupId],
+    itemsByGroup: { [groupId]: itemIds },
+    groupLabelsById: { [groupId]: "Cards" },
+    setLabelsById,
+    emitToken: "source",
+    acceptTokens: [],
+  };
+}
+
+export default function DeckGroupsBoardController() {
   const model = useDeckSortableBoardViewModel("groups", BOARD_ROUTING_META_BY_ID.groups);
   return <DeckSortableBoardView model={model} layoutMode="content" />;
 }
 
-export function DeckEntriesBoardMock({
+export function DeckEntriesBoardController({
   layoutMode = "fill-parent",
 }: {
   layoutMode?: LayoutMode;
@@ -706,7 +1235,11 @@ export function DeckEntriesBoardMock({
   return <DeckSortableBoardView model={model} layoutMode={layoutMode} />;
 }
 
-export function DeckSourceBoardMock({ layoutMode = "fill-parent" }: { layoutMode?: LayoutMode }) {
+export function DeckSourceBoardController({ layoutMode = "fill-parent" }: { layoutMode?: LayoutMode }) {
   const model = useDeckSortableBoardViewModel("source", BOARD_ROUTING_META_BY_ID.source);
   return <DeckSortableBoardView model={model} layoutMode={layoutMode} />;
 }
+
+export const DeckGroupsBoardMock = DeckGroupsBoardController;
+export const DeckEntriesBoardMock = DeckEntriesBoardController;
+export const DeckSourceBoardMock = DeckSourceBoardController;

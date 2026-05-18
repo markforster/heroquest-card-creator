@@ -11,6 +11,7 @@ export function useDeckRightPanelModel() {
   const [isRightPanelVisible, setIsRightPanelVisible] = useState(true);
   const [backFilter, setBackFilter] = useState<DeckFaceFilter>({ type: "all" });
   const [rightPanelFaceMode, setRightPanelFaceMode] = useState<RightPanelFaceMode>("back");
+  const [sourceSearch, setSourceSearch] = useState("");
 
   const collectionsQuery = useListCollections(undefined, {
     enabled: isRightPanelVisible,
@@ -39,6 +40,8 @@ export function useDeckRightPanelModel() {
     setBackFilter,
     rightPanelFaceMode,
     setRightPanelFaceMode,
+    sourceSearch,
+    setSourceSearch,
     backCollections: collectionsQuery.data ?? [],
     backCards: cardsQuery.data ?? [],
     rightPanelEmptyLabel,
