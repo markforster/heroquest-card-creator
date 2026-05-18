@@ -191,6 +191,8 @@ const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
   },
 };
 
+const SHOW_GROUP_HEADINGS = false;
+
 export const BOARD_ROUTING_META_BY_ID: Record<BoardId, BoardRoutingMeta> = {
   groups: { emitToken: "set", acceptTokens: ["source-back"] },
   entries: { emitToken: "entry", acceptTokens: ["source-front"] },
@@ -397,12 +399,14 @@ function GroupColumn({
   children,
   fillParent,
   canReceiveDrops,
+  showHeader,
 }: {
   groupId: GroupId;
   label?: string;
   children: React.ReactNode;
   fillParent: boolean;
   canReceiveDrops: boolean;
+  showHeader: boolean;
 }) {
   const { ref } = useDroppable({
     id: groupId,
@@ -416,12 +420,14 @@ function GroupColumn({
       ref={ref}
       data-testid={`group-${groupId}`}
     >
-      <header className={styles.groupHeader}>
-        <span>{label ?? parseGroupLabel(groupId)}</span>
-        <span className={styles.grip} aria-hidden="true">
-          ⠿
-        </span>
-      </header>
+      {showHeader ? (
+        <header className={styles.groupHeader}>
+          <span>{label ?? parseGroupLabel(groupId)}</span>
+          <span className={styles.grip} aria-hidden="true">
+            ⠿
+          </span>
+        </header>
+      ) : null}
       <div
         className={[styles.groupBody, fillParent ? styles.groupBodyFillParent : ""]
           .filter(Boolean)
@@ -712,6 +718,7 @@ export function DeckSortableBoardView({
                 label={model.groupLabelsById[groupId]}
                 fillParent={useFillParent}
                 canReceiveDrops={config.allowDropTarget}
+                showHeader={SHOW_GROUP_HEADINGS}
               >
                 {(() => {
                   const groupSetIds = itemsByGroup[groupId] ?? [];
