@@ -128,6 +128,7 @@ type DeckMockDndContextValue = {
   groupLabelsById: Record<GroupId, string>;
   activeSetId: SetId | null;
   activeTargetBoardId: BoardId | null;
+  dragAffordanceByBoard: Record<BoardId, boolean>;
   hoverBoundaryByBoard: Record<BoardId, number | null>;
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
   handleHoverBoundary: (boardId: BoardId, clientX: number) => void;
@@ -146,6 +147,7 @@ export type DeckSortableBoardViewModel = {
   setLabelsById: Record<SetId, string>;
   activeSetId: SetId | null;
   activeTargetBoardId: BoardId | null;
+  showDropAffordance: boolean;
   hoverBoundaryIndex: number | null;
   onHoverBoundary: (clientX: number) => void;
   onLeaveBoard: () => void;
@@ -335,6 +337,36 @@ function resolveSourceDragToken({
   if (face === "front") return "source-front";
   if (face === "back") return "source-back";
   return null;
+}
+
+function emptyAffordanceState(): Record<BoardId, boolean> {
+  return {
+    groups: false,
+    entries: false,
+    source: false,
+  };
+}
+
+function computeAffordanceByBoard({
+  sourceBoardId,
+  sourceEmitToken,
+  routingById,
+}: {
+  sourceBoardId: BoardId | null;
+  sourceEmitToken: DragRouteToken | null;
+  routingById: Record<BoardId, BoardRoutingMeta>;
+}): Record<BoardId, boolean> {
+  if (sourceBoardId !== "source" || !sourceEmitToken) {
+    return emptyAffordanceState();
+  }
+  const next = emptyAffordanceState();
+  (Object.keys(BOARD_CONFIGS) as BoardId[]).forEach((boardId) => {
+    if (!BOARD_CONFIGS[boardId].allowDropTarget) return;
+    if (routingById[boardId].acceptTokens.includes(sourceEmitToken)) {
+      next[boardId] = true;
+    }
+  });
+  return next;
 }
 
 function findGroupIdBySetId(itemsByGroup: Record<GroupId, SetId[]>, setId: SetId): GroupId | null {
@@ -671,8 +703,12 @@ export function DeckSortableBoardView({
   return (
     <section
       className={[styles.board, useFillParent ? styles.boardFillParent : ""]
-        .concat(activeSetId ? [" ", styles.boardDropActive] : [])
-        .concat(activeSetId && activeTargetBoardId === config.boardId ? [" ", styles.boardDropOver] : [])
+        .concat(model.showDropAffordance ? [" ", styles.boardDropActive] : [])
+        .concat(
+          model.showDropAffordance && activeTargetBoardId === config.boardId
+            ? [" ", styles.boardDropOver]
+            : [],
+        )
         .filter(Boolean)
         .join(" ")}
       data-testid={`board-${config.boardId}`}
@@ -795,6 +831,9 @@ export function DeckMockDndProvider({
   );
   const [activeSetId, setActiveSetId] = useState<SetId | null>(null);
   const [activeTargetBoardId, setActiveTargetBoardId] = useState<BoardId | null>(null);
+  const [dragAffordanceByBoard, setDragAffordanceByBoard] = useState<Record<BoardId, boolean>>(
+    emptyAffordanceState(),
+  );
   const [hoverBoundaryByBoard, setHoverBoundaryByBoard] = useState<Record<BoardId, number | null>>({
     groups: null,
     entries: null,
@@ -952,13 +991,29 @@ export function DeckMockDndProvider({
   const handleDragStart = (event: DragStartEvent) => {
     if (event.operation.source?.type !== "set") return;
     const sourceSetId = String(event.operation.source.id);
-    sourceGroupIdAtDragStartRef.current =
+    const sourceGroupId =
       extractGroupIdFromOperationEntity(event.operation.source) ||
       findGroupIdBySetId(state.itemsByGroup, sourceSetId) ||
       null;
+    sourceGroupIdAtDragStartRef.current = sourceGroupId;
     previousState.current = state;
     setActiveSetId(String(event.operation.source.id));
     setActiveTargetBoardId(null);
+    const sourceBoardId = sourceGroupId ? (state.groupToBoard[sourceGroupId] ?? null) : null;
+    const sourceRouting = sourceBoardId ? boardRoutingById.current[sourceBoardId] : null;
+    const sourceEmitToken = resolveSourceDragToken({
+      sourceBoardId,
+      sourceSetId,
+      sourceRoutingToken: sourceRouting?.emitToken ?? null,
+      sourceItemFaceBySetId: sourceItemFaceBySetIdRef.current,
+    });
+    setDragAffordanceByBoard(
+      computeAffordanceByBoard({
+        sourceBoardId,
+        sourceEmitToken,
+        routingById: boardRoutingById.current,
+      }),
+    );
     setHoverBoundaryByBoard({ groups: null, entries: null, source: null });
   };
 
@@ -1051,6 +1106,7 @@ export function DeckMockDndProvider({
     if (event.operation.source?.type !== "set") {
       setActiveSetId(null);
       setActiveTargetBoardId(null);
+      setDragAffordanceByBoard(emptyAffordanceState());
       return;
     }
 
@@ -1061,6 +1117,7 @@ export function DeckMockDndProvider({
       });
       setActiveSetId(null);
       setActiveTargetBoardId(null);
+      setDragAffordanceByBoard(emptyAffordanceState());
       sourceGroupIdAtDragStartRef.current = null;
       return;
     }
@@ -1106,6 +1163,7 @@ export function DeckMockDndProvider({
 
     setActiveSetId(null);
     setActiveTargetBoardId(null);
+    setDragAffordanceByBoard(emptyAffordanceState());
     sourceGroupIdAtDragStartRef.current = null;
 
     const normalizedSetId = sourceSetId.startsWith("set:") ? sourceSetId.slice(4) : "";
@@ -1304,6 +1362,7 @@ export function DeckMockDndProvider({
         groupLabelsById,
         activeSetId,
         activeTargetBoardId,
+        dragAffordanceByBoard,
         hoverBoundaryByBoard,
         registerGroupRef,
         handleHoverBoundary,
@@ -1362,6 +1421,7 @@ export function useDeckSortableBoardViewModel(
     groupLabelsById,
     activeSetId,
     activeTargetBoardId,
+    dragAffordanceByBoard,
     hoverBoundaryByBoard,
     registerGroupRef,
     handleHoverBoundary,
@@ -1379,6 +1439,7 @@ export function useDeckSortableBoardViewModel(
     setLabelsById,
     activeSetId,
     activeTargetBoardId,
+    showDropAffordance: dragAffordanceByBoard[boardId] ?? false,
     hoverBoundaryIndex: hoverBoundaryByBoard[boardId],
     onHoverBoundary: (clientX: number) => handleHoverBoundary(boardId, clientX),
     onLeaveBoard: () => handleLeaveBoard(boardId),
