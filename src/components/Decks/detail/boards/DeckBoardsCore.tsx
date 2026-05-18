@@ -282,10 +282,6 @@ function collectLabels(boardSeeds: Record<BoardId, BoardSeedModel>) {
   return { groupLabelsById, setLabelsById, setCardIdById };
 }
 
-function canMove(_sourceGroupId: GroupId, _targetGroupId: GroupId, _setId: SetId): boolean {
-  return true;
-}
-
 function canRouteDrag({
   sourceBoardId,
   sourceGroupId,
@@ -785,11 +781,8 @@ export function DeckMockDndProvider({
   boardSeeds,
 }: {
   children: React.ReactNode;
-  boardSeeds?: Record<BoardId, BoardSeedModel>;
+  boardSeeds: Record<BoardId, BoardSeedModel>;
 }) {
-  if (!boardSeeds) {
-    throw new Error("DeckMockDndProvider requires boardSeeds");
-  }
   const initialState = useMemo(() => createDnDStateFromSeeds(boardSeeds), [boardSeeds]);
   const initialLabels = useMemo(() => collectLabels(boardSeeds), [boardSeeds]);
   const [state, setState] = useState<DnDState>(initialState);
@@ -831,6 +824,7 @@ export function DeckMockDndProvider({
   const groupRefs = useRef<Map<GroupId, HTMLElement>>(new Map());
   const handlersRef = useRef<Map<string, DeckDropHandler>>(new Map());
   const lastPublishedDragIdRef = useRef<string | null>(null);
+  const dragSequenceRef = useRef<number>(0);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -1009,11 +1003,6 @@ export function DeckMockDndProvider({
       event.preventDefault?.();
       return;
     }
-    if (!canMove(sourceGroupId, targetGroupId, sourceSetId)) {
-      event.preventDefault?.();
-      return;
-    }
-
     // Source items are templates for persisted create operations.
     // Show a single in-flow pending placeholder for source -> groups.
     if (sourceBoardId === "source") {
@@ -1123,7 +1112,8 @@ export function DeckMockDndProvider({
       .filter((id) => id.startsWith("set:"))
       .map((id) => id.slice(4));
 
-    const dragId = `drag:${Date.now()}:${sourceSetId}`;
+    dragSequenceRef.current += 1;
+    const dragId = `drag:${Date.now()}:${dragSequenceRef.current}:${sourceSetId}`;
     if (lastPublishedDragIdRef.current === dragId) return;
     lastPublishedDragIdRef.current = dragId;
 
