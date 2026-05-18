@@ -13,6 +13,9 @@ import { move } from "@dnd-kit/helpers";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { apiClient } from "@/api/client";
+import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
+import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
 
 
 import styles from "./DeckGroupsSection2.module.css";
@@ -38,14 +41,15 @@ type DnDState = {
   groupToBoard: Record<GroupId, BoardId>;
 };
 
-type SetMovedPayload = {
-  setId: string;
-  sourceGroupId: string;
-  targetGroupId: string;
-  sourceGroupEmptyAfterDrop: boolean;
+type DeckDnDEventBase = {
+  dragId: string;
+  timestamp: number;
+  sourceBoardId: BoardId;
+  targetBoardId: BoardId;
 };
 
-type GroupsSetsReorderedPayload = {
+type GroupsReorderSetsEvent = DeckDnDEventBase & {
+  kind: "GROUPS_REORDER_SETS";
   setId: string;
   sourceGroupId: string;
   targetGroupId: string;
@@ -54,13 +58,8 @@ type GroupsSetsReorderedPayload = {
   sourceGroupEmptyAfterDrop: boolean;
 };
 
-type SourceSetDroppedToGroupPayload = {
-  backFaceId: string;
-  targetGroupId: string;
-  targetIndex: number;
-};
-
-type SetDroppedToNewGroupPayload = {
+type GroupsDropSetToNewGroupEvent = DeckDnDEventBase & {
+  kind: "GROUPS_DROP_SET_TO_NEW_GROUP";
   setId: string;
   sourceGroupId: string;
   targetGroupIndex: number;
@@ -68,10 +67,46 @@ type SetDroppedToNewGroupPayload = {
   sourceGroupEmptyAfterDrop: boolean;
 };
 
-type SourceSetDroppedToNewGroupPayload = {
+type GroupsDropSourceCardToGroupEvent = DeckDnDEventBase & {
+  kind: "GROUPS_DROP_SOURCE_CARD_TO_GROUP";
+  backFaceId: string;
+  targetGroupId: string;
+  targetIndex: number;
+};
+
+type GroupsDropSourceCardToNewGroupEvent = DeckDnDEventBase & {
+  kind: "GROUPS_DROP_SOURCE_CARD_TO_NEW_GROUP";
   backFaceId: string;
   targetGroupIndex: number;
 };
+
+type EntriesReorderEvent = DeckDnDEventBase & {
+  kind: "ENTRIES_REORDER";
+  orderedEntryIds: string[];
+};
+
+type EntriesDropSourceToEntriesEvent = DeckDnDEventBase & {
+  kind: "ENTRIES_DROP_SOURCE_TO_ENTRIES";
+  backFaceId: string;
+  targetIndex: number;
+};
+
+type DeckDnDEvent =
+  | GroupsReorderSetsEvent
+  | GroupsDropSetToNewGroupEvent
+  | GroupsDropSourceCardToGroupEvent
+  | GroupsDropSourceCardToNewGroupEvent
+  | EntriesReorderEvent
+  | EntriesDropSourceToEntriesEvent;
+
+type DeckDnDEventResult = {
+  handled: boolean;
+  success: boolean;
+  fatal?: boolean;
+  reason?: string;
+};
+
+type DeckDropHandler = (event: DeckDnDEvent) => Promise<DeckDnDEventResult | null>;
 
 export type BoardSeedModel = {
   boardId: BoardId;
@@ -95,6 +130,7 @@ type DeckMockDndContextValue = {
   handleHoverBoundary: (boardId: BoardId, clientX: number) => void;
   handleLeaveBoard: (boardId: BoardId) => void;
   createGroupAtIndex: (boardId: BoardId, index: number) => void;
+  registerDropHandler: (controllerId: string, handler: DeckDropHandler) => () => void;
 };
 
 type DeckSortableBoardViewModel = {
@@ -669,19 +705,9 @@ function DeckSortableBoardView({
 export function DeckMockDndProvider({
   children,
   boardSeeds,
-  onSetMovedAcrossGroups,
-  onSourceSetDroppedToGroup,
-  onGroupsSetsReordered,
-  onSetDroppedToNewGroup,
-  onSourceSetDroppedToNewGroup,
 }: {
   children: React.ReactNode;
   boardSeeds?: Record<BoardId, BoardSeedModel>;
-  onSetMovedAcrossGroups?: (payload: SetMovedPayload) => Promise<void> | void;
-  onSourceSetDroppedToGroup?: (payload: SourceSetDroppedToGroupPayload) => Promise<void> | void;
-  onGroupsSetsReordered?: (payload: GroupsSetsReorderedPayload) => Promise<void> | void;
-  onSetDroppedToNewGroup?: (payload: SetDroppedToNewGroupPayload) => Promise<void> | void;
-  onSourceSetDroppedToNewGroup?: (payload: SourceSetDroppedToNewGroupPayload) => Promise<void> | void;
 }) {
   const resolvedBoardSeeds = boardSeeds ?? DEFAULT_BOARD_SEEDS;
   const initialState = useMemo(() => createDnDStateFromSeeds(resolvedBoardSeeds), [resolvedBoardSeeds]);
@@ -719,6 +745,8 @@ export function DeckMockDndProvider({
   const sourceGroupIdAtDragStartRef = useRef<GroupId | null>(null);
   const nextGroupIdRef = useRef<number>(1);
   const groupRefs = useRef<Map<GroupId, HTMLElement>>(new Map());
+  const handlersRef = useRef<Map<string, DeckDropHandler>>(new Map());
+  const lastPublishedDragIdRef = useRef<string | null>(null);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -824,6 +852,13 @@ export function DeckMockDndProvider({
     });
 
     setEphemeralEmptyGroupId(newGroupId);
+  };
+
+  const registerDropHandler = (controllerId: string, handler: DeckDropHandler) => {
+    handlersRef.current.set(controllerId, handler);
+    return () => {
+      handlersRef.current.delete(controllerId);
+    };
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -960,6 +995,7 @@ export function DeckMockDndProvider({
     sourceGroupIdAtDragStartRef.current = null;
 
     const normalizedSetId = sourceSetId.startsWith("set:") ? sourceSetId.slice(4) : "";
+    const normalizedEntryId = sourceSetId.startsWith("entry:") ? sourceSetId.slice(6) : "";
     const normalizedSourceGroupId = sourceGroupId.startsWith("group:") ? sourceGroupId.slice(6) : "";
     const normalizedTargetGroupId = targetGroupId.startsWith("group:") ? targetGroupId.slice(6) : "";
     const isTempTargetGroup = targetGroupId.startsWith("groups:N");
@@ -973,91 +1009,143 @@ export function DeckMockDndProvider({
       .filter((id) => id.startsWith("set:"))
       .map((id) => id.slice(4));
 
-    if (
-      normalizedSetId &&
-      normalizedSourceGroupId &&
-      normalizedTargetGroupId &&
-      normalizedSourceGroupId !== normalizedTargetGroupId
-    ) {
-      const payload: SetMovedPayload = {
-        setId: normalizedSetId,
-        sourceGroupId: normalizedSourceGroupId,
-        targetGroupId: normalizedTargetGroupId,
-        sourceGroupEmptyAfterDrop:
-          sourceBoardId === "groups" &&
-          targetBoardId === "groups" &&
-          normalizedSourceGroupId !== normalizedTargetGroupId &&
-          normalizedSourceSetIds.length === 0,
-      };
-      void onSetMovedAcrossGroups?.(payload);
+    const dragId = `drag:${Date.now()}:${sourceSetId}`;
+    if (lastPublishedDragIdRef.current === dragId) return;
+    lastPublishedDragIdRef.current = dragId;
+
+    const events: DeckDnDEvent[] = [];
+    const eventBase =
+      sourceBoardId && targetBoardId
+        ? ({
+            dragId,
+            timestamp: Date.now(),
+            sourceBoardId,
+            targetBoardId,
+          } as const)
+        : null;
+
+    if (eventBase) {
+      if (
+        isTempTargetGroup &&
+        sourceBoardId === "groups" &&
+        targetBoardId === "groups" &&
+        normalizedSetId &&
+        normalizedSourceGroupId
+      ) {
+        events.push({
+          kind: "GROUPS_DROP_SET_TO_NEW_GROUP",
+          ...eventBase,
+          setId: normalizedSetId,
+          sourceGroupId: normalizedSourceGroupId,
+          targetGroupIndex: targetGroupIndex < 0 ? state.groupOrderByBoard.groups.length : targetGroupIndex,
+          orderedSourceSetIds: normalizedSourceSetIds,
+          sourceGroupEmptyAfterDrop: normalizedSourceSetIds.length === 0,
+        });
+      } else if (
+        normalizedSetId &&
+        normalizedSourceGroupId &&
+        normalizedTargetGroupId &&
+        sourceBoardId === "groups" &&
+        targetBoardId === "groups"
+      ) {
+        events.push({
+          kind: "GROUPS_REORDER_SETS",
+          ...eventBase,
+          setId: normalizedSetId,
+          sourceGroupId: normalizedSourceGroupId,
+          targetGroupId: normalizedTargetGroupId,
+          orderedTargetSetIds: normalizedTargetSetIds,
+          orderedSourceSetIds:
+            normalizedSourceGroupId === normalizedTargetGroupId
+              ? normalizedTargetSetIds
+              : normalizedSourceSetIds,
+          sourceGroupEmptyAfterDrop:
+            normalizedSourceGroupId !== normalizedTargetGroupId && normalizedSourceSetIds.length === 0,
+        });
+      }
+
+      const normalizedBackFaceId = sourceSetId.startsWith("source:") ? sourceSetId.slice(7) : "";
+      if (
+        normalizedBackFaceId &&
+        sourceBoardId === "source" &&
+        targetBoardId === "groups" &&
+        normalizedTargetGroupId &&
+        !isTempTargetGroup
+      ) {
+        events.push({
+          kind: "GROUPS_DROP_SOURCE_CARD_TO_GROUP",
+          ...eventBase,
+          backFaceId: normalizedBackFaceId,
+          targetGroupId: normalizedTargetGroupId,
+          targetIndex: sourcePreviewTargetIndex ?? (state.itemsByGroup[targetGroupId]?.length ?? 0),
+        });
+      }
+
+      if (
+        normalizedBackFaceId &&
+        sourceBoardId === "source" &&
+        targetBoardId === "groups" &&
+        isTempTargetGroup
+      ) {
+        events.push({
+          kind: "GROUPS_DROP_SOURCE_CARD_TO_NEW_GROUP",
+          ...eventBase,
+          backFaceId: normalizedBackFaceId,
+          targetGroupIndex: targetGroupIndex < 0 ? state.groupOrderByBoard.groups.length : targetGroupIndex,
+        });
+      }
+
+      if (
+        normalizedEntryId &&
+        sourceBoardId === "entries" &&
+        targetBoardId === "entries"
+      ) {
+        const orderedEntryIds = (state.itemsByGroup[targetGroupId] ?? [])
+          .filter((id) => id.startsWith("entry:"))
+          .map((id) => id.slice(6));
+        events.push({
+          kind: "ENTRIES_REORDER",
+          ...eventBase,
+          orderedEntryIds,
+        });
+      }
+
+      if (normalizedBackFaceId && sourceBoardId === "source" && targetBoardId === "entries") {
+        const targetItems = state.itemsByGroup[targetGroupId] ?? [];
+        const fallbackIndex = targetItems.length;
+        const targetIndex =
+          event.operation.target?.type === "group"
+            ? fallbackIndex
+            : Math.max(0, targetItems.indexOf(targetId));
+        events.push({
+          kind: "ENTRIES_DROP_SOURCE_TO_ENTRIES",
+          ...eventBase,
+          backFaceId: normalizedBackFaceId,
+          targetIndex,
+        });
+      }
     }
 
-    if (
-      isTempTargetGroup &&
-      sourceBoardId === "groups" &&
-      targetBoardId === "groups" &&
-      normalizedSetId &&
-      normalizedSourceGroupId
-    ) {
-      void onSetDroppedToNewGroup?.({
-        setId: normalizedSetId,
-        sourceGroupId: normalizedSourceGroupId,
-        targetGroupIndex: targetGroupIndex < 0 ? state.groupOrderByBoard.groups.length : targetGroupIndex,
-        orderedSourceSetIds: normalizedSourceSetIds,
-        sourceGroupEmptyAfterDrop: normalizedSourceSetIds.length === 0,
-      });
-    }
+    if (events.length === 0 || handlersRef.current.size === 0) return;
 
-    if (
-      normalizedSetId &&
-      normalizedSourceGroupId &&
-      normalizedTargetGroupId &&
-      sourceBoardId === "groups" &&
-      targetBoardId === "groups" &&
-      !isTempTargetGroup
-    ) {
-      void onGroupsSetsReordered?.({
-        setId: normalizedSetId,
-        sourceGroupId: normalizedSourceGroupId,
-        targetGroupId: normalizedTargetGroupId,
-        orderedTargetSetIds: normalizedTargetSetIds,
-        orderedSourceSetIds:
-          normalizedSourceGroupId === normalizedTargetGroupId
-            ? normalizedTargetSetIds
-            : normalizedSourceSetIds,
-        sourceGroupEmptyAfterDrop:
-          normalizedSourceGroupId !== normalizedTargetGroupId &&
-          normalizedSourceSetIds.length === 0,
-      });
-    }
-
-    const normalizedBackFaceId = sourceSetId.startsWith("source:") ? sourceSetId.slice(7) : "";
-    if (
-      normalizedBackFaceId &&
-      sourceBoardId === "source" &&
-      targetBoardId === "groups" &&
-      normalizedTargetGroupId &&
-      !isTempTargetGroup
-    ) {
-      const payload: SourceSetDroppedToGroupPayload = {
-        backFaceId: normalizedBackFaceId,
-        targetGroupId: normalizedTargetGroupId,
-        targetIndex: sourcePreviewTargetIndex ?? (state.itemsByGroup[targetGroupId]?.length ?? 0),
-      };
-      void onSourceSetDroppedToGroup?.(payload);
-    }
-
-    if (
-      normalizedBackFaceId &&
-      sourceBoardId === "source" &&
-      targetBoardId === "groups" &&
-      isTempTargetGroup
-    ) {
-      void onSourceSetDroppedToNewGroup?.({
-        backFaceId: normalizedBackFaceId,
-        targetGroupIndex: targetGroupIndex < 0 ? state.groupOrderByBoard.groups.length : targetGroupIndex,
-      });
-    }
+    void (async () => {
+      const handlers = [...handlersRef.current.values()];
+      const settled = await Promise.allSettled(
+        handlers.flatMap((handler) => events.map((eventPayload) => handler(eventPayload))),
+      );
+      const hasFatal = settled.some(
+        (result) =>
+          result.status === "rejected" ||
+          (result.status === "fulfilled" &&
+            result.value !== null &&
+            result.value.handled &&
+            !result.value.success &&
+            result.value.fatal),
+      );
+      if (hasFatal) {
+        setState(previousState.current);
+      }
+    })();
   };
 
   return (
@@ -1074,6 +1162,7 @@ export function DeckMockDndProvider({
         handleHoverBoundary,
         handleLeaveBoard,
         createGroupAtIndex,
+        registerDropHandler,
       }}
     >
       <DragDropProvider
@@ -1221,8 +1310,125 @@ export function toSourceBoardModel(input: SourceAdapterInput): BoardSeedModel {
   };
 }
 
-export default function DeckGroupsBoardController() {
+async function deleteGroupIfEmpty(groupId: string, isEmpty: boolean): Promise<void> {
+  if (!isEmpty || !groupId) return;
+  try {
+    await apiClient.deleteDeckGroup(undefined, { params: { groupId } });
+  } catch {
+    // Non-fatal; reload will re-sync.
+  }
+}
+
+export default function DeckGroupsBoardController({ deckId }: { deckId: string | null }) {
+  let selection: ReturnType<typeof useDeckDetailSelection> | null = null;
+  try {
+    selection = useDeckDetailSelection();
+  } catch {
+    selection = null;
+  }
+  const { registerDropHandler } = useDeckMockDnd();
   const model = useDeckSortableBoardViewModel("groups", BOARD_ROUTING_META_BY_ID.groups);
+
+  useEffect(() => {
+    if (!selection) return () => undefined;
+    return registerDropHandler("groups-controller", async (event) => {
+      if (event.kind === "GROUPS_REORDER_SETS") {
+        const isCrossGroup = event.sourceGroupId !== event.targetGroupId;
+        if (isCrossGroup) {
+          await apiClient.updateDeckSet(
+            { groupId: event.targetGroupId },
+            { params: { setId: event.setId } },
+          );
+        }
+        if (event.orderedTargetSetIds.length > 0) {
+          await apiClient.reorderDeckSets(
+            { orderedSetIds: event.orderedTargetSetIds },
+            { params: { setId: event.orderedTargetSetIds[0] } },
+          );
+        }
+        if (isCrossGroup && event.orderedSourceSetIds.length > 0) {
+          await apiClient.reorderDeckSets(
+            { orderedSetIds: event.orderedSourceSetIds },
+            { params: { setId: event.orderedSourceSetIds[0] } },
+          );
+        }
+        await deleteGroupIfEmpty(event.sourceGroupId, event.sourceGroupEmptyAfterDrop);
+        await selection.reloadStructure(selection.selectedSetId);
+        return { handled: true, success: true };
+      }
+
+      if (event.kind === "GROUPS_DROP_SET_TO_NEW_GROUP") {
+        if (!deckId) return { handled: true, success: false, fatal: true, reason: "missing deckId" };
+        const createdGroup = await apiClient.createDeckGroup(
+          { title: "New Group" },
+          { params: { deckId } },
+        );
+        const orderedGroupIds = selection.orderedGroups.map((group) => group.id);
+        const insertionIndex = Math.max(0, Math.min(event.targetGroupIndex, orderedGroupIds.length));
+        const nextGroupOrder = orderedGroupIds.slice();
+        nextGroupOrder.splice(insertionIndex, 0, createdGroup.id);
+        await apiClient.reorderDeckGroups({ orderedGroupIds: nextGroupOrder }, { params: { deckId } });
+        await apiClient.updateDeckSet({ groupId: createdGroup.id }, { params: { setId: event.setId } });
+        await apiClient.reorderDeckSets({ orderedSetIds: [event.setId] }, { params: { setId: event.setId } });
+        if (event.orderedSourceSetIds.length > 0) {
+          await apiClient.reorderDeckSets(
+            { orderedSetIds: event.orderedSourceSetIds },
+            { params: { setId: event.orderedSourceSetIds[0] } },
+          );
+        }
+        await deleteGroupIfEmpty(event.sourceGroupId, event.sourceGroupEmptyAfterDrop);
+        await selection.reloadStructure(selection.selectedSetId);
+        return { handled: true, success: true };
+      }
+
+      if (event.kind === "GROUPS_DROP_SOURCE_CARD_TO_GROUP") {
+        if (!deckId) return { handled: true, success: false, fatal: true, reason: "missing deckId" };
+        const created = await apiClient.createDeckSet({
+          deckId,
+          groupId: event.targetGroupId,
+          backFaceId: event.backFaceId,
+          title: "New Set",
+          description: null,
+        });
+        const orderedTargetSetIds = selection.sets
+          .filter((set) => set.groupId === event.targetGroupId)
+          .sort((a, b) => a.sortIndex - b.sortIndex)
+          .map((set) => set.id);
+        const clampedIndex = Math.max(0, Math.min(event.targetIndex, orderedTargetSetIds.length));
+        const nextOrdered = orderedTargetSetIds.slice();
+        nextOrdered.splice(clampedIndex, 0, created.id);
+        await apiClient.reorderDeckSets({ orderedSetIds: nextOrdered }, { params: { setId: created.id } });
+        await selection.reloadStructure(selection.selectedSetId);
+        return { handled: true, success: true };
+      }
+
+      if (event.kind === "GROUPS_DROP_SOURCE_CARD_TO_NEW_GROUP") {
+        if (!deckId) return { handled: true, success: false, fatal: true, reason: "missing deckId" };
+        const createdGroup = await apiClient.createDeckGroup(
+          { title: "New Group" },
+          { params: { deckId } },
+        );
+        const orderedGroupIds = selection.orderedGroups.map((group) => group.id);
+        const insertionIndex = Math.max(0, Math.min(event.targetGroupIndex, orderedGroupIds.length));
+        const nextGroupOrder = orderedGroupIds.slice();
+        nextGroupOrder.splice(insertionIndex, 0, createdGroup.id);
+        await apiClient.reorderDeckGroups({ orderedGroupIds: nextGroupOrder }, { params: { deckId } });
+        const createdSet = await apiClient.createDeckSet({
+          deckId,
+          groupId: createdGroup.id,
+          backFaceId: event.backFaceId,
+          title: "New Set",
+          description: null,
+        });
+        await apiClient.reorderDeckSets({ orderedSetIds: [createdSet.id] }, { params: { setId: createdSet.id } });
+        await selection.reloadStructure(selection.selectedSetId);
+        return { handled: true, success: true };
+      }
+
+      return null;
+    });
+  }, [deckId, registerDropHandler, selection]);
+
   return <DeckSortableBoardView model={model} layoutMode="content" />;
 }
 
@@ -1231,12 +1437,38 @@ export function DeckEntriesBoardController({
 }: {
   layoutMode?: LayoutMode;
 }) {
+  let entries: ReturnType<typeof useDeckSetEntries> | null = null;
+  try {
+    entries = useDeckSetEntries();
+  } catch {
+    entries = null;
+  }
+  const { registerDropHandler } = useDeckMockDnd();
   const model = useDeckSortableBoardViewModel("entries", BOARD_ROUTING_META_BY_ID.entries);
+
+  useEffect(() => {
+    if (!entries) return () => undefined;
+    return registerDropHandler("entries-controller", async (event) => {
+      if (event.kind === "ENTRIES_REORDER") {
+        await entries.reorderEntries(event.orderedEntryIds);
+        return { handled: true, success: true };
+      }
+      if (event.kind === "ENTRIES_DROP_SOURCE_TO_ENTRIES") {
+        // Source currently emits back-face ids. Entry insertion persistence is deferred until
+        // source token provides front-face compatible ids.
+        return { handled: true, success: true };
+      }
+      return null;
+    });
+  }, [entries, registerDropHandler]);
+
   return <DeckSortableBoardView model={model} layoutMode={layoutMode} />;
 }
 
 export function DeckSourceBoardController({ layoutMode = "fill-parent" }: { layoutMode?: LayoutMode }) {
+  const { registerDropHandler } = useDeckMockDnd();
   const model = useDeckSortableBoardViewModel("source", BOARD_ROUTING_META_BY_ID.source);
+  useEffect(() => registerDropHandler("source-controller", async () => null), [registerDropHandler]);
   return <DeckSortableBoardView model={model} layoutMode={layoutMode} />;
 }
 

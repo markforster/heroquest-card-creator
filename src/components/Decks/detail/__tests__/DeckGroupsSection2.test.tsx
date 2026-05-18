@@ -75,7 +75,7 @@ jest.mock("@dnd-kit/helpers", () => ({
 function renderWorkspace() {
   render(
     <DeckMockDndProvider>
-      <DeckGroupsBoardMock />
+      <DeckGroupsBoardMock deckId={null} />
       <DeckEntriesBoardMock />
       <DeckSourceBoardMock />
     </DeckMockDndProvider>,
