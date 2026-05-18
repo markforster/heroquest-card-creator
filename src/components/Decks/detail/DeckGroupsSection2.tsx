@@ -1163,8 +1163,8 @@ export function DeckMockDndProvider({
     const normalizedSourceGroupId = sourceGroupId.startsWith("group:") ? sourceGroupId.slice(6) : "";
     const normalizedTargetGroupId = targetGroupId.startsWith("group:") ? targetGroupId.slice(6) : "";
     const isTempTargetGroup = targetGroupId.startsWith("groups:N");
-    const sourceBoardId = sourceGroupId ? postDropState.groupToBoard[sourceGroupId] ?? null : null;
-    const targetBoardId = targetGroupId ? postDropState.groupToBoard[targetGroupId] ?? null : null;
+    const sourceBoardId = sourceGroupId ? postDropWithoutPending.groupToBoard[sourceGroupId] ?? null : null;
+    const targetBoardId = targetGroupId ? postDropWithoutPending.groupToBoard[targetGroupId] ?? null : null;
     const targetGroupIndex = postDropState.groupOrderByBoard.groups.findIndex((groupId) => groupId === targetGroupId);
     const normalizedTargetSetIds = (postDropState.itemsByGroup[targetGroupId] ?? [])
       .filter((id) => id.startsWith("set:"))
@@ -1745,9 +1745,52 @@ export function DeckEntriesBoardController({
         }
       }
       if (event.kind === "ENTRIES_DROP_SOURCE_TO_ENTRIES") {
-        // Source currently emits back-face ids. Entry insertion persistence is deferred until
-        // source token provides front-face compatible ids.
-        return { handled: true, success: true };
+        if (!entries.setId) {
+          return { handled: true, success: true };
+        }
+        if (lastHandledDragIdRef.current === event.dragId) {
+          return { handled: true, success: true };
+        }
+
+        try {
+          const frontFaceId = event.backFaceId;
+          if (!frontFaceId) {
+            return { handled: true, success: true };
+          }
+
+          const prevEntries = entries.entriesSorted.slice().sort((a, b) => a.sortIndex - b.sortIndex);
+          const createdEntries = await entries.addFront(frontFaceId);
+          if (!createdEntries.length) {
+            lastHandledDragIdRef.current = event.dragId;
+            return { handled: true, success: true };
+          }
+
+          const newEntryId = createdEntries[0]?.id ?? null;
+          if (!newEntryId) {
+            lastHandledDragIdRef.current = event.dragId;
+            return { handled: true, success: true };
+          }
+
+          const ordered = prevEntries.map((entryItem) => entryItem.id).filter((id) => id !== newEntryId);
+          const dropIndex = Math.max(0, Math.min(event.targetIndex, ordered.length));
+          ordered.splice(dropIndex, 0, newEntryId);
+
+          if (typeof entries.reorderEntriesOptimistic === "function") {
+            await entries.reorderEntriesOptimistic(ordered);
+          } else {
+            await entries.reorderEntries(ordered);
+          }
+
+          lastHandledDragIdRef.current = event.dragId;
+          return { handled: true, success: true };
+        } catch (error) {
+          return {
+            handled: true,
+            success: false,
+            fatal: true,
+            reason: error instanceof Error ? error.message : "entries add/reorder failed",
+          };
+        }
       }
       return null;
     });
