@@ -11,11 +11,13 @@ import {
 } from "@dnd-kit/react";
 import { move } from "@dnd-kit/helpers";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { apiClient } from "@/api/client";
+import CardThumbnail from "@/components/common/CardThumbnail";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
+import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 
 
 import styles from "./DeckGroupsSection2.module.css";
@@ -25,6 +27,7 @@ type GroupId = string;
 type SetId = string;
 type LayoutMode = "content" | "fill-parent";
 type DragRouteToken = string;
+type SetRenderState = "idle" | "dragging" | "ghost" | "dropTarget" | "pending" | "overlay";
 
 type BoardConfig = {
   boardId: BoardId;
@@ -114,6 +117,7 @@ export type BoardSeedModel = {
   itemsByGroup: Record<GroupId, SetId[]>;
   groupLabelsById: Record<GroupId, string>;
   setLabelsById: Record<SetId, string>;
+  setCardIdById: Record<SetId, string>;
   emitToken: DragRouteToken;
   acceptTokens: DragRouteToken[];
 };
@@ -121,6 +125,7 @@ export type BoardSeedModel = {
 type DeckMockDndContextValue = {
   state: DnDState;
   setLabelsById: Record<SetId, string>;
+  setCardIdById: Record<SetId, string>;
   groupLabelsById: Record<GroupId, string>;
   activeSetId: SetId | null;
   hoverBoundaryByBoard: Record<BoardId, number | null>;
@@ -146,6 +151,12 @@ type DeckSortableBoardViewModel = {
   onCreateGroupAtIndex: (index: number) => void;
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
   onSetClick?: (setUiId: SetId, groupUiId: GroupId) => void;
+  renderSetContent: (args: {
+    setId: SetId;
+    groupId: GroupId;
+    label?: string;
+    state: SetRenderState;
+  }) => React.ReactNode;
   emptyMessage?: string | null;
 };
 
@@ -205,6 +216,14 @@ const DEFAULT_BOARD_SEEDS: Record<BoardId, BoardSeedModel> = {
       "g-B2": "B2",
       "g-C1": "C1",
     },
+    setCardIdById: {
+      "g-A1": "g-A1",
+      "g-A2": "g-A2",
+      "g-A3": "g-A3",
+      "g-B1": "g-B1",
+      "g-B2": "g-B2",
+      "g-C1": "g-C1",
+    },
     emitToken: "set",
     acceptTokens: ["source"],
   },
@@ -227,6 +246,18 @@ const DEFAULT_BOARD_SEEDS: Record<BoardId, BoardSeedModel> = {
       "e-9": "E-9",
       "e-10": "E-10",
     },
+    setCardIdById: {
+      "e-1": "e-1",
+      "e-2": "e-2",
+      "e-3": "e-3",
+      "e-4": "e-4",
+      "e-5": "e-5",
+      "e-6": "e-6",
+      "e-7": "e-7",
+      "e-8": "e-8",
+      "e-9": "e-9",
+      "e-10": "e-10",
+    },
     emitToken: "entry",
     acceptTokens: ["source"],
   },
@@ -242,6 +273,12 @@ const DEFAULT_BOARD_SEEDS: Record<BoardId, BoardSeedModel> = {
       "src-2": "SRC-2",
       "src-3": "SRC-3",
       "src-4": "SRC-4",
+    },
+    setCardIdById: {
+      "src-1": "src-1",
+      "src-2": "src-2",
+      "src-3": "src-3",
+      "src-4": "src-4",
     },
     emitToken: "source",
     acceptTokens: [],
@@ -322,13 +359,15 @@ function createDnDStateFromSeeds(boardSeeds: Record<BoardId, BoardSeedModel>): D
 function collectLabels(boardSeeds: Record<BoardId, BoardSeedModel>) {
   const groupLabelsById: Record<GroupId, string> = {};
   const setLabelsById: Record<SetId, string> = {};
+  const setCardIdById: Record<SetId, string> = {};
 
   (Object.keys(boardSeeds) as BoardId[]).forEach((boardId) => {
     Object.assign(groupLabelsById, boardSeeds[boardId].groupLabelsById);
     Object.assign(setLabelsById, boardSeeds[boardId].setLabelsById);
+    Object.assign(setCardIdById, boardSeeds[boardId].setCardIdById);
   });
 
-  return { groupLabelsById, setLabelsById };
+  return { groupLabelsById, setLabelsById, setCardIdById };
 }
 
 function canMove(_sourceGroupId: GroupId, _targetGroupId: GroupId, _setId: SetId): boolean {
@@ -468,17 +507,61 @@ function GroupColumn({
   );
 }
 
+function DefaultSetThumbnailContent({
+  setId,
+  cardId,
+  label,
+  state,
+}: {
+  setId: SetId;
+  cardId?: string;
+  label?: string;
+  state: SetRenderState;
+}) {
+  const thumbUrl = useCardThumbnailUrl(cardId ?? null, null, { enabled: Boolean(cardId), useCache: true });
+  const title = label ?? parseSetLabel(setId);
+  const stateClass =
+    state === "dragging" || state === "overlay"
+      ? styles.setContentDragging
+      : state === "ghost" || state === "pending"
+        ? styles.setContentGhost
+        : state === "dropTarget"
+          ? styles.setContentDropTarget
+          : "";
+
+  return (
+    <div className={[styles.setContent, stateClass].filter(Boolean).join(" ")}>
+      <CardThumbnail
+        src={thumbUrl}
+        alt={title}
+        variant="md"
+        fit="contain"
+        className={styles.setThumb}
+        fallback={<div className={styles.setThumbFallback} />}
+      />
+      <div className={styles.setContentFooter}>
+        <span className={styles.setTitle}>{title}</span>
+        <span className={styles.grip} aria-hidden="true">
+          ⠿
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function SortableSetCard({
   setId,
   label,
   index,
   groupId,
+  renderContent,
   onClick,
 }: {
   setId: SetId;
   label?: string;
   index: number;
   groupId: GroupId;
+  renderContent: DeckSortableBoardViewModel["renderSetContent"];
   onClick?: () => void;
 }) {
   const { ref, isDragging, isDragSource, isDropTarget } = useSortable({
@@ -509,10 +592,18 @@ function SortableSetCard({
           .join(" ")}
         onClick={onClick}
       >
-        <span>{label ?? parseSetLabel(setId)}</span>
-        <span className={styles.grip} aria-hidden="true">
-          ⠿
-        </span>
+        {renderContent({
+          setId,
+          groupId,
+          label,
+          state: isDragging
+            ? "dragging"
+            : isDropTarget
+              ? "dropTarget"
+              : isDragSource
+                ? "ghost"
+                : "idle",
+        })}
       </div>
     </div>
   );
@@ -522,11 +613,13 @@ function DraggableSetCard({
   setId,
   label,
   groupId,
+  renderContent,
   onClick,
 }: {
   setId: SetId;
   label?: string;
   groupId: GroupId;
+  renderContent: DeckSortableBoardViewModel["renderSetContent"];
   onClick?: () => void;
 }) {
   const { ref, handleRef, isDragging } = useDraggable({
@@ -555,36 +648,62 @@ function DraggableSetCard({
         ref={handleRef}
         onClick={onClick}
       >
-        <span>{label ?? parseSetLabel(setId)}</span>
-        <span className={styles.grip} aria-hidden="true">
-          ⠿
-        </span>
+        {renderContent({
+          setId,
+          groupId,
+          label,
+          state: isDragging ? "dragging" : "idle",
+        })}
       </div>
     </div>
   );
 }
 
-function PendingSetCard({ label }: { label: string }) {
+function PendingSetCard({
+  setId,
+  groupId,
+  label,
+  renderContent,
+}: {
+  setId: SetId;
+  groupId: GroupId;
+  label: string;
+  renderContent: DeckSortableBoardViewModel["renderSetContent"];
+}) {
   return (
     <div className={styles.setShell} aria-hidden="true">
       <div className={[styles.setCard, styles.pendingSetCard].join(" ")}>
-        <span>{label}</span>
-        <span className={styles.grip} aria-hidden="true">
-          ⠿
-        </span>
+        {renderContent({
+          setId,
+          groupId,
+          label,
+          state: "pending",
+        })}
       </div>
     </div>
   );
 }
 
-function OverlayCard({ setId, label }: { setId: SetId; label?: string }) {
+function OverlayCard({
+  setId,
+  groupId,
+  label,
+  renderContent,
+}: {
+  setId: SetId;
+  groupId: GroupId;
+  label?: string;
+  renderContent: DeckSortableBoardViewModel["renderSetContent"];
+}) {
   return (
     <div className={styles.overlay}>
       <div className={[styles.setCard, styles.setCardDragging].join(" ")}>
-        <span>{label ?? parseSetLabel(setId)}</span>
-        <span className={styles.grip} aria-hidden="true">
-          ⠿
-        </span>
+        {renderContent({
+          setId,
+          groupId,
+          label,
+          state: "overlay",
+        })}
       </div>
     </div>
   );
@@ -675,7 +794,10 @@ function DeckSortableBoardView({
                     <div key={setId}>
                       {isPendingSetId(setId) ? (
                         <PendingSetCard
+                          setId={activeSetId ?? setId}
+                          groupId={groupId}
                           label={activeSetId ? model.setLabelsById[activeSetId] ?? parseSetLabel(activeSetId) : ""}
+                          renderContent={model.renderSetContent}
                         />
                       ) : null}
                       {!isPendingSetId(setId) && config.allowInGroupSort ? (
@@ -684,6 +806,7 @@ function DeckSortableBoardView({
                           label={model.setLabelsById[setId]}
                           index={setIndex}
                           groupId={groupId}
+                          renderContent={model.renderSetContent}
                           onClick={() => {
                             if (model.activeSetId) return;
                             model.onSetClick?.(setId, groupId);
@@ -695,6 +818,7 @@ function DeckSortableBoardView({
                           setId={setId}
                           label={model.setLabelsById[setId]}
                           groupId={groupId}
+                          renderContent={model.renderSetContent}
                           onClick={() => {
                             if (model.activeSetId) return;
                             model.onSetClick?.(setId, groupId);
@@ -741,6 +865,9 @@ export function DeckMockDndProvider({
     initialLabels.groupLabelsById,
   );
   const [setLabelsById, setSetLabelsById] = useState<Record<SetId, string>>(initialLabels.setLabelsById);
+  const [setCardIdById, setSetCardIdById] = useState<Record<SetId, string>>(
+    initialLabels.setCardIdById,
+  );
   const [activeSetId, setActiveSetId] = useState<SetId | null>(null);
   const [hoverBoundaryByBoard, setHoverBoundaryByBoard] = useState<Record<BoardId, number | null>>({
     groups: null,
@@ -792,10 +919,18 @@ export function DeckMockDndProvider({
     };
     setGroupLabelsById(initialLabels.groupLabelsById);
     setSetLabelsById(initialLabels.setLabelsById);
+    setSetCardIdById(initialLabels.setCardIdById);
     if (activeSetId) return;
     setState(initialState);
     previousState.current = initialState;
-  }, [activeSetId, resolvedBoardSeeds, initialLabels.groupLabelsById, initialLabels.setLabelsById, initialState]);
+  }, [
+    activeSetId,
+    resolvedBoardSeeds,
+    initialLabels.groupLabelsById,
+    initialLabels.setLabelsById,
+    initialLabels.setCardIdById,
+    initialState,
+  ]);
 
   const registerGroupRef = (groupId: GroupId, node: HTMLElement | null) => {
     if (node) {
@@ -1186,6 +1321,7 @@ export function DeckMockDndProvider({
       value={{
         state,
         setLabelsById,
+        setCardIdById,
         groupLabelsById,
         activeSetId,
         hoverBoundaryByBoard,
@@ -1206,7 +1342,19 @@ export function DeckMockDndProvider({
           ? createPortal(
               <DragOverlay>
                 {activeSetId ? (
-                  <OverlayCard setId={activeSetId} label={setLabelsById[activeSetId]} />
+                  <OverlayCard
+                    setId={activeSetId}
+                    groupId={findGroupIdBySetId(state.itemsByGroup, activeSetId) ?? ""}
+                    label={setLabelsById[activeSetId]}
+                    renderContent={({ setId, label, state: renderState }) => (
+                      <DefaultSetThumbnailContent
+                        setId={setId}
+                        cardId={setCardIdById[setId]}
+                        label={label}
+                        state={renderState}
+                      />
+                    )}
+                  />
                 ) : null}
               </DragOverlay>,
               document.body,
@@ -1222,12 +1370,14 @@ function useDeckSortableBoardViewModel(
   routing: BoardRoutingMeta,
   options?: {
     onSetClick?: (setUiId: SetId, groupUiId: GroupId) => void;
+    renderSetContent?: DeckSortableBoardViewModel["renderSetContent"];
     emptyMessage?: string | null;
   },
 ): DeckSortableBoardViewModel {
   const {
     state,
     setLabelsById,
+    setCardIdById,
     groupLabelsById,
     activeSetId,
     hoverBoundaryByBoard,
@@ -1252,6 +1402,16 @@ function useDeckSortableBoardViewModel(
     onCreateGroupAtIndex: (index: number) => createGroupAtIndex(boardId, index),
     registerGroupRef,
     onSetClick: options?.onSetClick,
+    renderSetContent:
+      options?.renderSetContent ??
+      (({ setId, label, state: renderState }) => (
+        <DefaultSetThumbnailContent
+          setId={setId}
+          cardId={setCardIdById[setId]}
+          label={label}
+          state={renderState}
+        />
+      )),
     emptyMessage: options?.emptyMessage ?? null,
   };
 }
@@ -1277,6 +1437,7 @@ export function toGroupsBoardModel(input: GroupsAdapterInput): BoardSeedModel {
   const groupLabelsById: Record<GroupId, string> = {};
   const itemsByGroup: Record<GroupId, SetId[]> = {};
   const setLabelsById: Record<SetId, string> = {};
+  const setCardIdById: Record<SetId, string> = {};
 
   input.orderedGroups.forEach((group) => {
     const gid = `group:${group.id}`;
@@ -1286,6 +1447,7 @@ export function toGroupsBoardModel(input: GroupsAdapterInput): BoardSeedModel {
       .sort((a, b) => a.sortIndex - b.sortIndex)
       .map((set) => {
         const sid = `set:${set.id}`;
+        setCardIdById[sid] = set.backFaceId;
         setLabelsById[sid] =
           input.cardNameById.get(set.backFaceId)?.trim() || set.title?.trim() || set.id;
         return sid;
@@ -1298,6 +1460,7 @@ export function toGroupsBoardModel(input: GroupsAdapterInput): BoardSeedModel {
     itemsByGroup,
     groupLabelsById,
     setLabelsById,
+    setCardIdById,
     emitToken: "set",
     acceptTokens: ["source"],
   };
@@ -1306,9 +1469,11 @@ export function toGroupsBoardModel(input: GroupsAdapterInput): BoardSeedModel {
 export function toEntriesBoardModel(input: EntriesAdapterInput): BoardSeedModel {
   const groupId = "entries:lane";
   const setLabelsById: Record<SetId, string> = {};
+  const setCardIdById: Record<SetId, string> = {};
   const itemIds = input.entriesSorted.map((entry) => {
     const sid = `entry:${entry.id}`;
     const frontId = input.entryFrontIdByEntryId.get(entry.id);
+    if (frontId) setCardIdById[sid] = frontId;
     const frontTitle = frontId ? input.cardNameById.get(frontId)?.trim() ?? "" : "";
     if (frontTitle) {
       setLabelsById[sid] = frontTitle;
@@ -1326,6 +1491,7 @@ export function toEntriesBoardModel(input: EntriesAdapterInput): BoardSeedModel 
     itemsByGroup: { [groupId]: itemIds },
     groupLabelsById: { [groupId]: "Entries" },
     setLabelsById,
+    setCardIdById,
     emitToken: "entry",
     acceptTokens: ["source"],
   };
@@ -1334,9 +1500,11 @@ export function toEntriesBoardModel(input: EntriesAdapterInput): BoardSeedModel 
 export function toSourceBoardModel(input: SourceAdapterInput): BoardSeedModel {
   const groupId = "source:lane";
   const setLabelsById: Record<SetId, string> = {};
+  const setCardIdById: Record<SetId, string> = {};
   const itemIds = input.cards.map((card) => {
     const sid = `source:${card.id}`;
     setLabelsById[sid] = card.name?.trim() || card.id;
+    setCardIdById[sid] = card.id;
     return sid;
   });
 
@@ -1346,6 +1514,7 @@ export function toSourceBoardModel(input: SourceAdapterInput): BoardSeedModel {
     itemsByGroup: { [groupId]: itemIds },
     groupLabelsById: { [groupId]: "Cards" },
     setLabelsById,
+    setCardIdById,
     emitToken: "source",
     acceptTokens: [],
   };
@@ -1368,7 +1537,23 @@ export default function DeckGroupsBoardController({ deckId }: { deckId: string |
     selection = null;
   }
   const { registerDropHandler } = useDeckMockDnd();
+  const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
+    ({ setId, label, state }) => {
+      const rawSetId = setId.startsWith("set:") ? setId.slice(4) : null;
+      const cardId = rawSetId ? selection?.setById.get(rawSetId)?.backFaceId : null;
+      return (
+        <DefaultSetThumbnailContent
+          setId={setId}
+          cardId={cardId ?? undefined}
+          label={label}
+          state={state}
+        />
+      );
+    },
+    [selection],
+  );
   const model = useDeckSortableBoardViewModel("groups", BOARD_ROUTING_META_BY_ID.groups, {
+    renderSetContent,
     onSetClick: (setUiId, groupUiId) => {
       if (!selection) return;
       if (!setUiId.startsWith("set:")) return;
@@ -1504,7 +1689,23 @@ export function DeckEntriesBoardController({
   }
   const { registerDropHandler } = useDeckMockDnd();
   const lastHandledDragIdRef = useRef<string | null>(null);
+  const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
+    ({ setId, label, state }) => {
+      const rawEntryId = setId.startsWith("entry:") ? setId.slice(6) : null;
+      const cardId = rawEntryId ? entries?.entryFrontIdByEntryId.get(rawEntryId) : null;
+      return (
+        <DefaultSetThumbnailContent
+          setId={setId}
+          cardId={cardId ?? undefined}
+          label={label}
+          state={state}
+        />
+      );
+    },
+    [entries],
+  );
   const model = useDeckSortableBoardViewModel("entries", BOARD_ROUTING_META_BY_ID.entries, {
+    renderSetContent,
     emptyMessage: selection?.selectedSetId ? null : "Select a set to view entries.",
   });
 
@@ -1557,7 +1758,23 @@ export function DeckEntriesBoardController({
 
 export function DeckSourceBoardController({ layoutMode = "fill-parent" }: { layoutMode?: LayoutMode }) {
   const { registerDropHandler } = useDeckMockDnd();
-  const model = useDeckSortableBoardViewModel("source", BOARD_ROUTING_META_BY_ID.source);
+  const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
+    ({ setId, label, state }) => {
+      const cardId = setId.startsWith("source:") ? setId.slice(7) : null;
+      return (
+        <DefaultSetThumbnailContent
+          setId={setId}
+          cardId={cardId ?? undefined}
+          label={label}
+          state={state}
+        />
+      );
+    },
+    [],
+  );
+  const model = useDeckSortableBoardViewModel("source", BOARD_ROUTING_META_BY_ID.source, {
+    renderSetContent,
+  });
   useEffect(() => registerDropHandler("source-controller", async () => null), [registerDropHandler]);
   return <DeckSortableBoardView model={model} layoutMode={layoutMode} />;
 }

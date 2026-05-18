@@ -155,18 +155,14 @@
 }
 
 .setCard {
-  width: 96px;
-  min-height: 44px;
+  width: 112px;
+  min-height: 0;
   border-radius: 6px;
   border: 1px solid #ccd0dd;
   background: #f8f9fb;
   color: #353b45;
-  font-size: 15px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 9px;
+  display: block;
+  padding: 6px;
   box-shadow:
     0 1px 2px rgba(16, 24, 40, 0.1),
     0 4px 10px rgba(16, 24, 40, 0.08);
@@ -215,9 +211,58 @@
 }
 
 .overlay {
-  min-width: 96px;
+  min-width: 112px;
   border-radius: 6px;
   pointer-events: none;
+}
+
+.setContent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.setThumb {
+  width: 100%;
+  border-radius: 5px;
+  background: #121726;
+}
+
+.setThumbFallback {
+  width: 100%;
+  aspect-ratio: 756 / 1056;
+  border-radius: 5px;
+  background: #a8afc0;
+}
+
+.setContentFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.setTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.setContentGhost {
+  opacity: 0.55;
+}
+
+.setContentDragging {
+  opacity: 0.92;
+}
+
+.setContentDropTarget {
+  transform: translateY(-1px);
 }
 
 .grip {
