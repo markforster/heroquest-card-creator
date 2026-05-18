@@ -1,68 +1,88 @@
 .root {
   border: 1px solid #c8cbe3;
-  border-radius: 14px;
-  padding: 20px;
+  border-radius: 7px;
+  padding: 10px;
   background: linear-gradient(120deg, #c7d7e0 0%, #cfcbe8 100%);
   box-shadow: 0 2px 4px rgba(16, 24, 40, 0.06);
 }
 
 .groupsRow {
   display: flex;
-  gap: 20px;
+  gap: 8px;
   align-items: stretch;
   overflow-x: auto;
-  padding: 4px;
+  padding: 2px;
+}
+
+.groupStack {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
 }
 
 .group {
-  min-width: 300px;
-  max-width: 300px;
-  border-radius: 12px;
+  min-width: 80px;
+  width: max-content;
+  border-radius: 6px;
   background: rgba(235, 236, 244, 0.76);
   border: 1px solid #d2d5df;
   display: flex;
   flex-direction: column;
 }
 
+.groupTemporary {
+  min-width: 110px;
+  border-style: dashed;
+  border-color: rgba(56, 64, 82, 0.45);
+  background: rgba(235, 236, 244, 0.5);
+}
+
+.groupTemporaryActive {
+  border-color: rgba(56, 64, 82, 0.75);
+  background: rgba(121, 138, 201, 0.22);
+}
+
 .groupHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 68px;
-  padding: 16px 18px;
+  min-height: 34px;
+  padding: 8px 9px;
   border-bottom: 1px solid #dddfe8;
   background: rgba(255, 255, 255, 0.68);
-  border-radius: 12px 12px 0 0;
-  font-size: 36px;
+  border-radius: 6px 6px 0 0;
+  font-size: 18px;
   font-weight: 500;
   color: #242a33;
 }
 
 .groupBody {
-  min-height: 240px;
-  padding: 14px;
+  min-height: 120px;
+  padding: 7px;
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 7px;
 }
 
 .setShell {
-  border-radius: 12px;
+  border-radius: 6px;
+  flex: 0 0 auto;
 }
 
 .setCard {
-  width: 100%;
-  min-height: 88px;
-  border-radius: 12px;
+  width: 96px;
+  min-height: 44px;
+  border-radius: 6px;
   border: 1px solid #ccd0dd;
   background: #f8f9fb;
   color: #353b45;
-  font-size: 30px;
+  font-size: 15px;
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 18px;
+  padding: 8px 9px;
   box-shadow:
     0 1px 2px rgba(16, 24, 40, 0.1),
     0 4px 10px rgba(16, 24, 40, 0.08);
@@ -72,21 +92,21 @@
 
 .setAccentA {
   box-shadow:
-    inset 4px 0 0 #6683e4,
+    inset 2px 0 0 #6683e4,
     0 1px 2px rgba(16, 24, 40, 0.1),
     0 4px 10px rgba(16, 24, 40, 0.08);
 }
 
 .setAccentB {
   box-shadow:
-    inset 4px 0 0 #f08b2d,
+    inset 2px 0 0 #f08b2d,
     0 1px 2px rgba(16, 24, 40, 0.1),
     0 4px 10px rgba(16, 24, 40, 0.08);
 }
 
 .setAccentC {
   box-shadow:
-    inset 4px 0 0 #7f8aa0,
+    inset 2px 0 0 #7f8aa0,
     0 1px 2px rgba(16, 24, 40, 0.1),
     0 4px 10px rgba(16, 24, 40, 0.08);
 }
@@ -101,18 +121,18 @@
 
 .setCardDragging {
   box-shadow:
-    0 12px 28px rgba(16, 24, 40, 0.22),
-    0 6px 16px rgba(16, 24, 40, 0.12);
+    0 6px 14px rgba(16, 24, 40, 0.22),
+    0 3px 8px rgba(16, 24, 40, 0.12);
 }
 
 .overlay {
-  min-width: 300px;
-  border-radius: 12px;
+  min-width: 96px;
+  border-radius: 6px;
   pointer-events: none;
 }
 
 .grip {
   color: #9ba2b3;
-  font-size: 24px;
+  font-size: 12px;
   letter-spacing: 1px;
 }

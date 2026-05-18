@@ -22,7 +22,7 @@ jest.mock("@dnd-kit/react", () => ({
     return <div data-testid="mock-drag-provider">{children}</div>;
   },
   DragOverlay: ({ children }: any) => <div data-testid="mock-drag-overlay">{children}</div>,
-  useDroppable: () => ({ ref: jest.fn() }),
+  useDroppable: () => ({ ref: jest.fn(), isDropTarget: false }),
 }));
 
 jest.mock("@dnd-kit/react/sortable", () => ({
@@ -39,32 +39,23 @@ jest.mock("@dnd-kit/helpers", () => ({
     const sourceId = event.operation.source?.id;
     const targetId = event.operation.target?.id;
 
-    if (sourceId !== "A1" || targetId == null) {
-      return items;
-    }
-
-    const withoutSource = Object.fromEntries(
-      Object.entries(items).map(([group, setIds]) => [
-        group,
-        setIds.filter((setId) => setId !== sourceId),
-      ]),
-    ) as Record<string, string[]>;
-
-    if (targetId === "B") {
+    if (sourceId === "A1" && targetId === "B") {
       return {
-        ...withoutSource,
-        B: [sourceId, ...withoutSource.B],
+        ...items,
+        A: items.A.filter((id) => id !== "A1"),
+        B: ["A1", ...items.B],
       };
     }
 
-    if (targetId === "A") {
+    if (sourceId === "B2" && targetId === "A") {
       return {
-        ...withoutSource,
-        A: [withoutSource.A[0], sourceId, ...withoutSource.A.slice(1)],
+        ...items,
+        A: [...items.A, "B2"],
+        B: [],
       };
     }
 
-    return withoutSource;
+    return items;
   }),
 }));
 
@@ -77,8 +68,20 @@ describe("DeckGroupsSection2", () => {
     expect(screen.getByTestId("group-A")).toBeInTheDocument();
     expect(screen.getByTestId("group-B")).toBeInTheDocument();
     expect(screen.getByTestId("group-C")).toBeInTheDocument();
-    expect(screen.getByText("A1")).toBeInTheDocument();
-    expect(screen.getByText("B2")).toBeInTheDocument();
+    expect(screen.queryByTestId("group-slot-0")).not.toBeInTheDocument();
+  });
+
+  it("shows all temporary group slots while dragging", () => {
+    render(<DeckGroupsSection2 />);
+
+    act(() => {
+      callbacks.onDragStart?.({ operation: { source: { id: "A1", type: "set" } } });
+    });
+
+    expect(screen.getByTestId("group-slot-0")).toBeInTheDocument();
+    expect(screen.getByTestId("group-slot-1")).toBeInTheDocument();
+    expect(screen.getByTestId("group-slot-2")).toBeInTheDocument();
+    expect(screen.getByTestId("group-slot-3")).toBeInTheDocument();
   });
 
   it("moves a set across groups via onDragOver", () => {
@@ -101,11 +104,56 @@ describe("DeckGroupsSection2", () => {
       });
     });
 
-    const groupA = screen.getByTestId("group-A");
-    const groupB = screen.getByTestId("group-B");
+    expect(screen.getByTestId("group-B")).toHaveTextContent("A1");
+  });
 
-    expect(groupA).not.toHaveTextContent("A1");
-    expect(groupB).toHaveTextContent("A1");
+  it("drops on a slot and creates a new group", () => {
+    render(<DeckGroupsSection2 />);
+
+    act(() => {
+      callbacks.onDragStart?.({ operation: { source: { id: "A1", type: "set" } } });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "A1", type: "set" },
+          target: { id: "new-group-slot:1", type: "new-group-slot" },
+        },
+      });
+      callbacks.onDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "A1", type: "set" },
+          target: { id: "new-group-slot:1", type: "new-group-slot" },
+        },
+      });
+    });
+
+    expect(screen.getByTestId("group-N1")).toBeInTheDocument();
+    expect(screen.getByTestId("group-N1")).toHaveTextContent("A1");
+    expect(screen.queryByTestId("group-A")).toHaveTextContent("A2");
+    expect(screen.queryByTestId("group-A")).not.toHaveTextContent("A1");
+  });
+
+  it("removes empty groups after a committed non-slot drop", () => {
+    render(<DeckGroupsSection2 />);
+
+    act(() => {
+      callbacks.onDragStart?.({ operation: { source: { id: "B2", type: "set" } } });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "B2", type: "set" },
+          target: { id: "A", type: "group" },
+        },
+      });
+      callbacks.onDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "B2", type: "set" },
+          target: { id: "A", type: "group" },
+        },
+      });
+    });
+
+    expect(screen.queryByTestId("group-B")).not.toBeInTheDocument();
   });
 
   it("restores previous state when drag is canceled", () => {
@@ -128,10 +176,7 @@ describe("DeckGroupsSection2", () => {
       });
     });
 
-    const groupA = screen.getByTestId("group-A");
-    const groupB = screen.getByTestId("group-B");
-
-    expect(groupA).toHaveTextContent("A1");
-    expect(groupB).not.toHaveTextContent("A1");
+    expect(screen.getByTestId("group-A")).toHaveTextContent("A1");
+    expect(screen.queryByTestId("group-slot-0")).not.toBeInTheDocument();
   });
 });
