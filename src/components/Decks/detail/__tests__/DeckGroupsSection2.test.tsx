@@ -31,6 +31,7 @@ jest.mock("@dnd-kit/react", () => ({
   },
   DragOverlay: ({ children }: any) => <div>{children}</div>,
   useDroppable: () => ({ ref: jest.fn(), isDropTarget: false }),
+  useDraggable: () => ({ ref: jest.fn(), handleRef: jest.fn(), isDragging: false }),
 }));
 
 jest.mock("@dnd-kit/react/sortable", () => ({
@@ -48,9 +49,19 @@ jest.mock("@dnd-kit/helpers", () => ({
     const sourceGroup = event.operation.source?.group;
     const targetGroup =
       event.operation.target?.type === "group" ? event.operation.target.id : event.operation.target?.group;
+    const targetId = event.operation.target?.id;
 
     if (!sourceId || !sourceGroup || !targetGroup || sourceGroup === targetGroup) {
-      return items;
+      if (!sourceId || !sourceGroup || sourceGroup !== targetGroup || !targetId || targetId === sourceId) {
+        return items;
+      }
+      const current = [...(items[sourceGroup] ?? [])];
+      const from = current.indexOf(sourceId);
+      const to = current.indexOf(targetId);
+      if (from < 0 || to < 0) return items;
+      current.splice(from, 1);
+      current.splice(to, 0, sourceId);
+      return { ...items, [sourceGroup]: current };
     }
 
     return {
@@ -138,5 +149,79 @@ describe("DeckGroupsSection2 mock boards", () => {
     });
 
     expect(screen.getByTestId("group-entries:E1")).toHaveTextContent("SRC-2");
+  });
+
+  it("does not sort within source group but still sorts within groups board", () => {
+    renderWorkspace();
+
+    expect(screen.getByTestId("group-source:S1")).toHaveTextContent("SRC-1");
+    expect(screen.getByTestId("group-source:S1")).toHaveTextContent("SRC-2");
+
+    act(() => {
+      callbacks.onDragStart?.({
+        operation: { source: { id: "src-1", type: "set", group: "source:S1" } },
+      });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "src-1", type: "set", group: "source:S1" },
+          target: { id: "src-4", type: "set", group: "source:S1" },
+        },
+      });
+      callbacks.onDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "src-1", type: "set", group: "source:S1" },
+          target: { id: "src-4", type: "set", group: "source:S1" },
+        },
+      });
+    });
+
+    expect(screen.getByTestId("group-source:S1").textContent).toMatch(/SRC-1.*SRC-2.*SRC-3.*SRC-4/);
+
+    act(() => {
+      callbacks.onDragStart?.({
+        operation: { source: { id: "g-A1", type: "set", group: "groups:A" } },
+      });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "g-A1", type: "set", group: "groups:A" },
+          target: { id: "g-A3", type: "set", group: "groups:A" },
+        },
+      });
+      callbacks.onDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "g-A1", type: "set", group: "groups:A" },
+          target: { id: "g-A3", type: "set", group: "groups:A" },
+        },
+      });
+    });
+
+    expect(screen.getByTestId("group-groups:A").textContent).toMatch(/A2.*A3.*A1/);
+  });
+
+  it("does not sort source even when drag metadata omits group ids", () => {
+    renderWorkspace();
+
+    act(() => {
+      callbacks.onDragStart?.({
+        operation: { source: { id: "src-1", type: "set" } },
+      });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "src-1", type: "set" },
+          target: { id: "src-4", type: "set" },
+        },
+      });
+      callbacks.onDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "src-1", type: "set" },
+          target: { id: "src-4", type: "set" },
+        },
+      });
+    });
+
+    expect(screen.getByTestId("group-source:S1").textContent).toMatch(/SRC-1.*SRC-2.*SRC-3.*SRC-4/);
   });
 });

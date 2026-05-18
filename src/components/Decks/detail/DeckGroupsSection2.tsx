@@ -6,6 +6,7 @@ import {
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
+  useDraggable,
   useDroppable,
 } from "@dnd-kit/react";
 import { move } from "@dnd-kit/helpers";
@@ -24,6 +25,7 @@ type BoardConfig = {
   title: string;
   allowMultipleGroups: boolean;
   allowGroupCreate: boolean;
+  allowInGroupSort: boolean;
 };
 
 type DnDState = {
@@ -43,18 +45,26 @@ type DeckMockDndContextValue = {
 };
 
 const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
-  groups: { boardId: "groups", title: "Groups", allowMultipleGroups: true, allowGroupCreate: true },
+  groups: {
+    boardId: "groups",
+    title: "Groups",
+    allowMultipleGroups: true,
+    allowGroupCreate: true,
+    allowInGroupSort: true,
+  },
   entries: {
     boardId: "entries",
     title: "Entries",
     allowMultipleGroups: false,
     allowGroupCreate: false,
+    allowInGroupSort: true,
   },
   source: {
     boardId: "source",
     title: "Source",
     allowMultipleGroups: false,
     allowGroupCreate: false,
+    allowInGroupSort: false,
   },
 };
 
@@ -105,6 +115,11 @@ function parseSetLabel(setId: SetId): string {
 
 function canMove(_sourceGroupId: GroupId, _targetGroupId: GroupId, _setId: SetId): boolean {
   return true;
+}
+
+function findGroupIdBySetId(itemsByGroup: Record<GroupId, SetId[]>, setId: SetId): GroupId | null {
+  const groupId = Object.keys(itemsByGroup).find((candidate) => itemsByGroup[candidate]?.includes(setId));
+  return groupId ?? null;
 }
 
 function getBlockedBoundaries(groupIds: GroupId[], itemsByGroup: Record<GroupId, SetId[]>): Set<number> {
@@ -181,7 +196,7 @@ function GroupColumn({
   );
 }
 
-function SetCard({ setId, index, groupId }: { setId: SetId; index: number; groupId: GroupId }) {
+function SortableSetCard({ setId, index, groupId }: { setId: SetId; index: number; groupId: GroupId }) {
   const { ref, isDragging, isDragSource, isDropTarget } = useSortable({
     id: setId,
     index,
@@ -208,6 +223,41 @@ function SetCard({ setId, index, groupId }: { setId: SetId; index: number; group
         ]
           .filter(Boolean)
           .join(" ")}
+      >
+        <span>{parseSetLabel(setId)}</span>
+        <span className={styles.grip} aria-hidden="true">
+          ⠿
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function DraggableSetCard({ setId, groupId }: { setId: SetId; groupId: GroupId }) {
+  const { ref, handleRef, isDragging } = useDraggable({
+    id: setId,
+    type: "set",
+    data: { group: groupId },
+  });
+
+  const accentClass = groupId.startsWith("groups:A")
+    ? styles.setAccentA
+    : groupId.startsWith("groups:B")
+      ? styles.setAccentB
+      : styles.setAccentC;
+
+  return (
+    <div className={styles.setShell} ref={ref} data-testid={`set-${setId}`}>
+      <div
+        className={[
+          styles.setCard,
+          accentClass,
+          isDragging ? styles.setCardDragging : "",
+          isDragging ? styles.setCardGhost : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        ref={handleRef}
       >
         <span>{parseSetLabel(setId)}</span>
         <span className={styles.grip} aria-hidden="true">
@@ -302,7 +352,11 @@ function DeckSortableBoardView({
             >
               <GroupColumn groupId={groupId} fillParent={useFillParent}>
                 {(state.itemsByGroup[groupId] ?? []).map((setId, setIndex) => (
-                  <SetCard key={setId} setId={setId} index={setIndex} groupId={groupId} />
+                  config.allowInGroupSort ? (
+                    <SortableSetCard key={setId} setId={setId} index={setIndex} groupId={groupId} />
+                  ) : (
+                    <DraggableSetCard key={setId} setId={setId} groupId={groupId} />
+                  )
                 ))}
               </GroupColumn>
             </div>
@@ -427,13 +481,20 @@ export function DeckMockDndProvider({ children }: { children: React.ReactNode })
     if (event.operation.source?.type !== "set") return;
 
     const sourceSetId = String(event.operation.source.id);
-    const sourceGroupId = String(event.operation.source.group ?? "");
+    const sourceGroupId =
+      String(event.operation.source.group ?? "") || findGroupIdBySetId(state.itemsByGroup, sourceSetId) || "";
+    const targetId = String(event.operation.target?.id ?? "");
     const targetGroupId =
       event.operation.target?.type === "group"
-        ? String(event.operation.target.id)
-        : String(event.operation.target?.group ?? "");
+        ? targetId
+        : String(event.operation.target?.group ?? "") ||
+          (targetId ? findGroupIdBySetId(state.itemsByGroup, targetId) || "" : "");
 
     if (!sourceGroupId || !targetGroupId) return;
+    const sourceBoardId = state.groupToBoard[sourceGroupId];
+    if (!sourceBoardId) return;
+    const sourceBoardConfig = BOARD_CONFIGS[sourceBoardId];
+    if (sourceGroupId === targetGroupId && !sourceBoardConfig.allowInGroupSort) return;
     if (!canMove(sourceGroupId, targetGroupId, sourceSetId)) return;
 
     setState((current) => ({
