@@ -1,9 +1,9 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
-import DeckGroupsSection2, {
-  DeckEntriesSection2Mock,
+import DeckGroupsBoardMock, {
+  DeckEntriesBoardMock,
   DeckMockDndProvider,
-  DeckSourceBoard2Mock,
+  DeckSourceBoardMock,
 } from "@/components/Decks/detail/DeckGroupsSection2";
 
 type DragEventLike = {
@@ -75,9 +75,9 @@ jest.mock("@dnd-kit/helpers", () => ({
 function renderWorkspace() {
   render(
     <DeckMockDndProvider>
-      <DeckGroupsSection2 />
-      <DeckEntriesSection2Mock />
-      <DeckSourceBoard2Mock />
+      <DeckGroupsBoardMock />
+      <DeckEntriesBoardMock />
+      <DeckSourceBoardMock />
     </DeckMockDndProvider>,
   );
 }

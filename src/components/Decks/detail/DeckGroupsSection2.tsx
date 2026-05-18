@@ -45,6 +45,18 @@ type DeckMockDndContextValue = {
   createGroupAtIndex: (boardId: BoardId, index: number) => void;
 };
 
+type DeckSortableBoardViewModel = {
+  config: BoardConfig;
+  groupIds: GroupId[];
+  itemsByGroup: Record<GroupId, SetId[]>;
+  activeSetId: SetId | null;
+  hoverBoundaryIndex: number | null;
+  onHoverBoundary: (clientX: number) => void;
+  onLeaveBoard: () => void;
+  onCreateGroupAtIndex: (index: number) => void;
+  registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
+};
+
 const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
   groups: {
     boardId: "groups",
@@ -326,28 +338,17 @@ function CreateBoundaryPlaceholder({
 }
 
 function DeckSortableBoardView({
-  boardId,
+  model,
   layoutMode = "content",
 }: {
-  boardId: BoardId;
+  model: DeckSortableBoardViewModel;
   layoutMode?: LayoutMode;
 }) {
-  const config = BOARD_CONFIGS[boardId];
-  const {
-    state,
-    activeSetId,
-    hoverBoundaryByBoard,
-    registerGroupRef,
-    handleHoverBoundary,
-    handleLeaveBoard,
-    createGroupAtIndex,
-  } = useDeckMockDnd();
-
-  const groupIds = state.groupOrderByBoard[boardId];
+  const { config, groupIds, itemsByGroup, activeSetId, hoverBoundaryIndex } = model;
   const useFillParent = layoutMode === "fill-parent" && !config.allowMultipleGroups;
   const blockedBoundaries = useMemo(
-    () => getBlockedBoundaries(groupIds, state.itemsByGroup),
-    [groupIds, state.itemsByGroup],
+    () => getBlockedBoundaries(groupIds, itemsByGroup),
+    [groupIds, itemsByGroup],
   );
 
   return (
@@ -355,38 +356,38 @@ function DeckSortableBoardView({
       className={[styles.board, useFillParent ? styles.boardFillParent : ""]
         .filter(Boolean)
         .join(" ")}
-      data-testid={`board-${boardId}`}
+      data-testid={`board-${config.boardId}`}
     >
       <header className={styles.boardHeader}>{config.title}</header>
       <div
         className={[styles.groupsRow, useFillParent ? styles.groupsRowFillParent : ""]
           .filter(Boolean)
           .join(" ")}
-        data-testid={`groups-row-${boardId}`}
-        onMouseMove={(event) => handleHoverBoundary(boardId, event.clientX)}
-        onMouseLeave={() => handleLeaveBoard(boardId)}
+        data-testid={`groups-row-${config.boardId}`}
+        onMouseMove={(event) => model.onHoverBoundary(event.clientX)}
+        onMouseLeave={model.onLeaveBoard}
       >
         {groupIds.map((groupId, index) => (
           <div key={`${groupId}-${index}`} className={styles.groupStack}>
             {!activeSetId &&
             config.allowGroupCreate &&
-            hoverBoundaryByBoard[boardId] === index &&
+            hoverBoundaryIndex === index &&
             !blockedBoundaries.has(index) ? (
               <CreateBoundaryPlaceholder
                 index={index}
-                onCreate={(nextIndex) => createGroupAtIndex(boardId, nextIndex)}
+                onCreate={model.onCreateGroupAtIndex}
               />
             ) : null}
             <div
               className={useFillParent ? styles.groupWrapperFillParent : ""}
-              ref={(node) => registerGroupRef(groupId, node)}
+              ref={(node) => model.registerGroupRef(groupId, node)}
             >
               <GroupColumn
                 groupId={groupId}
                 fillParent={useFillParent}
                 canReceiveDrops={config.allowDropTarget}
               >
-                {(state.itemsByGroup[groupId] ?? []).map((setId, setIndex) =>
+                {(itemsByGroup[groupId] ?? []).map((setId, setIndex) =>
                   config.allowInGroupSort ? (
                     <SortableSetCard key={setId} setId={setId} index={setIndex} groupId={groupId} />
                   ) : (
@@ -400,11 +401,11 @@ function DeckSortableBoardView({
 
         {!activeSetId &&
         config.allowGroupCreate &&
-        hoverBoundaryByBoard[boardId] === groupIds.length &&
+        hoverBoundaryIndex === groupIds.length &&
         !blockedBoundaries.has(groupIds.length) ? (
           <CreateBoundaryPlaceholder
             index={groupIds.length}
-            onCreate={(nextIndex) => createGroupAtIndex(boardId, nextIndex)}
+            onCreate={model.onCreateGroupAtIndex}
           />
         ) : null}
       </div>
@@ -602,18 +603,45 @@ export function DeckMockDndProvider({ children }: { children: React.ReactNode })
   );
 }
 
-export default function DeckGroupsSection2() {
-  return <DeckSortableBoardView boardId="groups" layoutMode="content" />;
+function useDeckSortableBoardViewModel(boardId: BoardId): DeckSortableBoardViewModel {
+  const {
+    state,
+    activeSetId,
+    hoverBoundaryByBoard,
+    registerGroupRef,
+    handleHoverBoundary,
+    handleLeaveBoard,
+    createGroupAtIndex,
+  } = useDeckMockDnd();
+
+  return {
+    config: BOARD_CONFIGS[boardId],
+    groupIds: state.groupOrderByBoard[boardId],
+    itemsByGroup: state.itemsByGroup,
+    activeSetId,
+    hoverBoundaryIndex: hoverBoundaryByBoard[boardId],
+    onHoverBoundary: (clientX: number) => handleHoverBoundary(boardId, clientX),
+    onLeaveBoard: () => handleLeaveBoard(boardId),
+    onCreateGroupAtIndex: (index: number) => createGroupAtIndex(boardId, index),
+    registerGroupRef,
+  };
 }
 
-export function DeckEntriesSection2Mock({
+export default function DeckGroupsBoardMock() {
+  const model = useDeckSortableBoardViewModel("groups");
+  return <DeckSortableBoardView model={model} layoutMode="content" />;
+}
+
+export function DeckEntriesBoardMock({
   layoutMode = "fill-parent",
 }: {
   layoutMode?: LayoutMode;
 }) {
-  return <DeckSortableBoardView boardId="entries" layoutMode={layoutMode} />;
+  const model = useDeckSortableBoardViewModel("entries");
+  return <DeckSortableBoardView model={model} layoutMode={layoutMode} />;
 }
 
-export function DeckSourceBoard2Mock({ layoutMode = "fill-parent" }: { layoutMode?: LayoutMode }) {
-  return <DeckSortableBoardView boardId="source" layoutMode={layoutMode} />;
+export function DeckSourceBoardMock({ layoutMode = "fill-parent" }: { layoutMode?: LayoutMode }) {
+  const model = useDeckSortableBoardViewModel("source");
+  return <DeckSortableBoardView model={model} layoutMode={layoutMode} />;
 }

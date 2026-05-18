@@ -26,10 +26,10 @@ import type {
   DeckDetailModalState,
 } from "@/components/Decks/types/deck-detail";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
-import DeckGroupsSection2, {
-  DeckEntriesSection2Mock,
+import DeckGroupsBoardMock, {
+  DeckEntriesBoardMock,
   DeckMockDndProvider,
-  DeckSourceBoard2Mock,
+  DeckSourceBoardMock,
 } from "./detail/DeckGroupsSection2";
 
 const SET_TILE_VARIANT = "smMd";
@@ -187,8 +187,8 @@ function DeckDetailPanelContent({
               <DeckDetailSelectionProvider model={selectionModel}>
                 <DeckSetEntriesProvider model={entriesModel}>
                   <div className={styles.deckRouteMiddle}>
-                    <DeckGroupsSection2 />
-                    <DeckEntriesSection2Mock />
+                    <DeckGroupsBoardMock />
+                    <DeckEntriesBoardMock />
 
                     <DeckDragOverlay
                       drag={drag}
@@ -216,7 +216,7 @@ function DeckDetailPanelContent({
               usedFrontFaceIds={usedFrontFaceIds}
               finalizingBackFaceId={drag.finalizingBackFaceId}
               finalizingFrontFaceId={drag.finalizingFrontFaceId}
-              gridOverride={<DeckSourceBoard2Mock />}
+              gridOverride={<DeckSourceBoardMock />}
             />
           </aside>
         </DeckMockDndProvider>
