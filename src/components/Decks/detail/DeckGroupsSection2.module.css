@@ -26,11 +26,11 @@
   --deck-board-selected-glow: var(--hq-deck-set-selected-glow, rgba(95, 134, 255, 0.32));
   --deck-board-drop-ring: var(--hq-accent-ring-soft, rgba(230, 179, 90, 0.35));
   --deck-board-focus-ring: var(--hq-focus-ring, #e6b35a);
-  border: 1px solid #c8cbe3;
-  border-radius: 7px;
-  padding: 10px;
-  background: linear-gradient(120deg, #c7d7e0 0%, #cfcbe8 100%);
-  box-shadow: 0 2px 4px rgba(16, 24, 40, 0.06);
+  border: 1px solid var(--hq-border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  background: var(--hq-surface-900);
+  box-shadow: none;
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -102,9 +102,9 @@
 .group {
   min-width: 96px;
   width: fit-content;
-  border-radius: 6px;
-  background: rgba(235, 236, 244, 0.76);
-  border: 1px solid #d2d5df;
+  border-radius: var(--radius-lg);
+  background: var(--hq-surface-900);
+  border: 1px solid var(--hq-border-strong);
   display: inline-flex;
   flex-direction: column;
   transition: width 160ms ease, min-width 160ms ease;
@@ -167,15 +167,13 @@
 .setCard {
   width: 112px;
   min-height: 0;
-  border-radius: 6px;
-  border: 1px solid var(--deck-board-card-border);
-  background: var(--deck-board-card-bg);
+  border-radius: 12px;
+  border: none;
+  background: transparent;
   color: var(--deck-board-card-text);
   display: block;
-  padding: 6px;
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.1),
-    0 4px 10px rgba(16, 24, 40, 0.08);
+  padding: 0;
+  box-shadow: none;
   transition:
     transform 180ms ease,
     box-shadow 180ms ease,
@@ -186,7 +184,6 @@
 }
 
 .setCard:hover {
-  border-color: var(--deck-board-hover-ring);
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--deck-board-hover-ring) 30%, transparent),
     0 2px 6px rgba(16, 24, 40, 0.12),
@@ -199,32 +196,10 @@
 }
 
 .setCardSelected {
-  border-color: var(--deck-board-selected-ring);
   box-shadow:
     0 0 0 2px var(--deck-board-selected-glow),
     0 0 0 1px var(--deck-board-selected-ring),
     0 2px 6px rgba(16, 24, 40, 0.12);
-}
-
-.setAccentA {
-  box-shadow:
-    inset 2px 0 0 #6683e4,
-    0 1px 2px rgba(16, 24, 40, 0.1),
-    0 4px 10px rgba(16, 24, 40, 0.08);
-}
-
-.setAccentB {
-  box-shadow:
-    inset 2px 0 0 #f08b2d,
-    0 1px 2px rgba(16, 24, 40, 0.1),
-    0 4px 10px rgba(16, 24, 40, 0.08);
-}
-
-.setAccentC {
-  box-shadow:
-    inset 2px 0 0 #7f8aa0,
-    0 1px 2px rgba(16, 24, 40, 0.1),
-    0 4px 10px rgba(16, 24, 40, 0.08);
 }
 
 .setCardGhost {
@@ -262,8 +237,8 @@
 
 .setThumb {
   width: 100%;
-  border-radius: 5px;
-  background: #121726;
+  border-radius: 6px;
+  background: transparent;
   box-shadow: var(--shadow-soft);
   transition: box-shadow 120ms ease, filter 120ms ease;
 }
@@ -273,24 +248,6 @@
   aspect-ratio: 756 / 1056;
   border-radius: 5px;
   background: #a8afc0;
-}
-
-.setContentFooter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-
-.setTitle {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 12px;
-  line-height: 1.2;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .setContentGhost {
@@ -329,10 +286,4 @@
 .boardDropOver {
   border-color: var(--hq-accent, #e6b35a);
   box-shadow: 0 0 0 2px var(--deck-board-drop-ring);
-}
-
-.grip {
-  color: #9ba2b3;
-  font-size: 12px;
-  letter-spacing: 1px;
 }

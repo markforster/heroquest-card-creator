@@ -477,12 +477,6 @@ export function DefaultSetThumbnailContent({
         className={styles.setThumb}
         fallback={<div className={styles.setThumbFallback} />}
       />
-      <div className={styles.setContentFooter}>
-        <span className={styles.setTitle}>{title}</span>
-        <span className={styles.grip} aria-hidden="true">
-          ⠿
-        </span>
-      </div>
     </div>
   );
 }
@@ -512,18 +506,11 @@ function SortableSetCard({
     group: groupId,
   });
 
-  const accentClass = groupId.startsWith("groups:A")
-    ? styles.setAccentA
-    : groupId.startsWith("groups:B")
-      ? styles.setAccentB
-      : styles.setAccentC;
-
   return (
     <div className={styles.setShell} ref={ref} data-testid={`set-${setId}`}>
       <div
         className={[
           styles.setCard,
-          accentClass,
           isSelected ? styles.setCardSelected : "",
           isDragging ? styles.setCardDragging : "",
           isDragSource ? styles.setCardGhost : "",
@@ -571,18 +558,11 @@ function DraggableSetCard({
     data: { group: groupId },
   });
 
-  const accentClass = groupId.startsWith("groups:A")
-    ? styles.setAccentA
-    : groupId.startsWith("groups:B")
-      ? styles.setAccentB
-      : styles.setAccentC;
-
   return (
     <div className={styles.setShell} ref={ref} data-testid={`set-${setId}`}>
       <div
         className={[
           styles.setCard,
-          accentClass,
           isSelected ? styles.setCardSelected : "",
           isDragging ? styles.setCardDragging : "",
           isDragging ? styles.setCardGhost : "",
