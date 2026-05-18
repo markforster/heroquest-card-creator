@@ -31,46 +31,13 @@ const INITIAL_STATE: SectionState = {
   },
 };
 
-const NEW_GROUP_SLOT_PREFIX = "new-group-slot:";
-
-function makeSlotId(index: number): string {
-  return `${NEW_GROUP_SLOT_PREFIX}${index}`;
-}
-
-function isNewGroupSlotId(id: string | null | undefined): id is string {
-  return Boolean(id?.startsWith(NEW_GROUP_SLOT_PREFIX));
-}
-
-function slotIndexFromId(id: string): number | null {
-  if (!isNewGroupSlotId(id)) {
-    return null;
-  }
-
-  const value = Number(id.slice(NEW_GROUP_SLOT_PREFIX.length));
-  return Number.isInteger(value) && value >= 0 ? value : null;
-}
-
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-function removeSetFromAllGroups(itemsByGroup: ItemsByGroup, setId: string): ItemsByGroup {
-  return Object.fromEntries(
-    Object.entries(itemsByGroup).map(([groupId, setIds]) => [
-      groupId,
-      setIds.filter((candidate) => candidate !== setId),
-    ]),
-  );
-}
-
 function normalizeState(groupOrder: GroupId[], itemsByGroup: ItemsByGroup): SectionState {
-  const nextOrder = groupOrder.filter((groupId) => (itemsByGroup[groupId] ?? []).length > 0);
-  const nextItems = Object.fromEntries(nextOrder.map((groupId) => [groupId, itemsByGroup[groupId] ?? []]));
-
-  return {
-    groupOrder: nextOrder,
-    itemsByGroup: nextItems,
-  };
+  const nextOrder = groupOrder.filter((groupId) => groupId in itemsByGroup);
+  return { groupOrder: nextOrder, itemsByGroup };
 }
 
 function GroupColumn({ id, children }: { id: GroupId; children: React.ReactNode }) {
@@ -89,33 +56,6 @@ function GroupColumn({ id, children }: { id: GroupId; children: React.ReactNode 
         </span>
       </header>
       <div className={styles.groupBody}>{children}</div>
-    </section>
-  );
-}
-
-function TemporaryGroupSlot({ index }: { index: number }) {
-  const slotId = makeSlotId(index);
-  const { ref, isDropTarget } = useDroppable({
-    id: slotId,
-    type: "new-group-slot",
-    accept: ["set"],
-  });
-
-  return (
-    <section
-      ref={ref}
-      className={[styles.group, styles.groupTemporary, isDropTarget ? styles.groupTemporaryActive : ""]
-        .filter(Boolean)
-        .join(" ")}
-      data-testid={`group-slot-${index}`}
-    >
-      <header className={styles.groupHeader}>
-        <span>GT</span>
-        <span className={styles.grip} aria-hidden="true">
-          ⠿
-        </span>
-      </header>
-      <div className={styles.groupBody} />
     </section>
   );
 }
@@ -167,13 +107,90 @@ function OverlayCard({ id }: { id: string }) {
   );
 }
 
+function CreateBoundaryPlaceholder({ index, onCreate }: { index: number; onCreate: (index: number) => void }) {
+  return (
+    <div className={styles.createBoundary} data-testid={`create-boundary-${index}`}>
+      <button
+        type="button"
+        className={styles.createBoundaryButton}
+        onClick={() => onCreate(index)}
+        aria-label={`Create group at position ${index}`}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
 export default function DeckGroupsSection2() {
   const [sectionState, setSectionState] = useState<SectionState>(INITIAL_STATE);
   const [activeSetId, setActiveSetId] = useState<string | null>(null);
+  const [hoverBoundaryIndex, setHoverBoundaryIndex] = useState<number | null>(null);
 
   const previousState = useRef<SectionState>(INITIAL_STATE);
   const nextGroupIdRef = useRef<number>(1);
-  const wasOverSlotRef = useRef<string | null>(null);
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  const groupRefs = useRef<Map<GroupId, HTMLElement>>(new Map());
+
+  const registerGroupRef = (groupId: GroupId, element: HTMLElement | null) => {
+    if (element) {
+      groupRefs.current.set(groupId, element);
+    } else {
+      groupRefs.current.delete(groupId);
+    }
+  };
+
+  const resolveBoundaryFromPointerX = (clientX: number): number => {
+    const orderedGroups = sectionState.groupOrder
+      .map((groupId) => ({ groupId, element: groupRefs.current.get(groupId) }))
+      .filter((entry): entry is { groupId: GroupId; element: HTMLElement } => Boolean(entry.element));
+
+    if (orderedGroups.length === 0) {
+      return 0;
+    }
+
+    for (let i = 0; i < orderedGroups.length; i += 1) {
+      const rect = orderedGroups[i].element.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      if (clientX < centerX) {
+        return i;
+      }
+    }
+
+    return orderedGroups.length;
+  };
+
+  const handleRowMouseMove: React.MouseEventHandler<HTMLDivElement> = (event) => {
+    if (activeSetId) {
+      return;
+    }
+    setHoverBoundaryIndex(resolveBoundaryFromPointerX(event.clientX));
+  };
+
+  const handleRowMouseLeave = () => {
+    if (!activeSetId) {
+      setHoverBoundaryIndex(null);
+    }
+  };
+
+  const createGroupAtIndex = (index: number) => {
+    setSectionState((current) => {
+      const newGroupId = `N${nextGroupIdRef.current}`;
+      nextGroupIdRef.current += 1;
+
+      const nextOrder = [...current.groupOrder];
+      const insertionIndex = clamp(index, 0, nextOrder.length);
+      nextOrder.splice(insertionIndex, 0, newGroupId);
+
+      return {
+        groupOrder: nextOrder,
+        itemsByGroup: {
+          ...current.itemsByGroup,
+          [newGroupId]: [],
+        },
+      };
+    });
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     if (event.operation.source?.type !== "set") {
@@ -181,8 +198,8 @@ export default function DeckGroupsSection2() {
     }
 
     previousState.current = sectionState;
-    wasOverSlotRef.current = null;
     setActiveSetId(String(event.operation.source.id));
+    setHoverBoundaryIndex(null);
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -191,54 +208,28 @@ export default function DeckGroupsSection2() {
     }
 
     const targetId = String(event.operation.target?.id ?? "");
-    wasOverSlotRef.current = isNewGroupSlotId(targetId) ? targetId : null;
-
-    if (targetId && !isNewGroupSlotId(targetId)) {
-      setSectionState((current) => ({
-        ...current,
-        itemsByGroup: move(current.itemsByGroup, event) as ItemsByGroup,
-      }));
-    }
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const sourceSetId = String(event.operation.source?.id ?? "");
-    const targetId = String(event.operation.target?.id ?? "");
-
-    if (event.canceled && event.operation.source?.type === "set") {
-      setSectionState(previousState.current);
-      setActiveSetId(null);
-      wasOverSlotRef.current = null;
+    if (!targetId) {
       return;
     }
 
-    const slotId = isNewGroupSlotId(targetId) ? targetId : wasOverSlotRef.current;
+    setSectionState((current) => ({
+      ...current,
+      itemsByGroup: move(current.itemsByGroup, event) as ItemsByGroup,
+    }));
+  };
 
-    if (!event.canceled && sourceSetId && slotId) {
-      const slotIndexRaw = slotIndexFromId(slotId);
-      if (slotIndexRaw != null) {
-        setSectionState((current) => {
-          const withoutSource = removeSetFromAllGroups(current.itemsByGroup, sourceSetId);
-          const newGroupId = `N${nextGroupIdRef.current}`;
-          nextGroupIdRef.current += 1;
+  const handleDragEnd = (event: DragEndEvent) => {
+    if (event.canceled && event.operation.source?.type === "set") {
+      setSectionState(previousState.current);
+      setActiveSetId(null);
+      return;
+    }
 
-          const nextItems = {
-            ...withoutSource,
-            [newGroupId]: [sourceSetId],
-          };
-          const insertionIndex = clamp(slotIndexRaw, 0, current.groupOrder.length);
-          const nextOrder = [...current.groupOrder];
-          nextOrder.splice(insertionIndex, 0, newGroupId);
-
-          return normalizeState(nextOrder, nextItems);
-        });
-      }
-    } else if (!event.canceled && event.operation.source?.type === "set") {
+    if (!event.canceled && event.operation.source?.type === "set") {
       setSectionState((current) => normalizeState(current.groupOrder, current.itemsByGroup));
     }
 
     setActiveSetId(null);
-    wasOverSlotRef.current = null;
   };
 
   const isSetDragActive = Boolean(activeSetId);
@@ -246,18 +237,33 @@ export default function DeckGroupsSection2() {
   return (
     <DragDropProvider onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
       <div className={styles.root} data-testid="deck-groups-section2">
-        <div className={styles.groupsRow}>
+        <div
+          className={styles.groupsRow}
+          data-testid="groups-row"
+          ref={rowRef}
+          onMouseMove={handleRowMouseMove}
+          onMouseLeave={handleRowMouseLeave}
+        >
           {sectionState.groupOrder.map((groupId, index) => (
             <div key={`${groupId}-${index}`} className={styles.groupStack}>
-              {isSetDragActive ? <TemporaryGroupSlot index={index} /> : null}
-              <GroupColumn id={groupId}>
-                {(sectionState.itemsByGroup[groupId] ?? []).map((setId, setIndex) => (
-                  <SetCard key={setId} id={setId} index={setIndex} group={groupId} />
-                ))}
-              </GroupColumn>
+              {!isSetDragActive && hoverBoundaryIndex === index ? (
+                <CreateBoundaryPlaceholder index={index} onCreate={createGroupAtIndex} />
+              ) : null}
+              <div ref={(element) => registerGroupRef(groupId, element)}>
+                <GroupColumn id={groupId}>
+                  {(sectionState.itemsByGroup[groupId] ?? []).map((setId, setIndex) => (
+                    <SetCard key={setId} id={setId} index={setIndex} group={groupId} />
+                  ))}
+                </GroupColumn>
+              </div>
             </div>
           ))}
-          {isSetDragActive ? <TemporaryGroupSlot index={sectionState.groupOrder.length} /> : null}
+          {!isSetDragActive && hoverBoundaryIndex === sectionState.groupOrder.length ? (
+            <CreateBoundaryPlaceholder
+              index={sectionState.groupOrder.length}
+              onCreate={createGroupAtIndex}
+            />
+          ) : null}
         </div>
       </div>
       <DragOverlay>{isSetDragActive && activeSetId ? <OverlayCard id={activeSetId} /> : null}</DragOverlay>

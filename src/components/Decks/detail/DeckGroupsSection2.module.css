@@ -20,6 +20,26 @@
   gap: 8px;
 }
 
+.createBoundary {
+  width: 18px;
+  min-width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.createBoundaryButton {
+  width: 16px;
+  height: 48px;
+  border: 1px dashed rgba(56, 64, 82, 0.45);
+  border-radius: 999px;
+  background: rgba(235, 236, 244, 0.5);
+  color: #3b4353;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+
 .group {
   min-width: 80px;
   width: max-content;
@@ -28,18 +48,7 @@
   border: 1px solid #d2d5df;
   display: flex;
   flex-direction: column;
-}
-
-.groupTemporary {
-  min-width: 110px;
-  border-style: dashed;
-  border-color: rgba(56, 64, 82, 0.45);
-  background: rgba(235, 236, 244, 0.5);
-}
-
-.groupTemporaryActive {
-  border-color: rgba(56, 64, 82, 0.75);
-  background: rgba(121, 138, 201, 0.22);
+  transition: width 160ms ease, min-width 160ms ease;
 }
 
 .groupHeader {
