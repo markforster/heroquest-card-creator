@@ -1265,6 +1265,7 @@ type GroupsAdapterInput = {
 type EntriesAdapterInput = {
   entriesSorted: Array<{ id: string; sortIndex: number }>;
   entryFrontIdByEntryId: Map<string, string>;
+  cardNameById: Map<string, string>;
 };
 
 type SourceAdapterInput = {
@@ -1305,10 +1306,17 @@ export function toGroupsBoardModel(input: GroupsAdapterInput): BoardSeedModel {
 export function toEntriesBoardModel(input: EntriesAdapterInput): BoardSeedModel {
   const groupId = "entries:lane";
   const setLabelsById: Record<SetId, string> = {};
-  const itemIds = input.entriesSorted.map((entry, index) => {
+  const itemIds = input.entriesSorted.map((entry) => {
     const sid = `entry:${entry.id}`;
     const frontId = input.entryFrontIdByEntryId.get(entry.id);
-    setLabelsById[sid] = frontId ? `Entry ${index + 1} (${frontId.slice(0, 8)})` : `Entry ${index + 1}`;
+    const frontTitle = frontId ? input.cardNameById.get(frontId)?.trim() ?? "" : "";
+    if (frontTitle) {
+      setLabelsById[sid] = frontTitle;
+    } else if (frontId) {
+      setLabelsById[sid] = frontId.slice(0, 8);
+    } else {
+      setLabelsById[sid] = entry.id.slice(0, 8);
+    }
     return sid;
   });
 

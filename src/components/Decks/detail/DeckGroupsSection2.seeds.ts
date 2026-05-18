@@ -83,8 +83,9 @@ export function useDeckBoardsSeedModels({
           sortIndex: entry.sortIndex,
         })),
         entryFrontIdByEntryId: entries.entryFrontIdByEntryId,
+        cardNameById,
       }),
-    [entries.entriesSorted, entries.entryFrontIdByEntryId],
+    [cardNameById, entries.entriesSorted, entries.entryFrontIdByEntryId],
   );
   const sourceModel = useMemo(
     () =>
