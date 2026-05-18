@@ -1,9 +1,10 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
-import DeckGroupsBoardMock, {
-  DeckEntriesBoardMock,
+import DeckGroupsBoardController, {
+  DeckEntriesBoardController,
   DeckMockDndProvider,
-  DeckSourceBoardMock,
+  DeckSourceBoardController,
+  type BoardSeedModel,
 } from "@/components/Decks/detail/DeckGroupsSection2";
 
 type DragEventLike = {
@@ -73,11 +74,61 @@ jest.mock("@dnd-kit/helpers", () => ({
 }));
 
 function renderWorkspace() {
+  const boardSeeds: Record<"groups" | "entries" | "source", BoardSeedModel> = {
+    groups: {
+      boardId: "groups",
+      groupIds: ["groups:A", "groups:B", "groups:C"],
+      itemsByGroup: {
+        "groups:A": ["g-A1", "g-A2", "g-A3"],
+        "groups:B": ["g-B1", "g-B2"],
+        "groups:C": ["g-C1"],
+      },
+      groupLabelsById: { "groups:A": "A", "groups:B": "B", "groups:C": "C" },
+      setLabelsById: {
+        "g-A1": "A1",
+        "g-A2": "A2",
+        "g-A3": "A3",
+        "g-B1": "B1",
+        "g-B2": "B2",
+        "g-C1": "C1",
+      },
+      setCardIdById: {
+        "g-A1": "g-A1",
+        "g-A2": "g-A2",
+        "g-A3": "g-A3",
+        "g-B1": "g-B1",
+        "g-B2": "g-B2",
+        "g-C1": "g-C1",
+      },
+      emitToken: "set",
+      acceptTokens: ["source"],
+    },
+    entries: {
+      boardId: "entries",
+      groupIds: ["entries:E1"],
+      itemsByGroup: { "entries:E1": ["e-1", "e-2"] },
+      groupLabelsById: { "entries:E1": "Entries" },
+      setLabelsById: { "e-1": "E-1", "e-2": "E-2" },
+      setCardIdById: { "e-1": "e-1", "e-2": "e-2" },
+      emitToken: "entry",
+      acceptTokens: ["source"],
+    },
+    source: {
+      boardId: "source",
+      groupIds: ["source:S1"],
+      itemsByGroup: { "source:S1": ["src-1", "src-2"] },
+      groupLabelsById: { "source:S1": "Source" },
+      setLabelsById: { "src-1": "SRC-1", "src-2": "SRC-2" },
+      setCardIdById: { "src-1": "src-1", "src-2": "src-2" },
+      emitToken: "source",
+      acceptTokens: [],
+    },
+  };
   render(
-    <DeckMockDndProvider>
-      <DeckGroupsBoardMock deckId={null} />
-      <DeckEntriesBoardMock />
-      <DeckSourceBoardMock />
+    <DeckMockDndProvider boardSeeds={boardSeeds}>
+      <DeckGroupsBoardController deckId={null} />
+      <DeckEntriesBoardController />
+      <DeckSourceBoardController />
     </DeckMockDndProvider>,
   );
 }
