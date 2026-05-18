@@ -123,8 +123,6 @@ type DeckMockDndContextValue = {
   setLabelsById: Record<SetId, string>;
   groupLabelsById: Record<GroupId, string>;
   activeSetId: SetId | null;
-  sourcePreviewTargetGroupId: GroupId | null;
-  sourcePreviewTargetIndex: number | null;
   hoverBoundaryByBoard: Record<BoardId, number | null>;
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
   handleHoverBoundary: (boardId: BoardId, clientX: number) => void;
@@ -142,8 +140,6 @@ type DeckSortableBoardViewModel = {
   groupLabelsById: Record<GroupId, string>;
   setLabelsById: Record<SetId, string>;
   activeSetId: SetId | null;
-  sourcePreviewTargetGroupId: GroupId | null;
-  sourcePreviewTargetIndex: number | null;
   hoverBoundaryIndex: number | null;
   onHoverBoundary: (clientX: number) => void;
   onLeaveBoard: () => void;
@@ -273,6 +269,34 @@ function parseGroupLabel(groupId: GroupId): string {
 function parseSetLabel(setId: SetId): string {
   if (setId.startsWith("g-")) return setId.slice(2).toUpperCase();
   return setId.toUpperCase();
+}
+
+function isPendingSetId(setId: SetId): boolean {
+  return setId.startsWith("pending:source:");
+}
+
+function clearPendingPlaceholder(itemsByGroup: Record<GroupId, SetId[]>): Record<GroupId, SetId[]> {
+  const next: Record<GroupId, SetId[]> = {};
+  Object.keys(itemsByGroup).forEach((groupId) => {
+    next[groupId] = (itemsByGroup[groupId] ?? []).filter((id) => !isPendingSetId(id));
+  });
+  return next;
+}
+
+function insertPendingPlaceholder(
+  itemsByGroup: Record<GroupId, SetId[]>,
+  targetGroupId: GroupId,
+  targetIndex: number,
+  pendingId: SetId,
+): Record<GroupId, SetId[]> {
+  const cleared = clearPendingPlaceholder(itemsByGroup);
+  const targetItems = (cleared[targetGroupId] ?? []).slice();
+  const index = clamp(targetIndex, 0, targetItems.length);
+  targetItems.splice(index, 0, pendingId);
+  return {
+    ...cleared,
+    [targetGroupId]: targetItems,
+  };
 }
 
 function createDnDStateFromSeeds(boardSeeds: Record<BoardId, BoardSeedModel>): DnDState {
@@ -540,10 +564,10 @@ function DraggableSetCard({
   );
 }
 
-function SourcePreviewGhost({ label }: { label: string }) {
+function PendingSetCard({ label }: { label: string }) {
   return (
     <div className={styles.setShell} aria-hidden="true">
-      <div className={[styles.setCard, styles.setCardGhost].join(" ")}>
+      <div className={[styles.setCard, styles.pendingSetCard].join(" ")}>
         <span>{label}</span>
         <span className={styles.grip} aria-hidden="true">
           ⠿
@@ -600,8 +624,6 @@ function DeckSortableBoardView({
     itemsByGroup,
     activeSetId,
     hoverBoundaryIndex,
-    sourcePreviewTargetGroupId,
-    sourcePreviewTargetIndex,
   } = model;
   const useFillParent = layoutMode === "fill-parent" && !config.allowMultipleGroups;
   const blockedBoundaries = useMemo(
@@ -648,23 +670,15 @@ function DeckSortableBoardView({
               >
                 {(() => {
                   const groupSetIds = itemsByGroup[groupId] ?? [];
-                  const shouldRenderSourcePreview =
-                    config.boardId === "groups" &&
-                    sourcePreviewTargetGroupId === groupId &&
-                    activeSetId?.startsWith("source:");
-                  const previewIndex = shouldRenderSourcePreview
-                    ? clamp(sourcePreviewTargetIndex ?? groupSetIds.length, 0, groupSetIds.length)
-                    : -1;
-                  const previewLabel = activeSetId
-                    ? model.setLabelsById[activeSetId] ?? parseSetLabel(activeSetId)
-                    : "";
 
                   return groupSetIds.map((setId, setIndex) => (
                     <div key={setId}>
-                      {shouldRenderSourcePreview && previewIndex === setIndex ? (
-                        <SourcePreviewGhost label={previewLabel} />
+                      {isPendingSetId(setId) ? (
+                        <PendingSetCard
+                          label={activeSetId ? model.setLabelsById[activeSetId] ?? parseSetLabel(activeSetId) : ""}
+                        />
                       ) : null}
-                      {config.allowInGroupSort ? (
+                      {!isPendingSetId(setId) && config.allowInGroupSort ? (
                         <SortableSetCard
                           setId={setId}
                           label={model.setLabelsById[setId]}
@@ -675,7 +689,8 @@ function DeckSortableBoardView({
                             model.onSetClick?.(setId, groupId);
                           }}
                         />
-                      ) : (
+                      ) : null}
+                      {!isPendingSetId(setId) && !config.allowInGroupSort ? (
                         <DraggableSetCard
                           setId={setId}
                           label={model.setLabelsById[setId]}
@@ -685,30 +700,12 @@ function DeckSortableBoardView({
                             model.onSetClick?.(setId, groupId);
                           }}
                         />
-                      )}
+                      ) : null}
                     </div>
                   ));
                 })()}
                 {(itemsByGroup[groupId] ?? []).length === 0 && model.emptyMessage ? (
                   <div>{model.emptyMessage}</div>
-                ) : null}
-                {config.boardId === "groups" &&
-                sourcePreviewTargetGroupId === groupId &&
-                activeSetId?.startsWith("source:") &&
-                (itemsByGroup[groupId] ?? []).length === 0 ? (
-                  <SourcePreviewGhost
-                    label={model.setLabelsById[activeSetId] ?? parseSetLabel(activeSetId)}
-                  />
-                ) : null}
-                {config.boardId === "groups" &&
-                sourcePreviewTargetGroupId === groupId &&
-                activeSetId?.startsWith("source:") &&
-                (itemsByGroup[groupId] ?? []).length > 0 &&
-                (sourcePreviewTargetIndex ?? (itemsByGroup[groupId] ?? []).length) >=
-                  (itemsByGroup[groupId] ?? []).length ? (
-                  <SourcePreviewGhost
-                    label={model.setLabelsById[activeSetId] ?? parseSetLabel(activeSetId)}
-                  />
                 ) : null}
               </GroupColumn>
             </div>
@@ -745,8 +742,6 @@ export function DeckMockDndProvider({
   );
   const [setLabelsById, setSetLabelsById] = useState<Record<SetId, string>>(initialLabels.setLabelsById);
   const [activeSetId, setActiveSetId] = useState<SetId | null>(null);
-  const [sourcePreviewTargetGroupId, setSourcePreviewTargetGroupId] = useState<GroupId | null>(null);
-  const [sourcePreviewTargetIndex, setSourcePreviewTargetIndex] = useState<number | null>(null);
   const [hoverBoundaryByBoard, setHoverBoundaryByBoard] = useState<Record<BoardId, number | null>>({
     groups: null,
     entries: null,
@@ -897,8 +892,6 @@ export function DeckMockDndProvider({
       null;
     previousState.current = state;
     setActiveSetId(String(event.operation.source.id));
-    setSourcePreviewTargetGroupId(null);
-    setSourcePreviewTargetIndex(null);
     setHoverBoundaryByBoard({ groups: null, entries: null, source: null });
   };
 
@@ -936,38 +929,36 @@ export function DeckMockDndProvider({
       targetAcceptTokens: targetRouting?.acceptTokens ?? null,
     });
     if (!canRoute) {
-      setSourcePreviewTargetGroupId(null);
-      setSourcePreviewTargetIndex(null);
       event.preventDefault?.();
       return;
     }
     if (!canMove(sourceGroupId, targetGroupId, sourceSetId)) {
-      setSourcePreviewTargetGroupId(null);
-      setSourcePreviewTargetIndex(null);
       event.preventDefault?.();
       return;
     }
 
     // Source items are templates for persisted create operations.
-    // Do not mutate in-memory board placement during hover.
+    // Show a single in-flow pending placeholder for source -> groups.
     if (sourceBoardId === "source") {
       if (targetBoardId === "groups") {
-        const targetItems = state.itemsByGroup[targetGroupId] ?? [];
+        const pendingId = `pending:source:${sourceSetId.replace(/^source:/, "")}`;
+        const targetItems = (state.itemsByGroup[targetGroupId] ?? []).filter((id) => !isPendingSetId(id));
         const targetIndex =
           event.operation.target?.type === "group"
             ? targetItems.length
             : Math.max(0, targetItems.indexOf(targetId));
-        setSourcePreviewTargetGroupId(targetGroupId);
-        setSourcePreviewTargetIndex(targetIndex);
-      } else {
-        setSourcePreviewTargetGroupId(null);
-        setSourcePreviewTargetIndex(null);
+        setState((current) => ({
+          ...current,
+          itemsByGroup: insertPendingPlaceholder(current.itemsByGroup, targetGroupId, targetIndex, pendingId),
+        }));
+        return;
       }
+      setState((current) => ({
+        ...current,
+        itemsByGroup: clearPendingPlaceholder(current.itemsByGroup),
+      }));
       return;
     }
-
-    setSourcePreviewTargetGroupId(null);
-    setSourcePreviewTargetIndex(null);
 
     setState((current) => ({
       ...current,
@@ -982,10 +973,11 @@ export function DeckMockDndProvider({
     }
 
     if (event.canceled) {
-      setState(previousState.current);
+      setState({
+        ...previousState.current,
+        itemsByGroup: clearPendingPlaceholder(previousState.current.itemsByGroup),
+      });
       setActiveSetId(null);
-      setSourcePreviewTargetGroupId(null);
-      setSourcePreviewTargetIndex(null);
       sourceGroupIdAtDragStartRef.current = null;
       return;
     }
@@ -1004,7 +996,11 @@ export function DeckMockDndProvider({
           (targetId ? findGroupIdBySetId(state.itemsByGroup, targetId) || "" : "");
 
     setState((current) => {
-      const next = normalizeAfterDrop(current);
+      const withoutPending: DnDState = {
+        ...current,
+        itemsByGroup: clearPendingPlaceholder(current.itemsByGroup),
+      };
+      const next = normalizeAfterDrop(withoutPending);
       if (ephemeralEmptyGroupId && !(ephemeralEmptyGroupId in next.itemsByGroup)) {
         setEphemeralEmptyGroupId(null);
       } else if (
@@ -1017,8 +1013,6 @@ export function DeckMockDndProvider({
     });
 
     setActiveSetId(null);
-    setSourcePreviewTargetGroupId(null);
-    setSourcePreviewTargetIndex(null);
     sourceGroupIdAtDragStartRef.current = null;
 
     const normalizedSetId = sourceSetId.startsWith("set:") ? sourceSetId.slice(4) : "";
@@ -1099,12 +1093,18 @@ export function DeckMockDndProvider({
         normalizedTargetGroupId &&
         !isTempTargetGroup
       ) {
+        const targetItemsWithoutPending = (state.itemsByGroup[targetGroupId] ?? []).filter(
+          (id) => !isPendingSetId(id),
+        );
         events.push({
           kind: "GROUPS_DROP_SOURCE_CARD_TO_GROUP",
           ...eventBase,
           backFaceId: normalizedBackFaceId,
           targetGroupId: normalizedTargetGroupId,
-          targetIndex: sourcePreviewTargetIndex ?? (state.itemsByGroup[targetGroupId]?.length ?? 0),
+          targetIndex:
+            event.operation.target?.type === "group"
+              ? targetItemsWithoutPending.length
+              : Math.max(0, targetItemsWithoutPending.indexOf(targetId)),
         });
       }
 
@@ -1182,8 +1182,6 @@ export function DeckMockDndProvider({
         setLabelsById,
         groupLabelsById,
         activeSetId,
-        sourcePreviewTargetGroupId,
-        sourcePreviewTargetIndex,
         hoverBoundaryByBoard,
         registerGroupRef,
         handleHoverBoundary,
@@ -1226,8 +1224,6 @@ function useDeckSortableBoardViewModel(
     setLabelsById,
     groupLabelsById,
     activeSetId,
-    sourcePreviewTargetGroupId,
-    sourcePreviewTargetIndex,
     hoverBoundaryByBoard,
     registerGroupRef,
     handleHoverBoundary,
@@ -1244,8 +1240,6 @@ function useDeckSortableBoardViewModel(
     groupLabelsById,
     setLabelsById,
     activeSetId,
-    sourcePreviewTargetGroupId,
-    sourcePreviewTargetIndex,
     hoverBoundaryIndex: hoverBoundaryByBoard[boardId],
     onHoverBoundary: (clientX: number) => handleHoverBoundary(boardId, clientX),
     onLeaveBoard: () => handleLeaveBoard(boardId),

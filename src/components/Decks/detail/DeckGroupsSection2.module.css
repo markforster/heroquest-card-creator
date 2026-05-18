@@ -123,7 +123,10 @@
 }
 
 .groupHeader > span:first-child {
+  flex: 1 1 auto;
+  width: 0;
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -194,6 +197,11 @@
 
 .setCardGhost {
   opacity: 0.38;
+}
+
+.pendingSetCard {
+  opacity: 0.55;
+  border-style: dashed;
 }
 
 .setCardDropTarget {
