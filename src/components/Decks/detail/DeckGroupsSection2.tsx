@@ -17,6 +17,7 @@ import styles from "./DeckGroupsSection2.module.css";
 type BoardId = "groups" | "entries" | "source";
 type GroupId = string;
 type SetId = string;
+type LayoutMode = "content" | "fill-parent";
 
 type BoardConfig = {
   boardId: BoardId;
@@ -146,18 +147,36 @@ function normalizeAfterDrop(current: DnDState): DnDState {
   };
 }
 
-function GroupColumn({ groupId, children }: { groupId: GroupId; children: React.ReactNode }) {
+function GroupColumn({
+  groupId,
+  children,
+  fillParent,
+}: {
+  groupId: GroupId;
+  children: React.ReactNode;
+  fillParent: boolean;
+}) {
   const { ref } = useDroppable({ id: groupId, type: "group", accept: ["set"] });
 
   return (
-    <section className={styles.group} ref={ref} data-testid={`group-${groupId}`}>
+    <section
+      className={[styles.group, fillParent ? styles.groupFillParent : ""].filter(Boolean).join(" ")}
+      ref={ref}
+      data-testid={`group-${groupId}`}
+    >
       <header className={styles.groupHeader}>
         <span>{parseGroupLabel(groupId)}</span>
         <span className={styles.grip} aria-hidden="true">
           ⠿
         </span>
       </header>
-      <div className={styles.groupBody}>{children}</div>
+      <div
+        className={[styles.groupBody, fillParent ? styles.groupBodyFillParent : ""]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        {children}
+      </div>
     </section>
   );
 }
@@ -227,7 +246,13 @@ function CreateBoundaryPlaceholder({ index, onCreate }: { index: number; onCreat
   );
 }
 
-function DeckSortableBoardView({ boardId }: { boardId: BoardId }) {
+function DeckSortableBoardView({
+  boardId,
+  layoutMode = "content",
+}: {
+  boardId: BoardId;
+  layoutMode?: LayoutMode;
+}) {
   const config = BOARD_CONFIGS[boardId];
   const {
     state,
@@ -240,16 +265,22 @@ function DeckSortableBoardView({ boardId }: { boardId: BoardId }) {
   } = useDeckMockDnd();
 
   const groupIds = state.groupOrderByBoard[boardId];
+  const useFillParent = layoutMode === "fill-parent" && !config.allowMultipleGroups;
   const blockedBoundaries = useMemo(
     () => getBlockedBoundaries(groupIds, state.itemsByGroup),
     [groupIds, state.itemsByGroup],
   );
 
   return (
-    <section className={styles.board} data-testid={`board-${boardId}`}>
+    <section
+      className={[styles.board, useFillParent ? styles.boardFillParent : ""].filter(Boolean).join(" ")}
+      data-testid={`board-${boardId}`}
+    >
       <header className={styles.boardHeader}>{config.title}</header>
       <div
-        className={styles.groupsRow}
+        className={[styles.groupsRow, useFillParent ? styles.groupsRowFillParent : ""]
+          .filter(Boolean)
+          .join(" ")}
         data-testid={`groups-row-${boardId}`}
         onMouseMove={(event) => handleHoverBoundary(boardId, event.clientX)}
         onMouseLeave={() => handleLeaveBoard(boardId)}
@@ -266,7 +297,7 @@ function DeckSortableBoardView({ boardId }: { boardId: BoardId }) {
               />
             ) : null}
             <div ref={(node) => registerGroupRef(groupId, node)}>
-              <GroupColumn groupId={groupId}>
+              <GroupColumn groupId={groupId} fillParent={useFillParent}>
                 {(state.itemsByGroup[groupId] ?? []).map((setId, setIndex) => (
                   <SetCard key={setId} setId={setId} index={setIndex} groupId={groupId} />
                 ))}
@@ -464,14 +495,13 @@ export function DeckMockDndProvider({ children }: { children: React.ReactNode })
 }
 
 export default function DeckGroupsSection2() {
-  return <DeckSortableBoardView boardId="groups" />;
+  return <DeckSortableBoardView boardId="groups" layoutMode="content" />;
 }
 
-export function DeckEntriesSection2Mock() {
-  return <DeckSortableBoardView boardId="entries" />;
+export function DeckEntriesSection2Mock({ layoutMode = "fill-parent" }: { layoutMode?: LayoutMode }) {
+  return <DeckSortableBoardView boardId="entries" layoutMode={layoutMode} />;
 }
 
-export function DeckSourceBoard2Mock() {
-  return <DeckSortableBoardView boardId="source" />;
+export function DeckSourceBoard2Mock({ layoutMode = "fill-parent" }: { layoutMode?: LayoutMode }) {
+  return <DeckSortableBoardView boardId="source" layoutMode={layoutMode} />;
 }
-

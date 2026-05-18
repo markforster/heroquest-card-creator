@@ -72,6 +72,14 @@ function renderWorkspace() {
 }
 
 describe("DeckGroupsSection2 mock boards", () => {
+  it("applies fill-parent layout to entries and source, but not groups", () => {
+    renderWorkspace();
+
+    expect(screen.getByTestId("board-groups").className).not.toContain("boardFillParent");
+    expect(screen.getByTestId("board-entries").className).toContain("boardFillParent");
+    expect(screen.getByTestId("board-source").className).toContain("boardFillParent");
+  });
+
   it("renders groups board and supports + on hover", () => {
     renderWorkspace();
     const row = screen.getByTestId("groups-row-groups");
@@ -132,4 +140,3 @@ describe("DeckGroupsSection2 mock boards", () => {
     expect(screen.getByTestId("group-entries:E1")).toHaveTextContent("SRC-2");
   });
 });
-
