@@ -1,9 +1,37 @@
-.root {
+.workspaceRoot {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.workspaceCenterColumn {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.workspaceRightColumn {
+  width: min(34vw, 420px);
+  min-width: 280px;
+}
+
+.board {
   border: 1px solid #c8cbe3;
   border-radius: 7px;
   padding: 10px;
   background: linear-gradient(120deg, #c7d7e0 0%, #cfcbe8 100%);
   box-shadow: 0 2px 4px rgba(16, 24, 40, 0.06);
+}
+
+.boardHeader {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(37, 43, 55, 0.8);
+  text-transform: uppercase;
+  margin: 0 0 8px;
 }
 
 .groupsRow {

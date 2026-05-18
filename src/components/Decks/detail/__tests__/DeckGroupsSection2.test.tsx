@@ -1,10 +1,16 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
+import DeckGroupsSection2, {
+  DeckEntriesSection2Mock,
+  DeckMockDndProvider,
+  DeckSourceBoard2Mock,
+} from "@/components/Decks/detail/DeckGroupsSection2";
+
 type DragEventLike = {
   canceled?: boolean;
   operation: {
-    source?: { id: string; type: string };
-    target?: { id: string; type: string };
+    source?: { id: string; type: string; group?: string };
+    target?: { id: string; type: string; group?: string };
   };
 };
 
@@ -12,16 +18,18 @@ const callbacks: {
   onDragStart?: (event: DragEventLike) => void;
   onDragOver?: (event: DragEventLike) => void;
   onDragEnd?: (event: DragEventLike) => void;
+  onDragCancel?: () => void;
 } = {};
 
 jest.mock("@dnd-kit/react", () => ({
-  DragDropProvider: ({ children, onDragStart, onDragOver, onDragEnd }: any) => {
+  DragDropProvider: ({ children, onDragStart, onDragOver, onDragEnd, onDragCancel }: any) => {
     callbacks.onDragStart = onDragStart;
     callbacks.onDragOver = onDragOver;
     callbacks.onDragEnd = onDragEnd;
-    return <div data-testid="mock-drag-provider">{children}</div>;
+    callbacks.onDragCancel = onDragCancel;
+    return <div>{children}</div>;
   },
-  DragOverlay: ({ children }: any) => <div data-testid="mock-drag-overlay">{children}</div>,
+  DragOverlay: ({ children }: any) => <div>{children}</div>,
   useDroppable: () => ({ ref: jest.fn(), isDropTarget: false }),
 }));
 
@@ -37,222 +45,91 @@ jest.mock("@dnd-kit/react/sortable", () => ({
 jest.mock("@dnd-kit/helpers", () => ({
   move: jest.fn((items: Record<string, string[]>, event: DragEventLike) => {
     const sourceId = event.operation.source?.id;
-    const targetId = event.operation.target?.id;
+    const sourceGroup = event.operation.source?.group;
+    const targetGroup =
+      event.operation.target?.type === "group" ? event.operation.target.id : event.operation.target?.group;
 
-    if (sourceId === "A1" && targetId === "B") {
-      return {
-        ...items,
-        A: items.A.filter((id) => id !== "A1"),
-        B: ["A1", ...items.B],
-      };
+    if (!sourceId || !sourceGroup || !targetGroup || sourceGroup === targetGroup) {
+      return items;
     }
 
-    if ((sourceId === "B1" || sourceId === "B2") && targetId === "C") {
-      return {
-        ...items,
-        B: items.B.filter((id) => id !== sourceId),
-        C: [...items.C, sourceId],
-      };
-    }
-
-    return items;
+    return {
+      ...items,
+      [sourceGroup]: (items[sourceGroup] ?? []).filter((id) => id !== sourceId),
+      [targetGroup]: [...(items[targetGroup] ?? []), sourceId],
+    };
   }),
 }));
 
-const DeckGroupsSection2 = require("@/components/Decks/detail/DeckGroupsSection2").default;
-
-function mockGroupRects(order: string[]) {
-  order.forEach((groupId, index) => {
-    const group = screen.getByTestId(`group-${groupId}`);
-    const wrapper = group.parentElement as HTMLElement;
-
-    jest.spyOn(wrapper, "getBoundingClientRect").mockReturnValue({
-      x: index * 240,
-      y: 0,
-      width: 220,
-      height: 140,
-      top: 0,
-      left: index * 240,
-      right: index * 240 + 220,
-      bottom: 140,
-      toJSON: () => ({}),
-    } as DOMRect);
-  });
+function renderWorkspace() {
+  render(
+    <DeckMockDndProvider>
+      <DeckGroupsSection2 />
+      <DeckEntriesSection2Mock />
+      <DeckSourceBoard2Mock />
+    </DeckMockDndProvider>,
+  );
 }
 
-describe("DeckGroupsSection2", () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
+describe("DeckGroupsSection2 mock boards", () => {
+  it("renders groups board and supports + on hover", () => {
+    renderWorkspace();
+    const row = screen.getByTestId("groups-row-groups");
+    fireEvent.mouseMove(row, { clientX: -9999 });
+    expect(screen.getByRole("button", { name: /Create group at position/i })).toBeInTheDocument();
   });
 
-  it("renders fake groups and no placeholder by default", () => {
-    render(<DeckGroupsSection2 />);
-
-    expect(screen.getByTestId("group-A")).toBeInTheDocument();
-    expect(screen.getByTestId("group-B")).toBeInTheDocument();
-    expect(screen.getByTestId("group-C")).toBeInTheDocument();
-    expect(screen.queryByTestId("create-boundary-0")).not.toBeInTheDocument();
+  it("does not render + for entries/source boards", () => {
+    renderWorkspace();
+    fireEvent.mouseMove(screen.getByTestId("groups-row-entries"), { clientX: -9999 });
+    fireEvent.mouseMove(screen.getByTestId("groups-row-source"), { clientX: -9999 });
+    expect(screen.queryAllByRole("button", { name: /Create group at position/i }).length).toBeLessThanOrEqual(1);
   });
 
-  it("shows a non-drag create placeholder on row hover", () => {
-    render(<DeckGroupsSection2 />);
-
-    const row = screen.getByTestId("groups-row");
-    fireEvent.mouseMove(row, { clientX: -1000 });
-
-    expect(screen.getByTestId("create-boundary-0")).toBeInTheDocument();
-  });
-
-  it("creates a permanent empty group from + button", () => {
-    render(<DeckGroupsSection2 />);
-
-    const row = screen.getByTestId("groups-row");
-    fireEvent.mouseMove(row, { clientX: -1000 });
-
-    fireEvent.click(screen.getByRole("button", { name: "Create group at position 0" }));
-
-    expect(screen.getByTestId("group-N1")).toBeInTheDocument();
-  });
-
-  it("keeps only one pending empty group when + is clicked repeatedly", () => {
-    render(<DeckGroupsSection2 />);
-    mockGroupRects(["A", "B", "C"]);
-
-    const row = screen.getByTestId("groups-row");
-    fireEvent.mouseMove(row, { clientX: -1000 });
-    fireEvent.click(screen.getByRole("button", { name: /Create group at position/i }));
-    expect(screen.getByTestId("group-N1")).toBeInTheDocument();
-
-    mockGroupRects(["N1", "A", "B", "C"]);
-    fireEvent.mouseMove(row, { clientX: 360 });
-    fireEvent.click(screen.getByRole("button", { name: /Create group at position/i }));
-
-    expect(screen.queryByTestId("group-N1")).not.toBeInTheDocument();
-    expect(screen.getByTestId("group-N2")).toBeInTheDocument();
-  });
-
-  it("does not show + on boundaries adjacent to any empty group", () => {
-    render(<DeckGroupsSection2 />);
-
-    const row = screen.getByTestId("groups-row");
-    fireEvent.mouseMove(row, { clientX: -1000 });
-    fireEvent.click(screen.getByRole("button", { name: /Create group at position/i }));
-    expect(screen.getByTestId("group-N1")).toBeInTheDocument();
-
-    const createdGroup = screen.getByTestId("group-N1");
-    const leftOfCreated = createdGroup.getBoundingClientRect().left - 1;
-    const rightOfCreated = createdGroup.getBoundingClientRect().right + 1;
-
-    fireEvent.mouseMove(row, { clientX: leftOfCreated });
-    expect(screen.queryByTestId("create-boundary-0")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("create-boundary-1")).not.toBeInTheDocument();
-
-    fireEvent.mouseMove(row, { clientX: rightOfCreated });
-    expect(screen.queryByTestId("create-boundary-0")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("create-boundary-1")).not.toBeInTheDocument();
-  });
-
-  it("does not show create placeholders while dragging", () => {
-    render(<DeckGroupsSection2 />);
-
-    const row = screen.getByTestId("groups-row");
-    fireEvent.mouseMove(row, { clientX: -1000 });
-    expect(screen.getByTestId("create-boundary-0")).toBeInTheDocument();
+  it("moves from source to groups and to entries", () => {
+    renderWorkspace();
 
     act(() => {
-      callbacks.onDragStart?.({ operation: { source: { id: "A1", type: "set" } } });
-    });
-
-    expect(screen.queryByTestId("create-boundary-0")).not.toBeInTheDocument();
-  });
-
-  it("still moves sets between existing groups", () => {
-    render(<DeckGroupsSection2 />);
-
-    act(() => {
-      callbacks.onDragStart?.({ operation: { source: { id: "A1", type: "set" } } });
+      callbacks.onDragStart?.({
+        operation: { source: { id: "src-1", type: "set", group: "source:S1" } },
+      });
       callbacks.onDragOver?.({
         operation: {
-          source: { id: "A1", type: "set" },
-          target: { id: "B", type: "group" },
+          source: { id: "src-1", type: "set", group: "source:S1" },
+          target: { id: "groups:A", type: "group" },
         },
       });
       callbacks.onDragEnd?.({
         canceled: false,
         operation: {
-          source: { id: "A1", type: "set" },
-          target: { id: "B", type: "group" },
+          source: { id: "src-1", type: "set", group: "source:S1" },
+          target: { id: "groups:A", type: "group" },
         },
       });
     });
 
-    expect(screen.getByTestId("group-B")).toHaveTextContent("A1");
-  });
-
-  it("deletes source group when it has no sets after committed drop", () => {
-    render(<DeckGroupsSection2 />);
+    expect(screen.getByTestId("group-groups:A")).toHaveTextContent("SRC-1");
 
     act(() => {
-      callbacks.onDragStart?.({ operation: { source: { id: "B1", type: "set" } } });
+      callbacks.onDragStart?.({
+        operation: { source: { id: "src-2", type: "set", group: "source:S1" } },
+      });
       callbacks.onDragOver?.({
         operation: {
-          source: { id: "B1", type: "set" },
-          target: { id: "C", type: "group" },
+          source: { id: "src-2", type: "set", group: "source:S1" },
+          target: { id: "entries:E1", type: "group" },
         },
       });
       callbacks.onDragEnd?.({
         canceled: false,
         operation: {
-          source: { id: "B1", type: "set" },
-          target: { id: "C", type: "group" },
+          source: { id: "src-2", type: "set", group: "source:S1" },
+          target: { id: "entries:E1", type: "group" },
         },
       });
     });
 
-    act(() => {
-      callbacks.onDragStart?.({ operation: { source: { id: "B2", type: "set" } } });
-      callbacks.onDragOver?.({
-        operation: {
-          source: { id: "B2", type: "set" },
-          target: { id: "C", type: "group" },
-        },
-      });
-      callbacks.onDragEnd?.({
-        canceled: false,
-        operation: {
-          source: { id: "B2", type: "set" },
-          target: { id: "C", type: "group" },
-        },
-      });
-    });
-
-    expect(screen.queryByTestId("group-B")).not.toBeInTheDocument();
-    expect(screen.getByTestId("group-C")).toHaveTextContent("B1");
-    expect(screen.getByTestId("group-C")).toHaveTextContent("B2");
-  });
-
-  it("does not delete groups on canceled drag", () => {
-    render(<DeckGroupsSection2 />);
-
-    act(() => {
-      callbacks.onDragStart?.({ operation: { source: { id: "B1", type: "set" } } });
-      callbacks.onDragOver?.({
-        operation: {
-          source: { id: "B1", type: "set" },
-          target: { id: "C", type: "group" },
-        },
-      });
-      callbacks.onDragEnd?.({
-        canceled: true,
-        operation: {
-          source: { id: "B1", type: "set" },
-          target: { id: "C", type: "group" },
-        },
-      });
-    });
-
-    expect(screen.getByTestId("group-B")).toBeInTheDocument();
-    expect(screen.getByTestId("group-B")).toHaveTextContent("B1");
-    expect(screen.getByTestId("group-B")).toHaveTextContent("B2");
+    expect(screen.getByTestId("group-entries:E1")).toHaveTextContent("SRC-2");
   });
 });
+

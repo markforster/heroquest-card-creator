@@ -3,6 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { BringToFront, ChevronLeft, ChevronRight, Search, SendToBack } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
@@ -70,11 +71,13 @@ export default function DeckBacksPanel({
   usedFrontFaceIds,
   finalizingBackFaceId,
   finalizingFrontFaceId,
+  gridOverride,
 }: {
   usedBackFaceIds: Set<string>;
   usedFrontFaceIds: Set<string>;
   finalizingBackFaceId: string | null;
   finalizingFrontFaceId: string | null;
+  gridOverride?: ReactNode;
 }) {
   const { t } = useI18n();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -228,7 +231,9 @@ export default function DeckBacksPanel({
             )}
           </div>
           <div className={styles.deckBacksGridPanel}>
-            {filteredCards.length === 0 ? (
+            {gridOverride ? (
+              gridOverride
+            ) : filteredCards.length === 0 ? (
               <div className={styles.decksEmpty}>{emptyLabel}</div>
             ) : (
               <div className={styles.deckBacksGrid}>

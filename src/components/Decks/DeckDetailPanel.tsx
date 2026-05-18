@@ -15,8 +15,6 @@ import DeckBacksPanel, { DeckBacksOverlayThumb } from "@/components/Decks/detail
 import DeckDetailHeader from "@/components/Decks/detail/DeckDetailHeader";
 import DeckDetailModals from "@/components/Decks/detail/DeckDetailModals";
 import DeckDragOverlay from "@/components/Decks/detail/DeckDragOverlay";
-import DeckEntriesSection from "@/components/Decks/detail/DeckEntriesSection";
-import DeckGroupsSection from "@/components/Decks/detail/DeckGroupsSection";
 import type { DeckDetailSelectionModel } from "@/components/Decks/hooks/useDeckDetailSelectionModel";
 import { useDeckHeaderModel } from "@/components/Decks/hooks/useDeckHeaderModel";
 import type { DeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
@@ -28,10 +26,13 @@ import type {
   DeckDetailModalState,
 } from "@/components/Decks/types/deck-detail";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
-import DeckGroupsSection2 from "./detail/DeckGroupsSection2";
+import DeckGroupsSection2, {
+  DeckEntriesSection2Mock,
+  DeckMockDndProvider,
+  DeckSourceBoard2Mock,
+} from "./detail/DeckGroupsSection2";
 
 const SET_TILE_VARIANT = "smMd";
-const GROUP_TILE_VARIANT = "smMd";
 const BACK_PANEL_DRAG_VARIANT = "smMd";
 
 function DeckEntryThumb({ cardId, isSelected }: { cardId: string; isSelected: boolean }) {
@@ -120,8 +121,6 @@ function DeckDetailPanelContent({
   dndProps,
   modalState,
   modalActions,
-  groupRowRef,
-  entriesRowRef,
   selectionModel,
   entriesModel,
 }: {
@@ -152,6 +151,7 @@ function DeckDetailPanelContent({
       ),
     [entriesModel.entries, entriesModel.entryFrontIdByEntryId],
   );
+
   return (
     <>
       <DndContext
@@ -165,75 +165,61 @@ function DeckDetailPanelContent({
         onDragEnd={dndProps.onDragEnd}
         onDragCancel={dndProps.onDragCancel}
       >
-        <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
-          <div className={styles.deckRoutePanel}>
-            <DeckDetailHeader
-              deckId={deckId}
-              deckTitle={deckTitle}
-              selectedSetId={selectionModel.selectedSetId}
-              keySetId={keySetId}
-              selectedSetBackFaceId={
-                selectionModel.selectedSetId
-                  ? (selectionModel.setById.get(selectionModel.selectedSetId)?.backFaceId ?? null)
-                  : null
-              }
-              onConfirmMakeKeyCard={async () => {
-                if (!selectionModel.selectedSetId || !deckId) return;
-                await actions.makeSelectedSetKeyCard(selectionModel.selectedSetId);
-              }}
+        <DeckMockDndProvider>
+          <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
+            <div className={styles.deckRoutePanel}>
+              <DeckDetailHeader
+                deckId={deckId}
+                deckTitle={deckTitle}
+                selectedSetId={selectionModel.selectedSetId}
+                keySetId={keySetId}
+                selectedSetBackFaceId={
+                  selectionModel.selectedSetId
+                    ? (selectionModel.setById.get(selectionModel.selectedSetId)?.backFaceId ?? null)
+                    : null
+                }
+                onConfirmMakeKeyCard={async () => {
+                  if (!selectionModel.selectedSetId || !deckId) return;
+                  await actions.makeSelectedSetKeyCard(selectionModel.selectedSetId);
+                }}
+              />
+
+              <DeckDetailSelectionProvider model={selectionModel}>
+                <DeckSetEntriesProvider model={entriesModel}>
+                  <div className={styles.deckRouteMiddle}>
+                    <DeckGroupsSection2 />
+                    <DeckEntriesSection2Mock />
+
+                    <DeckDragOverlay
+                      drag={drag}
+                      setById={selectionModel.setById}
+                      deckEntryThumb={(cardId, isSelected) => (
+                        <DeckEntryThumb cardId={cardId} isSelected={isSelected} />
+                      )}
+                      deckSetThumb={(cardId) => <DeckSetThumb cardId={cardId} />}
+                      backPanelThumb={(cardId) => (
+                        <DeckBacksOverlayThumb cardId={cardId} variant={BACK_PANEL_DRAG_VARIANT} />
+                      )}
+                    />
+                  </div>
+                </DeckSetEntriesProvider>
+              </DeckDetailSelectionProvider>
+            </div>
+          </section>
+          <aside
+            className={`${styles.rightPanel} ${styles.decksRightPanel} ${
+              isRightPanelVisible ? styles.decksRightPanelExpanded : styles.decksRightPanelCollapsed
+            }`}
+          >
+            <DeckBacksPanel
+              usedBackFaceIds={usedBackFaceIds}
+              usedFrontFaceIds={usedFrontFaceIds}
+              finalizingBackFaceId={drag.finalizingBackFaceId}
+              finalizingFrontFaceId={drag.finalizingFrontFaceId}
+              gridOverride={<DeckSourceBoard2Mock />}
             />
-
-            {/* <div className={styles.deckRouteDetailsRow} /> */}
-
-            <DeckDetailSelectionProvider model={selectionModel}>
-              <DeckSetEntriesProvider model={entriesModel}>
-                <div className={styles.deckRouteMiddle}>
-                  {/* <DeckGroupsSection
-                    groupTileVariant={GROUP_TILE_VARIANT}
-                    keySetId={keySetId}
-                    drag={drag}
-                    rowRef={groupRowRef}
-                    onDeleteSetFromGroupCard={actions.deleteSetFromGroupCard}
-                  /> */}
-                  <DeckGroupsSection2 />
-
-                  <DeckEntriesSection
-                    drag={drag}
-                    entriesRowRef={entriesRowRef}
-                    onOpenCardEditor={actions.onOpenCardEditor}
-                    deckEntryThumb={(cardId, isSelected) => (
-                      <DeckEntryThumb cardId={cardId} isSelected={isSelected} />
-                    )}
-                  />
-
-                  <DeckDragOverlay
-                    drag={drag}
-                    setById={selectionModel.setById}
-                    deckEntryThumb={(cardId, isSelected) => (
-                      <DeckEntryThumb cardId={cardId} isSelected={isSelected} />
-                    )}
-                    deckSetThumb={(cardId) => <DeckSetThumb cardId={cardId} />}
-                    backPanelThumb={(cardId) => (
-                      <DeckBacksOverlayThumb cardId={cardId} variant={BACK_PANEL_DRAG_VARIANT} />
-                    )}
-                  />
-                </div>
-              </DeckSetEntriesProvider>
-            </DeckDetailSelectionProvider>
-          </div>
-        </section>
-        <aside
-          className={`${styles.rightPanel} ${styles.decksRightPanel} ${
-            isRightPanelVisible ? styles.decksRightPanelExpanded : styles.decksRightPanelCollapsed
-          }`}
-        >
-          <DeckBacksPanel
-            usedBackFaceIds={usedBackFaceIds}
-            usedFrontFaceIds={usedFrontFaceIds}
-            finalizingBackFaceId={drag.finalizingBackFaceId}
-            finalizingFrontFaceId={drag.finalizingFrontFaceId}
-          />
-        </aside>
+          </aside>
+        </DeckMockDndProvider>
       </DndContext>
 
       <DeckDetailModals

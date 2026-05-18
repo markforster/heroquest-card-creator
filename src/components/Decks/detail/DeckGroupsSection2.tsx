@@ -8,53 +8,108 @@ import {
   type DragStartEvent,
   useDroppable,
 } from "@dnd-kit/react";
-import { useSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
-import { useRef, useState } from "react";
+import { useSortable } from "@dnd-kit/react/sortable";
+import { createContext, useContext, useMemo, useRef, useState } from "react";
 
 import styles from "./DeckGroupsSection2.module.css";
 
+type BoardId = "groups" | "entries" | "source";
 type GroupId = string;
-type ItemsByGroup = Record<GroupId, string[]>;
+type SetId = string;
 
-type SectionState = {
-  groupOrder: GroupId[];
-  itemsByGroup: ItemsByGroup;
+type BoardConfig = {
+  boardId: BoardId;
+  title: string;
+  allowMultipleGroups: boolean;
+  allowGroupCreate: boolean;
 };
 
-const INITIAL_STATE: SectionState = {
-  groupOrder: ["A", "B", "C"],
-  itemsByGroup: {
-    A: ["A1", "A2", "A3"],
-    B: ["B1", "B2"],
-    C: ["C1"],
+type DnDState = {
+  groupOrderByBoard: Record<BoardId, GroupId[]>;
+  itemsByGroup: Record<GroupId, SetId[]>;
+  groupToBoard: Record<GroupId, BoardId>;
+};
+
+type DeckMockDndContextValue = {
+  state: DnDState;
+  activeSetId: SetId | null;
+  hoverBoundaryByBoard: Record<BoardId, number | null>;
+  registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
+  handleHoverBoundary: (boardId: BoardId, clientX: number) => void;
+  handleLeaveBoard: (boardId: BoardId) => void;
+  createGroupAtIndex: (boardId: BoardId, index: number) => void;
+};
+
+const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
+  groups: { boardId: "groups", title: "Groups", allowMultipleGroups: true, allowGroupCreate: true },
+  entries: {
+    boardId: "entries",
+    title: "Entries",
+    allowMultipleGroups: false,
+    allowGroupCreate: false,
+  },
+  source: {
+    boardId: "source",
+    title: "Source",
+    allowMultipleGroups: false,
+    allowGroupCreate: false,
   },
 };
+
+const INITIAL_STATE: DnDState = {
+  groupOrderByBoard: {
+    groups: ["groups:A", "groups:B", "groups:C"],
+    entries: ["entries:E1"],
+    source: ["source:S1"],
+  },
+  groupToBoard: {
+    "groups:A": "groups",
+    "groups:B": "groups",
+    "groups:C": "groups",
+    "entries:E1": "entries",
+    "source:S1": "source",
+  },
+  itemsByGroup: {
+    "groups:A": ["g-A1", "g-A2", "g-A3"],
+    "groups:B": ["g-B1", "g-B2"],
+    "groups:C": ["g-C1"],
+    "entries:E1": ["e-1", "e-2"],
+    "source:S1": ["src-1", "src-2", "src-3", "src-4"],
+  },
+};
+
+const DeckMockDndContext = createContext<DeckMockDndContextValue | null>(null);
+
+function useDeckMockDnd() {
+  const ctx = useContext(DeckMockDndContext);
+  if (!ctx) {
+    throw new Error("Deck mock DnD components must be rendered inside DeckMockDndProvider");
+  }
+  return ctx;
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-function normalizeState(groupOrder: GroupId[], itemsByGroup: ItemsByGroup): SectionState {
-  const nextItemsByGroup: ItemsByGroup = {};
-  const nextOrder: GroupId[] = [];
-
-  groupOrder.forEach((groupId) => {
-    const sets = itemsByGroup[groupId] ?? [];
-    if (sets.length > 0) {
-      nextOrder.push(groupId);
-      nextItemsByGroup[groupId] = sets;
-    }
-  });
-
-  return { groupOrder: nextOrder, itemsByGroup: nextItemsByGroup };
+function parseGroupLabel(groupId: GroupId): string {
+  return groupId.split(":")[1] ?? groupId;
 }
 
-function getBlockedBoundaries(groupOrder: GroupId[], itemsByGroup: ItemsByGroup): Set<number> {
+function parseSetLabel(setId: SetId): string {
+  if (setId.startsWith("g-")) return setId.slice(2).toUpperCase();
+  return setId.toUpperCase();
+}
+
+function canMove(_sourceGroupId: GroupId, _targetGroupId: GroupId, _setId: SetId): boolean {
+  return true;
+}
+
+function getBlockedBoundaries(groupIds: GroupId[], itemsByGroup: Record<GroupId, SetId[]>): Set<number> {
   const blocked = new Set<number>();
-  groupOrder.forEach((groupId, index) => {
-    const size = itemsByGroup[groupId]?.length ?? 0;
-    if (size === 0) {
+  groupIds.forEach((groupId, index) => {
+    if ((itemsByGroup[groupId]?.length ?? 0) === 0) {
       blocked.add(index);
       blocked.add(index + 1);
     }
@@ -62,21 +117,42 @@ function getBlockedBoundaries(groupOrder: GroupId[], itemsByGroup: ItemsByGroup)
   return blocked;
 }
 
-function isBoundaryAllowed(index: number, blockedSet: Set<number>): boolean {
-  return !blockedSet.has(index);
-}
+function normalizeAfterDrop(current: DnDState): DnDState {
+  const nextGroupOrderByBoard: DnDState["groupOrderByBoard"] = {
+    groups: [],
+    entries: [],
+    source: [],
+  };
+  const nextItemsByGroup: DnDState["itemsByGroup"] = {};
+  const nextGroupToBoard: DnDState["groupToBoard"] = {};
 
-function GroupColumn({ id, children }: { id: GroupId; children: React.ReactNode }) {
-  const { ref } = useDroppable({
-    id,
-    type: "group",
-    accept: ["set"],
+  (Object.keys(current.groupOrderByBoard) as BoardId[]).forEach((boardId) => {
+    const config = BOARD_CONFIGS[boardId];
+    current.groupOrderByBoard[boardId].forEach((groupId) => {
+      const sets = current.itemsByGroup[groupId] ?? [];
+      const keepEmpty = !config.allowMultipleGroups;
+      if (sets.length > 0 || keepEmpty) {
+        nextGroupOrderByBoard[boardId].push(groupId);
+        nextGroupToBoard[groupId] = boardId;
+        nextItemsByGroup[groupId] = sets;
+      }
+    });
   });
 
+  return {
+    groupOrderByBoard: nextGroupOrderByBoard,
+    itemsByGroup: nextItemsByGroup,
+    groupToBoard: nextGroupToBoard,
+  };
+}
+
+function GroupColumn({ groupId, children }: { groupId: GroupId; children: React.ReactNode }) {
+  const { ref } = useDroppable({ id: groupId, type: "group", accept: ["set"] });
+
   return (
-    <section className={styles.group} ref={ref} data-testid={`group-${id}`}>
+    <section className={styles.group} ref={ref} data-testid={`group-${groupId}`}>
       <header className={styles.groupHeader}>
-        <span>{id}</span>
+        <span>{parseGroupLabel(groupId)}</span>
         <span className={styles.grip} aria-hidden="true">
           ⠿
         </span>
@@ -86,20 +162,23 @@ function GroupColumn({ id, children }: { id: GroupId; children: React.ReactNode 
   );
 }
 
-function SetCard({ id, index, group }: { id: string; index: number; group: GroupId }) {
+function SetCard({ setId, index, groupId }: { setId: SetId; index: number; groupId: GroupId }) {
   const { ref, isDragging, isDragSource, isDropTarget } = useSortable({
-    id,
+    id: setId,
     index,
     type: "set",
     accept: ["set"],
-    group,
+    group: groupId,
   });
 
-  const accentClass =
-    group === "A" ? styles.setAccentA : group === "B" ? styles.setAccentB : styles.setAccentC;
+  const accentClass = groupId.startsWith("groups:A")
+    ? styles.setAccentA
+    : groupId.startsWith("groups:B")
+      ? styles.setAccentB
+      : styles.setAccentC;
 
   return (
-    <div className={styles.setShell} ref={ref} data-testid={`set-${id}`}>
+    <div className={styles.setShell} ref={ref} data-testid={`set-${setId}`}>
       <div
         className={[
           styles.setCard,
@@ -111,7 +190,7 @@ function SetCard({ id, index, group }: { id: string; index: number; group: Group
           .filter(Boolean)
           .join(" ")}
       >
-        <span>{id}</span>
+        <span>{parseSetLabel(setId)}</span>
         <span className={styles.grip} aria-hidden="true">
           ⠿
         </span>
@@ -120,11 +199,11 @@ function SetCard({ id, index, group }: { id: string; index: number; group: Group
   );
 }
 
-function OverlayCard({ id }: { id: string }) {
+function OverlayCard({ setId }: { setId: SetId }) {
   return (
     <div className={styles.overlay}>
       <div className={[styles.setCard, styles.setCardDragging].join(" ")}>
-        <span>{id}</span>
+        <span>{parseSetLabel(setId)}</span>
         <span className={styles.grip} aria-hidden="true">
           ⠿
         </span>
@@ -148,173 +227,251 @@ function CreateBoundaryPlaceholder({ index, onCreate }: { index: number; onCreat
   );
 }
 
-export default function DeckGroupsSection2() {
-  const [sectionState, setSectionState] = useState<SectionState>(INITIAL_STATE);
-  const [activeSetId, setActiveSetId] = useState<string | null>(null);
-  const [hoverBoundaryIndex, setHoverBoundaryIndex] = useState<number | null>(null);
+function DeckSortableBoardView({ boardId }: { boardId: BoardId }) {
+  const config = BOARD_CONFIGS[boardId];
+  const {
+    state,
+    activeSetId,
+    hoverBoundaryByBoard,
+    registerGroupRef,
+    handleHoverBoundary,
+    handleLeaveBoard,
+    createGroupAtIndex,
+  } = useDeckMockDnd();
+
+  const groupIds = state.groupOrderByBoard[boardId];
+  const blockedBoundaries = useMemo(
+    () => getBlockedBoundaries(groupIds, state.itemsByGroup),
+    [groupIds, state.itemsByGroup],
+  );
+
+  return (
+    <section className={styles.board} data-testid={`board-${boardId}`}>
+      <header className={styles.boardHeader}>{config.title}</header>
+      <div
+        className={styles.groupsRow}
+        data-testid={`groups-row-${boardId}`}
+        onMouseMove={(event) => handleHoverBoundary(boardId, event.clientX)}
+        onMouseLeave={() => handleLeaveBoard(boardId)}
+      >
+        {groupIds.map((groupId, index) => (
+          <div key={`${groupId}-${index}`} className={styles.groupStack}>
+            {!activeSetId &&
+            config.allowGroupCreate &&
+            hoverBoundaryByBoard[boardId] === index &&
+            !blockedBoundaries.has(index) ? (
+              <CreateBoundaryPlaceholder
+                index={index}
+                onCreate={(nextIndex) => createGroupAtIndex(boardId, nextIndex)}
+              />
+            ) : null}
+            <div ref={(node) => registerGroupRef(groupId, node)}>
+              <GroupColumn groupId={groupId}>
+                {(state.itemsByGroup[groupId] ?? []).map((setId, setIndex) => (
+                  <SetCard key={setId} setId={setId} index={setIndex} groupId={groupId} />
+                ))}
+              </GroupColumn>
+            </div>
+          </div>
+        ))}
+
+        {!activeSetId &&
+        config.allowGroupCreate &&
+        hoverBoundaryByBoard[boardId] === groupIds.length &&
+        !blockedBoundaries.has(groupIds.length) ? (
+          <CreateBoundaryPlaceholder
+            index={groupIds.length}
+            onCreate={(nextIndex) => createGroupAtIndex(boardId, nextIndex)}
+          />
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+export function DeckMockDndProvider({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<DnDState>(INITIAL_STATE);
+  const [activeSetId, setActiveSetId] = useState<SetId | null>(null);
+  const [hoverBoundaryByBoard, setHoverBoundaryByBoard] = useState<Record<BoardId, number | null>>({
+    groups: null,
+    entries: null,
+    source: null,
+  });
   const [ephemeralEmptyGroupId, setEphemeralEmptyGroupId] = useState<GroupId | null>(null);
 
-  const previousState = useRef<SectionState>(INITIAL_STATE);
+  const previousState = useRef<DnDState>(INITIAL_STATE);
   const nextGroupIdRef = useRef<number>(1);
-  const rowRef = useRef<HTMLDivElement | null>(null);
   const groupRefs = useRef<Map<GroupId, HTMLElement>>(new Map());
 
-  const registerGroupRef = (groupId: GroupId, element: HTMLElement | null) => {
-    if (element) {
-      groupRefs.current.set(groupId, element);
+  const registerGroupRef = (groupId: GroupId, node: HTMLElement | null) => {
+    if (node) {
+      groupRefs.current.set(groupId, node);
     } else {
       groupRefs.current.delete(groupId);
     }
   };
 
-  const blockedBoundaries = getBlockedBoundaries(sectionState.groupOrder, sectionState.itemsByGroup);
+  const resolveBoundaryForBoard = (boardId: BoardId, clientX: number): number => {
+    const groups = state.groupOrderByBoard[boardId]
+      .map((groupId) => ({ node: groupRefs.current.get(groupId) }))
+      .filter((entry): entry is { node: HTMLElement } => Boolean(entry.node));
 
-  const resolveBoundaryFromPointerX = (clientX: number): number => {
-    const orderedGroups = sectionState.groupOrder
-      .map((groupId) => ({ groupId, element: groupRefs.current.get(groupId) }))
-      .filter((entry): entry is { groupId: GroupId; element: HTMLElement } => Boolean(entry.element));
+    if (groups.length === 0) return 0;
 
-    if (orderedGroups.length === 0) {
-      return 0;
-    }
-
-    for (let i = 0; i < orderedGroups.length; i += 1) {
-      const rect = orderedGroups[i].element.getBoundingClientRect();
+    for (let i = 0; i < groups.length; i += 1) {
+      const rect = groups[i].node.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
-      if (clientX < centerX) {
-        return i;
-      }
+      if (clientX < centerX) return i;
     }
-
-    return orderedGroups.length;
+    return groups.length;
   };
 
-  const handleRowMouseMove: React.MouseEventHandler<HTMLDivElement> = (event) => {
-    if (activeSetId) {
-      return;
-    }
-    setHoverBoundaryIndex(resolveBoundaryFromPointerX(event.clientX));
+  const handleHoverBoundary = (boardId: BoardId, clientX: number) => {
+    if (activeSetId) return;
+    setHoverBoundaryByBoard((current) => ({
+      ...current,
+      [boardId]: resolveBoundaryForBoard(boardId, clientX),
+    }));
   };
 
-  const handleRowMouseLeave = () => {
-    if (!activeSetId) {
-      setHoverBoundaryIndex(null);
-    }
+  const handleLeaveBoard = (boardId: BoardId) => {
+    if (activeSetId) return;
+    setHoverBoundaryByBoard((current) => ({ ...current, [boardId]: null }));
   };
 
-  const createGroupAtIndex = (index: number) => {
-    if (!isBoundaryAllowed(index, blockedBoundaries)) {
-      return;
-    }
+  const createGroupAtIndex = (boardId: BoardId, index: number) => {
+    const config = BOARD_CONFIGS[boardId];
+    if (!config.allowGroupCreate || !config.allowMultipleGroups) return;
 
-    const newGroupId = `N${nextGroupIdRef.current}`;
+    const blocked = getBlockedBoundaries(state.groupOrderByBoard[boardId], state.itemsByGroup);
+    if (blocked.has(index)) return;
+
+    const newGroupId = `${boardId}:N${nextGroupIdRef.current}`;
     nextGroupIdRef.current += 1;
 
-    setSectionState((current) => {
-      let nextOrder = [...current.groupOrder];
-      let nextItemsByGroup: ItemsByGroup = { ...current.itemsByGroup };
+    setState((current) => {
+      const nextBoardGroups = current.groupOrderByBoard[boardId].slice();
+      const nextGroupOrderByBoard = { ...current.groupOrderByBoard };
+      const nextItemsByGroup = { ...current.itemsByGroup };
+      const nextGroupToBoard = { ...current.groupToBoard };
 
-      if (ephemeralEmptyGroupId && (nextItemsByGroup[ephemeralEmptyGroupId] ?? []).length === 0) {
-        nextOrder = nextOrder.filter((groupId) => groupId !== ephemeralEmptyGroupId);
-        delete nextItemsByGroup[ephemeralEmptyGroupId];
+      if (ephemeralEmptyGroupId && (nextItemsByGroup[ephemeralEmptyGroupId]?.length ?? 0) === 0) {
+        const previousBoard = nextGroupToBoard[ephemeralEmptyGroupId];
+        if (previousBoard) {
+          nextGroupOrderByBoard[previousBoard] = nextGroupOrderByBoard[previousBoard].filter(
+            (groupId) => groupId !== ephemeralEmptyGroupId,
+          );
+          delete nextItemsByGroup[ephemeralEmptyGroupId];
+          delete nextGroupToBoard[ephemeralEmptyGroupId];
+        }
       }
 
-      const insertionIndex = clamp(index, 0, nextOrder.length);
-      nextOrder.splice(insertionIndex, 0, newGroupId);
+      const insertionIndex = clamp(index, 0, nextBoardGroups.length);
+      nextBoardGroups.splice(insertionIndex, 0, newGroupId);
+      nextGroupOrderByBoard[boardId] = nextBoardGroups;
+      nextItemsByGroup[newGroupId] = [];
+      nextGroupToBoard[newGroupId] = boardId;
 
       return {
-        groupOrder: nextOrder,
-        itemsByGroup: { ...nextItemsByGroup, [newGroupId]: [] },
+        groupOrderByBoard: nextGroupOrderByBoard,
+        itemsByGroup: nextItemsByGroup,
+        groupToBoard: nextGroupToBoard,
       };
     });
+
     setEphemeralEmptyGroupId(newGroupId);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    if (event.operation.source?.type !== "set") {
-      return;
-    }
-
-    previousState.current = sectionState;
+    if (event.operation.source?.type !== "set") return;
+    previousState.current = state;
     setActiveSetId(String(event.operation.source.id));
-    setHoverBoundaryIndex(null);
+    setHoverBoundaryByBoard({ groups: null, entries: null, source: null });
   };
 
   const handleDragOver = (event: DragOverEvent) => {
-    if (event.operation.source?.type !== "set") {
-      return;
-    }
+    if (event.operation.source?.type !== "set") return;
 
-    const targetId = String(event.operation.target?.id ?? "");
-    if (!targetId) {
-      return;
-    }
+    const sourceSetId = String(event.operation.source.id);
+    const sourceGroupId = String(event.operation.source.group ?? "");
+    const targetGroupId =
+      event.operation.target?.type === "group"
+        ? String(event.operation.target.id)
+        : String(event.operation.target?.group ?? "");
 
-    setSectionState((current) => ({
+    if (!sourceGroupId || !targetGroupId) return;
+    if (!canMove(sourceGroupId, targetGroupId, sourceSetId)) return;
+
+    setState((current) => ({
       ...current,
-      itemsByGroup: move(current.itemsByGroup, event) as ItemsByGroup,
+      itemsByGroup: move(current.itemsByGroup, event) as Record<GroupId, SetId[]>,
     }));
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    if (event.canceled && event.operation.source?.type === "set") {
-      setSectionState(previousState.current);
+    if (event.operation.source?.type !== "set") {
       setActiveSetId(null);
       return;
     }
 
-    if (!event.canceled && event.operation.source?.type === "set") {
-      setSectionState((current) => {
-        const next = normalizeState(current.groupOrder, current.itemsByGroup);
-        if (ephemeralEmptyGroupId && !(ephemeralEmptyGroupId in next.itemsByGroup)) {
-          setEphemeralEmptyGroupId(null);
-        } else if (ephemeralEmptyGroupId && (next.itemsByGroup[ephemeralEmptyGroupId]?.length ?? 0) > 0) {
-          setEphemeralEmptyGroupId(null);
-        }
-        return next;
-      });
+    if (event.canceled) {
+      setState(previousState.current);
+      setActiveSetId(null);
+      return;
     }
+
+    setState((current) => {
+      const next = normalizeAfterDrop(current);
+      if (ephemeralEmptyGroupId && !(ephemeralEmptyGroupId in next.itemsByGroup)) {
+        setEphemeralEmptyGroupId(null);
+      } else if (ephemeralEmptyGroupId && (next.itemsByGroup[ephemeralEmptyGroupId]?.length ?? 0) > 0) {
+        setEphemeralEmptyGroupId(null);
+      }
+      return next;
+    });
 
     setActiveSetId(null);
   };
 
-  const isSetDragActive = Boolean(activeSetId);
+  const handleDragCancel = () => {
+    setState(previousState.current);
+    setActiveSetId(null);
+  };
 
   return (
-    <DragDropProvider onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-      <div className={styles.root} data-testid="deck-groups-section2">
-        <div
-          className={styles.groupsRow}
-          data-testid="groups-row"
-          ref={rowRef}
-          onMouseMove={handleRowMouseMove}
-          onMouseLeave={handleRowMouseLeave}
-        >
-          {sectionState.groupOrder.map((groupId, index) => (
-            <div key={`${groupId}-${index}`} className={styles.groupStack}>
-              {!isSetDragActive && hoverBoundaryIndex === index && isBoundaryAllowed(index, blockedBoundaries) ? (
-                <CreateBoundaryPlaceholder index={index} onCreate={createGroupAtIndex} />
-              ) : null}
-              <div ref={(element) => registerGroupRef(groupId, element)}>
-                <GroupColumn id={groupId}>
-                  {(sectionState.itemsByGroup[groupId] ?? []).map((setId, setIndex) => (
-                    <SetCard key={setId} id={setId} index={setIndex} group={groupId} />
-                  ))}
-                </GroupColumn>
-              </div>
-            </div>
-          ))}
-          {!isSetDragActive &&
-          hoverBoundaryIndex === sectionState.groupOrder.length &&
-          isBoundaryAllowed(sectionState.groupOrder.length, blockedBoundaries) ? (
-            <CreateBoundaryPlaceholder
-              index={sectionState.groupOrder.length}
-              onCreate={createGroupAtIndex}
-            />
-          ) : null}
-        </div>
-      </div>
-      <DragOverlay>{isSetDragActive && activeSetId ? <OverlayCard id={activeSetId} /> : null}</DragOverlay>
-    </DragDropProvider>
+    <DeckMockDndContext.Provider
+      value={{
+        state,
+        activeSetId,
+        hoverBoundaryByBoard,
+        registerGroupRef,
+        handleHoverBoundary,
+        handleLeaveBoard,
+        createGroupAtIndex,
+      }}
+    >
+      <DragDropProvider
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        {children}
+        <DragOverlay>{activeSetId ? <OverlayCard setId={activeSetId} /> : null}</DragOverlay>
+      </DragDropProvider>
+    </DeckMockDndContext.Provider>
   );
 }
+
+export default function DeckGroupsSection2() {
+  return <DeckSortableBoardView boardId="groups" />;
+}
+
+export function DeckEntriesSection2Mock() {
+  return <DeckSortableBoardView boardId="entries" />;
+}
+
+export function DeckSourceBoard2Mock() {
+  return <DeckSortableBoardView boardId="source" />;
+}
+
