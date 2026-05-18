@@ -149,6 +149,8 @@ type DeckSortableBoardViewModel = {
   onLeaveBoard: () => void;
   onCreateGroupAtIndex: (index: number) => void;
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
+  onSetClick?: (setUiId: SetId, groupUiId: GroupId) => void;
+  emptyMessage?: string | null;
 };
 
 type BoardRoutingMeta = {
@@ -447,11 +449,13 @@ function SortableSetCard({
   label,
   index,
   groupId,
+  onClick,
 }: {
   setId: SetId;
   label?: string;
   index: number;
   groupId: GroupId;
+  onClick?: () => void;
 }) {
   const { ref, isDragging, isDragSource, isDropTarget } = useSortable({
     id: setId,
@@ -479,6 +483,7 @@ function SortableSetCard({
         ]
           .filter(Boolean)
           .join(" ")}
+        onClick={onClick}
       >
         <span>{label ?? parseSetLabel(setId)}</span>
         <span className={styles.grip} aria-hidden="true">
@@ -489,7 +494,17 @@ function SortableSetCard({
   );
 }
 
-function DraggableSetCard({ setId, label, groupId }: { setId: SetId; label?: string; groupId: GroupId }) {
+function DraggableSetCard({
+  setId,
+  label,
+  groupId,
+  onClick,
+}: {
+  setId: SetId;
+  label?: string;
+  groupId: GroupId;
+  onClick?: () => void;
+}) {
   const { ref, handleRef, isDragging } = useDraggable({
     id: setId,
     type: "set",
@@ -514,6 +529,7 @@ function DraggableSetCard({ setId, label, groupId }: { setId: SetId; label?: str
           .filter(Boolean)
           .join(" ")}
         ref={handleRef}
+        onClick={onClick}
       >
         <span>{label ?? parseSetLabel(setId)}</span>
         <span className={styles.grip} aria-hidden="true">
@@ -654,17 +670,28 @@ function DeckSortableBoardView({
                           label={model.setLabelsById[setId]}
                           index={setIndex}
                           groupId={groupId}
+                          onClick={() => {
+                            if (model.activeSetId) return;
+                            model.onSetClick?.(setId, groupId);
+                          }}
                         />
                       ) : (
                         <DraggableSetCard
                           setId={setId}
                           label={model.setLabelsById[setId]}
                           groupId={groupId}
+                          onClick={() => {
+                            if (model.activeSetId) return;
+                            model.onSetClick?.(setId, groupId);
+                          }}
                         />
                       )}
                     </div>
                   ));
                 })()}
+                {(itemsByGroup[groupId] ?? []).length === 0 && model.emptyMessage ? (
+                  <div>{model.emptyMessage}</div>
+                ) : null}
                 {config.boardId === "groups" &&
                 sourcePreviewTargetGroupId === groupId &&
                 activeSetId?.startsWith("source:") &&
@@ -1189,6 +1216,10 @@ export function DeckMockDndProvider({
 function useDeckSortableBoardViewModel(
   boardId: BoardId,
   routing: BoardRoutingMeta,
+  options?: {
+    onSetClick?: (setUiId: SetId, groupUiId: GroupId) => void;
+    emptyMessage?: string | null;
+  },
 ): DeckSortableBoardViewModel {
   const {
     state,
@@ -1220,6 +1251,8 @@ function useDeckSortableBoardViewModel(
     onLeaveBoard: () => handleLeaveBoard(boardId),
     onCreateGroupAtIndex: (index: number) => createGroupAtIndex(boardId, index),
     registerGroupRef,
+    onSetClick: options?.onSetClick,
+    emptyMessage: options?.emptyMessage ?? null,
   };
 }
 
@@ -1327,7 +1360,19 @@ export default function DeckGroupsBoardController({ deckId }: { deckId: string |
     selection = null;
   }
   const { registerDropHandler } = useDeckMockDnd();
-  const model = useDeckSortableBoardViewModel("groups", BOARD_ROUTING_META_BY_ID.groups);
+  const model = useDeckSortableBoardViewModel("groups", BOARD_ROUTING_META_BY_ID.groups, {
+    onSetClick: (setUiId, groupUiId) => {
+      if (!selection) return;
+      if (!setUiId.startsWith("set:")) return;
+      if (!groupUiId.startsWith("group:")) return;
+      const setId = setUiId.slice(4);
+      const groupId = groupUiId.slice(6);
+      const setRecord = selection.setById.get(setId);
+      if (!setRecord) return;
+      selection.selectGroup(groupId);
+      selection.selectSet(setRecord);
+    },
+  });
 
   useEffect(() => {
     if (!selection) return () => undefined;
@@ -1437,6 +1482,12 @@ export function DeckEntriesBoardController({
 }: {
   layoutMode?: LayoutMode;
 }) {
+  let selection: ReturnType<typeof useDeckDetailSelection> | null = null;
+  try {
+    selection = useDeckDetailSelection();
+  } catch {
+    selection = null;
+  }
   let entries: ReturnType<typeof useDeckSetEntries> | null = null;
   try {
     entries = useDeckSetEntries();
@@ -1444,7 +1495,9 @@ export function DeckEntriesBoardController({
     entries = null;
   }
   const { registerDropHandler } = useDeckMockDnd();
-  const model = useDeckSortableBoardViewModel("entries", BOARD_ROUTING_META_BY_ID.entries);
+  const model = useDeckSortableBoardViewModel("entries", BOARD_ROUTING_META_BY_ID.entries, {
+    emptyMessage: selection?.selectedSetId ? null : "Select a set to view entries.",
+  });
 
   useEffect(() => {
     if (!entries) return () => undefined;
