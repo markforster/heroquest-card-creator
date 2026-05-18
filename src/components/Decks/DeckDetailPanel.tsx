@@ -28,6 +28,7 @@ import type {
   DeckDetailModalState,
 } from "@/components/Decks/types/deck-detail";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
+import DeckGroupsSection2 from "./detail/DeckGroupsSection2";
 
 const SET_TILE_VARIANT = "smMd";
 const GROUP_TILE_VARIANT = "smMd";
@@ -187,13 +188,14 @@ function DeckDetailPanelContent({
             <DeckDetailSelectionProvider model={selectionModel}>
               <DeckSetEntriesProvider model={entriesModel}>
                 <div className={styles.deckRouteMiddle}>
-                  <DeckGroupsSection
+                  {/* <DeckGroupsSection
                     groupTileVariant={GROUP_TILE_VARIANT}
                     keySetId={keySetId}
                     drag={drag}
                     rowRef={groupRowRef}
                     onDeleteSetFromGroupCard={actions.deleteSetFromGroupCard}
-                  />
+                  /> */}
+                  <DeckGroupsSection2 />
 
                   <DeckEntriesSection
                     drag={drag}
@@ -218,7 +220,6 @@ function DeckDetailPanelContent({
                 </div>
               </DeckSetEntriesProvider>
             </DeckDetailSelectionProvider>
-
           </div>
         </section>
         <aside

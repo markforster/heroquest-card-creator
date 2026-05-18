@@ -1,0 +1,118 @@
+.root {
+  border: 1px solid #c8cbe3;
+  border-radius: 14px;
+  padding: 20px;
+  background: linear-gradient(120deg, #c7d7e0 0%, #cfcbe8 100%);
+  box-shadow: 0 2px 4px rgba(16, 24, 40, 0.06);
+}
+
+.groupsRow {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  overflow-x: auto;
+  padding: 4px;
+}
+
+.group {
+  min-width: 300px;
+  max-width: 300px;
+  border-radius: 12px;
+  background: rgba(235, 236, 244, 0.76);
+  border: 1px solid #d2d5df;
+  display: flex;
+  flex-direction: column;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 68px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #dddfe8;
+  background: rgba(255, 255, 255, 0.68);
+  border-radius: 12px 12px 0 0;
+  font-size: 36px;
+  font-weight: 500;
+  color: #242a33;
+}
+
+.groupBody {
+  min-height: 240px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.setShell {
+  border-radius: 12px;
+}
+
+.setCard {
+  width: 100%;
+  min-height: 88px;
+  border-radius: 12px;
+  border: 1px solid #ccd0dd;
+  background: #f8f9fb;
+  color: #353b45;
+  font-size: 30px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.1),
+    0 4px 10px rgba(16, 24, 40, 0.08);
+  transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+  cursor: grab;
+}
+
+.setAccentA {
+  box-shadow:
+    inset 4px 0 0 #6683e4,
+    0 1px 2px rgba(16, 24, 40, 0.1),
+    0 4px 10px rgba(16, 24, 40, 0.08);
+}
+
+.setAccentB {
+  box-shadow:
+    inset 4px 0 0 #f08b2d,
+    0 1px 2px rgba(16, 24, 40, 0.1),
+    0 4px 10px rgba(16, 24, 40, 0.08);
+}
+
+.setAccentC {
+  box-shadow:
+    inset 4px 0 0 #7f8aa0,
+    0 1px 2px rgba(16, 24, 40, 0.1),
+    0 4px 10px rgba(16, 24, 40, 0.08);
+}
+
+.setCardGhost {
+  opacity: 0.38;
+}
+
+.setCardDropTarget {
+  outline: 1px dashed rgba(56, 64, 82, 0.4);
+}
+
+.setCardDragging {
+  box-shadow:
+    0 12px 28px rgba(16, 24, 40, 0.22),
+    0 6px 16px rgba(16, 24, 40, 0.12);
+}
+
+.overlay {
+  min-width: 300px;
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.grip {
+  color: #9ba2b3;
+  font-size: 24px;
+  letter-spacing: 1px;
+}
