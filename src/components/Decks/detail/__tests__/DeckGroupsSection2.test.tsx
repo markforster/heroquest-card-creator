@@ -151,6 +151,32 @@ describe("DeckGroupsSection2 mock boards", () => {
     expect(screen.getByTestId("group-entries:E1")).toHaveTextContent("SRC-2");
   });
 
+  it("does not allow dropping into source board", () => {
+    renderWorkspace();
+
+    act(() => {
+      callbacks.onDragStart?.({
+        operation: { source: { id: "g-A1", type: "set", group: "groups:A" } },
+      });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "g-A1", type: "set", group: "groups:A" },
+          target: { id: "source:S1", type: "group" },
+        },
+      });
+      callbacks.onDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "g-A1", type: "set", group: "groups:A" },
+          target: { id: "source:S1", type: "group" },
+        },
+      });
+    });
+
+    expect(screen.getByTestId("group-groups:A")).toHaveTextContent("A1");
+    expect(screen.getByTestId("group-source:S1")).not.toHaveTextContent("A1");
+  });
+
   it("does not sort within source group but still sorts within groups board", () => {
     renderWorkspace();
 

@@ -26,6 +26,7 @@ type BoardConfig = {
   allowMultipleGroups: boolean;
   allowGroupCreate: boolean;
   allowInGroupSort: boolean;
+  allowDropTarget: boolean;
 };
 
 type DnDState = {
@@ -51,6 +52,7 @@ const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
     allowMultipleGroups: true,
     allowGroupCreate: true,
     allowInGroupSort: true,
+    allowDropTarget: true,
   },
   entries: {
     boardId: "entries",
@@ -58,6 +60,7 @@ const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
     allowMultipleGroups: false,
     allowGroupCreate: false,
     allowInGroupSort: true,
+    allowDropTarget: true,
   },
   source: {
     boardId: "source",
@@ -65,6 +68,7 @@ const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
     allowMultipleGroups: false,
     allowGroupCreate: false,
     allowInGroupSort: false,
+    allowDropTarget: false,
   },
 };
 
@@ -85,7 +89,7 @@ const INITIAL_STATE: DnDState = {
     "groups:A": ["g-A1", "g-A2", "g-A3"],
     "groups:B": ["g-B1", "g-B2"],
     "groups:C": ["g-C1"],
-    "entries:E1": ["e-1", "e-2"],
+    "entries:E1": ["e-1", "e-2", "e-3", "e-4", "e-5", "e-6", "e-7", "e-8", "e-9", "e-10"],
     "source:S1": ["src-1", "src-2", "src-3", "src-4"],
   },
 };
@@ -118,11 +122,16 @@ function canMove(_sourceGroupId: GroupId, _targetGroupId: GroupId, _setId: SetId
 }
 
 function findGroupIdBySetId(itemsByGroup: Record<GroupId, SetId[]>, setId: SetId): GroupId | null {
-  const groupId = Object.keys(itemsByGroup).find((candidate) => itemsByGroup[candidate]?.includes(setId));
+  const groupId = Object.keys(itemsByGroup).find((candidate) =>
+    itemsByGroup[candidate]?.includes(setId),
+  );
   return groupId ?? null;
 }
 
-function getBlockedBoundaries(groupIds: GroupId[], itemsByGroup: Record<GroupId, SetId[]>): Set<number> {
+function getBlockedBoundaries(
+  groupIds: GroupId[],
+  itemsByGroup: Record<GroupId, SetId[]>,
+): Set<number> {
   const blocked = new Set<number>();
   groupIds.forEach((groupId, index) => {
     if ((itemsByGroup[groupId]?.length ?? 0) === 0) {
@@ -166,12 +175,18 @@ function GroupColumn({
   groupId,
   children,
   fillParent,
+  canReceiveDrops,
 }: {
   groupId: GroupId;
   children: React.ReactNode;
   fillParent: boolean;
+  canReceiveDrops: boolean;
 }) {
-  const { ref } = useDroppable({ id: groupId, type: "group", accept: ["set"] });
+  const { ref } = useDroppable({
+    id: groupId,
+    type: "group",
+    accept: canReceiveDrops ? ["set"] : [],
+  });
 
   return (
     <section
@@ -196,7 +211,15 @@ function GroupColumn({
   );
 }
 
-function SortableSetCard({ setId, index, groupId }: { setId: SetId; index: number; groupId: GroupId }) {
+function SortableSetCard({
+  setId,
+  index,
+  groupId,
+}: {
+  setId: SetId;
+  index: number;
+  groupId: GroupId;
+}) {
   const { ref, isDragging, isDragSource, isDropTarget } = useSortable({
     id: setId,
     index,
@@ -281,7 +304,13 @@ function OverlayCard({ setId }: { setId: SetId }) {
   );
 }
 
-function CreateBoundaryPlaceholder({ index, onCreate }: { index: number; onCreate: (index: number) => void }) {
+function CreateBoundaryPlaceholder({
+  index,
+  onCreate,
+}: {
+  index: number;
+  onCreate: (index: number) => void;
+}) {
   return (
     <div className={styles.createBoundary} data-testid={`create-boundary-${index}`}>
       <button
@@ -323,7 +352,9 @@ function DeckSortableBoardView({
 
   return (
     <section
-      className={[styles.board, useFillParent ? styles.boardFillParent : ""].filter(Boolean).join(" ")}
+      className={[styles.board, useFillParent ? styles.boardFillParent : ""]
+        .filter(Boolean)
+        .join(" ")}
       data-testid={`board-${boardId}`}
     >
       <header className={styles.boardHeader}>{config.title}</header>
@@ -350,14 +381,18 @@ function DeckSortableBoardView({
               className={useFillParent ? styles.groupWrapperFillParent : ""}
               ref={(node) => registerGroupRef(groupId, node)}
             >
-              <GroupColumn groupId={groupId} fillParent={useFillParent}>
-                {(state.itemsByGroup[groupId] ?? []).map((setId, setIndex) => (
+              <GroupColumn
+                groupId={groupId}
+                fillParent={useFillParent}
+                canReceiveDrops={config.allowDropTarget}
+              >
+                {(state.itemsByGroup[groupId] ?? []).map((setId, setIndex) =>
                   config.allowInGroupSort ? (
                     <SortableSetCard key={setId} setId={setId} index={setIndex} groupId={groupId} />
                   ) : (
                     <DraggableSetCard key={setId} setId={setId} groupId={groupId} />
-                  )
-                ))}
+                  ),
+                )}
               </GroupColumn>
             </div>
           </div>
@@ -482,7 +517,9 @@ export function DeckMockDndProvider({ children }: { children: React.ReactNode })
 
     const sourceSetId = String(event.operation.source.id);
     const sourceGroupId =
-      String(event.operation.source.group ?? "") || findGroupIdBySetId(state.itemsByGroup, sourceSetId) || "";
+      String(event.operation.source.group ?? "") ||
+      findGroupIdBySetId(state.itemsByGroup, sourceSetId) ||
+      "";
     const targetId = String(event.operation.target?.id ?? "");
     const targetGroupId =
       event.operation.target?.type === "group"
@@ -492,9 +529,13 @@ export function DeckMockDndProvider({ children }: { children: React.ReactNode })
 
     if (!sourceGroupId || !targetGroupId) return;
     const sourceBoardId = state.groupToBoard[sourceGroupId];
+    const targetBoardId = state.groupToBoard[targetGroupId];
     if (!sourceBoardId) return;
+    if (!targetBoardId) return;
     const sourceBoardConfig = BOARD_CONFIGS[sourceBoardId];
+    const targetBoardConfig = BOARD_CONFIGS[targetBoardId];
     if (sourceGroupId === targetGroupId && !sourceBoardConfig.allowInGroupSort) return;
+    if (!targetBoardConfig.allowDropTarget) return;
     if (!canMove(sourceGroupId, targetGroupId, sourceSetId)) return;
 
     setState((current) => ({
@@ -519,7 +560,10 @@ export function DeckMockDndProvider({ children }: { children: React.ReactNode })
       const next = normalizeAfterDrop(current);
       if (ephemeralEmptyGroupId && !(ephemeralEmptyGroupId in next.itemsByGroup)) {
         setEphemeralEmptyGroupId(null);
-      } else if (ephemeralEmptyGroupId && (next.itemsByGroup[ephemeralEmptyGroupId]?.length ?? 0) > 0) {
+      } else if (
+        ephemeralEmptyGroupId &&
+        (next.itemsByGroup[ephemeralEmptyGroupId]?.length ?? 0) > 0
+      ) {
         setEphemeralEmptyGroupId(null);
       }
       return next;
@@ -562,7 +606,11 @@ export default function DeckGroupsSection2() {
   return <DeckSortableBoardView boardId="groups" layoutMode="content" />;
 }
 
-export function DeckEntriesSection2Mock({ layoutMode = "fill-parent" }: { layoutMode?: LayoutMode }) {
+export function DeckEntriesSection2Mock({
+  layoutMode = "fill-parent",
+}: {
+  layoutMode?: LayoutMode;
+}) {
   return <DeckSortableBoardView boardId="entries" layoutMode={layoutMode} />;
 }
 
