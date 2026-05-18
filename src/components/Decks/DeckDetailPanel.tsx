@@ -27,7 +27,7 @@ import DeckGroupsBoardController, {
   DeckMockDndProvider,
   DeckSourceBoardController,
 } from "./detail/DeckGroupsSection2";
-import { useDeckBoardsSeedModels } from "./detail/DeckGroupsSection2.seeds";
+import { useDeckBoardsModels } from "./detail/DeckGroupsSection2.models";
 
 export type DeckDetailPanelProps = {
   deckId: string | null;
@@ -115,14 +115,14 @@ function DeckDetailPanelContent({
       ),
     [entriesModel.entries, entriesModel.entryFrontIdByEntryId],
   );
-  const boardSeeds = useDeckBoardsSeedModels({
+  const boardModels = useDeckBoardsModels({
     selection: selectionModel,
     entries: entriesModel,
   });
 
   return (
     <>
-      <DeckMockDndProvider boardSeeds={boardSeeds}>
+      <DeckMockDndProvider boardModels={boardModels}>
         <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
           <div className={styles.deckRoutePanel}>
             <DeckDetailHeader

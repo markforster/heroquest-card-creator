@@ -7,16 +7,16 @@ import type { DeckDetailSelectionModel } from "@/components/Decks/hooks/useDeckD
 import type { DeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
 
-import type { BoardId, BoardSeedModel } from "./DeckGroupsSection2";
+import type { BoardId, BoardModel } from "./DeckGroupsSection2";
 import { toEntriesBoardModel, toGroupsBoardModel, toSourceBoardModel } from "./DeckGroupsSection2";
 
-export function useDeckBoardsSeedModels({
+export function useDeckBoardsModels({
   selection,
   entries,
 }: {
   selection: DeckDetailSelectionModel;
   entries: DeckSetEntriesModel;
-}): Record<BoardId, BoardSeedModel> {
+}): Record<BoardId, BoardModel> {
   const rightPanel = useDeckRightPanel();
 
   const usedBackFaceIds = useMemo(

@@ -14,7 +14,7 @@ export {
 
 export type {
   BoardId,
-  BoardSeedModel,
+  BoardModel,
   DeckDnDEvent,
   DeckDnDEventResult,
   DeckDropHandler,

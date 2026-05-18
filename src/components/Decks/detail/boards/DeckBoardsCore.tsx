@@ -109,7 +109,7 @@ export type DeckDnDEventResult = {
 
 export type DeckDropHandler = (event: DeckDnDEvent) => Promise<DeckDnDEventResult | null>;
 
-export type BoardSeedModel = {
+export type BoardModel = {
   boardId: BoardId;
   groupIds: GroupId[];
   itemsByGroup: Record<GroupId, SetId[]>;
@@ -248,19 +248,19 @@ function insertPendingPlaceholder(
   };
 }
 
-function createDnDStateFromSeeds(boardSeeds: Record<BoardId, BoardSeedModel>): DnDState {
+function createDnDStateFromModels(boardModels: Record<BoardId, BoardModel>): DnDState {
   const groupOrderByBoard: Record<BoardId, GroupId[]> = {
-    groups: boardSeeds.groups.groupIds.slice(),
-    entries: boardSeeds.entries.groupIds.slice(),
-    source: boardSeeds.source.groupIds.slice(),
+    groups: boardModels.groups.groupIds.slice(),
+    entries: boardModels.entries.groupIds.slice(),
+    source: boardModels.source.groupIds.slice(),
   };
   const itemsByGroup: Record<GroupId, SetId[]> = {};
   const groupToBoard: Record<GroupId, BoardId> = {};
 
-  (Object.keys(boardSeeds) as BoardId[]).forEach((boardId) => {
-    const seed = boardSeeds[boardId];
-    seed.groupIds.forEach((groupId) => {
-      itemsByGroup[groupId] = (seed.itemsByGroup[groupId] ?? []).slice();
+  (Object.keys(boardModels) as BoardId[]).forEach((boardId) => {
+    const model = boardModels[boardId];
+    model.groupIds.forEach((groupId) => {
+      itemsByGroup[groupId] = (model.itemsByGroup[groupId] ?? []).slice();
       groupToBoard[groupId] = boardId;
     });
   });
@@ -268,15 +268,15 @@ function createDnDStateFromSeeds(boardSeeds: Record<BoardId, BoardSeedModel>): D
   return { groupOrderByBoard, itemsByGroup, groupToBoard };
 }
 
-function collectLabels(boardSeeds: Record<BoardId, BoardSeedModel>) {
+function collectLabels(boardModels: Record<BoardId, BoardModel>) {
   const groupLabelsById: Record<GroupId, string> = {};
   const setLabelsById: Record<SetId, string> = {};
   const setCardIdById: Record<SetId, string> = {};
 
-  (Object.keys(boardSeeds) as BoardId[]).forEach((boardId) => {
-    Object.assign(groupLabelsById, boardSeeds[boardId].groupLabelsById);
-    Object.assign(setLabelsById, boardSeeds[boardId].setLabelsById);
-    Object.assign(setCardIdById, boardSeeds[boardId].setCardIdById);
+  (Object.keys(boardModels) as BoardId[]).forEach((boardId) => {
+    Object.assign(groupLabelsById, boardModels[boardId].groupLabelsById);
+    Object.assign(setLabelsById, boardModels[boardId].setLabelsById);
+    Object.assign(setCardIdById, boardModels[boardId].setCardIdById);
   });
 
   return { groupLabelsById, setLabelsById, setCardIdById };
@@ -778,13 +778,13 @@ export function DeckSortableBoardView({
 
 export function DeckMockDndProvider({
   children,
-  boardSeeds,
+  boardModels,
 }: {
   children: React.ReactNode;
-  boardSeeds: Record<BoardId, BoardSeedModel>;
+  boardModels: Record<BoardId, BoardModel>;
 }) {
-  const initialState = useMemo(() => createDnDStateFromSeeds(boardSeeds), [boardSeeds]);
-  const initialLabels = useMemo(() => collectLabels(boardSeeds), [boardSeeds]);
+  const initialState = useMemo(() => createDnDStateFromModels(boardModels), [boardModels]);
+  const initialLabels = useMemo(() => collectLabels(boardModels), [boardModels]);
   const [state, setState] = useState<DnDState>(initialState);
   const [groupLabelsById, setGroupLabelsById] = useState<Record<GroupId, string>>(
     initialLabels.groupLabelsById,
@@ -801,20 +801,20 @@ export function DeckMockDndProvider({
   });
   const [ephemeralEmptyGroupId, setEphemeralEmptyGroupId] = useState<GroupId | null>(null);
   const sourceItemFaceBySetIdRef = useRef<Record<SetId, SourceItemFace>>(
-    boardSeeds.source.sourceItemFaceBySetId ?? {},
+    boardModels.source.sourceItemFaceBySetId ?? {},
   );
   const boardRoutingById = useRef<Record<BoardId, BoardRoutingMeta>>({
     groups: {
-      emitToken: boardSeeds.groups.emitToken,
-      acceptTokens: boardSeeds.groups.acceptTokens,
+      emitToken: boardModels.groups.emitToken,
+      acceptTokens: boardModels.groups.acceptTokens,
     },
     entries: {
-      emitToken: boardSeeds.entries.emitToken,
-      acceptTokens: boardSeeds.entries.acceptTokens,
+      emitToken: boardModels.entries.emitToken,
+      acceptTokens: boardModels.entries.acceptTokens,
     },
     source: {
-      emitToken: boardSeeds.source.emitToken,
-      acceptTokens: boardSeeds.source.acceptTokens,
+      emitToken: boardModels.source.emitToken,
+      acceptTokens: boardModels.source.acceptTokens,
     },
   });
 
@@ -834,28 +834,28 @@ export function DeckMockDndProvider({
   useEffect(() => {
     boardRoutingById.current = {
       groups: {
-        emitToken: boardSeeds.groups.emitToken,
-        acceptTokens: boardSeeds.groups.acceptTokens,
+        emitToken: boardModels.groups.emitToken,
+        acceptTokens: boardModels.groups.acceptTokens,
       },
       entries: {
-        emitToken: boardSeeds.entries.emitToken,
-        acceptTokens: boardSeeds.entries.acceptTokens,
+        emitToken: boardModels.entries.emitToken,
+        acceptTokens: boardModels.entries.acceptTokens,
       },
       source: {
-        emitToken: boardSeeds.source.emitToken,
-        acceptTokens: boardSeeds.source.acceptTokens,
+        emitToken: boardModels.source.emitToken,
+        acceptTokens: boardModels.source.acceptTokens,
       },
     };
     setGroupLabelsById(initialLabels.groupLabelsById);
     setSetLabelsById(initialLabels.setLabelsById);
     setSetCardIdById(initialLabels.setCardIdById);
-    sourceItemFaceBySetIdRef.current = boardSeeds.source.sourceItemFaceBySetId ?? {};
+    sourceItemFaceBySetIdRef.current = boardModels.source.sourceItemFaceBySetId ?? {};
     if (activeSetId) return;
     setState(initialState);
     previousState.current = initialState;
   }, [
     activeSetId,
-    boardSeeds,
+    boardModels,
     initialLabels.groupLabelsById,
     initialLabels.setLabelsById,
     initialLabels.setCardIdById,
@@ -1383,7 +1383,7 @@ type SourceAdapterInput = {
   sourceFaceMode: SourceItemFace;
 };
 
-export function toGroupsBoardModel(input: GroupsAdapterInput): BoardSeedModel {
+export function toGroupsBoardModel(input: GroupsAdapterInput): BoardModel {
   const groupIds = input.orderedGroups.map((group) => `group:${group.id}`);
   const groupLabelsById: Record<GroupId, string> = {};
   const itemsByGroup: Record<GroupId, SetId[]> = {};
@@ -1417,7 +1417,7 @@ export function toGroupsBoardModel(input: GroupsAdapterInput): BoardSeedModel {
   };
 }
 
-export function toEntriesBoardModel(input: EntriesAdapterInput): BoardSeedModel {
+export function toEntriesBoardModel(input: EntriesAdapterInput): BoardModel {
   const groupId = "entries:lane";
   const setLabelsById: Record<SetId, string> = {};
   const setCardIdById: Record<SetId, string> = {};
@@ -1448,7 +1448,7 @@ export function toEntriesBoardModel(input: EntriesAdapterInput): BoardSeedModel 
   };
 }
 
-export function toSourceBoardModel(input: SourceAdapterInput): BoardSeedModel {
+export function toSourceBoardModel(input: SourceAdapterInput): BoardModel {
   const groupId = "source:lane";
   const setLabelsById: Record<SetId, string> = {};
   const setCardIdById: Record<SetId, string> = {};

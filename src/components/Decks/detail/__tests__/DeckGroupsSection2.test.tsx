@@ -4,7 +4,7 @@ import DeckGroupsBoardController, {
   DeckEntriesBoardController,
   DeckMockDndProvider,
   DeckSourceBoardController,
-  type BoardSeedModel,
+  type BoardModel,
 } from "@/components/Decks/detail/DeckGroupsSection2";
 
 type DragEventLike = {
@@ -74,7 +74,7 @@ jest.mock("@dnd-kit/helpers", () => ({
 }));
 
 function renderWorkspace() {
-  const boardSeeds: Record<"groups" | "entries" | "source", BoardSeedModel> = {
+  const boardModels: Record<"groups" | "entries" | "source", BoardModel> = {
     groups: {
       boardId: "groups",
       groupIds: ["groups:A", "groups:B", "groups:C"],
@@ -125,7 +125,7 @@ function renderWorkspace() {
     },
   };
   render(
-    <DeckMockDndProvider boardSeeds={boardSeeds}>
+    <DeckMockDndProvider boardModels={boardModels}>
       <DeckGroupsBoardController deckId={null} />
       <DeckEntriesBoardController />
       <DeckSourceBoardController />
