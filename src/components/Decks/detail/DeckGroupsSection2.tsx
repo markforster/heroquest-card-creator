@@ -27,7 +27,7 @@ const INITIAL_STATE: SectionState = {
   itemsByGroup: {
     A: ["A1", "A2", "A3"],
     B: ["B1", "B2"],
-    C: [],
+    C: ["C1"],
   },
 };
 
@@ -36,8 +36,34 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function normalizeState(groupOrder: GroupId[], itemsByGroup: ItemsByGroup): SectionState {
-  const nextOrder = groupOrder.filter((groupId) => groupId in itemsByGroup);
-  return { groupOrder: nextOrder, itemsByGroup };
+  const nextItemsByGroup: ItemsByGroup = {};
+  const nextOrder: GroupId[] = [];
+
+  groupOrder.forEach((groupId) => {
+    const sets = itemsByGroup[groupId] ?? [];
+    if (sets.length > 0) {
+      nextOrder.push(groupId);
+      nextItemsByGroup[groupId] = sets;
+    }
+  });
+
+  return { groupOrder: nextOrder, itemsByGroup: nextItemsByGroup };
+}
+
+function getBlockedBoundaries(groupOrder: GroupId[], itemsByGroup: ItemsByGroup): Set<number> {
+  const blocked = new Set<number>();
+  groupOrder.forEach((groupId, index) => {
+    const size = itemsByGroup[groupId]?.length ?? 0;
+    if (size === 0) {
+      blocked.add(index);
+      blocked.add(index + 1);
+    }
+  });
+  return blocked;
+}
+
+function isBoundaryAllowed(index: number, blockedSet: Set<number>): boolean {
+  return !blockedSet.has(index);
 }
 
 function GroupColumn({ id, children }: { id: GroupId; children: React.ReactNode }) {
@@ -126,6 +152,7 @@ export default function DeckGroupsSection2() {
   const [sectionState, setSectionState] = useState<SectionState>(INITIAL_STATE);
   const [activeSetId, setActiveSetId] = useState<string | null>(null);
   const [hoverBoundaryIndex, setHoverBoundaryIndex] = useState<number | null>(null);
+  const [ephemeralEmptyGroupId, setEphemeralEmptyGroupId] = useState<GroupId | null>(null);
 
   const previousState = useRef<SectionState>(INITIAL_STATE);
   const nextGroupIdRef = useRef<number>(1);
@@ -139,6 +166,8 @@ export default function DeckGroupsSection2() {
       groupRefs.current.delete(groupId);
     }
   };
+
+  const blockedBoundaries = getBlockedBoundaries(sectionState.groupOrder, sectionState.itemsByGroup);
 
   const resolveBoundaryFromPointerX = (clientX: number): number => {
     const orderedGroups = sectionState.groupOrder
@@ -174,22 +203,31 @@ export default function DeckGroupsSection2() {
   };
 
   const createGroupAtIndex = (index: number) => {
-    setSectionState((current) => {
-      const newGroupId = `N${nextGroupIdRef.current}`;
-      nextGroupIdRef.current += 1;
+    if (!isBoundaryAllowed(index, blockedBoundaries)) {
+      return;
+    }
 
-      const nextOrder = [...current.groupOrder];
+    const newGroupId = `N${nextGroupIdRef.current}`;
+    nextGroupIdRef.current += 1;
+
+    setSectionState((current) => {
+      let nextOrder = [...current.groupOrder];
+      let nextItemsByGroup: ItemsByGroup = { ...current.itemsByGroup };
+
+      if (ephemeralEmptyGroupId && (nextItemsByGroup[ephemeralEmptyGroupId] ?? []).length === 0) {
+        nextOrder = nextOrder.filter((groupId) => groupId !== ephemeralEmptyGroupId);
+        delete nextItemsByGroup[ephemeralEmptyGroupId];
+      }
+
       const insertionIndex = clamp(index, 0, nextOrder.length);
       nextOrder.splice(insertionIndex, 0, newGroupId);
 
       return {
         groupOrder: nextOrder,
-        itemsByGroup: {
-          ...current.itemsByGroup,
-          [newGroupId]: [],
-        },
+        itemsByGroup: { ...nextItemsByGroup, [newGroupId]: [] },
       };
     });
+    setEphemeralEmptyGroupId(newGroupId);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -226,7 +264,15 @@ export default function DeckGroupsSection2() {
     }
 
     if (!event.canceled && event.operation.source?.type === "set") {
-      setSectionState((current) => normalizeState(current.groupOrder, current.itemsByGroup));
+      setSectionState((current) => {
+        const next = normalizeState(current.groupOrder, current.itemsByGroup);
+        if (ephemeralEmptyGroupId && !(ephemeralEmptyGroupId in next.itemsByGroup)) {
+          setEphemeralEmptyGroupId(null);
+        } else if (ephemeralEmptyGroupId && (next.itemsByGroup[ephemeralEmptyGroupId]?.length ?? 0) > 0) {
+          setEphemeralEmptyGroupId(null);
+        }
+        return next;
+      });
     }
 
     setActiveSetId(null);
@@ -246,7 +292,7 @@ export default function DeckGroupsSection2() {
         >
           {sectionState.groupOrder.map((groupId, index) => (
             <div key={`${groupId}-${index}`} className={styles.groupStack}>
-              {!isSetDragActive && hoverBoundaryIndex === index ? (
+              {!isSetDragActive && hoverBoundaryIndex === index && isBoundaryAllowed(index, blockedBoundaries) ? (
                 <CreateBoundaryPlaceholder index={index} onCreate={createGroupAtIndex} />
               ) : null}
               <div ref={(element) => registerGroupRef(groupId, element)}>
@@ -258,7 +304,9 @@ export default function DeckGroupsSection2() {
               </div>
             </div>
           ))}
-          {!isSetDragActive && hoverBoundaryIndex === sectionState.groupOrder.length ? (
+          {!isSetDragActive &&
+          hoverBoundaryIndex === sectionState.groupOrder.length &&
+          isBoundaryAllowed(sectionState.groupOrder.length, blockedBoundaries) ? (
             <CreateBoundaryPlaceholder
               index={sectionState.groupOrder.length}
               onCreate={createGroupAtIndex}
