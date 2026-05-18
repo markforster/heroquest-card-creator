@@ -87,7 +87,7 @@ export default function DeckEntriesBoardController({
         if (lastHandledDragIdRef.current === event.dragId) return { handled: true, success: true };
 
         try {
-          const frontFaceId = event.backFaceId;
+          const frontFaceId = event.frontFaceId;
           if (!frontFaceId) return { handled: true, success: true };
 
           const prevEntries = entries.entriesSorted.slice().sort((a, b) => a.sortIndex - b.sortIndex);

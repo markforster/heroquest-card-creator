@@ -91,8 +91,9 @@ export function useDeckBoardsSeedModels({
     () =>
       toSourceBoardModel({
         cards: filteredCards.map((card) => ({ id: card.id, name: card.name })),
+        sourceFaceMode: rightPanel.rightPanelFaceMode === "back" ? "back" : "front",
       }),
-    [filteredCards],
+    [filteredCards, rightPanel.rightPanelFaceMode],
   );
 
   return {

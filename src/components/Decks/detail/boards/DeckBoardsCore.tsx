@@ -25,6 +25,7 @@ type SetId = string;
 export type LayoutMode = "content" | "fill-parent";
 type DragRouteToken = string;
 type SetRenderState = "idle" | "dragging" | "ghost" | "dropTarget" | "pending" | "overlay";
+type SourceItemFace = "front" | "back";
 
 type BoardConfig = {
   boardId: BoardId;
@@ -87,7 +88,7 @@ type EntriesReorderEvent = DeckDnDEventBase & {
 
 type EntriesDropSourceToEntriesEvent = DeckDnDEventBase & {
   kind: "ENTRIES_DROP_SOURCE_TO_ENTRIES";
-  backFaceId: string;
+  frontFaceId: string;
   targetIndex: number;
 };
 
@@ -115,6 +116,7 @@ export type BoardSeedModel = {
   groupLabelsById: Record<GroupId, string>;
   setLabelsById: Record<SetId, string>;
   setCardIdById: Record<SetId, string>;
+  sourceItemFaceBySetId?: Record<SetId, SourceItemFace>;
   emitToken: DragRouteToken;
   acceptTokens: DragRouteToken[];
 };
@@ -190,8 +192,8 @@ const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
 };
 
 export const BOARD_ROUTING_META_BY_ID: Record<BoardId, BoardRoutingMeta> = {
-  groups: { emitToken: "set", acceptTokens: ["source"] },
-  entries: { emitToken: "entry", acceptTokens: ["source"] },
+  groups: { emitToken: "set", acceptTokens: ["source-back"] },
+  entries: { emitToken: "entry", acceptTokens: ["source-front"] },
   source: { emitToken: "source", acceptTokens: [] },
 };
 
@@ -314,6 +316,24 @@ function canRouteDrag({
   if (!sourceEmitToken) return false;
   if (!targetAcceptTokens) return false;
   return targetAcceptTokens.includes(sourceEmitToken);
+}
+
+function resolveSourceDragToken({
+  sourceBoardId,
+  sourceSetId,
+  sourceRoutingToken,
+  sourceItemFaceBySetId,
+}: {
+  sourceBoardId: BoardId | null;
+  sourceSetId: SetId;
+  sourceRoutingToken: DragRouteToken | null;
+  sourceItemFaceBySetId: Record<SetId, SourceItemFace>;
+}): DragRouteToken | null {
+  if (sourceBoardId !== "source") return sourceRoutingToken;
+  const face = sourceItemFaceBySetId[sourceSetId];
+  if (face === "front") return "source-front";
+  if (face === "back") return "source-back";
+  return null;
 }
 
 function findGroupIdBySetId(itemsByGroup: Record<GroupId, SetId[]>, setId: SetId): GroupId | null {
@@ -787,6 +807,9 @@ export function DeckMockDndProvider({
     source: null,
   });
   const [ephemeralEmptyGroupId, setEphemeralEmptyGroupId] = useState<GroupId | null>(null);
+  const sourceItemFaceBySetIdRef = useRef<Record<SetId, SourceItemFace>>(
+    boardSeeds.source.sourceItemFaceBySetId ?? {},
+  );
   const boardRoutingById = useRef<Record<BoardId, BoardRoutingMeta>>({
     groups: {
       emitToken: boardSeeds.groups.emitToken,
@@ -832,6 +855,7 @@ export function DeckMockDndProvider({
     setGroupLabelsById(initialLabels.groupLabelsById);
     setSetLabelsById(initialLabels.setLabelsById);
     setSetCardIdById(initialLabels.setCardIdById);
+    sourceItemFaceBySetIdRef.current = boardSeeds.source.sourceItemFaceBySetId ?? {};
     if (activeSetId) return;
     setState(initialState);
     previousState.current = initialState;
@@ -964,6 +988,12 @@ export function DeckMockDndProvider({
     const targetBoardConfig = targetBoardId ? BOARD_CONFIGS[targetBoardId] : null;
     const sourceRouting = sourceBoardId ? boardRoutingById.current[sourceBoardId] : null;
     const targetRouting = targetBoardId ? boardRoutingById.current[targetBoardId] : null;
+    const sourceEmitToken = resolveSourceDragToken({
+      sourceBoardId,
+      sourceSetId,
+      sourceRoutingToken: sourceRouting?.emitToken ?? null,
+      sourceItemFaceBySetId: sourceItemFaceBySetIdRef.current,
+    });
     const canRoute = canRouteDrag({
       sourceBoardId,
       sourceGroupId,
@@ -972,7 +1002,7 @@ export function DeckMockDndProvider({
       sameGroup: sourceGroupId === targetGroupId,
       sourceAllowInGroupSort: sourceBoardConfig?.allowInGroupSort ?? false,
       targetAllowDropTarget: targetBoardConfig?.allowDropTarget ?? false,
-      sourceEmitToken: sourceRouting?.emitToken ?? null,
+      sourceEmitToken,
       targetAcceptTokens: targetRouting?.acceptTokens ?? null,
     });
     if (!canRoute) {
@@ -1077,6 +1107,14 @@ export function DeckMockDndProvider({
     const isTempTargetGroup = targetGroupId.startsWith("groups:N");
     const sourceBoardId = sourceGroupId ? postDropWithoutPending.groupToBoard[sourceGroupId] ?? null : null;
     const targetBoardId = targetGroupId ? postDropWithoutPending.groupToBoard[targetGroupId] ?? null : null;
+    const sourceRouting = sourceBoardId ? boardRoutingById.current[sourceBoardId] : null;
+    const targetRouting = targetBoardId ? boardRoutingById.current[targetBoardId] : null;
+    const sourceEmitToken = resolveSourceDragToken({
+      sourceBoardId,
+      sourceSetId,
+      sourceRoutingToken: sourceRouting?.emitToken ?? null,
+      sourceItemFaceBySetId: sourceItemFaceBySetIdRef.current,
+    });
     const targetGroupIndex = postDropState.groupOrderByBoard.groups.findIndex((groupId) => groupId === targetGroupId);
     const normalizedTargetSetIds = (postDropState.itemsByGroup[targetGroupId] ?? [])
       .filter((id) => id.startsWith("set:"))
@@ -1147,6 +1185,8 @@ export function DeckMockDndProvider({
         sourceBoardId === "source" &&
         targetBoardId === "groups" &&
         normalizedTargetGroupId &&
+        sourceEmitToken === "source-back" &&
+        targetRouting?.acceptTokens.includes("source-back") &&
         !isTempTargetGroup
       ) {
         const targetItemsWithoutPending = (postDropWithoutPending.itemsByGroup[targetGroupId] ?? []).filter(
@@ -1168,6 +1208,8 @@ export function DeckMockDndProvider({
         normalizedBackFaceId &&
         sourceBoardId === "source" &&
         targetBoardId === "groups" &&
+        sourceEmitToken === "source-back" &&
+        targetRouting?.acceptTokens.includes("source-back") &&
         isTempTargetGroup
       ) {
         events.push({
@@ -1190,7 +1232,13 @@ export function DeckMockDndProvider({
         });
       }
 
-      if (normalizedBackFaceId && sourceBoardId === "source" && targetBoardId === "entries") {
+      if (
+        normalizedBackFaceId &&
+        sourceBoardId === "source" &&
+        targetBoardId === "entries" &&
+        sourceEmitToken === "source-front" &&
+        targetRouting?.acceptTokens.includes("source-front")
+      ) {
         const targetItems = state.itemsByGroup[targetGroupId] ?? [];
         const fallbackIndex = targetItems.length;
         const targetIndex =
@@ -1200,7 +1248,7 @@ export function DeckMockDndProvider({
         events.push({
           kind: "ENTRIES_DROP_SOURCE_TO_ENTRIES",
           ...eventBase,
-          backFaceId: normalizedBackFaceId,
+          frontFaceId: normalizedBackFaceId,
           targetIndex,
         });
       }
@@ -1342,6 +1390,7 @@ type EntriesAdapterInput = {
 
 type SourceAdapterInput = {
   cards: Array<{ id: string; name: string }>;
+  sourceFaceMode: SourceItemFace;
 };
 
 export function toGroupsBoardModel(input: GroupsAdapterInput): BoardSeedModel {
@@ -1374,7 +1423,7 @@ export function toGroupsBoardModel(input: GroupsAdapterInput): BoardSeedModel {
     setLabelsById,
     setCardIdById,
     emitToken: "set",
-    acceptTokens: ["source"],
+    acceptTokens: ["source-back"],
   };
 }
 
@@ -1405,7 +1454,7 @@ export function toEntriesBoardModel(input: EntriesAdapterInput): BoardSeedModel 
     setLabelsById,
     setCardIdById,
     emitToken: "entry",
-    acceptTokens: ["source"],
+    acceptTokens: ["source-front"],
   };
 }
 
@@ -1413,10 +1462,12 @@ export function toSourceBoardModel(input: SourceAdapterInput): BoardSeedModel {
   const groupId = "source:lane";
   const setLabelsById: Record<SetId, string> = {};
   const setCardIdById: Record<SetId, string> = {};
+  const sourceItemFaceBySetId: Record<SetId, SourceItemFace> = {};
   const itemIds = input.cards.map((card) => {
     const sid = `source:${card.id}`;
     setLabelsById[sid] = card.name?.trim() || card.id;
     setCardIdById[sid] = card.id;
+    sourceItemFaceBySetId[sid] = input.sourceFaceMode;
     return sid;
   });
 
@@ -1427,6 +1478,7 @@ export function toSourceBoardModel(input: SourceAdapterInput): BoardSeedModel {
     groupLabelsById: { [groupId]: "Cards" },
     setLabelsById,
     setCardIdById,
+    sourceItemFaceBySetId,
     emitToken: "source",
     acceptTokens: [],
   };
