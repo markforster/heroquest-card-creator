@@ -40,6 +40,10 @@ export default function DeckGroupsBoardController({ deckId }: { deckId: string |
   );
   const model = useDeckSortableBoardViewModel("groups", BOARD_ROUTING_META_BY_ID.groups, {
     renderSetContent,
+    isSetSelected: (setUiId) => {
+      if (!selection?.selectedSetId) return false;
+      return setUiId === `set:${selection.selectedSetId}`;
+    },
     onSetClick: (setUiId, groupUiId) => {
       if (!selection) return;
       if (!setUiId.startsWith("set:")) return;

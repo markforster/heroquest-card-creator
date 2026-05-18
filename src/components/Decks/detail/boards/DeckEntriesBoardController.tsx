@@ -49,6 +49,10 @@ export default function DeckEntriesBoardController({
   );
   const model = useDeckSortableBoardViewModel("entries", BOARD_ROUTING_META_BY_ID.entries, {
     renderSetContent,
+    isSetSelected: (setUiId) => {
+      if (!selection?.selectedEntryId) return false;
+      return setUiId === `entry:${selection.selectedEntryId}`;
+    },
     emptyMessage: selection?.selectedSetId ? null : "Select a set to view entries.",
   });
 
