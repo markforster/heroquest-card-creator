@@ -177,6 +177,58 @@ describe("DeckGroupsSection2 mock boards", () => {
     expect(screen.getByTestId("group-source:S1")).not.toHaveTextContent("A1");
   });
 
+  it("blocks groups to entries routing", () => {
+    renderWorkspace();
+
+    act(() => {
+      callbacks.onDragStart?.({
+        operation: { source: { id: "g-A1", type: "set", group: "groups:A" } },
+      });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "g-A1", type: "set", group: "groups:A" },
+          target: { id: "entries:E1", type: "group" },
+        },
+      });
+      callbacks.onDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "g-A1", type: "set", group: "groups:A" },
+          target: { id: "entries:E1", type: "group" },
+        },
+      });
+    });
+
+    expect(screen.getByTestId("group-groups:A")).toHaveTextContent("A1");
+    expect(screen.getByTestId("group-entries:E1")).not.toHaveTextContent("A1");
+  });
+
+  it("blocks entries to groups routing", () => {
+    renderWorkspace();
+
+    act(() => {
+      callbacks.onDragStart?.({
+        operation: { source: { id: "e-1", type: "set", group: "entries:E1" } },
+      });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "e-1", type: "set", group: "entries:E1" },
+          target: { id: "groups:A", type: "group" },
+        },
+      });
+      callbacks.onDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "e-1", type: "set", group: "entries:E1" },
+          target: { id: "groups:A", type: "group" },
+        },
+      });
+    });
+
+    expect(screen.getByTestId("group-entries:E1")).toHaveTextContent("E-1");
+    expect(screen.getByTestId("group-groups:A")).not.toHaveTextContent("E-1");
+  });
+
   it("does not sort within source group but still sorts within groups board", () => {
     renderWorkspace();
 
