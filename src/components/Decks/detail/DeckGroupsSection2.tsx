@@ -995,38 +995,46 @@ export function DeckMockDndProvider({
         : extractGroupIdFromOperationEntity(event.operation.target) ||
           (targetId ? findGroupIdBySetId(state.itemsByGroup, targetId) || "" : "");
 
-    setState((current) => {
-      const withoutPending: DnDState = {
-        ...current,
-        itemsByGroup: clearPendingPlaceholder(current.itemsByGroup),
-      };
-      const next = normalizeAfterDrop(withoutPending);
-      if (ephemeralEmptyGroupId && !(ephemeralEmptyGroupId in next.itemsByGroup)) {
-        setEphemeralEmptyGroupId(null);
-      } else if (
-        ephemeralEmptyGroupId &&
-        (next.itemsByGroup[ephemeralEmptyGroupId]?.length ?? 0) > 0
-      ) {
-        setEphemeralEmptyGroupId(null);
-      }
-      return next;
-    });
+    const sourceBoardIdAtDrop = sourceGroupId ? state.groupToBoard[sourceGroupId] ?? null : null;
+    const targetBoardIdAtDrop = targetGroupId ? state.groupToBoard[targetGroupId] ?? null : null;
+    const canApplyMoveAtDrop =
+      sourceBoardIdAtDrop !== "source" &&
+      Boolean(sourceGroupId) &&
+      Boolean(targetGroupId) &&
+      (sourceBoardIdAtDrop === targetBoardIdAtDrop || targetBoardIdAtDrop !== null);
+    const movedItemsByGroup = canApplyMoveAtDrop
+      ? (move(state.itemsByGroup, event) as Record<GroupId, SetId[]>)
+      : state.itemsByGroup;
+
+    const postDropWithoutPending: DnDState = {
+      ...state,
+      itemsByGroup: clearPendingPlaceholder(movedItemsByGroup),
+    };
+    const postDropState = normalizeAfterDrop(postDropWithoutPending);
+    setState(postDropState);
+    if (ephemeralEmptyGroupId && !(ephemeralEmptyGroupId in postDropState.itemsByGroup)) {
+      setEphemeralEmptyGroupId(null);
+    } else if (
+      ephemeralEmptyGroupId &&
+      (postDropState.itemsByGroup[ephemeralEmptyGroupId]?.length ?? 0) > 0
+    ) {
+      setEphemeralEmptyGroupId(null);
+    }
 
     setActiveSetId(null);
     sourceGroupIdAtDragStartRef.current = null;
 
     const normalizedSetId = sourceSetId.startsWith("set:") ? sourceSetId.slice(4) : "";
-    const normalizedEntryId = sourceSetId.startsWith("entry:") ? sourceSetId.slice(6) : "";
     const normalizedSourceGroupId = sourceGroupId.startsWith("group:") ? sourceGroupId.slice(6) : "";
     const normalizedTargetGroupId = targetGroupId.startsWith("group:") ? targetGroupId.slice(6) : "";
     const isTempTargetGroup = targetGroupId.startsWith("groups:N");
-    const sourceBoardId = sourceGroupId ? state.groupToBoard[sourceGroupId] ?? null : null;
-    const targetBoardId = targetGroupId ? state.groupToBoard[targetGroupId] ?? null : null;
-    const targetGroupIndex = state.groupOrderByBoard.groups.findIndex((groupId) => groupId === targetGroupId);
-    const normalizedTargetSetIds = (state.itemsByGroup[targetGroupId] ?? [])
+    const sourceBoardId = sourceGroupId ? postDropState.groupToBoard[sourceGroupId] ?? null : null;
+    const targetBoardId = targetGroupId ? postDropState.groupToBoard[targetGroupId] ?? null : null;
+    const targetGroupIndex = postDropState.groupOrderByBoard.groups.findIndex((groupId) => groupId === targetGroupId);
+    const normalizedTargetSetIds = (postDropState.itemsByGroup[targetGroupId] ?? [])
       .filter((id) => id.startsWith("set:"))
       .map((id) => id.slice(4));
-    const normalizedSourceSetIds = (state.itemsByGroup[sourceGroupId] ?? [])
+    const normalizedSourceSetIds = (postDropState.itemsByGroup[sourceGroupId] ?? [])
       .filter((id) => id.startsWith("set:"))
       .map((id) => id.slice(4));
 
@@ -1058,7 +1066,8 @@ export function DeckMockDndProvider({
           ...eventBase,
           setId: normalizedSetId,
           sourceGroupId: normalizedSourceGroupId,
-          targetGroupIndex: targetGroupIndex < 0 ? state.groupOrderByBoard.groups.length : targetGroupIndex,
+          targetGroupIndex:
+            targetGroupIndex < 0 ? postDropState.groupOrderByBoard.groups.length : targetGroupIndex,
           orderedSourceSetIds: normalizedSourceSetIds,
           sourceGroupEmptyAfterDrop: normalizedSourceSetIds.length === 0,
         });
@@ -1093,7 +1102,7 @@ export function DeckMockDndProvider({
         normalizedTargetGroupId &&
         !isTempTargetGroup
       ) {
-        const targetItemsWithoutPending = (state.itemsByGroup[targetGroupId] ?? []).filter(
+        const targetItemsWithoutPending = (postDropWithoutPending.itemsByGroup[targetGroupId] ?? []).filter(
           (id) => !isPendingSetId(id),
         );
         events.push({
@@ -1118,18 +1127,15 @@ export function DeckMockDndProvider({
           kind: "GROUPS_DROP_SOURCE_CARD_TO_NEW_GROUP",
           ...eventBase,
           backFaceId: normalizedBackFaceId,
-          targetGroupIndex: targetGroupIndex < 0 ? state.groupOrderByBoard.groups.length : targetGroupIndex,
+          targetGroupIndex:
+            targetGroupIndex < 0 ? postDropState.groupOrderByBoard.groups.length : targetGroupIndex,
         });
       }
 
-      if (
-        normalizedEntryId &&
-        sourceBoardId === "entries" &&
-        targetBoardId === "entries"
-      ) {
-        const orderedEntryIds = (state.itemsByGroup[targetGroupId] ?? [])
-          .filter((id) => id.startsWith("entry:"))
-          .map((id) => id.slice(6));
+      if (sourceBoardId === "entries" && targetBoardId === "entries") {
+        const orderedEntryIds = (postDropState.itemsByGroup[targetGroupId] ?? [])
+          .map((id) => id.replace(/^entry:/, ""))
+          .filter(Boolean);
         events.push({
           kind: "ENTRIES_REORDER",
           ...eventBase,
@@ -1489,6 +1495,7 @@ export function DeckEntriesBoardController({
     entries = null;
   }
   const { registerDropHandler } = useDeckMockDnd();
+  const lastHandledDragIdRef = useRef<string | null>(null);
   const model = useDeckSortableBoardViewModel("entries", BOARD_ROUTING_META_BY_ID.entries, {
     emptyMessage: selection?.selectedSetId ? null : "Select a set to view entries.",
   });
@@ -1497,8 +1504,36 @@ export function DeckEntriesBoardController({
     if (!entries) return () => undefined;
     return registerDropHandler("entries-controller", async (event) => {
       if (event.kind === "ENTRIES_REORDER") {
-        await entries.reorderEntries(event.orderedEntryIds);
-        return { handled: true, success: true };
+        if (!entries.setId) {
+          return { handled: true, success: true };
+        }
+        if (lastHandledDragIdRef.current === event.dragId) {
+          return { handled: true, success: true };
+        }
+
+        const orderedEntryIds = (event.orderedEntryIds ?? [])
+          .map((id) => id.replace(/^entry:/, ""))
+          .filter(Boolean);
+        if (orderedEntryIds.length === 0) {
+          return { handled: true, success: true };
+        }
+
+        try {
+          if (typeof entries.reorderEntriesOptimistic === "function") {
+            await entries.reorderEntriesOptimistic(orderedEntryIds);
+          } else {
+            await entries.reorderEntries(orderedEntryIds);
+          }
+          lastHandledDragIdRef.current = event.dragId;
+          return { handled: true, success: true };
+        } catch (error) {
+          return {
+            handled: true,
+            success: false,
+            fatal: true,
+            reason: error instanceof Error ? error.message : "entries reorder failed",
+          };
+        }
       }
       if (event.kind === "ENTRIES_DROP_SOURCE_TO_ENTRIES") {
         // Source currently emits back-face ids. Entry insertion persistence is deferred until
