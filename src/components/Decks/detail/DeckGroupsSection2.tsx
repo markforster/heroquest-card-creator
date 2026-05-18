@@ -296,7 +296,10 @@ function DeckSortableBoardView({
                 onCreate={(nextIndex) => createGroupAtIndex(boardId, nextIndex)}
               />
             ) : null}
-            <div ref={(node) => registerGroupRef(groupId, node)}>
+            <div
+              className={useFillParent ? styles.groupWrapperFillParent : ""}
+              ref={(node) => registerGroupRef(groupId, node)}
+            >
               <GroupColumn groupId={groupId} fillParent={useFillParent}>
                 {(state.itemsByGroup[groupId] ?? []).map((setId, setIndex) => (
                   <SetCard key={setId} setId={setId} index={setIndex} groupId={groupId} />
