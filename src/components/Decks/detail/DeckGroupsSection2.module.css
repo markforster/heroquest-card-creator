@@ -301,6 +301,28 @@
   z-index: 3;
 }
 
+.setHoverPreviewOverlay {
+  position: absolute;
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 1;
+  will-change: transform, opacity;
+  transition: transform 100ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 100ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  filter: drop-shadow(0 5px 12px rgba(0, 0, 0, 0.18));
+}
+
+.setHoverPreviewOverlay * {
+  pointer-events: none;
+}
+
+.setHoverPreviewOverlay .setThumb {
+  box-shadow: 0 0 0 2px var(--deck-board-hover-ring);
+}
+
+.setHoverPreviewOverlay .setThumb img {
+  filter: brightness(1.25) saturate(1.08);
+}
+
 .setCard {
   width: 112px;
   min-height: 0;

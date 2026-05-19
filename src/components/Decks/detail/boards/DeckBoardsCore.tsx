@@ -8,6 +8,7 @@ import {
   type DragOverEvent,
   type DragStartEvent,
   useDraggable,
+  useDroppable,
 } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import {
@@ -52,6 +53,13 @@ type GroupVisualContext = {
   isHovered: boolean;
   hasSelectedSet: boolean;
   setCount: number;
+};
+
+type SetHoverContext = {
+  boardId: BoardId;
+  groupId: GroupId;
+  setId: SetId;
+  isHovered: boolean;
 };
 
 type BoardInfoPillProps = {
@@ -217,6 +225,7 @@ export type DeckSortableBoardViewModel = {
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
   allowGroupReorder?: boolean;
   onSetClick?: (setUiId: SetId, groupUiId: GroupId) => void;
+  onSetHoverChange?: (args: SetHoverContext) => void;
   renderSetContent: (args: {
     setId: SetId;
     groupId: GroupId;
@@ -235,6 +244,7 @@ export type DeckSortableBoardViewModel = {
   resolveSetShellStyle?: (
     args: GroupVisualContext & { setId: SetId; setIndex: number },
   ) => CSSProperties | undefined;
+  renderGroupOverlay?: (args: GroupVisualContext & { setIds: SetId[] }) => ReactNode;
   emptyMessage?: string | null;
 };
 
@@ -550,6 +560,9 @@ function getBlockedBoundaries(
   groupIds: GroupId[],
   itemsByGroup: Record<GroupId, SetId[]>,
 ): Set<number> {
+  if (groupIds.length <= 1) {
+    return new Set<number>();
+  }
   const blocked = new Set<number>();
   groupIds.forEach((groupId, index) => {
     if ((itemsByGroup[groupId]?.length ?? 0) === 0) {
@@ -640,12 +653,18 @@ function GroupColumn({
   onHoverChange?: (isHovered: boolean) => void;
   allowGroupReorder?: boolean;
 }) {
-  const { ref, handleRef, isDragging } = useSortable({
+  const droppable = useDroppable({
     id: groupId,
-    index,
     type: "group",
-    accept: canReceiveDrops ? ["set", "group"] : ["group"],
-    group: `board:${boardId}`,
+    accept: [
+      ...(canReceiveDrops ? (["set"] as const) : []),
+      ...(allowGroupReorder ? (["group"] as const) : []),
+    ],
+  });
+  const { ref, handleRef, isDragging } = useDraggable({
+    id: `sort:${groupId}`,
+    type: "group",
+    data: { group: groupId },
     disabled: !allowGroupReorder,
   });
 
@@ -659,7 +678,10 @@ function GroupColumn({
       ]
         .filter(Boolean)
         .join(" ")}
-      ref={ref}
+      ref={(node) => {
+        droppable.ref(node);
+        ref(node);
+      }}
       data-testid={`group-${groupId}`}
       style={style}
       onMouseEnter={() => onHoverChange?.(true)}
@@ -782,6 +804,7 @@ function SortableSetCard({
   isSelected,
   isEphemeral,
   onClick,
+  onHoverChange,
   renderTopToolbar,
   renderBottomToolbar,
   sourceLayout,
@@ -798,6 +821,7 @@ function SortableSetCard({
   isSelected: boolean;
   isEphemeral?: boolean;
   onClick?: () => void;
+  onHoverChange?: (isHovered: boolean) => void;
   renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
   renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
   sourceLayout?: boolean;
@@ -818,6 +842,8 @@ function SortableSetCard({
       ref={ref}
       data-testid={`set-${setId}`}
       style={shellStyle}
+      onMouseEnter={() => onHoverChange?.(true)}
+      onMouseLeave={() => onHoverChange?.(false)}
     >
       {renderTopToolbar
         ? (
@@ -894,6 +920,7 @@ function DraggableSetCard({
   isSelected,
   isEphemeral,
   onClick,
+  onHoverChange,
   renderTopToolbar,
   renderBottomToolbar,
   sourceLayout,
@@ -909,6 +936,7 @@ function DraggableSetCard({
   isSelected: boolean;
   isEphemeral?: boolean;
   onClick?: () => void;
+  onHoverChange?: (isHovered: boolean) => void;
   renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
   renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
   sourceLayout?: boolean;
@@ -927,6 +955,8 @@ function DraggableSetCard({
       ref={ref}
       data-testid={`set-${setId}`}
       style={shellStyle}
+      onMouseEnter={() => onHoverChange?.(true)}
+      onMouseLeave={() => onHoverChange?.(false)}
     >
       {renderTopToolbar
         ? (
@@ -1195,6 +1225,13 @@ export function DeckSortableBoardView({
                             if (model.activeSetId) return;
                             model.onSetClick?.(setId, groupId);
                           }}
+                          onHoverChange={(isHovered) =>
+                            model.onSetHoverChange?.({
+                              boardId: config.boardId,
+                              groupId,
+                              setId,
+                              isHovered,
+                            })}
                         />
                       ) : null}
                       {!config.allowInGroupSort ? (
@@ -1226,11 +1263,28 @@ export function DeckSortableBoardView({
                             if (model.activeSetId) return;
                             model.onSetClick?.(setId, groupId);
                           }}
+                          onHoverChange={(isHovered) =>
+                            model.onSetHoverChange?.({
+                              boardId: config.boardId,
+                              groupId,
+                              setId,
+                              isHovered,
+                            })}
                         />
                       ) : null}
                     </Fragment>
                   ));
                 })()}
+                {model.renderGroupOverlay?.({
+                  boardId: config.boardId,
+                  groupId,
+                  isHovered: hoveredGroupId === groupId,
+                  hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
+                    (setId) => model.isSetSelected?.(setId, groupId) ?? false,
+                  ),
+                  setCount: (itemsByGroup[groupId] ?? []).length,
+                  setIds: itemsByGroup[groupId] ?? [],
+                })}
                 {(itemsByGroup[groupId] ?? []).length === 0 && model.emptyMessage ? (
                   <div>{model.emptyMessage}</div>
                 ) : null}
@@ -1480,11 +1534,13 @@ export function DeckMockDndProvider({
 
   const handleDragOver = (event: DragOverEvent) => {
     if (event.operation.source?.type === "group") {
-      const sourceGroupId = String(event.operation.source.id ?? "");
+      const sourceGroupId =
+        extractGroupIdFromOperationEntity(event.operation.source) ||
+        String(event.operation.source.id ?? "");
       const targetId = String(event.operation.target?.id ?? "");
       const targetGroupId =
         event.operation.target?.type === "group"
-          ? targetId
+          ? extractGroupIdFromOperationEntity(event.operation.target) || targetId
           : extractGroupIdFromOperationEntity(event.operation.target) ||
             (targetId ? findContainerByItemId(state, targetId) || "" : "");
       if (!sourceGroupId || !targetGroupId || sourceGroupId === targetGroupId) return;
@@ -1621,7 +1677,9 @@ export function DeckMockDndProvider({
         setState(previousState.current);
         return;
       }
-      const sourceGroupId = String(event.operation.source.id ?? "");
+      const sourceGroupId =
+        extractGroupIdFromOperationEntity(event.operation.source) ||
+        String(event.operation.source.id ?? "");
       const sourceBoardId = sourceGroupId ? (state.groupToBoard[sourceGroupId] ?? null) : null;
       if (sourceBoardId === "groups" && handlersRef.current.size > 0) {
         const orderedGroupIds = (state.groupOrderByBoard.groups ?? [])
@@ -1971,6 +2029,7 @@ export function useDeckSortableBoardViewModel(
   options?: {
     allowGroupReorder?: boolean;
     onSetClick?: (setUiId: SetId, groupUiId: GroupId) => void;
+    onSetHoverChange?: DeckSortableBoardViewModel["onSetHoverChange"];
     renderSetContent?: DeckSortableBoardViewModel["renderSetContent"];
     renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
     renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
@@ -1981,6 +2040,7 @@ export function useDeckSortableBoardViewModel(
     resolveGroupBodyStyle?: DeckSortableBoardViewModel["resolveGroupBodyStyle"];
     resolveSetShellClassName?: DeckSortableBoardViewModel["resolveSetShellClassName"];
     resolveSetShellStyle?: DeckSortableBoardViewModel["resolveSetShellStyle"];
+    renderGroupOverlay?: DeckSortableBoardViewModel["renderGroupOverlay"];
     emptyMessage?: string | null;
   },
 ): DeckSortableBoardViewModel {
@@ -2018,6 +2078,7 @@ export function useDeckSortableBoardViewModel(
     registerGroupRef,
     allowGroupReorder: options?.allowGroupReorder ?? false,
     onSetClick: options?.onSetClick,
+    onSetHoverChange: options?.onSetHoverChange,
     renderTopToolbar: options?.renderTopToolbar,
     renderBottomToolbar: options?.renderBottomToolbar,
     isSetSelected: options?.isSetSelected,
@@ -2027,6 +2088,7 @@ export function useDeckSortableBoardViewModel(
     resolveGroupBodyStyle: options?.resolveGroupBodyStyle,
     resolveSetShellClassName: options?.resolveSetShellClassName,
     resolveSetShellStyle: options?.resolveSetShellStyle,
+    renderGroupOverlay: options?.renderGroupOverlay,
     renderSetContent:
       options?.renderSetContent ??
       (({ setId, label, cardId, state: renderState }) => (

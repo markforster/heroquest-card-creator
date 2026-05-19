@@ -300,13 +300,30 @@ export async function createDeck(input: {
     updatedAt: input.updatedAt ?? now,
     schemaVersion: input.schemaVersion ?? 1,
   };
-  const store = await getStore(DECKS_STORE, "readwrite");
+  const defaultGroup: DeckGroupRecord = {
+    id: generateId(),
+    deckId: record.id,
+    title: "Group",
+    sortIndex: 0,
+    createdAt: now,
+    updatedAt: now,
+    schemaVersion: 1,
+  };
+
+  const db = await openHqccDb();
+  const tx = db.transaction([DECKS_STORE, GROUPS_STORE], "readwrite");
+  const decksStore = tx.objectStore(DECKS_STORE);
+  const groupsStore = tx.objectStore(GROUPS_STORE);
+
+  decksStore.add(record);
+  groupsStore.add(defaultGroup);
+
   await new Promise<void>((resolve, reject) => {
-    const request = store.add(record);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error ?? new Error("Failed to create deck"));
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error("Failed to create deck"));
   });
   enqueueDbEstimateChange(DECKS_STORE, record.id);
+  enqueueDbEstimateChange(GROUPS_STORE, defaultGroup.id);
   return record;
 }
 
@@ -532,6 +549,8 @@ export async function deleteGroup(groupId: string): Promise<void> {
     request.onerror = () => reject(request.error ?? new Error("Failed to load group"));
   });
   if (!group) return;
+  const siblingGroups = await listByIndex<DeckGroupRecord>(GROUPS_STORE, "deckId", group.deckId);
+  if (siblingGroups.length <= 1) return;
 
   const sets = await listByIndex<DeckSetRecord>(SETS_STORE, "groupId", groupId);
   const entryIds: string[] = [];
@@ -690,7 +709,8 @@ export async function deleteSet(setId: string): Promise<void> {
   if (!set) return;
   const entries = await listByIndex<DeckEntryRecord>(ENTRIES_STORE, "setId", setId);
   const groupSets = await listByIndex<DeckSetRecord>(SETS_STORE, "groupId", set.groupId);
-  const shouldDeleteGroup = groupSets.length === 1;
+  const deckGroups = await listByIndex<DeckGroupRecord>(GROUPS_STORE, "deckId", set.deckId);
+  const shouldDeleteGroup = groupSets.length === 1 && deckGroups.length > 1;
 
   const deckStore = await getStore(DECKS_STORE, "readwrite");
   const deck = await new Promise<DeckRecord | null>((resolve, reject) => {

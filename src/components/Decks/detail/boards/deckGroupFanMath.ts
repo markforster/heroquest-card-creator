@@ -3,6 +3,7 @@ export type GroupFanMode = "collapsed" | "partial" | "expanded";
 export const FAN_CARD_WIDTH = 112;
 export const FAN_CARD_HEIGHT = (FAN_CARD_WIDTH * 1056) / 756;
 export const FAN_GROUP_HORIZONTAL_PADDING = 24;
+const FAN_PARTIAL_SPREAD_DELTA_MULTIPLIER = 0;
 
 const FAN_PROFILE_BY_MODE: Record<
   GroupFanMode,
@@ -10,7 +11,12 @@ const FAN_PROFILE_BY_MODE: Record<
 > = {
   // Keep the same radial silhouette for collapsed/partial and only widen in X for partial.
   collapsed: { angleSpreadDeg: 24, radiusPx: 440, centerYOffsetPx: 1, spreadX: 0.76 },
-  partial: { angleSpreadDeg: 24, radiusPx: 440, centerYOffsetPx: 1, spreadX: 1.18 },
+  partial: {
+    angleSpreadDeg: 24,
+    radiusPx: 440,
+    centerYOffsetPx: 1,
+    spreadX: 0.76 + (1.18 - 0.76) * FAN_PARTIAL_SPREAD_DELTA_MULTIPLIER,
+  },
   expanded: { angleSpreadDeg: 0, radiusPx: 0, centerYOffsetPx: 0, spreadX: 1 },
 };
 
