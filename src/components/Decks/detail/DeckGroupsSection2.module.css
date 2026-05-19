@@ -308,8 +308,7 @@
   pointer-events: auto;
 }
 
-.setShell:hover .setCardTopToolbar,
-.setShell:focus-within .setCardTopToolbar {
+.setShell:hover .setCardTopToolbar {
   opacity: 1;
   pointer-events: auto;
 }
