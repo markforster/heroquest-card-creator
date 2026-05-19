@@ -6,12 +6,12 @@ export const FAN_GROUP_HORIZONTAL_PADDING = 24;
 
 const FAN_PROFILE_BY_MODE: Record<
   GroupFanMode,
-  { angleSpreadDeg: number; radiusPx: number; centerYOffsetPx: number }
+  { angleSpreadDeg: number; radiusPx: number; centerYOffsetPx: number; spreadX: number }
 > = {
-  // Subtle fan: collapsed is tighter; partial opens the arc.
-  collapsed: { angleSpreadDeg: 18, radiusPx: 460, centerYOffsetPx: 2 },
-  partial: { angleSpreadDeg: 34, radiusPx: 420, centerYOffsetPx: 0 },
-  expanded: { angleSpreadDeg: 0, radiusPx: 0, centerYOffsetPx: 0 },
+  // Keep the same radial silhouette for collapsed/partial and only widen in X for partial.
+  collapsed: { angleSpreadDeg: 24, radiusPx: 440, centerYOffsetPx: 1, spreadX: 0.82 },
+  partial: { angleSpreadDeg: 24, radiusPx: 440, centerYOffsetPx: 1, spreadX: 1.18 },
+  expanded: { angleSpreadDeg: 0, radiusPx: 0, centerYOffsetPx: 0, spreadX: 1 },
 };
 
 export type FanFrameInput = {
@@ -88,6 +88,7 @@ export function resolveFanFrame({
   const angleSpreadDeg = lerp(fromProfile.angleSpreadDeg, toProfile.angleSpreadDeg, t);
   const radiusPx = lerp(fromProfile.radiusPx, toProfile.radiusPx, t);
   const centerYOffsetPx = lerp(fromProfile.centerYOffsetPx, toProfile.centerYOffsetPx, t);
+  const spreadX = lerp(fromProfile.spreadX, toProfile.spreadX, t);
   const halfPad = horizontalPadding / 2;
 
   if (count <= 0) {
@@ -118,7 +119,7 @@ export function resolveFanFrame({
     const rotateDeg = normalizedOffset * (angleSpreadDeg / 2);
     const theta = (rotateDeg * Math.PI) / 180;
     // Pivot is the card bottom-center in canvas space.
-    const radialPivotX = fanCenterX + Math.sin(theta) * radiusPx;
+    const radialPivotX = fanCenterX + Math.sin(theta) * radiusPx * spreadX;
     const radialPivotY = fanCenterY - Math.cos(theta) * radiusPx;
     const expandedPivotX = index * expandedStep - expandedRowCenterX;
     const expandedPivotY = cardHeight;

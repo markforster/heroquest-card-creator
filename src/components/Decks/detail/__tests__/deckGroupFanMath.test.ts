@@ -23,12 +23,24 @@ describe("deckGroupFanMath", () => {
 
     expect(collapsedLeft.rotateDeg).not.toBe(0);
     expect(partialLeft.rotateDeg).not.toBe(0);
-    expect(Math.abs(collapsedLeft.rotateDeg)).toBeLessThan(Math.abs(partialLeft.rotateDeg));
+    expect(collapsedLeft.rotateDeg).toBeCloseTo(partialLeft.rotateDeg, 8);
     expect(expandedLeft.rotateDeg).toBeCloseTo(0, 8);
     expect(expandedLeft.y).toBeCloseTo(
       resolveFanPlacement({ mode: "expanded", count: 3, index: 1 }).y,
       8,
     );
+  });
+
+  it("keeps fan silhouette fixed between collapsed and partial", () => {
+    const collapsed = resolveFanFrame({ fromMode: "collapsed", toMode: "collapsed", progress: 1, count: 5 });
+    const partial = resolveFanFrame({ fromMode: "partial", toMode: "partial", progress: 1, count: 5 });
+
+    collapsed.cards.forEach((card, index) => {
+      expect(card.rotateDeg).toBeCloseTo(partial.cards[index].rotateDeg, 8);
+      expect(card.pivotY).toBeCloseTo(partial.cards[index].pivotY, 8);
+    });
+    expect(collapsed.requiredHeightPx).toBeCloseTo(partial.requiredHeightPx, 8);
+    expect(partial.requiredWidthPx).toBeGreaterThan(collapsed.requiredWidthPx);
   });
 
   it("forms a radial fan where top spread is wider than bottom spread", () => {
@@ -95,5 +107,20 @@ describe("deckGroupFanMath", () => {
 
     expect(mid).toBeGreaterThan(start);
     expect(end).toBeGreaterThan(mid);
+  });
+
+  it("collapsed-to-partial transition changes only horizontal spread", () => {
+    const start = resolveFanFrame({ fromMode: "collapsed", toMode: "partial", progress: 0, count: 5 });
+    const mid = resolveFanFrame({ fromMode: "collapsed", toMode: "partial", progress: 0.5, count: 5 });
+    const end = resolveFanFrame({ fromMode: "collapsed", toMode: "partial", progress: 1, count: 5 });
+
+    start.cards.forEach((card, index) => {
+      expect(mid.cards[index].rotateDeg).toBeCloseTo(card.rotateDeg, 8);
+      expect(end.cards[index].rotateDeg).toBeCloseTo(card.rotateDeg, 8);
+      expect(mid.cards[index].pivotY).toBeCloseTo(card.pivotY, 8);
+      expect(end.cards[index].pivotY).toBeCloseTo(card.pivotY, 8);
+    });
+    expect(mid.requiredHeightPx).toBeCloseTo(start.requiredHeightPx, 8);
+    expect(end.requiredHeightPx).toBeCloseTo(start.requiredHeightPx, 8);
   });
 });

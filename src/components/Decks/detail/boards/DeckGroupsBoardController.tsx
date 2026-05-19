@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Gem, Trash2 } from "lucide-react";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
@@ -166,6 +166,24 @@ export default function DeckGroupsBoardController({
     },
     [transitionByGroup],
   );
+  const sharedFanMinHeightPx = useMemo(() => {
+    if (!enableFanLayout || !selection) return null;
+    const setCountByGroupId = new Map<string, number>();
+    selection.sets.forEach((set) => {
+      setCountByGroupId.set(set.groupId, (setCountByGroupId.get(set.groupId) ?? 0) + 1);
+    });
+    const maxFrameHeight = selection.orderedGroups.reduce((maxHeight, group) => {
+      const setCount = setCountByGroupId.get(group.id) ?? 0;
+      const frame = resolveFanFrame({
+        fromMode: "partial",
+        toMode: "partial",
+        progress: 1,
+        count: setCount,
+      });
+      return Math.max(maxHeight, frame.requiredHeightPx);
+    }, 0);
+    return Math.ceil(maxFrameHeight + 34);
+  }, [enableFanLayout, selection]);
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
     ({ setId, label, cardId, state }) => {
       const rawSetId = setId.startsWith("set:") ? setId.slice(4) : null;
@@ -276,7 +294,7 @@ export default function DeckGroupsBoardController({
       const frame = resolveAnimatedFrame(groupId, mode, setCount);
       return {
         minWidth: `${Math.ceil(frame.requiredWidthPx)}px`,
-        minHeight: `${Math.ceil(frame.requiredHeightPx + 34)}px`,
+        minHeight: `${Math.max(Math.ceil(frame.requiredHeightPx + 34), sharedFanMinHeightPx ?? 0)}px`,
       };
     },
     resolveGroupBodyClassName: ({ boardId }) =>
