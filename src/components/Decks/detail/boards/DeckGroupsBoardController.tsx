@@ -304,9 +304,10 @@ export default function DeckGroupsBoardController({
       const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet);
       noteDesiredMode(groupId, mode);
       const frame = resolveAnimatedFrame(groupId, mode, setCount);
+      const effectiveBodyHeight = Math.max(Math.ceil(frame.requiredHeightPx), sharedFanMinHeightPx ?? 0);
       return {
         width: `${Math.ceil(frame.requiredWidthPx)}px`,
-        height: `${Math.ceil(frame.requiredHeightPx)}px`,
+        height: `${effectiveBodyHeight}px`,
       };
     },
     resolveSetShellClassName: ({ boardId, groupId, isHovered, hasSelectedSet }) => {
@@ -323,9 +324,14 @@ export default function DeckGroupsBoardController({
       const frame = resolveAnimatedFrame(groupId, mode, setCount);
       const fan = frame.cards[setIndex];
       if (!fan) return undefined;
+      const frameHeightPx = Math.ceil(frame.requiredHeightPx);
+      const effectiveBodyHeight = Math.max(frameHeightPx, sharedFanMinHeightPx ?? 0);
+      const expandedVerticalCenterOffset = mode === "expanded"
+        ? Math.max(0, Math.round((effectiveBodyHeight - frameHeightPx) / 2))
+        : 0;
       return {
         left: `${fan.pivotX - FAN_CARD_WIDTH / 2}px`,
-        top: `${fan.pivotY - FAN_CARD_HEIGHT}px`,
+        top: `${fan.pivotY - FAN_CARD_HEIGHT + expandedVerticalCenterOffset}px`,
         transform: `rotate(${fan.rotateDeg}deg)`,
         transformOrigin: "50% 100%",
         zIndex: fan.zIndex,
