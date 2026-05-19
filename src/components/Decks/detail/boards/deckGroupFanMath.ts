@@ -6,11 +6,12 @@ export const FAN_GROUP_HORIZONTAL_PADDING = 24;
 
 const FAN_PROFILE_BY_MODE: Record<
   GroupFanMode,
-  { step: number; maxRotationDeg: number; maxArcLiftPx: number }
+  { angleSpreadDeg: number; radiusPx: number; centerYOffsetPx: number }
 > = {
-  collapsed: { step: 16, maxRotationDeg: 6, maxArcLiftPx: 6 },
-  partial: { step: 28, maxRotationDeg: 3, maxArcLiftPx: 3 },
-  expanded: { step: FAN_CARD_WIDTH + 14, maxRotationDeg: 0, maxArcLiftPx: 0 },
+  // Subtle fan: collapsed is tighter; partial opens the arc.
+  collapsed: { angleSpreadDeg: 18, radiusPx: 460, centerYOffsetPx: 2 },
+  partial: { angleSpreadDeg: 34, radiusPx: 420, centerYOffsetPx: 0 },
+  expanded: { angleSpreadDeg: 0, radiusPx: 0, centerYOffsetPx: 0 },
 };
 
 export type FanFrameInput = {
@@ -24,6 +25,8 @@ export type FanFrameInput = {
 };
 
 export type FanCardFrame = {
+  pivotX: number;
+  pivotY: number;
   x: number;
   y: number;
   rotateDeg: number;
@@ -67,7 +70,7 @@ export function resolveFanPlacement({
   });
   const card = frame.cards[index];
   if (!card) return { x: 0, y: 0, rotateDeg: 0, zIndex: index + 1 };
-  return { x: card.x, y: card.y, rotateDeg: card.rotateDeg, zIndex: card.zIndex };
+  return { x: card.pivotX, y: card.pivotY, rotateDeg: card.rotateDeg, zIndex: card.zIndex };
 }
 
 export function resolveFanFrame({
@@ -82,9 +85,9 @@ export function resolveFanFrame({
   const t = clamp(progress, 0, 1);
   const fromProfile = FAN_PROFILE_BY_MODE[fromMode];
   const toProfile = FAN_PROFILE_BY_MODE[toMode];
-  const step = lerp(fromProfile.step, toProfile.step, t);
-  const maxRotationDeg = lerp(fromProfile.maxRotationDeg, toProfile.maxRotationDeg, t);
-  const maxArcLiftPx = lerp(fromProfile.maxArcLiftPx, toProfile.maxArcLiftPx, t);
+  const angleSpreadDeg = lerp(fromProfile.angleSpreadDeg, toProfile.angleSpreadDeg, t);
+  const radiusPx = lerp(fromProfile.radiusPx, toProfile.radiusPx, t);
+  const centerYOffsetPx = lerp(fromProfile.centerYOffsetPx, toProfile.centerYOffsetPx, t);
   const halfPad = horizontalPadding / 2;
 
   if (count <= 0) {
@@ -97,33 +100,37 @@ export function resolveFanFrame({
     };
   }
 
-  const baseXByIndex: number[] = [];
-  for (let index = 0; index < count; index += 1) {
-    baseXByIndex.push(index * step);
-  }
-
   const center = (count - 1) / 2;
   let minLeft = Number.POSITIVE_INFINITY;
   let maxRight = Number.NEGATIVE_INFINITY;
   let minTop = Number.POSITIVE_INFINITY;
   let maxBottom = Number.NEGATIVE_INFINITY;
-  const cardsPreComp: Array<Omit<FanCardFrame, "x" | "y"> & { baseX: number; baseY: number }> = [];
-  const baselineY = cardHeight;
+  const cardsPreComp: Array<Omit<FanCardFrame, "x" | "y"> & { basePivotX: number; basePivotY: number }> = [];
+  const fanCenterX = 0;
+  const fanCenterY = cardHeight + radiusPx + centerYOffsetPx;
+  const expandedStep = cardWidth + 14;
+  const expandedRowCenterX = ((count - 1) * expandedStep) / 2;
 
   for (let index = 0; index < count; index += 1) {
     const offsetFromCenter = index - center;
     const maxOffset = Math.max(center, 1);
-    const normalizedOffset = offsetFromCenter / maxOffset;
-    const rotateDeg = normalizedOffset * maxRotationDeg;
-    const centerY = baselineY - Math.abs(normalizedOffset) * maxArcLiftPx;
+    const normalizedOffset = maxOffset > 0 ? offsetFromCenter / maxOffset : 0;
+    const rotateDeg = normalizedOffset * (angleSpreadDeg / 2);
     const theta = (rotateDeg * Math.PI) / 180;
+    // Pivot is the card bottom-center in canvas space.
+    const radialPivotX = fanCenterX + Math.sin(theta) * radiusPx;
+    const radialPivotY = fanCenterY - Math.cos(theta) * radiusPx;
+    const expandedPivotX = index * expandedStep - expandedRowCenterX;
+    const expandedPivotY = cardHeight;
+    const modeBlend = angleSpreadDeg <= 0.001 ? 1 : 0;
+    const pivotX = modeBlend ? expandedPivotX : radialPivotX;
+    const pivotY = modeBlend ? expandedPivotY : radialPivotY;
     const corners = [
-      { x: -cardWidth / 2, y: -cardHeight },
-      { x: cardWidth / 2, y: -cardHeight },
-      { x: cardWidth / 2, y: 0 },
-      { x: -cardWidth / 2, y: 0 },
+      { x: -cardWidth / 2, y: -cardHeight }, // top-left
+      { x: cardWidth / 2, y: -cardHeight }, // top-right
+      { x: cardWidth / 2, y: 0 }, // bottom-right
+      { x: -cardWidth / 2, y: 0 }, // bottom-left
     ];
-    const centerX = baseXByIndex[index];
     let left = Number.POSITIVE_INFINITY;
     let right = Number.NEGATIVE_INFINITY;
     let top = Number.POSITIVE_INFINITY;
@@ -133,8 +140,8 @@ export function resolveFanFrame({
     corners.forEach((corner) => {
       const rx = corner.x * cos - corner.y * sin;
       const ry = corner.x * sin + corner.y * cos;
-      const px = centerX + rx;
-      const py = centerY + ry;
+      const px = pivotX + rx;
+      const py = pivotY + ry;
       left = Math.min(left, px);
       right = Math.max(right, px);
       top = Math.min(top, py);
@@ -145,8 +152,10 @@ export function resolveFanFrame({
     minTop = Math.min(minTop, top);
     maxBottom = Math.max(maxBottom, bottom);
     cardsPreComp.push({
-      baseX: baseXByIndex[index],
-      baseY: centerY,
+      basePivotX: pivotX,
+      basePivotY: pivotY,
+      pivotX,
+      pivotY,
       rotateDeg,
       zIndex: index + 1,
       left,
@@ -164,8 +173,10 @@ export function resolveFanFrame({
   return {
     cards: cardsPreComp.map((card) => ({
       ...card,
-      x: card.baseX + originOffsetXPx,
-      y: card.baseY + originOffsetYPx,
+      pivotX: card.basePivotX + originOffsetXPx,
+      pivotY: card.basePivotY + originOffsetYPx,
+      x: card.basePivotX + originOffsetXPx,
+      y: card.basePivotY + originOffsetYPx,
       left: card.left + originOffsetXPx,
       right: card.right + originOffsetXPx,
       top: card.top + originOffsetYPx,

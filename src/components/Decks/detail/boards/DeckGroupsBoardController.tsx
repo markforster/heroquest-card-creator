@@ -306,8 +306,8 @@ export default function DeckGroupsBoardController({
       const fan = frame.cards[setIndex];
       if (!fan) return undefined;
       return {
-        left: `${fan.x - FAN_CARD_WIDTH / 2}px`,
-        top: `${fan.y - FAN_CARD_HEIGHT}px`,
+        left: `${fan.pivotX - FAN_CARD_WIDTH / 2}px`,
+        top: `${fan.pivotY - FAN_CARD_HEIGHT}px`,
         transform: `rotate(${fan.rotateDeg}deg)`,
         transformOrigin: "50% 100%",
         zIndex: fan.zIndex,
