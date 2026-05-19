@@ -642,7 +642,7 @@ function getBlockedBoundaries(
   }
   const blocked = new Set<number>();
   groupIds.forEach((groupId, index) => {
-    if ((itemsByGroup[groupId]?.length ?? 0) === 0) {
+    if (countRenderableSets(itemsByGroup[groupId] ?? []) === 0) {
       blocked.add(index);
       blocked.add(index + 1);
     }
@@ -1680,25 +1680,47 @@ export function DeckMockDndProvider({
     nextGroupIdRef.current += 1;
 
     setState((current) => {
-      const nextBoardGroups = current.groupOrderByBoard[boardId].slice();
       const nextGroupOrderByBoard = { ...current.groupOrderByBoard };
       const nextItemsByGroup = { ...current.itemsByGroup };
       const nextGroupToBoard = { ...current.groupToBoard };
       const nextContainersById = { ...current.containersById };
+      const nextItemsById: Record<SetId, UiItem> = { ...current.itemsById };
+      const preCleanupGroups = nextGroupOrderByBoard[boardId] ?? [];
+      const leftAnchorId = preCleanupGroups[index - 1] ?? null;
+      const rightAnchorId = preCleanupGroups[index] ?? null;
 
-      if (ephemeralEmptyGroupId && (nextItemsByGroup[ephemeralEmptyGroupId]?.length ?? 0) === 0) {
-        const previousBoard = nextGroupToBoard[ephemeralEmptyGroupId];
-        if (previousBoard) {
-          nextGroupOrderByBoard[previousBoard] = nextGroupOrderByBoard[previousBoard].filter(
-            (groupId) => groupId !== ephemeralEmptyGroupId,
-          );
-          delete nextItemsByGroup[ephemeralEmptyGroupId];
-          delete nextGroupToBoard[ephemeralEmptyGroupId];
-          delete nextContainersById[ephemeralEmptyGroupId];
-        }
+      // Keep at most one placeholder-only group by removing all existing empty ephemeral groups first.
+      const groupsBoardGroups = nextGroupOrderByBoard.groups ?? [];
+      const ephemeralGroupsToRemove = groupsBoardGroups.filter((groupId) => {
+        if (nextGroupToBoard[groupId] !== "groups") return false;
+        return countRenderableSets(nextItemsByGroup[groupId] ?? []) === 0;
+      });
+      if (ephemeralGroupsToRemove.length > 0) {
+        const removeSet = new Set(ephemeralGroupsToRemove);
+        nextGroupOrderByBoard.groups = groupsBoardGroups.filter((groupId) => !removeSet.has(groupId));
+        ephemeralGroupsToRemove.forEach((groupId) => {
+          (nextItemsByGroup[groupId] ?? []).forEach((setId) => {
+            if (isEmptySlotEphemeralSetId(setId)) {
+              delete nextItemsById[setId];
+            }
+          });
+          delete nextItemsByGroup[groupId];
+          delete nextGroupToBoard[groupId];
+          delete nextContainersById[groupId];
+        });
       }
 
-      const insertionIndex = clamp(index, 0, nextBoardGroups.length);
+      const nextBoardGroups = nextGroupOrderByBoard[boardId].slice();
+      const leftAnchorIndex = leftAnchorId ? nextBoardGroups.indexOf(leftAnchorId) : -1;
+      const rightAnchorIndex = rightAnchorId ? nextBoardGroups.indexOf(rightAnchorId) : -1;
+      let insertionIndex = clamp(index, 0, nextBoardGroups.length);
+      if (leftAnchorIndex >= 0 && rightAnchorIndex >= 0 && leftAnchorIndex < rightAnchorIndex) {
+        insertionIndex = leftAnchorIndex + 1;
+      } else if (leftAnchorIndex >= 0) {
+        insertionIndex = leftAnchorIndex + 1;
+      } else if (rightAnchorIndex >= 0) {
+        insertionIndex = rightAnchorIndex;
+      }
       nextBoardGroups.splice(insertionIndex, 0, newGroupId);
       nextGroupOrderByBoard[boardId] = nextBoardGroups;
       const emptySlotId = createEmptySlotEphemeralSetId(newGroupId);
@@ -1711,17 +1733,14 @@ export function DeckMockDndProvider({
         allowSortWithin: BOARD_CONFIGS[boardId].allowInGroupSort,
         accepts: boardRoutingById.current[boardId].acceptTokens,
       };
-      const nextItemsById: Record<SetId, UiItem> = {
-        ...current.itemsById,
-        [emptySlotId]: {
-          uiItemId: emptySlotId,
-          kind: "set",
-          ephemeralKind: "empty-slot",
-          face: "back",
-          sourceCardId: null,
-          persistedId: null,
-          isEphemeral: true,
-        },
+      nextItemsById[emptySlotId] = {
+        uiItemId: emptySlotId,
+        kind: "set",
+        ephemeralKind: "empty-slot",
+        face: "back",
+        sourceCardId: null,
+        persistedId: null,
+        isEphemeral: true,
       };
 
       return {

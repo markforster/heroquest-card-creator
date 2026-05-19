@@ -73,7 +73,7 @@ jest.mock("@dnd-kit/helpers", () => ({
   }),
 }));
 
-function renderWorkspace(options?: { enableFanLayout?: boolean }) {
+function renderWorkspace(options?: { enableFanLayout?: boolean; boardModelsOverride?: Partial<Record<"groups" | "entries" | "source", Partial<BoardModel>>> }) {
   const boardModels: Record<"groups" | "entries" | "source", BoardModel> = {
     groups: {
       boardId: "groups",
@@ -124,6 +124,16 @@ function renderWorkspace(options?: { enableFanLayout?: boolean }) {
       acceptTokens: [],
     },
   };
+  if (options?.boardModelsOverride) {
+    (Object.keys(options.boardModelsOverride) as Array<"groups" | "entries" | "source">).forEach((boardId) => {
+      const override = options.boardModelsOverride?.[boardId];
+      if (!override) return;
+      boardModels[boardId] = {
+        ...boardModels[boardId],
+        ...override,
+      };
+    });
+  }
   render(
     <DeckMockDndProvider boardModels={boardModels}>
       <DeckGroupsBoardController
@@ -182,6 +192,157 @@ describe("DeckGroupsSection2 mock boards", () => {
     fireEvent.mouseMove(screen.getByTestId("groups-row-entries"), { clientX: -9999 });
     fireEvent.mouseMove(screen.getByTestId("groups-row-source"), { clientX: -9999 });
     expect(screen.queryAllByRole("button", { name: /Create group at position/i }).length).toBeLessThanOrEqual(1);
+  });
+
+  it("keeps only one placeholder-only ephemeral group when creating repeatedly", () => {
+    renderWorkspace();
+    const row = screen.getByTestId("groups-row-groups");
+    fireEvent.mouseMove(row, { clientX: -9999 });
+    fireEvent.click(screen.getByRole("button", { name: "Create group at position 0" }));
+    fireEvent.mouseMove(row, { clientX: -9999 });
+    fireEvent.click(screen.getByRole("button", { name: "Create group at position 0" }));
+
+    const emptySlotSetNodes = screen
+      .getAllByTestId(/^set-ephemeral:empty-slot:group:/)
+      .map((node) => node.getAttribute("data-testid"));
+    expect(emptySlotSetNodes).toHaveLength(1);
+  });
+
+  it("collapses stale multiple placeholder-only groups to one when creating a new one", () => {
+    renderWorkspace({
+      boardModelsOverride: {
+        groups: {
+          groupIds: ["groups:E1", "groups:A", "groups:E2", "groups:B", "groups:C"],
+          itemsByGroup: {
+            "groups:E1": ["ephemeral:empty-slot:group:groups:E1"],
+            "groups:A": ["g-A1", "g-A2", "g-A3"],
+            "groups:E2": ["ephemeral:empty-slot:group:groups:E2"],
+            "groups:B": ["g-B1", "g-B2"],
+            "groups:C": ["g-C1"],
+          },
+          setLabelsById: {
+            "g-A1": "A1",
+            "g-A2": "A2",
+            "g-A3": "A3",
+            "g-B1": "B1",
+            "g-B2": "B2",
+            "g-C1": "C1",
+            "ephemeral:empty-slot:group:groups:E1": "",
+            "ephemeral:empty-slot:group:groups:E2": "",
+          },
+          setCardIdById: {
+            "g-A1": "g-A1",
+            "g-A2": "g-A2",
+            "g-A3": "g-A3",
+            "g-B1": "g-B1",
+            "g-B2": "g-B2",
+            "g-C1": "g-C1",
+            "ephemeral:empty-slot:group:groups:E1": "",
+            "ephemeral:empty-slot:group:groups:E2": "",
+          },
+        },
+      },
+    });
+    const row = screen.getByTestId("groups-row-groups");
+    fireEvent.mouseMove(row, { clientX: -9999 });
+    fireEvent.click(screen.getByRole("button", { name: "Create group at position 0" }));
+
+    const emptySlotSetNodes = screen
+      .getAllByTestId(/^set-ephemeral:empty-slot:group:/)
+      .map((node) => node.getAttribute("data-testid"));
+    expect(emptySlotSetNodes).toHaveLength(1);
+    expect(screen.getByTestId("group-group:groups:A")).toBeInTheDocument();
+    expect(screen.getByTestId("group-group:groups:B")).toBeInTheDocument();
+  });
+
+  it("keeps insertion between B and C after removing ephemeral between A and B", () => {
+    renderWorkspace({
+      boardModelsOverride: {
+        groups: {
+          groupIds: ["groups:A", "groups:E1", "groups:B", "groups:C", "groups:D"],
+          itemsByGroup: {
+            "groups:A": ["g-A1"],
+            "groups:E1": ["ephemeral:empty-slot:group:groups:E1"],
+            "groups:B": ["g-B1"],
+            "groups:C": ["g-C1"],
+            "groups:D": ["g-D1"],
+          },
+          setLabelsById: {
+            "g-A1": "A1",
+            "g-B1": "B1",
+            "g-C1": "C1",
+            "g-D1": "D1",
+            "ephemeral:empty-slot:group:groups:E1": "",
+          },
+          setCardIdById: {
+            "g-A1": "g-A1",
+            "g-B1": "g-B1",
+            "g-C1": "g-C1",
+            "g-D1": "g-D1",
+            "ephemeral:empty-slot:group:groups:E1": "",
+          },
+        },
+      },
+    });
+
+    const row = screen.getByTestId("groups-row-groups");
+    fireEvent.mouseMove(row, { clientX: -9999 });
+    fireEvent.click(screen.getByRole("button", { name: "Create group at position 3" }));
+
+    const groupOrder = screen
+      .getAllByTestId(/^group-group:/)
+      .map((node) => node.getAttribute("data-testid"));
+    const idxB = groupOrder.indexOf("group-group:groups:B");
+    const idxC = groupOrder.indexOf("group-group:groups:C");
+    expect(idxB).toBeGreaterThanOrEqual(0);
+    expect(idxC).toBeGreaterThan(idxB);
+    expect(groupOrder[idxB + 1]).toMatch(/^group-group:groups:N\d+$/);
+    expect(groupOrder[idxB + 2]).toBe("group-group:groups:C");
+  });
+
+  it("keeps insertion between B and C in mirrored case after removing ephemeral between C and D", () => {
+    renderWorkspace({
+      boardModelsOverride: {
+        groups: {
+          groupIds: ["groups:A", "groups:B", "groups:C", "groups:E1", "groups:D"],
+          itemsByGroup: {
+            "groups:A": ["g-A1"],
+            "groups:B": ["g-B1"],
+            "groups:C": ["g-C1"],
+            "groups:E1": ["ephemeral:empty-slot:group:groups:E1"],
+            "groups:D": ["g-D1"],
+          },
+          setLabelsById: {
+            "g-A1": "A1",
+            "g-B1": "B1",
+            "g-C1": "C1",
+            "g-D1": "D1",
+            "ephemeral:empty-slot:group:groups:E1": "",
+          },
+          setCardIdById: {
+            "g-A1": "g-A1",
+            "g-B1": "g-B1",
+            "g-C1": "g-C1",
+            "g-D1": "g-D1",
+            "ephemeral:empty-slot:group:groups:E1": "",
+          },
+        },
+      },
+    });
+
+    const row = screen.getByTestId("groups-row-groups");
+    fireEvent.mouseMove(row, { clientX: -9999 });
+    fireEvent.click(screen.getByRole("button", { name: "Create group at position 2" }));
+
+    const groupOrder = screen
+      .getAllByTestId(/^group-group:/)
+      .map((node) => node.getAttribute("data-testid"));
+    const idxB = groupOrder.indexOf("group-group:groups:B");
+    const idxC = groupOrder.indexOf("group-group:groups:C");
+    expect(idxB).toBeGreaterThanOrEqual(0);
+    expect(idxC).toBeGreaterThan(idxB);
+    expect(groupOrder[idxB + 1]).toMatch(/^group-group:groups:N\d+$/);
+    expect(groupOrder[idxB + 2]).toBe("group-group:groups:C");
   });
 
   it("moves from source to groups and to entries", () => {
