@@ -182,7 +182,7 @@ export default function DeckGroupsBoardController({
       });
       return Math.max(maxHeight, frame.requiredHeightPx);
     }, 0);
-    return Math.ceil(maxFrameHeight + 34);
+    return Math.ceil(maxFrameHeight);
   }, [enableFanLayout, selection]);
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
     ({ setId, label, cardId, state }) => {
@@ -294,7 +294,7 @@ export default function DeckGroupsBoardController({
       const frame = resolveAnimatedFrame(groupId, mode, setCount);
       return {
         minWidth: `${Math.ceil(frame.requiredWidthPx)}px`,
-        minHeight: `${Math.max(Math.ceil(frame.requiredHeightPx + 34), sharedFanMinHeightPx ?? 0)}px`,
+        minHeight: `${Math.max(Math.ceil(frame.requiredHeightPx), sharedFanMinHeightPx ?? 0)}px`,
       };
     },
     resolveGroupBodyClassName: ({ boardId }) =>
