@@ -229,6 +229,8 @@
 .setShell {
   --set-shell-toolbar-top: 16px;
   --set-shell-toolbar-bottom: 18px;
+  --set-toolbar-fade-duration: 180ms;
+  --set-toolbar-fade-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   position: relative;
   border-radius: 6px;
   flex: 0 0 auto;
@@ -286,14 +288,16 @@
   position: absolute;
   top: 0;
   left: 50%;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, 4px);
   display: inline-flex;
   align-items: center;
   gap: 6px;
   z-index: 4;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 100ms ease-out;
+  transition:
+    opacity var(--set-toolbar-fade-duration) var(--set-toolbar-fade-ease),
+    transform var(--set-toolbar-fade-duration) var(--set-toolbar-fade-ease);
 }
 
 .setCardBottomToolbar {
@@ -306,11 +310,15 @@
   justify-content: center;
   z-index: 4;
   pointer-events: auto;
+  transition:
+    opacity var(--set-toolbar-fade-duration) var(--set-toolbar-fade-ease),
+    transform var(--set-toolbar-fade-duration) var(--set-toolbar-fade-ease);
 }
 
 .setShell:hover .setCardTopToolbar {
   opacity: 1;
   pointer-events: auto;
+  transform: translate(-50%, 0);
 }
 
 .toolbarIconButton {
