@@ -317,6 +317,15 @@
   color: var(--hq-text-primary);
 }
 
+.boardQtyAdjustButton:disabled {
+  background: color-mix(in srgb, var(--hq-surface-700) 80%, #666 20%) !important;
+  border-color: var(--hq-white-25) !important;
+  color: var(--hq-text-muted) !important;
+  cursor: default;
+  transform: none !important;
+  filter: grayscale(0.2);
+}
+
 .boardQtyMinus:hover:enabled {
   background: var(--hq-stat-minus-hover);
   transform: scale(1.05);
@@ -325,6 +334,18 @@
 .boardQtyPlus:hover:enabled {
   background: var(--hq-stat-plus-hover);
   transform: scale(1.05);
+}
+
+.setCardBottomToolbar .boardInfoPill {
+  background: var(--board-pill-bg, var(--hq-surface-900));
+}
+
+.setCardBottomToolbar .boardInfoPill .boardInfoPillLabel {
+  color: inherit;
+}
+
+.setCardBottomToolbar .boardInfoPill {
+  border-color: var(--board-pill-border, var(--hq-border-strong));
 }
 
 .setCard:hover {

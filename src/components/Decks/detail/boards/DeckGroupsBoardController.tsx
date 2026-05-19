@@ -103,7 +103,7 @@ export default function DeckGroupsBoardController({
         <BoardInfoPill
           icon={<Gem size={11} aria-hidden="true" />}
           label="Key Card"
-          bgColor="color-mix(in srgb, #2a73ff 16%, transparent)"
+          bgColor="color-mix(in srgb, #2a73ff 35%, var(--hq-surface-900) 65%)"
           borderColor="color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%)"
         />
       );
