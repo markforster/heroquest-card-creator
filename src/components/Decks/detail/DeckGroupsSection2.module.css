@@ -34,12 +34,6 @@
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
-.boardSetDragActive .setShell,
-.boardSetDragActive .setCard,
-.boardSetDragActive .setThumb {
-  pointer-events: none;
-}
-
 .boardFillParent {
   width: 100%;
   height: 100%;
@@ -309,6 +303,28 @@
   transition: transform 100ms ease-out, margin-right 100ms ease-out;
 }
 
+.setShellEmptySlot {
+  opacity: 1;
+}
+
+.setCardEmptySlot {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  cursor: grab;
+}
+
+.setCardEmptySlot:hover {
+  box-shadow: none;
+}
+
+.setContentEmptySlot {
+  width: 112px;
+  height: calc(112px * 1056 / 756);
+  background: transparent;
+  border-radius: 12px;
+}
+
 .setShellSource {
   padding-top: 6px;
   padding-bottom: 6px;
@@ -548,6 +564,14 @@
     0 0 0 2px color-mix(in srgb, var(--deck-board-hover-ring) 30%, transparent),
     0 2px 6px rgba(16, 24, 40, 0.12),
     0 8px 18px rgba(16, 24, 40, 0.12);
+}
+
+.setCardEmptySlot,
+.setCardEmptySlot:hover,
+.setCardEmptySlot:focus-visible {
+  box-shadow: none !important;
+  outline: none;
+  border: 0;
 }
 
 .setCard:focus-visible {

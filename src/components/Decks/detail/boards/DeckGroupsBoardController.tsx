@@ -326,6 +326,9 @@ export default function DeckGroupsBoardController({
   }, [enableFanLayout, selection, transitionByGroup]);
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
     ({ setId, label, cardId, state }) => {
+      if (setId.startsWith("ephemeral:empty-slot:group:")) {
+        return <div className={styles.setContentEmptySlot} aria-hidden="true" />;
+      }
       const rawSetId = setId.startsWith("set:") ? setId.slice(4) : null;
       const resolvedCardId = rawSetId ? selection?.setById.get(rawSetId)?.backFaceId : cardId;
       return (
@@ -485,15 +488,26 @@ export default function DeckGroupsBoardController({
         height: `${Math.max(effectiveBodyHeight, setCount === 0 ? EMPTY_GROUP_MIN_HEIGHT_PX : 0)}px`,
       };
     },
-    resolveSetShellClassName: ({ boardId, groupId, isHovered, hasSelectedSet, setCount }) => {
+    resolveSetShellClassName: ({ boardId, groupId, isHovered, hasSelectedSet, setCount, setId }) => {
       if (!enableFanLayout || boardId !== "groups") return null;
+      if (setId.startsWith("ephemeral:empty-slot:group:")) {
+        return `${styles.setShellFanExpanded} ${styles.setShellEmptySlot}`;
+      }
       const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
       if (mode === "expanded") return styles.setShellFanExpanded;
       if (mode === "partial") return styles.setShellFanPartial;
       return styles.setShellFanCollapsed;
     },
-    resolveSetShellStyle: ({ boardId, groupId, isHovered, hasSelectedSet, setCount, setIndex }) => {
+    resolveSetShellStyle: ({ boardId, groupId, isHovered, hasSelectedSet, setCount, setIndex, setId }) => {
       if (!enableFanLayout || boardId !== "groups") return undefined;
+      if (setId.startsWith("ephemeral:empty-slot:group:")) {
+        return {
+          left: "50%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 8,
+        };
+      }
       const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
       noteDesiredMode(groupId, mode);
       const frame = resolveAnimatedFrame(groupId, mode, setCount);

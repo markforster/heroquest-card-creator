@@ -89,6 +89,7 @@ type UiContainer = {
 type UiItem = {
   uiItemId: SetId;
   kind: "set" | "entry" | "source-template";
+  ephemeralKind?: "source" | "empty-slot";
   face: SourceItemFace | null;
   sourceCardId: string | null;
   persistedId: string | null;
@@ -318,26 +319,86 @@ function parseSetLabel(setId: SetId): string {
   return setId.toUpperCase();
 }
 
-function isEphemeralSetId(setId: SetId): boolean {
+function isSourceEphemeralSetId(setId: SetId): boolean {
   return setId.startsWith("ephemeral:source:");
+}
+
+function isEmptySlotEphemeralSetId(setId: SetId): boolean {
+  return setId.startsWith("ephemeral:empty-slot:group:");
+}
+
+function createEmptySlotEphemeralSetId(groupId: GroupId): SetId {
+  return `ephemeral:empty-slot:group:${groupId}`;
+}
+
+function pruneEmptySlotFromGroup(items: SetId[]): SetId[] {
+  return items.filter((id) => !isEmptySlotEphemeralSetId(id));
+}
+
+function countRenderableSets(items: SetId[]): number {
+  return items.filter((id) => !isEmptySlotEphemeralSetId(id)).length;
 }
 
 function stripEphemeralItems(state: DnDState): DnDState {
   const nextItemsByContainer: Record<GroupId, SetId[]> = {};
   Object.keys(state.itemsByContainer).forEach((containerId) => {
     nextItemsByContainer[containerId] = (state.itemsByContainer[containerId] ?? []).filter(
-      (id) => !state.itemsById[id]?.isEphemeral,
+      (id) => state.itemsById[id]?.ephemeralKind !== "source",
     );
   });
   const nextItemsById: Record<SetId, UiItem> = {};
   Object.keys(state.itemsById).forEach((itemId) => {
-    if (!state.itemsById[itemId]?.isEphemeral) {
+    if (state.itemsById[itemId]?.ephemeralKind !== "source") {
       nextItemsById[itemId] = state.itemsById[itemId];
     }
   });
   return {
     ...state,
     itemsByGroup: nextItemsByContainer,
+    itemsByContainer: nextItemsByContainer,
+    itemsById: nextItemsById,
+  };
+}
+
+function withTempGroupEmptySlots(state: DnDState, tempGroupId: GroupId | null): DnDState {
+  if (!tempGroupId) return state;
+  const boardId = state.groupToBoard[tempGroupId];
+  if (boardId !== "groups") return state;
+  const items = state.itemsByGroup[tempGroupId] ?? [];
+  const hasOnlyTemporary = items.filter((id) => !isEmptySlotEphemeralSetId(id)).length === 0;
+  const slotId = createEmptySlotEphemeralSetId(tempGroupId);
+  const hasSlot = items.includes(slotId);
+
+  if (hasOnlyTemporary && hasSlot) return state;
+  if (!hasOnlyTemporary && !hasSlot) return state;
+
+  const nextItemsByGroup: Record<GroupId, SetId[]> = { ...state.itemsByGroup };
+  const nextItemsByContainer: Record<GroupId, SetId[]> = { ...state.itemsByContainer };
+  const nextItemsById: Record<SetId, UiItem> = { ...state.itemsById };
+
+  if (hasOnlyTemporary) {
+    const withSlot = [...pruneEmptySlotFromGroup(items), slotId];
+    nextItemsByGroup[tempGroupId] = withSlot;
+    nextItemsByContainer[tempGroupId] = withSlot;
+    nextItemsById[slotId] = {
+      uiItemId: slotId,
+      kind: "set",
+      ephemeralKind: "empty-slot",
+      face: "back",
+      sourceCardId: null,
+      persistedId: null,
+      isEphemeral: true,
+    };
+  } else {
+    const withoutSlot = pruneEmptySlotFromGroup(items);
+    nextItemsByGroup[tempGroupId] = withoutSlot;
+    nextItemsByContainer[tempGroupId] = withoutSlot;
+    delete nextItemsById[slotId];
+  }
+
+  return {
+    ...state,
+    itemsByGroup: nextItemsByGroup,
     itemsByContainer: nextItemsByContainer,
     itemsById: nextItemsById,
   };
@@ -580,7 +641,7 @@ function getBlockedBoundaries(
   return blocked;
 }
 
-function normalizeAfterDrop(current: DnDState): DnDState {
+function normalizeAfterDrop(current: DnDState, tempGroupId: GroupId | null): DnDState {
   const nextGroupOrderByBoard: DnDState["groupOrderByBoard"] = {
     groups: [],
     entries: [],
@@ -594,12 +655,12 @@ function normalizeAfterDrop(current: DnDState): DnDState {
   (Object.keys(current.groupOrderByBoard) as BoardId[]).forEach((boardId) => {
     const config = BOARD_CONFIGS[boardId];
     current.groupOrderByBoard[boardId].forEach((groupId) => {
-      const sets = current.itemsByGroup[groupId] ?? [];
+      const sets = (current.itemsByGroup[groupId] ?? []).filter((id) => !isEmptySlotEphemeralSetId(id));
       const keepEmpty = !config.allowMultipleGroups;
-      if (sets.length > 0 || keepEmpty) {
+      if (sets.length > 0 || keepEmpty || groupId === tempGroupId) {
         nextGroupOrderByBoard[boardId].push(groupId);
         nextGroupToBoard[groupId] = boardId;
-        nextItemsByGroup[groupId] = sets;
+        nextItemsByGroup[groupId] = current.itemsByGroup[groupId] ?? [];
         if (current.containersById[groupId]) {
           nextContainersById[groupId] = current.containersById[groupId];
         }
@@ -1028,6 +1089,52 @@ function DraggableSetCard({
   );
 }
 
+function EmptySlotDropCard({
+  setId,
+  groupId,
+  sourceLayout,
+  shellClassName,
+  shellStyle,
+  renderContent,
+}: {
+  setId: SetId;
+  groupId: GroupId;
+  sourceLayout?: boolean;
+  shellClassName?: string;
+  shellStyle?: CSSProperties;
+  renderContent: DeckSortableBoardViewModel["renderSetContent"];
+}) {
+  const { ref } = useDroppable({
+    id: setId,
+    type: "set",
+    accept: ["set"],
+  });
+
+  return (
+    <div
+      className={[
+        styles.setShell,
+        styles.setShellEmptySlot,
+        sourceLayout ? styles.setShellSource : "",
+        shellClassName ?? "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      ref={ref}
+      data-testid={`set-${setId}`}
+      style={shellStyle}
+    >
+      <div className={[styles.setCard, styles.setCardEmptySlot].filter(Boolean).join(" ")}>
+        {renderContent({
+          setId,
+          groupId,
+          state: "idle",
+        })}
+      </div>
+    </div>
+  );
+}
+
 function OverlayCard({
   setId,
   groupId,
@@ -1111,7 +1218,6 @@ export function DeckSortableBoardView({
   return (
     <section
       className={[styles.board, useFillParent ? styles.boardFillParent : ""]
-        .concat(activeSetId ? [" ", styles.boardSetDragActive] : [])
         .concat(isSourceBoard ? [" ", styles.boardSource] : [])
         .concat(model.showDropAffordance ? [" ", styles.boardDropActive] : [])
         .concat(
@@ -1173,7 +1279,7 @@ export function DeckSortableBoardView({
                     hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
                       (setId) => model.isSetSelected?.(setId, groupId) ?? false,
                     ),
-                    setCount: (itemsByGroup[groupId] ?? []).length,
+                    setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
                   }) ?? undefined
                 }
                 style={model.resolveGroupStyle?.({
@@ -1183,7 +1289,7 @@ export function DeckSortableBoardView({
                   hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
                     (setId) => model.isSetSelected?.(setId, groupId) ?? false,
                   ),
-                  setCount: (itemsByGroup[groupId] ?? []).length,
+                  setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
                 })}
                 bodyClassName={
                   model.resolveGroupBodyClassName?.({
@@ -1193,7 +1299,7 @@ export function DeckSortableBoardView({
                     hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
                       (setId) => model.isSetSelected?.(setId, groupId) ?? false,
                     ),
-                    setCount: (itemsByGroup[groupId] ?? []).length,
+                    setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
                   }) ?? undefined
                 }
                 bodyStyle={model.resolveGroupBodyStyle?.({
@@ -1203,7 +1309,7 @@ export function DeckSortableBoardView({
                   hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
                     (setId) => model.isSetSelected?.(setId, groupId) ?? false,
                   ),
-                  setCount: (itemsByGroup[groupId] ?? []).length,
+                  setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
                 })}
                 onHoverChange={(isHovered) => {
                   setHoveredGroupId((current) => {
@@ -1226,12 +1332,32 @@ export function DeckSortableBoardView({
                     groupId,
                     isHovered: hoveredGroupId === groupId,
                     hasSelectedSet,
-                    setCount: groupSetIds.length,
+                    setCount: countRenderableSets(groupSetIds),
                   };
 
                   return groupSetIds.map((setId, setIndex) => (
                     <Fragment key={setId}>
-                      {config.allowInGroupSort ? (
+                      {config.allowInGroupSort && isEmptySlotEphemeralSetId(setId) ? (
+                        <EmptySlotDropCard
+                          setId={setId}
+                          groupId={groupId}
+                          sourceLayout={isSourceBoard}
+                          renderContent={model.renderSetContent}
+                          shellClassName={
+                            model.resolveSetShellClassName?.({
+                              ...groupVisualContext,
+                              setId,
+                              setIndex,
+                            }) ?? undefined
+                          }
+                          shellStyle={model.resolveSetShellStyle?.({
+                            ...groupVisualContext,
+                            setId,
+                            setIndex,
+                          })}
+                        />
+                      ) : null}
+                      {config.allowInGroupSort && !isEmptySlotEphemeralSetId(setId) ? (
                         <SortableSetCard
                           boardId={config.boardId}
                           setId={setId}
@@ -1241,7 +1367,7 @@ export function DeckSortableBoardView({
                           groupId={groupId}
                           renderContent={model.renderSetContent}
                           isSelected={model.isSetSelected?.(setId, groupId) ?? false}
-                          isEphemeral={isEphemeralSetId(setId)}
+                          isEphemeral={isSourceEphemeralSetId(setId)}
                           renderTopToolbar={model.renderTopToolbar}
                           renderBottomToolbar={model.renderBottomToolbar}
                           sourceLayout={isSourceBoard}
@@ -1279,7 +1405,7 @@ export function DeckSortableBoardView({
                           groupId={groupId}
                           renderContent={model.renderSetContent}
                           isSelected={model.isSetSelected?.(setId, groupId) ?? false}
-                          isEphemeral={isEphemeralSetId(setId)}
+                          isEphemeral={isSourceEphemeralSetId(setId)}
                           renderTopToolbar={model.renderTopToolbar}
                           renderBottomToolbar={model.renderBottomToolbar}
                           sourceLayout={isSourceBoard}
@@ -1318,7 +1444,7 @@ export function DeckSortableBoardView({
                   hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
                     (setId) => model.isSetSelected?.(setId, groupId) ?? false,
                   ),
-                  setCount: (itemsByGroup[groupId] ?? []).length,
+                  setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
                   setIds: itemsByGroup[groupId] ?? [],
                 })}
                 {(itemsByGroup[groupId] ?? []).length === 0 && model.emptyMessage ? (
@@ -1565,7 +1691,8 @@ export function DeckMockDndProvider({
       const insertionIndex = clamp(index, 0, nextBoardGroups.length);
       nextBoardGroups.splice(insertionIndex, 0, newGroupId);
       nextGroupOrderByBoard[boardId] = nextBoardGroups;
-      nextItemsByGroup[newGroupId] = [];
+      const emptySlotId = createEmptySlotEphemeralSetId(newGroupId);
+      nextItemsByGroup[newGroupId] = [emptySlotId];
       nextGroupToBoard[newGroupId] = boardId;
       nextContainersById[newGroupId] = {
         id: newGroupId,
@@ -1573,6 +1700,18 @@ export function DeckMockDndProvider({
         role: "group",
         allowSortWithin: BOARD_CONFIGS[boardId].allowInGroupSort,
         accepts: boardRoutingById.current[boardId].acceptTokens,
+      };
+      const nextItemsById: Record<SetId, UiItem> = {
+        ...current.itemsById,
+        [emptySlotId]: {
+          uiItemId: emptySlotId,
+          kind: "set",
+          ephemeralKind: "empty-slot",
+          face: "back",
+          sourceCardId: null,
+          persistedId: null,
+          isEphemeral: true,
+        },
       };
 
       return {
@@ -1582,7 +1721,7 @@ export function DeckMockDndProvider({
         containerOrderByBoard: nextGroupOrderByBoard,
         itemsByContainer: nextItemsByGroup,
         containersById: nextContainersById,
-        itemsById: current.itemsById,
+        itemsById: nextItemsById,
       };
     });
 
@@ -1727,7 +1866,7 @@ export function DeckMockDndProvider({
     if (!canRoute) {
       event.preventDefault?.();
       if (activeEphemeralIdRef.current) {
-        setState((current) => stripEphemeralItems(current));
+        setState((current) => withTempGroupEmptySlots(stripEphemeralItems(current), ephemeralEmptyGroupId));
       }
       setActiveTargetBoardId(null);
       return;
@@ -1755,6 +1894,7 @@ export function DeckMockDndProvider({
                   [ephemeralId]: {
                     uiItemId: ephemeralId,
                     kind: "source-template" as const,
+                    ephemeralKind: "source",
                     face: sourceItem.face,
                     sourceCardId,
                     persistedId: null,
@@ -1762,7 +1902,10 @@ export function DeckMockDndProvider({
                   },
                 },
               };
-        return moveEphemeralToContainer(withItem, ephemeralId, targetGroupId, targetIndex);
+        return withTempGroupEmptySlots(
+          moveEphemeralToContainer(withItem, ephemeralId, targetGroupId, targetIndex),
+          ephemeralEmptyGroupId,
+        );
       });
       setSetLabelsById((current) => ({
         ...current,
@@ -1776,11 +1919,16 @@ export function DeckMockDndProvider({
     }
 
     const moved = move(state.itemsByGroup, event) as Record<GroupId, SetId[]>;
-    setState((current) => ({
-      ...current,
-      itemsByGroup: moved,
-      itemsByContainer: moved,
-    }));
+    setState((current) =>
+      withTempGroupEmptySlots(
+        {
+          ...current,
+          itemsByGroup: moved,
+          itemsByContainer: moved,
+        },
+        ephemeralEmptyGroupId,
+      ),
+    );
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -1836,7 +1984,7 @@ export function DeckMockDndProvider({
 
     if (event.canceled) {
       setActiveGroupId(null);
-      setState(stripEphemeralItems(previousState.current));
+      setState(withTempGroupEmptySlots(stripEphemeralItems(previousState.current), ephemeralEmptyGroupId));
       setActiveSetId(null);
       setActiveTargetBoardId(null);
       setDragAffordanceByBoard(emptyAffordanceState());
@@ -1888,7 +2036,10 @@ export function DeckMockDndProvider({
       (groupId) => groupId === targetGroupId,
     );
     const postDropWithoutEphemeral = stripEphemeralItems(postDropStateBeforeNormalize);
-    const postDropState = normalizeAfterDrop(postDropWithoutEphemeral);
+    const postDropState = withTempGroupEmptySlots(
+      normalizeAfterDrop(postDropWithoutEphemeral, ephemeralEmptyGroupId),
+      ephemeralEmptyGroupId,
+    );
     setState(postDropState);
     if (ephemeralEmptyGroupId && !(ephemeralEmptyGroupId in postDropState.itemsByGroup)) {
       setEphemeralEmptyGroupId(null);
