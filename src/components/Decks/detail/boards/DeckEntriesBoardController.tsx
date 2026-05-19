@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import DeckEntryQuantityControl from "@/components/Decks/detail/DeckEntryQuantityControl";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
+import styles from "../DeckGroupsSection2.module.css";
 import {
   BOARD_ROUTING_META_BY_ID,
   DefaultSetThumbnailContent,
@@ -15,8 +17,10 @@ import {
 
 export default function DeckEntriesBoardController({
   layoutMode = "fill-parent",
+  onOpenCardEditor,
 }: {
   layoutMode?: LayoutMode;
+  onOpenCardEditor: (cardId: string) => void;
 }) {
   let selection: ReturnType<typeof useDeckDetailSelection> | null = null;
   try {
@@ -32,6 +36,10 @@ export default function DeckEntriesBoardController({
   }
   const { registerDropHandler } = useDeckMockDnd();
   const lastHandledDragIdRef = useRef<string | null>(null);
+  const countByEntryId = useMemo(
+    () => new Map((entries?.entriesSorted ?? []).map((entry) => [entry.id, entry.count])),
+    [entries?.entriesSorted],
+  );
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
     ({ setId, label, cardId, state }) => {
       const rawEntryId = setId.startsWith("entry:") ? setId.slice(6) : null;
@@ -49,6 +57,62 @@ export default function DeckEntriesBoardController({
   );
   const model = useDeckSortableBoardViewModel("entries", BOARD_ROUTING_META_BY_ID.entries, {
     renderSetContent,
+    renderTopToolbar: ({ setId, cardId, isDragging, isGhost }) => {
+      if (!setId.startsWith("entry:") || isDragging || isGhost) return null;
+      const entryId = setId.slice(6);
+      const stopPropagation = (event: { stopPropagation: () => void }) => {
+        event.stopPropagation();
+      };
+      return (
+        <>
+          <button
+            type="button"
+            className={[styles.toolbarIconButton, styles.toolbarIconButtonEdit].join(" ")}
+            aria-label="Edit card"
+            title="Edit card"
+            onPointerDown={stopPropagation}
+            onClick={(event) => {
+              stopPropagation(event);
+              if (!cardId) return;
+              onOpenCardEditor(cardId);
+            }}
+          >
+            ✎
+          </button>
+          <button
+            type="button"
+            className={[styles.toolbarIconButton, styles.toolbarIconButtonDelete].join(" ")}
+            aria-label="Delete entry"
+            title="Delete entry"
+            onPointerDown={stopPropagation}
+            onClick={async (event) => {
+              stopPropagation(event);
+              if (!entries?.setId) return;
+              await entries.removeEntry(entryId, entries.setId);
+            }}
+          >
+            🗑
+          </button>
+        </>
+      );
+    },
+    renderBottomToolbar: ({ setId, isDragging, isGhost }) => {
+      if (!setId.startsWith("entry:") || isDragging || isGhost) return null;
+      const entryId = setId.slice(6);
+      const count = countByEntryId.get(entryId) ?? 1;
+      return (
+        <div
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <DeckEntryQuantityControl
+            count={count}
+            onDecrement={() => void entries?.updateEntryCount(entryId, count - 1, entries?.setId)}
+            onIncrement={() => void entries?.updateEntryCount(entryId, count + 1, entries?.setId)}
+          />
+        </div>
+      );
+    },
     isSetSelected: (setUiId) => {
       if (!selection?.selectedEntryId) return false;
       return setUiId === `entry:${selection.selectedEntryId}`;

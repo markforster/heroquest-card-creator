@@ -160,8 +160,11 @@
 }
 
 .setShell {
+  position: relative;
   border-radius: 6px;
   flex: 0 0 auto;
+  padding-top: 12px;
+  padding-bottom: 14px;
 }
 
 .setCard {
@@ -181,6 +184,80 @@
     border-color 180ms ease,
     filter 180ms ease;
   cursor: grab;
+}
+
+.setCardTopToolbar {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -40%);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.setCardBottomToolbar {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 45%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.toolbarIconButton {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid var(--hq-border-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 11px;
+  padding: 0;
+  cursor: pointer;
+  background: var(--hq-surface-900);
+  color: var(--hq-text-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+.toolbarIconButtonEdit {
+  color: var(--hq-text-primary);
+}
+
+.toolbarIconButtonKey {
+  color: #2a73ff;
+  border-color: color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%);
+}
+
+.toolbarIconButtonDelete {
+  color: #cd2d2d;
+  border-color: color-mix(in srgb, #cd2d2d 55%, var(--hq-border-strong) 45%);
+}
+
+.toolbarIconButton:hover {
+  filter: brightness(1.06);
+}
+
+.keySetPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%);
+  background: color-mix(in srgb, #2a73ff 16%, transparent);
+  color: #2a73ff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
 }
 
 .setCard:hover {

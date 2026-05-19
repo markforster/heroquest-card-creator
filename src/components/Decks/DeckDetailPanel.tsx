@@ -144,8 +144,8 @@ function DeckDetailPanelContent({
             <DeckDetailSelectionProvider model={selectionModel}>
               <DeckSetEntriesProvider model={entriesModel}>
                 <div className={styles.deckRouteMiddle}>
-                  <DeckGroupsBoardController deckId={deckId} />
-                  <DeckEntriesBoardController />
+                  <DeckGroupsBoardController deckId={deckId} keySetId={keySetId} />
+                  <DeckEntriesBoardController onOpenCardEditor={actions.onOpenCardEditor} />
                 </div>
               </DeckSetEntriesProvider>
             </DeckDetailSelectionProvider>

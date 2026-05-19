@@ -126,8 +126,8 @@ function renderWorkspace() {
   };
   render(
     <DeckMockDndProvider boardModels={boardModels}>
-      <DeckGroupsBoardController deckId={null} />
-      <DeckEntriesBoardController />
+      <DeckGroupsBoardController deckId={null} keySetId={null} />
+      <DeckEntriesBoardController onOpenCardEditor={() => {}} />
       <DeckSourceBoardController />
     </DeckMockDndProvider>,
   );

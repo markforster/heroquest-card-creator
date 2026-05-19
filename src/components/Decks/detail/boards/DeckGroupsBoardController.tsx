@@ -4,6 +4,7 @@ import { useCallback, useEffect } from "react";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useI18n } from "@/i18n/I18nProvider";
+import styles from "../DeckGroupsSection2.module.css";
 import {
   BOARD_ROUTING_META_BY_ID,
   DefaultSetThumbnailContent,
@@ -13,7 +14,13 @@ import {
   useDeckSortableBoardViewModel,
 } from "./DeckBoardsCore";
 
-export default function DeckGroupsBoardController({ deckId }: { deckId: string | null }) {
+export default function DeckGroupsBoardController({
+  deckId,
+  keySetId,
+}: {
+  deckId: string | null;
+  keySetId: string | null;
+}) {
   const mutations = useDeckMutations();
   const { t } = useI18n();
   let selection: ReturnType<typeof useDeckDetailSelection> | null = null;
@@ -40,6 +47,58 @@ export default function DeckGroupsBoardController({ deckId }: { deckId: string |
   );
   const model = useDeckSortableBoardViewModel("groups", BOARD_ROUTING_META_BY_ID.groups, {
     renderSetContent,
+    renderTopToolbar: ({ setId, isDragging, isGhost }) => {
+      if (!setId.startsWith("set:") || isDragging || isGhost) return null;
+      const resolvedSetId = setId.slice(4);
+      const stopPropagation = (event: { stopPropagation: () => void }) => {
+        event.stopPropagation();
+      };
+      return (
+        <>
+          <button
+            type="button"
+            className={[styles.toolbarIconButton, styles.toolbarIconButtonKey].join(" ")}
+            aria-label="Set key card"
+            title="Set key card"
+            onPointerDown={stopPropagation}
+            onClick={async (event) => {
+              stopPropagation(event);
+              if (!deckId) return;
+              await mutations.setDeckKeySet(deckId, resolvedSetId);
+              await selection?.reloadStructure(selection.selectedSetId);
+            }}
+          >
+            ♦
+          </button>
+          <button
+            type="button"
+            className={[styles.toolbarIconButton, styles.toolbarIconButtonDelete].join(" ")}
+            aria-label="Delete set"
+            title="Delete set"
+            onPointerDown={stopPropagation}
+            onClick={async (event) => {
+              stopPropagation(event);
+              const wasSelected = selection?.selectedSetId === resolvedSetId;
+              await mutations.deleteSet(resolvedSetId);
+              await selection?.reloadStructure(selection?.selectedSetId);
+              if (wasSelected) {
+                selection?.clearSelection();
+              }
+            }}
+          >
+            🗑
+          </button>
+        </>
+      );
+    },
+    renderBottomToolbar: ({ setId, isDragging, isGhost }) => {
+      if (isDragging || isGhost) return null;
+      if (!setId.startsWith("set:")) return null;
+      const resolvedSetId = setId.slice(4);
+      const isKeySet = keySetId === resolvedSetId;
+      if (!isKeySet) return null;
+      return <span className={styles.keySetPill}>Key Card</span>;
+    },
     isSetSelected: (setUiId) => {
       if (!selection?.selectedSetId) return false;
       return setUiId === `set:${selection.selectedSetId}`;

@@ -26,6 +26,16 @@ export type LayoutMode = "content" | "fill-parent";
 type DragRouteToken = string;
 type SetRenderState = "idle" | "dragging" | "ghost" | "dropTarget" | "pending" | "overlay";
 type SourceItemFace = "front" | "back";
+type SetToolbarContext = {
+  boardId: BoardId;
+  setId: SetId;
+  groupId: GroupId;
+  cardId?: string;
+  isSelected: boolean;
+  isDragging: boolean;
+  isGhost: boolean;
+  isDropTarget: boolean;
+};
 
 type BoardConfig = {
   boardId: BoardId;
@@ -183,6 +193,8 @@ export type DeckSortableBoardViewModel = {
     cardId?: string;
     state: SetRenderState;
   }) => React.ReactNode;
+  renderTopToolbar?: (args: SetToolbarContext) => React.ReactNode;
+  renderBottomToolbar?: (args: SetToolbarContext) => React.ReactNode;
   isSetSelected?: (setId: SetId, groupId: GroupId) => boolean;
   emptyMessage?: string | null;
 };
@@ -640,6 +652,7 @@ export function DefaultSetThumbnailContent({
 }
 
 function SortableSetCard({
+  boardId,
   setId,
   label,
   index,
@@ -649,7 +662,10 @@ function SortableSetCard({
   isSelected,
   isEphemeral,
   onClick,
+  renderTopToolbar,
+  renderBottomToolbar,
 }: {
+  boardId: BoardId;
   setId: SetId;
   label?: string;
   index: number;
@@ -659,6 +675,8 @@ function SortableSetCard({
   isSelected: boolean;
   isEphemeral?: boolean;
   onClick?: () => void;
+  renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
+  renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
 }) {
   const { ref, isDragging, isDragSource, isDropTarget } = useSortable({
     id: setId,
@@ -670,6 +688,22 @@ function SortableSetCard({
 
   return (
     <div className={styles.setShell} ref={ref} data-testid={`set-${setId}`}>
+      {renderTopToolbar
+        ? (
+            <div className={styles.setCardTopToolbar}>
+              {renderTopToolbar({
+                boardId,
+                setId,
+                groupId,
+                cardId,
+                isSelected,
+                isDragging,
+                isGhost: isDragSource || Boolean(isEphemeral),
+                isDropTarget,
+              })}
+            </div>
+          )
+        : null}
       <div
         className={[
           styles.setCard,
@@ -699,11 +733,28 @@ function SortableSetCard({
                   : "idle",
         })}
       </div>
+      {renderBottomToolbar
+        ? (
+            <div className={styles.setCardBottomToolbar}>
+              {renderBottomToolbar({
+                boardId,
+                setId,
+                groupId,
+                cardId,
+                isSelected,
+                isDragging,
+                isGhost: isDragSource || Boolean(isEphemeral),
+                isDropTarget,
+              })}
+            </div>
+          )
+        : null}
     </div>
   );
 }
 
 function DraggableSetCard({
+  boardId,
   setId,
   label,
   groupId,
@@ -712,7 +763,10 @@ function DraggableSetCard({
   isSelected,
   isEphemeral,
   onClick,
+  renderTopToolbar,
+  renderBottomToolbar,
 }: {
+  boardId: BoardId;
   setId: SetId;
   label?: string;
   groupId: GroupId;
@@ -721,6 +775,8 @@ function DraggableSetCard({
   isSelected: boolean;
   isEphemeral?: boolean;
   onClick?: () => void;
+  renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
+  renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
 }) {
   const { ref, handleRef, isDragging } = useDraggable({
     id: setId,
@@ -730,6 +786,22 @@ function DraggableSetCard({
 
   return (
     <div className={styles.setShell} ref={ref} data-testid={`set-${setId}`}>
+      {renderTopToolbar
+        ? (
+            <div className={styles.setCardTopToolbar}>
+              {renderTopToolbar({
+                boardId,
+                setId,
+                groupId,
+                cardId,
+                isSelected,
+                isDragging,
+                isGhost: isDragging || Boolean(isEphemeral),
+                isDropTarget: false,
+              })}
+            </div>
+          )
+        : null}
       <div
         className={[
           styles.setCard,
@@ -751,6 +823,22 @@ function DraggableSetCard({
           state: isDragging ? "dragging" : isEphemeral ? "ghost" : "idle",
         })}
       </div>
+      {renderBottomToolbar
+        ? (
+            <div className={styles.setCardBottomToolbar}>
+              {renderBottomToolbar({
+                boardId,
+                setId,
+                groupId,
+                cardId,
+                isSelected,
+                isDragging,
+                isGhost: isDragging || Boolean(isEphemeral),
+                isDropTarget: false,
+              })}
+            </div>
+          )
+        : null}
     </div>
   );
 }
@@ -866,6 +954,7 @@ export function DeckSortableBoardView({
                     <div key={setId}>
                       {config.allowInGroupSort ? (
                         <SortableSetCard
+                          boardId={config.boardId}
                           setId={setId}
                           label={model.setLabelsById[setId]}
                           cardId={model.setCardIdById[setId]}
@@ -874,6 +963,8 @@ export function DeckSortableBoardView({
                           renderContent={model.renderSetContent}
                           isSelected={model.isSetSelected?.(setId, groupId) ?? false}
                           isEphemeral={isEphemeralSetId(setId)}
+                          renderTopToolbar={model.renderTopToolbar}
+                          renderBottomToolbar={model.renderBottomToolbar}
                           onClick={() => {
                             if (model.activeSetId) return;
                             model.onSetClick?.(setId, groupId);
@@ -882,6 +973,7 @@ export function DeckSortableBoardView({
                       ) : null}
                       {!config.allowInGroupSort ? (
                         <DraggableSetCard
+                          boardId={config.boardId}
                           setId={setId}
                           label={model.setLabelsById[setId]}
                           cardId={model.setCardIdById[setId]}
@@ -889,6 +981,8 @@ export function DeckSortableBoardView({
                           renderContent={model.renderSetContent}
                           isSelected={model.isSetSelected?.(setId, groupId) ?? false}
                           isEphemeral={isEphemeralSetId(setId)}
+                          renderTopToolbar={model.renderTopToolbar}
+                          renderBottomToolbar={model.renderBottomToolbar}
                           onClick={() => {
                             if (model.activeSetId) return;
                             model.onSetClick?.(setId, groupId);
@@ -1563,6 +1657,8 @@ export function useDeckSortableBoardViewModel(
   options?: {
     onSetClick?: (setUiId: SetId, groupUiId: GroupId) => void;
     renderSetContent?: DeckSortableBoardViewModel["renderSetContent"];
+    renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
+    renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
     isSetSelected?: DeckSortableBoardViewModel["isSetSelected"];
     emptyMessage?: string | null;
   },
@@ -1600,6 +1696,8 @@ export function useDeckSortableBoardViewModel(
     onCreateGroupAtIndex: (index: number) => createGroupAtIndex(boardId, index),
     registerGroupRef,
     onSetClick: options?.onSetClick,
+    renderTopToolbar: options?.renderTopToolbar,
+    renderBottomToolbar: options?.renderBottomToolbar,
     isSetSelected: options?.isSetSelected,
     renderSetContent:
       options?.renderSetContent ??
