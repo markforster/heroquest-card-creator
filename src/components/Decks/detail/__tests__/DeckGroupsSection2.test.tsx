@@ -160,14 +160,24 @@ describe("DeckGroupsSection2 mock boards", () => {
     expect(group.className).toContain("groupVisualCollapsed");
   });
 
-  it("renders groups board and supports + on hover", () => {
+  it("renders groups board create rail on hover with split icon", () => {
     renderWorkspace();
     const row = screen.getByTestId("groups-row-groups");
     fireEvent.mouseMove(row, { clientX: -9999 });
-    expect(screen.getByRole("button", { name: /Create group at position/i })).toBeInTheDocument();
+    const createButton = screen.getByRole("button", { name: /Create group at position/i });
+    expect(createButton).toBeInTheDocument();
+    expect(createButton.querySelector("svg")).toBeInTheDocument();
   });
 
-  it("does not render + for entries/source boards", () => {
+  it("keeps create rail unfocusable when hidden and focusable when visible", () => {
+    renderWorkspace();
+    const createButton = screen.getByRole("button", { name: /Create group at position 0/i });
+    expect(createButton).toHaveAttribute("tabindex", "-1");
+    fireEvent.mouseMove(screen.getByTestId("groups-row-groups"), { clientX: -9999 });
+    expect(createButton).toHaveAttribute("tabindex", "0");
+  });
+
+  it("does not render create rail for entries/source boards", () => {
     renderWorkspace();
     fireEvent.mouseMove(screen.getByTestId("groups-row-entries"), { clientX: -9999 });
     fireEvent.mouseMove(screen.getByTestId("groups-row-source"), { clientX: -9999 });

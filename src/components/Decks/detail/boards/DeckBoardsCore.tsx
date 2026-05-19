@@ -11,6 +11,7 @@ import {
   useDroppable,
 } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
+import { SquareSplitHorizontal } from "lucide-react";
 import {
   Fragment,
   createContext,
@@ -1200,7 +1201,7 @@ function CreateBoundaryPlaceholder({
         aria-label={`Create group at position ${index}`}
         tabIndex={visible ? 0 : -1}
       >
-        +
+        <SquareSplitHorizontal className={styles.createBoundaryIcon} aria-hidden="true" />
       </button>
     </div>
   );
