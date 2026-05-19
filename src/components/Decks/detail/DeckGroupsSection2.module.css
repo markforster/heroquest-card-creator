@@ -239,6 +239,11 @@
 
 .groupActiveBorder {
   border-color: var(--deck-board-selected-ring, #5f86ff);
+  background: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 12%, var(--hq-surface-900) 88%);
+}
+
+:root[data-theme="light"] .groupActiveBorder {
+  background: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 10%, var(--hq-surface-900) 90%);
 }
 
 @keyframes groupEphemeralBorderPulseDark {
