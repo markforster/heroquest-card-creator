@@ -360,42 +360,50 @@ function stripEphemeralItems(state: DnDState): DnDState {
   };
 }
 
-function withTempGroupEmptySlots(state: DnDState, tempGroupId: GroupId | null): DnDState {
-  if (!tempGroupId) return state;
-  const boardId = state.groupToBoard[tempGroupId];
-  if (boardId !== "groups") return state;
-  const items = state.itemsByGroup[tempGroupId] ?? [];
-  const hasOnlyTemporary = items.filter((id) => !isEmptySlotEphemeralSetId(id)).length === 0;
-  const slotId = createEmptySlotEphemeralSetId(tempGroupId);
-  const hasSlot = items.includes(slotId);
+function withManagedEmptySlots(state: DnDState, groupIds: Array<GroupId | null>): DnDState {
+  const managedGroupIds = Array.from(new Set(groupIds.filter(Boolean) as GroupId[])).filter(
+    (groupId) => state.groupToBoard[groupId] === "groups",
+  );
+  if (managedGroupIds.length === 0) return state;
 
-  if (hasOnlyTemporary && hasSlot) return state;
-  if (!hasOnlyTemporary && !hasSlot) return state;
-
+  let didChange = false;
   const nextItemsByGroup: Record<GroupId, SetId[]> = { ...state.itemsByGroup };
   const nextItemsByContainer: Record<GroupId, SetId[]> = { ...state.itemsByContainer };
   const nextItemsById: Record<SetId, UiItem> = { ...state.itemsById };
 
-  if (hasOnlyTemporary) {
-    const withSlot = [...pruneEmptySlotFromGroup(items), slotId];
-    nextItemsByGroup[tempGroupId] = withSlot;
-    nextItemsByContainer[tempGroupId] = withSlot;
-    nextItemsById[slotId] = {
-      uiItemId: slotId,
-      kind: "set",
-      ephemeralKind: "empty-slot",
-      face: "back",
-      sourceCardId: null,
-      persistedId: null,
-      isEphemeral: true,
-    };
-  } else {
-    const withoutSlot = pruneEmptySlotFromGroup(items);
-    nextItemsByGroup[tempGroupId] = withoutSlot;
-    nextItemsByContainer[tempGroupId] = withoutSlot;
-    delete nextItemsById[slotId];
-  }
+  managedGroupIds.forEach((groupId) => {
+    const items = nextItemsByGroup[groupId] ?? [];
+    const hasOnlyTemporary = items.filter((id) => !isEmptySlotEphemeralSetId(id)).length === 0;
+    const slotId = createEmptySlotEphemeralSetId(groupId);
+    const hasSlot = items.includes(slotId);
 
+    if (hasOnlyTemporary && !hasSlot) {
+      const withSlot = [...pruneEmptySlotFromGroup(items), slotId];
+      nextItemsByGroup[groupId] = withSlot;
+      nextItemsByContainer[groupId] = withSlot;
+      nextItemsById[slotId] = {
+        uiItemId: slotId,
+        kind: "set",
+        ephemeralKind: "empty-slot",
+        face: "back",
+        sourceCardId: null,
+        persistedId: null,
+        isEphemeral: true,
+      };
+      didChange = true;
+      return;
+    }
+
+    if (!hasOnlyTemporary && hasSlot) {
+      const withoutSlot = pruneEmptySlotFromGroup(items);
+      nextItemsByGroup[groupId] = withoutSlot;
+      nextItemsByContainer[groupId] = withoutSlot;
+      delete nextItemsById[slotId];
+      didChange = true;
+    }
+  });
+
+  if (!didChange) return state;
   return {
     ...state,
     itemsByGroup: nextItemsByGroup,
@@ -1523,6 +1531,7 @@ export function DeckMockDndProvider({
 
   const previousState = useRef<DnDState>(initialState);
   const sourceGroupIdAtDragStartRef = useRef<GroupId | null>(null);
+  const dragSourceEmptySlotGroupIdRef = useRef<GroupId | null>(null);
   const activeEphemeralIdRef = useRef<SetId | null>(null);
   const nextGroupIdRef = useRef<number>(1);
   const groupRefs = useRef<Map<GroupId, HTMLElement>>(new Map());
@@ -1752,6 +1761,13 @@ export function DeckMockDndProvider({
       findGroupIdBySetId(state.itemsByGroup, sourceSetId) ||
       null;
     sourceGroupIdAtDragStartRef.current = sourceGroupId;
+    dragSourceEmptySlotGroupIdRef.current = null;
+    if (sourceGroupId && state.groupToBoard[sourceGroupId] === "groups") {
+      const sourceGroupItems = state.itemsByGroup[sourceGroupId] ?? [];
+      if (countRenderableSets(sourceGroupItems) === 1) {
+        dragSourceEmptySlotGroupIdRef.current = sourceGroupId;
+      }
+    }
     previousState.current = state;
     setActiveSetId(String(event.operation.source.id));
     setActiveTargetBoardId(null);
@@ -1866,7 +1882,12 @@ export function DeckMockDndProvider({
     if (!canRoute) {
       event.preventDefault?.();
       if (activeEphemeralIdRef.current) {
-        setState((current) => withTempGroupEmptySlots(stripEphemeralItems(current), ephemeralEmptyGroupId));
+        setState((current) =>
+          withManagedEmptySlots(stripEphemeralItems(current), [
+            ephemeralEmptyGroupId,
+            dragSourceEmptySlotGroupIdRef.current,
+          ]),
+        );
       }
       setActiveTargetBoardId(null);
       return;
@@ -1902,9 +1923,9 @@ export function DeckMockDndProvider({
                   },
                 },
               };
-        return withTempGroupEmptySlots(
+        return withManagedEmptySlots(
           moveEphemeralToContainer(withItem, ephemeralId, targetGroupId, targetIndex),
-          ephemeralEmptyGroupId,
+          [ephemeralEmptyGroupId, dragSourceEmptySlotGroupIdRef.current],
         );
       });
       setSetLabelsById((current) => ({
@@ -1920,13 +1941,13 @@ export function DeckMockDndProvider({
 
     const moved = move(state.itemsByGroup, event) as Record<GroupId, SetId[]>;
     setState((current) =>
-      withTempGroupEmptySlots(
+      withManagedEmptySlots(
         {
           ...current,
           itemsByGroup: moved,
           itemsByContainer: moved,
         },
-        ephemeralEmptyGroupId,
+        [ephemeralEmptyGroupId, dragSourceEmptySlotGroupIdRef.current],
       ),
     );
   };
@@ -1935,6 +1956,7 @@ export function DeckMockDndProvider({
     if (event.operation.source?.type === "group") {
       setActiveGroupId(null);
       if (event.canceled) {
+        dragSourceEmptySlotGroupIdRef.current = null;
         setState(previousState.current);
         return;
       }
@@ -1975,6 +1997,7 @@ export function DeckMockDndProvider({
       return;
     }
     if (event.operation.source?.type !== "set") {
+      dragSourceEmptySlotGroupIdRef.current = null;
       setActiveGroupId(null);
       setActiveSetId(null);
       setActiveTargetBoardId(null);
@@ -1984,12 +2007,18 @@ export function DeckMockDndProvider({
 
     if (event.canceled) {
       setActiveGroupId(null);
-      setState(withTempGroupEmptySlots(stripEphemeralItems(previousState.current), ephemeralEmptyGroupId));
+      setState(
+        withManagedEmptySlots(stripEphemeralItems(previousState.current), [
+          ephemeralEmptyGroupId,
+          dragSourceEmptySlotGroupIdRef.current,
+        ]),
+      );
       setActiveSetId(null);
       setActiveTargetBoardId(null);
       setDragAffordanceByBoard(emptyAffordanceState());
       activeEphemeralIdRef.current = null;
       sourceGroupIdAtDragStartRef.current = null;
+      dragSourceEmptySlotGroupIdRef.current = null;
       return;
     }
 
@@ -2036,9 +2065,9 @@ export function DeckMockDndProvider({
       (groupId) => groupId === targetGroupId,
     );
     const postDropWithoutEphemeral = stripEphemeralItems(postDropStateBeforeNormalize);
-    const postDropState = withTempGroupEmptySlots(
+    const postDropState = withManagedEmptySlots(
       normalizeAfterDrop(postDropWithoutEphemeral, ephemeralEmptyGroupId),
-      ephemeralEmptyGroupId,
+      [ephemeralEmptyGroupId, dragSourceEmptySlotGroupIdRef.current],
     );
     setState(postDropState);
     if (ephemeralEmptyGroupId && !(ephemeralEmptyGroupId in postDropState.itemsByGroup)) {
@@ -2056,6 +2085,7 @@ export function DeckMockDndProvider({
     setDragAffordanceByBoard(emptyAffordanceState());
     activeEphemeralIdRef.current = null;
     sourceGroupIdAtDragStartRef.current = null;
+    dragSourceEmptySlotGroupIdRef.current = null;
 
     const normalizedSetId = sourceSetId.startsWith("set:") ? sourceSetId.slice(4) : "";
     const normalizedSourceGroupId = sourceGroupId.startsWith("group:")
