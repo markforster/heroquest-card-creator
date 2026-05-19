@@ -589,6 +589,7 @@ function GroupColumn({
   fillParent,
   canReceiveDrops,
   showHeader,
+  sourceLayout,
 }: {
   groupId: GroupId;
   label?: string;
@@ -596,6 +597,7 @@ function GroupColumn({
   fillParent: boolean;
   canReceiveDrops: boolean;
   showHeader: boolean;
+  sourceLayout?: boolean;
 }) {
   const { ref } = useDroppable({
     id: groupId,
@@ -605,7 +607,13 @@ function GroupColumn({
 
   return (
     <section
-      className={[styles.group, fillParent ? styles.groupFillParent : ""].filter(Boolean).join(" ")}
+      className={[
+        styles.group,
+        fillParent ? styles.groupFillParent : "",
+        sourceLayout ? styles.groupSource : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       ref={ref}
       data-testid={`group-${groupId}`}
     >
@@ -618,7 +626,12 @@ function GroupColumn({
         </header>
       ) : null}
       <div
-        className={[styles.groupBody, fillParent ? styles.groupBodyFillParent : ""]
+        className={[
+          styles.groupBody,
+          fillParent ? styles.groupBodyFillParent : "",
+          sourceLayout ? styles.groupBodySource : "",
+          sourceLayout && fillParent ? styles.groupBodySourceFillParent : "",
+        ]
           .filter(Boolean)
           .join(" ")}
       >
@@ -702,6 +715,7 @@ function SortableSetCard({
   onClick,
   renderTopToolbar,
   renderBottomToolbar,
+  sourceLayout,
 }: {
   boardId: BoardId;
   setId: SetId;
@@ -715,6 +729,7 @@ function SortableSetCard({
   onClick?: () => void;
   renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
   renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
+  sourceLayout?: boolean;
 }) {
   const { ref, isDragging, isDragSource, isDropTarget } = useSortable({
     id: setId,
@@ -725,7 +740,11 @@ function SortableSetCard({
   });
 
   return (
-    <div className={styles.setShell} ref={ref} data-testid={`set-${setId}`}>
+    <div
+      className={[styles.setShell, sourceLayout ? styles.setShellSource : ""].filter(Boolean).join(" ")}
+      ref={ref}
+      data-testid={`set-${setId}`}
+    >
       {renderTopToolbar
         ? (
             <div className={styles.setCardTopToolbar}>
@@ -803,6 +822,7 @@ function DraggableSetCard({
   onClick,
   renderTopToolbar,
   renderBottomToolbar,
+  sourceLayout,
 }: {
   boardId: BoardId;
   setId: SetId;
@@ -815,6 +835,7 @@ function DraggableSetCard({
   onClick?: () => void;
   renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
   renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
+  sourceLayout?: boolean;
 }) {
   const { ref, handleRef, isDragging } = useDraggable({
     id: setId,
@@ -823,7 +844,11 @@ function DraggableSetCard({
   });
 
   return (
-    <div className={styles.setShell} ref={ref} data-testid={`set-${setId}`}>
+    <div
+      className={[styles.setShell, sourceLayout ? styles.setShellSource : ""].filter(Boolean).join(" ")}
+      ref={ref}
+      data-testid={`set-${setId}`}
+    >
       {renderTopToolbar
         ? (
             <div className={styles.setCardTopToolbar}>
@@ -939,6 +964,7 @@ export function DeckSortableBoardView({
 }) {
   const { config, groupIds, itemsByGroup, activeSetId, activeTargetBoardId, hoverBoundaryIndex } = model;
   const useFillParent = layoutMode === "fill-parent" && !config.allowMultipleGroups;
+  const isSourceBoard = config.boardId === "source";
   const blockedBoundaries = useMemo(
     () => getBlockedBoundaries(groupIds, itemsByGroup),
     [groupIds, itemsByGroup],
@@ -947,6 +973,7 @@ export function DeckSortableBoardView({
   return (
     <section
       className={[styles.board, useFillParent ? styles.boardFillParent : ""]
+        .concat(isSourceBoard ? [" ", styles.boardSource] : [])
         .concat(model.showDropAffordance ? [" ", styles.boardDropActive] : [])
         .concat(
           model.showDropAffordance && activeTargetBoardId === config.boardId
@@ -957,9 +984,13 @@ export function DeckSortableBoardView({
         .join(" ")}
       data-testid={`board-${config.boardId}`}
     >
-      <header className={styles.boardHeader}>{config.title}</header>
+      {config.boardId === "source" ? null : <header className={styles.boardHeader}>{config.title}</header>}
       <div
-        className={[styles.groupsRow, useFillParent ? styles.groupsRowFillParent : ""]
+        className={[
+          styles.groupsRow,
+          useFillParent ? styles.groupsRowFillParent : "",
+          isSourceBoard ? styles.groupsRowSource : "",
+        ]
           .filter(Boolean)
           .join(" ")}
         data-testid={`groups-row-${config.boardId}`}
@@ -984,6 +1015,7 @@ export function DeckSortableBoardView({
                 fillParent={useFillParent}
                 canReceiveDrops={config.allowDropTarget}
                 showHeader={SHOW_GROUP_HEADINGS}
+                sourceLayout={isSourceBoard}
               >
                 {(() => {
                   const groupSetIds = itemsByGroup[groupId] ?? [];
@@ -1003,6 +1035,7 @@ export function DeckSortableBoardView({
                           isEphemeral={isEphemeralSetId(setId)}
                           renderTopToolbar={model.renderTopToolbar}
                           renderBottomToolbar={model.renderBottomToolbar}
+                          sourceLayout={isSourceBoard}
                           onClick={() => {
                             if (model.activeSetId) return;
                             model.onSetClick?.(setId, groupId);
@@ -1021,6 +1054,7 @@ export function DeckSortableBoardView({
                           isEphemeral={isEphemeralSetId(setId)}
                           renderTopToolbar={model.renderTopToolbar}
                           renderBottomToolbar={model.renderBottomToolbar}
+                          sourceLayout={isSourceBoard}
                           onClick={() => {
                             if (model.activeSetId) return;
                             model.onSetClick?.(setId, groupId);

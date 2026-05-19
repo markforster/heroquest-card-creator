@@ -128,17 +128,6 @@ function DeckDetailPanelContent({
             <DeckDetailHeader
               deckId={deckId}
               deckTitle={deckTitle}
-              selectedSetId={selectionModel.selectedSetId}
-              keySetId={keySetId}
-              selectedSetBackFaceId={
-                selectionModel.selectedSetId
-                  ? (selectionModel.setById.get(selectionModel.selectedSetId)?.backFaceId ?? null)
-                  : null
-              }
-              onConfirmMakeKeyCard={async () => {
-                if (!selectionModel.selectedSetId || !deckId) return;
-                await actions.makeSelectedSetKeyCard(selectionModel.selectedSetId);
-              }}
             />
 
             <DeckDetailSelectionProvider model={selectionModel}>

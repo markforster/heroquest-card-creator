@@ -42,6 +42,17 @@
   flex-direction: column;
 }
 
+.boardSource {
+  --source-card-w: var(--deck-source-card-w, 112px);
+  --source-col-gap: var(--deck-source-col-gap, 12px);
+  --source-inline-inset: var(--deck-source-inline-inset, 6px);
+  --source-min-content-w: var(--deck-source-min-content-w, 360px);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
 .boardHeader {
   font-size: 12px;
   font-weight: 700;
@@ -65,6 +76,11 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
+}
+
+.groupsRowSource {
+  padding: 0 6px;
+  min-width: var(--source-min-content-w);
 }
 
 .groupStack {
@@ -116,6 +132,14 @@
   height: 100%;
 }
 
+.groupSource {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  margin: 0;
+}
+
 .groupHeader {
   display: flex;
   align-items: center;
@@ -159,12 +183,35 @@
   min-height: 0;
 }
 
+.groupBodySource {
+  padding: 0;
+  row-gap: 8px;
+  column-gap: var(--source-col-gap);
+}
+
+.groupBodySourceFillParent {
+  grid-template-columns: repeat(3, var(--source-card-w));
+  min-width: var(--source-min-content-w);
+  justify-content: start;
+}
+
+.boardSource .groupBodyFillParent {
+  grid-template-columns: repeat(3, var(--source-card-w));
+  min-width: var(--source-min-content-w);
+  justify-content: start;
+}
+
 .setShell {
   position: relative;
   border-radius: 6px;
   flex: 0 0 auto;
   padding-top: 16px;
   padding-bottom: 18px;
+}
+
+.setShellSource {
+  padding-top: 6px;
+  padding-bottom: 6px;
 }
 
 .setCard {
