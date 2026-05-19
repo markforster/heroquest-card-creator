@@ -123,7 +123,43 @@
   border: 1px solid var(--hq-border-strong);
   display: inline-flex;
   flex-direction: column;
+  position: relative;
   transition: width 100ms ease-out, min-width 100ms ease-out;
+}
+
+.groupDragHandle {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--hq-border-strong);
+  background: color-mix(in srgb, var(--hq-surface-900) 78%, white 22%);
+  color: var(--hq-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 5;
+  padding: 0;
+  line-height: 1;
+  font-size: 11px;
+}
+
+.groupDragHandle:hover {
+  color: var(--hq-text-primary);
+  background: color-mix(in srgb, var(--hq-surface-900) 68%, white 32%);
+}
+
+.groupDragHandle:active,
+.groupDragHandleActive {
+  cursor: grabbing;
+}
+
+.groupDragHandle:focus-visible {
+  outline: 2px solid var(--hq-focus-ring, #e6b35a);
+  outline-offset: 1px;
 }
 
 .groupVisualCollapsed {

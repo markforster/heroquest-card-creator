@@ -62,6 +62,7 @@ export default function DeckGroupsBoardController({
     });
     return counts;
   }, [selection]);
+  const canSortGroups = (selection?.orderedGroups.length ?? 0) > 1;
 
   const desiredModeByGroupRef = useRef<Record<string, GroupFanMode>>({});
   const rafByGroupRef = useRef<Record<string, number>>({});
@@ -279,6 +280,7 @@ export default function DeckGroupsBoardController({
     [selection],
   );
   const model = useDeckSortableBoardViewModel("groups", BOARD_ROUTING_META_BY_ID.groups, {
+    allowGroupReorder: canSortGroups,
     renderSetContent,
     renderTopToolbar: ({ setId, isDragging, isGhost }) => {
       if (!setId.startsWith("set:") || isDragging || isGhost) return null;
@@ -439,6 +441,15 @@ export default function DeckGroupsBoardController({
       }
     };
     return registerDropHandler("groups-controller", async (event) => {
+      if (event.kind === "GROUPS_REORDER_GROUPS") {
+        if (!deckId || event.orderedGroupIds.length <= 1) {
+          return { handled: true, success: true };
+        }
+        await mutations.reorderGroups(deckId, event.orderedGroupIds);
+        await selection.reloadStructure(selection.selectedSetId);
+        return { handled: true, success: true };
+      }
+
       if (event.kind === "GROUPS_REORDER_SETS") {
         const isCrossGroup = event.sourceGroupId !== event.targetGroupId;
         if (isCrossGroup) {

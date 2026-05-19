@@ -8,7 +8,6 @@ import {
   type DragOverEvent,
   type DragStartEvent,
   useDraggable,
-  useDroppable,
 } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import {
@@ -115,6 +114,11 @@ type GroupsReorderSetsEvent = DeckDnDEventBase & {
   sourceGroupEmptyAfterDrop: boolean;
 };
 
+type GroupsReorderGroupsEvent = DeckDnDEventBase & {
+  kind: "GROUPS_REORDER_GROUPS";
+  orderedGroupIds: string[];
+};
+
 type GroupsDropSetToNewGroupEvent = DeckDnDEventBase & {
   kind: "GROUPS_DROP_SET_TO_NEW_GROUP";
   setId: string;
@@ -149,6 +153,7 @@ type EntriesDropSourceToEntriesEvent = DeckDnDEventBase & {
 };
 
 export type DeckDnDEvent =
+  | GroupsReorderGroupsEvent
   | GroupsReorderSetsEvent
   | GroupsDropSetToNewGroupEvent
   | GroupsDropSourceCardToGroupEvent
@@ -210,6 +215,7 @@ export type DeckSortableBoardViewModel = {
   onLeaveBoard: () => void;
   onCreateGroupAtIndex: (index: number) => void;
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
+  allowGroupReorder?: boolean;
   onSetClick?: (setUiId: SetId, groupUiId: GroupId) => void;
   renderSetContent: (args: {
     setId: SetId;
@@ -600,6 +606,8 @@ function normalizeAfterDrop(current: DnDState): DnDState {
 }
 
 function GroupColumn({
+  boardId,
+  index,
   groupId,
   label,
   children,
@@ -613,7 +621,10 @@ function GroupColumn({
   bodyClassName,
   bodyStyle,
   onHoverChange,
+  allowGroupReorder,
 }: {
+  boardId: BoardId;
+  index: number;
   groupId: GroupId;
   label?: string;
   children: React.ReactNode;
@@ -627,11 +638,15 @@ function GroupColumn({
   bodyClassName?: string;
   bodyStyle?: CSSProperties;
   onHoverChange?: (isHovered: boolean) => void;
+  allowGroupReorder?: boolean;
 }) {
-  const { ref } = useDroppable({
+  const { ref, handleRef, isDragging } = useSortable({
     id: groupId,
+    index,
     type: "group",
-    accept: canReceiveDrops ? ["set"] : [],
+    accept: canReceiveDrops ? ["set", "group"] : ["group"],
+    group: `board:${boardId}`,
+    disabled: !allowGroupReorder,
   });
 
   return (
@@ -650,6 +665,24 @@ function GroupColumn({
       onMouseEnter={() => onHoverChange?.(true)}
       onMouseLeave={() => onHoverChange?.(false)}
     >
+      {allowGroupReorder ? (
+        <button
+          type="button"
+          ref={handleRef}
+          className={[
+            styles.groupDragHandle,
+            isDragging ? styles.groupDragHandleActive : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          aria-label="Reorder group"
+          title="Reorder group"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <span aria-hidden="true">⋮⋮</span>
+        </button>
+      ) : null}
       {showHeader ? (
         <header className={styles.groupHeader}>
           <span>{label ?? parseGroupLabel(groupId)}</span>
@@ -1058,6 +1091,8 @@ export function DeckSortableBoardView({
               ref={(node) => model.registerGroupRef(groupId, node)}
             >
               <GroupColumn
+                boardId={config.boardId}
+                index={index}
                 groupId={groupId}
                 label={model.groupLabelsById[groupId]}
                 fillParent={useFillParent}
@@ -1111,6 +1146,11 @@ export function DeckSortableBoardView({
                     return current === groupId ? null : current;
                   });
                 }}
+                allowGroupReorder={
+                  config.boardId === "groups" &&
+                  Boolean(model.allowGroupReorder) &&
+                  groupIds.length > 1
+                }
               >
                 {(() => {
                   const groupSetIds = itemsByGroup[groupId] ?? [];
@@ -1406,6 +1446,10 @@ export function DeckMockDndProvider({
   };
 
   const handleDragStart = (event: DragStartEvent) => {
+    if (event.operation.source?.type === "group") {
+      previousState.current = state;
+      return;
+    }
     if (event.operation.source?.type !== "set") return;
     const sourceSetId = String(event.operation.source.id);
     const sourceGroupId =
@@ -1435,6 +1479,38 @@ export function DeckMockDndProvider({
   };
 
   const handleDragOver = (event: DragOverEvent) => {
+    if (event.operation.source?.type === "group") {
+      const sourceGroupId = String(event.operation.source.id ?? "");
+      const targetId = String(event.operation.target?.id ?? "");
+      const targetGroupId =
+        event.operation.target?.type === "group"
+          ? targetId
+          : extractGroupIdFromOperationEntity(event.operation.target) ||
+            (targetId ? findContainerByItemId(state, targetId) || "" : "");
+      if (!sourceGroupId || !targetGroupId || sourceGroupId === targetGroupId) return;
+      const sourceBoardId = state.groupToBoard[sourceGroupId] ?? null;
+      const targetBoardId = state.groupToBoard[targetGroupId] ?? null;
+      if (!sourceBoardId || sourceBoardId !== targetBoardId) return;
+      setState((current) => {
+        const currentOrder = current.groupOrderByBoard[sourceBoardId] ?? [];
+        const sourceIndex = currentOrder.indexOf(sourceGroupId);
+        const targetIndex = currentOrder.indexOf(targetGroupId);
+        if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return current;
+        const nextOrder = currentOrder.slice();
+        const [moved] = nextOrder.splice(sourceIndex, 1);
+        nextOrder.splice(targetIndex, 0, moved);
+        const nextGroupOrderByBoard = {
+          ...current.groupOrderByBoard,
+          [sourceBoardId]: nextOrder,
+        };
+        return {
+          ...current,
+          groupOrderByBoard: nextGroupOrderByBoard,
+          containerOrderByBoard: nextGroupOrderByBoard,
+        };
+      });
+      return;
+    }
     if (event.operation.source?.type !== "set") return;
 
     const sourceSetId = String(event.operation.source.id);
@@ -1540,6 +1616,45 @@ export function DeckMockDndProvider({
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (event.operation.source?.type === "group") {
+      if (event.canceled) {
+        setState(previousState.current);
+        return;
+      }
+      const sourceGroupId = String(event.operation.source.id ?? "");
+      const sourceBoardId = sourceGroupId ? (state.groupToBoard[sourceGroupId] ?? null) : null;
+      if (sourceBoardId === "groups" && handlersRef.current.size > 0) {
+        const orderedGroupIds = (state.groupOrderByBoard.groups ?? [])
+          .map((groupUiId) => groupUiId.replace(/^group:/, ""))
+          .filter(Boolean);
+        const dragId = `drag:${Date.now()}:${++dragSequenceRef.current}:${sourceGroupId}`;
+        const eventPayload: DeckDnDEvent = {
+          kind: "GROUPS_REORDER_GROUPS",
+          dragId,
+          timestamp: Date.now(),
+          sourceBoardId: "groups",
+          targetBoardId: "groups",
+          orderedGroupIds,
+        };
+        void (async () => {
+          const handlers = [...handlersRef.current.values()];
+          const settled = await Promise.allSettled(handlers.map((handler) => handler(eventPayload)));
+          const hasFatal = settled.some(
+            (result) =>
+              result.status === "rejected" ||
+              (result.status === "fulfilled" &&
+                result.value !== null &&
+                result.value.handled &&
+                !result.value.success &&
+                result.value.fatal),
+          );
+          if (hasFatal) {
+            setState(previousState.current);
+          }
+        })();
+      }
+      return;
+    }
     if (event.operation.source?.type !== "set") {
       setActiveSetId(null);
       setActiveTargetBoardId(null);
@@ -1854,6 +1969,7 @@ export function useDeckSortableBoardViewModel(
   boardId: BoardId,
   routing: BoardRoutingMeta,
   options?: {
+    allowGroupReorder?: boolean;
     onSetClick?: (setUiId: SetId, groupUiId: GroupId) => void;
     renderSetContent?: DeckSortableBoardViewModel["renderSetContent"];
     renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
@@ -1900,6 +2016,7 @@ export function useDeckSortableBoardViewModel(
     onLeaveBoard: () => handleLeaveBoard(boardId),
     onCreateGroupAtIndex: (index: number) => createGroupAtIndex(boardId, index),
     registerGroupRef,
+    allowGroupReorder: options?.allowGroupReorder ?? false,
     onSetClick: options?.onSetClick,
     renderTopToolbar: options?.renderTopToolbar,
     renderBottomToolbar: options?.renderBottomToolbar,
