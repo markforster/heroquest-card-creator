@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Gem, Trash2 } from "lucide-react";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
@@ -15,13 +15,21 @@ import {
   useDeckMockDnd,
   useDeckSortableBoardViewModel,
 } from "./DeckBoardsCore";
+import {
+  FAN_CARD_HEIGHT,
+  FAN_CARD_WIDTH,
+  resolveFanFrame,
+  type GroupFanMode,
+} from "./deckGroupFanMath";
 
 export default function DeckGroupsBoardController({
   deckId,
   keySetId,
+  enableFanLayout = false,
 }: {
   deckId: string | null;
   keySetId: string | null;
+  enableFanLayout?: boolean;
 }) {
   const mutations = useDeckMutations();
   const { t } = useI18n();
@@ -32,6 +40,132 @@ export default function DeckGroupsBoardController({
     selection = null;
   }
   const { registerDropHandler } = useDeckMockDnd();
+  const selectedSetGroupId =
+    selection?.selectedSetId ? selection.setById.get(selection.selectedSetId)?.groupId ?? null : null;
+  const resolveGroupMode = useCallback(
+    (groupId: string, isHovered: boolean, hasSelectedSet: boolean): GroupFanMode => {
+      if (hasSelectedSet || selectedSetGroupId === groupId) return "expanded";
+      if (isHovered) return "partial";
+      return "collapsed";
+    },
+    [selectedSetGroupId],
+  );
+  const isGroupExpanded = useCallback(
+    (groupId: string) => (selection?.setById.get(selection.selectedSetId ?? "")?.groupId ?? null) === groupId,
+    [selection],
+  );
+
+  const desiredModeByGroupRef = useRef<Record<string, GroupFanMode>>({});
+  const rafByGroupRef = useRef<Record<string, number>>({});
+  const [transitionByGroup, setTransitionByGroup] = useState<
+    Record<string, { from: GroupFanMode; to: GroupFanMode; progress: number }>
+  >({});
+  const easeOutCubic = useCallback((value: number) => 1 - (1 - value) ** 3, []);
+  const noteDesiredMode = useCallback((groupId: string, mode: GroupFanMode) => {
+    desiredModeByGroupRef.current[groupId] = mode;
+  }, []);
+  const cancelGroupAnimation = useCallback((groupId: string) => {
+    const handle = rafByGroupRef.current[groupId];
+    if (!handle) return;
+    cancelAnimationFrame(handle);
+    delete rafByGroupRef.current[groupId];
+  }, []);
+
+  const startGroupAnimation = useCallback(
+    (groupId: string, from: GroupFanMode, to: GroupFanMode) => {
+      cancelGroupAnimation(groupId);
+      if (from === to) return;
+      const start = performance.now();
+      const durationMs = 100;
+      const tick = (now: number) => {
+        const linearProgress = Math.min(1, Math.max(0, (now - start) / durationMs));
+        const easedProgress = easeOutCubic(linearProgress);
+        setTransitionByGroup((current) => {
+          const existing = current[groupId];
+          if (!existing || existing.from !== from || existing.to !== to) return current;
+          return { ...current, [groupId]: { ...existing, progress: easedProgress } };
+        });
+        if (linearProgress >= 1) {
+          delete rafByGroupRef.current[groupId];
+          return;
+        }
+        rafByGroupRef.current[groupId] = requestAnimationFrame(tick);
+      };
+      rafByGroupRef.current[groupId] = requestAnimationFrame(tick);
+    },
+    [cancelGroupAnimation, easeOutCubic],
+  );
+
+  useEffect(() => {
+    if (!enableFanLayout) {
+      setTransitionByGroup({});
+      Object.keys(rafByGroupRef.current).forEach((groupId) => cancelGroupAnimation(groupId));
+      desiredModeByGroupRef.current = {};
+      return;
+    }
+    const desiredModeByGroup = desiredModeByGroupRef.current;
+    desiredModeByGroupRef.current = {};
+    const entries = Object.entries(desiredModeByGroup);
+    if (entries.length === 0) return;
+    setTransitionByGroup((current) => {
+      const next: typeof current = { ...current };
+      let didChange = false;
+      const desiredIds = new Set<string>();
+      entries.forEach(([groupId, targetMode]) => {
+        desiredIds.add(groupId);
+        const existing = current[groupId];
+        if (!existing) {
+          next[groupId] = { from: targetMode, to: targetMode, progress: 1 };
+          didChange = true;
+          return;
+        }
+        if (existing.to === targetMode) return;
+        const fromMode = existing.progress >= 0.5 ? existing.to : existing.from;
+        next[groupId] = { from: fromMode, to: targetMode, progress: 0 };
+        didChange = true;
+        startGroupAnimation(groupId, fromMode, targetMode);
+      });
+      Object.keys(next).forEach((groupId) => {
+        if (desiredIds.has(groupId)) return;
+        cancelGroupAnimation(groupId);
+        delete next[groupId];
+        didChange = true;
+      });
+      return didChange ? next : current;
+    });
+  });
+
+  useEffect(
+    () => () => {
+      Object.keys(rafByGroupRef.current).forEach((groupId) => {
+        const handle = rafByGroupRef.current[groupId];
+        if (handle) cancelAnimationFrame(handle);
+      });
+      rafByGroupRef.current = {};
+    },
+    [],
+  );
+
+  const resolveAnimatedFrame = useCallback(
+    (groupId: string, mode: GroupFanMode, setCount: number) => {
+      const transition = transitionByGroup[groupId];
+      if (!transition) {
+        return resolveFanFrame({
+          fromMode: mode,
+          toMode: mode,
+          progress: 1,
+          count: setCount,
+        });
+      }
+      return resolveFanFrame({
+        fromMode: transition.from,
+        toMode: transition.to,
+        progress: transition.progress,
+        count: setCount,
+      });
+    },
+    [transitionByGroup],
+  );
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
     ({ setId, label, cardId, state }) => {
       const rawSetId = setId.startsWith("set:") ? setId.slice(4) : null;
@@ -51,6 +185,10 @@ export default function DeckGroupsBoardController({
     renderSetContent,
     renderTopToolbar: ({ setId, isDragging, isGhost }) => {
       if (!setId.startsWith("set:") || isDragging || isGhost) return null;
+      if (enableFanLayout) {
+        const groupId = selection?.setById.get(setId.slice(4))?.groupId;
+        if (!groupId || !isGroupExpanded(groupId)) return null;
+      }
       const resolvedSetId = setId.slice(4);
       const stopPropagation = (event: { stopPropagation: () => void }) => {
         event.stopPropagation();
@@ -122,6 +260,58 @@ export default function DeckGroupsBoardController({
       if (!setRecord) return;
       selection.selectGroup(groupId);
       selection.selectSet(setRecord);
+    },
+    resolveGroupClassName: ({ boardId, groupId, isHovered, hasSelectedSet }) => {
+      if (!enableFanLayout || boardId !== "groups") return null;
+      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet);
+      noteDesiredMode(groupId, mode);
+      if (mode === "expanded") return styles.groupVisualExpanded;
+      if (mode === "partial") return styles.groupVisualPartial;
+      return styles.groupVisualCollapsed;
+    },
+    resolveGroupStyle: ({ boardId, groupId, isHovered, hasSelectedSet, setCount }) => {
+      if (!enableFanLayout || boardId !== "groups") return undefined;
+      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet);
+      noteDesiredMode(groupId, mode);
+      const frame = resolveAnimatedFrame(groupId, mode, setCount);
+      return {
+        minWidth: `${Math.ceil(frame.requiredWidthPx)}px`,
+        minHeight: `${Math.ceil(frame.requiredHeightPx + 34)}px`,
+      };
+    },
+    resolveGroupBodyClassName: ({ boardId }) =>
+      enableFanLayout && boardId === "groups" ? styles.groupBodyFanCanvas : null,
+    resolveGroupBodyStyle: ({ boardId, groupId, isHovered, hasSelectedSet, setCount }) => {
+      if (!enableFanLayout || boardId !== "groups") return undefined;
+      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet);
+      noteDesiredMode(groupId, mode);
+      const frame = resolveAnimatedFrame(groupId, mode, setCount);
+      return {
+        width: `${Math.ceil(frame.requiredWidthPx)}px`,
+        height: `${Math.ceil(frame.requiredHeightPx)}px`,
+      };
+    },
+    resolveSetShellClassName: ({ boardId, groupId, isHovered, hasSelectedSet }) => {
+      if (!enableFanLayout || boardId !== "groups") return null;
+      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet);
+      if (mode === "expanded") return styles.setShellFanExpanded;
+      if (mode === "partial") return styles.setShellFanPartial;
+      return styles.setShellFanCollapsed;
+    },
+    resolveSetShellStyle: ({ boardId, groupId, isHovered, hasSelectedSet, setCount, setIndex }) => {
+      if (!enableFanLayout || boardId !== "groups") return undefined;
+      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet);
+      noteDesiredMode(groupId, mode);
+      const frame = resolveAnimatedFrame(groupId, mode, setCount);
+      const fan = frame.cards[setIndex];
+      if (!fan) return undefined;
+      return {
+        left: `${fan.x - FAN_CARD_WIDTH / 2}px`,
+        top: `${fan.y - FAN_CARD_HEIGHT}px`,
+        transform: `rotate(${fan.rotateDeg}deg)`,
+        transformOrigin: "50% 100%",
+        zIndex: fan.zIndex,
+      };
     },
   });
 

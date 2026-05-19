@@ -12,6 +12,7 @@ import {
 } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import {
+  Fragment,
   createContext,
   useContext,
   useEffect,
@@ -44,6 +45,14 @@ type SetToolbarContext = {
   isDragging: boolean;
   isGhost: boolean;
   isDropTarget: boolean;
+};
+
+type GroupVisualContext = {
+  boardId: BoardId;
+  groupId: GroupId;
+  isHovered: boolean;
+  hasSelectedSet: boolean;
+  setCount: number;
 };
 
 type BoardInfoPillProps = {
@@ -212,6 +221,14 @@ export type DeckSortableBoardViewModel = {
   renderTopToolbar?: (args: SetToolbarContext) => React.ReactNode;
   renderBottomToolbar?: (args: SetToolbarContext) => React.ReactNode;
   isSetSelected?: (setId: SetId, groupId: GroupId) => boolean;
+  resolveGroupClassName?: (args: GroupVisualContext) => string | null;
+  resolveGroupStyle?: (args: GroupVisualContext) => CSSProperties | undefined;
+  resolveGroupBodyClassName?: (args: GroupVisualContext) => string | null;
+  resolveGroupBodyStyle?: (args: GroupVisualContext) => CSSProperties | undefined;
+  resolveSetShellClassName?: (args: GroupVisualContext & { setId: SetId; setIndex: number }) => string | null;
+  resolveSetShellStyle?: (
+    args: GroupVisualContext & { setId: SetId; setIndex: number },
+  ) => CSSProperties | undefined;
   emptyMessage?: string | null;
 };
 
@@ -591,6 +608,11 @@ function GroupColumn({
   showHeader,
   sourceLayout,
   entriesLayout,
+  className,
+  style,
+  bodyClassName,
+  bodyStyle,
+  onHoverChange,
 }: {
   groupId: GroupId;
   label?: string;
@@ -600,6 +622,11 @@ function GroupColumn({
   showHeader: boolean;
   sourceLayout?: boolean;
   entriesLayout?: boolean;
+  className?: string;
+  style?: CSSProperties;
+  bodyClassName?: string;
+  bodyStyle?: CSSProperties;
+  onHoverChange?: (isHovered: boolean) => void;
 }) {
   const { ref } = useDroppable({
     id: groupId,
@@ -613,11 +640,15 @@ function GroupColumn({
         styles.group,
         fillParent ? styles.groupFillParent : "",
         sourceLayout ? styles.groupSource : "",
+        className ?? "",
       ]
         .filter(Boolean)
         .join(" ")}
       ref={ref}
       data-testid={`group-${groupId}`}
+      style={style}
+      onMouseEnter={() => onHoverChange?.(true)}
+      onMouseLeave={() => onHoverChange?.(false)}
     >
       {showHeader ? (
         <header className={styles.groupHeader}>
@@ -634,9 +665,11 @@ function GroupColumn({
           sourceLayout ? styles.groupBodySource : "",
           sourceLayout && fillParent ? styles.groupBodySourceFillParent : "",
           entriesLayout && fillParent ? styles.groupBodyEntriesFillParent : "",
+          bodyClassName ?? "",
         ]
           .filter(Boolean)
           .join(" ")}
+        style={bodyStyle}
       >
         {children}
       </div>
@@ -719,6 +752,8 @@ function SortableSetCard({
   renderTopToolbar,
   renderBottomToolbar,
   sourceLayout,
+  shellClassName,
+  shellStyle,
 }: {
   boardId: BoardId;
   setId: SetId;
@@ -733,6 +768,8 @@ function SortableSetCard({
   renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
   renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
   sourceLayout?: boolean;
+  shellClassName?: string;
+  shellStyle?: CSSProperties;
 }) {
   const { ref, isDragging, isDragSource, isDropTarget } = useSortable({
     id: setId,
@@ -744,9 +781,10 @@ function SortableSetCard({
 
   return (
     <div
-      className={[styles.setShell, sourceLayout ? styles.setShellSource : ""].filter(Boolean).join(" ")}
+      className={[styles.setShell, sourceLayout ? styles.setShellSource : "", shellClassName ?? ""].filter(Boolean).join(" ")}
       ref={ref}
       data-testid={`set-${setId}`}
+      style={shellStyle}
     >
       {renderTopToolbar
         ? (
@@ -826,6 +864,8 @@ function DraggableSetCard({
   renderTopToolbar,
   renderBottomToolbar,
   sourceLayout,
+  shellClassName,
+  shellStyle,
 }: {
   boardId: BoardId;
   setId: SetId;
@@ -839,6 +879,8 @@ function DraggableSetCard({
   renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
   renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
   sourceLayout?: boolean;
+  shellClassName?: string;
+  shellStyle?: CSSProperties;
 }) {
   const { ref, handleRef, isDragging } = useDraggable({
     id: setId,
@@ -848,9 +890,10 @@ function DraggableSetCard({
 
   return (
     <div
-      className={[styles.setShell, sourceLayout ? styles.setShellSource : ""].filter(Boolean).join(" ")}
+      className={[styles.setShell, sourceLayout ? styles.setShellSource : "", shellClassName ?? ""].filter(Boolean).join(" ")}
       ref={ref}
       data-testid={`set-${setId}`}
+      style={shellStyle}
     >
       {renderTopToolbar
         ? (
@@ -973,6 +1016,7 @@ export function DeckSortableBoardView({
     () => getBlockedBoundaries(groupIds, itemsByGroup),
     [groupIds, itemsByGroup],
   );
+  const [hoveredGroupId, setHoveredGroupId] = useState<GroupId | null>(null);
 
   return (
     <section
@@ -1021,12 +1065,66 @@ export function DeckSortableBoardView({
                 showHeader={SHOW_GROUP_HEADINGS}
                 sourceLayout={isSourceBoard}
                 entriesLayout={isEntriesBoard}
+                className={
+                  model.resolveGroupClassName?.({
+                    boardId: config.boardId,
+                    groupId,
+                    isHovered: hoveredGroupId === groupId,
+                    hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
+                      (setId) => model.isSetSelected?.(setId, groupId) ?? false,
+                    ),
+                    setCount: (itemsByGroup[groupId] ?? []).length,
+                  }) ?? undefined
+                }
+                style={model.resolveGroupStyle?.({
+                  boardId: config.boardId,
+                  groupId,
+                  isHovered: hoveredGroupId === groupId,
+                  hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
+                    (setId) => model.isSetSelected?.(setId, groupId) ?? false,
+                  ),
+                  setCount: (itemsByGroup[groupId] ?? []).length,
+                })}
+                bodyClassName={
+                  model.resolveGroupBodyClassName?.({
+                    boardId: config.boardId,
+                    groupId,
+                    isHovered: hoveredGroupId === groupId,
+                    hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
+                      (setId) => model.isSetSelected?.(setId, groupId) ?? false,
+                    ),
+                    setCount: (itemsByGroup[groupId] ?? []).length,
+                  }) ?? undefined
+                }
+                bodyStyle={model.resolveGroupBodyStyle?.({
+                  boardId: config.boardId,
+                  groupId,
+                  isHovered: hoveredGroupId === groupId,
+                  hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
+                    (setId) => model.isSetSelected?.(setId, groupId) ?? false,
+                  ),
+                  setCount: (itemsByGroup[groupId] ?? []).length,
+                })}
+                onHoverChange={(isHovered) => {
+                  setHoveredGroupId((current) => {
+                    if (isHovered) return groupId;
+                    return current === groupId ? null : current;
+                  });
+                }}
               >
                 {(() => {
                   const groupSetIds = itemsByGroup[groupId] ?? [];
+                  const hasSelectedSet = groupSetIds.some((setId) => model.isSetSelected?.(setId, groupId) ?? false);
+                  const groupVisualContext: GroupVisualContext = {
+                    boardId: config.boardId,
+                    groupId,
+                    isHovered: hoveredGroupId === groupId,
+                    hasSelectedSet,
+                    setCount: groupSetIds.length,
+                  };
 
                   return groupSetIds.map((setId, setIndex) => (
-                    <div key={setId}>
+                    <Fragment key={setId}>
                       {config.allowInGroupSort ? (
                         <SortableSetCard
                           boardId={config.boardId}
@@ -1041,6 +1139,18 @@ export function DeckSortableBoardView({
                           renderTopToolbar={model.renderTopToolbar}
                           renderBottomToolbar={model.renderBottomToolbar}
                           sourceLayout={isSourceBoard}
+                          shellClassName={
+                            model.resolveSetShellClassName?.({
+                              ...groupVisualContext,
+                              setId,
+                              setIndex,
+                            }) ?? undefined
+                          }
+                          shellStyle={model.resolveSetShellStyle?.({
+                            ...groupVisualContext,
+                            setId,
+                            setIndex,
+                          })}
                           onClick={() => {
                             if (model.activeSetId) return;
                             model.onSetClick?.(setId, groupId);
@@ -1060,13 +1170,25 @@ export function DeckSortableBoardView({
                           renderTopToolbar={model.renderTopToolbar}
                           renderBottomToolbar={model.renderBottomToolbar}
                           sourceLayout={isSourceBoard}
+                          shellClassName={
+                            model.resolveSetShellClassName?.({
+                              ...groupVisualContext,
+                              setId,
+                              setIndex,
+                            }) ?? undefined
+                          }
+                          shellStyle={model.resolveSetShellStyle?.({
+                            ...groupVisualContext,
+                            setId,
+                            setIndex,
+                          })}
                           onClick={() => {
                             if (model.activeSetId) return;
                             model.onSetClick?.(setId, groupId);
                           }}
                         />
                       ) : null}
-                    </div>
+                    </Fragment>
                   ));
                 })()}
                 {(itemsByGroup[groupId] ?? []).length === 0 && model.emptyMessage ? (
@@ -1737,6 +1859,12 @@ export function useDeckSortableBoardViewModel(
     renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
     renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
     isSetSelected?: DeckSortableBoardViewModel["isSetSelected"];
+    resolveGroupClassName?: DeckSortableBoardViewModel["resolveGroupClassName"];
+    resolveGroupStyle?: DeckSortableBoardViewModel["resolveGroupStyle"];
+    resolveGroupBodyClassName?: DeckSortableBoardViewModel["resolveGroupBodyClassName"];
+    resolveGroupBodyStyle?: DeckSortableBoardViewModel["resolveGroupBodyStyle"];
+    resolveSetShellClassName?: DeckSortableBoardViewModel["resolveSetShellClassName"];
+    resolveSetShellStyle?: DeckSortableBoardViewModel["resolveSetShellStyle"];
     emptyMessage?: string | null;
   },
 ): DeckSortableBoardViewModel {
@@ -1776,6 +1904,12 @@ export function useDeckSortableBoardViewModel(
     renderTopToolbar: options?.renderTopToolbar,
     renderBottomToolbar: options?.renderBottomToolbar,
     isSetSelected: options?.isSetSelected,
+    resolveGroupClassName: options?.resolveGroupClassName,
+    resolveGroupStyle: options?.resolveGroupStyle,
+    resolveGroupBodyClassName: options?.resolveGroupBodyClassName,
+    resolveGroupBodyStyle: options?.resolveGroupBodyStyle,
+    resolveSetShellClassName: options?.resolveSetShellClassName,
+    resolveSetShellStyle: options?.resolveSetShellStyle,
     renderSetContent:
       options?.renderSetContent ??
       (({ setId, label, cardId, state: renderState }) => (

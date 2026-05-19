@@ -133,7 +133,11 @@ function DeckDetailPanelContent({
             <DeckDetailSelectionProvider model={selectionModel}>
               <DeckSetEntriesProvider model={entriesModel}>
                 <div className={styles.deckRouteMiddle}>
-                  <DeckGroupsBoardController deckId={deckId} keySetId={keySetId} />
+                  <DeckGroupsBoardController
+                    deckId={deckId}
+                    keySetId={keySetId}
+                    enableFanLayout
+                  />
                   <DeckEntriesBoardController onOpenCardEditor={actions.onOpenCardEditor} />
                 </div>
               </DeckSetEntriesProvider>

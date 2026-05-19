@@ -123,7 +123,19 @@
   border: 1px solid var(--hq-border-strong);
   display: inline-flex;
   flex-direction: column;
-  transition: width 160ms ease, min-width 160ms ease;
+  transition: width 100ms ease-out, min-width 100ms ease-out;
+}
+
+.groupVisualCollapsed {
+  --deck-group-set-gap: 0px;
+}
+
+.groupVisualPartial {
+  --deck-group-set-gap: 0px;
+}
+
+.groupVisualExpanded {
+  --deck-group-set-gap: 0px;
 }
 
 .groupFillParent {
@@ -171,8 +183,16 @@
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  gap: 14px;
+  gap: var(--deck-group-set-gap, 14px);
   align-content: flex-start;
+}
+
+.groupBodyFanCanvas {
+  position: relative;
+  display: block;
+  min-height: 0;
+  padding: 0;
+  gap: 0;
 }
 
 .groupBodyFillParent {
@@ -212,11 +232,39 @@
   flex: 0 0 auto;
   padding-top: 16px;
   padding-bottom: 18px;
+  transition: transform 100ms ease-out, margin-right 100ms ease-out;
 }
 
 .setShellSource {
   padding-top: 6px;
   padding-bottom: 6px;
+}
+
+.setShellFanCollapsed {
+  position: absolute;
+  width: 112px;
+  height: calc(112px * 1056 / 756);
+  padding-top: 0;
+  padding-bottom: 0;
+  z-index: 1;
+}
+
+.setShellFanPartial {
+  position: absolute;
+  width: 112px;
+  height: calc(112px * 1056 / 756);
+  padding-top: 0;
+  padding-bottom: 0;
+  z-index: 2;
+}
+
+.setShellFanExpanded {
+  position: absolute;
+  width: 112px;
+  height: calc(112px * 1056 / 756);
+  padding-top: 0;
+  padding-bottom: 0;
+  z-index: 3;
 }
 
 .setCard {
@@ -230,11 +278,11 @@
   padding: 0;
   box-shadow: none;
   transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    opacity 180ms ease,
-    border-color 180ms ease,
-    filter 180ms ease;
+    transform 100ms ease-out,
+    box-shadow 100ms ease-out,
+    opacity 100ms ease-out,
+    border-color 100ms ease-out,
+    filter 100ms ease-out;
   cursor: grab;
 }
 
@@ -249,7 +297,7 @@
   z-index: 4;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 120ms ease;
+  transition: opacity 100ms ease-out;
 }
 
 .setCardBottomToolbar {
@@ -345,7 +393,7 @@
 .boardQtyAdjustButton {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 120ms ease, transform 120ms ease;
+  transition: opacity 100ms ease-out, transform 100ms ease-out;
 }
 
 .boardQuantityWrap .boardInfoPill {

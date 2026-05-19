@@ -73,7 +73,7 @@ jest.mock("@dnd-kit/helpers", () => ({
   }),
 }));
 
-function renderWorkspace() {
+function renderWorkspace(options?: { enableFanLayout?: boolean }) {
   const boardModels: Record<"groups" | "entries" | "source", BoardModel> = {
     groups: {
       boardId: "groups",
@@ -126,7 +126,11 @@ function renderWorkspace() {
   };
   render(
     <DeckMockDndProvider boardModels={boardModels}>
-      <DeckGroupsBoardController deckId={null} keySetId={null} />
+      <DeckGroupsBoardController
+        deckId={null}
+        keySetId={null}
+        enableFanLayout={options?.enableFanLayout}
+      />
       <DeckEntriesBoardController onOpenCardEditor={() => {}} />
       <DeckSourceBoardController />
     </DeckMockDndProvider>,
@@ -140,6 +144,20 @@ describe("DeckGroupsSection2 mock boards", () => {
     expect(screen.getByTestId("board-groups").className).not.toContain("boardFillParent");
     expect(screen.getByTestId("board-entries").className).toContain("boardFillParent");
     expect(screen.getByTestId("board-source").className).toContain("boardFillParent");
+  });
+
+  it("keeps default groups board visuals when fan layout is disabled", () => {
+    renderWorkspace({ enableFanLayout: false });
+    const group = screen.getByTestId("group-groups:A");
+    expect(group.className).not.toContain("groupVisualCollapsed");
+    expect(group.className).not.toContain("groupVisualPartial");
+    expect(group.className).not.toContain("groupVisualExpanded");
+  });
+
+  it("applies fan visual classes when fan layout is enabled", () => {
+    renderWorkspace({ enableFanLayout: true });
+    const group = screen.getByTestId("group-groups:A");
+    expect(group.className).toContain("groupVisualCollapsed");
   });
 
   it("renders groups board and supports + on hover", () => {
