@@ -65,7 +65,7 @@ export default function DeckGroupsBoardController({
     });
     return counts;
   }, [selection]);
-  const canSortGroups = (selection?.orderedGroups.length ?? 0) > 1;
+  const canSortGroups = false;
 
   const desiredModeByGroupRef = useRef<Record<string, GroupFanMode>>({});
   const rafByGroupRef = useRef<Record<string, number>>({});

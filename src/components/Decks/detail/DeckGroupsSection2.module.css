@@ -96,11 +96,20 @@
 }
 
 .createBoundary {
-  width: 18px;
-  min-width: 18px;
+  width: 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 12;
+  overflow: visible;
+  transition: width 140ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.createBoundaryVisible {
+  width: 18px;
+  min-width: 18px;
 }
 
 .createBoundaryButton {
@@ -113,6 +122,20 @@
   font-weight: 700;
   cursor: pointer;
   line-height: 1;
+  position: relative;
+  z-index: 13;
+  opacity: 0;
+  transform: scale(0.82);
+  pointer-events: none;
+  transition:
+    opacity 120ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 140ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.createBoundaryButtonVisible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
 }
 
 .group {
@@ -125,6 +148,11 @@
   flex-direction: column;
   position: relative;
   transition: width 100ms ease-out, min-width 100ms ease-out;
+}
+
+.groupDragGhost {
+  opacity: 0.45;
+  filter: saturate(0.85);
 }
 
 .groupDragHandle {
