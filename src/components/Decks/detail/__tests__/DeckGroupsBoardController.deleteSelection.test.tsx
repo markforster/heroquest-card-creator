@@ -99,14 +99,28 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
     expect(mockReloadStructure).toHaveBeenCalledWith(null, {
       suppressSingleSetAutoSelectGroupId: "group-1",
     });
-    expect(
-      capturedResolveGroupClassName?.({
-        boardId: "groups",
-        groupId: "group:group-1",
-        isHovered: false,
-        hasSelectedSet: false,
-        setCount: 2,
-      }),
-    ).toBe(styles.groupVisualExpanded);
+    const expandedClassName = capturedResolveGroupClassName?.({
+      boardId: "groups",
+      groupId: "group:group-1",
+      isHovered: false,
+      hasSelectedSet: false,
+      setCount: 2,
+    });
+    expect(expandedClassName).toContain(styles.groupVisualExpanded);
+    expect(expandedClassName).toContain(styles.groupActiveBorder);
+  });
+
+  it("applies ephemeral pulse class to transient empty groups", () => {
+    render(<DeckGroupsBoardController deckId="deck-1" keySetId={null} enableFanLayout />);
+
+    const ephemeralClassName = capturedResolveGroupClassName?.({
+      boardId: "groups",
+      groupId: "group:groups:N4",
+      isHovered: false,
+      hasSelectedSet: false,
+      setCount: 0,
+    });
+    expect(ephemeralClassName).toContain(styles.groupVisualExpanded);
+    expect(ephemeralClassName).toContain(styles.groupEphemeralPulse);
   });
 });

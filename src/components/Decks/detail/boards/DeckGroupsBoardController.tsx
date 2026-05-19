@@ -27,6 +27,7 @@ const ENABLE_FAN_HOVER_PREVIEW_OVERLAY = false;
 const EMPTY_GROUP_MIN_WIDTH_PX = 112 + 24;
 const EMPTY_GROUP_MIN_HEIGHT_PX = Math.ceil(FAN_CARD_HEIGHT) + 24;
 const normalizeGroupId = (groupId: string) => (groupId.startsWith("group:") ? groupId.slice(6) : groupId);
+const isTransientEphemeralGroupId = (groupId: string) => /^groups:N\d+$/.test(groupId);
 
 export default function DeckGroupsBoardController({
   deckId,
@@ -48,6 +49,7 @@ export default function DeckGroupsBoardController({
   const { registerDropHandler, activeSetId } = useDeckMockDnd();
   const selectedSetGroupId =
     selection?.selectedSetId ? selection.setById.get(selection.selectedSetId)?.groupId ?? null : null;
+  const selectedGroupId = selection?.selectedGroupId ?? null;
   const [persistedOpenGroupId, setPersistedOpenGroupId] = useState<string | null>(null);
   const [hoveredSetUiId, setHoveredSetUiId] = useState<string | null>(null);
   const [hoveredGroupUiId, setHoveredGroupUiId] = useState<string | null>(null);
@@ -451,9 +453,22 @@ export default function DeckGroupsBoardController({
       if (!enableFanLayout || boardId !== "groups") return null;
       const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
       noteDesiredMode(groupId, mode);
-      if (mode === "expanded") return styles.groupVisualExpanded;
-      if (mode === "partial") return styles.groupVisualPartial;
-      return styles.groupVisualCollapsed;
+      const normalizedGroupId = normalizeGroupId(groupId);
+      const modeClassName =
+        mode === "expanded"
+          ? styles.groupVisualExpanded
+          : mode === "partial"
+            ? styles.groupVisualPartial
+            : styles.groupVisualCollapsed;
+      const isActiveGroup = normalizedGroupId === (selectedSetGroupId ?? selectedGroupId);
+      const isEphemeralGroup = setCount === 0 && isTransientEphemeralGroupId(normalizedGroupId);
+      return [
+        modeClassName,
+        isActiveGroup ? styles.groupActiveBorder : "",
+        isEphemeralGroup ? styles.groupEphemeralPulse : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
     },
     resolveGroupStyle: ({ boardId, groupId, isHovered, hasSelectedSet, setCount }) => {
       if (!enableFanLayout || boardId !== "groups") return undefined;

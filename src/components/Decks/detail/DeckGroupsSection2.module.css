@@ -237,6 +237,49 @@
   --deck-group-set-gap: 0px;
 }
 
+.groupActiveBorder {
+  border-color: var(--deck-board-selected-ring, #5f86ff);
+}
+
+@keyframes groupEphemeralBorderPulseDark {
+  0% {
+    border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 74%, var(--hq-border-strong) 26%);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 36%, var(--hq-border-strong) 64%);
+  }
+  100% {
+    border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 74%, var(--hq-border-strong) 26%);
+  }
+}
+
+.groupEphemeralPulse {
+  animation: groupEphemeralBorderPulseDark 1.45s ease-in-out infinite;
+}
+
+@keyframes groupEphemeralBorderPulseLight {
+  0% {
+    border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 22%, #000 78%);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 76%, white 24%);
+  }
+  100% {
+    border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 22%, #000 78%);
+  }
+}
+
+:root[data-theme="light"] .groupEphemeralPulse {
+  animation-name: groupEphemeralBorderPulseLight;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .groupEphemeralPulse {
+    animation: none;
+    border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 70%, var(--hq-border-strong) 30%);
+  }
+}
+
 .groupFillParent {
   width: 100%;
   min-height: 0;
