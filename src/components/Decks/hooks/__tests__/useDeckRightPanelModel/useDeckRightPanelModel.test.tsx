@@ -23,6 +23,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
 describe("useDeckRightPanelModel", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    window.localStorage.clear();
     mockUseListCollections.mockReturnValue({ data: [] });
     mockUseListCards.mockReturnValue({ data: [] });
   });
@@ -68,5 +69,59 @@ describe("useDeckRightPanelModel", () => {
       result.current.setRightPanelFaceMode("front");
     });
     expect(result.current.rightPanelEmptyLabel).toBe("No cards found");
+  });
+
+  it("initializes collapsed when stored value is 0", () => {
+    window.localStorage.setItem("hqcc.decks.rightPanelVisible", "0");
+
+    const { result } = renderHook(() => useDeckRightPanelModel());
+
+    expect(result.current.isRightPanelVisible).toBe(false);
+  });
+
+  it("initializes expanded when stored value is 1", () => {
+    window.localStorage.setItem("hqcc.decks.rightPanelVisible", "1");
+
+    const { result } = renderHook(() => useDeckRightPanelModel());
+
+    expect(result.current.isRightPanelVisible).toBe(true);
+  });
+
+  it("falls back to expanded when stored value is invalid", () => {
+    window.localStorage.setItem("hqcc.decks.rightPanelVisible", "maybe");
+
+    const { result } = renderHook(() => useDeckRightPanelModel());
+
+    expect(result.current.isRightPanelVisible).toBe(true);
+  });
+
+  it("persists 0 and 1 when toggling panel visibility", () => {
+    const { result } = renderHook(() => useDeckRightPanelModel());
+
+    act(() => {
+      result.current.toggleRightPanel();
+    });
+    expect(window.localStorage.getItem("hqcc.decks.rightPanelVisible")).toBe("0");
+
+    act(() => {
+      result.current.toggleRightPanel();
+    });
+    expect(window.localStorage.getItem("hqcc.decks.rightPanelVisible")).toBe("1");
+  });
+
+  it("does not throw when localStorage read/write fails and defaults to expanded", () => {
+    const getItemSpy = jest.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("read failed");
+    });
+    const setItemSpy = jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("write failed");
+    });
+
+    expect(() => renderHook(() => useDeckRightPanelModel())).not.toThrow();
+    const { result } = renderHook(() => useDeckRightPanelModel());
+    expect(result.current.isRightPanelVisible).toBe(true);
+
+    getItemSpy.mockRestore();
+    setItemSpy.mockRestore();
   });
 });
