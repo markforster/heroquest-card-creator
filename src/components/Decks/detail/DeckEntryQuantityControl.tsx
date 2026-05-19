@@ -21,10 +21,11 @@ export default function DeckEntryQuantityControl({
   const canIncrement = count < max;
 
   return (
-    <div className={styles.deckEntryQuantityControl}>
+    <div className={styles.deckEntryQuantityControl} data-entry-qty-control="true">
       <button
         type="button"
         className={`${styles.deckEntryCountButton} ${styles.deckEntryCountButtonMinus}`}
+        data-entry-qty-button="true"
         aria-label="Decrease quantity"
         title="Decrease quantity"
         onClick={onDecrement}
@@ -42,6 +43,7 @@ export default function DeckEntryQuantityControl({
       <button
         type="button"
         className={`${styles.deckEntryCountButton} ${styles.deckEntryCountButtonPlus}`}
+        data-entry-qty-button="true"
         aria-label="Increase quantity"
         title="Increase quantity"
         onClick={onIncrement}

@@ -210,6 +210,18 @@
   pointer-events: auto;
 }
 
+.setCardBottomToolbar [data-entry-qty-control="true"] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1, 4px);
+}
+
+.setShell:hover .setCardBottomToolbar [data-entry-qty-button="true"],
+.setShell:focus-within .setCardBottomToolbar [data-entry-qty-button="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .toolbarIconButton {
   width: 18px;
   height: 18px;
