@@ -23,7 +23,6 @@ import {
 } from "./deckGroupFanMath";
 
 const FAN_SHELL_TOOLBAR_TOP_PX = 16;
-const ENABLE_FAN_HOVER_PREVIEW_OVERLAY = false;
 const EMPTY_GROUP_MIN_WIDTH_PX = 112 + 24;
 const EMPTY_GROUP_MIN_HEIGHT_PX = Math.ceil(FAN_CARD_HEIGHT) + 24;
 const normalizeGroupId = (groupId: string) => (groupId.startsWith("group:") ? groupId.slice(6) : groupId);
@@ -46,13 +45,11 @@ export default function DeckGroupsBoardController({
   } catch {
     selection = null;
   }
-  const { registerDropHandler, activeSetId } = useDeckMockDnd();
+  const { registerDropHandler } = useDeckMockDnd();
   const selectedSetGroupId =
     selection?.selectedSetId ? selection.setById.get(selection.selectedSetId)?.groupId ?? null : null;
   const selectedGroupId = selection?.selectedGroupId ?? null;
   const [persistedOpenGroupId, setPersistedOpenGroupId] = useState<string | null>(null);
-  const [hoveredSetUiId, setHoveredSetUiId] = useState<string | null>(null);
-  const [hoveredGroupUiId, setHoveredGroupUiId] = useState<string | null>(null);
   const resolveGroupMode = useCallback(
     (groupUiId: string, isHovered: boolean, hasSelectedSet: boolean, setCount: number): GroupFanMode => {
       const groupId = normalizeGroupId(groupUiId);
@@ -240,43 +237,6 @@ export default function DeckGroupsBoardController({
   }, [persistedOpenGroupId, selectedSetGroupId]);
 
   useEffect(() => {
-    if (!hoveredSetUiId || !hoveredGroupUiId) return;
-    const rawSetId = hoveredSetUiId.startsWith("set:") ? hoveredSetUiId.slice(4) : null;
-    const rawGroupId = hoveredGroupUiId.startsWith("group:") ? hoveredGroupUiId.slice(6) : null;
-    if (!rawSetId || !rawGroupId) {
-      setHoveredSetUiId(null);
-      setHoveredGroupUiId(null);
-      return;
-    }
-    const setRecord = selection?.setById.get(rawSetId);
-    if (!setRecord || setRecord.groupId !== rawGroupId) {
-      setHoveredSetUiId(null);
-      setHoveredGroupUiId(null);
-      return;
-    }
-    if (rawGroupId !== selectedSetGroupId) return;
-    const setCount = setCountByGroupId.get(rawGroupId) ?? 0;
-    const mode = resolveGroupMode(rawGroupId, false, true, setCount);
-    if (mode === "expanded") {
-      setHoveredSetUiId(null);
-      setHoveredGroupUiId(null);
-    }
-  }, [
-    hoveredGroupUiId,
-    hoveredSetUiId,
-    resolveGroupMode,
-    selectedSetGroupId,
-    selection,
-    setCountByGroupId,
-  ]);
-
-  useEffect(() => {
-    if (!activeSetId) return;
-    setHoveredSetUiId(null);
-    setHoveredGroupUiId(null);
-  }, [activeSetId]);
-
-  useEffect(() => {
     const selectedSetId = selection?.selectedSetId ?? null;
     if (!selectedSetId) {
       lastRevealSetIdRef.current = null;
@@ -408,12 +368,13 @@ export default function DeckGroupsBoardController({
         </>
       );
     },
-    renderBottomToolbar: ({ setId, isDragging, isGhost }) => {
+    renderBottomToolbar: ({ boardId, setId, isDragging, isGhost }) => {
       if (isDragging || isGhost) return null;
       if (!setId.startsWith("set:")) return null;
       const resolvedSetId = setId.slice(4);
       const isKeySet = keySetId === resolvedSetId;
       if (!isKeySet) return null;
+      if (enableFanLayout && boardId === "groups") return null;
       return (
         <BoardInfoPill
           icon={<Gem size={11} aria-hidden="true" />}
@@ -438,16 +399,6 @@ export default function DeckGroupsBoardController({
       setPersistedOpenGroupId(groupId);
       selection.selectGroup(groupId);
       selection.selectSet(setRecord);
-    },
-    onSetHoverChange: ({ boardId, groupId, setId, isHovered }) => {
-      if (boardId !== "groups") return;
-      if (!isHovered) {
-        setHoveredSetUiId((current) => (current === setId ? null : current));
-        setHoveredGroupUiId((current) => (current === groupId ? null : current));
-        return;
-      }
-      setHoveredSetUiId(setId);
-      setHoveredGroupUiId(groupId);
     },
     resolveGroupClassName: ({ boardId, groupId, isHovered, hasSelectedSet, setCount }) => {
       if (!enableFanLayout || boardId !== "groups") return null;
@@ -513,9 +464,10 @@ export default function DeckGroupsBoardController({
         return `${styles.setShellFanExpanded} ${styles.setShellEmptySlot}`;
       }
       const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
-      if (mode === "expanded") return styles.setShellFanExpanded;
-      if (mode === "partial") return styles.setShellFanPartial;
-      return styles.setShellFanCollapsed;
+      const shellModeClassName =
+        mode === "expanded" ? styles.setShellFanExpanded : mode === "partial" ? styles.setShellFanPartial : styles.setShellFanCollapsed;
+      const isCollapsedKeySet = mode === "collapsed" && keySetId != null && setId === `set:${keySetId}`;
+      return [shellModeClassName, isCollapsedKeySet ? styles.keyCardSetShellCollapsed : ""].filter(Boolean).join(" ");
     },
     resolveSetShellStyle: ({ boardId, groupId, isHovered, hasSelectedSet, setCount, setIndex, setId }) => {
       if (!enableFanLayout || boardId !== "groups") return undefined;
@@ -533,35 +485,40 @@ export default function DeckGroupsBoardController({
       return resolveFanShellPresentation(mode, frame, setIndex) ?? undefined;
     },
     renderGroupOverlay: ({ boardId, groupId, isHovered, hasSelectedSet, setCount, setIds }) => {
-      if (!ENABLE_FAN_HOVER_PREVIEW_OVERLAY) return null;
       if (!enableFanLayout || boardId !== "groups") return null;
-      if (groupId !== hoveredGroupUiId || !hoveredSetUiId) return null;
+      if (!keySetId) return null;
       if (setIds.length <= 0) return null;
-      const setIndex = setIds.indexOf(hoveredSetUiId);
+      const keySetUiId = `set:${keySetId}`;
+      const setIndex = setIds.indexOf(keySetUiId);
       if (setIndex < 0) return null;
       const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
-      if (mode === "expanded") return null;
       const frame = resolveAnimatedFrame(groupId, mode, setCount);
       const shellStyle = resolveFanShellPresentation(mode, frame, setIndex);
       if (!shellStyle) return null;
-      const rawSetId = hoveredSetUiId.startsWith("set:") ? hoveredSetUiId.slice(4) : null;
-      const setRecord = rawSetId ? selection?.setById.get(rawSetId) : null;
-      const cardId = setRecord?.backFaceId;
+      const rotateDeg = frame.cards[setIndex]?.rotateDeg ?? 0;
       return (
         <div
-          className={styles.setHoverPreviewOverlay}
+          className={styles.keyCardOverlayAnchor}
+          data-testid={`key-card-overlay-${groupId}`}
           style={{
-            ...shellStyle,
+            left: shellStyle.left,
+            top: shellStyle.top,
+            transform: shellStyle.transform,
+            transformOrigin: shellStyle.transformOrigin,
             zIndex: Math.max(20, shellStyle.zIndex + 10),
           }}
         >
           <div className={styles.setShell}>
-            <div className={styles.setCard}>
-              <DefaultSetThumbnailContent
-                setId={hoveredSetUiId}
-                cardId={cardId}
-                label={undefined}
-                state="idle"
+            <div className={styles.keyCardOverlayShellSpacer} aria-hidden="true" />
+            <div
+              className={styles.keyCardOverlayPillAnchor}
+              style={{ transform: `translate(-50%, 0) rotate(${-rotateDeg}deg)` }}
+            >
+              <BoardInfoPill
+                icon={<Gem size={11} aria-hidden="true" />}
+                label="Key Card"
+                bgColor="color-mix(in srgb, #2a73ff 35%, var(--hq-surface-900) 65%)"
+                borderColor="color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%)"
               />
             </div>
           </div>

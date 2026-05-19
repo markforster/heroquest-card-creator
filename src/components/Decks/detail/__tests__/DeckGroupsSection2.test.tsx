@@ -73,7 +73,11 @@ jest.mock("@dnd-kit/helpers", () => ({
   }),
 }));
 
-function renderWorkspace(options?: { enableFanLayout?: boolean; boardModelsOverride?: Partial<Record<"groups" | "entries" | "source", Partial<BoardModel>>> }) {
+function renderWorkspace(options?: {
+  enableFanLayout?: boolean;
+  keySetId?: string | null;
+  boardModelsOverride?: Partial<Record<"groups" | "entries" | "source", Partial<BoardModel>>>;
+}) {
   const boardModels: Record<"groups" | "entries" | "source", BoardModel> = {
     groups: {
       boardId: "groups",
@@ -134,11 +138,11 @@ function renderWorkspace(options?: { enableFanLayout?: boolean; boardModelsOverr
       };
     });
   }
-  render(
+  return render(
     <DeckMockDndProvider boardModels={boardModels}>
       <DeckGroupsBoardController
         deckId={null}
-        keySetId={null}
+        keySetId={options?.keySetId ?? null}
         enableFanLayout={options?.enableFanLayout}
       />
       <DeckEntriesBoardController onOpenCardEditor={() => {}} />
@@ -168,6 +172,40 @@ describe("DeckGroupsSection2 mock boards", () => {
     renderWorkspace({ enableFanLayout: true });
     const group = screen.getByTestId("group-groups:A");
     expect(group.className).toContain("groupVisualCollapsed");
+  });
+
+  it("uses key-card overlay in collapsed fan groups and suppresses inline duplicate", () => {
+    renderWorkspace({ enableFanLayout: true, keySetId: "g-A2" });
+    expect(screen.getByTestId("key-card-overlay-groups:A")).toBeInTheDocument();
+    expect(screen.getByTestId("set-set:g-A2").className).toContain("keyCardSetShellCollapsed");
+    expect(screen.getByText("Key Card")).toBeInTheDocument();
+    expect(screen.getAllByText("Key Card")).toHaveLength(1);
+  });
+
+  it("keeps overlay key-card pill in expanded groups (single owner)", () => {
+    renderWorkspace({
+      enableFanLayout: true,
+      keySetId: "g-C1",
+      boardModelsOverride: {
+        groups: {
+          groupIds: ["groups:C"],
+          itemsByGroup: { "groups:C": ["g-C1"] },
+          groupLabelsById: { "groups:C": "C" },
+          setLabelsById: { "g-C1": "C1" },
+          setCardIdById: { "g-C1": "g-C1" },
+        },
+      },
+    });
+    expect(screen.getByTestId("key-card-overlay-groups:C")).toBeInTheDocument();
+    expect(screen.getByTestId("set-set:g-C1").className).not.toContain("keyCardSetShellCollapsed");
+    expect(screen.getAllByText("Key Card")).toHaveLength(1);
+  });
+
+  it("keeps existing inline key-card behavior when fan layout is disabled", () => {
+    renderWorkspace({ enableFanLayout: false, keySetId: "g-A2" });
+    expect(screen.queryByTestId("key-card-overlay-groups:A")).not.toBeInTheDocument();
+    expect(screen.getByTestId("set-set:g-A2").className).not.toContain("keyCardSetShellCollapsed");
+    expect(screen.getAllByText("Key Card")).toHaveLength(1);
   });
 
   it("renders groups board create rail on hover with split icon", () => {

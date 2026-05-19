@@ -512,6 +512,34 @@
   transform: translate(-50%, 0);
 }
 
+.keyCardOverlayAnchor {
+  position: absolute;
+  pointer-events: none;
+}
+
+.keyCardOverlayShellSpacer {
+  width: 112px;
+  height: calc(112px * 1056 / 756);
+}
+
+.keyCardSetShellCollapsed {
+}
+
+.keyCardSetShellCollapsed .setCard {
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%);
+}
+
+.keyCardOverlayPillAnchor {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
 .toolbarIconButton {
   width: 26px;
   height: 26px;
@@ -743,6 +771,18 @@
   box-shadow:
     0 0 0 3px var(--deck-board-selected-ring),
     0 0 6px var(--deck-board-selected-glow);
+}
+
+.setCardSelected:hover .setThumb,
+.setCardSelected:focus-visible .setThumb {
+  box-shadow:
+    0 0 0 3px var(--deck-board-selected-ring),
+    0 0 6px var(--deck-board-selected-glow);
+}
+
+.setCardSelected:hover .setThumb img,
+.setCardSelected:focus-visible .setThumb img {
+  filter: none;
 }
 
 .boardDropActive {
