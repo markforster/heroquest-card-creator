@@ -143,11 +143,11 @@
 
 .groupBody {
   min-height: 120px;
-  padding: 7px;
+  padding: 12px;
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  gap: 7px;
+  gap: 14px;
   align-content: flex-start;
 }
 
@@ -163,8 +163,8 @@
   position: relative;
   border-radius: 6px;
   flex: 0 0 auto;
-  padding-top: 12px;
-  padding-bottom: 14px;
+  padding-top: 16px;
+  padding-bottom: 18px;
 }
 
 .setCard {
@@ -190,48 +190,44 @@
   position: absolute;
   top: 0;
   left: 50%;
-  transform: translate(-50%, -40%);
+  transform: translate(-50%, -50%);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  z-index: 3;
-  pointer-events: auto;
+  gap: 6px;
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
 }
 
 .setCardBottomToolbar {
   position: absolute;
   bottom: 0;
   left: 50%;
-  transform: translate(-50%, 45%);
+  transform: translate(-50%, 50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  z-index: 3;
+  z-index: 4;
   pointer-events: auto;
 }
 
-.setCardBottomToolbar [data-entry-qty-control="true"] {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1, 4px);
-}
-
-.setShell:hover .setCardBottomToolbar [data-entry-qty-button="true"],
-.setShell:focus-within .setCardBottomToolbar [data-entry-qty-button="true"] {
+.setShell:hover .setCardTopToolbar,
+.setShell:focus-within .setCardTopToolbar {
   opacity: 1;
   pointer-events: auto;
 }
 
 .toolbarIconButton {
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   border: 1px solid var(--hq-border-strong);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
-  font-size: 11px;
+  font-size: 12px;
   padding: 0;
   cursor: pointer;
   background: var(--hq-surface-900);
@@ -241,6 +237,7 @@
 
 .toolbarIconButtonEdit {
   color: var(--hq-text-primary);
+  border-color: var(--hq-border-strong);
 }
 
 .toolbarIconButtonKey {
@@ -257,19 +254,72 @@
   filter: brightness(1.06);
 }
 
-.keySetPill {
+.boardInfoPill {
+  height: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 1px 7px;
+  gap: 4px;
+  padding: 0 9px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%);
-  background: color-mix(in srgb, #2a73ff 16%, transparent);
-  color: #2a73ff;
-  font-size: 10px;
+  border: 1px solid var(--board-pill-border, var(--hq-border-strong));
+  background: var(--board-pill-bg, var(--hq-surface-900));
+  color: var(--hq-text-primary);
+  font-size: 12px;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1;
   white-space: nowrap;
+  box-shadow: var(--shadow-soft);
+}
+
+.boardInfoPillIcon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.boardInfoPillLabel {
+  display: inline-flex;
+  align-items: center;
+  min-width: 8px;
+  justify-content: center;
+}
+
+.boardQuantityWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.boardQtyAdjustButton {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.setShell:hover .boardQtyAdjustButton,
+.setShell:focus-within .boardQtyAdjustButton {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.boardQtyMinus {
+  background: var(--hq-stat-minus);
+  color: var(--hq-text-primary);
+}
+
+.boardQtyPlus {
+  background: var(--hq-stat-plus);
+  color: var(--hq-text-primary);
+}
+
+.boardQtyMinus:hover:enabled {
+  background: var(--hq-stat-minus-hover);
+  transform: scale(1.05);
+}
+
+.boardQtyPlus:hover:enabled {
+  background: var(--hq-stat-plus-hover);
+  transform: scale(1.05);
 }
 
 .setCard:hover {

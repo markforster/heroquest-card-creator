@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
+import { Gem, Trash2 } from "lucide-react";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useI18n } from "@/i18n/I18nProvider";
 import styles from "../DeckGroupsSection2.module.css";
 import {
   BOARD_ROUTING_META_BY_ID,
+  BoardInfoPill,
   DefaultSetThumbnailContent,
   DeckSortableBoardView,
   type DeckSortableBoardViewModel,
@@ -68,7 +70,7 @@ export default function DeckGroupsBoardController({
               await selection?.reloadStructure(selection.selectedSetId);
             }}
           >
-            ♦
+            <Gem size={12} aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -86,7 +88,7 @@ export default function DeckGroupsBoardController({
               }
             }}
           >
-            🗑
+            <Trash2 size={12} aria-hidden="true" />
           </button>
         </>
       );
@@ -97,7 +99,14 @@ export default function DeckGroupsBoardController({
       const resolvedSetId = setId.slice(4);
       const isKeySet = keySetId === resolvedSetId;
       if (!isKeySet) return null;
-      return <span className={styles.keySetPill}>Key Card</span>;
+      return (
+        <BoardInfoPill
+          icon={<Gem size={11} aria-hidden="true" />}
+          label="Key Card"
+          bgColor="color-mix(in srgb, #2a73ff 16%, transparent)"
+          borderColor="color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%)"
+        />
+      );
     },
     isSetSelected: (setUiId) => {
       if (!selection?.selectedSetId) return false;

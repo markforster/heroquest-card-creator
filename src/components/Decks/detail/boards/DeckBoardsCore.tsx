@@ -11,7 +11,16 @@ import {
   useDroppable,
 } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 
 import CardThumbnail from "@/components/common/CardThumbnail";
@@ -35,6 +44,13 @@ type SetToolbarContext = {
   isDragging: boolean;
   isGhost: boolean;
   isDropTarget: boolean;
+};
+
+type BoardInfoPillProps = {
+  icon?: ReactNode;
+  label: ReactNode;
+  bgColor?: string;
+  borderColor?: string;
 };
 
 type BoardConfig = {
@@ -648,6 +664,28 @@ export function DefaultSetThumbnailContent({
         fallback={<div className={styles.setThumbFallback} />}
       />
     </div>
+  );
+}
+
+export function BoardInfoPill({
+  icon,
+  label,
+  bgColor,
+  borderColor,
+}: BoardInfoPillProps) {
+  return (
+    <span
+      className={styles.boardInfoPill}
+      style={
+        {
+          "--board-pill-bg": bgColor ?? "var(--hq-surface-900)",
+          "--board-pill-border": borderColor ?? "var(--hq-border-strong)",
+        } as CSSProperties
+      }
+    >
+      {icon ? <span className={styles.boardInfoPillIcon}>{icon}</span> : null}
+      <span className={styles.boardInfoPillLabel}>{label}</span>
+    </span>
   );
 }
 

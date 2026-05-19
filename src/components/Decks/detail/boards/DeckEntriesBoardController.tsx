@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Minus, Pencil, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "@/api/client";
-import DeckEntryQuantityControl from "@/components/Decks/detail/DeckEntryQuantityControl";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
@@ -11,6 +11,7 @@ import { isPairDeleteConfirmRequiredError } from "@/lib/decks-errors";
 import styles from "../DeckGroupsSection2.module.css";
 import {
   BOARD_ROUTING_META_BY_ID,
+  BoardInfoPill,
   DefaultSetThumbnailContent,
   DeckSortableBoardView,
   type DeckSortableBoardViewModel,
@@ -91,7 +92,7 @@ export default function DeckEntriesBoardController({
               onOpenCardEditor(cardId);
             }}
           >
-            ✎
+            <Pencil size={12} aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -118,7 +119,7 @@ export default function DeckEntriesBoardController({
               });
             }}
           >
-            🗑
+            <Trash2 size={12} aria-hidden="true" />
           </button>
         </>
       );
@@ -128,15 +129,40 @@ export default function DeckEntriesBoardController({
       const entryId = setId.slice(6);
       const count = countByEntryId.get(entryId) ?? 1;
       return (
-        <div
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <DeckEntryQuantityControl
-            count={count}
-            onDecrement={() => void entries?.updateEntryCount(entryId, count - 1, entries?.setId)}
-            onIncrement={() => void entries?.updateEntryCount(entryId, count + 1, entries?.setId)}
+        <div className={styles.boardQuantityWrap}>
+          <button
+            type="button"
+            className={[styles.toolbarIconButton, styles.boardQtyAdjustButton, styles.boardQtyMinus].join(" ")}
+            aria-label="Decrease quantity"
+            title="Decrease quantity"
+            disabled={count <= 1}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              void entries?.updateEntryCount(entryId, count - 1, entries?.setId);
+            }}
+          >
+            <Minus size={12} aria-hidden="true" />
+          </button>
+          <BoardInfoPill
+            label={count}
+            bgColor="var(--hq-black)"
+            borderColor="var(--hq-black)"
           />
+          <button
+            type="button"
+            className={[styles.toolbarIconButton, styles.boardQtyAdjustButton, styles.boardQtyPlus].join(" ")}
+            aria-label="Increase quantity"
+            title="Increase quantity"
+            disabled={count >= 12}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              void entries?.updateEntryCount(entryId, count + 1, entries?.setId);
+            }}
+          >
+            <Plus size={12} aria-hidden="true" />
+          </button>
         </div>
       );
     },
