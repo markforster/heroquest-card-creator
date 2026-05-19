@@ -1,0 +1,112 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
+
+import DeckGroupsBoardController from "@/components/Decks/detail/boards/DeckGroupsBoardController";
+import styles from "@/components/Decks/detail/DeckGroupsSection2.module.css";
+
+const mockDeleteSet = jest.fn(async () => {});
+const mockReloadStructure = jest.fn(async () => {});
+
+let capturedRenderTopToolbar: ((args: { setId: string; isDragging: boolean; isGhost: boolean }) => ReactNode) | null =
+  null;
+let capturedResolveGroupClassName:
+  | ((args: {
+      boardId: "groups" | "entries" | "source";
+      groupId: string;
+      isHovered: boolean;
+      hasSelectedSet: boolean;
+      setCount: number;
+    }) => string | null)
+  | null = null;
+
+jest.mock("@/components/Decks/hooks/useDeckMutations", () => ({
+  useDeckMutations: () => ({
+    deleteSet: mockDeleteSet,
+  }),
+}));
+
+jest.mock("@/i18n/I18nProvider", () => ({
+  useI18n: () => ({ t: (key: string) => key }),
+}));
+
+jest.mock("@/components/Decks/detail/context/DeckDetailSelectionContext", () => ({
+  useDeckDetailSelection: () => ({
+    selectedSetId: "set-2",
+    selectedGroupId: "group-1",
+    orderedGroups: [{ id: "group-1", title: "Group 1", sortIndex: 0 }],
+    sets: [
+      { id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 },
+      { id: "set-2", groupId: "group-1", backFaceId: "back-2", sortIndex: 1 },
+      { id: "set-3", groupId: "group-2", backFaceId: "back-3", sortIndex: 0 },
+    ],
+    setById: new Map([
+      ["set-1", { id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 }],
+      ["set-2", { id: "set-2", groupId: "group-1", backFaceId: "back-2", sortIndex: 1 }],
+      ["set-3", { id: "set-3", groupId: "group-2", backFaceId: "back-3", sortIndex: 0 }],
+    ]),
+    selectGroup: jest.fn(),
+    selectSet: jest.fn(),
+    clearSelection: jest.fn(),
+    reloadStructure: mockReloadStructure,
+  }),
+}));
+
+jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
+  BOARD_ROUTING_META_BY_ID: { groups: {} },
+  BoardInfoPill: () => null,
+  DefaultSetThumbnailContent: () => null,
+  DeckSortableBoardView: () => <div data-testid="board" />,
+  useDeckMockDnd: () => ({
+    registerDropHandler: () => () => undefined,
+    activeSetId: null,
+  }),
+  useDeckSortableBoardViewModel: (_boardId: string, _meta: unknown, options: unknown) => {
+    const typedOptions = options as {
+      renderTopToolbar: typeof capturedRenderTopToolbar;
+      resolveGroupClassName: typeof capturedResolveGroupClassName;
+    };
+    capturedRenderTopToolbar = typedOptions.renderTopToolbar;
+    capturedResolveGroupClassName = typedOptions.resolveGroupClassName;
+    return {};
+  },
+}));
+
+describe("DeckGroupsBoardController delete selected set behavior", () => {
+  beforeEach(() => {
+    capturedRenderTopToolbar = null;
+    capturedResolveGroupClassName = null;
+    mockDeleteSet.mockClear();
+    mockReloadStructure.mockClear();
+  });
+
+  it("reloads without selecting another set when deleting selected set", async () => {
+    render(<DeckGroupsBoardController deckId="deck-1" keySetId={null} enableFanLayout />);
+
+    const toolbar = capturedRenderTopToolbar?.({
+      setId: "set:set-2",
+      isDragging: false,
+      isGhost: false,
+    });
+
+    render(<>{toolbar}</>);
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete set" }));
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockDeleteSet).toHaveBeenCalledWith("set-2");
+    expect(mockReloadStructure).toHaveBeenCalledWith(null, {
+      suppressSingleSetAutoSelectGroupId: "group-1",
+    });
+    expect(
+      capturedResolveGroupClassName?.({
+        boardId: "groups",
+        groupId: "group:group-1",
+        isHovered: false,
+        hasSelectedSet: false,
+        setCount: 2,
+      }),
+    ).toBe(styles.groupVisualExpanded);
+  });
+});

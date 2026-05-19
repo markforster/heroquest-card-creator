@@ -21,13 +21,17 @@ export type DeckDetailSelectionModel = {
   clearSelection: () => void;
   selectGroup: (groupId: string) => void;
   selectSet: (set: DeckSetRecord) => void;
-  reloadStructure: (preferredSetId?: string | null) => Promise<void>;
+  reloadStructure: (
+    preferredSetId?: string | null,
+    options?: { suppressSingleSetAutoSelectGroupId?: string | null },
+  ) => Promise<void>;
   applyOptimisticSets: (nextSets: DeckSetRecord[]) => () => void;
 };
 
 export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSelectionModel {
   const queryClient = useQueryClient();
   const preferredSetIdRef = useRef<string | null>(null);
+  const suppressSingleSetAutoSelectGroupIdRef = useRef<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
@@ -105,9 +109,16 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
           .sort((a, b) => a.sortIndex - b.sortIndex)
       : [];
 
+    const suppressSingleSetAutoSelect = Boolean(
+      nextGroupId && suppressSingleSetAutoSelectGroupIdRef.current === nextGroupId,
+    );
+    if (suppressSingleSetAutoSelectGroupIdRef.current) {
+      suppressSingleSetAutoSelectGroupIdRef.current = null;
+    }
+
     const nextSetId =
       preferredSet?.id ??
-      (nextGroupSets.length === 1
+      (!suppressSingleSetAutoSelect && nextGroupSets.length === 1
         ? (nextGroupSets[0]?.id ?? null)
         : selectedSetId &&
             nextGroupId &&
@@ -149,8 +160,12 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
   }, []);
 
   const reloadStructure = useCallback(
-    async (preferredSetId?: string | null) => {
+    async (
+      preferredSetId?: string | null,
+      options?: { suppressSingleSetAutoSelectGroupId?: string | null },
+    ) => {
       preferredSetIdRef.current = preferredSetId ?? null;
+      suppressSingleSetAutoSelectGroupIdRef.current = options?.suppressSingleSetAutoSelectGroupId ?? null;
       await queryClient.invalidateQueries({
         predicate: deckStructureQueryPredicate,
       });

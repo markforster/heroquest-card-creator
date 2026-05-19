@@ -26,6 +26,7 @@ const FAN_SHELL_TOOLBAR_TOP_PX = 16;
 const ENABLE_FAN_HOVER_PREVIEW_OVERLAY = false;
 const EMPTY_GROUP_MIN_WIDTH_PX = 112 + 24;
 const EMPTY_GROUP_MIN_HEIGHT_PX = Math.ceil(FAN_CARD_HEIGHT) + 24;
+const normalizeGroupId = (groupId: string) => (groupId.startsWith("group:") ? groupId.slice(6) : groupId);
 
 export default function DeckGroupsBoardController({
   deckId,
@@ -51,7 +52,8 @@ export default function DeckGroupsBoardController({
   const [hoveredSetUiId, setHoveredSetUiId] = useState<string | null>(null);
   const [hoveredGroupUiId, setHoveredGroupUiId] = useState<string | null>(null);
   const resolveGroupMode = useCallback(
-    (groupId: string, isHovered: boolean, hasSelectedSet: boolean, setCount: number): GroupFanMode => {
+    (groupUiId: string, isHovered: boolean, hasSelectedSet: boolean, setCount: number): GroupFanMode => {
+      const groupId = normalizeGroupId(groupUiId);
       if (setCount <= 1) return "expanded";
       if (hasSelectedSet || selectedSetGroupId === groupId) return "expanded";
       if (persistedOpenGroupId === groupId) return "expanded";
@@ -391,10 +393,12 @@ export default function DeckGroupsBoardController({
                 setPersistedOpenGroupId(deletedSetGroupId);
               }
               await mutations.deleteSet(resolvedSetId);
-              await selection?.reloadStructure(selection?.selectedSetId);
-              if (wasSelected) {
-                selection?.clearSelection();
-              }
+              await selection?.reloadStructure(
+                wasSelected ? null : selection?.selectedSetId,
+                wasSelected && deletedSetGroupId
+                  ? { suppressSingleSetAutoSelectGroupId: deletedSetGroupId }
+                  : undefined,
+              );
             }}
           >
             <Trash2 size={12} aria-hidden="true" />
