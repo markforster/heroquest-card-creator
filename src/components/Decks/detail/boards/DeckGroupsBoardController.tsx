@@ -42,13 +42,15 @@ export default function DeckGroupsBoardController({
   const { registerDropHandler } = useDeckMockDnd();
   const selectedSetGroupId =
     selection?.selectedSetId ? selection.setById.get(selection.selectedSetId)?.groupId ?? null : null;
+  const [persistedOpenGroupId, setPersistedOpenGroupId] = useState<string | null>(null);
   const resolveGroupMode = useCallback(
     (groupId: string, isHovered: boolean, hasSelectedSet: boolean): GroupFanMode => {
       if (hasSelectedSet || selectedSetGroupId === groupId) return "expanded";
+      if (persistedOpenGroupId === groupId) return "expanded";
       if (isHovered) return "partial";
       return "collapsed";
     },
-    [selectedSetGroupId],
+    [persistedOpenGroupId, selectedSetGroupId],
   );
   const isGroupExpanded = useCallback(
     (groupId: string) => (selection?.setById.get(selection.selectedSetId ?? "")?.groupId ?? null) === groupId,
@@ -192,6 +194,18 @@ export default function DeckGroupsBoardController({
   }, [enableFanLayout, selection]);
 
   useEffect(() => {
+    if (!persistedOpenGroupId || !selection) return;
+    const stillExists = selection.orderedGroups.some((group) => group.id === persistedOpenGroupId);
+    if (!stillExists) setPersistedOpenGroupId(null);
+  }, [persistedOpenGroupId, selection]);
+
+  useEffect(() => {
+    if (!selectedSetGroupId) return;
+    if (persistedOpenGroupId === selectedSetGroupId) return;
+    setPersistedOpenGroupId(selectedSetGroupId);
+  }, [persistedOpenGroupId, selectedSetGroupId]);
+
+  useEffect(() => {
     const selectedSetId = selection?.selectedSetId ?? null;
     if (!selectedSetId) {
       lastRevealSetIdRef.current = null;
@@ -296,6 +310,10 @@ export default function DeckGroupsBoardController({
             onClick={async (event) => {
               stopPropagation(event);
               const wasSelected = selection?.selectedSetId === resolvedSetId;
+              const deletedSetGroupId = selection?.setById.get(resolvedSetId)?.groupId ?? null;
+              if (wasSelected && deletedSetGroupId) {
+                setPersistedOpenGroupId(deletedSetGroupId);
+              }
               await mutations.deleteSet(resolvedSetId);
               await selection?.reloadStructure(selection?.selectedSetId);
               if (wasSelected) {
@@ -335,6 +353,7 @@ export default function DeckGroupsBoardController({
       const groupId = groupUiId.slice(6);
       const setRecord = selection.setById.get(setId);
       if (!setRecord) return;
+      setPersistedOpenGroupId(groupId);
       selection.selectGroup(groupId);
       selection.selectSet(setRecord);
     },
