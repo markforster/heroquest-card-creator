@@ -34,6 +34,12 @@
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
+.boardSetDragActive .setShell,
+.boardSetDragActive .setCard,
+.boardSetDragActive .setThumb {
+  pointer-events: none;
+}
+
 .boardFillParent {
   width: 100%;
   height: 100%;

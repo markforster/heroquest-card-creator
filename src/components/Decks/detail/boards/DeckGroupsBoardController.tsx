@@ -24,6 +24,8 @@ import {
 
 const FAN_SHELL_TOOLBAR_TOP_PX = 16;
 const ENABLE_FAN_HOVER_PREVIEW_OVERLAY = false;
+const EMPTY_GROUP_MIN_WIDTH_PX = 112 + 24;
+const EMPTY_GROUP_MIN_HEIGHT_PX = Math.ceil(FAN_CARD_HEIGHT) + 24;
 
 export default function DeckGroupsBoardController({
   deckId,
@@ -451,9 +453,19 @@ export default function DeckGroupsBoardController({
       const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
       noteDesiredMode(groupId, mode);
       const frame = resolveAnimatedFrame(groupId, mode, setCount);
+      const minWidth = Math.max(
+        Math.ceil(frame.requiredWidthPx),
+        setCount === 0 ? EMPTY_GROUP_MIN_WIDTH_PX : 0,
+      );
+      const minHeight = Math.max(
+        Math.ceil(frame.requiredHeightPx),
+        sharedFanMinHeightPx ?? 0,
+        setCount === 0 ? EMPTY_GROUP_MIN_HEIGHT_PX : 0,
+      );
       return {
-        minWidth: `${Math.ceil(frame.requiredWidthPx)}px`,
-        minHeight: `${Math.max(Math.ceil(frame.requiredHeightPx), sharedFanMinHeightPx ?? 0)}px`,
+        minWidth: `${minWidth}px`,
+        minHeight: `${minHeight}px`,
+        zIndex: setCount === 0 ? 9 : undefined,
       };
     },
     resolveGroupBodyClassName: ({ boardId }) =>
@@ -464,9 +476,13 @@ export default function DeckGroupsBoardController({
       noteDesiredMode(groupId, mode);
       const frame = resolveAnimatedFrame(groupId, mode, setCount);
       const effectiveBodyHeight = Math.max(Math.ceil(frame.requiredHeightPx), sharedFanMinHeightPx ?? 0);
+      const effectiveBodyWidth = Math.max(
+        Math.ceil(frame.requiredWidthPx),
+        setCount === 0 ? EMPTY_GROUP_MIN_WIDTH_PX : 0,
+      );
       return {
-        width: `${Math.ceil(frame.requiredWidthPx)}px`,
-        height: `${effectiveBodyHeight}px`,
+        width: `${effectiveBodyWidth}px`,
+        height: `${Math.max(effectiveBodyHeight, setCount === 0 ? EMPTY_GROUP_MIN_HEIGHT_PX : 0)}px`,
       };
     },
     resolveSetShellClassName: ({ boardId, groupId, isHovered, hasSelectedSet, setCount }) => {

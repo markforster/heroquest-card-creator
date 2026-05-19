@@ -1111,6 +1111,7 @@ export function DeckSortableBoardView({
   return (
     <section
       className={[styles.board, useFillParent ? styles.boardFillParent : ""]
+        .concat(activeSetId ? [" ", styles.boardSetDragActive] : [])
         .concat(isSourceBoard ? [" ", styles.boardSource] : [])
         .concat(model.showDropAffordance ? [" ", styles.boardDropActive] : [])
         .concat(
@@ -1677,11 +1678,21 @@ export function DeckMockDndProvider({
       findContainerByItemId(state, sourceSetId) ||
       "";
     const targetId = String(event.operation.target?.id ?? "");
-    const targetGroupId =
+    let targetGroupId =
       event.operation.target?.type === "group"
         ? targetId
         : extractGroupIdFromOperationEntity(event.operation.target) ||
           (targetId ? findContainerByItemId(state, targetId) || "" : "");
+
+    // Keep temp-group targeting stable for source-template drags even if pointer briefly misses.
+    if (
+      sourceItem?.kind === "source-template" &&
+      !targetGroupId &&
+      ephemeralEmptyGroupId &&
+      state.groupToBoard[ephemeralEmptyGroupId] === "groups"
+    ) {
+      targetGroupId = ephemeralEmptyGroupId;
+    }
 
     if (!sourceGroupId || !targetGroupId) {
       setActiveTargetBoardId(null);
@@ -1852,6 +1863,8 @@ export function DeckMockDndProvider({
       const ephContainer = findContainerByItemId(state, activeEphemeralIdRef.current);
       if (ephContainer) {
         targetGroupId = ephContainer;
+      } else if (ephemeralEmptyGroupId) {
+        targetGroupId = ephemeralEmptyGroupId;
       }
     }
 
@@ -1871,6 +1884,9 @@ export function DeckMockDndProvider({
       itemsByGroup: movedItemsByGroup,
       itemsByContainer: movedItemsByGroup,
     };
+    const targetGroupIndexBeforeCleanup = postDropStateBeforeNormalize.groupOrderByBoard.groups.findIndex(
+      (groupId) => groupId === targetGroupId,
+    );
     const postDropWithoutEphemeral = stripEphemeralItems(postDropStateBeforeNormalize);
     const postDropState = normalizeAfterDrop(postDropWithoutEphemeral);
     setState(postDropState);
@@ -1952,7 +1968,11 @@ export function DeckMockDndProvider({
           setId: normalizedSetId,
           sourceGroupId: normalizedSourceGroupId,
           targetGroupIndex:
-            targetGroupIndex < 0 ? postDropState.groupOrderByBoard.groups.length : targetGroupIndex,
+            targetGroupIndexBeforeCleanup >= 0
+              ? targetGroupIndexBeforeCleanup
+              : targetGroupIndex < 0
+                ? postDropState.groupOrderByBoard.groups.length
+                : targetGroupIndex,
           orderedSourceSetIds: normalizedSourceSetIds,
           sourceGroupEmptyAfterDrop: normalizedSourceSetIds.length === 0,
         });
@@ -2017,7 +2037,11 @@ export function DeckMockDndProvider({
           ...eventBase,
           backFaceId: normalizedBackFaceId,
           targetGroupIndex:
-            targetGroupIndex < 0 ? postDropState.groupOrderByBoard.groups.length : targetGroupIndex,
+            targetGroupIndexBeforeCleanup >= 0
+              ? targetGroupIndexBeforeCleanup
+              : targetGroupIndex < 0
+                ? postDropState.groupOrderByBoard.groups.length
+                : targetGroupIndex,
         });
       }
 
