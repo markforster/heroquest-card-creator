@@ -57,6 +57,10 @@ export default function DeckGroupsBoardController({
 
   const desiredModeByGroupRef = useRef<Record<string, GroupFanMode>>({});
   const rafByGroupRef = useRef<Record<string, number>>({});
+  const revealRequestIdRef = useRef(0);
+  const revealRafRef = useRef<number | null>(null);
+  const revealTimeoutRef = useRef<number | null>(null);
+  const lastRevealSetIdRef = useRef<string | null>(null);
   const [transitionByGroup, setTransitionByGroup] = useState<
     Record<string, { from: GroupFanMode; to: GroupFanMode; progress: number }>
   >({});
@@ -137,6 +141,8 @@ export default function DeckGroupsBoardController({
 
   useEffect(
     () => () => {
+      if (revealRafRef.current) cancelAnimationFrame(revealRafRef.current);
+      if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
       Object.keys(rafByGroupRef.current).forEach((groupId) => {
         const handle = rafByGroupRef.current[groupId];
         if (handle) cancelAnimationFrame(handle);
@@ -184,6 +190,59 @@ export default function DeckGroupsBoardController({
     }, 0);
     return Math.ceil(maxFrameHeight);
   }, [enableFanLayout, selection]);
+
+  useEffect(() => {
+    const selectedSetId = selection?.selectedSetId ?? null;
+    if (!selectedSetId) {
+      lastRevealSetIdRef.current = null;
+      return;
+    }
+    const selectedSetUiId = `set:${selectedSetId}`;
+    if (lastRevealSetIdRef.current === selectedSetUiId) return;
+    const selectedGroupId = selection?.setById.get(selectedSetId)?.groupId ?? null;
+    const selectedGroupTransition = selectedGroupId ? transitionByGroup[selectedGroupId] : undefined;
+    const waitingForExpanded =
+      enableFanLayout &&
+      Boolean(selectedGroupTransition) &&
+      selectedGroupTransition?.to === "expanded" &&
+      selectedGroupTransition.progress < 1;
+    if (waitingForExpanded) return;
+
+    if (revealRafRef.current) cancelAnimationFrame(revealRafRef.current);
+    if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
+    const requestId = ++revealRequestIdRef.current;
+    const reveal = () => {
+      if (requestId !== revealRequestIdRef.current) return;
+      const groupsRow = document.querySelector(`[data-testid="groups-row-groups"]`) as HTMLElement | null;
+      const selectedSetNode = document.querySelector(
+        `[data-testid="set-${selectedSetUiId}"]`,
+      ) as HTMLElement | null;
+      if (!groupsRow || !selectedSetNode) return;
+      const rowRect = groupsRow.getBoundingClientRect();
+      const setRect = selectedSetNode.getBoundingClientRect();
+      const withinRow =
+        setRect.left >= rowRect.left &&
+        setRect.right <= rowRect.right &&
+        setRect.top >= rowRect.top &&
+        setRect.bottom <= rowRect.bottom;
+      const withinViewport =
+        setRect.left >= 0 &&
+        setRect.right <= window.innerWidth &&
+        setRect.top >= 0 &&
+        setRect.bottom <= window.innerHeight;
+      if (!withinRow || !withinViewport) {
+        selectedSetNode.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+      }
+      lastRevealSetIdRef.current = selectedSetUiId;
+    };
+    revealRafRef.current = requestAnimationFrame(() => {
+      revealRafRef.current = requestAnimationFrame(reveal);
+    });
+    revealTimeoutRef.current = window.setTimeout(() => {
+      if (requestId !== revealRequestIdRef.current) return;
+      reveal();
+    }, 140);
+  }, [enableFanLayout, selection, transitionByGroup]);
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
     ({ setId, label, cardId, state }) => {
       const rawSetId = setId.startsWith("set:") ? setId.slice(4) : null;
