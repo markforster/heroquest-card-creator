@@ -46,7 +46,8 @@ export default function DeckGroupsBoardController({
     selection?.selectedSetId ? selection.setById.get(selection.selectedSetId)?.groupId ?? null : null;
   const [persistedOpenGroupId, setPersistedOpenGroupId] = useState<string | null>(null);
   const resolveGroupMode = useCallback(
-    (groupId: string, isHovered: boolean, hasSelectedSet: boolean): GroupFanMode => {
+    (groupId: string, isHovered: boolean, hasSelectedSet: boolean, setCount: number): GroupFanMode => {
+      if (setCount <= 1) return "expanded";
       if (hasSelectedSet || selectedSetGroupId === groupId) return "expanded";
       if (persistedOpenGroupId === groupId) return "expanded";
       if (isHovered) return "partial";
@@ -54,10 +55,13 @@ export default function DeckGroupsBoardController({
     },
     [persistedOpenGroupId, selectedSetGroupId],
   );
-  const isGroupExpanded = useCallback(
-    (groupId: string) => (selection?.setById.get(selection.selectedSetId ?? "")?.groupId ?? null) === groupId,
-    [selection],
-  );
+  const setCountByGroupId = useMemo(() => {
+    const counts = new Map<string, number>();
+    selection?.sets.forEach((set) => {
+      counts.set(set.groupId, (counts.get(set.groupId) ?? 0) + 1);
+    });
+    return counts;
+  }, [selection]);
 
   const desiredModeByGroupRef = useRef<Record<string, GroupFanMode>>({});
   const rafByGroupRef = useRef<Record<string, number>>({});
@@ -280,7 +284,12 @@ export default function DeckGroupsBoardController({
       if (!setId.startsWith("set:") || isDragging || isGhost) return null;
       if (enableFanLayout) {
         const groupId = selection?.setById.get(setId.slice(4))?.groupId;
-        if (!groupId || !isGroupExpanded(groupId)) return null;
+        const setCount = groupId ? (setCountByGroupId.get(groupId) ?? 0) : 0;
+        const hasSelectedSet = Boolean(groupId && selectedSetGroupId === groupId);
+        const mode = groupId
+          ? resolveGroupMode(groupId, false, hasSelectedSet, setCount)
+          : "collapsed";
+        if (mode !== "expanded") return null;
       }
       const resolvedSetId = setId.slice(4);
       const stopPropagation = (event: { stopPropagation: () => void }) => {
@@ -359,9 +368,9 @@ export default function DeckGroupsBoardController({
       selection.selectGroup(groupId);
       selection.selectSet(setRecord);
     },
-    resolveGroupClassName: ({ boardId, groupId, isHovered, hasSelectedSet }) => {
+    resolveGroupClassName: ({ boardId, groupId, isHovered, hasSelectedSet, setCount }) => {
       if (!enableFanLayout || boardId !== "groups") return null;
-      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet);
+      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
       noteDesiredMode(groupId, mode);
       if (mode === "expanded") return styles.groupVisualExpanded;
       if (mode === "partial") return styles.groupVisualPartial;
@@ -369,7 +378,7 @@ export default function DeckGroupsBoardController({
     },
     resolveGroupStyle: ({ boardId, groupId, isHovered, hasSelectedSet, setCount }) => {
       if (!enableFanLayout || boardId !== "groups") return undefined;
-      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet);
+      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
       noteDesiredMode(groupId, mode);
       const frame = resolveAnimatedFrame(groupId, mode, setCount);
       return {
@@ -381,7 +390,7 @@ export default function DeckGroupsBoardController({
       enableFanLayout && boardId === "groups" ? styles.groupBodyFanCanvas : null,
     resolveGroupBodyStyle: ({ boardId, groupId, isHovered, hasSelectedSet, setCount }) => {
       if (!enableFanLayout || boardId !== "groups") return undefined;
-      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet);
+      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
       noteDesiredMode(groupId, mode);
       const frame = resolveAnimatedFrame(groupId, mode, setCount);
       const effectiveBodyHeight = Math.max(Math.ceil(frame.requiredHeightPx), sharedFanMinHeightPx ?? 0);
@@ -390,16 +399,16 @@ export default function DeckGroupsBoardController({
         height: `${effectiveBodyHeight}px`,
       };
     },
-    resolveSetShellClassName: ({ boardId, groupId, isHovered, hasSelectedSet }) => {
+    resolveSetShellClassName: ({ boardId, groupId, isHovered, hasSelectedSet, setCount }) => {
       if (!enableFanLayout || boardId !== "groups") return null;
-      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet);
+      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
       if (mode === "expanded") return styles.setShellFanExpanded;
       if (mode === "partial") return styles.setShellFanPartial;
       return styles.setShellFanCollapsed;
     },
     resolveSetShellStyle: ({ boardId, groupId, isHovered, hasSelectedSet, setCount, setIndex }) => {
       if (!enableFanLayout || boardId !== "groups") return undefined;
-      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet);
+      const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
       noteDesiredMode(groupId, mode);
       const frame = resolveAnimatedFrame(groupId, mode, setCount);
       const fan = frame.cards[setIndex];
