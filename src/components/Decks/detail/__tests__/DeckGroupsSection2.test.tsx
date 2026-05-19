@@ -194,6 +194,57 @@ describe("DeckGroupsSection2 mock boards", () => {
     expect(screen.queryAllByRole("button", { name: /Create group at position/i }).length).toBeLessThanOrEqual(1);
   });
 
+  it("hydrates empty-slot placeholder for default empty group and accepts source drop", () => {
+    renderWorkspace({
+      boardModelsOverride: {
+        groups: {
+          groupIds: ["groups:A", "groups:B", "groups:C"],
+          itemsByGroup: {
+            "groups:A": [],
+            "groups:B": ["g-B1", "g-B2"],
+            "groups:C": ["g-C1"],
+          },
+          setLabelsById: {
+            "g-B1": "B1",
+            "g-B2": "B2",
+            "g-C1": "C1",
+          },
+          setCardIdById: {
+            "g-B1": "g-B1",
+            "g-B2": "g-B2",
+            "g-C1": "g-C1",
+          },
+        },
+      },
+    });
+
+    expect(
+      screen.getByTestId("set-ephemeral:empty-slot:group:groups:A"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("set-ephemeral:empty-slot:group:groups:B")).not.toBeInTheDocument();
+
+    act(() => {
+      callbacks.onDragStart?.({
+        operation: { source: { id: "src-1", type: "set", group: "source:S1" } },
+      });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "src-1", type: "set", group: "source:S1" },
+          target: { id: "groups:A", type: "group" },
+        },
+      });
+      callbacks.onDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "src-1", type: "set", group: "source:S1" },
+          target: { id: "groups:A", type: "group" },
+        },
+      });
+    });
+
+    expect(screen.getByTestId("group-groups:A")).toHaveTextContent("SRC-1");
+  });
+
   it("keeps only one placeholder-only ephemeral group when creating repeatedly", () => {
     renderWorkspace();
     const row = screen.getByTestId("groups-row-groups");

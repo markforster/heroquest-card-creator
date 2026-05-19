@@ -1565,8 +1565,12 @@ export function DeckMockDndProvider({
     setSetCardIdById(initialLabels.setCardIdById);
     sourceItemFaceBySetIdRef.current = boardModels.source.sourceItemFaceBySetId ?? {};
     if (activeSetId) return;
-    setState(initialState);
-    previousState.current = initialState;
+    const normalizedInitialState = withManagedEmptySlots(
+      initialState,
+      initialState.groupOrderByBoard.groups ?? [],
+    );
+    setState(normalizedInitialState);
+    previousState.current = normalizedInitialState;
   }, [
     activeSetId,
     boardModels,
