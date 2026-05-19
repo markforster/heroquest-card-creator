@@ -14,12 +14,12 @@ import {
 export default function DeckSourceBoardController({ layoutMode = "fill-parent" }: { layoutMode?: LayoutMode }) {
   const { registerDropHandler } = useDeckMockDnd();
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
-    ({ setId, label, state }) => {
-      const cardId = setId.startsWith("source:") ? setId.slice(7) : null;
+    ({ setId, label, cardId, state }) => {
+      const resolvedCardId = setId.startsWith("source:") ? setId.slice(7) : cardId;
       return (
         <DefaultSetThumbnailContent
           setId={setId}
-          cardId={cardId ?? undefined}
+          cardId={resolvedCardId ?? undefined}
           label={label}
           state={state}
         />

@@ -33,13 +33,13 @@ export default function DeckEntriesBoardController({
   const { registerDropHandler } = useDeckMockDnd();
   const lastHandledDragIdRef = useRef<string | null>(null);
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
-    ({ setId, label, state }) => {
+    ({ setId, label, cardId, state }) => {
       const rawEntryId = setId.startsWith("entry:") ? setId.slice(6) : null;
-      const cardId = rawEntryId ? entries?.entryFrontIdByEntryId.get(rawEntryId) : null;
+      const resolvedCardId = rawEntryId ? entries?.entryFrontIdByEntryId.get(rawEntryId) : cardId;
       return (
         <DefaultSetThumbnailContent
           setId={setId}
-          cardId={cardId ?? undefined}
+          cardId={resolvedCardId ?? undefined}
           label={label}
           state={state}
         />

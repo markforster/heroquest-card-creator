@@ -24,13 +24,13 @@ export default function DeckGroupsBoardController({ deckId }: { deckId: string |
   }
   const { registerDropHandler } = useDeckMockDnd();
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
-    ({ setId, label, state }) => {
+    ({ setId, label, cardId, state }) => {
       const rawSetId = setId.startsWith("set:") ? setId.slice(4) : null;
-      const cardId = rawSetId ? selection?.setById.get(rawSetId)?.backFaceId : null;
+      const resolvedCardId = rawSetId ? selection?.setById.get(rawSetId)?.backFaceId : cardId;
       return (
         <DefaultSetThumbnailContent
           setId={setId}
-          cardId={cardId ?? undefined}
+          cardId={resolvedCardId ?? undefined}
           label={label}
           state={state}
         />
