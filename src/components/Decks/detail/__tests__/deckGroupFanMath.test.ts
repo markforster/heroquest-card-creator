@@ -100,6 +100,21 @@ describe("deckGroupFanMath", () => {
     );
   });
 
+  it("applies low-count damping so small collapsed fans do not flare too wide", () => {
+    const collapsed2 = resolveFanFrame({ fromMode: "collapsed", toMode: "collapsed", progress: 1, count: 2 });
+    const collapsed3 = resolveFanFrame({ fromMode: "collapsed", toMode: "collapsed", progress: 1, count: 3 });
+    const collapsed4 = resolveFanFrame({ fromMode: "collapsed", toMode: "collapsed", progress: 1, count: 4 });
+    const collapsed5 = resolveFanFrame({ fromMode: "collapsed", toMode: "collapsed", progress: 1, count: 5 });
+    const collapsed10 = resolveFanFrame({ fromMode: "collapsed", toMode: "collapsed", progress: 1, count: 10 });
+
+    expect(collapsed2.requiredWidthPx).toBeLessThan(collapsed3.requiredWidthPx);
+    expect(collapsed3.requiredWidthPx).toBeLessThan(collapsed4.requiredWidthPx);
+    expect(collapsed4.requiredWidthPx).toBeLessThan(collapsed5.requiredWidthPx);
+    expect(collapsed3.requiredWidthPx).toBeLessThan(
+      resolveFanFrame({ fromMode: "partial", toMode: "partial", progress: 1, count: 3 }).requiredWidthPx,
+    );
+  });
+
   it("transition frame width progresses toward target width", () => {
     const start = resolveFanFrame({ fromMode: "collapsed", toMode: "partial", progress: 0, count: 3 }).requiredWidthPx;
     const mid = resolveFanFrame({ fromMode: "collapsed", toMode: "partial", progress: 0.5, count: 3 }).requiredWidthPx;
