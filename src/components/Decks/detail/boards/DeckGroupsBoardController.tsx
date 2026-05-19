@@ -22,6 +22,8 @@ import {
   type GroupFanMode,
 } from "./deckGroupFanMath";
 
+const FAN_SHELL_TOOLBAR_TOP_PX = 16;
+
 export default function DeckGroupsBoardController({
   deckId,
   keySetId,
@@ -409,7 +411,7 @@ export default function DeckGroupsBoardController({
         : 0;
       return {
         left: `${fan.pivotX - FAN_CARD_WIDTH / 2}px`,
-        top: `${fan.pivotY - FAN_CARD_HEIGHT + expandedVerticalCenterOffset}px`,
+        top: `${fan.pivotY - FAN_CARD_HEIGHT - FAN_SHELL_TOOLBAR_TOP_PX + expandedVerticalCenterOffset}px`,
         transform: `rotate(${fan.rotateDeg}deg)`,
         transformOrigin: "50% 100%",
         zIndex: fan.zIndex,

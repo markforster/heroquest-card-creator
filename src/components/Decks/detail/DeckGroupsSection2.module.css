@@ -227,11 +227,13 @@
 }
 
 .setShell {
+  --set-shell-toolbar-top: 16px;
+  --set-shell-toolbar-bottom: 18px;
   position: relative;
   border-radius: 6px;
   flex: 0 0 auto;
-  padding-top: 16px;
-  padding-bottom: 18px;
+  padding-top: var(--set-shell-toolbar-top);
+  padding-bottom: var(--set-shell-toolbar-bottom);
   transition: transform 100ms ease-out, margin-right 100ms ease-out;
 }
 
@@ -243,27 +245,21 @@
 .setShellFanCollapsed {
   position: absolute;
   width: 112px;
-  height: calc(112px * 1056 / 756);
-  padding-top: 0;
-  padding-bottom: 0;
+  height: calc((112px * 1056 / 756) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom));
   z-index: 1;
 }
 
 .setShellFanPartial {
   position: absolute;
   width: 112px;
-  height: calc(112px * 1056 / 756);
-  padding-top: 0;
-  padding-bottom: 0;
+  height: calc((112px * 1056 / 756) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom));
   z-index: 2;
 }
 
 .setShellFanExpanded {
   position: absolute;
   width: 112px;
-  height: calc(112px * 1056 / 756);
-  padding-top: 0;
-  padding-bottom: 0;
+  height: calc((112px * 1056 / 756) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom));
   z-index: 3;
 }
 
