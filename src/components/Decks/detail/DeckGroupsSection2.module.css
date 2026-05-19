@@ -201,6 +201,11 @@
   justify-content: start;
 }
 
+.groupBodyEntriesFillParent {
+  grid-template-columns: repeat(auto-fill, 112px);
+  justify-content: start;
+}
+
 .setShell {
   position: relative;
   border-radius: 6px;

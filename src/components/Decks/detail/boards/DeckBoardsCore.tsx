@@ -590,6 +590,7 @@ function GroupColumn({
   canReceiveDrops,
   showHeader,
   sourceLayout,
+  entriesLayout,
 }: {
   groupId: GroupId;
   label?: string;
@@ -598,6 +599,7 @@ function GroupColumn({
   canReceiveDrops: boolean;
   showHeader: boolean;
   sourceLayout?: boolean;
+  entriesLayout?: boolean;
 }) {
   const { ref } = useDroppable({
     id: groupId,
@@ -631,6 +633,7 @@ function GroupColumn({
           fillParent ? styles.groupBodyFillParent : "",
           sourceLayout ? styles.groupBodySource : "",
           sourceLayout && fillParent ? styles.groupBodySourceFillParent : "",
+          entriesLayout && fillParent ? styles.groupBodyEntriesFillParent : "",
         ]
           .filter(Boolean)
           .join(" ")}
@@ -965,6 +968,7 @@ export function DeckSortableBoardView({
   const { config, groupIds, itemsByGroup, activeSetId, activeTargetBoardId, hoverBoundaryIndex } = model;
   const useFillParent = layoutMode === "fill-parent" && !config.allowMultipleGroups;
   const isSourceBoard = config.boardId === "source";
+  const isEntriesBoard = config.boardId === "entries";
   const blockedBoundaries = useMemo(
     () => getBlockedBoundaries(groupIds, itemsByGroup),
     [groupIds, itemsByGroup],
@@ -1016,6 +1020,7 @@ export function DeckSortableBoardView({
                 canReceiveDrops={config.allowDropTarget}
                 showHeader={SHOW_GROUP_HEADINGS}
                 sourceLayout={isSourceBoard}
+                entriesLayout={isEntriesBoard}
               >
                 {(() => {
                   const groupSetIds = itemsByGroup[groupId] ?? [];
