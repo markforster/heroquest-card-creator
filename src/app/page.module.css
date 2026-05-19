@@ -7063,7 +7063,7 @@ button.assetsKindBadge:disabled {
   gap: var(--space-10);
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
 }
 
