@@ -697,6 +697,10 @@ export const pt = {
 
   "decks.deleteDeckBody": "Eliminar um baralho não elimina as suas cartas nem emparelhamentos; apenas elimina a organização do baralho.",
 
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
   "decks.deleteSelectedBody": "Eliminar {count} baralho(s) selecionado(s)? Eliminar um baralho não elimina as suas cartas nem emparelhamentos; apenas elimina a organização do baralho.",
 
   "decks.removeFrontPromptTitle": "Remover frontal do conjunto?",

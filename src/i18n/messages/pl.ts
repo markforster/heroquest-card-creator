@@ -697,6 +697,10 @@ export const pl = {
 
   "decks.deleteDeckBody": "Usunięcie talii nie usuwa kart ani parowań; usuwa tylko organizację talii.",
 
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
   "decks.deleteSelectedBody": "Usunąć {count} wybranych talii? Usunięcie talii nie usuwa kart ani parowań; usuwa tylko organizację talii.",
 
   "decks.removeFrontPromptTitle": "Usunąć awers z zestawu?",

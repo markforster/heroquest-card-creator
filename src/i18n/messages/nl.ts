@@ -697,6 +697,10 @@ export const nl = {
 
   "decks.deleteDeckBody": "Het verwijderen van een deck verwijdert je kaarten of koppelingen niet; alleen de deckindeling wordt verwijderd.",
 
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
   "decks.deleteSelectedBody": "{count} geselecteerde deck(s) verwijderen? Het verwijderen van een deck verwijdert je kaarten of koppelingen niet; alleen de deckindeling wordt verwijderd.",
 
   "decks.removeFrontPromptTitle": "Voorkaart uit set verwijderen?",

@@ -258,10 +258,16 @@ export default function DecksRoutePanels() {
   const handleDeleteSet = async () => {
     if (!detail.pendingDeleteSet) return;
     const wasSelected = selectionModel.selectedSetId === detail.pendingDeleteSet.id;
+    const deletedSetGroupId = detail.pendingDeleteSet.groupId;
     await mutations.deleteSet(detail.pendingDeleteSet.id);
     detail.setPendingDeleteSet(null);
     detail.setIsDeleteSetOpen(false);
-    await selectionModel.reloadStructure();
+    await selectionModel.reloadStructure(
+      wasSelected ? null : selectionModel.selectedSetId,
+      wasSelected && deletedSetGroupId
+        ? { suppressSingleSetAutoSelectGroupId: deletedSetGroupId }
+        : undefined,
+    );
     if (wasSelected) {
       selectionModel.clearSelection();
     }
@@ -320,12 +326,10 @@ export default function DecksRoutePanels() {
               await mutations.setDeckKeySet(deckId, setId);
             },
             deleteSetFromGroupCard: async (setId) => {
-              const wasSelected = selectionModel.selectedSetId === setId;
-              await mutations.deleteSet(setId);
-              await selectionModel.reloadStructure();
-              if (wasSelected) {
-                selectionModel.clearSelection();
-              }
+              const targetSet = selectionModel.setById.get(setId);
+              if (!targetSet) return;
+              detail.setPendingDeleteSet(targetSet);
+              detail.setIsDeleteSetOpen(true);
             },
             deleteDeck: async (id) => {
               await mutations.deleteDecks([id]);

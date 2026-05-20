@@ -697,6 +697,10 @@ export const cs = {
 
   "decks.deleteDeckBody": "Smazání balíčku nesmaže vaše karty ani párování; smaže pouze organizaci balíčku.",
 
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
   "decks.deleteSelectedBody": "Smazat {count} vybraných balíčků? Smazání balíčku nesmaže vaše karty ani párování; smaže pouze organizaci balíčku.",
 
   "decks.removeFrontPromptTitle": "Odebrat přední kartu ze sady?",

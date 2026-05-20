@@ -171,6 +171,7 @@ function DeckDetailPanelContent({
                     deckId={deckId}
                     keySetId={keySetId}
                     enableFanLayout
+                    onRequestDeleteSet={actions.deleteSetFromGroupCard}
                   />
                   <DeckEntriesBoardController onOpenCardEditor={actions.onOpenCardEditor} />
                 </div>

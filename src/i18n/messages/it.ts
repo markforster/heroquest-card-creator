@@ -697,6 +697,10 @@ export const it = {
 
   "decks.deleteDeckBody": "L’eliminazione di un mazzo non elimina le tue carte o gli abbinamenti; elimina solo l’organizzazione del mazzo.",
 
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
   "decks.deleteSelectedBody": "Eliminare {count} mazzo/i selezionato/i? L’eliminazione di un mazzo non elimina le tue carte o gli abbinamenti; elimina solo l’organizzazione del mazzo.",
 
   "decks.removeFrontPromptTitle": "Rimuovere il fronte dal set?",

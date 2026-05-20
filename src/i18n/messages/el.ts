@@ -697,6 +697,10 @@ export const el = {
 
   "decks.deleteDeckBody": "Η διαγραφή τράπουλας δεν διαγράφει τις κάρτες ή τις ζευγοποιήσεις σας· διαγράφει μόνο την οργάνωση της τράπουλας.",
 
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
   "decks.deleteSelectedBody": "Να διαγραφούν {count} επιλεγμένες τράπουλες; Η διαγραφή τράπουλας δεν διαγράφει τις κάρτες ή τις ζευγοποιήσεις σας· διαγράφει μόνο την οργάνωση της τράπουλας.",
 
   "decks.removeFrontPromptTitle": "Αφαίρεση μπροστινής κάρτας από το σετ;",

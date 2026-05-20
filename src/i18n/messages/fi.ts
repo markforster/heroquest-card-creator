@@ -697,6 +697,10 @@ export const fi = {
 
   "decks.deleteDeckBody": "Pakan poistaminen ei poista korttejasi tai parituksia; se poistaa vain pakan järjestelyn.",
 
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
   "decks.deleteSelectedBody": "Poistetaanko {count} valittua pakkaa? Pakan poistaminen ei poista korttejasi tai parituksia; se poistaa vain pakan järjestelyn.",
 
   "decks.removeFrontPromptTitle": "Poistetaanko etukortti setistä?",

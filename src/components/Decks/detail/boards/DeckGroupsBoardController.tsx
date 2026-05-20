@@ -32,10 +32,12 @@ export default function DeckGroupsBoardController({
   deckId,
   keySetId,
   enableFanLayout = false,
+  onRequestDeleteSet,
 }: {
   deckId: string | null;
   keySetId: string | null;
   enableFanLayout?: boolean;
+  onRequestDeleteSet?: (setId: string) => Promise<void>;
 }) {
   const mutations = useDeckMutations();
   const { t } = useI18n();
@@ -356,6 +358,10 @@ export default function DeckGroupsBoardController({
               const deletedSetGroupId = selection?.setById.get(resolvedSetId)?.groupId ?? null;
               if (wasSelected && deletedSetGroupId) {
                 setPersistedOpenGroupId(deletedSetGroupId);
+              }
+              if (onRequestDeleteSet) {
+                await onRequestDeleteSet(resolvedSetId);
+                return;
               }
               await mutations.deleteSet(resolvedSetId);
               await selection?.reloadStructure(

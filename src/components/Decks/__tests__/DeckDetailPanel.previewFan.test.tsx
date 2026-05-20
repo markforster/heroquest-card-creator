@@ -2,6 +2,7 @@ import { render } from "@testing-library/react";
 import { TransformStream } from "node:stream/web";
 
 const mockDeckDetailHeader = jest.fn();
+const mockDeckGroupsBoardController = jest.fn();
 
 if (!(globalThis as { TransformStream?: typeof TransformStream }).TransformStream) {
   (globalThis as { TransformStream?: typeof TransformStream }).TransformStream =
@@ -70,7 +71,10 @@ jest.mock("@/components/Decks/detail/DeckGroupsSection2.models", () => ({
 
 jest.mock("@/components/Decks/detail/DeckGroupsSection2", () => {
   const MockProvider = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-  const MockBoard = () => null;
+  const MockBoard = (props: unknown) => {
+    mockDeckGroupsBoardController(props);
+    return null;
+  };
   return {
     __esModule: true,
     default: MockBoard,
@@ -84,6 +88,7 @@ jest.mock("@/components/Decks/detail/DeckGroupsSection2", () => {
 describe("DeckDetailPanel deck title fan preview ids", () => {
   beforeEach(() => {
     mockDeckDetailHeader.mockReset();
+    mockDeckGroupsBoardController.mockReset();
   });
 
   it("passes key-set-prioritized back-face ids to DeckDetailHeader", () => {
@@ -203,6 +208,11 @@ describe("DeckDetailPanel deck title fan preview ids", () => {
     expect(mockDeckDetailHeader).toHaveBeenCalledWith(
       expect.objectContaining({
         deckPreviewCardIds: ["back-3", "back-2", "back-1"],
+      }),
+    );
+    expect(mockDeckGroupsBoardController).toHaveBeenCalledWith(
+      expect.objectContaining({
+        onRequestDeleteSet: props.actions.deleteSetFromGroupCard,
       }),
     );
   });

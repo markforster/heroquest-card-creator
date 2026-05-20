@@ -697,6 +697,10 @@ export const sv = {
 
   "decks.deleteDeckBody": "Att ta bort en kortlek tar inte bort dina kort eller parningar; det tar bara bort kortlekens organisering.",
 
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
   "decks.deleteSelectedBody": "Ta bort {count} valda kortlek(ar)? Att ta bort en kortlek tar inte bort dina kort eller parningar; det tar bara bort kortlekens organisering.",
 
   "decks.removeFrontPromptTitle": "Ta bort framsida från set?",

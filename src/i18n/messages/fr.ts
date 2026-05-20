@@ -697,6 +697,10 @@ export const fr = {
 
   "decks.deleteDeckBody": "La suppression d’un deck ne supprime ni vos cartes ni vos associations ; elle supprime uniquement l’organisation du deck.",
 
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
   "decks.deleteSelectedBody": "Supprimer {count} deck(s) sélectionné(s) ? La suppression d’un deck ne supprime ni vos cartes ni vos associations ; elle supprime uniquement l’organisation du deck.",
 
   "decks.removeFrontPromptTitle": "Retirer la face avant du set ? ",

@@ -697,6 +697,10 @@ export const de = {
 
   "decks.deleteDeckBody": "Das Löschen eines Decks löscht weder Karten noch Paarungen; nur die Deck-Organisation wird entfernt.",
 
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
   "decks.deleteSelectedBody": "{count} ausgewählte Deck(s) löschen? Das Löschen eines Decks löscht weder Karten noch Paarungen; nur die Deck-Organisation wird entfernt.",
 
   "decks.removeFrontPromptTitle": "Vorderseite aus Set entfernen?",

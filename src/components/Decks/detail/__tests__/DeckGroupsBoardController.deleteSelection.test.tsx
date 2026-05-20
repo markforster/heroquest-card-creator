@@ -72,15 +72,25 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
 }));
 
 describe("DeckGroupsBoardController delete selected set behavior", () => {
+  const mockRequestDeleteSet = jest.fn(async () => {});
+
   beforeEach(() => {
     capturedRenderTopToolbar = null;
     capturedResolveGroupClassName = null;
     mockDeleteSet.mockClear();
     mockReloadStructure.mockClear();
+    mockRequestDeleteSet.mockClear();
   });
 
-  it("reloads without selecting another set when deleting selected set", async () => {
-    render(<DeckGroupsBoardController deckId="deck-1" keySetId={null} enableFanLayout />);
+  it("routes selected-set delete through request callback instead of immediate mutation", async () => {
+    render(
+      <DeckGroupsBoardController
+        deckId="deck-1"
+        keySetId={null}
+        enableFanLayout
+        onRequestDeleteSet={mockRequestDeleteSet}
+      />,
+    );
 
     const toolbar = capturedRenderTopToolbar?.({
       setId: "set:set-2",
@@ -90,15 +100,14 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
 
     render(<>{toolbar}</>);
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete set" }));
+    fireEvent.click(screen.getByRole("button", { name: "decks.sets.actions.delete" }));
 
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(mockDeleteSet).toHaveBeenCalledWith("set-2");
-    expect(mockReloadStructure).toHaveBeenCalledWith(null, {
-      suppressSingleSetAutoSelectGroupId: "group-1",
-    });
+    expect(mockRequestDeleteSet).toHaveBeenCalledWith("set-2");
+    expect(mockDeleteSet).not.toHaveBeenCalled();
+    expect(mockReloadStructure).not.toHaveBeenCalled();
     const expandedClassName = capturedResolveGroupClassName?.({
       boardId: "groups",
       groupId: "group:group-1",
@@ -135,8 +144,8 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
 
     render(<>{toolbar}</>);
 
-    expect(screen.queryByRole("button", { name: "Set key card" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Delete set" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "decks.sets.actions.setKeyCard" })).toBeNull();
+    expect(screen.getByRole("button", { name: "decks.sets.actions.delete" })).toBeInTheDocument();
   });
 
 });

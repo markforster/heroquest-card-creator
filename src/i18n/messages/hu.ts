@@ -697,6 +697,10 @@ export const hu = {
 
   "decks.deleteDeckBody": "A pakli törlése nem törli a kártyáidat vagy párosításaidat; csak a pakli szervezését törli.",
 
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
   "decks.deleteSelectedBody": "Törlöd a kijelölt {count} pakli(ka)t? A pakli törlése nem törli a kártyáidat vagy párosításaidat; csak a pakli szervezését törli.",
 
   "decks.removeFrontPromptTitle": "Eltávolítod az előlapot a készletből?",
