@@ -643,11 +643,54 @@ function resolveBoardIdFromOperationEntity(entity: unknown): BoardId | null {
   };
   const raw = String(maybeEntity.board ?? maybeEntity.data?.board ?? maybeEntity.id ?? "");
   if (!raw) return null;
-  const normalized = raw.startsWith("board-") ? raw.slice(6) : raw;
+  const normalized = raw.startsWith("board-")
+    ? raw.slice(6)
+    : raw.startsWith("board:")
+      ? raw.slice(6)
+      : raw;
   if (normalized === "groups" || normalized === "entries" || normalized === "source") {
     return normalized;
   }
   return null;
+}
+
+function BoardDropSurface({
+  boardId,
+  canReceiveDrops,
+  className,
+  children,
+  testId,
+  onPointerMove,
+  onMouseMove,
+  onMouseLeave,
+}: {
+  boardId: BoardId;
+  canReceiveDrops: boolean;
+  className: string;
+  children: React.ReactNode;
+  testId: string;
+  onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => void;
+  onMouseMove: (event: React.MouseEvent<HTMLDivElement>) => void;
+  onMouseLeave: () => void;
+}) {
+  const { ref } = useDroppable({
+    id: `board:${boardId}`,
+    type: "board",
+    accept: canReceiveDrops ? ["set"] : [],
+  });
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      data-testid={testId}
+      onPointerMove={onPointerMove}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+    >
+      {children}
+    </div>
+  );
 }
 
 function getBlockedBoundaries(
@@ -1263,7 +1306,9 @@ export function DeckSortableBoardView({
           ) : null}
         </header>
       )}
-      <div
+      <BoardDropSurface
+        boardId={config.boardId}
+        canReceiveDrops={config.allowDropTarget}
         className={[
           styles.groupsRow,
           useFillParent ? styles.groupsRowFillParent : "",
@@ -1271,7 +1316,7 @@ export function DeckSortableBoardView({
         ]
           .filter(Boolean)
           .join(" ")}
-        data-testid={`groups-row-${config.boardId}`}
+        testId={`groups-row-${config.boardId}`}
         onPointerMove={(event) => model.onHoverBoundary(event.clientX)}
         onMouseMove={(event) => model.onHoverBoundary(event.clientX)}
         onMouseLeave={model.onLeaveBoard}
@@ -1504,7 +1549,7 @@ export function DeckSortableBoardView({
             }
           />
         ) : null}
-      </div>
+      </BoardDropSurface>
     </section>
   );
 }
