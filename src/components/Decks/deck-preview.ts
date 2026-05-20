@@ -36,6 +36,10 @@ function buildVisualPrioritySlotOrder(count: number): number[] {
 
 function placeDeckPreviewIds(backIds: string[], frontIds: string[], maxCount: number): string[] {
   const candidateIds = [...backIds, ...frontIds].slice(0, maxCount);
+  return orderDeckPreviewCandidateIds(candidateIds);
+}
+
+export function orderDeckPreviewCandidateIds(candidateIds: string[]): string[] {
   const slotOrder = buildVisualPrioritySlotOrder(candidateIds.length);
   const slots = new Array<string>(candidateIds.length);
   for (let index = 0; index < candidateIds.length; index += 1) {

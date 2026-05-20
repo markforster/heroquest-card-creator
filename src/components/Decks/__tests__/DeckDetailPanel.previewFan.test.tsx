@@ -202,7 +202,7 @@ describe("DeckDetailPanel deck title fan preview ids", () => {
 
     expect(mockDeckDetailHeader).toHaveBeenCalledWith(
       expect.objectContaining({
-        deckPreviewCardIds: ["back-2", "back-1", "back-3"],
+        deckPreviewCardIds: ["back-3", "back-2", "back-1"],
       }),
     );
   });
