@@ -2132,6 +2132,7 @@ export function DeckMockDndProvider({
       extractGroupIdFromOperationEntity(event.operation.source) ||
       findContainerByItemId(state, sourceSetId) ||
       "";
+    const finalTargetBoardHint = resolveBoardIdFromOperationEntity(event.operation.target);
     const targetId = String(event.operation.target?.id ?? "");
     let targetGroupId =
       event.operation.target?.type === "group"
@@ -2140,6 +2141,27 @@ export function DeckMockDndProvider({
           (targetId ? findContainerByItemId(state, targetId) || "" : "");
 
     if (sourceItem?.kind === "source-template" && activeEphemeralIdRef.current) {
+      const isFinalTargetCommittable =
+        finalTargetBoardHint === "entries" ||
+        finalTargetBoardHint === "groups" ||
+        event.operation.target?.type === "group" ||
+        event.operation.target?.type === "set";
+      if (!isFinalTargetCommittable || finalTargetBoardHint === "source") {
+        setState(
+          withManagedEmptySlots(stripEphemeralItems(state), [
+            ephemeralEmptyGroupId,
+            dragSourceEmptySlotGroupIdRef.current,
+          ]),
+        );
+        setActiveSetId(null);
+        setActiveGroupId(null);
+        setActiveTargetBoardId(null);
+        setDragAffordanceByBoard(emptyAffordanceState());
+        activeEphemeralIdRef.current = null;
+        sourceGroupIdAtDragStartRef.current = null;
+        dragSourceEmptySlotGroupIdRef.current = null;
+        return;
+      }
       const ephContainer = findContainerByItemId(state, activeEphemeralIdRef.current);
       if (ephContainer) {
         targetGroupId = ephContainer;

@@ -1,4 +1,10 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { TransformStream } from "node:stream/web";
+
+if (!(globalThis as { TransformStream?: typeof TransformStream }).TransformStream) {
+  (globalThis as { TransformStream?: typeof TransformStream }).TransformStream =
+    TransformStream;
+}
 
 import DeckGroupsBoardController, {
   DeckEntriesBoardController,
@@ -511,6 +517,42 @@ describe("DeckGroupsSection2 mock boards", () => {
     });
 
     expect(screen.getByTestId("group-entries:E1")).toHaveTextContent("SRC-2");
+  });
+
+  it("does not commit source-to-entries when drag ends over source after transient entries hover", () => {
+    renderWorkspace({
+      boardModelsOverride: {
+        entries: {
+          itemsByGroup: { "entries:E1": ["ephemeral:empty-slot:group:entries:E1"] },
+          setLabelsById: { "ephemeral:empty-slot:group:entries:E1": "" },
+          setCardIdById: { "ephemeral:empty-slot:group:entries:E1": "" },
+        },
+      },
+    });
+
+    const beforeText = screen.getByTestId("group-entries:E1").textContent ?? "";
+
+    act(() => {
+      callbacks.onDragStart?.({
+        operation: { source: { id: "src-2", type: "set", group: "source:S1" } },
+      });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "src-2", type: "set", group: "source:S1" },
+          target: { id: "board:entries", type: "board", board: "entries" },
+        },
+      });
+      callbacks.onDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "src-2", type: "set", group: "source:S1" },
+          target: { id: "board:source", type: "board", board: "source" },
+        },
+      });
+    });
+
+    expect(screen.getByTestId("group-entries:E1").textContent ?? "").toBe(beforeText);
+    expect(screen.getByTestId("group-entries:E1")).not.toHaveTextContent("SRC-2");
   });
 
   it("does not allow dropping into source board", () => {
