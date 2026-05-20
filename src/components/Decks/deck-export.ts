@@ -5,6 +5,7 @@ import { listPairsMap } from "@/components/Decks/deck-preview";
 
 export type DeckExportFaceIdsResult = {
   faceIds: string[];
+  setCount: number;
   backCount: number;
   frontCount: number;
   totalCount: number;
@@ -53,6 +54,7 @@ export async function resolveDeckExportFaceIds(deckId: string): Promise<DeckExpo
 
   return {
     faceIds,
+    setCount: orderedSets.length,
     backCount: backIds.size,
     frontCount: frontIds.size,
     totalCount: faceIds.length,

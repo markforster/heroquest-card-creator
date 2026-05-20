@@ -23,6 +23,12 @@ jest.mock("@/components/common/IconButton", () => ({
   ),
 }));
 
+jest.mock("@/i18n/I18nProvider", () => ({
+  useI18n: () => ({
+    t: (key: string) => (key === "decks.actions.exportDeck" ? "Export" : key),
+  }),
+}));
+
 import DeckExportButton from "@/components/Decks/DeckExportButton";
 import { DeckExportProvider } from "@/components/Decks/context/DeckExportContext";
 

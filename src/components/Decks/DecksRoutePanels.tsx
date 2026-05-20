@@ -19,6 +19,7 @@ import {
   useBulkCardExport,
   type MissingAssetsExportPrompt,
 } from "@/components/Export/hooks/useBulkCardExport";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
@@ -47,6 +48,14 @@ export default function DecksRoutePanels() {
     deckId: string;
     scope: "decks_grid" | "deck_detail";
   } | null>(null);
+  const [pendingDeckExportConfirm, setPendingDeckExportConfirm] = useState<{
+    deckId: string;
+    scope: "decks_grid" | "deck_detail";
+    setCount: number;
+    totalCount: number;
+    frontCount: number;
+    backCount: number;
+  } | null>(null);
 
   const isDeckDetail = Boolean(deckId);
   const isDecksIndex = !isDeckDetail;
@@ -64,13 +73,13 @@ export default function DecksRoutePanels() {
     }),
   );
 
-  const startDeckExport = useCallback(
+  const executeDeckExport = useCallback(
     async (
       deckIdValue: string,
       scope: "decks_grid" | "deck_detail",
+      faceIds: string[],
       options?: { skipIds?: Set<string>; skipNotes?: Map<string, string>; skipPrecheck?: boolean },
     ) => {
-      const { faceIds } = await resolveDeckExportFaceIds(deckIdValue);
       if (!faceIds.length) {
         window.alert(t("alert.selectCardToExport"));
         return;
@@ -105,6 +114,26 @@ export default function DecksRoutePanels() {
       }
     },
     [exportFlow, t, track],
+  );
+
+  const startDeckExport = useCallback(
+    async (deckIdValue: string, scope: "decks_grid" | "deck_detail") => {
+      const { faceIds, setCount, totalCount, frontCount, backCount } =
+        await resolveDeckExportFaceIds(deckIdValue);
+      if (!faceIds.length) {
+        window.alert(t("alert.selectCardToExport"));
+        return;
+      }
+      setPendingDeckExportConfirm({
+        deckId: deckIdValue,
+        scope,
+        setCount,
+        totalCount,
+        frontCount,
+        backCount,
+      });
+    },
+    [t],
   );
 
   const createSetFromBackFace = async (
@@ -367,7 +396,8 @@ export default function DecksRoutePanels() {
           if (!prompt || !pending) return;
           setMissingAssetsPrompt(null);
           setPendingExportContext(null);
-          await startDeckExport(pending.deckId, pending.scope, {
+          const { faceIds } = await resolveDeckExportFaceIds(pending.deckId);
+          await executeDeckExport(pending.deckId, pending.scope, faceIds, {
             skipIds: prompt.skipIds,
             skipNotes: prompt.skipNotes,
             skipPrecheck: true,
@@ -378,6 +408,38 @@ export default function DecksRoutePanels() {
           setPendingExportContext(null);
         }}
       />
+      <ConfirmModal
+        isOpen={Boolean(pendingDeckExportConfirm)}
+        title={t("decks.exportConfirm.title")}
+        confirmLabel={t("actions.proceedExport")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={async () => {
+          const pending = pendingDeckExportConfirm;
+          if (!pending) return;
+          setPendingDeckExportConfirm(null);
+          const { faceIds } = await resolveDeckExportFaceIds(pending.deckId);
+          await executeDeckExport(pending.deckId, pending.scope, faceIds);
+        }}
+        onCancel={() => setPendingDeckExportConfirm(null)}
+      >
+        {pendingDeckExportConfirm ? (
+          <div className="d-flex flex-column gap-2">
+            <div>
+              {formatMessage("decks.exportConfirm.summary", {
+                totalCount: pendingDeckExportConfirm.totalCount,
+                setCount: pendingDeckExportConfirm.setCount,
+              })}
+            </div>
+            <div>
+              {formatMessage("decks.exportConfirm.breakdown", {
+                frontCount: pendingDeckExportConfirm.frontCount,
+                backCount: pendingDeckExportConfirm.backCount,
+              })}
+            </div>
+            <div>{t("decks.exportConfirm.uniqueNotice")}</div>
+          </div>
+        ) : null}
+      </ConfirmModal>
     </DeckExportProvider>
   );
 }
