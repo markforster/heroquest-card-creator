@@ -72,6 +72,24 @@
   gap: 6px;
 }
 
+.boardTitleWithThumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.boardTitleThumb {
+  border-radius: 4px;
+  box-shadow: var(--shadow-soft);
+}
+
+.boardTitleThumbFallback {
+  width: 46px;
+  height: 64px;
+  border-radius: 4px;
+  background: var(--hq-thumbnail-fallback);
+}
+
 .groupsRow {
   display: flex;
   gap: 8px;

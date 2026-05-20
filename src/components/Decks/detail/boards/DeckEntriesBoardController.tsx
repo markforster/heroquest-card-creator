@@ -4,11 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ListMinus, Minus, Pencil, Plus, ReplyAll, Trash2 } from "lucide-react";
 import { apiClient } from "@/api/client";
 import pageStyles from "@/app/page.module.css";
+import CardThumbnail from "@/components/common/CardThumbnail";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 import { isPairDeleteConfirmRequiredError } from "@/lib/decks-errors";
 import styles from "../DeckGroupsSection2.module.css";
 import {
@@ -70,6 +72,30 @@ export default function DeckEntriesBoardController({
   const recoverableFrontIdSet = useMemo(() => new Set(recoverableFrontIds), [recoverableFrontIds]);
   const recoverCount = recoverableFrontIds.length;
   const selectedEntryCount = selectedEntryIds.size;
+  const selectedSetBackFaceId = useMemo(() => {
+    if (!selection?.selectedSetId) return null;
+    return selection.setById.get(selection.selectedSetId)?.backFaceId ?? null;
+  }, [selection]);
+  const selectedSetBackThumbUrl = useCardThumbnailUrl(selectedSetBackFaceId, null, {
+    enabled: Boolean(selectedSetBackFaceId),
+    useCache: true,
+  });
+  const entriesBoardTitle = useMemo(() => {
+    if (!selectedSetBackFaceId) return "Entries";
+    return (
+      <span className={styles.boardTitleWithThumb}>
+        <CardThumbnail
+          src={selectedSetBackThumbUrl}
+          alt="Selected set back"
+          variant="xs"
+          fit="contain"
+          className={styles.boardTitleThumb}
+          fallback={<div className={styles.boardTitleThumbFallback} />}
+        />
+        <span>Entries</span>
+      </span>
+    );
+  }, [selectedSetBackFaceId, selectedSetBackThumbUrl]);
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
     ({ setId, label, cardId, state }) => {
       const rawEntryId = setId.startsWith("entry:") ? setId.slice(6) : null;
@@ -184,6 +210,7 @@ export default function DeckEntriesBoardController({
     });
   }, []);
   const model = useDeckSortableBoardViewModel("entries", BOARD_ROUTING_META_BY_ID.entries, {
+    title: entriesBoardTitle,
     renderBoardHeaderActions: () => (
       <div className={styles.boardHeaderActions}>
         <button

@@ -72,7 +72,7 @@ type BoardInfoPillProps = {
 
 type BoardConfig = {
   boardId: BoardId;
-  title: string;
+  title: ReactNode;
   allowMultipleGroups: boolean;
   allowGroupCreate: boolean;
   allowInGroupSort: boolean;
@@ -2374,6 +2374,7 @@ export function useDeckSortableBoardViewModel(
   boardId: BoardId,
   routing: BoardRoutingMeta,
   options?: {
+    title?: ReactNode;
     allowGroupReorder?: boolean;
     onSetClick?: (setUiId: SetId, groupUiId: GroupId, options?: { additive: boolean }) => void;
     onSetHoverChange?: DeckSortableBoardViewModel["onSetHoverChange"];
@@ -2409,7 +2410,10 @@ export function useDeckSortableBoardViewModel(
   } = useDeckMockDnd();
 
   return {
-    config: BOARD_CONFIGS[boardId],
+    config: {
+      ...BOARD_CONFIGS[boardId],
+      title: options?.title ?? BOARD_CONFIGS[boardId].title,
+    },
     emitToken: routing.emitToken,
     acceptTokens: routing.acceptTokens,
     groupIds: state.groupOrderByBoard[boardId],

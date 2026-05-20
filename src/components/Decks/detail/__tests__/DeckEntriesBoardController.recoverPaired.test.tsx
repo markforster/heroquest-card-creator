@@ -9,9 +9,12 @@ const mockUpdateEntryCount = jest.fn();
 const mockRemoveEntry = jest.fn();
 const mockReorderEntries = jest.fn();
 const mockDeletePair = jest.fn();
+const mockUseCardThumbnailUrl = jest.fn();
 
 let pairedNotInSetFrontIds: string[] = [];
 let entriesSortedMock: Array<{ id: string; setId: string; pairId: string; sortIndex: number; count: number }> = [];
+let selectedSetIdMock: string | null = "set-1";
+let selectionSetByIdMock = new Map<string, { id: string; backFaceId: string }>();
 let pairsByIdMock = new Map<
   string,
   {
@@ -41,9 +44,13 @@ jest.mock("@/api/client", () => ({
 jest.mock("@/components/Decks/detail/context/DeckDetailSelectionContext", () => ({
   useDeckDetailSelection: () => ({
     selectedEntryId: null,
-    selectedSetId: "set-1",
-    setById: new Map(),
+    selectedSetId: selectedSetIdMock,
+    setById: selectionSetByIdMock,
   }),
+}));
+
+jest.mock("@/lib/card-thumbnail-cache", () => ({
+  useCardThumbnailUrl: (...args: unknown[]) => mockUseCardThumbnailUrl(...args),
 }));
 
 jest.mock("@/components/Decks/detail/context/DeckSetEntriesContext", () => ({
@@ -70,7 +77,13 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
     registerDropHandler: mockRegisterDropHandler,
   }),
   useDeckSortableBoardViewModel: (_boardId: string, _routing: unknown, options: Record<string, unknown>) => ({
-    config: { boardId: "entries", title: "Entries", allowMultipleGroups: false, allowGroupCreate: false, allowDropTarget: true },
+    config: {
+      boardId: "entries",
+      title: options.title ?? "Entries",
+      allowMultipleGroups: false,
+      allowGroupCreate: false,
+      allowDropTarget: true,
+    },
     groupIds: ["entries:E1"],
     itemsByGroup: { "entries:E1": entriesSortedMock.map((entry) => `entry:${entry.id}`) },
     activeSetId: null,
@@ -95,7 +108,7 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
   }),
   DeckSortableBoardView: ({ model }: { model: any }) => (
     <div>
-      <div>Entries</div>
+      <div>{model.config?.title}</div>
       {model.renderBoardHeaderActions ? model.renderBoardHeaderActions() : null}
       <div>
         {(model?.itemsByGroup?.["entries:E1"] ?? []).map((setId: string) => (
@@ -122,6 +135,8 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     require("@/components/Decks/detail/boards/DeckEntriesBoardController").default;
 
   beforeEach(() => {
+    selectedSetIdMock = "set-1";
+    selectionSetByIdMock = new Map([["set-1", { id: "set-1", backFaceId: "back-1" }]]);
     pairedNotInSetFrontIds = [];
     entriesSortedMock = [
       { id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 },
@@ -162,10 +177,14 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     mockRemoveEntry.mockReset();
     mockReorderEntries.mockReset();
     mockDeletePair.mockReset();
+    mockUseCardThumbnailUrl.mockReset();
     mockAddFront.mockResolvedValue([]);
     mockRefreshEntries.mockResolvedValue(undefined);
     mockRemoveEntry.mockResolvedValue(undefined);
     mockDeletePair.mockResolvedValue(undefined);
+    mockUseCardThumbnailUrl.mockImplementation((cardId: string | null) =>
+      cardId ? `thumb:${cardId}` : null,
+    );
   });
 
   it("shows disabled recover button with zero count", () => {
@@ -175,6 +194,18 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     const removeSelectedButton = screen.getByRole("button", { name: "Remove Selected (0)" });
     expect(removeSelectedButton).toBeDisabled();
     expect(removeSelectedButton.className).toContain("removeSelectedButton");
+    expect(screen.getByRole("img", { name: "Selected set back" })).toBeInTheDocument();
+    expect(screen.getByText("Entries")).toBeInTheDocument();
+  });
+
+  it("renders text-only Entries title when selected set back thumbnail is unavailable", () => {
+    selectedSetIdMock = null;
+    selectionSetByIdMock = new Map();
+
+    render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
+
+    expect(screen.getByText("Entries")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Selected set back" })).toBeNull();
   });
 
   it("supports single and ctrl/cmd additive entry selection and updates delete count", () => {
