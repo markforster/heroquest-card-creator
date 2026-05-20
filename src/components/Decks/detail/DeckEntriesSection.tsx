@@ -610,6 +610,7 @@ export default function DeckEntriesSection({
         title={t("decks.removeFrontPromptTitle")}
         confirmLabel={t("decks.removeFromSet")}
         extraLabel={t("decks.removeAndUnpair")}
+        extraButtonClassName="btn btn-outline-danger btn-sm"
         cancelLabel={t("actions.cancel")}
         onConfirm={removeFromSetOnly}
         onExtra={removeAndUnpair}

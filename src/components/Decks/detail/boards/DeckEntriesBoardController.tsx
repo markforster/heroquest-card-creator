@@ -540,6 +540,7 @@ export default function DeckEntriesBoardController({
         }
         confirmLabel={t("decks.removeFromSet")}
         extraLabel={t("decks.removeAndUnpair")}
+        extraButtonClassName="btn btn-outline-danger btn-sm"
         cancelLabel={t("actions.cancel")}
         onConfirm={async () => {
           await removePending(false);
