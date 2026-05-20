@@ -371,6 +371,10 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     expect(css).toContain(
       ':has(.removeSelectedButton:focus-visible) .setCard:not(.setCardSelected)',
     );
+    expect(css).toContain(".setCardBottomToolbar");
+    expect(css).toContain("transform: translate(-50%, -4px);");
+    expect(css).toContain(".setShell:hover .setCardTopToolbar");
+    expect(css).toContain("transform: translate(-50%, 2px);");
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
     expect(css).toContain("entriesRemoveSelectedWarningPulse");
   });

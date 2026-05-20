@@ -565,7 +565,7 @@
   position: absolute;
   bottom: 0;
   left: 50%;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, -4px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -579,7 +579,7 @@
 .setShell:hover .setCardTopToolbar {
   opacity: 1;
   pointer-events: auto;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, 2px);
 }
 
 .keyCardOverlayAnchor {
