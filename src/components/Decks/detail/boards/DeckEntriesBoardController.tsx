@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Minus, Pencil, Plus, ReplyAll, Trash2 } from "lucide-react";
+import { ListMinus, Minus, Pencil, Plus, ReplyAll, Trash2 } from "lucide-react";
 import { apiClient } from "@/api/client";
 import pageStyles from "@/app/page.module.css";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
@@ -201,8 +201,8 @@ export default function DeckEntriesBoardController({
           onClick={openBulkRemoval}
           disabled={selectedEntryCount === 0}
         >
-          <Trash2 size={12} aria-hidden="true" />
-          {` Delete Selected (${selectedEntryCount})`}
+          <ListMinus size={12} aria-hidden="true" />
+          {` Remove Selected (${selectedEntryCount})`}
         </button>
       </div>
     ),

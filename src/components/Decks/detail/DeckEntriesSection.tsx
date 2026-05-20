@@ -442,7 +442,7 @@ export default function DeckEntriesSection({
             onClick={openBulkRemoval}
             disabled={!canBulkDelete}
           >
-            Delete Selected
+            Remove Selected
           </button>
         </div>
       ) : null}

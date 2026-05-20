@@ -170,7 +170,7 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
     const button = screen.getByRole("button", { name: "Recover Paired (0)" });
     expect(button).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Delete Selected (0)" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Remove Selected (0)" })).toBeDisabled();
   });
 
   it("supports single and ctrl/cmd additive entry selection and updates delete count", () => {
@@ -180,11 +180,11 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     const entry2 = screen.getByTestId("entry-entry:entry-2");
     fireEvent.click(entry1);
     expect(entry1.className).toContain("selected");
-    expect(screen.getByRole("button", { name: "Delete Selected (1)" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Remove Selected (1)" })).toBeEnabled();
 
     fireEvent.click(entry2, { ctrlKey: true });
     expect(entry2.className).toContain("selected");
-    expect(screen.getByRole("button", { name: "Delete Selected (2)" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Remove Selected (2)" })).toBeEnabled();
   });
 
   it("bulk Remove from set deletes all selected entries and refreshes", async () => {
@@ -192,7 +192,7 @@ describe("DeckEntriesBoardController recover paired modal", () => {
 
     fireEvent.click(screen.getByTestId("entry-entry:entry-1"));
     fireEvent.click(screen.getByTestId("entry-entry:entry-2"), { metaKey: true });
-    fireEvent.click(screen.getByRole("button", { name: "Delete Selected (2)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove Selected (2)" }));
 
     expect(screen.getByText("Remove 2 entries from set?")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "decks.removeFromSet" }));
@@ -209,7 +209,7 @@ describe("DeckEntriesBoardController recover paired modal", () => {
 
     fireEvent.click(screen.getByTestId("entry-entry:entry-1"));
     fireEvent.click(screen.getByTestId("entry-entry:entry-2"), { ctrlKey: true });
-    fireEvent.click(screen.getByRole("button", { name: "Delete Selected (2)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove Selected (2)" }));
 
     fireEvent.click(screen.getByRole("button", { name: "decks.removeAndUnpair" }));
 
