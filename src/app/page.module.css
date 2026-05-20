@@ -8015,12 +8015,19 @@ button.assetsKindBadge:disabled {
 }
 
 .deckCardRemoveButton {
+  --deck-entry-action-hue: #cd2d2d;
+  --deck-entry-action-icon: #0a0a0a;
+  --deck-entry-action-border: rgba(0, 0, 0, 0.38);
+  --deck-entry-action-bg: #ef4444;
+  --deck-entry-action-hover-bg: color-mix(in srgb, var(--deck-entry-action-hue) 24%, var(--deck-entry-action-bg) 76%);
+  --deck-entry-action-hover-icon: color-mix(in srgb, var(--deck-entry-action-hue) 88%, white 12%);
+  --deck-entry-action-hover-border: color-mix(in srgb, var(--deck-entry-action-hue) 82%, white 18%);
   width: 34px;
   height: 34px;
   border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.38);
-  background: #ef4444;
-  color: #0a0a0a;
+  border: 1px solid var(--deck-entry-action-border);
+  background: var(--deck-entry-action-bg);
+  color: var(--deck-entry-action-icon);
   font-size: 20px;
   line-height: 1;
   display: inline-flex;
@@ -8135,12 +8142,19 @@ button.assetsKindBadge:disabled {
 }
 
 .deckCardEditButton {
+  --deck-entry-action-hue: var(--hq-accent);
+  --deck-entry-action-icon: #0a0a0a;
+  --deck-entry-action-border: rgba(0, 0, 0, 0.38);
+  --deck-entry-action-bg: var(--hq-accent);
+  --deck-entry-action-hover-bg: color-mix(in srgb, var(--deck-entry-action-hue) 24%, var(--deck-entry-action-bg) 76%);
+  --deck-entry-action-hover-icon: color-mix(in srgb, var(--deck-entry-action-hue) 88%, white 12%);
+  --deck-entry-action-hover-border: color-mix(in srgb, var(--deck-entry-action-hue) 82%, white 18%);
   width: 34px;
   height: 34px;
   border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.38);
-  background: var(--hq-accent);
-  color: #0a0a0a;
+  border: 1px solid var(--deck-entry-action-border);
+  background: var(--deck-entry-action-bg);
+  color: var(--deck-entry-action-icon);
   font-size: 18px;
   line-height: 1;
   display: inline-flex;
@@ -8162,14 +8176,24 @@ button.assetsKindBadge:disabled {
 }
 
 .deckCardEditButton:hover {
-  filter: brightness(1.08);
+  background: var(--deck-entry-action-hover-bg);
+  color: var(--deck-entry-action-hover-icon);
+  border-color: var(--deck-entry-action-hover-border);
   transform: scale(1.05);
 }
 
 .deckCardRemoveButton:hover {
-  background: #dc2626;
+  background: var(--deck-entry-action-hover-bg);
+  color: var(--deck-entry-action-hover-icon);
+  border-color: var(--deck-entry-action-hover-border);
   transform: scale(1.05);
 }
+
+:root[data-theme="light"] .deckCardEditButton,
+:root[data-theme="light"] .deckCardRemoveButton {
+  --deck-entry-action-hover-bg: color-mix(in srgb, var(--deck-entry-action-hue) 30%, #0f172a 70%);
+}
+
 
 .deckEntryCardDraggingSelf {
   flex: 0 0 0;

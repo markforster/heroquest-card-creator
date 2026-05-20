@@ -611,10 +611,17 @@
 }
 
 .toolbarIconButton {
+  --toolbar-action-hue: var(--hq-border-strong);
+  --toolbar-action-icon: var(--hq-text-primary);
+  --toolbar-action-border: var(--hq-border-strong);
+  --toolbar-action-bg: var(--hq-surface-900);
+  --toolbar-action-hover-bg: color-mix(in srgb, var(--toolbar-action-hue) 24%, var(--toolbar-action-bg) 76%);
+  --toolbar-action-hover-icon: color-mix(in srgb, var(--toolbar-action-hue) 82%, white 18%);
+  --toolbar-action-hover-border: color-mix(in srgb, var(--toolbar-action-hue) 70%, white 30%);
   width: 26px;
   height: 26px;
   border-radius: 999px;
-  border: 1px solid var(--hq-border-strong);
+  border: 1px solid var(--toolbar-action-border);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -622,29 +629,42 @@
   font-size: 12px;
   padding: 0;
   cursor: pointer;
-  background: var(--hq-surface-900);
-  color: var(--hq-text-primary);
+  background: var(--toolbar-action-bg);
+  color: var(--toolbar-action-icon);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .toolbarIconButtonEdit {
-  color: var(--hq-text-primary);
-  border-color: var(--hq-border-strong);
+  --toolbar-action-hue: var(--hq-accent);
+  --toolbar-action-icon: var(--hq-text-primary);
+  --toolbar-action-border: var(--hq-border-strong);
 }
 
 .toolbarIconButtonKey {
-  color: #2a73ff;
-  border-color: color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%);
+  --toolbar-action-hue: #2a73ff;
+  --toolbar-action-icon: #2a73ff;
+  --toolbar-action-border: color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%);
 }
 
 .toolbarIconButtonDelete {
-  color: #cd2d2d;
-  border-color: color-mix(in srgb, #cd2d2d 55%, var(--hq-border-strong) 45%);
+  --toolbar-action-hue: #cd2d2d;
+  --toolbar-action-icon: #cd2d2d;
+  --toolbar-action-border: color-mix(in srgb, #cd2d2d 55%, var(--hq-border-strong) 45%);
 }
 
 .toolbarIconButton:hover {
-  filter: brightness(1.06);
+  background: var(--toolbar-action-hover-bg);
+  color: var(--toolbar-action-hover-icon);
+  border-color: var(--toolbar-action-hover-border);
 }
+
+:root[data-theme="light"] .toolbarIconButton {
+  --toolbar-action-hover-bg: color-mix(in srgb, var(--toolbar-action-hue) 30%, #0f172a 70%);
+  --toolbar-action-hover-icon: color-mix(in srgb, var(--toolbar-action-hue) 88%, white 12%);
+  --toolbar-action-hover-border: color-mix(in srgb, var(--toolbar-action-hue) 84%, white 16%);
+}
+
 
 .boardInfoPill {
   height: 24px;
