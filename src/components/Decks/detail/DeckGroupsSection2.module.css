@@ -266,12 +266,13 @@
 }
 
 .groupActiveBorder {
-  border-color: var(--deck-board-selected-ring, #5f86ff);
-  background: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 12%, var(--hq-surface-900) 88%);
+  border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 58%, var(--hq-border-strong) 42%);
+  background: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 7%, var(--hq-surface-900) 93%);
 }
 
 :root[data-theme="light"] .groupActiveBorder {
-  background: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 10%, var(--hq-surface-900) 90%);
+  border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 44%, var(--hq-border-strong) 56%);
+  background: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 5%, var(--hq-panel-bg) 95%);
 }
 
 @keyframes groupEphemeralBorderPulseDark {

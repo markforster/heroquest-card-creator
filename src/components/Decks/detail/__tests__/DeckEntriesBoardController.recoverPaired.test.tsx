@@ -14,7 +14,7 @@ const mockUseCardThumbnailUrl = jest.fn();
 let pairedNotInSetFrontIds: string[] = [];
 let entriesSortedMock: Array<{ id: string; setId: string; pairId: string; sortIndex: number; count: number }> = [];
 let selectedSetIdMock: string | null = "set-1";
-let selectionSetByIdMock = new Map<string, { id: string; backFaceId: string }>();
+let selectionSetByIdMock = new Map<string, { id: string; title: string; backFaceId: string }>();
 let pairsByIdMock = new Map<
   string,
   {
@@ -46,6 +46,15 @@ jest.mock("@/components/Decks/detail/context/DeckDetailSelectionContext", () => 
     selectedEntryId: null,
     selectedSetId: selectedSetIdMock,
     setById: selectionSetByIdMock,
+  }),
+}));
+
+jest.mock("@/components/Decks/detail/context/DeckRightPanelContext", () => ({
+  useDeckRightPanel: () => ({
+    backCards: [
+      { id: "back-1", name: "Back Card Alpha" },
+      { id: "back-2", name: "Back Card Beta" },
+    ],
   }),
 }));
 
@@ -136,7 +145,7 @@ describe("DeckEntriesBoardController recover paired modal", () => {
 
   beforeEach(() => {
     selectedSetIdMock = "set-1";
-    selectionSetByIdMock = new Map([["set-1", { id: "set-1", backFaceId: "back-1" }]]);
+    selectionSetByIdMock = new Map([["set-1", { id: "set-1", title: "Selected Set", backFaceId: "back-1" }]]);
     pairedNotInSetFrontIds = [];
     entriesSortedMock = [
       { id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 },
@@ -195,10 +204,10 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     expect(removeSelectedButton).toBeDisabled();
     expect(removeSelectedButton.className).toContain("removeSelectedButton");
     expect(screen.getByRole("img", { name: "Selected set back" })).toBeInTheDocument();
-    expect(screen.getByText("Entries")).toBeInTheDocument();
+    expect(screen.getByText("Back Card Alpha")).toBeInTheDocument();
   });
 
-  it("renders text-only Entries title when selected set back thumbnail is unavailable", () => {
+  it("renders text-only Entries title when selected set is unavailable", () => {
     selectedSetIdMock = null;
     selectionSetByIdMock = new Map();
 
@@ -206,6 +215,16 @@ describe("DeckEntriesBoardController recover paired modal", () => {
 
     expect(screen.getByText("Entries")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Selected set back" })).toBeNull();
+  });
+
+  it("renders Entries text fallback while keeping thumbnail when back card title is unavailable", () => {
+    selectedSetIdMock = "set-1";
+    selectionSetByIdMock = new Map([["set-1", { id: "set-1", title: "Set Without Back", backFaceId: "back-missing" }]]);
+
+    render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
+
+    expect(screen.getByText("Entries")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Selected set back" })).toBeInTheDocument();
   });
 
   it("supports single and ctrl/cmd additive entry selection and updates delete count", () => {

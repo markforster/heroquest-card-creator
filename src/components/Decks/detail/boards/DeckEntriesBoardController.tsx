@@ -6,6 +6,7 @@ import { apiClient } from "@/api/client";
 import pageStyles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
+import { useDeckRightPanel } from "@/components/Decks/detail/context/DeckRightPanelContext";
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import ModalShell from "@/components/common/ModalShell";
@@ -44,6 +45,12 @@ export default function DeckEntriesBoardController({
   } catch {
     entries = null;
   }
+  let rightPanel: ReturnType<typeof useDeckRightPanel> | null = null;
+  try {
+    rightPanel = useDeckRightPanel();
+  } catch {
+    rightPanel = null;
+  }
   const { registerDropHandler } = useDeckMockDnd();
   const lastHandledDragIdRef = useRef<string | null>(null);
   const [pendingFrontRemoval, setPendingFrontRemoval] = useState<{
@@ -76,12 +83,19 @@ export default function DeckEntriesBoardController({
     if (!selection?.selectedSetId) return null;
     return selection.setById.get(selection.selectedSetId)?.backFaceId ?? null;
   }, [selection]);
+  const selectedSetCardTitle = useMemo(() => {
+    if (!selectedSetBackFaceId) return null;
+    const raw = rightPanel?.backCards?.find((card) => card.id === selectedSetBackFaceId)?.name ?? null;
+    const normalized = raw?.trim() ?? "";
+    return normalized.length ? normalized : null;
+  }, [rightPanel?.backCards, selectedSetBackFaceId]);
   const selectedSetBackThumbUrl = useCardThumbnailUrl(selectedSetBackFaceId, null, {
     enabled: Boolean(selectedSetBackFaceId),
     useCache: true,
   });
   const entriesBoardTitle = useMemo(() => {
-    if (!selectedSetBackFaceId) return "Entries";
+    const titleText = selectedSetCardTitle || "Entries";
+    if (!selectedSetBackFaceId) return titleText;
     return (
       <span className={styles.boardTitleWithThumb}>
         <CardThumbnail
@@ -92,10 +106,10 @@ export default function DeckEntriesBoardController({
           className={styles.boardTitleThumb}
           fallback={<div className={styles.boardTitleThumbFallback} />}
         />
-        <span>Entries</span>
+        <span>{titleText}</span>
       </span>
     );
-  }, [selectedSetBackFaceId, selectedSetBackThumbUrl]);
+  }, [selectedSetBackFaceId, selectedSetBackThumbUrl, selectedSetCardTitle]);
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
     ({ setId, label, cardId, state }) => {
       const rawEntryId = setId.startsWith("entry:") ? setId.slice(6) : null;

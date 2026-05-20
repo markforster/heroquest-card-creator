@@ -1,1 +1,1 @@
-export const DEFAULT_DECK_FAN_PREVIEW_COUNT = 6;
+export const DEFAULT_DECK_FAN_PREVIEW_COUNT = 5;
