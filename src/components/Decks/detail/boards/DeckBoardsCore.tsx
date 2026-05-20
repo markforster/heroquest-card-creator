@@ -634,6 +634,22 @@ function extractGroupIdFromOperationEntity(entity: unknown): string {
   return String(maybeEntity.group ?? maybeEntity.data?.group ?? "");
 }
 
+function resolveBoardIdFromOperationEntity(entity: unknown): BoardId | null {
+  if (!entity || typeof entity !== "object") return null;
+  const maybeEntity = entity as {
+    board?: string;
+    data?: { board?: string };
+    id?: string;
+  };
+  const raw = String(maybeEntity.board ?? maybeEntity.data?.board ?? maybeEntity.id ?? "");
+  if (!raw) return null;
+  const normalized = raw.startsWith("board-") ? raw.slice(6) : raw;
+  if (normalized === "groups" || normalized === "entries" || normalized === "source") {
+    return normalized;
+  }
+  return null;
+}
+
 function getBlockedBoundaries(
   groupIds: GroupId[],
   itemsByGroup: Record<GroupId, SetId[]>,
@@ -1884,6 +1900,12 @@ export function DeckMockDndProvider({
     ) {
       targetGroupId = ephemeralEmptyGroupId;
     }
+    if (sourceItem?.kind === "source-template" && !targetGroupId) {
+      const targetBoardHint = resolveBoardIdFromOperationEntity(event.operation.target);
+      if (targetBoardHint === "entries") {
+        targetGroupId = state.groupOrderByBoard.entries[0] ?? "";
+      }
+    }
 
     if (!sourceGroupId || !targetGroupId) {
       setActiveTargetBoardId(null);
@@ -2078,6 +2100,11 @@ export function DeckMockDndProvider({
         targetGroupId = ephContainer;
       } else if (ephemeralEmptyGroupId) {
         targetGroupId = ephemeralEmptyGroupId;
+      } else {
+        const targetBoardHint = resolveBoardIdFromOperationEntity(event.operation.target);
+        if (targetBoardHint === "entries") {
+          targetGroupId = state.groupOrderByBoard.entries[0] ?? "";
+        }
       }
     }
 

@@ -28,6 +28,7 @@ let pairsByIdMock = new Map<
     schemaVersion: number;
   }
 >();
+let registeredDropHandler: ((event: any) => Promise<any>) | null = null;
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
@@ -83,7 +84,12 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
     entries: { emitToken: "entry", acceptTokens: ["source-front"] },
   },
   useDeckMockDnd: () => ({
-    registerDropHandler: mockRegisterDropHandler,
+    registerDropHandler: (...args: unknown[]) => {
+      mockRegisterDropHandler(...args);
+      const maybeHandler = args[1];
+      registeredDropHandler = typeof maybeHandler === "function" ? (maybeHandler as (event: any) => Promise<any>) : null;
+      return () => undefined;
+    },
   }),
   useDeckSortableBoardViewModel: (_boardId: string, _routing: unknown, options: Record<string, unknown>) => ({
     config: {
@@ -187,6 +193,7 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     mockReorderEntries.mockReset();
     mockDeletePair.mockReset();
     mockUseCardThumbnailUrl.mockReset();
+    registeredDropHandler = null;
     mockAddFront.mockResolvedValue([]);
     mockRefreshEntries.mockResolvedValue(undefined);
     mockRemoveEntry.mockResolvedValue(undefined);
@@ -194,6 +201,19 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     mockUseCardThumbnailUrl.mockImplementation((cardId: string | null) =>
       cardId ? `thumb:${cardId}` : null,
     );
+  });
+
+  it("persists reorder for ENTRIES_REORDER raw entry ids", async () => {
+    render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
+    expect(registeredDropHandler).not.toBeNull();
+
+    await registeredDropHandler?.({
+      kind: "ENTRIES_REORDER",
+      dragId: "drag-test-1",
+      orderedEntryIds: ["entry-2", "entry-1"],
+    });
+
+    expect(mockReorderEntries).toHaveBeenCalledWith(["entry-2", "entry-1"]);
   });
 
   it("shows disabled recover button with zero count", () => {

@@ -480,6 +480,39 @@ describe("DeckGroupsSection2 mock boards", () => {
     expect(screen.getByTestId("group-entries:E1")).toHaveTextContent("SRC-2");
   });
 
+  it("routes source-to-entries drop when target is entries board area (not group/item)", () => {
+    renderWorkspace({
+      boardModelsOverride: {
+        entries: {
+          itemsByGroup: { "entries:E1": ["ephemeral:empty-slot:group:entries:E1"] },
+          setLabelsById: { "ephemeral:empty-slot:group:entries:E1": "" },
+          setCardIdById: { "ephemeral:empty-slot:group:entries:E1": "" },
+        },
+      },
+    });
+
+    act(() => {
+      callbacks.onDragStart?.({
+        operation: { source: { id: "src-2", type: "set", group: "source:S1" } },
+      });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "src-2", type: "set", group: "source:S1" },
+          target: { id: "board-entries", type: "board", board: "entries" },
+        },
+      });
+      callbacks.onDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "src-2", type: "set", group: "source:S1" },
+          target: { id: "board-entries", type: "board", board: "entries" },
+        },
+      });
+    });
+
+    expect(screen.getByTestId("group-entries:E1")).toHaveTextContent("SRC-2");
+  });
+
   it("does not allow dropping into source board", () => {
     renderWorkspace();
 

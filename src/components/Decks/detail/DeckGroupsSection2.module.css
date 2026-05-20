@@ -418,6 +418,30 @@
   justify-content: start;
 }
 
+.board[data-testid="board-entries"] .groupStack {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.board[data-testid="board-entries"] .groupWrapperFillParent {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.board[data-testid="board-entries"] .group.groupFillParent {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.board[data-testid="board-entries"] .groupBodyFillParent.groupBodyEntriesFillParent {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-content: start;
+}
+
 .setShell {
   --set-shell-toolbar-top: 16px;
   --set-shell-toolbar-bottom: 18px;

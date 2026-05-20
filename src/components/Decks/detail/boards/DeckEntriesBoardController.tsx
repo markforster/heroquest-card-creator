@@ -401,8 +401,7 @@ export default function DeckEntriesBoardController({
         if (lastHandledDragIdRef.current === event.dragId) return { handled: true, success: true };
 
         const orderedEntryIds = (event.orderedEntryIds ?? [])
-          .filter((id) => id.startsWith("entry:"))
-          .map((id) => id.replace(/^entry:/, ""))
+          .map((id) => (id.startsWith("entry:") ? id.replace(/^entry:/, "") : id))
           .filter(Boolean);
         if (orderedEntryIds.length === 0) return { handled: true, success: true };
 
