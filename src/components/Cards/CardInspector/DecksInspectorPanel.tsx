@@ -73,7 +73,7 @@ export default function DecksInspectorPanel() {
 
   return (
     <div className="d-flex flex-column gap-2">
-      <div className="small text-uppercase text-muted fw-semibold">{heading}</div>
+      <div className={styles.inspectorPairTitle}>{heading}</div>
       {isLoading ? <div className={styles.inspectorModeEmpty}>{t("status.loadingDecks")}</div> : null}
       {!isLoading && error ? (
         <div className={styles.inspectorModeEmpty}>{t("error.failedToLoadDecks")}</div>
