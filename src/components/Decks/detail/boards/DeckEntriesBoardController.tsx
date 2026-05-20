@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Minus, Pencil, Plus, Trash2 } from "lucide-react";
+import { Minus, Pencil, Plus, ReplyAll, Trash2 } from "lucide-react";
 import { apiClient } from "@/api/client";
+import pageStyles from "@/app/page.module.css";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
@@ -55,6 +56,8 @@ export default function DeckEntriesBoardController({
   const [isRecoverModalOpen, setIsRecoverModalOpen] = useState(false);
   const [isRecoverBusy, setIsRecoverBusy] = useState(false);
   const [selectedRecoverFrontIds, setSelectedRecoverFrontIds] = useState<Set<string>>(new Set());
+  const recoverSelectAllRef = useRef<HTMLInputElement | null>(null);
+  const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set());
   const countByEntryId = useMemo(
     () => new Map((entries?.entriesSorted ?? []).map((entry) => [entry.id, entry.count])),
     [entries?.entriesSorted],
@@ -66,6 +69,7 @@ export default function DeckEntriesBoardController({
   );
   const recoverableFrontIdSet = useMemo(() => new Set(recoverableFrontIds), [recoverableFrontIds]);
   const recoverCount = recoverableFrontIds.length;
+  const selectedEntryCount = selectedEntryIds.size;
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
     ({ setId, label, cardId, state }) => {
       const rawEntryId = setId.startsWith("entry:") ? setId.slice(6) : null;
@@ -119,16 +123,88 @@ export default function DeckEntriesBoardController({
     () => recoverableFrontIds.filter((id) => selectedRecoverFrontIds.has(id)),
     [recoverableFrontIds, selectedRecoverFrontIds],
   );
+  const recoverSelectedCount = selectedRecoverFrontsOrdered.length;
+  const recoverTotalCount = recoverableFrontIds.length;
+  const recoverAllSelected = recoverTotalCount > 0 && recoverSelectedCount === recoverTotalCount;
+  const recoverPartiallySelected = recoverSelectedCount > 0 && recoverSelectedCount < recoverTotalCount;
+  const toggleRecoverSelectAll = useCallback(() => {
+    setSelectedRecoverFrontIds((prev) => {
+      if (recoverableFrontIds.length === 0) return prev;
+      if (prev.size === 0) {
+        return new Set(recoverableFrontIds);
+      }
+      if (prev.size < recoverableFrontIds.length) {
+        const next = new Set(prev);
+        recoverableFrontIds.forEach((id) => next.add(id));
+        return next;
+      }
+      return new Set();
+    });
+  }, [recoverableFrontIds]);
+  const buildRemovalItems = useCallback(
+    (entryIdsToRemove: Iterable<string>) => {
+      const ids = new Set(entryIdsToRemove);
+      const items: Array<{
+        entryId: string;
+        setId: string;
+        frontFaceId: string;
+        backFaceId: string;
+      }> = [];
+      for (const entry of entries?.entriesSorted ?? []) {
+        if (!ids.has(entry.id)) continue;
+        const pair = entries?.pairsById.get(entry.pairId);
+        if (!pair?.frontFaceId || !pair.backFaceId) continue;
+        items.push({
+          entryId: entry.id,
+          setId: entry.setId,
+          frontFaceId: pair.frontFaceId,
+          backFaceId: pair.backFaceId,
+        });
+      }
+      return items;
+    },
+    [entries],
+  );
+  const openBulkRemoval = useCallback(() => {
+    const items = buildRemovalItems(selectedEntryIds);
+    if (!items.length) return;
+    setPendingFrontRemoval({ items });
+  }, [buildRemovalItems, selectedEntryIds]);
+  const selectEntry = useCallback((entryId: string, additive: boolean) => {
+    setSelectedEntryIds((prev) => {
+      const next = new Set(prev);
+      if (additive) {
+        if (next.has(entryId)) next.delete(entryId);
+        else next.add(entryId);
+      } else {
+        next.clear();
+        next.add(entryId);
+      }
+      return next;
+    });
+  }, []);
   const model = useDeckSortableBoardViewModel("entries", BOARD_ROUTING_META_BY_ID.entries, {
     renderBoardHeaderActions: () => (
-      <button
-        type="button"
-        className="btn btn-outline-light btn-sm"
-        onClick={() => setIsRecoverModalOpen(true)}
-        disabled={recoverCount === 0}
-      >
-        {`Recover Paired (${recoverCount})`}
-      </button>
+      <div className={styles.boardHeaderActions}>
+        <button
+          type="button"
+          className="btn btn-outline-light btn-sm d-inline-flex align-items-center"
+          onClick={() => setIsRecoverModalOpen(true)}
+          disabled={recoverCount === 0}
+        >
+          <ReplyAll className={`${pageStyles.icon} ${pageStyles.iconLeft}`} aria-hidden="true" />
+          {`Recover Paired (${recoverCount})`}
+        </button>
+        <button
+          type="button"
+          className="btn btn-outline-danger btn-sm"
+          onClick={openBulkRemoval}
+          disabled={selectedEntryCount === 0}
+        >
+          <Trash2 size={12} aria-hidden="true" />
+          {` Delete Selected (${selectedEntryCount})`}
+        </button>
+      </div>
     ),
     renderSetContent,
     renderTopToolbar: ({ setId, cardId, isDragging, isGhost }) => {
@@ -161,21 +237,9 @@ export default function DeckEntriesBoardController({
             onPointerDown={stopPropagation}
             onClick={async (event) => {
               stopPropagation(event);
-              if (!entries?.setId) return;
-              const entry = entries.entriesSorted.find((item) => item.id === entryId);
-              if (!entry) return;
-              const pair = entries.pairsById.get(entry.pairId);
-              if (!pair?.frontFaceId || !pair.backFaceId) return;
-              setPendingFrontRemoval({
-                items: [
-                  {
-                    entryId,
-                    setId: entry.setId,
-                    frontFaceId: pair.frontFaceId,
-                    backFaceId: pair.backFaceId,
-                  },
-                ],
-              });
+              const items = buildRemovalItems([entryId]);
+              if (!items.length) return;
+              setPendingFrontRemoval({ items });
             }}
           >
             <Trash2 size={12} aria-hidden="true" />
@@ -226,8 +290,12 @@ export default function DeckEntriesBoardController({
       );
     },
     isSetSelected: (setUiId) => {
-      if (!selection?.selectedEntryId) return false;
-      return setUiId === `entry:${selection.selectedEntryId}`;
+      const entryId = setUiId.startsWith("entry:") ? setUiId.slice(6) : setUiId;
+      return selectedEntryIds.has(entryId);
+    },
+    onSetClick: (setUiId, _groupId, options) => {
+      const entryId = setUiId.startsWith("entry:") ? setUiId.slice(6) : setUiId;
+      selectEntry(entryId, Boolean(options?.additive));
     },
     emptyMessage: selection?.selectedSetId ? null : "Select a set to view entries.",
   });
@@ -268,6 +336,12 @@ export default function DeckEntriesBoardController({
           await entries?.refreshEntries(entries?.setId);
         }
       } finally {
+        setSelectedEntryIds((prev) => {
+          if (prev.size === 0) return prev;
+          const deletedIds = new Set(pending.items.map((item) => item.entryId));
+          const next = new Set(Array.from(prev).filter((id) => !deletedIds.has(id)));
+          return next.size === prev.size ? prev : next;
+        });
         setPendingFrontRemoval(null);
         setIsPendingRemovalBusy(false);
       }
@@ -357,6 +431,18 @@ export default function DeckEntriesBoardController({
       return next.size === prev.size ? prev : next;
     });
   }, [recoverableFrontIdSet]);
+  useEffect(() => {
+    if (!recoverSelectAllRef.current) return;
+    recoverSelectAllRef.current.indeterminate = recoverPartiallySelected;
+  }, [recoverPartiallySelected]);
+  useEffect(() => {
+    const liveEntryIds = new Set((entries?.entriesSorted ?? []).map((entry) => entry.id));
+    setSelectedEntryIds((prev) => {
+      if (prev.size === 0) return prev;
+      const next = new Set(Array.from(prev).filter((id) => liveEntryIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [entries?.entriesSorted]);
 
   return (
     <>
@@ -365,31 +451,36 @@ export default function DeckEntriesBoardController({
         isOpen={isRecoverModalOpen}
         onClose={closeRecoverModal}
         title="Recover Paired Cards"
+        contentClassName={`${pageStyles.cardsPopover} ${styles.recoverCardsPopover}`}
         footer={
           <div className={styles.recoverModalToolbar}>
+            <label className="d-inline-flex align-items-center gap-2 mb-0">
+              <input
+                ref={recoverSelectAllRef}
+                type="checkbox"
+                className="form-check-input hq-checkbox"
+                checked={recoverAllSelected}
+                disabled={isRecoverBusy || recoverTotalCount === 0}
+                onChange={toggleRecoverSelectAll}
+                aria-label="Select all recoverable cards"
+              />
+              <span>{recoverAllSelected ? "Select None" : "Select All"}</span>
+            </label>
             <button
               type="button"
               className="btn btn-outline-secondary btn-sm"
-              onClick={clearRecoverSelection}
-              disabled={isRecoverBusy || selectedRecoverFrontsOrdered.length === 0}
+              onClick={closeRecoverModal}
+              disabled={isRecoverBusy}
             >
-              Clear Selection
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline-primary btn-sm"
-              onClick={() => void addRecoverFronts(recoverableFrontIds)}
-              disabled={isRecoverBusy || recoverableFrontIds.length === 0}
-            >
-              {isRecoverBusy ? "Adding..." : "Add All"}
+              Cancel
             </button>
             <button
               type="button"
               className="btn btn-primary btn-sm"
               onClick={() => void addRecoverFronts(selectedRecoverFrontsOrdered)}
-              disabled={isRecoverBusy || selectedRecoverFrontsOrdered.length === 0}
+              disabled={isRecoverBusy || recoverSelectedCount === 0}
             >
-              {isRecoverBusy ? "Adding..." : "Add Selected"}
+              {isRecoverBusy ? "Recovering..." : "Recover Selected"}
             </button>
           </div>
         }
@@ -398,7 +489,8 @@ export default function DeckEntriesBoardController({
           {recoverableFrontIds.length === 0 ? (
             <div className={styles.recoverModalEmpty}>No paired cards to recover.</div>
           ) : (
-            <div className={styles.recoverModalGrid}>
+            <div className={styles.recoverModalScrollArea}>
+              <div className={styles.recoverModalGrid}>
               {recoverableFrontIds.map((frontFaceId) => {
                 const isSelected = selectedRecoverFrontIds.has(frontFaceId);
                 return (
@@ -434,13 +526,18 @@ export default function DeckEntriesBoardController({
                   </div>
                 );
               })}
+              </div>
             </div>
           )}
         </div>
       </ModalShell>
       <ConfirmModal
         isOpen={Boolean(pendingFrontRemoval)}
-        title={t("decks.removeFrontPromptTitle")}
+        title={
+          pendingFrontRemoval && pendingFrontRemoval.items.length > 1
+            ? `Remove ${pendingFrontRemoval.items.length} entries from set?`
+            : t("decks.removeFrontPromptTitle")
+        }
         confirmLabel={t("decks.removeFromSet")}
         extraLabel={t("decks.removeAndUnpair")}
         cancelLabel={t("actions.cancel")}
@@ -455,7 +552,9 @@ export default function DeckEntriesBoardController({
           setPendingFrontRemoval(null);
         }}
       >
-        {t("decks.removeFrontPromptBody")}
+        {pendingFrontRemoval && pendingFrontRemoval.items.length > 1
+          ? `This will apply to ${pendingFrontRemoval.items.length} selected entries.`
+          : t("decks.removeFrontPromptBody")}
       </ConfirmModal>
     </>
   );

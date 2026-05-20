@@ -228,7 +228,7 @@ export type DeckSortableBoardViewModel = {
   onCreateGroupAtIndex: (index: number) => void;
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
   allowGroupReorder?: boolean;
-  onSetClick?: (setUiId: SetId, groupUiId: GroupId) => void;
+  onSetClick?: (setUiId: SetId, groupUiId: GroupId, options?: { additive: boolean }) => void;
   onSetHoverChange?: (args: SetHoverContext) => void;
   renderSetContent: (args: {
     setId: SetId;
@@ -1402,7 +1402,9 @@ export function DeckSortableBoardView({
                           })}
                           onClick={() => {
                             if (model.activeSetId) return;
-                            model.onSetClick?.(setId, groupId);
+                            model.onSetClick?.(setId, groupId, {
+                              additive: event.metaKey || event.ctrlKey,
+                            });
                           }}
                           onHoverChange={(isHovered) =>
                             model.onSetHoverChange?.({
@@ -1440,7 +1442,9 @@ export function DeckSortableBoardView({
                           })}
                           onClick={() => {
                             if (model.activeSetId) return;
-                            model.onSetClick?.(setId, groupId);
+                            model.onSetClick?.(setId, groupId, {
+                              additive: event.metaKey || event.ctrlKey,
+                            });
                           }}
                           onHoverChange={(isHovered) =>
                             model.onSetHoverChange?.({
@@ -2371,7 +2375,7 @@ export function useDeckSortableBoardViewModel(
   routing: BoardRoutingMeta,
   options?: {
     allowGroupReorder?: boolean;
-    onSetClick?: (setUiId: SetId, groupUiId: GroupId) => void;
+    onSetClick?: (setUiId: SetId, groupUiId: GroupId, options?: { additive: boolean }) => void;
     onSetHoverChange?: DeckSortableBoardViewModel["onSetHoverChange"];
     renderSetContent?: DeckSortableBoardViewModel["renderSetContent"];
     renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];

@@ -685,10 +685,23 @@
 }
 
 .recoverModalBody {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
   min-height: 0;
+}
+
+.recoverCardsPopover {
+  min-height: 16rem !important;
+  height: min(560px, calc(100vh - 10rem)) !important;
+  max-height: calc(100vh - 10rem) !important;
+}
+
+.recoverModalScrollArea {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .recoverModalToolbar {
