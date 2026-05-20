@@ -12,6 +12,7 @@ import { DeckSetEntriesProvider } from "@/components/Decks/detail/context/DeckSe
 import DeckBacksPanel from "@/components/Decks/detail/DeckBacksPanel";
 import DeckDetailHeader from "@/components/Decks/detail/DeckDetailHeader";
 import DeckDetailModals from "@/components/Decks/detail/DeckDetailModals";
+import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
 import type { DeckDetailSelectionModel } from "@/components/Decks/hooks/useDeckDetailSelectionModel";
 import { useDeckHeaderModel } from "@/components/Decks/hooks/useDeckHeaderModel";
 import type { DeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
@@ -119,6 +120,37 @@ function DeckDetailPanelContent({
     selection: selectionModel,
     entries: entriesModel,
   });
+  const deckPreviewCardIds = useMemo(() => {
+    const orderedGroups = [...selectionModel.orderedGroups].sort((a, b) => a.sortIndex - b.sortIndex);
+    const setsByGroup = new Map<string, typeof selectionModel.sets>();
+    selectionModel.sets.forEach((set) => {
+      const list = setsByGroup.get(set.groupId) ?? [];
+      list.push(set);
+      setsByGroup.set(set.groupId, list);
+    });
+    setsByGroup.forEach((list, groupId) => {
+      setsByGroup.set(groupId, [...list].sort((a, b) => a.sortIndex - b.sortIndex));
+    });
+    const orderedSets = orderedGroups.flatMap((group) => setsByGroup.get(group.id) ?? []);
+
+    const seen = new Set<string>();
+    const ids: string[] = [];
+    if (keySetId) {
+      const keySet = orderedSets.find((set) => set.id === keySetId) ?? null;
+      if (keySet?.backFaceId && !seen.has(keySet.backFaceId)) {
+        ids.push(keySet.backFaceId);
+        seen.add(keySet.backFaceId);
+      }
+    }
+    for (const set of orderedSets) {
+      if (set.id === keySetId) continue;
+      if (!set.backFaceId || seen.has(set.backFaceId)) continue;
+      ids.push(set.backFaceId);
+      seen.add(set.backFaceId);
+      if (ids.length >= DEFAULT_DECK_FAN_PREVIEW_COUNT) break;
+    }
+    return ids.slice(0, DEFAULT_DECK_FAN_PREVIEW_COUNT);
+  }, [keySetId, selectionModel.orderedGroups, selectionModel.sets]);
 
   return (
     <>
@@ -128,6 +160,7 @@ function DeckDetailPanelContent({
             <DeckDetailHeader
               deckId={deckId}
               deckTitle={deckTitle}
+              deckPreviewCardIds={deckPreviewCardIds}
             />
 
             <DeckDetailSelectionProvider model={selectionModel}>

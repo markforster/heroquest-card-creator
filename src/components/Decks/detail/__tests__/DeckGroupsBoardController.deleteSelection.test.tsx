@@ -123,4 +123,5 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
     expect(ephemeralClassName).toContain(styles.groupVisualExpanded);
     expect(ephemeralClassName).toContain(styles.groupEphemeralPulse);
   });
+
 });

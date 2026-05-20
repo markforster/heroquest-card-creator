@@ -7224,6 +7224,20 @@ button.assetsKindBadge:disabled {
   color: var(--hq-text);
 }
 
+.deckBreadcrumbTitleWithFan {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.deckBreadcrumbFan {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
 .deckHeaderActions {
   display: inline-flex;
   gap: var(--space-3);
