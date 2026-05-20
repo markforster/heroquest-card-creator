@@ -624,10 +624,91 @@ export const fr = {
   "label.databaseAppVersion": "Version de l’app ayant créé la base",
   "label.lastEdited": "Dernière modification",
   "label.unknownVersion": "Inconnue",
-  "heading.decksForCard": "Decks for this card",
+  "heading.decksForCard": "Decks pour cette carte",
   "label.decksView": "Decks",
   "empty.saveCardToViewDecks": "Save this card to view deck membership.",
   "empty.cardNotInDecks": "This card is not in any deck.",
   "status.loadingDecks": "Loading decks...",
   "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Exporter le deck",
+  "decks.faces.back": "Faces arrière",
+  "decks.faces.front": "Faces avant",
+  "decks.faces.mode": "Mode des faces",
+  "decks.entries.actions.editFront": "Modifier la carte avant",
+  "decks.entries.actions.removeFront": "Retirer l'avant du set",
+  "decks.entries.mode.label": "Mode des cartes du set",
+  "decks.entries.mode.inSet": "Dans le set ({count})",
+  "decks.entries.mode.pairedNotInSet": "Appariées (hors set) ({count})",
+  "decks.entries.actions.removeSelected": "Retirer la sélection",
+  "decks.entries.actions.recoverPaired": "Récupérer les appariées ({count})",
+  "decks.entries.actions.removeSelectedCount": "Retirer la sélection ({count})",
+  "decks.entries.actions.editCard": "Modifier la carte",
+  "decks.entries.actions.deleteEntry": "Supprimer l'entrée",
+  "decks.entries.empty.selectSet": "Sélectionnez un set pour voir les entrées.",
+  "decks.entries.empty.noPairedPending": "Aucune carte appariée en attente d'ajout.",
+  "decks.entries.selectedSetBackAlt": "Dos du set sélectionné",
+  "decks.entries.recover.modalTitle": "Récupérer les cartes appariées",
+  "decks.entries.recover.selectAllAria": "Sélectionner toutes les cartes récupérables",
+  "decks.entries.recover.selectNone": "Ne rien sélectionner",
+  "decks.entries.recover.selectAll": "Tout sélectionner",
+  "decks.entries.recover.recovering": "Récupération...",
+  "decks.entries.recover.recoverSelected": "Récupérer la sélection",
+  "decks.entries.recover.empty": "Aucune carte appariée à récupérer.",
+  "decks.entries.removePrompt.bulkTitle": "Retirer {count} entrées du set ?",
+  "decks.entries.removePrompt.bulkBody": "Cela s'appliquera à {count} entrées sélectionnées.",
+  "decks.sets.actions.setKeyCard": "Définir comme carte clé",
+  "decks.sets.actions.delete": "Supprimer le set",
+  "decks.sets.badge.keyCard": "Carte clé",
+  "decks.boards.groups": "Groupes",
+  "decks.boards.entries": "Entrées",
+  "decks.boards.source": "Source",
+  "decks.boards.cards": "Cartes",
+  "decks.groups.actions.reorder": "Réordonner le groupe",
+  "decks.errors.saveTitleFailed": "Impossible d'enregistrer le titre du deck",
+  "decks.entries.quantity.decrease": "Diminuer la quantité",
+  "decks.entries.quantity.increase": "Augmenter la quantité",
+  "decks.entries.quantity.current": "Quantité {count}",
+
+  "decks.sourcePanelToggle": "Afficher/masquer le panneau des faces source",
+
+  "decks.entries.recover.selectCardAria": "Sélectionner {cardId}",
+
+  "decks.groups.actions.createAtPosition": "Créer un groupe à la position {index}",
+
+  "actions.edit": "Modifier",
+
+  "decks.openDeck": "Ouvrir le deck",
+
+  "decks.createDeck": "Créer un deck",
+
+  "decks.editDeck": "Modifier le deck",
+
+  "decks.title": "Titre",
+
+  "decks.description": "Description",
+
+  "decks.descriptionPlaceholder": "Description facultative",
+
+  "decks.removeAndUnpair": "Retirer et désapparier",
+
+  "decks.removeFromSet": "Retirer du set",
+
+  "decks.deleteDeckTitle": "Supprimer le deck ?",
+
+  "decks.deleteDeckBody": "La suppression d’un deck ne supprime ni vos cartes ni vos associations ; elle supprime uniquement l’organisation du deck.",
+
+  "decks.deleteSelectedBody": "Supprimer {count} deck(s) sélectionné(s) ? La suppression d’un deck ne supprime ni vos cartes ni vos associations ; elle supprime uniquement l’organisation du deck.",
+
+  "decks.removeFrontPromptTitle": "Retirer la face avant du set ? ",
+
+  "decks.removeFrontPromptBody": "Retirez cette carte avant du set. Vous pouvez aussi, si vous le souhaitez, la désapparier de la face arrière de ce set.",
+
+  "warning.unpairFromBackFaceSingle": "1 carte sera désappariée de ce verso. Continuer ?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} cartes seront désappariées de ce verso. Continuer ?",
+
+  "heading.impactedDecks": "Decks impactés",
+
+  "decks.pairUsage.body": "Cela désappariera et supprimera les entrées de deck dépendantes aux emplacements suivants :",
+
 } as const;

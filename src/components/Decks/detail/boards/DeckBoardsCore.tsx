@@ -27,6 +27,7 @@ import {
 import { createPortal } from "react-dom";
 
 import CardThumbnail from "@/components/common/CardThumbnail";
+import { useI18n } from "@/i18n/I18nProvider";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 
 import styles from "../DeckGroupsSection2.module.css";
@@ -262,7 +263,7 @@ export type BoardRoutingMeta = {
 const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
   groups: {
     boardId: "groups",
-    title: "Groups",
+    title: "decks.boards.groups",
     allowMultipleGroups: true,
     allowGroupCreate: true,
     allowInGroupSort: true,
@@ -270,7 +271,7 @@ const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
   },
   entries: {
     boardId: "entries",
-    title: "Entries",
+    title: "decks.boards.entries",
     allowMultipleGroups: false,
     allowGroupCreate: false,
     allowInGroupSort: true,
@@ -278,7 +279,7 @@ const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
   },
   source: {
     boardId: "source",
-    title: "Source",
+    title: "decks.boards.source",
     allowMultipleGroups: false,
     allowGroupCreate: false,
     allowInGroupSort: false,
@@ -793,6 +794,7 @@ function GroupColumn({
   allowGroupReorder?: boolean;
   isGroupDragSource?: boolean;
 }) {
+  const { t } = useI18n();
   const droppable = useDroppable({
     id: groupId,
     type: "group",
@@ -841,8 +843,8 @@ function GroupColumn({
           ]
             .filter(Boolean)
             .join(" ")}
-          aria-label="Reorder group"
-          title="Reorder group"
+          aria-label={t("decks.groups.actions.reorder")}
+          title={t("decks.groups.actions.reorder")}
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         >
@@ -1242,6 +1244,7 @@ function CreateBoundaryPlaceholder({
   onCreate: (index: number) => void;
   visible: boolean;
 }) {
+  const { t } = useI18n();
   return (
     <div
       className={[styles.createBoundary, visible ? styles.createBoundaryVisible : ""]
@@ -1259,7 +1262,7 @@ function CreateBoundaryPlaceholder({
           .filter(Boolean)
           .join(" ")}
         onClick={() => onCreate(index)}
-        aria-label={`Create group at position ${index}`}
+        aria-label={t("decks.groups.actions.createAtPosition").replace("{index}", String(index))}
         tabIndex={visible ? 0 : -1}
       >
         <SquareSplitHorizontal className={styles.createBoundaryIcon} aria-hidden="true" />
@@ -2489,6 +2492,7 @@ export function useDeckSortableBoardViewModel(
     emptyMessage?: string | null;
   },
 ): DeckSortableBoardViewModel {
+  const { t } = useI18n();
   const {
     state,
     setLabelsById,
@@ -2508,7 +2512,13 @@ export function useDeckSortableBoardViewModel(
   return {
     config: {
       ...BOARD_CONFIGS[boardId],
-      title: options?.title ?? BOARD_CONFIGS[boardId].title,
+      title:
+        options?.title ??
+        (boardId === "groups"
+          ? t("decks.boards.groups")
+          : boardId === "entries"
+            ? t("decks.boards.entries")
+            : t("decks.boards.source")),
     },
     emitToken: routing.emitToken,
     acceptTokens: routing.acceptTokens,
@@ -2570,11 +2580,13 @@ type EntriesAdapterInput = {
   entriesSorted: Array<{ id: string; sortIndex: number }>;
   entryFrontIdByEntryId: Map<string, string>;
   cardNameById: Map<string, string>;
+  laneLabel?: string;
 };
 
 type SourceAdapterInput = {
   cards: Array<{ id: string; name: string }>;
   sourceFaceMode: SourceItemFace;
+  laneLabel?: string;
 };
 
 export function toGroupsBoardModel(input: GroupsAdapterInput): BoardModel {
@@ -2637,7 +2649,7 @@ export function toEntriesBoardModel(input: EntriesAdapterInput): BoardModel {
     boardId: "entries",
     groupIds: [groupId],
     itemsByGroup: { [groupId]: itemIds },
-    groupLabelsById: { [groupId]: "Entries" },
+    groupLabelsById: { [groupId]: input.laneLabel ?? "Entries" },
     setLabelsById,
     setCardIdById,
     emitToken: "entry",
@@ -2662,7 +2674,7 @@ export function toSourceBoardModel(input: SourceAdapterInput): BoardModel {
     boardId: "source",
     groupIds: [groupId],
     itemsByGroup: { [groupId]: itemIds },
-    groupLabelsById: { [groupId]: "Cards" },
+    groupLabelsById: { [groupId]: input.laneLabel ?? "Cards" },
     setLabelsById,
     setCardIdById,
     sourceItemFaceBySetId,

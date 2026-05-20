@@ -394,7 +394,7 @@ export default function TemplateChooser() {
         }}
       >
         <div>
-          This will unpair and remove dependent deck entries from the following locations:
+          {t("decks.pairUsage.body")}
         </div>
         <ul>
           {(pairUsagePrompt?.report.cascadePlan.usage ?? []).map((usage) => (

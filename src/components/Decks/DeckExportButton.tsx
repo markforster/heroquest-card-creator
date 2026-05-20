@@ -6,6 +6,7 @@ import { useState } from "react";
 import IconButton from "@/components/common/IconButton";
 import { useDeckExport } from "@/components/Decks/context/DeckExportContext";
 import { useDeckHasSets } from "@/components/Decks/hooks/useDeckHasSets";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type DeckExportButtonProps = {
   deckId?: string | null;
@@ -19,13 +20,15 @@ export default function DeckExportButton({
   deckId,
   scope,
   disabled,
-  label = "Export Deck",
+  label,
   className = "btn btn-outline-light btn-sm",
 }: DeckExportButtonProps) {
+  const { t } = useI18n();
   const exportContext = useDeckExport();
   const exportDeck = exportContext?.exportDeck;
   const { hasSets } = useDeckHasSets(deckId);
   const [isLoading, setIsLoading] = useState(false);
+  const resolvedLabel = label ?? t("decks.actions.exportDeck");
 
   const isDisabled = disabled || !deckId || !hasSets || isLoading || !exportDeck;
 
@@ -33,7 +36,7 @@ export default function DeckExportButton({
     <IconButton
       className={className}
       icon={Download}
-      title={label}
+      title={resolvedLabel}
       disabled={Boolean(isDisabled)}
       onClick={async () => {
         if (!deckId || isLoading || !exportDeck) return;
@@ -45,7 +48,7 @@ export default function DeckExportButton({
         }
       }}
     >
-      {label}
+      {resolvedLabel}
     </IconButton>
   );
 }

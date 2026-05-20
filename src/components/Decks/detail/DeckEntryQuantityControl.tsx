@@ -1,6 +1,7 @@
 "use client";
 
 import styles from "@/app/page.module.css";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type DeckEntryQuantityControlProps = {
   count: number;
@@ -17,8 +18,10 @@ export default function DeckEntryQuantityControl({
   onDecrement,
   onIncrement,
 }: DeckEntryQuantityControlProps) {
+  const { t } = useI18n();
   const canDecrement = count > min;
   const canIncrement = count < max;
+  const quantityLabel = t("decks.entries.quantity.current").replace("{count}", String(count));
 
   return (
     <div className={styles.deckEntryQuantityControl} data-entry-qty-control="true">
@@ -26,8 +29,8 @@ export default function DeckEntryQuantityControl({
         type="button"
         className={`${styles.deckEntryCountButton} ${styles.deckEntryCountButtonMinus}`}
         data-entry-qty-button="true"
-        aria-label="Decrease quantity"
-        title="Decrease quantity"
+        aria-label={t("decks.entries.quantity.decrease")}
+        title={t("decks.entries.quantity.decrease")}
         onClick={onDecrement}
         disabled={!canDecrement}
       >
@@ -35,8 +38,8 @@ export default function DeckEntryQuantityControl({
       </button>
       <div
         className={styles.deckEntryCountValue}
-        aria-label={`Quantity ${count}`}
-        title={`Quantity ${count}`}
+        aria-label={quantityLabel}
+        title={quantityLabel}
       >
         {count}
       </div>
@@ -44,8 +47,8 @@ export default function DeckEntryQuantityControl({
         type="button"
         className={`${styles.deckEntryCountButton} ${styles.deckEntryCountButtonPlus}`}
         data-entry-qty-button="true"
-        aria-label="Increase quantity"
-        title="Increase quantity"
+        aria-label={t("decks.entries.quantity.increase")}
+        title={t("decks.entries.quantity.increase")}
         onClick={onIncrement}
         disabled={!canIncrement}
       >

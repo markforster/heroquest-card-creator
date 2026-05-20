@@ -10,9 +10,10 @@ import { getCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 
 type UseDecksGridModelArgs = {
   untitledDeckLabel: string;
+  saveTitleErrorLabel: string;
 };
 
-export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) {
+export function useDecksGridModel({ untitledDeckLabel, saveTitleErrorLabel }: UseDecksGridModelArgs) {
   const mutations = useDeckMutations();
   const decksQuery = useListDecks(
     { queries: {} },
@@ -131,10 +132,10 @@ export function useDecksGridModel({ untitledDeckLabel }: UseDecksGridModelArgs) 
       return true;
     } catch (error) {
       setIsDeckTitleSaving(false);
-      setDeckTitleSaveError(error instanceof Error ? error.message : "Failed to save deck title");
+      setDeckTitleSaveError(error instanceof Error ? error.message : saveTitleErrorLabel);
       return false;
     }
-  }, [mutations, refresh, untitledDeckLabel]);
+  }, [mutations, refresh, saveTitleErrorLabel, untitledDeckLabel]);
 
   const cancelPendingDeckTitleSave = useCallback(() => {
     if (pendingSaveTimeoutRef.current) {

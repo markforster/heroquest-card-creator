@@ -13,6 +13,7 @@ import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 import { isPairDeleteConfirmRequiredError } from "@/lib/decks-errors";
+import formatMessageWith from "@/lib/format-message-with";
 import styles from "../DeckGroupsSection2.module.css";
 import {
   BOARD_ROUTING_META_BY_ID,
@@ -33,6 +34,8 @@ export default function DeckEntriesBoardController({
   onOpenCardEditor: (cardId: string) => void;
 }) {
   const { t } = useI18n();
+  const formatMessage = (key: string, vars: Record<string, string | number>) =>
+    formatMessageWith(t as never, key as never, vars);
   let selection: ReturnType<typeof useDeckDetailSelection> | null = null;
   try {
     selection = useDeckDetailSelection();
@@ -100,7 +103,7 @@ export default function DeckEntriesBoardController({
       <span className={styles.boardTitleWithThumb}>
         <CardThumbnail
           src={selectedSetBackThumbUrl}
-          alt="Selected set back"
+          alt={t("decks.entries.selectedSetBackAlt")}
           variant="xs"
           fit="contain"
           className={styles.boardTitleThumb}
@@ -237,7 +240,7 @@ export default function DeckEntriesBoardController({
           disabled={recoverCount === 0}
         >
           <ReplyAll className={`${pageStyles.icon} ${pageStyles.iconLeft}`} aria-hidden="true" />
-          {`Recover Paired (${recoverCount})`}
+          {formatMessage("decks.entries.actions.recoverPaired", { count: recoverCount })}
         </button>
         <button
           type="button"
@@ -246,7 +249,9 @@ export default function DeckEntriesBoardController({
           disabled={selectedEntryCount === 0}
         >
           <ListMinus size={12} aria-hidden="true" />
-          {` Remove Selected (${selectedEntryCount})`}
+          {formatMessage("decks.entries.actions.removeSelectedCount", {
+            count: selectedEntryCount,
+          })}
         </button>
       </div>
     ),
@@ -262,8 +267,8 @@ export default function DeckEntriesBoardController({
           <button
             type="button"
             className={[styles.toolbarIconButton, styles.toolbarIconButtonEdit].join(" ")}
-            aria-label="Edit card"
-            title="Edit card"
+            aria-label={t("decks.entries.actions.editCard")}
+            title={t("decks.entries.actions.editCard")}
             onPointerDown={stopPropagation}
             onClick={(event) => {
               stopPropagation(event);
@@ -276,8 +281,8 @@ export default function DeckEntriesBoardController({
           <button
             type="button"
             className={[styles.toolbarIconButton, styles.toolbarIconButtonDelete].join(" ")}
-            aria-label="Delete entry"
-            title="Delete entry"
+            aria-label={t("decks.entries.actions.deleteEntry")}
+            title={t("decks.entries.actions.deleteEntry")}
             onPointerDown={stopPropagation}
             onClick={async (event) => {
               stopPropagation(event);
@@ -300,8 +305,8 @@ export default function DeckEntriesBoardController({
           <button
             type="button"
             className={[styles.toolbarIconButton, styles.boardQtyAdjustButton, styles.boardQtyMinus].join(" ")}
-            aria-label="Decrease quantity"
-            title="Decrease quantity"
+            aria-label={t("decks.entries.quantity.decrease")}
+            title={t("decks.entries.quantity.decrease")}
             disabled={count <= 1}
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => {
@@ -319,8 +324,8 @@ export default function DeckEntriesBoardController({
           <button
             type="button"
             className={[styles.toolbarIconButton, styles.boardQtyAdjustButton, styles.boardQtyPlus].join(" ")}
-            aria-label="Increase quantity"
-            title="Increase quantity"
+            aria-label={t("decks.entries.quantity.increase")}
+            title={t("decks.entries.quantity.increase")}
             disabled={count >= 12}
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => {
@@ -498,7 +503,7 @@ export default function DeckEntriesBoardController({
           data-testid="entries-empty-state-board"
         >
           <div className={styles.entriesEmptyStatePanel}>
-            <div className={styles.entriesEmptyStateMessage}>Select a set to view entries.</div>
+            <div className={styles.entriesEmptyStateMessage}>{t("decks.entries.empty.selectSet")}</div>
           </div>
         </section>
       ) : (
@@ -507,7 +512,7 @@ export default function DeckEntriesBoardController({
       <ModalShell
         isOpen={isRecoverModalOpen}
         onClose={closeRecoverModal}
-        title="Recover Paired Cards"
+        title={t("decks.entries.recover.modalTitle")}
         contentClassName={`${pageStyles.cardsPopover} ${styles.recoverCardsPopover}`}
         footer={
           <div className={styles.recoverModalToolbar}>
@@ -519,9 +524,13 @@ export default function DeckEntriesBoardController({
                 checked={recoverAllSelected}
                 disabled={isRecoverBusy || recoverTotalCount === 0}
                 onChange={toggleRecoverSelectAll}
-                aria-label="Select all recoverable cards"
+                aria-label={t("decks.entries.recover.selectAllAria")}
               />
-              <span>{recoverAllSelected ? "Select None" : "Select All"}</span>
+              <span>
+                {recoverAllSelected
+                  ? t("decks.entries.recover.selectNone")
+                  : t("decks.entries.recover.selectAll")}
+              </span>
             </label>
             <button
               type="button"
@@ -529,7 +538,7 @@ export default function DeckEntriesBoardController({
               onClick={closeRecoverModal}
               disabled={isRecoverBusy}
             >
-              Cancel
+              {t("actions.cancel")}
             </button>
             <button
               type="button"
@@ -537,14 +546,16 @@ export default function DeckEntriesBoardController({
               onClick={() => void addRecoverFronts(selectedRecoverFrontsOrdered)}
               disabled={isRecoverBusy || recoverSelectedCount === 0}
             >
-              {isRecoverBusy ? "Recovering..." : "Recover Selected"}
+              {isRecoverBusy
+                ? t("decks.entries.recover.recovering")
+                : t("decks.entries.recover.recoverSelected")}
             </button>
           </div>
         }
       >
         <div className={styles.recoverModalBody}>
           {recoverableFrontIds.length === 0 ? (
-            <div className={styles.recoverModalEmpty}>No paired cards to recover.</div>
+            <div className={styles.recoverModalEmpty}>{t("decks.entries.recover.empty")}</div>
           ) : (
             <div className={styles.recoverModalScrollArea}>
               <div className={styles.recoverModalGrid}>
@@ -555,7 +566,10 @@ export default function DeckEntriesBoardController({
                     <input
                       type="checkbox"
                       className={styles.recoverCardCheckbox}
-                      aria-label={`Select ${frontFaceId}`}
+                      aria-label={t("decks.entries.recover.selectCardAria").replace(
+                        "{cardId}",
+                        frontFaceId,
+                      )}
                       checked={isSelected}
                       onChange={() => {
                         toggleRecoverSelection(frontFaceId, true);
@@ -592,7 +606,9 @@ export default function DeckEntriesBoardController({
         isOpen={Boolean(pendingFrontRemoval)}
         title={
           pendingFrontRemoval && pendingFrontRemoval.items.length > 1
-            ? `Remove ${pendingFrontRemoval.items.length} entries from set?`
+            ? formatMessage("decks.entries.removePrompt.bulkTitle", {
+                count: pendingFrontRemoval.items.length,
+              })
             : t("decks.removeFrontPromptTitle")
         }
         confirmLabel={t("decks.removeFromSet")}
@@ -611,7 +627,9 @@ export default function DeckEntriesBoardController({
         }}
       >
         {pendingFrontRemoval && pendingFrontRemoval.items.length > 1
-          ? `This will apply to ${pendingFrontRemoval.items.length} selected entries.`
+          ? formatMessage("decks.entries.removePrompt.bulkBody", {
+              count: pendingFrontRemoval.items.length,
+            })
           : t("decks.removeFrontPromptBody")}
       </ConfirmModal>
     </>

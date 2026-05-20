@@ -6,6 +6,7 @@ import { useDeckRightPanel } from "@/components/Decks/detail/context/DeckRightPa
 import type { DeckDetailSelectionModel } from "@/components/Decks/hooks/useDeckDetailSelectionModel";
 import type { DeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
+import { useI18n } from "@/i18n/I18nProvider";
 
 import type { BoardId, BoardModel } from "./DeckGroupsSection2";
 import { toEntriesBoardModel, toGroupsBoardModel, toSourceBoardModel } from "./DeckGroupsSection2";
@@ -17,6 +18,7 @@ export function useDeckBoardsModels({
   selection: DeckDetailSelectionModel;
   entries: DeckSetEntriesModel;
 }): Record<BoardId, BoardModel> {
+  const { t } = useI18n();
   const rightPanel = useDeckRightPanel();
 
   const usedBackFaceIds = useMemo(
@@ -84,16 +86,18 @@ export function useDeckBoardsModels({
         })),
         entryFrontIdByEntryId: entries.entryFrontIdByEntryId,
         cardNameById,
+        laneLabel: t("decks.boards.entries"),
       }),
-    [cardNameById, entries.entriesSorted, entries.entryFrontIdByEntryId],
+    [cardNameById, entries.entriesSorted, entries.entryFrontIdByEntryId, t],
   );
   const sourceModel = useMemo(
     () =>
       toSourceBoardModel({
         cards: filteredCards.map((card) => ({ id: card.id, name: card.name })),
         sourceFaceMode: rightPanel.rightPanelFaceMode === "back" ? "back" : "front",
+        laneLabel: t("decks.boards.cards"),
       }),
-    [filteredCards, rightPanel.rightPanelFaceMode],
+    [filteredCards, rightPanel.rightPanelFaceMode, t],
   );
 
   return {

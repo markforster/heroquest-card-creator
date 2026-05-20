@@ -841,7 +841,7 @@ export default function PairingInspectorPanel({
           {pendingUnpairImpact?.usage.length ? (
             <>
               <div>
-                This will unpair and remove dependent deck entries from the following locations:
+                {t("decks.pairUsage.body")}
               </div>
               <div className={styles.pairingUsageDecks}>
                 {pendingUnpairImpact.decks.map((deck) => (
@@ -894,7 +894,7 @@ export default function PairingInspectorPanel({
       >
         <div className={styles.pairingUsageList}>
           <div>
-            This will unpair and remove dependent deck entries from the following locations:
+            {t("decks.pairUsage.body")}
           </div>
           <ul className={styles.pairingUsageItems}>
             {(pairUsagePrompt?.cascadePlan.usage ?? []).map((usage) => (

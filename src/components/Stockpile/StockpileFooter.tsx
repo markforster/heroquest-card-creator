@@ -14,6 +14,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import type { CardRecord } from "@/api/cards";
 import { previewDeletePair } from "@/lib/pairs-service";
 import type { PairUsageReport } from "@/lib/decks-errors";
+import formatMessageWith from "@/lib/format-message-with";
 
 import type { ReactNode } from "react";
 
@@ -54,6 +55,10 @@ export default function StockpileFooter({
   onLoadSelectedCard,
 }: StockpileFooterProps) {
   const { t } = useI18n();
+  const formatMessage = (
+    key: string,
+    vars: Record<string, string | number>,
+  ) => formatMessageWith(t as never, key as never, vars);
   const [hintIndex, setHintIndex] = useState(0);
   const [isHintVisible, setIsHintVisible] = useState(true);
   const [isApplyingPairSelection, setIsApplyingPairSelection] = useState(false);
@@ -281,14 +286,19 @@ export default function StockpileFooter({
         <div className={styles.pairingUsageList}>
           <div>
             {pendingPairFrontsUnpair
-              ? `${pendingPairFrontsUnpair.removedCards.length} card${
-                  pendingPairFrontsUnpair.removedCards.length === 1 ? "" : "s"
-                } will be unpaired from this back face. Continue?`
+              ? formatMessage(
+                  pendingPairFrontsUnpair.removedCards.length === 1
+                    ? "warning.unpairFromBackFaceSingle"
+                    : "warning.unpairFromBackFaceMultiple",
+                  { count: pendingPairFrontsUnpair.removedCards.length },
+                )
               : null}
           </div>
           {pendingPairFrontsUnpair?.removedCards.length ? (
             <>
-              <div className={styles.pairFrontsModalSectionTitle}>Cards to be unpaired</div>
+              <div className={styles.pairFrontsModalSectionTitle}>
+                {t("heading.cardsToBeUnpaired")}
+              </div>
               <div className={styles.pairingPanelGrid}>
                 {pendingPairFrontsUnpair.removedCards.map((card) => {
                   const templateThumbSrc = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
@@ -309,7 +319,7 @@ export default function StockpileFooter({
           ) : null}
           {pendingPairFrontsUnpair?.decks.length ? (
             <>
-              <div className={styles.pairFrontsModalSectionTitle}>Impacted decks</div>
+              <div className={styles.pairFrontsModalSectionTitle}>{t("heading.impactedDecks")}</div>
               <div className={styles.pairingUsageDecks}>
                 {pendingPairFrontsUnpair.decks.map((deck) => (
                   <div

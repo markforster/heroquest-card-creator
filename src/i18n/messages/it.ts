@@ -624,10 +624,91 @@ export const it = {
   "label.databaseAppVersion": "Database creato con versione dell'app",
   "label.lastEdited": "Ultima modifica",
   "label.unknownVersion": "Sconosciuta",
-  "heading.decksForCard": "Decks for this card",
-  "label.decksView": "Decks",
+  "heading.decksForCard": "Mazzi per questa carta",
+  "label.decksView": "Mazzi",
   "empty.saveCardToViewDecks": "Save this card to view deck membership.",
   "empty.cardNotInDecks": "This card is not in any deck.",
   "status.loadingDecks": "Loading decks...",
   "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Esporta mazzo",
+  "decks.faces.back": "Lati retro",
+  "decks.faces.front": "Lati fronte",
+  "decks.faces.mode": "Modalità lati",
+  "decks.entries.actions.editFront": "Modifica carta fronte",
+  "decks.entries.actions.removeFront": "Rimuovi fronte dal set",
+  "decks.entries.mode.label": "Modalità carte del set",
+  "decks.entries.mode.inSet": "Nel set ({count})",
+  "decks.entries.mode.pairedNotInSet": "Abbinate (non nel set) ({count})",
+  "decks.entries.actions.removeSelected": "Rimuovi selezionate",
+  "decks.entries.actions.recoverPaired": "Recupera abbinate ({count})",
+  "decks.entries.actions.removeSelectedCount": "Rimuovi selezionate ({count})",
+  "decks.entries.actions.editCard": "Modifica carta",
+  "decks.entries.actions.deleteEntry": "Elimina voce",
+  "decks.entries.empty.selectSet": "Seleziona un set per visualizzare le voci.",
+  "decks.entries.empty.noPairedPending": "Nessuna carta abbinata in attesa di aggiunta.",
+  "decks.entries.selectedSetBackAlt": "Retro del set selezionato",
+  "decks.entries.recover.modalTitle": "Recupera carte abbinate",
+  "decks.entries.recover.selectAllAria": "Seleziona tutte le carte recuperabili",
+  "decks.entries.recover.selectNone": "Seleziona nessuna",
+  "decks.entries.recover.selectAll": "Seleziona tutto",
+  "decks.entries.recover.recovering": "Recupero in corso...",
+  "decks.entries.recover.recoverSelected": "Recupera selezionate",
+  "decks.entries.recover.empty": "Nessuna carta abbinata da recuperare.",
+  "decks.entries.removePrompt.bulkTitle": "Rimuovere {count} voci dal set?",
+  "decks.entries.removePrompt.bulkBody": "Questo verrà applicato a {count} voci selezionate.",
+  "decks.sets.actions.setKeyCard": "Imposta carta chiave",
+  "decks.sets.actions.delete": "Elimina set",
+  "decks.sets.badge.keyCard": "Carta chiave",
+  "decks.boards.groups": "Gruppi",
+  "decks.boards.entries": "Voci",
+  "decks.boards.source": "Sorgente",
+  "decks.boards.cards": "Carte",
+  "decks.groups.actions.reorder": "Riordina gruppo",
+  "decks.errors.saveTitleFailed": "Impossibile salvare il titolo del mazzo",
+  "decks.entries.quantity.decrease": "Riduci quantità",
+  "decks.entries.quantity.increase": "Aumenta quantità",
+  "decks.entries.quantity.current": "Quantità {count}",
+
+  "decks.sourcePanelToggle": "Attiva/disattiva pannello facce sorgente",
+
+  "decks.entries.recover.selectCardAria": "Seleziona {cardId}",
+
+  "decks.groups.actions.createAtPosition": "Crea gruppo in posizione {index}",
+
+  "actions.edit": "Modifica",
+
+  "decks.openDeck": "Apri mazzo",
+
+  "decks.createDeck": "Crea mazzo",
+
+  "decks.editDeck": "Modifica mazzo",
+
+  "decks.title": "Titolo",
+
+  "decks.description": "Descrizione",
+
+  "decks.descriptionPlaceholder": "Descrizione facoltativa",
+
+  "decks.removeAndUnpair": "Rimuovi e disabbina",
+
+  "decks.removeFromSet": "Rimuovi dal set",
+
+  "decks.deleteDeckTitle": "Eliminare il mazzo?",
+
+  "decks.deleteDeckBody": "L’eliminazione di un mazzo non elimina le tue carte o gli abbinamenti; elimina solo l’organizzazione del mazzo.",
+
+  "decks.deleteSelectedBody": "Eliminare {count} mazzo/i selezionato/i? L’eliminazione di un mazzo non elimina le tue carte o gli abbinamenti; elimina solo l’organizzazione del mazzo.",
+
+  "decks.removeFrontPromptTitle": "Rimuovere il fronte dal set?",
+
+  "decks.removeFrontPromptBody": "Rimuovi questa carta fronte dal set. Facoltativamente puoi anche disabbinarla dal retro di questo set.",
+
+  "warning.unpairFromBackFaceSingle": "1 carta verrà disabbinata da questo retro. Continuare?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} carte verranno disabbinate da questo retro. Continuare?",
+
+  "heading.impactedDecks": "Mazzi interessati",
+
+  "decks.pairUsage.body": "Questo disabbinerà e rimuoverà le voci di mazzo dipendenti dalle seguenti posizioni:",
+
 } as const;

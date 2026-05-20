@@ -21,6 +21,7 @@ export default function DecksGridPanel() {
   const navigate = useNavigate();
   const model = useDecksGridModel({
     untitledDeckLabel: t("decks.untitledDeck"),
+    saveTitleErrorLabel: t("decks.errors.saveTitleFailed"),
   });
   const [isDeckModalOpen, setIsDeckModalOpen] = useState(false);
   const [activeDeckModalDeckId, setActiveDeckModalDeckId] = useState<string | null>(null);

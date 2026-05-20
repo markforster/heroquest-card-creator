@@ -624,10 +624,91 @@ export const de = {
   "label.databaseAppVersion": "Datenbank erstellt mit App-Version",
   "label.lastEdited": "Zuletzt bearbeitet",
   "label.unknownVersion": "Unbekannt",
-  "heading.decksForCard": "Decks for this card",
+  "heading.decksForCard": "Decks für diese Karte",
   "label.decksView": "Decks",
   "empty.saveCardToViewDecks": "Save this card to view deck membership.",
   "empty.cardNotInDecks": "This card is not in any deck.",
   "status.loadingDecks": "Loading decks...",
   "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Deck exportieren",
+  "decks.faces.back": "Rückseiten",
+  "decks.faces.front": "Vorderseiten",
+  "decks.faces.mode": "Seitenmodus",
+  "decks.entries.actions.editFront": "Vorderseite bearbeiten",
+  "decks.entries.actions.removeFront": "Vorderseite aus Set entfernen",
+  "decks.entries.mode.label": "Set-Kartenmodus",
+  "decks.entries.mode.inSet": "Im Set ({count})",
+  "decks.entries.mode.pairedNotInSet": "Gepaart (nicht im Set) ({count})",
+  "decks.entries.actions.removeSelected": "Auswahl entfernen",
+  "decks.entries.actions.recoverPaired": "Gepaarte wiederherstellen ({count})",
+  "decks.entries.actions.removeSelectedCount": "Auswahl entfernen ({count})",
+  "decks.entries.actions.editCard": "Karte bearbeiten",
+  "decks.entries.actions.deleteEntry": "Eintrag löschen",
+  "decks.entries.empty.selectSet": "Wähle ein Set, um Einträge anzuzeigen.",
+  "decks.entries.empty.noPairedPending": "Keine gepaarten Karten zum Hinzufügen.",
+  "decks.entries.selectedSetBackAlt": "Rückseite des ausgewählten Sets",
+  "decks.entries.recover.modalTitle": "Gepaarte Karten wiederherstellen",
+  "decks.entries.recover.selectAllAria": "Alle wiederherstellbaren Karten auswählen",
+  "decks.entries.recover.selectNone": "Nichts auswählen",
+  "decks.entries.recover.selectAll": "Alle auswählen",
+  "decks.entries.recover.recovering": "Wird wiederhergestellt...",
+  "decks.entries.recover.recoverSelected": "Auswahl wiederherstellen",
+  "decks.entries.recover.empty": "Keine gepaarten Karten zur Wiederherstellung.",
+  "decks.entries.removePrompt.bulkTitle": "{count} Einträge aus dem Set entfernen?",
+  "decks.entries.removePrompt.bulkBody": "Dies gilt für {count} ausgewählte Einträge.",
+  "decks.sets.actions.setKeyCard": "Als Schlüsselkarte festlegen",
+  "decks.sets.actions.delete": "Set löschen",
+  "decks.sets.badge.keyCard": "Schlüsselkarte",
+  "decks.boards.groups": "Gruppen",
+  "decks.boards.entries": "Einträge",
+  "decks.boards.source": "Quelle",
+  "decks.boards.cards": "Karten",
+  "decks.groups.actions.reorder": "Gruppe neu anordnen",
+  "decks.errors.saveTitleFailed": "Deck-Titel konnte nicht gespeichert werden",
+  "decks.entries.quantity.decrease": "Menge verringern",
+  "decks.entries.quantity.increase": "Menge erhöhen",
+  "decks.entries.quantity.current": "Menge {count}",
+
+  "decks.sourcePanelToggle": "Quellflächen-Panel umschalten",
+
+  "decks.entries.recover.selectCardAria": "{cardId} auswählen",
+
+  "decks.groups.actions.createAtPosition": "Gruppe an Position {index} erstellen",
+
+  "actions.edit": "Bearbeiten",
+
+  "decks.openDeck": "Deck öffnen",
+
+  "decks.createDeck": "Deck erstellen",
+
+  "decks.editDeck": "Deck bearbeiten",
+
+  "decks.title": "Titel",
+
+  "decks.description": "Beschreibung",
+
+  "decks.descriptionPlaceholder": "Optionale Beschreibung",
+
+  "decks.removeAndUnpair": "Entfernen und Entpaaren",
+
+  "decks.removeFromSet": "Aus Set entfernen",
+
+  "decks.deleteDeckTitle": "Deck löschen?",
+
+  "decks.deleteDeckBody": "Das Löschen eines Decks löscht weder Karten noch Paarungen; nur die Deck-Organisation wird entfernt.",
+
+  "decks.deleteSelectedBody": "{count} ausgewählte Deck(s) löschen? Das Löschen eines Decks löscht weder Karten noch Paarungen; nur die Deck-Organisation wird entfernt.",
+
+  "decks.removeFrontPromptTitle": "Vorderseite aus Set entfernen?",
+
+  "decks.removeFrontPromptBody": "Entferne diese Vorderseitenkarte aus dem Set. Optional kannst du die Paarung mit der Rückseite dieses Sets ebenfalls aufheben.",
+
+  "warning.unpairFromBackFaceSingle": "1 Karte wird von dieser Rückseite entkoppelt. Fortfahren?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} Karten werden von dieser Rückseite entkoppelt. Fortfahren?",
+
+  "heading.impactedDecks": "Betroffene Decks",
+
+  "decks.pairUsage.body": "Dadurch werden Paarungen aufgehoben und abhängige Deck-Einträge an folgenden Stellen entfernt:",
+
 } as const;

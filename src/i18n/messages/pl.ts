@@ -624,10 +624,91 @@ export const pl = {
   "label.databaseAppVersion": "Baza utworzona przez wersję",
   "label.lastEdited": "Ostatnio edytowano",
   "label.unknownVersion": "Nieznana",
-  "heading.decksForCard": "Decks for this card",
-  "label.decksView": "Decks",
+  "heading.decksForCard": "Talie dla tej karty",
+  "label.decksView": "Talie",
   "empty.saveCardToViewDecks": "Save this card to view deck membership.",
   "empty.cardNotInDecks": "This card is not in any deck.",
   "status.loadingDecks": "Loading decks...",
   "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Eksportuj talię",
+  "decks.faces.back": "Rewersy",
+  "decks.faces.front": "Awersy",
+  "decks.faces.mode": "Tryb stron",
+  "decks.entries.actions.editFront": "Edytuj kartę awersu",
+  "decks.entries.actions.removeFront": "Usuń awers z zestawu",
+  "decks.entries.mode.label": "Tryb kart zestawu",
+  "decks.entries.mode.inSet": "W zestawie ({count})",
+  "decks.entries.mode.pairedNotInSet": "Sparowane (poza zestawem) ({count})",
+  "decks.entries.actions.removeSelected": "Usuń zaznaczone",
+  "decks.entries.actions.recoverPaired": "Przywróć sparowane ({count})",
+  "decks.entries.actions.removeSelectedCount": "Usuń zaznaczone ({count})",
+  "decks.entries.actions.editCard": "Edytuj kartę",
+  "decks.entries.actions.deleteEntry": "Usuń wpis",
+  "decks.entries.empty.selectSet": "Wybierz zestaw, aby zobaczyć wpisy.",
+  "decks.entries.empty.noPairedPending": "Brak sparowanych kart oczekujących na dodanie.",
+  "decks.entries.selectedSetBackAlt": "Rewers wybranego zestawu",
+  "decks.entries.recover.modalTitle": "Przywróć sparowane karty",
+  "decks.entries.recover.selectAllAria": "Zaznacz wszystkie możliwe do przywrócenia karty",
+  "decks.entries.recover.selectNone": "Odznacz wszystko",
+  "decks.entries.recover.selectAll": "Zaznacz wszystko",
+  "decks.entries.recover.recovering": "Przywracanie...",
+  "decks.entries.recover.recoverSelected": "Przywróć zaznaczone",
+  "decks.entries.recover.empty": "Brak sparowanych kart do przywrócenia.",
+  "decks.entries.removePrompt.bulkTitle": "Usunąć {count} wpisów z zestawu?",
+  "decks.entries.removePrompt.bulkBody": "To zostanie zastosowane do {count} zaznaczonych wpisów.",
+  "decks.sets.actions.setKeyCard": "Ustaw kartę kluczową",
+  "decks.sets.actions.delete": "Usuń zestaw",
+  "decks.sets.badge.keyCard": "Karta kluczowa",
+  "decks.boards.groups": "Grupy",
+  "decks.boards.entries": "Wpisy",
+  "decks.boards.source": "Źródło",
+  "decks.boards.cards": "Karty",
+  "decks.groups.actions.reorder": "Zmień kolejność grupy",
+  "decks.errors.saveTitleFailed": "Nie udało się zapisać tytułu talii",
+  "decks.entries.quantity.decrease": "Zmniejsz ilość",
+  "decks.entries.quantity.increase": "Zwiększ ilość",
+  "decks.entries.quantity.current": "Ilość {count}",
+
+  "decks.sourcePanelToggle": "Przełącz panel stron źródłowych",
+
+  "decks.entries.recover.selectCardAria": "Wybierz {cardId}",
+
+  "decks.groups.actions.createAtPosition": "Utwórz grupę na pozycji {index}",
+
+  "actions.edit": "Edytuj",
+
+  "decks.openDeck": "Otwórz talię",
+
+  "decks.createDeck": "Utwórz talię",
+
+  "decks.editDeck": "Edytuj talię",
+
+  "decks.title": "Tytuł",
+
+  "decks.description": "Opis",
+
+  "decks.descriptionPlaceholder": "Opcjonalny opis",
+
+  "decks.removeAndUnpair": "Usuń i rozparuj",
+
+  "decks.removeFromSet": "Usuń z zestawu",
+
+  "decks.deleteDeckTitle": "Usunąć talię?",
+
+  "decks.deleteDeckBody": "Usunięcie talii nie usuwa kart ani parowań; usuwa tylko organizację talii.",
+
+  "decks.deleteSelectedBody": "Usunąć {count} wybranych talii? Usunięcie talii nie usuwa kart ani parowań; usuwa tylko organizację talii.",
+
+  "decks.removeFrontPromptTitle": "Usunąć awers z zestawu?",
+
+  "decks.removeFrontPromptBody": "Usuń tę kartę awersu z zestawu. Opcjonalnie możesz też rozparować ją z rewersem tego zestawu.",
+
+  "warning.unpairFromBackFaceSingle": "1 karta zostanie rozparowana od tego rewersu. Kontynuować?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} kart zostanie rozparowanych od tego rewersu. Kontynuować?",
+
+  "heading.impactedDecks": "Objęte talie",
+
+  "decks.pairUsage.body": "Spowoduje to rozparowanie i usunięcie zależnych wpisów talii z następujących lokalizacji:",
+
 } as const;

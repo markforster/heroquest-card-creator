@@ -141,7 +141,7 @@ export default function DeckBacksPanel({
   const visibleCollections = collections.filter((collection) =>
     visibleCollectionIds.has(collection.id),
   );
-  const faceModeTitle = faceMode === "back" ? "Back faces" : "Front faces";
+  const faceModeTitle = faceMode === "back" ? t("decks.faces.back") : t("decks.faces.front");
 
   return (
     <div className={styles.deckBacksPanel}>
@@ -248,7 +248,7 @@ export default function DeckBacksPanel({
         <div
           className={`nav nav-pills flex-column ${styles.deckBacksTabRail}`}
           role="tablist"
-          aria-label="Face mode"
+          aria-label={t("decks.faces.mode")}
           aria-orientation="vertical"
         >
           <button
@@ -259,8 +259,8 @@ export default function DeckBacksPanel({
             }`}
             aria-selected={faceMode === "back"}
             aria-pressed={faceMode === "back"}
-            aria-label="Back faces"
-            title="Back faces"
+            aria-label={t("decks.faces.back")}
+            title={t("decks.faces.back")}
             onClick={() => handleFaceModeChange("back")}
           >
             <span className={styles.leftNavGlyph} aria-hidden="true">
@@ -275,8 +275,8 @@ export default function DeckBacksPanel({
             }`}
             aria-selected={faceMode === "front"}
             aria-pressed={faceMode === "front"}
-            aria-label="Front faces"
-            title="Front faces"
+            aria-label={t("decks.faces.front")}
+            title={t("decks.faces.front")}
             onClick={() => handleFaceModeChange("front")}
           >
             <span className={styles.leftNavGlyph} aria-hidden="true">

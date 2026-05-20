@@ -624,10 +624,91 @@ export const sv = {
   "label.databaseAppVersion": "Databasen skapad med appversion",
   "label.lastEdited": "Senast redigerad",
   "label.unknownVersion": "Okänd",
-  "heading.decksForCard": "Decks for this card",
-  "label.decksView": "Decks",
+  "heading.decksForCard": "Kortlekar för detta kort",
+  "label.decksView": "Kortlekar",
   "empty.saveCardToViewDecks": "Save this card to view deck membership.",
   "empty.cardNotInDecks": "This card is not in any deck.",
   "status.loadingDecks": "Loading decks...",
   "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Exportera kortlek",
+  "decks.faces.back": "Baksidor",
+  "decks.faces.front": "Framsidor",
+  "decks.faces.mode": "Sidläge",
+  "decks.entries.actions.editFront": "Redigera framsideskort",
+  "decks.entries.actions.removeFront": "Ta bort framsida från set",
+  "decks.entries.mode.label": "Kortläge för set",
+  "decks.entries.mode.inSet": "I set ({count})",
+  "decks.entries.mode.pairedNotInSet": "Parade (inte i set) ({count})",
+  "decks.entries.actions.removeSelected": "Ta bort valda",
+  "decks.entries.actions.recoverPaired": "Återställ parade ({count})",
+  "decks.entries.actions.removeSelectedCount": "Ta bort valda ({count})",
+  "decks.entries.actions.editCard": "Redigera kort",
+  "decks.entries.actions.deleteEntry": "Ta bort post",
+  "decks.entries.empty.selectSet": "Välj ett set för att visa poster.",
+  "decks.entries.empty.noPairedPending": "Inga parade kort väntar på att läggas till.",
+  "decks.entries.selectedSetBackAlt": "Baksida för valt set",
+  "decks.entries.recover.modalTitle": "Återställ parade kort",
+  "decks.entries.recover.selectAllAria": "Välj alla återställningsbara kort",
+  "decks.entries.recover.selectNone": "Välj inga",
+  "decks.entries.recover.selectAll": "Välj alla",
+  "decks.entries.recover.recovering": "Återställer...",
+  "decks.entries.recover.recoverSelected": "Återställ valda",
+  "decks.entries.recover.empty": "Inga parade kort att återställa.",
+  "decks.entries.removePrompt.bulkTitle": "Ta bort {count} poster från setet?",
+  "decks.entries.removePrompt.bulkBody": "Detta tillämpas på {count} valda poster.",
+  "decks.sets.actions.setKeyCard": "Ange som nyckelkort",
+  "decks.sets.actions.delete": "Ta bort set",
+  "decks.sets.badge.keyCard": "Nyckelkort",
+  "decks.boards.groups": "Grupper",
+  "decks.boards.entries": "Poster",
+  "decks.boards.source": "Källa",
+  "decks.boards.cards": "Kort",
+  "decks.groups.actions.reorder": "Ordna om grupp",
+  "decks.errors.saveTitleFailed": "Det gick inte att spara kortlekens titel",
+  "decks.entries.quantity.decrease": "Minska antal",
+  "decks.entries.quantity.increase": "Öka antal",
+  "decks.entries.quantity.current": "Antal {count}",
+
+  "decks.sourcePanelToggle": "Växla panelen för källsidor",
+
+  "decks.entries.recover.selectCardAria": "Välj {cardId}",
+
+  "decks.groups.actions.createAtPosition": "Skapa grupp på position {index}",
+
+  "actions.edit": "Redigera",
+
+  "decks.openDeck": "Öppna kortlek",
+
+  "decks.createDeck": "Skapa kortlek",
+
+  "decks.editDeck": "Redigera kortlek",
+
+  "decks.title": "Titel",
+
+  "decks.description": "Beskrivning",
+
+  "decks.descriptionPlaceholder": "Valfri beskrivning",
+
+  "decks.removeAndUnpair": "Ta bort och avpara",
+
+  "decks.removeFromSet": "Ta bort från set",
+
+  "decks.deleteDeckTitle": "Ta bort kortlek?",
+
+  "decks.deleteDeckBody": "Att ta bort en kortlek tar inte bort dina kort eller parningar; det tar bara bort kortlekens organisering.",
+
+  "decks.deleteSelectedBody": "Ta bort {count} valda kortlek(ar)? Att ta bort en kortlek tar inte bort dina kort eller parningar; det tar bara bort kortlekens organisering.",
+
+  "decks.removeFrontPromptTitle": "Ta bort framsida från set?",
+
+  "decks.removeFrontPromptBody": "Ta bort detta framsideskort från setet. Du kan även valfritt avpara det från setets baksida.",
+
+  "warning.unpairFromBackFaceSingle": "1 kort kommer att avparas från denna baksida. Fortsätta?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} kort kommer att avparas från denna baksida. Fortsätta?",
+
+  "heading.impactedDecks": "Påverkade kortlekar",
+
+  "decks.pairUsage.body": "Detta kommer att avpara och ta bort beroende kortleksposter från följande platser:",
+
 } as const;

@@ -331,8 +331,8 @@ export default function DeckGroupsBoardController({
             <button
               type="button"
               className={[styles.toolbarIconButton, styles.toolbarIconButtonKey].join(" ")}
-              aria-label="Set key card"
-              title="Set key card"
+              aria-label={t("decks.sets.actions.setKeyCard")}
+              title={t("decks.sets.actions.setKeyCard")}
               onPointerDown={stopPropagation}
               onClick={async (event) => {
                 stopPropagation(event);
@@ -347,8 +347,8 @@ export default function DeckGroupsBoardController({
           <button
             type="button"
             className={[styles.toolbarIconButton, styles.toolbarIconButtonDelete].join(" ")}
-            aria-label="Delete set"
-            title="Delete set"
+            aria-label={t("decks.sets.actions.delete")}
+            title={t("decks.sets.actions.delete")}
             onPointerDown={stopPropagation}
             onClick={async (event) => {
               stopPropagation(event);
@@ -379,12 +379,12 @@ export default function DeckGroupsBoardController({
       if (!isKeySet) return null;
       if (enableFanLayout && boardId === "groups") return null;
       return (
-        <BoardInfoPill
-          icon={<Gem size={11} aria-hidden="true" />}
-          label="Key Card"
-          bgColor="color-mix(in srgb, #2a73ff 35%, var(--hq-surface-900) 65%)"
-          borderColor="color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%)"
-        />
+          <BoardInfoPill
+            icon={<Gem size={11} aria-hidden="true" />}
+            label={t("decks.sets.badge.keyCard")}
+            bgColor="color-mix(in srgb, #2a73ff 35%, var(--hq-surface-900) 65%)"
+            borderColor="color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%)"
+          />
       );
     },
     isSetSelected: (setUiId) => {
@@ -519,7 +519,7 @@ export default function DeckGroupsBoardController({
             >
               <BoardInfoPill
                 icon={<Gem size={11} aria-hidden="true" />}
-                label="Key Card"
+                label={t("decks.sets.badge.keyCard")}
                 bgColor="color-mix(in srgb, #2a73ff 35%, var(--hq-surface-900) 65%)"
                 borderColor="color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%)"
               />

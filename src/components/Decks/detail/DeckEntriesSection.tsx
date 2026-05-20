@@ -15,6 +15,7 @@ import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDe
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
 import type { DeckDetailDragState } from "@/components/Decks/types/deck-detail";
 import { useI18n } from "@/i18n/I18nProvider";
+import formatMessageWith from "@/lib/format-message-with";
 import { isPairDeleteConfirmRequiredError, type PairUsageReport } from "@/lib/decks-errors";
 
 import type { ReactNode } from "react";
@@ -40,6 +41,7 @@ function DeckEntryCard({
   onOpenCardEditor: (cardId: string) => void;
   deckEntryThumb: (cardId: string, isSelected: boolean) => ReactNode;
 }) {
+  const { t } = useI18n();
   const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({
     id: entryId,
     data: { type: "entry", entryId },
@@ -74,8 +76,8 @@ function DeckEntryCard({
               <button
                 type="button"
                 className={styles.deckCardEditButton}
-                aria-label="Edit front card"
-                title="Edit front card"
+                aria-label={t("decks.entries.actions.editFront")}
+                title={t("decks.entries.actions.editFront")}
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -87,8 +89,8 @@ function DeckEntryCard({
               <button
                 type="button"
                 className={styles.deckCardRemoveButton}
-                aria-label="Remove front from set"
-                title="Remove front from set"
+                aria-label={t("decks.entries.actions.removeFront")}
+                title={t("decks.entries.actions.removeFront")}
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -154,6 +156,8 @@ export default function DeckEntriesSection({
   deckEntryThumb: (cardId: string, isSelected: boolean) => ReactNode;
 }) {
   const { t } = useI18n();
+  const formatMessage = (key: string, vars: Record<string, string | number>) =>
+    formatMessageWith(t as never, key as never, vars);
   const navigate = useNavigate();
   const {
     deckId,
@@ -414,7 +418,7 @@ export default function DeckEntriesSection({
         <div
           className={`${styles.deckRouteRowToolbar} ${styles.assetsToolbar} d-flex align-items-center justify-content-between gap-2 px-2 py-2`}
         >
-          <div className={styles.deckFacesSegment} role="tablist" aria-label="Set cards mode">
+          <div className={styles.deckFacesSegment} role="tablist" aria-label={t("decks.entries.mode.label")}>
             <button
               type="button"
               className={`${styles.deckFacesSegmentBtn} ${
@@ -423,7 +427,7 @@ export default function DeckEntriesSection({
               aria-pressed={entriesViewMode === "in-set"}
               onClick={() => setEntriesViewMode("in-set")}
             >
-              In Set ({entriesSorted.length})
+              {formatMessage("decks.entries.mode.inSet", { count: entriesSorted.length })}
             </button>
             <button
               type="button"
@@ -433,7 +437,9 @@ export default function DeckEntriesSection({
               aria-pressed={entriesViewMode === "paired-not-in-set"}
               onClick={() => setEntriesViewMode("paired-not-in-set")}
             >
-              Paired (Not In Set) ({pairedNotInSetFrontIds.length})
+              {formatMessage("decks.entries.mode.pairedNotInSet", {
+                count: pairedNotInSetFrontIds.length,
+              })}
             </button>
           </div>
           <button
@@ -442,7 +448,7 @@ export default function DeckEntriesSection({
             onClick={openBulkRemoval}
             disabled={!canBulkDelete}
           >
-            Remove Selected
+            {t("decks.entries.actions.removeSelected")}
           </button>
         </div>
       ) : null}
@@ -467,7 +473,7 @@ export default function DeckEntriesSection({
             {entriesViewMode === "paired-not-in-set" ? (
               pairedNotInSetFrontIds.length === 0 ? (
                 <div className={styles.deckEntriesEmptyFill}>
-                  <div className={styles.decksEmpty}>No paired cards pending add.</div>
+                  <div className={styles.decksEmpty}>{t("decks.entries.empty.noPairedPending")}</div>
                 </div>
               ) : (
                 <div className={styles.deckEntriesGrid}>
@@ -658,7 +664,7 @@ export default function DeckEntriesSection({
       >
         <div className={styles.pairingUsageList}>
           <div>
-            This will unpair and remove dependent deck entries from the following locations:
+            {t("decks.pairUsage.body")}
           </div>
           <ul className={styles.pairingUsageItems}>
             {(pairUsagePromptExternal?.cascadePlan.usage ?? []).map((usage) => (

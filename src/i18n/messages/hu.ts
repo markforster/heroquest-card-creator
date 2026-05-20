@@ -624,10 +624,91 @@ export const hu = {
   "label.databaseAppVersion": "Adatbázis készítette: app verzió",
   "label.lastEdited": "Utoljára szerkesztve",
   "label.unknownVersion": "Ismeretlen",
-  "heading.decksForCard": "Decks for this card",
-  "label.decksView": "Decks",
+  "heading.decksForCard": "Paklik ehhez a kártyához",
+  "label.decksView": "Paklik",
   "empty.saveCardToViewDecks": "Save this card to view deck membership.",
   "empty.cardNotInDecks": "This card is not in any deck.",
   "status.loadingDecks": "Loading decks...",
   "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Pakli exportálása",
+  "decks.faces.back": "Hátlapok",
+  "decks.faces.front": "Előlapok",
+  "decks.faces.mode": "Oldal mód",
+  "decks.entries.actions.editFront": "Előlap szerkesztése",
+  "decks.entries.actions.removeFront": "Előlap eltávolítása a készletből",
+  "decks.entries.mode.label": "Készletkártya mód",
+  "decks.entries.mode.inSet": "A készletben ({count})",
+  "decks.entries.mode.pairedNotInSet": "Párosított (készleten kívül) ({count})",
+  "decks.entries.actions.removeSelected": "Kijelöltek eltávolítása",
+  "decks.entries.actions.recoverPaired": "Párosítottak visszaállítása ({count})",
+  "decks.entries.actions.removeSelectedCount": "Kijelöltek eltávolítása ({count})",
+  "decks.entries.actions.editCard": "Kártya szerkesztése",
+  "decks.entries.actions.deleteEntry": "Bejegyzés törlése",
+  "decks.entries.empty.selectSet": "Válassz készletet a bejegyzések megjelenítéséhez.",
+  "decks.entries.empty.noPairedPending": "Nincs hozzáadásra váró párosított kártya.",
+  "decks.entries.selectedSetBackAlt": "A kiválasztott készlet hátlapja",
+  "decks.entries.recover.modalTitle": "Párosított kártyák visszaállítása",
+  "decks.entries.recover.selectAllAria": "Minden visszaállítható kártya kijelölése",
+  "decks.entries.recover.selectNone": "Kijelölés megszüntetése",
+  "decks.entries.recover.selectAll": "Összes kijelölése",
+  "decks.entries.recover.recovering": "Visszaállítás...",
+  "decks.entries.recover.recoverSelected": "Kijelöltek visszaállítása",
+  "decks.entries.recover.empty": "Nincs visszaállítható párosított kártya.",
+  "decks.entries.removePrompt.bulkTitle": "Eltávolítod a(z) {count} bejegyzést a készletből?",
+  "decks.entries.removePrompt.bulkBody": "Ez {count} kijelölt bejegyzésre lesz alkalmazva.",
+  "decks.sets.actions.setKeyCard": "Kulcskártya beállítása",
+  "decks.sets.actions.delete": "Készlet törlése",
+  "decks.sets.badge.keyCard": "Kulcskártya",
+  "decks.boards.groups": "Csoportok",
+  "decks.boards.entries": "Bejegyzések",
+  "decks.boards.source": "Forrás",
+  "decks.boards.cards": "Kártyák",
+  "decks.groups.actions.reorder": "Csoport átrendezése",
+  "decks.errors.saveTitleFailed": "Nem sikerült menteni a pakli címét",
+  "decks.entries.quantity.decrease": "Mennyiség csökkentése",
+  "decks.entries.quantity.increase": "Mennyiség növelése",
+  "decks.entries.quantity.current": "Mennyiség {count}",
+
+  "decks.sourcePanelToggle": "Forrásoldalak paneljének váltása",
+
+  "decks.entries.recover.selectCardAria": "{cardId} kijelölése",
+
+  "decks.groups.actions.createAtPosition": "Csoport létrehozása a(z) {index}. pozíción",
+
+  "actions.edit": "Szerkesztés",
+
+  "decks.openDeck": "Pakli megnyitása",
+
+  "decks.createDeck": "Pakli létrehozása",
+
+  "decks.editDeck": "Pakli szerkesztése",
+
+  "decks.title": "Cím",
+
+  "decks.description": "Leírás",
+
+  "decks.descriptionPlaceholder": "Opcionális leírás",
+
+  "decks.removeAndUnpair": "Eltávolítás és párosítás megszüntetése",
+
+  "decks.removeFromSet": "Eltávolítás a készletből",
+
+  "decks.deleteDeckTitle": "Törlöd a paklit?",
+
+  "decks.deleteDeckBody": "A pakli törlése nem törli a kártyáidat vagy párosításaidat; csak a pakli szervezését törli.",
+
+  "decks.deleteSelectedBody": "Törlöd a kijelölt {count} pakli(ka)t? A pakli törlése nem törli a kártyáidat vagy párosításaidat; csak a pakli szervezését törli.",
+
+  "decks.removeFrontPromptTitle": "Eltávolítod az előlapot a készletből?",
+
+  "decks.removeFrontPromptBody": "Távolítsd el ezt az előlapkártyát a készletből. Opcionálisan a készlet hátlapjától való párosítását is megszüntetheted.",
+
+  "warning.unpairFromBackFaceSingle": "1 kártya leválik erről a hátlapról. Folytatja?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} kártya leválik erről a hátlapról. Folytatja?",
+
+  "heading.impactedDecks": "Érintett paklik",
+
+  "decks.pairUsage.body": "Ez megszünteti a párosítást, és eltávolítja a függő paklibejegyzéseket a következő helyekről:",
+
 } as const;

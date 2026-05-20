@@ -1519,7 +1519,7 @@ export default function StockpilePanelContent({
       >
         <div className={styles.pairingUsageList}>
           <div>
-            This will unpair and remove dependent deck entries from the following locations:
+            {t("decks.pairUsage.body")}
           </div>
           <ul className={styles.pairingUsageItems}>
             {(pairUsagePrompt?.cascadePlan.usage ?? []).map((usage) => (
