@@ -6629,7 +6629,7 @@ button.assetsKindBadge:disabled {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 2px;
+  padding: 2px var(--space-6);
 }
 
 .decksGridToolbar {
