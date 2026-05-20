@@ -57,7 +57,7 @@
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: rgba(37, 43, 55, 0.8);
+  color: var(--hq-accent);
   text-transform: uppercase;
   margin: 0 0 8px;
   display: flex;
@@ -354,9 +354,11 @@
   border-bottom: 1px solid #dddfe8;
   background: rgba(255, 255, 255, 0.68);
   border-radius: 6px 6px 0 0;
-  font-size: 18px;
+  font-size: var(--text-xl);
+  font-family: var(--hq-font-inline);
   font-weight: 500;
-  color: #242a33;
+  letter-spacing: 0.08em;
+  color: var(--hq-accent);
 }
 
 .groupHeader > span:first-child {
