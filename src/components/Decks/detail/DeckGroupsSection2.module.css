@@ -481,7 +481,8 @@
     box-shadow 100ms ease-out,
     opacity 100ms ease-out,
     border-color 100ms ease-out,
-    filter 100ms ease-out;
+    filter 100ms ease-out,
+    background-color 100ms ease-out;
   cursor: grab;
 }
 
@@ -878,6 +879,45 @@
 .setCardSelected:hover .setThumb img,
 .setCardSelected:focus-visible .setThumb img {
   filter: none;
+}
+
+@keyframes entriesRemoveSelectedWarningPulse {
+  0% {
+    box-shadow:
+      0 0 0 3px transparent,
+      0 0 0 transparent;
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px var(--hq-danger-bright, #ff3040),
+      0 0 12px color-mix(in srgb, var(--hq-danger-bright, #ff3040) 56%, transparent);
+  }
+  100% {
+    box-shadow:
+      0 0 0 3px transparent,
+      0 0 0 transparent;
+  }
+}
+
+.board[data-testid="board-entries"]:has(.removeSelectedButton:hover) .setCardSelected .setThumb,
+.board[data-testid="board-entries"]:has(.removeSelectedButton:focus-visible) .setCardSelected .setThumb {
+  animation: entriesRemoveSelectedWarningPulse 900ms ease-in-out infinite;
+}
+
+.board[data-testid="board-entries"]:has(.removeSelectedButton:hover) .setCard:not(.setCardSelected),
+.board[data-testid="board-entries"]:has(.removeSelectedButton:focus-visible) .setCard:not(.setCardSelected) {
+  opacity: 0.48;
+  filter: saturate(0.72) brightness(0.84);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board[data-testid="board-entries"]:has(.removeSelectedButton:hover) .setCardSelected .setThumb,
+  .board[data-testid="board-entries"]:has(.removeSelectedButton:focus-visible) .setCardSelected .setThumb {
+    animation: none;
+    box-shadow:
+      0 0 0 3px var(--hq-danger-bright, #ff3040),
+      0 0 8px color-mix(in srgb, var(--hq-danger-bright, #ff3040) 48%, transparent);
+  }
 }
 
 .boardDropActive {

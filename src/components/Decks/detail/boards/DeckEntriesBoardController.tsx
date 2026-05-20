@@ -197,7 +197,7 @@ export default function DeckEntriesBoardController({
         </button>
         <button
           type="button"
-          className="btn btn-outline-danger btn-sm"
+          className={`btn btn-outline-danger btn-sm ${styles.removeSelectedButton}`}
           onClick={openBulkRemoval}
           disabled={selectedEntryCount === 0}
         >

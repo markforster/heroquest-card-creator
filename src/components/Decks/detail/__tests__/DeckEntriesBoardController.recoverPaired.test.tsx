@@ -1,4 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 const mockRegisterDropHandler = jest.fn();
 const mockAddFront = jest.fn();
@@ -170,7 +172,9 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
     const button = screen.getByRole("button", { name: "Recover Paired (0)" });
     expect(button).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Remove Selected (0)" })).toBeDisabled();
+    const removeSelectedButton = screen.getByRole("button", { name: "Remove Selected (0)" });
+    expect(removeSelectedButton).toBeDisabled();
+    expect(removeSelectedButton.className).toContain("removeSelectedButton");
   });
 
   it("supports single and ctrl/cmd additive entry selection and updates delete count", () => {
@@ -277,5 +281,24 @@ describe("DeckEntriesBoardController recover paired modal", () => {
       expect(mockAddFront).toHaveBeenNthCalledWith(3, "front-3", "set-1");
       expect(mockRefreshEntries).toHaveBeenCalledWith("set-1");
     });
+  });
+
+  it("defines entries remove-hover danger pulse selector and reduced-motion fallback in styles", () => {
+    const cssPath = path.resolve(
+      process.cwd(),
+      "src/components/Decks/detail/DeckGroupsSection2.module.css",
+    );
+    const css = readFileSync(cssPath, "utf8");
+
+    expect(css).toContain(':has(.removeSelectedButton:hover) .setCardSelected .setThumb');
+    expect(css).toContain(
+      ':has(.removeSelectedButton:focus-visible) .setCardSelected .setThumb',
+    );
+    expect(css).toContain(':has(.removeSelectedButton:hover) .setCard:not(.setCardSelected)');
+    expect(css).toContain(
+      ':has(.removeSelectedButton:focus-visible) .setCard:not(.setCardSelected)',
+    );
+    expect(css).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(css).toContain("entriesRemoveSelectedWarningPulse");
   });
 });
