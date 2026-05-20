@@ -6,6 +6,7 @@ import { apiClient } from "@/api/client";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
+import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
 import { isPairDeleteConfirmRequiredError } from "@/lib/decks-errors";
 import styles from "../DeckGroupsSection2.module.css";
@@ -51,10 +52,20 @@ export default function DeckEntriesBoardController({
     }>;
   } | null>(null);
   const [isPendingRemovalBusy, setIsPendingRemovalBusy] = useState(false);
+  const [isRecoverModalOpen, setIsRecoverModalOpen] = useState(false);
+  const [isRecoverBusy, setIsRecoverBusy] = useState(false);
+  const [selectedRecoverFrontIds, setSelectedRecoverFrontIds] = useState<Set<string>>(new Set());
   const countByEntryId = useMemo(
     () => new Map((entries?.entriesSorted ?? []).map((entry) => [entry.id, entry.count])),
     [entries?.entriesSorted],
   );
+  const pairedNotInSetFrontIds = entries?.pairedNotInSetFrontIds ?? [];
+  const recoverableFrontIds = useMemo(
+    () => Array.from(new Set(pairedNotInSetFrontIds)),
+    [pairedNotInSetFrontIds],
+  );
+  const recoverableFrontIdSet = useMemo(() => new Set(recoverableFrontIds), [recoverableFrontIds]);
+  const recoverCount = recoverableFrontIds.length;
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
     ({ setId, label, cardId, state }) => {
       const rawEntryId = setId.startsWith("entry:") ? setId.slice(6) : null;
@@ -70,7 +81,55 @@ export default function DeckEntriesBoardController({
     },
     [entries],
   );
+  const toggleRecoverSelection = useCallback((frontFaceId: string, additive: boolean) => {
+    setSelectedRecoverFrontIds((prev) => {
+      if (!additive) return new Set([frontFaceId]);
+      const next = new Set(prev);
+      if (next.has(frontFaceId)) next.delete(frontFaceId);
+      else next.add(frontFaceId);
+      return next;
+    });
+  }, []);
+  const clearRecoverSelection = useCallback(() => {
+    setSelectedRecoverFrontIds(new Set());
+  }, []);
+  const closeRecoverModal = useCallback(() => {
+    if (isRecoverBusy) return;
+    setIsRecoverModalOpen(false);
+    clearRecoverSelection();
+  }, [clearRecoverSelection, isRecoverBusy]);
+  const addRecoverFronts = useCallback(
+    async (frontFaceIds: string[]) => {
+      if (!entries || isRecoverBusy || !entries.setId || frontFaceIds.length === 0) return;
+      setIsRecoverBusy(true);
+      try {
+        for (const frontFaceId of frontFaceIds) {
+          await entries.addFront(frontFaceId, entries.setId);
+        }
+        await entries.refreshEntries(entries.setId);
+        setIsRecoverModalOpen(false);
+        clearRecoverSelection();
+      } finally {
+        setIsRecoverBusy(false);
+      }
+    },
+    [clearRecoverSelection, entries, isRecoverBusy],
+  );
+  const selectedRecoverFrontsOrdered = useMemo(
+    () => recoverableFrontIds.filter((id) => selectedRecoverFrontIds.has(id)),
+    [recoverableFrontIds, selectedRecoverFrontIds],
+  );
   const model = useDeckSortableBoardViewModel("entries", BOARD_ROUTING_META_BY_ID.entries, {
+    renderBoardHeaderActions: () => (
+      <button
+        type="button"
+        className="btn btn-outline-light btn-sm"
+        onClick={() => setIsRecoverModalOpen(true)}
+        disabled={recoverCount === 0}
+      >
+        {`Recover Paired (${recoverCount})`}
+      </button>
+    ),
     renderSetContent,
     renderTopToolbar: ({ setId, cardId, isDragging, isGhost }) => {
       if (!setId.startsWith("entry:") || isDragging || isGhost) return null;
@@ -291,10 +350,94 @@ export default function DeckEntriesBoardController({
       return null;
     });
   }, [entries, registerDropHandler]);
+  useEffect(() => {
+    setSelectedRecoverFrontIds((prev) => {
+      if (prev.size === 0) return prev;
+      const next = new Set(Array.from(prev).filter((id) => recoverableFrontIdSet.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [recoverableFrontIdSet]);
 
   return (
     <>
       <DeckSortableBoardView model={model} layoutMode={layoutMode} />
+      <ModalShell
+        isOpen={isRecoverModalOpen}
+        onClose={closeRecoverModal}
+        title="Recover Paired Cards"
+        footer={
+          <div className={styles.recoverModalToolbar}>
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm"
+              onClick={clearRecoverSelection}
+              disabled={isRecoverBusy || selectedRecoverFrontsOrdered.length === 0}
+            >
+              Clear Selection
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-primary btn-sm"
+              onClick={() => void addRecoverFronts(recoverableFrontIds)}
+              disabled={isRecoverBusy || recoverableFrontIds.length === 0}
+            >
+              {isRecoverBusy ? "Adding..." : "Add All"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => void addRecoverFronts(selectedRecoverFrontsOrdered)}
+              disabled={isRecoverBusy || selectedRecoverFrontsOrdered.length === 0}
+            >
+              {isRecoverBusy ? "Adding..." : "Add Selected"}
+            </button>
+          </div>
+        }
+      >
+        <div className={styles.recoverModalBody}>
+          {recoverableFrontIds.length === 0 ? (
+            <div className={styles.recoverModalEmpty}>No paired cards to recover.</div>
+          ) : (
+            <div className={styles.recoverModalGrid}>
+              {recoverableFrontIds.map((frontFaceId) => {
+                const isSelected = selectedRecoverFrontIds.has(frontFaceId);
+                return (
+                  <div key={frontFaceId} className={styles.recoverCardShell}>
+                    <input
+                      type="checkbox"
+                      className={styles.recoverCardCheckbox}
+                      aria-label={`Select ${frontFaceId}`}
+                      checked={isSelected}
+                      onChange={() => {
+                        toggleRecoverSelection(frontFaceId, true);
+                      }}
+                      onClick={(event) => event.stopPropagation()}
+                    />
+                    <button
+                      type="button"
+                      className={[
+                        styles.recoverCardButton,
+                        isSelected ? styles.recoverCardButtonSelected : "",
+                      ].join(" ")}
+                      onClick={(event) => {
+                        const additive = event.metaKey || event.ctrlKey;
+                        toggleRecoverSelection(frontFaceId, additive);
+                      }}
+                    >
+                      <DefaultSetThumbnailContent
+                        setId={`recover:${frontFaceId}`}
+                        cardId={frontFaceId}
+                        label={frontFaceId}
+                        state="idle"
+                      />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </ModalShell>
       <ConfirmModal
         isOpen={Boolean(pendingFrontRemoval)}
         title={t("decks.removeFrontPromptTitle")}

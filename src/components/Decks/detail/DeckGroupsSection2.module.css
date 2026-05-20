@@ -60,6 +60,16 @@
   color: rgba(37, 43, 55, 0.8);
   text-transform: uppercase;
   margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.boardHeaderActions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .groupsRow {
@@ -656,6 +666,78 @@
 .boardQtyPlus:hover:enabled {
   background: var(--hq-stat-plus-hover);
   transform: scale(1.05);
+}
+
+.recoverPairedButton {
+  border: 1px solid var(--hq-border-strong);
+  border-radius: 999px;
+  background: var(--hq-surface-900);
+  color: var(--hq-text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 6px 10px;
+}
+
+.recoverPairedButton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.recoverModalBody {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  min-height: 0;
+}
+
+.recoverModalToolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.recoverModalGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 10px;
+  align-content: start;
+}
+
+.recoverModalEmpty {
+  font-size: 13px;
+  color: var(--hq-text-muted);
+  padding: 6px 2px;
+}
+
+.recoverCardShell {
+  position: relative;
+}
+
+.recoverCardButton {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.recoverCardButtonSelected {
+  box-shadow:
+    0 0 0 2px var(--deck-board-selected-glow),
+    0 0 0 1px var(--deck-board-selected-ring),
+    0 2px 6px rgba(16, 24, 40, 0.12);
+}
+
+.recoverCardCheckbox {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
 }
 
 .setCardBottomToolbar .boardInfoPill {

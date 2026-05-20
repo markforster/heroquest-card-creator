@@ -249,6 +249,7 @@ export type DeckSortableBoardViewModel = {
     args: GroupVisualContext & { setId: SetId; setIndex: number },
   ) => CSSProperties | undefined;
   renderGroupOverlay?: (args: GroupVisualContext & { setIds: SetId[] }) => ReactNode;
+  renderBoardHeaderActions?: () => ReactNode;
   emptyMessage?: string | null;
 };
 
@@ -1238,7 +1239,14 @@ export function DeckSortableBoardView({
         .join(" ")}
       data-testid={`board-${config.boardId}`}
     >
-      {config.boardId === "source" ? null : <header className={styles.boardHeader}>{config.title}</header>}
+      {config.boardId === "source" ? null : (
+        <header className={styles.boardHeader}>
+          <span>{config.title}</span>
+          {model.renderBoardHeaderActions ? (
+            <span className={styles.boardHeaderActions}>{model.renderBoardHeaderActions()}</span>
+          ) : null}
+        </header>
+      )}
       <div
         className={[
           styles.groupsRow,
@@ -2376,6 +2384,7 @@ export function useDeckSortableBoardViewModel(
     resolveSetShellClassName?: DeckSortableBoardViewModel["resolveSetShellClassName"];
     resolveSetShellStyle?: DeckSortableBoardViewModel["resolveSetShellStyle"];
     renderGroupOverlay?: DeckSortableBoardViewModel["renderGroupOverlay"];
+    renderBoardHeaderActions?: DeckSortableBoardViewModel["renderBoardHeaderActions"];
     emptyMessage?: string | null;
   },
 ): DeckSortableBoardViewModel {
@@ -2426,6 +2435,7 @@ export function useDeckSortableBoardViewModel(
     resolveSetShellClassName: options?.resolveSetShellClassName,
     resolveSetShellStyle: options?.resolveSetShellStyle,
     renderGroupOverlay: options?.renderGroupOverlay,
+    renderBoardHeaderActions: options?.renderBoardHeaderActions,
     renderSetContent:
       options?.renderSetContent ??
       (({ setId, label, cardId, state: renderState }) => (
