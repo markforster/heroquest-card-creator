@@ -321,26 +321,29 @@ export default function DeckGroupsBoardController({
         if (mode !== "expanded") return null;
       }
       const resolvedSetId = setId.slice(4);
+      const isKeySet = keySetId === resolvedSetId;
       const stopPropagation = (event: { stopPropagation: () => void }) => {
         event.stopPropagation();
       };
       return (
         <>
-          <button
-            type="button"
-            className={[styles.toolbarIconButton, styles.toolbarIconButtonKey].join(" ")}
-            aria-label="Set key card"
-            title="Set key card"
-            onPointerDown={stopPropagation}
-            onClick={async (event) => {
-              stopPropagation(event);
-              if (!deckId) return;
-              await mutations.setDeckKeySet(deckId, resolvedSetId);
-              await selection?.reloadStructure(selection.selectedSetId);
-            }}
-          >
-            <Gem size={12} aria-hidden="true" />
-          </button>
+          {!isKeySet ? (
+            <button
+              type="button"
+              className={[styles.toolbarIconButton, styles.toolbarIconButtonKey].join(" ")}
+              aria-label="Set key card"
+              title="Set key card"
+              onPointerDown={stopPropagation}
+              onClick={async (event) => {
+                stopPropagation(event);
+                if (!deckId) return;
+                await mutations.setDeckKeySet(deckId, resolvedSetId);
+                await selection?.reloadStructure(selection.selectedSetId);
+              }}
+            >
+              <Gem size={12} aria-hidden="true" />
+            </button>
+          ) : null}
           <button
             type="button"
             className={[styles.toolbarIconButton, styles.toolbarIconButtonDelete].join(" ")}

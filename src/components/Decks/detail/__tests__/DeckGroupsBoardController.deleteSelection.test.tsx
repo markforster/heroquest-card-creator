@@ -124,4 +124,19 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
     expect(ephemeralClassName).toContain(styles.groupEphemeralPulse);
   });
 
+  it("does not render set-key action when card is already key set", () => {
+    render(<DeckGroupsBoardController deckId="deck-1" keySetId="set-2" enableFanLayout />);
+
+    const toolbar = capturedRenderTopToolbar?.({
+      setId: "set:set-2",
+      isDragging: false,
+      isGhost: false,
+    });
+
+    render(<>{toolbar}</>);
+
+    expect(screen.queryByRole("button", { name: "Set key card" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Delete set" })).toBeInTheDocument();
+  });
+
 });
