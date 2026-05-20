@@ -2264,6 +2264,7 @@ export function DeckMockDndProvider({
 
       if (sourceBoardId === "entries" && targetBoardId === "entries") {
         const orderedEntryIds = (postDropState.itemsByGroup[targetGroupId] ?? [])
+          .filter((id) => !isEmptySlotEphemeralSetId(id))
           .map((id) => id.replace(/^entry:/, ""))
           .filter(Boolean);
         events.push({
@@ -2533,6 +2534,9 @@ export function toEntriesBoardModel(input: EntriesAdapterInput): BoardModel {
     }
     return sid;
   });
+  if (itemIds.length === 0) {
+    itemIds.push(createEmptySlotEphemeralSetId(groupId));
+  }
 
   return {
     boardId: "entries",

@@ -112,6 +112,9 @@ export default function DeckEntriesBoardController({
   }, [selectedSetBackFaceId, selectedSetBackThumbUrl, selectedSetCardTitle]);
   const renderSetContent = useCallback<DeckSortableBoardViewModel["renderSetContent"]>(
     ({ setId, label, cardId, state }) => {
+      if (setId.startsWith("ephemeral:empty-slot:group:")) {
+        return <div className={styles.setContentEmptySlot} aria-hidden="true" />;
+      }
       const rawEntryId = setId.startsWith("entry:") ? setId.slice(6) : null;
       const resolvedCardId = rawEntryId ? entries?.entryFrontIdByEntryId.get(rawEntryId) : cardId;
       return (
@@ -338,7 +341,7 @@ export default function DeckEntriesBoardController({
       const entryId = setUiId.startsWith("entry:") ? setUiId.slice(6) : setUiId;
       selectEntry(entryId, Boolean(options?.additive));
     },
-    emptyMessage: selection?.selectedSetId ? null : "Select a set to view entries.",
+    emptyMessage: null,
   });
 
   const removePending = useCallback(
@@ -398,6 +401,7 @@ export default function DeckEntriesBoardController({
         if (lastHandledDragIdRef.current === event.dragId) return { handled: true, success: true };
 
         const orderedEntryIds = (event.orderedEntryIds ?? [])
+          .filter((id) => id.startsWith("entry:"))
           .map((id) => id.replace(/^entry:/, ""))
           .filter(Boolean);
         if (orderedEntryIds.length === 0) return { handled: true, success: true };
@@ -487,7 +491,20 @@ export default function DeckEntriesBoardController({
 
   return (
     <>
-      <DeckSortableBoardView model={model} layoutMode={layoutMode} />
+      {!selection?.selectedSetId ? (
+        <section
+          className={[styles.board, layoutMode === "fill-parent" ? styles.boardFillParent : ""]
+            .filter(Boolean)
+            .join(" ")}
+          data-testid="entries-empty-state-board"
+        >
+          <div className={styles.entriesEmptyStatePanel}>
+            <div className={styles.entriesEmptyStateMessage}>Select a set to view entries.</div>
+          </div>
+        </section>
+      ) : (
+        <DeckSortableBoardView model={model} layoutMode={layoutMode} />
+      )}
       <ModalShell
         isOpen={isRecoverModalOpen}
         onClose={closeRecoverModal}

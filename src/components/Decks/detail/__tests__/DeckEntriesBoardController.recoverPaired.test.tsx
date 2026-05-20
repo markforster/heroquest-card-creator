@@ -213,8 +213,11 @@ describe("DeckEntriesBoardController recover paired modal", () => {
 
     render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
 
-    expect(screen.getByText("Entries")).toBeInTheDocument();
+    expect(screen.queryByText("Entries")).toBeNull();
     expect(screen.queryByRole("img", { name: "Selected set back" })).toBeNull();
+    expect(screen.getByTestId("entries-empty-state-board")).toBeInTheDocument();
+    expect(screen.getByText("Select a set to view entries.")).toBeInTheDocument();
+    expect(screen.queryByTestId("entry-entry:entry-1")).toBeNull();
   });
 
   it("renders Entries text fallback while keeping thumbnail when back card title is unavailable", () => {
