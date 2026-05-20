@@ -13,7 +13,7 @@ export const deckRecordSchema = z.object({
 export const deckGroupRecordSchema = z.object({
   id: z.string(),
   deckId: z.string(),
-  title: z.string(),
+  title: z.string().optional(),
   sortIndex: z.number(),
   createdAt: z.number(),
   updatedAt: z.number(),
@@ -24,7 +24,7 @@ export const deckSetRecordSchema = z.object({
   id: z.string(),
   deckId: z.string(),
   groupId: z.string(),
-  title: z.string(),
+  title: z.string().optional(),
   description: z.string().nullable(),
   backFaceId: z.string(),
   sortIndex: z.number(),
@@ -58,7 +58,7 @@ export const deckUpdateInputSchema = z.object({
 });
 
 export const deckGroupCreateInputSchema = z.object({
-  title: z.string().min(1),
+  title: z.string().min(1).optional(),
 });
 
 export const deckGroupUpdateInputSchema = z.object({
@@ -72,7 +72,7 @@ export const deckGroupReorderInputSchema = z.object({
 export const deckSetCreateInputSchema = z.object({
   deckId: z.string(),
   groupId: z.string(),
-  title: z.string().min(1),
+  title: z.string().min(1).optional(),
   description: z.string().nullable().optional(),
   backFaceId: z.string(),
 });

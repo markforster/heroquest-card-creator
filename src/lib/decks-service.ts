@@ -303,7 +303,6 @@ export async function createDeck(input: {
   const defaultGroup: DeckGroupRecord = {
     id: generateId(),
     deckId: record.id,
-    title: "Group",
     sortIndex: 0,
     createdAt: now,
     updatedAt: now,
@@ -493,19 +492,21 @@ export async function getGroup(groupId: string): Promise<DeckGroupRecord | null>
 
 export async function createGroup(
   deckId: string,
-  input: { title: string },
+  input: { title?: string },
 ): Promise<DeckGroupRecord> {
   const existing = await listGroups(deckId);
   const now = Date.now();
   const record: DeckGroupRecord = {
     id: generateId(),
     deckId,
-    title: input.title,
     sortIndex: nextSortIndex(existing),
     createdAt: now,
     updatedAt: now,
     schemaVersion: 1,
   };
+  if (typeof input.title !== "undefined") {
+    record.title = input.title;
+  }
   const store = await getStore(GROUPS_STORE, "readwrite");
   await new Promise<void>((resolve, reject) => {
     const request = store.add(record);
@@ -634,7 +635,7 @@ async function ensureBackFace(backFaceId: string): Promise<void> {
 export async function createSet(
   deckId: string,
   groupId: string,
-  input: { title: string; description?: string | null; backFaceId: string },
+  input: { title?: string; description?: string | null; backFaceId: string },
 ): Promise<DeckSetRecord> {
   const existingSets = await listSets(deckId);
   const conflict = existingSets.find((set) => set.backFaceId === input.backFaceId);
@@ -652,7 +653,6 @@ export async function createSet(
     id: generateId(),
     deckId,
     groupId,
-    title: input.title,
     description: input.description ?? null,
     backFaceId: input.backFaceId,
     sortIndex: nextSortIndex(existingSets.filter((set) => set.groupId === groupId)),
@@ -660,6 +660,9 @@ export async function createSet(
     updatedAt: now,
     schemaVersion: 1,
   };
+  if (typeof input.title !== "undefined") {
+    record.title = input.title;
+  }
   const store = await getStore(SETS_STORE, "readwrite");
   await new Promise<void>((resolve, reject) => {
     const request = store.add(record);
@@ -1046,9 +1049,9 @@ export async function getDeckUsageForPair(pairId: string): Promise<DeckUsageLoca
       deckId: deck.id,
       deckTitle: deck.title,
       groupId: group.id,
-      groupTitle: group.title,
+      groupTitle: group.title ?? "",
       setId: set.id,
-      setTitle: set.title,
+      setTitle: set.title ?? "",
     });
   });
 
@@ -1078,9 +1081,9 @@ export async function getDeckUsageForBackFaceIds(
       deckId: deck.id,
       deckTitle: deck.title,
       groupId: group.id,
-      groupTitle: group.title,
+      groupTitle: group.title ?? "",
       setId: set.id,
-      setTitle: set.title,
+      setTitle: set.title ?? "",
       backFaceId: set.backFaceId,
     });
   });

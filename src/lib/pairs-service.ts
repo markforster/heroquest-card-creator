@@ -229,9 +229,9 @@ async function buildDeckUsageForEntries(entryIds: string[]): Promise<
         deckId: deck.id,
         deckTitle: deck.title,
         groupId: group.id,
-        groupTitle: group.title,
+        groupTitle: group.title ?? "",
         setId: set.id,
-        setTitle: set.title,
+        setTitle: set.title ?? "",
       },
     });
   });

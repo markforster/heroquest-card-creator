@@ -11,7 +11,7 @@ export type DeckRecord = {
 export type DeckGroupRecord = {
   id: string;
   deckId: string;
-  title: string;
+  title?: string;
   sortIndex: number;
   createdAt: number;
   updatedAt: number;
@@ -22,7 +22,7 @@ export type DeckSetRecord = {
   id: string;
   deckId: string;
   groupId: string;
-  title: string;
+  title?: string;
   description: string | null;
   backFaceId: string;
   sortIndex: number;

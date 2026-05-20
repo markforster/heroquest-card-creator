@@ -82,11 +82,10 @@ export function useDeckMutations(): DeckMutationCommands {
         const result = await apiClient.duplicateDeck(undefined, { params: { deckId } });
         return result?.id ?? null;
       },
-      createSetFromBackFace: async (deckId, groupId, backFaceId, defaultSetTitle) => {
+      createSetFromBackFace: async (deckId, groupId, backFaceId) => {
         const createdSet = await apiClient.createDeckSet({
           deckId,
           groupId,
-          title: defaultSetTitle,
           backFaceId,
           description: null,
         });
@@ -129,8 +128,8 @@ export function useDeckMutations(): DeckMutationCommands {
       reorderEntries: async (setId, orderedEntryIds) => {
         await apiClient.reorderDeckEntries({ orderedEntryIds }, { params: { setId } });
       },
-      createGroup: async (deckId, defaultGroupTitle) =>
-        apiClient.createDeckGroup({ title: defaultGroupTitle }, { params: { deckId } }),
+      createGroup: async (deckId) =>
+        apiClient.createDeckGroup({}, { params: { deckId } }),
       reorderGroups: async (deckId, orderedGroupIds) => {
         await apiClient.reorderDeckGroups({ orderedGroupIds }, { params: { deckId } });
       },

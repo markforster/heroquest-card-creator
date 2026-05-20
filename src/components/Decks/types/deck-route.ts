@@ -17,7 +17,6 @@ export type DeckMutationCommands = {
     deckId: string,
     groupId: string,
     backFaceId: string,
-    defaultSetTitle: string,
   ) => Promise<DeckSetRecord>;
   addFrontToSetAndRefresh: (
     setId: string,
@@ -31,7 +30,7 @@ export type DeckMutationCommands = {
   deleteGroup: (groupId: string) => Promise<void>;
   rebuildSetBack: (setId: string, newBackFaceId: string, frontFaceIds: string[]) => Promise<void>;
   reorderEntries: (setId: string, orderedEntryIds: string[]) => Promise<void>;
-  createGroup: (deckId: string, defaultGroupTitle: string) => Promise<DeckGroupRecord>;
+  createGroup: (deckId: string) => Promise<DeckGroupRecord>;
   reorderGroups: (deckId: string, orderedGroupIds: string[]) => Promise<void>;
   reorderSets: (setId: string, orderedSetIds: string[]) => Promise<void>;
   updateSetGroup: (setId: string, groupId: string) => Promise<void>;

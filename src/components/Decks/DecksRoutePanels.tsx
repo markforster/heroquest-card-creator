@@ -141,12 +141,7 @@ export default function DecksRoutePanels() {
     groupId: string,
     backFaceId: string,
   ) => {
-    return mutations.createSetFromBackFace(
-      deckIdValue,
-      groupId,
-      backFaceId,
-      t("decks.defaultSetTitle"),
-    );
+    return mutations.createSetFromBackFace(deckIdValue, groupId, backFaceId);
   };
 
   const { dragState, dndHandlers, groupRowRef, entriesRowRef } = useDecksDragController({
@@ -166,8 +161,7 @@ export default function DecksRoutePanels() {
     reorderSetEntriesOptimistic: async (setId, orderedEntryIds) =>
       entriesModel.reorderEntriesOptimistic(orderedEntryIds, setId),
     applyOptimisticSets: selectionModel.applyOptimisticSets,
-    createDeckGroup: async (targetDeckId) =>
-      mutations.createGroup(targetDeckId, t("decks.defaultGroupTitle")),
+    createDeckGroup: async (targetDeckId) => mutations.createGroup(targetDeckId),
     reorderDeckGroups: mutations.reorderGroups,
     reorderDeckSets: mutations.reorderSets,
     updateDeckSetGroup: mutations.updateSetGroup,
@@ -319,13 +313,13 @@ export default function DecksRoutePanels() {
 
     openStockpile({
       mode: "pair-backs",
-      titleOverride: formatMessage("decks.changeBackTitle", { title: currentSet.title }),
+      titleOverride: formatMessage("decks.changeBackTitle", { title: currentSet.title ?? "" }),
       onConfirmSelection: (backIds) => {
         const newBackFaceId = backIds[0];
         if (!newBackFaceId) return;
         openStockpile({
           mode: "pair-fronts",
-          titleOverride: formatMessage("decks.rebuildSelectFronts", { title: currentSet.title }),
+          titleOverride: formatMessage("decks.rebuildSelectFronts", { title: currentSet.title ?? "" }),
           onConfirmSelection: async (frontIds) => {
             await mutations.rebuildSetBack(currentSet.id, newBackFaceId, frontIds);
             await selectionModel.reloadStructure(currentSet.id);

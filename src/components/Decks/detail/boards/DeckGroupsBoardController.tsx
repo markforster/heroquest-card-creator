@@ -574,7 +574,7 @@ export default function DeckGroupsBoardController({
 
       if (event.kind === "GROUPS_DROP_SET_TO_NEW_GROUP") {
         if (!deckId) return { handled: true, success: false, fatal: true, reason: "missing deckId" };
-        const createdGroup = await mutations.createGroup(deckId, t("decks.defaultGroupTitle"));
+        const createdGroup = await mutations.createGroup(deckId);
         const orderedGroupIds = selection.orderedGroups.map((group) => group.id);
         const insertionIndex = Math.max(0, Math.min(event.targetGroupIndex, orderedGroupIds.length));
         const nextGroupOrder = orderedGroupIds.slice();
@@ -592,12 +592,7 @@ export default function DeckGroupsBoardController({
 
       if (event.kind === "GROUPS_DROP_SOURCE_CARD_TO_GROUP") {
         if (!deckId) return { handled: true, success: false, fatal: true, reason: "missing deckId" };
-        const created = await mutations.createSetFromBackFace(
-          deckId,
-          event.targetGroupId,
-          event.backFaceId,
-          t("decks.defaultSetTitle"),
-        );
+        const created = await mutations.createSetFromBackFace(deckId, event.targetGroupId, event.backFaceId);
         const orderedTargetSetIds = selection.sets
           .filter((set) => set.groupId === event.targetGroupId)
           .sort((a, b) => a.sortIndex - b.sortIndex)
@@ -612,7 +607,7 @@ export default function DeckGroupsBoardController({
 
       if (event.kind === "GROUPS_DROP_SOURCE_CARD_TO_NEW_GROUP") {
         if (!deckId) return { handled: true, success: false, fatal: true, reason: "missing deckId" };
-        const createdGroup = await mutations.createGroup(deckId, t("decks.defaultGroupTitle"));
+        const createdGroup = await mutations.createGroup(deckId);
         const orderedGroupIds = selection.orderedGroups.map((group) => group.id);
         const insertionIndex = Math.max(0, Math.min(event.targetGroupIndex, orderedGroupIds.length));
         const nextGroupOrder = orderedGroupIds.slice();
@@ -622,7 +617,6 @@ export default function DeckGroupsBoardController({
           deckId,
           createdGroup.id,
           event.backFaceId,
-          t("decks.defaultSetTitle"),
         );
         await mutations.reorderSets(createdSet.id, [createdSet.id]);
         await selection.reloadStructure(selection.selectedSetId);

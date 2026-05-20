@@ -381,9 +381,9 @@ function validateDeckReferences(input: {
         deckId: deck.id,
         deckTitle: deck.title,
         groupId: group.id,
-        groupTitle: group.title,
+        groupTitle: group.title ?? "",
         setId: set.id,
-        setTitle: set.title,
+        setTitle: set.title ?? "",
       });
       issues.push(`Set ${set.id} references missing back card ${set.backFaceId}`);
     }
@@ -407,9 +407,9 @@ function validateDeckReferences(input: {
           deckId: deck.id,
           deckTitle: deck.title,
           groupId: group.id,
-          groupTitle: group.title,
+          groupTitle: group.title ?? "",
           setId: set.id,
-          setTitle: set.title,
+          setTitle: set.title ?? "",
         });
       }
       issues.push(`Entry ${entry.id} references missing pair ${entry.pairId}`);

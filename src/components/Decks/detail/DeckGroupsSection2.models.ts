@@ -64,13 +64,13 @@ export function useDeckBoardsModels({
       toGroupsBoardModel({
         orderedGroups: selection.orderedGroups.map((group) => ({
           id: group.id,
-          title: group.title,
+          title: group.title ?? "",
         })),
         sets: selection.sets.map((set) => ({
           id: set.id,
           groupId: set.groupId,
           sortIndex: set.sortIndex,
-          title: set.title,
+          title: set.title ?? "",
           backFaceId: set.backFaceId,
         })),
         cardNameById,

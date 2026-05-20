@@ -88,12 +88,11 @@ describe("useDeckMutations", () => {
     mockApiClient.addDeckEntries.mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useDeckMutations());
-    const created = await result.current.createSetFromBackFace("deck-1", "group-1", "back-1", "Default Set");
+    const created = await result.current.createSetFromBackFace("deck-1", "group-1", "back-1");
 
     expect(mockApiClient.createDeckSet).toHaveBeenCalledWith({
       deckId: "deck-1",
       groupId: "group-1",
-      title: "Default Set",
       backFaceId: "back-1",
       description: null,
     });
