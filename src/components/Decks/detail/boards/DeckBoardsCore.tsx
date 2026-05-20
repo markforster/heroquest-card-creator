@@ -21,6 +21,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
@@ -963,7 +964,7 @@ function SortableSetCard({
   renderContent: DeckSortableBoardViewModel["renderSetContent"];
   isSelected: boolean;
   isEphemeral?: boolean;
-  onClick?: () => void;
+  onClick?: (event: MouseEvent<HTMLDivElement>) => void;
   onHoverChange?: (isHovered: boolean) => void;
   renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
   renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
@@ -1078,7 +1079,7 @@ function DraggableSetCard({
   renderContent: DeckSortableBoardViewModel["renderSetContent"];
   isSelected: boolean;
   isEphemeral?: boolean;
-  onClick?: () => void;
+  onClick?: (event: MouseEvent<HTMLDivElement>) => void;
   onHoverChange?: (isHovered: boolean) => void;
   renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
   renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
@@ -1461,7 +1462,7 @@ export function DeckSortableBoardView({
                             setId,
                             setIndex,
                           })}
-                          onClick={() => {
+                          onClick={(event) => {
                             if (model.activeSetId) return;
                             model.onSetClick?.(setId, groupId, {
                               additive: event.metaKey || event.ctrlKey,
@@ -1501,7 +1502,7 @@ export function DeckSortableBoardView({
                             setId,
                             setIndex,
                           })}
-                          onClick={() => {
+                          onClick={(event) => {
                             if (model.activeSetId) return;
                             model.onSetClick?.(setId, groupId, {
                               additive: event.metaKey || event.ctrlKey,
