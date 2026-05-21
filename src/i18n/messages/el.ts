@@ -678,7 +678,7 @@ export const el = {
   "decks.entries.recover.selectCardAria": "Επιλογή {cardId}",
 
   "decks.groups.actions.createAtPosition": "Δημιουργία ομάδας στη θέση {index}",
-  "decks.groups.emptyDropHint": "Drag back faces Here",
+  "decks.groups.emptyDropHint": "Σύρετε εδώ τις πίσω όψεις καρτών",
 
   "actions.edit": "Επεξεργασία",
 

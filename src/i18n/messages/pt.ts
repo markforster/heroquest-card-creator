@@ -678,7 +678,7 @@ export const pt = {
   "decks.entries.recover.selectCardAria": "Selecionar {cardId}",
 
   "decks.groups.actions.createAtPosition": "Criar grupo na posição {index}",
-  "decks.groups.emptyDropHint": "Drag back faces Here",
+  "decks.groups.emptyDropHint": "Arraste cartas de verso para aqui",
 
   "actions.edit": "Editar",
 

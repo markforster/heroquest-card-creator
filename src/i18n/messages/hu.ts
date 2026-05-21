@@ -678,7 +678,7 @@ export const hu = {
   "decks.entries.recover.selectCardAria": "{cardId} kijelölése",
 
   "decks.groups.actions.createAtPosition": "Csoport létrehozása a(z) {index}. pozíción",
-  "decks.groups.emptyDropHint": "Drag back faces Here",
+  "decks.groups.emptyDropHint": "Húzd ide a hátoldalas kártyákat",
 
   "actions.edit": "Szerkesztés",
 
