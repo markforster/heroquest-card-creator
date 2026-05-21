@@ -61,6 +61,18 @@ function createStore<T extends { id: string }>(records: Map<string, T>, tx: Fake
       queueSuccess(req);
       return req;
     }),
+    get: jest.fn((id: string) => {
+      const req = createRequest(records.get(id));
+      queueSuccess(req);
+      return req;
+    }),
+    put: jest.fn((value: T) => {
+      const req = createRequest(undefined);
+      records.set(value.id, value);
+      queueSuccess(req);
+      setTimeout(() => tx.oncomplete?.(), 0);
+      return req;
+    }),
     delete: jest.fn((id: string) => {
       const req = createRequest(undefined);
       records.delete(id);
@@ -217,6 +229,7 @@ describe("deleteCardsWithCascade deck group cleanup", () => {
     expect(fixture.deckEntries.has("entry-1")).toBe(false);
     expect(fixture.deckGroups.has("group-1")).toBe(false);
     expect(fixture.decks.has("deck-1")).toBe(true);
+    expect((fixture.decks.get("deck-1")?.updatedAt ?? 0)).toBeGreaterThan(1);
   });
 
   it("keeps the group when another set remains in that group", async () => {

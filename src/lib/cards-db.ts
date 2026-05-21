@@ -452,6 +452,7 @@ async function cascadeDeleteDeckDataForBackFaceIds(backFaceIds: string[]): Promi
   if (!setsToDelete.length) return;
   const setIdSet = new Set(setsToDelete.map((set) => set.id));
   const entriesToDelete = entries.filter((entry) => setIdSet.has(entry.setId));
+  const touchedDeckIds = new Set(setsToDelete.map((set) => set.deckId));
   const touchedGroupIds = new Set(setsToDelete.map((set) => set.groupId));
   const remainingSets = sets.filter((set) => !setIdSet.has(set.id));
   const remainingGroupIds = new Set(remainingSets.map((set) => set.groupId));
@@ -476,6 +477,36 @@ async function cascadeDeleteDeckDataForBackFaceIds(backFaceIds: string[]): Promi
   entriesToDelete.forEach((entry) => enqueueDbEstimateChange(DECK_ENTRIES_STORE, entry.id));
   setsToDelete.forEach((set) => enqueueDbEstimateChange(DECK_SETS_STORE, set.id));
   groupsToDelete.forEach((group) => enqueueDbEstimateChange(DECK_GROUPS_STORE, group.id));
+  if (touchedDeckIds.size) {
+    const deckTx = db.transaction(DECKS_STORE, "readwrite");
+    const deckStore = deckTx.objectStore(DECKS_STORE);
+    const now = Date.now();
+    await Promise.all(
+      Array.from(touchedDeckIds).map(
+        (deckId) =>
+          new Promise<void>((resolve, reject) => {
+            const getRequest = deckStore.get(deckId);
+            getRequest.onsuccess = () => {
+              const deck = (getRequest.result as DeckRecord | undefined) ?? null;
+              if (!deck) {
+                resolve();
+                return;
+              }
+              const putRequest = deckStore.put({ ...deck, updatedAt: now });
+              putRequest.onsuccess = () => resolve();
+              putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to touch deck"));
+            };
+            getRequest.onerror = () => reject(getRequest.error ?? new Error("Failed to load deck"));
+          }),
+      ),
+    );
+    await new Promise<void>((resolve, reject) => {
+      deckTx.oncomplete = () => resolve();
+      deckTx.onerror = () => reject(deckTx.error ?? new Error("Failed to touch decks"));
+      deckTx.onabort = () => reject(deckTx.error ?? new Error("Failed to touch decks"));
+    });
+    touchedDeckIds.forEach((deckId) => enqueueDbEstimateChange(DECKS_STORE, deckId));
+  }
 }
 
 export async function softDeleteCards(

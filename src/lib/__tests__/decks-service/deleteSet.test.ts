@@ -156,7 +156,7 @@ describe("deleteSet", () => {
     };
   });
 
-  it("deletes set and entries and removes the parent group when it was the last set", async () => {
+  it("deletes set and entries and keeps the only remaining group", async () => {
     const fixture = createDbFixture({
       groups: [
         { id: "group-1", deckId: "deck-1", title: "G", sortIndex: 0, createdAt: now, updatedAt: now, schemaVersion: 1 },
@@ -194,7 +194,7 @@ describe("deleteSet", () => {
 
     expect(fixture.sets.has("set-1")).toBe(false);
     expect(fixture.entries.has("entry-1")).toBe(false);
-    expect(fixture.groups.has("group-1")).toBe(false);
+    expect(fixture.groups.has("group-1")).toBe(true);
   });
 
   it("deletes set and entries but keeps group when other sets remain", async () => {

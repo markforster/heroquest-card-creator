@@ -352,6 +352,40 @@ export async function updateDeck(
   return next;
 }
 
+async function touchDeckUpdatedAt(
+  deckId: string,
+  updatedAt: number = Date.now(),
+): Promise<void> {
+  const store = await getStore(DECKS_STORE, "readwrite");
+  const existing = await new Promise<DeckRecord | null>((resolve, reject) => {
+    const request = store.get(deckId);
+    request.onsuccess = () => resolve((request.result as DeckRecord | undefined) ?? null);
+    request.onerror = () => reject(request.error ?? new Error("Failed to load deck"));
+  });
+  if (!existing) return;
+  const next: DeckRecord = {
+    ...existing,
+    updatedAt,
+  };
+  await new Promise<void>((resolve, reject) => {
+    const request = store.put(next);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error ?? new Error("Failed to touch deck"));
+  });
+  enqueueDbEstimateChange(DECKS_STORE, deckId);
+}
+
+function touchDeckUpdatedAtInTransaction(
+  deckStore: IDBObjectStore,
+  deck: DeckRecord,
+  updatedAt: number,
+): void {
+  deckStore.put({
+    ...deck,
+    updatedAt,
+  });
+}
+
 export async function deleteDeck(deckId: string): Promise<void> {
   const groups = await listByIndex<DeckGroupRecord>(GROUPS_STORE, "deckId", deckId);
   const sets = await listByIndex<DeckSetRecord>(SETS_STORE, "deckId", deckId);
@@ -513,6 +547,7 @@ export async function createGroup(
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to create group"));
   });
+  await touchDeckUpdatedAt(deckId, now);
   enqueueDbEstimateChange(GROUPS_STORE, record.id);
   return record;
 }
@@ -538,6 +573,7 @@ export async function updateGroup(
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to update group"));
   });
+  await touchDeckUpdatedAt(existing.deckId, next.updatedAt);
   enqueueDbEstimateChange(GROUPS_STORE, next.id);
   return next;
 }
@@ -575,6 +611,7 @@ export async function deleteGroup(groupId: string): Promise<void> {
     tx.onerror = () => reject(tx.error ?? new Error("Failed to delete group"));
   });
 
+  await touchDeckUpdatedAt(group.deckId);
   enqueueDbEstimateChange(GROUPS_STORE, groupId);
   sets.forEach((set) => enqueueDbEstimateChange(SETS_STORE, set.id));
   entryIds.forEach((id) => enqueueDbEstimateChange(ENTRIES_STORE, id));
@@ -607,6 +644,7 @@ export async function reorderGroups(deckId: string, orderedGroupIds: string[]): 
       request.onerror = () => reject(request.error ?? new Error("Failed to reorder groups"));
     });
   });
+  await touchDeckUpdatedAt(deckId);
   orderedGroupIds.forEach((id) => enqueueDbEstimateChange(GROUPS_STORE, id));
 }
 
@@ -673,6 +711,8 @@ export async function createSet(
 
   if (existingSets.length === 0) {
     await updateDeck(deckId, { keySetId: record.id });
+  } else {
+    await touchDeckUpdatedAt(deckId, now);
   }
   return record;
 }
@@ -698,6 +738,7 @@ export async function updateSet(
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to update set"));
   });
+  await touchDeckUpdatedAt(existing.deckId, next.updatedAt);
   enqueueDbEstimateChange(SETS_STORE, next.id);
   return next;
 }
@@ -728,17 +769,22 @@ export async function deleteSet(setId: string): Promise<void> {
   const txEntryStore = tx.objectStore(ENTRIES_STORE);
   const txGroupStore = tx.objectStore(GROUPS_STORE);
   const txDeckStore = tx.objectStore(DECKS_STORE);
+  const now = Date.now();
   entries.forEach((entry) => txEntryStore.delete(entry.id));
   txSetStore.delete(setId);
   if (shouldDeleteGroup) {
     txGroupStore.delete(set.groupId);
   }
-  if (deck && (deck.keySetId ?? null) === setId) {
-    txDeckStore.put({
-      ...deck,
-      keySetId: null,
-      updatedAt: Date.now(),
-    });
+  if (deck) {
+    const isDeletingKeySet = (deck.keySetId ?? null) === setId;
+    touchDeckUpdatedAtInTransaction(
+      txDeckStore,
+      {
+        ...deck,
+        keySetId: isDeletingKeySet ? null : deck.keySetId ?? null,
+      },
+      now,
+    );
   }
 
   await new Promise<void>((resolve, reject) => {
@@ -784,6 +830,7 @@ export async function reorderSets(
       request.onerror = () => reject(request.error ?? new Error("Failed to reorder sets"));
     });
   });
+  await touchDeckUpdatedAt(deckId);
   orderedSetIds.forEach((id) => enqueueDbEstimateChange(SETS_STORE, id));
 }
 
@@ -815,6 +862,7 @@ export async function rebuildSetBack(
   await ensureBackFace(newBackFaceId);
 
   const existingEntries = await listByIndex<DeckEntryRecord>(ENTRIES_STORE, "setId", setId);
+  const existingDeck = await getDeck(set.deckId);
   const now = Date.now();
   let sortIndex = 0;
   const uniqueFrontIds = Array.from(new Set(selectedFrontFaceIds));
@@ -841,9 +889,10 @@ export async function rebuildSetBack(
   }
 
   const db = await openHqccDb();
-  const tx = db.transaction([SETS_STORE, ENTRIES_STORE], "readwrite");
+  const tx = db.transaction([SETS_STORE, ENTRIES_STORE, DECKS_STORE], "readwrite");
   const txSetStore = tx.objectStore(SETS_STORE);
   const txEntryStore = tx.objectStore(ENTRIES_STORE);
+  const txDeckStore = tx.objectStore(DECKS_STORE);
 
   existingEntries.forEach((entry) => txEntryStore.delete(entry.id));
   nextEntries.forEach((entry) => txEntryStore.add(entry));
@@ -854,6 +903,9 @@ export async function rebuildSetBack(
     updatedAt: now,
   };
   txSetStore.put(nextSet);
+  if (existingDeck) {
+    touchDeckUpdatedAtInTransaction(txDeckStore, existingDeck, now);
+  }
 
   await new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => resolve();
@@ -928,6 +980,7 @@ export async function addFrontsToSet(
     tx.onerror = () => reject(tx.error ?? new Error("Failed to add entry"));
   });
 
+  await touchDeckUpdatedAt(set.deckId, now);
   created.forEach((entry) => enqueueDbEstimateChange(ENTRIES_STORE, entry.id));
   return created;
 }
@@ -949,6 +1002,8 @@ export async function removeEntries(setId: string, entryIds: string[]): Promise<
 
 export async function reorderEntries(setId: string, orderedEntryIds: string[]): Promise<void> {
   const entries = await listEntriesForSet(setId);
+  const set = await getSet(setId);
+  if (!set) return;
   const entryMap = new Map(entries.map((entry) => [entry.id, entry]));
   const store = await getStore(ENTRIES_STORE, "readwrite");
 
@@ -974,6 +1029,7 @@ export async function reorderEntries(setId: string, orderedEntryIds: string[]): 
       request.onerror = () => reject(request.error ?? new Error("Failed to reorder entries"));
     });
   });
+  await touchDeckUpdatedAt(set.deckId);
   orderedEntryIds.forEach((id) => enqueueDbEstimateChange(ENTRIES_STORE, id));
 }
 
@@ -1001,6 +1057,7 @@ export async function updateEntryCount(
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Failed to update entry count"));
   });
+  await touchDeckUpdatedAt(existing.deckId, next.updatedAt);
   enqueueDbEstimateChange(ENTRIES_STORE, next.id);
   return next;
 }

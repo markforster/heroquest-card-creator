@@ -49,6 +49,19 @@ class FakeStore<T extends { id: string }> {
     return req;
   }
 
+  get(id: string) {
+    const req = createRequest(this.records.get(id));
+    queueSuccess(req as Request<unknown>);
+    return req;
+  }
+
+  put(value: T) {
+    this.records.set(value.id, value);
+    const req = createRequest<void>(undefined);
+    queueSuccess(req as Request<unknown>);
+    return req;
+  }
+
   delete(id: string) {
     this.records.delete(id);
     const req = createRequest<void>(undefined);
@@ -125,12 +138,12 @@ function createDbFixture(data: {
         },
         objectStore: (name: string) => (stores as Record<string, unknown>)[name] as IDBObjectStore,
       };
-      queueMicrotask(() => tx.oncomplete?.());
+      setTimeout(() => tx.oncomplete?.(), 0);
       return tx;
     },
   };
 
-  return { db, pairs, entries };
+  return { db, pairs, entries, decks };
 }
 
 describe("pairs-service deletion cascade", () => {
@@ -255,6 +268,7 @@ describe("pairs-service deletion cascade", () => {
     expect(result).toMatchObject({ kind: "executed", deletedPairs: 1, cascadedEntries: 1 });
     expect(fixture.pairs.has("pair-1")).toBe(false);
     expect(fixture.entries.has("entry-1")).toBe(false);
+    expect((fixture.decks.get("deck-1")?.updatedAt ?? 0)).toBeGreaterThan(now);
   });
 
   it("bulk deletePairsForFaces removes all affected pairs and entries", async () => {
@@ -338,5 +352,6 @@ describe("pairs-service deletion cascade", () => {
     expect(result).toMatchObject({ kind: "executed", deletedPairs: 2, cascadedEntries: 2 });
     expect(fixture.pairs.size).toBe(0);
     expect(fixture.entries.size).toBe(0);
+    expect((fixture.decks.get("deck-1")?.updatedAt ?? 0)).toBeGreaterThan(now);
   });
 });

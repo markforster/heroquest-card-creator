@@ -280,6 +280,19 @@ async function executePairDeletionPlan(report: PairUsageReport): Promise<{
   const stores = db.objectStoreNames.contains("deckEntries")
     ? (["pairs", "deckEntries"] as const)
     : (["pairs"] as const);
+  const deckIdsToTouch = new Set<string>();
+  if (entryIds.length && db.objectStoreNames.contains("deckEntries")) {
+    const readTx = db.transaction("deckEntries", "readonly");
+    const readEntriesStore = readTx.objectStore("deckEntries");
+    const existingEntries = await new Promise<DeckEntryRecord[]>((resolve, reject) => {
+      const request = readEntriesStore.getAll();
+      request.onsuccess = () => resolve((request.result as DeckEntryRecord[] | undefined) ?? []);
+      request.onerror = () => reject(request.error ?? new Error("Failed to load deck entries"));
+    });
+    existingEntries.forEach((entry) => {
+      if (entryIds.includes(entry.id)) deckIdsToTouch.add(entry.deckId);
+    });
+  }
   const tx = db.transaction(stores, "readwrite");
   const pairsStore = tx.objectStore("pairs");
   const entriesStore = tx.objectStoreNames.contains("deckEntries")
@@ -297,6 +310,36 @@ async function executePairDeletionPlan(report: PairUsageReport): Promise<{
 
   pairIds.forEach((pairId) => enqueueDbEstimateChange("pairs", pairId));
   entryIds.forEach((entryId) => enqueueDbEstimateChange("deckEntries", entryId));
+  if (deckIdsToTouch.size && db.objectStoreNames.contains("decks")) {
+    const deckTx = db.transaction("decks", "readwrite");
+    const deckStore = deckTx.objectStore("decks");
+    const now = Date.now();
+    await Promise.all(
+      Array.from(deckIdsToTouch).map(
+        (deckId) =>
+          new Promise<void>((resolve, reject) => {
+            const getRequest = deckStore.get(deckId);
+            getRequest.onsuccess = () => {
+              const deck = (getRequest.result as DeckRecord | undefined) ?? null;
+              if (!deck) {
+                resolve();
+                return;
+              }
+              const putRequest = deckStore.put({ ...deck, updatedAt: now });
+              putRequest.onsuccess = () => resolve();
+              putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to touch deck"));
+            };
+            getRequest.onerror = () => reject(getRequest.error ?? new Error("Failed to load deck"));
+          }),
+      ),
+    );
+    await new Promise<void>((resolve, reject) => {
+      deckTx.oncomplete = () => resolve();
+      deckTx.onerror = () => reject(deckTx.error ?? new Error("Failed to touch decks"));
+      deckTx.onabort = () => reject(deckTx.error ?? new Error("Failed to touch decks"));
+    });
+    deckIdsToTouch.forEach((deckId) => enqueueDbEstimateChange("decks", deckId));
+  }
 
   return { deletedPairs: pairIds.length, deletedEntries: entryIds.length };
 }
