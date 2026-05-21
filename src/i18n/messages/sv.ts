@@ -696,6 +696,7 @@ export const sv = {
 
   "decks.entries.recover.selectCardAria": "Välj {cardId}",
 
+  "decks.groups.actions.insertHere": "Infoga grupp här",
   "decks.groups.actions.createAtPosition": "Skapa grupp på position {index}",
   "decks.groups.emptyDropHint": "Dra baksideskort hit",
 

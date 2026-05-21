@@ -183,6 +183,7 @@ export const en = {
   "decks.boards.source": "Source",
   "decks.boards.cards": "Cards",
   "decks.groups.actions.reorder": "Reorder group",
+  "decks.groups.actions.insertHere": "Insert group here",
   "decks.groups.actions.createAtPosition": "Create group at position {index}",
   "decks.groups.emptyDropHint": "Drag back faces Here",
   "decks.sourcePanelToggle": "Toggle source faces panel",

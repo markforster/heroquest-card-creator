@@ -696,6 +696,7 @@ export const hu = {
 
   "decks.entries.recover.selectCardAria": "{cardId} kijelölése",
 
+  "decks.groups.actions.insertHere": "Csoport beszúrása ide",
   "decks.groups.actions.createAtPosition": "Csoport létrehozása a(z) {index}. pozíción",
   "decks.groups.emptyDropHint": "Húzd ide a hátoldalas kártyákat",
 

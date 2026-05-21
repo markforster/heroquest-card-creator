@@ -1263,6 +1263,7 @@ function CreateBoundaryPlaceholder({
           .join(" ")}
         onClick={() => onCreate(index)}
         aria-label={t("decks.groups.actions.createAtPosition").replace("{index}", String(index))}
+        title={t("decks.groups.actions.insertHere")}
         tabIndex={visible ? 0 : -1}
       >
         <SquareSplitHorizontal className={styles.createBoundaryIcon} aria-hidden="true" />

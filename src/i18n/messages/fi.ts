@@ -696,6 +696,7 @@ export const fi = {
 
   "decks.entries.recover.selectCardAria": "Valitse {cardId}",
 
+  "decks.groups.actions.insertHere": "Lisää ryhmä tähän",
   "decks.groups.actions.createAtPosition": "Luo ryhmä kohtaan {index}",
   "decks.groups.emptyDropHint": "Vedä korttien taustapuolet tähän",
 

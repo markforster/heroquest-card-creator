@@ -696,6 +696,7 @@ export const nl = {
 
   "decks.entries.recover.selectCardAria": "{cardId} selecteren",
 
+  "decks.groups.actions.insertHere": "Groep hier invoegen",
   "decks.groups.actions.createAtPosition": "Groep maken op positie {index}",
   "decks.groups.emptyDropHint": "Sleep achterkantkaarten hierheen",
 

@@ -696,6 +696,7 @@ export const cs = {
 
   "decks.entries.recover.selectCardAria": "Vybrat {cardId}",
 
+  "decks.groups.actions.insertHere": "Vložit skupinu sem",
   "decks.groups.actions.createAtPosition": "Vytvořit skupinu na pozici {index}",
   "decks.groups.emptyDropHint": "Přetáhněte sem rubové karty",
 
