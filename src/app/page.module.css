@@ -6684,6 +6684,20 @@ button.assetsKindBadge:disabled {
   --deck-preview-rotate: -1deg;
   --deck-preview-translate-x: -2%;
   --deck-preview-translate-y: -1%;
+  --deck-preview-brightness: 1;
+  --deck-preview-saturate: 1;
+  --deck-preview-focus-ease: cubic-bezier(0.18, 0.9, 0.22, 1);
+}
+
+.deckTile:hover {
+  --deck-preview-bg-opacity: 0.62;
+  --deck-preview-blur: 2.6px;
+  --deck-preview-scale: 1.36;
+  --deck-preview-rotate: -0.6deg;
+  --deck-preview-translate-x: -1.2%;
+  --deck-preview-translate-y: -0.3%;
+  --deck-preview-brightness: 0.92;
+  --deck-preview-saturate: 1.04;
 }
 
 :root[data-theme="light"] .deckTile:hover {
@@ -6748,6 +6762,24 @@ button.assetsKindBadge:disabled {
   filter: brightness(1.14) saturate(1.08);
 }
 
+.deckTile:hover .cardFanSvg {
+  transform: scale(1.04);
+  filter:
+    drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 1.4px rgba(255, 255, 255, 0.52))
+    drop-shadow(0 3px 10px rgba(0, 0, 0, 0.28));
+}
+
+.deckTileSelected:hover .cardFanSvg {
+  transform: scale(1.04);
+  filter:
+    brightness(1.14)
+    saturate(1.08)
+    drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 1.4px rgba(255, 255, 255, 0.52))
+    drop-shadow(0 3px 10px rgba(0, 0, 0, 0.28));
+}
+
 .deckTilePreview {
   position: relative;
   width: 100%;
@@ -6756,6 +6788,16 @@ button.assetsKindBadge:disabled {
   justify-content: center;
   align-items: center;
   z-index: 1;
+}
+
+.deckTilePreview .cardFan,
+.deckTilePreview .cardFanSvg,
+.deckTilePreview .cardFanCardSvg {
+  cursor: pointer !important;
+}
+
+.deckTilePreview .cardFanCardSvg * {
+  cursor: pointer !important;
 }
 
 .cardFan {
@@ -6769,7 +6811,10 @@ button.assetsKindBadge:disabled {
   display: block;
   transition:
     width 180ms ease,
-    height 180ms ease;
+    height 180ms ease,
+    transform 220ms cubic-bezier(0.18, 0.9, 0.22, 1),
+    filter 220ms cubic-bezier(0.18, 0.9, 0.22, 1);
+  will-change: transform, filter;
 }
 
 .cardFanPlaceholderSvg {
@@ -6982,12 +7027,31 @@ button.assetsKindBadge:disabled {
   background-size: cover;
   background-position: center;
   opacity: var(--deck-preview-bg-opacity);
-  filter: blur(var(--deck-preview-blur));
+  filter: blur(var(--deck-preview-blur)) brightness(var(--deck-preview-brightness))
+    saturate(var(--deck-preview-saturate));
   transform: scale(var(--deck-preview-scale)) rotate(var(--deck-preview-rotate))
     translate(var(--deck-preview-translate-x), var(--deck-preview-translate-y));
   transform-origin: center;
   pointer-events: none;
   z-index: 0;
+  transition:
+    transform 300ms var(--deck-preview-focus-ease),
+    filter 300ms var(--deck-preview-focus-ease),
+    opacity 260ms var(--deck-preview-focus-ease);
+  will-change: transform, filter, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deckTile:hover {
+    --deck-preview-scale: 1.28;
+    --deck-preview-rotate: -1deg;
+    --deck-preview-translate-x: -2%;
+    --deck-preview-translate-y: -1%;
+  }
+
+  .deckTileAtmosphere {
+    transition: none;
+  }
 }
 
 .deckTileMetaSlot,
