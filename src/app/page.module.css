@@ -6637,6 +6637,7 @@ button.assetsKindBadge:disabled {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  padding-inline: var(--space-6);
 }
 
 .decksGridSearch {
@@ -7009,13 +7010,14 @@ button.assetsKindBadge:disabled {
   margin-right: calc(var(--space-5) * -1);
   margin-bottom: calc(var(--space-5) * -1);
   z-index: 1;
+  border-top: 1px solid var(--hq-border-strong);
   border-radius: 0 0 calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px);
   background: var(--hq-surface-card);
   overflow: hidden;
 }
 
 :root[data-theme="light"] .deckTileBottom {
-  background: var(--hq-surface-card);
+  background: linear-gradient(135deg, #f4efe5, #ede5d7);
 }
 
 :root[data-theme="dark"] .deckTileBottom {
