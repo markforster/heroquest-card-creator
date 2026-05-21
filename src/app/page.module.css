@@ -6764,20 +6764,14 @@ button.assetsKindBadge:disabled {
 
 .deckTile:hover .cardFanSvg {
   transform: scale(1.04);
-  filter:
-    drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.9))
-    drop-shadow(0 0 1.4px rgba(255, 255, 255, 0.52))
-    drop-shadow(0 3px 10px rgba(0, 0, 0, 0.28));
+  filter: drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 1.4px rgba(255, 255, 255, 0.52)) drop-shadow(0 3px 10px rgba(0, 0, 0, 0.28));
 }
 
 .deckTileSelected:hover .cardFanSvg {
   transform: scale(1.04);
-  filter:
-    brightness(1.14)
-    saturate(1.08)
-    drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.9))
-    drop-shadow(0 0 1.4px rgba(255, 255, 255, 0.52))
-    drop-shadow(0 3px 10px rgba(0, 0, 0, 0.28));
+  filter: brightness(1.14) saturate(1.08) drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 1.4px rgba(255, 255, 255, 0.52)) drop-shadow(0 3px 10px rgba(0, 0, 0, 0.28));
 }
 
 .deckTilePreview {
@@ -7003,13 +6997,27 @@ button.assetsKindBadge:disabled {
 }
 
 .deckTileBottom {
-  width: 100%;
+  width: calc(100% + (var(--space-5) * 2));
   position: relative;
+  height: 56px;
   min-height: 56px;
   margin-top: auto;
+  margin-left: calc(var(--space-5) * -1);
+  margin-right: calc(var(--space-5) * -1);
+  margin-bottom: calc(var(--space-5) * -1);
   z-index: 1;
+  border-radius: 0 0 calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px);
+  background: var(--hq-surface-card);
+  overflow: hidden;
 }
 
+:root[data-theme="light"] .deckTileBottom {
+  background: var(--hq-surface-card);
+}
+
+:root[data-theme="dark"] .deckTileBottom {
+  background: var(--hq-surface-card);
+}
 
 .deckTileAtmosphereFrame {
   position: absolute;
@@ -7060,7 +7068,7 @@ button.assetsKindBadge:disabled {
   inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
   transition:
     opacity 140ms ease,
@@ -8083,7 +8091,11 @@ button.assetsKindBadge:disabled {
   --deck-entry-action-icon: #0a0a0a;
   --deck-entry-action-border: rgba(0, 0, 0, 0.38);
   --deck-entry-action-bg: #ef4444;
-  --deck-entry-action-hover-bg: color-mix(in srgb, var(--deck-entry-action-hue) 24%, var(--deck-entry-action-bg) 76%);
+  --deck-entry-action-hover-bg: color-mix(
+    in srgb,
+    var(--deck-entry-action-hue) 24%,
+    var(--deck-entry-action-bg) 76%
+  );
   --deck-entry-action-hover-icon: color-mix(in srgb, var(--deck-entry-action-hue) 88%, white 12%);
   --deck-entry-action-hover-border: color-mix(in srgb, var(--deck-entry-action-hue) 82%, white 18%);
   width: 34px;
@@ -8210,7 +8222,11 @@ button.assetsKindBadge:disabled {
   --deck-entry-action-icon: #0a0a0a;
   --deck-entry-action-border: rgba(0, 0, 0, 0.38);
   --deck-entry-action-bg: var(--hq-accent);
-  --deck-entry-action-hover-bg: color-mix(in srgb, var(--deck-entry-action-hue) 24%, var(--deck-entry-action-bg) 76%);
+  --deck-entry-action-hover-bg: color-mix(
+    in srgb,
+    var(--deck-entry-action-hue) 24%,
+    var(--deck-entry-action-bg) 76%
+  );
   --deck-entry-action-hover-icon: color-mix(in srgb, var(--deck-entry-action-hue) 88%, white 12%);
   --deck-entry-action-hover-border: color-mix(in srgb, var(--deck-entry-action-hue) 82%, white 18%);
   width: 34px;
@@ -8257,7 +8273,6 @@ button.assetsKindBadge:disabled {
 :root[data-theme="light"] .deckCardRemoveButton {
   --deck-entry-action-hover-bg: color-mix(in srgb, var(--deck-entry-action-hue) 30%, #0f172a 70%);
 }
-
 
 .deckEntryCardDraggingSelf {
   flex: 0 0 0;
