@@ -11,7 +11,7 @@ import {
   useDroppable,
 } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { SquareSplitHorizontal } from "lucide-react";
+import { SquarePlus } from "lucide-react";
 import {
   Fragment,
   createContext,
@@ -207,6 +207,7 @@ type DeckMockDndContextValue = {
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
   handleHoverBoundary: (boardId: BoardId, clientX: number) => void;
   handleLeaveBoard: (boardId: BoardId) => void;
+  setBoundaryHoverState: (boardId: BoardId, index: number, isHovered: boolean) => void;
   createGroupAtIndex: (boardId: BoardId, index: number) => void;
   registerDropHandler: (controllerId: string, handler: DeckDropHandler) => () => void;
 };
@@ -227,6 +228,7 @@ export type DeckSortableBoardViewModel = {
   hoverBoundaryIndex: number | null;
   onHoverBoundary: (clientX: number) => void;
   onLeaveBoard: () => void;
+  onBoundaryHoverChange: (index: number, isHovered: boolean) => void;
   onCreateGroupAtIndex: (index: number) => void;
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
   allowGroupReorder?: boolean;
@@ -1238,10 +1240,12 @@ function OverlayCard({
 function CreateBoundaryPlaceholder({
   index,
   onCreate,
+  onHoverChange,
   visible,
 }: {
   index: number;
   onCreate: (index: number) => void;
+  onHoverChange: (index: number, isHovered: boolean) => void;
   visible: boolean;
 }) {
   const { t } = useI18n();
@@ -1253,6 +1257,15 @@ function CreateBoundaryPlaceholder({
       data-testid={`create-boundary-${index}`}
       aria-hidden={!visible}
     >
+      <span
+        className={[
+          styles.createBoundaryLine,
+          visible ? styles.createBoundaryLineVisible : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        aria-hidden="true"
+      />
       <button
         type="button"
         className={[
@@ -1262,11 +1275,15 @@ function CreateBoundaryPlaceholder({
           .filter(Boolean)
           .join(" ")}
         onClick={() => onCreate(index)}
+        onPointerEnter={() => onHoverChange(index, true)}
+        onPointerLeave={() => onHoverChange(index, false)}
+        onMouseEnter={() => onHoverChange(index, true)}
+        onMouseLeave={() => onHoverChange(index, false)}
         aria-label={t("decks.groups.actions.createAtPosition").replace("{index}", String(index))}
         title={t("decks.groups.actions.insertHere")}
         tabIndex={visible ? 0 : -1}
       >
-        <SquareSplitHorizontal className={styles.createBoundaryIcon} aria-hidden="true" />
+        <SquarePlus className={styles.createBoundaryIcon} aria-hidden="true" />
       </button>
     </div>
   );
@@ -1332,6 +1349,7 @@ export function DeckSortableBoardView({
               <CreateBoundaryPlaceholder
                 index={index}
                 onCreate={model.onCreateGroupAtIndex}
+                onHoverChange={model.onBoundaryHoverChange}
                 visible={
                   !activeSetId &&
                   !activeGroupId &&
@@ -1546,6 +1564,7 @@ export function DeckSortableBoardView({
           <CreateBoundaryPlaceholder
             index={groupIds.length}
             onCreate={model.onCreateGroupAtIndex}
+            onHoverChange={model.onBoundaryHoverChange}
             visible={
               !activeSetId &&
               !activeGroupId &&
@@ -1585,6 +1604,13 @@ export function DeckMockDndProvider({
     emptyAffordanceState(),
   );
   const [hoverBoundaryByBoard, setHoverBoundaryByBoard] = useState<Record<BoardId, number | null>>({
+    groups: null,
+    entries: null,
+    source: null,
+  });
+  const [hoveredBoundaryByBoard, setHoveredBoundaryByBoard] = useState<
+    Record<BoardId, number | null>
+  >({
     groups: null,
     entries: null,
     source: null,
@@ -1737,6 +1763,14 @@ export function DeckMockDndProvider({
   const handleHoverBoundary = (boardId: BoardId, clientX: number) => {
     if (activeSetId || activeGroupId) return;
     setHoverBoundaryByBoard((current) => {
+      const hoveredBoundary = hoveredBoundaryByBoard[boardId];
+      if (hoveredBoundary != null) {
+        if (hoveredBoundary === current[boardId]) return current;
+        return {
+          ...current,
+          [boardId]: hoveredBoundary,
+        };
+      }
       const nextBoundary = resolveBoundaryForBoard(boardId, clientX, current[boardId]);
       if (nextBoundary === current[boardId]) return current;
       return {
@@ -1748,7 +1782,28 @@ export function DeckMockDndProvider({
 
   const handleLeaveBoard = (boardId: BoardId) => {
     if (activeSetId || activeGroupId) return;
-    setHoverBoundaryByBoard((current) => ({ ...current, [boardId]: null }));
+    setHoverBoundaryByBoard((current) => {
+      if (hoveredBoundaryByBoard[boardId] != null) return current;
+      if (current[boardId] == null) return current;
+      return { ...current, [boardId]: null };
+    });
+  };
+
+  const setBoundaryHoverState = (boardId: BoardId, index: number, isHovered: boolean) => {
+    setHoveredBoundaryByBoard((current) => {
+      const nextValue = isHovered ? index : current[boardId] === index ? null : current[boardId];
+      if (current[boardId] === nextValue) return current;
+      return {
+        ...current,
+        [boardId]: nextValue,
+      };
+    });
+    setHoverBoundaryByBoard((current) => {
+      if (isHovered) {
+        return current[boardId] === index ? current : { ...current, [boardId]: index };
+      }
+      return current[boardId] === index ? { ...current, [boardId]: null } : current;
+    });
   };
 
   const createGroupAtIndex = (boardId: BoardId, index: number) => {
@@ -1760,6 +1815,13 @@ export function DeckMockDndProvider({
 
     const newGroupId = `${boardId}:N${nextGroupIdRef.current}`;
     nextGroupIdRef.current += 1;
+    // Boundary button can unmount before mouseleave fires; clear hover-latch to avoid stale lock.
+    setHoveredBoundaryByBoard((current) =>
+      current[boardId] == null ? current : { ...current, [boardId]: null },
+    );
+    setHoverBoundaryByBoard((current) =>
+      current[boardId] == null ? current : { ...current, [boardId]: null },
+    );
 
     setState((current) => {
       const nextGroupOrderByBoard = { ...current.groupOrderByBoard };
@@ -1889,6 +1951,7 @@ export function DeckMockDndProvider({
       }),
     );
     setHoverBoundaryByBoard({ groups: null, entries: null, source: null });
+    setHoveredBoundaryByBoard({ groups: null, entries: null, source: null });
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -2432,6 +2495,7 @@ export function DeckMockDndProvider({
         registerGroupRef,
         handleHoverBoundary,
         handleLeaveBoard,
+        setBoundaryHoverState,
         createGroupAtIndex,
         registerDropHandler,
       }}
@@ -2507,6 +2571,7 @@ export function useDeckSortableBoardViewModel(
     registerGroupRef,
     handleHoverBoundary,
     handleLeaveBoard,
+    setBoundaryHoverState,
     createGroupAtIndex,
   } = useDeckMockDnd();
 
@@ -2535,6 +2600,8 @@ export function useDeckSortableBoardViewModel(
     hoverBoundaryIndex: hoverBoundaryByBoard[boardId],
     onHoverBoundary: (clientX: number) => handleHoverBoundary(boardId, clientX),
     onLeaveBoard: () => handleLeaveBoard(boardId),
+    onBoundaryHoverChange: (index: number, isHovered: boolean) =>
+      setBoundaryHoverState(boardId, index, isHovered),
     onCreateGroupAtIndex: (index: number) => createGroupAtIndex(boardId, index),
     registerGroupRef,
     allowGroupReorder: options?.allowGroupReorder ?? false,

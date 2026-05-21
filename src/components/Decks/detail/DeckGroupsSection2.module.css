@@ -135,6 +135,11 @@
   padding: 2px;
 }
 
+.board[data-testid="board-groups"] .groupsRow {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
 .groupsRowFillParent {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -170,36 +175,53 @@
   position: relative;
   z-index: 12;
   overflow: visible;
-  transition: width 140ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .createBoundaryVisible {
-  width: 34px;
-  min-width: 34px;
+  width: 0;
+  min-width: 0;
+}
+
+.createBoundaryLine {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--hq-border-strong) 88%, white 12%);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 120ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    background-color 140ms ease;
+  z-index: 12;
+}
+
+.createBoundaryLineVisible {
+  opacity: 1;
 }
 
 .createBoundaryButton {
   position: absolute;
-  top: 1px;
-  right: 0;
-  bottom: 1px;
-  left: 0;
-  width: 100%;
-  height: auto;
-  min-height: 0;
+  top: 50%;
+  left: 50%;
+  bottom: auto;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
   box-sizing: border-box;
   border: 1px solid var(--hq-border-strong);
-  border-radius: calc(var(--radius-lg) - 2px);
+  border-radius: 9px;
   background: color-mix(in srgb, var(--hq-surface-900) 90%, white 10%);
   color: color-mix(in srgb, var(--hq-text-muted) 86%, var(--hq-text-primary) 14%);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  position: relative;
   z-index: 13;
   opacity: 0;
-  transform: scaleX(0.78);
+  transform: translate(-50%, -50%) scale(0.86);
   pointer-events: none;
   transition:
     opacity 120ms cubic-bezier(0.22, 0.61, 0.36, 1),
@@ -211,7 +233,7 @@
 
 .createBoundaryButtonVisible {
   opacity: 1;
-  transform: scaleX(1);
+  transform: translate(-50%, -50%) scale(1);
   pointer-events: auto;
 }
 
