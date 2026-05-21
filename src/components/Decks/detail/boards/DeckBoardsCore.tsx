@@ -1304,6 +1304,10 @@ export function DeckSortableBoardView({
     () => getBlockedBoundaries(groupIds, itemsByGroup),
     [groupIds, itemsByGroup],
   );
+  const hideCreateBoundariesForBootstrapEmptyState =
+    config.boardId === "groups" &&
+    groupIds.length === 1 &&
+    countRenderableSets(itemsByGroup[groupIds[0]] ?? []) === 0;
   const [hoveredGroupId, setHoveredGroupId] = useState<GroupId | null>(null);
 
   return (
@@ -1345,7 +1349,7 @@ export function DeckSortableBoardView({
       >
         {groupIds.map((groupId, index) => (
           <div key={groupId} className={styles.groupStack}>
-            {config.allowGroupCreate ? (
+            {config.allowGroupCreate && !hideCreateBoundariesForBootstrapEmptyState ? (
               <CreateBoundaryPlaceholder
                 index={index}
                 onCreate={model.onCreateGroupAtIndex}
@@ -1560,7 +1564,7 @@ export function DeckSortableBoardView({
           </div>
         ))}
 
-        {config.allowGroupCreate ? (
+        {config.allowGroupCreate && !hideCreateBoundariesForBootstrapEmptyState ? (
           <CreateBoundaryPlaceholder
             index={groupIds.length}
             onCreate={model.onCreateGroupAtIndex}

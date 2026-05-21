@@ -239,6 +239,40 @@ describe("DeckGroupsSection2 mock boards", () => {
     expect(screen.queryAllByRole("button", { name: /Create group at position/i }).length).toBeLessThanOrEqual(1);
   });
 
+  it("hides create boundaries in bootstrap empty groups state (one group, zero sets)", () => {
+    renderWorkspace({
+      boardModelsOverride: {
+        groups: {
+          groupIds: ["groups:A"],
+          itemsByGroup: { "groups:A": [] },
+          groupLabelsById: { "groups:A": "A" },
+          setLabelsById: {},
+          setCardIdById: {},
+        },
+      },
+    });
+    const row = screen.getByTestId("groups-row-groups");
+    fireEvent.mouseMove(row, { clientX: -9999 });
+    expect(screen.queryByRole("button", { name: /Create group at position/i })).not.toBeInTheDocument();
+  });
+
+  it("shows create boundaries for single group once it has at least one set", () => {
+    renderWorkspace({
+      boardModelsOverride: {
+        groups: {
+          groupIds: ["groups:A"],
+          itemsByGroup: { "groups:A": ["g-A1"] },
+          groupLabelsById: { "groups:A": "A" },
+          setLabelsById: { "g-A1": "A1" },
+          setCardIdById: { "g-A1": "g-A1" },
+        },
+      },
+    });
+    const row = screen.getByTestId("groups-row-groups");
+    fireEvent.mouseMove(row, { clientX: -9999 });
+    expect(screen.getByRole("button", { name: /Create group at position 0/i })).toBeInTheDocument();
+  });
+
   it("hydrates empty-slot placeholder for default empty group and accepts source drop", () => {
     renderWorkspace({
       boardModelsOverride: {
