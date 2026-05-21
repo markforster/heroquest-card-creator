@@ -6967,6 +6967,9 @@ button.assetsKindBadge:disabled {
   font-weight: 600;
   font-size: var(--text-md);
   width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .deckTileMeta {
@@ -7079,6 +7082,8 @@ button.assetsKindBadge:disabled {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+  box-sizing: border-box;
+  padding-inline: var(--space-4);
 }
 
 .deckTileActionsSlot {
