@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Gem, Trash2 } from "lucide-react";
+import { CircleStar, Trash2 } from "lucide-react";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -347,7 +347,7 @@ export default function DeckGroupsBoardController({
                 await selection?.reloadStructure(selection.selectedSetId);
               }}
             >
-              <Gem size={12} aria-hidden="true" />
+              <CircleStar size={12} aria-hidden="true" />
             </button>
           ) : null}
           <button
@@ -390,7 +390,7 @@ export default function DeckGroupsBoardController({
       if (enableFanLayout && boardId === "groups") return null;
       return (
           <BoardInfoPill
-            icon={<Gem size={11} aria-hidden="true" />}
+            icon={<CircleStar size={11} aria-hidden="true" />}
             label={t("decks.sets.badge.keyCard")}
             bgColor="color-mix(in srgb, #2a73ff 35%, var(--hq-surface-900) 65%)"
             borderColor="color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%)"
@@ -528,7 +528,7 @@ export default function DeckGroupsBoardController({
               style={{ transform: `translate(-50%, 0) rotate(${-rotateDeg}deg)` }}
             >
               <BoardInfoPill
-                icon={<Gem size={11} aria-hidden="true" />}
+                icon={<CircleStar size={11} aria-hidden="true" />}
                 label={t("decks.sets.badge.keyCard")}
                 bgColor="color-mix(in srgb, #2a73ff 35%, var(--hq-surface-900) 65%)"
                 borderColor="color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%)"

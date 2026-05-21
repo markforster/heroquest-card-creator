@@ -190,6 +190,34 @@ function getZIndex(offset: number, maxDepth: number, fanType: "centered" | "ltr"
   return Math.round((maxDepth - depth + sideBias) * 100);
 }
 
+function LayersPlaceholderIcon({
+  x,
+  y,
+  width,
+  height,
+}: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}) {
+  const cx = x + width / 2;
+  const cy = y + height / 2;
+  const iconSize = Math.min(width, height) * 0.56;
+  const scale = iconSize / 24;
+  return (
+    <g
+      className={styles.cardFanEmptyDeckKeyIcon}
+      transform={`translate(${cx} ${cy}) scale(${scale}) translate(-12 -12)`}
+      aria-hidden="true"
+    >
+      <path d="m12.83 2.18 6.37 3.65a2 2 0 0 1 0 3.46l-6.37 3.64a2 2 0 0 1-1.98 0L4.48 9.29a2 2 0 0 1 0-3.46l6.37-3.65a2 2 0 0 1 1.98 0Z" />
+      <path d="m2 12 8.85 5.06a2 2 0 0 0 1.98 0L22 12" />
+      <path d="m2 16 8.85 5.06a2 2 0 0 0 1.98 0L22 16" />
+    </g>
+  );
+}
+
 function CardFanItem({
   itemKey,
   cardId,
@@ -203,6 +231,7 @@ function CardFanItem({
   enableHoverBorder,
   isSelected,
   isKeyCard,
+  showEmptyDeckKeyIcon,
   onHoverCard,
   onSelectCard,
   onRemoveCard,
@@ -225,6 +254,7 @@ function CardFanItem({
   enableHoverBorder: boolean;
   isSelected: boolean;
   isKeyCard: boolean;
+  showEmptyDeckKeyIcon: boolean;
   onHoverCard?: (cardId: string | null) => void;
   onSelectCard?: (cardId: string, index: number) => void;
   onRemoveCard?: () => void;
@@ -389,19 +419,24 @@ function CardFanItem({
           ) : null}
         </>
       ) : (
-        <rect
-          x={x}
-          y={y}
-          width={size.width}
-          height={size.height}
-          rx={cornerRadius}
-          ry={cornerRadius}
-          className={
-            emptyPlaceholderVariant === "deck-empty"
-              ? styles.cardFanEmptyDeckPlaceholderSvg
-              : styles.cardFanPlaceholderSvg
-          }
-        />
+        <>
+          <rect
+            x={x}
+            y={y}
+            width={size.width}
+            height={size.height}
+            rx={cornerRadius}
+            ry={cornerRadius}
+            className={
+              emptyPlaceholderVariant === "deck-empty"
+                ? styles.cardFanEmptyDeckPlaceholderSvg
+                : styles.cardFanPlaceholderSvg
+            }
+          />
+          {showEmptyDeckKeyIcon ? (
+            <LayersPlaceholderIcon x={x} y={y} width={size.width} height={size.height} />
+          ) : null}
+        </>
       )}
     </g>
   );
@@ -554,6 +589,10 @@ export default function CardFan({
       index,
     };
   });
+  const topmostLayoutIndex =
+    layout.length > 0
+      ? layout.reduce((best, item) => (item.zIndex > best.zIndex ? item : best), layout[0]).index
+      : -1;
 
   const bounds = layout.reduce(
     (acc, item) => {
@@ -628,6 +667,11 @@ export default function CardFan({
             const transform = `translate(${pivotX} ${pivotY}) rotate(${item.angle})`;
             const isSelected = selectedCardId ? cardId === selectedCardId : false;
             const isKeyCard = keyCardId ? cardId === keyCardId : false;
+            const showEmptyDeckKeyIcon =
+              !cardId &&
+              emptyPlaceholderVariant === "deck-empty" &&
+              !item.item.isDropPlaceholder &&
+              item.index === topmostLayoutIndex;
             const dragMeta = cardId && getDragMeta ? getDragMeta(cardId) : null;
             return (
               <CardFanItem
@@ -644,6 +688,7 @@ export default function CardFan({
                 enableHoverBorder={enableHoverBorder}
                 isSelected={isSelected}
                 isKeyCard={isKeyCard}
+                showEmptyDeckKeyIcon={showEmptyDeckKeyIcon}
                 onHoverCard={onHoverCard}
                 onSelectCard={onSelectCard}
                 onRemoveCard={cardId && onRemoveCard ? () => onRemoveCard(cardId) : undefined}

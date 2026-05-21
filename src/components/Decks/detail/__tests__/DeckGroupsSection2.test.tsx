@@ -184,8 +184,8 @@ describe("DeckGroupsSection2 mock boards", () => {
     renderWorkspace({ enableFanLayout: true, keySetId: "g-A2" });
     expect(screen.getByTestId("key-card-overlay-groups:A")).toBeInTheDocument();
     expect(screen.getByTestId("set-set:g-A2").className).toContain("keyCardSetShellCollapsed");
-    expect(screen.getByText("Key Card")).toBeInTheDocument();
-    expect(screen.getAllByText("Key Card")).toHaveLength(1);
+    expect(screen.getByText("Cover Card")).toBeInTheDocument();
+    expect(screen.getAllByText("Cover Card")).toHaveLength(1);
   });
 
   it("keeps overlay key-card pill in expanded groups (single owner)", () => {
@@ -204,14 +204,14 @@ describe("DeckGroupsSection2 mock boards", () => {
     });
     expect(screen.getByTestId("key-card-overlay-groups:C")).toBeInTheDocument();
     expect(screen.getByTestId("set-set:g-C1").className).not.toContain("keyCardSetShellCollapsed");
-    expect(screen.getAllByText("Key Card")).toHaveLength(1);
+    expect(screen.getAllByText("Cover Card")).toHaveLength(1);
   });
 
   it("keeps existing inline key-card behavior when fan layout is disabled", () => {
     renderWorkspace({ enableFanLayout: false, keySetId: "g-A2" });
     expect(screen.queryByTestId("key-card-overlay-groups:A")).not.toBeInTheDocument();
     expect(screen.getByTestId("set-set:g-A2").className).not.toContain("keyCardSetShellCollapsed");
-    expect(screen.getAllByText("Key Card")).toHaveLength(1);
+    expect(screen.getAllByText("Cover Card")).toHaveLength(1);
   });
 
   it("renders groups board create rail on hover with split icon", () => {

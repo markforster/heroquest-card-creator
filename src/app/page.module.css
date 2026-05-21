@@ -6692,7 +6692,7 @@ button.assetsKindBadge:disabled {
 
 .deckTile:hover {
   --deck-preview-bg-opacity: 0.62;
-  --deck-preview-blur: 2.6px;
+  --deck-preview-blur: 1.6px;
   --deck-preview-scale: 1.36;
   --deck-preview-rotate: -0.6deg;
   --deck-preview-translate-x: -1.2%;
@@ -6832,8 +6832,25 @@ button.assetsKindBadge:disabled {
 .cardFanEmptyDeckPlaceholderSvg {
   fill: var(--hq-cardfan-empty-fill);
   stroke: var(--hq-cardfan-empty-stroke);
-  stroke-width: 2.5;
-  stroke-dasharray: 6 4;
+  stroke-width: 1;
+  stroke-dasharray: 1 4;
+  stroke-linecap: round;
+}
+
+.cardFanEmptyDeckKeyIcon {
+  fill: none;
+  color: color-mix(in srgb, var(--hq-surface-900) 50%, transparent 50%);
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.7;
+  filter: blur(0.35px);
+  pointer-events: none;
+}
+
+:root[data-theme="dark"] .cardFanEmptyDeckKeyIcon {
+  color: color-mix(in srgb, var(--hq-surface-card) 85%, transparent 15%);
 }
 
 .cardFanThumbFallbackSvg {
