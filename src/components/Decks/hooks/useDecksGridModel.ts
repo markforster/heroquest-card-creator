@@ -13,6 +13,28 @@ type UseDecksGridModelArgs = {
   saveTitleErrorLabel: string;
 };
 
+const compareDeckTitles = (a: string, b: string): number => {
+  const normalizedA = a.toLocaleLowerCase();
+  const normalizedB = b.toLocaleLowerCase();
+  if (normalizedA !== normalizedB) return normalizedA.localeCompare(normalizedB);
+  return 0;
+};
+
+const compareDeckOrder = (
+  a: { id: string; title: string; updatedAt?: number; createdAt?: number },
+  b: { id: string; title: string; updatedAt?: number; createdAt?: number },
+): number => {
+  const aUpdatedAt = a.updatedAt ?? 0;
+  const bUpdatedAt = b.updatedAt ?? 0;
+  if (aUpdatedAt !== bUpdatedAt) return bUpdatedAt - aUpdatedAt;
+  const aCreatedAt = a.createdAt ?? 0;
+  const bCreatedAt = b.createdAt ?? 0;
+  if (aCreatedAt !== bCreatedAt) return bCreatedAt - aCreatedAt;
+  const titleCmp = compareDeckTitles(a.title, b.title);
+  if (titleCmp !== 0) return titleCmp;
+  return a.id.localeCompare(b.id);
+};
+
 export function useDecksGridModel({ untitledDeckLabel, saveTitleErrorLabel }: UseDecksGridModelArgs) {
   const mutations = useDeckMutations();
   const decksQuery = useListDecks(
@@ -44,6 +66,7 @@ export function useDecksGridModel({ untitledDeckLabel, saveTitleErrorLabel }: Us
     if (Array.isArray(decksQuery.data)) return decksQuery.data;
     return [];
   }, [decksQuery.data]);
+  const sortedDecks = useMemo(() => [...decks].sort(compareDeckOrder), [decks]);
   const cardsQuery = useListCards(
     { queries: {} },
     { enabled: true, staleTime: 0, refetchOnMount: "always" },
@@ -66,15 +89,15 @@ export function useDecksGridModel({ untitledDeckLabel, saveTitleErrorLabel }: Us
 
   const normalizedSearchQuery = useMemo(() => searchQuery.trim().toLowerCase(), [searchQuery]);
   const filteredDecks = useMemo(() => {
-    if (normalizedSearchQuery === "") return decks;
+    if (normalizedSearchQuery === "") return sortedDecks;
 
-    return decks.filter((deck) => {
+    return sortedDecks.filter((deck) => {
       const titleMatch = deck.title.toLowerCase().includes(normalizedSearchQuery);
       if (titleMatch) return true;
       const searchTexts = deckSearchTextsByDeckId[deck.id] ?? [];
       return searchTexts.some((text) => text.toLowerCase().includes(normalizedSearchQuery));
     });
-  }, [deckSearchTextsByDeckId, decks, normalizedSearchQuery]);
+  }, [deckSearchTextsByDeckId, normalizedSearchQuery, sortedDecks]);
   const visibleDeckCount = filteredDecks.length;
   const selectedCount = selectedDeckIds.size;
   const hasVisibleResults = visibleDeckCount > 0;

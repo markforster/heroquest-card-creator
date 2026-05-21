@@ -620,6 +620,59 @@ describe("useDecksGridModel", () => {
     expect(mockGetCardThumbnailUrl).toHaveBeenCalledWith("b1");
   });
 
+  it("orders filtered decks by updatedAt desc, createdAt desc, title asc (case-insensitive), then id asc", async () => {
+    mockUseListDecks.mockReturnValue({
+      data: [
+        { id: "d6", title: "Gamma", updatedAt: 8, createdAt: 2 },
+        { id: "d5", title: "Beta", updatedAt: 8, createdAt: 1 },
+        { id: "d4", title: "alpha", updatedAt: 8, createdAt: 1 },
+        { id: "d3", title: "Alpha", updatedAt: 8, createdAt: 1 },
+        { id: "d2", title: "Alpha", updatedAt: 8, createdAt: 1 },
+        { id: "d1", title: "Zeta", updatedAt: 7, createdAt: 9 },
+      ],
+      isLoading: false,
+      refetch,
+    });
+
+    const { result } = renderHook(() =>
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+    );
+
+    expect(result.current.filteredDecks.map((deck) => deck.id)).toEqual([
+      "d6",
+      "d2",
+      "d3",
+      "d4",
+      "d5",
+      "d1",
+    ]);
+  });
+
+  it("preserves comparator ordering after search filtering", async () => {
+    mockUseListDecks.mockReturnValue({
+      data: [
+        { id: "d1", title: "Spell Deck", updatedAt: 10, createdAt: 1 },
+        { id: "d2", title: "Spell Alpha", updatedAt: 9, createdAt: 10 },
+        { id: "d3", title: "Spell Beta", updatedAt: 9, createdAt: 9 },
+      ],
+      isLoading: false,
+      refetch,
+    });
+
+    const { result } = renderHook(() =>
+      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+    );
+
+    act(() => {
+      result.current.setSearchDraft("spell");
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(200);
+    });
+
+    expect(result.current.filteredDecks.map((deck) => deck.id)).toEqual(["d1", "d2", "d3"]);
+  });
+
   it("falls back to first front card thumbnail when key set is unavailable", async () => {
     mockUseListDecks.mockReturnValue({
       data: [{ id: "d1", title: "Deck 1", keySetId: null, updatedAt: 1 }],
