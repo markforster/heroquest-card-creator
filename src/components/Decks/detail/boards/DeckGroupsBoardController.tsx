@@ -310,6 +310,10 @@ export default function DeckGroupsBoardController({
   );
   const model = useDeckSortableBoardViewModel("groups", BOARD_ROUTING_META_BY_ID.groups, {
     allowGroupReorder: canSortGroups,
+    emptyMessage:
+      selection && selection.orderedGroups.length === 1 && selection.sets.length === 0
+        ? t("decks.groups.emptyDropHint")
+        : null,
     renderSetContent,
     renderTopToolbar: ({ setId, isDragging, isGhost }) => {
       if (!setId.startsWith("set:") || isDragging || isGhost) return null;

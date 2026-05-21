@@ -678,6 +678,7 @@ export const cs = {
   "decks.entries.recover.selectCardAria": "Vybrat {cardId}",
 
   "decks.groups.actions.createAtPosition": "Vytvořit skupinu na pozici {index}",
+  "decks.groups.emptyDropHint": "Drag back faces Here",
 
   "actions.edit": "Upravit",
 

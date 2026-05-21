@@ -678,6 +678,7 @@ export const ptBR = {
   "decks.entries.recover.selectCardAria": "Selecionar {cardId}",
 
   "decks.groups.actions.createAtPosition": "Criar grupo na posição {index}",
+  "decks.groups.emptyDropHint": "Drag back faces Here",
 
   "actions.edit": "Editar",
 

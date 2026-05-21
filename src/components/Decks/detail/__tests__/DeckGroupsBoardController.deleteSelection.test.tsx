@@ -6,6 +6,21 @@ import styles from "@/components/Decks/detail/DeckGroupsSection2.module.css";
 
 const mockDeleteSet = jest.fn(async () => {});
 const mockReloadStructure = jest.fn(async () => {});
+let mockSelectionState = {
+  selectedSetId: "set-2",
+  selectedGroupId: "group-1",
+  orderedGroups: [{ id: "group-1", title: "Group 1", sortIndex: 0 }],
+  sets: [
+    { id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 },
+    { id: "set-2", groupId: "group-1", backFaceId: "back-2", sortIndex: 1 },
+    { id: "set-3", groupId: "group-2", backFaceId: "back-3", sortIndex: 0 },
+  ],
+  setById: new Map([
+    ["set-1", { id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 }],
+    ["set-2", { id: "set-2", groupId: "group-1", backFaceId: "back-2", sortIndex: 1 }],
+    ["set-3", { id: "set-3", groupId: "group-2", backFaceId: "back-3", sortIndex: 0 }],
+  ]),
+};
 
 let capturedRenderTopToolbar: ((args: { setId: string; isDragging: boolean; isGhost: boolean }) => ReactNode) | null =
   null;
@@ -18,6 +33,7 @@ let capturedResolveGroupClassName:
       setCount: number;
     }) => string | null)
   | null = null;
+let capturedEmptyMessage: string | null = null;
 
 jest.mock("@/components/Decks/hooks/useDeckMutations", () => ({
   useDeckMutations: () => ({
@@ -31,19 +47,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
 
 jest.mock("@/components/Decks/detail/context/DeckDetailSelectionContext", () => ({
   useDeckDetailSelection: () => ({
-    selectedSetId: "set-2",
-    selectedGroupId: "group-1",
-    orderedGroups: [{ id: "group-1", title: "Group 1", sortIndex: 0 }],
-    sets: [
-      { id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 },
-      { id: "set-2", groupId: "group-1", backFaceId: "back-2", sortIndex: 1 },
-      { id: "set-3", groupId: "group-2", backFaceId: "back-3", sortIndex: 0 },
-    ],
-    setById: new Map([
-      ["set-1", { id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 }],
-      ["set-2", { id: "set-2", groupId: "group-1", backFaceId: "back-2", sortIndex: 1 }],
-      ["set-3", { id: "set-3", groupId: "group-2", backFaceId: "back-3", sortIndex: 0 }],
-    ]),
+    ...mockSelectionState,
     selectGroup: jest.fn(),
     selectSet: jest.fn(),
     clearSelection: jest.fn(),
@@ -64,9 +68,11 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
     const typedOptions = options as {
       renderTopToolbar: typeof capturedRenderTopToolbar;
       resolveGroupClassName: typeof capturedResolveGroupClassName;
+      emptyMessage?: string | null;
     };
     capturedRenderTopToolbar = typedOptions.renderTopToolbar;
     capturedResolveGroupClassName = typedOptions.resolveGroupClassName;
+    capturedEmptyMessage = typedOptions.emptyMessage ?? null;
     return {};
   },
 }));
@@ -75,8 +81,24 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
   const mockRequestDeleteSet = jest.fn(async () => {});
 
   beforeEach(() => {
+    mockSelectionState = {
+      selectedSetId: "set-2",
+      selectedGroupId: "group-1",
+      orderedGroups: [{ id: "group-1", title: "Group 1", sortIndex: 0 }],
+      sets: [
+        { id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 },
+        { id: "set-2", groupId: "group-1", backFaceId: "back-2", sortIndex: 1 },
+        { id: "set-3", groupId: "group-2", backFaceId: "back-3", sortIndex: 0 },
+      ],
+      setById: new Map([
+        ["set-1", { id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 }],
+        ["set-2", { id: "set-2", groupId: "group-1", backFaceId: "back-2", sortIndex: 1 }],
+        ["set-3", { id: "set-3", groupId: "group-2", backFaceId: "back-3", sortIndex: 0 }],
+      ]),
+    };
     capturedRenderTopToolbar = null;
     capturedResolveGroupClassName = null;
+    capturedEmptyMessage = null;
     mockDeleteSet.mockClear();
     mockReloadStructure.mockClear();
     mockRequestDeleteSet.mockClear();
@@ -146,6 +168,23 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
 
     expect(screen.queryByRole("button", { name: "decks.sets.actions.setKeyCard" })).toBeNull();
     expect(screen.getByRole("button", { name: "decks.sets.actions.delete" })).toBeInTheDocument();
+  });
+
+  it("does not pass empty-drop hint outside bootstrap empty state", () => {
+    render(<DeckGroupsBoardController deckId="deck-1" keySetId={null} enableFanLayout />);
+    expect(capturedEmptyMessage).toBeNull();
+  });
+
+  it("passes empty-drop hint in bootstrap empty state", () => {
+    mockSelectionState = {
+      selectedSetId: null,
+      selectedGroupId: "group-1",
+      orderedGroups: [{ id: "group-1", title: "Group 1", sortIndex: 0 }],
+      sets: [],
+      setById: new Map(),
+    };
+    render(<DeckGroupsBoardController deckId="deck-1" keySetId={null} enableFanLayout />);
+    expect(capturedEmptyMessage).toBe("decks.groups.emptyDropHint");
   });
 
 });

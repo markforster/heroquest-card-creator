@@ -1533,8 +1533,8 @@ export function DeckSortableBoardView({
                   setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
                   setIds: itemsByGroup[groupId] ?? [],
                 })}
-                {(itemsByGroup[groupId] ?? []).length === 0 && model.emptyMessage ? (
-                  <div>{model.emptyMessage}</div>
+                {countRenderableSets(itemsByGroup[groupId] ?? []) === 0 && model.emptyMessage ? (
+                  <div className={styles.groupEmptyMessage}>{model.emptyMessage}</div>
                 ) : null}
               </GroupColumn>
             </div>

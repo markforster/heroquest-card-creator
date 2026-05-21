@@ -165,6 +165,7 @@ export const en = {
   "decks.boards.cards": "Cards",
   "decks.groups.actions.reorder": "Reorder group",
   "decks.groups.actions.createAtPosition": "Create group at position {index}",
+  "decks.groups.emptyDropHint": "Drag back faces Here",
   "decks.sourcePanelToggle": "Toggle source faces panel",
   "decks.deleteSetTitle": "Delete set?",
   "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
