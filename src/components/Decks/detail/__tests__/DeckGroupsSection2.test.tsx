@@ -150,6 +150,7 @@ function renderWorkspace(options?: {
         deckId={null}
         keySetId={options?.keySetId ?? null}
         enableFanLayout={options?.enableFanLayout}
+        onOpenCardEditor={() => {}}
       />
       <DeckEntriesBoardController onOpenCardEditor={() => {}} />
       <DeckSourceBoardController />

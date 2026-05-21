@@ -79,6 +79,7 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
 
 describe("DeckGroupsBoardController delete selected set behavior", () => {
   const mockRequestDeleteSet = jest.fn(async () => {});
+  const mockOpenCardEditor = jest.fn();
 
   beforeEach(() => {
     mockSelectionState = {
@@ -102,6 +103,7 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
     mockDeleteSet.mockClear();
     mockReloadStructure.mockClear();
     mockRequestDeleteSet.mockClear();
+    mockOpenCardEditor.mockClear();
   });
 
   it("routes selected-set delete through request callback instead of immediate mutation", async () => {
@@ -111,6 +113,7 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
         keySetId={null}
         enableFanLayout
         onRequestDeleteSet={mockRequestDeleteSet}
+        onOpenCardEditor={mockOpenCardEditor}
       />,
     );
 
@@ -142,7 +145,14 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
   });
 
   it("applies ephemeral pulse class to transient empty groups", () => {
-    render(<DeckGroupsBoardController deckId="deck-1" keySetId={null} enableFanLayout />);
+    render(
+      <DeckGroupsBoardController
+        deckId="deck-1"
+        keySetId={null}
+        enableFanLayout
+        onOpenCardEditor={mockOpenCardEditor}
+      />,
+    );
 
     const ephemeralClassName = capturedResolveGroupClassName?.({
       boardId: "groups",
@@ -156,7 +166,14 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
   });
 
   it("does not render set-key action when card is already key set", () => {
-    render(<DeckGroupsBoardController deckId="deck-1" keySetId="set-2" enableFanLayout />);
+    render(
+      <DeckGroupsBoardController
+        deckId="deck-1"
+        keySetId="set-2"
+        enableFanLayout
+        onOpenCardEditor={mockOpenCardEditor}
+      />,
+    );
 
     const toolbar = capturedRenderTopToolbar?.({
       setId: "set:set-2",
@@ -171,7 +188,14 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
   });
 
   it("does not pass empty-drop hint outside bootstrap empty state", () => {
-    render(<DeckGroupsBoardController deckId="deck-1" keySetId={null} enableFanLayout />);
+    render(
+      <DeckGroupsBoardController
+        deckId="deck-1"
+        keySetId={null}
+        enableFanLayout
+        onOpenCardEditor={mockOpenCardEditor}
+      />,
+    );
     expect(capturedEmptyMessage).toBeNull();
   });
 
@@ -183,8 +207,61 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
       sets: [],
       setById: new Map(),
     };
-    render(<DeckGroupsBoardController deckId="deck-1" keySetId={null} enableFanLayout />);
+    render(
+      <DeckGroupsBoardController
+        deckId="deck-1"
+        keySetId={null}
+        enableFanLayout
+        onOpenCardEditor={mockOpenCardEditor}
+      />,
+    );
     expect(capturedEmptyMessage).toBe("decks.groups.emptyDropHint");
+  });
+
+  it("renders edit button and opens set back-face card editor", () => {
+    render(
+      <DeckGroupsBoardController
+        deckId="deck-1"
+        keySetId={null}
+        enableFanLayout
+        onOpenCardEditor={mockOpenCardEditor}
+      />,
+    );
+    const toolbar = capturedRenderTopToolbar?.({
+      setId: "set:set-2",
+      isDragging: false,
+      isGhost: false,
+    });
+    render(<>{toolbar}</>);
+    fireEvent.click(screen.getByRole("button", { name: "decks.entries.actions.editCard" }));
+    expect(mockOpenCardEditor).toHaveBeenCalledWith("back-2");
+  });
+
+  it("does not open card editor when set has no back-face id", () => {
+    mockSelectionState = {
+      ...mockSelectionState,
+      setById: new Map([
+        ["set-1", { id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 }],
+        ["set-2", { id: "set-2", groupId: "group-1", backFaceId: undefined, sortIndex: 1 }],
+        ["set-3", { id: "set-3", groupId: "group-2", backFaceId: "back-3", sortIndex: 0 }],
+      ]),
+    };
+    render(
+      <DeckGroupsBoardController
+        deckId="deck-1"
+        keySetId={null}
+        enableFanLayout
+        onOpenCardEditor={mockOpenCardEditor}
+      />,
+    );
+    const toolbar = capturedRenderTopToolbar?.({
+      setId: "set:set-2",
+      isDragging: false,
+      isGhost: false,
+    });
+    render(<>{toolbar}</>);
+    fireEvent.click(screen.getByRole("button", { name: "decks.entries.actions.editCard" }));
+    expect(mockOpenCardEditor).not.toHaveBeenCalled();
   });
 
 });

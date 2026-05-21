@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CircleStar, Trash2 } from "lucide-react";
+import { CircleStar, Pencil, Trash2 } from "lucide-react";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -33,11 +33,13 @@ export default function DeckGroupsBoardController({
   keySetId,
   enableFanLayout = false,
   onRequestDeleteSet,
+  onOpenCardEditor,
 }: {
   deckId: string | null;
   keySetId: string | null;
   enableFanLayout?: boolean;
   onRequestDeleteSet?: (setId: string) => Promise<void>;
+  onOpenCardEditor: (cardId: string) => void;
 }) {
   const mutations = useDeckMutations();
   const { t } = useI18n();
@@ -327,12 +329,27 @@ export default function DeckGroupsBoardController({
         if (mode !== "expanded") return null;
       }
       const resolvedSetId = setId.slice(4);
+      const setBackFaceId = selection?.setById.get(resolvedSetId)?.backFaceId ?? null;
       const isKeySet = keySetId === resolvedSetId;
       const stopPropagation = (event: { stopPropagation: () => void }) => {
         event.stopPropagation();
       };
       return (
         <>
+          <button
+            type="button"
+            className={[styles.toolbarIconButton, styles.toolbarIconButtonEdit].join(" ")}
+            aria-label={t("decks.entries.actions.editCard")}
+            title={t("decks.entries.actions.editCard")}
+            onPointerDown={stopPropagation}
+            onClick={(event) => {
+              stopPropagation(event);
+              if (!setBackFaceId) return;
+              onOpenCardEditor(setBackFaceId);
+            }}
+          >
+            <Pencil size={12} aria-hidden="true" />
+          </button>
           {!isKeySet ? (
             <button
               type="button"
