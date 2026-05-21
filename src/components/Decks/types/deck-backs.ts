@@ -5,4 +5,4 @@ export type DeckFaceFilter =
   | { type: "recentlyDeleted" }
   | { type: "collection"; id: string };
 
-export type RightPanelFaceMode = "back" | "front";
+export type RightPanelFaceMode = "back" | "front" | "meta";

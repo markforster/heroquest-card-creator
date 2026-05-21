@@ -56,7 +56,7 @@ export function useDeckRightPanelModel() {
 
   const rightPanelEmptyLabel = useMemo(
     () =>
-      rightPanelFaceMode === "back" ? t("empty.noBackCards") : t("empty.noCardsFound"),
+      rightPanelFaceMode === "front" ? t("empty.noCardsFound") : t("empty.noBackCards"),
     [rightPanelFaceMode, t],
   );
 

@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { TransformStream } from "node:stream/web";
 
-import DeckBacksPanel from "@/components/Decks/detail/DeckBacksPanel";
+if (!(globalThis as { TransformStream?: typeof TransformStream }).TransformStream) {
+  (globalThis as { TransformStream?: typeof TransformStream }).TransformStream =
+    TransformStream;
+}
 
 const mockUseDeckRightPanel = jest.fn();
 const mockUseStockpileFilters = jest.fn();
@@ -14,6 +18,9 @@ jest.mock("@/i18n/I18nProvider", () => ({
       if (key === "placeholders.searchCards") return "Search cards...";
       if (key === "tooltip.searchCards") return "Search saved cards by name";
       if (key === "actions.clear") return "Clear";
+      if (key === "decks.faces.back") return "Back faces";
+      if (key === "decks.faces.front") return "Front faces";
+      if (key === "decks.meta.tab") return "Deck metadata";
       return key;
     },
   }),
@@ -60,6 +67,9 @@ jest.mock("@/components/common/CardThumbnail", () => (props: { alt: string }) =>
   <div aria-label={props.alt || "thumb"} data-testid="card-thumb" />
 ));
 
+const DeckBacksPanel =
+  require("@/components/Decks/detail/DeckBacksPanel").default as typeof import("@/components/Decks/detail/DeckBacksPanel").default;
+
 describe("DeckBacksPanel used back-face availability", () => {
   const cards = [
     { id: "back-a", name: "Back A" },
@@ -79,6 +89,8 @@ describe("DeckBacksPanel used back-face availability", () => {
       setBackFilter: jest.fn(),
       rightPanelFaceMode: "back",
       setRightPanelFaceMode: jest.fn(),
+      sourceSearch: "",
+      setSourceSearch: jest.fn(),
     });
     mockUseStockpileFilters.mockImplementation(({ cards: inputCards }) => ({
       filteredCards: inputCards,
@@ -95,6 +107,7 @@ describe("DeckBacksPanel used back-face availability", () => {
   it("filters already-used back faces out of the addable grid", () => {
     render(
       <DeckBacksPanel
+        deckId="deck-1"
         usedBackFaceIds={new Set(["back-a"])}
         usedFrontFaceIds={new Set()}
         finalizingBackFaceId={null}
@@ -110,6 +123,7 @@ describe("DeckBacksPanel used back-face availability", () => {
   it("restores availability when a back face is no longer used", () => {
     const { rerender } = render(
       <DeckBacksPanel
+        deckId="deck-1"
         usedBackFaceIds={new Set(["back-a"])}
         usedFrontFaceIds={new Set()}
         finalizingBackFaceId={null}
@@ -121,6 +135,7 @@ describe("DeckBacksPanel used back-face availability", () => {
 
     rerender(
       <DeckBacksPanel
+        deckId="deck-1"
         usedBackFaceIds={new Set()}
         usedFrontFaceIds={new Set()}
         finalizingBackFaceId={null}
@@ -144,10 +159,13 @@ describe("DeckBacksPanel used back-face availability", () => {
       setBackFilter: jest.fn(),
       rightPanelFaceMode: "front",
       setRightPanelFaceMode: jest.fn(),
+      sourceSearch: "",
+      setSourceSearch: jest.fn(),
     });
 
     render(
       <DeckBacksPanel
+        deckId="deck-1"
         usedBackFaceIds={new Set()}
         usedFrontFaceIds={new Set(["back-b"])}
         finalizingBackFaceId={null}
@@ -173,10 +191,13 @@ describe("DeckBacksPanel used back-face availability", () => {
       setBackFilter,
       rightPanelFaceMode: "back",
       setRightPanelFaceMode: jest.fn(),
+      sourceSearch: "",
+      setSourceSearch: jest.fn(),
     });
 
     render(
       <DeckBacksPanel
+        deckId="deck-1"
         usedBackFaceIds={new Set()}
         usedFrontFaceIds={new Set()}
         finalizingBackFaceId={null}
@@ -188,8 +209,25 @@ describe("DeckBacksPanel used back-face availability", () => {
   });
 
   it("passes search text through to stockpile filters", () => {
+    const setSourceSearch = jest.fn();
+    mockUseDeckRightPanel.mockReturnValue({
+      isRightPanelVisible: true,
+      setIsRightPanelVisible: jest.fn(),
+      toggleRightPanel: jest.fn(),
+      backCollections: [],
+      backCards: cards,
+      rightPanelEmptyLabel: "No backs",
+      backFilter: { type: "all" },
+      setBackFilter: jest.fn(),
+      rightPanelFaceMode: "back",
+      setRightPanelFaceMode: jest.fn(),
+      sourceSearch: "",
+      setSourceSearch,
+    });
+
     render(
       <DeckBacksPanel
+        deckId="deck-1"
         usedBackFaceIds={new Set()}
         usedFrontFaceIds={new Set()}
         finalizingBackFaceId={null}
@@ -201,14 +239,30 @@ describe("DeckBacksPanel used back-face availability", () => {
     fireEvent.change(searchInput, { target: { value: "dragon" } });
 
     const firstCallArg = mockUseStockpileFilters.mock.calls[0][0];
-    const secondCallArg = mockUseStockpileFilters.mock.calls[1][0];
     expect(firstCallArg.search).toBe("");
-    expect(secondCallArg.search).toBe("dragon");
+    expect(setSourceSearch).toHaveBeenCalledWith("dragon");
   });
 
   it("shows clear button for non-empty search and clears search", () => {
+    const setSourceSearch = jest.fn();
+    mockUseDeckRightPanel.mockReturnValue({
+      isRightPanelVisible: true,
+      setIsRightPanelVisible: jest.fn(),
+      toggleRightPanel: jest.fn(),
+      backCollections: [],
+      backCards: cards,
+      rightPanelEmptyLabel: "No backs",
+      backFilter: { type: "all" },
+      setBackFilter: jest.fn(),
+      rightPanelFaceMode: "back",
+      setRightPanelFaceMode: jest.fn(),
+      sourceSearch: "goblin",
+      setSourceSearch,
+    });
+
     render(
       <DeckBacksPanel
+        deckId="deck-1"
         usedBackFaceIds={new Set()}
         usedFrontFaceIds={new Set()}
         finalizingBackFaceId={null}
@@ -216,22 +270,17 @@ describe("DeckBacksPanel used back-face availability", () => {
       />,
     );
 
-    const searchInput = screen.getByPlaceholderText("Search cards...");
-    fireEvent.change(searchInput, { target: { value: "goblin" } });
-
     const clearButton = screen.getByRole("button", { name: "Clear" });
     expect(clearButton).toBeInTheDocument();
 
     fireEvent.click(clearButton);
-    expect((screen.getByPlaceholderText("Search cards...") as HTMLInputElement).value).toBe("");
-
-    const lastCallArg = mockUseStockpileFilters.mock.calls[mockUseStockpileFilters.mock.calls.length - 1][0];
-    expect(lastCallArg.search).toBe("");
+    expect(setSourceSearch).toHaveBeenCalledWith("");
   });
 
   it("renders icon-only face tabs with accessible labels", () => {
     render(
       <DeckBacksPanel
+        deckId="deck-1"
         usedBackFaceIds={new Set()}
         usedFrontFaceIds={new Set()}
         finalizingBackFaceId={null}
@@ -241,6 +290,7 @@ describe("DeckBacksPanel used back-face availability", () => {
 
     expect(screen.getByRole("tab", { name: "Back faces" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Front faces" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Deck metadata" })).toBeInTheDocument();
   });
 
   it("switches face mode when icon tabs are clicked", () => {
@@ -257,10 +307,13 @@ describe("DeckBacksPanel used back-face availability", () => {
       setBackFilter: jest.fn(),
       rightPanelFaceMode: "back",
       setRightPanelFaceMode,
+      sourceSearch: "",
+      setSourceSearch: jest.fn(),
     });
 
     render(
       <DeckBacksPanel
+        deckId="deck-1"
         usedBackFaceIds={new Set()}
         usedFrontFaceIds={new Set()}
         finalizingBackFaceId={null}
@@ -287,10 +340,13 @@ describe("DeckBacksPanel used back-face availability", () => {
       setBackFilter: jest.fn(),
       rightPanelFaceMode: "back",
       setRightPanelFaceMode,
+      sourceSearch: "",
+      setSourceSearch: jest.fn(),
     });
 
     render(
       <DeckBacksPanel
+        deckId="deck-1"
         usedBackFaceIds={new Set()}
         usedFrontFaceIds={new Set()}
         finalizingBackFaceId={null}
@@ -316,10 +372,13 @@ describe("DeckBacksPanel used back-face availability", () => {
       setBackFilter: jest.fn(),
       rightPanelFaceMode: "back",
       setRightPanelFaceMode: jest.fn(),
+      sourceSearch: "",
+      setSourceSearch: jest.fn(),
     });
 
     render(
       <DeckBacksPanel
+        deckId="deck-1"
         usedBackFaceIds={new Set()}
         usedFrontFaceIds={new Set()}
         finalizingBackFaceId={null}
@@ -330,5 +389,34 @@ describe("DeckBacksPanel used back-face availability", () => {
     expect(screen.getByRole("tab", { name: "Back faces" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "decks.sourcePanelToggle" }));
     expect(toggleRightPanel).toHaveBeenCalledTimes(1);
+  });
+
+  it("switches to metadata mode when info tab is clicked", () => {
+    const setRightPanelFaceMode = jest.fn();
+    mockUseDeckRightPanel.mockReturnValue({
+      isRightPanelVisible: true,
+      setIsRightPanelVisible: jest.fn(),
+      toggleRightPanel: jest.fn(),
+      backCollections: [],
+      backCards: cards,
+      rightPanelEmptyLabel: "No backs",
+      backFilter: { type: "all" },
+      setBackFilter: jest.fn(),
+      rightPanelFaceMode: "back",
+      setRightPanelFaceMode,
+      sourceSearch: "",
+      setSourceSearch: jest.fn(),
+    });
+    render(
+      <DeckBacksPanel
+        deckId="deck-1"
+        usedBackFaceIds={new Set()}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+      />,
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Deck metadata" }));
+    expect(setRightPanelFaceMode).toHaveBeenCalledWith("meta");
   });
 });

@@ -186,6 +186,7 @@ function DeckDetailPanelContent({
           }`}
         >
           <DeckBacksPanel
+            deckId={deckId}
             usedBackFaceIds={usedBackFaceIds}
             usedFrontFaceIds={usedFrontFaceIds}
             finalizingBackFaceId={drag.finalizingBackFaceId}

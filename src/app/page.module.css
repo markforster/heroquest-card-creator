@@ -8474,6 +8474,18 @@ button.assetsKindBadge:disabled {
   background: var(--hq-surface-900);
 }
 
+.deckBacksTabRailTop,
+.deckBacksTabRailBottom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.deckBacksTabRailSpacer {
+  flex: 1 1 auto;
+  min-height: var(--space-4);
+}
+
 .deckBacksTabButton {
   border: 1px solid var(--hq-black-60) !important;
   border-radius: var(--radius-lg) !important;
@@ -8567,6 +8579,40 @@ button.assetsKindBadge:disabled {
   opacity: 1;
   pointer-events: none;
   overflow: hidden;
+}
+
+.deckMetaPanel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--space-10);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.deckMetaFanSection {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.deckMetaFanInner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: scale(1.08);
+  transform-origin: center center;
+}
+
+.deckMetaDetailsSection {
+  flex: 0 0 auto;
+  overflow: visible;
 }
 
 .deckBacksToolbar {
