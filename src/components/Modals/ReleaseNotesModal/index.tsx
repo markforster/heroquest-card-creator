@@ -1,5 +1,7 @@
 "use client";
 
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import { DocList, DocParagraph, DocSection, docStyles } from "@/components/common/DocContent";
 import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -10,14 +12,90 @@ type ReleaseNotesModalProps = OpenCloseProps;
 
 export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModalProps) {
   const { t } = useI18n();
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [activeSectionId, setActiveSectionId] = useState<string>("about-what-this-is");
+  const tocSections = useMemo(
+    () => [
+      { id: "about-what-this-is", title: "What this is" },
+      { id: "about-why-it-exists", title: "Why it exists" },
+      { id: "about-what-you-can-do-today", title: "What you can do today" },
+      { id: "about-notes-future-work", title: "Notes & future work" },
+      { id: "about-update-v0-6-0", title: "Update 31/05/2026 (v0.6.0)" },
+      { id: "about-update-v0-5-7", title: "Update 30/03/2026 (v0.5.7)" },
+      { id: "about-update-v0-5-6", title: "Update 15/03/2026 (v0.5.6)" },
+      { id: "about-update-v0-5-5", title: "Update 07/03/2026 (v0.5.5)" },
+      { id: "about-update-v0-5-4", title: "Update 28/02/2026 (v0.5.4)" },
+      { id: "about-update-v0-5-3-1", title: "Update 28/02/2026 (v0.5.3.1)" },
+      { id: "about-update-v0-5-3", title: "Update 26/02/2026 (v0.5.3)" },
+      { id: "about-update-v0-5-2", title: "Update 12/02/2026 (v0.5.2)" },
+      { id: "about-update-v0-5-1", title: "Update 07/02/2026 (v0.5.1)" },
+      { id: "about-update-v0-5-0", title: "Update 10/01/2026 (v0.5.0)" },
+      { id: "about-update-v0-4-0", title: "Update 18/12/2025 (v0.4.0)" },
+    ],
+    [],
+  );
+
+  const jumpToSection = useCallback((sectionId: string) => {
+    const sectionEl = document.getElementById(sectionId);
+    if (!sectionEl) return;
+    sectionEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    setActiveSectionId(sectionId);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (typeof IntersectionObserver === "undefined") return;
+    const root = contentRef.current;
+    if (!root) return;
+    const sectionElements = tocSections
+      .map((section) => document.getElementById(section.id))
+      .filter((el): el is HTMLElement => Boolean(el));
+    if (sectionElements.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const candidates = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (candidates.length === 0) return;
+        const nextId = (candidates[0].target as HTMLElement).id;
+        if (nextId) setActiveSectionId(nextId);
+      },
+      {
+        root,
+        threshold: [0.15, 0.35, 0.6, 0.85],
+      },
+    );
+    sectionElements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [isOpen, tocSections]);
+
   return (
     <ModalShell
       isOpen={isOpen}
       onClose={onClose}
       title={`${t("heading.aboutTool")} - v${APP_VERSION}`}
     >
-      <div className={docStyles.docBody}>
-        <DocSection title="What this is">
+      <div className={docStyles.aboutLayout}>
+        <div className={docStyles.aboutContent}>
+          <div className={docStyles.aboutMobileToc}>
+            <label htmlFor="about-toc-select" className={docStyles.aboutMobileTocLabel}>
+              On this page
+            </label>
+            <select
+              id="about-toc-select"
+              className={docStyles.aboutMobileTocSelect}
+              value={activeSectionId}
+              onChange={(event) => jumpToSection(event.target.value)}
+            >
+              {tocSections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div ref={contentRef} className={docStyles.docBody}>
+        <DocSection id="about-what-this-is" title="What this is">
           <DocParagraph>
             HeroQuest Card Creator is a small passion project for building custom HeroQuest-style
             cards in your browser. It runs completely on the client, works from static files, and is
@@ -26,7 +104,7 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="Why it exists">
+        <DocSection id="about-why-it-exists" title="Why it exists">
           <DocParagraph>
             The project was inspired by the excellent Unity-based{" "}
             <a
@@ -45,7 +123,7 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="What you can do today">
+        <DocSection id="about-what-you-can-do-today" title="What you can do today">
           <DocList>
             <li>
               Build cards from templates that closely match the original game: heroes, monsters,
@@ -167,7 +245,7 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocList>
         </DocSection>
 
-        <DocSection title="Notes & future work">
+        <DocSection id="about-notes-future-work" title="Notes & future work">
           <DocParagraph>
             This version is intentionally “early but useful”: it should feel about 99% usable for
             day-to-day card creation, while still leaving room for rough edges and future
@@ -186,7 +264,11 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="Update 31/05/2026 (v0.6.0)" className={docStyles.docSectionSpaced}>
+        <DocSection
+          id="about-update-v0-6-0"
+          title="Update 31/05/2026 (v0.6.0)"
+          className={docStyles.docSectionSpaced}
+        >
           <DocParagraph>
             This release introduces Decks, one of the largest additions to the project so far.
             Earlier releases laid groundwork across pairing, collections, export preparation, and
@@ -221,7 +303,11 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="Update 30/03/2026 (v0.5.7)" className={docStyles.docSectionSpaced}>
+        <DocSection
+          id="about-update-v0-5-7"
+          title="Update 30/03/2026 (v0.5.7)"
+          className={docStyles.docSectionSpaced}
+        >
           <DocParagraph>
             This update focused on first-run clarity and polish, especially when your library is
             empty. Assets and Stockpile now provide clearer onboarding guidance so new users can get
@@ -252,7 +338,11 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="Update 15/03/2026 (v0.5.6)" className={docStyles.docSectionSpaced}>
+        <DocSection
+          id="about-update-v0-5-6"
+          title="Update 15/03/2026 (v0.5.6)"
+          className={docStyles.docSectionSpaced}
+        >
           <DocParagraph>
             This release expanded visual control and storage efficiency, with improvements that make
             day-to-day editing feel more flexible while keeping larger libraries lighter and easier
@@ -284,7 +374,11 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="Update 07/03/2026 (v0.5.5)" className={docStyles.docSectionSpaced}>
+        <DocSection
+          id="about-update-v0-5-5"
+          title="Update 07/03/2026 (v0.5.5)"
+          className={docStyles.docSectionSpaced}
+        >
           <DocParagraph>
             This update focused on print-readiness and presentation quality, while also broadening
             language and appearance support across the app.
@@ -321,7 +415,11 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="Update 28/02/2026 (v0.5.4)" className={docStyles.docSectionSpaced}>
+        <DocSection
+          id="about-update-v0-5-4"
+          title="Update 28/02/2026 (v0.5.4)"
+          className={docStyles.docSectionSpaced}
+        >
           <DocParagraph>
             This was a focused bug-fix release improving image zoom behavior and rendering
             consistency, especially on artwork-heavy templates.
@@ -353,7 +451,11 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="Update 28/02/2026 (v0.5.3.1)" className={docStyles.docSectionSpaced}>
+        <DocSection
+          id="about-update-v0-5-3-1"
+          title="Update 28/02/2026 (v0.5.3.1)"
+          className={docStyles.docSectionSpaced}
+        >
           <DocParagraph>
             This was a small maintenance patch in the 0.5.3 cycle, focused on incremental
             stabilization before the broader 0.5.4 update.
@@ -371,7 +473,11 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="Update 26/02/2026 (v0.5.3)" className={docStyles.docSectionSpaced}>
+        <DocSection
+          id="about-update-v0-5-3"
+          title="Update 26/02/2026 (v0.5.3)"
+          className={docStyles.docSectionSpaced}
+        >
           <DocParagraph>
             This release is a major step forward in how the library feels to use, with a clearer
             Stockpile layout, safer card management, and smoother collection workflows so it’s
@@ -421,7 +527,11 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="Update 12/02/2026 (v0.5.2)" className={docStyles.docSectionSpaced}>
+        <DocSection
+          id="about-update-v0-5-2"
+          title="Update 12/02/2026 (v0.5.2)"
+          className={docStyles.docSectionSpaced}
+        >
           <DocParagraph>This release expanded pairing workflows and export options:</DocParagraph>
           <DocList className={docStyles.docListSpaced}>
             <li>
@@ -453,7 +563,11 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="Update 07/02/2026 (v0.5.1)" className={docStyles.docSectionSpaced}>
+        <DocSection
+          id="about-update-v0-5-1"
+          title="Update 07/02/2026 (v0.5.1)"
+          className={docStyles.docSectionSpaced}
+        >
           <DocParagraph>This update focused on the editor’s foundation and workflow:</DocParagraph>
           <DocList className={docStyles.docListSpaced}>
             <li>
@@ -483,7 +597,11 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="Update 10/01/2026 (v0.5.0)" className={docStyles.docSectionSpaced}>
+        <DocSection
+          id="about-update-v0-5-0"
+          title="Update 10/01/2026 (v0.5.0)"
+          className={docStyles.docSectionSpaced}
+        >
           <DocParagraph>
             This release focused on organizing larger libraries and making exports easier:
           </DocParagraph>
@@ -515,7 +633,11 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
           </DocParagraph>
         </DocSection>
 
-        <DocSection title="Update 18/12/2025 (v0.4.0)" className={docStyles.docSectionSpaced}>
+        <DocSection
+          id="about-update-v0-4-0"
+          title="Update 18/12/2025 (v0.4.0)"
+          className={docStyles.docSectionSpaced}
+        >
           <DocParagraph>
             This pass has been all about polish and consistency rather than big new features. The
             overall look should now feel tidier, more readable, and a bit closer to a finished app
@@ -544,6 +666,26 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             make everyday use noticeably calmer and more consistent.
           </DocParagraph>
         </DocSection>
+          </div>
+        </div>
+        <nav className={docStyles.aboutToc} aria-label="About sections">
+          <h3 className={docStyles.aboutTocHeading}>On this page</h3>
+          <ul className={docStyles.aboutTocList}>
+            {tocSections.map((section) => (
+              <li key={section.id}>
+                <button
+                  type="button"
+                  className={`${docStyles.aboutTocButton} ${
+                    activeSectionId === section.id ? docStyles.aboutTocButtonActive : ""
+                  }`}
+                  onClick={() => jumpToSection(section.id)}
+                >
+                  {section.title}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
     </ModalShell>
   );
