@@ -85,9 +85,36 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
               browser, all without creating an account or touching a server.
             </li>
             <li>
+              Build structured Decks in a dedicated workspace, using grouped sets and front-face
+              entries so larger projects can be organised as complete playable systems rather than
+              loose card lists.
+            </li>
+            <li>
+              Organize decks with drag-and-drop workflows: reorder groups, move sets between
+              sections, reorder entries, and drag cards directly into sets.
+            </li>
+            <li>
+              Assign quantities to cards inside sets so decks can represent repeated encounters,
+              weighted treasure pools, rarity systems, and other gameplay-oriented distributions.
+            </li>
+            <li>
+              Use deck-aware inspector context to see where cards are used across decks, making
+              larger libraries easier to understand and maintain.
+            </li>
+            <li>
+              Use safer remove and recovery-oriented workflows while deck-building: removing an
+              entry from a set does not delete the underlying card, and paired-card recovery
+              workflows reduce accidental structural breakage during reorganization.
+            </li>
+            <li>
               Export the current card to a 756×1056 PNG with fonts and artwork baked in, ready to
               drop into a print layout or share online. The exported image is generated from the
               same SVG used for the on-screen preview.
+            </li>
+            <li>
+              Export decks directly from Decks workflows. Current deck export focuses on structured
+              organization/export preparation and lays important groundwork for future print/PDF
+              workflows planned for later releases.
             </li>
             <li>
               Back up your entire library of cards and image assets to a single <code>.hqcc</code>{" "}
@@ -156,6 +183,191 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
             The plan is to keep iterating, publish the code on GitHub, and provide a self-contained
             build that can be hosted anywhere. In the meantime, if this tool helps you create new
             quests, heroes, or treasure for your table, it&apos;s doing its job.
+          </DocParagraph>
+        </DocSection>
+
+        <DocSection title="Update 31/05/2026 (v0.6.0)" className={docStyles.docSectionSpaced}>
+          <DocParagraph>
+            This release introduces Decks, one of the largest additions to the project so far.
+            Earlier releases laid groundwork across pairing, collections, export preparation, and
+            safer workflows; v0.6.0 brings those foundations together into a structured deck-building
+            experience for larger HeroQuest projects.
+          </DocParagraph>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Decks can now be organized as grouped sets with front-face entries, helping creators
+            build and manage complete playable systems such as treasure ecosystems, encounter groups,
+            spell schools, hero packs, and expansion content.
+          </DocParagraph>
+          <DocList className={docStyles.docListSpaced}>
+            <li>Dedicated Decks workspace with grid and focused detail editing workflows.</li>
+            <li>Drag-and-drop deck building for groups, sets, and entries.</li>
+            <li>Quantity support for cards inside sets.</li>
+            <li>Deck-aware inspector membership visibility and usage context.</li>
+            <li>Safer remove, recovery, and cleanup-oriented workflows.</li>
+            <li>Deck export integrated into app workflows.</li>
+            <li>Localization and terminology refinement across Decks UI.</li>
+            <li>Broad stability and interaction polish across larger editing workflows.</li>
+          </DocList>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Full release notes:{" "}
+            <a
+              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.6.0"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={docStyles.docLink}
+            >
+              v0.6.0
+            </a>
+          </DocParagraph>
+        </DocSection>
+
+        <DocSection title="Update 30/03/2026 (v0.5.7)" className={docStyles.docSectionSpaced}>
+          <DocParagraph>
+            This update focused on first-run clarity and polish, especially when your library is
+            empty. Assets and Stockpile now provide clearer onboarding guidance so new users can get
+            started faster without guessing the next step.
+          </DocParagraph>
+          <DocList className={docStyles.docListSpaced}>
+            <li>
+              New empty-library onboarding in Assets and Stockpile with quick-start guidance and
+              direct setup/import actions.
+            </li>
+            <li>Resources access improved in Assets for faster access to supporting links.</li>
+            <li>
+              Color picker input is more reliable with manual hex entry, better validation, and
+              cleaner keyboard behavior.
+            </li>
+            <li>Small app-shell updates, including header navigation refinements.</li>
+          </DocList>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Full release notes:{" "}
+            <a
+              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.7"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={docStyles.docLink}
+            >
+              v0.5.7
+            </a>
+          </DocParagraph>
+        </DocSection>
+
+        <DocSection title="Update 15/03/2026 (v0.5.6)" className={docStyles.docSectionSpaced}>
+          <DocParagraph>
+            This release expanded visual control and storage efficiency, with improvements that make
+            day-to-day editing feel more flexible while keeping larger libraries lighter and easier
+            to manage.
+          </DocParagraph>
+          <DocList className={docStyles.docListSpaced}>
+            <li>
+              Added global background tint and body text color controls across templates for more
+              styling flexibility.
+            </li>
+            <li>Treasure artwork window behavior was reworked for cleaner, more consistent output.</li>
+            <li>Added an in-app PNG to JPEG conversion workflow for compatible assets.</li>
+            <li>
+              Introduced a compact backup format and major thumbnail/storage optimizations to reduce
+              library size.
+            </li>
+            <li>Added system/library information improvements and contextual stockpile hints.</li>
+          </DocList>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Full release notes:{" "}
+            <a
+              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.6"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={docStyles.docLink}
+            >
+              v0.5.6
+            </a>
+          </DocParagraph>
+        </DocSection>
+
+        <DocSection title="Update 07/03/2026 (v0.5.5)" className={docStyles.docSectionSpaced}>
+          <DocParagraph>
+            This update focused on print-readiness and presentation quality, while also broadening
+            language and appearance support across the app.
+          </DocParagraph>
+          <DocList className={docStyles.docListSpaced}>
+            <li>Added full Light, Dark, and System theme support.</li>
+            <li>
+              Export workflows were significantly expanded with bleed, crop/cut marks, and clearer
+              export options.
+            </li>
+            <li>
+              Exported images gained subtle watermarking and metadata tagging (export-only, not in
+              editor preview).
+            </li>
+            <li>
+              Card canvas and print-related sizing were refined to improve consistency between screen
+              output and physical cards.
+            </li>
+            <li>
+              Added broader i18n coverage and language menu refinements for easier language
+              selection.
+            </li>
+          </DocList>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Full release notes:{" "}
+            <a
+              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.5"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={docStyles.docLink}
+            >
+              v0.5.5
+            </a>
+          </DocParagraph>
+        </DocSection>
+
+        <DocSection title="Update 28/02/2026 (v0.5.4)" className={docStyles.docSectionSpaced}>
+          <DocParagraph>
+            This was a focused bug-fix release improving image zoom behavior and rendering
+            consistency, especially on artwork-heavy templates.
+          </DocParagraph>
+          <DocList className={docStyles.docListSpaced}>
+            <li>
+              Image scaling/zoom controls were corrected so 1x, 2x, and 3x behave as expected.
+            </li>
+            <li>Zoom slider feedback and marker alignment were made clearer and more predictable.</li>
+            <li>
+              Fixed edge-rendering artifacts seen on some treasure card templates at higher zoom
+              levels.
+            </li>
+            <li>
+              Kept full-card coverage workflows available while making zoom behavior easier to
+              understand.
+            </li>
+          </DocList>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Full release notes:{" "}
+            <a
+              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.4"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={docStyles.docLink}
+            >
+              v0.5.4
+            </a>
+          </DocParagraph>
+        </DocSection>
+
+        <DocSection title="Update 28/02/2026 (v0.5.3.1)" className={docStyles.docSectionSpaced}>
+          <DocParagraph>
+            This was a small maintenance patch in the 0.5.3 cycle, focused on incremental
+            stabilization before the broader 0.5.4 update.
+          </DocParagraph>
+          <DocParagraph className={docStyles.docParagraphSpaced}>
+            Full release notes:{" "}
+            <a
+              href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.3.1"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={docStyles.docLink}
+            >
+              v0.5.3.1
+            </a>
           </DocParagraph>
         </DocSection>
 
