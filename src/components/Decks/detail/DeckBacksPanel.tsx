@@ -425,13 +425,13 @@ export default function DeckBacksPanel({
                       <div className={styles.uRowLg}>
                         <dt>{t("decks.meta.created")}</dt>
                         <dd>
-                          {metaState.createdAt ? new Date(metaState.createdAt).toLocaleString() : t("label.unknown")}
+                          {metaState.createdAt ? new Date(metaState.createdAt).toLocaleString() : t("label.unknownVersion")}
                         </dd>
                       </div>
                       <div className={styles.uRowLg}>
                         <dt>{t("decks.meta.modified")}</dt>
                         <dd>
-                          {metaState.updatedAt ? new Date(metaState.updatedAt).toLocaleString() : t("label.unknown")}
+                          {metaState.updatedAt ? new Date(metaState.updatedAt).toLocaleString() : t("label.unknownVersion")}
                         </dd>
                       </div>
                       <div className={styles.uRowLg}>

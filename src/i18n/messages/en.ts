@@ -824,5 +824,6 @@ export const en = {
   "warning.unpairFromBackFaceMultiple": "{count} cards will be unpaired from this back face. Continue?",
 
   "heading.impactedDecks": "Impacted decks",
+  "decks.pairUsage.body": "This will unpair and remove dependent deck entries from the following locations:",
 
 } as const;
