@@ -4,6 +4,7 @@ import { createContext, useContext } from "react";
 
 type DeckExportContextValue = {
   exportDeck: (deckId: string, scope: "decks_grid" | "deck_detail") => Promise<void>;
+  exportDeckPdf: (deckId: string, scope: "decks_grid" | "deck_detail") => Promise<void>;
 };
 
 const DeckExportContext = createContext<DeckExportContextValue | null>(null);

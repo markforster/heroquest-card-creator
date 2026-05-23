@@ -3889,6 +3889,24 @@
   color: var(--hq-accent);
 }
 
+.pdfExportGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.pdfExportInlineGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.pdfExportInlineGrid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
 .exportFormatOptions {
   display: flex;
   flex-direction: column;

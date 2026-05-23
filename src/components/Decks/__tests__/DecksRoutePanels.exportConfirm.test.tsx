@@ -37,6 +37,18 @@ jest.mock("@/components/Decks/DecksGridPanel", () => {
 
 jest.mock("@/components/Decks/DeckDetailPanel", () => () => null);
 jest.mock("@/components/Stockpile/StockpileMissingAssetsModal", () => () => null);
+jest.mock("@/components/Cards/CardPreview", () => () => null);
+jest.mock("@/components/Decks/pdf/DeckPdfExportModal", () => () => null);
+jest.mock("@/components/Providers/ExportSettingsContext", () => ({
+  useExportSettingsState: () => ({
+    settings: {
+      bleed: { enabled: false, bleedPx: 0, askBeforeExport: false },
+      cropMarks: { enabled: false, color: "#00FFFF", style: "lines" },
+      cutMarks: { enabled: false, color: "#00FFFF" },
+      roundedCorners: true,
+    },
+  }),
+}));
 
 jest.mock("@/components/Providers/AnalyticsProvider", () => ({
   useAnalytics: () => ({ track: jest.fn() }),
@@ -212,4 +224,3 @@ describe("DecksRoutePanels export confirmation", () => {
     });
   });
 });
-

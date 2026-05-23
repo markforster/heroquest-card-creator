@@ -26,6 +26,7 @@ export type BleedComposeOptions = {
   fullCanvas: HTMLCanvasElement;
   backgroundCanvas?: HTMLCanvasElement | null;
   bleedPx: number;
+  renderBleedBands?: boolean;
   cropMarks?: CropMarksOptions;
   cutMarks?: CutMarksOptions;
 };
@@ -116,6 +117,7 @@ export function composeBleedCanvas({
   fullCanvas,
   backgroundCanvas,
   bleedPx,
+  renderBleedBands = true,
   cropMarks,
   cutMarks,
 }: BleedComposeOptions): HTMLCanvasElement {
@@ -145,7 +147,7 @@ export function composeBleedCanvas({
   const trimH = CARD_HEIGHT;
 
   const bleedCanvas = backgroundCanvas ?? fullCanvas;
-  if (bleedPx > 0) {
+  if (bleedPx > 0 && renderBleedBands) {
     const bleedOffset = padding - bleedPx;
     drawBleedBands(ctx, bleedCanvas, bleedPx, {
       trimX,
