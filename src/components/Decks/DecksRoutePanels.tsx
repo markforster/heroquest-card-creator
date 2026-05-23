@@ -9,6 +9,7 @@ import DeckDetailPanel from "@/components/Decks/DeckDetailPanel";
 import { DeckExportProvider } from "@/components/Decks/context/DeckExportContext";
 import { resolveDeckExportFaceIds } from "@/components/Decks/deck-export";
 import DeckPdfExportModal from "@/components/Decks/pdf/DeckPdfExportModal";
+import DeckPdfExportProgressModal from "@/components/Decks/pdf/DeckPdfExportProgressModal";
 import DecksGridPanel from "@/components/Decks/DecksGridPanel";
 import { useDeckDetailSelectionModel } from "@/components/Decks/hooks/useDeckDetailSelectionModel";
 import { useDeckDetailState } from "@/components/Decks/hooks/useDeckDetailState";
@@ -85,6 +86,12 @@ export default function DecksRoutePanels() {
     scope: "decks_grid" | "deck_detail";
   } | null>(null);
   const [isDeckPdfExporting, setIsDeckPdfExporting] = useState(false);
+  const [isDeckPdfProgressOpen, setIsDeckPdfProgressOpen] = useState(false);
+  const [deckPdfProgressCurrent, setDeckPdfProgressCurrent] = useState(0);
+  const [deckPdfProgressTotal, setDeckPdfProgressTotal] = useState(0);
+  const [deckPdfProgressPhase, setDeckPdfProgressPhase] = useState<string | null>(null);
+  const [deckPdfIsCancelling, setDeckPdfIsCancelling] = useState(false);
+  const deckPdfCancelRequestedRef = useRef(false);
   const [pdfPrompt, setPdfPrompt] = useState<{
     resolve: (result: ExportPromptResult | null) => void;
     initial: typeof exportSettings;
@@ -202,6 +209,24 @@ export default function DecksRoutePanels() {
     [],
   );
 
+  const openDeckPdfProgress = useCallback((total: number) => {
+    deckPdfCancelRequestedRef.current = false;
+    setDeckPdfIsCancelling(false);
+    setDeckPdfProgressCurrent(0);
+    setDeckPdfProgressTotal(total);
+    setDeckPdfProgressPhase(t("status.exportingImages"));
+    setIsDeckPdfProgressOpen(true);
+  }, [t]);
+
+  const closeDeckPdfProgress = useCallback(() => {
+    setIsDeckPdfProgressOpen(false);
+    setDeckPdfProgressCurrent(0);
+    setDeckPdfProgressTotal(0);
+    setDeckPdfProgressPhase(null);
+    setDeckPdfIsCancelling(false);
+    deckPdfCancelRequestedRef.current = false;
+  }, []);
+
   const runDeckPdfExport = useCallback(
     async (config: PrintConfig) => {
       const pending = pendingDeckPdfExport;
@@ -227,9 +252,21 @@ export default function DecksRoutePanels() {
         window.alert(t("decks.pdf.errors.noSheets"));
         return;
       }
+      const totalFaces = composition.sheets.reduce((sum, sheet) => {
+        for (const slot of sheet.slots) {
+          if (slot.frontId) sum += 1;
+          if (config.mode === "frontAndBack" && slot.backId) sum += 1;
+        }
+        return sum;
+      }, 0);
+      setPendingDeckPdfExport(null);
+      openDeckPdfProgress(totalFaces);
 
       const cachedPngByFaceId = new Map<string, Uint8Array>();
       const renderFacePngBytes = async (faceId: string): Promise<Uint8Array | null> => {
+        if (deckPdfCancelRequestedRef.current) {
+          return null;
+        }
         if (cachedPngByFaceId.has(faceId)) {
           return cachedPngByFaceId.get(faceId) ?? null;
         }
@@ -248,6 +285,10 @@ export default function DecksRoutePanels() {
         const { cache } = await buildAssetCache(assetIds);
         if (assetIds.length > 0) {
           await waitForAssetElements(() => pdfPreviewRef.current?.getSvgElement(), assetIds);
+        }
+        if (deckPdfCancelRequestedRef.current) {
+          cache.clear();
+          return null;
         }
 
         const blob = await pdfPreviewRef.current?.renderToPngBlob({
@@ -275,7 +316,20 @@ export default function DecksRoutePanels() {
           composition,
           fileName: `heroquest-deck-${pending.deckId}-${config.mode}-${now}.pdf`,
           renderFacePngBytes,
+          shouldCancel: () => deckPdfCancelRequestedRef.current,
+          onPhase: (phase) => {
+            setDeckPdfProgressPhase(
+              phase === "finalizing" ? t("status.finalizing") : t("status.exportingImages"),
+            );
+          },
+          onProgress: ({ completedFaces, totalFaces: total }) => {
+            setDeckPdfProgressCurrent(completedFaces);
+            setDeckPdfProgressTotal(total);
+          },
         });
+        if (pdfResult.status === "cancelled") {
+          return;
+        }
         const url = URL.createObjectURL(pdfResult.blob);
         const link = document.createElement("a");
         link.href = url;
@@ -291,10 +345,11 @@ export default function DecksRoutePanels() {
         window.alert(t("alert.exportImagesFailed"));
       } finally {
         setIsDeckPdfExporting(false);
+        closeDeckPdfProgress();
         setPdfRenderTarget(null);
       }
     },
-    [pendingDeckPdfExport, requestExportOptions, t],
+    [closeDeckPdfProgress, openDeckPdfProgress, pendingDeckPdfExport, requestExportOptions, t],
   );
 
   const runDeckPdfAlignmentTestExport = useCallback(
@@ -325,6 +380,15 @@ export default function DecksRoutePanels() {
         window.alert(t("decks.pdf.errors.noSheets"));
         return;
       }
+      const totalFaces = alignmentComposition.sheets.reduce((sum, sheet) => {
+        for (const slot of sheet.slots) {
+          if (slot.frontId) sum += 1;
+          if (config.mode === "frontAndBack" && slot.backId) sum += 1;
+        }
+        return sum;
+      }, 0);
+      setPendingDeckPdfExport(null);
+      openDeckPdfProgress(totalFaces);
 
       const makeAlignmentImage = async (faceId: string): Promise<Uint8Array> => {
         const parsed = parseAlignmentFaceId(faceId);
@@ -428,6 +492,9 @@ export default function DecksRoutePanels() {
 
       const cachedPngByFaceId = new Map<string, Uint8Array>();
       const renderFacePngBytes = async (faceId: string): Promise<Uint8Array | null> => {
+        if (deckPdfCancelRequestedRef.current) {
+          return null;
+        }
         if (!cachedPngByFaceId.has(faceId)) {
           const bytes = await makeAlignmentImage(faceId);
           cachedPngByFaceId.set(faceId, bytes);
@@ -444,7 +511,20 @@ export default function DecksRoutePanels() {
           composition: alignmentComposition,
           fileName: `heroquest-deck-${pending.deckId}-alignment-test-${now}.pdf`,
           renderFacePngBytes,
+          shouldCancel: () => deckPdfCancelRequestedRef.current,
+          onPhase: (phase) => {
+            setDeckPdfProgressPhase(
+              phase === "finalizing" ? t("status.finalizing") : t("status.exportingImages"),
+            );
+          },
+          onProgress: ({ completedFaces, totalFaces: total }) => {
+            setDeckPdfProgressCurrent(completedFaces);
+            setDeckPdfProgressTotal(total);
+          },
         });
+        if (pdfResult.status === "cancelled") {
+          return;
+        }
         const url = URL.createObjectURL(pdfResult.blob);
         const link = document.createElement("a");
         link.href = url;
@@ -459,9 +539,10 @@ export default function DecksRoutePanels() {
         window.alert(t("alert.exportImagesFailed"));
       } finally {
         setIsDeckPdfExporting(false);
+        closeDeckPdfProgress();
       }
     },
-    [pendingDeckPdfExport, requestExportOptions, t],
+    [closeDeckPdfProgress, openDeckPdfProgress, pendingDeckPdfExport, requestExportOptions, t],
   );
 
   const createSetFromBackFace = async (
@@ -774,6 +855,18 @@ export default function DecksRoutePanels() {
         }}
         onExport={runDeckPdfExport}
         onExportAlignmentTest={runDeckPdfAlignmentTestExport}
+      />
+      <DeckPdfExportProgressModal
+        isOpen={isDeckPdfProgressOpen}
+        title={`${t("decks.pdf.modal.export")} (${deckPdfProgressTotal})`}
+        progress={deckPdfProgressCurrent}
+        total={deckPdfProgressTotal}
+        phaseLabel={deckPdfProgressPhase}
+        isCancelling={deckPdfIsCancelling}
+        onCancel={() => {
+          deckPdfCancelRequestedRef.current = true;
+          setDeckPdfIsCancelling(true);
+        }}
       />
       {pdfPrompt ? (
         <ExportBleedPrompt

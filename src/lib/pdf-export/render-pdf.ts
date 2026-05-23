@@ -11,6 +11,15 @@ type RenderPdfOptions = {
   composition: PrintComposition;
   fileName: string;
   renderFacePngBytes: (faceId: string) => Promise<Uint8Array | null>;
+  shouldCancel?: () => boolean;
+  onPhase?: (phase: "rendering" | "finalizing") => void;
+  onProgress?: (progress: {
+    completedFaces: number;
+    totalFaces: number;
+    side: "front" | "back";
+    sheetIndex: number;
+    slotIndex: number;
+  }) => void;
 };
 
 function mmRectToPdfRect(
@@ -25,7 +34,7 @@ function mmRectToPdfRect(
 }
 
 export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportResult> {
-  const { config, layout, composition, fileName, renderFacePngBytes } = options;
+  const { config, layout, composition, fileName, renderFacePngBytes, shouldCancel, onPhase, onProgress } = options;
   const pdf = await PDFDocument.create();
   const pageWidthPt = mmToPt(layout.paperMm.width);
   const pageHeightPt = mmToPt(layout.paperMm.height);
@@ -33,11 +42,36 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
   const embeddedByFaceId = new Map<string, Awaited<ReturnType<typeof pdf.embedPng>>>();
   let renderedFaces = 0;
   let skippedFaces = 0;
+  const totalFaces = composition.sheets.reduce((sum, sheet) => {
+    for (const slot of sheet.slots) {
+      if (slot.frontId) sum += 1;
+      if (config.mode === "frontAndBack" && slot.backId) sum += 1;
+    }
+    return sum;
+  }, 0);
+
+  onPhase?.("rendering");
 
   for (const sheet of composition.sheets) {
+    if (shouldCancel?.()) {
+      return {
+        status: "cancelled",
+        renderedFaces,
+        skippedFaces,
+        pageCount: pdf.getPageCount(),
+      };
+    }
     const frontPage = pdf.addPage([pageWidthPt, pageHeightPt]);
 
     for (let slotIndex = 0; slotIndex < sheet.slots.length; slotIndex += 1) {
+      if (shouldCancel?.()) {
+        return {
+          status: "cancelled",
+          renderedFaces,
+          skippedFaces,
+          pageCount: pdf.getPageCount(),
+        };
+      }
       const slot = sheet.slots[slotIndex];
       const placement = layout.placements[slotIndex];
       if (!placement || !slot.frontId) {
@@ -59,6 +93,13 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
       const rect = mmRectToPdfRect(layout.paperMm, placement);
       frontPage.drawImage(image, rect);
       renderedFaces += 1;
+      onProgress?.({
+        completedFaces: renderedFaces,
+        totalFaces,
+        side: "front",
+        sheetIndex: sheet.sheetIndex,
+        slotIndex,
+      });
     }
 
     if (config.mode !== "frontAndBack") {
@@ -68,6 +109,14 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
     const backPage = pdf.addPage([pageWidthPt, pageHeightPt]);
     const preset = config.duplexPreset ?? "normal";
     for (let slotIndex = 0; slotIndex < sheet.slots.length; slotIndex += 1) {
+      if (shouldCancel?.()) {
+        return {
+          status: "cancelled",
+          renderedFaces,
+          skippedFaces,
+          pageCount: pdf.getPageCount(),
+        };
+      }
       const slot = sheet.slots[slotIndex];
       const frontPlacement = layout.placements[slotIndex];
       if (!frontPlacement || !slot.backId) {
@@ -90,11 +139,29 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
       const rect = mmRectToPdfRect(layout.paperMm, transformed);
       backPage.drawImage(image, rect);
       renderedFaces += 1;
+      onProgress?.({
+        completedFaces: renderedFaces,
+        totalFaces,
+        side: "back",
+        sheetIndex: sheet.sheetIndex,
+        slotIndex,
+      });
     }
   }
 
+  if (shouldCancel?.()) {
+    return {
+      status: "cancelled",
+      renderedFaces,
+      skippedFaces,
+      pageCount: pdf.getPageCount(),
+    };
+  }
+
+  onPhase?.("finalizing");
   const bytes = await pdf.save();
   return {
+    status: "success",
     blob: new Blob([bytes], { type: "application/pdf" }),
     fileName,
     renderedFaces,

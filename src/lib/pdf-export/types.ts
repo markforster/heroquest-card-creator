@@ -48,10 +48,20 @@ export type LayoutPlan = {
   placements: SlotPlacementMm[];
 };
 
-export type PdfExportResult = {
+export type PdfExportSuccessResult = {
+  status: "success";
   blob: Blob;
   fileName: string;
   renderedFaces: number;
   skippedFaces: number;
   pageCount: number;
 };
+
+export type PdfExportCancelledResult = {
+  status: "cancelled";
+  renderedFaces: number;
+  skippedFaces: number;
+  pageCount: number;
+};
+
+export type PdfExportResult = PdfExportSuccessResult | PdfExportCancelledResult;
