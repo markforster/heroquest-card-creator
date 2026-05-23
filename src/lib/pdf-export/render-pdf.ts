@@ -1,4 +1,4 @@
-import { PDFArray, PDFDocument, PDFName, PDFString, StandardFonts, grayscale } from "pdf-lib";
+import { PDFArray, PDFDocument, PDFName, PDFString, StandardFonts, grayscale, rgb } from "pdf-lib";
 import type { PDFFont, PDFPage } from "pdf-lib";
 
 import { embeddedImagesByFileName } from "@/generated/embeddedAssets";
@@ -74,23 +74,68 @@ function drawPdfAttributionFooter(
   const textY = qrY + (qrSizePt - PDF_ATTRIBUTION_TEXT_SIZE_PT) / 2;
   const textMaxWidth = Math.max(0, qrX - textX - textGapPt);
 
-  page.drawText(text, {
-    x: textX,
-    y: textY,
-    size: PDF_ATTRIBUTION_TEXT_SIZE_PT,
-    font,
-    color: grayscale(0.35),
-    maxWidth: textMaxWidth,
-  });
-
   const linkStart = text.indexOf(PDF_ATTRIBUTION_LINK_TEXT);
   if (linkStart >= 0) {
     const prefix = text.slice(0, linkStart);
-    const linkX = textX + font.widthOfTextAtSize(prefix, PDF_ATTRIBUTION_TEXT_SIZE_PT);
+    const suffix = text.slice(linkStart + PDF_ATTRIBUTION_LINK_TEXT.length);
+    const prefixWidth = font.widthOfTextAtSize(prefix, PDF_ATTRIBUTION_TEXT_SIZE_PT);
     const linkWidth = font.widthOfTextAtSize(PDF_ATTRIBUTION_LINK_TEXT, PDF_ATTRIBUTION_TEXT_SIZE_PT);
+    const suffixWidth = font.widthOfTextAtSize(suffix, PDF_ATTRIBUTION_TEXT_SIZE_PT);
+    const fullWidth = prefixWidth + linkWidth + suffixWidth;
+    const scale = fullWidth > 0 ? Math.min(1, textMaxWidth / fullWidth) : 1;
+    const size = PDF_ATTRIBUTION_TEXT_SIZE_PT * scale;
+    const scaledPrefixWidth = font.widthOfTextAtSize(prefix, size);
+    const scaledLinkWidth = font.widthOfTextAtSize(PDF_ATTRIBUTION_LINK_TEXT, size);
     const linkY = textY;
-    const linkHeight = PDF_ATTRIBUTION_TEXT_SIZE_PT + 2;
-    addPageUriLinkAnnotation(page, linkX, linkY, linkWidth, linkHeight, PDF_ATTRIBUTION_LINK_URL);
+
+    page.drawText(prefix, {
+      x: textX,
+      y: textY,
+      size,
+      font,
+      color: grayscale(0.35),
+    });
+    page.drawText(PDF_ATTRIBUTION_LINK_TEXT, {
+      x: textX + scaledPrefixWidth,
+      y: textY,
+      size,
+      font,
+      color: rgb(0.1, 0.35, 0.85),
+    });
+    page.drawText(suffix, {
+      x: textX + scaledPrefixWidth + scaledLinkWidth,
+      y: textY,
+      size,
+      font,
+      color: grayscale(0.35),
+    });
+
+    const underlineY = linkY - Math.max(0.8, size * 0.12);
+    page.drawLine({
+      start: { x: textX + scaledPrefixWidth, y: underlineY },
+      end: { x: textX + scaledPrefixWidth + scaledLinkWidth, y: underlineY },
+      color: rgb(0.1, 0.35, 0.85),
+      thickness: 0.7,
+    });
+
+    const linkHeight = size + 2;
+    addPageUriLinkAnnotation(
+      page,
+      textX + scaledPrefixWidth,
+      linkY,
+      scaledLinkWidth,
+      linkHeight,
+      PDF_ATTRIBUTION_LINK_URL,
+    );
+  } else {
+    page.drawText(text, {
+      x: textX,
+      y: textY,
+      size: PDF_ATTRIBUTION_TEXT_SIZE_PT,
+      font,
+      color: grayscale(0.35),
+      maxWidth: textMaxWidth,
+    });
   }
 
   page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSizePt, height: qrSizePt });

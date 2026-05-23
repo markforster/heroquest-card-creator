@@ -60,7 +60,7 @@ describe("pdf-export renderPdf", () => {
     expect(phases).toContain("finalizing");
     expect(progressCalls).toHaveLength(2);
     expect(progressCalls[1]).toMatchObject({ completedFaces: 2, totalFaces: 2 });
-    expect(drawTextSpy).toHaveBeenCalledTimes(1);
+    expect(drawTextSpy).toHaveBeenCalledTimes(3);
     drawTextSpy.mockRestore();
   });
 
@@ -83,7 +83,7 @@ describe("pdf-export renderPdf", () => {
 
     expect(result.status).toBe("success");
     expect(result.pageCount).toBe(2);
-    expect(drawTextSpy).toHaveBeenCalledTimes(2);
+    expect(drawTextSpy).toHaveBeenCalledTimes(6);
     drawTextSpy.mockRestore();
   });
 
