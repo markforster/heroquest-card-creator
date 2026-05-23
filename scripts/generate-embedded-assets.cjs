@@ -111,7 +111,10 @@ function main() {
     path.join(rootDir, "src", "assets", "card-parts"),
     path.join(rootDir, "src", "assets", "dice"),
   ];
-  const extraImageFiles = [path.join(rootDir, "src", "assets", "avatar.jpeg")];
+  const extraImageFiles = [
+    path.join(rootDir, "src", "assets", "avatar.jpeg"),
+    path.join(rootDir, "src", "assets", "thqcc-qr.jpg"),
+  ];
   const fontsDir = path.join(rootDir, "public", "fonts");
 
   const imageFiles = [
