@@ -1,13 +1,12 @@
 "use client";
 
-import { Download } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { Download, FileText, Image } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { useMemo, useState } from "react";
 
-import { useClickOutside } from "@/components/common/useClickOutside";
-import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
-import IconButton from "@/components/common/IconButton";
+import styles from "@/app/page.module.css";
+import IconLabelMenuButton from "@/components/common/IconLabelMenuButton";
 import { useDeckExport } from "@/components/Decks/context/DeckExportContext";
-import SplitActionMenu from "@/components/EditorActionsToolbar/SplitActionMenu";
 import { useDeckHasSets } from "@/components/Decks/hooks/useDeckHasSets";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -32,49 +31,25 @@ export default function DeckExportButton({
   const exportDeckPdf = exportContext?.exportDeckPdf;
   const { hasSets } = useDeckHasSets(deckId);
   const [isLoading, setIsLoading] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const menuPanelRef = useRef<HTMLDivElement | null>(null);
   const resolvedLabel = label ?? t("decks.actions.exportDeck");
 
-  const isDisabled = disabled || !deckId || !hasSets || isLoading || !exportDeck;
-  const menuPlacement = usePopoverPlacement({
-    isOpen: isMenuOpen,
-    anchorRef: menuRef,
-    popoverRef: menuPanelRef,
-  });
-  useClickOutside(menuRef, () => setIsMenuOpen(false));
+  const baseDisabled = disabled || !deckId || !hasSets || isLoading;
+  const isDisabled = baseDisabled || (!exportDeck && !exportDeckPdf);
 
-  const menuItems = useMemo(
-    () =>
-      exportDeckPdf
-        ? [
-            {
-              id: "export-pdf",
-              label: t("decks.actions.exportDeckPdf"),
-              onClick: async () => {
-                if (!deckId || isLoading) return;
-                setIsLoading(true);
-                try {
-                  await exportDeckPdf(deckId, scope);
-                } finally {
-                  setIsLoading(false);
-                }
-              },
-            },
-          ]
-        : [],
-    [deckId, exportDeckPdf, isLoading, scope, t],
-  );
+  const menuItems = useMemo(() => {
+    const items: Array<{
+      id: string;
+      label: string;
+      icon: LucideIcon;
+      onSelect: () => Promise<void>;
+    }> = [];
 
-  if (!menuItems.length) {
-    return (
-      <IconButton
-        className={className}
-        icon={Download}
-        title={resolvedLabel}
-        disabled={Boolean(isDisabled)}
-        onClick={async () => {
+    if (exportDeck) {
+      items.push({
+        id: "export-png",
+        label: "Image Export",
+        icon: Image,
+        onSelect: async () => {
           if (!deckId || isLoading || !exportDeck) return;
           setIsLoading(true);
           try {
@@ -82,36 +57,38 @@ export default function DeckExportButton({
           } finally {
             setIsLoading(false);
           }
-        }}
-      >
-        {resolvedLabel}
-      </IconButton>
-    );
-  }
+        },
+      });
+    }
+
+    if (exportDeckPdf) {
+      items.push({
+        id: "export-pdf",
+        label: "PDF Export",
+        icon: FileText,
+        onSelect: async () => {
+          if (!deckId || isLoading || !exportDeckPdf) return;
+          setIsLoading(true);
+          try {
+            await exportDeckPdf(deckId, scope);
+          } finally {
+            setIsLoading(false);
+          }
+        },
+      });
+    }
+
+    return items;
+  }, [deckId, exportDeck, exportDeckPdf, isLoading, scope, t]);
 
   return (
-    <SplitActionMenu
+    <IconLabelMenuButton
       label={resolvedLabel}
       icon={Download}
       disabled={Boolean(isDisabled)}
-      onPrimaryClick={async () => {
-        if (!deckId || isLoading || !exportDeck) return;
-        setIsLoading(true);
-        try {
-          await exportDeck(deckId, scope);
-        } finally {
-          setIsLoading(false);
-        }
-      }}
-      menuItems={menuItems}
-      isMenuOpen={isMenuOpen}
-      onToggleMenu={() => setIsMenuOpen((prev) => !prev)}
-      onCloseMenu={() => setIsMenuOpen(false)}
-      placement={menuPlacement}
-      anchorRef={menuRef}
-      panelRef={menuPanelRef}
-      chevronAriaLabel={resolvedLabel}
-      primaryClassName={className}
+      ariaLabel={resolvedLabel}
+      className={`${styles.inspectorFaceButton} ${className}`.trim()}
+      items={menuItems}
     />
   );
 }
