@@ -5,32 +5,43 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { apiClient } from "@/api/client";
-import DeckDetailPanel from "@/components/Decks/DeckDetailPanel";
+import CardPreview from "@/components/Cards/CardPreview";
+import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
+import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import { DeckExportProvider } from "@/components/Decks/context/DeckExportContext";
-import { resolveDeckExportFaceIds } from "@/components/Decks/deck-export";
-import DeckPdfExportModal from "@/components/Decks/pdf/DeckPdfExportModal";
-import DeckPdfExportProgressModal from "@/components/Decks/pdf/DeckPdfExportProgressModal";
+import {
+  resolveDeckExportFaceIds,
+  resolveDeckPdfExportSummary,
+  type DeckPdfExportSummary,
+} from "@/components/Decks/deck-export";
+import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
+import DeckDetailPanel from "@/components/Decks/DeckDetailPanel";
 import DecksGridPanel from "@/components/Decks/DecksGridPanel";
 import { useDeckDetailSelectionModel } from "@/components/Decks/hooks/useDeckDetailSelectionModel";
 import { useDeckDetailState } from "@/components/Decks/hooks/useDeckDetailState";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useDecksDragController } from "@/components/Decks/hooks/useDecksDragController";
 import { useDeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
-import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
-import CardPreview from "@/components/Cards/CardPreview";
-import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
+import DeckPdfExportModal from "@/components/Decks/pdf/DeckPdfExportModal";
+import DeckPdfExportProgressModal from "@/components/Decks/pdf/DeckPdfExportProgressModal";
+import DeckPdfExportSummaryModal from "@/components/Decks/pdf/DeckPdfExportSummaryModal";
 import {
   useBulkCardExport,
   type MissingAssetsExportPrompt,
 } from "@/components/Export/hooks/useBulkCardExport";
-import ExportBleedPrompt, { type ExportPromptResult } from "@/components/Modals/ExportBleedPrompt";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
-import { useAppActions } from "@/components/Providers/AppActionsContext";
+import ExportBleedPrompt, { type ExportPromptResult } from "@/components/Modals/ExportBleedPrompt";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
+import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
+import {
+  resolveExportFileName,
+  resolveZipFileName,
+  waitForAssetElements,
+  waitForFrame,
+} from "@/components/Stockpile/stockpile-utils";
 import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
-import { waitForAssetElements, waitForFrame } from "@/components/Stockpile/stockpile-utils";
-import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
+import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -44,12 +55,12 @@ import {
   composeDeckSlotPairs,
   composePrintComposition,
   computeLayoutPlan,
+  DEFAULT_PDF_PRINT_CONFIG,
+  normalizePdfPrintConfig,
   parseAlignmentFaceId,
   renderPdf,
   type PrintConfig,
 } from "@/lib/pdf-export";
-import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
-import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
 
 export default function DecksRoutePanels() {
   const { t, language } = useI18n();
@@ -85,6 +96,9 @@ export default function DecksRoutePanels() {
     deckId: string;
     scope: "decks_grid" | "deck_detail";
   } | null>(null);
+  const [deckPdfFlowStep, setDeckPdfFlowStep] = useState<"summary" | "settings">("summary");
+  const [deckPdfRunConfig, setDeckPdfRunConfig] = useState<PrintConfig>(DEFAULT_PDF_PRINT_CONFIG);
+  const [deckPdfSummary, setDeckPdfSummary] = useState<DeckPdfExportSummary | null>(null);
   const [isDeckPdfExporting, setIsDeckPdfExporting] = useState(false);
   const [isDeckPdfProgressOpen, setIsDeckPdfProgressOpen] = useState(false);
   const [deckPdfProgressCurrent, setDeckPdfProgressCurrent] = useState(0);
@@ -204,9 +218,14 @@ export default function DecksRoutePanels() {
 
   const startDeckPdfExport = useCallback(
     async (deckIdValue: string, scope: "decks_grid" | "deck_detail") => {
+      const initialConfig = normalizePdfPrintConfig(exportSettings.pdf ?? DEFAULT_PDF_PRINT_CONFIG);
+      const summary = await resolveDeckPdfExportSummary(deckIdValue, initialConfig.mode);
+      setDeckPdfRunConfig(initialConfig);
+      setDeckPdfSummary(summary);
+      setDeckPdfFlowStep("summary");
       setPendingDeckPdfExport({ deckId: deckIdValue, scope });
     },
-    [],
+    [exportSettings.pdf],
   );
 
   const openDeckPdfProgress = useCallback((total: number) => {
@@ -259,7 +278,6 @@ export default function DecksRoutePanels() {
         }
         return sum;
       }, 0);
-      setPendingDeckPdfExport(null);
       openDeckPdfProgress(totalFaces);
 
       const cachedPngByFaceId = new Map<string, Uint8Array>();
@@ -338,7 +356,6 @@ export default function DecksRoutePanels() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        setPendingDeckPdfExport(null);
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error("[decks] PDF export failed", error);
@@ -387,7 +404,6 @@ export default function DecksRoutePanels() {
         }
         return sum;
       }, 0);
-      setPendingDeckPdfExport(null);
       openDeckPdfProgress(totalFaces);
 
       const makeAlignmentImage = async (faceId: string): Promise<Uint8Array> => {
@@ -847,14 +863,37 @@ export default function DecksRoutePanels() {
         ) : null}
       </ConfirmModal>
       <DeckPdfExportModal
-        isOpen={Boolean(pendingDeckPdfExport)}
+        isOpen={Boolean(pendingDeckPdfExport) && deckPdfFlowStep === "settings"}
+        initialConfig={deckPdfRunConfig}
+        onCancel={() => setDeckPdfFlowStep("summary")}
+        onConfirm={async (nextConfig) => {
+          const normalized = normalizePdfPrintConfig(nextConfig);
+          setDeckPdfRunConfig(normalized);
+          if (pendingDeckPdfExport) {
+            const summary = await resolveDeckPdfExportSummary(
+              pendingDeckPdfExport.deckId,
+              normalized.mode,
+            );
+            setDeckPdfSummary(summary);
+          }
+          setDeckPdfFlowStep("summary");
+        }}
+      />
+      <DeckPdfExportSummaryModal
+        isOpen={Boolean(pendingDeckPdfExport) && deckPdfFlowStep === "summary"}
         isExporting={isDeckPdfExporting}
+        summary={deckPdfSummary}
+        config={deckPdfRunConfig}
         onCancel={() => {
           if (isDeckPdfExporting) return;
           setPendingDeckPdfExport(null);
+          setDeckPdfSummary(null);
+          setDeckPdfFlowStep("summary");
+          setDeckPdfRunConfig(normalizePdfPrintConfig(exportSettings.pdf ?? DEFAULT_PDF_PRINT_CONFIG));
         }}
-        onExport={runDeckPdfExport}
-        onExportAlignmentTest={runDeckPdfAlignmentTestExport}
+        onAdjustSettings={() => setDeckPdfFlowStep("settings")}
+        onExport={() => runDeckPdfExport(deckPdfRunConfig)}
+        onExportAlignmentTest={() => runDeckPdfAlignmentTestExport(deckPdfRunConfig)}
       />
       <DeckPdfExportProgressModal
         isOpen={isDeckPdfProgressOpen}

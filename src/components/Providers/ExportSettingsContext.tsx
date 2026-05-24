@@ -8,6 +8,7 @@ import {
   DEFAULT_CROP_MARK_STYLE,
   DEFAULT_CUT_MARK_COLOR,
   DEFAULT_EXPORT_ROUNDED_CORNERS,
+  DEFAULT_PDF_PRINT_CONFIG,
   getExportSettings,
   setExportSettings,
   type ExportSettings,
@@ -26,6 +27,7 @@ const DEFAULT_SETTINGS: ExportSettings = {
   cropMarks: { enabled: false, color: DEFAULT_CROP_MARK_COLOR, style: DEFAULT_CROP_MARK_STYLE },
   cutMarks: { enabled: false, color: DEFAULT_CUT_MARK_COLOR },
   roundedCorners: DEFAULT_EXPORT_ROUNDED_CORNERS,
+  pdf: DEFAULT_PDF_PRINT_CONFIG,
 };
 
 const ExportSettingsContext = createContext<ExportSettingsContextValue | null>(null);

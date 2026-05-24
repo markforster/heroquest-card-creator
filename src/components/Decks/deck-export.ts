@@ -11,6 +11,22 @@ export type DeckExportFaceIdsResult = {
   totalCount: number;
 };
 
+export type DeckPdfExcludedSet = {
+  setId: string;
+  setTitle: string;
+  backFaceId: string | null;
+};
+
+export type DeckPdfExportSummary = {
+  includedSetCount: number;
+  excludedSetCount: number;
+  totalEntryQuantity: number;
+  frontFaceCount: number;
+  backFaceCount: number;
+  totalFaceCount: number;
+  excludedSets: DeckPdfExcludedSet[];
+};
+
 export async function resolveDeckExportFaceIds(deckId: string): Promise<DeckExportFaceIdsResult> {
   const [sets, pairMap] = await Promise.all([
     apiClient.listDeckSets({ params: { deckId } }),
@@ -58,5 +74,49 @@ export async function resolveDeckExportFaceIds(deckId: string): Promise<DeckExpo
     backCount: backIds.size,
     frontCount: frontIds.size,
     totalCount: faceIds.length,
+  };
+}
+
+export async function resolveDeckPdfExportSummary(
+  deckId: string,
+  mode: "frontsOnly" | "frontAndBack",
+): Promise<DeckPdfExportSummary> {
+  const [sets, cards] = await Promise.all([
+    apiClient.listDeckSets({ params: { deckId } }),
+    apiClient.listCards(),
+  ]);
+
+  const cardTitleById = new Map(cards.map((card) => [card.id, card.name || card.title || card.id]));
+  const entriesBySet = await Promise.all(
+    sets.map(async (set) => ({
+      set,
+      entries: await apiClient.listDeckEntries({ params: { setId: set.id } }),
+    })),
+  );
+
+  const included = entriesBySet.filter(({ entries }) => entries.length > 0);
+  const excluded = entriesBySet.filter(({ entries }) => entries.length === 0);
+  const totalEntryQuantity = included.reduce(
+    (sum, { entries }) =>
+      sum +
+      entries.reduce((entrySum, entry) => entrySum + Math.max(1, entry.count ?? 1), 0),
+    0,
+  );
+  const frontFaceCount = totalEntryQuantity;
+  const backFaceCount = mode === "frontAndBack" ? totalEntryQuantity : 0;
+  const totalFaceCount = frontFaceCount + backFaceCount;
+
+  return {
+    includedSetCount: included.length,
+    excludedSetCount: excluded.length,
+    totalEntryQuantity,
+    frontFaceCount,
+    backFaceCount,
+    totalFaceCount,
+    excludedSets: excluded.map(({ set }) => ({
+      setId: set.id,
+      setTitle: set.title ?? cardTitleById.get(set.backFaceId) ?? set.id,
+      backFaceId: set.backFaceId ?? null,
+    })),
   };
 }

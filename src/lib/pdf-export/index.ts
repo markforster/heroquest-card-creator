@@ -5,3 +5,4 @@ export * from "@/lib/pdf-export/duplex";
 export * from "@/lib/pdf-export/compose";
 export * from "@/lib/pdf-export/render-pdf";
 export * from "@/lib/pdf-export/alignment-test";
+export * from "@/lib/pdf-export/default-config";

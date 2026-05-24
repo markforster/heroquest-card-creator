@@ -1,6 +1,10 @@
 "use client";
 
 import { formatHexColor, parseHexColor } from "@/lib/color";
+import { DEFAULT_PDF_PRINT_CONFIG, normalizePdfPrintConfig } from "@/lib/pdf-export/default-config";
+import type { PrintConfig } from "@/lib/pdf-export/types";
+
+export { DEFAULT_PDF_PRINT_CONFIG };
 
 export type ExportPngBleedSettings = {
   enabled: boolean;
@@ -24,6 +28,7 @@ export type ExportSettings = {
   cropMarks: ExportCropMarksSettings;
   cutMarks: ExportCutMarksSettings;
   roundedCorners: boolean;
+  pdf: PrintConfig;
 };
 
 export const DEFAULT_BLEED_PX = 36;
@@ -43,6 +48,17 @@ const STORAGE_KEYS = {
   cutMarksEnabled: "hqcc.exportPng.cutMarksEnabled",
   cutMarksColor: "hqcc.exportPng.cutMarksColor",
   roundedCorners: "hqcc.exportPng.roundedCorners",
+  pdfPaper: "hqcc.exportPdf.paper",
+  pdfOrientation: "hqcc.exportPdf.orientation",
+  pdfMarginTop: "hqcc.exportPdf.marginTop",
+  pdfMarginRight: "hqcc.exportPdf.marginRight",
+  pdfMarginBottom: "hqcc.exportPdf.marginBottom",
+  pdfMarginLeft: "hqcc.exportPdf.marginLeft",
+  pdfGapX: "hqcc.exportPdf.gapX",
+  pdfGapY: "hqcc.exportPdf.gapY",
+  pdfMode: "hqcc.exportPdf.mode",
+  pdfBleedMode: "hqcc.exportPdf.bleedMode",
+  pdfDuplexPreset: "hqcc.exportPdf.duplexPreset",
 } as const;
 
 export function getExportSettings(): ExportSettings {
@@ -63,6 +79,7 @@ export function getExportSettings(): ExportSettings {
         color: DEFAULT_CUT_MARK_COLOR,
       },
       roundedCorners: DEFAULT_EXPORT_ROUNDED_CORNERS,
+      pdf: DEFAULT_PDF_PRINT_CONFIG,
     };
   }
 
@@ -80,12 +97,40 @@ export function getExportSettings(): ExportSettings {
     STORAGE_KEYS.roundedCorners,
     DEFAULT_EXPORT_ROUNDED_CORNERS,
   );
+  const pdf = normalizePdfPrintConfig({
+    paper: readString(STORAGE_KEYS.pdfPaper, DEFAULT_PDF_PRINT_CONFIG.paper) as PrintConfig["paper"],
+    orientation: readString(
+      STORAGE_KEYS.pdfOrientation,
+      DEFAULT_PDF_PRINT_CONFIG.orientation,
+    ) as PrintConfig["orientation"],
+    marginsMm: {
+      top: readNumber(STORAGE_KEYS.pdfMarginTop, DEFAULT_PDF_PRINT_CONFIG.marginsMm.top),
+      right: readNumber(STORAGE_KEYS.pdfMarginRight, DEFAULT_PDF_PRINT_CONFIG.marginsMm.right),
+      bottom: readNumber(STORAGE_KEYS.pdfMarginBottom, DEFAULT_PDF_PRINT_CONFIG.marginsMm.bottom),
+      left: readNumber(STORAGE_KEYS.pdfMarginLeft, DEFAULT_PDF_PRINT_CONFIG.marginsMm.left),
+    },
+    gapMm: {
+      x: readFloat(STORAGE_KEYS.pdfGapX, DEFAULT_PDF_PRINT_CONFIG.gapMm.x),
+      y: readFloat(STORAGE_KEYS.pdfGapY, DEFAULT_PDF_PRINT_CONFIG.gapMm.y),
+    },
+    mode: readString(STORAGE_KEYS.pdfMode, DEFAULT_PDF_PRINT_CONFIG.mode) as PrintConfig["mode"],
+    bleedMode: readString(
+      STORAGE_KEYS.pdfBleedMode,
+      DEFAULT_PDF_PRINT_CONFIG.bleedMode,
+    ) as PrintConfig["bleedMode"],
+    cardMm: DEFAULT_PDF_PRINT_CONFIG.cardMm,
+    duplexPreset: readString(
+      STORAGE_KEYS.pdfDuplexPreset,
+      DEFAULT_PDF_PRINT_CONFIG.duplexPreset ?? "mirrorX",
+    ) as PrintConfig["duplexPreset"],
+  });
 
   return {
     bleed: { enabled: bleedEnabled, bleedPx, askBeforeExport },
     cropMarks: { enabled: cropMarksEnabled, color: cropMarksColor, style: cropMarksStyle },
     cutMarks: { enabled: cutMarksEnabled, color: cutMarksColor },
     roundedCorners,
+    pdf,
   };
 }
 
@@ -122,6 +167,17 @@ export function setExportSettings(next: ExportSettings): void {
       STORAGE_KEYS.roundedCorners,
       next.roundedCorners ? "1" : "0",
     );
+    window.localStorage.setItem(STORAGE_KEYS.pdfPaper, next.pdf.paper);
+    window.localStorage.setItem(STORAGE_KEYS.pdfOrientation, next.pdf.orientation);
+    window.localStorage.setItem(STORAGE_KEYS.pdfMarginTop, String(Math.max(0, next.pdf.marginsMm.top)));
+    window.localStorage.setItem(STORAGE_KEYS.pdfMarginRight, String(Math.max(0, next.pdf.marginsMm.right)));
+    window.localStorage.setItem(STORAGE_KEYS.pdfMarginBottom, String(Math.max(0, next.pdf.marginsMm.bottom)));
+    window.localStorage.setItem(STORAGE_KEYS.pdfMarginLeft, String(Math.max(0, next.pdf.marginsMm.left)));
+    window.localStorage.setItem(STORAGE_KEYS.pdfGapX, String(Math.max(0, next.pdf.gapMm.x)));
+    window.localStorage.setItem(STORAGE_KEYS.pdfGapY, String(Math.max(0, next.pdf.gapMm.y)));
+    window.localStorage.setItem(STORAGE_KEYS.pdfMode, next.pdf.mode);
+    window.localStorage.setItem(STORAGE_KEYS.pdfBleedMode, next.pdf.bleedMode);
+    window.localStorage.setItem(STORAGE_KEYS.pdfDuplexPreset, next.pdf.duplexPreset ?? "mirrorX");
   } catch {
     // ignore storage failures
   }
@@ -151,6 +207,17 @@ export function readExportSettingKeys(): Record<string, string | null> {
       [STORAGE_KEYS.cutMarksEnabled]: null,
       [STORAGE_KEYS.cutMarksColor]: null,
       [STORAGE_KEYS.roundedCorners]: null,
+      [STORAGE_KEYS.pdfPaper]: null,
+      [STORAGE_KEYS.pdfOrientation]: null,
+      [STORAGE_KEYS.pdfMarginTop]: null,
+      [STORAGE_KEYS.pdfMarginRight]: null,
+      [STORAGE_KEYS.pdfMarginBottom]: null,
+      [STORAGE_KEYS.pdfMarginLeft]: null,
+      [STORAGE_KEYS.pdfGapX]: null,
+      [STORAGE_KEYS.pdfGapY]: null,
+      [STORAGE_KEYS.pdfMode]: null,
+      [STORAGE_KEYS.pdfBleedMode]: null,
+      [STORAGE_KEYS.pdfDuplexPreset]: null,
     };
   }
   return {
@@ -163,6 +230,17 @@ export function readExportSettingKeys(): Record<string, string | null> {
     [STORAGE_KEYS.cutMarksEnabled]: safeGetItem(STORAGE_KEYS.cutMarksEnabled),
     [STORAGE_KEYS.cutMarksColor]: safeGetItem(STORAGE_KEYS.cutMarksColor),
     [STORAGE_KEYS.roundedCorners]: safeGetItem(STORAGE_KEYS.roundedCorners),
+    [STORAGE_KEYS.pdfPaper]: safeGetItem(STORAGE_KEYS.pdfPaper),
+    [STORAGE_KEYS.pdfOrientation]: safeGetItem(STORAGE_KEYS.pdfOrientation),
+    [STORAGE_KEYS.pdfMarginTop]: safeGetItem(STORAGE_KEYS.pdfMarginTop),
+    [STORAGE_KEYS.pdfMarginRight]: safeGetItem(STORAGE_KEYS.pdfMarginRight),
+    [STORAGE_KEYS.pdfMarginBottom]: safeGetItem(STORAGE_KEYS.pdfMarginBottom),
+    [STORAGE_KEYS.pdfMarginLeft]: safeGetItem(STORAGE_KEYS.pdfMarginLeft),
+    [STORAGE_KEYS.pdfGapX]: safeGetItem(STORAGE_KEYS.pdfGapX),
+    [STORAGE_KEYS.pdfGapY]: safeGetItem(STORAGE_KEYS.pdfGapY),
+    [STORAGE_KEYS.pdfMode]: safeGetItem(STORAGE_KEYS.pdfMode),
+    [STORAGE_KEYS.pdfBleedMode]: safeGetItem(STORAGE_KEYS.pdfBleedMode),
+    [STORAGE_KEYS.pdfDuplexPreset]: safeGetItem(STORAGE_KEYS.pdfDuplexPreset),
   };
 }
 
@@ -211,6 +289,14 @@ function readNumber(key: string, fallback: number): number {
   const value = safeGetItem(key);
   if (value == null) return fallback;
   const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed)) return fallback;
+  return parsed;
+}
+
+function readFloat(key: string, fallback: number): number {
+  const value = safeGetItem(key);
+  if (value == null) return fallback;
+  const parsed = Number.parseFloat(value);
   if (Number.isNaN(parsed)) return fallback;
   return parsed;
 }
