@@ -10,8 +10,11 @@ import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import { DeckExportProvider } from "@/components/Decks/context/DeckExportContext";
 import {
+  parseDeckPdfPlaceholderFrontId,
   resolveDeckExportFaceIds,
-  resolveDeckPdfExportSummary,
+  resolveDeckPdfRunData,
+  summarizeDeckPdfRunData,
+  type DeckPdfSetScopeMode,
   type DeckPdfExportSummary,
 } from "@/components/Decks/deck-export";
 import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
@@ -22,15 +25,14 @@ import { useDeckDetailState } from "@/components/Decks/hooks/useDeckDetailState"
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useDecksDragController } from "@/components/Decks/hooks/useDecksDragController";
 import { useDeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
-import DeckPdfExportModal from "@/components/Decks/pdf/DeckPdfExportModal";
 import DeckPdfExportProgressModal from "@/components/Decks/pdf/DeckPdfExportProgressModal";
 import DeckPdfExportSummaryModal from "@/components/Decks/pdf/DeckPdfExportSummaryModal";
+import type { ExportOptionsFormState } from "@/components/Export/ExportOptionsForm";
 import {
   useBulkCardExport,
   type MissingAssetsExportPrompt,
 } from "@/components/Export/hooks/useBulkCardExport";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
-import ExportBleedPrompt, { type ExportPromptResult } from "@/components/Modals/ExportBleedPrompt";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
@@ -52,7 +54,6 @@ import { buildAssetCache } from "@/lib/export-assets-cache";
 import formatMessageWith from "@/lib/format-message-with";
 import {
   buildSingleSheetAlignmentComposition,
-  composeDeckSlotPairs,
   composePrintComposition,
   computeLayoutPlan,
   DEFAULT_PDF_PRINT_CONFIG,
@@ -96,8 +97,22 @@ export default function DecksRoutePanels() {
     deckId: string;
     scope: "decks_grid" | "deck_detail";
   } | null>(null);
-  const [deckPdfFlowStep, setDeckPdfFlowStep] = useState<"summary" | "settings">("summary");
+  const [deckPdfSetScopeMode, setDeckPdfSetScopeMode] = useState<DeckPdfSetScopeMode>("complete");
+  const [deckPdfLayoutMode, setDeckPdfLayoutMode] = useState<"default" | "custom">("default");
+  const [deckPdfBleedMode, setDeckPdfBleedMode] = useState<"default" | "custom">("default");
+  const [deckPdfSelectedSetIds, setDeckPdfSelectedSetIds] = useState<Set<string>>(new Set());
   const [deckPdfRunConfig, setDeckPdfRunConfig] = useState<PrintConfig>(DEFAULT_PDF_PRINT_CONFIG);
+  const [deckPdfRunBleedOptions, setDeckPdfRunBleedOptions] = useState<ExportOptionsFormState>({
+    bleedEnabled: false,
+    bleedPx: 0,
+    askBeforeExport: false,
+    roundedCorners: true,
+    cropMarksEnabled: false,
+    cropMarkColor: "#00FFFF",
+    cropMarkStyle: "lines",
+    cutMarksEnabled: false,
+    cutMarkColor: "#00FFFF",
+  });
   const [deckPdfSummary, setDeckPdfSummary] = useState<DeckPdfExportSummary | null>(null);
   const [isDeckPdfExporting, setIsDeckPdfExporting] = useState(false);
   const [isDeckPdfProgressOpen, setIsDeckPdfProgressOpen] = useState(false);
@@ -106,10 +121,6 @@ export default function DecksRoutePanels() {
   const [deckPdfProgressPhase, setDeckPdfProgressPhase] = useState<string | null>(null);
   const [deckPdfIsCancelling, setDeckPdfIsCancelling] = useState(false);
   const deckPdfCancelRequestedRef = useRef(false);
-  const [pdfPrompt, setPdfPrompt] = useState<{
-    resolve: (result: ExportPromptResult | null) => void;
-    initial: typeof exportSettings;
-  } | null>(null);
   const [pdfRenderTarget, setPdfRenderTarget] = useState<Awaited<
     ReturnType<typeof apiClient.getCard>
   > | null>(null);
@@ -194,39 +205,113 @@ export default function DecksRoutePanels() {
     [t],
   );
 
-  const requestExportOptions = useCallback(async (): Promise<ExportPromptResult | null> => {
-    if (!exportSettings.bleed.askBeforeExport) {
-      return {
-        bleedPx: exportSettings.bleed.enabled ? exportSettings.bleed.bleedPx : 0,
-        cropMarks: {
-          enabled: exportSettings.bleed.enabled ? exportSettings.cropMarks.enabled : false,
-          color: exportSettings.cropMarks.color,
-          style: exportSettings.cropMarks.style ?? "lines",
-        },
-        cutMarks: {
-          enabled: exportSettings.cutMarks.enabled,
-          color: exportSettings.cutMarks.color,
-        },
-        roundedCorners: exportSettings.roundedCorners,
-      };
-    }
+  const resolveDeckPdfBleedOptions = useCallback(() => {
+    const source =
+      deckPdfBleedMode === "custom"
+        ? deckPdfRunBleedOptions
+        : {
+            bleedEnabled: exportSettings.bleed.enabled,
+            bleedPx: exportSettings.bleed.bleedPx,
+            roundedCorners: exportSettings.roundedCorners,
+            cropMarksEnabled: exportSettings.cropMarks.enabled,
+            cropMarkColor: exportSettings.cropMarks.color,
+            cropMarkStyle: exportSettings.cropMarks.style ?? "lines",
+            cutMarksEnabled: exportSettings.cutMarks.enabled,
+            cutMarkColor: exportSettings.cutMarks.color,
+          };
+    return {
+      bleedPx: source.bleedEnabled ? source.bleedPx : 0,
+      cropMarks: {
+        enabled: source.bleedEnabled ? source.cropMarksEnabled : false,
+        color: source.cropMarkColor,
+        style: source.cropMarkStyle,
+      },
+      cutMarks: {
+        enabled: source.cutMarksEnabled,
+        color: source.cutMarkColor,
+      },
+      roundedCorners: source.roundedCorners,
+    };
+  }, [deckPdfBleedMode, deckPdfRunBleedOptions, exportSettings]);
 
-    return new Promise<ExportPromptResult | null>((resolve) => {
-      setPdfPrompt({ resolve, initial: exportSettings });
-    });
-  }, [exportSettings]);
+  const refreshDeckPdfRun = useCallback(
+    async (
+      deckIdValue: string,
+      mode: PrintConfig["mode"],
+      scopeMode: DeckPdfSetScopeMode,
+      selectedSetIds: Set<string>,
+    ) => {
+      const runData = await resolveDeckPdfRunData(deckIdValue, mode, scopeMode, [...selectedSetIds]);
+      const nextSummary = summarizeDeckPdfRunData(runData, mode, scopeMode, selectedSetIds);
+      setDeckPdfSummary(nextSummary);
+      return { runData, nextSummary };
+    },
+    [],
+  );
 
   const startDeckPdfExport = useCallback(
     async (deckIdValue: string, scope: "decks_grid" | "deck_detail") => {
       const initialConfig = normalizePdfPrintConfig(exportSettings.pdf ?? DEFAULT_PDF_PRINT_CONFIG);
-      const summary = await resolveDeckPdfExportSummary(deckIdValue, initialConfig.mode);
+      const initialRunData = await resolveDeckPdfRunData(
+        deckIdValue,
+        initialConfig.mode,
+        "complete",
+        [],
+      );
+      const autoSelectedIds = new Set(
+        initialRunData.sets.filter((set) => set.hasEntries).map((set) => set.setId),
+      );
+      const summary = summarizeDeckPdfRunData(
+        initialRunData,
+        initialConfig.mode,
+        "complete",
+        autoSelectedIds,
+      );
       setDeckPdfRunConfig(initialConfig);
+      setDeckPdfSetScopeMode("complete");
+      setDeckPdfLayoutMode("default");
+      setDeckPdfBleedMode("default");
+      setDeckPdfSelectedSetIds(autoSelectedIds);
+      setDeckPdfRunBleedOptions({
+        bleedEnabled: exportSettings.bleed.enabled,
+        bleedPx: exportSettings.bleed.bleedPx,
+        askBeforeExport: false,
+        roundedCorners: exportSettings.roundedCorners,
+        cropMarksEnabled: exportSettings.cropMarks.enabled,
+        cropMarkColor: exportSettings.cropMarks.color,
+        cropMarkStyle: exportSettings.cropMarks.style ?? "lines",
+        cutMarksEnabled: exportSettings.cutMarks.enabled,
+        cutMarkColor: exportSettings.cutMarks.color,
+      });
       setDeckPdfSummary(summary);
-      setDeckPdfFlowStep("summary");
       setPendingDeckPdfExport({ deckId: deckIdValue, scope });
     },
-    [exportSettings.pdf],
+    [exportSettings],
   );
+
+  useEffect(() => {
+    const pending = pendingDeckPdfExport;
+    if (!pending) return;
+    let active = true;
+    void refreshDeckPdfRun(
+      pending.deckId,
+      deckPdfRunConfig.mode,
+      deckPdfSetScopeMode,
+      deckPdfSelectedSetIds,
+    ).then(({ nextSummary }) => {
+      if (!active) return;
+      setDeckPdfSummary(nextSummary);
+    });
+    return () => {
+      active = false;
+    };
+  }, [
+    deckPdfRunConfig.mode,
+    deckPdfSelectedSetIds,
+    deckPdfSetScopeMode,
+    pendingDeckPdfExport,
+    refreshDeckPdfRun,
+  ]);
 
   const openDeckPdfProgress = useCallback((total: number) => {
     deckPdfCancelRequestedRef.current = false;
@@ -247,20 +332,28 @@ export default function DecksRoutePanels() {
   }, []);
 
   const runDeckPdfExport = useCallback(
-    async (config: PrintConfig) => {
+    async () => {
       const pending = pendingDeckPdfExport;
       if (!pending) return;
+      const effectiveConfig =
+        deckPdfLayoutMode === "custom"
+          ? deckPdfRunConfig
+          : normalizePdfPrintConfig(exportSettings.pdf ?? DEFAULT_PDF_PRINT_CONFIG);
+      const exportOptions = resolveDeckPdfBleedOptions();
 
-      const exportOptions = await requestExportOptions();
-      if (!exportOptions) return;
-
-      const layout = computeLayoutPlan(config);
+      const layout = computeLayoutPlan(effectiveConfig);
       if (layout.grid.perPage <= 0) {
         window.alert(t("decks.pdf.errors.layoutCapacity"));
         return;
       }
 
-      const slotPairs = await composeDeckSlotPairs(pending.deckId, config.mode);
+      const { runData } = await refreshDeckPdfRun(
+        pending.deckId,
+        effectiveConfig.mode,
+        deckPdfSetScopeMode,
+        deckPdfSelectedSetIds,
+      );
+      const slotPairs = runData.slotPairs;
       if (!slotPairs.length) {
         window.alert(t("alert.selectCardToExport"));
         return;
@@ -274,7 +367,7 @@ export default function DecksRoutePanels() {
       const totalFaces = composition.sheets.reduce((sum, sheet) => {
         for (const slot of sheet.slots) {
           if (slot.frontId) sum += 1;
-          if (config.mode === "frontAndBack" && slot.backId) sum += 1;
+          if (effectiveConfig.mode === "frontAndBack" && slot.backId) sum += 1;
         }
         return sum;
       }, 0);
@@ -287,6 +380,55 @@ export default function DecksRoutePanels() {
         }
         if (cachedPngByFaceId.has(faceId)) {
           return cachedPngByFaceId.get(faceId) ?? null;
+        }
+        const placeholder = parseDeckPdfPlaceholderFrontId(faceId);
+        if (placeholder) {
+          const set = runData.sets.find((item) => item.setId === placeholder.setId) ?? null;
+          const base = document.createElement("canvas");
+          base.width = CARD_WIDTH;
+          base.height = CARD_HEIGHT;
+          const ctx = base.getContext("2d");
+          if (!ctx) return null;
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, base.width, base.height);
+          ctx.strokeStyle = "#222222";
+          ctx.lineWidth = 1;
+          const edgeInset = 0.5;
+          const insetX = edgeInset;
+          const insetY = edgeInset;
+          const borderWidth = base.width - edgeInset * 2;
+          const borderHeight = base.height - edgeInset * 2;
+          const radius = Math.max(0, CARD_CORNER_RADIUS - edgeInset);
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(insetX, insetY, borderWidth, borderHeight, radius);
+          }
+          ctx.stroke();
+          ctx.fillStyle = "#111111";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.font = "700 28px sans-serif";
+          ctx.fillText("EMPTY FRONT", base.width / 2, base.height * 0.45);
+          ctx.font = "500 16px sans-serif";
+          ctx.fillText(set?.setTitle ?? "Set", base.width / 2, base.height * 0.55);
+          const finalCanvas =
+            exportOptions.bleedPx > 0 || exportOptions.cropMarks.enabled || exportOptions.cutMarks.enabled
+              ? composeBleedCanvas({
+                  fullCanvas: base,
+                  backgroundCanvas: base,
+                  bleedPx: exportOptions.bleedPx,
+                  renderBleedBands: false,
+                  cropMarks: exportOptions.cropMarks,
+                  cutMarks: exportOptions.cutMarks,
+                })
+              : base;
+          const blob = await new Promise<Blob | null>((resolve) =>
+            finalCanvas.toBlob((nextBlob) => resolve(nextBlob), "image/png"),
+          );
+          if (!blob) return null;
+          const bytes = new Uint8Array(await blob.arrayBuffer());
+          cachedPngByFaceId.set(faceId, bytes);
+          return bytes;
         }
         const card = await apiClient.getCard({ params: { id: faceId } }).catch(() => null);
         if (!card) {
@@ -329,10 +471,10 @@ export default function DecksRoutePanels() {
       try {
         const now = new Date().toISOString().replace(/[:.]/g, "-");
         const pdfResult = await renderPdf({
-          config,
+          config: effectiveConfig,
           layout,
           composition,
-          fileName: `heroquest-deck-${pending.deckId}-${config.mode}-${now}.pdf`,
+          fileName: `heroquest-deck-${pending.deckId}-${effectiveConfig.mode}-${now}.pdf`,
           renderFacePngBytes,
           shouldCancel: () => deckPdfCancelRequestedRef.current,
           onPhase: (phase) => {
@@ -366,24 +508,43 @@ export default function DecksRoutePanels() {
         setPdfRenderTarget(null);
       }
     },
-    [closeDeckPdfProgress, openDeckPdfProgress, pendingDeckPdfExport, requestExportOptions, t],
+    [
+      closeDeckPdfProgress,
+      deckPdfLayoutMode,
+      deckPdfRunConfig,
+      deckPdfSelectedSetIds,
+      deckPdfSetScopeMode,
+      exportSettings.pdf,
+      openDeckPdfProgress,
+      pendingDeckPdfExport,
+      refreshDeckPdfRun,
+      resolveDeckPdfBleedOptions,
+      t,
+    ],
   );
 
   const runDeckPdfAlignmentTestExport = useCallback(
-    async (config: PrintConfig) => {
+    async () => {
       const pending = pendingDeckPdfExport;
       if (!pending) return;
-
-      const exportOptions = await requestExportOptions();
-      if (!exportOptions) return;
-
-      const layout = computeLayoutPlan(config);
+      const effectiveConfig =
+        deckPdfLayoutMode === "custom"
+          ? deckPdfRunConfig
+          : normalizePdfPrintConfig(exportSettings.pdf ?? DEFAULT_PDF_PRINT_CONFIG);
+      const exportOptions = resolveDeckPdfBleedOptions();
+      const layout = computeLayoutPlan(effectiveConfig);
       if (layout.grid.perPage <= 0) {
         window.alert(t("decks.pdf.errors.layoutCapacity"));
         return;
       }
 
-      const slotPairs = await composeDeckSlotPairs(pending.deckId, config.mode);
+      const { runData } = await refreshDeckPdfRun(
+        pending.deckId,
+        effectiveConfig.mode,
+        deckPdfSetScopeMode,
+        deckPdfSelectedSetIds,
+      );
+      const slotPairs = runData.slotPairs;
       if (!slotPairs.length) {
         window.alert(t("alert.selectCardToExport"));
         return;
@@ -391,7 +552,7 @@ export default function DecksRoutePanels() {
 
       const alignmentComposition = buildSingleSheetAlignmentComposition(
         layout.grid.perPage,
-        config.mode === "frontAndBack",
+        effectiveConfig.mode === "frontAndBack",
       );
       if (!alignmentComposition.sheets.length) {
         window.alert(t("decks.pdf.errors.noSheets"));
@@ -400,7 +561,7 @@ export default function DecksRoutePanels() {
       const totalFaces = alignmentComposition.sheets.reduce((sum, sheet) => {
         for (const slot of sheet.slots) {
           if (slot.frontId) sum += 1;
-          if (config.mode === "frontAndBack" && slot.backId) sum += 1;
+          if (effectiveConfig.mode === "frontAndBack" && slot.backId) sum += 1;
         }
         return sum;
       }, 0);
@@ -522,7 +683,7 @@ export default function DecksRoutePanels() {
       try {
         const now = new Date().toISOString().replace(/[:.]/g, "-");
         const pdfResult = await renderPdf({
-          config,
+          config: effectiveConfig,
           layout,
           composition: alignmentComposition,
           fileName: `heroquest-deck-${pending.deckId}-alignment-test-${now}.pdf`,
@@ -558,7 +719,19 @@ export default function DecksRoutePanels() {
         closeDeckPdfProgress();
       }
     },
-    [closeDeckPdfProgress, openDeckPdfProgress, pendingDeckPdfExport, requestExportOptions, t],
+    [
+      closeDeckPdfProgress,
+      deckPdfLayoutMode,
+      deckPdfRunConfig,
+      deckPdfSelectedSetIds,
+      deckPdfSetScopeMode,
+      exportSettings.pdf,
+      openDeckPdfProgress,
+      pendingDeckPdfExport,
+      refreshDeckPdfRun,
+      resolveDeckPdfBleedOptions,
+      t,
+    ],
   );
 
   const createSetFromBackFace = async (
@@ -862,38 +1035,43 @@ export default function DecksRoutePanels() {
           </div>
         ) : null}
       </ConfirmModal>
-      <DeckPdfExportModal
-        isOpen={Boolean(pendingDeckPdfExport) && deckPdfFlowStep === "settings"}
-        initialConfig={deckPdfRunConfig}
-        onCancel={() => setDeckPdfFlowStep("summary")}
-        onConfirm={async (nextConfig) => {
-          const normalized = normalizePdfPrintConfig(nextConfig);
-          setDeckPdfRunConfig(normalized);
-          if (pendingDeckPdfExport) {
-            const summary = await resolveDeckPdfExportSummary(
-              pendingDeckPdfExport.deckId,
-              normalized.mode,
-            );
-            setDeckPdfSummary(summary);
-          }
-          setDeckPdfFlowStep("summary");
-        }}
-      />
       <DeckPdfExportSummaryModal
-        isOpen={Boolean(pendingDeckPdfExport) && deckPdfFlowStep === "summary"}
+        isOpen={Boolean(pendingDeckPdfExport)}
         isExporting={isDeckPdfExporting}
         summary={deckPdfSummary}
         config={deckPdfRunConfig}
+        bleedOptions={deckPdfRunBleedOptions}
+        setScopeMode={deckPdfSetScopeMode}
+        layoutMode={deckPdfLayoutMode}
+        bleedMode={deckPdfBleedMode}
+        selectedSetIds={deckPdfSelectedSetIds}
         onCancel={() => {
           if (isDeckPdfExporting) return;
           setPendingDeckPdfExport(null);
           setDeckPdfSummary(null);
-          setDeckPdfFlowStep("summary");
+          setDeckPdfSetScopeMode("complete");
+          setDeckPdfLayoutMode("default");
+          setDeckPdfBleedMode("default");
+          setDeckPdfSelectedSetIds(new Set());
           setDeckPdfRunConfig(normalizePdfPrintConfig(exportSettings.pdf ?? DEFAULT_PDF_PRINT_CONFIG));
         }}
-        onAdjustSettings={() => setDeckPdfFlowStep("settings")}
-        onExport={() => runDeckPdfExport(deckPdfRunConfig)}
-        onExportAlignmentTest={() => runDeckPdfAlignmentTestExport(deckPdfRunConfig)}
+        onSetScopeMode={(mode) => setDeckPdfSetScopeMode(mode)}
+        onLayoutMode={(mode) => setDeckPdfLayoutMode(mode)}
+        onBleedMode={(mode) => setDeckPdfBleedMode(mode)}
+        onToggleSet={(setId) =>
+          setDeckPdfSelectedSetIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(setId)) next.delete(setId);
+            else next.add(setId);
+            return next;
+          })
+        }
+        onConfigChange={(next) => setDeckPdfRunConfig(normalizePdfPrintConfig(next))}
+        onBleedOptionsChange={(next) =>
+          setDeckPdfRunBleedOptions((prev) => ({ ...prev, ...next }))
+        }
+        onExport={() => runDeckPdfExport()}
+        onExportAlignmentTest={() => runDeckPdfAlignmentTestExport()}
       />
       <DeckPdfExportProgressModal
         isOpen={isDeckPdfProgressOpen}
@@ -907,31 +1085,6 @@ export default function DecksRoutePanels() {
           setDeckPdfIsCancelling(true);
         }}
       />
-      {pdfPrompt ? (
-        <ExportBleedPrompt
-          isOpen={Boolean(pdfPrompt)}
-          initialBleedEnabled={pdfPrompt.initial.bleed.enabled}
-          initialBleedPx={pdfPrompt.initial.bleed.bleedPx}
-          initialCropMarksEnabled={pdfPrompt.initial.cropMarks.enabled}
-          initialCropMarkColor={pdfPrompt.initial.cropMarks.color}
-          initialCropMarkStyle={pdfPrompt.initial.cropMarks.style ?? "lines"}
-          initialCutMarksEnabled={pdfPrompt.initial.cutMarks.enabled}
-          initialCutMarkColor={pdfPrompt.initial.cutMarks.color}
-          initialRoundedCorners={pdfPrompt.initial.roundedCorners}
-          onConfirm={(result) => {
-            const prompt = pdfPrompt;
-            if (!prompt) return;
-            setPdfPrompt(null);
-            prompt.resolve(result);
-          }}
-          onCancel={() => {
-            const prompt = pdfPrompt;
-            if (!prompt) return;
-            setPdfPrompt(null);
-            prompt.resolve(null);
-          }}
-        />
-      ) : null}
       {pdfRenderTarget ? (
         <div style={{ position: "fixed", left: -99999, top: -99999, pointerEvents: "none" }} aria-hidden="true">
           <CardPreview

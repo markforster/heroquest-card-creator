@@ -17,14 +17,34 @@ export type DeckPdfExcludedSet = {
   backFaceId: string | null;
 };
 
+export type DeckPdfSetScopeMode = "complete" | "all" | "selected";
+
+export type DeckPdfSetMeta = {
+  setId: string;
+  setTitle: string;
+  backFaceId: string | null;
+  hasEntries: boolean;
+};
+
+export type DeckPdfRunData = {
+  sets: DeckPdfSetMeta[];
+  selectedSetIds: string[];
+  slotPairs: {
+    slotId: string;
+    frontId: string | null;
+    backId: string | null;
+  }[];
+};
+
 export type DeckPdfExportSummary = {
   includedSetCount: number;
-  excludedSetCount: number;
+  emptyIncludedSetCount: number;
+  emptyExcludedSetCount: number;
   totalEntryQuantity: number;
   frontFaceCount: number;
   backFaceCount: number;
   totalFaceCount: number;
-  excludedSets: DeckPdfExcludedSet[];
+  sets: DeckPdfSetMeta[];
 };
 
 export async function resolveDeckExportFaceIds(deckId: string): Promise<DeckExportFaceIdsResult> {
@@ -81,42 +101,122 @@ export async function resolveDeckPdfExportSummary(
   deckId: string,
   mode: "frontsOnly" | "frontAndBack",
 ): Promise<DeckPdfExportSummary> {
+  const runData = await resolveDeckPdfRunData(deckId, mode, "complete", []);
+  return summarizeDeckPdfRunData(runData, mode, "complete", new Set(runData.selectedSetIds));
+}
+
+export function createDeckPdfPlaceholderFrontId(setId: string): string {
+  return `deck-empty-front:${setId}`;
+}
+
+export function parseDeckPdfPlaceholderFrontId(faceId: string): { setId: string } | null {
+  const prefix = "deck-empty-front:";
+  if (!faceId.startsWith(prefix)) return null;
+  const setId = faceId.slice(prefix.length);
+  if (!setId) return null;
+  return { setId };
+}
+
+export function summarizeDeckPdfRunData(
+  runData: DeckPdfRunData,
+  mode: "frontsOnly" | "frontAndBack",
+  scopeMode: DeckPdfSetScopeMode,
+  selectedSetIds: Set<string>,
+): DeckPdfExportSummary {
+  const includedBySetId = new Set<string>();
+  const emptyIncludedBySetId = new Set<string>();
+  const setsById = new Map(runData.sets.map((set) => [set.setId, set]));
+  for (const slot of runData.slotPairs) {
+    const setId = slot.slotId.split(":")[0] ?? "";
+    if (!setId) continue;
+    includedBySetId.add(setId);
+    const set = setsById.get(setId);
+    if (set && !set.hasEntries) emptyIncludedBySetId.add(setId);
+  }
+
+  const emptyExcludedSetCount = runData.sets.reduce((sum, set) => {
+    if (set.hasEntries) return sum;
+    if (scopeMode === "all") return sum;
+    if (scopeMode === "complete") return sum + 1;
+    return selectedSetIds.has(set.setId) ? sum : sum + 1;
+  }, 0);
+
+  const totalEntryQuantity = runData.slotPairs.length;
+  const frontFaceCount = totalEntryQuantity;
+  const backFaceCount = mode === "frontAndBack" ? totalEntryQuantity : 0;
+  const totalFaceCount = frontFaceCount + backFaceCount;
+  return {
+    includedSetCount: includedBySetId.size,
+    emptyIncludedSetCount: emptyIncludedBySetId.size,
+    emptyExcludedSetCount,
+    totalEntryQuantity,
+    frontFaceCount,
+    backFaceCount,
+    totalFaceCount,
+    sets: runData.sets,
+  };
+}
+
+export async function resolveDeckPdfRunData(
+  deckId: string,
+  mode: "frontsOnly" | "frontAndBack",
+  scopeMode: DeckPdfSetScopeMode,
+  selectedSetIds: string[],
+): Promise<DeckPdfRunData> {
   const [sets, cards] = await Promise.all([
     apiClient.listDeckSets({ params: { deckId } }),
     apiClient.listCards(),
   ]);
 
   const cardTitleById = new Map(cards.map((card) => [card.id, card.name || card.title || card.id]));
+  const pairMap = await listPairsMap();
   const entriesBySet = await Promise.all(
     sets.map(async (set) => ({
       set,
-      entries: await apiClient.listDeckEntries({ params: { setId: set.id } }),
+      entries: (await apiClient.listDeckEntries({ params: { setId: set.id } })).sort(
+        (a, b) => a.sortIndex - b.sortIndex,
+      ),
     })),
   );
+  const setMeta: DeckPdfSetMeta[] = entriesBySet.map(({ set, entries }) => ({
+    setId: set.id,
+    setTitle: set.title ?? cardTitleById.get(set.backFaceId) ?? set.id,
+    backFaceId: set.backFaceId ?? null,
+    hasEntries: entries.length > 0,
+  }));
+  const selected = new Set(selectedSetIds);
+  const effectiveSetMeta = setMeta.filter((set) => {
+    if (scopeMode === "all") return true;
+    if (scopeMode === "complete") return set.hasEntries;
+    return selected.has(set.setId);
+  });
+  const includeEmptyPlaceholders = scopeMode === "all";
+  const slotPairs: DeckPdfRunData["slotPairs"] = [];
+  for (const set of effectiveSetMeta) {
+    const setEntries = entriesBySet.find((row) => row.set.id === set.setId)?.entries ?? [];
+    if (!setEntries.length) {
+      if (includeEmptyPlaceholders) {
+        slotPairs.push({
+          slotId: `${set.setId}:empty:0`,
+          frontId: createDeckPdfPlaceholderFrontId(set.setId),
+          backId: mode === "frontAndBack" ? set.backFaceId : null,
+        });
+      }
+      continue;
+    }
+    for (const entry of setEntries) {
+      const frontId = pairMap.get(entry.pairId)?.frontFaceId ?? null;
+      if (!frontId) continue;
+      const count = Math.max(1, entry.count ?? 1);
+      for (let copyIndex = 0; copyIndex < count; copyIndex += 1) {
+        slotPairs.push({
+          slotId: `${set.setId}:${entry.id}:${copyIndex}`,
+          frontId,
+          backId: mode === "frontAndBack" ? set.backFaceId : null,
+        });
+      }
+    }
+  }
 
-  const included = entriesBySet.filter(({ entries }) => entries.length > 0);
-  const excluded = entriesBySet.filter(({ entries }) => entries.length === 0);
-  const totalEntryQuantity = included.reduce(
-    (sum, { entries }) =>
-      sum +
-      entries.reduce((entrySum, entry) => entrySum + Math.max(1, entry.count ?? 1), 0),
-    0,
-  );
-  const frontFaceCount = totalEntryQuantity;
-  const backFaceCount = mode === "frontAndBack" ? totalEntryQuantity : 0;
-  const totalFaceCount = frontFaceCount + backFaceCount;
-
-  return {
-    includedSetCount: included.length,
-    excludedSetCount: excluded.length,
-    totalEntryQuantity,
-    frontFaceCount,
-    backFaceCount,
-    totalFaceCount,
-    excludedSets: excluded.map(({ set }) => ({
-      setId: set.id,
-      setTitle: set.title ?? cardTitleById.get(set.backFaceId) ?? set.id,
-      backFaceId: set.backFaceId ?? null,
-    })),
-  };
+  return { sets: setMeta, selectedSetIds, slotPairs };
 }

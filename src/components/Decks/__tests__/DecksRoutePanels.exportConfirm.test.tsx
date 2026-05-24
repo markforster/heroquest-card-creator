@@ -24,6 +24,7 @@ jest.mock("@/components/Export/hooks/useBulkCardExport", () => ({
 }));
 
 jest.mock("@/components/Decks/DecksGridPanel", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useDeckExport } = require("@/components/Decks/context/DeckExportContext");
   return function MockDecksGridPanel() {
     const ctx = useDeckExport();
@@ -46,6 +47,16 @@ jest.mock("@/components/Providers/ExportSettingsContext", () => ({
       cropMarks: { enabled: false, color: "#00FFFF", style: "lines" },
       cutMarks: { enabled: false, color: "#00FFFF" },
       roundedCorners: true,
+      pdf: {
+        paper: "A4",
+        orientation: "landscape",
+        marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
+        gapMm: { x: 0.5, y: 0.5 },
+        cardMm: { width: 63.5, height: 89 },
+        mode: "frontAndBack",
+        bleedMode: "bakedInImage",
+        duplexPreset: "mirrorX",
+      },
     },
   }),
 }));
