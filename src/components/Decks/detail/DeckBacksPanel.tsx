@@ -511,7 +511,7 @@ export default function DeckBacksPanel({
           )}
         </div>
         <div
-          className={`nav nav-pills flex-column ${styles.deckBacksTabRail}`}
+          className={styles.deckBacksTabRail}
           role="tablist"
           aria-label={t("decks.faces.mode")}
           aria-orientation="vertical"

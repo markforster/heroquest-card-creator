@@ -1427,6 +1427,7 @@
   background: linear-gradient(135deg, var(--hq-right-panel-bg-start), var(--hq-surface-900));
   padding: 0;
   border-left: 1px solid var(--hq-border-strong);
+  box-sizing: border-box;
   color: var(--hq-text);
   font-size: var(--text-xl);
   overflow: hidden;
@@ -7164,17 +7165,18 @@ button.assetsKindBadge:disabled {
 }
 
 .decksRightPanelExpanded {
-  flex: 0 0 calc(var(--deck-right-rail-w) + var(--deck-right-view-effective-w));
-  width: calc(var(--deck-right-rail-w) + var(--deck-right-view-effective-w));
-  min-width: calc(var(--deck-right-rail-w) + var(--deck-right-view-effective-w));
-  max-width: calc(var(--deck-right-rail-w) + var(--deck-right-view-effective-w));
+  flex: 0 0 calc(var(--deck-right-rail-w) + var(--deck-right-view-effective-w) + 1px);
+  width: calc(var(--deck-right-rail-w) + var(--deck-right-view-effective-w) + 1px);
+  min-width: calc(var(--deck-right-rail-w) + var(--deck-right-view-effective-w) + 1px);
+  max-width: calc(var(--deck-right-rail-w) + var(--deck-right-view-effective-w) + 1px);
 }
 
 .decksRightPanelCollapsed {
-  flex: 0 0 var(--deck-right-rail-w);
-  width: var(--deck-right-rail-w);
-  min-width: var(--deck-right-rail-w);
-  max-width: var(--deck-right-rail-w);
+  flex: 0 0 calc(var(--deck-right-rail-w) + 1px);
+  width: calc(var(--deck-right-rail-w) + 1px);
+  min-width: calc(var(--deck-right-rail-w) + 1px);
+  max-width: calc(var(--deck-right-rail-w) + 1px);
+  gap: 0;
 }
 
 .decksRightSection {
@@ -8462,8 +8464,12 @@ button.assetsKindBadge:disabled {
 
 .deckBacksTabRail {
   flex: 0 0 var(--deck-right-rail-w);
+  width: var(--deck-right-rail-w);
   min-width: var(--deck-right-rail-w);
+  max-width: var(--deck-right-rail-w);
   flex-shrink: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
   padding: calc(var(--space-10) + 22px + var(--space-8)) var(--space-3) var(--space-4) 0;
   border-left: 0;
   display: flex;
@@ -8488,6 +8494,7 @@ button.assetsKindBadge:disabled {
 
 .deckBacksTabButton {
   border: 1px solid var(--hq-black-60) !important;
+  box-sizing: border-box;
   border-radius: var(--radius-lg) !important;
   background: var(--hq-white-05) !important;
   color: var(--hq-text-muted) !important;
@@ -8498,7 +8505,7 @@ button.assetsKindBadge:disabled {
   align-items: center;
   justify-content: center;
   padding: var(--space-1) !important;
-  margin-left: -1px !important;
+  margin-left: 0 !important;
   border-left: 0 !important;
   border-top-left-radius: 0 !important;
   border-bottom-left-radius: 0 !important;
@@ -8541,7 +8548,7 @@ button.assetsKindBadge:disabled {
 .deckBacksTabButton[aria-selected="true"]::after {
   content: "";
   position: absolute;
-  left: -1px;
+  left: 0;
   top: -1px;
   bottom: -1px;
   width: 2px;
@@ -8562,6 +8569,7 @@ button.assetsKindBadge:disabled {
   flex-direction: column;
   overflow: hidden;
   background: var(--deck-backs-view-bg);
+  box-sizing: border-box;
   border-right: 1px solid var(--hq-border-strong);
 }
 
@@ -8574,11 +8582,14 @@ button.assetsKindBadge:disabled {
 }
 
 .deckBacksMainClosed {
-  width: 3px;
-  min-width: 3px;
+  flex: 0 0 0;
+  width: 0;
+  min-width: 0;
+  max-width: 0;
   opacity: 1;
   pointer-events: none;
   overflow: hidden;
+  border-right: 0;
 }
 
 .deckMetaPanel {
