@@ -1434,6 +1434,13 @@
   --inspector-label-field-gap: var(--space-8);
 }
 
+.assetsRightPanel {
+  flex: 0 0 520px;
+  width: 520px;
+  min-width: 520px;
+  max-width: 520px;
+}
+
 .inspectorTop {
   flex: 0 0 auto;
   margin-bottom: var(--space-10);
