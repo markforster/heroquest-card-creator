@@ -197,4 +197,28 @@ describe("DecksGridPanel grid refresh", () => {
     await waitFor(() => expect(model.submitDeckDraft).toHaveBeenCalled());
     expect(mockNavigate).not.toHaveBeenCalledWith("/decks/d1");
   });
+
+  it("submit in create mode navigates to created deck", async () => {
+    const model = createModel({ submitDeckDraft: jest.fn().mockResolvedValue("d1") });
+    mockUseDecksGridModel.mockReturnValue(model);
+    render(<DecksGridPanel />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Create deck" }));
+    fireEvent.click(screen.getByRole("heading", { name: "Create deck" }).closest("div")!.parentElement!.querySelector('button[type="submit"]') as HTMLButtonElement);
+
+    await waitFor(() => expect(model.submitDeckDraft).toHaveBeenCalled());
+    expect(mockNavigate).toHaveBeenCalledWith("/decks/d1");
+  });
+
+  it("submit in create mode does not navigate when create returns null id", async () => {
+    const model = createModel({ submitDeckDraft: jest.fn().mockResolvedValue(null) });
+    mockUseDecksGridModel.mockReturnValue(model);
+    render(<DecksGridPanel />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Create deck" }));
+    fireEvent.click(screen.getByRole("heading", { name: "Create deck" }).closest("div")!.parentElement!.querySelector('button[type="submit"]') as HTMLButtonElement);
+
+    await waitFor(() => expect(model.submitDeckDraft).toHaveBeenCalled());
+    expect(mockNavigate).not.toHaveBeenCalledWith("/decks/d1");
+  });
 });

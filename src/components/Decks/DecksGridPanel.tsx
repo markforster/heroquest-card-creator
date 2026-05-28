@@ -11,7 +11,7 @@ import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useNavigate } from "react-router-dom";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
 const PREVIEW_VARIANT = "smMd";
@@ -44,20 +44,6 @@ export default function DecksGridPanel() {
   };
   const decksGridRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const pendingScrollDeckIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const pendingId = pendingScrollDeckIdRef.current;
-    if (!pendingId) return;
-    if (model.selectedDeckId !== pendingId) return;
-    if (!model.decks.some((deck) => deck.id === pendingId)) return;
-    const target = decksGridRef.current?.querySelector<HTMLButtonElement>(
-      `[data-deck-id="${pendingId}"]`,
-    );
-    if (!target) return;
-    target.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
-    pendingScrollDeckIdRef.current = null;
-  }, [model.decks, model.selectedDeckId]);
 
   return (
     <>
@@ -252,8 +238,8 @@ export default function DecksGridPanel() {
           onSubmit={async (event) => {
             event.preventDefault();
             const deckId = await model.submitDeckDraft();
-            if (!isEditMode) pendingScrollDeckIdRef.current = deckId ?? null;
             closeDeckModal();
+            if (!isEditMode && deckId) navigate(`/decks/${deckId}`);
           }}
         >
           <div className="d-flex flex-column gap-2">
