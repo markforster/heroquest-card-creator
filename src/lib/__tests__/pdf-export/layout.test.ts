@@ -28,4 +28,19 @@ describe("pdf-export layout", () => {
       expect(plan.placements[1].innerRectMm.yMm).toBe(plan.placements[0].innerRectMm.yMm);
     }
   });
+
+  it("fits 4x2 trim slots on A4 landscape with default poker sizing", () => {
+    const plan = computeLayoutPlan({
+      ...config,
+      orientation: "landscape",
+      marginsMm: { top: 0, right: 0, bottom: 0, left: 0 },
+      gapMm: { x: 0, y: 0 },
+      cardMm: { width: 63.5, height: 88.9 },
+      bleedMm: 3,
+    });
+
+    expect(plan.grid.cols).toBe(4);
+    expect(plan.grid.rows).toBe(2);
+    expect(plan.grid.perPage).toBe(8);
+  });
 });

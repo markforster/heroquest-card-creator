@@ -3,8 +3,8 @@ import type { PrintConfig } from "@/lib/pdf-export/types";
 export const DEFAULT_PDF_PRINT_CONFIG: PrintConfig = {
   paper: "A4",
   orientation: "landscape",
-  marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
-  gapMm: { x: 0.5, y: 0.5 },
+  marginsMm: { top: 0, right: 0, bottom: 0, left: 0 },
+  gapMm: { x: 0, y: 0 },
   cardMm: { width: 63.5, height: 88.9 },
   mode: "frontAndBack",
   bleedMode: "bakedInImage",
@@ -18,14 +18,14 @@ export function normalizePdfPrintConfig(value: Partial<PrintConfig> | null | und
     paper: next.paper === "Letter" ? "Letter" : "A4",
     orientation: next.orientation === "portrait" ? "portrait" : "landscape",
     marginsMm: {
-      top: Number.isFinite(next.marginsMm?.top) ? Math.max(0, Number(next.marginsMm?.top)) : 10,
-      right: Number.isFinite(next.marginsMm?.right) ? Math.max(0, Number(next.marginsMm?.right)) : 10,
-      bottom: Number.isFinite(next.marginsMm?.bottom) ? Math.max(0, Number(next.marginsMm?.bottom)) : 10,
-      left: Number.isFinite(next.marginsMm?.left) ? Math.max(0, Number(next.marginsMm?.left)) : 10,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
     },
     gapMm: {
-      x: Number.isFinite(next.gapMm?.x) ? Math.max(0, Number(next.gapMm?.x)) : 0.5,
-      y: Number.isFinite(next.gapMm?.y) ? Math.max(0, Number(next.gapMm?.y)) : 0.5,
+      x: 0,
+      y: 0,
     },
     cardMm: {
       width: Number.isFinite(next.cardMm?.width) ? Math.max(1, Number(next.cardMm?.width)) : 63.5,
