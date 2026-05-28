@@ -4,6 +4,13 @@ import { renderPdf } from "@/lib/pdf-export/render-pdf";
 
 import type { PrintConfig } from "@/lib/pdf-export/types";
 
+jest.mock("@/generated/embeddedAssets", () => ({
+  embeddedImagesByFileName: {
+    "thqcc-qr.jpg":
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+y6gAAAABJRU5ErkJggg==",
+  },
+}));
+
 const ONE_BY_ONE_PNG_BYTES = Uint8Array.from(
   Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+y6gAAAABJRU5ErkJggg==",
@@ -17,9 +24,10 @@ describe("pdf-export renderPdf", () => {
     orientation: "portrait",
     marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
     gapMm: { x: 1, y: 1 },
-    cardMm: { width: 63.5, height: 89 },
+    cardMm: { width: 63.5, height: 88.9 },
     mode: "frontsOnly",
     bleedMode: "bakedInImage",
+    bleedMm: 3,
   };
 
   it("reports progress and finalizing phase", async () => {
@@ -33,8 +41,16 @@ describe("pdf-export renderPdf", () => {
         paperMm: { width: 210, height: 297 },
         grid: { cols: 1, rows: 2, perPage: 2 },
         placements: [
-          { slotIndex: 0, xMm: 10, yMm: 10, wMm: 63.5, hMm: 89 },
-          { slotIndex: 1, xMm: 10, yMm: 100, wMm: 63.5, hMm: 89 },
+          {
+            slotIndex: 0,
+            innerRectMm: { xMm: 13, yMm: 13, wMm: 63.5, hMm: 88.9 },
+            outerRectMm: { xMm: 10, yMm: 10, wMm: 69.5, hMm: 94.9 },
+          },
+          {
+            slotIndex: 1,
+            innerRectMm: { xMm: 13, yMm: 110.9, wMm: 63.5, hMm: 88.9 },
+            outerRectMm: { xMm: 10, yMm: 107.9, wMm: 69.5, hMm: 94.9 },
+          },
         ],
       },
       composition: {
@@ -71,7 +87,13 @@ describe("pdf-export renderPdf", () => {
       layout: {
         paperMm: { width: 210, height: 297 },
         grid: { cols: 1, rows: 1, perPage: 1 },
-        placements: [{ slotIndex: 0, xMm: 10, yMm: 10, wMm: 63.5, hMm: 89 }],
+        placements: [
+          {
+            slotIndex: 0,
+            innerRectMm: { xMm: 13, yMm: 13, wMm: 63.5, hMm: 88.9 },
+            outerRectMm: { xMm: 10, yMm: 10, wMm: 69.5, hMm: 94.9 },
+          },
+        ],
       },
       composition: {
         totalSlots: 1,
@@ -93,7 +115,13 @@ describe("pdf-export renderPdf", () => {
       layout: {
         paperMm: { width: 210, height: 297 },
         grid: { cols: 1, rows: 1, perPage: 1 },
-        placements: [{ slotIndex: 0, xMm: 10, yMm: 10, wMm: 63.5, hMm: 89 }],
+        placements: [
+          {
+            slotIndex: 0,
+            innerRectMm: { xMm: 13, yMm: 13, wMm: 63.5, hMm: 88.9 },
+            outerRectMm: { xMm: 10, yMm: 10, wMm: 69.5, hMm: 94.9 },
+          },
+        ],
       },
       composition: {
         totalSlots: 1,
@@ -105,5 +133,34 @@ describe("pdf-export renderPdf", () => {
     });
 
     expect(result.status).toBe("cancelled");
+  });
+
+  it("supports layoutBleed mode and adds optional calibration page", async () => {
+    const result = await renderPdf({
+      config: { ...config, bleedMode: "layoutBleed", mode: "frontsOnly" },
+      layout: {
+        paperMm: { width: 210, height: 297 },
+        grid: { cols: 1, rows: 1, perPage: 1 },
+        placements: [
+          {
+            slotIndex: 0,
+            innerRectMm: { xMm: 13, yMm: 13, wMm: 63.5, hMm: 88.9 },
+            outerRectMm: { xMm: 10, yMm: 10, wMm: 69.5, hMm: 94.9 },
+          },
+        ],
+      },
+      composition: {
+        totalSlots: 1,
+        sheets: [{ sheetIndex: 0, slots: [{ slotId: "s1", frontId: "f1", backId: null }] }],
+      },
+      fileName: "test.pdf",
+      renderFacePngBytes: async () => ONE_BY_ONE_PNG_BYTES,
+      includeCalibrationPage: true,
+    });
+
+    expect(result.status).toBe("success");
+    if (result.status === "success") {
+      expect(result.pageCount).toBe(2);
+    }
   });
 });

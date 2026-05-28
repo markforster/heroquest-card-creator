@@ -219,15 +219,18 @@ export default function DecksRoutePanels() {
             cutMarksEnabled: exportSettings.cutMarks.enabled,
             cutMarkColor: exportSettings.cutMarks.color,
           };
+    const bleedPx = source.bleedEnabled ? source.bleedPx : 0;
+    const bleedMm = bleedPx > 0 ? (bleedPx * DEFAULT_PDF_PRINT_CONFIG.cardMm.width) / CARD_WIDTH : 0;
     return {
-      bleedPx: source.bleedEnabled ? source.bleedPx : 0,
+      bleedPx,
+      bleedMm,
       cropMarks: {
         enabled: source.bleedEnabled ? source.cropMarksEnabled : false,
         color: source.cropMarkColor,
         style: source.cropMarkStyle,
       },
       cutMarks: {
-        enabled: source.cutMarksEnabled,
+        enabled: source.bleedEnabled ? source.cutMarksEnabled : false,
         color: source.cutMarkColor,
       },
       roundedCorners: source.roundedCorners,
@@ -340,8 +343,12 @@ export default function DecksRoutePanels() {
           ? deckPdfRunConfig
           : normalizePdfPrintConfig(exportSettings.pdf ?? DEFAULT_PDF_PRINT_CONFIG);
       const exportOptions = resolveDeckPdfBleedOptions();
+      const configForRun: PrintConfig = {
+        ...effectiveConfig,
+        bleedMm: exportOptions.bleedMm,
+      };
 
-      const layout = computeLayoutPlan(effectiveConfig);
+      const layout = computeLayoutPlan(configForRun);
       if (layout.grid.perPage <= 0) {
         window.alert(t("decks.pdf.errors.layoutCapacity"));
         return;
@@ -349,7 +356,7 @@ export default function DecksRoutePanels() {
 
       const { runData } = await refreshDeckPdfRun(
         pending.deckId,
-        effectiveConfig.mode,
+        configForRun.mode,
         deckPdfSetScopeMode,
         deckPdfSelectedSetIds,
       );
@@ -367,7 +374,7 @@ export default function DecksRoutePanels() {
       const totalFaces = composition.sheets.reduce((sum, sheet) => {
         for (const slot of sheet.slots) {
           if (slot.frontId) sum += 1;
-          if (effectiveConfig.mode === "frontAndBack" && slot.backId) sum += 1;
+          if (configForRun.mode === "frontAndBack" && slot.backId) sum += 1;
         }
         return sum;
       }, 0);
@@ -412,7 +419,7 @@ export default function DecksRoutePanels() {
           ctx.font = "500 16px sans-serif";
           ctx.fillText(set?.setTitle ?? "Set", base.width / 2, base.height * 0.55);
           const finalCanvas =
-            exportOptions.bleedPx > 0 || exportOptions.cropMarks.enabled || exportOptions.cutMarks.enabled
+            exportOptions.bleedPx > 0 && configForRun.bleedMode === "bakedInImage"
               ? composeBleedCanvas({
                   fullCanvas: base,
                   backgroundCanvas: base,
@@ -452,9 +459,15 @@ export default function DecksRoutePanels() {
         }
 
         const blob = await pdfPreviewRef.current?.renderToPngBlob({
-          bleedPx: exportOptions.bleedPx,
-          cropMarks: exportOptions.cropMarks,
-          cutMarks: exportOptions.cutMarks,
+          bleedPx: configForRun.bleedMode === "bakedInImage" ? exportOptions.bleedPx : 0,
+          cropMarks:
+            configForRun.bleedMode === "bakedInImage"
+              ? exportOptions.cropMarks
+              : { enabled: false, color: exportOptions.cropMarks.color, style: exportOptions.cropMarks.style },
+          cutMarks:
+            configForRun.bleedMode === "bakedInImage"
+              ? exportOptions.cutMarks
+              : { enabled: false, color: exportOptions.cutMarks.color },
           roundedCorners: exportOptions.roundedCorners,
           assetBlobsById: cache,
         });
@@ -471,12 +484,13 @@ export default function DecksRoutePanels() {
       try {
         const now = new Date().toISOString().replace(/[:.]/g, "-");
         const pdfResult = await renderPdf({
-          config: effectiveConfig,
+          config: configForRun,
           layout,
           composition,
           fileName: `heroquest-deck-${pending.deckId}-${effectiveConfig.mode}-${now}.pdf`,
           renderFacePngBytes,
           shouldCancel: () => deckPdfCancelRequestedRef.current,
+          includeCalibrationPage: process.env.NODE_ENV !== "production",
           onPhase: (phase) => {
             setDeckPdfProgressPhase(
               phase === "finalizing" ? t("status.finalizing") : t("status.exportingImages"),
@@ -532,7 +546,11 @@ export default function DecksRoutePanels() {
           ? deckPdfRunConfig
           : normalizePdfPrintConfig(exportSettings.pdf ?? DEFAULT_PDF_PRINT_CONFIG);
       const exportOptions = resolveDeckPdfBleedOptions();
-      const layout = computeLayoutPlan(effectiveConfig);
+      const configForRun: PrintConfig = {
+        ...effectiveConfig,
+        bleedMm: exportOptions.bleedMm,
+      };
+      const layout = computeLayoutPlan(configForRun);
       if (layout.grid.perPage <= 0) {
         window.alert(t("decks.pdf.errors.layoutCapacity"));
         return;
@@ -540,7 +558,7 @@ export default function DecksRoutePanels() {
 
       const { runData } = await refreshDeckPdfRun(
         pending.deckId,
-        effectiveConfig.mode,
+        configForRun.mode,
         deckPdfSetScopeMode,
         deckPdfSelectedSetIds,
       );
@@ -552,7 +570,7 @@ export default function DecksRoutePanels() {
 
       const alignmentComposition = buildSingleSheetAlignmentComposition(
         layout.grid.perPage,
-        effectiveConfig.mode === "frontAndBack",
+        configForRun.mode === "frontAndBack",
       );
       if (!alignmentComposition.sheets.length) {
         window.alert(t("decks.pdf.errors.noSheets"));
@@ -561,7 +579,7 @@ export default function DecksRoutePanels() {
       const totalFaces = alignmentComposition.sheets.reduce((sum, sheet) => {
         for (const slot of sheet.slots) {
           if (slot.frontId) sum += 1;
-          if (effectiveConfig.mode === "frontAndBack" && slot.backId) sum += 1;
+          if (configForRun.mode === "frontAndBack" && slot.backId) sum += 1;
         }
         return sum;
       }, 0);
@@ -647,7 +665,7 @@ export default function DecksRoutePanels() {
         ctx.fill();
 
         const finalCanvas =
-          exportOptions.bleedPx > 0 || exportOptions.cropMarks.enabled || exportOptions.cutMarks.enabled
+          exportOptions.bleedPx > 0 && configForRun.bleedMode === "bakedInImage"
             ? composeBleedCanvas({
                 fullCanvas: base,
                 backgroundCanvas: base,
@@ -683,12 +701,13 @@ export default function DecksRoutePanels() {
       try {
         const now = new Date().toISOString().replace(/[:.]/g, "-");
         const pdfResult = await renderPdf({
-          config: effectiveConfig,
+          config: configForRun,
           layout,
           composition: alignmentComposition,
           fileName: `heroquest-deck-${pending.deckId}-alignment-test-${now}.pdf`,
           renderFacePngBytes,
           shouldCancel: () => deckPdfCancelRequestedRef.current,
+          includeCalibrationPage: process.env.NODE_ENV !== "production",
           onPhase: (phase) => {
             setDeckPdfProgressPhase(
               phase === "finalizing" ? t("status.finalizing") : t("status.exportingImages"),

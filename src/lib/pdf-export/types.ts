@@ -1,5 +1,6 @@
 export type Mm = number;
 export type Pt = number;
+export type MmRect = { xMm: Mm; yMm: Mm; wMm: Mm; hMm: Mm };
 
 export type PaperSize = "A4" | "Letter";
 export type Orientation = "portrait" | "landscape";
@@ -36,10 +37,8 @@ export type PrintComposition = {
 
 export type SlotPlacementMm = {
   slotIndex: number;
-  xMm: Mm;
-  yMm: Mm;
-  wMm: Mm;
-  hMm: Mm;
+  innerRectMm: MmRect;
+  outerRectMm: MmRect;
 };
 
 export type LayoutPlan = {

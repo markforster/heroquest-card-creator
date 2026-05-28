@@ -5,7 +5,7 @@ import { embeddedImagesByFileName } from "@/generated/embeddedAssets";
 import { applyDuplexPreset } from "@/lib/pdf-export/duplex";
 import { mmToPt } from "@/lib/pdf-export/units";
 
-import type { LayoutPlan, PdfExportResult, PrintComposition, PrintConfig } from "@/lib/pdf-export/types";
+import type { LayoutPlan, MmRect, PdfExportResult, PrintComposition, PrintConfig } from "@/lib/pdf-export/types";
 
 type RenderPdfOptions = {
   config: PrintConfig;
@@ -22,6 +22,7 @@ type RenderPdfOptions = {
     sheetIndex: number;
     slotIndex: number;
   }) => void;
+  includeCalibrationPage?: boolean;
 };
 
 const PDF_ATTRIBUTION_TEXT_SIZE_PT = 8;
@@ -63,7 +64,9 @@ function drawPdfAttributionFooter(
   pageWidthPt: number,
   text: string,
   font: PDFFont,
-  qrImage: Awaited<ReturnType<PDFDocument["embedJpg"]>>,
+  qrImage:
+    | Awaited<ReturnType<PDFDocument["embedJpg"]>>
+    | Awaited<ReturnType<PDFDocument["embedPng"]>>,
 ): void {
   const marginPt = mmToPt(PDF_ATTRIBUTION_MARGIN_MM);
   const qrSizePt = mmToPt(PDF_ATTRIBUTION_QR_SIZE_MM);
@@ -176,7 +179,7 @@ function addPageUriLinkAnnotation(
 
 function mmRectToPdfRect(
   pageMm: { width: number; height: number },
-  rectMm: { xMm: number; yMm: number; wMm: number; hMm: number },
+  rectMm: MmRect,
 ): { x: number; y: number; width: number; height: number } {
   const x = mmToPt(rectMm.xMm);
   const y = mmToPt(pageMm.height - rectMm.yMm - rectMm.hMm);
@@ -185,8 +188,140 @@ function mmRectToPdfRect(
   return { x, y, width, height };
 }
 
+function drawCalibrationPage(
+  page: PDFPage,
+  pageMm: { width: number; height: number },
+  config: PrintConfig,
+): void {
+  const pageWidthPt = mmToPt(pageMm.width);
+  const pageHeightPt = mmToPt(pageMm.height);
+  const cmStepPt = mmToPt(10);
+
+  page.drawText("PDF Calibration (Dev Only)", {
+    x: mmToPt(10),
+    y: pageHeightPt - mmToPt(12),
+    size: 14,
+    color: grayscale(0.1),
+  });
+
+  // Top mm/cm ruler
+  for (let mm = 0; mm <= Math.floor(pageMm.width); mm += 1) {
+    const x = mmToPt(mm);
+    const isCm = mm % 10 === 0;
+    const len = isCm ? mmToPt(5) : mmToPt(2);
+    page.drawLine({
+      start: { x, y: pageHeightPt - mmToPt(18) },
+      end: { x, y: pageHeightPt - mmToPt(18) - len },
+      thickness: isCm ? 0.8 : 0.4,
+      color: grayscale(0.2),
+    });
+    if (isCm) {
+      page.drawText(String(mm / 10), {
+        x: x + mmToPt(0.4),
+        y: pageHeightPt - mmToPt(24),
+        size: 7,
+        color: grayscale(0.2),
+      });
+    }
+  }
+
+  // Left mm/cm ruler
+  for (let mm = 0; mm <= Math.floor(pageMm.height); mm += 1) {
+    const y = pageHeightPt - mmToPt(mm);
+    const isCm = mm % 10 === 0;
+    const len = isCm ? mmToPt(5) : mmToPt(2);
+    page.drawLine({
+      start: { x: mmToPt(8), y },
+      end: { x: mmToPt(8) + len, y },
+      thickness: isCm ? 0.8 : 0.4,
+      color: grayscale(0.2),
+    });
+    if (isCm) {
+      page.drawText(String(mm / 10), {
+        x: mmToPt(14),
+        y: y - mmToPt(1.2),
+        size: 7,
+        color: grayscale(0.2),
+      });
+    }
+  }
+
+  // 1-inch and 1-cm blocks
+  page.drawRectangle({
+    x: mmToPt(20),
+    y: pageHeightPt - mmToPt(50),
+    width: mmToPt(25.4),
+    height: mmToPt(25.4),
+    borderColor: rgb(0.1, 0.3, 0.8),
+    borderWidth: 1,
+  });
+  page.drawText("1 inch", {
+    x: mmToPt(22),
+    y: pageHeightPt - mmToPt(54),
+    size: 8,
+    color: rgb(0.1, 0.3, 0.8),
+  });
+  page.drawRectangle({
+    x: mmToPt(52),
+    y: pageHeightPt - mmToPt(34),
+    width: cmStepPt,
+    height: cmStepPt,
+    borderColor: rgb(0.1, 0.55, 0.2),
+    borderWidth: 1,
+  });
+  page.drawText("1 cm", {
+    x: mmToPt(53.4),
+    y: pageHeightPt - mmToPt(38),
+    size: 8,
+    color: rgb(0.1, 0.55, 0.2),
+  });
+
+  // Inner/outer diagnostic slot
+  const bleedMm = Math.max(0, config.bleedMm ?? 0);
+  const innerW = config.cardMm.width;
+  const innerH = config.cardMm.height;
+  const outerW = innerW + bleedMm * 2;
+  const outerH = innerH + bleedMm * 2;
+  const originX = mmToPt(85);
+  const originY = pageHeightPt - mmToPt(20) - mmToPt(outerH);
+  page.drawRectangle({
+    x: originX,
+    y: originY,
+    width: mmToPt(outerW),
+    height: mmToPt(outerH),
+    borderColor: rgb(0.75, 0.1, 0.1),
+    borderWidth: 1.2,
+  });
+  page.drawRectangle({
+    x: originX + mmToPt(bleedMm),
+    y: originY + mmToPt(bleedMm),
+    width: mmToPt(innerW),
+    height: mmToPt(innerH),
+    borderColor: rgb(0.1, 0.6, 0.2),
+    borderWidth: 1.2,
+  });
+  page.drawText(
+    `Outer (bleed): ${outerW.toFixed(2)} x ${outerH.toFixed(2)} mm`,
+    { x: originX, y: originY - mmToPt(6), size: 8, color: rgb(0.75, 0.1, 0.1) },
+  );
+  page.drawText(
+    `Inner (trim): ${innerW.toFixed(2)} x ${innerH.toFixed(2)} mm`,
+    { x: originX, y: originY - mmToPt(10), size: 8, color: rgb(0.1, 0.6, 0.2) },
+  );
+}
+
 export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportResult> {
-  const { config, layout, composition, fileName, renderFacePngBytes, shouldCancel, onPhase, onProgress } = options;
+  const {
+    config,
+    layout,
+    composition,
+    fileName,
+    renderFacePngBytes,
+    shouldCancel,
+    onPhase,
+    onProgress,
+    includeCalibrationPage = false,
+  } = options;
   const pdf = await PDFDocument.create();
   const pageWidthPt = mmToPt(layout.paperMm.width);
   const pageHeightPt = mmToPt(layout.paperMm.height);
@@ -199,7 +334,13 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
   if (!qrDataUrl) {
     throw new Error(`Missing embedded image asset for ${PDF_ATTRIBUTION_QR_KEY}. Run generate:embedded-assets.`);
   }
-  const qrImage = await pdf.embedJpg(decodeImageDataUrlBytes(qrDataUrl));
+  let qrImage: Awaited<ReturnType<PDFDocument["embedJpg"]>> | Awaited<ReturnType<PDFDocument["embedPng"]>>;
+  const qrBytes = decodeImageDataUrlBytes(qrDataUrl);
+  try {
+    qrImage = await pdf.embedJpg(qrBytes);
+  } catch {
+    qrImage = await pdf.embedPng(qrBytes);
+  }
   const attributionText = `Made using ${PDF_ATTRIBUTION_LINK_TEXT} - Mark Forster ${new Date().getFullYear()}`;
   const totalFaces = composition.sheets.reduce((sum, sheet) => {
     for (const slot of sheet.slots) {
@@ -249,7 +390,9 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
         embeddedByFaceId.set(slot.frontId, image);
       }
 
-      const rect = mmRectToPdfRect(layout.paperMm, placement);
+      const frontRectMm =
+        config.bleedMode === "bakedInImage" ? placement.outerRectMm : placement.innerRectMm;
+      const rect = mmRectToPdfRect(layout.paperMm, frontRectMm);
       frontPage.drawImage(image, rect);
       renderedFaces += 1;
       onProgress?.({
@@ -284,7 +427,11 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
         continue;
       }
 
-      const transformed = applyDuplexPreset(frontPlacement, layout.paperMm, preset);
+      const backBaseRectMm =
+        config.bleedMode === "bakedInImage"
+          ? frontPlacement.outerRectMm
+          : frontPlacement.innerRectMm;
+      const transformed = applyDuplexPreset(backBaseRectMm, layout.paperMm, preset);
       let image = embeddedByFaceId.get(slot.backId);
       if (!image) {
         const bytes = await renderFacePngBytes(slot.backId);
@@ -320,6 +467,10 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
   }
 
   onPhase?.("finalizing");
+  if (includeCalibrationPage) {
+    const calibrationPage = pdf.addPage([pageWidthPt, pageHeightPt]);
+    drawCalibrationPage(calibrationPage, layout.paperMm, config);
+  }
   const bytes = await pdf.save();
   return {
     status: "success",

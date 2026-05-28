@@ -1,33 +1,27 @@
-import type { DuplexPreset, SlotPlacementMm } from "@/lib/pdf-export/types";
+import type { DuplexPreset, MmRect } from "@/lib/pdf-export/types";
 
-function rotate180(
-  placement: SlotPlacementMm,
-  pageMm: { width: number; height: number },
-): SlotPlacementMm {
+function rotate180(rect: MmRect, pageMm: { width: number; height: number }): MmRect {
   return {
-    ...placement,
-    xMm: pageMm.width - placement.xMm - placement.wMm,
-    yMm: pageMm.height - placement.yMm - placement.hMm,
+    ...rect,
+    xMm: pageMm.width - rect.xMm - rect.wMm,
+    yMm: pageMm.height - rect.yMm - rect.hMm,
   };
 }
 
-function mirrorX(
-  placement: SlotPlacementMm,
-  pageMm: { width: number; height: number },
-): SlotPlacementMm {
+function mirrorX(rect: MmRect, pageMm: { width: number; height: number }): MmRect {
   return {
-    ...placement,
-    xMm: pageMm.width - placement.xMm - placement.wMm,
+    ...rect,
+    xMm: pageMm.width - rect.xMm - rect.wMm,
   };
 }
 
 export function applyDuplexPreset(
-  placement: SlotPlacementMm,
+  rect: MmRect,
   pageMm: { width: number; height: number },
   preset: DuplexPreset,
-): SlotPlacementMm {
-  if (preset === "normal") return placement;
-  if (preset === "mirrorX") return mirrorX(placement, pageMm);
-  if (preset === "rotate180") return rotate180(placement, pageMm);
-  return rotate180(mirrorX(placement, pageMm), pageMm);
+): MmRect {
+  if (preset === "normal") return rect;
+  if (preset === "mirrorX") return mirrorX(rect, pageMm);
+  if (preset === "rotate180") return rotate180(rect, pageMm);
+  return rotate180(mirrorX(rect, pageMm), pageMm);
 }

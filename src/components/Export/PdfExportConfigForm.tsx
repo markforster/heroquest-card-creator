@@ -157,6 +157,75 @@ export default function PdfExportConfigForm({ config, onChange }: PdfExportConfi
         />
       </div>
 
+      <label className="form-label" htmlFor="pdf-card-width">
+        Card size (mm)
+      </label>
+      <div className={styles.pdfExportInlineGrid2}>
+        <input
+          id="pdf-card-width"
+          type="number"
+          className="form-control form-control-sm"
+          min={1}
+          step="0.1"
+          value={config.cardMm.width}
+          onChange={(event) =>
+            onChange({
+              ...config,
+              cardMm: { ...config.cardMm, width: Number(event.target.value) || 1 },
+            })
+          }
+        />
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          min={1}
+          step="0.1"
+          value={config.cardMm.height}
+          onChange={(event) =>
+            onChange({
+              ...config,
+              cardMm: { ...config.cardMm, height: Number(event.target.value) || 1 },
+            })
+          }
+        />
+      </div>
+
+      <label className="form-label" htmlFor="pdf-bleed-mode">
+        PDF bleed source
+      </label>
+      <select
+        id="pdf-bleed-mode"
+        className="form-select form-select-sm"
+        value={config.bleedMode}
+        onChange={(event) =>
+          onChange({
+            ...config,
+            bleedMode: event.target.value as PrintConfig["bleedMode"],
+          })
+        }
+      >
+        <option value="bakedInImage">Image includes bleed</option>
+        <option value="layoutBleed">Image has no bleed (trim only)</option>
+      </select>
+
+      <label className="form-label" htmlFor="pdf-bleed-mm">
+        Bleed per edge (mm)
+      </label>
+      <input
+        id="pdf-bleed-mm"
+        type="number"
+        className="form-control form-control-sm"
+        min={0}
+        step="0.1"
+        value={config.bleedMm ?? 0}
+        onChange={(event) =>
+          onChange({
+            ...config,
+            bleedMm: Math.max(0, Number(event.target.value) || 0),
+          })
+        }
+      />
+
       {config.mode === "frontAndBack" ? (
         <>
           <label className="form-label" htmlFor="pdf-duplex">
@@ -178,4 +247,3 @@ export default function PdfExportConfigForm({ config, onChange }: PdfExportConfi
     </div>
   );
 }
-

@@ -58,6 +58,7 @@ const STORAGE_KEYS = {
   pdfGapY: "hqcc.exportPdf.gapY",
   pdfMode: "hqcc.exportPdf.mode",
   pdfBleedMode: "hqcc.exportPdf.bleedMode",
+  pdfBleedMm: "hqcc.exportPdf.bleedMm",
   pdfDuplexPreset: "hqcc.exportPdf.duplexPreset",
 } as const;
 
@@ -118,6 +119,7 @@ export function getExportSettings(): ExportSettings {
       STORAGE_KEYS.pdfBleedMode,
       DEFAULT_PDF_PRINT_CONFIG.bleedMode,
     ) as PrintConfig["bleedMode"],
+    bleedMm: readFloat(STORAGE_KEYS.pdfBleedMm, DEFAULT_PDF_PRINT_CONFIG.bleedMm ?? 0),
     cardMm: DEFAULT_PDF_PRINT_CONFIG.cardMm,
     duplexPreset: readString(
       STORAGE_KEYS.pdfDuplexPreset,
@@ -177,6 +179,10 @@ export function setExportSettings(next: ExportSettings): void {
     window.localStorage.setItem(STORAGE_KEYS.pdfGapY, String(Math.max(0, next.pdf.gapMm.y)));
     window.localStorage.setItem(STORAGE_KEYS.pdfMode, next.pdf.mode);
     window.localStorage.setItem(STORAGE_KEYS.pdfBleedMode, next.pdf.bleedMode);
+    window.localStorage.setItem(
+      STORAGE_KEYS.pdfBleedMm,
+      String(Math.max(0, next.pdf.bleedMm ?? DEFAULT_PDF_PRINT_CONFIG.bleedMm ?? 0)),
+    );
     window.localStorage.setItem(STORAGE_KEYS.pdfDuplexPreset, next.pdf.duplexPreset ?? "mirrorX");
   } catch {
     // ignore storage failures
@@ -217,6 +223,7 @@ export function readExportSettingKeys(): Record<string, string | null> {
       [STORAGE_KEYS.pdfGapY]: null,
       [STORAGE_KEYS.pdfMode]: null,
       [STORAGE_KEYS.pdfBleedMode]: null,
+      [STORAGE_KEYS.pdfBleedMm]: null,
       [STORAGE_KEYS.pdfDuplexPreset]: null,
     };
   }
@@ -240,6 +247,7 @@ export function readExportSettingKeys(): Record<string, string | null> {
     [STORAGE_KEYS.pdfGapY]: safeGetItem(STORAGE_KEYS.pdfGapY),
     [STORAGE_KEYS.pdfMode]: safeGetItem(STORAGE_KEYS.pdfMode),
     [STORAGE_KEYS.pdfBleedMode]: safeGetItem(STORAGE_KEYS.pdfBleedMode),
+    [STORAGE_KEYS.pdfBleedMm]: safeGetItem(STORAGE_KEYS.pdfBleedMm),
     [STORAGE_KEYS.pdfDuplexPreset]: safeGetItem(STORAGE_KEYS.pdfDuplexPreset),
   };
 }

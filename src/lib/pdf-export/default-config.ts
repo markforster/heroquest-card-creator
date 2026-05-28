@@ -5,9 +5,10 @@ export const DEFAULT_PDF_PRINT_CONFIG: PrintConfig = {
   orientation: "landscape",
   marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
   gapMm: { x: 0.5, y: 0.5 },
-  cardMm: { width: 63.5, height: 89 },
+  cardMm: { width: 63.5, height: 88.9 },
   mode: "frontAndBack",
   bleedMode: "bakedInImage",
+  bleedMm: 3,
   duplexPreset: "mirrorX",
 };
 
@@ -28,11 +29,13 @@ export function normalizePdfPrintConfig(value: Partial<PrintConfig> | null | und
     },
     cardMm: {
       width: Number.isFinite(next.cardMm?.width) ? Math.max(1, Number(next.cardMm?.width)) : 63.5,
-      height: Number.isFinite(next.cardMm?.height) ? Math.max(1, Number(next.cardMm?.height)) : 89,
+      height: Number.isFinite(next.cardMm?.height) ? Math.max(1, Number(next.cardMm?.height)) : 88.9,
     },
     mode: next.mode === "frontsOnly" ? "frontsOnly" : "frontAndBack",
     bleedMode: next.bleedMode === "layoutBleed" ? "layoutBleed" : "bakedInImage",
-    bleedMm: Number.isFinite(next.bleedMm) ? Math.max(0, Number(next.bleedMm)) : undefined,
+    bleedMm: Number.isFinite(next.bleedMm)
+      ? Math.max(0, Number(next.bleedMm))
+      : DEFAULT_PDF_PRINT_CONFIG.bleedMm,
     duplexPreset:
       next.duplexPreset === "normal" ||
       next.duplexPreset === "mirrorX" ||
@@ -42,4 +45,3 @@ export function normalizePdfPrintConfig(value: Partial<PrintConfig> | null | und
         : "mirrorX",
   };
 }
-

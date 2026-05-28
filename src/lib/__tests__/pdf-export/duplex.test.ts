@@ -1,11 +1,10 @@
 import { applyDuplexPreset } from "@/lib/pdf-export/duplex";
 
-import type { SlotPlacementMm } from "@/lib/pdf-export/types";
+import type { MmRect } from "@/lib/pdf-export/types";
 
 describe("pdf-export duplex", () => {
   const page = { width: 210, height: 297 };
-  const placement: SlotPlacementMm = {
-    slotIndex: 0,
+  const placement: MmRect = {
     xMm: 10,
     yMm: 20,
     wMm: 30,
