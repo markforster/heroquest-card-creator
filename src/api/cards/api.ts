@@ -15,6 +15,7 @@ import {
   updateCardsInputSchema,
   updateCardThumbnailInputSchema,
   cardThumbnailResponseSchema,
+  cardDeckMembershipSchema,
 } from "@/api/cards/schema";
 
 export const cardsApi = makeApi([
@@ -71,6 +72,19 @@ export const cardsApi = makeApi([
       },
     ],
     response: cardThumbnailResponseSchema,
+  },
+  {
+    method: "get",
+    path: "/cards/:id/decks",
+    alias: "listCardDecks",
+    parameters: [
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string(),
+      },
+    ],
+    response: z.array(cardDeckMembershipSchema),
   },
   {
     method: "post",

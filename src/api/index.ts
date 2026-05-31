@@ -3,6 +3,7 @@ import { makeApi } from "@zodios/core";
 import { assetsApi } from "@/api/assets";
 import { cardsApi } from "@/api/cards";
 import { collectionsApi } from "@/api/collections";
+import { decksApi } from "@/api/decks";
 import { libraryApi } from "@/api/library";
 import { pairsApi } from "@/api/pairs";
 import { settingsApi } from "@/api/settings";
@@ -12,6 +13,7 @@ export const api = makeApi([
   ...cardsApi,
   ...assetsApi,
   ...collectionsApi,
+  ...decksApi,
   ...libraryApi,
   ...pairsApi,
   ...settingsApi,
@@ -22,6 +24,7 @@ export {
   assetsApi,
   cardsApi,
   collectionsApi,
+  decksApi,
   libraryApi,
   pairsApi,
   settingsApi,

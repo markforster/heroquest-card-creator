@@ -8,12 +8,15 @@ type DocSectionProps = {
   title: ReactNode;
   children: ReactNode;
   className?: string;
+  id?: string;
 };
 
-export default function DocSection({ title, children, className }: DocSectionProps) {
+export default function DocSection({ title, children, className, id }: DocSectionProps) {
   return (
-    <section className={`${styles.docSection}${className ? ` ${className}` : ""}`}>
-      <h3 className={styles.docHeading}>{title}</h3>
+    <section id={id} className={`${styles.docSection}${className ? ` ${className}` : ""}`}>
+      <h3 id={id ? `${id}-heading` : undefined} className={styles.docHeading}>
+        {title}
+      </h3>
       {children}
     </section>
   );

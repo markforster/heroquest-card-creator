@@ -29,4 +29,6 @@ export const createPairInputSchema = z.object({
 export const deletePairInputSchema = z.object({
   frontFaceId: z.string(),
   backFaceId: z.string(),
+  mode: z.enum(["block", "confirmable-cascade"]).optional(),
+  confirmCascade: z.boolean().optional(),
 });

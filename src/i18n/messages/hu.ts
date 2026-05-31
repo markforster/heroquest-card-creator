@@ -656,5 +656,121 @@ export const hu = {
   "label.expectedDatabaseVersion": "Várt adatbázis verzió",
   "label.databaseAppVersion": "Adatbázis készítette: app verzió",
   "label.lastEdited": "Utoljára szerkesztve",
-  "label.unknownVersion": "Ismeretlen"
+  "label.unknownVersion": "Ismeretlen",
+  "heading.decksForCard": "Paklik ehhez a kártyához",
+  "label.decksView": "Paklik",
+  "empty.saveCardToViewDecks": "Save this card to view deck membership.",
+  "empty.cardNotInDecks": "This card is not in any deck.",
+  "status.loadingDecks": "Loading decks...",
+  "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Pakli exportálása",
+  "decks.exportConfirm.title": "Pakli képek exportálása?",
+  "decks.exportConfirm.summary": "Ez {totalCount} egyedi képet exportál {setCount} készletből.",
+  "decks.exportConfirm.breakdown": "Tartalmaz {frontCount} előlapi és {backCount} hátlapi kártyát.",
+  "decks.exportConfirm.uniqueNotice": "A több készletben ismétlődő kártyák csak egyszer kerülnek exportálásra.",
+  "decks.faces.back": "Hátlapok",
+  "decks.faces.front": "Előlapok",
+  "decks.faces.mode": "Oldal mód",
+  "decks.meta.tab": "Részletek",
+  "decks.meta.title": "Részletek",
+  "decks.meta.loading": "Metaadatok betöltése...",
+  "decks.meta.error": "A pakli metaadatainak betöltése sikertelen.",
+  "decks.meta.created": "Létrehozva",
+  "decks.meta.modified": "Utoljára módosítva",
+  "decks.meta.groups": "Csoportok",
+  "decks.meta.sets": "Szettek",
+  "decks.meta.entries": "Bejegyzések",
+  "decks.meta.images.section": "Kép export",
+  "decks.meta.images.totalUnique": "Egyedi képek",
+  "decks.meta.images.frontUnique": "Előoldalak (egyedi)",
+  "decks.meta.images.backUnique": "Hátoldalak (egyedi)",
+  "decks.meta.images.setSnapshot": "Figyelembe vett szettek",
+  "decks.meta.pdf.section": "PDF-tervezés",
+  "decks.meta.pdf.uniquePairs": "Egyedi párok",
+  "decks.meta.pdf.quantityTotal": "Összmennyiség",
+  "decks.meta.health.section": "Pakli állapota",
+  "decks.meta.health.pairedMissing": "Párosítva, de nincs szettben (egyedi)",
+  "decks.entries.actions.editFront": "Előlap szerkesztése",
+  "decks.entries.actions.removeFront": "Előlap eltávolítása a készletből",
+  "decks.entries.mode.label": "Készletkártya mód",
+  "decks.entries.mode.inSet": "A készletben ({count})",
+  "decks.entries.mode.pairedNotInSet": "Párosított (készleten kívül) ({count})",
+  "decks.entries.actions.removeSelected": "Kijelöltek eltávolítása",
+  "decks.entries.actions.recoverPaired": "Párosítottak visszaállítása ({count})",
+  "decks.entries.actions.removeSelectedCount": "Kijelöltek eltávolítása ({count})",
+  "decks.entries.actions.editCard": "Kártya szerkesztése",
+  "decks.entries.actions.deleteEntry": "Bejegyzés törlése",
+  "decks.entries.empty.selectSet": "Válassz készletet a bejegyzések megjelenítéséhez.",
+  "decks.entries.empty.noPairedPending": "Nincs hozzáadásra váró párosított kártya.",
+  "decks.entries.selectedSetBackAlt": "A kiválasztott készlet hátlapja",
+  "decks.entries.recover.modalTitle": "Párosított kártyák visszaállítása",
+  "decks.entries.recover.selectAllAria": "Minden visszaállítható kártya kijelölése",
+  "decks.entries.recover.selectNone": "Kijelölés megszüntetése",
+  "decks.entries.recover.selectAll": "Összes kijelölése",
+  "decks.entries.recover.recovering": "Visszaállítás...",
+  "decks.entries.recover.recoverSelected": "Kijelöltek visszaállítása",
+  "decks.entries.recover.empty": "Nincs visszaállítható párosított kártya.",
+  "decks.entries.removePrompt.bulkTitle": "Eltávolítod a(z) {count} bejegyzést a készletből?",
+  "decks.entries.removePrompt.bulkBody": "Ez {count} kijelölt bejegyzésre lesz alkalmazva.",
+  "decks.sets.actions.setKeyCard": "Beállítás borítókártyának",
+  "decks.sets.actions.delete": "Készlet törlése",
+  "decks.sets.badge.keyCard": "Borítókártya",
+  "decks.boards.groups": "Csoportok",
+  "decks.boards.entries": "Bejegyzések",
+  "decks.boards.source": "Forrás",
+  "decks.boards.cards": "Kártyák",
+  "decks.groups.actions.reorder": "Csoport átrendezése",
+  "decks.errors.saveTitleFailed": "Nem sikerült menteni a pakli címét",
+  "decks.entries.quantity.decrease": "Mennyiség csökkentése",
+  "decks.entries.quantity.increase": "Mennyiség növelése",
+  "decks.entries.quantity.current": "Mennyiség {count}",
+
+  "decks.sourcePanelToggle": "Forrásoldalak paneljének váltása",
+
+  "decks.entries.recover.selectCardAria": "{cardId} kijelölése",
+
+  "decks.groups.actions.insertHere": "Csoport beszúrása ide",
+  "decks.groups.actions.createAtPosition": "Csoport létrehozása a(z) {index}. pozíción",
+  "decks.groups.emptyDropHint": "Húzd ide a hátoldalas kártyákat",
+
+  "actions.edit": "Szerkesztés",
+
+  "decks.openDeck": "Pakli megnyitása",
+
+  "decks.createDeck": "Pakli létrehozása",
+
+  "decks.editDeck": "Pakli szerkesztése",
+
+  "decks.title": "Cím",
+
+  "decks.description": "Leírás",
+
+  "decks.descriptionPlaceholder": "Opcionális leírás",
+
+  "decks.removeAndUnpair": "Eltávolítás és párosítás megszüntetése",
+
+  "decks.removeFromSet": "Eltávolítás a készletből",
+
+  "decks.deleteDeckTitle": "Törlöd a paklit?",
+
+  "decks.deleteDeckBody": "A pakli törlése nem törli a kártyáidat vagy párosításaidat; csak a pakli szervezését törli.",
+
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
+  "decks.deleteSelectedBody": "Törlöd a kijelölt {count} pakli(ka)t? A pakli törlése nem törli a kártyáidat vagy párosításaidat; csak a pakli szervezését törli.",
+
+  "decks.removeFrontPromptTitle": "Eltávolítod az előlapot a készletből?",
+
+  "decks.removeFrontPromptBody": "Távolítsd el ezt az előlapkártyát a készletből. Opcionálisan a készlet hátlapjától való párosítását is megszüntetheted.",
+
+  "warning.unpairFromBackFaceSingle": "1 kártya leválik erről a hátlapról. Folytatja?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} kártya leválik erről a hátlapról. Folytatja?",
+
+  "heading.impactedDecks": "Érintett paklik",
+
+  "decks.pairUsage.body": "Ez megszünteti a párosítást, és eltávolítja a függő paklibejegyzéseket a következő helyekről:",
+
 } as const;

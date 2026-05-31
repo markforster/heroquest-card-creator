@@ -1,6 +1,7 @@
 "use client";
 
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 
 import type { ReactNode } from "react";
@@ -26,7 +27,7 @@ export default function StockpileThumbImage({
     enabled: true,
     useCache: ENABLE_CARD_THUMB_CACHE,
   });
-  const src = url ?? templateThumbSrc ?? null;
+  const src = url ?? (templateThumbSrc ? normalizeFileProtocolAssetUrl(templateThumbSrc) : null);
 
   if (src) {
     // eslint-disable-next-line @next/next/no-img-element

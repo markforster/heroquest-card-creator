@@ -656,5 +656,121 @@ export const fi = {
   "label.expectedDatabaseVersion": "Odotettu tietokannan versio",
   "label.databaseAppVersion": "Tietokanta luotu sovellusversiolla",
   "label.lastEdited": "Viimeksi muokattu",
-  "label.unknownVersion": "Tuntematon"
+  "label.unknownVersion": "Tuntematon",
+  "heading.decksForCard": "Tämän kortin pakat",
+  "label.decksView": "Pakat",
+  "empty.saveCardToViewDecks": "Save this card to view deck membership.",
+  "empty.cardNotInDecks": "This card is not in any deck.",
+  "status.loadingDecks": "Loading decks...",
+  "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Vie pakka",
+  "decks.exportConfirm.title": "Viedäänkö pakan kuvat?",
+  "decks.exportConfirm.summary": "Tämä vie {totalCount} yksilöllistä kuvaa {setCount} setistä.",
+  "decks.exportConfirm.breakdown": "Sisältää {frontCount} etupuolen ja {backCount} taustapuolen korttia.",
+  "decks.exportConfirm.uniqueNotice": "Useissa seteissä toistuvat kortit viedään vain kerran.",
+  "decks.faces.back": "Takapuolet",
+  "decks.faces.front": "Etupuolet",
+  "decks.faces.mode": "Puolitila",
+  "decks.meta.tab": "Tiedot",
+  "decks.meta.title": "Tiedot",
+  "decks.meta.loading": "Ladataan metatietoja...",
+  "decks.meta.error": "Pakan metatietoja ei voitu ladata.",
+  "decks.meta.created": "Luotu",
+  "decks.meta.modified": "Viimeksi muokattu",
+  "decks.meta.groups": "Ryhmät",
+  "decks.meta.sets": "Setit",
+  "decks.meta.entries": "Merkinnät",
+  "decks.meta.images.section": "Kuvavienti",
+  "decks.meta.images.totalUnique": "Yksilölliset kuvat",
+  "decks.meta.images.frontUnique": "Etupuolet (yksilölliset)",
+  "decks.meta.images.backUnique": "Takapuolet (yksilölliset)",
+  "decks.meta.images.setSnapshot": "Huomioidut setit",
+  "decks.meta.pdf.section": "PDF-suunnittelu",
+  "decks.meta.pdf.uniquePairs": "Yksilölliset parit",
+  "decks.meta.pdf.quantityTotal": "Kokonaismäärä",
+  "decks.meta.health.section": "Pakan tila",
+  "decks.meta.health.pairedMissing": "Paritettu mutta ei setissä (yksilöllinen)",
+  "decks.entries.actions.editFront": "Muokkaa etukorttia",
+  "decks.entries.actions.removeFront": "Poista etukortti setistä",
+  "decks.entries.mode.label": "Setin korttitila",
+  "decks.entries.mode.inSet": "Setissä ({count})",
+  "decks.entries.mode.pairedNotInSet": "Paritetut (ei setissä) ({count})",
+  "decks.entries.actions.removeSelected": "Poista valitut",
+  "decks.entries.actions.recoverPaired": "Palauta paritetut ({count})",
+  "decks.entries.actions.removeSelectedCount": "Poista valitut ({count})",
+  "decks.entries.actions.editCard": "Muokkaa korttia",
+  "decks.entries.actions.deleteEntry": "Poista merkintä",
+  "decks.entries.empty.selectSet": "Valitse setti nähdäksesi merkinnät.",
+  "decks.entries.empty.noPairedPending": "Ei lisättäviä paritettuja kortteja.",
+  "decks.entries.selectedSetBackAlt": "Valitun setin taustapuoli",
+  "decks.entries.recover.modalTitle": "Palauta paritetut kortit",
+  "decks.entries.recover.selectAllAria": "Valitse kaikki palautettavat kortit",
+  "decks.entries.recover.selectNone": "Poista valinta",
+  "decks.entries.recover.selectAll": "Valitse kaikki",
+  "decks.entries.recover.recovering": "Palautetaan...",
+  "decks.entries.recover.recoverSelected": "Palauta valitut",
+  "decks.entries.recover.empty": "Ei palautettavia paritettuja kortteja.",
+  "decks.entries.removePrompt.bulkTitle": "Poistetaanko {count} merkintää setistä?",
+  "decks.entries.removePrompt.bulkBody": "Tämä koskee {count} valittua merkintää.",
+  "decks.sets.actions.setKeyCard": "Aseta kansikortiksi",
+  "decks.sets.actions.delete": "Poista setti",
+  "decks.sets.badge.keyCard": "Kansikortti",
+  "decks.boards.groups": "Ryhmät",
+  "decks.boards.entries": "Merkinnät",
+  "decks.boards.source": "Lähde",
+  "decks.boards.cards": "Kortit",
+  "decks.groups.actions.reorder": "Järjestä ryhmä uudelleen",
+  "decks.errors.saveTitleFailed": "Pakan otsikon tallennus epäonnistui",
+  "decks.entries.quantity.decrease": "Vähennä määrää",
+  "decks.entries.quantity.increase": "Lisää määrää",
+  "decks.entries.quantity.current": "Määrä {count}",
+
+  "decks.sourcePanelToggle": "Vaihda lähdepuolten paneeli",
+
+  "decks.entries.recover.selectCardAria": "Valitse {cardId}",
+
+  "decks.groups.actions.insertHere": "Lisää ryhmä tähän",
+  "decks.groups.actions.createAtPosition": "Luo ryhmä kohtaan {index}",
+  "decks.groups.emptyDropHint": "Vedä korttien taustapuolet tähän",
+
+  "actions.edit": "Muokkaa",
+
+  "decks.openDeck": "Avaa pakka",
+
+  "decks.createDeck": "Luo pakka",
+
+  "decks.editDeck": "Muokkaa pakkaa",
+
+  "decks.title": "Otsikko",
+
+  "decks.description": "Kuvaus",
+
+  "decks.descriptionPlaceholder": "Valinnainen kuvaus",
+
+  "decks.removeAndUnpair": "Poista ja pura paritus",
+
+  "decks.removeFromSet": "Poista setistä",
+
+  "decks.deleteDeckTitle": "Poistetaanko pakka?",
+
+  "decks.deleteDeckBody": "Pakan poistaminen ei poista korttejasi tai parituksia; se poistaa vain pakan järjestelyn.",
+
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
+  "decks.deleteSelectedBody": "Poistetaanko {count} valittua pakkaa? Pakan poistaminen ei poista korttejasi tai parituksia; se poistaa vain pakan järjestelyn.",
+
+  "decks.removeFrontPromptTitle": "Poistetaanko etukortti setistä?",
+
+  "decks.removeFrontPromptBody": "Poista tämä etukortti setistä. Voit halutessasi myös purkaa sen parituksen tämän setin takakortin kanssa.",
+
+  "warning.unpairFromBackFaceSingle": "1 kortti poistetaan parituksesta tämän kääntöpuolen kanssa. Jatketaanko?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} korttia poistetaan parituksesta tämän kääntöpuolen kanssa. Jatketaanko?",
+
+  "heading.impactedDecks": "Vaikutuksen alaiset pakat",
+
+  "decks.pairUsage.body": "Tämä poistaa parituksen ja poistaa riippuvat pakka-merkinnät seuraavista sijainneista:",
+
 } as const;

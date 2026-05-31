@@ -656,5 +656,121 @@ export const el = {
   "label.expectedDatabaseVersion": "Αναμενόμενη έκδοση βάσης δεδομένων",
   "label.databaseAppVersion": "Βάση δεδομένων δημιουργήθηκε με έκδοση εφαρμογής",
   "label.lastEdited": "Τελευταία επεξεργασία",
-  "label.unknownVersion": "Άγνωστο"
+  "label.unknownVersion": "Άγνωστο",
+  "heading.decksForCard": "Τράπουλες για αυτήν την κάρτα",
+  "label.decksView": "Τράπουλες",
+  "empty.saveCardToViewDecks": "Save this card to view deck membership.",
+  "empty.cardNotInDecks": "This card is not in any deck.",
+  "status.loadingDecks": "Loading decks...",
+  "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Εξαγωγή τράπουλας",
+  "decks.exportConfirm.title": "Εξαγωγή εικόνων τράπουλας;",
+  "decks.exportConfirm.summary": "Θα εξαχθούν {totalCount} μοναδικές εικόνες από {setCount} σετ.",
+  "decks.exportConfirm.breakdown": "Περιλαμβάνει {frontCount} μπροστινές και {backCount} πίσω κάρτες.",
+  "decks.exportConfirm.uniqueNotice": "Οι κάρτες που επαναλαμβάνονται σε πολλά σετ εξάγονται μόνο μία φορά.",
+  "decks.faces.back": "Πίσω όψεις",
+  "decks.faces.front": "Μπροστινές όψεις",
+  "decks.faces.mode": "Λειτουργία όψεων",
+  "decks.meta.tab": "Λεπτομέρειες",
+  "decks.meta.title": "Λεπτομέρειες",
+  "decks.meta.loading": "Φόρτωση μεταδεδομένων...",
+  "decks.meta.error": "Αδυναμία φόρτωσης μεταδεδομένων τράπουλας.",
+  "decks.meta.created": "Δημιουργήθηκε",
+  "decks.meta.modified": "Τελευταία τροποποίηση",
+  "decks.meta.groups": "Ομάδες",
+  "decks.meta.sets": "Σετ",
+  "decks.meta.entries": "Καταχωρήσεις",
+  "decks.meta.images.section": "Εξαγωγή εικόνων",
+  "decks.meta.images.totalUnique": "Μοναδικές εικόνες",
+  "decks.meta.images.frontUnique": "Μπροστινές όψεις (μοναδικές)",
+  "decks.meta.images.backUnique": "Πίσω όψεις (μοναδικές)",
+  "decks.meta.images.setSnapshot": "Σετ που λήφθηκαν υπόψη",
+  "decks.meta.pdf.section": "Σχεδιασμός PDF",
+  "decks.meta.pdf.uniquePairs": "Μοναδικά ζεύγη",
+  "decks.meta.pdf.quantityTotal": "Συνολική ποσότητα",
+  "decks.meta.health.section": "Κατάσταση τράπουλας",
+  "decks.meta.health.pairedMissing": "Ζευγοποιημένα εκτός σετ (μοναδικά)",
+  "decks.entries.actions.editFront": "Επεξεργασία μπροστινής κάρτας",
+  "decks.entries.actions.removeFront": "Αφαίρεση μπροστινής κάρτας από σετ",
+  "decks.entries.mode.label": "Λειτουργία καρτών σετ",
+  "decks.entries.mode.inSet": "Στο σετ ({count})",
+  "decks.entries.mode.pairedNotInSet": "Ζευγοποιημένες (εκτός σετ) ({count})",
+  "decks.entries.actions.removeSelected": "Αφαίρεση επιλεγμένων",
+  "decks.entries.actions.recoverPaired": "Επαναφορά ζευγοποιημένων ({count})",
+  "decks.entries.actions.removeSelectedCount": "Αφαίρεση επιλεγμένων ({count})",
+  "decks.entries.actions.editCard": "Επεξεργασία κάρτας",
+  "decks.entries.actions.deleteEntry": "Διαγραφή καταχώρησης",
+  "decks.entries.empty.selectSet": "Επιλέξτε σετ για προβολή καταχωρήσεων.",
+  "decks.entries.empty.noPairedPending": "Δεν υπάρχουν ζευγοποιημένες κάρτες για προσθήκη.",
+  "decks.entries.selectedSetBackAlt": "Πίσω όψη επιλεγμένου σετ",
+  "decks.entries.recover.modalTitle": "Επαναφορά ζευγοποιημένων καρτών",
+  "decks.entries.recover.selectAllAria": "Επιλογή όλων των ανακτήσιμων καρτών",
+  "decks.entries.recover.selectNone": "Καμία επιλογή",
+  "decks.entries.recover.selectAll": "Επιλογή όλων",
+  "decks.entries.recover.recovering": "Γίνεται επαναφορά...",
+  "decks.entries.recover.recoverSelected": "Επαναφορά επιλεγμένων",
+  "decks.entries.recover.empty": "Δεν υπάρχουν ζευγοποιημένες κάρτες για επαναφορά.",
+  "decks.entries.removePrompt.bulkTitle": "Να αφαιρεθούν {count} καταχωρήσεις από το σετ;",
+  "decks.entries.removePrompt.bulkBody": "Αυτό θα εφαρμοστεί σε {count} επιλεγμένες καταχωρήσεις.",
+  "decks.sets.actions.setKeyCard": "Ορισμός ως κάρτα εξωφύλλου",
+  "decks.sets.actions.delete": "Διαγραφή σετ",
+  "decks.sets.badge.keyCard": "Κάρτα εξωφύλλου",
+  "decks.boards.groups": "Ομάδες",
+  "decks.boards.entries": "Καταχωρήσεις",
+  "decks.boards.source": "Πηγή",
+  "decks.boards.cards": "Κάρτες",
+  "decks.groups.actions.reorder": "Αναδιάταξη ομάδας",
+  "decks.errors.saveTitleFailed": "Αποτυχία αποθήκευσης τίτλου τράπουλας",
+  "decks.entries.quantity.decrease": "Μείωση ποσότητας",
+  "decks.entries.quantity.increase": "Αύξηση ποσότητας",
+  "decks.entries.quantity.current": "Ποσότητα {count}",
+
+  "decks.sourcePanelToggle": "Εναλλαγή πίνακα πλευρών πηγής",
+
+  "decks.entries.recover.selectCardAria": "Επιλογή {cardId}",
+
+  "decks.groups.actions.insertHere": "Εισαγωγή ομάδας εδώ",
+  "decks.groups.actions.createAtPosition": "Δημιουργία ομάδας στη θέση {index}",
+  "decks.groups.emptyDropHint": "Σύρετε εδώ τις πίσω όψεις καρτών",
+
+  "actions.edit": "Επεξεργασία",
+
+  "decks.openDeck": "Άνοιγμα τράπουλας",
+
+  "decks.createDeck": "Δημιουργία τράπουλας",
+
+  "decks.editDeck": "Επεξεργασία τράπουλας",
+
+  "decks.title": "Τίτλος",
+
+  "decks.description": "Περιγραφή",
+
+  "decks.descriptionPlaceholder": "Προαιρετική περιγραφή",
+
+  "decks.removeAndUnpair": "Αφαίρεση και αποσύζευξη",
+
+  "decks.removeFromSet": "Αφαίρεση από το σετ",
+
+  "decks.deleteDeckTitle": "Διαγραφή τράπουλας;",
+
+  "decks.deleteDeckBody": "Η διαγραφή τράπουλας δεν διαγράφει τις κάρτες ή τις ζευγοποιήσεις σας· διαγράφει μόνο την οργάνωση της τράπουλας.",
+
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
+  "decks.deleteSelectedBody": "Να διαγραφούν {count} επιλεγμένες τράπουλες; Η διαγραφή τράπουλας δεν διαγράφει τις κάρτες ή τις ζευγοποιήσεις σας· διαγράφει μόνο την οργάνωση της τράπουλας.",
+
+  "decks.removeFrontPromptTitle": "Αφαίρεση μπροστινής κάρτας από το σετ;",
+
+  "decks.removeFrontPromptBody": "Αφαιρέστε αυτή τη μπροστινή κάρτα από το σετ. Προαιρετικά μπορείτε επίσης να την αποσυζεύξετε από την πίσω όψη αυτού του σετ.",
+
+  "warning.unpairFromBackFaceSingle": "1 κάρτα θα αποσυζευχθεί από αυτή την πίσω όψη. Συνέχεια;",
+
+  "warning.unpairFromBackFaceMultiple": "{count} κάρτες θα αποσυζευχθούν από αυτή την πίσω όψη. Συνέχεια;",
+
+  "heading.impactedDecks": "Επηρεαζόμενες τράπουλες",
+
+  "decks.pairUsage.body": "Αυτό θα αποσυζεύξει και θα αφαιρέσει εξαρτημένες καταχωρήσεις τράπουλας από τις παρακάτω τοποθεσίες:",
+
 } as const;

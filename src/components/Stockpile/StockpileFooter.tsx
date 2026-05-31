@@ -5,12 +5,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Lightbulb } from "lucide-react";
 
 import styles from "@/app/page.module.css";
+import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
+import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
-import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardRecord } from "@/api/cards";
+import { previewDeletePair } from "@/lib/pairs-service";
+import type { PairUsageReport } from "@/lib/decks-errors";
+import formatMessageWith from "@/lib/format-message-with";
 
 import type { ReactNode } from "react";
 
@@ -18,9 +22,9 @@ type StockpileFooterProps = {
   isPairMode: boolean;
   isPairFronts: boolean;
   selectedIds: string[];
-  activeBackId: string | null;
-  cardById: Map<string, CardRecord>;
-  backByFrontId: Map<string, string>;
+  activeBackId?: string | null;
+  cardById?: Map<string, CardRecord>;
+  backByFrontId?: Map<string, string>;
   onConfirmSelection?: (cardIds: string[]) => void;
   onClose: () => void;
   baselineSelectedIds?: string[];
@@ -39,7 +43,6 @@ export default function StockpileFooter({
   selectedIds,
   activeBackId,
   cardById,
-  backByFrontId,
   onConfirmSelection,
   onClose,
   baselineSelectedIds,
@@ -52,22 +55,23 @@ export default function StockpileFooter({
   onLoadSelectedCard,
 }: StockpileFooterProps) {
   const { t } = useI18n();
-  const formatMessageWith = useMemo(
-    () => (key: string, vars: Record<string, string | number>) =>
-      formatMessage(t(key as never), vars),
-    [t],
-  );
-  const [pairingConflict, setPairingConflict] = useState<{
-    count: number;
-    cardIds: string[];
-  } | null>(null);
-  const [pairingRemovalPrompt, setPairingRemovalPrompt] = useState<{
-    count: number;
-  } | null>(null);
+  const formatMessage = (
+    key: string,
+    vars: Record<string, string | number>,
+  ) => formatMessageWith(t as never, key as never, vars);
   const [hintIndex, setHintIndex] = useState(0);
   const [isHintVisible, setIsHintVisible] = useState(true);
+  const [isApplyingPairSelection, setIsApplyingPairSelection] = useState(false);
+  const [pendingPairFrontsUnpair, setPendingPairFrontsUnpair] = useState<{
+    selectedIds: string[];
+    removedCards: CardRecord[];
+    decks: Array<{
+      deckId: string;
+      deckTitle: string;
+      locations: Array<{ groupId: string; groupTitle: string; setId: string; setTitle: string }>;
+    }>;
+  } | null>(null);
 
-  const fallbackTitle = t("label.untitledCard");
   const hasSelection = selectedIds.length > 0;
   const hints = useMemo(() => {
     if (hasSelection) {
@@ -121,6 +125,51 @@ export default function StockpileFooter({
     };
   }, [hints.length]);
 
+  const buildPairFrontsImpact = async (
+    removedFrontIds: string[],
+    backFaceId: string,
+  ): Promise<{
+    decks: Array<{
+      deckId: string;
+      deckTitle: string;
+      locations: Array<{ groupId: string; groupTitle: string; setId: string; setTitle: string }>;
+    }>;
+  }> => {
+    const reports = await Promise.all(
+      removedFrontIds.map((frontFaceId) =>
+        previewDeletePair(frontFaceId, backFaceId, { mode: "confirmable-cascade" }),
+      ),
+    );
+    const usageByKey = new Map<string, PairUsageReport["cascadePlan"]["usage"][number]>();
+    reports.forEach((report) => {
+      report.cascadePlan.usage.forEach((usage) => {
+        const key = `${usage.deckId}:${usage.groupId}:${usage.setId}`;
+        if (!usageByKey.has(key)) usageByKey.set(key, usage);
+      });
+    });
+    const deckMap = new Map<
+      string,
+      { deckId: string; deckTitle: string; locations: Array<{ groupId: string; groupTitle: string; setId: string; setTitle: string }> }
+    >();
+    usageByKey.forEach((usage) => {
+      const deck = deckMap.get(usage.deckId) ?? {
+        deckId: usage.deckId,
+        deckTitle: usage.deckTitle,
+        locations: [],
+      };
+      if (!deck.locations.some((location) => location.groupId === usage.groupId && location.setId === usage.setId)) {
+        deck.locations.push({
+          groupId: usage.groupId,
+          groupTitle: usage.groupTitle,
+          setId: usage.setId,
+          setTitle: usage.setTitle,
+        });
+      }
+      deckMap.set(usage.deckId, deck);
+    });
+    return { decks: Array.from(deckMap.values()) };
+  };
+
   return (
     <>
       <div className={styles.stockpilePanelFooter}>
@@ -132,30 +181,48 @@ export default function StockpileFooter({
             <button
               type="button"
               className="btn btn-primary btn-sm"
-              disabled={false}
-              onClick={() => {
+              disabled={isApplyingPairSelection}
+              onClick={async () => {
                 if (!onConfirmSelection) {
                   onClose();
                   return;
                 }
+                const baseline = baselineSelectedIds ?? [];
+                const baselineSet = new Set(baseline);
+                const selectedSet = new Set(selectedIds);
+                const sameSize = baselineSet.size === selectedSet.size;
+                const unchanged =
+                  sameSize && Array.from(baselineSet).every((id) => selectedSet.has(id));
+                if (isPairFronts && unchanged) {
+                  onClose();
+                  return;
+                }
                 if (isPairFronts) {
-                  const conflicting = selectedIds.filter((id) => {
-                    const selectedCard = cardById.get(id);
-                    const pairedBackId = selectedCard
-                      ? backByFrontId.get(selectedCard.id)
-                      : null;
-                    if (!pairedBackId) return false;
-                    return pairedBackId !== activeBackId;
-                  });
-                  if (conflicting.length > 0) {
-                    setPairingConflict({ count: conflicting.length, cardIds: conflicting });
+                  const removedFrontIds = baseline.filter((id) => !selectedSet.has(id));
+                  if (removedFrontIds.length === 0) {
+                    onConfirmSelection(selectedIds);
+                    onClose();
                     return;
                   }
-                }
-                const baseline = baselineSelectedIds ?? [];
-                const removedCount = baseline.filter((id) => !selectedIds.includes(id)).length;
-                if (removedCount > 1) {
-                  setPairingRemovalPrompt({ count: removedCount });
+                  if (!activeBackId) {
+                    onConfirmSelection(selectedIds);
+                    onClose();
+                    return;
+                  }
+                  const removedCards = removedFrontIds
+                    .map((id) => cardById?.get(id))
+                    .filter((card): card is CardRecord => Boolean(card));
+                  setIsApplyingPairSelection(true);
+                  try {
+                    const impact = await buildPairFrontsImpact(removedFrontIds, activeBackId);
+                    setPendingPairFrontsUnpair({
+                      selectedIds,
+                      removedCards,
+                      decks: impact.decks,
+                    });
+                  } finally {
+                    setIsApplyingPairSelection(false);
+                  }
                   return;
                 }
                 onConfirmSelection(selectedIds);
@@ -202,137 +269,85 @@ export default function StockpileFooter({
           </div>
         )}
       </div>
-      {pairingConflict ? (
-        <ConfirmModal
-          isOpen={Boolean(pairingConflict)}
-          title={t("actions.confirm")}
-          confirmLabel={t("actions.confirm")}
-          cancelLabel={t("actions.cancel")}
-          onConfirm={async () => {
-            const current = pairingConflict;
-            setPairingConflict(null);
-            if (!current || !onConfirmSelection) return;
-            onConfirmSelection(selectedIds);
-            onClose();
-          }}
-          onCancel={() => {
-            setPairingConflict(null);
-          }}
-        >
-          {(() => {
-            const backIds = new Set<string>();
-            pairingConflict.cardIds.forEach((id) => {
-              const card = cardById.get(id);
-              const pairedBackId = card ? backByFrontId.get(card.id) : null;
-              if (pairedBackId) {
-                backIds.add(pairedBackId);
-              }
-            });
-            const backCount = backIds.size || 1;
-            return pairingConflict.count === 1
-              ? formatMessageWith("warning.pairingLossSingleGeneric", { backCount })
-              : formatMessageWith("warning.pairingLossMultipleGeneric", {
-                  count: pairingConflict.count,
-                  backCount,
-                });
-          })()}
-          {(() => {
-            const pairedBackIds = new Set<string>();
-            pairingConflict.cardIds.forEach((id) => {
-              const card = cardById.get(id);
-              const pairedBackId = card ? backByFrontId.get(card.id) : null;
-              if (pairedBackId) {
-                pairedBackIds.add(pairedBackId);
-              }
-            });
-            const pairedBacks = Array.from(pairedBackIds)
-              .map((id) => cardById.get(id))
-              .filter((card): card is CardRecord => Boolean(card));
-            return (
-              <>
-                <div className={styles.pairingConflictDivider} />
-                <div className={styles.pairingConflictScroll}>
-                  <div className={styles.pairingConflictSection}>
-                    <div className={styles.pairingConflictTitle}>
-                      {t("heading.cardsToBeUnpaired")}
+      <ConfirmModal
+        isOpen={Boolean(pendingPairFrontsUnpair)}
+        title={t("actions.confirm")}
+        confirmLabel={t("actions.confirm")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={() => {
+          const pending = pendingPairFrontsUnpair;
+          setPendingPairFrontsUnpair(null);
+          if (!pending || !onConfirmSelection) return;
+          onConfirmSelection(pending.selectedIds);
+          onClose();
+        }}
+        onCancel={() => setPendingPairFrontsUnpair(null)}
+      >
+        <div className={styles.pairingUsageList}>
+          <div>
+            {pendingPairFrontsUnpair
+              ? formatMessage(
+                  pendingPairFrontsUnpair.removedCards.length === 1
+                    ? "warning.unpairFromBackFaceSingle"
+                    : "warning.unpairFromBackFaceMultiple",
+                  { count: pendingPairFrontsUnpair.removedCards.length },
+                )
+              : null}
+          </div>
+          {pendingPairFrontsUnpair?.removedCards.length ? (
+            <>
+              <div className={styles.pairFrontsModalSectionTitle}>
+                {t("heading.cardsToBeUnpaired")}
+              </div>
+              <div className={styles.pairingPanelGrid}>
+                {pendingPairFrontsUnpair.removedCards.map((card) => {
+                  const templateThumbSrc = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+                  return (
+                    <div key={card.id} className={styles.pairFrontsModalThumbItem}>
+                      <StockpileThumbImage
+                        cardId={card.id}
+                        thumbnailBlob={card.thumbnailBlob ?? null}
+                        templateThumbSrc={templateThumbSrc}
+                        alt={card.name || ""}
+                        className={styles.pairFrontsModalThumbImage}
+                      />
                     </div>
-                    <div className={styles.pairingConflictGrid}>
-                      {pairingConflict.cardIds.map((id) => {
-                        const conflictCard = cardById.get(id);
-                        if (!conflictCard) return null;
-                        const templateThumb =
-                          cardTemplatesById[conflictCard.templateId]?.thumbnail ?? null;
-                        return (
-                          <div key={id} className={styles.pairingConflictItem}>
-                            <StockpileThumbImage
-                              cardId={conflictCard.id}
-                              thumbnailBlob={conflictCard.thumbnailBlob ?? null}
-                              templateThumbSrc={templateThumb?.src ?? null}
-                              alt=""
-                              fallback={<div className={styles.cardsPairIndicatorPlaceholder} />}
-                            />
-                          </div>
-                        );
-                      })}
+                  );
+                })}
+              </div>
+            </>
+          ) : null}
+          {pendingPairFrontsUnpair?.decks.length ? (
+            <>
+              <div className={styles.pairFrontsModalSectionTitle}>{t("heading.impactedDecks")}</div>
+              <div className={styles.pairingUsageDecks}>
+                {pendingPairFrontsUnpair.decks.map((deck) => (
+                  <div
+                    key={deck.deckId}
+                    className={`${styles.pairingUsageDeckRow} ${styles.pairFrontsDeckRow}`}
+                  >
+                    <div className={styles.pairFrontsDeckNameRow}>
+                      <span className={styles.pairingUsageDeckTitle}>{deck.deckTitle}</span>
+                      <DeckFanByDeckId
+                        deckId={deck.deckId}
+                        variant="xs"
+                        maxCount={DEFAULT_DECK_FAN_PREVIEW_COUNT}
+                      />
                     </div>
+                    <ul className={styles.pairingUsageItems}>
+                      {deck.locations.map((location) => (
+                        <li key={`${deck.deckId}-${location.groupId}-${location.setId}`}>
+                          {`${location.groupTitle} › ${location.setTitle}`}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  {pairedBacks.length > 0 ? (
-                    <div className={styles.pairingConflictSection}>
-                      <div className={styles.pairingConflictTitle}>{t("heading.pairedWith")}</div>
-                      <div className={styles.pairingConflictGrid}>
-                        {pairedBacks.map((paired) => {
-                          const templateThumb =
-                            cardTemplatesById[paired.templateId]?.thumbnail ?? null;
-                          return (
-                            <div key={paired.id} className={styles.pairingConflictItem}>
-                              <StockpileThumbImage
-                                cardId={paired.id}
-                                thumbnailBlob={paired.thumbnailBlob ?? null}
-                                templateThumbSrc={templateThumb?.src ?? null}
-                                alt=""
-                                fallback={<div className={styles.cardsPairIndicatorPlaceholder} />}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              </>
-            );
-          })()}
-        </ConfirmModal>
-      ) : null}
-      {pairingRemovalPrompt ? (
-        <ConfirmModal
-          isOpen={Boolean(pairingRemovalPrompt)}
-          title={t("actions.confirm")}
-          confirmLabel={t("actions.confirm")}
-          cancelLabel={t("actions.cancel")}
-          onConfirm={() => {
-            const current = pairingRemovalPrompt;
-            setPairingRemovalPrompt(null);
-            if (!current || !onConfirmSelection) {
-              return;
-            }
-            onConfirmSelection(selectedIds);
-            onClose();
-          }}
-          onCancel={() => {
-            setPairingRemovalPrompt(null);
-          }}
-        >
-          {isPairFronts
-            ? formatMessageWith("warning.pairingLossMultiple", {
-                count: pairingRemovalPrompt.count,
-                back: activeBackId ? cardById.get(activeBackId)?.title ?? fallbackTitle : fallbackTitle,
-              })
-            : formatMessageWith("warning.pairingLossMultipleBacks", {
-                backCount: pairingRemovalPrompt.count,
-              })}
-        </ConfirmModal>
-      ) : null}
+                ))}
+              </div>
+            </>
+          ) : null}
+        </div>
+      </ConfirmModal>
     </>
   );
 }

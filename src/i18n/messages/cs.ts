@@ -656,5 +656,121 @@ export const cs = {
   "label.expectedDatabaseVersion": "Očekávaná verze databáze",
   "label.databaseAppVersion": "Databázi vytvořila verze",
   "label.lastEdited": "Naposledy upraveno",
-  "label.unknownVersion": "Neznámá"
+  "label.unknownVersion": "Neznámá",
+  "heading.decksForCard": "Balíčky pro tuto kartu",
+  "label.decksView": "Balíčky",
+  "empty.saveCardToViewDecks": "Save this card to view deck membership.",
+  "empty.cardNotInDecks": "This card is not in any deck.",
+  "status.loadingDecks": "Loading decks...",
+  "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Exportovat balíček",
+  "decks.exportConfirm.title": "Exportovat obrázky balíčku?",
+  "decks.exportConfirm.summary": "Tímto se exportuje {totalCount} jedinečných obrázků z {setCount} sad.",
+  "decks.exportConfirm.breakdown": "Zahrnuje {frontCount} předních a {backCount} zadních karet.",
+  "decks.exportConfirm.uniqueNotice": "Karty opakující se napříč sadami se exportují pouze jednou.",
+  "decks.faces.back": "Zadní strany",
+  "decks.faces.front": "Přední strany",
+  "decks.faces.mode": "Režim stran",
+  "decks.meta.tab": "Detaily",
+  "decks.meta.title": "Detaily",
+  "decks.meta.loading": "Načítání metadat...",
+  "decks.meta.error": "Metadata balíčku se nepodařilo načíst.",
+  "decks.meta.created": "Vytvořeno",
+  "decks.meta.modified": "Naposledy upraveno",
+  "decks.meta.groups": "Skupiny",
+  "decks.meta.sets": "Sady",
+  "decks.meta.entries": "Položky",
+  "decks.meta.images.section": "Export obrázků",
+  "decks.meta.images.totalUnique": "Jedinečné obrázky",
+  "decks.meta.images.frontUnique": "Přední strany (jedinečné)",
+  "decks.meta.images.backUnique": "Zadní strany (jedinečné)",
+  "decks.meta.images.setSnapshot": "Zahrnuté sady",
+  "decks.meta.pdf.section": "Plánování PDF",
+  "decks.meta.pdf.uniquePairs": "Jedinečné páry",
+  "decks.meta.pdf.quantityTotal": "Celkové množství",
+  "decks.meta.health.section": "Stav balíčku",
+  "decks.meta.health.pairedMissing": "Spárované mimo sadu (jedinečné)",
+  "decks.entries.actions.editFront": "Upravit přední kartu",
+  "decks.entries.actions.removeFront": "Odebrat přední kartu ze sady",
+  "decks.entries.mode.label": "Režim karet v sadě",
+  "decks.entries.mode.inSet": "V sadě ({count})",
+  "decks.entries.mode.pairedNotInSet": "Spárované (mimo sadu) ({count})",
+  "decks.entries.actions.removeSelected": "Odebrat vybrané",
+  "decks.entries.actions.recoverPaired": "Obnovit spárované ({count})",
+  "decks.entries.actions.removeSelectedCount": "Odebrat vybrané ({count})",
+  "decks.entries.actions.editCard": "Upravit kartu",
+  "decks.entries.actions.deleteEntry": "Smazat položku",
+  "decks.entries.empty.selectSet": "Vyberte sadu pro zobrazení položek.",
+  "decks.entries.empty.noPairedPending": "Žádné spárované karty nečekají na přidání.",
+  "decks.entries.selectedSetBackAlt": "Rub vybrané sady",
+  "decks.entries.recover.modalTitle": "Obnovit spárované karty",
+  "decks.entries.recover.selectAllAria": "Vybrat všechny obnovitelné karty",
+  "decks.entries.recover.selectNone": "Zrušit výběr",
+  "decks.entries.recover.selectAll": "Vybrat vše",
+  "decks.entries.recover.recovering": "Obnovuje se...",
+  "decks.entries.recover.recoverSelected": "Obnovit vybrané",
+  "decks.entries.recover.empty": "Žádné spárované karty k obnovení.",
+  "decks.entries.removePrompt.bulkTitle": "Odebrat {count} položek ze sady?",
+  "decks.entries.removePrompt.bulkBody": "Toto se použije na {count} vybraných položek.",
+  "decks.sets.actions.setKeyCard": "Nastavit jako titulní kartu",
+  "decks.sets.actions.delete": "Smazat sadu",
+  "decks.sets.badge.keyCard": "Titulní karta",
+  "decks.boards.groups": "Skupiny",
+  "decks.boards.entries": "Položky",
+  "decks.boards.source": "Zdroj",
+  "decks.boards.cards": "Karty",
+  "decks.groups.actions.reorder": "Přeskládat skupinu",
+  "decks.errors.saveTitleFailed": "Nepodařilo se uložit název balíčku",
+  "decks.entries.quantity.decrease": "Snížit množství",
+  "decks.entries.quantity.increase": "Zvýšit množství",
+  "decks.entries.quantity.current": "Množství {count}",
+
+  "decks.sourcePanelToggle": "Přepnout panel zdrojových stran",
+
+  "decks.entries.recover.selectCardAria": "Vybrat {cardId}",
+
+  "decks.groups.actions.insertHere": "Vložit skupinu sem",
+  "decks.groups.actions.createAtPosition": "Vytvořit skupinu na pozici {index}",
+  "decks.groups.emptyDropHint": "Přetáhněte sem rubové karty",
+
+  "actions.edit": "Upravit",
+
+  "decks.openDeck": "Otevřít balíček",
+
+  "decks.createDeck": "Vytvořit balíček",
+
+  "decks.editDeck": "Upravit balíček",
+
+  "decks.title": "Název",
+
+  "decks.description": "Popis",
+
+  "decks.descriptionPlaceholder": "Volitelný popis",
+
+  "decks.removeAndUnpair": "Odebrat a zrušit párování",
+
+  "decks.removeFromSet": "Odebrat ze sady",
+
+  "decks.deleteDeckTitle": "Smazat balíček?",
+
+  "decks.deleteDeckBody": "Smazání balíčku nesmaže vaše karty ani párování; smaže pouze organizaci balíčku.",
+
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
+  "decks.deleteSelectedBody": "Smazat {count} vybraných balíčků? Smazání balíčku nesmaže vaše karty ani párování; smaže pouze organizaci balíčku.",
+
+  "decks.removeFrontPromptTitle": "Odebrat přední kartu ze sady?",
+
+  "decks.removeFrontPromptBody": "Odeberte tuto přední kartu ze sady. Volitelně ji můžete také zrušit z párování se zadní stranou této sady.",
+
+  "warning.unpairFromBackFaceSingle": "1 karta bude odpárována od tohoto rubu. Pokračovat?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} karet bude odpárováno od tohoto rubu. Pokračovat?",
+
+  "heading.impactedDecks": "Dotčené balíčky",
+
+  "decks.pairUsage.body": "Tímto se zruší párování a odeberou závislé položky balíčku z následujících umístění:",
+
 } as const;

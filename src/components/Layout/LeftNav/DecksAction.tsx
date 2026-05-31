@@ -20,10 +20,9 @@ export default function DecksAction({ isEnabled }: DecksActionProps) {
     <NavActionButton
       label={t("actions.decks")}
       icon={Layers}
-      onClick={() => {}}
+      to="/decks"
       title={t("actions.decks")}
       ariaLabel={t("actions.decks")}
-      isActive={false}
     />
   );
 }

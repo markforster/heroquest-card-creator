@@ -7,6 +7,7 @@ import CardThumbnail from "@/components/common/CardThumbnail";
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import {
   invalidateCardThumbnail,
   useCardThumbnailUrl,
@@ -36,7 +37,10 @@ function RecentCardItem({
   onClose,
   onThumbError,
 }: RecentCardItemProps) {
-  const templateThumb = cardTemplatesById[card.templateId]?.thumbnail ?? null;
+  const templateThumbSrcRaw = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+  const templateThumbSrc = templateThumbSrcRaw
+    ? normalizeFileProtocolAssetUrl(templateThumbSrcRaw)
+    : null;
   const thumbUrl = useCardThumbnailUrl(card.id, card.thumbnailBlob ?? null, {
     enabled: true,
     useCache: ENABLE_CARD_THUMB_CACHE,
@@ -61,7 +65,7 @@ function RecentCardItem({
       </div>
       <CardThumbnail
         key={`${card.id}-${retryToken}`}
-        src={thumbUrl ?? templateThumb?.src ?? null}
+        src={thumbUrl ?? templateThumbSrc}
         alt={card.name}
         variant="fluidSm"
         fit="contain"

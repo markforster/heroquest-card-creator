@@ -11,22 +11,16 @@ import {
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { FolderPlus, Pencil, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
-import CardPreview from "@/components/Cards/CardPreview";
-import { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ModalShell from "@/components/common/ModalShell";
-import ExportProgressOverlay from "@/components/ExportProgressOverlay";
+import { useBulkCardExport } from "@/components/Export/hooks/useBulkCardExport";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
-import ExportBleedPrompt, {
-  type ExportPromptResult,
-} from "@/components/Modals/ExportBleedPrompt";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useEditorForm } from "@/components/Providers/EditorFormContext";
-import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import { getDeleteCollectionImpact } from "@/components/Stockpile/collection-delete-impact";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
@@ -37,6 +31,7 @@ import {
   resolveExportFileName,
   resolveZipFileName,
 } from "@/components/Stockpile/stockpile-utils";
+import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import StockpileActionsBar from "@/components/Stockpile/StockpileActionsBar";
 import StockpileAddToCollectionController from "@/components/Stockpile/StockpileAddToCollectionController";
 import StockpileCollectionModal from "@/components/Stockpile/StockpileCollectionModal";
@@ -54,23 +49,28 @@ import type {
   StockpileCardThumb,
   StockpileCardView,
 } from "@/components/Stockpile/types";
-import { ENABLE_CARD_THUMB_CACHE, ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
+import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { createEditorDefaultValues } from "@/lib/editor-form";
-import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
   getCachedCardThumbnailUrl,
   getLegacyCardThumbnailUrl,
   releaseLegacyCardThumbnailUrl,
 } from "@/lib/card-thumbnail-cache";
 import { apiClient } from "@/api/client";
-import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
-import { runBulkExport } from "@/lib/export-cards";
-import type { ExportSettings } from "@/lib/export-settings";
+import {
+  isCardDeleteConfirmRequiredError,
+  isPairDeleteConfirmRequiredError,
+  type CardDeleteUsageReport,
+  type PairUsageReport,
+} from "@/lib/decks-errors";
+import type { MissingAssetReport } from "@/lib/export-assets-cache";
 import formatMessageWith from "@/lib/format-message-with";
+import { deletePairsForFaces } from "@/lib/pairs-service";
 import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
 import type { OpenCloseProps } from "@/types/ui";
@@ -100,21 +100,6 @@ type MissingAssetsPrompt = {
 
 const STOCKPILE_VIEW_STORAGE_KEY = "hqcc.stockpileView";
 
-async function deletePairsForFaceId(faceId: string): Promise<void> {
-  const pairs = await apiClient.listPairs({ queries: { faceId } });
-  const deletions = pairs.filter(
-    (pair) => pair.frontFaceId && pair.backFaceId && (pair.frontFaceId === faceId || pair.backFaceId === faceId),
-  );
-  await Promise.all(
-    deletions.map((pair) =>
-      apiClient.deletePair({
-        frontFaceId: pair.frontFaceId as string,
-        backFaceId: pair.backFaceId as string,
-      }),
-    ),
-  );
-}
-
 export default function StockpilePanelContent({
   isOpen,
   onClose,
@@ -128,6 +113,7 @@ export default function StockpilePanelContent({
   frame = "panel",
 }: StockpilePanelContentProps) {
   const { t, language } = useI18n();
+  const navigate = useNavigate();
   const { track } = useAnalytics();
   const isPairFronts = mode === "pair-fronts";
   const isPairBacks = mode === "pair-backs";
@@ -155,6 +141,12 @@ export default function StockpilePanelContent({
   } | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const selectedIdsRef = useRef<string[]>([]);
+  const [pairUsagePrompt, setPairUsagePrompt] = useState<PairUsageReport | null>(null);
+  const [pairUsagePendingDeleteIds, setPairUsagePendingDeleteIds] = useState<string[]>([]);
+  const [cardDeleteUsagePrompt, setCardDeleteUsagePrompt] = useState<CardDeleteUsageReport | null>(
+    null,
+  );
+  const [cardDeletePendingIds, setCardDeletePendingIds] = useState<string[]>([]);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
   const [draggingIds, setDraggingIds] = useState<string[]>([]);
   const [pairingBaselineIds, setPairingBaselineIds] = useState<string[]>([]);
@@ -232,21 +224,7 @@ export default function StockpilePanelContent({
     showMissingArtworkOnly,
     missingArtworkIdSet: missingArtworkIds,
   });
-  const [exportTarget, setExportTarget] = useState<CardRecord | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportTotal, setExportTotal] = useState(0);
-  const [exportProgress, setExportProgress] = useState(0);
-  const [exportSecondaryPercent, setExportSecondaryPercent] = useState<number | null>(null);
-  const [exportSecondaryMode, setExportSecondaryMode] = useState<"worker" | "fallback" | null>(
-    null,
-  );
-  const exportSecondaryModeRef = useRef<"worker" | "fallback" | null>(null);
-  const [exportCancelled, setExportCancelled] = useState(false);
-  const [exportPrompt, setExportPrompt] = useState<{
-    resolve: (result: ExportPromptResult | null) => void;
-    initial: ExportSettings;
-  } | null>(null);
-  const { settings: exportSettings } = useExportSettingsState();
+  const exportFlow = useBulkCardExport();
   const [exportPairPrompt, setExportPairPrompt] = useState<{
     baseIds: string[];
     pairedIds: string[];
@@ -254,8 +232,6 @@ export default function StockpilePanelContent({
     exportOnlyLabel: string;
     previewRows: { left: CardRecord[]; right: CardRecord[] }[];
   } | null>(null);
-  const previewRef = useRef<CardPreviewHandle | null>(null);
-  const cancelExportRef = useRef(false);
   const [hoveredPairCardId, setHoveredPairCardId] = useState<string | null>(null);
   const pairHoverTimeoutRef = useRef<number | null>(null);
   const [pairPopoverAnchor, setPairPopoverAnchor] = useState<{
@@ -448,11 +424,6 @@ export default function StockpilePanelContent({
         : templateFilter === "back"
           ? t("cardFace.backFacing")
           : (templateFilterLabelMap[templateFilter] ?? templateFilter);
-  const exportTemplate =
-    exportTarget && cardTemplatesById[exportTarget.templateId]
-      ? cardTemplatesById[exportTarget.templateId]
-      : null;
-  const exportCardData = exportTarget ? cardRecordToCardData(exportTarget) : undefined;
   const cardById = useMemo(() => {
     const map = new Map<string, CardRecord>();
     cards.forEach((card) => {
@@ -550,7 +521,10 @@ export default function StockpilePanelContent({
     const resolveCardThumb = (card: CardRecord): StockpileCardThumb => ({
       id: card.id,
       thumbnailBlob: card.thumbnailBlob ?? null,
-      templateThumbSrc: cardTemplatesById[card.templateId]?.thumbnail?.src ?? null,
+      templateThumbSrc: (() => {
+        const src = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+        return src ? normalizeFileProtocolAssetUrl(src) : null;
+      })(),
       name: card.name ?? card.title ?? "",
     });
 
@@ -591,7 +565,10 @@ export default function StockpilePanelContent({
           minute: "2-digit",
         }),
         thumbnailBlob: card.thumbnailBlob ?? null,
-        templateThumbSrc: templateMeta?.thumbnail?.src ?? null,
+        templateThumbSrc: (() => {
+          const src = templateMeta?.thumbnail?.src ?? null;
+          return src ? normalizeFileProtocolAssetUrl(src) : null;
+        })(),
         paired: {
           back: pairedBack ? resolveCardThumb(pairedBack) : null,
           fronts: pairedFrontThumbs,
@@ -639,7 +616,10 @@ export default function StockpilePanelContent({
       if (!card) {
         return { id, url: null as string | null, onLoad: undefined as (() => void) | undefined };
       }
-      const templateThumbSrc = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+      const templateThumbSrcRaw = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+      const templateThumbSrc = templateThumbSrcRaw
+        ? normalizeFileProtocolAssetUrl(templateThumbSrcRaw)
+        : null;
       const { url, onLoad } = resolveOverlayThumb(id, card.thumbnailBlob ?? null);
       return { id, url: url ?? templateThumbSrc, onLoad };
     });
@@ -808,6 +788,50 @@ export default function StockpilePanelContent({
       return aName.localeCompare(bName);
     });
 
+  const finalizeHardDelete = async (ids: string[], confirmCascade = false) => {
+    if (!ids.length) return;
+    const idSet = new Set(ids);
+    await apiClient.deleteCards({
+      ids,
+      mode: "confirmable-cascade",
+      confirmCascade,
+    });
+
+    (Object.keys(activeCardIdByTemplate) as TemplateId[]).forEach((templateId) => {
+      const activeId = activeCardIdByTemplate[templateId];
+      if (!activeId || !idSet.has(activeId)) return;
+      setActiveCard(templateId, null, null);
+      if (selectedTemplateId === templateId) {
+        resetWithSaved(createEditorDefaultValues(templateId));
+      }
+    });
+
+    const updates = collections
+      .map((collection) => {
+        const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
+        return nextCardIds.length === collection.cardIds.length
+          ? null
+          : { id: collection.id, cardIds: nextCardIds };
+      })
+      .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
+    await Promise.all(
+      updates.map((update) =>
+        apiClient.updateCollection(
+          { cardIds: update.cardIds },
+          { params: { id: update.id } },
+        ),
+      ),
+    );
+
+    const refreshedCards = await apiClient.listCards({
+      queries: { status: "saved", deleted: "include" },
+    });
+    setCards(refreshedCards);
+    const refreshedCollections = await apiClient.listCollections();
+    setCollections(refreshedCollections);
+    setSelectedIds([]);
+  };
+
   const resolvePairedExportPlan = (base: CardRecord[]) => {
     const baseIdSet = new Set(base.map((card) => card.id));
     const baseIds = Array.from(baseIdSet);
@@ -867,150 +891,41 @@ export default function StockpilePanelContent({
   };
 
   const canExport =
-    !isExporting &&
+    !exportFlow.isExporting &&
     exportCards.length > 0 &&
     (activeFilter.type === "collection" ||
       ((activeFilter.type === "all" || activeFilter.type === "unfiled") &&
         selectedVisibleCards.length > 0));
   const exportCount = exportCards.length;
-  const exportLabel = isExporting
+  const exportLabel = exportFlow.isExporting
     ? t("actions.exporting")
     : activeFilter.type === "collection" && selectedVisibleCards.length === 0
       ? `${t("actions.exportAll")} ${t("actions.fromThisCollection")}`
       : activeFilter.type === "collection"
         ? `${t("actions.export")} (${exportCount}) ${t("actions.fromThisCollection")}`
         : `${t("actions.export")} (${exportCount})`;
-  const exportCollectionName = activeCollection?.name;
-  const exportTitle = exportCollectionName
-    ? `${t("status.exportingImagesFrom")} ${exportCollectionName} (${exportTotal})`
-    : `${t("status.exportingImages")} (${exportTotal})`;
-
-  const requestExportOptions = async (): Promise<ExportPromptResult | null> => {
-    const settings = exportSettings;
-    if (!settings.bleed.askBeforeExport) {
-      return {
-        bleedPx: settings.bleed.enabled ? settings.bleed.bleedPx : 0,
-        cropMarks: {
-          enabled: settings.bleed.enabled ? settings.cropMarks.enabled : false,
-          color: settings.cropMarks.color,
-          style: settings.cropMarks.style ?? "lines",
-        },
-        cutMarks: {
-          enabled: settings.cutMarks.enabled,
-          color: settings.cutMarks.color,
-        },
-        roundedCorners: settings.roundedCorners,
-      };
-    }
-    return new Promise<ExportPromptResult | null>((resolve) => {
-      setExportPrompt({ resolve, initial: settings });
-    });
-  };
-
   const handleExportCards = async (
     cardsToExport: CardRecord[],
     options?: { skipIds?: Set<string>; skipNotes?: Map<string, string>; skipPrecheck?: boolean },
   ) => {
-    if (!cardsToExport.length) {
-      window.alert(t("alert.selectCardToExport"));
-      return;
-    }
-
-    const skipIds = options?.skipIds ?? new Set<string>();
-    const skipNotes = options?.skipNotes ?? new Map<string, string>();
-
-    if (ENABLE_MISSING_ASSET_CHECKS && !options?.skipPrecheck) {
-      const report = await buildMissingAssetsReport(cardsToExport);
-      if (report.length > 0) {
-        const nextSkipIds = new Set(report.map((entry) => entry.cardId));
-        const nextSkipNotes = new Map<string, string>();
-        report.forEach((entry) => {
-          const missingSummary = entry.missing
-            .map((asset) => `${asset.label} asset \"${asset.name}\" (id=${asset.id})`)
-            .join(", ");
-          nextSkipNotes.set(
-            entry.cardId,
-            `Card \"${entry.title}\" (id=${entry.cardId}, template=${entry.templateId}, face=${entry.face}) could not be exported because the ${missingSummary}.`,
-          );
-        });
-        setMissingAssetsPrompt({
-          cards: cardsToExport,
-          report,
-          skipIds: nextSkipIds,
-          skipNotes: nextSkipNotes,
-        });
-        return;
-      }
-    }
-
-    const exportOptions = await requestExportOptions();
-    if (!exportOptions) return;
-
-    const exportableCount = cardsToExport.filter((card) => !skipIds.has(card.id)).length;
-    setIsExporting(true);
-    setExportTotal(exportableCount);
-    setExportProgress(0);
-    setExportSecondaryPercent(null);
-    setExportSecondaryMode(null);
-    exportSecondaryModeRef.current = null;
-    setExportCancelled(false);
-    cancelExportRef.current = false;
-
-    try {
-      const result = await runBulkExport({
-        cards: cardsToExport,
-        previewRef,
-        resolveName: (card, usedNames) =>
-          resolveExportFileName(
-            card.name || card.title || templateFilterLabelMap[card.templateId] || card.templateId,
-            usedNames,
-          ),
-        resolveZipName: () =>
-          resolveZipFileName(() => {
-            if (activeFilter.type !== "collection") return null;
-            return (
-              collections.find((collection) => collection.id === activeFilter.id)?.name ?? null
-            );
-          }),
-        shouldCancel: () => cancelExportRef.current,
-        onTargetChange: (card) => setExportTarget(card),
-        onProgress: (exportedCount) => setExportProgress(exportedCount),
-        onZipProgress: (percent) => {
-          if (exportSecondaryModeRef.current === "fallback") return;
-          setExportSecondaryPercent(percent);
-        },
-        onZipStatus: (mode) => {
-          setExportSecondaryMode(mode);
-          exportSecondaryModeRef.current = mode;
-          if (mode === "fallback") {
-            setExportSecondaryPercent(null);
-          }
-        },
-        skipCardIds: skipIds,
-        skipCardNotes: skipNotes,
-        bleedPx: exportOptions.bleedPx,
-        cropMarks: exportOptions.cropMarks,
-        cutMarks: exportOptions.cutMarks,
-        roundedCorners: exportOptions.roundedCorners,
-      });
-
-      if (result.status === "no-images") {
-        window.alert(t("alert.noImagesExported"));
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("[StockpileModal] Bulk export failed", error);
-      window.alert(t("alert.exportImagesFailed"));
-    } finally {
-      setIsExporting(false);
-      setExportTarget(null);
-      setExportTotal(0);
-      setExportProgress(0);
-      setExportSecondaryPercent(null);
-      setExportSecondaryMode(null);
-      exportSecondaryModeRef.current = null;
-      setExportCancelled(false);
-      cancelExportRef.current = false;
+    const result = await exportFlow.startBulkCardExport({
+      cards: cardsToExport,
+      skipIds: options?.skipIds,
+      skipNotes: options?.skipNotes,
+      skipPrecheck: options?.skipPrecheck,
+      resolveName: (card, usedNames) =>
+        resolveExportFileName(
+          card.name || card.title || templateFilterLabelMap[card.templateId] || card.templateId,
+          usedNames,
+        ),
+      resolveZipName: () =>
+        resolveZipFileName(() => {
+          if (activeFilter.type !== "collection") return null;
+          return collections.find((collection) => collection.id === activeFilter.id)?.name ?? null;
+        }),
+    });
+    if (result.status === "missing-assets") {
+      setMissingAssetsPrompt(result.prompt);
     }
   };
 
@@ -1176,34 +1091,28 @@ export default function StockpilePanelContent({
                         setCards(refreshed);
                       };
 
-                      const runHardDelete = async () => {
-                        await Promise.all(ids.map((id) => deletePairsForFaceId(id)));
-                        await apiClient.deleteCards({ ids });
-                        clearActiveCardsForDeletedIds();
-                        const updates = collections
-                          .map((collection) => {
-                            const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
-                            return nextCardIds.length === collection.cardIds.length
-                              ? null
-                              : { id: collection.id, cardIds: nextCardIds };
-                          })
-                          .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
-                        await Promise.all(
-                          updates.map((update) =>
-                            apiClient.updateCollection(
-                              { cardIds: update.cardIds },
-                              { params: { id: update.id } },
-                            ),
-                          ),
-                        );
-                        await refreshSavedCards();
-                        const refreshedCollections = await apiClient.listCollections();
-                        setCollections(refreshedCollections);
-                        setSelectedIds([]);
+                      const runHardDelete = async (confirmCascade: boolean) => {
+                        try {
+                          await finalizeHardDelete(ids, confirmCascade);
+                        } catch (error) {
+                          if (
+                            isCardDeleteConfirmRequiredError(error) ||
+                            isPairDeleteConfirmRequiredError(error)
+                          ) {
+                            if (isCardDeleteConfirmRequiredError(error)) {
+                              setCardDeletePendingIds(ids);
+                              setCardDeleteUsagePrompt(error.report);
+                            } else {
+                              setPairUsagePendingDeleteIds(ids);
+                              setPairUsagePrompt(error.report);
+                            }
+                            return;
+                          }
+                          throw error;
+                        }
                       };
 
                       const runSoftDelete = async () => {
-                        await Promise.all(ids.map((id) => deletePairsForFaceId(id)));
                         await apiClient.softDeleteCards({ ids });
                         clearActiveCardsForDeletedIds();
                         await refreshSavedCards();
@@ -1238,7 +1147,7 @@ export default function StockpilePanelContent({
                                   : t("actions.deletePermanently"),
                               onExtra: async () => {
                                 try {
-                                  await runHardDelete();
+                                  await runHardDelete(false);
                                 } catch (error) {
                                   // eslint-disable-next-line no-console
                                   console.error(
@@ -1254,7 +1163,7 @@ export default function StockpilePanelContent({
                         onConfirm: async () => {
                           try {
                             if (activeFilter.type === "recentlyDeleted") {
-                              await runHardDelete();
+                              await runHardDelete(false);
                             } else {
                               await runSoftDelete();
                             }
@@ -1540,6 +1449,109 @@ export default function StockpilePanelContent({
           })()}
         </ConfirmModal>
       ) : null}
+      <ConfirmModal
+        isOpen={Boolean(cardDeleteUsagePrompt)}
+        title={t("decks.pairInUseTitle")}
+        confirmLabel={t("actions.confirm")}
+        extraLabel={t("decks.openDeck")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={async () => {
+          const pending = cardDeleteUsagePrompt;
+          setCardDeleteUsagePrompt(null);
+          const allIds = cardDeletePendingIds;
+          setCardDeletePendingIds([]);
+          if (!pending || !allIds.length) return;
+          await finalizeHardDelete(allIds, true);
+        }}
+        onExtra={() => {
+          const usage =
+            cardDeleteUsagePrompt?.cascadePlan?.deletedDeckUsage?.[0] ??
+            cardDeleteUsagePrompt?.cascadePlan?.pairUsage?.[0];
+          if (usage) {
+            navigate(buildDeckDeepLink({ deckId: usage.deckId, setId: usage.setId }));
+          }
+          setCardDeleteUsagePrompt(null);
+          setCardDeletePendingIds([]);
+        }}
+        onCancel={() => {
+          setCardDeleteUsagePrompt(null);
+          setCardDeletePendingIds([]);
+        }}
+      >
+        <div className={styles.pairingUsageList}>
+          {(() => {
+            const merged = [
+              ...(cardDeleteUsagePrompt?.cascadePlan.deletedDeckUsage ?? []),
+              ...(cardDeleteUsagePrompt?.cascadePlan.pairUsage ?? []),
+            ];
+            const deduped = Array.from(
+              new Map(
+                merged.map((usage) => [
+                  `${usage.deckId}:${usage.groupId}:${usage.setId}`,
+                  usage,
+                ]),
+              ).values(),
+            );
+            return (
+              <>
+                <div>
+                  Deleting these cards will remove dependent deck sets and deck entries from the
+                  following locations:
+                </div>
+                <ul className={styles.pairingUsageItems}>
+                  {deduped.map((usage) => (
+                    <li key={`${usage.deckId}-${usage.setId}`}>
+                      {`${usage.deckTitle} › ${usage.groupTitle} › ${usage.setTitle}`}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            );
+          })()}
+        </div>
+      </ConfirmModal>
+      <ConfirmModal
+        isOpen={Boolean(pairUsagePrompt)}
+        title={t("decks.pairInUseTitle")}
+        confirmLabel={t("actions.confirm")}
+        extraLabel={t("decks.openDeck")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={async () => {
+          if (!pairUsagePrompt) return;
+          setPairUsagePrompt(null);
+          const allFaceIds = pairUsagePendingDeleteIds;
+          if (!allFaceIds.length) return;
+          await deletePairsForFaces(allFaceIds, {
+            mode: "confirmable-cascade",
+            confirmCascade: true,
+          });
+          await finalizeHardDelete(allFaceIds);
+          setPairUsagePendingDeleteIds([]);
+        }}
+        onExtra={() => {
+          const usage = pairUsagePrompt?.cascadePlan?.usage?.[0];
+          if (usage) navigate(buildDeckDeepLink({ deckId: usage.deckId, setId: usage.setId }));
+          setPairUsagePrompt(null);
+          setPairUsagePendingDeleteIds([]);
+        }}
+        onCancel={() => {
+          setPairUsagePrompt(null);
+          setPairUsagePendingDeleteIds([]);
+        }}
+      >
+        <div className={styles.pairingUsageList}>
+          <div>
+            {t("decks.pairUsage.body")}
+          </div>
+          <ul className={styles.pairingUsageItems}>
+            {(pairUsagePrompt?.cascadePlan.usage ?? []).map((usage) => (
+              <li key={`${usage.deckId}-${usage.setId}`}>
+                {`${usage.deckTitle} › ${usage.groupTitle} › ${usage.setTitle}`}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </ConfirmModal>
       <StockpilePairPopover
         hoveredPairCardId={hoveredPairCardId}
         pairPopoverAnchor={pairPopoverAnchor}
@@ -1595,18 +1607,6 @@ export default function StockpilePanelContent({
           setMissingAssetsPrompt(null);
         }}
       />
-      {isOpen && exportTarget && exportTemplate ? (
-        <div className={styles.bulkExportPreview} aria-hidden="true">
-          <CardPreview
-            ref={previewRef}
-            templateId={exportTemplate.id}
-            templateName={exportTemplate.name}
-            backgroundSrc={exportTemplate.background}
-            cardData={exportCardData}
-            copyrightTextColor={exportCardData?.copyrightColor}
-          />
-        </div>
-      ) : null}
       <StockpileExportPairPrompt
         exportPairPrompt={exportPairPrompt}
         onClose={() => setExportPairPrompt(null)}
@@ -1615,44 +1615,7 @@ export default function StockpilePanelContent({
           void handleExportCards(cards);
         }}
       />
-      {exportPrompt ? (
-        <ExportBleedPrompt
-          isOpen={Boolean(exportPrompt)}
-          initialBleedEnabled={exportPrompt.initial.bleed.enabled}
-          initialBleedPx={exportPrompt.initial.bleed.bleedPx}
-          initialCropMarksEnabled={exportPrompt.initial.cropMarks.enabled}
-          initialCropMarkColor={exportPrompt.initial.cropMarks.color}
-          initialCropMarkStyle={exportPrompt.initial.cropMarks.style ?? "lines"}
-          initialCutMarksEnabled={exportPrompt.initial.cutMarks.enabled}
-          initialCutMarkColor={exportPrompt.initial.cutMarks.color}
-          initialRoundedCorners={exportPrompt.initial.roundedCorners}
-          onConfirm={(result) => {
-            const prompt = exportPrompt;
-            if (!prompt) return;
-            setExportPrompt(null);
-            prompt.resolve(result);
-          }}
-          onCancel={() => {
-            const prompt = exportPrompt;
-            if (!prompt) return;
-            setExportPrompt(null);
-            prompt.resolve(null);
-          }}
-        />
-      ) : null}
-      <ExportProgressOverlay
-        isOpen={isExporting}
-        title={exportTitle}
-        progress={exportProgress}
-        total={exportTotal}
-        secondaryLabel={exportSecondaryMode ? t("status.finalizing") : null}
-        secondaryPercent={exportSecondaryMode === "worker" ? exportSecondaryPercent : null}
-        exportCancelled={exportCancelled}
-        onCancel={() => {
-          cancelExportRef.current = true;
-          setExportCancelled(true);
-        }}
-      />
+      {exportFlow.exportUi}
       <StockpileConfirmModal confirmDialog={confirmDialog} onCancel={() => setConfirmDialog(null)} />
     </>
   );
