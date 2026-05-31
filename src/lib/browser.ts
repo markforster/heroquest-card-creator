@@ -12,3 +12,10 @@ export function isSafariBrowser(): boolean {
   const ua = navigator.userAgent;
   return /Safari/.test(ua) && !/Chrome|Chromium|Edg|OPR/.test(ua);
 }
+
+export function normalizeFileProtocolAssetUrl(src: string): string {
+  if (typeof window === "undefined") return src;
+  if (window.location.protocol !== "file:") return src;
+  if (!src.startsWith("/")) return src;
+  return `.${src}`;
+}

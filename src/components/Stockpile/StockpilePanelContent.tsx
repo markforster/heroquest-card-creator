@@ -54,6 +54,7 @@ import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { createEditorDefaultValues } from "@/lib/editor-form";
 import {
   getCachedCardThumbnailUrl,
@@ -511,7 +512,10 @@ export default function StockpilePanelContent({
     const resolveCardThumb = (card: CardRecord): StockpileCardThumb => ({
       id: card.id,
       thumbnailBlob: card.thumbnailBlob ?? null,
-      templateThumbSrc: cardTemplatesById[card.templateId]?.thumbnail?.src ?? null,
+      templateThumbSrc: (() => {
+        const src = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+        return src ? normalizeFileProtocolAssetUrl(src) : null;
+      })(),
       name: card.name ?? card.title ?? "",
     });
 
@@ -552,7 +556,10 @@ export default function StockpilePanelContent({
           minute: "2-digit",
         }),
         thumbnailBlob: card.thumbnailBlob ?? null,
-        templateThumbSrc: templateMeta?.thumbnail?.src ?? null,
+        templateThumbSrc: (() => {
+          const src = templateMeta?.thumbnail?.src ?? null;
+          return src ? normalizeFileProtocolAssetUrl(src) : null;
+        })(),
         paired: {
           back: pairedBack ? resolveCardThumb(pairedBack) : null,
           fronts: pairedFrontThumbs,
@@ -600,7 +607,10 @@ export default function StockpilePanelContent({
       if (!card) {
         return { id, url: null as string | null, onLoad: undefined as (() => void) | undefined };
       }
-      const templateThumbSrc = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+      const templateThumbSrcRaw = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+      const templateThumbSrc = templateThumbSrcRaw
+        ? normalizeFileProtocolAssetUrl(templateThumbSrcRaw)
+        : null;
       const { url, onLoad } = resolveOverlayThumb(id, card.thumbnailBlob ?? null);
       return { id, url: url ?? templateThumbSrc, onLoad };
     });
