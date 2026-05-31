@@ -104,6 +104,8 @@ export const listCardsFilterSchema = z.object({
 
 export const deleteCardsInputSchema = z.object({
   ids: z.array(z.string()).min(1),
+  mode: z.enum(["block", "confirmable-cascade"]).optional(),
+  confirmCascade: z.boolean().optional(),
 });
 
 export const softDeleteCardsInputSchema = z.object({
@@ -133,3 +135,11 @@ export const cardThumbnailResponseSchema = blobSchema.nullable();
 export const normalizeSelfPairingsInputSchema = z.object({});
 
 export const normalizeSelfPairingsResponseSchema = z.number();
+
+export const cardDeckMembershipSchema = z.object({
+  deckId: z.string(),
+  deckTitle: z.string(),
+  count: z.number().int().nonnegative(),
+  setId: z.string().optional(),
+  entryId: z.string().optional(),
+});

@@ -1,0 +1,33 @@
+name: Codebase Hygiene
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  fallow:
+    name: Fallow Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fallow (PR-scoped)
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            npx fallow --changed-since "${{ github.event.pull_request.base.sha }}" --fail-on-issues --quiet
+          else
+            npm run fallow:ci
+          fi

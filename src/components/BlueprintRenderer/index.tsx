@@ -42,6 +42,7 @@ import { resolveEffectiveFace } from "@/lib/card-face";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { computeContainScale } from "@/lib/image-scale";
 import { clamp } from "@/lib/math";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import type {
   Blueprint,
   BlueprintBounds,
@@ -269,7 +270,7 @@ function renderBackgroundLayer({
       ) : null}
       <g style={tint ? { isolation: "isolate" } : undefined}>
         <image
-          href={image.src}
+          href={normalizeFileProtocolAssetUrl(image.src)}
           data-card-background="true"
           data-template-asset="background"
           x={bounds.x}
@@ -364,7 +365,7 @@ function renderOverlayLayer({ blueprint, layer }: { blueprint: Blueprint; layer:
   return (
     <Layer key={layer.id}>
       <image
-        href={overlayLayer.asset.src}
+        href={normalizeFileProtocolAssetUrl(overlayLayer.asset.src)}
         data-template-asset="overlay"
         x={bounds.x}
         y={bounds.y}

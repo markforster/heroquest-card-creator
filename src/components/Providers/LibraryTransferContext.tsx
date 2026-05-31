@@ -96,7 +96,15 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
 
   const runRemoteImport = async (
     file: File,
-  ): Promise<{ cardsCount: number; assetsCount: number; collectionsCount: number }> => {
+  ): Promise<{
+    cardsCount: number;
+    assetsCount: number;
+    collectionsCount: number;
+    decksCount: number;
+    deckGroupsCount: number;
+    deckSetsCount: number;
+    deckEntriesCount: number;
+  }> => {
     const apiConfig = readApiConfig();
     if (apiConfig.mode !== "remote" || !apiConfig.baseUrl) {
       throw new Error(t("alert.importFailed"));
@@ -124,12 +132,28 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
     setBackupProgressTotal(100);
     setBackupProgressCurrent(0);
 
-    return await new Promise<{ cardsCount: number; assetsCount: number; collectionsCount: number }>(
+    return await new Promise<{
+      cardsCount: number;
+      assetsCount: number;
+      collectionsCount: number;
+      decksCount: number;
+      deckGroupsCount: number;
+      deckSetsCount: number;
+      deckEntriesCount: number;
+    }>(
       (resolve, reject) => {
         let settled = false;
         let pollTimer: number | null = null;
 
-        const finish = (result: { cardsCount: number; assetsCount: number; collectionsCount: number }) => {
+        const finish = (result: {
+          cardsCount: number;
+          assetsCount: number;
+          collectionsCount: number;
+          decksCount: number;
+          deckGroupsCount: number;
+          deckSetsCount: number;
+          deckEntriesCount: number;
+        }) => {
           if (settled) return;
           settled = true;
           if (pollTimer) {
@@ -151,7 +175,15 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
           status?: string;
           progress?: number;
           message?: string;
-          result?: { cardsCount: number; assetsCount: number; collectionsCount: number };
+          result?: {
+            cardsCount: number;
+            assetsCount: number;
+            collectionsCount: number;
+            decksCount: number;
+            deckGroupsCount: number;
+            deckSetsCount: number;
+            deckEntriesCount: number;
+          };
         }) => {
           const progress = typeof job.progress === "number" ? job.progress : 0;
           setBackupProgressCurrent(progress);
@@ -160,7 +192,17 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
           setBackupSecondaryPercent(null);
 
           if (job.status === "complete") {
-            finish(job.result ?? { cardsCount: 0, assetsCount: 0, collectionsCount: 0 });
+            finish(
+              job.result ?? {
+                cardsCount: 0,
+                assetsCount: 0,
+                collectionsCount: 0,
+                decksCount: 0,
+                deckGroupsCount: 0,
+                deckSetsCount: 0,
+                deckEntriesCount: 0,
+              },
+            );
           } else if (job.status === "error") {
             fail(job.message);
           }
@@ -181,7 +223,15 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
                 status?: string;
                 progress?: number;
                 message?: string;
-                result?: { cardsCount: number; assetsCount: number; collectionsCount: number };
+                result?: {
+                  cardsCount: number;
+                  assetsCount: number;
+                  collectionsCount: number;
+                  decksCount: number;
+                  deckGroupsCount: number;
+                  deckSetsCount: number;
+                  deckEntriesCount: number;
+                };
               };
               handleJobUpdate(job);
             } catch {
@@ -200,7 +250,15 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
               status?: string;
               progress?: number;
               message?: string;
-              result?: { cardsCount: number; assetsCount: number; collectionsCount: number };
+              result?: {
+                cardsCount: number;
+                assetsCount: number;
+                collectionsCount: number;
+                decksCount: number;
+                deckGroupsCount: number;
+                deckSetsCount: number;
+                deckEntriesCount: number;
+              };
             };
             handleJobUpdate(data);
           } catch {
@@ -357,7 +415,15 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
       const useZip = lowerName.endsWith(".hqcc");
       const useJson = !useZip && lowerName.endsWith(".hqcc.json");
 
-      let result: { cardsCount: number; assetsCount: number; collectionsCount: number };
+      let result: {
+        cardsCount: number;
+        assetsCount: number;
+        collectionsCount: number;
+        decksCount: number;
+        deckGroupsCount: number;
+        deckSetsCount: number;
+        deckEntriesCount: number;
+      };
 
       const apiConfig = readApiConfig();
       if (apiConfig.mode === "remote") {
@@ -430,7 +496,9 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
       window.alert(
         `${t("alert.importComplete")}\n${t("label.cards")}: ${result.cardsCount}\n${t(
           "label.assets",
-        )}: ${result.assetsCount}\n${t("label.collections")}: ${result.collectionsCount}`,
+        )}: ${result.assetsCount}\n${t("label.collections")}: ${result.collectionsCount}\nDecks: ${
+          result.decksCount
+        }`,
       );
     } catch (error) {
       // eslint-disable-next-line no-console

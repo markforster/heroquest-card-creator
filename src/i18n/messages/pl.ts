@@ -656,5 +656,121 @@ export const pl = {
   "label.expectedDatabaseVersion": "Oczekiwana wersja bazy",
   "label.databaseAppVersion": "Baza utworzona przez wersję",
   "label.lastEdited": "Ostatnio edytowano",
-  "label.unknownVersion": "Nieznana"
+  "label.unknownVersion": "Nieznana",
+  "heading.decksForCard": "Talie dla tej karty",
+  "label.decksView": "Talie",
+  "empty.saveCardToViewDecks": "Save this card to view deck membership.",
+  "empty.cardNotInDecks": "This card is not in any deck.",
+  "status.loadingDecks": "Loading decks...",
+  "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Eksportuj talię",
+  "decks.exportConfirm.title": "Eksportować obrazy talii?",
+  "decks.exportConfirm.summary": "To wyeksportuje {totalCount} unikalnych obrazów z {setCount} zestawów.",
+  "decks.exportConfirm.breakdown": "Obejmuje {frontCount} kart awersu i {backCount} kart rewersu.",
+  "decks.exportConfirm.uniqueNotice": "Karty powtarzające się w wielu zestawach są eksportowane tylko raz.",
+  "decks.faces.back": "Rewersy",
+  "decks.faces.front": "Awersy",
+  "decks.faces.mode": "Tryb stron",
+  "decks.meta.tab": "Szczegóły",
+  "decks.meta.title": "Szczegóły",
+  "decks.meta.loading": "Ładowanie metadanych...",
+  "decks.meta.error": "Nie udało się załadować metadanych talii.",
+  "decks.meta.created": "Utworzono",
+  "decks.meta.modified": "Ostatnia modyfikacja",
+  "decks.meta.groups": "Grupy",
+  "decks.meta.sets": "Zestawy",
+  "decks.meta.entries": "Pozycje",
+  "decks.meta.images.section": "Eksport obrazów",
+  "decks.meta.images.totalUnique": "Unikalne obrazy",
+  "decks.meta.images.frontUnique": "Awersy (unikalne)",
+  "decks.meta.images.backUnique": "Rewersy (unikalne)",
+  "decks.meta.images.setSnapshot": "Uwzględnione zestawy",
+  "decks.meta.pdf.section": "Planowanie PDF",
+  "decks.meta.pdf.uniquePairs": "Unikalne pary",
+  "decks.meta.pdf.quantityTotal": "Łączna ilość",
+  "decks.meta.health.section": "Stan talii",
+  "decks.meta.health.pairedMissing": "Sparowane poza zestawem (unikalne)",
+  "decks.entries.actions.editFront": "Edytuj kartę awersu",
+  "decks.entries.actions.removeFront": "Usuń awers z zestawu",
+  "decks.entries.mode.label": "Tryb kart zestawu",
+  "decks.entries.mode.inSet": "W zestawie ({count})",
+  "decks.entries.mode.pairedNotInSet": "Sparowane (poza zestawem) ({count})",
+  "decks.entries.actions.removeSelected": "Usuń zaznaczone",
+  "decks.entries.actions.recoverPaired": "Przywróć sparowane ({count})",
+  "decks.entries.actions.removeSelectedCount": "Usuń zaznaczone ({count})",
+  "decks.entries.actions.editCard": "Edytuj kartę",
+  "decks.entries.actions.deleteEntry": "Usuń wpis",
+  "decks.entries.empty.selectSet": "Wybierz zestaw, aby zobaczyć wpisy.",
+  "decks.entries.empty.noPairedPending": "Brak sparowanych kart oczekujących na dodanie.",
+  "decks.entries.selectedSetBackAlt": "Rewers wybranego zestawu",
+  "decks.entries.recover.modalTitle": "Przywróć sparowane karty",
+  "decks.entries.recover.selectAllAria": "Zaznacz wszystkie możliwe do przywrócenia karty",
+  "decks.entries.recover.selectNone": "Odznacz wszystko",
+  "decks.entries.recover.selectAll": "Zaznacz wszystko",
+  "decks.entries.recover.recovering": "Przywracanie...",
+  "decks.entries.recover.recoverSelected": "Przywróć zaznaczone",
+  "decks.entries.recover.empty": "Brak sparowanych kart do przywrócenia.",
+  "decks.entries.removePrompt.bulkTitle": "Usunąć {count} wpisów z zestawu?",
+  "decks.entries.removePrompt.bulkBody": "To zostanie zastosowane do {count} zaznaczonych wpisów.",
+  "decks.sets.actions.setKeyCard": "Ustaw kartę okładki",
+  "decks.sets.actions.delete": "Usuń zestaw",
+  "decks.sets.badge.keyCard": "Karta okładki",
+  "decks.boards.groups": "Grupy",
+  "decks.boards.entries": "Wpisy",
+  "decks.boards.source": "Źródło",
+  "decks.boards.cards": "Karty",
+  "decks.groups.actions.reorder": "Zmień kolejność grupy",
+  "decks.errors.saveTitleFailed": "Nie udało się zapisać tytułu talii",
+  "decks.entries.quantity.decrease": "Zmniejsz ilość",
+  "decks.entries.quantity.increase": "Zwiększ ilość",
+  "decks.entries.quantity.current": "Ilość {count}",
+
+  "decks.sourcePanelToggle": "Przełącz panel stron źródłowych",
+
+  "decks.entries.recover.selectCardAria": "Wybierz {cardId}",
+
+  "decks.groups.actions.insertHere": "Wstaw grupę tutaj",
+  "decks.groups.actions.createAtPosition": "Utwórz grupę na pozycji {index}",
+  "decks.groups.emptyDropHint": "Przeciągnij tu karty rewersu",
+
+  "actions.edit": "Edytuj",
+
+  "decks.openDeck": "Otwórz talię",
+
+  "decks.createDeck": "Utwórz talię",
+
+  "decks.editDeck": "Edytuj talię",
+
+  "decks.title": "Tytuł",
+
+  "decks.description": "Opis",
+
+  "decks.descriptionPlaceholder": "Opcjonalny opis",
+
+  "decks.removeAndUnpair": "Usuń i rozparuj",
+
+  "decks.removeFromSet": "Usuń z zestawu",
+
+  "decks.deleteDeckTitle": "Usunąć talię?",
+
+  "decks.deleteDeckBody": "Usunięcie talii nie usuwa kart ani parowań; usuwa tylko organizację talii.",
+
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
+  "decks.deleteSelectedBody": "Usunąć {count} wybranych talii? Usunięcie talii nie usuwa kart ani parowań; usuwa tylko organizację talii.",
+
+  "decks.removeFrontPromptTitle": "Usunąć awers z zestawu?",
+
+  "decks.removeFrontPromptBody": "Usuń tę kartę awersu z zestawu. Opcjonalnie możesz też rozparować ją z rewersem tego zestawu.",
+
+  "warning.unpairFromBackFaceSingle": "1 karta zostanie rozparowana od tego rewersu. Kontynuować?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} kart zostanie rozparowanych od tego rewersu. Kontynuować?",
+
+  "heading.impactedDecks": "Objęte talie",
+
+  "decks.pairUsage.body": "Spowoduje to rozparowanie i usunięcie zależnych wpisów talii z następujących lokalizacji:",
+
 } as const;

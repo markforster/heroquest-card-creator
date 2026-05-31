@@ -17,6 +17,7 @@ type ConfirmModalProps = {
   confirmLabel?: string;
   cancelLabel?: string;
   extraLabel?: string;
+  extraButtonClassName?: string;
   contentClassName?: string;
   onConfirm: () => void;
   onExtra?: () => void;
@@ -32,6 +33,7 @@ export default function ConfirmModal({
   confirmLabel,
   cancelLabel,
   extraLabel,
+  extraButtonClassName,
   contentClassName,
   onConfirm,
   onExtra,
@@ -57,7 +59,7 @@ export default function ConfirmModal({
               {extraLabel && onExtra ? (
                 <button
                   type="button"
-                  className="btn btn-outline-light btn-sm"
+                  className={extraButtonClassName ?? "btn btn-outline-light btn-sm"}
                   onClick={onExtra}
                   disabled={isExtraConfirming}
                 >

@@ -4,6 +4,7 @@ import {
   cardSchemaVersionSchema,
   cardStatusSchema,
   cardUpdateInputSchema,
+  cardDeckMembershipSchema,
   deleteCardsInputSchema,
   listCardsFilterSchema,
   normalizeSelfPairingsResponseSchema,
@@ -31,3 +32,4 @@ export type UpdateCardsInput = z.infer<typeof updateCardsInputSchema>;
 export type UpdateCardThumbnailInput = z.infer<typeof updateCardThumbnailInputSchema>;
 export type NormalizeSelfPairingsResponse = z.infer<typeof normalizeSelfPairingsResponseSchema>;
 export type NormalizeSelfPairingsInput = z.infer<typeof normalizeSelfPairingsInputSchema>;
+export type CardDeckMembership = z.infer<typeof cardDeckMembershipSchema>;

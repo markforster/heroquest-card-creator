@@ -656,5 +656,121 @@ export const nl = {
   "label.expectedDatabaseVersion": "Verwachte databaseversie",
   "label.databaseAppVersion": "Database gemaakt met app-versie",
   "label.lastEdited": "Laatst bewerkt",
-  "label.unknownVersion": "Onbekend"
+  "label.unknownVersion": "Onbekend",
+  "heading.decksForCard": "Decks voor deze kaart",
+  "label.decksView": "Decks",
+  "empty.saveCardToViewDecks": "Save this card to view deck membership.",
+  "empty.cardNotInDecks": "This card is not in any deck.",
+  "status.loadingDecks": "Loading decks...",
+  "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Deck exporteren",
+  "decks.exportConfirm.title": "Deckafbeeldingen exporteren?",
+  "decks.exportConfirm.summary": "Dit exporteert {totalCount} unieke afbeeldingen uit {setCount} sets.",
+  "decks.exportConfirm.breakdown": "Bevat {frontCount} voorkant- en {backCount} achterkantkaarten.",
+  "decks.exportConfirm.uniqueNotice": "Kaarten die in meerdere sets voorkomen, worden slechts één keer geëxporteerd.",
+  "decks.faces.back": "Achterkanten",
+  "decks.faces.front": "Voorkanten",
+  "decks.faces.mode": "Zijdenmodus",
+  "decks.meta.tab": "Details",
+  "decks.meta.title": "Details",
+  "decks.meta.loading": "Metadata laden...",
+  "decks.meta.error": "Deckmetadata kon niet worden geladen.",
+  "decks.meta.created": "Aangemaakt",
+  "decks.meta.modified": "Laatst gewijzigd",
+  "decks.meta.groups": "Groepen",
+  "decks.meta.sets": "Sets",
+  "decks.meta.entries": "Items",
+  "decks.meta.images.section": "Afbeeldingsexport",
+  "decks.meta.images.totalUnique": "Unieke afbeeldingen",
+  "decks.meta.images.frontUnique": "Voorkanten (uniek)",
+  "decks.meta.images.backUnique": "Achterkanten (uniek)",
+  "decks.meta.images.setSnapshot": "Meegenomen sets",
+  "decks.meta.pdf.section": "PDF-planning",
+  "decks.meta.pdf.uniquePairs": "Unieke paren",
+  "decks.meta.pdf.quantityTotal": "Totale hoeveelheid",
+  "decks.meta.health.section": "Deckstatus",
+  "decks.meta.health.pairedMissing": "Gepaard maar niet in set (uniek)",
+  "decks.entries.actions.editFront": "Voorkaart bewerken",
+  "decks.entries.actions.removeFront": "Voorkaart uit set verwijderen",
+  "decks.entries.mode.label": "Setkaartmodus",
+  "decks.entries.mode.inSet": "In set ({count})",
+  "decks.entries.mode.pairedNotInSet": "Gekoppeld (niet in set) ({count})",
+  "decks.entries.actions.removeSelected": "Selectie verwijderen",
+  "decks.entries.actions.recoverPaired": "Gekoppelde herstellen ({count})",
+  "decks.entries.actions.removeSelectedCount": "Selectie verwijderen ({count})",
+  "decks.entries.actions.editCard": "Kaart bewerken",
+  "decks.entries.actions.deleteEntry": "Item verwijderen",
+  "decks.entries.empty.selectSet": "Selecteer een set om items te bekijken.",
+  "decks.entries.empty.noPairedPending": "Geen gekoppelde kaarten om toe te voegen.",
+  "decks.entries.selectedSetBackAlt": "Achterkant van geselecteerde set",
+  "decks.entries.recover.modalTitle": "Gekoppelde kaarten herstellen",
+  "decks.entries.recover.selectAllAria": "Alle herstelbare kaarten selecteren",
+  "decks.entries.recover.selectNone": "Niets selecteren",
+  "decks.entries.recover.selectAll": "Alles selecteren",
+  "decks.entries.recover.recovering": "Herstellen...",
+  "decks.entries.recover.recoverSelected": "Selectie herstellen",
+  "decks.entries.recover.empty": "Geen gekoppelde kaarten om te herstellen.",
+  "decks.entries.removePrompt.bulkTitle": "{count} items uit set verwijderen?",
+  "decks.entries.removePrompt.bulkBody": "Dit wordt toegepast op {count} geselecteerde items.",
+  "decks.sets.actions.setKeyCard": "Als omslagkaart instellen",
+  "decks.sets.actions.delete": "Set verwijderen",
+  "decks.sets.badge.keyCard": "Omslagkaart",
+  "decks.boards.groups": "Groepen",
+  "decks.boards.entries": "Items",
+  "decks.boards.source": "Bron",
+  "decks.boards.cards": "Kaarten",
+  "decks.groups.actions.reorder": "Groep herschikken",
+  "decks.errors.saveTitleFailed": "Decktitel kon niet worden opgeslagen",
+  "decks.entries.quantity.decrease": "Aantal verlagen",
+  "decks.entries.quantity.increase": "Aantal verhogen",
+  "decks.entries.quantity.current": "Aantal {count}",
+
+  "decks.sourcePanelToggle": "Paneel met bronzijden tonen/verbergen",
+
+  "decks.entries.recover.selectCardAria": "{cardId} selecteren",
+
+  "decks.groups.actions.insertHere": "Groep hier invoegen",
+  "decks.groups.actions.createAtPosition": "Groep maken op positie {index}",
+  "decks.groups.emptyDropHint": "Sleep achterkantkaarten hierheen",
+
+  "actions.edit": "Bewerken",
+
+  "decks.openDeck": "Deck openen",
+
+  "decks.createDeck": "Deck maken",
+
+  "decks.editDeck": "Deck bewerken",
+
+  "decks.title": "Titel",
+
+  "decks.description": "Beschrijving",
+
+  "decks.descriptionPlaceholder": "Optionele beschrijving",
+
+  "decks.removeAndUnpair": "Verwijderen en ontkoppelen",
+
+  "decks.removeFromSet": "Uit set verwijderen",
+
+  "decks.deleteDeckTitle": "Deck verwijderen?",
+
+  "decks.deleteDeckBody": "Het verwijderen van een deck verwijdert je kaarten of koppelingen niet; alleen de deckindeling wordt verwijderd.",
+
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
+  "decks.deleteSelectedBody": "{count} geselecteerde deck(s) verwijderen? Het verwijderen van een deck verwijdert je kaarten of koppelingen niet; alleen de deckindeling wordt verwijderd.",
+
+  "decks.removeFrontPromptTitle": "Voorkaart uit set verwijderen?",
+
+  "decks.removeFrontPromptBody": "Verwijder deze voorkaart uit de set. Je kunt deze optioneel ook ontkoppelen van de achterkant van deze set.",
+
+  "warning.unpairFromBackFaceSingle": "1 kaart wordt ontkoppeld van deze achterkant. Doorgaan?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} kaarten worden ontkoppeld van deze achterkant. Doorgaan?",
+
+  "heading.impactedDecks": "Getroffen decks",
+
+  "decks.pairUsage.body": "Dit ontkoppelt en verwijdert afhankelijke deck-items op de volgende locaties:",
+
 } as const;

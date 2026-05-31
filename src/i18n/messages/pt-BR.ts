@@ -656,5 +656,121 @@ export const ptBR = {
   "label.expectedDatabaseVersion": "Versão esperada do banco de dados",
   "label.databaseAppVersion": "Banco criado pela versão do app",
   "label.lastEdited": "Última edição",
-  "label.unknownVersion": "Desconhecida"
+  "label.unknownVersion": "Desconhecida",
+  "heading.decksForCard": "Baralhos para esta carta",
+  "label.decksView": "Baralhos",
+  "empty.saveCardToViewDecks": "Save this card to view deck membership.",
+  "empty.cardNotInDecks": "This card is not in any deck.",
+  "status.loadingDecks": "Loading decks...",
+  "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Exportar baralho",
+  "decks.exportConfirm.title": "Exportar imagens do baralho?",
+  "decks.exportConfirm.summary": "Isso exportará {totalCount} imagens únicas de {setCount} conjuntos.",
+  "decks.exportConfirm.breakdown": "Inclui {frontCount} cartas de frente e {backCount} cartas de verso.",
+  "decks.exportConfirm.uniqueNotice": "Cartas repetidas entre conjuntos são exportadas apenas uma vez.",
+  "decks.faces.back": "Faces traseiras",
+  "decks.faces.front": "Faces frontais",
+  "decks.faces.mode": "Modo de faces",
+  "decks.meta.tab": "Detalhes",
+  "decks.meta.title": "Detalhes",
+  "decks.meta.loading": "Carregando metadados...",
+  "decks.meta.error": "Não foi possível carregar os metadados do baralho.",
+  "decks.meta.created": "Criado",
+  "decks.meta.modified": "Última modificação",
+  "decks.meta.groups": "Grupos",
+  "decks.meta.sets": "Conjuntos",
+  "decks.meta.entries": "Entradas",
+  "decks.meta.images.section": "Exportação de imagens",
+  "decks.meta.images.totalUnique": "Imagens únicas",
+  "decks.meta.images.frontUnique": "Frentes (únicas)",
+  "decks.meta.images.backUnique": "Versos (únicos)",
+  "decks.meta.images.setSnapshot": "Conjuntos considerados",
+  "decks.meta.pdf.section": "Planejamento de PDF",
+  "decks.meta.pdf.uniquePairs": "Pares únicos",
+  "decks.meta.pdf.quantityTotal": "Quantidade total",
+  "decks.meta.health.section": "Saúde do baralho",
+  "decks.meta.health.pairedMissing": "Emparelhadas fora do conjunto (únicas)",
+  "decks.entries.actions.editFront": "Editar carta frontal",
+  "decks.entries.actions.removeFront": "Remover frontal do conjunto",
+  "decks.entries.mode.label": "Modo de cartas do conjunto",
+  "decks.entries.mode.inSet": "No conjunto ({count})",
+  "decks.entries.mode.pairedNotInSet": "Emparelhadas (fora do conjunto) ({count})",
+  "decks.entries.actions.removeSelected": "Remover selecionadas",
+  "decks.entries.actions.recoverPaired": "Recuperar emparelhadas ({count})",
+  "decks.entries.actions.removeSelectedCount": "Remover selecionadas ({count})",
+  "decks.entries.actions.editCard": "Editar carta",
+  "decks.entries.actions.deleteEntry": "Excluir entrada",
+  "decks.entries.empty.selectSet": "Selecione um conjunto para ver as entradas.",
+  "decks.entries.empty.noPairedPending": "Não há cartas emparelhadas para adicionar.",
+  "decks.entries.selectedSetBackAlt": "Verso do conjunto selecionado",
+  "decks.entries.recover.modalTitle": "Recuperar cartas emparelhadas",
+  "decks.entries.recover.selectAllAria": "Selecionar todas as cartas recuperáveis",
+  "decks.entries.recover.selectNone": "Não selecionar nenhuma",
+  "decks.entries.recover.selectAll": "Selecionar tudo",
+  "decks.entries.recover.recovering": "Recuperando...",
+  "decks.entries.recover.recoverSelected": "Recuperar selecionadas",
+  "decks.entries.recover.empty": "Não há cartas emparelhadas para recuperar.",
+  "decks.entries.removePrompt.bulkTitle": "Remover {count} entradas do conjunto?",
+  "decks.entries.removePrompt.bulkBody": "Isso será aplicado a {count} entradas selecionadas.",
+  "decks.sets.actions.setKeyCard": "Definir carta de capa",
+  "decks.sets.actions.delete": "Excluir conjunto",
+  "decks.sets.badge.keyCard": "Carta de capa",
+  "decks.boards.groups": "Grupos",
+  "decks.boards.entries": "Entradas",
+  "decks.boards.source": "Origem",
+  "decks.boards.cards": "Cartas",
+  "decks.groups.actions.reorder": "Reordenar grupo",
+  "decks.errors.saveTitleFailed": "Não foi possível salvar o título do baralho",
+  "decks.entries.quantity.decrease": "Diminuir quantidade",
+  "decks.entries.quantity.increase": "Aumentar quantidade",
+  "decks.entries.quantity.current": "Quantidade {count}",
+
+  "decks.sourcePanelToggle": "Alternar painel de faces de origem",
+
+  "decks.entries.recover.selectCardAria": "Selecionar {cardId}",
+
+  "decks.groups.actions.insertHere": "Inserir grupo aqui",
+  "decks.groups.actions.createAtPosition": "Criar grupo na posição {index}",
+  "decks.groups.emptyDropHint": "Arraste cartas de verso para aqui",
+
+  "actions.edit": "Editar",
+
+  "decks.openDeck": "Abrir baralho",
+
+  "decks.createDeck": "Criar baralho",
+
+  "decks.editDeck": "Editar baralho",
+
+  "decks.title": "Título",
+
+  "decks.description": "Descrição",
+
+  "decks.descriptionPlaceholder": "Descrição opcional",
+
+  "decks.removeAndUnpair": "Remover e desemparelhar",
+
+  "decks.removeFromSet": "Remover do conjunto",
+
+  "decks.deleteDeckTitle": "Excluir baralho?",
+
+  "decks.deleteDeckBody": "Excluir um baralho não exclui suas cartas nem emparelhamentos; apenas exclui a organização do baralho.",
+
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
+  "decks.deleteSelectedBody": "Excluir {count} baralho(s) selecionado(s)? Excluir um baralho não exclui suas cartas nem emparelhamentos; apenas exclui a organização do baralho.",
+
+  "decks.removeFrontPromptTitle": "Remover frontal do conjunto?",
+
+  "decks.removeFrontPromptBody": "Remova esta carta frontal do conjunto. Opcionalmente, você também pode desemparelhá-la da face traseira deste conjunto.",
+
+  "warning.unpairFromBackFaceSingle": "1 carta será desemparelhada deste verso. Continuar?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} cartas serão desemparelhadas deste verso. Continuar?",
+
+  "heading.impactedDecks": "Baralhos impactados",
+
+  "decks.pairUsage.body": "Isso vai desemparelhar e remover entradas de baralho dependentes dos seguintes locais:",
+
 } as const;

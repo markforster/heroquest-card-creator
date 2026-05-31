@@ -1,6 +1,7 @@
 "use client";
 
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 
 import CardThumbnail from "./index";
@@ -35,7 +36,7 @@ export default function RemoteCardThumbnail({
     enabled: true,
     useCache: ENABLE_CARD_THUMB_CACHE,
   });
-  const src = url ?? templateThumbSrc ?? null;
+  const src = url ?? (templateThumbSrc ? normalizeFileProtocolAssetUrl(templateThumbSrc) : null);
 
   return (
     <CardThumbnail

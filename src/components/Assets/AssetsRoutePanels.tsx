@@ -1196,7 +1196,7 @@ function AssetsInspector({
   }, [isKindPopoverOpen, kindPopoverPlacement]);
 
   return (
-    <aside className={styles.rightPanel}>
+    <aside className={`${styles.rightPanel} ${styles.assetsRightPanel}`}>
       <div className={styles.assetsInspectorBody}>
         <div className={styles.assetsInspectorActions}>
           {isOpaquePng ? (

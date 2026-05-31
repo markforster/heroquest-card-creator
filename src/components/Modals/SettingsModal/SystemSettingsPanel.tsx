@@ -42,7 +42,6 @@ type StorageDetailRowsProps = {
   data: StoreBreakdownEntry[];
   fallbackLabel: string;
   recordsLabel: string;
-  t: ReturnType<typeof useI18n>["t"];
 };
 
 type StorageUsageBarProps = {
@@ -50,7 +49,6 @@ type StorageUsageBarProps = {
   fallbackLabel: string;
   sectionLabel: string;
   recordsLabel: string;
-  t: ReturnType<typeof useI18n>["t"];
 };
 
 function formatBytes(bytes: number | null, fallback: string): string {
@@ -157,7 +155,8 @@ function buildRestDetailData(
   return buildStorageChartData(restStores);
 }
 
-function StorageDetailRows({ title, data, fallbackLabel, recordsLabel, t }: StorageDetailRowsProps) {
+function StorageDetailRows({ title, data, fallbackLabel, recordsLabel }: StorageDetailRowsProps) {
+  const { t } = useI18n();
   if (data.length === 0) return null;
 
   return (
@@ -190,8 +189,8 @@ function StorageUsageBar({
   fallbackLabel,
   sectionLabel,
   recordsLabel,
-  t,
 }: StorageUsageBarProps) {
+  const { t } = useI18n();
   if (data.length === 0) return null;
 
   return (
@@ -336,7 +335,6 @@ export default function SystemSettingsPanel() {
             fallbackLabel={t("label.unavailable")}
             sectionLabel={t("label.estimatedBrowserUsage")}
             recordsLabel={t("label.records")}
-            t={t}
           />
           <div className={styles.settingsPanelOption}>
             {t("label.estimatedBrowserUsage")}: {formatBytes(usageBytes, t("label.unavailable"))}
@@ -349,7 +347,6 @@ export default function SystemSettingsPanel() {
                   data={restDetailData}
                   fallbackLabel={t("label.unavailable")}
                   recordsLabel={t("label.records")}
-                  t={t}
                 />
               ) : null}
             </div>

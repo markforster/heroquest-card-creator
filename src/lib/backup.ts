@@ -8,11 +8,19 @@ import { configureZipJs } from "@/lib/zip-config";
 import { createZipBlobWithProgress } from "@/lib/zip-utils";
 import type { AssetRecord } from "@/api/assets";
 import type { CardRecord } from "@/types/cards-db";
+import type {
+  DeckEntryRecord,
+  DeckGroupRecord,
+  DeckRecord,
+  DeckSetRecord,
+} from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
+import type { DeckUsageLocation } from "@/lib/decks-errors";
 
 import { generateId } from ".";
 import { DEFAULT_BACKUP_FORMAT, type BackupContainerFormat } from "./backup-formats";
 import { listCards } from "./cards-db";
+import { openHqccDb } from "./hqcc-db";
 
 export const BACKUP_SCHEMA_VERSION = 2 as const;
 export const BACKUP_FILE_EXTENSION = ".hqcc.json" as const;
@@ -92,6 +100,10 @@ export interface HqccExportFileV1 {
   assets: AssetRecordExportV1[];
   pairs?: PairRecord[];
   collections?: CollectionRecordExportV1[];
+  decks?: DeckRecord[];
+  deckGroups?: DeckGroupRecord[];
+  deckSets?: DeckSetRecord[];
+  deckEntries?: DeckEntryRecord[];
   settings?: HqccExportSettingsV1;
   localStorage: HqccExportLocalStorageV1;
 }
@@ -105,6 +117,10 @@ export interface HqccExportCompactFileV1 {
   assets: AssetRecordExportCompactV1[];
   pairs?: PairRecord[];
   collections?: CollectionRecordExportV1[];
+  decks?: DeckRecord[];
+  deckGroups?: DeckGroupRecord[];
+  deckSets?: DeckSetRecord[];
+  deckEntries?: DeckEntryRecord[];
   settings?: HqccExportSettingsV1;
   localStorage: HqccExportLocalStorageV1;
 }
@@ -116,6 +132,10 @@ export type ExportResult = {
     cardsCount: number;
     assetsCount: number;
     collectionsCount: number;
+    decksCount: number;
+    deckGroupsCount: number;
+    deckSetsCount: number;
+    deckEntriesCount: number;
   };
 };
 
@@ -123,6 +143,10 @@ export type ImportResult = {
   cardsCount: number;
   assetsCount: number;
   collectionsCount: number;
+  decksCount: number;
+  deckGroupsCount: number;
+  deckSetsCount: number;
+  deckEntriesCount: number;
 };
 
 export type BackupProgressPhase = "export" | "import";
@@ -306,11 +330,134 @@ function parseBackupMetadata(text: string): HqccExportCompactFileV1 {
   return validateCompactBackupObject(stripNulls(parsed));
 }
 
+function dedupeDeckUsageRows(rows: DeckUsageLocation[]): DeckUsageLocation[] {
+  const map = new Map<string, DeckUsageLocation>();
+  rows.forEach((row) => {
+    const key = `${row.deckId}:${row.groupId}:${row.setId}`;
+    if (!map.has(key)) map.set(key, row);
+  });
+  return Array.from(map.values());
+}
+
+function validateDeckReferences(input: {
+  cards: Array<Pick<CardRecord, "id">>;
+  pairs: Array<Pick<PairRecord, "id">>;
+  decks: DeckRecord[];
+  deckGroups: DeckGroupRecord[];
+  deckSets: DeckSetRecord[];
+  deckEntries: DeckEntryRecord[];
+}): {
+  valid: boolean;
+  usage: DeckUsageLocation[];
+  issues: string[];
+} {
+  const cardIds = new Set(input.cards.map((card) => card.id));
+  const pairIds = new Set(input.pairs.map((pair) => pair.id));
+  const deckMap = new Map(input.decks.map((deck) => [deck.id, deck]));
+  const groupMap = new Map(input.deckGroups.map((group) => [group.id, group]));
+  const setMap = new Map(input.deckSets.map((set) => [set.id, set]));
+  const usage: DeckUsageLocation[] = [];
+  const issues: string[] = [];
+
+  input.deckGroups.forEach((group) => {
+    if (!deckMap.has(group.deckId)) {
+      issues.push(`Group ${group.id} references missing deck ${group.deckId}`);
+    }
+  });
+
+  input.deckSets.forEach((set) => {
+    const group = groupMap.get(set.groupId);
+    const deck = deckMap.get(set.deckId);
+    if (!deck) {
+      issues.push(`Set ${set.id} references missing deck ${set.deckId}`);
+      return;
+    }
+    if (!group) {
+      issues.push(`Set ${set.id} references missing group ${set.groupId}`);
+      return;
+    }
+    if (!cardIds.has(set.backFaceId)) {
+      usage.push({
+        deckId: deck.id,
+        deckTitle: deck.title,
+        groupId: group.id,
+        groupTitle: group.title ?? "",
+        setId: set.id,
+        setTitle: set.title ?? "",
+      });
+      issues.push(`Set ${set.id} references missing back card ${set.backFaceId}`);
+    }
+  });
+
+  input.deckEntries.forEach((entry) => {
+    const set = setMap.get(entry.setId);
+    const deck = deckMap.get(entry.deckId);
+    const group = set ? groupMap.get(set.groupId) : null;
+    if (!deck) {
+      issues.push(`Entry ${entry.id} references missing deck ${entry.deckId}`);
+      return;
+    }
+    if (!set) {
+      issues.push(`Entry ${entry.id} references missing set ${entry.setId}`);
+      return;
+    }
+    if (!pairIds.has(entry.pairId)) {
+      if (group) {
+        usage.push({
+          deckId: deck.id,
+          deckTitle: deck.title,
+          groupId: group.id,
+          groupTitle: group.title ?? "",
+          setId: set.id,
+          setTitle: set.title ?? "",
+        });
+      }
+      issues.push(`Entry ${entry.id} references missing pair ${entry.pairId}`);
+    }
+  });
+
+  const dedupedUsage = dedupeDeckUsageRows(usage);
+  return { valid: issues.length === 0, usage: dedupedUsage, issues };
+}
+
+async function restoreDeckHierarchyAtomic(input: {
+  decks: DeckRecord[];
+  deckGroups: DeckGroupRecord[];
+  deckSets: DeckSetRecord[];
+  deckEntries: DeckEntryRecord[];
+}): Promise<void> {
+  const db = await openHqccDb();
+  const requiredStores = ["decks", "deckGroups", "deckSets", "deckEntries"] as const;
+  if (requiredStores.some((store) => !db.objectStoreNames.contains(store))) {
+    throw new Error("Deck stores are not available");
+  }
+  const tx = db.transaction(requiredStores, "readwrite");
+  const decksStore = tx.objectStore("decks");
+  const groupsStore = tx.objectStore("deckGroups");
+  const setsStore = tx.objectStore("deckSets");
+  const entriesStore = tx.objectStore("deckEntries");
+
+  input.decks.forEach((deck) => decksStore.add(deck));
+  input.deckGroups.forEach((group) => groupsStore.add(group));
+  input.deckSets.forEach((set) => setsStore.add(set));
+  input.deckEntries.forEach((entry) => entriesStore.add(entry));
+
+  await new Promise<void>((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error("Failed to restore deck hierarchy"));
+    tx.onabort = () => reject(tx.error ?? new Error("Failed to restore deck hierarchy"));
+  });
+}
+
 async function loadExportInputs(): Promise<{
   rawCards: CardRecord[];
   rawAssets: (AssetRecord & { blob?: Blob | null })[];
   collections: CollectionRecordExportV1[];
   pairs: PairRecord[];
+  decks: DeckRecord[];
+  deckGroups: DeckGroupRecord[];
+  deckSets: DeckSetRecord[];
+  deckEntries: DeckEntryRecord[];
   settings?: HqccExportSettingsV1;
   localStorage: HqccExportLocalStorageV1;
 }> {
@@ -323,6 +470,10 @@ async function loadExportInputs(): Promise<{
     rawAssets,
     collections,
     pairs,
+    decks,
+    deckGroupsByDeck,
+    deckSetsByDeck,
+    deckEntriesBySet,
     borderSwatches,
     defaultCopyright,
   ] = await Promise.all([
@@ -330,9 +481,31 @@ async function loadExportInputs(): Promise<{
     apiClient.listAssetsWithBlobs(),
     apiClient.listCollections(),
     apiClient.listPairs(),
+    apiClient.listDecks({ queries: {} }),
+    Promise.resolve(new Map<string, DeckGroupRecord[]>()),
+    Promise.resolve(new Map<string, DeckSetRecord[]>()),
+    Promise.resolve(new Map<string, DeckEntryRecord[]>()),
     apiClient.getBorderSwatches(),
     apiClient.getDefaultCopyright(),
   ]);
+
+  await Promise.all(
+    decks.map(async (deck) => {
+      const groups = await apiClient.listDeckGroups({ params: { deckId: deck.id } });
+      deckGroupsByDeck.set(deck.id, groups);
+      const sets = await apiClient.listDeckSets({ params: { deckId: deck.id } });
+      deckSetsByDeck.set(deck.id, sets);
+      await Promise.all(
+        sets.map(async (set) => {
+          const entries = await apiClient.listDeckEntries({ params: { setId: set.id } });
+          deckEntriesBySet.set(set.id, entries);
+        }),
+      );
+    }),
+  );
+  const deckGroups = Array.from(deckGroupsByDeck.values()).flat();
+  const deckSets = Array.from(deckSetsByDeck.values()).flat();
+  const deckEntries = Array.from(deckEntriesBySet.values()).flat();
 
   let settings: HqccExportSettingsV1 | undefined;
   const hasBorderSwatches = Array.isArray(borderSwatches) && borderSwatches.length > 0;
@@ -454,6 +627,10 @@ async function loadExportInputs(): Promise<{
     rawAssets,
     collections: collections as CollectionRecordExportV1[],
     pairs: pairs as PairRecord[],
+    decks: decks as DeckRecord[],
+    deckGroups: deckGroups as DeckGroupRecord[],
+    deckSets: deckSets as DeckSetRecord[],
+    deckEntries: deckEntries as DeckEntryRecord[],
     settings,
     localStorage,
   };
@@ -462,8 +639,19 @@ async function loadExportInputs(): Promise<{
 async function buildLegacyExportObject(
   onProgress?: BackupProgressCallback,
 ): Promise<HqccExportFileV1> {
-  const { rawCards, rawAssets, collections, pairs, settings, localStorage } =
+  const { rawCards, rawAssets, collections, pairs, decks, deckGroups, deckSets, deckEntries, settings, localStorage } =
     await loadExportInputs();
+  const deckValidation = validateDeckReferences({
+    cards: rawCards,
+    pairs,
+    decks,
+    deckGroups,
+    deckSets,
+    deckEntries,
+  });
+  if (!deckValidation.valid) {
+    throw new Error("Deck integrity check failed: unresolved deck references");
+  }
 
   const cards: CardRecordExportV1[] = [];
   const totalProgressCount = rawCards.length + rawAssets.length;
@@ -517,6 +705,10 @@ async function buildLegacyExportObject(
     assets,
     ...(pairs ? { pairs: pairs as PairRecord[] } : {}),
     collections,
+    decks,
+    deckGroups,
+    deckSets,
+    deckEntries,
     settings,
     localStorage,
   };
@@ -530,8 +722,19 @@ async function buildCompactExportBundle(
   metadata: HqccExportCompactFileV1;
   files: { name: string; data: Blob | string }[];
 }> {
-  const { rawCards, rawAssets, collections, pairs, settings, localStorage } =
+  const { rawCards, rawAssets, collections, pairs, decks, deckGroups, deckSets, deckEntries, settings, localStorage } =
     await loadExportInputs();
+  const deckValidation = validateDeckReferences({
+    cards: rawCards,
+    pairs,
+    decks,
+    deckGroups,
+    deckSets,
+    deckEntries,
+  });
+  if (!deckValidation.valid) {
+    throw new Error("Deck integrity check failed: unresolved deck references");
+  }
 
   const cards: CardRecordExportCompactV1[] = [];
   const assets: AssetRecordExportCompactV1[] = [];
@@ -583,6 +786,10 @@ async function buildCompactExportBundle(
     assets,
     ...(pairs ? { pairs: pairs as PairRecord[] } : {}),
     collections,
+    decks,
+    deckGroups,
+    deckSets,
+    deckEntries,
     settings,
     localStorage,
   };
@@ -630,15 +837,21 @@ async function applyBackupObject(
   }
 
   const { apiClient } = await import("@/api/client");
-  const [existingCards, existingAssets, existingCollections, existingPairs] = await Promise.all([
-    apiClient.listCards({ queries: { deleted: "include" } }),
-    apiClient.listAssets(),
-    apiClient.listCollections(),
-    apiClient.listPairs(),
-  ]);
+  const [existingCards, existingAssets, existingCollections, existingPairs, existingDecks] =
+    await Promise.all([
+      apiClient.listCards({ queries: { deleted: "include" } }),
+      apiClient.listAssets(),
+      apiClient.listCollections(),
+      apiClient.listPairs(),
+      apiClient.listDecks({ queries: {} }),
+    ]);
 
   if (existingCards.length > 0) {
-    await apiClient.deleteCards({ ids: existingCards.map((card) => card.id) });
+    await apiClient.deleteCards({
+      ids: existingCards.map((card) => card.id),
+      mode: "confirmable-cascade",
+      confirmCascade: true,
+    });
   }
   if (existingAssets.length > 0) {
     await apiClient.deleteAssets({ ids: existingAssets.map((asset) => asset.id) });
@@ -650,6 +863,11 @@ async function applyBackupObject(
       ),
     );
   }
+  if (existingDecks.length > 0) {
+    await Promise.all(
+      existingDecks.map((deck) => apiClient.deleteDeck(undefined, { params: { deckId: deck.id } })),
+    );
+  }
   if (existingPairs.length > 0) {
     await Promise.all(
       existingPairs.map((pair) => {
@@ -657,6 +875,8 @@ async function applyBackupObject(
         return apiClient.deletePair({
           frontFaceId: pair.frontFaceId,
           backFaceId: pair.backFaceId,
+          mode: "confirmable-cascade",
+          confirmCascade: true,
         });
       }),
     );
@@ -665,6 +885,10 @@ async function applyBackupObject(
   let cardsCount = 0;
   let assetsCount = 0;
   let collectionsCount = 0;
+  let decksCount = 0;
+  let deckGroupsCount = 0;
+  let deckSetsCount = 0;
+  let deckEntriesCount = 0;
   const total =
     exportData.assets.length +
     exportData.cards.length +
@@ -776,6 +1000,29 @@ async function applyBackupObject(
     }
   }
 
+  const decks = Array.isArray(exportData.decks) ? exportData.decks : [];
+  const deckGroups = Array.isArray(exportData.deckGroups) ? exportData.deckGroups : [];
+  const deckSets = Array.isArray(exportData.deckSets) ? exportData.deckSets : [];
+  const deckEntries = Array.isArray(exportData.deckEntries) ? exportData.deckEntries : [];
+  if (decks.length || deckGroups.length || deckSets.length || deckEntries.length) {
+    const validation = validateDeckReferences({
+      cards: exportData.cards as CardRecord[],
+      pairs: Array.isArray(exportData.pairs) ? exportData.pairs : [],
+      decks,
+      deckGroups,
+      deckSets,
+      deckEntries,
+    });
+    if (!validation.valid) {
+      throw new Error("Invalid backup file: unresolved deck references");
+    }
+    await restoreDeckHierarchyAtomic({ decks, deckGroups, deckSets, deckEntries });
+    decksCount = decks.length;
+    deckGroupsCount = deckGroups.length;
+    deckSetsCount = deckSets.length;
+    deckEntriesCount = deckEntries.length;
+  }
+
   try {
     const {
       draftV1,
@@ -835,6 +1082,10 @@ async function applyBackupObject(
     cardsCount,
     assetsCount,
     collectionsCount,
+    decksCount,
+    deckGroupsCount,
+    deckSetsCount,
+    deckEntriesCount,
   };
 }
 
@@ -862,15 +1113,21 @@ async function applyCompactBackupObject(
   const entryByName = new Map(entries.map((entry) => [entry.filename, entry]));
 
   const { apiClient } = await import("@/api/client");
-  const [existingCards, existingAssets, existingCollections, existingPairs] = await Promise.all([
-    apiClient.listCards({ queries: { deleted: "include" } }),
-    apiClient.listAssets(),
-    apiClient.listCollections(),
-    apiClient.listPairs(),
-  ]);
+  const [existingCards, existingAssets, existingCollections, existingPairs, existingDecks] =
+    await Promise.all([
+      apiClient.listCards({ queries: { deleted: "include" } }),
+      apiClient.listAssets(),
+      apiClient.listCollections(),
+      apiClient.listPairs(),
+      apiClient.listDecks({ queries: {} }),
+    ]);
 
   if (existingCards.length > 0) {
-    await apiClient.deleteCards({ ids: existingCards.map((card) => card.id) });
+    await apiClient.deleteCards({
+      ids: existingCards.map((card) => card.id),
+      mode: "confirmable-cascade",
+      confirmCascade: true,
+    });
   }
   if (existingAssets.length > 0) {
     await apiClient.deleteAssets({ ids: existingAssets.map((asset) => asset.id) });
@@ -882,6 +1139,11 @@ async function applyCompactBackupObject(
       ),
     );
   }
+  if (existingDecks.length > 0) {
+    await Promise.all(
+      existingDecks.map((deck) => apiClient.deleteDeck(undefined, { params: { deckId: deck.id } })),
+    );
+  }
   if (existingPairs.length > 0) {
     await Promise.all(
       existingPairs.map((pair) => {
@@ -889,6 +1151,8 @@ async function applyCompactBackupObject(
         return apiClient.deletePair({
           frontFaceId: pair.frontFaceId,
           backFaceId: pair.backFaceId,
+          mode: "confirmable-cascade",
+          confirmCascade: true,
         });
       }),
     );
@@ -897,6 +1161,10 @@ async function applyCompactBackupObject(
   let cardsCount = 0;
   let assetsCount = 0;
   let collectionsCount = 0;
+  let decksCount = 0;
+  let deckGroupsCount = 0;
+  let deckSetsCount = 0;
+  let deckEntriesCount = 0;
   const total =
     exportData.assets.length +
     exportData.cards.length +
@@ -1029,6 +1297,29 @@ async function applyCompactBackupObject(
     }
   }
 
+  const decks = Array.isArray(exportData.decks) ? exportData.decks : [];
+  const deckGroups = Array.isArray(exportData.deckGroups) ? exportData.deckGroups : [];
+  const deckSets = Array.isArray(exportData.deckSets) ? exportData.deckSets : [];
+  const deckEntries = Array.isArray(exportData.deckEntries) ? exportData.deckEntries : [];
+  if (decks.length || deckGroups.length || deckSets.length || deckEntries.length) {
+    const validation = validateDeckReferences({
+      cards: exportData.cards as CardRecord[],
+      pairs: Array.isArray(exportData.pairs) ? exportData.pairs : [],
+      decks,
+      deckGroups,
+      deckSets,
+      deckEntries,
+    });
+    if (!validation.valid) {
+      throw new Error("Invalid backup file: unresolved deck references");
+    }
+    await restoreDeckHierarchyAtomic({ decks, deckGroups, deckSets, deckEntries });
+    decksCount = decks.length;
+    deckGroupsCount = deckGroups.length;
+    deckSetsCount = deckSets.length;
+    deckEntriesCount = deckEntries.length;
+  }
+
   try {
     const {
       draftV1,
@@ -1088,6 +1379,10 @@ async function applyCompactBackupObject(
     cardsCount,
     assetsCount,
     collectionsCount,
+    decksCount,
+    deckGroupsCount,
+    deckSetsCount,
+    deckEntriesCount,
   };
 }
 
@@ -1120,6 +1415,10 @@ export async function createBackupJson(options?: {
       collectionsCount: Array.isArray(exportObject.collections)
         ? exportObject.collections.length
         : 0,
+      decksCount: Array.isArray(exportObject.decks) ? exportObject.decks.length : 0,
+      deckGroupsCount: Array.isArray(exportObject.deckGroups) ? exportObject.deckGroups.length : 0,
+      deckSetsCount: Array.isArray(exportObject.deckSets) ? exportObject.deckSets.length : 0,
+      deckEntriesCount: Array.isArray(exportObject.deckEntries) ? exportObject.deckEntries.length : 0,
     },
   };
 }
@@ -1201,6 +1500,34 @@ export async function createBackupHqcc(options?: {
           : 0
         : Array.isArray(legacyExport?.collections)
           ? legacyExport?.collections.length ?? 0
+          : 0,
+      decksCount: isCompact
+        ? Array.isArray(compactExport?.metadata.decks)
+          ? compactExport?.metadata.decks.length ?? 0
+          : 0
+        : Array.isArray(legacyExport?.decks)
+          ? legacyExport?.decks.length ?? 0
+          : 0,
+      deckGroupsCount: isCompact
+        ? Array.isArray(compactExport?.metadata.deckGroups)
+          ? compactExport?.metadata.deckGroups.length ?? 0
+          : 0
+        : Array.isArray(legacyExport?.deckGroups)
+          ? legacyExport?.deckGroups.length ?? 0
+          : 0,
+      deckSetsCount: isCompact
+        ? Array.isArray(compactExport?.metadata.deckSets)
+          ? compactExport?.metadata.deckSets.length ?? 0
+          : 0
+        : Array.isArray(legacyExport?.deckSets)
+          ? legacyExport?.deckSets.length ?? 0
+          : 0,
+      deckEntriesCount: isCompact
+        ? Array.isArray(compactExport?.metadata.deckEntries)
+          ? compactExport?.metadata.deckEntries.length ?? 0
+          : 0
+        : Array.isArray(legacyExport?.deckEntries)
+          ? legacyExport?.deckEntries.length ?? 0
           : 0,
     },
   };

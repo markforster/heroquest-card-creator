@@ -656,5 +656,121 @@ export const es = {
   "label.expectedDatabaseVersion": "Versión de base de datos esperada",
   "label.databaseAppVersion": "Base creada con versión de la app",
   "label.lastEdited": "Última edición",
-  "label.unknownVersion": "Desconocida"
+  "label.unknownVersion": "Desconocida",
+  "heading.decksForCard": "Mazos para esta carta",
+  "label.decksView": "Mazos",
+  "empty.saveCardToViewDecks": "Save this card to view deck membership.",
+  "empty.cardNotInDecks": "This card is not in any deck.",
+  "status.loadingDecks": "Loading decks...",
+  "error.failedToLoadDecks": "Unable to load decks right now.",
+  "decks.actions.exportDeck": "Exportar mazo",
+  "decks.exportConfirm.title": "¿Exportar imágenes del mazo?",
+  "decks.exportConfirm.summary": "Esto exportará {totalCount} imágenes únicas de {setCount} sets.",
+  "decks.exportConfirm.breakdown": "Incluye {frontCount} cartas de frente y {backCount} cartas de reverso.",
+  "decks.exportConfirm.uniqueNotice": "Las cartas repetidas en varios sets se exportan una sola vez.",
+  "decks.faces.back": "Caras traseras",
+  "decks.faces.front": "Caras frontales",
+  "decks.faces.mode": "Modo de caras",
+  "decks.meta.tab": "Detalles",
+  "decks.meta.title": "Detalles",
+  "decks.meta.loading": "Cargando metadatos...",
+  "decks.meta.error": "No se pudieron cargar los metadatos del mazo.",
+  "decks.meta.created": "Creado",
+  "decks.meta.modified": "Última modificación",
+  "decks.meta.groups": "Grupos",
+  "decks.meta.sets": "Conjuntos",
+  "decks.meta.entries": "Entradas",
+  "decks.meta.images.section": "Exportación de imágenes",
+  "decks.meta.images.totalUnique": "Imágenes únicas",
+  "decks.meta.images.frontUnique": "Anversos (únicos)",
+  "decks.meta.images.backUnique": "Reversos (únicos)",
+  "decks.meta.images.setSnapshot": "Conjuntos incluidos",
+  "decks.meta.pdf.section": "Planificación de PDF",
+  "decks.meta.pdf.uniquePairs": "Pares únicos",
+  "decks.meta.pdf.quantityTotal": "Cantidad total",
+  "decks.meta.health.section": "Estado del mazo",
+  "decks.meta.health.pairedMissing": "Emparejadas fuera del conjunto (únicas)",
+  "decks.entries.actions.editFront": "Editar carta frontal",
+  "decks.entries.actions.removeFront": "Quitar frontal del set",
+  "decks.entries.mode.label": "Modo de cartas del set",
+  "decks.entries.mode.inSet": "En el set ({count})",
+  "decks.entries.mode.pairedNotInSet": "Emparejadas (fuera del set) ({count})",
+  "decks.entries.actions.removeSelected": "Quitar seleccionadas",
+  "decks.entries.actions.recoverPaired": "Recuperar emparejadas ({count})",
+  "decks.entries.actions.removeSelectedCount": "Quitar seleccionadas ({count})",
+  "decks.entries.actions.editCard": "Editar carta",
+  "decks.entries.actions.deleteEntry": "Eliminar entrada",
+  "decks.entries.empty.selectSet": "Selecciona un set para ver entradas.",
+  "decks.entries.empty.noPairedPending": "No hay cartas emparejadas pendientes de añadir.",
+  "decks.entries.selectedSetBackAlt": "Reverso del set seleccionado",
+  "decks.entries.recover.modalTitle": "Recuperar cartas emparejadas",
+  "decks.entries.recover.selectAllAria": "Seleccionar todas las cartas recuperables",
+  "decks.entries.recover.selectNone": "No seleccionar ninguna",
+  "decks.entries.recover.selectAll": "Seleccionar todo",
+  "decks.entries.recover.recovering": "Recuperando...",
+  "decks.entries.recover.recoverSelected": "Recuperar seleccionadas",
+  "decks.entries.recover.empty": "No hay cartas emparejadas para recuperar.",
+  "decks.entries.removePrompt.bulkTitle": "¿Quitar {count} entradas del set?",
+  "decks.entries.removePrompt.bulkBody": "Esto se aplicará a {count} entradas seleccionadas.",
+  "decks.sets.actions.setKeyCard": "Establecer carta de portada",
+  "decks.sets.actions.delete": "Eliminar set",
+  "decks.sets.badge.keyCard": "Carta de portada",
+  "decks.boards.groups": "Grupos",
+  "decks.boards.entries": "Entradas",
+  "decks.boards.source": "Origen",
+  "decks.boards.cards": "Cartas",
+  "decks.groups.actions.reorder": "Reordenar grupo",
+  "decks.errors.saveTitleFailed": "No se pudo guardar el título del mazo",
+  "decks.entries.quantity.decrease": "Disminuir cantidad",
+  "decks.entries.quantity.increase": "Aumentar cantidad",
+  "decks.entries.quantity.current": "Cantidad {count}",
+
+  "decks.sourcePanelToggle": "Alternar panel de caras de origen",
+
+  "decks.entries.recover.selectCardAria": "Seleccionar {cardId}",
+
+  "decks.groups.actions.insertHere": "Insertar grupo aquí",
+  "decks.groups.actions.createAtPosition": "Crear grupo en la posición {index}",
+  "decks.groups.emptyDropHint": "Arrastra cartas de reverso aquí",
+
+  "actions.edit": "Editar",
+
+  "decks.openDeck": "Abrir mazo",
+
+  "decks.createDeck": "Crear mazo",
+
+  "decks.editDeck": "Editar mazo",
+
+  "decks.title": "Título",
+
+  "decks.description": "Descripción",
+
+  "decks.descriptionPlaceholder": "Descripción opcional",
+
+  "decks.removeAndUnpair": "Quitar y desemparejar",
+
+  "decks.removeFromSet": "Quitar del set",
+
+  "decks.deleteDeckTitle": "¿Eliminar mazo?",
+
+  "decks.deleteDeckBody": "Eliminar un mazo no elimina tus cartas ni emparejamientos; solo elimina la organización del mazo.",
+
+  "decks.deleteSetTitle": "Delete set?",
+
+  "decks.deleteSetBody": "This will remove the set and its entries from the deck.",
+
+  "decks.deleteSelectedBody": "¿Eliminar {count} mazo(s) seleccionado(s)? Eliminar un mazo no elimina tus cartas ni emparejamientos; solo elimina la organización del mazo.",
+
+  "decks.removeFrontPromptTitle": "¿Quitar frontal del set?",
+
+  "decks.removeFrontPromptBody": "Quita esta carta frontal del set. Opcionalmente también puedes desemparejarla de la cara trasera de este set.",
+
+  "warning.unpairFromBackFaceSingle": "1 carta se desemparejará de este reverso. ¿Continuar?",
+
+  "warning.unpairFromBackFaceMultiple": "{count} cartas se desemparejarán de este reverso. ¿Continuar?",
+
+  "heading.impactedDecks": "Mazos afectados",
+
+  "decks.pairUsage.body": "Esto desemparejará y eliminará entradas de mazo dependientes de las siguientes ubicaciones:",
+
 } as const;

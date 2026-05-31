@@ -4,6 +4,7 @@ import { useId } from "react";
 
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 
 import type { StaticImageData } from "next/image";
 
@@ -46,7 +47,7 @@ export default function CardBorder({
       <defs>
         <mask id={maskId} maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse">
           <image
-            href={mask.src}
+            href={normalizeFileProtocolAssetUrl(mask.src)}
             data-template-asset="border-mask"
             x={offsetX}
             y={offsetY}

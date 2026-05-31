@@ -1,5 +1,5 @@
 import { deleteCardsInputSchema } from "@/api/cards";
-import { deleteCards } from "@/lib/cards-db";
+import { deleteCardsWithCascade } from "@/lib/cards-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
@@ -9,7 +9,10 @@ export const deleteCardsRequestPlugin: ZodiosPlugin = {
   request: async (apiDefinitions, config) => {
     const adapter = async (): Promise<AxiosResponse> => {
       const parsed = deleteCardsInputSchema.parse(config.data ?? {});
-      await deleteCards(parsed.ids);
+      await deleteCardsWithCascade(parsed.ids, {
+        mode: parsed.mode,
+        confirmCascade: parsed.confirmCascade,
+      });
 
       return {
         data: undefined,

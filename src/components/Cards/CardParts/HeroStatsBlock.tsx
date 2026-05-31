@@ -5,6 +5,7 @@ import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useStatLabelOverrides } from "@/components/Providers/StatLabelOverridesProvider";
 import { CARD_WIDTH, sx, sy } from "@/config/card-canvas";
 import { useI18n } from "@/i18n/I18nProvider";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { getStatLabel } from "@/lib/stat-labels";
 import type { StatValue } from "@/types/stats";
 
@@ -44,7 +45,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
     <Layer>
       <g transform={`translate(${STATS_X}, ${y ?? STATS_Y})`}>
         <image
-          href={heroStatsBg.src}
+          href={normalizeFileProtocolAssetUrl(heroStatsBg.src)}
           x={0}
           y={0}
           width={STATS_WIDTH}
