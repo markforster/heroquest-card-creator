@@ -893,7 +893,7 @@ export default function PairingInspectorPanel({
           setPairedFrontsToken((prev) => prev + 1);
         }}
         onExtra={() => {
-          const first = pairUsagePrompt?.cascadePlan.usage[0];
+          const first = pairUsagePrompt?.cascadePlan?.usage?.[0];
           if (!first) return;
           navigate(buildDeckDeepLink({ deckId: first.deckId, setId: first.setId }));
           setPairUsagePrompt(null);

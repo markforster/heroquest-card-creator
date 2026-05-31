@@ -628,7 +628,7 @@ export default function DeckEntriesSection({
         {t("decks.removeFrontPromptBody")}
       </ConfirmModal>
       <ConfirmModal
-        isOpen={Boolean(pairUsagePromptExternal?.cascadePlan.usage.length)}
+        isOpen={Boolean(pairUsagePromptExternal?.cascadePlan?.usage?.length)}
         title={t("decks.pairInUseTitle")}
         confirmLabel={t("actions.confirm")}
         extraLabel={t("decks.openDeck")}
@@ -654,7 +654,7 @@ export default function DeckEntriesSection({
           setPendingFrontRemoval(null);
         }}
         onExtra={() => {
-          const usage = pairUsagePromptExternal?.cascadePlan.usage[0];
+          const usage = pairUsagePromptExternal?.cascadePlan?.usage?.[0];
           if (usage) {
             navigate(buildDeckDeepLink({ deckId: usage.deckId, setId: usage.setId }));
           }

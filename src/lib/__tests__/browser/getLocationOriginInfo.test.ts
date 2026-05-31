@@ -1,4 +1,8 @@
-import { getLocationOriginInfo, normalizeFileProtocolAssetUrl } from "@/lib/browser";
+import {
+  buildAppHashUrl,
+  getLocationOriginInfo,
+  normalizeFileProtocolAssetUrl,
+} from "@/lib/browser";
 
 describe("getLocationOriginInfo", () => {
   const originalLocation = window.location;
@@ -107,5 +111,41 @@ describe("normalizeFileProtocolAssetUrl", () => {
     expect(normalizeFileProtocolAssetUrl("/_next/static/chunks/app.js")).toBe(
       "/_next/static/chunks/app.js",
     );
+  });
+});
+
+describe("buildAppHashUrl", () => {
+  const originalLocation = window.location;
+
+  afterEach(() => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: originalLocation,
+    });
+  });
+
+  it("builds file-safe hash urls in file protocol", () => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: {
+        protocol: "file:",
+        pathname: "/Users/test/index.html",
+      },
+    });
+
+    expect(buildAppHashUrl("/cards/abc")).toBe("/Users/test/index.html#/cards/abc");
+  });
+
+  it("builds absolute hash urls outside file protocol", () => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: {
+        protocol: "https:",
+        origin: "https://example.com",
+        pathname: "/index.html",
+      },
+    });
+
+    expect(buildAppHashUrl("/cards/abc")).toBe("https://example.com/index.html#/cards/abc");
   });
 });

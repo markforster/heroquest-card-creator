@@ -5,6 +5,7 @@ import RemoteCardThumbnail from "@/components/common/CardThumbnail/RemoteCardThu
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
+import { buildAppHashUrl } from "@/lib/browser";
 import type { MissingAssetReport } from "@/lib/export-assets-cache";
 
 type StockpileMissingAssetsModalProps = {
@@ -26,7 +27,7 @@ export default function StockpileMissingAssetsModal({
   const { t } = useI18n();
   const openCardInNewTab = (cardId: string) => {
     if (typeof window === "undefined") return;
-    const url = `${window.location.origin}${window.location.pathname}#/cards/${cardId}`;
+    const url = buildAppHashUrl(`/cards/${cardId}`);
     window.open(url, "_blank", "noopener");
   };
   if (!prompt) return null;

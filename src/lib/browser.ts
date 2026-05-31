@@ -19,3 +19,12 @@ export function normalizeFileProtocolAssetUrl(src: string): string {
   if (!src.startsWith("/")) return src;
   return `.${src}`;
 }
+
+export function buildAppHashUrl(path: string): string {
+  if (typeof window === "undefined") return path;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (window.location.protocol === "file:") {
+    return `${window.location.pathname}#${normalizedPath}`;
+  }
+  return `${window.location.origin}${window.location.pathname}#${normalizedPath}`;
+}

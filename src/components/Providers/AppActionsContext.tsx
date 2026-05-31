@@ -169,6 +169,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
             template_id: nextTemplateId,
             source: "template_picker",
           });
+          templatePicker.close();
           const nextDraft = createEditorDefaultValues(nextTemplateId);
           setSelectedTemplateId(nextTemplateId);
           saveDraft(nextTemplateId, nextDraft, { sourceCardId: null });

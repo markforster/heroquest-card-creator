@@ -1465,8 +1465,8 @@ export default function StockpilePanelContent({
         }}
         onExtra={() => {
           const usage =
-            cardDeleteUsagePrompt?.cascadePlan.deletedDeckUsage[0] ??
-            cardDeleteUsagePrompt?.cascadePlan.pairUsage[0];
+            cardDeleteUsagePrompt?.cascadePlan?.deletedDeckUsage?.[0] ??
+            cardDeleteUsagePrompt?.cascadePlan?.pairUsage?.[0];
           if (usage) {
             navigate(buildDeckDeepLink({ deckId: usage.deckId, setId: usage.setId }));
           }
@@ -1529,7 +1529,7 @@ export default function StockpilePanelContent({
           setPairUsagePendingDeleteIds([]);
         }}
         onExtra={() => {
-          const usage = pairUsagePrompt?.cascadePlan.usage[0];
+          const usage = pairUsagePrompt?.cascadePlan?.usage?.[0];
           if (usage) navigate(buildDeckDeepLink({ deckId: usage.deckId, setId: usage.setId }));
           setPairUsagePrompt(null);
           setPairUsagePendingDeleteIds([]);
