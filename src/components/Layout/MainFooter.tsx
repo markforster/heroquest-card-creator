@@ -61,7 +61,7 @@ export default function MainFooter() {
                 <span>·</span>
                 <a
                   ref={downloadLinkRef}
-                  href="#"
+                  href="https://mark-forster.itch.io/heroquest-card-creator?source=footer-download"
                   className={styles.footerLink}
                   onClickCapture={(event) => {
                     event.preventDefault();
