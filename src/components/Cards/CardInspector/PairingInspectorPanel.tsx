@@ -28,6 +28,7 @@ import {
   type PairUsageReport,
 } from "@/lib/decks-errors";
 import { previewDeletePair } from "@/lib/pairs-service";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import type { CardFace } from "@/types/card-face";
 import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
@@ -95,7 +96,14 @@ function PairingThumbImage({
   }
   if (templateThumbSrc) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={templateThumbSrc} alt="" style={style} onLoad={onLoaded} />;
+    return (
+      <img
+        src={normalizeFileProtocolAssetUrl(templateThumbSrc)}
+        alt=""
+        style={style}
+        onLoad={onLoaded}
+      />
+    );
   }
   return <div className={styles.inspectorStackPlaceholder} />;
 }
@@ -885,7 +893,7 @@ export default function PairingInspectorPanel({
           setPairedFrontsToken((prev) => prev + 1);
         }}
         onExtra={() => {
-          const first = pairUsagePrompt?.cascadePlan.usage[0];
+          const first = pairUsagePrompt?.cascadePlan?.usage?.[0];
           if (!first) return;
           navigate(buildDeckDeepLink({ deckId: first.deckId, setId: first.setId }));
           setPairUsagePrompt(null);

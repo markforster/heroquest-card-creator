@@ -46,6 +46,7 @@ import {
   startExportLogging,
 } from "@/lib/export-logging";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { addPngTextChunk } from "@/lib/png-metadata";
 import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
@@ -349,7 +350,10 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               ? normalizedDefault
               : "";
         })();
-        const loadBackgroundImage = async (href: string) => {
+        const loadBackgroundImage = async (href: string | null) => {
+          if (!href) return null;
+          if (href.startsWith("#")) return null;
+          if (typeof window !== "undefined" && href === window.location.href) return null;
           const cache = backgroundImageCacheRef.current;
           if (cache.has(href)) {
             return cache.get(href) ?? null;
@@ -369,15 +373,30 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           }
         };
 
-        const resolveBackgroundHref = (href: string) => {
-          if (href.startsWith("data:") || href.startsWith("blob:") || href.startsWith("http")) {
-            return href;
+        const resolveBackgroundHref = (href: string): string | null => {
+          const trimmed = href.trim();
+          if (!trimmed || trimmed.startsWith("#")) {
+            return null;
           }
-          if (typeof window === "undefined") return href;
+          if (
+            trimmed.startsWith("data:") ||
+            trimmed.startsWith("blob:") ||
+            trimmed.startsWith("http")
+          ) {
+            return trimmed;
+          }
+          const normalized = normalizeFileProtocolAssetUrl(trimmed);
+          if (normalized !== trimmed) {
+            return normalized;
+          }
+          if (typeof window === "undefined") return trimmed;
+          if (window.location.protocol === "file:") {
+            return trimmed;
+          }
           try {
-            return new URL(href, window.location.href).toString();
+            return new URL(trimmed, window.location.href).toString();
           } catch {
-            return href;
+            return trimmed;
           }
         };
 
@@ -518,6 +537,9 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             const backgroundHref = backgroundImageEl ? getSvgImageHref(backgroundImageEl) : null;
             if (backgroundHref) {
               const resolvedHref = resolveBackgroundHref(backgroundHref);
+              if (!resolvedHref) {
+                return undefined;
+              }
               const img = await loadBackgroundImage(resolvedHref);
               if (img) {
                 const cached = backgroundSampleRef.current;

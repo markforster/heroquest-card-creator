@@ -347,7 +347,7 @@ export default function LeftNavDownloadAction() {
   return (
     <a
       ref={linkRef}
-      href="#"
+      href="https://mark-forster.itch.io/heroquest-card-creator?source=in-app-download"
       className={`${styles.leftNavItem} ${ENABLE_GET_APP_GLOW ? styles.leftNavItemGlow : ""} ${
         isGlowActive ? styles.leftNavItemGlowActive : ""
       } d-flex align-items-center gap-2`}

@@ -13,6 +13,7 @@ import {
   USE_TITLE_STROKE,
   USE_TITLE_VERTICAL_COMPRESSION,
 } from "@/config/flags";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";
 
@@ -95,7 +96,7 @@ export default function RibbonTitle({
       {showRibbon ? (
         <>
           <image
-            href={ribbon.src}
+            href={normalizeFileProtocolAssetUrl(ribbon.src)}
             x={ribbonImageBounds.x}
             y={ribbonImageBounds.y}
             width={ribbonImageBounds.width}

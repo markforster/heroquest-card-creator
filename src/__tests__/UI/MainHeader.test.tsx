@@ -45,4 +45,24 @@ describe("MainHeader", () => {
     expect(screen.getByRole("menuitem", { name: /Export library/i })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: /Import library/i })).toBeInTheDocument();
   });
+
+  it("renders YouTube after Facebook in social links", () => {
+    render(
+      <I18nProvider>
+        <LibraryTransferProvider>
+          <MainHeader />
+        </LibraryTransferProvider>
+      </I18nProvider>,
+    );
+
+    const socialLinks = screen.getByLabelText("Social links");
+    const links = Array.from(socialLinks.querySelectorAll("a"));
+    const labels = links.map((link) => link.getAttribute("aria-label"));
+
+    expect(labels).toContain("YouTube");
+    expect(labels.indexOf("YouTube")).toBe(labels.indexOf("Facebook") + 1);
+
+    const youtubeLink = links.find((link) => link.getAttribute("aria-label") === "YouTube");
+    expect(youtubeLink).toHaveAttribute("href", "https://www.youtube.com/@HeroQuestCardCreator");
+  });
 });

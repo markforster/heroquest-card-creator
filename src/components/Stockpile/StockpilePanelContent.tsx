@@ -54,6 +54,7 @@ import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { createEditorDefaultValues } from "@/lib/editor-form";
 import {
   getCachedCardThumbnailUrl,
@@ -399,6 +400,15 @@ export default function StockpilePanelContent({
     return selectedIds.filter((id) => visibleIds.has(id));
   }, [filteredCards, selectedIds]);
   const hasMultiSelection = selectedIds.length > 1;
+  const hasSavedCards = cards.some((card) => card.deletedAt == null);
+  const hasRecentlyDeletedCards = cards.some((card) => typeof card.deletedAt === "number");
+  const isLibraryEmpty = !hasSavedCards && !hasRecentlyDeletedCards;
+  const hasActiveNarrowing =
+    search.trim().length > 0 ||
+    templateFilter !== "all" ||
+    showUnpairedOnly ||
+    showMissingArtworkOnly ||
+    activeFilter.type !== "all";
   const templateFilterLabelMap = useMemo(() => {
     const map: Record<string, string> = {};
     cardTemplates.forEach((template) => {
@@ -511,7 +521,10 @@ export default function StockpilePanelContent({
     const resolveCardThumb = (card: CardRecord): StockpileCardThumb => ({
       id: card.id,
       thumbnailBlob: card.thumbnailBlob ?? null,
-      templateThumbSrc: cardTemplatesById[card.templateId]?.thumbnail?.src ?? null,
+      templateThumbSrc: (() => {
+        const src = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+        return src ? normalizeFileProtocolAssetUrl(src) : null;
+      })(),
       name: card.name ?? card.title ?? "",
     });
 
@@ -552,7 +565,10 @@ export default function StockpilePanelContent({
           minute: "2-digit",
         }),
         thumbnailBlob: card.thumbnailBlob ?? null,
-        templateThumbSrc: templateMeta?.thumbnail?.src ?? null,
+        templateThumbSrc: (() => {
+          const src = templateMeta?.thumbnail?.src ?? null;
+          return src ? normalizeFileProtocolAssetUrl(src) : null;
+        })(),
         paired: {
           back: pairedBack ? resolveCardThumb(pairedBack) : null,
           fronts: pairedFrontThumbs,
@@ -600,7 +616,10 @@ export default function StockpilePanelContent({
       if (!card) {
         return { id, url: null as string | null, onLoad: undefined as (() => void) | undefined };
       }
-      const templateThumbSrc = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+      const templateThumbSrcRaw = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+      const templateThumbSrc = templateThumbSrcRaw
+        ? normalizeFileProtocolAssetUrl(templateThumbSrcRaw)
+        : null;
       const { url, onLoad } = resolveOverlayThumb(id, card.thumbnailBlob ?? null);
       return { id, url: url ?? templateThumbSrc, onLoad };
     });
@@ -1184,6 +1203,9 @@ export default function StockpilePanelContent({
                       templateFilter={templateFilter}
                       totalCount={totalCount}
                       filterLabel={filterLabel}
+                      frame={frame}
+                      isLibraryEmpty={isLibraryEmpty}
+                      hasActiveNarrowing={hasActiveNarrowing}
                       isTableView={isTableView}
                       cardViews={cardViews}
                       cardActions={cardActions}
@@ -1443,8 +1465,8 @@ export default function StockpilePanelContent({
         }}
         onExtra={() => {
           const usage =
-            cardDeleteUsagePrompt?.cascadePlan.deletedDeckUsage[0] ??
-            cardDeleteUsagePrompt?.cascadePlan.pairUsage[0];
+            cardDeleteUsagePrompt?.cascadePlan?.deletedDeckUsage?.[0] ??
+            cardDeleteUsagePrompt?.cascadePlan?.pairUsage?.[0];
           if (usage) {
             navigate(buildDeckDeepLink({ deckId: usage.deckId, setId: usage.setId }));
           }
@@ -1507,7 +1529,7 @@ export default function StockpilePanelContent({
           setPairUsagePendingDeleteIds([]);
         }}
         onExtra={() => {
-          const usage = pairUsagePrompt?.cascadePlan.usage[0];
+          const usage = pairUsagePrompt?.cascadePlan?.usage?.[0];
           if (usage) navigate(buildDeckDeepLink({ deckId: usage.deckId, setId: usage.setId }));
           setPairUsagePrompt(null);
           setPairUsagePendingDeleteIds([]);

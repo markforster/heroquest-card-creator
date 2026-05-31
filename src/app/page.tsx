@@ -9,7 +9,6 @@ import {
   Route,
   Routes,
   useLocation,
-  useMatch,
   useNavigate,
   useParams,
 } from "react-router-dom";
@@ -75,6 +74,7 @@ import formatMessageWith from "@/lib/format-message-with";
 import { clearDbEstimateCache, runFullDbEstimate } from "@/lib/indexeddb-size-tracker";
 import { repairOrphanDeckEntries } from "@/lib/decks-service";
 import { startThumbnailJpegMigration } from "@/lib/thumbnail-jpeg-migration";
+import { buildAppHashUrl } from "@/lib/browser";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
@@ -86,19 +86,15 @@ function IndexPageInner() {
   const { track } = useAnalytics();
   const navigate = useNavigate();
   const location = useLocation();
+  const pathname = location.pathname || "/";
   const { cardId } = useParams();
   const normalizedCardId = cardId && cardId.trim().length > 0 ? cardId : null;
-  const isAssetsRoute = Boolean(useMatch("/assets"));
-  const isDecksRoute = Boolean(useMatch("/decks"));
-  const decksDetailBaseMatch = useMatch("/decks/:deckId");
-  const decksDetailSetMatch = useMatch("/decks/:deckId/set/:setId");
-  const decksDetailEntryMatch = useMatch("/decks/:deckId/set/:setId/entry/:entryId");
-  const isDeckDetailRoute = Boolean(
-    decksDetailBaseMatch || decksDetailSetMatch || decksDetailEntryMatch,
-  );
-  const isCardsListRoute = Boolean(useMatch("/cards"));
-  const isDraftRoute = Boolean(useMatch("/cards/new"));
-  const isCardDetailRoute = Boolean(useMatch("/cards/:cardId")) && Boolean(normalizedCardId);
+  const isAssetsRoute = pathname === "/assets";
+  const isDecksRoute = pathname === "/decks";
+  const isDeckDetailRoute = /^\/decks\/[^/]+(?:\/set\/[^/]+(?:\/entry\/[^/]+)?)?$/.test(pathname);
+  const isCardsListRoute = pathname === "/cards" || pathname === "/";
+  const isDraftRoute = pathname === "/cards/new";
+  const isCardDetailRoute = /^\/cards\/[^/]+$/.test(pathname) && Boolean(normalizedCardId);
   const isSavedCardDetailRoute = isCardDetailRoute && normalizedCardId !== "new";
   const isEditorRoute = isDraftRoute || isSavedCardDetailRoute;
 
@@ -206,6 +202,12 @@ function IndexPageInner() {
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [routeError, setRouteError] = useState<"not-found" | "load-failed" | null>(null);
   const [draftSourceCardId, setDraftSourceCardId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isEditorRoute) return;
+    if (!isWelcomeOpen) return;
+    setIsWelcomeOpen(false);
+  }, [isEditorRoute, isWelcomeOpen]);
 
   useEscapeModalAware({
     id: "route:assets",
@@ -432,7 +434,8 @@ function IndexPageInner() {
 
     (async () => {
       try {
-        const cards = await apiClient.listCards({ queries: { status: "saved" } });
+        const cardsResponse = await apiClient.listCards({ queries: { status: "saved" } });
+        const cards = Array.isArray(cardsResponse) ? cardsResponse : [];
         if (cancelled) return;
         if (!cards.length) {
           setIsWelcomeOpen(true);
@@ -562,8 +565,9 @@ function IndexPageInner() {
     let active = true;
     apiClient
       .listCards({ queries: { status: "saved" } })
-      .then(async (cards) => {
+      .then(async (cardsResponse) => {
         if (!active) return;
+        const cards = Array.isArray(cardsResponse) ? cardsResponse : [];
         const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
         if (!active) return;
         const frontIds = new Set(
@@ -691,7 +695,7 @@ function IndexPageInner() {
 
   const openCardInNewTab = (cardIdToOpen: string) => {
     if (typeof window === "undefined") return;
-    const url = `${window.location.origin}${window.location.pathname}#/cards/${cardIdToOpen}`;
+    const url = buildAppHashUrl(`/cards/${cardIdToOpen}`);
     window.open(url, "_blank", "noopener");
   };
 
@@ -1211,6 +1215,7 @@ export default function IndexPage() {
                               <Route path="/cards" element={<IndexPageInner />} />
                               <Route path="/cards/new" element={<IndexPageInner />} />
                               <Route path="/cards/:cardId" element={<IndexPageInner />} />
+                              <Route path="/" element={<Navigate to="/cards" replace />} />
                               <Route path="/assets" element={<IndexPageInner />} />
                               <Route path="/decks" element={<IndexPageInner />} />
                               <Route path="/decks/:deckId" element={<IndexPageInner />} />

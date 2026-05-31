@@ -5,6 +5,7 @@ import { useId } from "react";
 import { DEFAULT_BORDER_COLOR, splitHexAlpha } from "@/components/Cards/CardParts/CardBorder";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 
 import type { StaticImageData } from "next/image";
 
@@ -46,7 +47,7 @@ export default function CardTexturedBorder({
       <defs>
         <mask id={maskId} maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse">
           <image
-            href={alphaMask.src}
+            href={normalizeFileProtocolAssetUrl(alphaMask.src)}
             data-template-asset="border-mask"
             x={offsetX}
             y={offsetY}
@@ -64,7 +65,7 @@ export default function CardTexturedBorder({
           filterUnits="userSpaceOnUse"
         >
           <feImage
-            href={textureMask.src}
+            href={normalizeFileProtocolAssetUrl(textureMask.src)}
             data-template-asset="border-texture"
             x={offsetX}
             y={offsetY}
