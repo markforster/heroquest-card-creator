@@ -21,7 +21,7 @@ All custom typefaces that ship with the legacy `old/` build live in this folder 
 - `HeroQuest` / `HeroQuest Inline`: used for the app title marquee to match the classic logo treatment.
 - `IM Fell English`: default `--font-inline` value that powers the primary buttons (with `Caslon Antique` as a commented backup stack).
 - `Caslon Antique HQ2`: mapped to `--font-copy` and applied to modal / helper copy so longer text blocks feel like the quest and rule books.
-- `Carter Sans W01`: wired into `--font-card-heading`, `--font-card-body`, and `--font-hero-name` (used by the hero list). Utility classes `.hq-card-title` / `.hq-card-text` are available for any card-style blocks.
+- `Carter Sans W04`: wired into `--font-card-heading`, `--font-card-body`, and `--font-hero-name` (used by the hero list). Utility classes `.hq-card-title` / `.hq-card-text` are available for any card-style blocks.
 - `Calibri Light`: used via `--font-form` for inputs, textareas, and selects so UI controls stay highly readable.
 
 Keeping everything inside `old/assets/fonts/` ensures the build remains self‑contained; the static HTML can now load the typefaces without needing any external CDN access.

@@ -142,24 +142,24 @@ export default function RootLayout({ children }: RootLayoutProps) {
           dangerouslySetInnerHTML={{
             __html: `
 @font-face {
-  font-family: "Carter Sans W01";
-  src: url("./fonts/Carter Sans W01 Regular.ttf") format("truetype");
+  font-family: "Carter Sans W04";
+  src: url("./fonts/Carter Sans W04 Regular.ttf") format("truetype");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Carter Sans W01";
-  src: url("./fonts/Carter Sans W01 Medium.ttf") format("truetype");
+  font-family: "Carter Sans W04";
+  src: url("./fonts/Carter Sans W04 Medium.ttf") format("truetype");
   font-style: normal;
   font-weight: 550;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Carter Sans W01";
-  src: url("./fonts/Carter Sans W01 Bold.ttf") format("truetype");
+  font-family: "Carter Sans W04";
+  src: url("./fonts/Carter Sans W04 Bold.ttf") format("truetype");
   font-style: normal;
   font-weight: 700;
   font-display: swap;

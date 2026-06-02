@@ -63,9 +63,9 @@ function encodeFileToDataUrl(filePath) {
 
 function buildEmbeddedFontsCss(embeddedFontsByFileName) {
   const carter = [
-    { file: "Carter Sans W01 Regular.ttf", weight: 400 },
-    { file: "Carter Sans W01 Medium.ttf", weight: 550 },
-    { file: "Carter Sans W01 Bold.ttf", weight: 700 },
+    { file: "Carter Sans W04 Regular.ttf", weight: 400 },
+    { file: "Carter Sans W04 Medium.ttf", weight: 550 },
+    { file: "Carter Sans W04 Bold.ttf", weight: 700 },
   ];
 
   const heroQuest = [{ file: "HeroQuest.ttf", weight: 400 }];
@@ -77,14 +77,16 @@ function buildEmbeddedFontsCss(embeddedFontsByFileName) {
     if (!dataUrl) {
       throw new Error(`[generate-embedded-assets] Missing expected font: ${file}`);
     }
-    rules.push(`
+    rules.push(
+      `
 @font-face {
-  font-family: "Carter Sans W01";
+  font-family: "Carter Sans W04";
   src: url("${dataUrl}") format("truetype");
   font-style: normal;
   font-weight: ${weight};
   font-display: swap;
-}`.trim());
+}`.trim(),
+    );
   }
 
   for (const { file, weight } of heroQuest) {
@@ -92,14 +94,16 @@ function buildEmbeddedFontsCss(embeddedFontsByFileName) {
     if (!dataUrl) {
       throw new Error(`[generate-embedded-assets] Missing expected font: ${file}`);
     }
-    rules.push(`
+    rules.push(
+      `
 @font-face {
   font-family: "HeroQuest";
   src: url("${dataUrl}") format("truetype");
   font-style: normal;
   font-weight: ${weight};
   font-display: swap;
-}`.trim());
+}`.trim(),
+    );
   }
 
   return rules.join("\n\n");
@@ -128,15 +132,11 @@ function main() {
   });
 
   const embeddedImagesByFileName = Object.fromEntries(
-    imageFiles
-      .sort()
-      .map((filePath) => [fileNameKey(filePath), encodeFileToDataUrl(filePath)]),
+    imageFiles.sort().map((filePath) => [fileNameKey(filePath), encodeFileToDataUrl(filePath)]),
   );
 
   const embeddedFontsByFileName = Object.fromEntries(
-    fontFiles
-      .sort()
-      .map((filePath) => [fileNameKey(filePath), encodeFileToDataUrl(filePath)]),
+    fontFiles.sort().map((filePath) => [fileNameKey(filePath), encodeFileToDataUrl(filePath)]),
   );
 
   const embeddedFontFaceCss = buildEmbeddedFontsCss(embeddedFontsByFileName);
