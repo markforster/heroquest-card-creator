@@ -1229,12 +1229,11 @@ export default function AssetsPanelContent({
           <div className={styles.assetsGrid}>
             {Array.from({ length: 12 }).map((_, index) => (
               <div key={`asset-skeleton-${index}`} className={styles.assetsItem}>
-                <div className={styles.assetsThumbPlaceholder}>
-                  <div className={styles.spinner} />
-                </div>
                 <div className={styles.assetsItemMeta}>
                   <div className={styles.assetsItemName}>Loading…</div>
-                  <div className={styles.assetsItemDetails}>—</div>
+                </div>
+                <div className={styles.assetsThumbPlaceholder}>
+                  <div className={styles.spinner} />
                 </div>
               </div>
             ))}
@@ -1308,40 +1307,14 @@ export default function AssetsPanelContent({
                           onClose();
                         }}
                       >
-                        <span
-                          className={`${styles.assetsKindBadge} ${styles.assetsKindBadgeOverlay} ${styles.assetsKindBadgeClickable} ${
-                            kindStatus === "classifying"
-                              ? styles.assetsKindBadgeClassifying
-                              : kindStatus === "classified"
-                                ? asset.assetKind === "icon"
-                                  ? styles.assetsKindBadgeIcon
-                                  : styles.assetsKindBadgeArtwork
-                                : styles.assetsKindBadgeUnknown
-                          }`}
-                          role="button"
-                          tabIndex={0}
-                          aria-haspopup="dialog"
-                          aria-expanded={activeKindPopoverId === asset.id}
-                          onMouseDown={(event) => {
-                            event.stopPropagation();
-                          }}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            event.preventDefault();
-                            if (kindStatus === "classifying") return;
-                            kindAnchorRef.current = event.currentTarget;
-                            setActiveKindPopoverId(asset.id);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key !== "Enter" && event.key !== " ") return;
-                            event.preventDefault();
-                            if (kindStatus === "classifying") return;
-                            kindAnchorRef.current = event.currentTarget;
-                            setActiveKindPopoverId(asset.id);
-                          }}
-                        >
-                          {kindLabel}
-                        </span>
+                        <div className={styles.assetsItemMeta}>
+                          <div
+                            className={styles.assetsItemName}
+                            title={getDisplayAssetName(asset.name)}
+                          >
+                            {getDisplayAssetName(asset.name)}
+                          </div>
+                        </div>
                         <div className={styles.assetsThumbPlaceholder}>
                           {thumbUrls[asset.id] ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -1352,16 +1325,41 @@ export default function AssetsPanelContent({
                             />
                           ) : null}
                         </div>
-                        <div className={styles.assetsItemMeta}>
-                          <div
-                            className={styles.assetsItemName}
-                            title={getDisplayAssetName(asset.name)}
+                        <div className={styles.assetsKindBadgeRow}>
+                          <span
+                            className={`${styles.assetsKindBadge} ${styles.assetsKindBadgeTile} ${styles.assetsKindBadgeClickable} ${
+                              kindStatus === "classifying"
+                                ? styles.assetsKindBadgeClassifying
+                                : kindStatus === "classified"
+                                  ? asset.assetKind === "icon"
+                                    ? styles.assetsKindBadgeIcon
+                                    : styles.assetsKindBadgeArtwork
+                                  : styles.assetsKindBadgeUnknown
+                            }`}
+                            role="button"
+                            tabIndex={0}
+                            aria-haspopup="dialog"
+                            aria-expanded={activeKindPopoverId === asset.id}
+                            onMouseDown={(event) => {
+                              event.stopPropagation();
+                            }}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              event.preventDefault();
+                              if (kindStatus === "classifying") return;
+                              kindAnchorRef.current = event.currentTarget;
+                              setActiveKindPopoverId(asset.id);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key !== "Enter" && event.key !== " ") return;
+                              event.preventDefault();
+                              if (kindStatus === "classifying") return;
+                              kindAnchorRef.current = event.currentTarget;
+                              setActiveKindPopoverId(asset.id);
+                            }}
                           >
-                            {getDisplayAssetName(asset.name)}
-                          </div>
-                          <div className={styles.assetsItemDetails}>
-                            {asset.width}×{asset.height} · {asset.mimeType}
-                          </div>
+                            {kindLabel}
+                          </span>
                         </div>
                       </button>
                     );

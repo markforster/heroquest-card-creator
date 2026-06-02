@@ -5625,8 +5625,19 @@ button.assetsKindBadge:disabled {
   pointer-events: auto;
 }
 
+.assetsKindBadgeRow {
+  display: flex;
+  justify-content: center;
+}
+
 .assetsKindBadgeClickable {
   cursor: pointer;
+}
+
+.assetsKindBadgeTile {
+  padding: 3px 7px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .assetsKindBadgeUnknown {
@@ -5719,11 +5730,11 @@ button.assetsKindBadge:disabled {
 
 .assetsThumbPlaceholder {
   width: 100%;
-  padding-top: 60%;
+  padding-top: 75%;
   border-radius: 4px;
   background: var(--hq-surface-sunken);
   position: relative;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .assetsItemMeta {
@@ -5733,15 +5744,12 @@ button.assetsKindBadge:disabled {
 
 .assetsItemName {
   min-width: 0;
+  font-size: var(--text-lg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--hq-gray-200);
-}
-
-.assetsItemDetails {
-  color: var(--hq-text-muted);
 }
 
 .assetsItemSelected {
