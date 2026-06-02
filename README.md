@@ -81,7 +81,7 @@ This project is configured to always emit a **fully static** build that can be o
   - `assetPrefix: "./"` – assets are loaded relative to the current page, so the bundle works under any subfolder.
   - `trailingSlash: true` – output uses directory-style routes (e.g. `out/some-page/index.html`).
   - `images.unoptimized: true` – disables the Next image optimizer so images are just plain files.
-- `src/app/layout.tsx` inlines `@font-face` rules with **relative** font URLs (e.g. `./fonts/Carter Sans W01 Regular.ttf`).
+- `src/app/layout.tsx` inlines `@font-face` rules with **relative** font URLs (e.g. `./fonts/Carter Sans W04 Regular.ttf`).
 - `src/components/CardPreview` embeds fonts and images into the exported PNG so exports are self‑contained.
 
 What this means in practice:

@@ -13,9 +13,11 @@ import {
   USE_TITLE_STROKE,
   USE_TITLE_VERTICAL_COMPRESSION,
 } from "@/config/flags";
+import { buildNumericFontStyle } from "@/config/typography";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";
+import { useTypographyNumericSettings } from "@/lib/typography-settings";
 
 type RibbonTitleProps = {
   title: string;
@@ -44,6 +46,7 @@ export default function RibbonTitle({
   textBoundsNoRibbon,
   titleColor,
 }: RibbonTitleProps) {
+  const { titleAlignedNumerals, titleFixedWidthNumerals } = useTypographyNumericSettings();
   const x = (CARD_WIDTH - RIBBON_WIDTH) / 2;
   const ribbonBox = {
     x,
@@ -90,6 +93,18 @@ export default function RibbonTitle({
   const resolvedTitleColor = titleColor ?? DEFAULT_TITLE_COLOR;
   const { color: resolvedFill, alpha: resolvedAlpha } = splitHexAlpha(resolvedTitleColor);
   const resolvedOpacity = resolvedAlpha ?? 1;
+  const numericStyle = buildNumericFontStyle({
+    lining: titleAlignedNumerals,
+    tabular: titleFixedWidthNumerals,
+  });
+  const titleTextStyle = {
+    fontFamily: CARD_TEXT_FONT_FAMILY,
+    fontSize: `${titleFontSize}px`,
+    fontWeight: String(titleFontWeight),
+    letterSpacing: letterSpacing != null ? `${letterSpacing}px` : undefined,
+    fontKerning: "normal",
+    ...numericStyle,
+  };
 
   return (
     <Layer>
@@ -111,12 +126,9 @@ export default function RibbonTitle({
               dominantBaseline="middle"
               fill="#ffffff"
               opacity={0.9}
-              fontSize={titleFontSize}
-              fontWeight={titleFontWeight}
-              letterSpacing={letterSpacing}
               stroke="#ffffff62"
               strokeWidth="5.5px"
-              fontFamily={CARD_TEXT_FONT_FAMILY}
+              style={titleTextStyle}
             >
               {titleLines[0]}
             </text>
@@ -133,17 +145,13 @@ export default function RibbonTitle({
           // fill="#1a130c"
           fill={resolvedFill}
           opacity={resolvedOpacity}
-          fontSize={titleFontSize}
-          // fontWeight={700}
-          fontWeight={titleFontWeight}
-          letterSpacing={letterSpacing}
           // stroke="#f00"
           // stroke="#311501ff"
           // letterSpacing="0.0em"
           // kerning={"1px"}
           stroke={titleStroke}
           strokeWidth={titleStrokeWidth}
-          fontFamily={CARD_TEXT_FONT_FAMILY}
+          style={titleTextStyle}
         >
           {titleLines[0]}
         </text>

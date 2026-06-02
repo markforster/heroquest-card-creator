@@ -50,6 +50,9 @@ describe("ReleaseNotesModal TOC", () => {
     expect(screen.getByRole("heading", { name: /On this page/i })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "What this is" }).length).toBeGreaterThan(0);
     expect(
+      screen.getAllByRole("button", { name: "Credits & Attribution" }).length,
+    ).toBeGreaterThan(0);
+    expect(
       screen.getAllByRole("button", { name: "Update 31/05/2026 (v0.6.0)" }).length,
     ).toBeGreaterThan(0);
   });
@@ -62,6 +65,16 @@ describe("ReleaseNotesModal TOC", () => {
 
     expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
     expect(window.location.hash).toBe(beforeHash);
+  });
+
+  it("renders the credits section with the font source link", () => {
+    renderModal();
+
+    expect(screen.getByRole("heading", { name: "Credits & Attribution" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "onlinewebfonts.com" })).toHaveAttribute(
+      "href",
+      "https://www.onlinewebfonts.com/package/Carter_Sans",
+    );
   });
 
   it("updates active TOC item from intersection observer", () => {
