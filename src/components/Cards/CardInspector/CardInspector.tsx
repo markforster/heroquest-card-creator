@@ -1,6 +1,8 @@
 "use client";
 
+import { Combine, Info, Layers } from "lucide-react";
 import { useState } from "react";
+import type { LucideIcon } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
@@ -11,6 +13,12 @@ import DecksInspectorPanel from "./DecksInspectorPanel";
 import PairingInspectorPanel from "./PairingInspectorPanel";
 
 type InspectorMode = "form" | "pairing" | "decks";
+
+type InspectorModeConfig = {
+  id: InspectorMode;
+  label: string;
+  Icon: LucideIcon;
+};
 
 type CardInspectorProps = {
   activeFrontId?: string | null;
@@ -32,6 +40,12 @@ export default function CardInspector({
     state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
   const [mode, setMode] = useState<InspectorMode>("form");
+  const modes: InspectorModeConfig[] = [
+    { id: "form", label: t("label.formView"), Icon: Info },
+    { id: "pairing", label: t("label.pairingView"), Icon: Combine },
+    { id: "decks", label: t("label.decksView"), Icon: Layers },
+  ];
+  const activeMode = modes.find((item) => item.id === mode) ?? modes[0];
 
   // TODO: Implement a more scalable way to map templates to inspector forms.
   const key = selectedTemplateId
@@ -44,58 +58,50 @@ export default function CardInspector({
 
   return (
     <div className={styles.inspectorMode}>
-      <div className={styles.inspectorModeHeader}>
-        <div
-          className={styles.inspectorModeSegment}
-          role="tablist"
-          aria-label={t("tooltip.inspectorMode")}
-        >
-          <button
-            type="button"
-            className={`${styles.inspectorModeTab} ${
-              mode === "form" ? styles.inspectorModeTabActive : ""
-            }`}
-            aria-pressed={mode === "form"}
-            onClick={() => setMode("form")}
-          >
-            {t("label.formView")}
-          </button>
-          <button
-            type="button"
-            className={`${styles.inspectorModeTab} ${
-              mode === "pairing" ? styles.inspectorModeTabActive : ""
-            }`}
-            aria-pressed={mode === "pairing"}
-            onClick={() => setMode("pairing")}
-          >
-            {t("label.pairingView")}
-          </button>
-          <button
-            type="button"
-            className={`${styles.inspectorModeTab} ${
-              mode === "decks" ? styles.inspectorModeTabActive : ""
-            }`}
-            aria-pressed={mode === "decks"}
-            onClick={() => setMode("decks")}
-          >
-            {t("label.decksView")}
-          </button>
+      <div className={styles.inspectorModeContent}>
+        <div className={styles.deckFaceModeHeader}>
+          <div className={styles.deckFaceModeTitle}>{activeMode.label}</div>
+        </div>
+        <div className={styles.inspectorModeBody}>
+          {mode === "form" ? (
+            <GenericInspectorForm key={key} templateId={selectedTemplateId} />
+          ) : mode === "pairing" ? (
+            <PairingInspectorPanel
+              activeFrontId={activeFrontId}
+              autoOpenBackId={autoOpenBackId}
+              frontViewToken={frontViewToken}
+              onRememberBackId={onRememberBackId}
+              pairingReferenceId={pairingReferenceId}
+            />
+          ) : (
+            <DecksInspectorPanel />
+          )}
         </div>
       </div>
-      <div className={styles.inspectorModeBody}>
-        {mode === "form" ? (
-          <GenericInspectorForm key={key} templateId={selectedTemplateId} />
-        ) : mode === "pairing" ? (
-          <PairingInspectorPanel
-            activeFrontId={activeFrontId}
-            autoOpenBackId={autoOpenBackId}
-            frontViewToken={frontViewToken}
-            onRememberBackId={onRememberBackId}
-            pairingReferenceId={pairingReferenceId}
-          />
-        ) : (
-          <DecksInspectorPanel />
-        )}
+      <div
+        className={styles.inspectorModeTabRail}
+        role="tablist"
+        aria-label={t("tooltip.inspectorMode")}
+        aria-orientation="vertical"
+      >
+        <div className={styles.inspectorModeTabRailGroup}>
+          {modes.map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              className={styles.inspectorModeTabButton}
+              aria-selected={mode === id}
+              aria-label={label}
+              title={label}
+              onClick={() => setMode(id)}
+            >
+              <span className={styles.leftNavGlyph} aria-hidden="true">
+                <Icon className={styles.deckBacksTabIcon} aria-hidden="true" />
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

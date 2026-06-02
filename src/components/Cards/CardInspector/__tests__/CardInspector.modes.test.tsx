@@ -43,7 +43,7 @@ describe("CardInspector modes", () => {
     mockUseCardEditor.mockReset();
   });
 
-  it("renders a Decks segment and toggles panels", () => {
+  it("renders inspector mode tabs and toggles panels", () => {
     mockUseCardEditor.mockReturnValue({
       state: {
         selectedTemplateId: "hero",
@@ -54,10 +54,13 @@ describe("CardInspector modes", () => {
     render(<CardInspector />);
 
     expect(screen.getByText("FORM_PANEL")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Decks" }));
+    expect(screen.getByText("Properties")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Decks" }));
     expect(screen.getByText("DECKS_PANEL")).toBeInTheDocument();
+    expect(screen.getByText("Decks")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Pairing" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Pairing" }));
     expect(screen.getByText("PAIRING_PANEL")).toBeInTheDocument();
+    expect(screen.getByText("Pairing")).toBeInTheDocument();
   });
 });

@@ -1423,7 +1423,11 @@
 /* Right panel & inspector */
 
 .rightPanel {
-  flex: 0 0 auto;
+  --editor-right-panel-w: 520px;
+  flex: 0 0 var(--editor-right-panel-w);
+  width: var(--editor-right-panel-w);
+  min-width: var(--editor-right-panel-w);
+  max-width: var(--editor-right-panel-w);
   background: linear-gradient(135deg, var(--hq-right-panel-bg-start), var(--hq-surface-900));
   padding: 0;
   border-left: 1px solid var(--hq-border-strong);
@@ -1443,7 +1447,6 @@
 
 .inspectorTop {
   flex: 0 0 auto;
-  margin-bottom: var(--space-10);
   padding: var(--space-10) var(--space-14);
   background: linear-gradient(135deg, var(--hq-panel-bg), var(--hq-surface-900));
   border-bottom: 1px solid var(--hq-border-strong);
@@ -1546,7 +1549,7 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: visible;
-  padding: 0 var(--space-14) var(--space-6);
+  padding: 0;
 }
 
 .assetsInspectorBody {
@@ -2177,59 +2180,118 @@
 
 .inspectorMode {
   height: 100%;
-  gap: var(--space-6);
-}
-
-.inspectorModeHeader {
-  flex: 0 1 auto;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 44px;
+  flex-direction: row;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 0;
+  --inspector-mode-view-bg: var(--hq-right-panel-bg-start);
 }
 
-.inspectorModeSegment {
+.inspectorModeContent {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--inspector-mode-view-bg);
+  border-right: 1px solid var(--hq-border-strong);
+}
+
+.inspectorModeTabRail {
+  flex: 0 0 var(--deck-right-rail-w);
+  width: var(--deck-right-rail-w);
+  min-width: var(--deck-right-rail-w);
+  max-width: var(--deck-right-rail-w);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  padding: 16px var(--space-3) 0 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+  background: var(--hq-surface-900);
+}
+
+.inspectorModeTabRailGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+
+.inspectorModeTabButton {
+  border: 1px solid var(--hq-black-60);
+  box-sizing: border-box;
+  border-radius: var(--radius-lg);
+  background: var(--hq-white-05);
+  color: var(--hq-text-muted);
+  width: 46px;
+  min-width: 46px;
+  min-height: 46px;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  justify-content: center;
   padding: var(--space-1);
-  border-radius: var(--radius-pill);
-  background: var(--hq-white-06);
-  border: 1px solid var(--hq-white-12);
-}
-
-.inspectorModeTab {
-  border: 0;
-  background: transparent;
-  color: var(--hq-text-muted);
-  padding: 0.35rem 0.9rem;
-  border-radius: var(--radius-pill);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  cursor: pointer;
+  margin-left: 0;
+  border-left: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left-color: var(--hq-border-strong);
+  position: relative;
+  z-index: 1;
   transition:
     background-color 160ms ease,
+    border-color 160ms ease,
     color 160ms ease,
     box-shadow 160ms ease;
 }
 
-.inspectorModeTab:hover {
+.inspectorModeTabButton:hover {
+  background: var(--hq-white-08);
   color: var(--hq-text);
+  border-left-color: transparent;
 }
 
-.inspectorModeTabActive {
-  color: var(--hq-white);
-  background: var(--hq-white-15);
-  box-shadow: 0 0 0 1px var(--hq-white-15);
+.inspectorModeTabButton[aria-selected="true"] {
+  border-color: var(--hq-border-strong);
+  border-left-color: transparent;
+  box-shadow: none;
+  background: var(--inspector-mode-view-bg);
+  z-index: 2;
+}
+
+.inspectorModeTabButton[aria-selected="true"]:hover {
+  border-color: var(--hq-border-strong);
+  border-left-color: transparent;
+  box-shadow: none;
+  background: var(--inspector-mode-view-bg);
+}
+
+.inspectorModeTabButton[aria-selected="true"] .deckBacksTabIcon,
+.inspectorModeTabButton[aria-selected="true"]:hover .deckBacksTabIcon {
+  color: var(--hq-accent);
+}
+
+.inspectorModeTabButton[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  background: var(--inspector-mode-view-bg);
+  pointer-events: none;
 }
 
 .inspectorModeBody {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding-bottom: var(--space-6);
+  padding: 0 var(--space-10) var(--space-6);
 }
 
 .inspectorModeEmpty {
