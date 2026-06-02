@@ -36,7 +36,7 @@ import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
 import { useListAssets } from "@/api/hooks";
 import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
-import { getNextAvailableFilename } from "@/lib/asset-filename";
+import { getDisplayAssetName, getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
 import {
   getRemoteAssetThumbPrefetchEnabled,
@@ -1270,7 +1270,7 @@ export default function AssetsPanelContent({
                           isSelected ? styles.assetsItemSelected : ""
                         }`}
                         data-asset-id={asset.id}
-                        title={asset.name}
+                        title={getDisplayAssetName(asset.name)}
                         onClick={(event) => {
                           setSelectedIds((prev) => {
                             if (mode === "select") {
@@ -1353,8 +1353,11 @@ export default function AssetsPanelContent({
                           ) : null}
                         </div>
                         <div className={styles.assetsItemMeta}>
-                          <div className={styles.assetsItemName} title={asset.name}>
-                            {asset.name}
+                          <div
+                            className={styles.assetsItemName}
+                            title={getDisplayAssetName(asset.name)}
+                          >
+                            {getDisplayAssetName(asset.name)}
                           </div>
                           <div className={styles.assetsItemDetails}>
                             {asset.width}×{asset.height} · {asset.mimeType}

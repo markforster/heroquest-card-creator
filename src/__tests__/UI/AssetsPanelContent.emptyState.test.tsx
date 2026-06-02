@@ -137,7 +137,7 @@ describe("AssetsPanelContent empty state (UI)", () => {
     renderPanel();
 
     expect(screen.queryByRole("heading", { name: "Your asset library is empty" })).not.toBeInTheDocument();
-    expect(screen.getByText("goblin.png")).toBeInTheDocument();
+    expect(screen.getByText("goblin")).toBeInTheDocument();
   });
 
   it("shows the normal no-assets message for search-empty results when the library is not empty", () => {

@@ -27,7 +27,7 @@ import type { AssetRecord } from "@/api/assets";
 import type { CardRecord } from "@/api/cards";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { generateId } from "@/lib";
-import { getNextAvailableFilename } from "@/lib/asset-filename";
+import { getDisplayAssetName, getNextAvailableFilename } from "@/lib/asset-filename";
 import { optimizeImageBlob } from "@/lib/image-optimization";
 import type { Blueprint, BlueprintBounds } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
@@ -1500,8 +1500,8 @@ function AssetsInspector({
             )}
           </div>
         </div>
-        <div className={styles.assetsInspectorFilename} title={asset.name}>
-          {asset.name}
+        <div className={styles.assetsInspectorFilename} title={getDisplayAssetName(asset.name)}>
+          {getDisplayAssetName(asset.name)}
         </div>
         <dl className={styles.assetsInspectorDetails}>
           <div className={styles.uRowLg}>

@@ -6,6 +6,7 @@ type ParsedName = {
 };
 
 const SUFFIX_PATTERN = /^(.*) \((\d+)\)$/;
+const DISPLAY_IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 
 export function splitFilename(name: string): ParsedName {
   const lastDot = name.lastIndexOf(".");
@@ -34,6 +35,11 @@ export function parseSuffix(base: string): { root: string; suffix: number | null
   }
 
   return { root: match[1], suffix };
+}
+
+export function getDisplayAssetName(name: string): string {
+  const { base, extension } = splitFilename(name);
+  return DISPLAY_IMAGE_EXTENSIONS.has(extension.toLowerCase()) ? base : name;
 }
 
 export function getNextAvailableFilename(

@@ -1745,7 +1745,7 @@
   max-width: 100%;
   min-width: 0;
   white-space: nowrap;
-  overflow: visible;
+  overflow: hidden;
   text-overflow: ellipsis;
   padding-right: var(--space-2);
   flex: 0 0 auto;
@@ -5665,12 +5665,14 @@ button.assetsKindBadge:disabled {
 }
 
 .assetsItemMeta {
+  min-width: 0;
   font-size: var(--text-sm);
 }
 
 .assetsItemName {
+  min-width: 0;
   white-space: nowrap;
-  overflow: visible;
+  overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 500;
   color: var(--hq-gray-200);
