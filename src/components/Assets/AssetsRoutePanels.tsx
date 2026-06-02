@@ -7,6 +7,7 @@ import { useFormState } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
+import AssetInspectorPreview from "@/components/Assets/AssetInspectorPreview";
 import AssetsMainPanel from "@/components/Assets/AssetsMainPanel";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
@@ -43,8 +44,6 @@ type AssetUsageBounds = {
   width: number;
   height: number;
 };
-
-const ASSET_PREVIEW_TILT_MAX_DEG = 8;
 
 function formatAssetDate(timestamp: number): string {
   return new Date(timestamp).toLocaleString();
@@ -291,18 +290,8 @@ function AssetsInspector({
   });
   const [keepBackup, setKeepBackup] = useState(false);
   const [isReplacing, setIsReplacing] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const previewInnerRef = useRef<HTMLDivElement | null>(null);
-  const tiltFrameRef = useRef<number | null>(null);
-  const tiltPointRef = useRef<{ x: number; y: number } | null>(null);
-  const idleFrameRef = useRef<number | null>(null);
-  const idleTargetRef = useRef<{ x: number; y: number } | null>(null);
-  const idleFromRef = useRef<{ x: number; y: number } | null>(null);
-  const idleStartRef = useRef<number | null>(null);
-  const idleDurationRef = useRef<number>(0);
-  const isHoveringRef = useRef(false);
-  const currentTiltRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const reduceMotionRef = useRef(false);
   const showCarousel = assets.length > 1;
   const isJpegLike = asset.mimeType === "image/jpeg" || asset.mimeType === "image/jpg";
   const maxEdge = Math.max(asset.width, asset.height);
@@ -650,6 +639,7 @@ function AssetsInspector({
   useEffect(() => {
     setPendingReplace(null);
     setKeepBackup(false);
+    setIsPreviewModalOpen(false);
     setIsKindPopoverOpen(false);
     setIsOptimizeOpen(false);
     setIsConvertOpen(false);
@@ -753,146 +743,6 @@ function AssetsInspector({
       setOptimizeScalePercent(100);
     }
   }, [optimizeScalePercent]);
-
-  const resetPreviewTilt = () => {
-    const previewEl = previewInnerRef.current;
-    if (!previewEl) return;
-    previewEl.style.setProperty("--asset-preview-tilt-x", "0deg");
-    previewEl.style.setProperty("--asset-preview-tilt-y", "0deg");
-    currentTiltRef.current = { x: 0, y: 0 };
-  };
-
-  const stopIdleTilt = () => {
-    if (idleFrameRef.current !== null) {
-      cancelAnimationFrame(idleFrameRef.current);
-      idleFrameRef.current = null;
-    }
-    idleTargetRef.current = null;
-    idleFromRef.current = null;
-    idleStartRef.current = null;
-  };
-
-  const startIdleTilt = () => {
-    if (reduceMotionRef.current || isHoveringRef.current) return;
-    if (idleFrameRef.current !== null) return;
-    idleFrameRef.current = requestAnimationFrame(stepIdleTilt);
-  };
-
-  const stepIdleTilt = (timestamp: number) => {
-    idleFrameRef.current = null;
-    if (reduceMotionRef.current || isHoveringRef.current) {
-      stopIdleTilt();
-      return;
-    }
-    const previewEl = previewInnerRef.current;
-    if (!previewEl) return;
-
-    if (!idleTargetRef.current || idleStartRef.current === null) {
-      const maxTilt = 1.8;
-      const randTilt = () => (Math.random() * 2 - 1) * maxTilt;
-      idleFromRef.current = { ...currentTiltRef.current };
-      idleTargetRef.current = { x: randTilt(), y: randTilt() };
-      idleStartRef.current = timestamp;
-      idleDurationRef.current = 2800 + Math.random() * 2200;
-    }
-
-    const start = idleStartRef.current ?? timestamp;
-    const duration = idleDurationRef.current || 3000;
-    const progress = Math.min(1, (timestamp - start) / duration);
-    const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-    const target = idleTargetRef.current ?? { x: 0, y: 0 };
-    const from = idleFromRef.current ?? { x: 0, y: 0 };
-    const nextX = from.x + (target.x - from.x) * ease;
-    const nextY = from.y + (target.y - from.y) * ease;
-
-    previewEl.style.setProperty("--asset-preview-tilt-x", `${nextX.toFixed(2)}deg`);
-    previewEl.style.setProperty("--asset-preview-tilt-y", `${nextY.toFixed(2)}deg`);
-    currentTiltRef.current = { x: nextX, y: nextY };
-
-    if (progress >= 1) {
-      idleTargetRef.current = null;
-      idleFromRef.current = null;
-      idleStartRef.current = null;
-    }
-
-    idleFrameRef.current = requestAnimationFrame(stepIdleTilt);
-  };
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handleChange = () => {
-      reduceMotionRef.current = media.matches;
-      if (media.matches) {
-        stopIdleTilt();
-        resetPreviewTilt();
-      }
-    };
-    handleChange();
-    if (media.addEventListener) {
-      media.addEventListener("change", handleChange);
-      return () => media.removeEventListener("change", handleChange);
-    }
-    media.addListener(handleChange);
-    return () => media.removeListener(handleChange);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (tiltFrameRef.current !== null) {
-        cancelAnimationFrame(tiltFrameRef.current);
-        tiltFrameRef.current = null;
-      }
-      stopIdleTilt();
-    };
-  }, []);
-
-  const handlePreviewMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (reduceMotionRef.current) return;
-    if (!isHoveringRef.current) {
-      isHoveringRef.current = true;
-      stopIdleTilt();
-    }
-    tiltPointRef.current = { x: event.clientX, y: event.clientY };
-    if (tiltFrameRef.current !== null) return;
-    tiltFrameRef.current = requestAnimationFrame(() => {
-      tiltFrameRef.current = null;
-      const previewEl = previewInnerRef.current;
-      const point = tiltPointRef.current;
-      if (!previewEl || !point) return;
-      const rect = previewEl.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      const normX = (point.x - rect.left) / rect.width - 0.5;
-      const normY = (point.y - rect.top) / rect.height - 0.5;
-      const tiltX = normY * ASSET_PREVIEW_TILT_MAX_DEG;
-      const tiltY = -normX * ASSET_PREVIEW_TILT_MAX_DEG;
-      previewEl.style.setProperty("--asset-preview-tilt-x", `${tiltX.toFixed(2)}deg`);
-      previewEl.style.setProperty("--asset-preview-tilt-y", `${tiltY.toFixed(2)}deg`);
-      currentTiltRef.current = { x: tiltX, y: tiltY };
-    });
-  };
-
-  const handlePreviewMouseLeave = () => {
-    isHoveringRef.current = false;
-    tiltPointRef.current = null;
-    if (tiltFrameRef.current !== null) {
-      cancelAnimationFrame(tiltFrameRef.current);
-      tiltFrameRef.current = null;
-    }
-    resetPreviewTilt();
-    startIdleTilt();
-  };
-
-  useEffect(() => {
-    stopIdleTilt();
-    resetPreviewTilt();
-    if (!reduceMotionRef.current) {
-      startIdleTilt();
-    }
-    return () => {
-      stopIdleTilt();
-    };
-  }, [asset.id, previewUrl, refreshKey]);
 
   const handleReplaceConfirm = async () => {
     if (!pendingReplace) return;
@@ -1478,28 +1328,14 @@ function AssetsInspector({
             </button>
           </div>
         ) : null}
-        <div className={styles.assetsInspectorPreview}>
-          <div
-            className={styles.assetsInspectorPreviewInner}
-            ref={previewInnerRef}
-            onMouseMove={handlePreviewMouseMove}
-            onMouseLeave={handlePreviewMouseLeave}
-            style={
-              previewUrl
-                ? ({
-                    ["--asset-preview-url" as const]: `url("${previewUrl}")`,
-                  } as React.CSSProperties)
-                : undefined
-            }
-          >
-            {previewUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={previewUrl} alt={asset.name} />
-            ) : (
-              <div className={styles.assetsInspectorPreviewPlaceholder}>{t("empty.noPreview")}</div>
-            )}
-          </div>
-        </div>
+        <AssetInspectorPreview
+          previewUrl={previewUrl}
+          alt={asset.name}
+          emptyContent={t("empty.noPreview")}
+          interactive
+          onClick={() => setIsPreviewModalOpen(true)}
+          ariaLabel={`${t("label.preview")}: ${getDisplayAssetName(asset.name)}`}
+        />
         <div className={styles.assetsInspectorFilename} title={getDisplayAssetName(asset.name)}>
           {getDisplayAssetName(asset.name)}
         </div>
@@ -1651,6 +1487,22 @@ function AssetsInspector({
       >
         {t("confirm.saveBeforeViewBody")}
       </ConfirmModal>
+      <ModalShell
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        title={`${t("label.preview")}: ${getDisplayAssetName(asset.name)}`}
+        contentClassName={styles.assetsPreviewModalPopover}
+      >
+        <div className={styles.assetsPreviewModalBody}>
+          <AssetInspectorPreview
+            previewUrl={previewUrl}
+            alt={asset.name}
+            emptyContent={t("empty.noPreview")}
+            variant="modal"
+            containerClassName={styles.assetsPreviewModalFrame}
+          />
+        </div>
+      </ModalShell>
       <ModalShell
         isOpen={Boolean(pendingReplace)}
         onClose={closeReplaceModal}
@@ -2201,7 +2053,10 @@ export default function AssetsRoutePanels() {
   return (
     <>
       <section className={`${styles.leftPanel} d-flex align-items-stretch gap-3 p-3`}>
-        <AssetsMainPanel onSelectionChange={setSelectedAssets} refreshKey={refreshKey} />
+        <AssetsMainPanel
+          onSelectionChange={setSelectedAssets}
+          refreshKey={refreshKey}
+        />
       </section>
       {selectedAssets.length > 0 ? (
         <AssetsInspector

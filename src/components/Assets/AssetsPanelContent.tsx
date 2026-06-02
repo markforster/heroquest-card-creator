@@ -1271,12 +1271,12 @@ export default function AssetsPanelContent({
                         data-asset-id={asset.id}
                         title={getDisplayAssetName(asset.name)}
                         onClick={(event) => {
+                          const hasModifier = event.metaKey || event.ctrlKey;
                           setSelectedIds((prev) => {
                             if (mode === "select") {
                               setSelectedOrder([asset.id]);
                               return new Set([asset.id]);
                             }
-                            const hasModifier = event.metaKey || event.ctrlKey;
                             if (hasModifier) {
                               const next = new Set(prev);
                               if (next.has(asset.id)) {
