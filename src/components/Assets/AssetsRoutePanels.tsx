@@ -2028,6 +2028,11 @@ export default function AssetsRoutePanels() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const { setIsActive } = useAssetKindQueue();
+  const selectedAssetIdsSignature = useMemo(
+    () => selectedAssets.map((asset) => asset.id).join("|"),
+    [selectedAssets],
+  );
+  const previousSelectedAssetIdsSignatureRef = useRef("");
 
   useEffect(() => {
     setIsActive(true);
@@ -2038,11 +2043,16 @@ export default function AssetsRoutePanels() {
 
   useEffect(() => {
     if (selectedAssets.length === 0) {
+      previousSelectedAssetIdsSignatureRef.current = "";
       setCurrentIndex(0);
       return;
     }
+    if (previousSelectedAssetIdsSignatureRef.current === selectedAssetIdsSignature) {
+      return;
+    }
+    previousSelectedAssetIdsSignatureRef.current = selectedAssetIdsSignature;
     setCurrentIndex(0);
-  }, [selectedAssets]);
+  }, [selectedAssetIdsSignature, selectedAssets.length]);
 
   useEffect(() => {
     if (currentIndex >= selectedAssets.length) {
