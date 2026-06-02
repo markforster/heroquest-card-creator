@@ -8,7 +8,7 @@ import type { AssetRecord } from "@/api/assets";
 const mockUseFormState = jest.fn();
 const mockListCards = jest.fn();
 
-const selectedAssets: AssetRecord[] = [
+const defaultSelectedAssets: AssetRecord[] = [
   {
     id: "asset-1",
     name: "goblin.png",
@@ -27,6 +27,7 @@ const selectedAssets: AssetRecord[] = [
   },
 ];
 
+let selectedAssets: AssetRecord[] = defaultSelectedAssets.map((asset) => ({ ...asset }));
 let emitSelectionRefresh: (() => void) | null = null;
 
 jest.mock("react-router-dom", () => ({
@@ -126,6 +127,7 @@ function renderSubject() {
 
 describe("AssetsRoutePanels carousel selection (UI)", () => {
   beforeEach(() => {
+    selectedAssets = defaultSelectedAssets.map((asset) => ({ ...asset }));
     mockUseFormState.mockReturnValue({ isDirty: false });
     mockListCards.mockResolvedValue([]);
     emitSelectionRefresh = null;
@@ -158,5 +160,26 @@ describe("AssetsRoutePanels carousel selection (UI)", () => {
     await waitFor(() => {
       expect(screen.getByText("2 / 2")).toBeInTheDocument();
     });
+  });
+
+  it("enables replace only when exactly one asset is selected", async () => {
+    selectedAssets = [defaultSelectedAssets[0]];
+    const { rerender } = renderSubject();
+
+    expect(await screen.findByRole("button", { name: "Replace" })).toBeEnabled();
+
+    selectedAssets = defaultSelectedAssets.map((asset) => ({ ...asset }));
+    rerender(
+      <I18nProvider>
+        <AssetsRoutePanels />
+      </I18nProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh selection" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Replace" })).toBeDisabled();
+    });
+    expect(screen.getByText("1 / 2")).toBeInTheDocument();
   });
 });

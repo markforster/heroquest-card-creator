@@ -293,6 +293,7 @@ function AssetsInspector({
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const showCarousel = assets.length > 1;
+  const canReplaceImage = assets.length === 1;
   const isJpegLike = asset.mimeType === "image/jpeg" || asset.mimeType === "image/jpg";
   const maxEdge = Math.max(asset.width, asset.height);
   const requiredWidth = usageBounds?.width ?? 0;
@@ -1274,7 +1275,11 @@ function AssetsInspector({
           <button
             type="button"
             className="btn btn-outline-light btn-sm"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (!canReplaceImage) return;
+              fileInputRef.current?.click();
+            }}
+            disabled={!canReplaceImage}
           >
             {t("actions.replaceImage")}
           </button>
