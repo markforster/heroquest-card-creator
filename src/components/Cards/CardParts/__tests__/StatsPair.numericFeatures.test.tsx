@@ -1,6 +1,10 @@
 import { render, screen } from "@testing-library/react";
 
 import StatsPair from "@/components/Cards/CardParts/StatsPair";
+import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
+import {
+  TYPOGRAPHY_NUMERIC_STORAGE_KEYS,
+} from "@/lib/typography-settings";
 
 jest.mock("@/lib/text-fitting/fitText", () => ({
   __esModule: true,
@@ -24,11 +28,33 @@ jest.mock("@/components/Providers/TextFittingPreferencesContext", () => ({
 }));
 
 describe("StatsPair numeric features", () => {
-  it("applies lining and tabular figure features to stat values", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it.each([
+    [{}, "lining-nums tabular-nums", '"lnum" 1, "tnum" 1'],
+    [{ [TYPOGRAPHY_NUMERIC_STORAGE_KEYS.statFixedWidthNumerals]: "0" }, "lining-nums", '"lnum" 1'],
+    [{ [TYPOGRAPHY_NUMERIC_STORAGE_KEYS.statAlignedNumerals]: "0" }, "tabular-nums", '"tnum" 1'],
+    [
+      {
+        [TYPOGRAPHY_NUMERIC_STORAGE_KEYS.statAlignedNumerals]: "0",
+        [TYPOGRAPHY_NUMERIC_STORAGE_KEYS.statFixedWidthNumerals]: "0",
+      },
+      "",
+      "",
+    ],
+  ])("applies stat numeral settings %#", (storedValues, expectedVariant, expectedFeatures) => {
+    for (const [key, value] of Object.entries(storedValues)) {
+      window.localStorage.setItem(key, value);
+    }
+
     const { container } = render(
-      <svg>
-        <StatsPair header="Attack" value={1234} x={0} y={0} width={160} height={120} />
-      </svg>,
+      <LocalStorageProvider>
+        <svg>
+          <StatsPair header="Attack" value={1234} x={0} y={0} width={160} height={120} />
+        </svg>
+      </LocalStorageProvider>,
     );
 
     expect(screen.getByText("Attack")).toBeInTheDocument();
@@ -37,9 +63,13 @@ describe("StatsPair numeric features", () => {
     expect(valueText).toBeInTheDocument();
     const textElement = valueText.closest("text");
     expect(textElement).not.toBeNull();
-    expect(textElement?.style.fontVariantNumeric).toBe("lining-nums tabular-nums");
-    expect(textElement?.style.fontFeatureSettings).toBe('"lnum" 1, "tnum" 1');
+    expect(textElement?.style.fontVariantNumeric).toBe(expectedVariant);
+    expect(textElement?.style.fontFeatureSettings).toBe(expectedFeatures);
 
-    expect(container.querySelector('text[style*="font-variant-numeric"]')).toBe(textElement);
+    if (expectedVariant) {
+      expect(container.querySelector('text[style*="font-variant-numeric"]')).toBe(textElement);
+    } else {
+      expect(container.querySelector('text[style*="font-variant-numeric"]')).toBeNull();
+    }
   });
 });

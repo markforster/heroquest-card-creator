@@ -6,10 +6,21 @@ import styles from "@/app/page.module.css";
 import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { useTheme } from "@/components/Providers/ThemeProvider";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useTypographyNumericSettings } from "@/lib/typography-settings";
 
 export default function AppearanceSettingsPanel() {
   const { t } = useI18n();
   const { preference, setPreference } = useTheme();
+  const {
+    titleAlignedNumerals,
+    setTitleAlignedNumerals,
+    titleFixedWidthNumerals,
+    setTitleFixedWidthNumerals,
+    statAlignedNumerals,
+    setStatAlignedNumerals,
+    statFixedWidthNumerals,
+    setStatFixedWidthNumerals,
+  } = useTypographyNumericSettings();
   const [lastExplicit, setLastExplicit] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
@@ -69,6 +80,51 @@ export default function AppearanceSettingsPanel() {
             {t("label.themeLight")}
           </label>
         </div>
+      </SettingsGroup>
+      <SettingsGroup title={t("heading.typography")} className="d-flex flex-column gap-3">
+        <div className="d-flex flex-column gap-2">
+          <div className={styles.settingsGroupTitle}>{t("heading.titles")}</div>
+          <label className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}>
+            <input
+              type="checkbox"
+              className="form-check-input hq-checkbox"
+              checked={titleAlignedNumerals}
+              onChange={(event) => setTitleAlignedNumerals(event.target.checked)}
+            />
+            {t("label.useAlignedNumeralStyle")}
+          </label>
+          <label className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}>
+            <input
+              type="checkbox"
+              className="form-check-input hq-checkbox"
+              checked={titleFixedWidthNumerals}
+              onChange={(event) => setTitleFixedWidthNumerals(event.target.checked)}
+            />
+            {t("label.useFixedWidthNumerals")}
+          </label>
+        </div>
+        <div className="d-flex flex-column gap-2">
+          <div className={styles.settingsGroupTitle}>{t("heading.stats")}</div>
+          <label className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}>
+            <input
+              type="checkbox"
+              className="form-check-input hq-checkbox"
+              checked={statAlignedNumerals}
+              onChange={(event) => setStatAlignedNumerals(event.target.checked)}
+            />
+            {t("label.useAlignedNumeralStyle")}
+          </label>
+          <label className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}>
+            <input
+              type="checkbox"
+              className="form-check-input hq-checkbox"
+              checked={statFixedWidthNumerals}
+              onChange={(event) => setStatFixedWidthNumerals(event.target.checked)}
+            />
+            {t("label.useFixedWidthNumerals")}
+          </label>
+        </div>
+        <div className={styles.settingsPanelRow}>{t("label.typographyNumeralHint")}</div>
       </SettingsGroup>
     </div>
   );

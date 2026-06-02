@@ -234,6 +234,13 @@ export const en = {
   "label.themeLight": "Light",
   "label.useSystemTheme": "Use system preference",
   "label.useSystemThemeHint": "Match your OS/browser theme setting.",
+  "heading.typography": "Typography",
+  "heading.titles": "Titles",
+  "heading.stats": "Stats",
+  "label.useAlignedNumeralStyle": "Use aligned numeral style",
+  "label.useFixedWidthNumerals": "Use fixed-width numerals",
+  "label.typographyNumeralHint":
+    "Body text keeps the original numeral behavior used on the printed cards.",
   "label.exportWithBleed": "Export with bleed",
   "label.includeBleed": "Include bleed",
   "label.bleedPixels": "Bleed (px)",
