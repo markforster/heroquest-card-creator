@@ -19,6 +19,7 @@ import AssetsEmptyState from "@/components/Assets/AssetsEmptyState";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
 import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
 import IconButton from "@/components/common/IconButton";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import ModalShell from "@/components/common/ModalShell";
 import { WarningNotice } from "@/components/common/Notice";
 import { apiClient } from "@/api/client";
@@ -52,7 +53,7 @@ import {
   type ResourceMenuIcon,
 } from "@/components/Assets/assetsResources";
 
-import type { ComponentType, Dispatch, SetStateAction } from "react";
+import type { ComponentType } from "react";
 
 type AssetsPanelMode = "manage" | "select";
 
@@ -121,6 +122,7 @@ export default function AssetsPanelContent({
   preferredKindOrder,
 }: AssetsPanelProps) {
   const { t } = useI18n();
+  const { getValues, setValue } = useFormContext();
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [search, setSearch] = useState("");
   const [assetKindFilter, setAssetKindFilter] = useState<
@@ -154,6 +156,7 @@ export default function AssetsPanelContent({
   );
   const isRemoteMode = readApiConfig().mode === "remote";
   const [isLoadingAssets, setIsLoadingAssets] = useState(false);
+  const [affectedCardCount, setAffectedCardCount] = useState<number | null>(null);
   const { runMissingAssetsScan } = useMissingAssets();
   const { enqueueAsset, cancelAsset, setIsActive } = useAssetKindQueue();
   const isSafari = typeof window !== "undefined" ? isSafariBrowser() : false;
@@ -501,24 +504,42 @@ export default function AssetsPanelContent({
   }, [assets, selectedOrder]);
 
   useEffect(() => {
-    if (!confirmState || confirmState.isDeleting) return;
-
-    const nextIds = Array.from(selectedIds);
-    if (nextIds.length === 0) {
-      setConfirmState(null);
+    if (!confirmState) {
+      setAffectedCardCount(null);
       return;
     }
 
-    setConfirmState((prev) => {
-      if (!prev || prev.isDeleting) return prev;
-      if (prev.assetIds.length === nextIds.length) {
-        const prevSet = new Set(prev.assetIds);
-        const isSame = nextIds.every((id) => prevSet.has(id));
-        if (isSame) return prev;
+    let cancelled = false;
+    const idSet = new Set(confirmState.assetIds);
+
+    (async () => {
+      try {
+        const cards = await apiClient.listCards();
+        if (cancelled) return;
+        const affectedCards = new Set<string>();
+
+        cards.forEach((card) => {
+          if (card.imageAssetId && idSet.has(card.imageAssetId)) {
+            affectedCards.add(card.id);
+            return;
+          }
+          if (card.monsterIconAssetId && idSet.has(card.monsterIconAssetId)) {
+            affectedCards.add(card.id);
+          }
+        });
+
+        setAffectedCardCount(affectedCards.size);
+      } catch {
+        if (!cancelled) {
+          setAffectedCardCount(0);
+        }
       }
-      return { ...prev, assetIds: nextIds };
-    });
-  }, [confirmState, selectedIds, setConfirmState]);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [confirmState]);
 
   useEffect(() => {
     if (!onSelectionChange) return;
@@ -630,6 +651,42 @@ export default function AssetsPanelContent({
       // eslint-disable-next-line no-console
       console.error("[AssetsModal] Failed to delete assets");
     }
+  };
+
+  const handleDeleteConfirm = async () => {
+    const current = confirmState;
+    if (!current) return;
+    const ids = current.assetIds;
+    const idSet = new Set(ids);
+
+    setConfirmState((prev) => (prev ? { ...prev, isDeleting: true } : prev));
+
+    // Clear image fields on the active editor form if they reference deleted assets.
+    const currentValues = getValues();
+    const imageMatch = currentValues?.imageAssetId && idSet.has(currentValues.imageAssetId);
+    const iconMatch =
+      "iconAssetId" in (currentValues ?? {}) &&
+      (currentValues as { iconAssetId?: string }).iconAssetId &&
+      idSet.has((currentValues as { iconAssetId?: string }).iconAssetId as string);
+
+    if (imageMatch) {
+      setValue("imageAssetId", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageAssetName", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageScale", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageScaleMode", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageOriginalWidth", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageOriginalHeight", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
+    }
+    if (iconMatch) {
+      setValue("iconAssetId" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
+      setValue("iconAssetName" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
+    }
+
+    await handleConfirmDelete(ids);
+    setConfirmState(null);
   };
 
   const handleUpload = async (files: File[], input: HTMLInputElement) => {
@@ -1142,35 +1199,6 @@ export default function AssetsPanelContent({
         </div>
         <div className={styles.assetsToolbarSpacer} />
         <div className={`${styles.assetsActions} d-flex align-items-center gap-2`}>
-          <IconButton
-            className="btn btn-primary btn-sm"
-            icon={Upload}
-            onClick={() => {
-              fileInputRef.current?.click();
-            }}
-            title={t("tooltip.uploadImages")}
-          >
-            {t("actions.upload")}
-          </IconButton>
-          {mode === "manage" && (
-            <IconButton
-              className="btn btn-outline-danger btn-sm"
-              icon={Trash2}
-              disabled={selectedIds.size === 0}
-              onClick={() => {
-                if (selectedIds.size === 0) return;
-                const ids = Array.from(selectedIds);
-                setConfirmState({
-                  assetIds: ids,
-                  isDeleting: false,
-                });
-              }}
-              title={t("tooltip.deleteAssets")}
-            >
-              {t("actions.delete")}
-              {selectedIds.size > 1 ? ` (${selectedIds.size})` : ""}
-            </IconButton>
-          )}
           <div className={styles.assetsResourcesMenu} ref={resourcesMenuRef}>
             <IconButton
               className="btn btn-outline-secondary btn-sm"
@@ -1370,20 +1398,77 @@ export default function AssetsPanelContent({
           </div>
         )}
       </div>
-      {(mode === "select" || confirmState) && (
-        <div className={styles.assetsFooter}>
-          <AssetsModalFooter
-            mode={mode}
-            selectedIds={selectedIds}
-            onClose={onClose}
-            onSelect={onSelect}
-            assets={filteredAssets}
-            onConfirmDelete={handleConfirmDelete}
-            confirmState={confirmState}
-            setConfirmState={setConfirmState}
-          />
-        </div>
-      )}
+      <div className={`${styles.assetsFooterToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
+        <IconButton
+          className="btn btn-primary btn-sm"
+          icon={Upload}
+          onClick={() => {
+            fileInputRef.current?.click();
+          }}
+          title={t("tooltip.uploadImages")}
+        >
+          {t("actions.upload")}
+        </IconButton>
+        {mode === "manage" ? (
+          <IconButton
+            className="btn btn-outline-danger btn-sm"
+            icon={Trash2}
+            disabled={selectedIds.size === 0}
+            onClick={() => {
+              if (selectedIds.size === 0) return;
+              const ids = Array.from(selectedIds);
+              setConfirmState({
+                assetIds: ids,
+                isDeleting: false,
+              });
+            }}
+            title={t("tooltip.deleteAssets")}
+          >
+            {t("actions.delete")}
+            {selectedIds.size > 1 ? ` (${selectedIds.size})` : ""}
+          </IconButton>
+        ) : (
+          <>
+            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onClose}>
+              {t("actions.cancel")}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              disabled={selectedIds.size === 0}
+              onClick={() => {
+                const firstId = selectedIds.values().next().value as string | undefined;
+                const selectedAsset = firstId
+                  ? filteredAssets.find((asset) => asset.id === firstId)
+                  : undefined;
+                if (!selectedAsset || !onSelect) return;
+                onSelect(selectedAsset);
+                onClose();
+              }}
+            >
+              {t("actions.select")}
+            </button>
+          </>
+        )}
+      </div>
+      <ConfirmModal
+        isOpen={Boolean(confirmState)}
+        title={t("actions.delete")}
+        confirmLabel={t("actions.delete")}
+        cancelLabel={t("actions.cancel")}
+        isConfirming={confirmState?.isDeleting ?? false}
+        onConfirm={() => void handleDeleteConfirm()}
+        onCancel={() => setConfirmState(null)}
+      >
+        {confirmState ? (
+          <div>
+            {t("confirm.deleteAssetsBody")} {confirmState.assetIds.length}{" "}
+            {confirmState.assetIds.length === 1 ? t("label.asset") : t("label.assets")}{" "}
+            {t("status.willClearImagesOn")} {affectedCardCount ?? "..."}{" "}
+            {affectedCardCount === 1 ? t("label.card") : t("label.cards")}. {t("actions.continue")}?
+          </div>
+        ) : null}
+      </ConfirmModal>
       {isKindPopoverOpen
         ? createPortal(
             <div
@@ -1532,165 +1617,4 @@ export default function AssetsPanelContent({
       />
     </div>
   );
-}
-
-type AssetsFooterProps = {
-  mode: AssetsPanelMode;
-  selectedIds: Set<string>;
-  onClose: () => void;
-  onSelect?: (asset: AssetRecord) => void;
-  assets: AssetRecord[];
-};
-
-function AssetsModalFooter({
-  mode,
-  selectedIds,
-  onClose,
-  onSelect,
-  assets,
-  onConfirmDelete,
-  confirmState,
-  setConfirmState,
-}: AssetsFooterProps & {
-  onConfirmDelete: (ids: string[]) => Promise<void> | void;
-  confirmState: ConfirmState | null;
-  setConfirmState: Dispatch<SetStateAction<ConfirmState | null>>;
-}) {
-  const { t } = useI18n();
-  const { getValues, setValue } = useFormContext();
-  const [affectedCardCount, setAffectedCardCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!confirmState) {
-      setAffectedCardCount(null);
-      return;
-    }
-
-    let cancelled = false;
-    const idSet = new Set(confirmState.assetIds);
-
-    (async () => {
-      try {
-        const cards = await apiClient.listCards();
-        if (cancelled) return;
-        const affectedCards = new Set<string>();
-
-        cards.forEach((card) => {
-          if (card.imageAssetId && idSet.has(card.imageAssetId)) {
-            affectedCards.add(card.id);
-            return;
-          }
-          if (card.monsterIconAssetId && idSet.has(card.monsterIconAssetId)) {
-            affectedCards.add(card.id);
-          }
-        });
-
-        setAffectedCardCount(affectedCards.size);
-      } catch {
-        if (!cancelled) {
-          setAffectedCardCount(0);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [confirmState]);
-
-  if (mode === "select") {
-    const firstId = selectedIds.values().next().value as string | undefined;
-    const selectedAsset = firstId ? assets.find((asset) => asset.id === firstId) : undefined;
-    return (
-      <>
-        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onClose}>
-          {t("actions.cancel")}
-        </button>
-        <button
-          type="button"
-          className="btn btn-primary btn-sm"
-          disabled={!selectedAsset}
-          onClick={() => {
-            if (!selectedAsset || !onSelect) return;
-            onSelect(selectedAsset);
-            onClose();
-          }}
-        >
-          {t("actions.select")}
-        </button>
-      </>
-    );
-  }
-
-  if (confirmState) {
-    const { assetIds, isDeleting } = confirmState;
-    const assetCount = assetIds.length;
-    const idSet = new Set(assetIds);
-    const cardCountLabel = affectedCardCount === 1 ? t("label.card") : t("label.cards");
-    const cardCountValue = affectedCardCount ?? "...";
-
-    return (
-      <>
-        <div className={styles.assetsConfirmMessage}>
-          {t("confirm.deleteAssetsBody")} {assetCount}{" "}
-          {assetCount === 1 ? t("label.asset") : t("label.assets")} {t("status.willClearImagesOn")}
-          {" "}
-          {cardCountValue} {cardCountLabel}. {t("actions.continue")}?
-        </div>
-        <button
-          type="button"
-          className="btn btn-outline-secondary btn-sm"
-          disabled={isDeleting}
-          onClick={() => setConfirmState(null)}
-        >
-          {t("actions.cancel")}
-        </button>
-        <IconButton
-          className="btn btn-danger btn-sm"
-          icon={Trash2}
-          disabled={isDeleting}
-          onClick={async () => {
-            const current = confirmState;
-            if (!current) return;
-            const ids = current.assetIds;
-            const idSet = new Set(ids);
-
-            setConfirmState((prev) => (prev ? { ...prev, isDeleting: true } : prev));
-
-            // Clear image fields on the active editor form if they reference deleted assets.
-            const currentValues = getValues();
-            const imageMatch =
-              currentValues?.imageAssetId && idSet.has(currentValues.imageAssetId);
-            const iconMatch =
-              "iconAssetId" in (currentValues ?? {}) &&
-              (currentValues as { iconAssetId?: string }).iconAssetId &&
-              idSet.has((currentValues as { iconAssetId?: string }).iconAssetId as string);
-            if (imageMatch) {
-              setValue("imageAssetId", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageAssetName", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageScale", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageScaleMode", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageOriginalWidth", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageOriginalHeight", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
-            }
-            if (iconMatch) {
-              setValue("iconAssetId" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
-              setValue("iconAssetName" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
-            }
-
-            await onConfirmDelete(ids);
-            setConfirmState(null);
-          }}
-          title={t("tooltip.confirmDeleteAssets")}
-        >
-          {t("actions.delete")}
-        </IconButton>
-      </>
-    );
-  }
-
-  return null;
 }

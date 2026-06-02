@@ -4241,7 +4241,15 @@
 /* Assets and cards toolbars, grids */
 
 .assetsToolbar {
+  flex: 0 0 auto;
   margin-bottom: var(--space-10);
+}
+
+.assetsFooterToolbar {
+  flex: 0 0 auto;
+  margin-top: var(--space-10);
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .assetsSearch {
@@ -4522,7 +4530,6 @@
   flex: 1 1 auto;
   min-height: 0;
   margin-top: 0;
-  min-height: 200px;
   border-radius: var(--radius-sm);
   border: 1px dashed var(--hq-border-mid);
   background: linear-gradient(180deg, var(--hq-white-05), var(--hq-black-35));
@@ -6254,20 +6261,6 @@ button.assetsKindBadge:disabled {
 .cardsType_labelled-back {
   background: var(--hq-pill-back-bg);
   color: var(--hq-pill-back-text);
-}
-
-.assetsFooter {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--space-6);
-  margin-top: var(--space-10);
-}
-
-.assetsConfirmMessage {
-  flex: 1 1 auto;
-  font-size: var(--text-md);
-  color: var(--hq-text-muted);
 }
 
 .assetsReportIntro {

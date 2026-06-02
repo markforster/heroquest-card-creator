@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { FormProvider, useForm } from "react-hook-form";
 
 import AssetsPanelContent from "@/components/Assets/AssetsPanelContent";
 import { I18nProvider } from "@/i18n/I18nProvider";
@@ -55,11 +56,31 @@ jest.mock("@/lib/remote-asset-flags", () => ({
   subscribeRemoteAssetFlags: () => () => undefined,
 }));
 
-function renderPanel() {
+type RenderPanelOptions = {
+  mode?: "manage" | "select";
+  onClose?: () => void;
+  onSelect?: (asset: AssetRecord) => void;
+};
+
+function renderPanel({ mode, onClose, onSelect }: RenderPanelOptions = {}) {
+  function Wrapper() {
+    const methods = useForm();
+    return (
+      <I18nProvider>
+        <FormProvider {...methods}>
+          <AssetsPanelContent
+            isOpen
+            onClose={onClose ?? (() => undefined)}
+            mode={mode}
+            onSelect={onSelect}
+          />
+        </FormProvider>
+      </I18nProvider>
+    );
+  }
+
   return render(
-    <I18nProvider>
-      <AssetsPanelContent isOpen onClose={() => undefined} />
-    </I18nProvider>,
+    <Wrapper />,
   );
 }
 
@@ -217,5 +238,91 @@ describe("AssetsPanelContent empty state (UI)", () => {
 
     fireEvent.mouseDown(document.body);
     expect(screen.queryByRole("menu", { name: "Asset resources" })).not.toBeInTheDocument();
+  });
+
+  it("keeps resources in the top toolbar and places manage actions in the unified footer toolbar", async () => {
+    const asset = buildAsset();
+    const secondAsset = buildAsset({
+      id: "asset-2",
+      name: "wizard.png",
+      createdAt: 2,
+    });
+    mockUseListAssets.mockReturnValue({
+      data: [asset, secondAsset],
+      isLoading: false,
+      refetch: jest.fn().mockResolvedValue({ data: [asset, secondAsset] }),
+    });
+
+    const { container } = renderPanel();
+
+    const toolbar = container.querySelector(".assetsToolbar");
+    const footerToolbar = container.querySelector(".assetsFooterToolbar");
+    expect(toolbar).toBeTruthy();
+    expect(footerToolbar).toBeTruthy();
+
+    const resourcesButton = screen.getByTitle("Open artwork and GPT links");
+    expect(toolbar).toContainElement(resourcesButton);
+    expect(footerToolbar).not.toContainElement(resourcesButton);
+
+    const uploadButton = screen.getByRole("button", { name: "Upload" });
+    const deleteButton = screen.getByRole("button", { name: "Delete" });
+    expect(footerToolbar).toContainElement(uploadButton);
+    expect(footerToolbar).toContainElement(deleteButton);
+    expect(toolbar).not.toContainElement(uploadButton);
+    expect(toolbar).not.toContainElement(deleteButton);
+    expect(deleteButton).toBeDisabled();
+    expect(container.querySelector(".assetsFooter")).toBeFalsy();
+
+    const firstAssetTile = container.querySelector('[data-asset-id="asset-1"]');
+    expect(firstAssetTile).toBeTruthy();
+    fireEvent.click(firstAssetTile as Element);
+    expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(
+      (
+        await screen.findAllByText((_, element) =>
+          element?.textContent === "Deleting 1 asset will clear images on 0 Cards. Continue?",
+        )
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+
+    fireEvent.click(resourcesButton);
+    expect(screen.getByRole("menu", { name: "Asset resources" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Download free artwork pack" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Open Art Generator" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Open Card Art" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Open Icon Generator" })).toBeInTheDocument();
+  });
+
+  it("renders upload, cancel, and select in the unified footer toolbar for select mode", () => {
+    const asset = buildAsset();
+    const onClose = jest.fn();
+    const onSelect = jest.fn();
+    mockUseListAssets.mockReturnValue({
+      data: [asset],
+      isLoading: false,
+      refetch: jest.fn().mockResolvedValue({ data: [asset] }),
+    });
+
+    const { container } = renderPanel({ mode: "select", onClose, onSelect });
+
+    const footerToolbar = container.querySelector(".assetsFooterToolbar");
+    expect(footerToolbar).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Upload" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    const selectButton = screen.getByRole("button", { name: "Select" });
+    expect(selectButton).toBeDisabled();
+    expect(container.querySelector(".assetsFooter")).toBeFalsy();
+
+    const firstAssetTile = container.querySelector('[data-asset-id="asset-1"]');
+    expect(firstAssetTile).toBeTruthy();
+    fireEvent.click(firstAssetTile as Element);
+    expect(screen.getByRole("button", { name: "Select" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Select" }));
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: "asset-1" }));
+    expect(onClose).toHaveBeenCalled();
   });
 });
