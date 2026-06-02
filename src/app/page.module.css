@@ -1423,7 +1423,13 @@
 /* Right panel & inspector */
 
 .rightPanel {
-  --editor-right-panel-w: 520px;
+  --editor-right-rail-right-space: 16px;
+  --editor-right-rail-w: calc(
+    var(--deck-right-rail-w) + var(--editor-right-rail-right-space) - var(--space-3)
+  );
+  --editor-right-panel-w: calc(
+    520px + var(--editor-right-rail-right-space) - var(--space-3)
+  );
   flex: 0 0 var(--editor-right-panel-w);
   width: var(--editor-right-panel-w);
   min-width: var(--editor-right-panel-w);
@@ -2200,14 +2206,14 @@
 }
 
 .inspectorModeTabRail {
-  flex: 0 0 var(--deck-right-rail-w);
-  width: var(--deck-right-rail-w);
-  min-width: var(--deck-right-rail-w);
-  max-width: var(--deck-right-rail-w);
+  flex: 0 0 var(--editor-right-rail-w);
+  width: var(--editor-right-rail-w);
+  min-width: var(--editor-right-rail-w);
+  max-width: var(--editor-right-rail-w);
   flex-shrink: 0;
   box-sizing: border-box;
   overflow-x: hidden;
-  padding: 16px var(--space-3) 0 0;
+  padding: 16px var(--editor-right-rail-right-space) 0 0;
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
