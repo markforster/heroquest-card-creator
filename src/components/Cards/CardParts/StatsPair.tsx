@@ -1,11 +1,16 @@
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useTextFittingPreferences } from "@/components/Providers/TextFittingPreferencesContext";
 import {
+  ENABLE_OPENTYPE_NUMERIC_ALIGNMENT,
   STATS_VERTICAL_SCALE_Y,
   USE_STATS_VERTICAL_COMPRESSION,
   USE_TIGHTER_STATS_TRACKING,
 } from "@/config/flags";
-import { EMPHASIZED_LABEL_WEIGHT } from "@/config/typography";
+import {
+  CARD_NUMERIC_FONT_FEATURE_SETTINGS,
+  CARD_NUMERIC_FONT_VARIANT,
+  EMPHASIZED_LABEL_WEIGHT,
+} from "@/config/typography";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { formatStatValue } from "@/lib/stat-values";
 import fitText from "@/lib/text-fitting/fitText";
@@ -93,6 +98,12 @@ export default function StatsPair({
           MIN_VALUE_FONT_SIZE,
         )
       : VALUE_FONT_SIZE;
+  const numericStyle = ENABLE_OPENTYPE_NUMERIC_ALIGNMENT
+    ? {
+        fontVariantNumeric: CARD_NUMERIC_FONT_VARIANT,
+        fontFeatureSettings: CARD_NUMERIC_FONT_FEATURE_SETTINGS,
+      }
+    : undefined;
 
   return (
     <Layer>
@@ -125,6 +136,7 @@ export default function StatsPair({
             fontSize={valueFontSize}
             fontWeight={700}
             fontFamily={CARD_TEXT_FONT_FAMILY}
+            style={numericStyle}
           >
             {formattedValue}
           </text>

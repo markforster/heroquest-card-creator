@@ -5,6 +5,7 @@ import { useTextFittingPreferences } from "@/components/Providers/TextFittingPre
 import { CARD_WIDTH, savg, sx, sy } from "@/config/card-canvas";
 import { DEFAULT_TITLE_COLOR } from "@/config/colors";
 import {
+  ENABLE_OPENTYPE_NUMERIC_ALIGNMENT,
   NONRIBBON_TITLE_WEIGHT,
   TITLE_VERTICAL_SCALE_Y,
   USE_BOLD_TITLE_WEIGHT,
@@ -13,6 +14,7 @@ import {
   USE_TITLE_STROKE,
   USE_TITLE_VERTICAL_COMPRESSION,
 } from "@/config/flags";
+import { CARD_NUMERIC_FONT_FEATURE_SETTINGS, CARD_NUMERIC_FONT_VARIANT } from "@/config/typography";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";
@@ -90,6 +92,19 @@ export default function RibbonTitle({
   const resolvedTitleColor = titleColor ?? DEFAULT_TITLE_COLOR;
   const { color: resolvedFill, alpha: resolvedAlpha } = splitHexAlpha(resolvedTitleColor);
   const resolvedOpacity = resolvedAlpha ?? 1;
+  const titleTextStyle = {
+    fontFamily: CARD_TEXT_FONT_FAMILY,
+    fontSize: `${titleFontSize}px`,
+    fontWeight: String(titleFontWeight),
+    letterSpacing: letterSpacing != null ? `${letterSpacing}px` : undefined,
+    fontKerning: "normal",
+    fontVariantNumeric: ENABLE_OPENTYPE_NUMERIC_ALIGNMENT
+      ? CARD_NUMERIC_FONT_VARIANT
+      : undefined,
+    fontFeatureSettings: ENABLE_OPENTYPE_NUMERIC_ALIGNMENT
+      ? CARD_NUMERIC_FONT_FEATURE_SETTINGS
+      : undefined,
+  };
 
   return (
     <Layer>
@@ -111,12 +126,9 @@ export default function RibbonTitle({
               dominantBaseline="middle"
               fill="#ffffff"
               opacity={0.9}
-              fontSize={titleFontSize}
-              fontWeight={titleFontWeight}
-              letterSpacing={letterSpacing}
               stroke="#ffffff62"
               strokeWidth="5.5px"
-              fontFamily={CARD_TEXT_FONT_FAMILY}
+              style={titleTextStyle}
             >
               {titleLines[0]}
             </text>
@@ -133,17 +145,13 @@ export default function RibbonTitle({
           // fill="#1a130c"
           fill={resolvedFill}
           opacity={resolvedOpacity}
-          fontSize={titleFontSize}
-          // fontWeight={700}
-          fontWeight={titleFontWeight}
-          letterSpacing={letterSpacing}
           // stroke="#f00"
           // stroke="#311501ff"
           // letterSpacing="0.0em"
           // kerning={"1px"}
           stroke={titleStroke}
           strokeWidth={titleStrokeWidth}
-          fontFamily={CARD_TEXT_FONT_FAMILY}
+          style={titleTextStyle}
         >
           {titleLines[0]}
         </text>

@@ -54,6 +54,12 @@ export const USE_WEBGL_SPARKLE_PARALLAX = false;
 export const USE_TIGHTER_TITLE_TRACKING = true;
 
 /**
+ * Enables OpenType numeric alignment features for Carter-based SVG text paths.
+ * When false, title/body/stat text falls back to the font's default numeral behavior.
+ */
+export const ENABLE_OPENTYPE_NUMERIC_ALIGNMENT = false;
+
+/**
  * Uses bold weight for the ribbon title text to better match printed cards.
  */
 export const USE_BOLD_TITLE_WEIGHT = true;
