@@ -5394,6 +5394,73 @@
   width: 100%;
 }
 
+.assetsUsageTrigger {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--hq-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+  cursor: pointer;
+}
+
+.assetsUsageTrigger:hover,
+.assetsUsageTrigger:focus-visible {
+  color: var(--hq-accent-soft);
+}
+
+.assetsUsagePopover {
+  position: fixed;
+  border: 1px solid var(--hq-surface-700);
+  border-radius: var(--radius-sm);
+  background: var(--hq-surface-850);
+  box-shadow: 0 12px 28px var(--hq-black-45);
+  padding: 16px;
+  z-index: 200;
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.assetsUsagePopoverGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 96px);
+  grid-auto-rows: 140px;
+  gap: 8px;
+}
+
+.assetsUsagePopoverCard {
+  width: 96px;
+  height: 140px;
+  border-radius: 4px;
+  overflow: visible;
+  border: 1px solid var(--hq-surface-700);
+  background: var(--hq-surface-850);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.assetsUsagePopoverCard:hover,
+.assetsUsagePopoverCard:focus-visible {
+  border-color: var(--hq-accent);
+  box-shadow: 0 0 0 2px var(--hq-focus-ring);
+}
+
+.assetsUsagePopoverCard img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.assetsUsagePopoverPlaceholder {
+  width: 100%;
+  height: 100%;
+  border: 1px dashed var(--hq-border-mid);
+  background: var(--hq-white-06);
+}
+
 .assetsGroups {
   display: flex;
   flex-direction: column;
