@@ -1,7 +1,8 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useFormContext, useWatch } from "react-hook-form";
 
 
@@ -12,6 +13,7 @@ import type { StatSplitFormat, StatValue } from "@/types/stats";
 
 import { formatStatInputValue, parseStatInputValue } from "./stat-stepper-input";
 
+import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { FieldValues, Path } from "react-hook-form";
 
@@ -69,10 +71,14 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
   const [focusedField, setFocusedField] = useState<"primary" | "secondary" | null>(null);
   const [formatOpen, setFormatOpen] = useState(false);
   const [formatHover, setFormatHover] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const [formatPopoverStyle, setFormatPopoverStyle] = useState<CSSProperties | null>(null);
+  const [formatHoverPopoverStyle, setFormatHoverPopoverStyle] = useState<CSSProperties | null>(null);
   const primaryLastValidRef = useRef(primaryValue);
   const secondaryLastValidRef = useRef(secondaryValue);
   const formatButtonRef = useRef<HTMLButtonElement | null>(null);
   const formatPopoverRef = useRef<HTMLDivElement | null>(null);
+  const formatHoverPopoverRef = useRef<HTMLDivElement | null>(null);
 
   useOutsideClick([formatPopoverRef, formatButtonRef], () => setFormatOpen(false), formatOpen);
 
@@ -258,10 +264,65 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
   }, [secondaryValue, focusedField]);
 
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const computeFloatingPopoverStyle = useCallback((popover: HTMLDivElement | null) => {
+    const anchor = formatButtonRef.current;
+    if (!anchor || !popover) return null;
+
+    const anchorRect = anchor.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const padding = 12;
+    const offset = 8;
+
+    let left = anchorRect.left + anchorRect.width / 2 - popoverRect.width / 2;
+    left = Math.min(Math.max(left, padding), viewportWidth - popoverRect.width - padding);
+
+    const aboveTop = anchorRect.top - popoverRect.height - offset;
+    const belowTop = anchorRect.bottom + offset;
+    const canRenderBelow = belowTop + popoverRect.height + padding <= viewportHeight;
+    const top = aboveTop >= padding
+      ? aboveTop
+      : canRenderBelow
+        ? belowTop
+        : Math.max(padding, viewportHeight - popoverRect.height - padding);
+
+    return { left, top };
+  }, []);
+
+  useEffect(() => {
     if (!isSplit) {
       setFormatOpen(false);
     }
   }, [isSplit]);
+
+  useEffect(() => {
+    if (!formatOpen && !formatHover) {
+      setFormatPopoverStyle(null);
+      setFormatHoverPopoverStyle(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      if (formatOpen) {
+        setFormatPopoverStyle(computeFloatingPopoverStyle(formatPopoverRef.current));
+      }
+      if (formatHover && !formatOpen) {
+        setFormatHoverPopoverStyle(computeFloatingPopoverStyle(formatHoverPopoverRef.current));
+      }
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [computeFloatingPopoverStyle, formatHover, formatOpen]);
 
   const handleFormatChange = (nextFormat: StatSplitFormat) => {
     setSplitValue(primaryValue, secondaryValue, 1, nextFormat);
@@ -346,43 +407,6 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
                 >
                   <span className={layoutStyles.statFormatLabel}>{formatButtonLabel}</span>
                 </button>
-                {formatHover && !formatOpen ? (
-                  <div className={layoutStyles.statFormatHoverPopover} role="status">
-                    {formatButtonLabel}
-                  </div>
-                ) : null}
-                {formatOpen ? (
-                  <div
-                    ref={formatPopoverRef}
-                    className={layoutStyles.statFormatPopover}
-                    role="menu"
-                  >
-                    <button
-                      type="button"
-                      className={layoutStyles.statFormatOption}
-                      onClick={() => handleFormatChange("slash")}
-                      role="menuitem"
-                    >
-                      {optionSlashLabel}
-                    </button>
-                    <button
-                      type="button"
-                      className={layoutStyles.statFormatOption}
-                      onClick={() => handleFormatChange("paren")}
-                      role="menuitem"
-                    >
-                      {optionParenLabel}
-                    </button>
-                    <button
-                      type="button"
-                      className={layoutStyles.statFormatOption}
-                      onClick={() => handleFormatChange("paren-leading")}
-                      role="menuitem"
-                    >
-                      {optionParenLeadingLabel}
-                    </button>
-                  </div>
-                ) : null}
               </div>
             ) : null}
             <button
@@ -402,6 +426,55 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
           {isSplit ? renderStatField(secondaryValue, "secondary") : null}
         </div>
       </div>
+      {isClient && formatHover && !formatOpen
+        ? createPortal(
+            <div
+              ref={formatHoverPopoverRef}
+              className={layoutStyles.statFormatHoverPopover}
+              style={formatHoverPopoverStyle ?? { visibility: "hidden" }}
+              role="status"
+            >
+              {formatButtonLabel}
+            </div>,
+            document.body,
+          )
+        : null}
+      {isClient && formatOpen
+        ? createPortal(
+            <div
+              ref={formatPopoverRef}
+              className={layoutStyles.statFormatPopover}
+              style={formatPopoverStyle ?? { visibility: "hidden" }}
+              role="menu"
+            >
+              <button
+                type="button"
+                className={layoutStyles.statFormatOption}
+                onClick={() => handleFormatChange("slash")}
+                role="menuitem"
+              >
+                {optionSlashLabel}
+              </button>
+              <button
+                type="button"
+                className={layoutStyles.statFormatOption}
+                onClick={() => handleFormatChange("paren")}
+                role="menuitem"
+              >
+                {optionParenLabel}
+              </button>
+              <button
+                type="button"
+                className={layoutStyles.statFormatOption}
+                onClick={() => handleFormatChange("paren-leading")}
+                role="menuitem"
+              >
+                {optionParenLeadingLabel}
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

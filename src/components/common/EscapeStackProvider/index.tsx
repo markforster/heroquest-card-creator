@@ -54,11 +54,14 @@ export function EscapeStackProvider({ children }: { children: React.ReactNode })
   const handleEscape = useCallback(
     (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      if (event.defaultPrevented) return;
       const active = entries
         .filter((entry) => entry.enabled)
         .sort((a, b) => b.order - a.order)[0];
       if (!active) return;
       event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
       active.onEscape();
     },
     [entries],

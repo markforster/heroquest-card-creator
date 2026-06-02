@@ -30,6 +30,7 @@ import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
 import type { AssetRecord } from "@/api/assets";
+import { getDisplayAssetName } from "@/lib/asset-filename";
 import { clamp } from "@/lib/math";
 
 import type { CSSProperties } from "react";
@@ -417,8 +418,11 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
                           </div>
-                          <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
-                            {asset.name}
+                          <div
+                            className={layoutStyles.imageAutocompleteName}
+                            title={getDisplayAssetName(asset.name)}
+                          >
+                            {getDisplayAssetName(asset.name)}
                           </div>
                           <span
                             className={`${layoutStyles.imageAutocompleteKind} ${
@@ -452,8 +456,11 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
                       </div>
-                    <div className={layoutStyles.imageAutocompleteName} title={asset.name}>
-                      {asset.name}
+                    <div
+                      className={layoutStyles.imageAutocompleteName}
+                      title={getDisplayAssetName(asset.name)}
+                    >
+                      {getDisplayAssetName(asset.name)}
                     </div>
                     <span
                       className={`${layoutStyles.imageAutocompleteKind} ${

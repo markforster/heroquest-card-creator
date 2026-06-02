@@ -12,7 +12,10 @@ export function useEscapeKey({ enabled = true, onEscape }: UseEscapeKeyArgs) {
     if (!enabled) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      if (event.defaultPrevented) return;
       event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
       onEscape();
     };
     window.addEventListener("keydown", handleKeyDown);
