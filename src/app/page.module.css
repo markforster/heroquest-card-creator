@@ -1773,6 +1773,20 @@
   will-change: transform;
 }
 
+.assetsInspectorPreviewImageLoading {
+  opacity: 0;
+}
+
+.assetsInspectorPreviewSpinnerOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  pointer-events: none;
+}
+
 .assetsInspectorPreviewPlaceholder {
   color: var(--hq-text-muted);
   font-size: var(--text-lg);
@@ -5805,6 +5819,16 @@ button.assetsKindBadge:disabled {
   background: var(--hq-surface-sunken);
   position: relative;
   overflow: hidden;
+}
+
+.assetsThumbSpinnerOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .assetsItemMeta {

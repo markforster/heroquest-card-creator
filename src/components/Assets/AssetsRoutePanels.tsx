@@ -227,6 +227,7 @@ function AssetsInspector({
   const safeIndex = Math.min(currentIndex, assets.length - 1);
   const asset = assets[safeIndex];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [assetBlob, setAssetBlob] = useState<Blob | null>(null);
   const [isOpaquePng, setIsOpaquePng] = useState(false);
   const [assetSizeBytes, setAssetSizeBytes] = useState<number | null>(null);
@@ -431,6 +432,8 @@ function AssetsInspector({
   useEffect(() => {
     let cancelled = false;
     let url: string | null = null;
+    setPreviewUrl(null);
+    setIsPreviewLoading(true);
 
     (async () => {
       try {
@@ -440,6 +443,7 @@ function AssetsInspector({
       }
       if (!cancelled) {
         setPreviewUrl(url);
+        setIsPreviewLoading(false);
       } else if (url) {
         URL.revokeObjectURL(url);
       }
@@ -1335,6 +1339,7 @@ function AssetsInspector({
         ) : null}
         <AssetInspectorPreview
           previewUrl={previewUrl}
+          isLoading={isPreviewLoading}
           alt={asset.name}
           emptyContent={t("empty.noPreview")}
           interactive
@@ -1501,6 +1506,7 @@ function AssetsInspector({
         <div className={styles.assetsPreviewModalBody}>
           <AssetInspectorPreview
             previewUrl={previewUrl}
+            isLoading={isPreviewLoading}
             alt={asset.name}
             emptyContent={t("empty.noPreview")}
             variant="modal"

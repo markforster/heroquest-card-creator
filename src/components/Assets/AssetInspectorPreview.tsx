@@ -1,8 +1,9 @@
 "use client";
 
 import styles from "@/app/page.module.css";
+import useBufferedLoadingIndicator from "@/hooks/useBufferedLoadingIndicator";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
 
@@ -10,6 +11,7 @@ const ASSET_PREVIEW_TILT_MAX_DEG = 8;
 
 type AssetInspectorPreviewProps = {
   previewUrl: string | null;
+  isLoading?: boolean;
   alt: string;
   emptyContent: ReactNode;
   interactive?: boolean;
@@ -22,6 +24,7 @@ type AssetInspectorPreviewProps = {
 
 export default function AssetInspectorPreview({
   previewUrl,
+  isLoading = false,
   alt,
   emptyContent,
   interactive = false,
@@ -32,6 +35,7 @@ export default function AssetInspectorPreview({
   variant = "inspector",
 }: AssetInspectorPreviewProps) {
   const previewInnerRef = useRef<HTMLDivElement | null>(null);
+  const previewImageRef = useRef<HTMLImageElement | null>(null);
   const tiltFrameRef = useRef<number | null>(null);
   const tiltPointRef = useRef<{ x: number; y: number } | null>(null);
   const idleFrameRef = useRef<number | null>(null);
@@ -42,6 +46,8 @@ export default function AssetInspectorPreview({
   const isHoveringRef = useRef(false);
   const currentTiltRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const reduceMotionRef = useRef(false);
+  const [isImageLoading, setIsImageLoading] = useState(false);
+  const showSpinner = useBufferedLoadingIndicator(isLoading || isImageLoading);
 
   const resetPreviewTilt = () => {
     const previewEl = previewInnerRef.current;
@@ -142,13 +148,29 @@ export default function AssetInspectorPreview({
   useEffect(() => {
     stopIdleTilt();
     resetPreviewTilt();
+    setIsImageLoading(Boolean(previewUrl) || isLoading);
     if (!reduceMotionRef.current) {
       startIdleTilt();
     }
     return () => {
       stopIdleTilt();
     };
-  }, [previewUrl, variant]);
+  }, [isLoading, previewUrl, variant]);
+
+  useEffect(() => {
+    const image = previewImageRef.current;
+    if (isLoading) {
+      setIsImageLoading(true);
+      return;
+    }
+    if (!previewUrl || !image) {
+      setIsImageLoading(false);
+      return;
+    }
+    if (image.complete) {
+      setIsImageLoading(false);
+    }
+  }, [isLoading, previewUrl]);
 
   const handlePreviewMouseMove = (event: MouseEvent<HTMLDivElement>) => {
     if (reduceMotionRef.current) return;
@@ -208,8 +230,28 @@ export default function AssetInspectorPreview({
       }
     >
       {previewUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={previewUrl} alt={alt} />
+        <>
+          {showSpinner ? (
+            <div className={styles.assetsInspectorPreviewSpinnerOverlay} aria-hidden="true">
+              <div className={styles.spinner} />
+            </div>
+          ) : null}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            ref={previewImageRef}
+            src={previewUrl}
+            alt={alt}
+            onLoad={() => setIsImageLoading(false)}
+            onError={() => setIsImageLoading(false)}
+            className={showSpinner ? styles.assetsInspectorPreviewImageLoading : ""}
+          />
+        </>
+      ) : isLoading ? (
+        showSpinner ? (
+          <div className={styles.assetsInspectorPreviewSpinnerOverlay} aria-hidden="true">
+            <div className={styles.spinner} />
+          </div>
+        ) : null
       ) : (
         <div className={styles.assetsInspectorPreviewPlaceholder}>{emptyContent}</div>
       )}

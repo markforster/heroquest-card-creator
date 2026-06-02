@@ -46,6 +46,7 @@ import {
 import type { AssetKindGroupId } from "@/lib/assets-grouping";
 import { groupAssetsByKind } from "@/lib/assets-grouping";
 import { isSafariBrowser } from "@/lib/browser";
+import useBufferedLoadingIndicator from "@/hooks/useBufferedLoadingIndicator";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
 import type { OpenCloseProps } from "@/types/ui";
 import {
@@ -74,6 +75,40 @@ type UploadNotice = {
   duplicates: UploadScanReportItem[];
   renames: Array<{ original: string; renamed: string }>;
 };
+
+function AssetThumbnail({
+  asset,
+  thumbUrl,
+  isReady,
+  onReady,
+}: {
+  asset: AssetRecord;
+  thumbUrl: string | undefined;
+  isReady: boolean;
+  onReady: () => void;
+}) {
+  const showSpinner = useBufferedLoadingIndicator(!isReady);
+
+  return (
+    <div className={styles.assetsThumbPlaceholder}>
+      {showSpinner ? (
+        <div className={styles.assetsThumbSpinnerOverlay} aria-hidden="true">
+          <div className={styles.spinner} />
+        </div>
+      ) : null}
+      {thumbUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={thumbUrl}
+          alt={asset.name}
+          className={styles.assetsThumbImage}
+          onLoad={onReady}
+          onError={onReady}
+        />
+      ) : null}
+    </div>
+  );
+}
 
 type UploadProgressPhase =
   | "scanning"
@@ -131,6 +166,7 @@ export default function AssetsPanelContent({
   const [mimeTypeFilter, setMimeTypeFilter] = useState<string>("all");
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const thumbUrlsRef = useRef<Record<string, string>>({});
+  const [thumbReadyById, setThumbReadyById] = useState<Record<string, boolean>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedOrder, setSelectedOrder] = useState<string[]>([]);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
@@ -183,7 +219,16 @@ export default function AssetsPanelContent({
     Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
     thumbUrlsRef.current = {};
     setThumbUrls({});
+    setThumbReadyById({});
   }, [isThumbPrefetchEnabled]);
+
+  useEffect(() => {
+    if (refreshKey == null) return;
+    Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
+    thumbUrlsRef.current = {};
+    setThumbUrls({});
+    setThumbReadyById({});
+  }, [refreshKey]);
 
   const listAssetsQuery = useListAssets(undefined, {
     enabled: isOpen,
@@ -316,12 +361,14 @@ export default function AssetsPanelContent({
       Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
       thumbUrlsRef.current = {};
       setThumbUrls({});
+      setThumbReadyById({});
       return;
     }
     if (assets.length === 0) {
       Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
       thumbUrlsRef.current = {};
       setThumbUrls({});
+      setThumbReadyById({});
       return;
     }
 
@@ -372,15 +419,29 @@ export default function AssetsPanelContent({
               params: { id: asset.id },
             });
             if (url) {
+              setThumbReadyById((prev) => {
+                if (!prev[asset.id]) return prev;
+                const next = { ...prev };
+                delete next[asset.id];
+                return next;
+              });
               nextUrls[asset.id] = url;
               urlsChanged = true;
               if (!cancelled) {
                 thumbUrlsRef.current = { ...thumbUrlsRef.current, [asset.id]: url };
                 setThumbUrls(thumbUrlsRef.current);
               }
+            } else if (!cancelled) {
+              setThumbReadyById((prev) =>
+                prev[asset.id] ? prev : { ...prev, [asset.id]: true },
+              );
             }
           } catch {
-            // Ignore individual asset errors for now.
+            if (!cancelled) {
+              setThumbReadyById((prev) =>
+                prev[asset.id] ? prev : { ...prev, [asset.id]: true },
+              );
+            }
           }
           await maybeYield();
         }
@@ -403,6 +464,16 @@ export default function AssetsPanelContent({
       cancelled = true;
     };
   }, [isOpen, assets, refreshKey, isThumbPrefetchEnabled, isRemoteMode]);
+
+  useEffect(() => {
+    const assetIds = new Set(assets.map((asset) => asset.id));
+    setThumbReadyById((prev) => {
+      const next = Object.fromEntries(
+        Object.entries(prev).filter(([id]) => assetIds.has(id)),
+      );
+      return Object.keys(next).length === Object.keys(prev).length ? prev : next;
+    });
+  }, [assets]);
 
   useEffect(() => {
     if (!isOpen && selectedIds.size > 0) {
@@ -477,11 +548,21 @@ export default function AssetsPanelContent({
         try {
           const url = await apiClient.getAssetObjectUrl({ params: { id } });
           if (url && !cancelled) {
+            setThumbReadyById((prev) => {
+              if (!prev[id]) return prev;
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
             thumbUrlsRef.current = { ...thumbUrlsRef.current, [id]: url };
             setThumbUrls(thumbUrlsRef.current);
+          } else if (!cancelled) {
+            setThumbReadyById((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
           }
         } catch {
-          // Ignore individual asset errors.
+          if (!cancelled) {
+            setThumbReadyById((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
+          }
         }
       }
     })();
@@ -1343,16 +1424,16 @@ export default function AssetsPanelContent({
                             {getDisplayAssetName(asset.name)}
                           </div>
                         </div>
-                        <div className={styles.assetsThumbPlaceholder}>
-                          {thumbUrls[asset.id] ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={thumbUrls[asset.id]}
-                              alt={asset.name}
-                              className={styles.assetsThumbImage}
-                            />
-                          ) : null}
-                        </div>
+                        <AssetThumbnail
+                          asset={asset}
+                          thumbUrl={thumbUrls[asset.id]}
+                          isReady={Boolean(thumbReadyById[asset.id])}
+                          onReady={() =>
+                            setThumbReadyById((prev) =>
+                              prev[asset.id] ? prev : { ...prev, [asset.id]: true },
+                            )
+                          }
+                        />
                         <div className={styles.assetsKindBadgeRow}>
                           <span
                             className={`${styles.assetsKindBadge} ${styles.assetsKindBadgeTile} ${styles.assetsKindBadgeClickable} ${
