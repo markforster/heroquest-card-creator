@@ -8,7 +8,7 @@ const ts = require("typescript");
 const repoRoot = path.join(__dirname, "..");
 const srcRoot = path.join(repoRoot, "src");
 const messagesPath = path.join(srcRoot, "i18n", "messages.ts");
-const rawMessagesDir = path.join(srcRoot, "i18n", "messages");
+const rawLocalesDir = path.join(srcRoot, "i18n", "locales");
 
 function transpileTsModule(source, filename) {
   return ts.transpileModule(source, {
@@ -16,6 +16,8 @@ function transpileTsModule(source, filename) {
       module: ts.ModuleKind.CommonJS,
       target: ts.ScriptTarget.ES2020,
       importsNotUsedAsValues: ts.ImportsNotUsedAsValues.Remove,
+      resolveJsonModule: true,
+      esModuleInterop: true,
     },
     fileName: filename,
   }).outputText;
@@ -97,78 +99,64 @@ function loadSupportedLanguages() {
   return supportedLanguages;
 }
 
-function loadRawLocaleBundles(supportedLanguages) {
-  const { compileTsModule } = createTsSandbox(messagesPath);
-  const bundles = {};
-  const exportNames = {};
-
-  for (const locale of supportedLanguages) {
-    const filename = path.join(rawMessagesDir, `${locale}.ts`);
-    const mod = compileTsModule(filename);
-    const exportKeys = Object.keys(mod);
-    if (exportKeys.length !== 1) {
-      throw new Error(`Expected a single export in ${filename}`);
-    }
-    exportNames[locale] = exportKeys[0];
-    bundles[locale] = mod[exportKeys[0]];
-  }
-
-  return { bundles, exportNames };
+function getNamespaces() {
+  const enDir = path.join(rawLocalesDir, "en");
+  return fs.readdirSync(enDir)
+    .filter((name) => name.endsWith(".json"))
+    .map((name) => name.replace(/\.json$/, ""))
+    .sort((a, b) => a.localeCompare(b));
 }
 
-function serializeLocaleFile(exportName, values) {
-  const lines = ["// Auto-generated from messages.ts", `export const ${exportName} = {`];
-  const entries = Object.entries(values);
-
-  for (const [key, value] of entries) {
-    lines.push(`  ${JSON.stringify(key)}: ${JSON.stringify(value)},`);
-  }
-
-  lines.push("} as const;", "");
-  return `${lines.join("\n")}`;
+function loadJson(filename) {
+  if (!fs.existsSync(filename)) return null;
+  return JSON.parse(fs.readFileSync(filename, "utf8"));
 }
 
 const supportedLanguages = loadSupportedLanguages();
-const { bundles, exportNames } = loadRawLocaleBundles(supportedLanguages);
-const en = bundles.en;
-
-if (!en || typeof en !== "object") {
-  throw new Error("Missing raw en locale bundle");
-}
-
-const enKeys = Object.keys(en);
+const namespaces = getNamespaces();
 let updatedFileCount = 0;
 let insertedKeyCount = 0;
 
-for (const locale of supportedLanguages) {
-  if (locale === "en") continue;
+for (const namespace of namespaces) {
+  const enFilename = path.join(rawLocalesDir, "en", `${namespace}.json`);
+  const enValues = loadJson(enFilename);
 
-  const filename = path.join(rawMessagesDir, `${locale}.ts`);
-  const exportName = exportNames[locale];
-  const bundle = bundles[locale] ?? {};
-  const next = {};
-  let missingCount = 0;
+  if (!enValues || typeof enValues !== "object") {
+    throw new Error(`Missing or invalid English namespace file: ${enFilename}`);
+  }
 
-  for (const key of enKeys) {
-    if (Object.prototype.hasOwnProperty.call(bundle, key)) {
-      next[key] = bundle[key];
-    } else {
-      next[key] = en[key];
-      missingCount += 1;
+  const enKeys = Object.keys(enValues);
+
+  for (const locale of supportedLanguages) {
+    if (locale === "en") continue;
+
+    const filename = path.join(rawLocalesDir, locale, `${namespace}.json`);
+    const values = loadJson(filename) ?? {};
+    const next = {};
+    let missingCount = 0;
+
+    for (const key of enKeys) {
+      if (Object.prototype.hasOwnProperty.call(values, key)) {
+        next[key] = values[key];
+      } else {
+        next[key] = enValues[key];
+        missingCount += 1;
+      }
     }
+
+    for (const [key, value] of Object.entries(values)) {
+      if (Object.prototype.hasOwnProperty.call(next, key)) continue;
+      next[key] = value;
+    }
+
+    if (missingCount === 0) continue;
+
+    fs.mkdirSync(path.dirname(filename), { recursive: true });
+    fs.writeFileSync(filename, JSON.stringify(next, null, 2) + "\n", "utf8");
+    updatedFileCount += 1;
+    insertedKeyCount += missingCount;
+    console.log(`updated ${locale}/${namespace}: inserted ${missingCount} missing keys`);
   }
-
-  for (const [key, value] of Object.entries(bundle)) {
-    if (Object.prototype.hasOwnProperty.call(next, key)) continue;
-    next[key] = value;
-  }
-
-  if (missingCount === 0) continue;
-
-  fs.writeFileSync(filename, serializeLocaleFile(exportName, next), "utf8");
-  updatedFileCount += 1;
-  insertedKeyCount += missingCount;
-  console.log(`updated ${locale}: inserted ${missingCount} missing keys`);
 }
 
 if (updatedFileCount === 0) {
@@ -176,4 +164,3 @@ if (updatedFileCount === 0) {
 } else {
   console.log(`Synced ${insertedKeyCount} missing keys across ${updatedFileCount} locale files.`);
 }
-

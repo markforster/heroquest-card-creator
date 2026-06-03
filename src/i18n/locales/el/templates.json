@@ -1,0 +1,8 @@
+{
+  "templates.hero": "Κάρτα ήρωα",
+  "templates.monster": "Κάρτα τέρατος",
+  "templates.small-treasure": "Μικρή εικονογράφηση",
+  "templates.large-treasure": "Μεγάλη εικονογράφηση",
+  "templates.hero-back": "Πίσω όψη ήρωα",
+  "templates.labelled-back": "Πίσω όψη με ετικέτα"
+}

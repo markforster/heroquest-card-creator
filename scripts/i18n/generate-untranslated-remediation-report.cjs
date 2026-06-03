@@ -8,7 +8,7 @@ const ts = require("typescript");
 const repoRoot = path.join(__dirname, "..", "..");
 const srcRoot = path.join(repoRoot, "src");
 const messagesPath = path.join(srcRoot, "i18n", "messages.ts");
-const rawMessagesDir = path.join(srcRoot, "i18n", "messages");
+const rawLocalesDir = path.join(srcRoot, "i18n", "locales");
 const outputPath = path.join(
   repoRoot,
   "artefacts",
@@ -25,6 +25,8 @@ function transpileTsModule(source, filename) {
       module: ts.ModuleKind.CommonJS,
       target: ts.ScriptTarget.ES2020,
       importsNotUsedAsValues: ts.ImportsNotUsedAsValues.Remove,
+      resolveJsonModule: true,
+      esModuleInterop: true,
     },
     fileName: filename,
   }).outputText;
@@ -112,18 +114,31 @@ function loadNormalizedMessages() {
   return { messages, supportedLanguages };
 }
 
+function getNamespaces() {
+  const enDir = path.join(rawLocalesDir, "en");
+  return fs.readdirSync(enDir)
+    .filter((name) => name.endsWith(".json"))
+    .map((name) => name.replace(/\.json$/, ""))
+    .sort((a, b) => a.localeCompare(b));
+}
+
 function loadRawLocaleBundles(supportedLanguages) {
-  const { compileTsModule } = createTsSandbox(messagesPath);
   const bundles = {};
+  const namespaces = getNamespaces();
+
   for (const locale of supportedLanguages) {
-    const filename = path.join(rawMessagesDir, `${locale}.ts`);
-    const mod = compileTsModule(filename);
-    const exportKeys = Object.keys(mod);
-    if (exportKeys.length !== 1) {
-      throw new Error(`Expected a single export in ${filename}`);
+    const merged = {};
+    for (const namespace of namespaces) {
+      const filename = path.join(rawLocalesDir, locale, `${namespace}.json`);
+      if (!fs.existsSync(filename)) {
+        continue;
+      }
+      const values = JSON.parse(fs.readFileSync(filename, "utf8"));
+      Object.assign(merged, values);
     }
-    bundles[locale] = mod[exportKeys[0]];
+    bundles[locale] = merged;
   }
+
   return bundles;
 }
 
@@ -141,6 +156,7 @@ function walkProductionFiles(rootDir) {
       if (entry.isDirectory()) {
         if (entry.name === "__tests__") continue;
         if (relativePath.startsWith(`src${path.sep}i18n${path.sep}messages`)) continue;
+        if (relativePath.startsWith(`src${path.sep}i18n${path.sep}locales`)) continue;
         visit(fullPath);
         continue;
       }

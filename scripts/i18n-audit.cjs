@@ -13,6 +13,8 @@ const { outputText } = ts.transpileModule(source, {
     module: ts.ModuleKind.CommonJS,
     target: ts.ScriptTarget.ES2020,
     importsNotUsedAsValues: ts.ImportsNotUsedAsValues.Remove,
+    resolveJsonModule: true,
+    esModuleInterop: true,
   },
   fileName: messagesPath,
 });
@@ -27,6 +29,8 @@ const compileTsModule = (filename) => {
       module: ts.ModuleKind.CommonJS,
       target: ts.ScriptTarget.ES2020,
       importsNotUsedAsValues: ts.ImportsNotUsedAsValues.Remove,
+      resolveJsonModule: true,
+      esModuleInterop: true,
     },
     fileName: filename,
   });

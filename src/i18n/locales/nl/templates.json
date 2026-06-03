@@ -1,0 +1,8 @@
+{
+  "templates.hero": "Heldenkaart",
+  "templates.monster": "Monsterkaart",
+  "templates.small-treasure": "Kaart met kleine illustratie",
+  "templates.large-treasure": "Kaart met grote illustratie",
+  "templates.hero-back": "Held achterkant",
+  "templates.labelled-back": "Gelabelde achterkant"
+}
