@@ -39,7 +39,11 @@ type LanguageOption = {
   label: string;
   title: string;
   flag: string;
-  isDetected?: boolean;
+};
+
+type LanguagePopoverSections = {
+  primaryOptions: LanguageOption[];
+  detectedOption: LanguageOption | null;
 };
 
 const getLanguageSortKey = (label: string): string => {
@@ -105,19 +109,28 @@ export default function LeftNavActionStrip({ isCollapsed }: LeftNavActionStripPr
     [t],
   );
 
-  const options = useMemo(() => {
+  const popoverSections = useMemo<LanguagePopoverSections>(() => {
     const baseOptions = getLanguageOptions(getLocalizedLanguageName);
     const filteredOptions = baseOptions.filter((option) => option.code !== language);
     if (!detectedLanguage || detectedLanguage === language) {
-      return filteredOptions;
+      return {
+        primaryOptions: filteredOptions,
+        detectedOption: null,
+      };
     }
 
     const detectedOption = filteredOptions.find((option) => option.code === detectedLanguage);
-    if (!detectedOption) return filteredOptions;
+    if (!detectedOption) {
+      return {
+        primaryOptions: filteredOptions,
+        detectedOption: null,
+      };
+    }
 
-    const remaining = filteredOptions.filter((option) => option.code !== detectedLanguage);
-
-    return [...remaining, { ...detectedOption, isDetected: true }];
+    return {
+      primaryOptions: filteredOptions.filter((option) => option.code !== detectedLanguage),
+      detectedOption,
+    };
   }, [detectedLanguage, getLocalizedLanguageName, language]);
 
   const handleLanguageSelect = useCallback(
@@ -159,7 +172,8 @@ export default function LeftNavActionStrip({ isCollapsed }: LeftNavActionStripPr
         </button>
         <LanguageMenuPopover
           isOpen={isLanguageOpen}
-          options={options}
+          primaryOptions={popoverSections.primaryOptions}
+          detectedOption={popoverSections.detectedOption}
           onSelect={handleLanguageSelect}
         />
       </div>
