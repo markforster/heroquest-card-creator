@@ -22,6 +22,7 @@
 
 .footerCenter {
   flex: 0 0 auto;
+  min-width: 0;
 }
 
 .footerSpacer {
@@ -72,6 +73,52 @@
 .footerSocialIcon {
   width: 12px;
   height: 12px;
+}
+
+.footerCompatibilityNotice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #d97706;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  transition:
+    transform 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.12em;
+}
+
+.footerCompatibilityNotice:hover,
+.footerCompatibilityNotice:focus-visible {
+  transform: translateY(-1px);
+  color: #f59e0b;
+  opacity: 1;
+  outline: none;
+}
+
+.footerCompatibilityNoticeIcon {
+  width: 0.82rem;
+  height: 0.82rem;
+  flex: 0 0 auto;
+}
+
+.footerCompatibilityModalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  color: var(--hq-text);
+}
+
+.footerCompatibilityModalBody p {
+  margin: 0;
 }
 
 .footerCtaWrapper {

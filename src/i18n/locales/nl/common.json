@@ -680,5 +680,10 @@
   "warning.unpairFromBackFaceSingle": "1 kaart wordt ontkoppeld van deze achterkant. Doorgaan?",
   "warning.unpairFromBackFaceMultiple": "{count} kaarten worden ontkoppeld van deze achterkant. Doorgaan?",
   "heading.impactedDecks": "Getroffen decks",
-  "label.recentlyUploaded": "Recent geüpload"
+  "label.recentlyUploaded": "Recent geüpload",
+  "heading.desktopBrowserRecommended": "Desktopbrowser aanbevolen",
+  "label.desktopOptimized": "Geoptimaliseerd voor desktop",
+  "tooltip.desktopOptimizedNotice": "Meer informatie over compatibiliteit met desktopbrowsers",
+  "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator is momenteel geoptimaliseerd voor desktopbrowsers.",
+  "notice.desktopOptimizedBodySecondary": "De app kan nog steeds openen en gedeeltelijk werken op je apparaat, maar sommige lay-outs, interacties en bewerkingsstromen kunnen lastig zijn op kleinere schermen of op apparaten die vooral op aanraking zijn gericht."
 }

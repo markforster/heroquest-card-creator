@@ -680,5 +680,10 @@
   "warning.unpairFromBackFaceSingle": "1 carta verrà disabbinata da questo retro. Continuare?",
   "warning.unpairFromBackFaceMultiple": "{count} carte verranno disabbinate da questo retro. Continuare?",
   "heading.impactedDecks": "Mazzi interessati",
-  "label.recentlyUploaded": "Caricati di recente"
+  "label.recentlyUploaded": "Caricati di recente",
+  "heading.desktopBrowserRecommended": "Browser desktop consigliato",
+  "label.desktopOptimized": "Ottimizzato per desktop",
+  "tooltip.desktopOptimizedNotice": "Scopri di più sulla compatibilità con i browser desktop",
+  "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator è attualmente ottimizzato per i browser desktop.",
+  "notice.desktopOptimizedBodySecondary": "L’app può comunque aprirsi e funzionare parzialmente sul tuo dispositivo, ma alcuni layout, interazioni e flussi di modifica potrebbero risultare difficili su schermi più piccoli o dispositivi principalmente touch."
 }

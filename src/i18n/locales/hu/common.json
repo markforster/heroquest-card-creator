@@ -680,5 +680,10 @@
   "warning.unpairFromBackFaceSingle": "1 kártya leválik erről a hátlapról. Folytatja?",
   "warning.unpairFromBackFaceMultiple": "{count} kártya leválik erről a hátlapról. Folytatja?",
   "heading.impactedDecks": "Érintett paklik",
-  "label.recentlyUploaded": "Nemrég feltöltve"
+  "label.recentlyUploaded": "Nemrég feltöltve",
+  "heading.desktopBrowserRecommended": "Asztali böngésző ajánlott",
+  "label.desktopOptimized": "Asztalira optimalizálva",
+  "tooltip.desktopOptimizedNotice": "További információ az asztali böngészők kompatibilitásáról",
+  "notice.desktopOptimizedBodyPrimary": "A HeroQuest Card Creator jelenleg asztali böngészőkre van optimalizálva.",
+  "notice.desktopOptimizedBodySecondary": "Az alkalmazás ettől még megnyílhat és részben működhet az eszközén, de egyes elrendezések, interakciók és szerkesztési munkafolyamatok nehézkesek lehetnek kisebb képernyőkön vagy főként érintéses eszközökön."
 }

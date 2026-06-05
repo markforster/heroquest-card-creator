@@ -680,5 +680,10 @@
   "warning.unpairFromBackFaceSingle": "1 kort bliver afparret fra denne bagside. Fortsæt?",
   "warning.unpairFromBackFaceMultiple": "{count} kort bliver afparret fra denne bagside. Fortsæt?",
   "heading.impactedDecks": "Berørte dæk",
-  "label.recentlyUploaded": "Senest uploadet"
+  "label.recentlyUploaded": "Senest uploadet",
+  "heading.desktopBrowserRecommended": "Desktopbrowser anbefales",
+  "label.desktopOptimized": "Optimeret til desktop",
+  "tooltip.desktopOptimizedNotice": "Få mere at vide om kompatibilitet med desktopbrowsere",
+  "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator er i øjeblikket optimeret til desktopbrowsere.",
+  "notice.desktopOptimizedBodySecondary": "Appen kan stadig åbne og delvist fungere på din enhed, men nogle layouts, interaktioner og redigeringsforløb kan være vanskelige på mindre skærme eller på primært touch-baserede enheder."
 }

@@ -680,5 +680,10 @@
   "warning.unpairFromBackFaceSingle": "1 card will be unpaired from this back face. Continue?",
   "warning.unpairFromBackFaceMultiple": "{count} cards will be unpaired from this back face. Continue?",
   "heading.impactedDecks": "Impacted decks",
-  "label.recentlyUploaded": "Recently uploaded"
+  "label.recentlyUploaded": "Recently uploaded",
+  "heading.desktopBrowserRecommended": "Desktop browser recommended",
+  "label.desktopOptimized": "Desktop optimized",
+  "tooltip.desktopOptimizedNotice": "Learn more about desktop browser compatibility",
+  "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator is currently optimized for desktop browsers.",
+  "notice.desktopOptimizedBodySecondary": "It may still open and partially work on your device, but some layouts, interactions, and editing workflows may be difficult on smaller screens or touch-first devices."
 }
