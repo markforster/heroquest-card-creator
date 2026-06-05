@@ -170,7 +170,7 @@ export default function StockpilePanelContent({
     setActiveCard,
   } = useCardEditor();
   const { resetWithSaved } = useEditorForm();
-  const { cards, setCards, collections, setCollections } = useStockpileData({
+  const { cards, setCards, isLoadingCards, collections, setCollections } = useStockpileData({
     isOpen,
     refreshToken,
     activeFilter,
@@ -1204,6 +1204,7 @@ export default function StockpilePanelContent({
                       totalCount={totalCount}
                       filterLabel={filterLabel}
                       frame={frame}
+                      isLoadingCards={isLoadingCards}
                       isLibraryEmpty={isLibraryEmpty}
                       hasActiveNarrowing={hasActiveNarrowing}
                       isTableView={isTableView}
