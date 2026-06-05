@@ -41,11 +41,13 @@ function SetThumb({
   isSelected,
   showSelection,
   onToggle,
+  t,
 }: {
   set: DeckPdfSetMeta;
   isSelected: boolean;
   showSelection: boolean;
   onToggle: () => void;
+  t: (key: never, options?: Record<string, unknown>) => string;
 }) {
   const url = useCardThumbnailUrl(set.backFaceId, null, { enabled: Boolean(set.backFaceId), useCache: true });
   return (
@@ -67,7 +69,11 @@ function SetThumb({
       <div className={styles.deckPdfExcludedTitle} title={set.setTitle}>
         {set.setTitle}
       </div>
-      <div className={styles.deckPdfSummaryLineMuted}>{set.hasEntries ? "has entries" : "empty"}</div>
+      <div className={styles.deckPdfSummaryLineMuted}>
+        {set.hasEntries
+          ? t("decks.pdf.summary.setState.hasEntries" as never)
+          : t("decks.pdf.summary.setState.empty" as never)}
+      </div>
     </button>
   );
 }
@@ -137,26 +143,29 @@ export default function DeckPdfExportSummaryModal({
           <div className={styles.settingsPanelBody}>
             <div className={styles.settingsGroup}>
               <label className={styles.deckPdfSummaryLine}>
-                Set scope
+                {t("decks.pdf.summary.scope.label" as never)}
                 <select
                   className="form-select form-select-sm mt-1"
                   value={setScopeMode}
                   onChange={(event) => onSetScopeMode(event.target.value as DeckPdfSetScopeMode)}
                 >
-                  <option value="complete">Complete sets</option>
-                  <option value="all">All sets</option>
-                  <option value="selected">Selected sets</option>
+                  <option value="complete">{t("decks.pdf.summary.scope.complete" as never)}</option>
+                  <option value="all">{t("decks.pdf.summary.scope.all" as never)}</option>
+                  <option value="selected">{t("decks.pdf.summary.scope.selected" as never)}</option>
                 </select>
               </label>
             </div>
             {showScopeForm ? (
               <div className={styles.settingsGroup}>
-                <div className={styles.deckPdfSummaryExcludedHeading}>Set selection</div>
+                <div className={styles.deckPdfSummaryExcludedHeading}>
+                  {t("decks.pdf.summary.selection.label" as never)}
+                </div>
                 <div className={styles.deckPdfExcludedRow}>
                   {summary.sets.map((set) => (
                     <SetThumb
                       key={set.setId}
                       set={set}
+                      t={t}
                       showSelection={setScopeMode === "selected"}
                       isSelected={setScopeMode === "selected" ? selectedSetIds.has(set.setId) : set.hasEntries}
                       onToggle={() => onToggleSet(set.setId)}
@@ -167,14 +176,14 @@ export default function DeckPdfExportSummaryModal({
             ) : null}
             <div className={styles.settingsGroup}>
               <label className={styles.deckPdfSummaryLine}>
-                Layout
+                {t("decks.pdf.summary.layout.label" as never)}
                 <select
                   className="form-select form-select-sm mt-1"
                   value={layoutMode}
                   onChange={(event) => onLayoutMode(event.target.value as "default" | "custom")}
                 >
-                  <option value="default">Default</option>
-                  <option value="custom">Custom</option>
+                  <option value="default">{t("decks.pdf.summary.option.default" as never)}</option>
+                  <option value="custom">{t("decks.pdf.summary.option.custom" as never)}</option>
                 </select>
               </label>
             </div>
@@ -185,14 +194,14 @@ export default function DeckPdfExportSummaryModal({
             ) : null}
             <div className={styles.settingsGroup}>
               <label className={styles.deckPdfSummaryLine}>
-                Bleed settings
+                {t("decks.pdf.summary.bleedSettings.label" as never)}
                 <select
                   className="form-select form-select-sm mt-1"
                   value={bleedMode}
                   onChange={(event) => onBleedMode(event.target.value as "default" | "custom")}
                 >
-                  <option value="default">Default</option>
-                  <option value="custom">Custom</option>
+                  <option value="default">{t("decks.pdf.summary.option.default" as never)}</option>
+                  <option value="custom">{t("decks.pdf.summary.option.custom" as never)}</option>
                 </select>
               </label>
             </div>
@@ -209,27 +218,43 @@ export default function DeckPdfExportSummaryModal({
             ) : null}
             <div className={`${styles.settingsGroup} ${styles.deckPdfSummaryBody}`}>
               <div className={styles.deckPdfSummaryLine}>
-                <strong>{summary.includedSetCount}</strong> sets with entries will be exported.
+                {t("decks.pdf.summary.includedSets" as never, {
+                  count: summary.includedSetCount,
+                })}
               </div>
               <div className={styles.deckPdfSummaryLine}>
-                <strong>{summary.totalEntryQuantity}</strong> total entry quantity.
+                {t("decks.pdf.summary.totalEntryQuantity" as never, {
+                  count: summary.totalEntryQuantity,
+                })}
               </div>
               <div className={styles.deckPdfSummaryLine}>
-                Faces: <strong>{summary.frontFaceCount}</strong> front, <strong>{summary.backFaceCount}</strong> back,{" "}
-                <strong>{summary.totalFaceCount}</strong> total.
+                {t("decks.pdf.summary.faces" as never, {
+                  frontCount: summary.frontFaceCount,
+                  backCount: summary.backFaceCount,
+                  totalCount: summary.totalFaceCount,
+                })}
               </div>
               <div className={styles.deckPdfSummaryLineMuted}>
-                Run settings: {config.paper}, {config.orientation}, {config.mode === "frontAndBack" ? "front + back" : "fronts only"}
+                {t("decks.pdf.summary.runSettings" as never, {
+                  paper: config.paper,
+                  orientation: config.orientation,
+                  mode:
+                    config.mode === "frontAndBack"
+                      ? t("decks.pdf.summary.runMode.frontBack" as never)
+                      : t("decks.pdf.summary.runMode.frontsOnly" as never),
+                })}
               </div>
               {summary.emptyExcludedSetCount > 0 ? (
                 <div className={styles.deckPdfSummaryLineMuted}>
-                  {summary.emptyExcludedSetCount} empty sets are excluded by current scope.
+                  {t("decks.pdf.summary.emptyExcluded" as never, {
+                    count: summary.emptyExcludedSetCount,
+                  })}
                 </div>
               ) : null}
             </div>
             {!hasIncludedSets ? (
               <div className={styles.deckPdfSummaryBlocked}>
-                No sets with entries are available for PDF export.
+                {t("decks.pdf.summary.noneAvailable" as never)}
               </div>
             ) : null}
           </div>

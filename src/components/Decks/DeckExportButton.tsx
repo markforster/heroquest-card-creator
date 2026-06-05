@@ -47,7 +47,7 @@ export default function DeckExportButton({
     if (exportDeck) {
       items.push({
         id: "export-png",
-        label: "Image Export",
+        label: t("decks.actions.exportDeckImages"),
         icon: Image,
         onSelect: async () => {
           if (!deckId || isLoading || !exportDeck) return;
@@ -64,7 +64,7 @@ export default function DeckExportButton({
     if (exportDeckPdf) {
       items.push({
         id: "export-pdf",
-        label: "PDF Export",
+        label: t("decks.actions.exportDeckPdfMenu"),
         icon: FileText,
         onSelect: async () => {
           if (!deckId || isLoading || !exportDeckPdf) return;

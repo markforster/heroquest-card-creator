@@ -70,7 +70,7 @@ export default function PdfExportConfigForm({ config, onChange }: PdfExportConfi
       </select>
 
       <label className="form-label" htmlFor="pdf-card-width">
-        Card size (mm)
+        {t("decks.pdf.cardSize" as never)}
       </label>
       <div className={styles.pdfExportInlineGrid2}>
         <input
@@ -103,7 +103,7 @@ export default function PdfExportConfigForm({ config, onChange }: PdfExportConfi
       </div>
 
       <label className="form-label" htmlFor="pdf-bleed-mode">
-        PDF bleed source
+        {t("decks.pdf.bleedSource" as never)}
       </label>
       <select
         id="pdf-bleed-mode"
@@ -116,12 +116,12 @@ export default function PdfExportConfigForm({ config, onChange }: PdfExportConfi
           })
         }
       >
-        <option value="bakedInImage">Image includes bleed</option>
-        <option value="layoutBleed">Image has no bleed (trim only)</option>
+        <option value="bakedInImage">{t("decks.pdf.bleedSource.bakedInImage" as never)}</option>
+        <option value="layoutBleed">{t("decks.pdf.bleedSource.layoutBleed" as never)}</option>
       </select>
 
       <label className="form-label" htmlFor="pdf-bleed-mm">
-        Bleed per edge (mm)
+        {t("decks.pdf.bleedPerEdge" as never)}
       </label>
       <input
         id="pdf-bleed-mm"
