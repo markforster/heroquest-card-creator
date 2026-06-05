@@ -102,6 +102,16 @@ function buildScanReport(files: File[]): UploadScanReport {
   };
 }
 
+function buildAssetSeries(names: string[]): AssetRecord[] {
+  return names.map((name, index) =>
+    buildAsset({
+      id: `asset-${index + 1}`,
+      name: `${name}.png`,
+      createdAt: index + 1,
+    }),
+  );
+}
+
 function renderPanel({
   mode = "manage",
   onSelect,
@@ -140,6 +150,21 @@ async function uploadFiles(container: HTMLElement, files: File[]) {
   await act(async () => {
     fireEvent.change(input as HTMLInputElement, { target: { files } });
   });
+}
+
+function getAssetTile(container: HTMLElement, title: string) {
+  const button = Array.from(container.querySelectorAll("button[title]")).find(
+    (element) => element.getAttribute("title") === title,
+  );
+  expect(button).toBeTruthy();
+  return button as HTMLButtonElement;
+}
+
+function getSelectedAssetTitles(container: HTMLElement) {
+  return Array.from(container.querySelectorAll("button.assetsItemSelected[title]"))
+    .map((element) => element.getAttribute("title"))
+    .filter((title): title is string => Boolean(title))
+    .sort();
 }
 
 describe("AssetsPanelContent recent uploads (UI)", () => {
@@ -371,5 +396,121 @@ describe("AssetsPanelContent recent uploads (UI)", () => {
     expect(screen.getAllByText("existing-art")).toHaveLength(1);
     expect(screen.getAllByText("fresh-upload")).toHaveLength(1);
     consoleErrorSpy.mockRestore();
+  });
+
+  it("adds a visible shift range after a plain click anchor in manage mode", () => {
+    assetStore = buildAssetSeries(["alpha", "bravo", "charlie", "delta"]);
+    const { container } = renderPanel();
+
+    fireEvent.click(getAssetTile(container, "alpha"));
+    fireEvent.click(getAssetTile(container, "charlie"), { shiftKey: true });
+
+    expect(getSelectedAssetTitles(container)).toEqual(["alpha", "bravo", "charlie"]);
+    expect(screen.getByRole("button", { name: "Delete (3)" })).toBeEnabled();
+  });
+
+  it("treats shift click without an anchor like a plain click in manage mode", () => {
+    assetStore = buildAssetSeries(["alpha", "bravo", "charlie"]);
+    const { container } = renderPanel();
+
+    fireEvent.click(getAssetTile(container, "charlie"), { shiftKey: true });
+
+    expect(getSelectedAssetTitles(container)).toEqual(["charlie"]);
+    expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
+  });
+
+  it("updates the anchor on cmd ctrl click and additively selects the next shift range", () => {
+    assetStore = buildAssetSeries(["alpha", "bravo", "charlie", "delta"]);
+    const { container } = renderPanel();
+
+    fireEvent.click(getAssetTile(container, "alpha"));
+    fireEvent.click(getAssetTile(container, "charlie"), { metaKey: true });
+    fireEvent.click(getAssetTile(container, "delta"), { shiftKey: true });
+
+    expect(getSelectedAssetTitles(container)).toEqual(["alpha", "charlie", "delta"]);
+    expect(screen.getByRole("button", { name: "Delete (3)" })).toBeEnabled();
+  });
+
+  it("supports additive mixed click, shift, and cmd ctrl selection sequences", () => {
+    assetStore = buildAssetSeries([
+      "alpha",
+      "bravo",
+      "charlie",
+      "delta",
+      "echo",
+      "foxtrot",
+      "golf",
+      "hotel",
+      "india",
+      "juliet",
+      "kilo",
+      "lima",
+    ]);
+    const { container } = renderPanel();
+
+    fireEvent.click(getAssetTile(container, "alpha"));
+    fireEvent.click(getAssetTile(container, "echo"), { shiftKey: true });
+    fireEvent.click(getAssetTile(container, "hotel"), { metaKey: true });
+    fireEvent.click(getAssetTile(container, "lima"), { shiftKey: true });
+
+    expect(getSelectedAssetTitles(container)).toEqual([
+      "alpha",
+      "bravo",
+      "charlie",
+      "delta",
+      "echo",
+      "hotel",
+      "india",
+      "juliet",
+      "kilo",
+      "lima",
+    ]);
+    expect(screen.getByRole("button", { name: "Delete (10)" })).toBeEnabled();
+  });
+
+  it("supports reverse-direction shift ranges and avoids duplicate ids across overlaps", () => {
+    assetStore = buildAssetSeries(["alpha", "bravo", "charlie", "delta", "echo"]);
+    const { container } = renderPanel();
+
+    fireEvent.click(getAssetTile(container, "echo"));
+    fireEvent.click(getAssetTile(container, "bravo"), { shiftKey: true });
+    fireEvent.click(getAssetTile(container, "delta"), { shiftKey: true });
+
+    expect(getSelectedAssetTitles(container)).toEqual([
+      "bravo",
+      "charlie",
+      "delta",
+      "echo",
+    ]);
+    expect(screen.getByRole("button", { name: "Delete (4)" })).toBeEnabled();
+  });
+
+  it("keeps select mode single-select even when shift is used", () => {
+    assetStore = buildAssetSeries(["alpha", "bravo", "charlie"]);
+    const { container } = renderPanel({ mode: "select", onSelect: jest.fn() });
+
+    fireEvent.click(getAssetTile(container, "alpha"));
+    fireEvent.click(getAssetTile(container, "charlie"), { shiftKey: true });
+
+    expect(getSelectedAssetTitles(container)).toEqual(["charlie"]);
+    expect(screen.getByRole("button", { name: "Select" })).toBeEnabled();
+  });
+
+  it("computes shift range from the visible order including recently uploaded first", async () => {
+    assetStore = buildAssetSeries(["alpha", "bravo", "charlie"]);
+    const { container } = renderPanel();
+
+    await uploadFiles(container, [new File(["fresh"], "fresh-upload.png", { type: "image/png" })]);
+    expect(await screen.findByRole("heading", { name: "Recently uploaded" })).toBeInTheDocument();
+
+    fireEvent.click(getAssetTile(container, "fresh-upload"));
+    fireEvent.click(getAssetTile(container, "bravo"), { shiftKey: true });
+
+    expect(getSelectedAssetTitles(container)).toEqual([
+      "alpha",
+      "bravo",
+      "fresh-upload",
+    ]);
+    expect(screen.getByRole("button", { name: "Delete (3)" })).toBeEnabled();
   });
 });

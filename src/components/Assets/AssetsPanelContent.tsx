@@ -176,6 +176,7 @@ export default function AssetsPanelContent({
   const [thumbReadyById, setThumbReadyById] = useState<Record<string, boolean>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedOrder, setSelectedOrder] = useState<string[]>([]);
+  const [selectionAnchorId, setSelectionAnchorId] = useState<string | null>(null);
   const [recentlyUploadedIds, setRecentlyUploadedIds] = useState<string[]>([]);
   const [shouldScrollToRecentlyUploaded, setShouldScrollToRecentlyUploaded] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
@@ -486,11 +487,12 @@ export default function AssetsPanelContent({
   }, [assets]);
 
   useEffect(() => {
-    if (!isOpen && selectedIds.size > 0) {
-      setSelectedIds(new Set());
-      setSelectedOrder([]);
-    }
-  }, [isOpen, selectedIds]);
+    if (isOpen) return;
+    if (selectedIds.size === 0 && selectionAnchorId == null) return;
+    setSelectedIds(new Set());
+    setSelectedOrder([]);
+    setSelectionAnchorId(null);
+  }, [isOpen, selectedIds, selectionAnchorId]);
 
   useEffect(() => {
     if (isOpen) return;
@@ -602,6 +604,12 @@ export default function AssetsPanelContent({
   }, [assets, selectedOrder]);
 
   useEffect(() => {
+    if (!selectionAnchorId) return;
+    if (assets.some((asset) => asset.id === selectionAnchorId)) return;
+    setSelectionAnchorId(null);
+  }, [assets, selectionAnchorId]);
+
+  useEffect(() => {
     if (!confirmState) {
       setAffectedCardCount(null);
       return;
@@ -697,6 +705,10 @@ export default function AssetsPanelContent({
     groups.push(...groupedAssets);
     return groups;
   }, [groupedAssets, recentlyUploadedVisibleAssets]);
+  const visibleAssetIdsInGridOrder = useMemo(
+    () => displayGroups.flatMap((group) => group.assets.map((asset) => asset.id)),
+    [displayGroups],
+  );
   const hasVisibleDisplayAssets = displayGroups.some((group) => group.assets.length > 0);
   const isLibraryEmpty = assets.length === 0;
 
@@ -1452,10 +1464,38 @@ export default function AssetsPanelContent({
                         title={getDisplayAssetName(asset.name)}
                         onClick={(event) => {
                           const hasModifier = event.metaKey || event.ctrlKey;
+                          const hasShift = event.shiftKey;
                           setSelectedIds((prev) => {
                             if (mode === "select") {
                               setSelectedOrder([asset.id]);
                               return new Set([asset.id]);
+                            }
+                            if (hasShift) {
+                              const anchorId = selectionAnchorId;
+                              const anchorIndex = anchorId
+                                ? visibleAssetIdsInGridOrder.indexOf(anchorId)
+                                : -1;
+                              const clickedIndex = visibleAssetIdsInGridOrder.indexOf(asset.id);
+
+                              if (anchorIndex === -1 || clickedIndex === -1) {
+                                setSelectionAnchorId(asset.id);
+                                setSelectedOrder([asset.id]);
+                                return new Set([asset.id]);
+                              }
+
+                              const rangeStart = Math.min(anchorIndex, clickedIndex);
+                              const rangeEnd = Math.max(anchorIndex, clickedIndex);
+                              const rangeIds = visibleAssetIdsInGridOrder.slice(
+                                rangeStart,
+                                rangeEnd + 1,
+                              );
+                              const next = new Set(prev);
+                              rangeIds.forEach((id) => next.add(id));
+                              setSelectedOrder(
+                                visibleAssetIdsInGridOrder.filter((id) => next.has(id)),
+                              );
+                              setSelectionAnchorId(asset.id);
+                              return next;
                             }
                             if (hasModifier) {
                               const next = new Set(prev);
@@ -1471,12 +1511,10 @@ export default function AssetsPanelContent({
                                   ...order.filter((id) => id !== asset.id),
                                 ]);
                               }
+                              setSelectionAnchorId(asset.id);
                               return next;
                             }
-                            if (prev.size === 1 && prev.has(asset.id)) {
-                              setSelectedOrder([]);
-                              return new Set();
-                            }
+                            setSelectionAnchorId(asset.id);
                             setSelectedOrder([asset.id]);
                             return new Set([asset.id]);
                           });
