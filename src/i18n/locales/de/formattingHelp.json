@@ -65,10 +65,10 @@
   "formattingHelp.diceStructure.combatOutput": "Kampfwürfel-Token",
   "formattingHelp.diceStructure.d6Code": "&d6-<number>-<color>-<faceColor?>;",
   "formattingHelp.diceStructure.d6Output": "D6-Token",
-  "formattingHelp.diceStructure.facesCode": "Faces: s, h, m, cd, ad, dd, md",
+  "formattingHelp.diceStructure.facesCode": "Seiten: s, h, m, cd, ad, dd, md",
   "formattingHelp.diceStructure.facesOutput": "Gültige Seiten",
-  "formattingHelp.diceStructure.colorsCode": "Colors: w, bk, r, bl, g, y, o, p, gy",
+  "formattingHelp.diceStructure.colorsCode": "Farben: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Gültige Farben",
-  "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
+  "formattingHelp.diceStructure.hexCode": "Hexadezimal: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
   "formattingHelp.diceStructure.hexOutput": "Hex-Farben"
 }

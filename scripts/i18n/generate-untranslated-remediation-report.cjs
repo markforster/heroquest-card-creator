@@ -103,6 +103,7 @@ function loadNormalizedMessages() {
   const exported = sandbox.module.exports;
   const messages = exported?.messages;
   const supportedLanguages = exported?.supportedLanguages;
+  const visibleLanguages = exported?.visibleLanguages;
 
   if (!messages || typeof messages !== "object") {
     throw new Error("Failed to load messages from messages.ts");
@@ -110,8 +111,11 @@ function loadNormalizedMessages() {
   if (!Array.isArray(supportedLanguages)) {
     throw new Error("Failed to load supportedLanguages from messages.ts");
   }
+  if (!Array.isArray(visibleLanguages)) {
+    throw new Error("Failed to load visibleLanguages from messages.ts");
+  }
 
-  return { messages, supportedLanguages };
+  return { messages, supportedLanguages, visibleLanguages };
 }
 
 function getNamespaces() {
@@ -266,15 +270,20 @@ function formatUsageFiles(usageFiles) {
   return usageFiles.map((file) => `\`${file}\``).join("<br>");
 }
 
-function renderMarkdown({ generatedOn, rows, summary, scannedFilesCount }) {
+function renderMarkdown({ generatedOn, rows, summary, scannedFilesCount, visibleLanguages }) {
   const lines = [];
   lines.push("# i18n Untranslated Remediation Report");
   lines.push("");
   lines.push(`Generated: ${generatedOn}`);
-  lines.push("Scope: Current exposed non-English locales in `src/i18n/messages.ts`");
+  lines.push(
+    "Scope: All implemented non-English locales in `src/i18n/messages.ts` (including hidden in-progress locales not yet shown in the language menu)",
+  );
+  lines.push(
+    `Visible language menu locales: ${visibleLanguages.filter((locale) => locale !== "en").join(", ")}`,
+  );
   lines.push("Source scan: Production files under `src/` only (`__tests__`, `*.test.*`, `*.spec.*`, and locale bundle sources excluded)");
   lines.push(
-    "Purpose: Canonical worklist for translating every currently untranslated string in already exposed locales.",
+    "Purpose: Canonical worklist for translating every currently untranslated string in implemented non-English locales.",
   );
   lines.push("");
   lines.push("## Summary");
@@ -316,7 +325,7 @@ function renderMarkdown({ generatedOn, rows, summary, scannedFilesCount }) {
 }
 
 function generateReport() {
-  const { messages, supportedLanguages } = loadNormalizedMessages();
+  const { messages, supportedLanguages, visibleLanguages } = loadNormalizedMessages();
   const rawBundles = loadRawLocaleBundles(supportedLanguages);
   const filePaths = walkProductionFiles(srcRoot);
   const usageByKey = collectUsageByKey(filePaths, Object.keys(messages.en));
@@ -331,6 +340,7 @@ function generateReport() {
     rows,
     summary,
     scannedFilesCount: filePaths.length,
+    visibleLanguages,
   });
 
   return {

@@ -1,20 +1,27 @@
 import isSupportedLanguage from "./isSupportedLanguage";
-import { supportedLanguages } from "./messages";
+import { supportedLanguages, visibleLanguages } from "./messages";
 
 import type { SupportedLanguage } from "./messages";
 
 export const LANGUAGE_STORAGE_KEY = "hqcc.language";
+
+function isVisibleLanguage(value: SupportedLanguage): boolean {
+  return visibleLanguages.includes(value as (typeof visibleLanguages)[number]);
+}
 
 
 function normalizeLanguageTag(value: string): string {
   return value.trim().replace(/_/g, "-");
 }
 
-function matchSupportedLanguage(tag: string): SupportedLanguage | null {
+function matchLanguageTag(
+  tag: string,
+  candidates: readonly SupportedLanguage[],
+): SupportedLanguage | null {
   const normalized = normalizeLanguageTag(tag);
   if (!normalized) return null;
 
-  const exact = supportedLanguages.find(
+  const exact = candidates.find(
     (language) => language.toLowerCase() === normalized.toLowerCase(),
   );
   if (exact) return exact;
@@ -22,7 +29,7 @@ function matchSupportedLanguage(tag: string): SupportedLanguage | null {
   const [primary] = normalized.split("-");
   if (!primary) return null;
 
-  const primaryMatch = supportedLanguages.find(
+  const primaryMatch = candidates.find(
     (language) => language.toLowerCase() === primary.toLowerCase(),
   );
   return primaryMatch ?? null;
@@ -37,7 +44,7 @@ export function getDetectedLanguage(): SupportedLanguage | null {
 
   for (const candidate of candidates) {
     if (!candidate) continue;
-    const match = matchSupportedLanguage(candidate);
+    const match = matchLanguageTag(candidate, visibleLanguages);
     if (match) return match;
   }
 
@@ -53,7 +60,7 @@ export function getInitialLanguage(
 
   try {
     const stored = window.localStorage.getItem(storageKey);
-    if (stored && isSupportedLanguage(stored)) {
+    if (stored && isSupportedLanguage(stored) && isVisibleLanguage(stored)) {
       return stored;
     }
   } catch {

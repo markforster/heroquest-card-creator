@@ -65,10 +65,10 @@
   "formattingHelp.diceStructure.combatOutput": "Ficha de dado de combate",
   "formattingHelp.diceStructure.d6Code": "&d6-<number>-<color>-<faceColor?>;",
   "formattingHelp.diceStructure.d6Output": "Ficha D6",
-  "formattingHelp.diceStructure.facesCode": "Faces: s, h, m, cd, ad, dd, md",
+  "formattingHelp.diceStructure.facesCode": "Caras: s, h, m, cd, ad, dd, md",
   "formattingHelp.diceStructure.facesOutput": "Caras válidas",
-  "formattingHelp.diceStructure.colorsCode": "Colors: w, bk, r, bl, g, y, o, p, gy",
+  "formattingHelp.diceStructure.colorsCode": "Colores: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Colores válidos",
-  "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
+  "formattingHelp.diceStructure.hexCode": "Hexadecimal: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
   "formattingHelp.diceStructure.hexOutput": "Colores hexadecimales"
 }

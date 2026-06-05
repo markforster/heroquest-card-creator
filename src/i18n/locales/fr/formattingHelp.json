@@ -65,10 +65,10 @@
   "formattingHelp.diceStructure.combatOutput": "Jeton de dé de combat",
   "formattingHelp.diceStructure.d6Code": "&d6-<number>-<color>-<faceColor?>;",
   "formattingHelp.diceStructure.d6Output": "Jeton D6",
-  "formattingHelp.diceStructure.facesCode": "Faces: s, h, m, cd, ad, dd, md",
+  "formattingHelp.diceStructure.facesCode": "Faces : s, h, m, cd, ad, dd, md",
   "formattingHelp.diceStructure.facesOutput": "Faces valides",
-  "formattingHelp.diceStructure.colorsCode": "Colors: w, bk, r, bl, g, y, o, p, gy",
+  "formattingHelp.diceStructure.colorsCode": "Couleurs : w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Couleurs valides",
-  "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
+  "formattingHelp.diceStructure.hexCode": "Hexadécimal : #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
   "formattingHelp.diceStructure.hexOutput": "Couleurs hexadécimales"
 }

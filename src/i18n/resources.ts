@@ -3,6 +3,10 @@ import cs_common from "./locales/cs/common.json";
 import cs_decks from "./locales/cs/decks.json";
 import cs_formattingHelp from "./locales/cs/formattingHelp.json";
 import cs_templates from "./locales/cs/templates.json";
+import da_common from "./locales/da/common.json";
+import da_decks from "./locales/da/decks.json";
+import da_formattingHelp from "./locales/da/formattingHelp.json";
+import da_templates from "./locales/da/templates.json";
 import de_common from "./locales/de/common.json";
 import de_decks from "./locales/de/decks.json";
 import de_formattingHelp from "./locales/de/formattingHelp.json";
@@ -35,6 +39,10 @@ import it_common from "./locales/it/common.json";
 import it_decks from "./locales/it/decks.json";
 import it_formattingHelp from "./locales/it/formattingHelp.json";
 import it_templates from "./locales/it/templates.json";
+import nb_common from "./locales/nb/common.json";
+import nb_decks from "./locales/nb/decks.json";
+import nb_formattingHelp from "./locales/nb/formattingHelp.json";
+import nb_templates from "./locales/nb/templates.json";
 import nl_common from "./locales/nl/common.json";
 import nl_decks from "./locales/nl/decks.json";
 import nl_formattingHelp from "./locales/nl/formattingHelp.json";
@@ -51,6 +59,10 @@ import pt_BR_common from "./locales/pt-BR/common.json";
 import pt_BR_decks from "./locales/pt-BR/decks.json";
 import pt_BR_formattingHelp from "./locales/pt-BR/formattingHelp.json";
 import pt_BR_templates from "./locales/pt-BR/templates.json";
+import ru_common from "./locales/ru/common.json";
+import ru_decks from "./locales/ru/decks.json";
+import ru_formattingHelp from "./locales/ru/formattingHelp.json";
+import ru_templates from "./locales/ru/templates.json";
 import sv_common from "./locales/sv/common.json";
 import sv_decks from "./locales/sv/decks.json";
 import sv_formattingHelp from "./locales/sv/formattingHelp.json";
@@ -79,6 +91,12 @@ export const resources = {
     formattingHelp: de_formattingHelp,
     templates: de_templates,
   },
+  da: {
+    common: da_common,
+    decks: da_decks,
+    formattingHelp: da_formattingHelp,
+    templates: da_templates,
+  },
   es: {
     common: es_common,
     decks: es_decks,
@@ -91,6 +109,12 @@ export const resources = {
     formattingHelp: it_formattingHelp,
     templates: it_templates,
   },
+  nb: {
+    common: nb_common,
+    decks: nb_decks,
+    formattingHelp: nb_formattingHelp,
+    templates: nb_templates,
+  },
   pt: {
     common: pt_common,
     decks: pt_decks,
@@ -102,6 +126,12 @@ export const resources = {
     decks: pt_BR_decks,
     formattingHelp: pt_BR_formattingHelp,
     templates: pt_BR_templates,
+  },
+  ru: {
+    common: ru_common,
+    decks: ru_decks,
+    formattingHelp: ru_formattingHelp,
+    templates: ru_templates,
   },
   nl: {
     common: nl_common,

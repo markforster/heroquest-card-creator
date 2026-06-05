@@ -1,0 +1,8 @@
+{
+  "templates.hero": "Heltekort",
+  "templates.monster": "Monsterkort",
+  "templates.small-treasure": "Lille illustration",
+  "templates.large-treasure": "Stor illustrasjon",
+  "templates.hero-back": "Heltebagside",
+  "templates.labelled-back": "Mærket bagside"
+}

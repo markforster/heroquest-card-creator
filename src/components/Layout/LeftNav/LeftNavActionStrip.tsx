@@ -22,7 +22,7 @@ import { languageFlags } from "@/i18n/language-flags";
 import {
   languageLabels,
   SupportedLanguage,
-  supportedLanguages,
+  visibleLanguages,
 } from "@/i18n/messages";
 
 import LanguageMenuPopover from "@/components/LanguageMenu/LanguageMenuPopover";
@@ -48,7 +48,7 @@ const getLanguageSortKey = (label: string): string => {
 };
 
 const getLanguageOptions = (): LanguageOption[] => {
-  const options = supportedLanguages.map((code) => ({
+  const options = visibleLanguages.map((code) => ({
     code,
     label: languageLabels[code] ?? code.toUpperCase(),
     flag: languageFlags[code] ?? "🏳️",

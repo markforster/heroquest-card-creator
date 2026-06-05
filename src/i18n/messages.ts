@@ -7,10 +7,13 @@ export const supportedLanguages = [
   "en",
   "fr",
   "de",
+  "da",
   "es",
   "it",
+  "nb",
   "pt",
   "pt-BR",
+  "ru",
   "nl",
   "el",
   "hu",
@@ -22,14 +25,39 @@ export const supportedLanguages = [
 
 export type SupportedLanguage = (typeof supportedLanguages)[number];
 
+export const visibleLanguages = [
+  "en",
+  "fr",
+  "de",
+  "da",
+  "es",
+  "it",
+  "nb",
+  "pt",
+  "pt-BR",
+  "ru",
+  "nl",
+  "el",
+  "hu",
+  "pl",
+  "cs",
+  "sv",
+  "fi",
+] as const;
+
+export type VisibleLanguage = (typeof visibleLanguages)[number];
+
 export const languageLabels: Record<SupportedLanguage, string> = {
   en: "🇬🇧 English",
   fr: "🇫🇷 Français",
   de: "🇩🇪 Deutsch",
+  da: "🇩🇰 Dansk",
   es: "🇪🇸 Español",
   it: "🇮🇹 Italiano",
+  nb: "🇳🇴 Norsk bokmål",
   pt: "🇵🇹 Português",
   "pt-BR": "🇧🇷 Português (Brasil)",
+  ru: "🇷🇺 Русский",
   nl: "🇳🇱 Nederlands",
   el: "🇬🇷 Ελληνικά",
   hu: "🇭🇺 Magyar",

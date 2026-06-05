@@ -10,6 +10,7 @@ const srcRoot = path.join(repoRoot, "src");
 const messagesPath = path.join(srcRoot, "i18n", "messages.ts");
 const rawLocalesDir = path.join(srcRoot, "i18n", "locales");
 const SAMPLE_LIMIT = 10;
+const verbose = process.argv.includes("--verbose");
 
 function transpileTsModule(source, filename) {
   return ts.transpileModule(source, {
@@ -176,16 +177,20 @@ for (const locale of supportedLanguages) {
     `- ${locale}: missing ${missing.length}, extra ${extra.length}, untranslated ${untranslated.length}`,
   );
 
-  if (missing.length) {
+  if (verbose && missing.length) {
     hasErrors = true;
     console.log(`  missing sample: ${sample(missing)}`);
   }
-  if (extra.length) {
+  if (verbose && extra.length) {
     hasErrors = true;
     console.log(`  extra sample: ${sample(extra)}`);
   }
-  if (untranslated.length) {
+  if (verbose && untranslated.length) {
     console.log(`  untranslated sample: ${sample(untranslated)}`);
+  }
+
+  if (missing.length || extra.length) {
+    hasErrors = true;
   }
 }
 

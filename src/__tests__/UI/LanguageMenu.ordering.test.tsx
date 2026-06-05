@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import LanguageMenu from "@/components/LanguageMenu";
-import { languageLabels, supportedLanguages } from "@/i18n/messages";
+import { languageLabels, visibleLanguages } from "@/i18n/messages";
 
 let currentLanguage = "en";
 const setLanguage = jest.fn();
@@ -76,7 +76,7 @@ describe("LanguageMenu (UI) - detected ordering", () => {
       if (firstSpace === -1) return trimmed;
       return trimmed.slice(firstSpace + 1).trim();
     };
-    const expected = supportedLanguages
+    const expected = visibleLanguages
       .filter((code) => code !== currentLanguage)
       .map((code) => languageLabels[code] ?? code.toUpperCase())
       .sort((a, b) => sortKey(a).localeCompare(sortKey(b), undefined, { sensitivity: "base" }));
