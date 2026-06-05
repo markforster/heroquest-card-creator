@@ -1,0 +1,8 @@
+{
+  "templates.hero": "Heldenkarte",
+  "templates.monster": "Monsterkarte",
+  "templates.small-treasure": "Karte mit kleinem Bild",
+  "templates.large-treasure": "Karte mit großem Bild",
+  "templates.hero-back": "Heldenrückseite",
+  "templates.labelled-back": "Beschriftete Rückseite"
+}

@@ -893,6 +893,17 @@
     border-color 200ms ease,
     box-shadow 200ms ease;
 }
+
+.leftNavUpdateAction {
+  font-size: 0.66rem;
+  letter-spacing: 0.01em;
+}
+
+.leftNavUpdateAction .leftNavLabel {
+  font-size: inherit;
+  letter-spacing: 0;
+}
+
 .leftNavItem:hover,
 .leftNavMenuButton:hover,
 .exportSplitMenuItem:hover,
@@ -1109,12 +1120,18 @@
   padding-right: var(--space-4);
   box-shadow: 0 12px 28px var(--hq-black-45);
   z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.leftNavMenuGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   justify-items: stretch;
   gap: var(--space-2);
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 .leftNavMenuItem {
@@ -1134,8 +1151,13 @@
   white-space: normal;
 }
 
-.leftNavMenuItemDetected {
-  margin-top: 2em;
+.leftNavMenuDetectedSection {
+  margin-top: calc(var(--space-4) + var(--space-2));
+}
+
+.leftNavMenuDetectedItem {
+  display: inline-flex;
+  width: 100%;
 }
 .leftNavMenuText,
 .assetsPanel,

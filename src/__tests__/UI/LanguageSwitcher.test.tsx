@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import LanguageSwitcher from "@/components/LanguageMenu/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
-import { supportedLanguages } from "@/i18n/messages";
+import { visibleLanguages } from "@/i18n/messages";
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: jest.fn(),
@@ -38,7 +38,7 @@ describe("LanguageSwitcher (UI)", () => {
 
     const select = screen.getByRole("combobox", { name: "Language" });
     const options = Array.from(select.querySelectorAll("option"));
-    expect(options).toHaveLength(supportedLanguages.length);
+    expect(options).toHaveLength(visibleLanguages.length);
 
     // Spot-check a couple of common values.
     expect(options.some((o) => o.value === "en")).toBe(true);
@@ -66,4 +66,3 @@ describe("LanguageSwitcher (UI)", () => {
     blurSpy.mockRestore();
   });
 });
-

@@ -18,6 +18,7 @@ import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";
 import { useTypographyNumericSettings } from "@/lib/typography-settings";
+import type { CSSProperties } from "react";
 
 type RibbonTitleProps = {
   title: string;
@@ -97,10 +98,10 @@ export default function RibbonTitle({
     lining: titleAlignedNumerals,
     tabular: titleFixedWidthNumerals,
   });
-  const titleTextStyle = {
+  const titleTextStyle: CSSProperties = {
     fontFamily: CARD_TEXT_FONT_FAMILY,
     fontSize: `${titleFontSize}px`,
-    fontWeight: String(titleFontWeight),
+    fontWeight: titleFontWeight,
     letterSpacing: letterSpacing != null ? `${letterSpacing}px` : undefined,
     fontKerning: "normal",
     ...numericStyle,

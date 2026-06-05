@@ -1,0 +1,8 @@
+{
+  "templates.hero": "Hjältekort",
+  "templates.monster": "Monterkort",
+  "templates.small-treasure": "Liten illustration",
+  "templates.large-treasure": "Stor illustration",
+  "templates.hero-back": "Hjältebaksida",
+  "templates.labelled-back": "Baksida med etikett"
+}

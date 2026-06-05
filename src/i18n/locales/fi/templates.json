@@ -1,0 +1,8 @@
+{
+  "templates.hero": "Sankarinkortti",
+  "templates.monster": "Hirviökortti",
+  "templates.small-treasure": "Pieni kuvitus",
+  "templates.large-treasure": "Suuri kuvitus",
+  "templates.hero-back": "Sankarin kääntöpuoli",
+  "templates.labelled-back": "Merkitty kääntöpuoli"
+}
