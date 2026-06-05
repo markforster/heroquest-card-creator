@@ -94,6 +94,7 @@ export default function LeftNavDownloadAction() {
     distribution === "unknown" ||
     distribution === "npm" ||
     distribution === "download";
+  const isUpdateAction = distribution === "download" || isLocalInstall;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -124,11 +125,11 @@ export default function LeftNavDownloadAction() {
   }, [isEligibleBuild]);
 
   const label = useMemo(() => {
-    if (distribution === "download" || isLocalInstall) {
+    if (isUpdateAction) {
       return t("actions.checkForUpdates");
     }
     return t("actions.getTheApp");
-  }, [distribution, isLocalInstall, t]);
+  }, [isUpdateAction, t]);
 
   useEffect(() => {
     if (!isEligibleBuild) {
@@ -348,9 +349,9 @@ export default function LeftNavDownloadAction() {
     <a
       ref={linkRef}
       href="https://mark-forster.itch.io/heroquest-card-creator?source=in-app-download"
-      className={`${styles.leftNavItem} ${ENABLE_GET_APP_GLOW ? styles.leftNavItemGlow : ""} ${
-        isGlowActive ? styles.leftNavItemGlowActive : ""
-      } d-flex align-items-center gap-2`}
+      className={`${styles.leftNavItem} ${isUpdateAction ? styles.leftNavUpdateAction : ""} ${
+        ENABLE_GET_APP_GLOW ? styles.leftNavItemGlow : ""
+      } ${isGlowActive ? styles.leftNavItemGlowActive : ""} d-flex align-items-center gap-2`}
       onClickCapture={(event) => {
         event.preventDefault();
         track("page_view", { page_path: "/download", page_title: "Download" });

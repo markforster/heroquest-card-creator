@@ -893,6 +893,17 @@
     border-color 200ms ease,
     box-shadow 200ms ease;
 }
+
+.leftNavUpdateAction {
+  font-size: 0.66rem;
+  letter-spacing: 0.01em;
+}
+
+.leftNavUpdateAction .leftNavLabel {
+  font-size: inherit;
+  letter-spacing: 0;
+}
+
 .leftNavItem:hover,
 .leftNavMenuButton:hover,
 .exportSplitMenuItem:hover,
