@@ -8,6 +8,7 @@ import { getDetectedLanguage } from "@/i18n/getInitialLanguage";
 import { useI18n } from "@/i18n/I18nProvider";
 import { languageFlags } from "@/i18n/language-flags";
 import {
+  languageNameKeys,
   languageLabels,
   SupportedLanguage,
   visibleLanguages,
@@ -23,6 +24,7 @@ type LanguageMenuProps = {
 type LanguageOption = {
   code: string;
   label: string;
+  title: string;
   flag: string;
   isDetected?: boolean;
 };
@@ -34,10 +36,13 @@ const getLanguageSortKey = (label: string): string => {
   return trimmed.slice(firstSpace + 1).trim();
 };
 
-const getLanguageOptions = (): LanguageOption[] => {
+const getLanguageOptions = (
+  getLocalizedLanguageName: (code: SupportedLanguage) => string,
+): LanguageOption[] => {
   const options = visibleLanguages.map((code) => ({
     code,
     label: languageLabels[code] ?? code.toUpperCase(),
+    title: getLocalizedLanguageName(code),
     flag: languageFlags[code] ?? "🏳️",
   }));
 
@@ -79,9 +84,13 @@ export default function LanguageMenu({ isCollapsed }: LanguageMenuProps) {
   const currentFlag = languageFlags[language] ?? "🏳️";
   const currentCode = language.toUpperCase();
   const currentLabel = languageLabels[language] ?? currentCode;
+  const getLocalizedLanguageName = useCallback(
+    (code: SupportedLanguage) => t(languageNameKeys[code]),
+    [t],
+  );
 
   const options = useMemo(() => {
-    const baseOptions = getLanguageOptions();
+    const baseOptions = getLanguageOptions(getLocalizedLanguageName);
     const filteredOptions = baseOptions.filter((option) => option.code !== language);
     if (!detectedLanguage || detectedLanguage === language) {
       return filteredOptions;
@@ -93,7 +102,7 @@ export default function LanguageMenu({ isCollapsed }: LanguageMenuProps) {
     const remaining = filteredOptions.filter((option) => option.code !== detectedLanguage);
 
     return [...remaining, { ...detectedOption, isDetected: true }];
-  }, [detectedLanguage, language]);
+  }, [detectedLanguage, getLocalizedLanguageName, language]);
 
   return (
     <div className={styles.leftNavMenu} ref={menuRef}>

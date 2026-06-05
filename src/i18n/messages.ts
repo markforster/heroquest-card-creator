@@ -73,6 +73,26 @@ export type MessageKey = {
   [NS in keyof EnglishResources]: keyof EnglishResources[NS];
 }[keyof EnglishResources] & string;
 
+export const languageNameKeys: Record<SupportedLanguage, MessageKey> = {
+  en: "languages.en",
+  fr: "languages.fr",
+  de: "languages.de",
+  da: "languages.da",
+  es: "languages.es",
+  it: "languages.it",
+  nb: "languages.nb",
+  pt: "languages.pt",
+  "pt-BR": "languages.pt-BR",
+  ru: "languages.ru",
+  nl: "languages.nl",
+  el: "languages.el",
+  hu: "languages.hu",
+  pl: "languages.pl",
+  cs: "languages.cs",
+  sv: "languages.sv",
+  fi: "languages.fi",
+};
+
 type FlattenedMessages = Record<MessageKey, string>;
 
 function flattenMessages(language: SupportedLanguage): FlattenedMessages {

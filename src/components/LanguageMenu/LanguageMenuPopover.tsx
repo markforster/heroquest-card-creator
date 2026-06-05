@@ -5,6 +5,7 @@ import styles from "@/app/page.module.css";
 type LanguageOption = {
   code: string;
   label: string;
+  title: string;
   flag: string;
   isDetected?: boolean;
 };
@@ -34,6 +35,7 @@ export default function LanguageMenuPopover({
               : styles.leftNavMenuItem
           }
           role="menuitem"
+          title={option.title}
           onClick={() => onSelect(option.code)}
         >
           <span className={styles.leftNavMenuText}>{option.label}</span>
