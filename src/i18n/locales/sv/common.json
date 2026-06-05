@@ -679,5 +679,6 @@
   "label.unknownVersion": "Okänd",
   "warning.unpairFromBackFaceSingle": "1 kort kommer att avparas från denna baksida. Fortsätta?",
   "warning.unpairFromBackFaceMultiple": "{count} kort kommer att avparas från denna baksida. Fortsätta?",
-  "heading.impactedDecks": "Påverkade kortlekar"
+  "heading.impactedDecks": "Påverkade kortlekar",
+  "label.recentlyUploaded": "Nyligen uppladdade"
 }

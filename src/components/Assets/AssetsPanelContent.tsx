@@ -36,6 +36,7 @@ import {
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
 import { useListAssets } from "@/api/hooks";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { MessageKey } from "@/i18n/messages";
 import { generateId } from "@/lib";
 import { getDisplayAssetName, getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
@@ -74,6 +75,12 @@ type ConfirmState = {
 type UploadNotice = {
   duplicates: UploadScanReportItem[];
   renames: Array<{ original: string; renamed: string }>;
+};
+
+type AssetDisplayGroup = {
+  id: AssetKindGroupId | "recently-uploaded";
+  labelKey: MessageKey;
+  assets: AssetRecord[];
 };
 
 function AssetThumbnail({
@@ -169,6 +176,8 @@ export default function AssetsPanelContent({
   const [thumbReadyById, setThumbReadyById] = useState<Record<string, boolean>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedOrder, setSelectedOrder] = useState<string[]>([]);
+  const [recentlyUploadedIds, setRecentlyUploadedIds] = useState<string[]>([]);
+  const [shouldScrollToRecentlyUploaded, setShouldScrollToRecentlyUploaded] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [uploadNotice, setUploadNotice] = useState<UploadNotice | null>(null);
   const [uploadProgress, setUploadProgress] = useState<UploadProgressState | null>(null);
@@ -176,6 +185,7 @@ export default function AssetsPanelContent({
   const reviewResolverRef = useRef<((shouldContinue: boolean) => void) | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const assetsGridRef = useRef<HTMLDivElement | null>(null);
+  const recentlyUploadedSectionRef = useRef<HTMLElement | null>(null);
   const [isKindFilterOpen, setIsKindFilterOpen] = useState(false);
   const kindFilterRef = useRef<HTMLDivElement | null>(null);
   const [isMimeFilterOpen, setIsMimeFilterOpen] = useState(false);
@@ -484,6 +494,13 @@ export default function AssetsPanelContent({
 
   useEffect(() => {
     if (isOpen) return;
+    if (recentlyUploadedIds.length === 0 && !shouldScrollToRecentlyUploaded) return;
+    setRecentlyUploadedIds([]);
+    setShouldScrollToRecentlyUploaded(false);
+  }, [isOpen, recentlyUploadedIds.length, shouldScrollToRecentlyUploaded]);
+
+  useEffect(() => {
+    if (isOpen) return;
     setIsResourcesMenuOpen(false);
   }, [isOpen]);
 
@@ -649,9 +666,38 @@ export default function AssetsPanelContent({
     return asset.mimeType === mimeTypeFilter;
   });
 
-  const groupedAssets = groupAssetsByKind(filteredAssets, preferredKindOrder).filter(
+  const recentlyUploadedIdSet = useMemo(
+    () => new Set(recentlyUploadedIds),
+    [recentlyUploadedIds],
+  );
+  const recentlyUploadedVisibleAssets = searchFiltered.filter((asset) => {
+    if (!recentlyUploadedIdSet.has(asset.id)) return false;
+    if (mimeTypeFilter === "all") return true;
+    return asset.mimeType === mimeTypeFilter;
+  });
+  const recentlyUploadedVisibleIdSet = useMemo(
+    () => new Set(recentlyUploadedVisibleAssets.map((asset) => asset.id)),
+    [recentlyUploadedVisibleAssets],
+  );
+  const filteredAssetsWithoutRecent = filteredAssets.filter(
+    (asset) => !recentlyUploadedVisibleIdSet.has(asset.id),
+  );
+  const groupedAssets = groupAssetsByKind(filteredAssetsWithoutRecent, preferredKindOrder).filter(
     (group) => group.assets.length > 0,
   );
+  const displayGroups = useMemo<AssetDisplayGroup[]>(() => {
+    const groups: AssetDisplayGroup[] = [];
+    if (recentlyUploadedVisibleAssets.length > 0) {
+      groups.push({
+        id: "recently-uploaded",
+        labelKey: "label.recentlyUploaded",
+        assets: recentlyUploadedVisibleAssets,
+      });
+    }
+    groups.push(...groupedAssets);
+    return groups;
+  }, [groupedAssets, recentlyUploadedVisibleAssets]);
+  const hasVisibleDisplayAssets = displayGroups.some((group) => group.assets.length > 0);
   const isLibraryEmpty = assets.length === 0;
 
   const totalCount = assets.length;
@@ -685,6 +731,18 @@ export default function AssetsPanelContent({
           : t("label.assetKindFilterUnclassified");
   const mimeTypeFilterLabel =
     mimeTypeFilter === "all" ? t("label.mimeFilterAll") : mimeTypeFilter;
+
+  useEffect(() => {
+    if (!shouldScrollToRecentlyUploaded) return;
+    if (recentlyUploadedVisibleAssets.length === 0) {
+      setShouldScrollToRecentlyUploaded(false);
+      return;
+    }
+    const section = recentlyUploadedSectionRef.current;
+    if (!section) return;
+    section.scrollIntoView({ behavior: "auto", block: "start" });
+    setShouldScrollToRecentlyUploaded(false);
+  }, [recentlyUploadedVisibleAssets.length, shouldScrollToRecentlyUploaded]);
 
   const handleConfirmDelete = async (ids: string[]) => {
     try {
@@ -1063,9 +1121,18 @@ export default function AssetsPanelContent({
       try {
         const records = await apiClient.listAssets();
         setAssets(records);
+        const recentIds = Array.from(uploaded);
+        setRecentlyUploadedIds(recentIds);
+        setShouldScrollToRecentlyUploaded(recentIds.length > 0);
+        if (mode === "select" && recentIds.length === 1) {
+          setSelectedIds(new Set(recentIds));
+          setSelectedOrder(recentIds);
+        }
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error("[AssetsModal] Upload failed", error);
+        setRecentlyUploadedIds([]);
+        setShouldScrollToRecentlyUploaded(false);
       }
 
       if (ENABLE_UPLOAD_PROGRESS) {
@@ -1347,7 +1414,7 @@ export default function AssetsPanelContent({
               </div>
             ))}
           </div>
-        ) : filteredAssets.length === 0 ? (
+        ) : !hasVisibleDisplayAssets ? (
           isLibraryEmpty ? (
             <AssetsEmptyState />
           ) : (
@@ -1355,8 +1422,12 @@ export default function AssetsPanelContent({
           )
         ) : (
           <div className={styles.assetsGroups}>
-            {groupedAssets.map((group) => (
-              <section key={group.id} className={styles.assetsGroup}>
+            {displayGroups.map((group) => (
+              <section
+                key={group.id}
+                className={styles.assetsGroup}
+                ref={group.id === "recently-uploaded" ? recentlyUploadedSectionRef : undefined}
+              >
                 <h3 className={styles.assetsGroupTitle}>{t(group.labelKey)}</h3>
                 <div className={styles.assetsGroupGrid}>
                   {group.assets.map((asset) => {
@@ -1520,7 +1591,7 @@ export default function AssetsPanelContent({
               onClick={() => {
                 const firstId = selectedIds.values().next().value as string | undefined;
                 const selectedAsset = firstId
-                  ? filteredAssets.find((asset) => asset.id === firstId)
+                  ? assets.find((asset) => asset.id === firstId)
                   : undefined;
                 if (!selectedAsset || !onSelect) return;
                 onSelect(selectedAsset);

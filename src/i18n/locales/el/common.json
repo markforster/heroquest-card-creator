@@ -679,5 +679,6 @@
   "label.unknownVersion": "Άγνωστο",
   "warning.unpairFromBackFaceSingle": "1 κάρτα θα αποσυζευχθεί από αυτή την πίσω όψη. Συνέχεια;",
   "warning.unpairFromBackFaceMultiple": "{count} κάρτες θα αποσυζευχθούν από αυτή την πίσω όψη. Συνέχεια;",
-  "heading.impactedDecks": "Επηρεαζόμενες τράπουλες"
+  "heading.impactedDecks": "Επηρεαζόμενες τράπουλες",
+  "label.recentlyUploaded": "Πρόσφατα μεταφορτωμένα"
 }

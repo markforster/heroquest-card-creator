@@ -679,5 +679,6 @@
   "label.unknownVersion": "Sconosciuta",
   "warning.unpairFromBackFaceSingle": "1 carta verrà disabbinata da questo retro. Continuare?",
   "warning.unpairFromBackFaceMultiple": "{count} carte verranno disabbinate da questo retro. Continuare?",
-  "heading.impactedDecks": "Mazzi interessati"
+  "heading.impactedDecks": "Mazzi interessati",
+  "label.recentlyUploaded": "Caricati di recente"
 }

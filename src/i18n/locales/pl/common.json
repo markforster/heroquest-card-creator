@@ -679,5 +679,6 @@
   "label.unknownVersion": "Nieznana",
   "warning.unpairFromBackFaceSingle": "1 karta zostanie rozparowana od tego rewersu. Kontynuować?",
   "warning.unpairFromBackFaceMultiple": "{count} kart zostanie rozparowanych od tego rewersu. Kontynuować?",
-  "heading.impactedDecks": "Objęte talie"
+  "heading.impactedDecks": "Objęte talie",
+  "label.recentlyUploaded": "Ostatnio przesłane"
 }

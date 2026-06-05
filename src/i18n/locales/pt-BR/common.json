@@ -679,5 +679,6 @@
   "label.unknownVersion": "Desconhecida",
   "warning.unpairFromBackFaceSingle": "1 carta será desemparelhada deste verso. Continuar?",
   "warning.unpairFromBackFaceMultiple": "{count} cartas serão desemparelhadas deste verso. Continuar?",
-  "heading.impactedDecks": "Baralhos impactados"
+  "heading.impactedDecks": "Baralhos impactados",
+  "label.recentlyUploaded": "Enviados recentemente"
 }

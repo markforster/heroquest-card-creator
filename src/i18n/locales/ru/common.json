@@ -679,5 +679,6 @@
   "label.unknownVersion": "Неизвестно",
   "warning.unpairFromBackFaceSingle": "Связь 1 карты с этой рубашкой будет разорвана. Продолжить?",
   "warning.unpairFromBackFaceMultiple": "Связь {count} карт с этой рубашкой будет разорвана. Продолжить?",
-  "heading.impactedDecks": "Затронутые колоды"
+  "heading.impactedDecks": "Затронутые колоды",
+  "label.recentlyUploaded": "Недавно загруженные"
 }

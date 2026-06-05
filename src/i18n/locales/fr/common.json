@@ -679,5 +679,6 @@
   "label.unknownVersion": "Inconnue",
   "warning.unpairFromBackFaceSingle": "1 carte sera désappariée de ce verso. Continuer ?",
   "warning.unpairFromBackFaceMultiple": "{count} cartes seront désappariées de ce verso. Continuer ?",
-  "heading.impactedDecks": "Decks impactés"
+  "heading.impactedDecks": "Decks impactés",
+  "label.recentlyUploaded": "Téléversés récemment"
 }

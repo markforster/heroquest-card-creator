@@ -679,5 +679,6 @@
   "label.unknownVersion": "Ukendt",
   "warning.unpairFromBackFaceSingle": "1 kort bliver afparret fra denne bagside. Fortsæt?",
   "warning.unpairFromBackFaceMultiple": "{count} kort bliver afparret fra denne bagside. Fortsæt?",
-  "heading.impactedDecks": "Berørte dæk"
+  "heading.impactedDecks": "Berørte dæk",
+  "label.recentlyUploaded": "Senest uploadet"
 }

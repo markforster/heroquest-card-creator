@@ -679,5 +679,6 @@
   "label.unknownVersion": "Onbekend",
   "warning.unpairFromBackFaceSingle": "1 kaart wordt ontkoppeld van deze achterkant. Doorgaan?",
   "warning.unpairFromBackFaceMultiple": "{count} kaarten worden ontkoppeld van deze achterkant. Doorgaan?",
-  "heading.impactedDecks": "Getroffen decks"
+  "heading.impactedDecks": "Getroffen decks",
+  "label.recentlyUploaded": "Recent geüpload"
 }

@@ -679,5 +679,6 @@
   "label.unknownVersion": "Ismeretlen",
   "warning.unpairFromBackFaceSingle": "1 kártya leválik erről a hátlapról. Folytatja?",
   "warning.unpairFromBackFaceMultiple": "{count} kártya leválik erről a hátlapról. Folytatja?",
-  "heading.impactedDecks": "Érintett paklik"
+  "heading.impactedDecks": "Érintett paklik",
+  "label.recentlyUploaded": "Nemrég feltöltve"
 }

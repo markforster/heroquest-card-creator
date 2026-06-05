@@ -679,5 +679,6 @@
   "label.unknownVersion": "Unbekannt",
   "warning.unpairFromBackFaceSingle": "1 Karte wird von dieser Rückseite entkoppelt. Fortfahren?",
   "warning.unpairFromBackFaceMultiple": "{count} Karten werden von dieser Rückseite entkoppelt. Fortfahren?",
-  "heading.impactedDecks": "Betroffene Decks"
+  "heading.impactedDecks": "Betroffene Decks",
+  "label.recentlyUploaded": "Kürzlich hochgeladen"
 }

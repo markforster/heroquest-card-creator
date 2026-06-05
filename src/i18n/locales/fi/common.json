@@ -679,5 +679,6 @@
   "label.unknownVersion": "Tuntematon",
   "warning.unpairFromBackFaceSingle": "1 kortti poistetaan parituksesta tämän kääntöpuolen kanssa. Jatketaanko?",
   "warning.unpairFromBackFaceMultiple": "{count} korttia poistetaan parituksesta tämän kääntöpuolen kanssa. Jatketaanko?",
-  "heading.impactedDecks": "Vaikutuksen alaiset pakat"
+  "heading.impactedDecks": "Vaikutuksen alaiset pakat",
+  "label.recentlyUploaded": "Äskettäin ladatut"
 }

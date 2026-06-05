@@ -679,5 +679,6 @@
   "label.unknownVersion": "Desconocida",
   "warning.unpairFromBackFaceSingle": "1 carta se desemparejará de este reverso. ¿Continuar?",
   "warning.unpairFromBackFaceMultiple": "{count} cartas se desemparejarán de este reverso. ¿Continuar?",
-  "heading.impactedDecks": "Mazos afectados"
+  "heading.impactedDecks": "Mazos afectados",
+  "label.recentlyUploaded": "Subidas recientemente"
 }
