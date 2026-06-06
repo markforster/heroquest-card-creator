@@ -22,6 +22,7 @@
 
 .footerCenter {
   flex: 0 0 auto;
+  min-width: 0;
 }
 
 .footerSpacer {
@@ -72,6 +73,52 @@
 .footerSocialIcon {
   width: 12px;
   height: 12px;
+}
+
+.footerCompatibilityNotice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #d97706;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  transition:
+    transform 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.12em;
+}
+
+.footerCompatibilityNotice:hover,
+.footerCompatibilityNotice:focus-visible {
+  transform: translateY(-1px);
+  color: #f59e0b;
+  opacity: 1;
+  outline: none;
+}
+
+.footerCompatibilityNoticeIcon {
+  width: 0.82rem;
+  height: 0.82rem;
+  flex: 0 0 auto;
+}
+
+.footerCompatibilityModalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  color: var(--hq-text);
+}
+
+.footerCompatibilityModalBody p {
+  margin: 0;
 }
 
 .footerCtaWrapper {
@@ -4667,7 +4714,7 @@
   border-radius: var(--radius-sm);
   border: 1px dashed var(--hq-border-mid);
   background: linear-gradient(180deg, var(--hq-white-05), var(--hq-black-35));
-  padding: var(--space-6);
+  padding: 0 var(--space-6) var(--space-6);
   color: var(--hq-text-muted);
   font-size: var(--text-lg);
   overflow-y: auto;
@@ -4724,6 +4771,7 @@
 .stockpileRightPanel {
   flex: 0 0 20em;
   max-width: 20em;
+  min-width: 20em;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -4732,6 +4780,57 @@
   background: linear-gradient(135deg, var(--hq-right-panel-bg-start), var(--hq-surface-900));
   border-left: 1px solid var(--hq-border-strong);
   box-shadow: inset 1px 0 0 var(--hq-white-05);
+}
+
+.stockpileRightPanelCollapsed {
+  flex-basis: 28px;
+  width: 28px;
+  min-width: 28px;
+  max-width: 28px;
+}
+
+.stockpileRightPanelToggle {
+  flex: 0 0 auto;
+  border: 1px solid var(--hq-border-strong);
+  background: var(--hq-surface-750);
+  color: inherit;
+  border-radius: var(--radius-pill);
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: absolute;
+  top: var(--space-10);
+  left: -11px;
+  z-index: 5;
+  box-shadow: var(--shadow-soft);
+}
+
+.stockpileRightPanelToggle:hover {
+  background: var(--hq-surface-700);
+}
+
+.stockpileRightPanelToggleIcon {
+  width: 12px;
+  height: 12px;
+}
+
+.stockpileRightPanelContent {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.stockpileRightPanelContentCollapsed {
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
 }
 
 .stockpileCollectionsBackdrop {
@@ -5382,6 +5481,14 @@
   text-align: center;
 }
 
+.stockpileLoadingState {
+  height: 100%;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .assetsEmptyStateCard {
   width: min(760px, 100%);
   display: flex;
@@ -5730,26 +5837,26 @@
 .assetsGroups {
   display: flex;
   flex-direction: column;
-  gap: var(--space-10);
+  gap: 0;
 }
 
 .assetsGroup {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
 }
 
 .assetsGroupTitle {
-  margin: 0 0 var(--space-4);
-  font-size: var(--text-lg);
+  margin: 0;
+  font-size: var(--text-xl);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  font-family: var(--hq-font-inline);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--hq-accent);
   position: sticky;
   top: 0;
   z-index: 3;
-  padding: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
   background: linear-gradient(135deg, var(--hq-surface-750), var(--hq-surface-900));
   box-shadow: 0 6px 12px var(--hq-overlay-soft);
 }
@@ -5758,7 +5865,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--space-6);
-  padding-top: var(--space-6);
+}
+
+.assetsGroup:not(:last-child) .assetsGroupGrid {
+  padding-bottom: var(--space-10);
 }
 
 .selectAllLabel {

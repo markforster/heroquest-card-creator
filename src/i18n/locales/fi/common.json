@@ -679,5 +679,11 @@
   "label.unknownVersion": "Tuntematon",
   "warning.unpairFromBackFaceSingle": "1 kortti poistetaan parituksesta tämän kääntöpuolen kanssa. Jatketaanko?",
   "warning.unpairFromBackFaceMultiple": "{count} korttia poistetaan parituksesta tämän kääntöpuolen kanssa. Jatketaanko?",
-  "heading.impactedDecks": "Vaikutuksen alaiset pakat"
+  "heading.impactedDecks": "Vaikutuksen alaiset pakat",
+  "label.recentlyUploaded": "Äskettäin ladatut",
+  "heading.desktopBrowserRecommended": "Työpöytäselainta suositellaan",
+  "label.desktopOptimized": "Optimoitu työpöydälle",
+  "tooltip.desktopOptimizedNotice": "Lue lisää työpöytäselainten yhteensopivuudesta",
+  "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator on tällä hetkellä optimoitu työpöytäselaimille.",
+  "notice.desktopOptimizedBodySecondary": "Sovellus voi silti avautua ja toimia osittain laitteellasi, mutta jotkin asettelut, vuorovaikutukset ja muokkaustyönkulut voivat olla hankalia pienemmillä näytöillä tai pääasiassa kosketuskäyttöisillä laitteilla."
 }

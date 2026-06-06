@@ -679,5 +679,11 @@
   "label.unknownVersion": "Nieznana",
   "warning.unpairFromBackFaceSingle": "1 karta zostanie rozparowana od tego rewersu. Kontynuować?",
   "warning.unpairFromBackFaceMultiple": "{count} kart zostanie rozparowanych od tego rewersu. Kontynuować?",
-  "heading.impactedDecks": "Objęte talie"
+  "heading.impactedDecks": "Objęte talie",
+  "label.recentlyUploaded": "Ostatnio przesłane",
+  "heading.desktopBrowserRecommended": "Zalecana przeglądarka komputerowa",
+  "label.desktopOptimized": "Zoptymalizowane pod desktop",
+  "tooltip.desktopOptimizedNotice": "Dowiedz się więcej o zgodności z przeglądarkami desktopowymi",
+  "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator jest obecnie zoptymalizowany pod przeglądarki desktopowe.",
+  "notice.desktopOptimizedBodySecondary": "Aplikacja może nadal otwierać się i częściowo działać na Twoim urządzeniu, ale niektóre układy, interakcje i przepływy edycji mogą być trudne na mniejszych ekranach lub urządzeniach nastawionych głównie na dotyk."
 }

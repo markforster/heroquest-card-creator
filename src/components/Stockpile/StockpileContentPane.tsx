@@ -21,6 +21,7 @@ type StockpileContentPaneProps = {
   totalCount: number;
   filterLabel: string;
   frame: "panel" | "modal";
+  isLoadingCards: boolean;
   isLibraryEmpty: boolean;
   hasActiveNarrowing: boolean;
   isTableView: boolean;
@@ -48,6 +49,7 @@ export default function StockpileContentPane({
   totalCount,
   filterLabel,
   frame,
+  isLoadingCards,
   isLibraryEmpty,
   hasActiveNarrowing,
   isTableView,
@@ -71,7 +73,11 @@ export default function StockpileContentPane({
         onClearSelection();
       }}
     >
-      {filteredCards.length === 0 ? (
+      {isLoadingCards && filteredCards.length === 0 ? (
+        <div className={styles.stockpileLoadingState} aria-hidden="true">
+          <div className={styles.spinner} />
+        </div>
+      ) : filteredCards.length === 0 ? (
         shouldShowLibraryEmptyState ? (
           <StockpileEmptyState />
         ) : (

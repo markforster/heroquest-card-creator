@@ -679,5 +679,11 @@
   "label.unknownVersion": "Okänd",
   "warning.unpairFromBackFaceSingle": "1 kort kommer att avparas från denna baksida. Fortsätta?",
   "warning.unpairFromBackFaceMultiple": "{count} kort kommer att avparas från denna baksida. Fortsätta?",
-  "heading.impactedDecks": "Påverkade kortlekar"
+  "heading.impactedDecks": "Påverkade kortlekar",
+  "label.recentlyUploaded": "Nyligen uppladdade",
+  "heading.desktopBrowserRecommended": "Skrivbordswebbläsare rekommenderas",
+  "label.desktopOptimized": "Optimerad för dator",
+  "tooltip.desktopOptimizedNotice": "Läs mer om kompatibilitet med skrivbordswebbläsare",
+  "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator är för närvarande optimerad för skrivbordswebbläsare.",
+  "notice.desktopOptimizedBodySecondary": "Appen kan fortfarande öppnas och fungera delvis på din enhet, men vissa layouter, interaktioner och redigeringsflöden kan vara svåra på mindre skärmar eller på enheter som främst är touch-baserade."
 }

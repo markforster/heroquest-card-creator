@@ -679,5 +679,11 @@
   "label.unknownVersion": "Neznámá",
   "warning.unpairFromBackFaceSingle": "1 karta bude odpárována od tohoto rubu. Pokračovat?",
   "warning.unpairFromBackFaceMultiple": "{count} karet bude odpárováno od tohoto rubu. Pokračovat?",
-  "heading.impactedDecks": "Dotčené balíčky"
+  "heading.impactedDecks": "Dotčené balíčky",
+  "label.recentlyUploaded": "Nedavno nahrané",
+  "heading.desktopBrowserRecommended": "Doporučen desktopový prohlížeč",
+  "label.desktopOptimized": "Optimalizováno pro desktop",
+  "tooltip.desktopOptimizedNotice": "Zjistit více o kompatibilitě s desktopovými prohlížeči",
+  "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator je v současnosti optimalizován pro desktopové prohlížeče.",
+  "notice.desktopOptimizedBodySecondary": "Aplikace se na vašem zařízení může stále otevřít a částečně fungovat, ale některá rozvržení, interakce a pracovní postupy úprav mohou být na menších obrazovkách nebo dotykových zařízeních obtížné."
 }

@@ -9,7 +9,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
-import { FolderPlus, Pencil, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, FolderPlus, Pencil, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -21,6 +21,7 @@ import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useEditorForm } from "@/components/Providers/EditorFormContext";
+import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import { getDeleteCollectionImpact } from "@/components/Stockpile/collection-delete-impact";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
@@ -99,6 +100,7 @@ type MissingAssetsPrompt = {
 };
 
 const STOCKPILE_VIEW_STORAGE_KEY = "hqcc.stockpileView";
+const STOCKPILE_FILTERS_PANEL_OPEN_STORAGE_KEY = "hqcc.stockpile.filtersPanelOpen";
 
 export default function StockpilePanelContent({
   isOpen,
@@ -130,6 +132,10 @@ export default function StockpilePanelContent({
   const [templateFilter, setTemplateFilter] = useState<string>("all");
   const [showUnpairedOnly, setShowUnpairedOnly] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [isFiltersPanelOpen, setIsFiltersPanelOpen] = useLocalStorageBoolean(
+    STOCKPILE_FILTERS_PANEL_OPEN_STORAGE_KEY,
+    true,
+  );
   const [isCollectionsDrawerOpen, setIsCollectionsDrawerOpen] = useState(false);
   const [isManagingCollections, setIsManagingCollections] = useState(false);
   const [collectionModalState, setCollectionModalState] = useState<{
@@ -170,7 +176,7 @@ export default function StockpilePanelContent({
     setActiveCard,
   } = useCardEditor();
   const { resetWithSaved } = useEditorForm();
-  const { cards, setCards, collections, setCollections } = useStockpileData({
+  const { cards, setCards, isLoadingCards, collections, setCollections } = useStockpileData({
     isOpen,
     refreshToken,
     activeFilter,
@@ -966,6 +972,10 @@ export default function StockpilePanelContent({
     return null;
   }
 
+  const filtersPanelToggleLabel = isFiltersPanelOpen
+    ? "Collapse collections panel"
+    : "Expand collections panel";
+
   const panel = (
     <>
       <DndContext
@@ -1204,6 +1214,7 @@ export default function StockpilePanelContent({
                       totalCount={totalCount}
                       filterLabel={filterLabel}
                       frame={frame}
+                      isLoadingCards={isLoadingCards}
                       isLibraryEmpty={isLibraryEmpty}
                       hasActiveNarrowing={hasActiveNarrowing}
                       isTableView={isTableView}
@@ -1248,75 +1259,106 @@ export default function StockpilePanelContent({
               ) : null}
               <div
                 className={`${styles.stockpileRightPanel} ${
+                  !isFiltersPanelOpen ? styles.stockpileRightPanelCollapsed : ""
+                } ${
                   isCollectionsDrawerOpen ? styles.stockpileRightPanelDrawerOpen : ""
                 }`}
               >
-                <StockpileSidebar
-                  footerActions={
-                    !isPairMode ? (
-                      <div className={styles.stockpileCollectionsFooterActions}>
-                        <button
-                          type="button"
-                          className={styles.stockpileCollectionsFooterButton}
-                          title={t("actions.newCollection")}
-                          aria-label={t("actions.newCollection")}
-                          onClick={() =>
-                            setCollectionModalState({ mode: "create", collectionId: null })
-                          }
-                        >
-                          <FolderPlus size={18} aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          className={`${styles.stockpileCollectionsFooterButton} ${
-                            isManagingCollections ? styles.stockpileCollectionsFooterButtonActive : ""
-                          }`}
-                          title={
-                            isManagingCollections ? t("actions.cancel") : t("actions.manageCollections")
-                          }
-                          aria-label={
-                            isManagingCollections ? t("actions.cancel") : t("actions.manageCollections")
-                          }
-                          aria-pressed={isManagingCollections}
-                          onClick={() => setIsManagingCollections((prev) => !prev)}
-                        >
-                          {isManagingCollections ? (
-                            <X size={18} aria-hidden="true" />
-                          ) : (
-                            <Pencil size={18} aria-hidden="true" />
-                          )}
-                        </button>
-                      </div>
-                    ) : null
-                  }
-                  onRequestClose={() => setIsCollectionsDrawerOpen(false)}
-                  onEditCollection={(collectionId) => {
-                    setCollectionModalState({ mode: "edit", collectionId });
-                  }}
-                  onDeleteCollection={(collectionId) => {
-                    setDeleteCollectionPrompt({ collectionId });
-                  }}
-                  isManagingCollections={isManagingCollections}
-                  activeFilter={activeFilter}
-                  onFilterChange={(next) => {
-                    setActiveFilter(next);
-                    setIsCollectionsDrawerOpen(false);
-                  }}
-                  isPairMode={isPairMode}
-                  showMissingArtworkOnly={showMissingArtworkOnly}
-                  collectionsWithMissingArtwork={collectionsWithMissingArtwork}
-                  selectedIds={selectedIds}
-                  onClearSelection={() => setSelectedIds([])}
-                  recentCardsCount={recentCards.length}
-                  recentlyDeletedCount={recentlyDeletedCount}
-                  recentlyDeletedTotalCount={recentlyDeletedTotalCount}
-                  overallCount={overallCount}
-                  unfiledCount={unfiledCount}
-                  visibleCollections={visibleCollections}
-                  collectionCounts={collectionCounts}
-                  selectedCountByCollection={selectedCountByCollection}
-                  dragEnabled={dragEnabled}
-                />
+                <button
+                  type="button"
+                  className={styles.stockpileRightPanelToggle}
+                  onClick={() => setIsFiltersPanelOpen(!isFiltersPanelOpen)}
+                  title={filtersPanelToggleLabel}
+                  aria-label={filtersPanelToggleLabel}
+                >
+                  {isFiltersPanelOpen ? (
+                    <ChevronRight
+                      className={styles.stockpileRightPanelToggleIcon}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <ChevronLeft className={styles.stockpileRightPanelToggleIcon} aria-hidden="true" />
+                  )}
+                </button>
+                <div
+                  className={`${styles.stockpileRightPanelContent} ${
+                    !isFiltersPanelOpen ? styles.stockpileRightPanelContentCollapsed : ""
+                  }`}
+                  aria-hidden={!isFiltersPanelOpen}
+                >
+                  <StockpileSidebar
+                    footerActions={
+                      !isPairMode ? (
+                        <div className={styles.stockpileCollectionsFooterActions}>
+                          <button
+                            type="button"
+                            className={styles.stockpileCollectionsFooterButton}
+                            title={t("actions.newCollection")}
+                            aria-label={t("actions.newCollection")}
+                            onClick={() =>
+                              setCollectionModalState({ mode: "create", collectionId: null })
+                            }
+                          >
+                            <FolderPlus size={18} aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            className={`${styles.stockpileCollectionsFooterButton} ${
+                              isManagingCollections
+                                ? styles.stockpileCollectionsFooterButtonActive
+                                : ""
+                            }`}
+                            title={
+                              isManagingCollections
+                                ? t("actions.cancel")
+                                : t("actions.manageCollections")
+                            }
+                            aria-label={
+                              isManagingCollections
+                                ? t("actions.cancel")
+                                : t("actions.manageCollections")
+                            }
+                            aria-pressed={isManagingCollections}
+                            onClick={() => setIsManagingCollections((prev) => !prev)}
+                          >
+                            {isManagingCollections ? (
+                              <X size={18} aria-hidden="true" />
+                            ) : (
+                              <Pencil size={18} aria-hidden="true" />
+                            )}
+                          </button>
+                        </div>
+                      ) : null
+                    }
+                    onRequestClose={() => setIsCollectionsDrawerOpen(false)}
+                    onEditCollection={(collectionId) => {
+                      setCollectionModalState({ mode: "edit", collectionId });
+                    }}
+                    onDeleteCollection={(collectionId) => {
+                      setDeleteCollectionPrompt({ collectionId });
+                    }}
+                    isManagingCollections={isManagingCollections}
+                    activeFilter={activeFilter}
+                    onFilterChange={(next) => {
+                      setActiveFilter(next);
+                      setIsCollectionsDrawerOpen(false);
+                    }}
+                    isPairMode={isPairMode}
+                    showMissingArtworkOnly={showMissingArtworkOnly}
+                    collectionsWithMissingArtwork={collectionsWithMissingArtwork}
+                    selectedIds={selectedIds}
+                    onClearSelection={() => setSelectedIds([])}
+                    recentCardsCount={recentCards.length}
+                    recentlyDeletedCount={recentlyDeletedCount}
+                    recentlyDeletedTotalCount={recentlyDeletedTotalCount}
+                    overallCount={overallCount}
+                    unfiledCount={unfiledCount}
+                    visibleCollections={visibleCollections}
+                    collectionCounts={collectionCounts}
+                    selectedCountByCollection={selectedCountByCollection}
+                    dragEnabled={dragEnabled}
+                  />
+                </div>
               </div>
             </div>
           </div>

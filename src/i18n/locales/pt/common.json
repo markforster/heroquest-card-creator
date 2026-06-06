@@ -679,5 +679,11 @@
   "label.unknownVersion": "Desconhecida",
   "warning.unpairFromBackFaceSingle": "1 carta será desemparelhada deste verso. Continuar?",
   "warning.unpairFromBackFaceMultiple": "{count} cartas serão desemparelhadas deste verso. Continuar?",
-  "heading.impactedDecks": "Baralhos impactados"
+  "heading.impactedDecks": "Baralhos impactados",
+  "label.recentlyUploaded": "Carregados recentemente",
+  "heading.desktopBrowserRecommended": "Navegador de desktop recomendado",
+  "label.desktopOptimized": "Otimizado para desktop",
+  "tooltip.desktopOptimizedNotice": "Saiba mais sobre a compatibilidade com navegadores de desktop",
+  "notice.desktopOptimizedBodyPrimary": "O HeroQuest Card Creator está atualmente otimizado para navegadores de desktop.",
+  "notice.desktopOptimizedBodySecondary": "A aplicação pode ainda abrir e funcionar parcialmente no seu dispositivo, mas alguns esquemas, interações e fluxos de edição podem ser difíceis em ecrãs mais pequenos ou dispositivos maioritariamente táteis."
 }

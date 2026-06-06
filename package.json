@@ -112,6 +112,7 @@
     "mime": "^3.0.0",
     "pica": "^9.0.1",
     "pdf-lib": "^1.17.1",
+    "react-device-detect": "^2.2.3",
     "react-i18next": "^17.0.8",
     "react-select": "^5.10.2",
     "recharts": "^3.8.0",

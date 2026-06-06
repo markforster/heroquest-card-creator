@@ -679,5 +679,11 @@
   "label.unknownVersion": "Unbekannt",
   "warning.unpairFromBackFaceSingle": "1 Karte wird von dieser Rückseite entkoppelt. Fortfahren?",
   "warning.unpairFromBackFaceMultiple": "{count} Karten werden von dieser Rückseite entkoppelt. Fortfahren?",
-  "heading.impactedDecks": "Betroffene Decks"
+  "heading.impactedDecks": "Betroffene Decks",
+  "label.recentlyUploaded": "Kürzlich hochgeladen",
+  "heading.desktopBrowserRecommended": "Desktop-Browser empfohlen",
+  "label.desktopOptimized": "Für Desktop optimiert",
+  "tooltip.desktopOptimizedNotice": "Mehr über die Kompatibilität mit Desktop-Browsern erfahren",
+  "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator ist derzeit für Desktop-Browser optimiert.",
+  "notice.desktopOptimizedBodySecondary": "Die App kann auf deinem Gerät möglicherweise trotzdem geöffnet werden und teilweise funktionieren, aber einige Layouts, Interaktionen und Bearbeitungsabläufe können auf kleineren Bildschirmen oder Touch-Geräten schwierig sein."
 }

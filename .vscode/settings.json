@@ -15,5 +15,16 @@
   },
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "i18n-ally.localesPaths": [
+    "scripts/i18n",
+    "src/i18n",
+    "artefacts/coverage/i18n",
+    "src/i18n/locales",
+    "artefacts/coverage/i18n/messages",
+    "artefacts/coverage/lcov-report/i18n",
+    "artefacts/coverage/src/i18n",
+    "artefacts/coverage/lcov-report/i18n/messages",
+    "artefacts/coverage/lcov-report/src/i18n"
+  ]
 }
