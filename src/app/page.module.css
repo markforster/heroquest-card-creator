@@ -4673,6 +4673,7 @@
 .stockpileRightPanel {
   flex: 0 0 20em;
   max-width: 20em;
+  min-width: 20em;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -4681,6 +4682,57 @@
   background: linear-gradient(135deg, var(--hq-right-panel-bg-start), var(--hq-surface-900));
   border-left: 1px solid var(--hq-border-strong);
   box-shadow: inset 1px 0 0 var(--hq-white-05);
+}
+
+.stockpileRightPanelCollapsed {
+  flex-basis: 28px;
+  width: 28px;
+  min-width: 28px;
+  max-width: 28px;
+}
+
+.stockpileRightPanelToggle {
+  flex: 0 0 auto;
+  border: 1px solid var(--hq-border-strong);
+  background: var(--hq-surface-750);
+  color: inherit;
+  border-radius: var(--radius-pill);
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: absolute;
+  top: var(--space-10);
+  left: -11px;
+  z-index: 5;
+  box-shadow: var(--shadow-soft);
+}
+
+.stockpileRightPanelToggle:hover {
+  background: var(--hq-surface-700);
+}
+
+.stockpileRightPanelToggleIcon {
+  width: 12px;
+  height: 12px;
+}
+
+.stockpileRightPanelContent {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.stockpileRightPanelContentCollapsed {
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
 }
 
 .stockpileCollectionsBackdrop {
