@@ -49,6 +49,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
         "heading.addToCollection": "Add to collection",
         "actions.close": "Close",
         "form.targetCollection": "Target collection",
+        "form.selectCollectionPlaceholder": "Select a collection",
         "actions.add": "Add",
         "actions.cancel": "Cancel",
       };

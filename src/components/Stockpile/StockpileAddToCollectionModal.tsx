@@ -82,7 +82,7 @@ export default function StockpileAddToCollectionModal({
               includeSystemFilters={false}
               showCounts={false}
               allowEmptySelection
-              placeholder="Select a collection"
+              placeholder={t("form.selectCollectionPlaceholder")}
             />
           </label>
           <div className={styles.stockpileOverlayActions}>

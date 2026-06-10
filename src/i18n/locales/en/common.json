@@ -203,6 +203,7 @@
   "form.searchCards": "Search cards",
   "form.enableStatLabelOverrides": "Enable stat label overrides",
   "form.targetCollection": "Target collection",
+  "form.selectCollectionPlaceholder": "Select a collection",
   "helper.defaultCopyright": "This text appears on new front-facing cards unless overridden.",
   "helper.copyrightUsesDefault": "Uses the global default if left empty.",
   "placeholders.collectionName": "Name",
