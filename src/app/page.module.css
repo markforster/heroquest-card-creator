@@ -7776,6 +7776,142 @@ button.assetsKindBadge:disabled {
   font-weight: 500;
 }
 
+.inspectorCollectionsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.inspectorCollectionsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+}
+
+.inspectorCollectionsFolderBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.inspectorCollectionsFolderRow {
+  width: 100%;
+}
+
+.inspectorCollectionsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--hq-gray-200);
+  cursor: default;
+}
+
+.inspectorCollectionsRowMain {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.inspectorCollectionsLabel {
+  min-width: 0;
+}
+
+.inspectorCollectionsActionButton {
+  border: 1px solid var(--hq-white-15);
+  background: var(--hq-white-06);
+  color: var(--hq-text);
+  border-radius: var(--radius-sm);
+  min-width: 70px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.inspectorCollectionsActionButton:hover:enabled {
+  background: var(--hq-white-12);
+}
+
+.inspectorCollectionsActionButtonAdd {
+  color: #4ade80;
+}
+
+.inspectorCollectionsActionButtonAdd:hover:enabled {
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+.inspectorCollectionsIconActionButtonAdd {
+  background: #2f8f3d;
+  color: #f5f1e6;
+  border: 1px solid #1f6d2c;
+}
+
+.inspectorCollectionsIconActionButtonAdd:hover:enabled {
+  background: #39a04a;
+  border-color: #2c7f38;
+}
+
+.inspectorCollectionsIconActionButtonAdd svg {
+  color: #f5f1e6;
+}
+
+.inspectorCollectionsIconActionButtonRemove {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+
+.inspectorCollectionsIconActionButtonRemove:hover:enabled {
+  background: #ef4444;
+  color: #f5f1e6;
+  border-color: #ef4444;
+}
+
+.inspectorCollectionsIconActionButtonRemove svg {
+  color: currentColor;
+}
+
+.inspectorCollectionsActionButtonRemove {
+  color: #f87171;
+}
+
+.inspectorCollectionsActionButtonRemove:hover:enabled {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.inspectorCollectionsIconActionButton {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  flex: 0 0 28px;
+}
+
+.inspectorCollectionsModalPanel {
+  width: min(360px, 100% - 2rem);
+}
+
+.inspectorCollectionsModalBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: min(420px, 60vh);
+  overflow-y: auto;
+}
+
 .decksRightTitle {
   font-size: var(--text-md);
   font-weight: 600;
