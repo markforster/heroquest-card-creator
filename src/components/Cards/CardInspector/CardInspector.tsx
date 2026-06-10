@@ -1,6 +1,6 @@
 "use client";
 
-import { Combine, Info, Layers } from "lucide-react";
+import { Combine, Info, Layers, SquareStack } from "lucide-react";
 import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 
@@ -8,11 +8,12 @@ import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
+import CollectionsInspectorPanel from "./CollectionsInspectorPanel";
 import GenericInspectorForm from "./GenericInspectorForm";
 import DecksInspectorPanel from "./DecksInspectorPanel";
 import PairingInspectorPanel from "./PairingInspectorPanel";
 
-type InspectorMode = "form" | "pairing" | "decks";
+type InspectorMode = "form" | "pairing" | "collections" | "decks";
 
 type InspectorModeConfig = {
   id: InspectorMode;
@@ -43,6 +44,7 @@ export default function CardInspector({
   const modes: InspectorModeConfig[] = [
     { id: "form", label: t("label.formView"), Icon: Info },
     { id: "pairing", label: t("label.pairingView"), Icon: Combine },
+    { id: "collections", label: t("label.collections"), Icon: SquareStack },
     { id: "decks", label: t("label.decksView"), Icon: Layers },
   ];
   const activeMode = modes.find((item) => item.id === mode) ?? modes[0];
@@ -73,6 +75,8 @@ export default function CardInspector({
               onRememberBackId={onRememberBackId}
               pairingReferenceId={pairingReferenceId}
             />
+          ) : mode === "collections" ? (
+            <CollectionsInspectorPanel />
           ) : (
             <DecksInspectorPanel />
           )}
