@@ -1,7 +1,7 @@
 "use client";
 
-import AssetsPanelContent from "@/components/Assets/AssetsPanelContent";
 import type { AssetRecord } from "@/api/assets";
+import AssetsPanelContent from "@/components/Assets/AssetsPanelContent";
 import type { AssetKindGroupId } from "@/lib/assets-grouping";
 
 type AssetsMainPanelMode = "manage" | "select";

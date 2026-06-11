@@ -18,14 +18,25 @@ import {
 import { getUsageBoundsForTemplate } from "@/components/Assets/asset-inspector-usage";
 import AssetInspectorPreview from "@/components/Assets/AssetInspectorPreview";
 import type {
+  ConvertPreviewState,
+  FrameSize,
+  OptimizePreviewState,
+  PendingReplaceState,
+} from "@/components/Assets/AssetsInspector.types";
+import type {
   AssetUsage,
   AssetUsageBounds,
   UsagePopoverAnchor,
 } from "@/components/Assets/AssetsRoutePanels.types";
 import AssetsUsageCardsPopover from "@/components/Assets/AssetsUsageCardsPopover";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
+import {
+  AssetsConvertModal,
+  AssetsOptimizeModal,
+  AssetsPreviewModal,
+  AssetsReplaceModal,
+} from "@/components/Assets/modals";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
-import ModalShell from "@/components/common/ModalShell";
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
@@ -41,11 +52,6 @@ import { optimizeImageBlob } from "@/lib/image-optimization";
 import type { TemplateId } from "@/types/templates";
 
 import type { ChangeEvent } from "react";
-
-type FrameSize = {
-  width: number;
-  height: number;
-};
 
 type AssetsInspectorProps = {
   assets: AssetRecord[];
@@ -88,24 +94,11 @@ export default function AssetsInspector({
   const [isUsagePopoverOpen, setIsUsagePopoverOpen] = useState(false);
   const [pendingOpenCard, setPendingOpenCard] = useState<CardRecord | null>(null);
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
-  const [pendingReplace, setPendingReplace] = useState<{
-    file: File;
-    width: number;
-    height: number;
-    mimeType: string;
-    sizeBytes: number;
-    previewUrl?: string | null;
-  } | null>(null);
+  const [pendingReplace, setPendingReplace] = useState<PendingReplaceState | null>(null);
   const [optimizeScalePercent, setOptimizeScalePercent] = useState(100);
   const [optimizeQuality, setOptimizeQuality] = useState(0.85);
   const [optimizeSource, setOptimizeSource] = useState<Blob | null>(null);
-  const [optimizePreview, setOptimizePreview] = useState<{
-    blob: Blob;
-    url: string;
-    width: number;
-    height: number;
-    bytes: number;
-  } | null>(null);
+  const [optimizePreview, setOptimizePreview] = useState<OptimizePreviewState | null>(null);
   const [isOptimizeOpen, setIsOptimizeOpen] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isApplyingOptimization, setIsApplyingOptimization] = useState(false);
@@ -115,11 +108,7 @@ export default function AssetsInspector({
   const [isConverting, setIsConverting] = useState(false);
   const [isApplyingConvert, setIsApplyingConvert] = useState(false);
   const [convertQuality, setConvertQuality] = useState(0.85);
-  const [convertPreview, setConvertPreview] = useState<{
-    blob: Blob;
-    url: string;
-    bytes: number;
-  } | null>(null);
+  const [convertPreview, setConvertPreview] = useState<ConvertPreviewState | null>(null);
   const [convertError, setConvertError] = useState<string | null>(null);
   const [convertInspect, setConvertInspect] = useState(false);
   const [convertPan, setConvertPan] = useState({ x: 0, y: 0 });
@@ -940,11 +929,12 @@ export default function AssetsInspector({
     optimizeSource && optimizePreview ? optimizePreview.bytes - optimizeSource.size : null;
   const hasSizeReduction = typeof optimizeDelta === "number" && optimizeDelta < 0;
   const hasSizeIncrease = typeof optimizeDelta === "number" && optimizeDelta > 0;
-  const hasDimensionReduction =
+  const hasDimensionReduction = Boolean(
     optimizePreview &&
-    (optimizePreview.width < asset.width || optimizePreview.height < asset.height);
+      (optimizePreview.width < asset.width || optimizePreview.height < asset.height),
+  );
   const canApplyOptimization =
-    Boolean(optimizePreview) && (hasSizeReduction || hasDimensionReduction);
+    Boolean(optimizePreview) && Boolean(hasSizeReduction || hasDimensionReduction);
   const pixelationScale =
     optimizePreview && requiredWidth > 0 && requiredHeight > 0
       ? Math.max(
@@ -1333,510 +1323,187 @@ export default function AssetsInspector({
       >
         {t("confirm.saveBeforeViewBody")}
       </ConfirmModal>
-      <ModalShell
+      <AssetsPreviewModal
         isOpen={isPreviewModalOpen}
         onClose={() => setIsPreviewModalOpen(false)}
-        title={`${t("label.preview")}: ${getDisplayAssetName(asset.name)}`}
-        contentClassName={styles.assetsPreviewModalPopover}
-      >
-        <div className={styles.assetsPreviewModalBody}>
-          <AssetInspectorPreview
-            previewUrl={previewUrl}
-            isLoading={isPreviewLoading}
-            alt={asset.name}
-            emptyContent={t("empty.noPreview")}
-            variant="modal"
-            containerClassName={styles.assetsPreviewModalFrame}
-          />
-        </div>
-      </ModalShell>
-      <ModalShell
+        previewUrl={previewUrl}
+        isLoading={isPreviewLoading}
+        assetName={asset.name}
+      />
+      <AssetsReplaceModal
         isOpen={Boolean(pendingReplace)}
         onClose={closeReplaceModal}
-        title={t("heading.replaceImage")}
-        contentClassName={styles.assetsReplacePopover}
-        footer={
-          <div className="d-flex gap-2 justify-content-end">
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              onClick={closeReplaceModal}
-              disabled={isReplacing}
-            >
-              {t("actions.cancel")}
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={handleReplaceConfirm}
-              disabled={isReplacing}
-            >
-              {t("actions.replace")}
-            </button>
-          </div>
+        onConfirm={handleReplaceConfirm}
+        isReplacing={isReplacing}
+        previewUrl={previewUrl}
+        assetName={asset.name}
+        pendingReplace={pendingReplace}
+        pendingMismatch={pendingMismatch}
+        originalResolution={`${asset.width}×${asset.height}`}
+        replacementResolution={
+          pendingReplace ? `${pendingReplace.width}×${pendingReplace.height}` : "—"
         }
-      >
-        <div className={styles.assetsOptimizeBody}>
-          <div className={styles.assetsReplaceLayout}>
-            <div className={styles.assetsReplacePanel}>
-              <div className={styles.assetsReplaceLabel}>{t("label.original")}</div>
-              <div className={styles.assetsReplaceFrame}>
-                {previewUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={previewUrl} alt={asset.name} />
-                ) : (
-                  <div className={styles.assetsReplacePlaceholder}>{t("empty.noPreview")}</div>
-                )}
-              </div>
-            </div>
-            <div className={styles.assetsReplacePanel}>
-              <div className={styles.assetsReplaceLabel}>{t("label.replacement")}</div>
-              <div className={styles.assetsReplaceFrame}>
-                {pendingReplace?.previewUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={pendingReplace.previewUrl} alt={asset.name} />
-                ) : (
-                  <div className={styles.assetsReplacePlaceholder}>{t("empty.noPreview")}</div>
-                )}
-              </div>
-            </div>
-            <aside className={styles.assetsReplaceSidebar}>
-              {pendingMismatch ? (
-                <div className={styles.assetsReplaceWarning}>
-                  {t("confirm.replaceDifferentDimensionsBody")
-                    .replace("{old}", `${asset.width}×${asset.height}`)
-                    .replace("{next}", `${pendingReplace?.width ?? 0}×${pendingReplace?.height ?? 0}`)}
-                </div>
-              ) : (
-                <div className={styles.assetsInspectorReplaceInfo}>{t("confirm.replaceBody")}</div>
-              )}
-              <div className={styles.assetsReplaceSummary}>
-                <div>
-                  {t("label.originalResolution")}: {asset.width}×{asset.height}
-                </div>
-                <div>
-                  {t("label.replacementResolution")}:{" "}
-                  {pendingReplace ? `${pendingReplace.width}×${pendingReplace.height}` : "—"}
-                </div>
-                <div>
-                  {t("label.originalSize")}: {assetSizeBytes != null ? formatBytes(assetSizeBytes) : "—"}
-                </div>
-                <div>
-                  {t("label.replacementSize")}:{" "}
-                  {pendingReplace ? formatBytes(pendingReplace.sizeBytes) : "—"}
-                </div>
-                <div>
-                  {t("label.fileType")}: {asset.mimeType}
-                </div>
-                <div>
-                  {t("label.replacementType")}: {pendingReplace?.mimeType ?? "—"}
-                </div>
-              </div>
-              <label className={styles.assetsInspectorReplaceToggle}>
-                <input
-                  type="checkbox"
-                  className="form-check-input hq-checkbox"
-                  checked={keepBackup}
-                  onChange={(event) => setKeepBackup(event.target.checked)}
-                  disabled={isReplacing}
-                />
-                <span>{t("label.keepBackup")}</span>
-              </label>
-            </aside>
-          </div>
-        </div>
-      </ModalShell>
-      <ModalShell
+        originalSize={assetSizeBytes != null ? formatBytes(assetSizeBytes) : "—"}
+        replacementSize={pendingReplace ? formatBytes(pendingReplace.sizeBytes) : "—"}
+        fileType={asset.mimeType}
+        replacementType={pendingReplace?.mimeType ?? "—"}
+        keepBackup={keepBackup}
+        onKeepBackupChange={setKeepBackup}
+      />
+      <AssetsOptimizeModal
         isOpen={isOptimizeOpen}
         onClose={() => {
           if (isApplyingOptimization) return;
           setIsOptimizeOpen(false);
         }}
-        title={t("heading.optimizeImage")}
-        contentClassName={styles.assetsReplacePopover}
-        footer={
-          <div className={styles.assetsOptimizeFooter}>
-            <div className={styles.assetsOptimizeFooterHint}>{t("helper.optimizeOverwrite")}</div>
-            <div className={styles.assetsOptimizeFooterActions}>
-              <button
-                type="button"
-                className="btn btn-outline-secondary btn-sm"
-                onClick={() => setIsOptimizeOpen(false)}
-                disabled={isApplyingOptimization}
-              >
-                {t("actions.cancel")}
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => void handleOptimizeApply()}
-                disabled={isOptimizing || isApplyingOptimization || !optimizePreview || !canApplyOptimization}
-              >
-                {t("actions.apply")}
-              </button>
-            </div>
-          </div>
+        onApply={() => void handleOptimizeApply()}
+        isApplyingOptimization={isApplyingOptimization}
+        isOptimizing={isOptimizing}
+        optimizePreview={optimizePreview}
+        canApplyOptimization={canApplyOptimization}
+        optimizeStatus={optimizeStatus}
+        optimizeReasons={optimizeReasons}
+        previewUrl={previewUrl}
+        assetName={asset.name}
+        originalFrameRef={originalFrameRef}
+        optimizedFrameRef={optimizedFrameRef}
+        onInspectMove={handleInspectMove}
+        onInspectLeave={handleInspectLeave}
+        buildInspectStyle={buildInspectStyle}
+        originalFrameSize={originalFrameSize}
+        optimizedFrameSize={optimizedFrameSize}
+        assetWidth={asset.width}
+        assetHeight={asset.height}
+        optimizeScalePercent={optimizeScalePercent}
+        onOptimizeScaleChange={(nextValue) => {
+          if (!Number.isFinite(nextValue)) return;
+          setOptimizeScalePercent(Math.min(100, Math.max(10, nextValue)));
+        }}
+        pixelationThresholdPercent={pixelationThresholdPercent}
+        isJpegLike={isJpegLike}
+        optimizeQuality={optimizeQuality}
+        onOptimizeQualityChange={(nextValue) => {
+          if (!Number.isFinite(nextValue)) return;
+          const clamped = Math.min(100, Math.max(10, nextValue));
+          setOptimizeQuality(clamped / 100);
+        }}
+        originalSize={optimizeSource ? formatBytes(optimizeSource.size) : "—"}
+        optimizedSize={optimizePreview ? formatBytes(optimizePreview.bytes) : "—"}
+        sizeChangeValue={
+          optimizeSource && optimizePreview
+            ? (() => {
+                if (optimizeSource.size === 0) return "—";
+                const diff = optimizePreview.bytes - optimizeSource.size;
+                if (diff === 0) return t("label.sizeUnchanged");
+                const percent = Math.abs(diff) / optimizeSource.size;
+                const percentLabel = `${Math.round(percent * 100)}%`;
+                return diff < 0
+                  ? `${t("label.sizeReduction")} ${percentLabel}`
+                  : `${t("label.sizeIncrease")} ${percentLabel}`;
+              })()
+            : "—"
         }
-      >
-        <div className={styles.assetsOptimizeBody}>
-          <div className={styles.assetsOptimizeLayout}>
-            <div className={styles.assetsOptimizePreview}>
-              <div className={styles.assetsOptimizePanel}>
-                <div className={styles.assetsOptimizeLabel}>{t("label.original")}</div>
-                <div
-                  className={styles.assetsOptimizeFrame}
-                  ref={originalFrameRef}
-                  onMouseMove={handleInspectMove}
-                  onMouseLeave={handleInspectLeave}
-                >
-                  {previewUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={previewUrl}
-                      alt={asset.name}
-                      style={buildInspectStyle(originalFrameSize, {
-                        width: asset.width,
-                        height: asset.height,
-                      })}
-                    />
-                  ) : (
-                    <div className={styles.assetsOptimizePlaceholder}>{t("empty.noPreview")}</div>
-                  )}
-                  <div className={styles.assetsOptimizeZoomBadge}>
-                    {t("label.zoom")} {INSPECT_ZOOM}×
-                  </div>
-                </div>
-              </div>
-              <div className={styles.assetsOptimizePanel}>
-                <div className={styles.assetsOptimizeLabel}>{t("label.optimized")}</div>
-                <div
-                  className={`${styles.assetsOptimizeFrame} ${styles.assetsOptimizeFrameFill}`}
-                  ref={optimizedFrameRef}
-                  onMouseMove={handleInspectMove}
-                  onMouseLeave={handleInspectLeave}
-                >
-                  {optimizePreview ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={optimizePreview.url}
-                      alt={asset.name}
-                      style={buildInspectStyle(optimizedFrameSize, {
-                        width: optimizePreview.width,
-                        height: optimizePreview.height,
-                      })}
-                    />
-                  ) : (
-                    <div className={styles.assetsOptimizePlaceholder}>
-                      {isOptimizing ? t("status.optimizing") : t("empty.noPreview")}
-                    </div>
-                  )}
-                  <div className={styles.assetsOptimizeZoomBadge}>
-                    {t("label.zoom")} {INSPECT_ZOOM}×
-                  </div>
-                </div>
-              </div>
-            </div>
-            <aside className={styles.assetsOptimizeSidebar}>
-              {optimizeStatus ? (
-                <div className={styles.assetsOptimizeStatus}>
-                  <span>{optimizeStatus}</span>
-                  {optimizeReasons.length > 0 ? (
-                    <span className={styles.assetsOptimizeInfo}>
-                      <span
-                        className={styles.assetsOptimizeInfoIcon}
-                        aria-label={t("label.moreInfo")}
-                      >
-                        i
-                      </span>
-                      <div className={styles.assetsOptimizeInfoPopover}>
-                        {optimizeReasons.map((reason) => (
-                          <div key={reason}>{reason}</div>
-                        ))}
-                      </div>
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-              <div className={styles.assetsOptimizeControls}>
-                <div className={styles.assetsOptimizeControlRow}>
-                  <label htmlFor="optimize-scale">{t("label.scale")}</label>
-                  <div className={styles.assetsOptimizeSlider}>
-                    <div className={styles.assetsOptimizeSliderTrack}>
-                      <input
-                        id="optimize-scale"
-                        type="range"
-                        min={10}
-                        max={100}
-                        step={1}
-                        value={optimizeScalePercent}
-                        onChange={(event) => {
-                          const nextValue = Number(event.target.value);
-                          if (!Number.isFinite(nextValue)) return;
-                          setOptimizeScalePercent(Math.min(100, Math.max(10, nextValue)));
-                        }}
-                      />
-                      {typeof pixelationThresholdPercent === "number" ? (
-                        <div
-                          className={styles.assetsOptimizeSliderMarker}
-                          style={{ left: `${pixelationThresholdPercent}%` }}
-                          title={t("label.pixelationThreshold")}
-                        />
-                      ) : null}
-                    </div>
-                    <span>{optimizeScalePercent}%</span>
-                  </div>
-                </div>
-                {isJpegLike ? (
-                  <div className={styles.assetsOptimizeControlRow}>
-                    <label htmlFor="optimize-quality">{t("label.quality")}</label>
-                    <div className={styles.assetsOptimizeSlider}>
-                      <div className={styles.assetsOptimizeSliderTrack}>
-                        <input
-                          id="optimize-quality"
-                          type="range"
-                          min={10}
-                          max={100}
-                          step={1}
-                          value={Math.round(optimizeQuality * 100)}
-                          onChange={(event) => {
-                            const nextValue = Number(event.target.value);
-                            if (!Number.isFinite(nextValue)) return;
-                            const clamped = Math.min(100, Math.max(10, nextValue));
-                            setOptimizeQuality(clamped / 100);
-                          }}
-                        />
-                      </div>
-                      <span>{Math.round(optimizeQuality * 100)}%</span>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-              <div className={styles.assetsOptimizeSummary}>
-                <div>
-                  {t("label.originalResolution")}: {asset.width}×{asset.height}
-                </div>
-                <div>
-                  {t("label.optimizedResolution")}:{" "}
-                  {optimizePreview ? `${optimizePreview.width}×${optimizePreview.height}` : "—"}
-                </div>
-                <div>
-                  {t("label.originalSize")}: {optimizeSource ? formatBytes(optimizeSource.size) : "—"}
-                </div>
-                <div>
-                  {t("label.optimizedSize")}: {optimizePreview ? formatBytes(optimizePreview.bytes) : "—"}
-                </div>
-                <div>
-                  {t("label.sizeChange")}:{" "}
-                  {optimizeSource && optimizePreview ? (
-                    <span
-                      className={
-                        hasSizeReduction
-                          ? styles.assetsOptimizeDeltaGood
-                          : hasSizeIncrease
-                            ? styles.assetsOptimizeDeltaBad
-                            : undefined
-                      }
-                    >
-                      {(() => {
-                        if (optimizeSource.size === 0) return "—";
-                        const diff = optimizePreview.bytes - optimizeSource.size;
-                        if (diff === 0) return t("label.sizeUnchanged");
-                        const percent = Math.abs(diff) / optimizeSource.size;
-                        const percentLabel = `${Math.round(percent * 100)}%`;
-                        return diff < 0
-                          ? `${t("label.sizeReduction")} ${percentLabel}`
-                          : `${t("label.sizeIncrease")} ${percentLabel}`;
-                      })()}
-                    </span>
-                  ) : (
-                    "—"
-                  )}
-                </div>
-              </div>
-              {optimizeError ? <div className={styles.assetsOptimizeError}>{optimizeError}</div> : null}
-            </aside>
-          </div>
-        </div>
-      </ModalShell>
-      <ModalShell
+        sizeChangeClassName={
+          optimizeSource && optimizePreview
+            ? hasSizeReduction
+              ? styles.assetsOptimizeDeltaGood
+              : hasSizeIncrease
+                ? styles.assetsOptimizeDeltaBad
+                : undefined
+            : undefined
+        }
+        optimizeError={optimizeError}
+      />
+      <AssetsConvertModal
         isOpen={isConvertOpen}
         onClose={closeConvertModal}
-        title={t("heading.convertToJpeg")}
-        contentClassName={styles.assetsOptimizePopover}
-        footer={
-          <div className="d-flex gap-2 justify-content-end">
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              onClick={closeConvertModal}
-              disabled={isApplyingConvert}
-            >
-              {t("actions.cancel")}
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={handleConvertApply}
-              disabled={isApplyingConvert || isConverting || !convertPreview}
-            >
-              {t("actions.apply")}
-            </button>
-          </div>
+        onApply={handleConvertApply}
+        isApplyingConvert={isApplyingConvert}
+        isConverting={isConverting}
+        convertPreview={convertPreview}
+        assetName={asset.name}
+        convertError={convertError}
+        convertFrameRef={convertFrameRef}
+        convertImgRef={convertImgRef}
+        convertInspectRef={convertInspectRef}
+        onMouseEnter={(event) => {
+          convertLastPointRef.current = { x: event.clientX, y: event.clientY };
+        }}
+        onMouseMove={(event) => {
+          if (!convertPreview || !convertFrameRef.current || !convertImgRef.current) {
+            return;
+          }
+          if (!convertInspectRef.current) return;
+          const rect = convertInspectRef.current.getBoundingClientRect();
+          const width = convertImageSize.width || convertImgRef.current.naturalWidth;
+          const height = convertImageSize.height || convertImgRef.current.naturalHeight;
+          if (!width || !height) return;
+          const viewportWidth = rect.width;
+          const viewportHeight = rect.height;
+          if (width <= viewportWidth && height <= viewportHeight) {
+            setConvertInspect(false);
+            setConvertPan({ x: 0, y: 0 });
+            return;
+          }
+          const last = convertLastPointRef.current;
+          const nextPoint = { x: event.clientX, y: event.clientY };
+          convertLastPointRef.current = nextPoint;
+          if (!convertInspect) {
+            if (!last) return;
+            const delta = Math.abs(nextPoint.x - last.x) + Math.abs(nextPoint.y - last.y);
+            if (delta < CONVERT_INSPECT_THRESHOLD_PX) return;
+            setConvertInspect(true);
+          }
+          const contentX = event.clientX - rect.left;
+          const contentY = event.clientY - rect.top;
+          const fx = Math.min(1, Math.max(0, contentX / viewportWidth));
+          const fy = Math.min(1, Math.max(0, contentY / viewportHeight));
+          const maxX = width - viewportWidth;
+          const maxY = height - viewportHeight;
+          setConvertPan({
+            x: -fx * maxX,
+            y: -fy * maxY,
+          });
+        }}
+        onMouseLeave={() => {
+          setConvertInspect(false);
+          setConvertPan({ x: 0, y: 0 });
+          convertLastPointRef.current = null;
+        }}
+        containerStyle={
+          convertPreview
+            ? ({
+                ["--asset-preview-url" as const]: `url("${convertPreview.url}")`,
+              } as React.CSSProperties)
+            : undefined
         }
-      >
-        <div className={styles.assetsOptimizeBody}>
-          <div className={styles.assetsConvertLayout}>
-            <div className={styles.assetsReplacePanel}>
-              <div className={styles.assetsReplaceLabel}>{t("label.preview")}</div>
-              <div className={styles.assetsInspectorPreview}>
-                <div
-                  className={styles.assetsInspectorPreviewInner}
-                  ref={convertFrameRef}
-                  onMouseEnter={(event) => {
-                    convertLastPointRef.current = { x: event.clientX, y: event.clientY };
-                  }}
-                  onMouseMove={(event) => {
-                    if (!convertPreview || !convertFrameRef.current || !convertImgRef.current) {
-                      return;
-                    }
-                    if (!convertInspectRef.current) return;
-                    const rect = convertInspectRef.current.getBoundingClientRect();
-                    const width = convertImageSize.width || convertImgRef.current.naturalWidth;
-                    const height = convertImageSize.height || convertImgRef.current.naturalHeight;
-                    if (!width || !height) return;
-                    const viewportWidth = rect.width;
-                    const viewportHeight = rect.height;
-                    if (width <= viewportWidth && height <= viewportHeight) {
-                      setConvertInspect(false);
-                      setConvertPan({ x: 0, y: 0 });
-                      return;
-                    }
-                    const last = convertLastPointRef.current;
-                    const nextPoint = { x: event.clientX, y: event.clientY };
-                    convertLastPointRef.current = nextPoint;
-                    if (!convertInspect) {
-                      if (!last) return;
-                      const delta =
-                        Math.abs(nextPoint.x - last.x) + Math.abs(nextPoint.y - last.y);
-                      if (delta < CONVERT_INSPECT_THRESHOLD_PX) return;
-                      setConvertInspect(true);
-                    }
-                    const contentX = event.clientX - rect.left;
-                    const contentY = event.clientY - rect.top;
-                    const fx = Math.min(1, Math.max(0, contentX / viewportWidth));
-                    const fy = Math.min(1, Math.max(0, contentY / viewportHeight));
-                    const maxX = width - viewportWidth;
-                    const maxY = height - viewportHeight;
-                    setConvertPan({
-                      x: -fx * maxX,
-                      y: -fy * maxY,
-                    });
-                  }}
-                  onMouseLeave={() => {
-                    setConvertInspect(false);
-                    setConvertPan({ x: 0, y: 0 });
-                    convertLastPointRef.current = null;
-                  }}
-                  style={
-                    convertPreview
-                      ? ({
-                          ["--asset-preview-url" as const]: `url("${convertPreview.url}")`,
-                        } as React.CSSProperties)
-                      : undefined
-                  }
-                >
-                  {convertPreview ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        ref={convertImgRef}
-                        src={convertPreview.url}
-                        alt={asset.name}
-                        onLoad={(event) => {
-                          const target = event.currentTarget;
-                          if (!target.naturalWidth || !target.naturalHeight) return;
-                          setConvertImageSize({
-                            width: target.naturalWidth,
-                            height: target.naturalHeight,
-                          });
-                        }}
-                        style={convertInspect ? { opacity: 0 } : undefined}
-                      />
-                      <div
-                        className={styles.assetsConvertInspectViewport}
-                        ref={convertInspectRef}
-                      >
-                        {convertInspect ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={convertPreview.url}
-                            alt=""
-                            className={styles.assetsConvertInspectOverlay}
-                            style={{
-                              width: `${convertImageSize.width}px`,
-                              height: `${convertImageSize.height}px`,
-                              transform: `translate(${convertPan.x}px, ${convertPan.y}px)`,
-                            }}
-                          />
-                        ) : null}
-                      </div>
-                    </>
-                  ) : (
-                    <div className={styles.assetsInspectorPreviewPlaceholder}>
-                      {isConverting ? t("status.optimizing") : convertError || t("empty.noPreview")}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <aside className={styles.assetsReplaceSidebar}>
-              <div className={styles.assetsReplaceSummary}>
-                <div>
-                  {t("label.originalSize")}: {assetSizeBytes != null ? formatBytes(assetSizeBytes) : "—"}
-                </div>
-                <div>
-                  {t("label.convertedSize")}: {convertPreview ? formatBytes(convertPreview.bytes) : "—"}
-                </div>
-                <div>
-                  {t("label.sizeChange")}:{" "}
-                  <strong>
-                    {assetSizeBytes != null && convertPreview
-                      ? (() => {
-                          if (assetSizeBytes === 0) return "—";
-                          const diff = assetSizeBytes - convertPreview.bytes;
-                          const percent = Math.round((diff / assetSizeBytes) * 100);
-                          return `${percent}%`;
-                        })()
-                      : "—"}
-                  </strong>
-                </div>
-              </div>
-              <div className={styles.assetsOptimizeControlRow}>
-                <label htmlFor="convert-quality">{t("label.quality")}</label>
-                <div className={styles.assetsOptimizeSlider}>
-                  <div className={styles.assetsOptimizeSliderTrack}>
-                    <input
-                      id="convert-quality"
-                      type="range"
-                      min={10}
-                      max={100}
-                      step={1}
-                      value={Math.round(convertQuality * 100)}
-                      onChange={(event) => {
-                        const nextValue = Number(event.target.value);
-                        if (!Number.isFinite(nextValue)) return;
-                        const clamped = Math.min(100, Math.max(10, nextValue));
-                        setConvertQuality(clamped / 100);
-                      }}
-                    />
-                  </div>
-                  <span>{Math.round(convertQuality * 100)}%</span>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </ModalShell>
+        onPreviewImageLoad={(width, height) => {
+          if (!width || !height) return;
+          setConvertImageSize({ width, height });
+        }}
+        convertInspect={convertInspect}
+        convertImageWidth={convertImageSize.width}
+        convertImageHeight={convertImageSize.height}
+        convertPanX={convertPan.x}
+        convertPanY={convertPan.y}
+        originalSize={assetSizeBytes != null ? formatBytes(assetSizeBytes) : "—"}
+        convertedSize={convertPreview ? formatBytes(convertPreview.bytes) : "—"}
+        sizeChangeValue={
+          assetSizeBytes != null && convertPreview
+            ? (() => {
+                if (assetSizeBytes === 0) return "—";
+                const diff = assetSizeBytes - convertPreview.bytes;
+                return `${Math.round((diff / assetSizeBytes) * 100)}%`;
+              })()
+            : "—"
+        }
+        convertQuality={convertQuality}
+        onConvertQualityChange={(nextValue) => {
+          if (!Number.isFinite(nextValue)) return;
+          const clamped = Math.min(100, Math.max(10, nextValue));
+          setConvertQuality(clamped / 100);
+        }}
+      />
     </aside>
   );
 }
