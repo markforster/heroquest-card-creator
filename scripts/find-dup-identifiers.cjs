@@ -1,40 +1,29 @@
 #!/usr/bin/env node
 "use strict";
 
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
-const ts = require("typescript");
+const fs = require("node:fs");
+const path = require("node:path");
+const crypto = require("node:crypto");
+const { Project, ts } = require("ts-morph");
 
-const repoRoot = "/Users/markforster/Workspace/heroquest-card-creator";
-const srcRoot = path.join(repoRoot, "src");
-const outDir = path.join(repoRoot, "artefacts", "reports", "dup-identifiers");
-const outJson = path.join(outDir, "dup-identifiers.json");
-const outMd = path.join(outDir, "dup-identifiers.md");
+const DEFAULT_REPO_ROOT = "/Users/markforster/Workspace/heroquest-card-creator";
+const DEFAULT_SCOPE = "src";
+const DEFAULT_OUT_DIR = path.join(
+  DEFAULT_REPO_ROOT,
+  "artefacts",
+  "reports",
+  "dup-identifiers",
+);
+const DEFAULT_IGNORE_PATTERNS = [
+  /(?:^|\/)__tests__(?:\/|$)/,
+  /(?:^|\/)__testutils__(?:\/|$)/,
+  /(?:^|\/)src\/__tests__(?:\/|$)/,
+  /\.test\.tsx?$/,
+  /\.spec\.tsx?$/,
+];
 
-function ensureDir(p) {
-  fs.mkdirSync(p, { recursive: true });
-}
-
-function listSourceFiles(dir) {
-  const results = [];
-  const stack = [dir];
-  while (stack.length) {
-    const current = stack.pop();
-    const entries = fs.readdirSync(current, { withFileTypes: true });
-    for (const entry of entries) {
-      if (entry.name === "node_modules" || entry.name === "out") continue;
-      const full = path.join(current, entry.name);
-      if (entry.isDirectory()) {
-        stack.push(full);
-      } else if (entry.isFile()) {
-        if (full.endsWith(".ts") || full.endsWith(".tsx")) {
-          results.push(full);
-        }
-      }
-    }
-  }
-  return results;
+function ensureDir(targetPath) {
+  fs.mkdirSync(targetPath, { recursive: true });
 }
 
 function stripCommentsAndWhitespace(text) {
@@ -47,174 +36,287 @@ function hashText(text) {
   return crypto.createHash("sha1").update(text).digest("hex");
 }
 
-function getLineAndChar(sf, pos) {
-  const { line, character } = sf.getLineAndCharacterOfPosition(pos);
-  return { line: line + 1, column: character + 1 };
+function toPosixRelativePath(repoRoot, filePath) {
+  return path.relative(repoRoot, filePath).split(path.sep).join("/");
 }
 
-function record(locations, name, entry) {
-  if (!locations.has(name)) locations.set(name, []);
-  locations.get(name).push(entry);
+function getNodeName(node) {
+  if (typeof node.getName === "function") {
+    const name = node.getName();
+    if (typeof name === "string" && name.length > 0) return name;
+  }
+
+  if (typeof node.getNameNode === "function") {
+    const nameNode = node.getNameNode();
+    if (nameNode) return nameNode.getText();
+  }
+
+  return null;
 }
 
-const sourceFiles = listSourceFiles(srcRoot);
-const exactMap = new Map(); // key: name|hash
-const nameOnlyMap = new Map(); // key: name
+function getLineNumber(sourceFile, pos) {
+  return sourceFile.getLineAndColumnAtPos(pos).line;
+}
 
-for (const filePath of sourceFiles) {
-  const content = fs.readFileSync(filePath, "utf8");
-  const sf = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true, undefined);
+function createEntry({ repoRoot, filePath, name, kind, node, bodyNode }) {
+  const sourceFile = node.getSourceFile();
+  const entry = {
+    name,
+    kind,
+    file: toPosixRelativePath(repoRoot, filePath),
+    startLine: getLineNumber(sourceFile, node.getStart()),
+    endLine: getLineNumber(sourceFile, node.getEnd()),
+  };
 
-  function addEntry({ name, kind, node, bodyNode }) {
-    const start = node.getStart(sf);
-    const end = node.getEnd();
-    const startLoc = getLineAndChar(sf, start);
-    const endLoc = getLineAndChar(sf, end);
-    const entry = {
+  if (bodyNode) {
+    const normalized = stripCommentsAndWhitespace(bodyNode.getText());
+    entry.bodyHash = hashText(normalized);
+  }
+
+  return entry;
+}
+
+function addGroupEntry(map, key, entry) {
+  if (!map.has(key)) map.set(key, []);
+  map.get(key).push(entry);
+}
+
+function shouldIgnoreFile(repoRoot, filePath, ignorePatterns = DEFAULT_IGNORE_PATTERNS) {
+  const relativePath = toPosixRelativePath(repoRoot, filePath);
+  return ignorePatterns.some((pattern) => pattern.test(relativePath));
+}
+
+function collectDuplicateIdentifiers({
+  repoRoot = DEFAULT_REPO_ROOT,
+  scope = DEFAULT_SCOPE,
+  tsConfigFilePath = path.join(DEFAULT_REPO_ROOT, "tsconfig.json"),
+  ignorePatterns = DEFAULT_IGNORE_PATTERNS,
+} = {}) {
+  const scopeRoot = path.join(repoRoot, scope);
+  const project = new Project({
+    tsConfigFilePath,
+    skipAddingFilesFromTsConfig: true,
+    skipFileDependencyResolution: true,
+  });
+
+  project.addSourceFilesAtPaths(path.join(scopeRoot, "**/*.{ts,tsx}"));
+
+  const sourceFiles = project
+    .getSourceFiles()
+    .filter(
+      (sourceFile) =>
+        !sourceFile.isDeclarationFile() &&
+        !shouldIgnoreFile(repoRoot, sourceFile.getFilePath(), ignorePatterns),
+    );
+
+  const exactMap = new Map();
+  const nameOnlyMap = new Map();
+
+  function addEntry(params) {
+    const entry = createEntry(params);
+    addGroupEntry(nameOnlyMap, entry.name, entry);
+
+    if (entry.bodyHash) {
+      addGroupEntry(exactMap, `${entry.name}|${entry.bodyHash}`, entry);
+    }
+  }
+
+  for (const sourceFile of sourceFiles) {
+    const filePath = sourceFile.getFilePath();
+
+    for (const node of sourceFile.getDescendants()) {
+      if (ts.isFunctionDeclaration(node.compilerNode)) {
+        const name = getNodeName(node);
+        if (name) {
+          addEntry({ repoRoot, filePath, name, kind: "function", node, bodyNode: node.getBody() });
+        }
+        continue;
+      }
+
+      if (ts.isMethodDeclaration(node.compilerNode)) {
+        const name = getNodeName(node);
+        if (name) {
+          addEntry({ repoRoot, filePath, name, kind: "method", node, bodyNode: node.getBody() });
+        }
+        continue;
+      }
+
+      if (ts.isVariableDeclaration(node.compilerNode) && node.getInitializer()) {
+        const initializer = node.getInitializer();
+        if (
+          initializer &&
+          (ts.isArrowFunction(initializer.compilerNode) ||
+            ts.isFunctionExpression(initializer.compilerNode))
+        ) {
+          const name = getNodeName(node);
+          if (name) {
+            addEntry({
+              repoRoot,
+              filePath,
+              name,
+              kind: "function",
+              node,
+              bodyNode: initializer,
+            });
+          }
+        }
+        continue;
+      }
+
+      if (ts.isPropertyAssignment(node.compilerNode)) {
+        const initializer = node.getInitializer();
+        if (
+          initializer &&
+          (ts.isArrowFunction(initializer.compilerNode) ||
+            ts.isFunctionExpression(initializer.compilerNode))
+        ) {
+          const name = getNodeName(node);
+          if (name) {
+            addEntry({
+              repoRoot,
+              filePath,
+              name,
+              kind: "function",
+              node,
+              bodyNode: initializer,
+            });
+          }
+        }
+        continue;
+      }
+
+      if (ts.isPropertyDeclaration(node.compilerNode)) {
+        const initializer = node.getInitializer();
+        if (
+          initializer &&
+          (ts.isArrowFunction(initializer.compilerNode) ||
+            ts.isFunctionExpression(initializer.compilerNode))
+        ) {
+          const name = getNodeName(node);
+          if (name) {
+            addEntry({
+              repoRoot,
+              filePath,
+              name,
+              kind: "function",
+              node,
+              bodyNode: initializer,
+            });
+          }
+        }
+        continue;
+      }
+
+      if (ts.isTypeAliasDeclaration(node.compilerNode)) {
+        addEntry({ repoRoot, filePath, name: node.getName(), kind: "type", node });
+        continue;
+      }
+
+      if (ts.isInterfaceDeclaration(node.compilerNode)) {
+        addEntry({ repoRoot, filePath, name: node.getName(), kind: "interface", node });
+        continue;
+      }
+
+      if (ts.isEnumDeclaration(node.compilerNode)) {
+        addEntry({ repoRoot, filePath, name: node.getName(), kind: "enum", node });
+        continue;
+      }
+
+      if (ts.isClassDeclaration(node.compilerNode)) {
+        const name = getNodeName(node);
+        if (name) addEntry({ repoRoot, filePath, name, kind: "class", node });
+      }
+    }
+  }
+
+  const exactDuplicates = Array.from(exactMap.entries())
+    .filter(([, entries]) => entries.length >= 2)
+    .map(([key, entries]) => {
+      const [name, bodyHash] = key.split("|");
+      return { name, bodyHash, entries };
+    })
+    .sort((a, b) => b.entries.length - a.entries.length || a.name.localeCompare(b.name));
+
+  const nameDuplicates = Array.from(nameOnlyMap.entries())
+    .filter(([, entries]) => entries.length >= 2)
+    .map(([name, entries]) => ({
       name,
-      kind,
-      file: path.relative(repoRoot, filePath),
-      startLine: startLoc.line,
-      endLine: endLoc.line,
-    };
-    if (bodyNode) {
-      const raw = bodyNode.getText(sf);
-      const normalized = stripCommentsAndWhitespace(raw);
-      entry.bodyHash = hashText(normalized);
-    }
-    record(nameOnlyMap, name, entry);
+      entries,
+      distinctBodies: new Set(entries.map((entry) => entry.bodyHash).filter(Boolean)).size,
+    }))
+    .sort((a, b) => b.entries.length - a.entries.length || a.name.localeCompare(b.name));
 
-    if (bodyNode) {
-      const exactKey = `${name}|${entry.bodyHash}`;
-      if (!exactMap.has(exactKey)) exactMap.set(exactKey, []);
-      exactMap.get(exactKey).push(entry);
-    }
-  }
-
-  function walk(node) {
-    if (ts.isFunctionDeclaration(node) && node.name) {
-      addEntry({ name: node.name.text, kind: "function", node, bodyNode: node.body });
-    }
-    if (ts.isMethodDeclaration(node) && node.name) {
-      const name = node.name.getText(sf);
-      addEntry({ name, kind: "method", node, bodyNode: node.body });
-    }
-    if (ts.isFunctionExpression(node) || ts.isArrowFunction(node)) {
-      if (ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name)) {
-        addEntry({
-          name: node.parent.name.text,
-          kind: "function",
-          node: node.parent,
-          bodyNode: node.body,
-        });
-      }
-    }
-    if (ts.isPropertyAssignment(node)) {
-      if (
-        node.initializer &&
-        (ts.isFunctionExpression(node.initializer) || ts.isArrowFunction(node.initializer)) &&
-        node.name
-      ) {
-        const name = node.name.getText(sf);
-        addEntry({ name, kind: "function", node, bodyNode: node.initializer.body });
-      }
-    }
-    if (ts.isPropertyDeclaration(node)) {
-      if (
-        node.initializer &&
-        (ts.isFunctionExpression(node.initializer) || ts.isArrowFunction(node.initializer)) &&
-        node.name
-      ) {
-        const name = node.name.getText(sf);
-        addEntry({ name, kind: "function", node, bodyNode: node.initializer.body });
-      }
-    }
-    if (ts.isTypeAliasDeclaration(node)) {
-      addEntry({ name: node.name.text, kind: "type", node });
-    }
-    if (ts.isInterfaceDeclaration(node)) {
-      addEntry({ name: node.name.text, kind: "interface", node });
-    }
-    if (ts.isEnumDeclaration(node)) {
-      addEntry({ name: node.name.text, kind: "enum", node });
-    }
-    if (ts.isClassDeclaration(node) && node.name) {
-      addEntry({ name: node.name.text, kind: "class", node });
-    }
-
-    ts.forEachChild(node, walk);
-  }
-
-  walk(sf);
+  return {
+    generatedAt: new Date().toISOString(),
+    scope,
+    exactDuplicates,
+    nameDuplicates,
+  };
 }
 
-function groupExactDuplicates() {
-  const groups = [];
-  for (const [key, entries] of exactMap.entries()) {
-    if (entries.length < 2) continue;
-    const [name, bodyHash] = key.split("|");
-    groups.push({ name, bodyHash, entries });
+function renderMarkdown(report) {
+  let md = "# Duplicate Identifier Report\n\n";
+  md += `Generated: ${report.generatedAt}\n`;
+  md += "\n## Exact Duplicates (name + body)\n\n";
+
+  if (report.exactDuplicates.length === 0) {
+    md += "- None found\n";
+  } else {
+    for (const group of report.exactDuplicates) {
+      md += `### ${group.name}\n`;
+      md += `- Instances: ${group.entries.length}\n`;
+      md += `- Body hash: ${group.bodyHash}\n`;
+      for (const entry of group.entries) {
+        md += `- ${entry.kind} — \`${entry.file}:${entry.startLine}-${entry.endLine}\`\n`;
+      }
+      md += "\n";
+    }
   }
-  groups.sort((a, b) => b.entries.length - a.entries.length || a.name.localeCompare(b.name));
-  return groups;
+
+  md += "## Name Duplicates (may differ)\n\n";
+  if (report.nameDuplicates.length === 0) {
+    md += "- None found\n";
+  } else {
+    for (const group of report.nameDuplicates) {
+      md += `### ${group.name}\n`;
+      md += `- Instances: ${group.entries.length}\n`;
+      md += `- Distinct bodies: ${group.distinctBodies}\n`;
+      for (const entry of group.entries) {
+        md += `- ${entry.kind} — \`${entry.file}:${entry.startLine}-${entry.endLine}\`\n`;
+      }
+      md += "\n";
+    }
+  }
+
+  return md;
 }
 
-function groupNameOnlyDuplicates() {
-  const groups = [];
-  for (const [name, entries] of nameOnlyMap.entries()) {
-    if (entries.length < 2) continue;
-    const uniqueHashes = new Set(entries.map((e) => e.bodyHash).filter(Boolean));
-    groups.push({ name, entries, distinctBodies: uniqueHashes.size || 0 });
-  }
-  groups.sort((a, b) => b.entries.length - a.entries.length || a.name.localeCompare(b.name));
-  return groups;
+function writeReport(report, outDir = DEFAULT_OUT_DIR) {
+  ensureDir(outDir);
+  const outJson = path.join(outDir, "dup-identifiers.json");
+  const outMd = path.join(outDir, "dup-identifiers.md");
+
+  fs.writeFileSync(outJson, JSON.stringify(report, null, 2));
+  fs.writeFileSync(outMd, renderMarkdown(report));
+
+  return { outJson, outMd };
 }
 
-const exactGroups = groupExactDuplicates();
-const nameGroups = groupNameOnlyDuplicates();
+function main() {
+  const report = collectDuplicateIdentifiers();
+  const { outJson, outMd } = writeReport(report);
+  console.log(`Wrote ${outJson}`);
+  console.log(`Wrote ${outMd}`);
+}
 
-const report = {
-  generatedAt: new Date().toISOString(),
-  scope: "src",
-  exactDuplicates: exactGroups,
-  nameDuplicates: nameGroups,
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  collectDuplicateIdentifiers,
+  renderMarkdown,
+  writeReport,
+  stripCommentsAndWhitespace,
+  shouldIgnoreFile,
 };
-
-ensureDir(outDir);
-fs.writeFileSync(outJson, JSON.stringify(report, null, 2));
-
-let md = "# Duplicate Identifier Report\n\n";
-md += `Generated: ${report.generatedAt}\n`;
-md += "\n## Exact Duplicates (name + body)\n\n";
-if (exactGroups.length === 0) {
-  md += "- None found\n";
-} else {
-  for (const group of exactGroups) {
-    md += `### ${group.name}\n`;
-    md += `- Instances: ${group.entries.length}\n`;
-    md += `- Body hash: ${group.bodyHash}\n`;
-    for (const entry of group.entries) {
-      md += `- ${entry.kind} — \`${entry.file}:${entry.startLine}-${entry.endLine}\`\n`;
-    }
-    md += "\n";
-  }
-}
-
-md += "## Name Duplicates (may differ)\n\n";
-if (nameGroups.length === 0) {
-  md += "- None found\n";
-} else {
-  for (const group of nameGroups) {
-    md += `### ${group.name}\n`;
-    md += `- Instances: ${group.entries.length}\n`;
-    md += `- Distinct bodies: ${group.distinctBodies}\n`;
-    for (const entry of group.entries) {
-      md += `- ${entry.kind} — \`${entry.file}:${entry.startLine}-${entry.endLine}\`\n`;
-    }
-    md += "\n";
-  }
-}
-
-fs.writeFileSync(outMd, md);
-console.log(`Wrote ${outJson}`);
-console.log(`Wrote ${outMd}`);
