@@ -632,6 +632,7 @@
   "confirm.deleteCollectionBodySuffix": "A gyűjtemény kártyái nem törlődnek.",
   "confirm.deleteAssetsBody": "Törlés",
   "confirm.discardChangesBody": "Nem mentett változtatások vannak. Másik kártya betöltése és eldobás?",
+  "confirm.leaveCardEditorBody": "Ezen a kártyán nem mentett módosítások vannak. Ha most kilép a szerkesztőből, ezek a módosítások elvesznek.",
   "confirm.discardSettingsChangesBody": "Nem mentett változtatások vannak a beállításokban. Eldobja és folytatja?",
   "confirm.discardSettingsChangesPanel": "Nem mentett változtatások vannak itt: {panel}. Eldobja és folytatja?",
   "confirm.saveBeforeViewBody": "Mentse a változtatásokat a megtekintés előtt?",

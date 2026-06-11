@@ -632,6 +632,7 @@
   "confirm.deleteCollectionBodySuffix": "Cards in this collection will not be deleted.",
   "confirm.deleteAssetsBody": "Deleting",
   "confirm.discardChangesBody": "You have unsaved changes on the current card. Load another card and discard these changes?",
+  "confirm.leaveCardEditorBody": "You have unsaved changes on this card. If you leave the editor now, those changes will be lost.",
   "confirm.discardSettingsChangesBody": "You have unsaved changes in settings. Discard them and continue?",
   "confirm.discardSettingsChangesPanel": "You have unsaved changes in {panel}. Discard them and continue?",
   "confirm.saveBeforeViewBody": "Save changes before viewing this card?",

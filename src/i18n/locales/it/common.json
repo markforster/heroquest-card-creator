@@ -632,6 +632,7 @@
   "confirm.deleteCollectionBodySuffix": "Le carte in questa raccolta non verranno eliminate.",
   "confirm.deleteAssetsBody": "Eliminazione",
   "confirm.discardChangesBody": "Ci sono modifiche non salvate. Caricare un’altra carta e scartarle?",
+  "confirm.leaveCardEditorBody": "Ci sono modifiche non salvate su questa carta. Se esci dall’editor ora, queste modifiche andranno perse.",
   "confirm.discardSettingsChangesBody": "Ci sono modifiche non salvate nelle impostazioni. Scartarle e continuare?",
   "confirm.discardSettingsChangesPanel": "Ci sono modifiche non salvate in {panel}. Scartarle e continuare?",
   "confirm.saveBeforeViewBody": "Salvare le modifiche prima di aprire questa carta?",

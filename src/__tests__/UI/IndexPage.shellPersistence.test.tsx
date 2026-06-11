@@ -56,6 +56,7 @@ jest.mock("@/components/Providers/AssetKindBackfillProvider", () => ({
 jest.mock("@/components/common/EscapeStackProvider", () => ({
   __esModule: true,
   EscapeStackProvider: ({ children }: { children: ReactNode }) => children,
+  useEscapeModalAware: () => undefined,
 }));
 
 jest.mock("@/components/common/Notice", () => ({
@@ -178,6 +179,36 @@ jest.mock("@/components/App/pages/DeckPage", () => ({
   __esModule: true,
   default: () => <div>Deck detail page</div>,
 }));
+
+beforeAll(() => {
+  if (typeof Request === "undefined") {
+    class MockRequest {
+      body: BodyInit | null;
+      credentials: RequestCredentials;
+      headers: Headers;
+      method: string;
+      mode: RequestMode;
+      signal: AbortSignal | null;
+      url: string;
+
+      constructor(input: string | URL, init: RequestInit = {}) {
+        this.url = String(input);
+        this.method = (init.method ?? "GET").toUpperCase();
+        this.headers = new Headers(init.headers);
+        this.body = init.body ?? null;
+        this.signal = init.signal ?? null;
+        this.mode = init.mode ?? "same-origin";
+        this.credentials = init.credentials ?? "same-origin";
+      }
+    }
+
+    Object.defineProperty(globalThis, "Request", {
+      configurable: true,
+      writable: true,
+      value: MockRequest,
+    });
+  }
+});
 
 describe("IndexPage shell persistence", () => {
   beforeEach(() => {

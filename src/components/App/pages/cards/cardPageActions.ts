@@ -20,6 +20,7 @@ type AnalyticsTrackProperties = Record<string, string | number | boolean | null 
 type CreateCardPageActionsArgs = {
   activeCardId?: string;
   activeStatus?: CardStatus;
+  bypassNextNavigation: () => void;
   currentTemplateId: TemplateId | null;
   methods: Pick<UseFormReturn<CardDataByTemplate[TemplateId]>, "getValues">;
   navigate: NavigateFunction;
@@ -36,6 +37,7 @@ type CreateCardPageActionsArgs = {
 export function createCardPageActions({
   activeCardId,
   activeStatus,
+  bypassNextNavigation,
   currentTemplateId,
   methods,
   navigate,
@@ -85,6 +87,7 @@ export function createCardPageActions({
           lastViewedAt: viewedAt,
         });
         setActiveCard(templateId, record.id, record.status);
+        bypassNextNavigation();
         navigate(`/cards/${record.id}`, { replace: true });
         resetWithSaved(mapCardRecordToFormValues(templateId, record));
         didSave = true;
@@ -159,6 +162,7 @@ export function createCardPageActions({
     setDraftSourceCardId(activeCardId ?? null);
     resetWithSaved(applyInspectorDefaults(templateId, nextDraft));
     setActiveCard(templateId, null, null);
+    bypassNextNavigation();
     navigate("/cards/new", { replace: true });
     if (withPairing) {
       // Pairing for new duplicates is not persisted; ignore for now.

@@ -632,6 +632,7 @@
   "confirm.deleteCollectionBodySuffix": "Karten in dieser Sammlung werden nicht gelöscht.",
   "confirm.deleteAssetsBody": "Lösche",
   "confirm.discardChangesBody": "Ungespeicherte Änderungen vorhanden. Andere Karte laden und verwerfen?",
+  "confirm.leaveCardEditorBody": "Diese Karte enthält ungespeicherte Änderungen. Wenn Sie den Editor jetzt verlassen, gehen diese Änderungen verloren.",
   "confirm.discardSettingsChangesBody": "Ungespeicherte Änderungen in den Einstellungen. Verwerfen und fortfahren?",
   "confirm.discardSettingsChangesPanel": "Ungespeicherte Änderungen in {panel}. Verwerfen und fortfahren?",
   "confirm.saveBeforeViewBody": "Änderungen vor dem Öffnen speichern?",

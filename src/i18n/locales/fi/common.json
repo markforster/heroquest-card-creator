@@ -632,6 +632,7 @@
   "confirm.deleteCollectionBodySuffix": "Kokoelman kortteja ei poisteta.",
   "confirm.deleteAssetsBody": "Poistetaan",
   "confirm.discardChangesBody": "Sinulla on tallentamattomia muutoksia nykyisessä kortissa. Ladataanko toinen kortti ja hylätäänkö muutokset?",
+  "confirm.leaveCardEditorBody": "Tässä kortissa on tallentamattomia muutoksia. Jos poistut editorista nyt, muutokset menetetään.",
   "confirm.discardSettingsChangesBody": "Sinulla on tallentamattomia muutoksia asetuksissa. Hylätäänkö ja jatketaanko?",
   "confirm.discardSettingsChangesPanel": "Sinulla on tallentamattomia muutoksia kohdassa {panel}. Hylätäänkö ja jatketaanko?",
   "confirm.saveBeforeViewBody": "Tallennetaanko muutokset ennen kortin katselua?",

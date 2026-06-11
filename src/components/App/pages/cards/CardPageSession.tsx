@@ -8,6 +8,7 @@ import type { CardRecord } from "@/api/cards";
 import { useGetCard } from "@/api/hooks";
 import { createCardPageActions } from "@/components/App/pages/cards/cardPageActions";
 import { useCardFacePairing } from "@/components/App/pages/cards/useCardFacePairing";
+import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesGuardContext";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
@@ -29,6 +30,7 @@ type UseCardPageSessionArgs = {
 export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
   const { cardId } = useParams();
   const navigate = useNavigate();
+  const { bypassNextNavigation } = useUnsavedChangesGuardControls();
   const { track } = useAnalytics();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate, activeCardStatusByTemplate },
@@ -185,6 +187,7 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
     createCardPageActions({
       activeCardId,
       activeStatus,
+      bypassNextNavigation,
       currentTemplateId,
       methods,
       navigate,
@@ -206,6 +209,7 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
 
   return {
     isDraftRoute,
+    isEditorDirty: isDirty,
     normalizedCardId,
     selectedTemplate,
     activeFrontId,

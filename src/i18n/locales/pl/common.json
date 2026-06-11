@@ -632,6 +632,7 @@
   "confirm.deleteCollectionBodySuffix": "Karty w tej kolekcji nie zostaną usunięte.",
   "confirm.deleteAssetsBody": "Usuwanie",
   "confirm.discardChangesBody": "Masz niezapisane zmiany na bieżącej karcie. Wczytać inną kartę i odrzucić zmiany?",
+  "confirm.leaveCardEditorBody": "Masz niezapisane zmiany na tej karcie. Jeśli teraz opuścisz edytor, zmiany zostaną utracone.",
   "confirm.discardSettingsChangesBody": "Masz niezapisane zmiany w ustawieniach. Odrzucić i kontynuować?",
   "confirm.discardSettingsChangesPanel": "Masz niezapisane zmiany w {panel}. Odrzucić i kontynuować?",
   "confirm.saveBeforeViewBody": "Zapisać zmiany przed podglądem tej karty?",
