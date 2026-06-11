@@ -49,15 +49,11 @@ export default function IndexPage() {
     return createAppRouter();
   }, []);
 
-  if (router === null) {
-    return null;
-  }
-
   return (
     <DatabaseVersionGate>
       <AppProviders>
         <AppStartup />
-        <RouterProvider router={router} />
+        {router ? <RouterProvider router={router} /> : null}
       </AppProviders>
     </DatabaseVersionGate>
   );
