@@ -5,6 +5,11 @@ import { useEffect, useMemo, useRef } from "react";
 import { useController, useFormContext } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
+import {
+  hasInspectorColorRevert,
+  normalizeHexValue,
+  normalizeInspectorColor,
+} from "@/components/Cards/CardInspector/card-inspector-color-utils";
 import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 import { DEFAULT_BORDER_COLOR } from "@/components/Cards/CardParts/CardBorder";
 import ColorPickerField from "@/components/common/ColorPickerField";
@@ -12,12 +17,15 @@ import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
-import { formatHexColor, isTransparentHex, parseHexColor } from "@/lib/color";
 import type { TemplateId } from "@/types/templates";
 
 const SMART_CANVAS_WIDTH = 300;
 const SMART_CANVAS_HEIGHT = 420;
 const TRANSPARENT_BORDER_COLOR = "transparent";
+const BORDER_COLOR_OPTIONS = {
+  defaultColor: DEFAULT_BORDER_COLOR,
+  transparentValue: TRANSPARENT_BORDER_COLOR,
+} as const;
 
 type BorderColorFieldProps = {
   label: string;
@@ -37,7 +45,10 @@ export default function BorderColorField({ label, templateId }: BorderColorField
 
   const { field } = useController({ name: "borderColor", control });
   const borderColor = typeof field.value === "string" ? field.value : "";
-  const normalizedSelected = useMemo(() => normalizeBorderColor(borderColor), [borderColor]);
+  const normalizedSelected = useMemo(
+    () => normalizeInspectorColor(borderColor, BORDER_COLOR_OPTIONS),
+    [borderColor],
+  );
   const inputValue =
     normalizedSelected === TRANSPARENT_BORDER_COLOR
       ? ""
@@ -49,7 +60,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
   }, [savedValues, templateId]);
 
   const handleRevert = () => {
-    const saved = normalizeBorderColor(savedColorRef.current);
+    const saved = normalizeInspectorColor(savedColorRef.current, BORDER_COLOR_OPTIONS);
     const nextColor =
       saved === TRANSPARENT_BORDER_COLOR ? TRANSPARENT_BORDER_COLOR : saved.toUpperCase();
     setValue("borderColor", nextColor, { shouldDirty: true, shouldTouch: true });
@@ -82,7 +93,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
         onChange={(value) => field.onChange(value)}
         onSelectDefault={handleSelectDefault}
         onSelectTransparent={() => field.onChange(TRANSPARENT_BORDER_COLOR)}
-        canRevert={hasRevert(borderColor, savedColorRef.current)}
+        canRevert={hasInspectorColorRevert(borderColor, savedColorRef.current, BORDER_COLOR_OPTIONS)}
         onRevert={handleRevert}
         isOpen={popoverState.isOpen}
         onToggleOpen={popoverState.toggle}
@@ -92,27 +103,4 @@ export default function BorderColorField({ label, templateId }: BorderColorField
       />
     </div>
   );
-}
-
-function normalizeHexValue(value: string | undefined): string | null {
-  const parsed = parseHexColor(value);
-  if (!parsed) return null;
-  return formatHexColor(parsed, { alphaMode: "preserve", case: "upper" });
-}
-
-function isTransparentColor(value?: string) {
-  if (!value) return false;
-  if (value.trim().toLowerCase() === TRANSPARENT_BORDER_COLOR) return true;
-  return isTransparentHex(value);
-}
-
-function normalizeBorderColor(value?: string) {
-  if (isTransparentColor(value)) return TRANSPARENT_BORDER_COLOR;
-  return normalizeHexValue(value) ?? DEFAULT_BORDER_COLOR;
-}
-
-function hasRevert(current: string, saved: string | undefined) {
-  const normalizedCurrent = normalizeBorderColor(current);
-  const normalizedSaved = normalizeBorderColor(saved);
-  return normalizedCurrent !== normalizedSaved;
 }
