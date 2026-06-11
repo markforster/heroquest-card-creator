@@ -23,6 +23,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import layoutStyles from "@/app/page.module.css";
 import { AssetsModal } from "@/components/Assets";
 import { addPinnedAsset, getAssetKindLabel } from "@/components/Cards/CardInspector/asset-utils";
+import { computeCardInspectorPopoverPosition } from "@/components/Cards/CardInspector/card-inspector-popover-position";
 import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 import IconButton from "@/components/common/IconButton";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
@@ -236,27 +237,12 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
     normalizedQuery.length < 4 ? rankedAssets.slice(0, 8) : rankedAssets;
 
   const positionPopover = () => {
-    const anchor = adjustmentsButtonRef.current;
-    const popover = adjustmentsPopoverRef.current;
-    if (!anchor || !popover) return;
-
-    const anchorRect = anchor.getBoundingClientRect();
-    const padding = 12;
-    const offset = 8;
-    const viewportHeight = window.innerHeight;
-
-    const spaceLeft = anchorRect.left - padding - offset;
-    const clampedWidth = Math.max(240, Math.min(520, spaceLeft));
-    popover.style.width = `${clampedWidth}px`;
-
-    const { width, height } = popover.getBoundingClientRect();
-
-    const left = Math.max(anchorRect.left - width - offset, padding);
-    const anchorCenterY = anchorRect.top + anchorRect.height / 2;
-    let top = anchorCenterY;
-    top = Math.min(Math.max(top, padding + height / 2), viewportHeight - padding - height / 2);
-
-    setAdjustmentsStyle({ left, top });
+    const position = computeCardInspectorPopoverPosition(
+      adjustmentsButtonRef.current,
+      adjustmentsPopoverRef.current,
+    );
+    if (!position) return;
+    setAdjustmentsStyle({ left: position.left, top: position.top });
   };
 
   useLayoutEffect(() => {
