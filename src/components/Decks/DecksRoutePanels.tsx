@@ -5,25 +5,25 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { apiClient } from "@/api/client";
-import DeckDetailPanel from "@/components/Decks/DeckDetailPanel";
 import { DeckExportProvider } from "@/components/Decks/context/DeckExportContext";
 import { resolveDeckExportFaceIds } from "@/components/Decks/deck-export";
+import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
+import DeckDetailPanel from "@/components/Decks/DeckDetailPanel";
 import DecksGridPanel from "@/components/Decks/DecksGridPanel";
 import { useDeckDetailSelectionModel } from "@/components/Decks/hooks/useDeckDetailSelectionModel";
 import { useDeckDetailState } from "@/components/Decks/hooks/useDeckDetailState";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useDecksDragController } from "@/components/Decks/hooks/useDecksDragController";
 import { useDeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
-import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import {
   useBulkCardExport,
   type MissingAssetsExportPrompt,
 } from "@/components/Export/hooks/useBulkCardExport";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
-import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
-import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
+import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
+import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import formatMessageWith from "@/lib/format-message-with";
 
@@ -199,14 +199,7 @@ export default function DecksRoutePanels() {
       return;
     }
     hydratedSetRouteKeyRef.current = routeKey;
-  }, [
-    deckId,
-    isDraggingAny,
-    navigate,
-    routeSetId,
-    selectionModel.sets.length,
-    selectionModel,
-  ]);
+  }, [deckId, isDraggingAny, navigate, routeSetId, selectionModel.sets.length, selectionModel]);
 
   useEffect(() => {
     if (!deckId || !routeSetId || !routeEntryId) {
@@ -220,10 +213,7 @@ export default function DecksRoutePanels() {
     if (hydratedEntryRouteKeyRef.current === routeKey) return;
     const matched = entriesModel.entriesSorted.some((entry) => entry.id === routeEntryId);
     if (!matched) {
-      navigate(
-        buildDeckDeepLink({ deckId, setId: routeSetId }),
-        { replace: true },
-      );
+      navigate(buildDeckDeepLink({ deckId, setId: routeSetId }), { replace: true });
       hydratedEntryRouteKeyRef.current = routeKey;
       return;
     }
@@ -319,7 +309,9 @@ export default function DecksRoutePanels() {
         if (!newBackFaceId) return;
         openStockpile({
           mode: "pair-fronts",
-          titleOverride: formatMessage("decks.rebuildSelectFronts", { title: currentSet.title ?? "" }),
+          titleOverride: formatMessage("decks.rebuildSelectFronts", {
+            title: currentSet.title ?? "",
+          }),
           onConfirmSelection: async (frontIds) => {
             await mutations.rebuildSetBack(currentSet.id, newBackFaceId, frontIds);
             await selectionModel.reloadStructure(currentSet.id);
