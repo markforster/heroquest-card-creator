@@ -7,7 +7,6 @@ import {
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
-  useDraggable,
   useDroppable,
 } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
@@ -21,49 +20,45 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type MouseEvent,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 
 import CardThumbnail from "@/components/common/CardThumbnail";
+import type {
+  BoardId,
+  GroupId,
+  GroupVisualContext,
+  RenderSetContent,
+  SetHoverContext,
+  SetId,
+  SetRenderState,
+  SetShellVisualContext,
+  SetToolbarContext,
+} from "@/components/Decks/detail/boards/deck-board-types";
+import {
+  DraggableSetCard,
+  EmptySlotDropCard,
+  OverlayCard,
+  SortableSetCard,
+} from "@/components/Decks/detail/boards/DeckBoardCards";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 
 import styles from "../DeckGroupsSection2.module.css";
 
-export type BoardId = "groups" | "entries" | "source";
-type GroupId = string;
-type SetId = string;
+export type {
+  BoardId,
+  GroupId,
+  GroupVisualContext,
+  SetHoverContext,
+  SetId,
+  SetRenderState,
+  SetToolbarContext,
+} from "@/components/Decks/detail/boards/deck-board-types";
 export type LayoutMode = "content" | "fill-parent";
 type DragRouteToken = string;
-type SetRenderState = "idle" | "dragging" | "ghost" | "dropTarget" | "pending" | "overlay";
 type SourceItemFace = "front" | "back";
-type SetToolbarContext = {
-  boardId: BoardId;
-  setId: SetId;
-  groupId: GroupId;
-  cardId?: string;
-  isSelected: boolean;
-  isDragging: boolean;
-  isGhost: boolean;
-  isDropTarget: boolean;
-};
-
-type GroupVisualContext = {
-  boardId: BoardId;
-  groupId: GroupId;
-  isHovered: boolean;
-  hasSelectedSet: boolean;
-  setCount: number;
-};
-
-type SetHoverContext = {
-  boardId: BoardId;
-  groupId: GroupId;
-  setId: SetId;
-  isHovered: boolean;
-};
 
 type BoardInfoPillProps = {
   icon?: ReactNode;
@@ -234,13 +229,7 @@ export type DeckSortableBoardViewModel = {
   allowGroupReorder?: boolean;
   onSetClick?: (setUiId: SetId, groupUiId: GroupId, options?: { additive: boolean }) => void;
   onSetHoverChange?: (args: SetHoverContext) => void;
-  renderSetContent: (args: {
-    setId: SetId;
-    groupId: GroupId;
-    label?: string;
-    cardId?: string;
-    state: SetRenderState;
-  }) => React.ReactNode;
+  renderSetContent: RenderSetContent;
   renderTopToolbar?: (args: SetToolbarContext) => React.ReactNode;
   renderBottomToolbar?: (args: SetToolbarContext) => React.ReactNode;
   isSetSelected?: (setId: SetId, groupId: GroupId) => boolean;
@@ -248,10 +237,8 @@ export type DeckSortableBoardViewModel = {
   resolveGroupStyle?: (args: GroupVisualContext) => CSSProperties | undefined;
   resolveGroupBodyClassName?: (args: GroupVisualContext) => string | null;
   resolveGroupBodyStyle?: (args: GroupVisualContext) => CSSProperties | undefined;
-  resolveSetShellClassName?: (args: GroupVisualContext & { setId: SetId; setIndex: number }) => string | null;
-  resolveSetShellStyle?: (
-    args: GroupVisualContext & { setId: SetId; setIndex: number },
-  ) => CSSProperties | undefined;
+  resolveSetShellClassName?: (args: SetShellVisualContext) => string | null;
+  resolveSetShellStyle?: (args: SetShellVisualContext) => CSSProperties | undefined;
   renderGroupOverlay?: (args: GroupVisualContext & { setIds: SetId[] }) => ReactNode;
   renderBoardHeaderActions?: () => ReactNode;
   emptyMessage?: string | null;
@@ -938,302 +925,6 @@ export function BoardInfoPill({
       {icon ? <span className={styles.boardInfoPillIcon}>{icon}</span> : null}
       <span className={styles.boardInfoPillLabel}>{label}</span>
     </span>
-  );
-}
-
-function SortableSetCard({
-  boardId,
-  setId,
-  label,
-  index,
-  groupId,
-  cardId,
-  renderContent,
-  isSelected,
-  isEphemeral,
-  onClick,
-  onHoverChange,
-  renderTopToolbar,
-  renderBottomToolbar,
-  sourceLayout,
-  shellClassName,
-  shellStyle,
-}: {
-  boardId: BoardId;
-  setId: SetId;
-  label?: string;
-  index: number;
-  groupId: GroupId;
-  cardId?: string;
-  renderContent: DeckSortableBoardViewModel["renderSetContent"];
-  isSelected: boolean;
-  isEphemeral?: boolean;
-  onClick?: (event: MouseEvent<HTMLDivElement>) => void;
-  onHoverChange?: (isHovered: boolean) => void;
-  renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
-  renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
-  sourceLayout?: boolean;
-  shellClassName?: string;
-  shellStyle?: CSSProperties;
-}) {
-  const { ref, isDragging, isDragSource, isDropTarget } = useSortable({
-    id: setId,
-    index,
-    type: "set",
-    accept: ["set"],
-    group: groupId,
-  });
-
-  return (
-    <div
-      className={[styles.setShell, sourceLayout ? styles.setShellSource : "", shellClassName ?? ""].filter(Boolean).join(" ")}
-      ref={ref}
-      data-testid={`set-${setId}`}
-      style={shellStyle}
-      onMouseEnter={() => onHoverChange?.(true)}
-      onMouseLeave={() => onHoverChange?.(false)}
-    >
-      {renderTopToolbar
-        ? (
-            <div className={styles.setCardTopToolbar}>
-              {renderTopToolbar({
-                boardId,
-                setId,
-                groupId,
-                cardId,
-                isSelected,
-                isDragging,
-                isGhost: isDragSource || Boolean(isEphemeral),
-                isDropTarget,
-              })}
-            </div>
-          )
-        : null}
-      <div
-        className={[
-          styles.setCard,
-          isSelected ? styles.setCardSelected : "",
-          isDragging ? styles.setCardDragging : "",
-          isDragSource ? styles.setCardGhost : "",
-          isEphemeral ? styles.setCardGhost : "",
-          isDropTarget ? styles.setCardDropTarget : "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        onClick={onClick}
-      >
-        {renderContent({
-          setId,
-          groupId,
-          label,
-          cardId,
-          state: isDragging
-            ? "dragging"
-            : isDropTarget
-              ? "dropTarget"
-              : isDragSource
-                ? "ghost"
-                : isEphemeral
-                  ? "ghost"
-                  : "idle",
-        })}
-      </div>
-      {renderBottomToolbar
-        ? (
-            <div className={styles.setCardBottomToolbar}>
-              {renderBottomToolbar({
-                boardId,
-                setId,
-                groupId,
-                cardId,
-                isSelected,
-                isDragging,
-                isGhost: isDragSource || Boolean(isEphemeral),
-                isDropTarget,
-              })}
-            </div>
-          )
-        : null}
-    </div>
-  );
-}
-
-function DraggableSetCard({
-  boardId,
-  setId,
-  label,
-  groupId,
-  cardId,
-  renderContent,
-  isSelected,
-  isEphemeral,
-  onClick,
-  onHoverChange,
-  renderTopToolbar,
-  renderBottomToolbar,
-  sourceLayout,
-  shellClassName,
-  shellStyle,
-}: {
-  boardId: BoardId;
-  setId: SetId;
-  label?: string;
-  groupId: GroupId;
-  cardId?: string;
-  renderContent: DeckSortableBoardViewModel["renderSetContent"];
-  isSelected: boolean;
-  isEphemeral?: boolean;
-  onClick?: (event: MouseEvent<HTMLDivElement>) => void;
-  onHoverChange?: (isHovered: boolean) => void;
-  renderTopToolbar?: DeckSortableBoardViewModel["renderTopToolbar"];
-  renderBottomToolbar?: DeckSortableBoardViewModel["renderBottomToolbar"];
-  sourceLayout?: boolean;
-  shellClassName?: string;
-  shellStyle?: CSSProperties;
-}) {
-  const { ref, handleRef, isDragging } = useDraggable({
-    id: setId,
-    type: "set",
-    data: { group: groupId },
-  });
-
-  return (
-    <div
-      className={[styles.setShell, sourceLayout ? styles.setShellSource : "", shellClassName ?? ""].filter(Boolean).join(" ")}
-      ref={ref}
-      data-testid={`set-${setId}`}
-      style={shellStyle}
-      onMouseEnter={() => onHoverChange?.(true)}
-      onMouseLeave={() => onHoverChange?.(false)}
-    >
-      {renderTopToolbar
-        ? (
-            <div className={styles.setCardTopToolbar}>
-              {renderTopToolbar({
-                boardId,
-                setId,
-                groupId,
-                cardId,
-                isSelected,
-                isDragging,
-                isGhost: isDragging || Boolean(isEphemeral),
-                isDropTarget: false,
-              })}
-            </div>
-          )
-        : null}
-      <div
-        className={[
-          styles.setCard,
-          isSelected ? styles.setCardSelected : "",
-          isDragging ? styles.setCardDragging : "",
-          isDragging ? styles.setCardGhost : "",
-          isEphemeral ? styles.setCardGhost : "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        ref={handleRef}
-        onClick={onClick}
-      >
-        {renderContent({
-          setId,
-          groupId,
-          label,
-          cardId,
-          state: isDragging ? "dragging" : isEphemeral ? "ghost" : "idle",
-        })}
-      </div>
-      {renderBottomToolbar
-        ? (
-            <div className={styles.setCardBottomToolbar}>
-              {renderBottomToolbar({
-                boardId,
-                setId,
-                groupId,
-                cardId,
-                isSelected,
-                isDragging,
-                isGhost: isDragging || Boolean(isEphemeral),
-                isDropTarget: false,
-              })}
-            </div>
-          )
-        : null}
-    </div>
-  );
-}
-
-function EmptySlotDropCard({
-  setId,
-  groupId,
-  sourceLayout,
-  shellClassName,
-  shellStyle,
-  renderContent,
-}: {
-  setId: SetId;
-  groupId: GroupId;
-  sourceLayout?: boolean;
-  shellClassName?: string;
-  shellStyle?: CSSProperties;
-  renderContent: DeckSortableBoardViewModel["renderSetContent"];
-}) {
-  const { ref } = useDroppable({
-    id: setId,
-    type: "set",
-    accept: ["set"],
-  });
-
-  return (
-    <div
-      className={[
-        styles.setShell,
-        styles.setShellEmptySlot,
-        sourceLayout ? styles.setShellSource : "",
-        shellClassName ?? "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      ref={ref}
-      data-testid={`set-${setId}`}
-      style={shellStyle}
-    >
-      <div className={[styles.setCard, styles.setCardEmptySlot].filter(Boolean).join(" ")}>
-        {renderContent({
-          setId,
-          groupId,
-          state: "idle",
-        })}
-      </div>
-    </div>
-  );
-}
-
-function OverlayCard({
-  setId,
-  groupId,
-  label,
-  cardId,
-  renderContent,
-}: {
-  setId: SetId;
-  groupId: GroupId;
-  label?: string;
-  cardId?: string;
-  renderContent: DeckSortableBoardViewModel["renderSetContent"];
-}) {
-  return (
-    <div className={styles.overlay}>
-      <div className={[styles.setCard, styles.setCardDragging].join(" ")}>
-        {renderContent({
-          setId,
-          groupId,
-          label,
-          cardId,
-          state: "overlay",
-        })}
-      </div>
-    </div>
   );
 }
 
