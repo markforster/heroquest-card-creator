@@ -4,7 +4,7 @@ import { useSortable } from "@dnd-kit/react/sortable";
 
 import type { SortableSetCardProps } from "@/components/Decks/detail/boards/DeckBoardCards/types";
 
-import styles from "../DeckGroupsSection2.module.css";
+import styles from "../../DeckGroupsSection2.module.css";
 
 export function SortableSetCard({
   boardId,

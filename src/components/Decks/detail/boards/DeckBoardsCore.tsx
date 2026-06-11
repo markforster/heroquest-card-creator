@@ -25,6 +25,38 @@ import {
 import { createPortal } from "react-dom";
 
 import CardThumbnail from "@/components/common/CardThumbnail";
+import {
+  canRouteDrag,
+  collectLabels,
+  computeAffordanceByBoard,
+  createDnDStateFromModels,
+  emptyAffordanceState,
+  extractGroupIdFromOperationEntity,
+  findGroupIdBySetId,
+  getBlockedBoundaries,
+  resolveBoardIdFromOperationEntity,
+  resolveSourceDragToken,
+} from "@/components/Decks/detail/boards/deck-board-adapters";
+import {
+  countRenderableSets,
+  createEmptySlotEphemeralSetId,
+  findContainerByItemId,
+  isEmptySlotEphemeralSetId,
+  isSourceEphemeralSetId,
+  moveEphemeralToContainer,
+  normalizeAfterDrop,
+  stripEphemeralItems,
+  withManagedEmptySlots,
+} from "@/components/Decks/detail/boards/deck-board-dnd-state";
+import type {
+  BoardConfig,
+  BoardModel,
+  BoardRoutingMeta,
+  DnDState,
+  DragRouteToken,
+  SourceItemFace,
+  UiItem,
+} from "@/components/Decks/detail/boards/deck-board-internal-types";
 import type {
   BoardId,
   GroupId,
@@ -56,52 +88,14 @@ export type {
   SetRenderState,
   SetToolbarContext,
 } from "@/components/Decks/detail/boards/deck-board-types";
+export type { BoardModel } from "@/components/Decks/detail/boards/deck-board-internal-types";
 export type LayoutMode = "content" | "fill-parent";
-type DragRouteToken = string;
-type SourceItemFace = "front" | "back";
 
 type BoardInfoPillProps = {
   icon?: ReactNode;
   label: ReactNode;
   bgColor?: string;
   borderColor?: string;
-};
-
-type BoardConfig = {
-  boardId: BoardId;
-  title: ReactNode;
-  allowMultipleGroups: boolean;
-  allowGroupCreate: boolean;
-  allowInGroupSort: boolean;
-  allowDropTarget: boolean;
-};
-
-type UiContainer = {
-  id: GroupId;
-  boardId: BoardId;
-  role: "group" | "entries-lane" | "source-lane";
-  allowSortWithin: boolean;
-  accepts: DragRouteToken[];
-};
-
-type UiItem = {
-  uiItemId: SetId;
-  kind: "set" | "entry" | "source-template";
-  ephemeralKind?: "source" | "empty-slot";
-  face: SourceItemFace | null;
-  sourceCardId: string | null;
-  persistedId: string | null;
-  isEphemeral: boolean;
-};
-
-type DnDState = {
-  groupOrderByBoard: Record<BoardId, GroupId[]>;
-  itemsByGroup: Record<GroupId, SetId[]>;
-  groupToBoard: Record<GroupId, BoardId>;
-  containerOrderByBoard: Record<BoardId, GroupId[]>;
-  itemsByContainer: Record<GroupId, SetId[]>;
-  containersById: Record<GroupId, UiContainer>;
-  itemsById: Record<SetId, UiItem>;
 };
 
 type DeckDnDEventBase = {
@@ -177,18 +171,6 @@ export type DeckDnDEventResult = {
 
 export type DeckDropHandler = (event: DeckDnDEvent) => Promise<DeckDnDEventResult | null>;
 
-export type BoardModel = {
-  boardId: BoardId;
-  groupIds: GroupId[];
-  itemsByGroup: Record<GroupId, SetId[]>;
-  groupLabelsById: Record<GroupId, string>;
-  setLabelsById: Record<SetId, string>;
-  setCardIdById: Record<SetId, string>;
-  sourceItemFaceBySetId?: Record<SetId, SourceItemFace>;
-  emitToken: DragRouteToken;
-  acceptTokens: DragRouteToken[];
-};
-
 type DeckMockDndContextValue = {
   state: DnDState;
   setLabelsById: Record<SetId, string>;
@@ -242,11 +224,6 @@ export type DeckSortableBoardViewModel = {
   renderGroupOverlay?: (args: GroupVisualContext & { setIds: SetId[] }) => ReactNode;
   renderBoardHeaderActions?: () => ReactNode;
   emptyMessage?: string | null;
-};
-
-export type BoardRoutingMeta = {
-  emitToken: DragRouteToken;
-  acceptTokens: DragRouteToken[];
 };
 
 const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
@@ -312,338 +289,6 @@ function parseSetLabel(setId: SetId): string {
   return setId.toUpperCase();
 }
 
-function isSourceEphemeralSetId(setId: SetId): boolean {
-  return setId.startsWith("ephemeral:source:");
-}
-
-function isEmptySlotEphemeralSetId(setId: SetId): boolean {
-  return setId.startsWith("ephemeral:empty-slot:group:");
-}
-
-function createEmptySlotEphemeralSetId(groupId: GroupId): SetId {
-  return `ephemeral:empty-slot:group:${groupId}`;
-}
-
-function pruneEmptySlotFromGroup(items: SetId[]): SetId[] {
-  return items.filter((id) => !isEmptySlotEphemeralSetId(id));
-}
-
-function countRenderableSets(items: SetId[]): number {
-  return items.filter((id) => !isEmptySlotEphemeralSetId(id)).length;
-}
-
-function stripEphemeralItems(state: DnDState): DnDState {
-  const nextItemsByContainer: Record<GroupId, SetId[]> = {};
-  Object.keys(state.itemsByContainer).forEach((containerId) => {
-    nextItemsByContainer[containerId] = (state.itemsByContainer[containerId] ?? []).filter(
-      (id) => state.itemsById[id]?.ephemeralKind !== "source",
-    );
-  });
-  const nextItemsById: Record<SetId, UiItem> = {};
-  Object.keys(state.itemsById).forEach((itemId) => {
-    if (state.itemsById[itemId]?.ephemeralKind !== "source") {
-      nextItemsById[itemId] = state.itemsById[itemId];
-    }
-  });
-  return {
-    ...state,
-    itemsByGroup: nextItemsByContainer,
-    itemsByContainer: nextItemsByContainer,
-    itemsById: nextItemsById,
-  };
-}
-
-function withManagedEmptySlots(state: DnDState, groupIds: Array<GroupId | null>): DnDState {
-  const managedGroupIds = Array.from(new Set(groupIds.filter(Boolean) as GroupId[])).filter(
-    (groupId) => state.groupToBoard[groupId] === "groups",
-  );
-  if (managedGroupIds.length === 0) return state;
-
-  let didChange = false;
-  const nextItemsByGroup: Record<GroupId, SetId[]> = { ...state.itemsByGroup };
-  const nextItemsByContainer: Record<GroupId, SetId[]> = { ...state.itemsByContainer };
-  const nextItemsById: Record<SetId, UiItem> = { ...state.itemsById };
-
-  managedGroupIds.forEach((groupId) => {
-    const items = nextItemsByGroup[groupId] ?? [];
-    const hasOnlyTemporary = items.filter((id) => !isEmptySlotEphemeralSetId(id)).length === 0;
-    const slotId = createEmptySlotEphemeralSetId(groupId);
-    const hasSlot = items.includes(slotId);
-
-    if (hasOnlyTemporary && !hasSlot) {
-      const withSlot = [...pruneEmptySlotFromGroup(items), slotId];
-      nextItemsByGroup[groupId] = withSlot;
-      nextItemsByContainer[groupId] = withSlot;
-      nextItemsById[slotId] = {
-        uiItemId: slotId,
-        kind: "set",
-        ephemeralKind: "empty-slot",
-        face: "back",
-        sourceCardId: null,
-        persistedId: null,
-        isEphemeral: true,
-      };
-      didChange = true;
-      return;
-    }
-
-    if (!hasOnlyTemporary && hasSlot) {
-      const withoutSlot = pruneEmptySlotFromGroup(items);
-      nextItemsByGroup[groupId] = withoutSlot;
-      nextItemsByContainer[groupId] = withoutSlot;
-      delete nextItemsById[slotId];
-      didChange = true;
-    }
-  });
-
-  if (!didChange) return state;
-  return {
-    ...state,
-    itemsByGroup: nextItemsByGroup,
-    itemsByContainer: nextItemsByContainer,
-    itemsById: nextItemsById,
-  };
-}
-
-function findContainerByItemId(state: DnDState, setId: SetId): GroupId | null {
-  const containerId = Object.keys(state.itemsByContainer).find((candidate) =>
-    state.itemsByContainer[candidate]?.includes(setId),
-  );
-  return containerId ?? null;
-}
-
-function moveEphemeralToContainer(
-  state: DnDState,
-  ephemeralId: SetId,
-  targetContainerId: GroupId,
-  targetIndex: number,
-): DnDState {
-  const nextItemsByContainer: Record<GroupId, SetId[]> = {};
-  Object.keys(state.itemsByContainer).forEach((containerId) => {
-    nextItemsByContainer[containerId] = (state.itemsByContainer[containerId] ?? []).filter(
-      (id) => id !== ephemeralId,
-    );
-  });
-  const targetItems = nextItemsByContainer[targetContainerId] ?? [];
-  const index = clamp(targetIndex, 0, targetItems.length);
-  targetItems.splice(index, 0, ephemeralId);
-  nextItemsByContainer[targetContainerId] = targetItems;
-  return {
-    ...state,
-    itemsByGroup: nextItemsByContainer,
-    itemsByContainer: nextItemsByContainer,
-  };
-}
-
-function createDnDStateFromModels(boardModels: Record<BoardId, BoardModel>): DnDState {
-  const containerOrderByBoard: Record<BoardId, GroupId[]> = {
-    groups: boardModels.groups.groupIds.slice(),
-    entries: boardModels.entries.groupIds.slice(),
-    source: boardModels.source.groupIds.slice(),
-  };
-  const itemsByContainer: Record<GroupId, SetId[]> = {};
-  const containersById: Record<GroupId, UiContainer> = {};
-  const itemsById: Record<SetId, UiItem> = {};
-
-  (Object.keys(boardModels) as BoardId[]).forEach((boardId) => {
-    const model = boardModels[boardId];
-    model.groupIds.forEach((groupId) => {
-      itemsByContainer[groupId] = (model.itemsByGroup[groupId] ?? []).slice();
-      containersById[groupId] = {
-        id: groupId,
-        boardId,
-        role:
-          boardId === "groups" ? "group" : boardId === "entries" ? "entries-lane" : "source-lane",
-        allowSortWithin: BOARD_CONFIGS[boardId].allowInGroupSort,
-        accepts: model.acceptTokens,
-      };
-      (model.itemsByGroup[groupId] ?? []).forEach((setId) => {
-        if (itemsById[setId]) return;
-        if (boardId === "groups") {
-          itemsById[setId] = {
-            uiItemId: setId,
-            kind: "set",
-            face: "back",
-            sourceCardId: model.setCardIdById[setId] ?? null,
-            persistedId: setId.startsWith("set:") ? setId.slice(4) : null,
-            isEphemeral: false,
-          };
-          return;
-        }
-        if (boardId === "entries") {
-          itemsById[setId] = {
-            uiItemId: setId,
-            kind: "entry",
-            face: "front",
-            sourceCardId: model.setCardIdById[setId] ?? null,
-            persistedId: setId.startsWith("entry:") ? setId.slice(6) : null,
-            isEphemeral: false,
-          };
-          return;
-        }
-        itemsById[setId] = {
-          uiItemId: setId,
-          kind: "source-template",
-          face: model.sourceItemFaceBySetId?.[setId] ?? null,
-          sourceCardId: model.setCardIdById[setId] ?? (setId.startsWith("source:") ? setId.slice(7) : null),
-          persistedId: null,
-          isEphemeral: false,
-        };
-      });
-    });
-  });
-
-  return {
-    groupOrderByBoard: containerOrderByBoard,
-    itemsByGroup: itemsByContainer,
-    groupToBoard: Object.fromEntries(
-      Object.keys(containersById).map((containerId) => [containerId, containersById[containerId].boardId]),
-    ) as Record<GroupId, BoardId>,
-    containerOrderByBoard,
-    itemsByContainer,
-    containersById,
-    itemsById,
-  };
-}
-
-function collectLabels(boardModels: Record<BoardId, BoardModel>) {
-  const groupLabelsById: Record<GroupId, string> = {};
-  const setLabelsById: Record<SetId, string> = {};
-  const setCardIdById: Record<SetId, string> = {};
-
-  (Object.keys(boardModels) as BoardId[]).forEach((boardId) => {
-    Object.assign(groupLabelsById, boardModels[boardId].groupLabelsById);
-    Object.assign(setLabelsById, boardModels[boardId].setLabelsById);
-    Object.assign(setCardIdById, boardModels[boardId].setCardIdById);
-  });
-
-  return { groupLabelsById, setLabelsById, setCardIdById };
-}
-
-function canRouteDrag({
-  sourceBoardId,
-  sourceGroupId,
-  targetBoardId,
-  targetGroupId,
-  sameGroup,
-  sourceAllowInGroupSort,
-  targetAllowDropTarget,
-  sourceEmitToken,
-  targetAcceptTokens,
-  sourceItem,
-  targetContainer,
-}: {
-  sourceBoardId: BoardId | null;
-  sourceGroupId: GroupId | null;
-  targetBoardId: BoardId | null;
-  targetGroupId: GroupId | null;
-  sameGroup: boolean;
-  sourceAllowInGroupSort: boolean;
-  targetAllowDropTarget: boolean;
-  sourceEmitToken: DragRouteToken | null;
-  targetAcceptTokens: DragRouteToken[] | null;
-  sourceItem: UiItem | null;
-  targetContainer: UiContainer | null;
-}): boolean {
-  if (!sourceBoardId || !sourceGroupId || !targetBoardId || !targetGroupId) return false;
-  if (sameGroup) return sourceAllowInGroupSort;
-  if (sourceBoardId === targetBoardId) {
-    return sourceAllowInGroupSort && targetAllowDropTarget;
-  }
-  if (!targetAllowDropTarget) return false;
-  if (!sourceEmitToken) return false;
-  if (!targetAcceptTokens) return false;
-  if (!targetAcceptTokens.includes(sourceEmitToken)) return false;
-  if (sourceItem?.kind === "source-template" && targetContainer) {
-    if (sourceItem.face === "back" && !targetContainer.accepts.includes("source-back")) return false;
-    if (sourceItem.face === "front" && !targetContainer.accepts.includes("source-front")) return false;
-  }
-  return true;
-}
-
-function resolveSourceDragToken({
-  sourceBoardId,
-  sourceSetId,
-  sourceRoutingToken,
-  sourceItemFaceBySetId,
-}: {
-  sourceBoardId: BoardId | null;
-  sourceSetId: SetId;
-  sourceRoutingToken: DragRouteToken | null;
-  sourceItemFaceBySetId: Record<SetId, SourceItemFace>;
-}): DragRouteToken | null {
-  if (sourceBoardId !== "source") return sourceRoutingToken;
-  const face = sourceItemFaceBySetId[sourceSetId];
-  if (face === "front") return "source-front";
-  if (face === "back") return "source-back";
-  return null;
-}
-
-function emptyAffordanceState(): Record<BoardId, boolean> {
-  return {
-    groups: false,
-    entries: false,
-    source: false,
-  };
-}
-
-function computeAffordanceByBoard({
-  sourceBoardId,
-  sourceEmitToken,
-  routingById,
-}: {
-  sourceBoardId: BoardId | null;
-  sourceEmitToken: DragRouteToken | null;
-  routingById: Record<BoardId, BoardRoutingMeta>;
-}): Record<BoardId, boolean> {
-  if (sourceBoardId !== "source" || !sourceEmitToken) {
-    return emptyAffordanceState();
-  }
-  const next = emptyAffordanceState();
-  (Object.keys(BOARD_CONFIGS) as BoardId[]).forEach((boardId) => {
-    if (!BOARD_CONFIGS[boardId].allowDropTarget) return;
-    if (routingById[boardId].acceptTokens.includes(sourceEmitToken)) {
-      next[boardId] = true;
-    }
-  });
-  return next;
-}
-
-function findGroupIdBySetId(itemsByGroup: Record<GroupId, SetId[]>, setId: SetId): GroupId | null {
-  const groupId = Object.keys(itemsByGroup).find((candidate) =>
-    itemsByGroup[candidate]?.includes(setId),
-  );
-  return groupId ?? null;
-}
-
-function extractGroupIdFromOperationEntity(entity: unknown): string {
-  if (!entity || typeof entity !== "object") return "";
-  const maybeEntity = entity as {
-    group?: string;
-    data?: { group?: string };
-  };
-  return String(maybeEntity.group ?? maybeEntity.data?.group ?? "");
-}
-
-function resolveBoardIdFromOperationEntity(entity: unknown): BoardId | null {
-  if (!entity || typeof entity !== "object") return null;
-  const maybeEntity = entity as {
-    board?: string;
-    data?: { board?: string };
-    id?: string;
-  };
-  const raw = String(maybeEntity.board ?? maybeEntity.data?.board ?? maybeEntity.id ?? "");
-  if (!raw) return null;
-  const normalized = raw.startsWith("board-")
-    ? raw.slice(6)
-    : raw.startsWith("board:")
-      ? raw.slice(6)
-      : raw;
-  if (normalized === "groups" || normalized === "entries" || normalized === "source") {
-    return normalized;
-  }
-  return null;
-}
 
 function BoardDropSurface({
   boardId,
@@ -682,68 +327,6 @@ function BoardDropSurface({
       {children}
     </div>
   );
-}
-
-function getBlockedBoundaries(
-  groupIds: GroupId[],
-  itemsByGroup: Record<GroupId, SetId[]>,
-): Set<number> {
-  if (groupIds.length <= 1) {
-    return new Set<number>();
-  }
-  const blocked = new Set<number>();
-  groupIds.forEach((groupId, index) => {
-    if (countRenderableSets(itemsByGroup[groupId] ?? []) === 0) {
-      blocked.add(index);
-      blocked.add(index + 1);
-    }
-  });
-  return blocked;
-}
-
-function normalizeAfterDrop(current: DnDState, tempGroupId: GroupId | null): DnDState {
-  const nextGroupOrderByBoard: DnDState["groupOrderByBoard"] = {
-    groups: [],
-    entries: [],
-    source: [],
-  };
-  const nextItemsByGroup: DnDState["itemsByGroup"] = {};
-  const nextGroupToBoard: DnDState["groupToBoard"] = {};
-  const nextContainersById: DnDState["containersById"] = {};
-  const nextItemsById: DnDState["itemsById"] = { ...current.itemsById };
-
-  (Object.keys(current.groupOrderByBoard) as BoardId[]).forEach((boardId) => {
-    const config = BOARD_CONFIGS[boardId];
-    current.groupOrderByBoard[boardId].forEach((groupId) => {
-      const sets = (current.itemsByGroup[groupId] ?? []).filter((id) => !isEmptySlotEphemeralSetId(id));
-      const keepEmpty = !config.allowMultipleGroups;
-      if (sets.length > 0 || keepEmpty || groupId === tempGroupId) {
-        nextGroupOrderByBoard[boardId].push(groupId);
-        nextGroupToBoard[groupId] = boardId;
-        nextItemsByGroup[groupId] = current.itemsByGroup[groupId] ?? [];
-        if (current.containersById[groupId]) {
-          nextContainersById[groupId] = current.containersById[groupId];
-        }
-      }
-    });
-  });
-
-  Object.keys(nextItemsById).forEach((itemId) => {
-    const stillPresent = Object.values(nextItemsByGroup).some((items) => items.includes(itemId));
-    if (!stillPresent && nextItemsById[itemId]?.isEphemeral) {
-      delete nextItemsById[itemId];
-    }
-  });
-
-  return {
-    groupOrderByBoard: nextGroupOrderByBoard,
-    itemsByGroup: nextItemsByGroup,
-    groupToBoard: nextGroupToBoard,
-    containerOrderByBoard: nextGroupOrderByBoard,
-    itemsByContainer: nextItemsByGroup,
-    containersById: nextContainersById,
-    itemsById: nextItemsById,
-  };
 }
 
 function GroupColumn({
@@ -1280,7 +863,10 @@ export function DeckMockDndProvider({
   children: React.ReactNode;
   boardModels: Record<BoardId, BoardModel>;
 }) {
-  const initialState = useMemo(() => createDnDStateFromModels(boardModels), [boardModels]);
+  const initialState = useMemo(
+    () => createDnDStateFromModels(boardModels, BOARD_CONFIGS),
+    [boardModels],
+  );
   const initialLabels = useMemo(() => collectLabels(boardModels), [boardModels]);
   const [state, setState] = useState<DnDState>(initialState);
   const [groupLabelsById, setGroupLabelsById] = useState<Record<GroupId, string>>(
@@ -1643,6 +1229,7 @@ export function DeckMockDndProvider({
         sourceBoardId,
         sourceEmitToken,
         routingById: boardRoutingById.current,
+        boardConfigs: BOARD_CONFIGS,
       }),
     );
     setHoverBoundaryByBoard({ groups: null, entries: null, source: null });
@@ -1959,7 +1546,7 @@ export function DeckMockDndProvider({
     );
     const postDropWithoutEphemeral = stripEphemeralItems(postDropStateBeforeNormalize);
     const postDropState = withManagedEmptySlots(
-      normalizeAfterDrop(postDropWithoutEphemeral, ephemeralEmptyGroupId),
+      normalizeAfterDrop(postDropWithoutEphemeral, ephemeralEmptyGroupId, BOARD_CONFIGS),
       [ephemeralEmptyGroupId, dragSourceEmptySlotGroupIdRef.current],
     );
     setState(postDropState);

@@ -2,7 +2,7 @@
 
 import type { OverlayCardProps } from "@/components/Decks/detail/boards/DeckBoardCards/types";
 
-import styles from "../DeckGroupsSection2.module.css";
+import styles from "../../DeckGroupsSection2.module.css";
 
 export function OverlayCard({ setId, groupId, label, cardId, renderContent }: OverlayCardProps) {
   return (

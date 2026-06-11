@@ -4,7 +4,7 @@ import { useDraggable } from "@dnd-kit/react";
 
 import type { SharedSetCardProps } from "@/components/Decks/detail/boards/DeckBoardCards/types";
 
-import styles from "../DeckGroupsSection2.module.css";
+import styles from "../../DeckGroupsSection2.module.css";
 
 export function DraggableSetCard({
   boardId,

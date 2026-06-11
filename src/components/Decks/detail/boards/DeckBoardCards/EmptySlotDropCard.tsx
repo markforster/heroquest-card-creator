@@ -4,7 +4,7 @@ import { useDroppable } from "@dnd-kit/react";
 
 import type { EmptySlotDropCardProps } from "@/components/Decks/detail/boards/DeckBoardCards/types";
 
-import styles from "../DeckGroupsSection2.module.css";
+import styles from "../../DeckGroupsSection2.module.css";
 
 export function EmptySlotDropCard({
   setId,
