@@ -1,6 +1,5 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormState } from "react-hook-form";
@@ -16,13 +15,13 @@ import {
   sortCardsByUpdated,
 } from "@/components/Assets/asset-formatters";
 import { getUsageBoundsForTemplate } from "@/components/Assets/asset-inspector-usage";
-import AssetInspectorPreview from "@/components/Assets/AssetInspectorPreview";
 import type {
   ConvertPreviewState,
   FrameSize,
   OptimizePreviewState,
   PendingReplaceState,
 } from "@/components/Assets/AssetsInspector.types";
+import AssetsInspectorHero from "@/components/Assets/AssetsInspectorHero";
 import type {
   AssetUsage,
   AssetUsageBounds,
@@ -47,7 +46,7 @@ import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
-import { getDisplayAssetName, getNextAvailableFilename } from "@/lib/asset-filename";
+import { getNextAvailableFilename } from "@/lib/asset-filename";
 import { optimizeImageBlob } from "@/lib/image-optimization";
 import type { TemplateId } from "@/types/templates";
 
@@ -1137,46 +1136,17 @@ export default function AssetsInspector({
             onChange={handleReplaceFile}
           />
         </div>
-        {showCarousel ? (
-          <div className={`${styles.assetsInspectorCarousel} ${styles.uRowLg}`}>
-            <button
-              type="button"
-              className={styles.assetsInspectorCarouselButton}
-              onClick={() => onSelectIndex((safeIndex - 1 + assets.length) % assets.length)}
-              aria-label={t("actions.previous")}
-            >
-              <ChevronLeft />
-            </button>
-            <div className={styles.assetsInspectorCarouselMeta}>
-              <div className={styles.assetsInspectorCarouselCount}>
-                {assets.length} {assets.length === 1 ? t("label.asset") : t("label.assets")}
-              </div>
-              <div className={styles.assetsInspectorCarouselIndex}>
-                {safeIndex + 1} / {assets.length}
-              </div>
-            </div>
-            <button
-              type="button"
-              className={styles.assetsInspectorCarouselButton}
-              onClick={() => onSelectIndex((safeIndex + 1) % assets.length)}
-              aria-label={t("actions.next")}
-            >
-              <ChevronRight />
-            </button>
-          </div>
-        ) : null}
-        <AssetInspectorPreview
+        <AssetsInspectorHero
+          assetsCount={assets.length}
+          safeIndex={safeIndex}
+          assetName={asset.name}
           previewUrl={previewUrl}
-          isLoading={isPreviewLoading}
-          alt={asset.name}
-          emptyContent={t("empty.noPreview")}
-          interactive
-          onClick={() => setIsPreviewModalOpen(true)}
-          ariaLabel={`${t("label.preview")}: ${getDisplayAssetName(asset.name)}`}
+          isPreviewLoading={isPreviewLoading}
+          showCarousel={showCarousel}
+          onPrevious={() => onSelectIndex((safeIndex - 1 + assets.length) % assets.length)}
+          onNext={() => onSelectIndex((safeIndex + 1) % assets.length)}
+          onOpenPreview={() => setIsPreviewModalOpen(true)}
         />
-        <div className={styles.assetsInspectorFilename} title={getDisplayAssetName(asset.name)}>
-          {getDisplayAssetName(asset.name)}
-        </div>
         <dl className={styles.assetsInspectorDetails}>
           <div className={styles.uRowLg}>
             <dt>{t("label.assetKind")}</dt>
