@@ -7,12 +7,8 @@ import {
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
-  useDroppable,
 } from "@dnd-kit/react";
-import { useSortable } from "@dnd-kit/react/sortable";
-import { SquarePlus } from "lucide-react";
 import {
-  Fragment,
   createContext,
   useContext,
   useEffect,
@@ -24,7 +20,6 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
-import CardThumbnail from "@/components/common/CardThumbnail";
 import {
   canRouteDrag,
   collectLabels,
@@ -42,7 +37,6 @@ import {
   createEmptySlotEphemeralSetId,
   findContainerByItemId,
   isEmptySlotEphemeralSetId,
-  isSourceEphemeralSetId,
   moveEphemeralToContainer,
   normalizeAfterDrop,
   stripEphemeralItems,
@@ -53,29 +47,20 @@ import type {
   BoardModel,
   BoardRoutingMeta,
   DnDState,
-  DragRouteToken,
   SourceItemFace,
   UiItem,
 } from "@/components/Decks/detail/boards/deck-board-internal-types";
 import type {
   BoardId,
   GroupId,
-  GroupVisualContext,
-  RenderSetContent,
-  SetHoverContext,
   SetId,
-  SetRenderState,
-  SetShellVisualContext,
-  SetToolbarContext,
 } from "@/components/Decks/detail/boards/deck-board-types";
+import { OverlayCard } from "@/components/Decks/detail/boards/DeckBoardCards";
 import {
-  DraggableSetCard,
-  EmptySlotDropCard,
-  OverlayCard,
-  SortableSetCard,
-} from "@/components/Decks/detail/boards/DeckBoardCards";
+  DefaultSetThumbnailContent,
+} from "@/components/Decks/detail/boards/DeckSortableBoardView";
+import type { DeckSortableBoardViewModel } from "@/components/Decks/detail/boards/DeckSortableBoardView";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 
 import styles from "../DeckGroupsSection2.module.css";
 
@@ -89,7 +74,14 @@ export type {
   SetToolbarContext,
 } from "@/components/Decks/detail/boards/deck-board-types";
 export type { BoardModel } from "@/components/Decks/detail/boards/deck-board-internal-types";
-export type LayoutMode = "content" | "fill-parent";
+export {
+  DeckSortableBoardView,
+  DefaultSetThumbnailContent,
+} from "@/components/Decks/detail/boards/DeckSortableBoardView";
+export type {
+  DeckSortableBoardViewModel,
+  LayoutMode,
+} from "@/components/Decks/detail/boards/DeckSortableBoardView";
 
 type BoardInfoPillProps = {
   icon?: ReactNode;
@@ -189,43 +181,6 @@ type DeckMockDndContextValue = {
   registerDropHandler: (controllerId: string, handler: DeckDropHandler) => () => void;
 };
 
-export type DeckSortableBoardViewModel = {
-  config: BoardConfig;
-  emitToken: DragRouteToken;
-  acceptTokens: DragRouteToken[];
-  groupIds: GroupId[];
-  itemsByGroup: Record<GroupId, SetId[]>;
-  groupLabelsById: Record<GroupId, string>;
-  setLabelsById: Record<SetId, string>;
-  setCardIdById: Record<SetId, string>;
-  activeSetId: SetId | null;
-  activeGroupId: GroupId | null;
-  activeTargetBoardId: BoardId | null;
-  showDropAffordance: boolean;
-  hoverBoundaryIndex: number | null;
-  onHoverBoundary: (clientX: number) => void;
-  onLeaveBoard: () => void;
-  onBoundaryHoverChange: (index: number, isHovered: boolean) => void;
-  onCreateGroupAtIndex: (index: number) => void;
-  registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
-  allowGroupReorder?: boolean;
-  onSetClick?: (setUiId: SetId, groupUiId: GroupId, options?: { additive: boolean }) => void;
-  onSetHoverChange?: (args: SetHoverContext) => void;
-  renderSetContent: RenderSetContent;
-  renderTopToolbar?: (args: SetToolbarContext) => React.ReactNode;
-  renderBottomToolbar?: (args: SetToolbarContext) => React.ReactNode;
-  isSetSelected?: (setId: SetId, groupId: GroupId) => boolean;
-  resolveGroupClassName?: (args: GroupVisualContext) => string | null;
-  resolveGroupStyle?: (args: GroupVisualContext) => CSSProperties | undefined;
-  resolveGroupBodyClassName?: (args: GroupVisualContext) => string | null;
-  resolveGroupBodyStyle?: (args: GroupVisualContext) => CSSProperties | undefined;
-  resolveSetShellClassName?: (args: SetShellVisualContext) => string | null;
-  resolveSetShellStyle?: (args: SetShellVisualContext) => CSSProperties | undefined;
-  renderGroupOverlay?: (args: GroupVisualContext & { setIds: SetId[] }) => ReactNode;
-  renderBoardHeaderActions?: () => ReactNode;
-  emptyMessage?: string | null;
-};
-
 const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
   groups: {
     boardId: "groups",
@@ -253,7 +208,6 @@ const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
   },
 };
 
-const SHOW_GROUP_HEADINGS = false;
 const GROUP_BOUNDARY_EDGE_PCT = 0.1;
 const GROUP_BOUNDARY_EDGE_MIN_PX = 12;
 const GROUP_BOUNDARY_EDGE_MAX_PX = 28;
@@ -280,215 +234,6 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-function parseGroupLabel(groupId: GroupId): string {
-  return groupId.split(":")[1] ?? groupId;
-}
-
-function parseSetLabel(setId: SetId): string {
-  if (setId.startsWith("g-")) return setId.slice(2).toUpperCase();
-  return setId.toUpperCase();
-}
-
-
-function BoardDropSurface({
-  boardId,
-  canReceiveDrops,
-  className,
-  children,
-  testId,
-  onPointerMove,
-  onMouseMove,
-  onMouseLeave,
-}: {
-  boardId: BoardId;
-  canReceiveDrops: boolean;
-  className: string;
-  children: React.ReactNode;
-  testId: string;
-  onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => void;
-  onMouseMove: (event: React.MouseEvent<HTMLDivElement>) => void;
-  onMouseLeave: () => void;
-}) {
-  const { ref } = useDroppable({
-    id: `board:${boardId}`,
-    type: "board",
-    accept: canReceiveDrops ? ["set"] : [],
-  });
-
-  return (
-    <div
-      ref={ref}
-      className={className}
-      data-testid={testId}
-      onPointerMove={onPointerMove}
-      onMouseMove={onMouseMove}
-      onMouseLeave={onMouseLeave}
-    >
-      {children}
-    </div>
-  );
-}
-
-function GroupColumn({
-  boardId,
-  index,
-  groupId,
-  label,
-  children,
-  fillParent,
-  canReceiveDrops,
-  showHeader,
-  sourceLayout,
-  entriesLayout,
-  className,
-  style,
-  bodyClassName,
-  bodyStyle,
-  onHoverChange,
-  allowGroupReorder,
-  isGroupDragSource,
-}: {
-  boardId: BoardId;
-  index: number;
-  groupId: GroupId;
-  label?: string;
-  children: React.ReactNode;
-  fillParent: boolean;
-  canReceiveDrops: boolean;
-  showHeader: boolean;
-  sourceLayout?: boolean;
-  entriesLayout?: boolean;
-  className?: string;
-  style?: CSSProperties;
-  bodyClassName?: string;
-  bodyStyle?: CSSProperties;
-  onHoverChange?: (isHovered: boolean) => void;
-  allowGroupReorder?: boolean;
-  isGroupDragSource?: boolean;
-}) {
-  const { t } = useI18n();
-  const droppable = useDroppable({
-    id: groupId,
-    type: "group",
-    accept: [
-      ...(canReceiveDrops ? (["set"] as const) : []),
-      ...(allowGroupReorder ? (["group"] as const) : []),
-    ],
-  });
-  const { ref, handleRef, isDragging, isDragSource } = useSortable({
-    id: groupId,
-    index,
-    type: "group",
-    accept: ["group"],
-    group: `board:${boardId}`,
-    data: { group: groupId },
-    disabled: !allowGroupReorder,
-  });
-
-  return (
-    <section
-      className={[
-        styles.group,
-        isGroupDragSource || isDragSource ? styles.groupDragGhost : "",
-        fillParent ? styles.groupFillParent : "",
-        sourceLayout ? styles.groupSource : "",
-        className ?? "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      ref={(node) => {
-        droppable.ref(node);
-        ref(node);
-      }}
-      data-testid={`group-${groupId}`}
-      style={style}
-      onMouseEnter={() => onHoverChange?.(true)}
-      onMouseLeave={() => onHoverChange?.(false)}
-    >
-      {allowGroupReorder ? (
-        <button
-          type="button"
-          ref={handleRef}
-          className={[
-            styles.groupDragHandle,
-            isDragging ? styles.groupDragHandleActive : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          aria-label={t("decks.groups.actions.reorder")}
-          title={t("decks.groups.actions.reorder")}
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <span aria-hidden="true">⋮⋮</span>
-        </button>
-      ) : null}
-      {showHeader ? (
-        <header className={styles.groupHeader}>
-          <span>{label ?? parseGroupLabel(groupId)}</span>
-          <span className={styles.grip} aria-hidden="true">
-            ⠿
-          </span>
-        </header>
-      ) : null}
-      <div
-        className={[
-          styles.groupBody,
-          fillParent ? styles.groupBodyFillParent : "",
-          sourceLayout ? styles.groupBodySource : "",
-          sourceLayout && fillParent ? styles.groupBodySourceFillParent : "",
-          entriesLayout && fillParent ? styles.groupBodyEntriesFillParent : "",
-          bodyClassName ?? "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        style={bodyStyle}
-      >
-        {children}
-      </div>
-    </section>
-  );
-}
-
-export function DefaultSetThumbnailContent({
-  setId,
-  cardId,
-  label,
-  state,
-}: {
-  setId: SetId;
-  cardId?: string;
-  label?: string;
-  state: SetRenderState;
-}) {
-  const thumbUrl = useCardThumbnailUrl(cardId ?? null, null, {
-    enabled: Boolean(cardId),
-    useCache: true,
-  });
-  const title = label ?? parseSetLabel(setId);
-  const stateClass =
-    state === "dragging" || state === "overlay"
-      ? styles.setContentDragging
-      : state === "ghost" || state === "pending"
-        ? styles.setContentGhost
-        : state === "dropTarget"
-          ? styles.setContentDropTarget
-          : "";
-
-  return (
-    <div className={[styles.setContent, stateClass].filter(Boolean).join(" ")}>
-      <CardThumbnail
-        src={thumbUrl}
-        alt={title}
-        variant="md"
-        fit="contain"
-        className={styles.setThumb}
-        fallback={<div className={styles.setThumbFallback} />}
-      />
-    </div>
-  );
-}
-
 export function BoardInfoPill({
   icon,
   label,
@@ -508,351 +253,6 @@ export function BoardInfoPill({
       {icon ? <span className={styles.boardInfoPillIcon}>{icon}</span> : null}
       <span className={styles.boardInfoPillLabel}>{label}</span>
     </span>
-  );
-}
-
-function CreateBoundaryPlaceholder({
-  index,
-  onCreate,
-  onHoverChange,
-  visible,
-}: {
-  index: number;
-  onCreate: (index: number) => void;
-  onHoverChange: (index: number, isHovered: boolean) => void;
-  visible: boolean;
-}) {
-  const { t } = useI18n();
-  return (
-    <div
-      className={[styles.createBoundary, visible ? styles.createBoundaryVisible : ""]
-        .filter(Boolean)
-        .join(" ")}
-      data-testid={`create-boundary-${index}`}
-      aria-hidden={!visible}
-    >
-      <span
-        className={[
-          styles.createBoundaryLine,
-          visible ? styles.createBoundaryLineVisible : "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        aria-hidden="true"
-      />
-      <button
-        type="button"
-        className={[
-          styles.createBoundaryButton,
-          visible ? styles.createBoundaryButtonVisible : "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        onClick={() => onCreate(index)}
-        onPointerEnter={() => onHoverChange(index, true)}
-        onPointerLeave={() => onHoverChange(index, false)}
-        onMouseEnter={() => onHoverChange(index, true)}
-        onMouseLeave={() => onHoverChange(index, false)}
-        aria-label={t("decks.groups.actions.createAtPosition").replace("{index}", String(index))}
-        title={t("decks.groups.actions.insertHere")}
-        tabIndex={visible ? 0 : -1}
-      >
-        <SquarePlus className={styles.createBoundaryIcon} aria-hidden="true" />
-      </button>
-    </div>
-  );
-}
-
-export function DeckSortableBoardView({
-  model,
-  layoutMode = "content",
-}: {
-  model: DeckSortableBoardViewModel;
-  layoutMode?: LayoutMode;
-}) {
-  const { config, groupIds, itemsByGroup, activeSetId, activeGroupId, activeTargetBoardId, hoverBoundaryIndex } = model;
-  const useFillParent = layoutMode === "fill-parent" && !config.allowMultipleGroups;
-  const isSourceBoard = config.boardId === "source";
-  const isEntriesBoard = config.boardId === "entries";
-  const blockedBoundaries = useMemo(
-    () => getBlockedBoundaries(groupIds, itemsByGroup),
-    [groupIds, itemsByGroup],
-  );
-  const hideCreateBoundariesForBootstrapEmptyState =
-    config.boardId === "groups" &&
-    groupIds.length === 1 &&
-    countRenderableSets(itemsByGroup[groupIds[0]] ?? []) === 0;
-  const [hoveredGroupId, setHoveredGroupId] = useState<GroupId | null>(null);
-
-  return (
-    <section
-      className={[styles.board, useFillParent ? styles.boardFillParent : ""]
-        .concat(isSourceBoard ? [" ", styles.boardSource] : [])
-        .concat(model.showDropAffordance ? [" ", styles.boardDropActive] : [])
-        .concat(
-          model.showDropAffordance && activeTargetBoardId === config.boardId
-            ? [" ", styles.boardDropOver]
-            : [],
-        )
-        .filter(Boolean)
-        .join(" ")}
-      data-testid={`board-${config.boardId}`}
-    >
-      {config.boardId === "source" ? null : (
-        <header className={styles.boardHeader}>
-          <span>{config.title}</span>
-          {model.renderBoardHeaderActions ? (
-            <span className={styles.boardHeaderActions}>{model.renderBoardHeaderActions()}</span>
-          ) : null}
-        </header>
-      )}
-      <BoardDropSurface
-        boardId={config.boardId}
-        canReceiveDrops={config.allowDropTarget}
-        className={[
-          styles.groupsRow,
-          useFillParent ? styles.groupsRowFillParent : "",
-          isSourceBoard ? styles.groupsRowSource : "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        testId={`groups-row-${config.boardId}`}
-        onPointerMove={(event) => model.onHoverBoundary(event.clientX)}
-        onMouseMove={(event) => model.onHoverBoundary(event.clientX)}
-        onMouseLeave={model.onLeaveBoard}
-      >
-        {groupIds.map((groupId, index) => (
-          <div key={groupId} className={styles.groupStack}>
-            {config.allowGroupCreate && !hideCreateBoundariesForBootstrapEmptyState ? (
-              <CreateBoundaryPlaceholder
-                index={index}
-                onCreate={model.onCreateGroupAtIndex}
-                onHoverChange={model.onBoundaryHoverChange}
-                visible={
-                  !activeSetId &&
-                  !activeGroupId &&
-                  hoverBoundaryIndex === index &&
-                  !blockedBoundaries.has(index)
-                }
-              />
-            ) : null}
-            <div
-              className={useFillParent ? styles.groupWrapperFillParent : ""}
-              ref={(node) => model.registerGroupRef(groupId, node)}
-            >
-              <GroupColumn
-                boardId={config.boardId}
-                index={index}
-                groupId={groupId}
-                label={model.groupLabelsById[groupId]}
-                fillParent={useFillParent}
-                canReceiveDrops={config.allowDropTarget}
-                showHeader={SHOW_GROUP_HEADINGS}
-                sourceLayout={isSourceBoard}
-                entriesLayout={isEntriesBoard}
-                className={
-                  model.resolveGroupClassName?.({
-                    boardId: config.boardId,
-                    groupId,
-                    isHovered: hoveredGroupId === groupId,
-                    hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
-                      (setId) => model.isSetSelected?.(setId, groupId) ?? false,
-                    ),
-                    setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
-                  }) ?? undefined
-                }
-                style={model.resolveGroupStyle?.({
-                  boardId: config.boardId,
-                  groupId,
-                  isHovered: hoveredGroupId === groupId,
-                  hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
-                    (setId) => model.isSetSelected?.(setId, groupId) ?? false,
-                  ),
-                  setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
-                })}
-                bodyClassName={
-                  model.resolveGroupBodyClassName?.({
-                    boardId: config.boardId,
-                    groupId,
-                    isHovered: hoveredGroupId === groupId,
-                    hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
-                      (setId) => model.isSetSelected?.(setId, groupId) ?? false,
-                    ),
-                    setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
-                  }) ?? undefined
-                }
-                bodyStyle={model.resolveGroupBodyStyle?.({
-                  boardId: config.boardId,
-                  groupId,
-                  isHovered: hoveredGroupId === groupId,
-                  hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
-                    (setId) => model.isSetSelected?.(setId, groupId) ?? false,
-                  ),
-                  setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
-                })}
-                onHoverChange={(isHovered) => {
-                  setHoveredGroupId((current) => {
-                    if (isHovered) return groupId;
-                    return current === groupId ? null : current;
-                  });
-                }}
-                allowGroupReorder={
-                  config.boardId === "groups" &&
-                  Boolean(model.allowGroupReorder) &&
-                  groupIds.length > 1
-                }
-                isGroupDragSource={activeGroupId === groupId}
-              >
-                {(() => {
-                  const groupSetIds = itemsByGroup[groupId] ?? [];
-                  const hasSelectedSet = groupSetIds.some((setId) => model.isSetSelected?.(setId, groupId) ?? false);
-                  const groupVisualContext: GroupVisualContext = {
-                    boardId: config.boardId,
-                    groupId,
-                    isHovered: hoveredGroupId === groupId,
-                    hasSelectedSet,
-                    setCount: countRenderableSets(groupSetIds),
-                  };
-
-                  return groupSetIds.map((setId, setIndex) => (
-                    <Fragment key={setId}>
-                      {config.allowInGroupSort && isEmptySlotEphemeralSetId(setId) ? (
-                        <EmptySlotDropCard
-                          setId={setId}
-                          groupId={groupId}
-                          sourceLayout={isSourceBoard}
-                          renderContent={model.renderSetContent}
-                          shellClassName={
-                            model.resolveSetShellClassName?.({
-                              ...groupVisualContext,
-                              setId,
-                              setIndex,
-                            }) ?? undefined
-                          }
-                          shellStyle={model.resolveSetShellStyle?.({
-                            ...groupVisualContext,
-                            setId,
-                            setIndex,
-                          })}
-                        />
-                      ) : null}
-                      {config.allowInGroupSort && !isEmptySlotEphemeralSetId(setId) ? (
-                        <SortableSetCard
-                          boardId={config.boardId}
-                          setId={setId}
-                          label={model.setLabelsById[setId]}
-                          cardId={model.setCardIdById[setId]}
-                          index={setIndex}
-                          groupId={groupId}
-                          renderContent={model.renderSetContent}
-                          isSelected={model.isSetSelected?.(setId, groupId) ?? false}
-                          isEphemeral={isSourceEphemeralSetId(setId)}
-                          renderTopToolbar={model.renderTopToolbar}
-                          renderBottomToolbar={model.renderBottomToolbar}
-                          sourceLayout={isSourceBoard}
-                          shellClassName={
-                            model.resolveSetShellClassName?.({
-                              ...groupVisualContext,
-                              setId,
-                              setIndex,
-                            }) ?? undefined
-                          }
-                          shellStyle={model.resolveSetShellStyle?.({
-                            ...groupVisualContext,
-                            setId,
-                            setIndex,
-                          })}
-                          onClick={(event) => {
-                            if (model.activeSetId) return;
-                            model.onSetClick?.(setId, groupId, {
-                              additive: event.metaKey || event.ctrlKey,
-                            });
-                          }}
-                          onHoverChange={(isHovered) =>
-                            model.onSetHoverChange?.({
-                              boardId: config.boardId,
-                              groupId,
-                              setId,
-                              isHovered,
-                            })}
-                        />
-                      ) : null}
-                      {!config.allowInGroupSort ? (
-                        <DraggableSetCard
-                          boardId={config.boardId}
-                          setId={setId}
-                          label={model.setLabelsById[setId]}
-                          cardId={model.setCardIdById[setId]}
-                          groupId={groupId}
-                          renderContent={model.renderSetContent}
-                          isSelected={model.isSetSelected?.(setId, groupId) ?? false}
-                          isEphemeral={isSourceEphemeralSetId(setId)}
-                          renderTopToolbar={model.renderTopToolbar}
-                          renderBottomToolbar={model.renderBottomToolbar}
-                          sourceLayout={isSourceBoard}
-                          shellClassName={
-                            model.resolveSetShellClassName?.({
-                              ...groupVisualContext,
-                              setId,
-                              setIndex,
-                            }) ?? undefined
-                          }
-                          shellStyle={model.resolveSetShellStyle?.({
-                            ...groupVisualContext,
-                            setId,
-                            setIndex,
-                          })}
-                          onClick={(event) => {
-                            if (model.activeSetId) return;
-                            model.onSetClick?.(setId, groupId, {
-                              additive: event.metaKey || event.ctrlKey,
-                            });
-                          }}
-                          onHoverChange={(isHovered) =>
-                            model.onSetHoverChange?.({
-                              boardId: config.boardId,
-                              groupId,
-                              setId,
-                              isHovered,
-                            })}
-                        />
-                      ) : null}
-                    </Fragment>
-                  ));
-                })()}
-                {model.renderGroupOverlay?.({
-                  boardId: config.boardId,
-                  groupId,
-                  isHovered: hoveredGroupId === groupId,
-                  hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
-                    (setId) => model.isSetSelected?.(setId, groupId) ?? false,
-                  ),
-                  setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
-                  setIds: itemsByGroup[groupId] ?? [],
-                })}
-                {countRenderableSets(itemsByGroup[groupId] ?? []) === 0 && model.emptyMessage ? (
-                  <div className={styles.groupEmptyMessage}>{model.emptyMessage}</div>
-                ) : null}
-              </GroupColumn>
-            </div>
-          </div>
-        ))}
-
-        {config.allowGroupCreate && !hideCreateBoundariesForBootstrapEmptyState ? (
-          <CreateBoundaryPlaceholder
-            index={groupIds.length}
-            onCreate={model.onCreateGroupAtIndex}
-            onHoverChange={model.onBoundaryHoverChange}
-            visible={
-              !activeSetId &&
-              !activeGroupId &&
-              hoverBoundaryIndex === groupIds.length &&
-              !blockedBoundaries.has(groupIds.length)
-            }
-          />
-        ) : null}
-      </BoardDropSurface>
-    </section>
   );
 }
 
