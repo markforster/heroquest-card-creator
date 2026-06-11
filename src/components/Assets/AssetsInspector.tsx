@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useFormState } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 
@@ -9,11 +8,7 @@ import type { AssetRecord } from "@/api/assets";
 import type { CardRecord } from "@/api/cards";
 import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
-import {
-  formatAssetDate,
-  formatBytes,
-  sortCardsByUpdated,
-} from "@/components/Assets/asset-formatters";
+import { formatBytes, sortCardsByUpdated } from "@/components/Assets/asset-formatters";
 import { getUsageBoundsForTemplate } from "@/components/Assets/asset-inspector-usage";
 import type {
   ConvertPreviewState,
@@ -21,13 +16,9 @@ import type {
   OptimizePreviewState,
   PendingReplaceState,
 } from "@/components/Assets/AssetsInspector.types";
+import AssetsInspectorDetails from "@/components/Assets/AssetsInspectorDetails";
 import AssetsInspectorHero from "@/components/Assets/AssetsInspectorHero";
-import type {
-  AssetUsage,
-  AssetUsageBounds,
-  UsagePopoverAnchor,
-} from "@/components/Assets/AssetsRoutePanels.types";
-import AssetsUsageCardsPopover from "@/components/Assets/AssetsUsageCardsPopover";
+import type { AssetUsage, AssetUsageBounds } from "@/components/Assets/AssetsRoutePanels.types";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
 import {
   AssetsConvertModal,
@@ -36,14 +27,12 @@ import {
   AssetsReplaceModal,
 } from "@/components/Assets/modals";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
-import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useEditorSave } from "@/components/Providers/EditorSaveContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
-import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
 import { getNextAvailableFilename } from "@/lib/asset-filename";
@@ -79,7 +68,7 @@ export default function AssetsInspector({
   } = useCardEditor();
   const { isDirty } = useFormState();
   const { saveCurrentCard } = useEditorSave();
-  const { enqueueAsset, cancelAsset } = useAssetKindQueue();
+  const { enqueueAsset } = useAssetKindQueue();
   const safeIndex = Math.min(currentIndex, assets.length - 1);
   const asset = assets[safeIndex];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -89,8 +78,6 @@ export default function AssetsInspector({
   const [assetSizeBytes, setAssetSizeBytes] = useState<number | null>(null);
   const [usage, setUsage] = useState<AssetUsage>({ total: 0, cards: [] });
   const [usageBounds, setUsageBounds] = useState<AssetUsageBounds | null>(null);
-  const [usagePopoverAnchor, setUsagePopoverAnchor] = useState<UsagePopoverAnchor | null>(null);
-  const [isUsagePopoverOpen, setIsUsagePopoverOpen] = useState(false);
   const [pendingOpenCard, setPendingOpenCard] = useState<CardRecord | null>(null);
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
   const [pendingReplace, setPendingReplace] = useState<PendingReplaceState | null>(null);
@@ -162,64 +149,9 @@ export default function AssetsInspector({
     requiredWidth > 0 &&
     requiredHeight > 0 &&
     optimizeScalePercent < recommendedMinScalePercent;
-  const [isKindPopoverOpen, setIsKindPopoverOpen] = useState(false);
-  const kindAnchorRef = useRef<HTMLButtonElement | null>(null);
-  const kindPopoverRef = useRef<HTMLDivElement | null>(null);
-  const usageTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const usagePopoverRef = useRef<HTMLDivElement | null>(null);
-  const usagePopoverCloseTimeoutRef = useRef<number | null>(null);
   const recenterTimeoutRef = useRef<number | null>(null);
-  const [kindPopoverStyle, setKindPopoverStyle] = useState<React.CSSProperties | null>(null);
-  const kindPopoverPlacement = usePopoverPlacement({
-    isOpen: isKindPopoverOpen,
-    anchorRef: kindAnchorRef,
-    popoverRef: kindPopoverRef,
-    offset: 8,
-  });
-  useOutsideClick(
-    [kindPopoverRef, kindAnchorRef],
-    () => setIsKindPopoverOpen(false),
-    isKindPopoverOpen,
-  );
-
-  const clearUsagePopoverCloseTimeout = () => {
-    if (usagePopoverCloseTimeoutRef.current) {
-      window.clearTimeout(usagePopoverCloseTimeoutRef.current);
-      usagePopoverCloseTimeoutRef.current = null;
-    }
-  };
-
-  const closeUsagePopover = () => {
-    clearUsagePopoverCloseTimeout();
-    setIsUsagePopoverOpen(false);
-    setUsagePopoverAnchor(null);
-  };
-
-  const scheduleUsagePopoverClose = () => {
-    clearUsagePopoverCloseTimeout();
-    usagePopoverCloseTimeoutRef.current = window.setTimeout(() => {
-      setIsUsagePopoverOpen(false);
-      setUsagePopoverAnchor(null);
-    }, 200);
-  };
-
-  const openUsagePopover = (anchor: HTMLElement) => {
-    if (usage.cards.length === 0) return;
-    clearUsagePopoverCloseTimeout();
-    const rect = anchor.getBoundingClientRect();
-    setUsagePopoverAnchor({
-      rect: {
-        top: rect.top,
-        left: rect.left,
-        bottom: rect.bottom,
-        right: rect.right,
-      },
-    });
-    setIsUsagePopoverOpen(true);
-  };
 
   const openCard = async (cardId: string) => {
-    closeUsagePopover();
     navigate(`/cards/${cardId}`);
     if (ENABLE_WEBGL_RECENTER_ON_FACE_SELECT) {
       if (recenterTimeoutRef.current) {
@@ -240,28 +172,6 @@ export default function AssetsInspector({
       return;
     }
     await openCard(cardId);
-  };
-
-  const handleUsageTriggerBlur = (event: React.FocusEvent<HTMLButtonElement>) => {
-    const nextTarget = event.relatedTarget as Node | null;
-    if (
-      (nextTarget && usageTriggerRef.current?.contains(nextTarget)) ||
-      (nextTarget && usagePopoverRef.current?.contains(nextTarget))
-    ) {
-      return;
-    }
-    closeUsagePopover();
-  };
-
-  const handleUsagePopoverBlur = (event: React.FocusEvent<HTMLDivElement>) => {
-    const nextTarget = event.relatedTarget as Node | null;
-    if (
-      (nextTarget && usageTriggerRef.current?.contains(nextTarget)) ||
-      (nextTarget && usagePopoverRef.current?.contains(nextTarget))
-    ) {
-      return;
-    }
-    closeUsagePopover();
   };
 
   useEffect(() => {
@@ -436,27 +346,17 @@ export default function AssetsInspector({
   }, [asset.id]);
 
   useEffect(() => {
-    clearUsagePopoverCloseTimeout();
-    setIsUsagePopoverOpen(false);
-    setUsagePopoverAnchor(null);
     setPendingOpenCard(null);
     setIsSavePromptOpen(false);
   }, [asset.id]);
 
   useEffect(() => {
     return () => {
-      clearUsagePopoverCloseTimeout();
       if (recenterTimeoutRef.current) {
         window.clearTimeout(recenterTimeoutRef.current);
       }
     };
   }, []);
-
-  const dimensionsLabel = useMemo(() => `${asset.width}×${asset.height}`, [asset.height, asset.width]);
-  const sizeLabel = useMemo(
-    () => (assetSizeBytes != null ? formatBytes(assetSizeBytes) : "—"),
-    [assetSizeBytes],
-  );
 
   const pendingMismatch = pendingReplace
     ? pendingReplace.width !== asset.width || pendingReplace.height !== asset.height
@@ -474,7 +374,6 @@ export default function AssetsInspector({
     setPendingReplace(null);
     setKeepBackup(false);
     setIsPreviewModalOpen(false);
-    setIsKindPopoverOpen(false);
     setIsOptimizeOpen(false);
     setIsConvertOpen(false);
     setConvertPreview((prev) => {
@@ -1030,70 +929,6 @@ export default function AssetsInspector({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [assets.length, onSelectIndex, safeIndex, showCarousel]);
 
-  const kindStatus = asset.assetKindStatus ?? "unclassified";
-  const kindLabel =
-    kindStatus === "classifying"
-      ? t("label.assetKindClassifying")
-      : kindStatus === "classified"
-        ? asset.assetKind === "icon"
-          ? t("label.assetKindIcon")
-          : t("label.assetKindArtwork")
-        : t("label.assetKindUnknown");
-  const canOverride = kindStatus !== "classifying";
-  const applyManualKind = async (kind: "icon" | "artwork") => {
-    cancelAsset(asset.id);
-    await apiClient.updateAssetMetadata(
-      {
-        patch: {
-          assetKindStatus: "classified",
-          assetKind: kind,
-          assetKindSource: "manual",
-          assetKindConfidence: 1,
-          assetKindUpdatedAt: Date.now(),
-        },
-      },
-      { params: { id: asset.id } },
-    );
-    setIsKindPopoverOpen(false);
-  };
-
-  useLayoutEffect(() => {
-    if (!isKindPopoverOpen) return;
-    if (typeof window === "undefined") return;
-
-    const updatePosition = () => {
-      const anchor = kindAnchorRef.current;
-      const popover = kindPopoverRef.current;
-      if (!anchor || !popover) return;
-
-      const anchorRect = anchor.getBoundingClientRect();
-      const popoverRect = popover.getBoundingClientRect();
-      const padding = 12;
-      const offset = 8;
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      let left = anchorRect.left;
-      let top =
-        kindPopoverPlacement === "up"
-          ? anchorRect.top - popoverRect.height - offset
-          : anchorRect.bottom + offset;
-
-      left = Math.min(Math.max(left, padding), viewportWidth - popoverRect.width - padding);
-      top = Math.min(Math.max(top, padding), viewportHeight - popoverRect.height - padding);
-
-      setKindPopoverStyle({ left, top, position: "fixed" });
-    };
-
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [isKindPopoverOpen, kindPopoverPlacement]);
-
   return (
     <aside className={`${styles.rightPanel} ${styles.assetsRightPanel}`}>
       <div className={styles.assetsInspectorBody}>
@@ -1147,130 +982,13 @@ export default function AssetsInspector({
           onNext={() => onSelectIndex((safeIndex + 1) % assets.length)}
           onOpenPreview={() => setIsPreviewModalOpen(true)}
         />
-        <dl className={styles.assetsInspectorDetails}>
-          <div className={styles.uRowLg}>
-            <dt>{t("label.assetKind")}</dt>
-            <dd>
-              <div className={styles.assetsKindPopoverAnchor}>
-                <button
-                  type="button"
-                  ref={kindAnchorRef}
-                  className={`${styles.assetsKindBadge} ${
-                    kindStatus === "classifying"
-                      ? styles.assetsKindBadgeClassifying
-                      : kindStatus === "classified"
-                        ? asset.assetKind === "icon"
-                          ? styles.assetsKindBadgeIcon
-                          : styles.assetsKindBadgeArtwork
-                        : styles.assetsKindBadgeUnknown
-                  }`}
-                  onClick={() => {
-                    if (!canOverride) return;
-                    setIsKindPopoverOpen((prev) => !prev);
-                  }}
-                  aria-haspopup="dialog"
-                  aria-expanded={isKindPopoverOpen}
-                  disabled={!canOverride}
-                >
-                  {kindLabel}
-                </button>
-                {isKindPopoverOpen
-                  ? createPortal(
-                      <div
-                        ref={kindPopoverRef}
-                        className={styles.assetsKindPopover}
-                        style={
-                          kindPopoverStyle ?? {
-                            position: "fixed",
-                            left: 0,
-                            top: 0,
-                            opacity: 0,
-                            pointerEvents: "none",
-                          }
-                        }
-                        role="dialog"
-                      >
-                        <div className={styles.assetsKindPopoverTitle}>
-                          {t("label.assetKindOverride")}
-                        </div>
-                        <button
-                          type="button"
-                          className={styles.assetsKindPopoverOption}
-                          onClick={() => void applyManualKind("icon")}
-                        >
-                          {t("label.assetKindIcon")}
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.assetsKindPopoverOption}
-                          onClick={() => void applyManualKind("artwork")}
-                        >
-                          {t("label.assetKindArtwork")}
-                        </button>
-                      </div>,
-                      document.body,
-                    )
-                  : null}
-              </div>
-              {!canOverride ? (
-                <span className={styles.assetsKindPopoverHint}>
-                  {t("label.assetKindClassifyingHint")}
-                </span>
-              ) : null}
-            </dd>
-          </div>
-          <div className={styles.uRowLg}>
-            <dt>{t("label.fileType")}</dt>
-            <dd>{asset.mimeType}</dd>
-          </div>
-          <div className={styles.uRowLg}>
-            <dt>{t("label.dimensions")}</dt>
-            <dd>{dimensionsLabel}</dd>
-          </div>
-          <div className={styles.uRowLg}>
-            <dt>{t("label.fileSize")}</dt>
-            <dd>{sizeLabel}</dd>
-          </div>
-          <div className={styles.uRowLg}>
-            <dt>{t("label.dateAdded")}</dt>
-            <dd>{formatAssetDate(asset.createdAt)}</dd>
-          </div>
-          <div className={styles.uRowLg}>
-            <dt>{t("label.usedOnCards")}</dt>
-            <dd>
-              {usage.total > 0 ? (
-                <button
-                  ref={usageTriggerRef}
-                  type="button"
-                  className={styles.assetsUsageTrigger}
-                  onMouseEnter={(event) => openUsagePopover(event.currentTarget)}
-                  onMouseLeave={scheduleUsagePopoverClose}
-                  onFocus={(event) => openUsagePopover(event.currentTarget)}
-                  onBlur={handleUsageTriggerBlur}
-                  aria-haspopup="dialog"
-                  aria-expanded={isUsagePopoverOpen}
-                >
-                  {usage.total} {usage.total === 1 ? t("label.card") : t("label.cards")}
-                </button>
-              ) : (
-                <>{usage.total} {usage.total === 1 ? t("label.card") : t("label.cards")}</>
-              )}
-            </dd>
-          </div>
-        </dl>
+        <AssetsInspectorDetails
+          asset={asset}
+          assetSizeBytes={assetSizeBytes}
+          usage={usage}
+          onOpenCard={(cardId) => void requestOpenCard(cardId)}
+        />
       </div>
-      <AssetsUsageCardsPopover
-        isOpen={isUsagePopoverOpen}
-        anchor={usagePopoverAnchor}
-        cards={usage.cards}
-        popoverRef={usagePopoverRef}
-        onMouseEnter={clearUsagePopoverCloseTimeout}
-        onMouseLeave={scheduleUsagePopoverClose}
-        onBlur={handleUsagePopoverBlur}
-        onOpenCard={(cardId) => {
-          void requestOpenCard(cardId);
-        }}
-      />
       <ConfirmModal
         isOpen={isSavePromptOpen}
         title={t("heading.saveBeforeView")}
