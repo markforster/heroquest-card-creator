@@ -54,6 +54,12 @@ jest.mock("@/components/Providers/AssetHashIndexProvider", () => ({
   __esModule: true,
   AssetHashIndexProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
+jest.mock("@/components/Providers/AnalyticsProvider", () => ({
+  __esModule: true,
+  useAnalytics: () => ({
+    track: jest.fn(),
+  }),
+}));
 jest.mock("@/components/Providers/LocalStorageProvider", () => ({
   __esModule: true,
   LocalStorageProvider: ({ children }: { children: React.ReactNode }) => children,
@@ -70,6 +76,21 @@ jest.mock("@/components/Providers/PreviewRendererContext", () => ({
 jest.mock("@/components/Providers/WebglPreviewSettingsContext", () => ({
   __esModule: true,
   WebglPreviewSettingsProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+jest.mock("@/components/Providers/ThemeProvider", () => ({
+  __esModule: true,
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+jest.mock("@/components/Providers/ExportSettingsContext", () => ({
+  __esModule: true,
+  useExportSettingsState: () => ({
+    settings: {
+      bleed: { enabled: false, bleedPx: 0, askBeforeExport: false },
+      cropMarks: { enabled: false, color: "#000000", style: "lines" },
+      cutMarks: { enabled: false, color: "#000000" },
+      roundedCorners: false,
+    },
+  }),
 }));
 jest.mock("@/components/Providers/TextFittingPreferencesContext", () => ({
   __esModule: true,
@@ -121,6 +142,10 @@ jest.mock("@/components/Stockpile", () => ({
   __esModule: true,
   StockpileMainPanel: () => <div>Stockpile</div>,
 }));
+jest.mock("@/components/Decks/DecksRoutePanels", () => ({
+  __esModule: true,
+  default: () => <div>Decks Route</div>,
+}));
 
 jest.mock("@/components/Cards/CardEditor/CardPreviewContainer", () => ({
   __esModule: true,
@@ -128,7 +153,11 @@ jest.mock("@/components/Cards/CardEditor/CardPreviewContainer", () => ({
 }));
 jest.mock("@/components/Cards/CardInspector/CardInspector", () => ({
   __esModule: true,
-  default: () => <div>Inspector</div>,
+  default: function MockCardInspector() {
+    const { useFormContext } = jest.requireActual("react-hook-form") as typeof import("react-hook-form");
+    const { register } = useFormContext();
+    return <input aria-label="Title" {...register("title")} />;
+  },
 }));
 jest.mock("@/components/Cards/CardInspector/TemplateChooser", () => ({
   __esModule: true,
@@ -168,6 +197,19 @@ jest.mock("@/lib/export-face-ids", () => ({
 jest.mock("@/lib/export-assets-cache", () => ({
   __esModule: true,
   buildMissingAssetsReport: jest.fn().mockResolvedValue([]),
+}));
+jest.mock("@/lib/thumbnail-jpeg-migration", () => ({
+  __esModule: true,
+  startThumbnailJpegMigration: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock("@/lib/decks-service", () => ({
+  __esModule: true,
+  repairOrphanDeckEntries: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock("@/lib/indexeddb-size-tracker", () => ({
+  __esModule: true,
+  clearDbEstimateCache: jest.fn(),
+  runFullDbEstimate: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("@/i18n/I18nProvider", () => ({

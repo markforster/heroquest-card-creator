@@ -1,5 +1,18 @@
 # AGENT NOTES – HeroQuest Card Maker
 
-This repo also has detailed agent notes in `docs/AGENTS.md` (project overview, structure, conventions).
+Start every new task by reading:
 
-Testing working practices live in `TESTING.md` (test layout, naming, runner usage, and coverage conventions).
+1. `POLICY.md`
+2. `docs/policy/index.md`
+3. `docs/AGENTS.md`
+
+Then read every policy document relevant to the task before making changes.
+
+Important policy documents:
+
+- `POLICY.md`
+- `docs/policy/routing-and-pages.md`
+- `docs/policy/code-placement.md`
+- `docs/policy/testing.md`
+
+This repo also has detailed agent notes in `docs/AGENTS.md` (project overview, structure, conventions).

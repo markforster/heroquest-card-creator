@@ -13,9 +13,13 @@ const customJestConfig = {
   watchman: false,
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "\\.svg\\?url$": "<rootDir>/__mocks__/fileMock.js",
     "\\.(svg)$": "<rootDir>/__mocks__/svgrMock.tsx",
     "^next/link$": "<rootDir>/__mocks__/nextLinkMock.tsx",
   },
+  transformIgnorePatterns: [
+    "/node_modules/(?!(?:@preact/signals-core|@dnd-kit/state|@dnd-kit/abstract|@dnd-kit/dom|@dnd-kit/react)/)",
+  ],
   coverageDirectory: "<rootDir>/artefacts/coverage",
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",

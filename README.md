@@ -231,7 +231,9 @@ Outputs are written under `src-tauri/target/release/bundle/`.
 - `npm run fallow:dead-code` – find dead/unused code candidates.
 - `npm run fallow:audit` – run dead-code, duplication, and health audit across the repo.
 - `npm run fallow:changed` – run the same local audit check used before commit.
-- `npm run typecheck` – TypeScript type checking.
+- `npm run typecheck` – TypeScript type checking for app code.
+- `npm run typecheck:tests` – TypeScript type checking for tests and test utilities.
+- `npm run typecheck:all` – Combined TypeScript type checking for app code and tests.
 - `npm run test` / `test:*` – Jest test commands (see `jest.config.js`).
 - `npm run format` / `format:check` – Prettier formatting.
 
@@ -286,4 +288,4 @@ The codebase is deliberately small and component‑driven. If you’re exploring
 
 Prettier + ESLint are configured; running `npm run lint`, `npm run fallow:changed`, and `npm run format` before committing will keep things consistent.
 
-If you intend to contribute, please work on a fork and ensure `npm run test` (and ideally `npm run typecheck`) pass before opening a pull request — PRs with failing tests will be refused.
+If you intend to contribute, please work on a fork and ensure `npm run test`, `npm run typecheck`, and, when touching test code, `npm run typecheck:tests` pass before opening a pull request — PRs with failing tests will be refused.

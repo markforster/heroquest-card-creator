@@ -816,14 +816,7 @@ export default function DecksRoutePanels() {
       return;
     }
     hydratedSetRouteKeyRef.current = routeKey;
-  }, [
-    deckId,
-    isDraggingAny,
-    navigate,
-    routeSetId,
-    selectionModel.sets.length,
-    selectionModel,
-  ]);
+  }, [deckId, isDraggingAny, navigate, routeSetId, selectionModel.sets.length, selectionModel]);
 
   useEffect(() => {
     if (!deckId || !routeSetId || !routeEntryId) {
@@ -837,10 +830,7 @@ export default function DecksRoutePanels() {
     if (hydratedEntryRouteKeyRef.current === routeKey) return;
     const matched = entriesModel.entriesSorted.some((entry) => entry.id === routeEntryId);
     if (!matched) {
-      navigate(
-        buildDeckDeepLink({ deckId, setId: routeSetId }),
-        { replace: true },
-      );
+      navigate(buildDeckDeepLink({ deckId, setId: routeSetId }), { replace: true });
       hydratedEntryRouteKeyRef.current = routeKey;
       return;
     }
@@ -936,7 +926,9 @@ export default function DecksRoutePanels() {
         if (!newBackFaceId) return;
         openStockpile({
           mode: "pair-fronts",
-          titleOverride: formatMessage("decks.rebuildSelectFronts", { title: currentSet.title ?? "" }),
+          titleOverride: formatMessage("decks.rebuildSelectFronts", {
+            title: currentSet.title ?? "",
+          }),
           onConfirmSelection: async (frontIds) => {
             await mutations.rebuildSetBack(currentSet.id, newBackFaceId, frontIds);
             await selectionModel.reloadStructure(currentSet.id);

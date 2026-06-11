@@ -101,7 +101,7 @@ function installDbFixture(fixture: Fixture) {
       },
       transaction: (storeNames: string | string[]) => {
         const tx: FakeTx & {
-          objectStore: (name: string) => ReturnType<typeof createStore>;
+          objectStore: (name: string) => unknown;
           objectStoreNames: { contains: (name: string) => boolean };
         } = {
           oncomplete: null,

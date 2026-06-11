@@ -8,7 +8,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
 }));
 
 jest.mock("@/i18n/messages", () => ({
-  supportedLanguages: ["xx"],
+  visibleLanguages: ["xx"],
   languageLabels: {},
 }));
 

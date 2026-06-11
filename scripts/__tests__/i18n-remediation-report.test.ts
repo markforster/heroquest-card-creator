@@ -121,6 +121,7 @@ describe("i18n remediation report generator", () => {
         { locale: "fr", total: 1, untranslated: 1, missing: 0 },
       ],
       scannedFilesCount: 3,
+      visibleLanguages: ["en", "fr"],
     });
 
     expect(markdown).toContain("# i18n Untranslated Remediation Report");

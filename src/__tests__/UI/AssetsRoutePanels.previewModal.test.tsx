@@ -192,7 +192,7 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
   });
 
   it("shows a spinner until the selected preview image finishes loading", async () => {
-    let resolvePreviewUrl: ((value: string | null) => void) | null = null;
+    let resolvePreviewUrl!: (value: string | null) => void;
     mockGetAssetObjectUrl.mockImplementationOnce(
       () =>
         new Promise<string | null>((resolve) => {
@@ -207,7 +207,7 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
     });
     expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(1);
 
-    resolvePreviewUrl?.("blob:asset-preview");
+    resolvePreviewUrl("blob:asset-preview");
     await act(async () => {
       await Promise.resolve();
     });
@@ -246,7 +246,7 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
   });
 
   it("does not flash a spinner for a preview that resolves before the delay", async () => {
-    let resolvePreviewUrl: ((value: string | null) => void) | null = null;
+    let resolvePreviewUrl!: (value: string | null) => void;
     mockGetAssetObjectUrl.mockImplementationOnce(
       () =>
         new Promise<string | null>((resolve) => {
@@ -260,7 +260,7 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
     });
     expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(0);
 
-    resolvePreviewUrl?.("blob:asset-preview");
+    resolvePreviewUrl("blob:asset-preview");
     const image = await screen.findByAltText("goblin.png");
     fireEvent.load(image);
     act(() => {
@@ -272,7 +272,7 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
   });
 
   it("clears the old preview immediately when the selected asset changes", async () => {
-    let resolveSecondPreview: ((value: string | null) => void) | null = null;
+    let resolveSecondPreview!: (value: string | null) => void;
     mockGetAssetObjectUrl
       .mockResolvedValueOnce("blob:goblin-preview")
       .mockImplementationOnce(
@@ -302,7 +302,7 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
     });
     expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(1);
 
-    resolveSecondPreview?.("blob:orc-preview");
+    resolveSecondPreview("blob:orc-preview");
 
     const secondImage = await screen.findByAltText("orc.png");
     fireEvent.load(secondImage);
@@ -312,7 +312,7 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
   });
 
   it("shows a spinner instead of the empty state while the next preview is still being fetched", async () => {
-    let resolveSecondPreview: ((value: string | null) => void) | null = null;
+    let resolveSecondPreview!: (value: string | null) => void;
     mockGetAssetObjectUrl
       .mockResolvedValueOnce("blob:goblin-preview")
       .mockImplementationOnce(
@@ -342,7 +342,7 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
     expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(1);
     expect(screen.queryByText("No preview available")).not.toBeInTheDocument();
 
-    resolveSecondPreview?.(null);
+    resolveSecondPreview(null);
 
     await waitFor(() => {
       expect(screen.getByText("No preview available")).toBeInTheDocument();

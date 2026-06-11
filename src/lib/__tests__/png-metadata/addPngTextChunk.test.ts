@@ -1,5 +1,6 @@
 import { addPngTextChunk } from "@/lib/png-metadata";
 import { APP_VERSION } from "@/version";
+import { Blob as NodeBlob } from "buffer";
 
 const ONE_BY_ONE_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9Fq6QAAAAASUVORK5CYII=";
@@ -15,6 +16,18 @@ const readChunkType = (buffer: Uint8Array, offset: number) =>
   );
 
 describe("addPngTextChunk", () => {
+  const OriginalBlob = globalThis.Blob;
+
+  beforeAll(() => {
+    // Jest's jsdom Blob may not expose arrayBuffer(); use Node's Blob for this binary round-trip test.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).Blob = NodeBlob;
+  });
+
+  afterAll(() => {
+    globalThis.Blob = OriginalBlob;
+  });
+
   it("adds a tEXt chunk before IEND with the keyword and value", async () => {
     const original = new Blob([decodePng()], { type: "image/png" });
     const updated = await addPngTextChunk(

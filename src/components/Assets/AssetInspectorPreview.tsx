@@ -1,9 +1,9 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import styles from "@/app/page.module.css";
 import useBufferedLoadingIndicator from "@/hooks/useBufferedLoadingIndicator";
-
-import { useEffect, useRef, useState } from "react";
 
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
 
@@ -145,6 +145,8 @@ export default function AssetInspectorPreview({
     };
   }, []);
 
+  // This effect intentionally reinitializes preview tilt only when preview content changes.
+  // The helper functions operate on refs and do not need to trigger reruns.
   useEffect(() => {
     stopIdleTilt();
     resetPreviewTilt();
@@ -155,7 +157,7 @@ export default function AssetInspectorPreview({
     return () => {
       stopIdleTilt();
     };
-  }, [isLoading, previewUrl, variant]);
+  }, [isLoading, previewUrl, variant]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const image = previewImageRef.current;

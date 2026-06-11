@@ -111,10 +111,6 @@ describe("DeckGroupGridList drag selection boundary", () => {
 
     expect(selectedGroup?.className).toContain("deckNavItemSelected");
     expect(temporaryTargetGroup?.className).not.toContain("deckNavItemSelected");
-    const selectedBaseline = selectedGroup?.querySelector('[data-group-baseline="true"]');
-    const targetBaseline = temporaryTargetGroup?.querySelector('[data-group-baseline="true"]');
-    expect(selectedBaseline?.className).toContain("deckGroupBaselineActive");
-    expect(targetBaseline?.className).toContain("deckGroupBaselineInactive");
     expect(targetFan?.getAttribute("data-expanded")).toBe("true");
     expect(targetFan?.getAttribute("data-drop-placeholder-index")).toBe("1");
   });

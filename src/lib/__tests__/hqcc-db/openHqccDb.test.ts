@@ -1,4 +1,4 @@
-import { openHqccDb } from "@/lib/hqcc-db";
+import { DB_VERSION, openHqccDb } from "@/lib/hqcc-db";
 
 type MockStore = {
   indexNames: { contains: (name: string) => boolean };
@@ -20,7 +20,7 @@ type OpenRequest = {
   transaction?: {
     objectStore: (name: string) => MockStore;
   };
-  onupgradeneeded: null | (() => void);
+  onupgradeneeded: null | ((event: IDBVersionChangeEvent) => void);
   onsuccess: null | (() => void);
   onerror: null | (() => void);
 };
@@ -31,47 +31,62 @@ function createDb({
 }: {
   existingStores?: string[];
   existingAssetIndexes?: string[];
-}): { db: MockDb; assetsStore: MockStore; metaStore: MockStore; settingsStore: MockStore } {
+}): {
+  db: MockDb;
+  assetsStore: MockStore;
+  metaStore: MockStore;
+  settingsStore: MockStore;
+  pairsStore: MockStore;
+  groupsStore: MockStore;
+  setsStore: MockStore;
+  entriesStore: MockStore;
+} {
   const storeSet = new Set(existingStores);
   const assetsIndexSet = new Set(existingAssetIndexes);
-
-  const assetsStore: MockStore = {
-    indexNames: { contains: (name) => assetsIndexSet.has(name) },
-    createIndex: jest.fn(),
-    put: jest.fn(),
+  const createStore = (existingIndexes: string[] = []): MockStore => {
+    const indexSet = new Set(existingIndexes);
+    return {
+      indexNames: { contains: (name) => indexSet.has(name) },
+      createIndex: jest.fn(),
+      put: jest.fn(),
+    };
   };
 
-  const metaStore: MockStore = {
-    indexNames: { contains: () => false },
-    createIndex: jest.fn(),
-    put: jest.fn(),
-  };
-
-  const settingsStore: MockStore = {
-    indexNames: { contains: () => false },
-    createIndex: jest.fn(),
-    put: jest.fn(),
-  };
+  const assetsStore = createStore([...assetsIndexSet]);
+  const metaStore = createStore();
+  const settingsStore = createStore();
+  const pairsStore = createStore();
+  const groupsStore = createStore();
+  const setsStore = createStore();
+  const entriesStore = createStore();
 
   const db: MockDb = {
     objectStoreNames: { contains: (name) => storeSet.has(name) },
     createObjectStore: jest.fn((name: string) => {
       storeSet.add(name);
       if (name === "assets") return assetsStore;
+      if (name === "pairs") return pairsStore;
       if (name === "meta") return metaStore;
       if (name === "settings") return settingsStore;
+      if (name === "deckGroups") return groupsStore;
+      if (name === "deckSets") return setsStore;
+      if (name === "deckEntries") return entriesStore;
       return undefined;
     }),
     transaction: {
       objectStore: (name: string) => {
         if (name === "meta") return metaStore;
         if (name === "settings") return settingsStore;
+        if (name === "pairs") return pairsStore;
+        if (name === "deckGroups") return groupsStore;
+        if (name === "deckSets") return setsStore;
+        if (name === "deckEntries") return entriesStore;
         return assetsStore;
       },
     },
   };
 
-  return { db, assetsStore, metaStore, settingsStore };
+  return { db, assetsStore, metaStore, settingsStore, pairsStore, groupsStore, setsStore, entriesStore };
 }
 
 function createOpenRequest(db: MockDb): OpenRequest {
@@ -121,7 +136,7 @@ describe("openHqccDb", () => {
 
     const promise = openHqccDb();
 
-    expect(open).toHaveBeenCalledWith("hqcc", 4);
+    expect(open).toHaveBeenCalledWith("hqcc", DB_VERSION);
 
     request.onsuccess?.();
     await expect(promise).resolves.toBe(db);
@@ -136,18 +151,23 @@ describe("openHqccDb", () => {
 
     const promise = openHqccDb();
 
-    request.onupgradeneeded?.();
+    request.onupgradeneeded?.({ oldVersion: 5 } as IDBVersionChangeEvent);
 
     expect(db.createObjectStore).toHaveBeenCalledWith("cards", { keyPath: "id" });
+    expect(db.createObjectStore).toHaveBeenCalledWith("pairs", { keyPath: "id" });
     expect(db.createObjectStore).toHaveBeenCalledWith("assets", { keyPath: "id" });
     expect(assetsStore.createIndex).toHaveBeenCalledWith("createdAt", "createdAt", { unique: false });
     expect(db.createObjectStore).toHaveBeenCalledWith("collections", { keyPath: "id" });
     expect(db.createObjectStore).toHaveBeenCalledWith("settings", { keyPath: "id" });
+    expect(db.createObjectStore).toHaveBeenCalledWith("decks", { keyPath: "id" });
+    expect(db.createObjectStore).toHaveBeenCalledWith("deckGroups", { keyPath: "id" });
+    expect(db.createObjectStore).toHaveBeenCalledWith("deckSets", { keyPath: "id" });
+    expect(db.createObjectStore).toHaveBeenCalledWith("deckEntries", { keyPath: "id" });
     expect(db.createObjectStore).toHaveBeenCalledWith("meta", { keyPath: "id" });
     expect(metaStore.put).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "appVersion",
-        dbVersion: 4,
+        dbVersion: DB_VERSION,
       }),
     );
 
@@ -157,7 +177,18 @@ describe("openHqccDb", () => {
 
   it("does not recreate existing stores or indexes during upgrade", async () => {
     const { db, assetsStore, metaStore } = createDb({
-      existingStores: ["cards", "assets", "collections", "settings", "meta"],
+      existingStores: [
+        "cards",
+        "pairs",
+        "assets",
+        "collections",
+        "settings",
+        "decks",
+        "deckGroups",
+        "deckSets",
+        "deckEntries",
+        "meta",
+      ],
       existingAssetIndexes: ["createdAt"],
     });
     const request = createOpenRequest(db);
@@ -167,14 +198,14 @@ describe("openHqccDb", () => {
 
     const promise = openHqccDb();
 
-    request.onupgradeneeded?.();
+    request.onupgradeneeded?.({ oldVersion: 5 } as IDBVersionChangeEvent);
 
     expect(db.createObjectStore).not.toHaveBeenCalled();
     expect(assetsStore.createIndex).not.toHaveBeenCalled();
     expect(metaStore.put).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "appVersion",
-        dbVersion: 4,
+        dbVersion: DB_VERSION,
       }),
     );
 
