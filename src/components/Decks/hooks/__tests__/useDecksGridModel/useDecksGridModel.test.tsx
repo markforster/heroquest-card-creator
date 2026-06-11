@@ -32,12 +32,22 @@ jest.mock("@/components/Decks/hooks/useDeckMutations", () => ({
 }));
 
 describe("useDecksGridModel", () => {
+  const hookArgs = {
+    untitledDeckLabel: "Untitled",
+    saveTitleErrorLabel: "Failed to save title",
+  };
   const refetch = jest.fn();
   const createDeck = jest.fn();
   const updateDeck = jest.fn();
   const updateDeckTitle = jest.fn();
   const deleteDecks = jest.fn();
   const duplicateDeck = jest.fn();
+
+  const flushDebouncedTitleSave = async () => {
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(250);
+    });
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -73,13 +83,15 @@ describe("useDecksGridModel", () => {
   });
 
   afterEach(() => {
-    jest.runOnlyPendingTimers();
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
     jest.useRealTimers();
   });
 
   it("loads decks", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     await waitFor(() => {
@@ -89,7 +101,7 @@ describe("useDecksGridModel", () => {
 
   it("preserves single-select and modifier toggle behavior", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -110,7 +122,7 @@ describe("useDecksGridModel", () => {
     });
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     await act(async () => {
@@ -124,7 +136,7 @@ describe("useDecksGridModel", () => {
 
   it("beginCreateDeckDraft clears drafts and target", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
     act(() => {
       result.current.setDeckTitleDraft("X");
@@ -143,7 +155,7 @@ describe("useDecksGridModel", () => {
       refetch,
     });
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
     let opened = false;
     act(() => {
@@ -158,7 +170,7 @@ describe("useDecksGridModel", () => {
   it("submitDeckDraft updates existing deck in edit mode", async () => {
     updateDeck.mockResolvedValue(undefined);
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
     act(() => {
       result.current.beginEditDeckDraft("d1");
@@ -174,7 +186,7 @@ describe("useDecksGridModel", () => {
 
   it("initializes rename draft from single selected deck and gates actions by selection", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     expect(result.current.canRenameDeck).toBe(false);
@@ -192,7 +204,7 @@ describe("useDecksGridModel", () => {
 
   it("commits title updates and falls back to untitled when blank", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -216,7 +228,7 @@ describe("useDecksGridModel", () => {
 
   it("cancels title edits and resets draft", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -242,7 +254,7 @@ describe("useDecksGridModel", () => {
     });
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -256,8 +268,10 @@ describe("useDecksGridModel", () => {
   });
 
   it("updates effective title immediately and persists with debounce", async () => {
+    updateDeckTitle.mockImplementation(() => new Promise(() => {}));
+
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -275,16 +289,17 @@ describe("useDecksGridModel", () => {
     expect(result.current.effectiveDeckTitleById.d1).toBe("Deck 1 Updated");
     expect(updateDeckTitle).not.toHaveBeenCalled();
 
-    await act(async () => {
-      jest.advanceTimersByTime(250);
-    });
+    await flushDebouncedTitleSave();
 
     expect(updateDeckTitle).toHaveBeenCalledWith("d1", "Deck 1 Updated", "Untitled");
   });
 
   it("shows untitled label in effective map when selected draft is empty", async () => {
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled deck" }),
+      useDecksGridModel({
+        untitledDeckLabel: "Untitled deck",
+        saveTitleErrorLabel: "Failed to save title",
+      }),
     );
 
     act(() => {
@@ -302,8 +317,10 @@ describe("useDecksGridModel", () => {
   });
 
   it("debounced save uses latest draft value only", async () => {
+    updateDeckTitle.mockImplementation(() => new Promise(() => {}));
+
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -319,9 +336,7 @@ describe("useDecksGridModel", () => {
       result.current.onDeckTitleDraftChangeLive("ABC");
     });
 
-    await act(async () => {
-      jest.advanceTimersByTime(250);
-    });
+    await flushDebouncedTitleSave();
 
     expect(updateDeckTitle).toHaveBeenCalledTimes(1);
     expect(updateDeckTitle).toHaveBeenCalledWith("d1", "ABC", "Untitled");
@@ -338,7 +353,7 @@ describe("useDecksGridModel", () => {
     }));
 
     const { result, rerender } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -370,7 +385,7 @@ describe("useDecksGridModel", () => {
     });
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -384,9 +399,7 @@ describe("useDecksGridModel", () => {
       result.current.onDeckTitleDraftChangeLive("Should Not Persist");
     });
 
-    await act(async () => {
-      jest.advanceTimersByTime(250);
-    });
+    await flushDebouncedTitleSave();
 
     expect(updateDeckTitle).not.toHaveBeenCalled();
   });
@@ -400,7 +413,7 @@ describe("useDecksGridModel", () => {
     refetch.mockResolvedValue({ data: { deckId: "unexpected-shape" } });
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     expect(result.current.decks).toEqual([]);
@@ -421,7 +434,7 @@ describe("useDecksGridModel", () => {
     });
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
     expect(result.current.filteredDecks).toHaveLength(2);
 
@@ -447,7 +460,7 @@ describe("useDecksGridModel", () => {
       refetch,
     });
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -484,7 +497,7 @@ describe("useDecksGridModel", () => {
     mockListDeckEntries.mockResolvedValue([{ id: "e1", pairId: "p1" }]);
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -519,7 +532,7 @@ describe("useDecksGridModel", () => {
     mockListDeckEntries.mockResolvedValue([]);
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -571,7 +584,7 @@ describe("useDecksGridModel", () => {
     });
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -611,7 +624,7 @@ describe("useDecksGridModel", () => {
     mockGetCardThumbnailUrl.mockResolvedValue("blob:key-back");
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     await waitFor(() => {
@@ -635,7 +648,7 @@ describe("useDecksGridModel", () => {
     });
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     expect(result.current.filteredDecks.map((deck) => deck.id)).toEqual([
@@ -660,7 +673,7 @@ describe("useDecksGridModel", () => {
     });
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     act(() => {
@@ -694,7 +707,7 @@ describe("useDecksGridModel", () => {
     mockGetCardThumbnailUrl.mockResolvedValue("blob:fallback-front");
 
     const { result } = renderHook(() =>
-      useDecksGridModel({ untitledDeckLabel: "Untitled" }),
+      useDecksGridModel(hookArgs),
     );
 
     await waitFor(() => {

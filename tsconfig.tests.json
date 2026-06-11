@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "jest", "@testing-library/jest-dom", "react", "react-dom"]
+  },
+  "include": [
+    "next-env.d.ts",
+    "custom.d.ts",
+    "src/i18n/i18next.d.ts",
+    ".next/types/**/*.ts",
+    "jest.setup.ts",
+    "src/**/__tests__/**/*.ts",
+    "src/**/__tests__/**/*.tsx",
+    "src/__tests__/**/*.ts",
+    "src/__tests__/**/*.tsx",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
+    "src/lib/__testutils__/**/*.ts",
+    "src/lib/__testutils__/**/*.tsx"
+  ],
+  "exclude": ["node_modules"]
+}

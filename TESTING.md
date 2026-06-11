@@ -67,6 +67,6 @@ Generated output (e.g. `src/generated/**`) should not count toward coverage:
 
 ## Typecheck Stability
 
-Keep `npm run typecheck` green while testing:
+Keep `npm run typecheck` green for app code and `npm run typecheck:tests` green for test code:
 
 - Avoid `for..of` iteration over typed arrays (`Uint8Array`, `Uint32Array`) in production code unless TS `target`/`downlevelIteration` guarantees iterator support; use index-based loops to be safe.

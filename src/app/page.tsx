@@ -63,8 +63,10 @@ import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
+import { buildAppHashUrl } from "@/lib/browser";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
+import { repairOrphanDeckEntries } from "@/lib/decks-service";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/draft-storage";
 import { applyInspectorDefaults, createEditorDefaultValues } from "@/lib/editor-form";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
@@ -72,9 +74,7 @@ import { exportFaceIdsToZip } from "@/lib/export-face-ids";
 import type { ExportSettings } from "@/lib/export-settings";
 import formatMessageWith from "@/lib/format-message-with";
 import { clearDbEstimateCache, runFullDbEstimate } from "@/lib/indexeddb-size-tracker";
-import { repairOrphanDeckEntries } from "@/lib/decks-service";
 import { startThumbnailJpegMigration } from "@/lib/thumbnail-jpeg-migration";
-import { buildAppHashUrl } from "@/lib/browser";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
@@ -1219,7 +1219,10 @@ export default function IndexPage() {
                               <Route path="/assets" element={<IndexPageInner />} />
                               <Route path="/decks" element={<IndexPageInner />} />
                               <Route path="/decks/:deckId" element={<IndexPageInner />} />
-                              <Route path="/decks/:deckId/set/:setId" element={<IndexPageInner />} />
+                              <Route
+                                path="/decks/:deckId/set/:setId"
+                                element={<IndexPageInner />}
+                              />
                               <Route
                                 path="/decks/:deckId/set/:setId/entry/:entryId"
                                 element={<IndexPageInner />}

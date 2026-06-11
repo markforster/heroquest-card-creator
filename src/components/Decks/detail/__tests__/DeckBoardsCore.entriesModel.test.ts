@@ -1,7 +1,7 @@
 import { TransformStream } from "node:stream/web";
 
-if (!(globalThis as { TransformStream?: typeof TransformStream }).TransformStream) {
-  (globalThis as { TransformStream?: typeof TransformStream }).TransformStream =
+if (!(globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream) {
+  (globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream =
     TransformStream;
 }
 

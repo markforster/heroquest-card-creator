@@ -357,8 +357,8 @@ describe("DeckEntriesSection guidance states", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Paired (Not In Set) (1)" }));
-    expect(screen.getByRole("button", { name: "Paired (Not In Set) (1)" })).toHaveAttribute(
+    fireEvent.click(screen.getByRole("button", { name: "decks.entries.mode.pairedNotInSet" }));
+    expect(screen.getByRole("button", { name: "decks.entries.mode.pairedNotInSet" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -374,8 +374,8 @@ describe("DeckEntriesSection guidance states", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "In Set (1)" })).toHaveAttribute("aria-pressed", "true");
-      expect(screen.getByRole("button", { name: "Paired (Not In Set) (1)" })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: "decks.entries.mode.inSet" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "decks.entries.mode.pairedNotInSet" })).toHaveAttribute(
         "aria-pressed",
         "false",
       );

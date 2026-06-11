@@ -1,4 +1,19 @@
 import { resolveDeckPreviewIds } from "@/components/Decks/deck-preview";
+import type { PairRecord } from "@/api/pairs/types";
+
+function buildPair(overrides: Partial<PairRecord> = {}): PairRecord {
+  return {
+    id: "pair-1",
+    name: "Pair",
+    nameLower: "pair",
+    frontFaceId: null,
+    backFaceId: null,
+    createdAt: 1,
+    updatedAt: 1,
+    schemaVersion: 1,
+    ...overrides,
+  };
+}
 
 const mockGetDeck = jest.fn();
 const mockListDeckGroups = jest.fn();
@@ -62,9 +77,9 @@ describe("resolveDeckPreviewIds visual prioritization", () => {
 
   it("renders only back faces when SHOW_FRONT_FACES is false", async () => {
     const pairMap = new Map([
-      ["p1", { id: "p1", frontFaceId: "f1" }],
-      ["p2", { id: "p2", frontFaceId: "f2" }],
-      ["p3", { id: "p3", frontFaceId: "f3" }],
+      ["p1", buildPair({ id: "p1", name: "P1", nameLower: "p1", frontFaceId: "f1" })],
+      ["p2", buildPair({ id: "p2", name: "P2", nameLower: "p2", frontFaceId: "f2" })],
+      ["p3", buildPair({ id: "p3", name: "P3", nameLower: "p3", frontFaceId: "f3" })],
     ]);
     mockListDeckSets.mockResolvedValue([
       { id: "s1", groupId: "g1", backFaceId: "b1", sortIndex: 0 },
@@ -92,8 +107,8 @@ describe("resolveDeckPreviewIds visual prioritization", () => {
 
   it("deduplicates faces and enforces maxCount", async () => {
     const pairMap = new Map([
-      ["p1", { id: "p1", frontFaceId: "f1" }],
-      ["p2", { id: "p2", frontFaceId: "b1" }],
+      ["p1", buildPair({ id: "p1", name: "P1", nameLower: "p1", frontFaceId: "f1" })],
+      ["p2", buildPair({ id: "p2", name: "P2", nameLower: "p2", frontFaceId: "b1" })],
     ]);
     mockListDeckSets.mockResolvedValue([
       { id: "s1", groupId: "g1", backFaceId: "b1", sortIndex: 0 },

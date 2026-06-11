@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import { TextDecoder, TextEncoder } from "util";
+import { TransformStream } from "node:stream/web";
 
 if (!global.TextEncoder) {
   global.TextEncoder = TextEncoder as unknown as typeof global.TextEncoder;
@@ -9,23 +10,43 @@ if (!global.TextDecoder) {
   global.TextDecoder = TextDecoder as unknown as typeof global.TextDecoder;
 }
 
+if (!(globalThis as { TransformStream?: unknown }).TransformStream) {
+  (
+    globalThis as { TransformStream?: unknown }
+  ).TransformStream = TransformStream as unknown;
+}
+
 const originalEmitWarning = process.emitWarning.bind(process);
-type EmitWarningParams = Parameters<typeof process.emitWarning>;
-type EmitWarningRest = EmitWarningParams extends [unknown, unknown?, unknown?, ...infer Rest]
-  ? Rest
-  : [];
-process.emitWarning = ((
-  warning: EmitWarningParams[0],
-  type?: EmitWarningParams[1],
-  code?: EmitWarningParams[2],
-  ...args: EmitWarningRest
-) => {
+process.emitWarning = ((warning: string | Error, ...args: unknown[]) => {
+  const [typeOrOptions, maybeCode] = args;
   const message = typeof warning === "string" ? warning : warning?.message;
+  const type =
+    typeof typeOrOptions === "string"
+      ? typeOrOptions
+      : typeOrOptions &&
+          typeof typeOrOptions === "object" &&
+          "type" in typeOrOptions &&
+          typeof typeOrOptions.type === "string"
+        ? typeOrOptions.type
+        : undefined;
+  const code =
+    typeOrOptions &&
+      typeof typeOrOptions === "object" &&
+      "code" in typeOrOptions &&
+      typeof typeOrOptions.code === "string"
+      ? typeOrOptions.code
+      : typeof maybeCode === "string"
+        ? maybeCode
+        : undefined;
   if (
     type === "DeprecationWarning" &&
     (code === "DEP0040" || message?.includes("punycode"))
   ) {
     return;
   }
-  return originalEmitWarning(warning as string, type as string, code as string, ...args);
+  return Reflect.apply(
+    originalEmitWarning as (...callArgs: unknown[]) => unknown,
+    process,
+    [warning, ...args],
+  );
 }) as typeof process.emitWarning;

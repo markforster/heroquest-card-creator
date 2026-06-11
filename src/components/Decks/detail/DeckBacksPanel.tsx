@@ -1,75 +1,27 @@
 "use client";
 
-import { useDraggable } from "@dnd-kit/core";
 import { BringToFront, ChevronLeft, ChevronRight, Info, Search, SendToBack } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+
+import { apiClient } from "@/api/client";
+import styles from "@/app/page.module.css";
+import CardFan from "@/components/Decks/CardFan";
+import { resolveDeckExportFaceIds } from "@/components/Decks/deck-export";
+import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
+import { listPairsMap, orderDeckPreviewCandidateIds } from "@/components/Decks/deck-preview";
+import { useDeckRightPanel } from "@/components/Decks/detail/context/DeckRightPanelContext";
+import DeckFaceCardsFilterSelect from "@/components/Decks/detail/DeckFaceCardsFilterSelect";
+import type { RightPanelFaceMode } from "@/components/Decks/types/deck-backs";
+import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
+import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
+import { useI18n } from "@/i18n/I18nProvider";
+
+import { BackPanelDraggableThumb } from "./BackPanelDraggableThumb";
+import { BackPanelThumb } from "./BackPanelThumb";
+
 import type { ReactNode } from "react";
 
-import styles from "@/app/page.module.css";
-import { apiClient } from "@/api/client";
-import CardFan from "@/components/Decks/CardFan";
-import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
-import { resolveDeckExportFaceIds } from "@/components/Decks/deck-export";
-import { listPairsMap, orderDeckPreviewCandidateIds } from "@/components/Decks/deck-preview";
-import CardThumbnail from "@/components/common/CardThumbnail";
-import DeckFaceCardsFilterSelect from "@/components/Decks/detail/DeckFaceCardsFilterSelect";
-import { useDeckRightPanel } from "@/components/Decks/detail/context/DeckRightPanelContext";
-import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
-import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
-import type { RightPanelFaceMode } from "@/components/Decks/types/deck-backs";
-import { useI18n } from "@/i18n/I18nProvider";
-import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
-
-const BACK_PANEL_TILE_VARIANT = "smMd";
 const DECK_FACE_FILTER_MODE: "select" | "tree" = "select";
-
-function BackPanelThumb({
-  cardId,
-  variant = BACK_PANEL_TILE_VARIANT,
-}: {
-  cardId: string;
-  variant?: "sm" | "smMd";
-}) {
-  const thumbUrl = useCardThumbnailUrl(cardId, null, { enabled: true, useCache: true });
-  return (
-    <CardThumbnail
-      src={thumbUrl}
-      alt=""
-      variant={variant}
-      fit="contain"
-      className={styles.deckSetThumb}
-      fallback={<div className={styles.deckSetThumbFallback} />}
-    />
-  );
-}
-
-function BackPanelDraggableThumb({
-  cardId,
-  faceMode,
-}: {
-  cardId: string;
-  faceMode: RightPanelFaceMode;
-}) {
-  const dragType = faceMode === "back" ? "back-face" : "front-face";
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `${faceMode}:${cardId}`,
-    data:
-      faceMode === "back"
-        ? { type: dragType, backFaceId: cardId }
-        : { type: dragType, frontFaceId: cardId },
-  });
-  return (
-    <div
-      ref={setNodeRef}
-      className={`${styles.deckBacksThumb} ${isDragging ? styles.deckBacksThumbDragging : ""}`}
-      style={{ touchAction: "none", cursor: isDragging ? "grabbing" : "grab" }}
-      {...attributes}
-      {...listeners}
-    >
-      <BackPanelThumb cardId={cardId} />
-    </div>
-  );
-}
 
 function buildDeckPreviewCardIds({
   keySetId,
@@ -93,7 +45,8 @@ function buildDeckPreviewCardIds({
     setsByGroup.set(
       groupId,
       [...list].sort(
-        (a, b) => (a.sortIndex ?? Number.MAX_SAFE_INTEGER) - (b.sortIndex ?? Number.MAX_SAFE_INTEGER),
+        (a, b) =>
+          (a.sortIndex ?? Number.MAX_SAFE_INTEGER) - (b.sortIndex ?? Number.MAX_SAFE_INTEGER),
       ),
     );
   });
@@ -414,7 +367,9 @@ export default function DeckBacksPanel({
                 </div>
               </div>
               <div className={styles.deckMetaDetailsSection}>
-                {metaState.isLoading ? <div className={styles.inspectorModeEmpty}>{t("decks.meta.loading")}</div> : null}
+                {metaState.isLoading ? (
+                  <div className={styles.inspectorModeEmpty}>{t("decks.meta.loading")}</div>
+                ) : null}
                 {!metaState.isLoading && metaState.error ? (
                   <div className={styles.inspectorModeEmpty}>{t("decks.meta.error")}</div>
                 ) : null}
@@ -424,13 +379,17 @@ export default function DeckBacksPanel({
                       <div className={styles.uRowLg}>
                         <dt>{t("decks.meta.created")}</dt>
                         <dd>
-                          {metaState.createdAt ? new Date(metaState.createdAt).toLocaleString() : t("label.unknownVersion")}
+                          {metaState.createdAt
+                            ? new Date(metaState.createdAt).toLocaleString()
+                            : t("label.unknownVersion")}
                         </dd>
                       </div>
                       <div className={styles.uRowLg}>
                         <dt>{t("decks.meta.modified")}</dt>
                         <dd>
-                          {metaState.updatedAt ? new Date(metaState.updatedAt).toLocaleString() : t("label.unknownVersion")}
+                          {metaState.updatedAt
+                            ? new Date(metaState.updatedAt).toLocaleString()
+                            : t("label.unknownVersion")}
                         </dd>
                       </div>
                       <div className={styles.uRowLg}>
@@ -447,7 +406,9 @@ export default function DeckBacksPanel({
                       </div>
                     </dl>
                     <div className={styles.assetsInspectorUsage}>
-                      <div className={styles.assetsInspectorSectionTitle}>{t("decks.meta.images.section")}</div>
+                      <div className={styles.assetsInspectorSectionTitle}>
+                        {t("decks.meta.images.section")}
+                      </div>
                       <dl className={styles.assetsInspectorDetails}>
                         <div className={styles.uRowLg}>
                           <dt>{t("decks.meta.images.totalUnique")}</dt>
@@ -468,7 +429,9 @@ export default function DeckBacksPanel({
                       </dl>
                     </div>
                     <div className={styles.assetsInspectorUsage}>
-                      <div className={styles.assetsInspectorSectionTitle}>{t("decks.meta.pdf.section")}</div>
+                      <div className={styles.assetsInspectorSectionTitle}>
+                        {t("decks.meta.pdf.section")}
+                      </div>
                       <dl className={styles.assetsInspectorDetails}>
                         <div className={styles.uRowLg}>
                           <dt>{t("decks.meta.pdf.uniquePairs")}</dt>
@@ -481,7 +444,9 @@ export default function DeckBacksPanel({
                       </dl>
                     </div>
                     <div className={styles.assetsInspectorUsage}>
-                      <div className={styles.assetsInspectorSectionTitle}>{t("decks.meta.health.section")}</div>
+                      <div className={styles.assetsInspectorSectionTitle}>
+                        {t("decks.meta.health.section")}
+                      </div>
                       <dl className={styles.assetsInspectorDetails}>
                         <div className={styles.uRowLg}>
                           <dt>{t("decks.meta.health.pairedMissing")}</dt>

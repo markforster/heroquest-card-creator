@@ -102,7 +102,7 @@ describe("AssetsPanelContent thumbnail loading (UI)", () => {
   });
 
   it("does not flash a spinner for a thumbnail that finishes before the delay", async () => {
-    let resolveThumbUrl: ((value: string | null) => void) | null = null;
+    let resolveThumbUrl!: (value: string | null) => void;
     mockGetAssetObjectUrl.mockImplementationOnce(
       () =>
         new Promise<string | null>((resolve) => {
@@ -116,7 +116,7 @@ describe("AssetsPanelContent thumbnail loading (UI)", () => {
     });
     expect(container.getElementsByClassName("assetsThumbSpinnerOverlay")).toHaveLength(0);
 
-    resolveThumbUrl?.("blob:asset-thumb");
+    resolveThumbUrl("blob:asset-thumb");
     const image = await screen.findByAltText("goblin.png");
     fireEvent.load(image);
 
@@ -129,7 +129,7 @@ describe("AssetsPanelContent thumbnail loading (UI)", () => {
   });
 
   it("shows a delayed spinner and keeps it visible for the minimum duration", async () => {
-    let resolveThumbUrl: ((value: string | null) => void) | null = null;
+    let resolveThumbUrl!: (value: string | null) => void;
     mockGetAssetObjectUrl.mockImplementationOnce(
       () =>
         new Promise<string | null>((resolve) => {
@@ -143,7 +143,7 @@ describe("AssetsPanelContent thumbnail loading (UI)", () => {
     });
     expect(container.getElementsByClassName("assetsThumbSpinnerOverlay")).toHaveLength(1);
 
-    resolveThumbUrl?.("blob:asset-thumb");
+    resolveThumbUrl("blob:asset-thumb");
     await act(async () => {
       await Promise.resolve();
     });

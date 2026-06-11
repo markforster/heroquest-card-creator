@@ -116,6 +116,13 @@ jest.mock("@dnd-kit/utilities", () => ({
 }));
 
 describe("DeckEntriesSection front remove prompt", () => {
+  const DELETE_SELECTED_LABEL = "decks.entries.actions.removeSelected";
+  const EDIT_FRONT_LABEL = "decks.entries.actions.editFront";
+  const REMOVE_FRONT_LABEL = "decks.entries.actions.removeFront";
+  const QUANTITY_CURRENT_LABEL = "decks.entries.quantity.current";
+  const QUANTITY_DECREASE_LABEL = "decks.entries.quantity.decrease";
+  const QUANTITY_INCREASE_LABEL = "decks.entries.quantity.increase";
+
   beforeEach(() => {
     entriesSortedMock = [{ id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 }];
     pairsByIdMock = new Map([
@@ -205,7 +212,7 @@ describe("DeckEntriesSection front remove prompt", () => {
       />,
     );
 
-    const deleteSelected = screen.getByRole("button", { name: "Delete Selected" });
+    const deleteSelected = screen.getByRole("button", { name: DELETE_SELECTED_LABEL });
     expect(deleteSelected).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "thumb" }));
@@ -228,7 +235,7 @@ describe("DeckEntriesSection front remove prompt", () => {
       />,
     );
 
-    fireEvent.click(screen.getByTitle("Edit front card"));
+    fireEvent.click(screen.getByTitle(EDIT_FRONT_LABEL));
 
     expect(onOpenCardEditor).toHaveBeenCalledWith("front-1");
   });
@@ -249,7 +256,7 @@ describe("DeckEntriesSection front remove prompt", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Quantity 1")).toBeInTheDocument();
+    expect(screen.getByLabelText(QUANTITY_CURRENT_LABEL)).toBeInTheDocument();
     const anchor = container.querySelector(".deckEntryCardOverlayAnchor");
     expect(anchor).not.toBeNull();
     expect(anchor?.querySelector(".deckEntryCardActions")).not.toBeNull();
@@ -273,8 +280,8 @@ describe("DeckEntriesSection front remove prompt", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Decrease quantity")).toBeDisabled();
-    fireEvent.click(screen.getByLabelText("Increase quantity"));
+    expect(screen.getByLabelText(QUANTITY_DECREASE_LABEL)).toBeDisabled();
+    fireEvent.click(screen.getByLabelText(QUANTITY_INCREASE_LABEL));
     await waitFor(() => expect(updateEntryCount).toHaveBeenCalledWith("entry-1", 2));
 
     entriesSortedMock = [{ id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 12 }];
@@ -292,7 +299,7 @@ describe("DeckEntriesSection front remove prompt", () => {
         deckEntryThumb={() => <div>thumb</div>}
       />,
     );
-    expect(screen.getByLabelText("Increase quantity")).toBeDisabled();
+    expect(screen.getByLabelText(QUANTITY_INCREASE_LABEL)).toBeDisabled();
   });
 
   it("removes from set only when confirm is clicked", async () => {
@@ -311,7 +318,7 @@ describe("DeckEntriesSection front remove prompt", () => {
       />,
     );
 
-    fireEvent.click(screen.getByTitle("Remove front from set"));
+    fireEvent.click(screen.getByTitle(REMOVE_FRONT_LABEL));
     fireEvent.click(screen.getByText("Remove from set"));
 
     await waitFor(() => expect(removeEntry).toHaveBeenCalledWith("entry-1", "set-1"));
@@ -334,7 +341,7 @@ describe("DeckEntriesSection front remove prompt", () => {
       />,
     );
 
-    fireEvent.click(screen.getByTitle("Remove front from set"));
+    fireEvent.click(screen.getByTitle(REMOVE_FRONT_LABEL));
     fireEvent.click(screen.getByText("Remove and unpair"));
 
     await waitFor(() =>
@@ -401,7 +408,7 @@ describe("DeckEntriesSection front remove prompt", () => {
     fireEvent.click(thumbs[0], { metaKey: true });
     fireEvent.click(thumbs[1], { metaKey: true });
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Selected" }));
+    fireEvent.click(screen.getByRole("button", { name: DELETE_SELECTED_LABEL }));
     fireEvent.click(screen.getByText("Remove from set"));
 
     await waitFor(() => {
@@ -464,7 +471,7 @@ describe("DeckEntriesSection front remove prompt", () => {
     fireEvent.click(thumbs[0], { metaKey: true });
     fireEvent.click(thumbs[1], { metaKey: true });
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Selected" }));
+    fireEvent.click(screen.getByRole("button", { name: DELETE_SELECTED_LABEL }));
     fireEvent.click(screen.getByText("Remove and unpair"));
 
     await waitFor(() => {
@@ -523,7 +530,7 @@ describe("DeckEntriesSection front remove prompt", () => {
       />,
     );
 
-    fireEvent.click(screen.getByTitle("Remove front from set"));
+    fireEvent.click(screen.getByTitle(REMOVE_FRONT_LABEL));
     fireEvent.click(screen.getByText("Remove and unpair"));
 
     await waitFor(() => {
@@ -590,7 +597,7 @@ describe("DeckEntriesSection front remove prompt", () => {
       />,
     );
 
-    fireEvent.click(screen.getByTitle("Remove front from set"));
+    fireEvent.click(screen.getByTitle(REMOVE_FRONT_LABEL));
     fireEvent.click(screen.getByText("Remove and unpair"));
 
     await waitFor(() => {
@@ -652,7 +659,7 @@ describe("DeckEntriesSection front remove prompt", () => {
       />,
     );
 
-    fireEvent.click(screen.getByTitle("Remove front from set"));
+    fireEvent.click(screen.getByTitle(REMOVE_FRONT_LABEL));
     fireEvent.click(screen.getByText("Remove and unpair"));
     await waitFor(() => expect(screen.getByText("decks.openDeck")).toBeInTheDocument());
     fireEvent.click(screen.getByText("decks.openDeck"));

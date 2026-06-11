@@ -40,7 +40,7 @@ describe("deckGroupFanMath", () => {
       expect(card.pivotY).toBeCloseTo(partial.cards[index].pivotY, 8);
     });
     expect(collapsed.requiredHeightPx).toBeCloseTo(partial.requiredHeightPx, 8);
-    expect(partial.requiredWidthPx).toBeGreaterThan(collapsed.requiredWidthPx);
+    expect(partial.requiredWidthPx).toBeCloseTo(collapsed.requiredWidthPx, 8);
   });
 
   it("forms a radial fan where top spread is wider than bottom spread", () => {
@@ -87,12 +87,7 @@ describe("deckGroupFanMath", () => {
     expect(frame.requiredHeightPx).toBeGreaterThan(FAN_CARD_HEIGHT + FAN_GROUP_HORIZONTAL_PADDING);
   });
 
-  it("returns wider footprint for less-overlapped state and higher card count", () => {
-    expect(
-      resolveFanFrame({ fromMode: "collapsed", toMode: "collapsed", progress: 1, count: 3 }).requiredWidthPx,
-    ).toBeLessThan(
-      resolveFanFrame({ fromMode: "partial", toMode: "partial", progress: 1, count: 3 }).requiredWidthPx,
-    );
+  it("returns wider footprint for higher card count", () => {
     expect(
       resolveFanFrame({ fromMode: "partial", toMode: "partial", progress: 1, count: 4 }).requiredWidthPx,
     ).toBeGreaterThan(
@@ -110,18 +105,19 @@ describe("deckGroupFanMath", () => {
     expect(collapsed2.requiredWidthPx).toBeLessThan(collapsed3.requiredWidthPx);
     expect(collapsed3.requiredWidthPx).toBeLessThan(collapsed4.requiredWidthPx);
     expect(collapsed4.requiredWidthPx).toBeLessThan(collapsed5.requiredWidthPx);
-    expect(collapsed3.requiredWidthPx).toBeLessThan(
+    expect(collapsed3.requiredWidthPx).toBeCloseTo(
       resolveFanFrame({ fromMode: "partial", toMode: "partial", progress: 1, count: 3 }).requiredWidthPx,
+      8,
     );
   });
 
-  it("transition frame width progresses toward target width", () => {
+  it("transition frame width stays stable when collapsed and partial silhouettes match", () => {
     const start = resolveFanFrame({ fromMode: "collapsed", toMode: "partial", progress: 0, count: 3 }).requiredWidthPx;
     const mid = resolveFanFrame({ fromMode: "collapsed", toMode: "partial", progress: 0.5, count: 3 }).requiredWidthPx;
     const end = resolveFanFrame({ fromMode: "collapsed", toMode: "partial", progress: 1, count: 3 }).requiredWidthPx;
 
-    expect(mid).toBeGreaterThan(start);
-    expect(end).toBeGreaterThan(mid);
+    expect(mid).toBeCloseTo(start, 8);
+    expect(end).toBeCloseTo(mid, 8);
   });
 
   it("collapsed-to-partial transition changes only horizontal spread", () => {

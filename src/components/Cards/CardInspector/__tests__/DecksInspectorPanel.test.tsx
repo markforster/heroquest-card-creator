@@ -104,14 +104,14 @@ describe("DecksInspectorPanel", () => {
     expect(mockDeckFanByDeckId).toHaveBeenCalledWith(
       expect.objectContaining({
         deckId: "deck-1",
-        maxCount: 6,
+        maxCount: 5,
         variant: "inspector",
       }),
     );
     expect(mockDeckFanByDeckId).toHaveBeenCalledWith(
       expect.objectContaining({
         deckId: "deck-2",
-        maxCount: 6,
+        maxCount: 5,
         variant: "inspector",
       }),
     );

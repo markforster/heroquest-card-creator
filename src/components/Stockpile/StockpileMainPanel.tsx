@@ -1,7 +1,7 @@
 "use client";
 
-import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
 import type { CardRecord } from "@/api/cards";
+import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
 
 type StockpileMainPanelProps = {
   isOpen?: boolean;
