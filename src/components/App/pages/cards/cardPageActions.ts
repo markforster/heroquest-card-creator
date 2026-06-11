@@ -1,0 +1,219 @@
+"use client";
+
+import type { CardRecord, CardStatus } from "@/api/cards";
+import { apiClient } from "@/api/client";
+import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
+import type { CardEditorContextValue } from "@/components/Providers/CardEditorContext";
+import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
+import { clearDraft, saveDraft } from "@/lib/draft-storage";
+import { applyInspectorDefaults } from "@/lib/editor-form";
+import type { CardDataByTemplate } from "@/types/card-data";
+import type { TemplateId } from "@/types/templates";
+
+import type { Dispatch, RefObject, SetStateAction } from "react";
+import type { UseFormReturn } from "react-hook-form";
+import type { NavigateFunction } from "react-router-dom";
+
+type SavingMode = "new" | "update" | null;
+type AnalyticsTrackProperties = Record<string, string | number | boolean | null | undefined>;
+
+type CreateCardPageActionsArgs = {
+  activeCardId?: string;
+  activeStatus?: CardStatus;
+  currentTemplateId: TemplateId | null;
+  methods: Pick<UseFormReturn<CardDataByTemplate[TemplateId]>, "getValues">;
+  navigate: NavigateFunction;
+  previewRef: RefObject<CardPreviewHandle>;
+  resetWithSaved: (values: CardDataByTemplate[TemplateId]) => void;
+  setActiveCard: CardEditorContextValue["setActiveCard"];
+  setDraftSourceCardId: Dispatch<SetStateAction<string | null>>;
+  setSaveToken: Dispatch<SetStateAction<number>>;
+  setSavingMode: Dispatch<SetStateAction<SavingMode>>;
+  setSelectedTemplateId: CardEditorContextValue["setSelectedTemplateId"];
+  track: (event: string, properties?: AnalyticsTrackProperties) => void;
+};
+
+export function createCardPageActions({
+  activeCardId,
+  activeStatus,
+  currentTemplateId,
+  methods,
+  navigate,
+  previewRef,
+  resetWithSaved,
+  setActiveCard,
+  setDraftSourceCardId,
+  setSaveToken,
+  setSavingMode,
+  setSelectedTemplateId,
+  track,
+}: CreateCardPageActionsArgs) {
+  const handleSave = async (mode: Exclude<SavingMode, null>) => {
+    if (!currentTemplateId) return;
+    const templateId = currentTemplateId as TemplateId;
+    const currentDraftValue = methods.getValues() as CardDataByTemplate[TemplateId];
+    const draftTitle =
+      (currentDraftValue &&
+        "title" in currentDraftValue &&
+        (currentDraftValue as { title?: string | null }).title) ||
+      "";
+    if (!draftTitle || !draftTitle.toString().trim()) {
+      return;
+    }
+
+    const startedAt = Date.now();
+    setSavingMode(mode);
+
+    const thumbnailBlob = await renderThumbnailBlob(
+      previewRef,
+      "[card-page] Failed to render thumbnail blob",
+    );
+    const derivedName = (draftTitle ?? "").toString().trim() || `${templateId} card`;
+    const patch = cardDataToCardRecordPatch(templateId, derivedName, currentDraftValue as never);
+    const viewedAt = Date.now();
+
+    let didSave = false;
+    let didCreateNew = false;
+    try {
+      if (mode === "new") {
+        const record = await apiClient.createCard({
+          ...patch,
+          templateId,
+          status: "saved",
+          thumbnailBlob,
+          name: derivedName,
+          lastViewedAt: viewedAt,
+        });
+        setActiveCard(templateId, record.id, record.status);
+        navigate(`/cards/${record.id}`, { replace: true });
+        resetWithSaved(mapCardRecordToFormValues(templateId, record));
+        didSave = true;
+        didCreateNew = true;
+      } else if (mode === "update") {
+        if (!activeCardId || activeStatus !== "saved") return;
+        const record = await apiClient.updateCard(
+          { ...patch, thumbnailBlob, lastViewedAt: viewedAt },
+          { params: { id: activeCardId } },
+        );
+        if (record) {
+          setActiveCard(templateId, record.id, record.status);
+          resetWithSaved(mapCardRecordToFormValues(templateId, record));
+          didSave = true;
+        }
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[card-page] Failed to save card", error);
+    } finally {
+      if (didSave) {
+        setSaveToken((prev) => prev + 1);
+      }
+      if (didCreateNew) {
+        clearDraft();
+        setDraftSourceCardId(null);
+      }
+      await settleSavingState(startedAt);
+      setSavingMode(null);
+    }
+  };
+
+  const saveCurrentCard = async () => {
+    if (!currentTemplateId) return false;
+    const mode = activeCardId && activeStatus === "saved" ? "update" : "new";
+    track("save_started", { mode });
+    await handleSave(mode);
+    return true;
+  };
+
+  const repairCurrentCardThumbnail = async () => {
+    if (!activeCardId) return false;
+    const thumbnailBlob = await renderThumbnailBlob(
+      previewRef,
+      "[card-page] Failed to render thumbnail blob for repair",
+    );
+    if (!thumbnailBlob) return false;
+    try {
+      return await apiClient.updateCardThumbnail(
+        { thumbnailBlob },
+        { params: { id: activeCardId } },
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  const duplicateCurrentCard = async (withPairing: boolean) => {
+    if (!currentTemplateId) return;
+    const templateId = currentTemplateId as TemplateId;
+    const currentValues = methods.getValues() as CardDataByTemplate[TemplateId];
+    const draftTitle =
+      (currentValues && "title" in currentValues
+        ? (currentValues as { title?: string | null }).title
+        : "") || "";
+    const nextDraft = {
+      ...currentValues,
+      ...(draftTitle ? { title: nextDuplicateTitle(String(draftTitle)) } : {}),
+    } as CardDataByTemplate[TemplateId];
+    setSelectedTemplateId(templateId);
+    saveDraft(templateId, nextDraft, { sourceCardId: activeCardId ?? null });
+    setDraftSourceCardId(activeCardId ?? null);
+    resetWithSaved(applyInspectorDefaults(templateId, nextDraft));
+    setActiveCard(templateId, null, null);
+    navigate("/cards/new", { replace: true });
+    if (withPairing) {
+      // Pairing for new duplicates is not persisted; ignore for now.
+    }
+  };
+
+  return {
+    duplicateCurrentCard,
+    repairCurrentCardThumbnail,
+    saveCurrentCard,
+  };
+}
+
+async function renderThumbnailBlob(
+  previewRef: RefObject<CardPreviewHandle>,
+  errorMessage: string,
+) {
+  let thumbnailBlob: Blob | null = null;
+  try {
+    const blob = await previewRef.current?.renderToJpegBlob({
+      width: 225,
+      height: 315,
+    });
+    thumbnailBlob = blob ?? null;
+  } catch {
+    // eslint-disable-next-line no-console
+    console.error(errorMessage);
+  }
+  return thumbnailBlob;
+}
+
+function mapCardRecordToFormValues(templateId: TemplateId, record: CardRecord) {
+  const mapped = cardRecordToCardData(record as CardRecord & { templateId: TemplateId });
+  return applyInspectorDefaults(templateId, mapped);
+}
+
+async function settleSavingState(startedAt: number) {
+  const elapsed = Date.now() - startedAt;
+  const remaining = Math.max(0, 300 - elapsed);
+  if (remaining > 0) {
+    await new Promise((resolve) => setTimeout(resolve, remaining));
+  }
+}
+
+export function nextDuplicateTitle(title: string) {
+  const trimmed = title.trim();
+  if (!trimmed) return trimmed;
+  const match = trimmed.match(/^(.*)\s\((\d+)\)$/);
+  if (!match) {
+    return `${trimmed} (2)`;
+  }
+  const base = match[1].trim();
+  const suffix = Number(match[2]);
+  if (!base || Number.isNaN(suffix)) {
+    return `${trimmed} (2)`;
+  }
+  return `${base} (${suffix + 1})`;
+}

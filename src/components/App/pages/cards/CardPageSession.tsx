@@ -5,8 +5,9 @@ import { useFormState, useWatch } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 
 import type { CardRecord } from "@/api/cards";
-import { apiClient } from "@/api/client";
 import { useGetCard } from "@/api/hooks";
+import { createCardPageActions } from "@/components/App/pages/cards/cardPageActions";
+import { useCardFacePairing } from "@/components/App/pages/cards/useCardFacePairing";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
@@ -14,8 +15,8 @@ import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import type { EditorSaveContextValue } from "@/components/Providers/EditorSaveContext";
 import { cardTemplatesById } from "@/data/card-templates";
 import { resolveEffectiveFace } from "@/lib/card-face";
-import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
-import { clearDraft, loadDraft, saveDraft } from "@/lib/draft-storage";
+import { cardRecordToCardData } from "@/lib/card-record-mapper";
+import { loadDraft, saveDraft } from "@/lib/draft-storage";
 import { applyInspectorDefaults, createEditorDefaultValues } from "@/lib/editor-form";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
@@ -60,13 +61,6 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
 
   const [savingMode, setSavingMode] = useState<"new" | "update" | null>(null);
   const [saveToken, setSaveToken] = useState(0);
-  const [pairedFrontCount, setPairedFrontCount] = useState(0);
-  const [pairedFrontIds, setPairedFrontIds] = useState<string[]>([]);
-  const [activeFrontId, setActiveFrontId] = useState<string | null>(null);
-  const [pairedBackId, setPairedBackId] = useState<string | null>(null);
-  const [lastRememberedBackId, setLastRememberedBackId] = useState<string | null>(null);
-  const [frontViewToken, setFrontViewToken] = useState(0);
-  const lastFaceRef = useRef<CardFace | null>(null);
   const [routeError, setRouteError] = useState<"not-found" | "load-failed" | null>(null);
   const [draftSourceCardId, setDraftSourceCardId] = useState<string | null>(null);
 
@@ -174,221 +168,35 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
     };
   }, [isDraftRoute, selectedTemplateId, activeCardId, activeStatus, editorValues]);
 
-  const sortByRecent = (cards: CardRecord[]) =>
-    cards.sort((a, b) => {
-      const aViewed = a.lastViewedAt ?? 0;
-      const bViewed = b.lastViewedAt ?? 0;
-      if (bViewed !== aViewed) return bViewed - aViewed;
-      if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
-      const aName = a.nameLower ?? a.name.toLocaleLowerCase();
-      const bName = b.nameLower ?? b.name.toLocaleLowerCase();
-      return aName.localeCompare(bName);
+  const {
+    activeFrontId,
+    frontViewToken,
+    lastRememberedBackId,
+    pairedBackId,
+    pairedFrontCount,
+    pairedFrontIds,
+    setLastRememberedBackId,
+  } = useCardFacePairing({
+    activeCardId,
+    effectiveFace,
+  });
+
+  const { duplicateCurrentCard, repairCurrentCardThumbnail, saveCurrentCard } =
+    createCardPageActions({
+      activeCardId,
+      activeStatus,
+      currentTemplateId,
+      methods,
+      navigate,
+      previewRef,
+      resetWithSaved,
+      setActiveCard,
+      setDraftSourceCardId,
+      setSaveToken,
+      setSavingMode,
+      setSelectedTemplateId,
+      track,
     });
-
-  useEffect(() => {
-    if (effectiveFace !== "back" || !activeCardId) {
-      setPairedFrontCount(0);
-      setPairedFrontIds([]);
-      setActiveFrontId(null);
-      return;
-    }
-    setLastRememberedBackId(activeCardId);
-    let active = true;
-    void apiClient
-      .listCards({ queries: { status: "saved" } })
-      .then(async (cardsResponse) => {
-        if (!active) return;
-        const cards = Array.isArray(cardsResponse) ? cardsResponse : [];
-        const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
-        if (!active) return;
-        const frontIds = new Set(
-          pairs.map((pair) => pair.frontFaceId).filter((id): id is string => Boolean(id)),
-        );
-        const matches = cards.filter((card) => frontIds.has(card.id));
-        sortByRecent(matches);
-        setPairedFrontCount(matches.length);
-        setPairedFrontIds(matches.map((card) => card.id));
-        setActiveFrontId(matches[0]?.id ?? null);
-      })
-      .catch(() => {
-        if (!active) return;
-        setPairedFrontCount(0);
-        setPairedFrontIds([]);
-        setActiveFrontId(null);
-      });
-    return () => {
-      active = false;
-    };
-  }, [activeCardId, effectiveFace]);
-
-  useEffect(() => {
-    if (effectiveFace !== "front" || !activeCardId) {
-      setPairedBackId(null);
-      return;
-    }
-    let active = true;
-    const loadPairedBack = async () => {
-      const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
-      if (!active) return;
-      const match =
-        pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
-        pairs.find((pair) => pair.backFaceId);
-      setPairedBackId(match?.backFaceId ?? null);
-    };
-    void loadPairedBack().catch(() => {
-      if (!active) return;
-      setPairedBackId(null);
-    });
-    return () => {
-      active = false;
-    };
-  }, [activeCardId, effectiveFace]);
-
-  useEffect(() => {
-    const previousFace = lastFaceRef.current;
-    if (previousFace === "back" && effectiveFace === "front") {
-      setFrontViewToken((prev) => prev + 1);
-    }
-    lastFaceRef.current = effectiveFace;
-  }, [effectiveFace]);
-
-  const handleSave = async (mode: "new" | "update") => {
-    if (!currentTemplateId) return;
-    const templateId = currentTemplateId as TemplateId;
-    const currentDraftValue = methods.getValues() as CardDataByTemplate[TemplateId];
-    const draftTitle =
-      (currentDraftValue &&
-      "title" in currentDraftValue &&
-      (currentDraftValue as { title?: string | null }).title) ||
-      "";
-    if (!draftTitle || !draftTitle.toString().trim()) {
-      return;
-    }
-
-    const startedAt = Date.now();
-    setSavingMode(mode);
-
-    let thumbnailBlob: Blob | null = null;
-    try {
-      const blob = await previewRef.current?.renderToJpegBlob({
-        width: 225,
-        height: 315,
-      });
-      thumbnailBlob = blob ?? null;
-    } catch {
-      // eslint-disable-next-line no-console
-      console.error("[card-page] Failed to render thumbnail blob");
-    }
-
-    const derivedName = (draftTitle ?? "").toString().trim() || `${templateId} card`;
-    const patch = cardDataToCardRecordPatch(templateId, derivedName, currentDraftValue as never);
-    const viewedAt = Date.now();
-
-    let didSave = false;
-    let didCreateNew = false;
-    try {
-      if (mode === "new") {
-        const record = await apiClient.createCard({
-          ...patch,
-          templateId,
-          status: "saved",
-          thumbnailBlob,
-          name: derivedName,
-          lastViewedAt: viewedAt,
-        });
-        setActiveCard(templateId, record.id, record.status);
-        navigate(`/cards/${record.id}`, { replace: true });
-        const mapped = cardRecordToCardData(record as CardRecord & { templateId: TemplateId });
-        resetWithSaved(applyInspectorDefaults(templateId, mapped));
-        didSave = true;
-        didCreateNew = true;
-      } else if (mode === "update") {
-        if (!activeCardId || activeStatus !== "saved") return;
-        const record = await apiClient.updateCard(
-          { ...patch, thumbnailBlob, lastViewedAt: viewedAt },
-          { params: { id: activeCardId } },
-        );
-        if (record) {
-          setActiveCard(templateId, record.id, record.status);
-          const mapped = cardRecordToCardData(record as CardRecord & { templateId: TemplateId });
-          resetWithSaved(applyInspectorDefaults(templateId, mapped));
-          didSave = true;
-        }
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("[card-page] Failed to save card", error);
-    } finally {
-      if (didSave) {
-        setSaveToken((prev) => prev + 1);
-      }
-      if (didCreateNew) {
-        clearDraft();
-        setDraftSourceCardId(null);
-      }
-      const elapsed = Date.now() - startedAt;
-      const remaining = Math.max(0, 300 - elapsed);
-      if (remaining > 0) {
-        await new Promise((resolve) => setTimeout(resolve, remaining));
-      }
-      setSavingMode(null);
-    }
-  };
-
-  const saveCurrentCard = async () => {
-    if (!currentTemplateId) return false;
-    const mode = activeCardId && activeStatus === "saved" ? "update" : "new";
-    track("save_started", { mode });
-    await handleSave(mode);
-    return true;
-  };
-
-  const repairCurrentCardThumbnail = async () => {
-    if (!activeCardId) return false;
-    let thumbnailBlob: Blob | null = null;
-    try {
-      const blob = await previewRef.current?.renderToJpegBlob({
-        width: 225,
-        height: 315,
-      });
-      thumbnailBlob = blob ?? null;
-    } catch {
-      // eslint-disable-next-line no-console
-      console.error("[card-page] Failed to render thumbnail blob for repair");
-    }
-    if (!thumbnailBlob) return false;
-    try {
-      return await apiClient.updateCardThumbnail(
-        { thumbnailBlob },
-        { params: { id: activeCardId } },
-      );
-    } catch {
-      return false;
-    }
-  };
-
-  const duplicateCurrentCard = async (withPairing: boolean) => {
-    if (!currentTemplateId) return;
-    const templateId = currentTemplateId as TemplateId;
-    const currentValues = methods.getValues() as CardDataByTemplate[TemplateId];
-    const draftTitle =
-      (currentValues && "title" in currentValues
-        ? (currentValues as { title?: string | null }).title
-        : "") || "";
-    const nextDraft = {
-      ...currentValues,
-      ...(draftTitle ? { title: nextDuplicateTitle(String(draftTitle)) } : {}),
-    } as CardDataByTemplate[TemplateId];
-    setSelectedTemplateId(templateId);
-    saveDraft(templateId, nextDraft, { sourceCardId: activeCardId ?? null });
-    setDraftSourceCardId(activeCardId ?? null);
-    resetWithSaved(applyInspectorDefaults(templateId, nextDraft));
-    setActiveCard(templateId, null, null);
-    navigate("/cards/new", { replace: true });
-    if (withPairing) {
-      // Pairing for new duplicates is not persisted; ignore for now.
-    }
-  };
 
   const editorSaveValue: EditorSaveContextValue = {
     saveCurrentCard,
@@ -419,19 +227,4 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
     saveCurrentCard,
     setLastRememberedBackId,
   };
-}
-
-function nextDuplicateTitle(title: string) {
-  const trimmed = title.trim();
-  if (!trimmed) return trimmed;
-  const match = trimmed.match(/^(.*)\s\((\d+)\)$/);
-  if (!match) {
-    return `${trimmed} (2)`;
-  }
-  const base = match[1].trim();
-  const suffix = Number(match[2]);
-  if (!base || Number.isNaN(suffix)) {
-    return `${trimmed} (2)`;
-  }
-  return `${base} (${suffix + 1})`;
 }
