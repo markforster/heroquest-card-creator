@@ -70,11 +70,6 @@ export default function BorderColorField({ label, templateId }: BorderColorField
     setValue("borderColor", undefined, { shouldDirty: true, shouldTouch: true });
   };
 
-  const handleRequestSmart = async () => {
-    if (isSmartBusy) return;
-    await requestSmart();
-  };
-
   return (
     <div className="mb-2">
       <div className={layoutStyles.inspectorFieldHeader}>
@@ -89,7 +84,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
         transparentValue={TRANSPARENT_BORDER_COLOR}
         smartGroups={smartGroups}
         isSmartBusy={isSmartBusy}
-        onRequestSmart={handleRequestSmart}
+        onRequestSmart={requestSmart}
         onChange={(value) => field.onChange(value)}
         onSelectDefault={handleSelectDefault}
         onSelectTransparent={() => field.onChange(TRANSPARENT_BORDER_COLOR)}
