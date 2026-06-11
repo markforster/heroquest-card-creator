@@ -3,11 +3,18 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import AppShell, { noopEditorSaveValue } from "@/components/App/AppShell";
+import {
+  noopRouteShellCapabilities,
+  usePublishRouteShellCapabilities,
+} from "@/components/App/RouteShellCapabilitiesContext";
 import { AssetsRoutePanels } from "@/components/Assets";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import {
+  EditorSaveProvider,
+  noopEditorSaveValue,
+} from "@/components/Providers/EditorSaveContext";
 
 export default function AssetsPage() {
   const { track } = useAnalytics();
@@ -19,6 +26,8 @@ export default function AssetsPage() {
   const currentTemplateId = selectedTemplateId ?? null;
   const activeCardId =
     currentTemplateId != null ? activeCardIdByTemplate[currentTemplateId] : undefined;
+
+  usePublishRouteShellCapabilities(noopRouteShellCapabilities);
 
   useEffect(() => {
     track("page_view", { page_path: "/assets", page_title: "Assets" });
@@ -38,8 +47,8 @@ export default function AssetsPage() {
   });
 
   return (
-    <AppShell editorSaveValue={noopEditorSaveValue}>
+    <EditorSaveProvider value={noopEditorSaveValue}>
       <AssetsRoutePanels />
-    </AppShell>
+    </EditorSaveProvider>
   );
 }

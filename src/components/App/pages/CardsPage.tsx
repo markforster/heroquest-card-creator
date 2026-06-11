@@ -5,7 +5,10 @@ import { useNavigate } from "react-router-dom";
 
 import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
-import AppShell, { noopEditorSaveValue } from "@/components/App/AppShell";
+import {
+  noopRouteShellCapabilities,
+  usePublishRouteShellCapabilities,
+} from "@/components/App/RouteShellCapabilitiesContext";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import WelcomeTemplateModal from "@/components/Modals/WelcomeTemplateModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
@@ -31,6 +34,8 @@ export default function CardsPage() {
   const currentTemplateId = selectedTemplateId ?? null;
   const activeCardId =
     currentTemplateId != null ? activeCardIdByTemplate[currentTemplateId] : undefined;
+
+  usePublishRouteShellCapabilities(noopRouteShellCapabilities);
 
   useEffect(() => {
     track("page_view", { page_path: "/cards", page_title: "Cards" });
@@ -94,7 +99,7 @@ export default function CardsPage() {
   }, [activeCardIdByTemplate, navigate, selectedTemplateId]);
 
   return (
-    <AppShell editorSaveValue={noopEditorSaveValue}>
+    <>
       <section className={`${styles.leftPanel} d-flex align-items-stretch`}>
         <StockpileMainPanel
           isOpen
@@ -119,6 +124,6 @@ export default function CardsPage() {
           setIsWelcomeOpen(false);
         }}
       />
-    </AppShell>
+    </>
   );
 }

@@ -153,7 +153,7 @@ jest.mock("@/components/Cards/CardEditor/CardPreviewContainer", () => ({
 }));
 jest.mock("@/components/Cards/CardInspector/CardInspector", () => ({
   __esModule: true,
-  default: () => {
+  default: function MockCardInspector() {
     const { useFormContext } = jest.requireActual("react-hook-form") as typeof import("react-hook-form");
     const { register } = useFormContext();
     return <input aria-label="Title" {...register("title")} />;

@@ -10,6 +10,12 @@ export type EditorSaveContextValue = {
   saveToken: number;
 };
 
+export const noopEditorSaveValue: EditorSaveContextValue = {
+  saveCurrentCard: async () => false,
+  repairCurrentCardThumbnail: async () => false,
+  saveToken: 0,
+};
+
 const EditorSaveContext = createContext<EditorSaveContextValue | null>(null);
 
 export function EditorSaveProvider({

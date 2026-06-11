@@ -37,9 +37,9 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
   }),
 }));
 
-jest.mock("@/components/Providers/EditorSaveContext", () => ({
+jest.mock("@/components/App/RouteShellCapabilitiesContext", () => ({
   __esModule: true,
-  useEditorSave: () => ({
+  useRouteShellCapabilities: () => ({
     repairCurrentCardThumbnail: jest.fn(),
   }),
 }));

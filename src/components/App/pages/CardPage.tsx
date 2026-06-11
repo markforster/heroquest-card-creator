@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import AppShell from "@/components/App/AppShell";
 import CardEditorWorkspace from "@/components/App/pages/cards/CardEditorWorkspace";
 import { useCardExportController } from "@/components/App/pages/cards/CardExportController";
 import { useCardPageSession } from "@/components/App/pages/cards/CardPageSession";
+import {
+  noopRouteShellCapabilities,
+  usePublishRouteShellCapabilities,
+} from "@/components/App/RouteShellCapabilitiesContext";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
+import { EditorSaveProvider } from "@/components/Providers/EditorSaveContext";
 
 export default function CardPage() {
   const { track } = useAnalytics();
@@ -24,6 +28,15 @@ export default function CardPage() {
     activeFrontId: session.activeFrontId,
     previewRef,
   });
+  const shellCapabilities = useMemo(
+    () => ({
+      ...noopRouteShellCapabilities,
+      repairCurrentCardThumbnail: session.editorSaveValue.repairCurrentCardThumbnail,
+    }),
+    [session.editorSaveValue.repairCurrentCardThumbnail],
+  );
+
+  usePublishRouteShellCapabilities(shellCapabilities);
 
   useEffect(() => {
     if (session.isDraftRoute) {
@@ -34,7 +47,7 @@ export default function CardPage() {
   }, [session.isDraftRoute, session.normalizedCardId, track]);
 
   return (
-    <AppShell editorSaveValue={session.editorSaveValue}>
+    <EditorSaveProvider value={session.editorSaveValue}>
       <CardEditorWorkspace
         activeFrontId={session.activeFrontId}
         canDuplicate={session.canDuplicate}
@@ -61,6 +74,6 @@ export default function CardPage() {
         selectedTemplateId={session.currentTemplateId ?? undefined}
       />
       {exportController.exportUi}
-    </AppShell>
+    </EditorSaveProvider>
   );
 }
