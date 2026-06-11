@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
-import { useListCards, useListCollections } from "@/api/hooks";
 import type { CardRecord } from "@/api/cards";
 import type { CollectionRecord } from "@/api/collections";
+import { useListCards, useListCollections } from "@/api/hooks";
 
 type ActiveFilter =
   | { type: "all" }
@@ -24,12 +24,6 @@ export const useStockpileData = ({
   activeFilter,
   setActiveFilter,
 }: UseStockpileDataOptions) => {
-  const [cards, setCards] = useState<CardRecord[]>([]);
-  const [collections, setCollections] = useState<CollectionRecord[]>([]);
-  const [storedCollectionId, setStoredCollectionId] = useState<string | null>(null);
-  const hasHydratedStoredCollection = useRef(false);
-  const hasResolvedStoredCollection = useRef(false);
-  const hasLoadedCollections = useRef(false);
   const listCardsQuery = useListCards(
     { queries: { status: "saved", deleted: "include" } },
     {
@@ -45,11 +39,23 @@ export const useStockpileData = ({
     staleTime: 60_000,
     keepPreviousData: true,
   });
+  const [cards, setCards] = useState<CardRecord[]>(() => listCardsQuery.data ?? []);
+  const [collections, setCollections] = useState<CollectionRecord[]>([]);
+  const [storedCollectionId, setStoredCollectionId] = useState<string | null>(null);
+  const hasHydratedStoredCollection = useRef(false);
+  const hasResolvedStoredCollection = useRef(false);
+  const hasLoadedCollections = useRef(false);
+  const hasResolvedInitialCardsLoad = useRef(
+    !isOpen || listCardsQuery.data !== undefined || !listCardsQuery.isLoading,
+  );
 
   useEffect(() => {
     if (!isOpen) return;
+    if (listCardsQuery.data !== undefined || !listCardsQuery.isLoading) {
+      hasResolvedInitialCardsLoad.current = true;
+    }
     setCards(listCardsQuery.data ?? []);
-  }, [isOpen, listCardsQuery.data, refreshToken]);
+  }, [isOpen, listCardsQuery.data, listCardsQuery.isLoading, refreshToken]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -136,7 +142,7 @@ export const useStockpileData = ({
   return {
     cards,
     setCards,
-    isLoadingCards: listCardsQuery.isLoading,
+    isLoadingCards: isOpen && !hasResolvedInitialCardsLoad.current,
     collections,
     setCollections,
     storedCollectionId,

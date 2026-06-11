@@ -3,8 +3,8 @@
 import styles from "@/app/page.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
 
-import LeftNavBottom from "./LeftNavBottom";
 import LeftNavActionStrip from "./LeftNavActionStrip";
+import LeftNavBottom from "./LeftNavBottom";
 import LeftNavCollapseToggle from "./LeftNavCollapseToggle";
 import LeftNavDownloadAction from "./LeftNavDownloadAction";
 import LeftNavMiddle from "./LeftNavMiddle";
