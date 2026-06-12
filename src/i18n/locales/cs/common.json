@@ -28,8 +28,10 @@
   "actions.help": "Nápověda",
   "actions.about": "O aplikaci",
   "actions.download": "Stáhnout",
+  "actions.downloadOnItch": "Stáhnout z itch.io",
   "actions.getTheApp": "Získat aplikaci",
   "actions.checkForUpdates": "Zkontrolovat aktualizace?",
+  "actions.viewOnNpm": "Zobrazit na npm",
   "actions.rateOnItch": "Ohodnoťte na itch.io",
   "actions.rateOnItchHover": "Klikněte pro hodnocení",
   "actions.exportData": "Exportovat",
@@ -693,6 +695,7 @@
   "heading.desktopBrowserRecommended": "Doporučen desktopový prohlížeč",
   "label.desktopOptimized": "Optimalizováno pro desktop",
   "tooltip.desktopOptimizedNotice": "Zjistit více o kompatibilitě s desktopovými prohlížeči",
+  "notice.updateAvailable": "Je k dispozici nová verze: {{version}}.",
   "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator je v současnosti optimalizován pro desktopové prohlížeče.",
   "notice.desktopOptimizedBodySecondary": "Aplikace se na vašem zařízení může stále otevřít a částečně fungovat, ale některá rozvržení, interakce a pracovní postupy úprav mohou být na menších obrazovkách nebo dotykových zařízeních obtížné."
 }

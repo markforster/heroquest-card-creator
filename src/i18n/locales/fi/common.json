@@ -28,8 +28,10 @@
   "actions.help": "Ohje",
   "actions.about": "Tietoja",
   "actions.download": "Lataa",
+  "actions.downloadOnItch": "Lataa itch.io:sta",
   "actions.getTheApp": "Hanki sovellus",
   "actions.checkForUpdates": "Tarkista päivitykset?",
+  "actions.viewOnNpm": "Näytä npm:ssä",
   "actions.rateOnItch": "Arvostele itch.io:ssa",
   "actions.rateOnItchHover": "Napsauta arvioidaksesi",
   "actions.exportData": "Vie",
@@ -693,6 +695,7 @@
   "heading.desktopBrowserRecommended": "Työpöytäselainta suositellaan",
   "label.desktopOptimized": "Optimoitu työpöydälle",
   "tooltip.desktopOptimizedNotice": "Lue lisää työpöytäselainten yhteensopivuudesta",
+  "notice.updateAvailable": "Uusi versio on saatavilla: {{version}}.",
   "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator on tällä hetkellä optimoitu työpöytäselaimille.",
   "notice.desktopOptimizedBodySecondary": "Sovellus voi silti avautua ja toimia osittain laitteellasi, mutta jotkin asettelut, vuorovaikutukset ja muokkaustyönkulut voivat olla hankalia pienemmillä näytöillä tai pääasiassa kosketuskäyttöisillä laitteilla."
 }

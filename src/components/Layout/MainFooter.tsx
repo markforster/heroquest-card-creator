@@ -13,6 +13,7 @@ import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import useIsTauriApp from "@/hooks/useIsTauriApp";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
+import { attachItchBuyButton } from "@/lib/itch";
 import { APP_VERSION } from "@/version";
 
 export default function MainFooter() {
@@ -28,25 +29,7 @@ export default function MainFooter() {
   const showDesktopOptimizedNotice = isMobile || isTablet || isNarrowViewport;
 
   useEffect(() => {
-    const link = downloadLinkRef.current;
-    if (!link || typeof window === "undefined") return;
-    const itch = (
-      window as typeof window & {
-        Itch?: {
-          attachBuyButton?: (
-            el: HTMLElement,
-            opts: { user: string; game: string; width?: number; height?: number },
-          ) => void;
-        };
-      }
-    ).Itch;
-    if (!itch?.attachBuyButton) return;
-    itch.attachBuyButton(link, {
-      user: "mark-forster",
-      game: "heroquest-card-creator",
-      width: 650,
-      height: 400,
-    });
+    attachItchBuyButton(downloadLinkRef.current);
   }, []);
 
   return (

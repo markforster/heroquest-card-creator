@@ -28,8 +28,10 @@
   "actions.help": "Hilfe",
   "actions.about": "Über",
   "actions.download": "Herunterladen",
+  "actions.downloadOnItch": "Auf itch.io herunterladen",
   "actions.getTheApp": "App holen",
   "actions.checkForUpdates": "Nach Updates suchen?",
+  "actions.viewOnNpm": "Auf npm ansehen",
   "actions.rateOnItch": "Auf itch.io bewerten",
   "actions.rateOnItchHover": "Zum Bewerten klicken",
   "actions.exportData": "Daten exportieren",
@@ -693,6 +695,7 @@
   "heading.desktopBrowserRecommended": "Desktop-Browser empfohlen",
   "label.desktopOptimized": "Für Desktop optimiert",
   "tooltip.desktopOptimizedNotice": "Mehr über die Kompatibilität mit Desktop-Browsern erfahren",
+  "notice.updateAvailable": "Eine neue Version ist verfügbar: {{version}}.",
   "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator ist derzeit für Desktop-Browser optimiert.",
   "notice.desktopOptimizedBodySecondary": "Die App kann auf deinem Gerät möglicherweise trotzdem geöffnet werden und teilweise funktionieren, aber einige Layouts, Interaktionen und Bearbeitungsabläufe können auf kleineren Bildschirmen oder Touch-Geräten schwierig sein."
 }
