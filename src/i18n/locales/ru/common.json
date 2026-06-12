@@ -632,6 +632,7 @@
   "confirm.deleteCollectionBodySuffix": "Карты в этой коллекции удалены не будут.",
   "confirm.deleteAssetsBody": "Удаление",
   "confirm.discardChangesBody": "У вас есть несохранённые изменения текущей карты. Загрузить другую карту и отменить эти изменения?",
+  "confirm.leaveCardEditorBody": "У вас есть несохранённые изменения в этой карте. Если выйти из редактора сейчас, эти изменения будут потеряны.",
   "confirm.discardSettingsChangesBody": "У вас есть несохранённые изменения в настройках. Отменить их и продолжить?",
   "confirm.discardSettingsChangesPanel": "У вас есть несохранённые изменения в разделе {panel}. Отменить их и продолжить?",
   "confirm.saveBeforeViewBody": "Сохранить изменения перед просмотром этой карты?",

@@ -632,6 +632,7 @@
   "confirm.deleteCollectionBodySuffix": "Karty v této kolekci nebudou smazány.",
   "confirm.deleteAssetsBody": "Mazání",
   "confirm.discardChangesBody": "Máte neuložené změny na aktuální kartě. Načíst jinou kartu a zahodit změny?",
+  "confirm.leaveCardEditorBody": "Na této kartě máte neuložené změny. Pokud nyní opustíte editor, tyto změny se ztratí.",
   "confirm.discardSettingsChangesBody": "Máte neuložené změny v nastavení. Zahodit a pokračovat?",
   "confirm.discardSettingsChangesPanel": "Máte neuložené změny v {panel}. Zahodit a pokračovat?",
   "confirm.saveBeforeViewBody": "Uložit změny před zobrazením této karty?",

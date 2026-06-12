@@ -632,6 +632,7 @@
   "confirm.deleteCollectionBodySuffix": "As cartas desta coleção não serão excluídas.",
   "confirm.deleteAssetsBody": "Excluindo",
   "confirm.discardChangesBody": "Há alterações não salvas. Carregar outro card e descartá-las?",
+  "confirm.leaveCardEditorBody": "Há alterações não salvas neste card. Se você sair do editor agora, essas alterações serão perdidas.",
   "confirm.discardSettingsChangesBody": "Há alterações não salvas nas definições. Descartá-las e continuar?",
   "confirm.discardSettingsChangesPanel": "Há alterações não salvas em {panel}. Descartá-las e continuar?",
   "confirm.saveBeforeViewBody": "Guardar alterações antes de abrir esta carta?",

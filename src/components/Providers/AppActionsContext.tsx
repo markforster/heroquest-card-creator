@@ -8,6 +8,7 @@ import AssetsModal from "@/components/Assets/AssetsModal";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import RecentCardsModal from "@/components/Modals/RecentCardsModal";
 import SettingsModal from "@/components/Modals/SettingsModal/SettingsModal";
+import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesGuardContext";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useEditorForm } from "@/components/Providers/EditorFormContext";
@@ -61,6 +62,7 @@ type AppActionsProviderProps = {
 export function AppActionsProvider({ children }: AppActionsProviderProps) {
   const { t, language } = useI18n();
   const navigate = useNavigate();
+  const { bypassNextNavigation } = useUnsavedChangesGuardControls();
   const { track } = useAnalytics();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
@@ -240,6 +242,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
             templatePicker.open();
             return;
           }
+          bypassNextNavigation();
           await handleLoadCard(card);
           if (source === "recent") {
             recentModal.close();

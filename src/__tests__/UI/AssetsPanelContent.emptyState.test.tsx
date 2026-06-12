@@ -147,6 +147,20 @@ describe("AssetsPanelContent empty state (UI)", () => {
     );
   });
 
+  it("shows loading skeletons instead of onboarding while the first assets snapshot is unresolved", () => {
+    mockUseListAssets.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      refetch: jest.fn().mockResolvedValue({ data: [] }),
+    });
+
+    renderPanel();
+
+    expect(screen.queryByRole("heading", { name: "Your asset library is empty" })).not.toBeInTheDocument();
+    expect(screen.queryByText("No assets")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Loading…")).toHaveLength(12);
+  });
+
   it("does not render onboarding when the library contains assets", () => {
     const asset = buildAsset();
     mockUseListAssets.mockReturnValue({
@@ -158,6 +172,21 @@ describe("AssetsPanelContent empty state (UI)", () => {
     renderPanel();
 
     expect(screen.queryByRole("heading", { name: "Your asset library is empty" })).not.toBeInTheDocument();
+    expect(screen.getByText("goblin")).toBeInTheDocument();
+  });
+
+  it("renders cached assets immediately without showing loading or onboarding flicker", () => {
+    const asset = buildAsset();
+    mockUseListAssets.mockReturnValue({
+      data: [asset],
+      isLoading: true,
+      refetch: jest.fn().mockResolvedValue({ data: [asset] }),
+    });
+
+    renderPanel();
+
+    expect(screen.queryByRole("heading", { name: "Your asset library is empty" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Loading…")).not.toBeInTheDocument();
     expect(screen.getByText("goblin")).toBeInTheDocument();
   });
 

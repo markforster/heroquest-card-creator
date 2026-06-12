@@ -164,8 +164,13 @@ export default function AssetsPanelContent({
   preferredKindOrder,
 }: AssetsPanelProps) {
   const { t } = useI18n();
+  const listAssetsQuery = useListAssets(undefined, {
+    enabled: isOpen,
+    staleTime: 60_000,
+    keepPreviousData: true,
+  });
   const { getValues, setValue } = useFormContext();
-  const [assets, setAssets] = useState<AssetRecord[]>([]);
+  const [assets, setAssets] = useState<AssetRecord[]>(() => listAssetsQuery.data ?? []);
   const [search, setSearch] = useState("");
   const [assetKindFilter, setAssetKindFilter] = useState<
     "all" | "artwork" | "icon" | "unclassified"
@@ -202,11 +207,14 @@ export default function AssetsPanelContent({
     getRemoteAssetThumbPrefetchEnabled(),
   );
   const isRemoteMode = readApiConfig().mode === "remote";
-  const [isLoadingAssets, setIsLoadingAssets] = useState(false);
   const [affectedCardCount, setAffectedCardCount] = useState<number | null>(null);
   const { runMissingAssetsScan } = useMissingAssets();
   const { enqueueAsset, cancelAsset, setIsActive } = useAssetKindQueue();
   const isSafari = typeof window !== "undefined" ? isSafariBrowser() : false;
+  const hasResolvedInitialAssetsLoad = useRef(
+    !isOpen || listAssetsQuery.data !== undefined || !listAssetsQuery.isLoading,
+  );
+  const isLoadingAssets = isOpen && !hasResolvedInitialAssetsLoad.current;
 
   useEffect(() => {
     if (!isOpen) {
@@ -241,15 +249,11 @@ export default function AssetsPanelContent({
     setThumbReadyById({});
   }, [refreshKey]);
 
-  const listAssetsQuery = useListAssets(undefined, {
-    enabled: isOpen,
-    staleTime: 60_000,
-    keepPreviousData: true,
-  });
-
   useEffect(() => {
     if (!isOpen) return;
-    setIsLoadingAssets(listAssetsQuery.isLoading);
+    if (listAssetsQuery.data !== undefined || !listAssetsQuery.isLoading) {
+      hasResolvedInitialAssetsLoad.current = true;
+    }
     setAssets(listAssetsQuery.data ?? []);
   }, [isOpen, listAssetsQuery.data, listAssetsQuery.isLoading]);
 

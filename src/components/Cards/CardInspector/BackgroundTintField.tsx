@@ -5,19 +5,27 @@ import { useEffect, useMemo, useRef } from "react";
 import { useController, useFormContext } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
+import {
+  hasInspectorColorRevert,
+  normalizeHexValue,
+  normalizeInspectorColor,
+} from "@/components/Cards/CardInspector/card-inspector-color-utils";
 import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
-import { formatHexColor, isTransparentHex, parseHexColor } from "@/lib/color";
 import type { TemplateId } from "@/types/templates";
 
 const TRANSPARENT_TINT = "transparent";
 const DEFAULT_TINT_COLOR = "#FFFFFF";
 const SMART_CANVAS_WIDTH = 300;
 const SMART_CANVAS_HEIGHT = 420;
+const TINT_COLOR_OPTIONS = {
+  defaultColor: DEFAULT_TINT_COLOR,
+  transparentValue: TRANSPARENT_TINT,
+} as const;
 
 type BackgroundTintFieldProps = {
   label: string;
@@ -37,7 +45,10 @@ export default function BackgroundTintField({ label, templateId }: BackgroundTin
 
   const { field } = useController({ name: "backgroundTint", control });
   const tintValue = typeof field.value === "string" ? field.value : "";
-  const normalizedSelected = useMemo(() => normalizeTintColor(tintValue), [tintValue]);
+  const normalizedSelected = useMemo(
+    () => normalizeInspectorColor(tintValue, TINT_COLOR_OPTIONS),
+    [tintValue],
+  );
   const inputValue =
     normalizedSelected === TRANSPARENT_TINT ? "" : normalizeHexValue(normalizedSelected);
   const savedColorRef = useRef<string | undefined>(undefined);
@@ -48,18 +59,13 @@ export default function BackgroundTintField({ label, templateId }: BackgroundTin
   }, [savedValues, templateId]);
 
   const handleRevert = () => {
-    const saved = normalizeTintColor(savedColorRef.current);
+    const saved = normalizeInspectorColor(savedColorRef.current, TINT_COLOR_OPTIONS);
     const nextColor = saved === TRANSPARENT_TINT ? TRANSPARENT_TINT : saved.toUpperCase();
     setValue("backgroundTint", nextColor, { shouldDirty: true, shouldTouch: true });
   };
 
   const handleSelectDefault = () => {
     setValue("backgroundTint", undefined, { shouldDirty: true, shouldTouch: true });
-  };
-
-  const handleRequestSmart = async () => {
-    if (isSmartBusy) return;
-    await requestSmart();
   };
 
   return (
@@ -76,11 +82,11 @@ export default function BackgroundTintField({ label, templateId }: BackgroundTin
         transparentValue={TRANSPARENT_TINT}
         smartGroups={smartGroups}
         isSmartBusy={isSmartBusy}
-        onRequestSmart={handleRequestSmart}
+        onRequestSmart={requestSmart}
         onChange={(value) => field.onChange(value)}
         onSelectDefault={handleSelectDefault}
         onSelectTransparent={() => field.onChange(TRANSPARENT_TINT)}
-        canRevert={hasRevert(tintValue, savedColorRef.current)}
+        canRevert={hasInspectorColorRevert(tintValue, savedColorRef.current, TINT_COLOR_OPTIONS)}
         onRevert={handleRevert}
         isOpen={popoverState.isOpen}
         onToggleOpen={popoverState.toggle}
@@ -90,27 +96,4 @@ export default function BackgroundTintField({ label, templateId }: BackgroundTin
       />
     </div>
   );
-}
-
-function normalizeHexValue(value: string | undefined): string | null {
-  const parsed = parseHexColor(value);
-  if (!parsed) return null;
-  return formatHexColor(parsed, { alphaMode: "preserve", case: "upper" });
-}
-
-function isTransparentColor(value?: string) {
-  if (!value) return false;
-  if (value.trim().toLowerCase() === TRANSPARENT_TINT) return true;
-  return isTransparentHex(value);
-}
-
-function normalizeTintColor(value?: string) {
-  if (isTransparentColor(value)) return TRANSPARENT_TINT;
-  return normalizeHexValue(value) ?? DEFAULT_TINT_COLOR;
-}
-
-function hasRevert(current: string, saved: string | undefined) {
-  const normalizedCurrent = normalizeTintColor(current);
-  const normalizedSaved = normalizeTintColor(saved);
-  return normalizedCurrent !== normalizedSaved;
 }

@@ -632,6 +632,7 @@
   "confirm.deleteCollectionBodySuffix": "Las cartas de esta colección no se eliminarán.",
   "confirm.deleteAssetsBody": "Eliminando",
   "confirm.discardChangesBody": "Hay cambios sin guardar. ¿Cargar otra carta y descartarlos?",
+  "confirm.leaveCardEditorBody": "Hay cambios sin guardar en esta carta. Si sales del editor ahora, esos cambios se perderán.",
   "confirm.discardSettingsChangesBody": "Tienes cambios sin guardar en la configuración. ¿Descartarlos y continuar?",
   "confirm.discardSettingsChangesPanel": "Tienes cambios sin guardar en {panel}. ¿Descartarlos y continuar?",
   "confirm.saveBeforeViewBody": "¿Guardar cambios antes de abrir esta carta?",

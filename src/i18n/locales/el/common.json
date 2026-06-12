@@ -632,6 +632,7 @@
   "confirm.deleteCollectionBodySuffix": "Οι κάρτες σε αυτή τη συλλογή δεν θα διαγραφούν.",
   "confirm.deleteAssetsBody": "Διαγραφή",
   "confirm.discardChangesBody": "Έχετε μη αποθηκευμένες αλλαγές στην τρέχουσα κάρτα. Φόρτωση άλλης κάρτας και απόρριψη αυτών των αλλαγών;",
+  "confirm.leaveCardEditorBody": "Έχετε μη αποθηκευμένες αλλαγές σε αυτή την κάρτα. Αν φύγετε τώρα από τον επεξεργαστή, αυτές οι αλλαγές θα χαθούν.",
   "confirm.discardSettingsChangesBody": "Έχετε μη αποθηκευμένες αλλαγές στις ρυθμίσεις. Απόρριψη και συνέχεια;",
   "confirm.discardSettingsChangesPanel": "Έχετε μη αποθηκευμένες αλλαγές στο {panel}. Απόρριψη και συνέχεια;",
   "confirm.saveBeforeViewBody": "Αποθήκευση αλλαγών πριν την προβολή αυτής της κάρτας;",

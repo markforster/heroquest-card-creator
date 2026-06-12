@@ -632,6 +632,7 @@
   "confirm.deleteCollectionBodySuffix": "Kaarten in deze collectie worden niet verwijderd.",
   "confirm.deleteAssetsBody": "Verwijderen",
   "confirm.discardChangesBody": "Er zijn niet-opgeslagen wijzigingen. Andere kaart laden en verwerpen?",
+  "confirm.leaveCardEditorBody": "Er zijn niet-opgeslagen wijzigingen op deze kaart. Als je de editor nu verlaat, gaan die wijzigingen verloren.",
   "confirm.discardSettingsChangesBody": "Je hebt niet-opgeslagen wijzigingen in de instellingen. Verwerpen en doorgaan?",
   "confirm.discardSettingsChangesPanel": "Je hebt niet-opgeslagen wijzigingen in {panel}. Verwerpen en doorgaan?",
   "confirm.saveBeforeViewBody": "Wijzigingen opslaan voordat je deze kaart opent?",

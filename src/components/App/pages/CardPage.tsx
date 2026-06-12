@@ -10,11 +10,14 @@ import {
   noopRouteShellCapabilities,
   usePublishRouteShellCapabilities,
 } from "@/components/App/RouteShellCapabilitiesContext";
+import { usePublishUnsavedChangesGuard } from "@/components/App/UnsavedChangesGuardContext";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { EditorSaveProvider } from "@/components/Providers/EditorSaveContext";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function CardPage() {
+  const { t } = useI18n();
   const { track } = useAnalytics();
   const navigate = useNavigate();
   const previewRef = useRef<CardPreviewHandle>(null!);
@@ -37,6 +40,17 @@ export default function CardPage() {
   );
 
   usePublishRouteShellCapabilities(shellCapabilities);
+  usePublishUnsavedChangesGuard(
+    useMemo(
+      () => ({
+        enabled: true,
+        isDirty: session.isEditorDirty,
+        title: t("heading.discardChanges"),
+        body: t("confirm.leaveCardEditorBody"),
+      }),
+      [session.isEditorDirty, t],
+    ),
+  );
 
   useEffect(() => {
     if (session.isDraftRoute) {
