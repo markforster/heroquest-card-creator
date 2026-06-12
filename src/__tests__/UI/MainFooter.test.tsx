@@ -120,4 +120,5 @@ describe("MainFooter (UI)", () => {
       screen.queryByRole("heading", { name: "Desktop browser recommended" }),
     ).not.toBeInTheDocument();
   });
+
 });

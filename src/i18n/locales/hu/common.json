@@ -28,8 +28,10 @@
   "actions.help": "Súgó",
   "actions.about": "Névjegy",
   "actions.download": "Letöltés",
+  "actions.downloadOnItch": "Letöltés az itch.io oldalról",
   "actions.getTheApp": "Szerezd meg az appot",
   "actions.checkForUpdates": "Frissítések keresése?",
+  "actions.viewOnNpm": "Megtekintés npm-en",
   "actions.rateOnItch": "Értékeld az itch.io-n",
   "actions.rateOnItchHover": "Kattints az értékeléshez",
   "actions.exportData": "Exportálás",
@@ -692,6 +694,7 @@
   "heading.desktopBrowserRecommended": "Asztali böngésző ajánlott",
   "label.desktopOptimized": "Asztalira optimalizálva",
   "tooltip.desktopOptimizedNotice": "További információ az asztali böngészők kompatibilitásáról",
+  "notice.updateAvailable": "Új verzió érhető el: {{version}}.",
   "notice.desktopOptimizedBodyPrimary": "A HeroQuest Card Creator jelenleg asztali böngészőkre van optimalizálva.",
   "notice.desktopOptimizedBodySecondary": "Az alkalmazás ettől még megnyílhat és részben működhet az eszközén, de egyes elrendezések, interakciók és szerkesztési munkafolyamatok nehézkesek lehetnek kisebb képernyőkön vagy főként érintéses eszközökön."
 }

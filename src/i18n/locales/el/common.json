@@ -28,8 +28,10 @@
   "actions.help": "Βοήθεια",
   "actions.about": "Σχετικά",
   "actions.download": "Λήψη",
+  "actions.downloadOnItch": "Λήψη από το itch.io",
   "actions.getTheApp": "Αποκτήστε την εφαρμογή",
   "actions.checkForUpdates": "Έλεγχος για ενημερώσεις;",
+  "actions.viewOnNpm": "Προβολή στο npm",
   "actions.rateOnItch": "Βαθμολογήστε στο itch.io",
   "actions.rateOnItchHover": "Κάντε κλικ για βαθμολόγηση",
   "actions.exportData": "Εξαγωγή",
@@ -692,6 +694,7 @@
   "heading.desktopBrowserRecommended": "Συνιστάται πρόγραμμα περιήγησης για υπολογιστή",
   "label.desktopOptimized": "Βελτιστοποιημένο για υπολογιστή",
   "tooltip.desktopOptimizedNotice": "Μάθετε περισσότερα για τη συμβατότητα με προγράμματα περιήγησης υπολογιστή",
+  "notice.updateAvailable": "Υπάρχει διαθέσιμη νέα έκδοση: {{version}}.",
   "notice.desktopOptimizedBodyPrimary": "Το HeroQuest Card Creator είναι προς το παρόν βελτιστοποιημένο για προγράμματα περιήγησης υπολογιστή.",
   "notice.desktopOptimizedBodySecondary": "Η εφαρμογή μπορεί να ανοίξει και να λειτουργήσει εν μέρει στη συσκευή σας, αλλά ορισμένες διατάξεις, αλληλεπιδράσεις και ροές επεξεργασίας μπορεί να είναι δύσκολες σε μικρότερες οθόνες ή σε συσκευές που βασίζονται κυρίως στην αφή."
 }
