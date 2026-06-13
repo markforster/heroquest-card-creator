@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Gamepad2, Twitter } from "lucide-react";
+import { Gamepad2, TriangleAlert, Twitter } from "lucide-react";
+import { isMobile, isTablet } from "react-device-detect";
 import styles from "@/app/page.module.css";
 import HelpModal from "@/components/Modals/HelpModal";
 import ReleaseNotesModal from "@/components/Modals/ReleaseNotesModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
+import { useMediaQuery } from "@/components/Layout/LeftNav/useMediaQuery";
+import ModalShell from "@/components/common/ModalShell";
 import useIsTauriApp from "@/hooks/useIsTauriApp";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
+import { attachItchBuyButton } from "@/lib/itch";
 import { APP_VERSION } from "@/version";
 
 export default function MainFooter() {
@@ -16,16 +20,15 @@ export default function MainFooter() {
   const { track } = useAnalytics();
   const helpModal = usePopupState(false);
   const releaseNotesModal = usePopupState(false);
+  const desktopNoticeModal = usePopupState(false);
   const isTauriApp = useIsTauriApp();
+  const isNarrowViewport = useMediaQuery("(max-width: 1024px)");
   const downloadLinkRef = useRef<HTMLAnchorElement | null>(null);
   const showDownloadLink = false;
+  const showDesktopOptimizedNotice = isMobile || isTablet || isNarrowViewport;
 
   useEffect(() => {
-    const link = downloadLinkRef.current;
-    if (!link || typeof window === "undefined") return;
-    const itch = (window as typeof window & { Itch?: { attachBuyButton?: (el: HTMLElement, opts: { user: string; game: string; width?: number; height?: number }) => void } }).Itch;
-    if (!itch?.attachBuyButton) return;
-    itch.attachBuyButton(link, { user: "mark-forster", game: "heroquest-card-creator", width: 650, height: 400 });
+    attachItchBuyButton(downloadLinkRef.current);
   }, []);
 
   return (
@@ -77,7 +80,23 @@ export default function MainFooter() {
           <div
             className={`${styles.footerCenter} d-flex align-items-center justify-content-center`}
           >
-            {/* <RateCta /> */}
+            {showDesktopOptimizedNotice ? (
+              <button
+                type="button"
+                className={styles.footerCompatibilityNotice}
+                onClick={() => {
+                  track("page_view", {
+                    page_path: "/desktop-compatibility",
+                    page_title: "Desktop Compatibility",
+                  });
+                  desktopNoticeModal.open();
+                }}
+                title={t("tooltip.desktopOptimizedNotice")}
+              >
+                <TriangleAlert className={styles.footerCompatibilityNoticeIcon} aria-hidden="true" />
+                {t("label.desktopOptimized")}
+              </button>
+            ) : null}
           </div>
           <div className={styles.footerSpacer} aria-hidden="true" />
           <div className="d-flex align-items-center gap-1">
@@ -135,6 +154,21 @@ export default function MainFooter() {
       </footer>
       <HelpModal isOpen={helpModal.isOpen} onClose={helpModal.close} />
       <ReleaseNotesModal isOpen={releaseNotesModal.isOpen} onClose={releaseNotesModal.close} />
+      <ModalShell
+        isOpen={desktopNoticeModal.isOpen}
+        onClose={desktopNoticeModal.close}
+        title={t("heading.desktopBrowserRecommended")}
+        footer={
+          <button type="button" className="btn btn-primary btn-sm" onClick={desktopNoticeModal.close}>
+            {t("actions.ok")}
+          </button>
+        }
+      >
+        <div className={styles.footerCompatibilityModalBody}>
+          <p>{t("notice.desktopOptimizedBodyPrimary")}</p>
+          <p>{t("notice.desktopOptimizedBodySecondary")}</p>
+        </div>
+      </ModalShell>
     </>
   );
 }

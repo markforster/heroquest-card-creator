@@ -366,7 +366,6 @@ export default function DeckBacksPanel({
                     activeFilter={activeFilter}
                     onFilterChange={onFilterChange}
                     visibleCollections={visibleCollections}
-                    collectionCounts={collectionCounts}
                     recentCardsCount={recentCards.length}
                     overallCount={overallCount}
                     unfiledCount={unfiledCount}

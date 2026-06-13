@@ -5,11 +5,12 @@ import {
   USE_STATS_VERTICAL_COMPRESSION,
   USE_TIGHTER_STATS_TRACKING,
 } from "@/config/flags";
-import { EMPHASIZED_LABEL_WEIGHT } from "@/config/typography";
+import { buildNumericFontStyle, EMPHASIZED_LABEL_WEIGHT } from "@/config/typography";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { formatStatValue } from "@/lib/stat-values";
 import fitText from "@/lib/text-fitting/fitText";
 import { shrinkToFitSingleLine } from "@/lib/text-fitting/shrink";
+import { useTypographyNumericSettings } from "@/lib/typography-settings";
 import type { StatValue } from "@/types/stats";
 
 
@@ -31,6 +32,7 @@ const HEADER_LINE_HEIGHT = HEADER_FONT_SIZE * 1.05;
 const VALUE_FONT_SIZE = 56;
 const MIN_VALUE_FONT_SIZE = 24;
 const HEADER_LETTER_SPACING = -0.4;
+const VALUE_NUMERIC_OPTICAL_Y_OFFSET = 3;
 
 export default function StatsPair({
   header,
@@ -42,6 +44,7 @@ export default function StatsPair({
   headerHeight,
   debug = false,
 }: StatsPairProps) {
+  const { statAlignedNumerals, statFixedWidthNumerals } = useTypographyNumericSettings();
   const resolvedHeaderHeight = headerHeight ?? height / 2;
   const valueHeight = height - resolvedHeaderHeight;
 
@@ -79,10 +82,6 @@ export default function StatsPair({
     statsScaleY === 1
       ? undefined
       : `translate(${centerX} ${headerCenterY}) scale(1 ${statsScaleY}) translate(${-centerX} ${-headerCenterY})`;
-  const valueTransform =
-    statsScaleY === 1
-      ? undefined
-      : `translate(${centerX} ${valueCenterY}) scale(1 ${statsScaleY}) translate(${-centerX} ${-valueCenterY})`;
   const valueFontSize =
     formattedValue != null
       ? shrinkToFitSingleLine(
@@ -93,6 +92,17 @@ export default function StatsPair({
           MIN_VALUE_FONT_SIZE,
         )
       : VALUE_FONT_SIZE;
+  const numericStyle = buildNumericFontStyle({
+    lining: statAlignedNumerals,
+    tabular: statFixedWidthNumerals,
+  });
+  const valueOpticalYOffset =
+    statAlignedNumerals || statFixedWidthNumerals ? VALUE_NUMERIC_OPTICAL_Y_OFFSET : 0;
+  const adjustedValueCenterY = valueCenterY + valueOpticalYOffset;
+  const valueTransform =
+    statsScaleY === 1
+      ? undefined
+      : `translate(${centerX} ${adjustedValueCenterY}) scale(1 ${statsScaleY}) translate(${-centerX} ${-adjustedValueCenterY})`;
 
   return (
     <Layer>
@@ -118,13 +128,14 @@ export default function StatsPair({
         <g transform={valueTransform}>
           <text
             x={centerX}
-            y={valueCenterY}
+            y={adjustedValueCenterY}
             textAnchor="middle"
             dominantBaseline="middle"
             fill="#452304"
             fontSize={valueFontSize}
             fontWeight={700}
             fontFamily={CARD_TEXT_FONT_FAMILY}
+            style={numericStyle}
           >
             {formattedValue}
           </text>

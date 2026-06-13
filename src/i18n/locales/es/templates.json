@@ -1,0 +1,8 @@
+{
+  "templates.hero": "Carta de héroe",
+  "templates.monster": "Carta de monstruo",
+  "templates.small-treasure": "Carta con arte pequeño",
+  "templates.large-treasure": "Carta con arte grande",
+  "templates.hero-back": "Reverso de héroe",
+  "templates.labelled-back": "Reverso con etiqueta"
+}

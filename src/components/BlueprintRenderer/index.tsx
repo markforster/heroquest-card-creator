@@ -197,7 +197,7 @@ function MissingArtworkPlaceholder({
         y={line1Y}
         textAnchor="middle"
         fontSize={fontSize}
-        fontFamily="Carter Sans W01, serif"
+        fontFamily="Carter Sans W04, serif"
         fill={MISSING_ARTWORK_COLOR}
       >
         {label}
@@ -207,7 +207,7 @@ function MissingArtworkPlaceholder({
         y={line2Y}
         textAnchor="middle"
         fontSize={fontSize}
-        fontFamily="Carter Sans W01, serif"
+        fontFamily="Carter Sans W04, serif"
         fill={MISSING_ARTWORK_COLOR}
       >
         {truncatedDetail}
@@ -1591,7 +1591,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
           y={DEFAULT_CANVAS.height / 2 - 6}
           textAnchor="middle"
           fontSize={20}
-          fontFamily="Carter Sans W01, serif"
+          fontFamily="Carter Sans W04, serif"
           fill="#c6541a"
         >
           Blueprint missing
@@ -1601,7 +1601,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
           y={DEFAULT_CANVAS.height / 2 + 20}
           textAnchor="middle"
           fontSize={16}
-          fontFamily="Carter Sans W01, serif"
+          fontFamily="Carter Sans W04, serif"
           fill="#c6541a"
         >
           {templateName ?? templateId}

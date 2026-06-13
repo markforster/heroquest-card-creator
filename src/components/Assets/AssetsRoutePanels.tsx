@@ -3,21 +3,32 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useFormState } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
+import AssetInspectorPreview from "@/components/Assets/AssetInspectorPreview";
 import AssetsMainPanel from "@/components/Assets/AssetsMainPanel";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import ModalShell from "@/components/common/ModalShell";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useEditorSave } from "@/components/Providers/EditorSaveContext";
+import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
+import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
+import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
+import { cardTemplatesById } from "@/data/card-templates";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
 import type { AssetRecord } from "@/api/assets";
+import type { CardRecord } from "@/api/cards";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { generateId } from "@/lib";
-import { getNextAvailableFilename } from "@/lib/asset-filename";
+import { getDisplayAssetName, getNextAvailableFilename } from "@/lib/asset-filename";
 import { optimizeImageBlob } from "@/lib/image-optimization";
 import type { Blueprint, BlueprintBounds } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
@@ -26,14 +37,13 @@ import type { ChangeEvent } from "react";
 
 type AssetUsage = {
   total: number;
+  cards: CardRecord[];
 };
 
 type AssetUsageBounds = {
   width: number;
   height: number;
 };
-
-const ASSET_PREVIEW_TILT_MAX_DEG = 8;
 
 function formatAssetDate(timestamp: number): string {
   return new Date(timestamp).toLocaleString();
@@ -103,6 +113,93 @@ function getUsageBoundsForTemplate(
   return { width: bounds.width, height: bounds.height };
 }
 
+type UsagePopoverAnchor = {
+  rect: { top: number; left: number; bottom: number; right: number };
+};
+
+function sortCardsByUpdated(cards: CardRecord[]): CardRecord[] {
+  return cards.sort((a, b) => {
+    if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
+    const aName = a.nameLower ?? a.name.toLocaleLowerCase();
+    const bName = b.nameLower ?? b.name.toLocaleLowerCase();
+    return aName.localeCompare(bName);
+  });
+}
+
+function AssetsUsageCardsPopover({
+  isOpen,
+  anchor,
+  cards,
+  popoverRef,
+  onMouseEnter,
+  onMouseLeave,
+  onBlur,
+  onOpenCard,
+}: {
+  isOpen: boolean;
+  anchor: UsagePopoverAnchor | null;
+  cards: CardRecord[];
+  popoverRef: React.Ref<HTMLDivElement>;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  onBlur: (event: React.FocusEvent<HTMLDivElement>) => void;
+  onOpenCard: (cardId: string) => void;
+}) {
+  if (!isOpen || !anchor || typeof document === "undefined") return null;
+
+  const tileWidth = 96;
+  const tileHeight = 140;
+  const tileGap = 8;
+  const columns = Math.max(1, Math.min(cards.length, 5));
+  const padding = 16;
+  const popoverWidth = padding * 2 + columns * tileWidth + (columns - 1) * tileGap;
+  const minLeft = 16;
+  const maxLeft = Math.max(minLeft, window.innerWidth - popoverWidth - 16);
+  const left = Math.min(Math.max(anchor.rect.left, minLeft), maxLeft);
+  const top = Math.max(16, anchor.rect.top - 6);
+
+  return createPortal(
+    <div
+      ref={popoverRef}
+      className={styles.assetsUsagePopover}
+      style={{ left, top, width: popoverWidth, transform: "translateY(-100%)" }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onBlur={onBlur}
+      role="group"
+      aria-label="Used on cards"
+    >
+      <div
+        className={styles.assetsUsagePopoverGrid}
+        style={{ gridTemplateColumns: `repeat(${columns}, ${tileWidth}px)` }}
+      >
+        {cards.map((card) => {
+          const templateThumb = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+          const cardLabel = card.name?.trim() || card.title?.trim() || "Untitled card";
+          return (
+            <button
+              key={card.id}
+              type="button"
+              className={styles.assetsUsagePopoverCard}
+              onClick={() => onOpenCard(card.id)}
+              aria-label={cardLabel}
+            >
+              <StockpileThumbImage
+                cardId={card.id}
+                thumbnailBlob={card.thumbnailBlob ?? null}
+                templateThumbSrc={templateThumb}
+                alt=""
+                fallback={<div className={styles.assetsUsagePopoverPlaceholder} />}
+              />
+            </button>
+          );
+        })}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 function AssetsInspector({
   assets,
   currentIndex,
@@ -119,15 +216,27 @@ function AssetsInspector({
   refreshKey: number;
 }) {
   const { t } = useI18n();
+  const navigate = useNavigate();
+  const { requestRecenter } = usePreviewRenderer();
+  const {
+    state: { selectedTemplateId },
+  } = useCardEditor();
+  const { isDirty } = useFormState();
+  const { saveCurrentCard } = useEditorSave();
   const { enqueueAsset, cancelAsset } = useAssetKindQueue();
   const safeIndex = Math.min(currentIndex, assets.length - 1);
   const asset = assets[safeIndex];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [assetBlob, setAssetBlob] = useState<Blob | null>(null);
   const [isOpaquePng, setIsOpaquePng] = useState(false);
   const [assetSizeBytes, setAssetSizeBytes] = useState<number | null>(null);
-  const [usage, setUsage] = useState<AssetUsage>({ total: 0 });
+  const [usage, setUsage] = useState<AssetUsage>({ total: 0, cards: [] });
   const [usageBounds, setUsageBounds] = useState<AssetUsageBounds | null>(null);
+  const [usagePopoverAnchor, setUsagePopoverAnchor] = useState<UsagePopoverAnchor | null>(null);
+  const [isUsagePopoverOpen, setIsUsagePopoverOpen] = useState(false);
+  const [pendingOpenCard, setPendingOpenCard] = useState<CardRecord | null>(null);
+  const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
   const [pendingReplace, setPendingReplace] = useState<{
     file: File;
     width: number;
@@ -182,19 +291,10 @@ function AssetsInspector({
   });
   const [keepBackup, setKeepBackup] = useState(false);
   const [isReplacing, setIsReplacing] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const previewInnerRef = useRef<HTMLDivElement | null>(null);
-  const tiltFrameRef = useRef<number | null>(null);
-  const tiltPointRef = useRef<{ x: number; y: number } | null>(null);
-  const idleFrameRef = useRef<number | null>(null);
-  const idleTargetRef = useRef<{ x: number; y: number } | null>(null);
-  const idleFromRef = useRef<{ x: number; y: number } | null>(null);
-  const idleStartRef = useRef<number | null>(null);
-  const idleDurationRef = useRef<number>(0);
-  const isHoveringRef = useRef(false);
-  const currentTiltRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const reduceMotionRef = useRef(false);
   const showCarousel = assets.length > 1;
+  const canReplaceImage = assets.length === 1;
   const isJpegLike = asset.mimeType === "image/jpeg" || asset.mimeType === "image/jpg";
   const maxEdge = Math.max(asset.width, asset.height);
   const requiredWidth = usageBounds?.width ?? 0;
@@ -230,6 +330,10 @@ function AssetsInspector({
   const [isKindPopoverOpen, setIsKindPopoverOpen] = useState(false);
   const kindAnchorRef = useRef<HTMLButtonElement | null>(null);
   const kindPopoverRef = useRef<HTMLDivElement | null>(null);
+  const usageTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const usagePopoverRef = useRef<HTMLDivElement | null>(null);
+  const usagePopoverCloseTimeoutRef = useRef<number | null>(null);
+  const recenterTimeoutRef = useRef<number | null>(null);
   const [kindPopoverStyle, setKindPopoverStyle] = useState<React.CSSProperties | null>(null);
   const kindPopoverPlacement = usePopoverPlacement({
     isOpen: isKindPopoverOpen,
@@ -243,9 +347,93 @@ function AssetsInspector({
     isKindPopoverOpen,
   );
 
+  const clearUsagePopoverCloseTimeout = () => {
+    if (usagePopoverCloseTimeoutRef.current) {
+      window.clearTimeout(usagePopoverCloseTimeoutRef.current);
+      usagePopoverCloseTimeoutRef.current = null;
+    }
+  };
+
+  const closeUsagePopover = () => {
+    clearUsagePopoverCloseTimeout();
+    setIsUsagePopoverOpen(false);
+    setUsagePopoverAnchor(null);
+  };
+
+  const scheduleUsagePopoverClose = () => {
+    clearUsagePopoverCloseTimeout();
+    usagePopoverCloseTimeoutRef.current = window.setTimeout(() => {
+      setIsUsagePopoverOpen(false);
+      setUsagePopoverAnchor(null);
+    }, 200);
+  };
+
+  const openUsagePopover = (anchor: HTMLElement) => {
+    if (usage.cards.length === 0) return;
+    clearUsagePopoverCloseTimeout();
+    const rect = anchor.getBoundingClientRect();
+    setUsagePopoverAnchor({
+      rect: {
+        top: rect.top,
+        left: rect.left,
+        bottom: rect.bottom,
+        right: rect.right,
+      },
+    });
+    setIsUsagePopoverOpen(true);
+  };
+
+  const openCard = async (cardId: string) => {
+    closeUsagePopover();
+    navigate(`/cards/${cardId}`);
+    if (ENABLE_WEBGL_RECENTER_ON_FACE_SELECT) {
+      if (recenterTimeoutRef.current) {
+        window.clearTimeout(recenterTimeoutRef.current);
+      }
+      recenterTimeoutRef.current = window.setTimeout(() => {
+        requestRecenter();
+      }, 90);
+    }
+  };
+
+  const requestOpenCard = async (cardId: string) => {
+    if (selectedTemplateId && isDirty) {
+      const record = await apiClient.getCard({ params: { id: cardId } });
+      if (!record) return;
+      setPendingOpenCard(record);
+      setIsSavePromptOpen(true);
+      return;
+    }
+    await openCard(cardId);
+  };
+
+  const handleUsageTriggerBlur = (event: React.FocusEvent<HTMLButtonElement>) => {
+    const nextTarget = event.relatedTarget as Node | null;
+    if (
+      (nextTarget && usageTriggerRef.current?.contains(nextTarget)) ||
+      (nextTarget && usagePopoverRef.current?.contains(nextTarget))
+    ) {
+      return;
+    }
+    closeUsagePopover();
+  };
+
+  const handleUsagePopoverBlur = (event: React.FocusEvent<HTMLDivElement>) => {
+    const nextTarget = event.relatedTarget as Node | null;
+    if (
+      (nextTarget && usageTriggerRef.current?.contains(nextTarget)) ||
+      (nextTarget && usagePopoverRef.current?.contains(nextTarget))
+    ) {
+      return;
+    }
+    closeUsagePopover();
+  };
+
   useEffect(() => {
     let cancelled = false;
     let url: string | null = null;
+    setPreviewUrl(null);
+    setIsPreviewLoading(true);
 
     (async () => {
       try {
@@ -255,6 +443,7 @@ function AssetsInspector({
       }
       if (!cancelled) {
         setPreviewUrl(url);
+        setIsPreviewLoading(false);
       } else if (url) {
         URL.revokeObjectURL(url);
       }
@@ -366,9 +555,9 @@ function AssetsInspector({
 
     (async () => {
       try {
-        const cards = await apiClient.listCards();
+        const cards = await apiClient.listCards({ queries: { status: "saved" } });
         if (cancelled) return;
-        let total = 0;
+        const usedCards = new Map<string, CardRecord>();
         let maxWidth = 0;
         let maxHeight = 0;
         cards.forEach((card) => {
@@ -395,15 +584,18 @@ function AssetsInspector({
               maxHeight = Math.max(maxHeight, bounds.height);
             }
           }
-          if (used) total += 1;
+          if (used) {
+            usedCards.set(card.id, card);
+          }
         });
-        setUsage({ total });
+        const matchedCards = sortCardsByUpdated(Array.from(usedCards.values()));
+        setUsage({ total: matchedCards.length, cards: matchedCards });
         setUsageBounds(
           maxWidth > 0 && maxHeight > 0 ? { width: maxWidth, height: maxHeight } : null,
         );
       } catch {
         if (!cancelled) {
-          setUsage({ total: 0 });
+          setUsage({ total: 0, cards: [] });
           setUsageBounds(null);
         }
       }
@@ -413,6 +605,21 @@ function AssetsInspector({
       cancelled = true;
     };
   }, [asset.id]);
+
+  useEffect(() => {
+    closeUsagePopover();
+    setPendingOpenCard(null);
+    setIsSavePromptOpen(false);
+  }, [asset.id]);
+
+  useEffect(() => {
+    return () => {
+      clearUsagePopoverCloseTimeout();
+      if (recenterTimeoutRef.current) {
+        window.clearTimeout(recenterTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const dimensionsLabel = useMemo(() => {
     return `${asset.width}×${asset.height}`;
@@ -437,6 +644,7 @@ function AssetsInspector({
   useEffect(() => {
     setPendingReplace(null);
     setKeepBackup(false);
+    setIsPreviewModalOpen(false);
     setIsKindPopoverOpen(false);
     setIsOptimizeOpen(false);
     setIsConvertOpen(false);
@@ -540,146 +748,6 @@ function AssetsInspector({
       setOptimizeScalePercent(100);
     }
   }, [optimizeScalePercent]);
-
-  const resetPreviewTilt = () => {
-    const previewEl = previewInnerRef.current;
-    if (!previewEl) return;
-    previewEl.style.setProperty("--asset-preview-tilt-x", "0deg");
-    previewEl.style.setProperty("--asset-preview-tilt-y", "0deg");
-    currentTiltRef.current = { x: 0, y: 0 };
-  };
-
-  const stopIdleTilt = () => {
-    if (idleFrameRef.current !== null) {
-      cancelAnimationFrame(idleFrameRef.current);
-      idleFrameRef.current = null;
-    }
-    idleTargetRef.current = null;
-    idleFromRef.current = null;
-    idleStartRef.current = null;
-  };
-
-  const startIdleTilt = () => {
-    if (reduceMotionRef.current || isHoveringRef.current) return;
-    if (idleFrameRef.current !== null) return;
-    idleFrameRef.current = requestAnimationFrame(stepIdleTilt);
-  };
-
-  const stepIdleTilt = (timestamp: number) => {
-    idleFrameRef.current = null;
-    if (reduceMotionRef.current || isHoveringRef.current) {
-      stopIdleTilt();
-      return;
-    }
-    const previewEl = previewInnerRef.current;
-    if (!previewEl) return;
-
-    if (!idleTargetRef.current || idleStartRef.current === null) {
-      const maxTilt = 1.8;
-      const randTilt = () => (Math.random() * 2 - 1) * maxTilt;
-      idleFromRef.current = { ...currentTiltRef.current };
-      idleTargetRef.current = { x: randTilt(), y: randTilt() };
-      idleStartRef.current = timestamp;
-      idleDurationRef.current = 2800 + Math.random() * 2200;
-    }
-
-    const start = idleStartRef.current ?? timestamp;
-    const duration = idleDurationRef.current || 3000;
-    const progress = Math.min(1, (timestamp - start) / duration);
-    const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-    const target = idleTargetRef.current ?? { x: 0, y: 0 };
-    const from = idleFromRef.current ?? { x: 0, y: 0 };
-    const nextX = from.x + (target.x - from.x) * ease;
-    const nextY = from.y + (target.y - from.y) * ease;
-
-    previewEl.style.setProperty("--asset-preview-tilt-x", `${nextX.toFixed(2)}deg`);
-    previewEl.style.setProperty("--asset-preview-tilt-y", `${nextY.toFixed(2)}deg`);
-    currentTiltRef.current = { x: nextX, y: nextY };
-
-    if (progress >= 1) {
-      idleTargetRef.current = null;
-      idleFromRef.current = null;
-      idleStartRef.current = null;
-    }
-
-    idleFrameRef.current = requestAnimationFrame(stepIdleTilt);
-  };
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handleChange = () => {
-      reduceMotionRef.current = media.matches;
-      if (media.matches) {
-        stopIdleTilt();
-        resetPreviewTilt();
-      }
-    };
-    handleChange();
-    if (media.addEventListener) {
-      media.addEventListener("change", handleChange);
-      return () => media.removeEventListener("change", handleChange);
-    }
-    media.addListener(handleChange);
-    return () => media.removeListener(handleChange);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (tiltFrameRef.current !== null) {
-        cancelAnimationFrame(tiltFrameRef.current);
-        tiltFrameRef.current = null;
-      }
-      stopIdleTilt();
-    };
-  }, []);
-
-  const handlePreviewMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (reduceMotionRef.current) return;
-    if (!isHoveringRef.current) {
-      isHoveringRef.current = true;
-      stopIdleTilt();
-    }
-    tiltPointRef.current = { x: event.clientX, y: event.clientY };
-    if (tiltFrameRef.current !== null) return;
-    tiltFrameRef.current = requestAnimationFrame(() => {
-      tiltFrameRef.current = null;
-      const previewEl = previewInnerRef.current;
-      const point = tiltPointRef.current;
-      if (!previewEl || !point) return;
-      const rect = previewEl.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      const normX = (point.x - rect.left) / rect.width - 0.5;
-      const normY = (point.y - rect.top) / rect.height - 0.5;
-      const tiltX = normY * ASSET_PREVIEW_TILT_MAX_DEG;
-      const tiltY = -normX * ASSET_PREVIEW_TILT_MAX_DEG;
-      previewEl.style.setProperty("--asset-preview-tilt-x", `${tiltX.toFixed(2)}deg`);
-      previewEl.style.setProperty("--asset-preview-tilt-y", `${tiltY.toFixed(2)}deg`);
-      currentTiltRef.current = { x: tiltX, y: tiltY };
-    });
-  };
-
-  const handlePreviewMouseLeave = () => {
-    isHoveringRef.current = false;
-    tiltPointRef.current = null;
-    if (tiltFrameRef.current !== null) {
-      cancelAnimationFrame(tiltFrameRef.current);
-      tiltFrameRef.current = null;
-    }
-    resetPreviewTilt();
-    startIdleTilt();
-  };
-
-  useEffect(() => {
-    stopIdleTilt();
-    resetPreviewTilt();
-    if (!reduceMotionRef.current) {
-      startIdleTilt();
-    }
-    return () => {
-      stopIdleTilt();
-    };
-  }, [asset.id, previewUrl, refreshKey]);
 
   const handleReplaceConfirm = async () => {
     if (!pendingReplace) return;
@@ -1211,7 +1279,11 @@ function AssetsInspector({
           <button
             type="button"
             className="btn btn-outline-light btn-sm"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (!canReplaceImage) return;
+              fileInputRef.current?.click();
+            }}
+            disabled={!canReplaceImage}
           >
             {t("actions.replaceImage")}
           </button>
@@ -1265,30 +1337,17 @@ function AssetsInspector({
             </button>
           </div>
         ) : null}
-        <div className={styles.assetsInspectorPreview}>
-          <div
-            className={styles.assetsInspectorPreviewInner}
-            ref={previewInnerRef}
-            onMouseMove={handlePreviewMouseMove}
-            onMouseLeave={handlePreviewMouseLeave}
-            style={
-              previewUrl
-                ? ({
-                    ["--asset-preview-url" as const]: `url("${previewUrl}")`,
-                  } as React.CSSProperties)
-                : undefined
-            }
-          >
-            {previewUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={previewUrl} alt={asset.name} />
-            ) : (
-              <div className={styles.assetsInspectorPreviewPlaceholder}>{t("empty.noPreview")}</div>
-            )}
-          </div>
-        </div>
-        <div className={styles.assetsInspectorFilename} title={asset.name}>
-          {asset.name}
+        <AssetInspectorPreview
+          previewUrl={previewUrl}
+          isLoading={isPreviewLoading}
+          alt={asset.name}
+          emptyContent={t("empty.noPreview")}
+          interactive
+          onClick={() => setIsPreviewModalOpen(true)}
+          ariaLabel={`${t("label.preview")}: ${getDisplayAssetName(asset.name)}`}
+        />
+        <div className={styles.assetsInspectorFilename} title={getDisplayAssetName(asset.name)}>
+          {getDisplayAssetName(asset.name)}
         </div>
         <dl className={styles.assetsInspectorDetails}>
           <div className={styles.uRowLg}>
@@ -1381,11 +1440,80 @@ function AssetsInspector({
           <div className={styles.uRowLg}>
             <dt>{t("label.usedOnCards")}</dt>
             <dd>
-              {usage.total} {usage.total === 1 ? t("label.card") : t("label.cards")}
+              {usage.total > 0 ? (
+                <button
+                  ref={usageTriggerRef}
+                  type="button"
+                  className={styles.assetsUsageTrigger}
+                  onMouseEnter={(event) => openUsagePopover(event.currentTarget)}
+                  onMouseLeave={scheduleUsagePopoverClose}
+                  onFocus={(event) => openUsagePopover(event.currentTarget)}
+                  onBlur={handleUsageTriggerBlur}
+                  aria-haspopup="dialog"
+                  aria-expanded={isUsagePopoverOpen}
+                >
+                  {usage.total} {usage.total === 1 ? t("label.card") : t("label.cards")}
+                </button>
+              ) : (
+                <>
+                  {usage.total} {usage.total === 1 ? t("label.card") : t("label.cards")}
+                </>
+              )}
             </dd>
           </div>
         </dl>
       </div>
+      <AssetsUsageCardsPopover
+        isOpen={isUsagePopoverOpen}
+        anchor={usagePopoverAnchor}
+        cards={usage.cards}
+        popoverRef={usagePopoverRef}
+        onMouseEnter={clearUsagePopoverCloseTimeout}
+        onMouseLeave={scheduleUsagePopoverClose}
+        onBlur={handleUsagePopoverBlur}
+        onOpenCard={(cardId) => {
+          void requestOpenCard(cardId);
+        }}
+      />
+      <ConfirmModal
+        isOpen={isSavePromptOpen}
+        title={t("heading.saveBeforeView")}
+        confirmLabel={t("actions.save")}
+        cancelLabel={t("actions.cancel")}
+        onConfirm={async () => {
+          setIsSavePromptOpen(false);
+          const nextOpenCard = pendingOpenCard;
+          setPendingOpenCard(null);
+          const saved = await saveCurrentCard();
+          if (!saved) return;
+          if (nextOpenCard) {
+            await openCard(nextOpenCard.id);
+          }
+        }}
+        onCancel={() => {
+          setIsSavePromptOpen(false);
+          setPendingOpenCard(null);
+        }}
+      >
+        {t("confirm.saveBeforeViewBody")}
+      </ConfirmModal>
+      <ModalShell
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        title={`${t("label.preview")}: ${getDisplayAssetName(asset.name)}`}
+        contentClassName={styles.assetsPreviewModalPopover}
+      >
+        <div className={styles.assetsPreviewModalBody}>
+          <AssetInspectorPreview
+            previewUrl={previewUrl}
+            isLoading={isPreviewLoading}
+            alt={asset.name}
+            emptyContent={t("empty.noPreview")}
+            variant="modal"
+            containerClassName={styles.assetsPreviewModalFrame}
+          />
+        </div>
+      </ModalShell>
       <ModalShell
         isOpen={Boolean(pendingReplace)}
         onClose={closeReplaceModal}
@@ -1911,6 +2039,11 @@ export default function AssetsRoutePanels() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const { setIsActive } = useAssetKindQueue();
+  const selectedAssetIdsSignature = useMemo(
+    () => selectedAssets.map((asset) => asset.id).join("|"),
+    [selectedAssets],
+  );
+  const previousSelectedAssetIdsSignatureRef = useRef("");
 
   useEffect(() => {
     setIsActive(true);
@@ -1921,11 +2054,16 @@ export default function AssetsRoutePanels() {
 
   useEffect(() => {
     if (selectedAssets.length === 0) {
+      previousSelectedAssetIdsSignatureRef.current = "";
       setCurrentIndex(0);
       return;
     }
+    if (previousSelectedAssetIdsSignatureRef.current === selectedAssetIdsSignature) {
+      return;
+    }
+    previousSelectedAssetIdsSignatureRef.current = selectedAssetIdsSignature;
     setCurrentIndex(0);
-  }, [selectedAssets]);
+  }, [selectedAssetIdsSignature, selectedAssets.length]);
 
   useEffect(() => {
     if (currentIndex >= selectedAssets.length) {
@@ -1936,7 +2074,10 @@ export default function AssetsRoutePanels() {
   return (
     <>
       <section className={`${styles.leftPanel} d-flex align-items-stretch gap-3 p-3`}>
-        <AssetsMainPanel onSelectionChange={setSelectedAssets} refreshKey={refreshKey} />
+        <AssetsMainPanel
+          onSelectionChange={setSelectedAssets}
+          refreshKey={refreshKey}
+        />
       </section>
       {selectedAssets.length > 0 ? (
         <AssetsInspector

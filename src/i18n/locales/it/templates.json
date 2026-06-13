@@ -1,0 +1,8 @@
+{
+  "templates.hero": "Carta eroe",
+  "templates.monster": "Carta mostro",
+  "templates.small-treasure": "Carta con illustrazione piccola",
+  "templates.large-treasure": "Carta con illustrazione grande",
+  "templates.hero-back": "Retro eroe",
+  "templates.labelled-back": "Retro etichettato"
+}

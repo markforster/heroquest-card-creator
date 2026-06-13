@@ -6,6 +6,8 @@ import { MonitorDown } from "lucide-react";
 import styles from "@/app/page.module.css";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getConfiguredAppDistribution } from "@/lib/app-distribution";
+import { HQCC_ITCH_DOWNLOAD_URL, attachItchBuyButton } from "@/lib/itch";
 
 const ENABLE_GET_APP_GLOW = false;
 const WAIT_BEFORE_FIRST_MS = 10 * 60 * 1000;
@@ -87,13 +89,9 @@ export default function LeftNavDownloadAction() {
   const timersRef = useRef<number[]>([]);
   const scheduleRef = useRef<((state: GlowState) => void) | null>(null);
 
-  const distribution = process.env.NEXT_PUBLIC_APP_DISTRIBUTION ?? "unknown";
-  const isEligibleBuild =
-    distribution === "itch" ||
-    distribution === "self_hosted" ||
-    distribution === "unknown" ||
-    distribution === "npm" ||
-    distribution === "download";
+  const distribution = getConfiguredAppDistribution();
+  const isEligibleBuild = true;
+  const isUpdateAction = distribution === "download" || isLocalInstall;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -102,33 +100,15 @@ export default function LeftNavDownloadAction() {
 
   useEffect(() => {
     if (!isEligibleBuild) return;
-    const link = linkRef.current;
-    if (!link || typeof window === "undefined") return;
-    const itch = (
-      window as typeof window & {
-        Itch?: {
-          attachBuyButton?: (
-            el: HTMLElement,
-            opts: { user: string; game: string; width?: number; height?: number },
-          ) => void;
-        };
-      }
-    ).Itch;
-    if (!itch?.attachBuyButton) return;
-    itch.attachBuyButton(link, {
-      user: "mark-forster",
-      game: "heroquest-card-creator",
-      width: 650,
-      height: 400,
-    });
+    attachItchBuyButton(linkRef.current);
   }, [isEligibleBuild]);
 
   const label = useMemo(() => {
-    if (distribution === "download" || isLocalInstall) {
+    if (isUpdateAction) {
       return t("actions.checkForUpdates");
     }
     return t("actions.getTheApp");
-  }, [distribution, isLocalInstall, t]);
+  }, [isUpdateAction, t]);
 
   useEffect(() => {
     if (!isEligibleBuild) {
@@ -347,10 +327,10 @@ export default function LeftNavDownloadAction() {
   return (
     <a
       ref={linkRef}
-      href="https://mark-forster.itch.io/heroquest-card-creator?source=in-app-download"
-      className={`${styles.leftNavItem} ${ENABLE_GET_APP_GLOW ? styles.leftNavItemGlow : ""} ${
-        isGlowActive ? styles.leftNavItemGlowActive : ""
-      } d-flex align-items-center gap-2`}
+      href={HQCC_ITCH_DOWNLOAD_URL}
+      className={`${styles.leftNavItem} ${isUpdateAction ? styles.leftNavUpdateAction : ""} ${
+        ENABLE_GET_APP_GLOW ? styles.leftNavItemGlow : ""
+      } ${isGlowActive ? styles.leftNavItemGlowActive : ""} d-flex align-items-center gap-2`}
       onClickCapture={(event) => {
         event.preventDefault();
         track("page_view", { page_path: "/download", page_title: "Download" });

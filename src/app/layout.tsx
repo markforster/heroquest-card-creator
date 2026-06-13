@@ -3,6 +3,7 @@ import Script from "next/script";
 
 import { AnalyticsProvider } from "@/components/Providers/AnalyticsProvider";
 import I18nProviderClient from "@/components/Providers/I18nProviderClient";
+import { UpdateNoticeProvider } from "@/components/Providers/UpdateNoticeProvider";
 import QueryClientProviderClient from "@/components/QueryClientProviderClient";
 
 import type { Metadata, Viewport } from "next";
@@ -142,24 +143,24 @@ export default function RootLayout({ children }: RootLayoutProps) {
           dangerouslySetInnerHTML={{
             __html: `
 @font-face {
-  font-family: "Carter Sans W01";
-  src: url("./fonts/Carter Sans W01 Regular.ttf") format("truetype");
+  font-family: "Carter Sans W04";
+  src: url("./fonts/Carter Sans W04 Regular.ttf") format("truetype");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Carter Sans W01";
-  src: url("./fonts/Carter Sans W01 Medium.ttf") format("truetype");
+  font-family: "Carter Sans W04";
+  src: url("./fonts/Carter Sans W04 Medium.ttf") format("truetype");
   font-style: normal;
   font-weight: 550;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Carter Sans W01";
-  src: url("./fonts/Carter Sans W01 Bold.ttf") format("truetype");
+  font-family: "Carter Sans W04";
+  src: url("./fonts/Carter Sans W04 Bold.ttf") format("truetype");
   font-style: normal;
   font-weight: 700;
   font-display: swap;
@@ -177,7 +178,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
         />
         <AnalyticsProvider gaId={gaId}>
           <QueryClientProviderClient>
-            <I18nProviderClient>{children}</I18nProviderClient>
+            <I18nProviderClient>
+              <UpdateNoticeProvider>{children}</UpdateNoticeProvider>
+            </I18nProviderClient>
           </QueryClientProviderClient>
         </AnalyticsProvider>
       </body>

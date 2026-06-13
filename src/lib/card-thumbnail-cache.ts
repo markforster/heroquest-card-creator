@@ -9,7 +9,7 @@ type CacheEntry = {
   refCount: number;
 };
 
-const MAX_ENTRIES = 200;
+export const MAX_ENTRIES = 750;
 const RETRY_DELAYS_MS = [100, 250, 500];
 
 const cache = new Map<string, CacheEntry>();
@@ -134,11 +134,26 @@ export function useCardThumbnailUrl(
   const useCache = options?.useCache ?? true;
   const [url, setUrl] = useState<string | null>(null);
   const legacyUrlRef = useRef<string | null>(null);
+  const retainedCardIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let active = true;
+    const releaseRetainedCard = () => {
+      if (!retainedCardIdRef.current) return;
+      releaseCardThumbnail(retainedCardIdRef.current);
+      retainedCardIdRef.current = null;
+    };
+    const retainActiveCard = (nextCardId: string) => {
+      if (retainedCardIdRef.current === nextCardId) return;
+      if (retainedCardIdRef.current) {
+        releaseCardThumbnail(retainedCardIdRef.current);
+      }
+      retainCardThumbnail(nextCardId);
+      retainedCardIdRef.current = nextCardId;
+    };
 
     if (!cardId) {
+      releaseRetainedCard();
       setUrl(null);
       return () => {
         active = false;
@@ -146,28 +161,39 @@ export function useCardThumbnailUrl(
     }
 
     if (useCache) {
-      const cached = getCachedCardThumbnailUrl(cardId, blob ?? null);
-      if (cached) {
-        setUrl(cached);
-        return () => {
-          active = false;
-        };
-      }
       if (!enabled) {
+        releaseRetainedCard();
         setUrl(null);
         return () => {
           active = false;
         };
       }
+      const cached = getCachedCardThumbnailUrl(cardId, blob ?? null);
+      if (cached) {
+        retainActiveCard(cardId);
+        setUrl(cached);
+        return () => {
+          active = false;
+          releaseRetainedCard();
+        };
+      }
       void (async () => {
         const next = await getCardThumbnailUrl(cardId);
         if (!active) return;
+        if (next) {
+          retainActiveCard(cardId);
+        } else {
+          releaseRetainedCard();
+        }
         setUrl(next);
       })();
       return () => {
         active = false;
+        releaseRetainedCard();
       };
     }
+
+    releaseRetainedCard();
 
     if (legacyUrlRef.current) {
       releaseLegacyCardThumbnailUrl(legacyUrlRef.current);

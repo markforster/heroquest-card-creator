@@ -1,0 +1,8 @@
+{
+  "templates.hero": "Hőskártya",
+  "templates.monster": "Szörnykártya",
+  "templates.small-treasure": "Kis illusztráció",
+  "templates.large-treasure": "Nagy illusztráció",
+  "templates.hero-back": "Hős hátoldal",
+  "templates.labelled-back": "Címkézett hátoldal"
+}

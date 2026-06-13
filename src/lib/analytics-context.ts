@@ -1,3 +1,5 @@
+import { getConfiguredAppDistribution } from "@/lib/app-distribution";
+
 export type AnalyticsContextData = {
   app_distribution: "itch" | "local" | "self_hosted" | "unknown" | "npm" | "download";
   app_version: string;
@@ -17,7 +19,7 @@ export function buildAnalyticsContext(
   location: LocationLike | null | undefined,
   appVersion: string,
 ): AnalyticsContextData {
-  const override = sanitizeOverride(process.env.NEXT_PUBLIC_APP_DISTRIBUTION);
+  const override = sanitizeOverride(getConfiguredAppDistribution());
   const protocol = location?.protocol ?? "";
   const hostname = location?.hostname ?? "";
   const isFile = protocol === "file:";
@@ -61,20 +63,11 @@ function resolveAppUrl(location: LocationLike | null | undefined): string | unde
   }
 }
 
-function sanitizeOverride(value: string | undefined): AnalyticsContextData["app_distribution"] | null {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const allowed: AnalyticsContextData["app_distribution"][] = [
-    "itch",
-    "local",
-    "self_hosted",
-    "unknown",
-    "npm",
-    "download",
-  ];
-  if (allowed.includes(trimmed as AnalyticsContextData["app_distribution"])) {
-    return trimmed as AnalyticsContextData["app_distribution"];
+function sanitizeOverride(
+  value: ReturnType<typeof getConfiguredAppDistribution>,
+): AnalyticsContextData["app_distribution"] | null {
+  if (value === "itch" || value === "npm" || value === "download") {
+    return value;
   }
   return null;
 }

@@ -20,9 +20,10 @@ import { getDetectedLanguage } from "@/i18n/getInitialLanguage";
 import { useI18n } from "@/i18n/I18nProvider";
 import { languageFlags } from "@/i18n/language-flags";
 import {
+  languageNameKeys,
   languageLabels,
   SupportedLanguage,
-  supportedLanguages,
+  visibleLanguages,
 } from "@/i18n/messages";
 
 import LanguageMenuPopover from "@/components/LanguageMenu/LanguageMenuPopover";
@@ -36,8 +37,13 @@ type LeftNavActionStripProps = {
 type LanguageOption = {
   code: string;
   label: string;
+  title: string;
   flag: string;
-  isDetected?: boolean;
+};
+
+type LanguagePopoverSections = {
+  primaryOptions: LanguageOption[];
+  detectedOption: LanguageOption | null;
 };
 
 const getLanguageSortKey = (label: string): string => {
@@ -47,10 +53,13 @@ const getLanguageSortKey = (label: string): string => {
   return trimmed.slice(firstSpace + 1).trim();
 };
 
-const getLanguageOptions = (): LanguageOption[] => {
-  const options = supportedLanguages.map((code) => ({
+const getLanguageOptions = (
+  getLocalizedLanguageName: (code: SupportedLanguage) => string,
+): LanguageOption[] => {
+  const options = visibleLanguages.map((code) => ({
     code,
     label: languageLabels[code] ?? code.toUpperCase(),
+    title: getLocalizedLanguageName(code),
     flag: languageFlags[code] ?? "🏳️",
   }));
 
@@ -95,21 +104,34 @@ export default function LeftNavActionStrip({ isCollapsed }: LeftNavActionStripPr
   const currentFlag = languageFlags[language] ?? "🏳️";
   const currentCode = language.toUpperCase();
   const currentLabel = languageLabels[language] ?? currentCode;
+  const getLocalizedLanguageName = useCallback(
+    (code: SupportedLanguage) => t(languageNameKeys[code]),
+    [t],
+  );
 
-  const options = useMemo(() => {
-    const baseOptions = getLanguageOptions();
+  const popoverSections = useMemo<LanguagePopoverSections>(() => {
+    const baseOptions = getLanguageOptions(getLocalizedLanguageName);
     const filteredOptions = baseOptions.filter((option) => option.code !== language);
     if (!detectedLanguage || detectedLanguage === language) {
-      return filteredOptions;
+      return {
+        primaryOptions: filteredOptions,
+        detectedOption: null,
+      };
     }
 
     const detectedOption = filteredOptions.find((option) => option.code === detectedLanguage);
-    if (!detectedOption) return filteredOptions;
+    if (!detectedOption) {
+      return {
+        primaryOptions: filteredOptions,
+        detectedOption: null,
+      };
+    }
 
-    const remaining = filteredOptions.filter((option) => option.code !== detectedLanguage);
-
-    return [...remaining, { ...detectedOption, isDetected: true }];
-  }, [detectedLanguage, language]);
+    return {
+      primaryOptions: filteredOptions.filter((option) => option.code !== detectedLanguage),
+      detectedOption,
+    };
+  }, [detectedLanguage, getLocalizedLanguageName, language]);
 
   const handleLanguageSelect = useCallback(
     (code: string) => {
@@ -150,7 +172,8 @@ export default function LeftNavActionStrip({ isCollapsed }: LeftNavActionStripPr
         </button>
         <LanguageMenuPopover
           isOpen={isLanguageOpen}
-          options={options}
+          primaryOptions={popoverSections.primaryOptions}
+          detectedOption={popoverSections.detectedOption}
           onSelect={handleLanguageSelect}
         />
       </div>

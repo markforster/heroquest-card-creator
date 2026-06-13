@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "@/i18n/I18nProvider";
-import { languageLabels, supportedLanguages } from "@/i18n/messages";
+import { languageLabels, visibleLanguages } from "@/i18n/messages";
 
 type LanguageSwitcherProps = {
   className?: string;
@@ -20,7 +20,7 @@ export default function LanguageSwitcher({ className }: LanguageSwitcherProps) {
         event.currentTarget.blur();
       }}
     >
-      {supportedLanguages.map((code) => (
+      {visibleLanguages.map((code) => (
         <option key={code} value={code}>
           {languageLabels[code] ?? code.toUpperCase()}
         </option>

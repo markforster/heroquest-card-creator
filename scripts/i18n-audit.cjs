@@ -6,6 +6,7 @@ const { createRequire } = require("module");
 const ts = require("typescript");
 
 const messagesPath = path.join(__dirname, "..", "src", "i18n", "messages.ts");
+const verbose = process.argv.includes("--verbose");
 const source = fs.readFileSync(messagesPath, "utf8");
 
 const { outputText } = ts.transpileModule(source, {
@@ -13,6 +14,8 @@ const { outputText } = ts.transpileModule(source, {
     module: ts.ModuleKind.CommonJS,
     target: ts.ScriptTarget.ES2020,
     importsNotUsedAsValues: ts.ImportsNotUsedAsValues.Remove,
+    resolveJsonModule: true,
+    esModuleInterop: true,
   },
   fileName: messagesPath,
 });
@@ -27,6 +30,8 @@ const compileTsModule = (filename) => {
       module: ts.ModuleKind.CommonJS,
       target: ts.ScriptTarget.ES2020,
       importsNotUsedAsValues: ts.ImportsNotUsedAsValues.Remove,
+      resolveJsonModule: true,
+      esModuleInterop: true,
     },
     fileName: filename,
   });
@@ -118,20 +123,22 @@ const SAMPLE_LIMIT = 10;
 console.log(`i18n audit: ${keys.length} keys in en`);
 for (const { lang, missing, untranslated } of audit) {
   console.log(`- ${lang}: missing ${missing.length}, untranslated ${untranslated.length}`);
-  if (missing.length) {
+  if (verbose && missing.length) {
     console.log(`  missing sample: ${missing.slice(0, SAMPLE_LIMIT).join(", ")}`);
   }
-  if (untranslated.length) {
+  if (verbose && untranslated.length) {
     console.log(`  untranslated sample: ${untranslated.slice(0, SAMPLE_LIMIT).join(", ")}`);
   }
 }
 
-console.log("");
-if (suspiciousEn.length === 0) {
-  console.log("Suspicious EN values: none");
-} else {
-  console.log("Suspicious EN values:");
-  for (const item of suspiciousEn) {
-    console.log(`- ${item.key}: ${item.value}`);
+if (verbose) {
+  console.log("");
+  if (suspiciousEn.length === 0) {
+    console.log("Suspicious EN values: none");
+  } else {
+    console.log("Suspicious EN values:");
+    for (const item of suspiciousEn) {
+      console.log(`- ${item.key}: ${item.value}`);
+    }
   }
 }

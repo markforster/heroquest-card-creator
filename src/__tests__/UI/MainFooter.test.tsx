@@ -1,10 +1,23 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import MainFooter from "@/components/Layout/MainFooter";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
+const mockUseMediaQuery = jest.fn();
+let mockIsMobile = false;
+let mockIsTablet = false;
+
 jest.mock("@/version", () => ({
   APP_VERSION: "0.0.0-test",
+}));
+
+jest.mock("react-device-detect", () => ({
+  get isMobile() {
+    return mockIsMobile;
+  },
+  get isTablet() {
+    return mockIsTablet;
+  },
 }));
 
 jest.mock("@/components/Modals/HelpModal", () => ({
@@ -22,6 +35,15 @@ jest.mock("@/hooks/useIsTauriApp", () => ({
   default: () => false,
 }));
 
+jest.mock("@/components/Providers/AnalyticsProvider", () => ({
+  useAnalytics: () => ({
+    track: jest.fn(),
+  }),
+}));
+
+jest.mock("@/components/Layout/LeftNav/useMediaQuery", () => ({
+  useMediaQuery: (...args: unknown[]) => mockUseMediaQuery(...args),
+}));
 
 function renderMainFooter() {
   return render(
@@ -32,6 +54,16 @@ function renderMainFooter() {
 }
 
 describe("MainFooter (UI)", () => {
+  beforeEach(() => {
+    mockUseMediaQuery.mockReturnValue(false);
+    mockIsMobile = false;
+    mockIsTablet = false;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("shows the app version", () => {
     renderMainFooter();
     expect(screen.getByRole("link", { name: "v 0.0.0-test" })).toBeInTheDocument();
@@ -47,4 +79,46 @@ describe("MainFooter (UI)", () => {
     renderMainFooter();
     expect(screen.getByText("App: Web")).toBeInTheDocument();
   });
+
+  it("hides the desktop notice on desktop-like environments", () => {
+    renderMainFooter();
+    expect(screen.queryByRole("button", { name: "Desktop optimized" })).not.toBeInTheDocument();
+  });
+
+  it("shows the desktop notice when the device is mobile", async () => {
+    mockIsMobile = true;
+    renderMainFooter();
+    expect(screen.getByRole("button", { name: "Desktop optimized" })).toBeInTheDocument();
+  });
+
+  it("shows the desktop notice when the device is tablet", () => {
+    mockIsTablet = true;
+    renderMainFooter();
+    expect(screen.getByRole("button", { name: "Desktop optimized" })).toBeInTheDocument();
+  });
+
+  it("shows the desktop notice when the viewport is narrow", () => {
+    mockUseMediaQuery.mockReturnValue(true);
+    renderMainFooter();
+    expect(screen.getByRole("button", { name: "Desktop optimized" })).toBeInTheDocument();
+  });
+
+  it("opens and closes the desktop compatibility modal", () => {
+    mockIsMobile = true;
+    renderMainFooter();
+
+    fireEvent.click(screen.getByRole("button", { name: "Desktop optimized" }));
+    expect(screen.getByRole("heading", { name: "Desktop browser recommended" })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "HeroQuest Card Creator is currently optimized for desktop browsers.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "OK" }));
+    expect(
+      screen.queryByRole("heading", { name: "Desktop browser recommended" }),
+    ).not.toBeInTheDocument();
+  });
+
 });

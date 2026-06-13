@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-import { apiClient } from "@/api/client";
 import { useListCards, useListCollections } from "@/api/hooks";
 import type { CardRecord } from "@/api/cards";
 import type { CollectionRecord } from "@/api/collections";
@@ -137,6 +136,7 @@ export const useStockpileData = ({
   return {
     cards,
     setCards,
+    isLoadingCards: listCardsQuery.isLoading,
     collections,
     setCollections,
     storedCollectionId,

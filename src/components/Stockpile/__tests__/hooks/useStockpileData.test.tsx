@@ -4,21 +4,31 @@ import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData"
 import type { CardRecord } from "@/api/cards";
 import type { CollectionRecord } from "@/api/collections";
 
-const mockListCards = jest.fn();
-const mockListCollections = jest.fn();
+const mockUseListCards = jest.fn();
+const mockUseListCollections = jest.fn();
+const mockRefetchCards = jest.fn();
 
-jest.mock("@/api/client", () => ({
-  apiClient: {
-    listCards: (...args: unknown[]) => mockListCards(...args),
-    listCollections: (...args: unknown[]) => mockListCollections(...args),
-  },
+jest.mock("@/api/hooks", () => ({
+  useListCards: (...args: unknown[]) => mockUseListCards(...args),
+  useListCollections: (...args: unknown[]) => mockUseListCollections(...args),
 }));
 
 describe("useStockpileData", () => {
   beforeEach(() => {
-    mockListCards.mockReset();
-    mockListCollections.mockReset();
+    mockUseListCards.mockReset();
+    mockUseListCollections.mockReset();
+    mockRefetchCards.mockReset();
     window.localStorage.clear();
+    mockRefetchCards.mockResolvedValue({ data: [] });
+    mockUseListCards.mockReturnValue({
+      data: [],
+      isLoading: false,
+      refetch: mockRefetchCards,
+    });
+    mockUseListCollections.mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
   });
 
   it("loads cards and collections when open", async () => {
@@ -44,8 +54,15 @@ describe("useStockpileData", () => {
         schemaVersion: 1,
       },
     ];
-    mockListCards.mockResolvedValue(cards);
-    mockListCollections.mockResolvedValue(collections);
+    mockUseListCards.mockReturnValue({
+      data: cards,
+      isLoading: false,
+      refetch: mockRefetchCards,
+    });
+    mockUseListCollections.mockReturnValue({
+      data: collections,
+      isLoading: false,
+    });
 
     const setActiveFilter = jest.fn();
     const { result } = renderHook(() =>
@@ -62,10 +79,13 @@ describe("useStockpileData", () => {
       expect(result.current.collections).toHaveLength(1);
     });
 
-    expect(mockListCards).toHaveBeenCalledWith({
+    expect(mockUseListCards).toHaveBeenCalledWith({
       queries: { status: "saved", deleted: "include" },
-    });
-    expect(mockListCollections).toHaveBeenCalledTimes(1);
+    }, expect.any(Object));
+    expect(mockUseListCollections).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ enabled: true }),
+    );
   });
 
   it("does not load data when closed", () => {
@@ -79,14 +99,20 @@ describe("useStockpileData", () => {
       }),
     );
 
-    expect(mockListCards).not.toHaveBeenCalled();
-    expect(mockListCollections).not.toHaveBeenCalled();
+    expect(mockUseListCards).toHaveBeenCalledWith(
+      { queries: { status: "saved", deleted: "include" } },
+      expect.objectContaining({ enabled: false }),
+    );
+    expect(mockUseListCollections).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ enabled: false }),
+    );
   });
 
   it("hydrates stored collection and sets active filter", async () => {
     window.localStorage.setItem("hqcc.selectedCollectionId", "col-1");
-    mockListCards.mockResolvedValue([]);
-    mockListCollections.mockResolvedValue([
+    mockUseListCollections.mockReturnValue({
+      data: [
       {
         id: "col-1",
         name: "Collection",
@@ -95,7 +121,9 @@ describe("useStockpileData", () => {
         updatedAt: Date.now(),
         schemaVersion: 1,
       },
-    ]);
+      ],
+      isLoading: false,
+    });
 
     const setActiveFilter = jest.fn();
     renderHook(() =>
@@ -113,9 +141,6 @@ describe("useStockpileData", () => {
   });
 
   it("persists active collection id to localStorage", async () => {
-    mockListCards.mockResolvedValue([]);
-    mockListCollections.mockResolvedValue([]);
-
     const setActiveFilter = jest.fn();
     renderHook(() =>
       useStockpileData({
@@ -133,8 +158,6 @@ describe("useStockpileData", () => {
 
   it("clears stored collection when active filter is not collection", async () => {
     window.localStorage.setItem("hqcc.selectedCollectionId", "col-3");
-    mockListCards.mockResolvedValue([]);
-    mockListCollections.mockResolvedValue([]);
 
     const setActiveFilter = jest.fn();
     renderHook(() =>
@@ -148,6 +171,53 @@ describe("useStockpileData", () => {
 
     await waitFor(() => {
       expect(window.localStorage.getItem("hqcc.selectedCollectionId")).toBeNull();
+    });
+  });
+
+  it("passes through cards loading state from the query result", async () => {
+    mockUseListCards.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      refetch: mockRefetchCards,
+    });
+
+    const setActiveFilter = jest.fn();
+    const { result, rerender } = renderHook(() =>
+      useStockpileData({
+        isOpen: true,
+        refreshToken: 0,
+        activeFilter: { type: "all" },
+        setActiveFilter,
+      }),
+    );
+
+    expect(result.current.isLoadingCards).toBe(true);
+    expect(result.current.cards).toEqual([]);
+
+    const cards: CardRecord[] = [
+      {
+        id: "card-1",
+        name: "Card 1",
+        nameLower: "card 1",
+        templateId: "hero",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        status: "saved",
+        schemaVersion: 1,
+      },
+    ];
+
+    mockUseListCards.mockReturnValue({
+      data: cards,
+      isLoading: false,
+      refetch: mockRefetchCards,
+    });
+
+    rerender();
+
+    await waitFor(() => {
+      expect(result.current.isLoadingCards).toBe(false);
+      expect(result.current.cards).toEqual(cards);
     });
   });
 });

@@ -52,3 +52,5 @@ docs/issues/**
 /src-tauri/gen/
 commit.msg
 .npmrc
+heroquest.card-maker.code-workspace
+

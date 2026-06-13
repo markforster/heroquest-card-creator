@@ -1,0 +1,8 @@
+{
+  "templates.hero": "Hero Card",
+  "templates.monster": "Monster Card",
+  "templates.small-treasure": "Small Artwork",
+  "templates.large-treasure": "Large Artwork",
+  "templates.hero-back": "Hero Back",
+  "templates.labelled-back": "Labelled Back"
+}

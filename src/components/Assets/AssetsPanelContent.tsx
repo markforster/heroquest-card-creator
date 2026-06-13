@@ -19,6 +19,7 @@ import AssetsEmptyState from "@/components/Assets/AssetsEmptyState";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
 import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
 import IconButton from "@/components/common/IconButton";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import ModalShell from "@/components/common/ModalShell";
 import { WarningNotice } from "@/components/common/Notice";
 import { apiClient } from "@/api/client";
@@ -35,8 +36,9 @@ import {
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
 import { useListAssets } from "@/api/hooks";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { MessageKey } from "@/i18n/messages";
 import { generateId } from "@/lib";
-import { getNextAvailableFilename } from "@/lib/asset-filename";
+import { getDisplayAssetName, getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
 import {
   getRemoteAssetThumbPrefetchEnabled,
@@ -45,6 +47,7 @@ import {
 import type { AssetKindGroupId } from "@/lib/assets-grouping";
 import { groupAssetsByKind } from "@/lib/assets-grouping";
 import { isSafariBrowser } from "@/lib/browser";
+import useBufferedLoadingIndicator from "@/hooks/useBufferedLoadingIndicator";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
 import type { OpenCloseProps } from "@/types/ui";
 import {
@@ -52,7 +55,7 @@ import {
   type ResourceMenuIcon,
 } from "@/components/Assets/assetsResources";
 
-import type { ComponentType, Dispatch, SetStateAction } from "react";
+import type { ComponentType } from "react";
 
 type AssetsPanelMode = "manage" | "select";
 
@@ -73,6 +76,46 @@ type UploadNotice = {
   duplicates: UploadScanReportItem[];
   renames: Array<{ original: string; renamed: string }>;
 };
+
+type AssetDisplayGroup = {
+  id: AssetKindGroupId | "recently-uploaded";
+  labelKey: MessageKey;
+  assets: AssetRecord[];
+};
+
+function AssetThumbnail({
+  asset,
+  thumbUrl,
+  isReady,
+  onReady,
+}: {
+  asset: AssetRecord;
+  thumbUrl: string | undefined;
+  isReady: boolean;
+  onReady: () => void;
+}) {
+  const showSpinner = useBufferedLoadingIndicator(!isReady);
+
+  return (
+    <div className={styles.assetsThumbPlaceholder}>
+      {showSpinner ? (
+        <div className={styles.assetsThumbSpinnerOverlay} aria-hidden="true">
+          <div className={styles.spinner} />
+        </div>
+      ) : null}
+      {thumbUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={thumbUrl}
+          alt={asset.name}
+          className={styles.assetsThumbImage}
+          onLoad={onReady}
+          onError={onReady}
+        />
+      ) : null}
+    </div>
+  );
+}
 
 type UploadProgressPhase =
   | "scanning"
@@ -121,6 +164,7 @@ export default function AssetsPanelContent({
   preferredKindOrder,
 }: AssetsPanelProps) {
   const { t } = useI18n();
+  const { getValues, setValue } = useFormContext();
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [search, setSearch] = useState("");
   const [assetKindFilter, setAssetKindFilter] = useState<
@@ -129,8 +173,12 @@ export default function AssetsPanelContent({
   const [mimeTypeFilter, setMimeTypeFilter] = useState<string>("all");
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const thumbUrlsRef = useRef<Record<string, string>>({});
+  const [thumbReadyById, setThumbReadyById] = useState<Record<string, boolean>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedOrder, setSelectedOrder] = useState<string[]>([]);
+  const [selectionAnchorId, setSelectionAnchorId] = useState<string | null>(null);
+  const [recentlyUploadedIds, setRecentlyUploadedIds] = useState<string[]>([]);
+  const [shouldScrollToRecentlyUploaded, setShouldScrollToRecentlyUploaded] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [uploadNotice, setUploadNotice] = useState<UploadNotice | null>(null);
   const [uploadProgress, setUploadProgress] = useState<UploadProgressState | null>(null);
@@ -138,6 +186,7 @@ export default function AssetsPanelContent({
   const reviewResolverRef = useRef<((shouldContinue: boolean) => void) | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const assetsGridRef = useRef<HTMLDivElement | null>(null);
+  const recentlyUploadedSectionRef = useRef<HTMLElement | null>(null);
   const [isKindFilterOpen, setIsKindFilterOpen] = useState(false);
   const kindFilterRef = useRef<HTMLDivElement | null>(null);
   const [isMimeFilterOpen, setIsMimeFilterOpen] = useState(false);
@@ -154,6 +203,7 @@ export default function AssetsPanelContent({
   );
   const isRemoteMode = readApiConfig().mode === "remote";
   const [isLoadingAssets, setIsLoadingAssets] = useState(false);
+  const [affectedCardCount, setAffectedCardCount] = useState<number | null>(null);
   const { runMissingAssetsScan } = useMissingAssets();
   const { enqueueAsset, cancelAsset, setIsActive } = useAssetKindQueue();
   const isSafari = typeof window !== "undefined" ? isSafariBrowser() : false;
@@ -180,7 +230,16 @@ export default function AssetsPanelContent({
     Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
     thumbUrlsRef.current = {};
     setThumbUrls({});
+    setThumbReadyById({});
   }, [isThumbPrefetchEnabled]);
+
+  useEffect(() => {
+    if (refreshKey == null) return;
+    Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
+    thumbUrlsRef.current = {};
+    setThumbUrls({});
+    setThumbReadyById({});
+  }, [refreshKey]);
 
   const listAssetsQuery = useListAssets(undefined, {
     enabled: isOpen,
@@ -313,12 +372,14 @@ export default function AssetsPanelContent({
       Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
       thumbUrlsRef.current = {};
       setThumbUrls({});
+      setThumbReadyById({});
       return;
     }
     if (assets.length === 0) {
       Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
       thumbUrlsRef.current = {};
       setThumbUrls({});
+      setThumbReadyById({});
       return;
     }
 
@@ -369,15 +430,29 @@ export default function AssetsPanelContent({
               params: { id: asset.id },
             });
             if (url) {
+              setThumbReadyById((prev) => {
+                if (!prev[asset.id]) return prev;
+                const next = { ...prev };
+                delete next[asset.id];
+                return next;
+              });
               nextUrls[asset.id] = url;
               urlsChanged = true;
               if (!cancelled) {
                 thumbUrlsRef.current = { ...thumbUrlsRef.current, [asset.id]: url };
                 setThumbUrls(thumbUrlsRef.current);
               }
+            } else if (!cancelled) {
+              setThumbReadyById((prev) =>
+                prev[asset.id] ? prev : { ...prev, [asset.id]: true },
+              );
             }
           } catch {
-            // Ignore individual asset errors for now.
+            if (!cancelled) {
+              setThumbReadyById((prev) =>
+                prev[asset.id] ? prev : { ...prev, [asset.id]: true },
+              );
+            }
           }
           await maybeYield();
         }
@@ -402,11 +477,29 @@ export default function AssetsPanelContent({
   }, [isOpen, assets, refreshKey, isThumbPrefetchEnabled, isRemoteMode]);
 
   useEffect(() => {
-    if (!isOpen && selectedIds.size > 0) {
-      setSelectedIds(new Set());
-      setSelectedOrder([]);
-    }
-  }, [isOpen, selectedIds]);
+    const assetIds = new Set(assets.map((asset) => asset.id));
+    setThumbReadyById((prev) => {
+      const next = Object.fromEntries(
+        Object.entries(prev).filter(([id]) => assetIds.has(id)),
+      );
+      return Object.keys(next).length === Object.keys(prev).length ? prev : next;
+    });
+  }, [assets]);
+
+  useEffect(() => {
+    if (isOpen) return;
+    if (selectedIds.size === 0 && selectionAnchorId == null) return;
+    setSelectedIds(new Set());
+    setSelectedOrder([]);
+    setSelectionAnchorId(null);
+  }, [isOpen, selectedIds, selectionAnchorId]);
+
+  useEffect(() => {
+    if (isOpen) return;
+    if (recentlyUploadedIds.length === 0 && !shouldScrollToRecentlyUploaded) return;
+    setRecentlyUploadedIds([]);
+    setShouldScrollToRecentlyUploaded(false);
+  }, [isOpen, recentlyUploadedIds.length, shouldScrollToRecentlyUploaded]);
 
   useEffect(() => {
     if (isOpen) return;
@@ -474,11 +567,21 @@ export default function AssetsPanelContent({
         try {
           const url = await apiClient.getAssetObjectUrl({ params: { id } });
           if (url && !cancelled) {
+            setThumbReadyById((prev) => {
+              if (!prev[id]) return prev;
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
             thumbUrlsRef.current = { ...thumbUrlsRef.current, [id]: url };
             setThumbUrls(thumbUrlsRef.current);
+          } else if (!cancelled) {
+            setThumbReadyById((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
           }
         } catch {
-          // Ignore individual asset errors.
+          if (!cancelled) {
+            setThumbReadyById((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
+          }
         }
       }
     })();
@@ -501,24 +604,48 @@ export default function AssetsPanelContent({
   }, [assets, selectedOrder]);
 
   useEffect(() => {
-    if (!confirmState || confirmState.isDeleting) return;
+    if (!selectionAnchorId) return;
+    if (assets.some((asset) => asset.id === selectionAnchorId)) return;
+    setSelectionAnchorId(null);
+  }, [assets, selectionAnchorId]);
 
-    const nextIds = Array.from(selectedIds);
-    if (nextIds.length === 0) {
-      setConfirmState(null);
+  useEffect(() => {
+    if (!confirmState) {
+      setAffectedCardCount(null);
       return;
     }
 
-    setConfirmState((prev) => {
-      if (!prev || prev.isDeleting) return prev;
-      if (prev.assetIds.length === nextIds.length) {
-        const prevSet = new Set(prev.assetIds);
-        const isSame = nextIds.every((id) => prevSet.has(id));
-        if (isSame) return prev;
+    let cancelled = false;
+    const idSet = new Set(confirmState.assetIds);
+
+    (async () => {
+      try {
+        const cards = await apiClient.listCards();
+        if (cancelled) return;
+        const affectedCards = new Set<string>();
+
+        cards.forEach((card) => {
+          if (card.imageAssetId && idSet.has(card.imageAssetId)) {
+            affectedCards.add(card.id);
+            return;
+          }
+          if (card.monsterIconAssetId && idSet.has(card.monsterIconAssetId)) {
+            affectedCards.add(card.id);
+          }
+        });
+
+        setAffectedCardCount(affectedCards.size);
+      } catch {
+        if (!cancelled) {
+          setAffectedCardCount(0);
+        }
       }
-      return { ...prev, assetIds: nextIds };
-    });
-  }, [confirmState, selectedIds, setConfirmState]);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [confirmState]);
 
   useEffect(() => {
     if (!onSelectionChange) return;
@@ -547,9 +674,42 @@ export default function AssetsPanelContent({
     return asset.mimeType === mimeTypeFilter;
   });
 
-  const groupedAssets = groupAssetsByKind(filteredAssets, preferredKindOrder).filter(
+  const recentlyUploadedIdSet = useMemo(
+    () => new Set(recentlyUploadedIds),
+    [recentlyUploadedIds],
+  );
+  const recentlyUploadedVisibleAssets = searchFiltered.filter((asset) => {
+    if (!recentlyUploadedIdSet.has(asset.id)) return false;
+    if (mimeTypeFilter === "all") return true;
+    return asset.mimeType === mimeTypeFilter;
+  });
+  const recentlyUploadedVisibleIdSet = useMemo(
+    () => new Set(recentlyUploadedVisibleAssets.map((asset) => asset.id)),
+    [recentlyUploadedVisibleAssets],
+  );
+  const filteredAssetsWithoutRecent = filteredAssets.filter(
+    (asset) => !recentlyUploadedVisibleIdSet.has(asset.id),
+  );
+  const groupedAssets = groupAssetsByKind(filteredAssetsWithoutRecent, preferredKindOrder).filter(
     (group) => group.assets.length > 0,
   );
+  const displayGroups = useMemo<AssetDisplayGroup[]>(() => {
+    const groups: AssetDisplayGroup[] = [];
+    if (recentlyUploadedVisibleAssets.length > 0) {
+      groups.push({
+        id: "recently-uploaded",
+        labelKey: "label.recentlyUploaded",
+        assets: recentlyUploadedVisibleAssets,
+      });
+    }
+    groups.push(...groupedAssets);
+    return groups;
+  }, [groupedAssets, recentlyUploadedVisibleAssets]);
+  const visibleAssetIdsInGridOrder = useMemo(
+    () => displayGroups.flatMap((group) => group.assets.map((asset) => asset.id)),
+    [displayGroups],
+  );
+  const hasVisibleDisplayAssets = displayGroups.some((group) => group.assets.length > 0);
   const isLibraryEmpty = assets.length === 0;
 
   const totalCount = assets.length;
@@ -583,6 +743,18 @@ export default function AssetsPanelContent({
           : t("label.assetKindFilterUnclassified");
   const mimeTypeFilterLabel =
     mimeTypeFilter === "all" ? t("label.mimeFilterAll") : mimeTypeFilter;
+
+  useEffect(() => {
+    if (!shouldScrollToRecentlyUploaded) return;
+    if (recentlyUploadedVisibleAssets.length === 0) {
+      setShouldScrollToRecentlyUploaded(false);
+      return;
+    }
+    const section = recentlyUploadedSectionRef.current;
+    if (!section) return;
+    section.scrollIntoView({ behavior: "auto", block: "start" });
+    setShouldScrollToRecentlyUploaded(false);
+  }, [recentlyUploadedVisibleAssets.length, shouldScrollToRecentlyUploaded]);
 
   const handleConfirmDelete = async (ids: string[]) => {
     try {
@@ -630,6 +802,42 @@ export default function AssetsPanelContent({
       // eslint-disable-next-line no-console
       console.error("[AssetsModal] Failed to delete assets");
     }
+  };
+
+  const handleDeleteConfirm = async () => {
+    const current = confirmState;
+    if (!current) return;
+    const ids = current.assetIds;
+    const idSet = new Set(ids);
+
+    setConfirmState((prev) => (prev ? { ...prev, isDeleting: true } : prev));
+
+    // Clear image fields on the active editor form if they reference deleted assets.
+    const currentValues = getValues();
+    const imageMatch = currentValues?.imageAssetId && idSet.has(currentValues.imageAssetId);
+    const iconMatch =
+      "iconAssetId" in (currentValues ?? {}) &&
+      (currentValues as { iconAssetId?: string }).iconAssetId &&
+      idSet.has((currentValues as { iconAssetId?: string }).iconAssetId as string);
+
+    if (imageMatch) {
+      setValue("imageAssetId", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageAssetName", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageScale", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageScaleMode", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageOriginalWidth", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageOriginalHeight", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
+    }
+    if (iconMatch) {
+      setValue("iconAssetId" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
+      setValue("iconAssetName" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
+    }
+
+    await handleConfirmDelete(ids);
+    setConfirmState(null);
   };
 
   const handleUpload = async (files: File[], input: HTMLInputElement) => {
@@ -925,9 +1133,18 @@ export default function AssetsPanelContent({
       try {
         const records = await apiClient.listAssets();
         setAssets(records);
+        const recentIds = Array.from(uploaded);
+        setRecentlyUploadedIds(recentIds);
+        setShouldScrollToRecentlyUploaded(recentIds.length > 0);
+        if (mode === "select" && recentIds.length === 1) {
+          setSelectedIds(new Set(recentIds));
+          setSelectedOrder(recentIds);
+        }
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error("[AssetsModal] Upload failed", error);
+        setRecentlyUploadedIds([]);
+        setShouldScrollToRecentlyUploaded(false);
       }
 
       if (ENABLE_UPLOAD_PROGRESS) {
@@ -1142,35 +1359,6 @@ export default function AssetsPanelContent({
         </div>
         <div className={styles.assetsToolbarSpacer} />
         <div className={`${styles.assetsActions} d-flex align-items-center gap-2`}>
-          <IconButton
-            className="btn btn-primary btn-sm"
-            icon={Upload}
-            onClick={() => {
-              fileInputRef.current?.click();
-            }}
-            title={t("tooltip.uploadImages")}
-          >
-            {t("actions.upload")}
-          </IconButton>
-          {mode === "manage" && (
-            <IconButton
-              className="btn btn-outline-danger btn-sm"
-              icon={Trash2}
-              disabled={selectedIds.size === 0}
-              onClick={() => {
-                if (selectedIds.size === 0) return;
-                const ids = Array.from(selectedIds);
-                setConfirmState({
-                  assetIds: ids,
-                  isDeleting: false,
-                });
-              }}
-              title={t("tooltip.deleteAssets")}
-            >
-              {t("actions.delete")}
-              {selectedIds.size > 1 ? ` (${selectedIds.size})` : ""}
-            </IconButton>
-          )}
           <div className={styles.assetsResourcesMenu} ref={resourcesMenuRef}>
             <IconButton
               className="btn btn-outline-secondary btn-sm"
@@ -1229,17 +1417,16 @@ export default function AssetsPanelContent({
           <div className={styles.assetsGrid}>
             {Array.from({ length: 12 }).map((_, index) => (
               <div key={`asset-skeleton-${index}`} className={styles.assetsItem}>
-                <div className={styles.assetsThumbPlaceholder}>
-                  <div className={styles.spinner} />
-                </div>
                 <div className={styles.assetsItemMeta}>
                   <div className={styles.assetsItemName}>Loading…</div>
-                  <div className={styles.assetsItemDetails}>—</div>
+                </div>
+                <div className={styles.assetsThumbPlaceholder}>
+                  <div className={styles.spinner} />
                 </div>
               </div>
             ))}
           </div>
-        ) : filteredAssets.length === 0 ? (
+        ) : !hasVisibleDisplayAssets ? (
           isLibraryEmpty ? (
             <AssetsEmptyState />
           ) : (
@@ -1247,8 +1434,12 @@ export default function AssetsPanelContent({
           )
         ) : (
           <div className={styles.assetsGroups}>
-            {groupedAssets.map((group) => (
-              <section key={group.id} className={styles.assetsGroup}>
+            {displayGroups.map((group) => (
+              <section
+                key={group.id}
+                className={styles.assetsGroup}
+                ref={group.id === "recently-uploaded" ? recentlyUploadedSectionRef : undefined}
+              >
                 <h3 className={styles.assetsGroupTitle}>{t(group.labelKey)}</h3>
                 <div className={styles.assetsGroupGrid}>
                   {group.assets.map((asset) => {
@@ -1270,14 +1461,42 @@ export default function AssetsPanelContent({
                           isSelected ? styles.assetsItemSelected : ""
                         }`}
                         data-asset-id={asset.id}
-                        title={asset.name}
+                        title={getDisplayAssetName(asset.name)}
                         onClick={(event) => {
+                          const hasModifier = event.metaKey || event.ctrlKey;
+                          const hasShift = event.shiftKey;
                           setSelectedIds((prev) => {
                             if (mode === "select") {
                               setSelectedOrder([asset.id]);
                               return new Set([asset.id]);
                             }
-                            const hasModifier = event.metaKey || event.ctrlKey;
+                            if (hasShift) {
+                              const anchorId = selectionAnchorId;
+                              const anchorIndex = anchorId
+                                ? visibleAssetIdsInGridOrder.indexOf(anchorId)
+                                : -1;
+                              const clickedIndex = visibleAssetIdsInGridOrder.indexOf(asset.id);
+
+                              if (anchorIndex === -1 || clickedIndex === -1) {
+                                setSelectionAnchorId(asset.id);
+                                setSelectedOrder([asset.id]);
+                                return new Set([asset.id]);
+                              }
+
+                              const rangeStart = Math.min(anchorIndex, clickedIndex);
+                              const rangeEnd = Math.max(anchorIndex, clickedIndex);
+                              const rangeIds = visibleAssetIdsInGridOrder.slice(
+                                rangeStart,
+                                rangeEnd + 1,
+                              );
+                              const next = new Set(prev);
+                              rangeIds.forEach((id) => next.add(id));
+                              setSelectedOrder(
+                                visibleAssetIdsInGridOrder.filter((id) => next.has(id)),
+                              );
+                              setSelectionAnchorId(asset.id);
+                              return next;
+                            }
                             if (hasModifier) {
                               const next = new Set(prev);
                               if (next.has(asset.id)) {
@@ -1292,12 +1511,10 @@ export default function AssetsPanelContent({
                                   ...order.filter((id) => id !== asset.id),
                                 ]);
                               }
+                              setSelectionAnchorId(asset.id);
                               return next;
                             }
-                            if (prev.size === 1 && prev.has(asset.id)) {
-                              setSelectedOrder([]);
-                              return new Set();
-                            }
+                            setSelectionAnchorId(asset.id);
                             setSelectedOrder([asset.id]);
                             return new Set([asset.id]);
                           });
@@ -1308,57 +1525,59 @@ export default function AssetsPanelContent({
                           onClose();
                         }}
                       >
-                        <span
-                          className={`${styles.assetsKindBadge} ${styles.assetsKindBadgeOverlay} ${styles.assetsKindBadgeClickable} ${
-                            kindStatus === "classifying"
-                              ? styles.assetsKindBadgeClassifying
-                              : kindStatus === "classified"
-                                ? asset.assetKind === "icon"
-                                  ? styles.assetsKindBadgeIcon
-                                  : styles.assetsKindBadgeArtwork
-                                : styles.assetsKindBadgeUnknown
-                          }`}
-                          role="button"
-                          tabIndex={0}
-                          aria-haspopup="dialog"
-                          aria-expanded={activeKindPopoverId === asset.id}
-                          onMouseDown={(event) => {
-                            event.stopPropagation();
-                          }}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            event.preventDefault();
-                            if (kindStatus === "classifying") return;
-                            kindAnchorRef.current = event.currentTarget;
-                            setActiveKindPopoverId(asset.id);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key !== "Enter" && event.key !== " ") return;
-                            event.preventDefault();
-                            if (kindStatus === "classifying") return;
-                            kindAnchorRef.current = event.currentTarget;
-                            setActiveKindPopoverId(asset.id);
-                          }}
-                        >
-                          {kindLabel}
-                        </span>
-                        <div className={styles.assetsThumbPlaceholder}>
-                          {thumbUrls[asset.id] ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={thumbUrls[asset.id]}
-                              alt={asset.name}
-                              className={styles.assetsThumbImage}
-                            />
-                          ) : null}
-                        </div>
                         <div className={styles.assetsItemMeta}>
-                          <div className={styles.assetsItemName} title={asset.name}>
-                            {asset.name}
+                          <div
+                            className={styles.assetsItemName}
+                            title={getDisplayAssetName(asset.name)}
+                          >
+                            {getDisplayAssetName(asset.name)}
                           </div>
-                          <div className={styles.assetsItemDetails}>
-                            {asset.width}×{asset.height} · {asset.mimeType}
-                          </div>
+                        </div>
+                        <AssetThumbnail
+                          asset={asset}
+                          thumbUrl={thumbUrls[asset.id]}
+                          isReady={Boolean(thumbReadyById[asset.id])}
+                          onReady={() =>
+                            setThumbReadyById((prev) =>
+                              prev[asset.id] ? prev : { ...prev, [asset.id]: true },
+                            )
+                          }
+                        />
+                        <div className={styles.assetsKindBadgeRow}>
+                          <span
+                            className={`${styles.assetsKindBadge} ${styles.assetsKindBadgeTile} ${styles.assetsKindBadgeClickable} ${
+                              kindStatus === "classifying"
+                                ? styles.assetsKindBadgeClassifying
+                                : kindStatus === "classified"
+                                  ? asset.assetKind === "icon"
+                                    ? styles.assetsKindBadgeIcon
+                                    : styles.assetsKindBadgeArtwork
+                                  : styles.assetsKindBadgeUnknown
+                            }`}
+                            role="button"
+                            tabIndex={0}
+                            aria-haspopup="dialog"
+                            aria-expanded={activeKindPopoverId === asset.id}
+                            onMouseDown={(event) => {
+                              event.stopPropagation();
+                            }}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              event.preventDefault();
+                              if (kindStatus === "classifying") return;
+                              kindAnchorRef.current = event.currentTarget;
+                              setActiveKindPopoverId(asset.id);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key !== "Enter" && event.key !== " ") return;
+                              event.preventDefault();
+                              if (kindStatus === "classifying") return;
+                              kindAnchorRef.current = event.currentTarget;
+                              setActiveKindPopoverId(asset.id);
+                            }}
+                          >
+                            {kindLabel}
+                          </span>
                         </div>
                       </button>
                     );
@@ -1369,20 +1588,77 @@ export default function AssetsPanelContent({
           </div>
         )}
       </div>
-      {(mode === "select" || confirmState) && (
-        <div className={styles.assetsFooter}>
-          <AssetsModalFooter
-            mode={mode}
-            selectedIds={selectedIds}
-            onClose={onClose}
-            onSelect={onSelect}
-            assets={filteredAssets}
-            onConfirmDelete={handleConfirmDelete}
-            confirmState={confirmState}
-            setConfirmState={setConfirmState}
-          />
-        </div>
-      )}
+      <div className={`${styles.assetsFooterToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
+        <IconButton
+          className="btn btn-primary btn-sm"
+          icon={Upload}
+          onClick={() => {
+            fileInputRef.current?.click();
+          }}
+          title={t("tooltip.uploadImages")}
+        >
+          {t("actions.upload")}
+        </IconButton>
+        {mode === "manage" ? (
+          <IconButton
+            className="btn btn-outline-danger btn-sm"
+            icon={Trash2}
+            disabled={selectedIds.size === 0}
+            onClick={() => {
+              if (selectedIds.size === 0) return;
+              const ids = Array.from(selectedIds);
+              setConfirmState({
+                assetIds: ids,
+                isDeleting: false,
+              });
+            }}
+            title={t("tooltip.deleteAssets")}
+          >
+            {t("actions.delete")}
+            {selectedIds.size > 1 ? ` (${selectedIds.size})` : ""}
+          </IconButton>
+        ) : (
+          <>
+            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onClose}>
+              {t("actions.cancel")}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              disabled={selectedIds.size === 0}
+              onClick={() => {
+                const firstId = selectedIds.values().next().value as string | undefined;
+                const selectedAsset = firstId
+                  ? assets.find((asset) => asset.id === firstId)
+                  : undefined;
+                if (!selectedAsset || !onSelect) return;
+                onSelect(selectedAsset);
+                onClose();
+              }}
+            >
+              {t("actions.select")}
+            </button>
+          </>
+        )}
+      </div>
+      <ConfirmModal
+        isOpen={Boolean(confirmState)}
+        title={t("actions.delete")}
+        confirmLabel={t("actions.delete")}
+        cancelLabel={t("actions.cancel")}
+        isConfirming={confirmState?.isDeleting ?? false}
+        onConfirm={() => void handleDeleteConfirm()}
+        onCancel={() => setConfirmState(null)}
+      >
+        {confirmState ? (
+          <div>
+            {t("confirm.deleteAssetsBody")} {confirmState.assetIds.length}{" "}
+            {confirmState.assetIds.length === 1 ? t("label.asset") : t("label.assets")}{" "}
+            {t("status.willClearImagesOn")} {affectedCardCount ?? "..."}{" "}
+            {affectedCardCount === 1 ? t("label.card") : t("label.cards")}. {t("actions.continue")}?
+          </div>
+        ) : null}
+      </ConfirmModal>
       {isKindPopoverOpen
         ? createPortal(
             <div
@@ -1531,165 +1807,4 @@ export default function AssetsPanelContent({
       />
     </div>
   );
-}
-
-type AssetsFooterProps = {
-  mode: AssetsPanelMode;
-  selectedIds: Set<string>;
-  onClose: () => void;
-  onSelect?: (asset: AssetRecord) => void;
-  assets: AssetRecord[];
-};
-
-function AssetsModalFooter({
-  mode,
-  selectedIds,
-  onClose,
-  onSelect,
-  assets,
-  onConfirmDelete,
-  confirmState,
-  setConfirmState,
-}: AssetsFooterProps & {
-  onConfirmDelete: (ids: string[]) => Promise<void> | void;
-  confirmState: ConfirmState | null;
-  setConfirmState: Dispatch<SetStateAction<ConfirmState | null>>;
-}) {
-  const { t } = useI18n();
-  const { getValues, setValue } = useFormContext();
-  const [affectedCardCount, setAffectedCardCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!confirmState) {
-      setAffectedCardCount(null);
-      return;
-    }
-
-    let cancelled = false;
-    const idSet = new Set(confirmState.assetIds);
-
-    (async () => {
-      try {
-        const cards = await apiClient.listCards();
-        if (cancelled) return;
-        const affectedCards = new Set<string>();
-
-        cards.forEach((card) => {
-          if (card.imageAssetId && idSet.has(card.imageAssetId)) {
-            affectedCards.add(card.id);
-            return;
-          }
-          if (card.monsterIconAssetId && idSet.has(card.monsterIconAssetId)) {
-            affectedCards.add(card.id);
-          }
-        });
-
-        setAffectedCardCount(affectedCards.size);
-      } catch {
-        if (!cancelled) {
-          setAffectedCardCount(0);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [confirmState]);
-
-  if (mode === "select") {
-    const firstId = selectedIds.values().next().value as string | undefined;
-    const selectedAsset = firstId ? assets.find((asset) => asset.id === firstId) : undefined;
-    return (
-      <>
-        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onClose}>
-          {t("actions.cancel")}
-        </button>
-        <button
-          type="button"
-          className="btn btn-primary btn-sm"
-          disabled={!selectedAsset}
-          onClick={() => {
-            if (!selectedAsset || !onSelect) return;
-            onSelect(selectedAsset);
-            onClose();
-          }}
-        >
-          {t("actions.select")}
-        </button>
-      </>
-    );
-  }
-
-  if (confirmState) {
-    const { assetIds, isDeleting } = confirmState;
-    const assetCount = assetIds.length;
-    const idSet = new Set(assetIds);
-    const cardCountLabel = affectedCardCount === 1 ? t("label.card") : t("label.cards");
-    const cardCountValue = affectedCardCount ?? "...";
-
-    return (
-      <>
-        <div className={styles.assetsConfirmMessage}>
-          {t("confirm.deleteAssetsBody")} {assetCount}{" "}
-          {assetCount === 1 ? t("label.asset") : t("label.assets")} {t("status.willClearImagesOn")}
-          {" "}
-          {cardCountValue} {cardCountLabel}. {t("actions.continue")}?
-        </div>
-        <button
-          type="button"
-          className="btn btn-outline-secondary btn-sm"
-          disabled={isDeleting}
-          onClick={() => setConfirmState(null)}
-        >
-          {t("actions.cancel")}
-        </button>
-        <IconButton
-          className="btn btn-danger btn-sm"
-          icon={Trash2}
-          disabled={isDeleting}
-          onClick={async () => {
-            const current = confirmState;
-            if (!current) return;
-            const ids = current.assetIds;
-            const idSet = new Set(ids);
-
-            setConfirmState((prev) => (prev ? { ...prev, isDeleting: true } : prev));
-
-            // Clear image fields on the active editor form if they reference deleted assets.
-            const currentValues = getValues();
-            const imageMatch =
-              currentValues?.imageAssetId && idSet.has(currentValues.imageAssetId);
-            const iconMatch =
-              "iconAssetId" in (currentValues ?? {}) &&
-              (currentValues as { iconAssetId?: string }).iconAssetId &&
-              idSet.has((currentValues as { iconAssetId?: string }).iconAssetId as string);
-            if (imageMatch) {
-              setValue("imageAssetId", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageAssetName", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageScale", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageScaleMode", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageOriginalWidth", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageOriginalHeight", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
-            }
-            if (iconMatch) {
-              setValue("iconAssetId" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
-              setValue("iconAssetName" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
-            }
-
-            await onConfirmDelete(ids);
-            setConfirmState(null);
-          }}
-          title={t("tooltip.confirmDeleteAssets")}
-        >
-          {t("actions.delete")}
-        </IconButton>
-      </>
-    );
-  }
-
-  return null;
 }

@@ -1,0 +1,8 @@
+{
+  "templates.hero": "Carte Héros",
+  "templates.monster": "Carte Monstre",
+  "templates.small-treasure": "Carte à petite illustration",
+  "templates.large-treasure": "Carte à grande illustration",
+  "templates.hero-back": "Dos de héros",
+  "templates.labelled-back": "Dos étiqueté"
+}

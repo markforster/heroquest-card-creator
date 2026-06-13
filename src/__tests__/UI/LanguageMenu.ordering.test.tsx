@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import LanguageMenu from "@/components/LanguageMenu";
-import { languageLabels, supportedLanguages } from "@/i18n/messages";
+import { languageLabels, visibleLanguages } from "@/i18n/messages";
 
 let currentLanguage = "en";
 const setLanguage = jest.fn();
@@ -33,7 +33,7 @@ describe("LanguageMenu (UI) - detected ordering", () => {
     }
   });
 
-  it("moves detected language to the end when a stored selection exists", async () => {
+  it("renders the detected language in a separate section when a stored selection exists", async () => {
     window.localStorage.setItem("hqcc.language", "en");
     Object.defineProperty(globalThis, "navigator", {
       configurable: true,
@@ -48,13 +48,23 @@ describe("LanguageMenu (UI) - detected ordering", () => {
       expect(screen.getAllByRole("menuitem").length).toBeGreaterThan(1);
     });
 
-    const options = screen.getAllByRole("menuitem");
-    const labels = options.map((option) => option.textContent);
-    expect(labels).not.toContain("🇬🇧 English");
-    expect(labels[labels.length - 1]).toBe("🇸🇪 Svenska");
+    const grid = document.querySelector(".leftNavMenuGrid");
+    const detectedSection = document.querySelector(".leftNavMenuDetectedSection");
+    expect(grid).not.toBeNull();
+    expect(detectedSection).not.toBeNull();
+
+    const gridLabels = Array.from(grid!.querySelectorAll('[role=\"menuitem\"]')).map(
+      (option) => option.textContent,
+    );
+    expect(gridLabels).not.toContain("🇬🇧 English");
+    expect(gridLabels).not.toContain("🇸🇪 Svenska");
+
+    const detectedButton = detectedSection!.querySelector('[role=\"menuitem\"]');
+    expect(detectedButton).not.toBeNull();
+    expect(detectedButton?.textContent).toBe("🇸🇪 Svenska");
   });
 
-  it("moves detected language to the end when no stored language exists", async () => {
+  it("keeps the normal grid ordering and separates the detected language when no stored language exists", async () => {
     Object.defineProperty(globalThis, "navigator", {
       configurable: true,
       value: { languages: ["sv-SE"], language: "sv-SE" },
@@ -68,21 +78,46 @@ describe("LanguageMenu (UI) - detected ordering", () => {
       expect(screen.getAllByRole("menuitem").length).toBeGreaterThan(1);
     });
 
-    const options = screen.getAllByRole("menuitem");
-    const labels = options.map((option) => option.textContent);
+    const grid = document.querySelector(".leftNavMenuGrid");
+    const detectedSection = document.querySelector(".leftNavMenuDetectedSection");
+    expect(grid).not.toBeNull();
+    expect(detectedSection).not.toBeNull();
+
+    const labels = Array.from(grid!.querySelectorAll('[role=\"menuitem\"]')).map(
+      (option) => option.textContent,
+    );
     const sortKey = (label: string) => {
       const trimmed = label.trim();
       const firstSpace = trimmed.indexOf(" ");
       if (firstSpace === -1) return trimmed;
       return trimmed.slice(firstSpace + 1).trim();
     };
-    const expected = supportedLanguages
+    const expected = visibleLanguages
       .filter((code) => code !== currentLanguage)
       .map((code) => languageLabels[code] ?? code.toUpperCase())
       .sort((a, b) => sortKey(a).localeCompare(sortKey(b), undefined, { sensitivity: "base" }));
 
     const expectedDetected = languageLabels.sv;
     const expectedWithoutDetected = expected.filter((label) => label !== expectedDetected);
-    expect(labels).toEqual([...expectedWithoutDetected, expectedDetected]);
+    expect(labels).toEqual(expectedWithoutDetected);
+    expect(detectedSection!.querySelector('[role=\"menuitem\"]')?.textContent).toBe(expectedDetected);
+  });
+
+  it("does not render a detected section when detected language matches the current language", async () => {
+    Object.defineProperty(globalThis, "navigator", {
+      configurable: true,
+      value: { languages: ["en-GB"], language: "en-GB" },
+    });
+
+    render(<LanguageMenu isCollapsed={false} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Language" }));
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("menuitem").length).toBeGreaterThan(1);
+    });
+
+    expect(document.querySelector(".leftNavMenuGrid")).not.toBeNull();
+    expect(document.querySelector(".leftNavMenuDetectedSection")).toBeNull();
   });
 });

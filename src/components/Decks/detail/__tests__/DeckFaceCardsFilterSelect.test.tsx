@@ -64,17 +64,10 @@ describe("DeckFaceCardsFilterSelect", () => {
         activeFilter={{ type: "all" }}
         onFilterChange={jest.fn()}
         visibleCollections={[
-          { id: "c1", name: "Decks/DungeonBeasts.v1/monsters", cardIds: [] },
-          { id: "c2", name: "Decks/DungeonBeasts.v1/Encounters", cardIds: [] },
-          { id: "c3", name: "Backs/Backs", cardIds: [] },
+          { id: "c1", name: "Decks/DungeonBeasts.v1/monsters", cardIds: ["1", "2", "3"] },
+          { id: "c2", name: "Decks/DungeonBeasts.v1/Encounters", cardIds: ["1", "2", "3", "4", "5"] },
+          { id: "c3", name: "Backs/Backs", cardIds: ["1", "2", "3", "4", "5", "6", "7"] },
         ]}
-        collectionCounts={
-          new Map<string, number>([
-            ["c1", 3],
-            ["c2", 5],
-            ["c3", 7],
-          ])
-        }
         recentCardsCount={2}
         overallCount={10}
         unfiledCount={1}
@@ -106,7 +99,6 @@ describe("DeckFaceCardsFilterSelect", () => {
         activeFilter={{ type: "all" }}
         onFilterChange={jest.fn()}
         visibleCollections={[{ id: "c1", name: "spells/fire", cardIds: [] }]}
-        collectionCounts={new Map([["c1", 3]])}
         recentCardsCount={2}
         overallCount={10}
         unfiledCount={1}
@@ -123,7 +115,6 @@ describe("DeckFaceCardsFilterSelect", () => {
         activeFilter={{ type: "all" }}
         onFilterChange={onFilterChange}
         visibleCollections={[{ id: "c1", name: "spells/fire", cardIds: [] }]}
-        collectionCounts={new Map([["c1", 3]])}
         recentCardsCount={2}
         overallCount={10}
         unfiledCount={1}
@@ -143,15 +134,9 @@ describe("DeckFaceCardsFilterSelect", () => {
         activeFilter={{ type: "collection", id: "c2" }}
         onFilterChange={jest.fn()}
         visibleCollections={[
-          { id: "c1", name: "spells/fire", cardIds: [] },
-          { id: "c2", name: "heroes", cardIds: [] },
+          { id: "c1", name: "spells/fire", cardIds: ["1", "2", "3"] },
+          { id: "c2", name: "heroes", cardIds: ["1", "2", "3", "4", "5"] },
         ]}
-        collectionCounts={
-          new Map<string, number>([
-            ["c1", 3],
-            ["c2", 5],
-          ])
-        }
         recentCardsCount={2}
         overallCount={10}
         unfiledCount={1}

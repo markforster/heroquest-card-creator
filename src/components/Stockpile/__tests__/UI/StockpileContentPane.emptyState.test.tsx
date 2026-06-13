@@ -41,6 +41,7 @@ function createActions(): StockpileCardActions {
 type RenderOptions = {
   search?: string;
   frame?: "panel" | "modal";
+  isLoadingCards?: boolean;
   isLibraryEmpty?: boolean;
   hasActiveNarrowing?: boolean;
 };
@@ -48,6 +49,7 @@ type RenderOptions = {
 function renderPane({
   search = "",
   frame = "panel",
+  isLoadingCards = false,
   isLibraryEmpty = true,
   hasActiveNarrowing = false,
 }: RenderOptions = {}) {
@@ -61,6 +63,7 @@ function renderPane({
         totalCount={0}
         filterLabel="All types"
         frame={frame}
+        isLoadingCards={isLoadingCards}
         isLibraryEmpty={isLibraryEmpty}
         hasActiveNarrowing={hasActiveNarrowing}
         isTableView={false}
@@ -172,6 +175,17 @@ describe("StockpileContentPane empty state (UI)", () => {
 
     expect(screen.queryByRole("heading", { name: "Your card library is empty" })).not.toBeInTheDocument();
     expect(screen.getByText("No cards found.")).toBeInTheDocument();
+  });
+
+  it("shows the centered spinner instead of any empty state while cards are loading", () => {
+    const { container } = renderPane({
+      isLoadingCards: true,
+    });
+
+    expect(container.querySelector(".stockpileLoadingState .spinner")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Your card library is empty" })).not.toBeInTheDocument();
+    expect(screen.queryByText("No saved cards yet.")).not.toBeInTheDocument();
+    expect(screen.queryByText("No cards found.")).not.toBeInTheDocument();
   });
 
   it("does not render onboarding in modal contexts", () => {
