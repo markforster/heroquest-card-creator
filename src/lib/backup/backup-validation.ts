@@ -10,7 +10,7 @@ import type {
 import type { PairRecord } from "@/types/pairs-db";
 import type { DeckUsageLocation } from "@/lib/decks-errors";
 
-import { openHqccDb } from "../hqcc-db";
+import { openHqccDexieDb } from "../hqcc-dexie";
 import type { HqccExportCompactFileV1, HqccExportFileV1 } from "./backup-types";
 
 export function parseBackupJson(text: string): HqccExportFileV1 {
@@ -194,25 +194,18 @@ export async function restoreDeckHierarchyAtomic(input: {
   deckSets: DeckSetRecord[];
   deckEntries: DeckEntryRecord[];
 }): Promise<void> {
-  const db = await openHqccDb();
-  const requiredStores = ["decks", "deckGroups", "deckSets", "deckEntries"] as const;
-  if (requiredStores.some((store) => !db.objectStoreNames.contains(store))) {
-    throw new Error("Deck stores are not available");
+  const db = await openHqccDexieDb();
+
+  try {
+    await db.transaction("rw", db.decks, db.deckGroups, db.deckSets, db.deckEntries, async () => {
+      await db.decks.bulkAdd(input.decks);
+      await db.deckGroups.bulkAdd(input.deckGroups);
+      await db.deckSets.bulkAdd(input.deckSets);
+      await db.deckEntries.bulkAdd(input.deckEntries);
+    });
+  } catch (error) {
+    const wrapped = new Error("Failed to restore deck hierarchy");
+    (wrapped as Error & { cause?: unknown }).cause = error;
+    throw wrapped;
   }
-  const tx = db.transaction(requiredStores, "readwrite");
-  const decksStore = tx.objectStore("decks");
-  const groupsStore = tx.objectStore("deckGroups");
-  const setsStore = tx.objectStore("deckSets");
-  const entriesStore = tx.objectStore("deckEntries");
-
-  input.decks.forEach((deck) => decksStore.add(deck));
-  input.deckGroups.forEach((group) => groupsStore.add(group));
-  input.deckSets.forEach((set) => setsStore.add(set));
-  input.deckEntries.forEach((entry) => entriesStore.add(entry));
-
-  await new Promise<void>((resolve, reject) => {
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error ?? new Error("Failed to restore deck hierarchy"));
-    tx.onabort = () => reject(tx.error ?? new Error("Failed to restore deck hierarchy"));
-  });
 }
