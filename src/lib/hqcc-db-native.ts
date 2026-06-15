@@ -4,20 +4,10 @@ import {
   DB_NAME,
   DB_VERSION,
   META_APP_VERSION_KEY,
-  META_CARD_CANVAS_MIGRATED_KEY,
-  META_PAIRS_DEDUPED_KEY,
-  META_PAIRED_WITH_CLEANED_KEY,
-  META_PAIRS_MIGRATED_KEY,
   META_STORE,
 } from "@/lib/hqcc-dexie";
 
 export { META_STORE };
-export {
-  META_CARD_CANVAS_MIGRATED_KEY,
-  META_PAIRS_DEDUPED_KEY,
-  META_PAIRED_WITH_CLEANED_KEY,
-  META_PAIRS_MIGRATED_KEY,
-};
 
 export function ensureIndexedDbAvailable(): void {
   if (typeof window === "undefined" || !("indexedDB" in window)) {
