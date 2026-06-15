@@ -1,13 +1,23 @@
 "use client";
 
-import { DB_NAME, DB_VERSION, META_APP_VERSION_KEY, META_STORE } from "@/lib/hqcc-dexie";
-import { APP_VERSION } from "@/version";
+import {
+  DB_NAME,
+  DB_VERSION,
+  META_APP_VERSION_KEY,
+  META_CARD_CANVAS_MIGRATED_KEY,
+  META_PAIRS_DEDUPED_KEY,
+  META_PAIRED_WITH_CLEANED_KEY,
+  META_PAIRS_MIGRATED_KEY,
+  META_STORE,
+} from "@/lib/hqcc-dexie";
 
 export { META_STORE };
-export const META_PAIRS_MIGRATED_KEY = "pairsMigrated";
-export const META_PAIRS_DEDUPED_KEY = "pairsDeduped";
-export const META_PAIRED_WITH_CLEANED_KEY = "pairedWithCleaned";
-export const META_CARD_CANVAS_MIGRATED_KEY = "cardCanvasMigrated";
+export {
+  META_CARD_CANVAS_MIGRATED_KEY,
+  META_PAIRS_DEDUPED_KEY,
+  META_PAIRED_WITH_CLEANED_KEY,
+  META_PAIRS_MIGRATED_KEY,
+};
 
 export function ensureIndexedDbAvailable(): void {
   if (typeof window === "undefined" || !("indexedDB" in window)) {
@@ -47,44 +57,6 @@ export async function openNativeHqccDb(version?: number): Promise<IDBDatabase> {
     request.onerror = () => {
       reject(request.error ?? new Error("Failed to open hqcc DB"));
     };
-  });
-}
-
-export async function ensureMetaAppVersionRecord(db: IDBDatabase): Promise<void> {
-  if (!db.objectStoreNames.contains(META_STORE)) {
-    return;
-  }
-
-  const existingRecord = await new Promise<{ value?: string; dbVersion?: number } | undefined>(
-    (resolve, reject) => {
-      const tx = db.transaction(META_STORE, "readonly");
-      const store = tx.objectStore(META_STORE);
-      const request = store.get(META_APP_VERSION_KEY);
-      request.onsuccess = () =>
-        resolve(
-          (request.result as { value?: string; dbVersion?: number } | undefined) ?? undefined,
-        );
-      request.onerror = () =>
-        reject(request.error ?? new Error("Failed to read appVersion metadata"));
-    },
-  );
-
-  if (existingRecord?.value && existingRecord.dbVersion === DB_VERSION) {
-    return;
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(META_STORE, "readwrite");
-    const store = tx.objectStore(META_STORE);
-    const request = store.put({
-      id: META_APP_VERSION_KEY,
-      value: APP_VERSION,
-      dbVersion: DB_VERSION,
-      updatedAt: Date.now(),
-    });
-    request.onsuccess = () => resolve();
-    request.onerror = () =>
-      reject(request.error ?? new Error("Failed to store appVersion metadata"));
   });
 }
 

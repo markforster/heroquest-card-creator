@@ -69,7 +69,7 @@ describe("runHqccDbStartupJobs", () => {
     });
 
     const { runHqccDbStartupJobs } = await import("@/lib/hqcc-db-startup-jobs");
-    runHqccDbStartupJobs({} as IDBDatabase);
+    runHqccDbStartupJobs();
 
     expect(order).toEqual(["dedupe:start", "canvas:start"]);
     expect(backfillPairsFromLegacy).not.toHaveBeenCalled();
@@ -116,8 +116,8 @@ describe("runHqccDbStartupJobs", () => {
     migrateCardCanvas.mockImplementation(() => canvas.promise);
 
     const { runHqccDbStartupJobs } = await import("@/lib/hqcc-db-startup-jobs");
-    runHqccDbStartupJobs({} as IDBDatabase);
-    runHqccDbStartupJobs({} as IDBDatabase);
+    runHqccDbStartupJobs();
+    runHqccDbStartupJobs();
 
     expect(dedupePairsFromStore).toHaveBeenCalledTimes(1);
     expect(migrateCardCanvas).toHaveBeenCalledTimes(1);
@@ -126,7 +126,7 @@ describe("runHqccDbStartupJobs", () => {
     canvas.resolve();
     await flushMicrotasks();
 
-    runHqccDbStartupJobs({} as IDBDatabase);
+    runHqccDbStartupJobs();
 
     expect(dedupePairsFromStore).toHaveBeenCalledTimes(2);
     expect(migrateCardCanvas).toHaveBeenCalledTimes(2);

@@ -31,7 +31,7 @@ export async function openHqccDb(): Promise<HqccDb> {
 
     // eslint-disable-next-line no-console
     console.debug("[hqcc-db] openHqccDb success");
-    runHqccDbStartupJobs(db);
+    runHqccDbStartupJobs(dexieDb);
 
     return db;
   } catch (error) {

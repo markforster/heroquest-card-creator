@@ -16,8 +16,11 @@ export const DEXIE_DB_VERSION = 0.6;
 export const META_STORE = "meta";
 export const META_APP_VERSION_KEY = "appVersion";
 export const META_PAIRS_MIGRATED_KEY = "pairsMigrated";
+export const META_PAIRS_DEDUPED_KEY = "pairsDeduped";
+export const META_PAIRED_WITH_CLEANED_KEY = "pairedWithCleaned";
+export const META_CARD_CANVAS_MIGRATED_KEY = "cardCanvasMigrated";
 
-type MetaRecord = {
+export type MetaRecord = {
   id: string;
   value: boolean | string;
   dbVersion?: number;

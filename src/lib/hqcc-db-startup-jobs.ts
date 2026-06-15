@@ -1,6 +1,7 @@
 "use client";
 
 import { migrateCardCanvas } from "@/lib/hqcc-db-card-canvas-job";
+import { openHqccDexieDb } from "@/lib/hqcc-dexie";
 import {
   backfillPairsFromLegacy,
   cleanupLegacyPairedWith,
@@ -10,7 +11,9 @@ import {
 let pairMaintenanceInFlight: Promise<void> | null = null;
 let cardCanvasMigrationInFlight: Promise<void> | null = null;
 
-export function runHqccDbStartupJobs(db: IDBDatabase): void {
+type HqccDexieDb = Awaited<ReturnType<typeof openHqccDexieDb>>;
+
+export function runHqccDbStartupJobs(db?: HqccDexieDb): void {
   if (!pairMaintenanceInFlight) {
     pairMaintenanceInFlight = dedupePairsFromStore(db)
       .then(() => backfillPairsFromLegacy(db))
