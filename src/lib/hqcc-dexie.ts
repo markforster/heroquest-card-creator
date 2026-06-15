@@ -61,6 +61,21 @@ async function writeMetaRecord(
   return tx.table(META_STORE).put(record);
 }
 
+export async function ensureDexieMetaAppVersionRecord(db: HqccDexieDb): Promise<void> {
+  const existingRecord = await db.meta.get(META_APP_VERSION_KEY);
+
+  if (existingRecord?.value && existingRecord.dbVersion === DB_VERSION) {
+    return;
+  }
+
+  await db.meta.put({
+    id: META_APP_VERSION_KEY,
+    value: APP_VERSION,
+    dbVersion: DB_VERSION,
+    updatedAt: Date.now(),
+  });
+}
+
 class HqccDexieDb extends Dexie implements HqccDexieTables {
   cards!: EntityTable<CardRecord, "id">;
   pairs!: EntityTable<PairRecord, "id">;

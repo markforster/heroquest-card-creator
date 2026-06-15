@@ -15,6 +15,17 @@ export function ensureIndexedDbAvailable(): void {
   }
 }
 
+async function readExistingDatabaseInfo(name: string): Promise<IDBDatabaseInfo | null> {
+  ensureIndexedDbAvailable();
+
+  if (typeof window.indexedDB.databases !== "function") {
+    return null;
+  }
+
+  const databases = await window.indexedDB.databases();
+  return databases.find((database) => database.name === name) ?? null;
+}
+
 export async function openNativeHqccDb(version?: number): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     try {
@@ -78,6 +89,11 @@ export async function ensureMetaAppVersionRecord(db: IDBDatabase): Promise<void>
 }
 
 export async function probeHqccDbVersion(): Promise<number | null> {
+  const info = await readExistingDatabaseInfo(DB_NAME);
+  if (!info) {
+    return null;
+  }
+
   const db = await openNativeHqccDb(DB_VERSION);
   try {
     return Number.isFinite(db.version) ? db.version : null;
@@ -87,6 +103,11 @@ export async function probeHqccDbVersion(): Promise<number | null> {
 }
 
 export async function readExistingHqccDbVersion(): Promise<number | null> {
+  const info = await readExistingDatabaseInfo(DB_NAME);
+  if (!info) {
+    return null;
+  }
+
   const db = await openNativeHqccDb();
   try {
     return Number.isFinite(db.version) ? db.version : null;
@@ -96,6 +117,11 @@ export async function readExistingHqccDbVersion(): Promise<number | null> {
 }
 
 export async function readExistingHqccDbAppVersion(): Promise<string | null> {
+  const info = await readExistingDatabaseInfo(DB_NAME);
+  if (!info) {
+    return null;
+  }
+
   const db = await openNativeHqccDb();
   if (!db.objectStoreNames.contains(META_STORE)) {
     db.close();

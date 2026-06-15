@@ -1,9 +1,13 @@
 "use client";
 
-import { DB_NAME, DB_VERSION, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import {
+  DB_NAME,
+  DB_VERSION,
+  ensureDexieMetaAppVersionRecord,
+  openHqccDexieDb,
+} from "@/lib/hqcc-dexie";
 import {
   ensureIndexedDbAvailable,
-  ensureMetaAppVersionRecord,
   probeHqccDbVersion,
   readExistingHqccDbAppVersion,
   readExistingHqccDbVersion,
@@ -23,7 +27,7 @@ export async function openHqccDb(): Promise<HqccDb> {
       throw new Error("Failed to access native hqcc DB");
     }
 
-    await ensureMetaAppVersionRecord(db);
+    await ensureDexieMetaAppVersionRecord(dexieDb);
 
     // eslint-disable-next-line no-console
     console.debug("[hqcc-db] openHqccDb success");

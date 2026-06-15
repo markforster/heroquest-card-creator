@@ -199,6 +199,34 @@ describe("openHqccDb", () => {
     await expect(readExistingHqccDbAppVersion()).resolves.toBe(APP_VERSION);
   });
 
+  it("does not create an empty DB when probing a fresh install", async () => {
+    const { openHqccDb, probeHqccDbVersion, readExistingHqccDbVersion, readExistingHqccDbAppVersion } =
+      await import("@/lib/hqcc-db");
+
+    await expect(probeHqccDbVersion()).resolves.toBeNull();
+    await expect(readExistingHqccDbVersion()).resolves.toBeNull();
+    await expect(readExistingHqccDbAppVersion()).resolves.toBeNull();
+
+    const db = await openHqccDb();
+
+    expect(Array.from(db.objectStoreNames)).toEqual(
+      expect.arrayContaining([
+        "assets",
+        "cards",
+        "collections",
+        "deckEntries",
+        "deckGroups",
+        "decks",
+        "deckSets",
+        "meta",
+        "pairs",
+        "settings",
+      ]),
+    );
+
+    db.close();
+  });
+
   it("upgrades a legacy DB to version 6 and preserves post-open pair maintenance", async () => {
     const legacyDb = await openDbVersion(4, (_db, tx) => {
       tx.objectStore("cards").put({
