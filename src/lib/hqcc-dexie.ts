@@ -1,7 +1,13 @@
 "use client";
 
-import Dexie, { type Transaction } from "dexie";
+import Dexie, { type EntityTable, type Transaction } from "dexie";
 
+import type { AssetRecord } from "@/lib/assets-db";
+import type { SettingsRecord } from "@/lib/settings-db";
+import type { CardRecord } from "@/types/cards-db";
+import type { CollectionRecord } from "@/types/collections-db";
+import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
+import type { PairRecord } from "@/types/pairs-db";
 import { APP_VERSION } from "@/version";
 
 export const DB_NAME = "hqcc";
@@ -16,6 +22,19 @@ type MetaRecord = {
   value: boolean | string;
   dbVersion?: number;
   updatedAt: number;
+};
+
+type HqccDexieTables = {
+  cards: EntityTable<CardRecord, "id">;
+  pairs: EntityTable<PairRecord, "id">;
+  assets: EntityTable<AssetRecord, "id">;
+  collections: EntityTable<CollectionRecord, "id">;
+  settings: EntityTable<SettingsRecord, "id">;
+  decks: EntityTable<DeckRecord, "id">;
+  deckGroups: EntityTable<DeckGroupRecord, "id">;
+  deckSets: EntityTable<DeckSetRecord, "id">;
+  deckEntries: EntityTable<DeckEntryRecord, "id">;
+  meta: EntityTable<MetaRecord, "id">;
 };
 
 const HQCC_STORES_V4 = {
@@ -42,7 +61,18 @@ async function writeMetaRecord(
   return tx.table(META_STORE).put(record);
 }
 
-class HqccDexieDb extends Dexie {
+class HqccDexieDb extends Dexie implements HqccDexieTables {
+  cards!: EntityTable<CardRecord, "id">;
+  pairs!: EntityTable<PairRecord, "id">;
+  assets!: EntityTable<AssetRecord, "id">;
+  collections!: EntityTable<CollectionRecord, "id">;
+  settings!: EntityTable<SettingsRecord, "id">;
+  decks!: EntityTable<DeckRecord, "id">;
+  deckGroups!: EntityTable<DeckGroupRecord, "id">;
+  deckSets!: EntityTable<DeckSetRecord, "id">;
+  deckEntries!: EntityTable<DeckEntryRecord, "id">;
+  meta!: EntityTable<MetaRecord, "id">;
+
   constructor() {
     super(DB_NAME);
 
