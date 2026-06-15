@@ -3,22 +3,9 @@
 import type { CollectionRecord } from "@/types/collections-db";
 
 import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
-import { openHqccDb } from "./hqcc-db";
+import { openHqccDexieDb } from "./hqcc-dexie";
 
 import { generateId } from ".";
-
-import type { HqccDb } from "./hqcc-db";
-
-async function getCollectionsStore(mode: IDBTransactionMode): Promise<IDBObjectStore> {
-  const db: HqccDb = await openHqccDb();
-
-  if (!db.objectStoreNames.contains("collections")) {
-    throw new Error("Collections store not available");
-  }
-
-  const tx = db.transaction("collections", mode);
-  return tx.objectStore("collections");
-}
 
 export async function createCollection(input: {
   name: string;
@@ -42,13 +29,8 @@ export async function createCollection(input: {
     schemaVersion: input.schemaVersion ?? 1,
   };
 
-  const store = await getCollectionsStore("readwrite");
-
-  await new Promise<void>((resolve, reject) => {
-    const request = store.add(record);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error ?? new Error("Failed to create collection"));
-  });
+  const db = await openHqccDexieDb();
+  await db.collections.add(record);
   enqueueDbEstimateChange("collections", record.id);
 
   return record;
@@ -58,17 +40,8 @@ export async function updateCollection(
   id: string,
   patch: Partial<Omit<CollectionRecord, "id" | "createdAt" | "schemaVersion">>,
 ): Promise<CollectionRecord | null> {
-  const store = await getCollectionsStore("readwrite");
-
-  const existing = await new Promise<CollectionRecord | null>((resolve, reject) => {
-    const getRequest = store.get(id);
-    getRequest.onsuccess = () => {
-      resolve((getRequest.result as CollectionRecord | undefined) ?? null);
-    };
-    getRequest.onerror = () => {
-      reject(getRequest.error ?? new Error("Failed to load collection for update"));
-    };
-  });
+  const db = await openHqccDexieDb();
+  const existing = (await db.collections.get(id)) ?? null;
 
   if (!existing) {
     return null;
@@ -81,51 +54,20 @@ export async function updateCollection(
     updatedAt: now,
   };
 
-  await new Promise<void>((resolve, reject) => {
-    const putRequest = store.put(next);
-    putRequest.onsuccess = () => resolve();
-    putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update collection"));
-  });
+  await db.collections.put(next);
   enqueueDbEstimateChange("collections", next.id);
 
   return next;
 }
 
 export async function getCollection(id: string): Promise<CollectionRecord | null> {
-  const store = await getCollectionsStore("readonly");
-
-  return new Promise<CollectionRecord | null>((resolve, reject) => {
-    const request = store.get(id);
-    request.onsuccess = () => {
-      resolve((request.result as CollectionRecord | undefined) ?? null);
-    };
-    request.onerror = () => {
-      reject(request.error ?? new Error("Failed to load collection"));
-    };
-  });
+  const db = await openHqccDexieDb();
+  return (await db.collections.get(id)) ?? null;
 }
 
 export async function listCollections(): Promise<CollectionRecord[]> {
-  const store = await getCollectionsStore("readonly");
-  const collections: CollectionRecord[] = [];
-
-  await new Promise<void>((resolve, reject) => {
-    const request = store.openCursor();
-
-    request.onsuccess = () => {
-      const cursor = request.result as IDBCursorWithValue | null;
-      if (!cursor) {
-        resolve();
-        return;
-      }
-      collections.push(cursor.value as CollectionRecord);
-      cursor.continue();
-    };
-
-    request.onerror = () => {
-      reject(request.error ?? new Error("Failed to list collections"));
-    };
-  });
+  const db = await openHqccDexieDb();
+  const collections = await db.collections.toArray();
 
   return collections.sort((a, b) =>
     a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
@@ -133,12 +75,7 @@ export async function listCollections(): Promise<CollectionRecord[]> {
 }
 
 export async function deleteCollection(id: string): Promise<void> {
-  const store = await getCollectionsStore("readwrite");
-
-  await new Promise<void>((resolve, reject) => {
-    const request = store.delete(id);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error ?? new Error("Failed to delete collection"));
-  });
+  const db = await openHqccDexieDb();
+  await db.collections.delete(id);
   enqueueDbEstimateChange("collections", id);
 }
