@@ -4,12 +4,12 @@ jest.mock("@/lib/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-import { addAsset } from "@/lib/assets-db";
 import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { replaceAsset } from "@/lib/assets-db";
 
 import { createTestBlob, deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 
-describe("addAsset", () => {
+describe("replaceAsset", () => {
   beforeEach(() => {
     jest.resetModules();
     installFakeIndexedDb();
@@ -29,18 +29,22 @@ describe("addAsset", () => {
     jest.resetModules();
   });
 
-  it("writes the record and resolves after the Dexie transaction completes", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(123);
-
+  it("preserves an explicitly supplied createdAt value", async () => {
     const blob = createTestBlob();
+
     await expect(
-      addAsset("a1", blob, { name: "img.png", mimeType: "image/png", width: 10, height: 20 }),
+      replaceAsset(
+        "a1",
+        blob,
+        { name: "img.png", mimeType: "image/png", width: 10, height: 20 },
+        99,
+      ),
     ).resolves.toBeUndefined();
 
     const db = await openHqccDexieDb();
     await expect(db.table("assets").get("a1")).resolves.toEqual({
       id: "a1",
-      createdAt: 123,
+      createdAt: 99,
       name: "img.png",
       mimeType: "image/png",
       width: 10,

@@ -1,72 +1,38 @@
-import { installMockIndexedDbAssets } from "@/lib/__testutils__/mockIndexedDbAssets";
 import { getAllAssets } from "@/lib/assets-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+
+import { createTestBlob, deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 
 describe("getAllAssets", () => {
-  afterEach(() => {
+  beforeEach(() => {
+    jest.resetModules();
+    installFakeIndexedDb();
+  });
+
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {
+      // Ignore teardown failures if the DB module was not opened.
+    }
+
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
     jest.restoreAllMocks();
+    jest.resetModules();
   });
 
-  it("uses createdAt index when available", async () => {
-    const harness = installMockIndexedDbAssets({
-      hasAssetsStore: true,
-      hasCreatedAtIndex: true,
-      initialAssets: [
-        { id: "a1", name: "a", mimeType: "x", width: 1, height: 1, createdAt: 1 },
-      ],
-    });
+  it("returns metadata-only records ordered by createdAt", async () => {
+    const blob = createTestBlob();
+    const db = await openHqccDexieDb();
+    await db.table("assets").bulkPut([
+      { id: "a2", name: "b", mimeType: "x", width: 1, height: 1, createdAt: 2, blob },
+      { id: "a1", name: "a", mimeType: "x", width: 1, height: 1, createdAt: 1, blob },
+    ]);
 
-    await expect(getAllAssets()).resolves.toHaveLength(1);
-    expect(harness.assetsStore.index).toHaveBeenCalledWith("createdAt");
-    expect(harness.assetsStore.getAll).not.toHaveBeenCalled();
-
-    harness.cleanup();
-  });
-
-  it("falls back to store.getAll when createdAt index is missing", async () => {
-    const harness = installMockIndexedDbAssets({
-      hasAssetsStore: true,
-      hasCreatedAtIndex: false,
-      initialAssets: [
-        { id: "a1", name: "a", mimeType: "x", width: 1, height: 1, createdAt: 1 },
-      ],
-    });
-
-    await expect(getAllAssets()).resolves.toHaveLength(1);
-    expect(harness.assetsStore.getAll).toHaveBeenCalledTimes(1);
-
-    harness.cleanup();
-  });
-
-  it("rejects when getAll fails with request.error", async () => {
-    const harness = installMockIndexedDbAssets({ hasAssetsStore: true, hasCreatedAtIndex: false });
-    harness.assetsStore.failNextRequest("getAll", new Error("getAll-failed"));
-
-    await expect(getAllAssets()).rejects.toThrow("getAll-failed");
-    harness.cleanup();
-  });
-
-  it("rejects with a default error when getAll fails without request.error", async () => {
-    const harness = installMockIndexedDbAssets({ hasAssetsStore: true, hasCreatedAtIndex: false });
-    harness.assetsStore.failNextRequest("getAll", undefined);
-
-    await expect(getAllAssets()).rejects.toThrow("Failed to load assets");
-    harness.cleanup();
-  });
-
-  it("rejects when index.getAll fails with request.error", async () => {
-    const harness = installMockIndexedDbAssets({ hasAssetsStore: true, hasCreatedAtIndex: true });
-    harness.assetsStore.failNextRequest("indexGetAll", new Error("index-failed"));
-
-    await expect(getAllAssets()).rejects.toThrow("index-failed");
-    harness.cleanup();
-  });
-
-  it("rejects with a default error when index.getAll fails without request.error", async () => {
-    const harness = installMockIndexedDbAssets({ hasAssetsStore: true, hasCreatedAtIndex: true });
-    harness.assetsStore.failNextRequest("indexGetAll", undefined);
-
-    await expect(getAllAssets()).rejects.toThrow("Failed to load assets");
-    harness.cleanup();
+    await expect(getAllAssets()).resolves.toEqual([
+      { id: "a1", name: "a", mimeType: "x", width: 1, height: 1, createdAt: 1 },
+      { id: "a2", name: "b", mimeType: "x", width: 1, height: 1, createdAt: 2 },
+    ]);
   });
 });
-
