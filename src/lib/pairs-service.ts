@@ -17,7 +17,7 @@ import {
   type PairUsageReport,
 } from "@/lib/decks-errors";
 import { getCard } from "./cards-db";
-import { openHqccDb } from "./hqcc-db";
+import { openHqccDexieDb } from "./hqcc-dexie";
 
 import { generateId } from ".";
 
@@ -29,59 +29,34 @@ type PairDeleteOptions = {
   confirmCascade?: boolean;
 };
 
-async function getPairsStore(mode: IDBTransactionMode): Promise<IDBObjectStore> {
-  const db = await openHqccDb();
-  const tx = db.transaction("pairs", mode);
-  return tx.objectStore("pairs");
-}
-
 function buildPairName(front?: CardRecord | null, back?: CardRecord | null): string {
   const frontName = front?.title ?? front?.name ?? "Untitled front";
   const backName = back?.title ?? back?.name ?? "Untitled back";
   return `${frontName} - ${backName}`;
 }
 
-async function listPairsByIndex(
-  indexName: "frontFaceId" | "backFaceId",
-  faceId: string,
-): Promise<PairSummary[]> {
-  const store = await getPairsStore("readonly");
-  if (!store.indexNames.contains(indexName)) return [];
-  const index = store.index(indexName);
-
-  return new Promise<PairSummary[]>((resolve, reject) => {
-    const results: PairSummary[] = [];
-    const request = index.openCursor(IDBKeyRange.only(faceId));
-
-    request.onsuccess = () => {
-      const cursor = request.result as IDBCursorWithValue | null;
-      if (!cursor) {
-        resolve(results);
-        return;
-      }
-      const value = cursor.value as PairRecord;
-      results.push(value);
-      cursor.continue();
-    };
-
-    request.onerror = () => {
-      reject(request.error ?? new Error("Failed to list pairs"));
-    };
-  });
+function throwPairError(error: unknown, fallback: string): never {
+  if (error instanceof Error) {
+    throw error;
+  }
+  throw new Error(fallback);
 }
 
-async function listAllPairsFromStore(): Promise<PairSummary[]> {
-  const store = await getPairsStore("readonly");
-  return new Promise<PairSummary[]>((resolve, reject) => {
-    const request = store.getAll();
-    request.onsuccess = () => {
-      const values = (request.result as PairRecord[] | undefined) ?? [];
-      resolve(values);
-    };
-    request.onerror = () => {
-      reject(request.error ?? new Error("Failed to list pairs"));
-    };
-  });
+async function listPairsForFaceFromDb(
+  db: Awaited<ReturnType<typeof openHqccDexieDb>>,
+  faceId: string,
+): Promise<PairSummary[]> {
+  const [frontMatches, backMatches] = await Promise.all([
+    db.pairs.where("frontFaceId").equals(faceId).toArray(),
+    db.pairs.where("backFaceId").equals(faceId).toArray(),
+  ]);
+  return [...frontMatches, ...backMatches];
+}
+
+async function listAllPairsFromDb(
+  db: Awaited<ReturnType<typeof openHqccDexieDb>>,
+): Promise<PairSummary[]> {
+  return db.pairs.toArray();
 }
 
 async function listLegacyPairsFromCards(): Promise<PairSummary[]> {
@@ -94,67 +69,37 @@ async function listLegacyPairsForFace(faceId: string): Promise<PairSummary[]> {
 }
 
 export async function listPairsForFace(faceId: string): Promise<PairSummary[]> {
-  const [frontMatches, backMatches] = await Promise.all([
-    listPairsByIndex("frontFaceId", faceId),
-    listPairsByIndex("backFaceId", faceId),
-  ]);
-  const combined = [...frontMatches, ...backMatches];
+  const db = await openHqccDexieDb();
+  const combined = await listPairsForFaceFromDb(db, faceId);
   if (combined.length > 0) return combined;
   return listLegacyPairsForFace(faceId);
 }
 
 export async function listAllPairs(): Promise<PairSummary[]> {
-  const pairs = await listAllPairsFromStore();
+  const db = await openHqccDexieDb();
+  const pairs = await listAllPairsFromDb(db);
   if (pairs.length > 0) return pairs;
   return listLegacyPairsFromCards();
 }
 
 async function listPairsForBack(backId: string): Promise<PairSummary[]> {
-  const pairs = await listPairsForFace(backId);
+  const db = await openHqccDexieDb();
+  const pairs = await listPairsForFaceFromDb(db, backId);
   return pairs.filter((pair) => pair.backFaceId === backId);
 }
 
-async function listEntriesForPairIds(pairIds: string[]): Promise<DeckEntryRecord[]> {
+async function listEntriesForPairIds(
+  db: Awaited<ReturnType<typeof openHqccDexieDb>>,
+  pairIds: string[],
+): Promise<DeckEntryRecord[]> {
   if (!pairIds.length) return [];
-  const db = await openHqccDb();
-  if (!db.objectStoreNames.contains("deckEntries")) return [];
-  const tx = db.transaction("deckEntries", "readonly");
-  const store = tx.objectStore("deckEntries");
-  const byPairId = store.indexNames.contains("pairId") ? store.index("pairId") : null;
-  const entries: DeckEntryRecord[] = [];
-
-  if (!byPairId) {
-    const allEntries = await new Promise<DeckEntryRecord[]>((resolve, reject) => {
-      const request = store.getAll();
-      request.onsuccess = () => resolve((request.result as DeckEntryRecord[] | undefined) ?? []);
-      request.onerror = () => reject(request.error ?? new Error("Failed to list deck entries"));
-    });
-    const pairIdSet = new Set(pairIds);
-    return allEntries.filter((entry) => pairIdSet.has(entry.pairId));
-  }
-
-  await Promise.all(
-    pairIds.map(
-      (pairId) =>
-        new Promise<void>((resolve, reject) => {
-          const request = byPairId.openCursor(IDBKeyRange.only(pairId));
-          request.onsuccess = () => {
-            const cursor = request.result as IDBCursorWithValue | null;
-            if (!cursor) {
-              resolve();
-              return;
-            }
-            entries.push(cursor.value as DeckEntryRecord);
-            cursor.continue();
-          };
-          request.onerror = () => reject(request.error ?? new Error("Failed to list deck entries"));
-        }),
-    ),
-  );
-  return entries;
+  return db.deckEntries.where("pairId").anyOf(pairIds).toArray();
 }
 
-async function buildDeckUsageForEntries(entryIds: string[]): Promise<
+async function buildDeckUsageForEntries(
+  db: Awaited<ReturnType<typeof openHqccDexieDb>>,
+  entryIds: string[],
+): Promise<
   Array<{
     entryId: string;
     usage: {
@@ -168,38 +113,19 @@ async function buildDeckUsageForEntries(entryIds: string[]): Promise<
   }>
 > {
   if (!entryIds.length) return [];
-  const db = await openHqccDb();
-  const stores = ["deckEntries", "deckSets", "deckGroups", "decks"] as const;
-  if (stores.some((name) => !db.objectStoreNames.contains(name))) return [];
-  const tx = db.transaction(stores, "readonly");
-  const entriesStore = tx.objectStore("deckEntries");
-  const setsStore = tx.objectStore("deckSets");
-  const groupsStore = tx.objectStore("deckGroups");
-  const decksStore = tx.objectStore("decks");
-  const ids = new Set(entryIds);
-
-  const [entries, sets, groups, decks] = await Promise.all([
-    new Promise<DeckEntryRecord[]>((resolve, reject) => {
-      const request = entriesStore.getAll();
-      request.onsuccess = () => resolve((request.result as DeckEntryRecord[] | undefined) ?? []);
-      request.onerror = () => reject(request.error ?? new Error("Failed to load entries"));
-    }),
-    new Promise<DeckSetRecord[]>((resolve, reject) => {
-      const request = setsStore.getAll();
-      request.onsuccess = () => resolve((request.result as DeckSetRecord[] | undefined) ?? []);
-      request.onerror = () => reject(request.error ?? new Error("Failed to load sets"));
-    }),
-    new Promise<DeckGroupRecord[]>((resolve, reject) => {
-      const request = groupsStore.getAll();
-      request.onsuccess = () => resolve((request.result as DeckGroupRecord[] | undefined) ?? []);
-      request.onerror = () => reject(request.error ?? new Error("Failed to load groups"));
-    }),
-    new Promise<DeckRecord[]>((resolve, reject) => {
-      const request = decksStore.getAll();
-      request.onsuccess = () => resolve((request.result as DeckRecord[] | undefined) ?? []);
-      request.onerror = () => reject(request.error ?? new Error("Failed to load decks"));
-    }),
-  ]);
+  const entries = (await db.deckEntries.bulkGet(entryIds)).filter(
+    (entry): entry is DeckEntryRecord => Boolean(entry),
+  );
+  if (!entries.length) return [];
+  const sets = (
+    await db.deckSets.bulkGet(Array.from(new Set(entries.map((entry) => entry.setId))))
+  ).filter((set): set is DeckSetRecord => Boolean(set));
+  const groups = (
+    await db.deckGroups.bulkGet(Array.from(new Set(sets.map((set) => set.groupId))))
+  ).filter((group): group is DeckGroupRecord => Boolean(group));
+  const decks = (
+    await db.decks.bulkGet(Array.from(new Set(sets.map((set) => set.deckId))))
+  ).filter((deck): deck is DeckRecord => Boolean(deck));
 
   const setById = new Map(sets.map((set) => [set.id, set]));
   const groupById = new Map(groups.map((group) => [group.id, group]));
@@ -217,7 +143,6 @@ async function buildDeckUsageForEntries(entryIds: string[]): Promise<
   }> = [];
 
   entries.forEach((entry) => {
-    if (!ids.has(entry.id)) return;
     const set = setById.get(entry.setId);
     if (!set) return;
     const group = groupById.get(set.groupId);
@@ -239,18 +164,19 @@ async function buildDeckUsageForEntries(entryIds: string[]): Promise<
 }
 
 async function resolvePairUsageReport(
+  db: Awaited<ReturnType<typeof openHqccDexieDb>>,
   frontFaceId: string,
   backFaceId: string,
   mode: PairDeleteMode,
 ): Promise<PairUsageReport> {
-  const pairs = await listPairsForFace(frontFaceId);
+  const pairs = await listPairsForFaceFromDb(db, frontFaceId);
   const matches = pairs.filter(
     (pair) => pair.frontFaceId === frontFaceId && pair.backFaceId === backFaceId,
   );
   const pairIds = matches.map((pair) => pair.id);
-  const entries = await listEntriesForPairIds(pairIds);
+  const entries = await listEntriesForPairIds(db, pairIds);
   const entryIds = Array.from(new Set(entries.map((entry) => entry.id)));
-  const usageRows = await buildDeckUsageForEntries(entryIds);
+  const usageRows = await buildDeckUsageForEntries(db, entryIds);
   const usageByKey = new Map<string, (typeof usageRows)[number]["usage"]>();
   usageRows.forEach(({ usage }) => {
     const key = `${usage.deckId}:${usage.groupId}:${usage.setId}`;
@@ -276,69 +202,52 @@ async function executePairDeletionPlan(report: PairUsageReport): Promise<{
   const entryIds = report.cascadePlan.entryIds;
   if (!pairIds.length) return { deletedPairs: 0, deletedEntries: 0 };
 
-  const db = await openHqccDb();
-  const stores = db.objectStoreNames.contains("deckEntries")
-    ? (["pairs", "deckEntries"] as const)
-    : (["pairs"] as const);
+  const db = await openHqccDexieDb();
   const deckIdsToTouch = new Set<string>();
-  if (entryIds.length && db.objectStoreNames.contains("deckEntries")) {
-    const readTx = db.transaction("deckEntries", "readonly");
-    const readEntriesStore = readTx.objectStore("deckEntries");
-    const existingEntries = await new Promise<DeckEntryRecord[]>((resolve, reject) => {
-      const request = readEntriesStore.getAll();
-      request.onsuccess = () => resolve((request.result as DeckEntryRecord[] | undefined) ?? []);
-      request.onerror = () => reject(request.error ?? new Error("Failed to load deck entries"));
-    });
+  if (entryIds.length) {
+    const existingEntries = await db.deckEntries.bulkGet(entryIds);
     existingEntries.forEach((entry) => {
-      if (entryIds.includes(entry.id)) deckIdsToTouch.add(entry.deckId);
+      if (entry) {
+        deckIdsToTouch.add(entry.deckId);
+      }
     });
   }
-  const tx = db.transaction(stores, "readwrite");
-  const pairsStore = tx.objectStore("pairs");
-  const entriesStore = tx.objectStoreNames.contains("deckEntries")
-    ? tx.objectStore("deckEntries")
-    : null;
 
-  pairIds.forEach((pairId) => pairsStore.delete(pairId));
-  entryIds.forEach((entryId) => entriesStore?.delete(entryId));
-
-  await new Promise<void>((resolve, reject) => {
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error ?? new Error("Failed to execute pair deletion plan"));
-    tx.onabort = () => reject(tx.error ?? new Error("Failed to execute pair deletion plan"));
-  });
+  try {
+    await db.transaction("rw", db.pairs, db.deckEntries, async () => {
+      await db.pairs.bulkDelete(pairIds);
+      if (entryIds.length) {
+        await db.deckEntries.bulkDelete(entryIds);
+      }
+    });
+  } catch (error) {
+    throwPairError(error, "Failed to execute pair deletion plan");
+  }
 
   pairIds.forEach((pairId) => enqueueDbEstimateChange("pairs", pairId));
   entryIds.forEach((entryId) => enqueueDbEstimateChange("deckEntries", entryId));
-  if (deckIdsToTouch.size && db.objectStoreNames.contains("decks")) {
-    const deckTx = db.transaction("decks", "readwrite");
-    const deckStore = deckTx.objectStore("decks");
-    const now = Date.now();
-    await Promise.all(
-      Array.from(deckIdsToTouch).map(
-        (deckId) =>
-          new Promise<void>((resolve, reject) => {
-            const getRequest = deckStore.get(deckId);
-            getRequest.onsuccess = () => {
-              const deck = (getRequest.result as DeckRecord | undefined) ?? null;
-              if (!deck) {
-                resolve();
-                return;
-              }
-              const putRequest = deckStore.put({ ...deck, updatedAt: now });
-              putRequest.onsuccess = () => resolve();
-              putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to touch deck"));
-            };
-            getRequest.onerror = () => reject(getRequest.error ?? new Error("Failed to load deck"));
-          }),
-      ),
-    );
-    await new Promise<void>((resolve, reject) => {
-      deckTx.oncomplete = () => resolve();
-      deckTx.onerror = () => reject(deckTx.error ?? new Error("Failed to touch decks"));
-      deckTx.onabort = () => reject(deckTx.error ?? new Error("Failed to touch decks"));
-    });
-    deckIdsToTouch.forEach((deckId) => enqueueDbEstimateChange("decks", deckId));
+  if (deckIdsToTouch.size) {
+    const deckIds = Array.from(deckIdsToTouch);
+    let touchedDeckIds: string[] = [];
+
+    try {
+      await db.transaction("rw", db.decks, async () => {
+        const decks = (await db.decks.bulkGet(deckIds)).filter(
+          (deck): deck is DeckRecord => Boolean(deck),
+        );
+        if (!decks.length) {
+          return;
+        }
+        const now = Date.now();
+        const touchedDecks = decks.map((deck) => ({ ...deck, updatedAt: now }));
+        touchedDeckIds = touchedDecks.map((deck) => deck.id);
+        await db.decks.bulkPut(touchedDecks);
+      });
+    } catch (error) {
+      throwPairError(error, "Failed to touch decks");
+    }
+
+    touchedDeckIds.forEach((deckId) => enqueueDbEstimateChange("decks", deckId));
   }
 
   return { deletedPairs: pairIds.length, deletedEntries: entryIds.length };
@@ -349,7 +258,13 @@ export async function previewDeletePair(
   backFaceId: string,
   options?: Pick<PairDeleteOptions, "mode">,
 ): Promise<PairUsageReport> {
-  return resolvePairUsageReport(frontFaceId, backFaceId, options?.mode ?? "confirmable-cascade");
+  const db = await openHqccDexieDb();
+  return resolvePairUsageReport(
+    db,
+    frontFaceId,
+    backFaceId,
+    options?.mode ?? "confirmable-cascade",
+  );
 }
 
 function mergeUsageReports(
@@ -384,7 +299,8 @@ export async function previewDeletePairsForFaces(
   options?: Pick<PairDeleteOptions, "mode">,
 ): Promise<PairUsageReport> {
   const ids = new Set(faceIds);
-  const pairs = await listAllPairs();
+  const db = await openHqccDexieDb();
+  const pairs = await listAllPairsFromDb(db);
   const uniqueOps = new Map<string, { frontFaceId: string; backFaceId: string }>();
   pairs.forEach((pair) => {
     if (!pair.frontFaceId || !pair.backFaceId) return;
@@ -397,7 +313,7 @@ export async function previewDeletePairsForFaces(
   const mode = options?.mode ?? "confirmable-cascade";
   const reports = await Promise.all(
     Array.from(uniqueOps.values()).map((op) =>
-      resolvePairUsageReport(op.frontFaceId, op.backFaceId, mode),
+      resolvePairUsageReport(db, op.frontFaceId, op.backFaceId, mode),
     ),
   );
   return mergeUsageReports(reports, mode);
@@ -446,12 +362,14 @@ export async function createPairWithOverrides(input: {
     schemaVersion: input.schemaVersion ?? 1,
   };
 
-  const store = await getPairsStore("readwrite");
-  await new Promise<void>((resolve, reject) => {
-    const request = store.put(record);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error ?? new Error("Failed to create pair"));
-  });
+  const db = await openHqccDexieDb();
+  try {
+    await db.transaction("rw", db.pairs, async () => {
+      await db.pairs.put(record);
+    });
+  } catch (error) {
+    throwPairError(error, "Failed to create pair");
+  }
   enqueueDbEstimateChange("pairs", record.id);
 
   return record;
@@ -461,20 +379,14 @@ export async function deletePairsForFront(frontFaceId: string): Promise<void> {
   const pairs = await listPairsForFace(frontFaceId);
   const deletions = pairs.filter((pair) => pair.frontFaceId === frontFaceId);
   if (!deletions.length) return;
-  const store = await getPairsStore("readwrite");
-  await new Promise<void>((resolve, reject) => {
-    let remaining = deletions.length;
-    deletions.forEach((pair) => {
-      const request = store.delete(pair.id);
-      request.onsuccess = () => {
-        remaining -= 1;
-        if (remaining === 0) resolve();
-      };
-      request.onerror = () => {
-        reject(request.error ?? new Error("Failed to delete pair"));
-      };
+  const db = await openHqccDexieDb();
+  try {
+    await db.transaction("rw", db.pairs, async () => {
+      await db.pairs.bulkDelete(deletions.map((pair) => pair.id));
     });
-  });
+  } catch (error) {
+    throwPairError(error, "Failed to delete pair");
+  }
   deletions.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
 }
 
@@ -482,40 +394,28 @@ export async function deletePairsForBack(backFaceId: string): Promise<void> {
   const pairs = await listPairsForFace(backFaceId);
   const deletions = pairs.filter((pair) => pair.backFaceId === backFaceId);
   if (!deletions.length) return;
-  const store = await getPairsStore("readwrite");
-  await new Promise<void>((resolve, reject) => {
-    let remaining = deletions.length;
-    deletions.forEach((pair) => {
-      const request = store.delete(pair.id);
-      request.onsuccess = () => {
-        remaining -= 1;
-        if (remaining === 0) resolve();
-      };
-      request.onerror = () => {
-        reject(request.error ?? new Error("Failed to delete pair"));
-      };
+  const db = await openHqccDexieDb();
+  try {
+    await db.transaction("rw", db.pairs, async () => {
+      await db.pairs.bulkDelete(deletions.map((pair) => pair.id));
     });
-  });
+  } catch (error) {
+    throwPairError(error, "Failed to delete pair");
+  }
   deletions.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
 }
 
 export async function deletePairsForFace(faceId: string): Promise<void> {
   const pairs = await listPairsForFace(faceId);
   if (!pairs.length) return;
-  const store = await getPairsStore("readwrite");
-  await new Promise<void>((resolve, reject) => {
-    let remaining = pairs.length;
-    pairs.forEach((pair) => {
-      const request = store.delete(pair.id);
-      request.onsuccess = () => {
-        remaining -= 1;
-        if (remaining === 0) resolve();
-      };
-      request.onerror = () => {
-        reject(request.error ?? new Error("Failed to delete pair"));
-      };
+  const db = await openHqccDexieDb();
+  try {
+    await db.transaction("rw", db.pairs, async () => {
+      await db.pairs.bulkDelete(pairs.map((pair) => pair.id));
     });
-  });
+  } catch (error) {
+    throwPairError(error, "Failed to delete pair");
+  }
   pairs.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
 }
 
@@ -525,7 +425,8 @@ export async function deletePair(
   options?: PairDeleteOptions,
 ): Promise<PairDeleteResolution> {
   const mode = options?.mode ?? "confirmable-cascade";
-  const report = await resolvePairUsageReport(frontFaceId, backFaceId, mode);
+  const db = await openHqccDexieDb();
+  const report = await resolvePairUsageReport(db, frontFaceId, backFaceId, mode);
   if (!report.cascadePlan.pairIds.length) {
     return { kind: "no-impact", report };
   }
@@ -586,27 +487,48 @@ export async function replacePairsForBack(
 
   if (!toRemove.length && !toAdd.length) return;
 
-  if (toRemove.length) {
-    const store = await getPairsStore("readwrite");
-    await new Promise<void>((resolve, reject) => {
-      let remaining = toRemove.length;
-      toRemove.forEach((pair) => {
-        const request = store.delete(pair.id);
-        request.onsuccess = () => {
-          remaining -= 1;
-          if (remaining === 0) resolve();
-        };
-        request.onerror = () => {
-          reject(request.error ?? new Error("Failed to delete pair"));
-        };
-      });
-    });
-    toRemove.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
-  }
+  const db = await openHqccDexieDb();
+  const now = Date.now();
+  const cardsById = new Map<string, CardRecord | null>();
+  const back = toAdd.length ? await getCard(backFaceId) : null;
 
   if (toAdd.length) {
-    await Promise.all(toAdd.map((frontId) => createPair(frontId, backFaceId)));
+    const cards = await Promise.all(toAdd.map((frontId) => getCard(frontId)));
+    cards.forEach((card, index) => {
+      cardsById.set(toAdd[index], card);
+    });
   }
+
+  const additions: PairRecord[] = toAdd.map((frontId) => {
+    const front = cardsById.get(frontId) ?? null;
+    const name = buildPairName(front, back);
+    return {
+      id: generateId(),
+      name,
+      nameLower: name.toLocaleLowerCase(),
+      frontFaceId: frontId,
+      backFaceId,
+      createdAt: now,
+      updatedAt: now,
+      schemaVersion: 1,
+    };
+  });
+
+  try {
+    await db.transaction("rw", db.pairs, async () => {
+      if (toRemove.length) {
+        await db.pairs.bulkDelete(toRemove.map((pair) => pair.id));
+      }
+      if (additions.length) {
+        await db.pairs.bulkPut(additions);
+      }
+    });
+  } catch (error) {
+    throwPairError(error, "Failed to replace pairs");
+  }
+
+  toRemove.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
+  additions.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
 }
 
 export async function getPairedFaceIds(faceId: string): Promise<string[]> {
