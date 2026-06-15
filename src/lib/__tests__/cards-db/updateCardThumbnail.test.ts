@@ -1,5 +1,5 @@
-import { deleteCards, getCard } from "@/lib/cards-db";
 import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { getCardThumbnail, updateCardThumbnail } from "@/lib/cards-db";
 
 import {
   createCardRecord,
@@ -14,7 +14,7 @@ jest.mock("@/lib/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-describe("deleteCards", () => {
+describe("updateCardThumbnail", () => {
   beforeEach(() => {
     installFakeIndexedDb();
     enqueueDbEstimateChange.mockReset();
@@ -29,18 +29,17 @@ describe("deleteCards", () => {
     jest.restoreAllMocks();
   });
 
-  it("returns early when ids is empty", async () => {
-    await expect(deleteCards([])).resolves.toBeUndefined();
+  it("returns false when the card is missing", async () => {
+    await expect(updateCardThumbnail("missing", new Blob(["x"]))).resolves.toBe(false);
   });
 
-  it("deletes multiple cards", async () => {
+  it("updates and normalizes the thumbnail blob", async () => {
     const db = await openHqccDexieDb();
-    await db.cards.bulkPut([createCardRecord({ id: "a" }), createCardRecord({ id: "b" })]);
+    await db.cards.put(createCardRecord({ id: "c1" }));
 
-    await deleteCards(["a", "b"]);
-    await expect(getCard("a")).resolves.toBeNull();
-    await expect(getCard("b")).resolves.toBeNull();
-    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("cards", "a");
-    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("cards", "b");
+    const ok = await updateCardThumbnail("c1", new Blob(["x"]));
+    expect(ok).toBe(true);
+    expect((await getCardThumbnail("c1"))?.type).toBe("image/png");
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("cards", "c1");
   });
 });

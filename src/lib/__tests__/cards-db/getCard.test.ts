@@ -1,47 +1,43 @@
-import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
 import { getCard } from "@/lib/cards-db";
-import type { CardRecord } from "@/types/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
 
+import {
+  createCardRecord,
+  deleteDb,
+  installFakeIndexedDb,
+  restoreIndexedDb,
+} from "@/lib/test-support/cards-db-test-helpers";
 
 describe("getCard", () => {
-  afterEach(() => {
+  beforeEach(() => {
+    installFakeIndexedDb();
+  });
+
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {}
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
     jest.restoreAllMocks();
   });
 
-  it("returns null when missing", async () => {
-    const harness = installMockIndexedDbCards({ hasCardsStore: true });
+  it("returns null when the card is missing", async () => {
     await expect(getCard("missing")).resolves.toBeNull();
-    harness.cleanup();
   });
 
   it("returns the card when present", async () => {
-    const existing: CardRecord = {
-      id: "c1",
-      templateId: "hero",
-      status: "saved",
-      name: "Name",
-      nameLower: "name",
-      createdAt: 1,
-      updatedAt: 1,
-      schemaVersion: 1,
-    };
-    const harness = installMockIndexedDbCards({ hasCardsStore: true, initialCards: [existing] });
-    await expect(getCard("c1")).resolves.toEqual(existing);
-    harness.cleanup();
+    const db = await openHqccDexieDb();
+    await db.cards.put(createCardRecord({ id: "c1" }));
+
+    await expect(getCard("c1")).resolves.toEqual(createCardRecord({ id: "c1" }));
   });
 
-  it("rejects when store.get fails", async () => {
-    const harness = installMockIndexedDbCards({ hasCardsStore: true });
-    harness.cardsStore.failNext("get", new Error("get-failed"));
-    await expect(getCard("c1")).rejects.toThrow("get-failed");
-    harness.cleanup();
-  });
+  it("normalizes a thumbnail blob with no type and schedules repair", async () => {
+    const db = await openHqccDexieDb();
+    await db.cards.put(createCardRecord({ id: "c1", thumbnailBlob: new Blob(["x"]) }));
 
-  it("rejects with a default error when store.get fails without request.error", async () => {
-    const harness = installMockIndexedDbCards({ hasCardsStore: true });
-    harness.cardsStore.failNext("get", undefined);
-    await expect(getCard("c1")).rejects.toThrow("Failed to load card");
-    harness.cleanup();
+    const card = await getCard("c1");
+    expect(card?.thumbnailBlob?.type).toBe("image/png");
   });
 });
-

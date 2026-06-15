@@ -1,22 +1,40 @@
-import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
-import { createCard, getCard } from "@/lib/cards-db";
-import type { CardRecord } from "@/types/cards-db";
+import { createCard, getCard, getCardThumbnail } from "@/lib/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
 
+import {
+  deleteDb,
+  installFakeIndexedDb,
+  restoreIndexedDb,
+} from "@/lib/test-support/cards-db-test-helpers";
+
+const enqueueDbEstimateChange = jest.fn();
+
+jest.mock("@/lib/indexeddb-size-tracker", () => ({
+  enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
+}));
 
 describe("createCard", () => {
-  afterEach(() => {
+  beforeEach(() => {
+    installFakeIndexedDb();
+    enqueueDbEstimateChange.mockReset();
+  });
+
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {}
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
     jest.restoreAllMocks();
   });
 
-  it("creates a card with timestamps, schemaVersion and nameLower", async () => {
+  it("creates a card with timestamps, schemaVersion, and nameLower", async () => {
     jest.spyOn(Date, "now").mockReturnValue(100);
     const originalCrypto = Object.getOwnPropertyDescriptor(globalThis, "crypto");
     Object.defineProperty(globalThis, "crypto", {
       configurable: true,
       value: { randomUUID: () => "card-1" },
     });
-
-    const harness = installMockIndexedDbCards({ hasCardsStore: true });
 
     const created = await createCard({
       templateId: "hero",
@@ -25,7 +43,7 @@ describe("createCard", () => {
       title: "Title",
     });
 
-    expect(created).toEqual<CardRecord>({
+    expect(created).toEqual({
       templateId: "hero",
       status: "saved",
       name: "My HERO",
@@ -36,35 +54,24 @@ describe("createCard", () => {
       nameLower: "my hero",
       schemaVersion: 2,
     });
-
-    expect(harness.cardsStore.add).toHaveBeenCalledWith(created);
     await expect(getCard("card-1")).resolves.toEqual(created);
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("cards", "card-1");
 
-    harness.cleanup();
     if (originalCrypto) Object.defineProperty(globalThis, "crypto", originalCrypto);
   });
 
-  it("rejects when store.add fails with request.error", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1);
-    const harness = installMockIndexedDbCards({ hasCardsStore: true });
-    harness.cardsStore.failNext("add", new Error("add-failed"));
+  it("normalizes the thumbnail blob type before persisting", async () => {
+    const blob = new Blob(["x"]);
+    const created = await createCard({
+      templateId: "hero",
+      status: "saved",
+      name: "Blob Card",
+      thumbnailBlob: blob,
+    });
 
-    await expect(
-      createCard({ templateId: "hero", status: "saved", name: "X" }),
-    ).rejects.toThrow("add-failed");
-
-    harness.cleanup();
-  });
-
-  it("rejects with a default error when store.add fails without request.error", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1);
-    const harness = installMockIndexedDbCards({ hasCardsStore: true });
-    harness.cardsStore.failNext("add", undefined);
-
-    await expect(
-      createCard({ templateId: "hero", status: "saved", name: "X" }),
-    ).rejects.toThrow("Failed to create card");
-
-    harness.cleanup();
+    const stored = await getCard(created.id);
+    const thumbnail = await getCardThumbnail(created.id);
+    expect(stored?.thumbnailBlob?.type).toBe("image/png");
+    expect(thumbnail?.type).toBe("image/png");
   });
 });

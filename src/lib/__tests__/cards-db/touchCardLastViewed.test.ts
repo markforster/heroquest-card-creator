@@ -1,5 +1,5 @@
-import { deleteCard, getCard } from "@/lib/cards-db";
 import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { touchCardLastViewed } from "@/lib/cards-db";
 
 import {
   createCardRecord,
@@ -8,16 +8,9 @@ import {
   restoreIndexedDb,
 } from "@/lib/test-support/cards-db-test-helpers";
 
-const enqueueDbEstimateChange = jest.fn();
-
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
-  enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
-}));
-
-describe("deleteCard", () => {
+describe("touchCardLastViewed", () => {
   beforeEach(() => {
     installFakeIndexedDb();
-    enqueueDbEstimateChange.mockReset();
   });
 
   afterEach(async () => {
@@ -29,12 +22,14 @@ describe("deleteCard", () => {
     jest.restoreAllMocks();
   });
 
-  it("deletes a card", async () => {
+  it("updates lastViewedAt when the card exists", async () => {
     const db = await openHqccDexieDb();
     await db.cards.put(createCardRecord({ id: "c1" }));
 
-    await deleteCard("c1");
-    await expect(getCard("c1")).resolves.toBeNull();
-    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("cards", "c1");
+    const card = await touchCardLastViewed("c1", 999);
+    expect(card?.lastViewedAt).toBe(999);
+    await expect(db.cards.get("c1")).resolves.toEqual(
+      expect.objectContaining({ lastViewedAt: 999 }),
+    );
   });
 });
