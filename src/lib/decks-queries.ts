@@ -12,15 +12,11 @@ import type { CardDeckMembership } from "@/api/cards";
 import { getCard } from "@/lib/cards-db";
 import type { DeckUsageLocation } from "@/lib/decks-errors";
 import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
-import { openHqccDb } from "@/lib/hqcc-db";
+import { openHqccDexieDb } from "@/lib/hqcc-dexie";
 import {
   DECKS_STORE,
   ENTRIES_STORE,
-  getPairsStore,
-  getStore,
   GROUPS_STORE,
-  listAll,
-  listByIndex,
   normalizeDeckEntryRecord,
   PAIRS_STORE,
   resolveCardFace,
@@ -29,7 +25,8 @@ import {
 } from "@/lib/decks-db";
 
 export async function listDecks({ search }: { search?: string } = {}): Promise<DeckRecord[]> {
-  const decks = (await listAll<DeckRecord>(DECKS_STORE)).map((deck) => ({
+  const db = await openHqccDexieDb();
+  const decks = (await db.decks.toArray()).map((deck) => ({
     ...deck,
     keySetId: deck.keySetId ?? null,
   }));
@@ -47,9 +44,10 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
   const effectiveFace = resolveCardFace(card.templateId, card.face);
   const deckCountById = new Map<string, number>();
   const locationByDeckId = new Map<string, { setId: string; entryId?: string }>();
-  const groups = await listAll<DeckGroupRecord>(GROUPS_STORE);
-  const sets = await listAll<DeckSetRecord>(SETS_STORE);
-  const entries = (await listAll<DeckEntryRecord & { count?: number | null }>(ENTRIES_STORE)).map(
+  const db = await openHqccDexieDb();
+  const groups = await db.deckGroups.toArray();
+  const sets = await db.deckSets.toArray();
+  const entries = (await db.deckEntries.toArray()).map(
     normalizeDeckEntryRecord,
   );
   const groupById = new Map(groups.map((group) => [group.id, group]));
@@ -86,7 +84,7 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
       }
     });
   } else {
-    const pairs = await listAll<PairRecord>(PAIRS_STORE);
+    const pairs = await db.pairs.toArray();
     const pairIds = new Set(
       pairs.filter((pair) => pair.frontFaceId === cardId).map((pair) => pair.id),
     );
@@ -148,7 +146,7 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
 
   if (!deckCountById.size) return [];
 
-  const decks = await listAll<DeckRecord>(DECKS_STORE);
+  const decks = await db.decks.toArray();
   const deckMap = new Map(decks.map((deck) => [deck.id, deck]));
 
   const memberships: CardDeckMembership[] = [];
@@ -175,79 +173,60 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
 }
 
 export async function getDeck(deckId: string): Promise<DeckRecord | null> {
-  const store = await getStore(DECKS_STORE, "readonly");
-  return new Promise<DeckRecord | null>((resolve, reject) => {
-    const request = store.get(deckId);
-    request.onsuccess = () => {
-      const deck = (request.result as DeckRecord | undefined) ?? null;
-      if (!deck) {
-        resolve(null);
-        return;
-      }
-      resolve({ ...deck, keySetId: deck.keySetId ?? null });
-    };
-    request.onerror = () => reject(request.error ?? new Error("Failed to load deck"));
-  });
+  const db = await openHqccDexieDb();
+  const deck = (await db.decks.get(deckId)) ?? null;
+  if (!deck) {
+    return null;
+  }
+  return { ...deck, keySetId: deck.keySetId ?? null };
 }
 
 export async function listGroups(deckId: string): Promise<DeckGroupRecord[]> {
-  const groups = await listByIndex<DeckGroupRecord>(GROUPS_STORE, "deckId", deckId);
+  const db = await openHqccDexieDb();
+  const groups = await db.deckGroups.where("deckId").equals(deckId).toArray();
   return sortByIndex(groups);
 }
 
 export async function getGroup(groupId: string): Promise<DeckGroupRecord | null> {
-  const store = await getStore(GROUPS_STORE, "readonly");
-  return new Promise<DeckGroupRecord | null>((resolve, reject) => {
-    const request = store.get(groupId);
-    request.onsuccess = () => resolve((request.result as DeckGroupRecord | undefined) ?? null);
-    request.onerror = () => reject(request.error ?? new Error("Failed to load group"));
-  });
+  const db = await openHqccDexieDb();
+  return (await db.deckGroups.get(groupId)) ?? null;
 }
 
 export async function listSets(deckId: string): Promise<DeckSetRecord[]> {
-  const sets = await listByIndex<DeckSetRecord>(SETS_STORE, "deckId", deckId);
+  const db = await openHqccDexieDb();
+  const sets = await db.deckSets.where("deckId").equals(deckId).toArray();
   return sortByIndex(sets);
 }
 
 export async function getSet(setId: string): Promise<DeckSetRecord | null> {
-  const store = await getStore(SETS_STORE, "readonly");
-  return new Promise<DeckSetRecord | null>((resolve, reject) => {
-    const request = store.get(setId);
-    request.onsuccess = () => resolve((request.result as DeckSetRecord | undefined) ?? null);
-    request.onerror = () => reject(request.error ?? new Error("Failed to load set"));
-  });
+  const db = await openHqccDexieDb();
+  return (await db.deckSets.get(setId)) ?? null;
 }
 
 export async function listEntriesForSet(setId: string): Promise<DeckEntryRecord[]> {
-  const entries = await listByIndex<DeckEntryRecord & { count?: number | null }>(
-    ENTRIES_STORE,
-    "setId",
-    setId,
-  );
+  const db = await openHqccDexieDb();
+  const entries = await db.deckEntries.where("setId").equals(setId).toArray();
   return sortByIndex(entries.map(normalizeDeckEntryRecord));
 }
 
 async function getPairById(pairId: string): Promise<PairRecord | null> {
-  const store = await getPairsStore("readonly");
-  return new Promise<PairRecord | null>((resolve, reject) => {
-    const request = store.get(pairId);
-    request.onsuccess = () => resolve((request.result as PairRecord | undefined) ?? null);
-    request.onerror = () => reject(request.error ?? new Error("Failed to load pair"));
-  });
+  const db = await openHqccDexieDb();
+  return (await db.pairs.get(pairId)) ?? null;
 }
 
 export async function getDeckUsageForPair(pairId: string): Promise<DeckUsageLocation[]> {
-  const entries = (
-    await listByIndex<DeckEntryRecord & { count?: number | null }>(ENTRIES_STORE, "pairId", pairId)
-  ).map(normalizeDeckEntryRecord);
+  const db = await openHqccDexieDb();
+  const entries = (await db.deckEntries.where("pairId").equals(pairId).toArray()).map(
+    normalizeDeckEntryRecord,
+  );
   if (!entries.length) return [];
 
   const setIds = new Set(entries.map((entry) => entry.setId));
-  const sets = await listAll<DeckSetRecord>(SETS_STORE);
+  const sets = await db.deckSets.toArray();
   const setMap = new Map(sets.map((set) => [set.id, set]));
-  const groups = await listAll<DeckGroupRecord>(GROUPS_STORE);
+  const groups = await db.deckGroups.toArray();
   const groupMap = new Map(groups.map((group) => [group.id, group]));
-  const decks = await listAll<DeckRecord>(DECKS_STORE);
+  const decks = await db.decks.toArray();
   const deckMap = new Map(decks.map((deck) => [deck.id, deck]));
 
   const usage: DeckUsageLocation[] = [];
@@ -275,12 +254,13 @@ export async function getDeckUsageForBackFaceIds(
 ): Promise<Array<DeckUsageLocation & { backFaceId: string }>> {
   if (!backFaceIds.length) return [];
   const backIdSet = new Set(backFaceIds);
-  const sets = await listAll<DeckSetRecord>(SETS_STORE);
+  const db = await openHqccDexieDb();
+  const sets = await db.deckSets.toArray();
   const matchedSets = sets.filter((set) => backIdSet.has(set.backFaceId));
   if (!matchedSets.length) return [];
 
-  const groups = await listAll<DeckGroupRecord>(GROUPS_STORE);
-  const decks = await listAll<DeckRecord>(DECKS_STORE);
+  const groups = await db.deckGroups.toArray();
+  const decks = await db.decks.toArray();
   const groupMap = new Map(groups.map((group) => [group.id, group]));
   const deckMap = new Map(decks.map((deck) => [deck.id, deck]));
   const usage: Array<DeckUsageLocation & { backFaceId: string }> = [];
@@ -304,12 +284,8 @@ export async function getDeckUsageForBackFaceIds(
 }
 
 export async function validatePairEntry(setId: string, pairId: string): Promise<void> {
-  const setStore = await getStore(SETS_STORE, "readonly");
-  const set = await new Promise<DeckSetRecord | null>((resolve, reject) => {
-    const request = setStore.get(setId);
-    request.onsuccess = () => resolve((request.result as DeckSetRecord | undefined) ?? null);
-    request.onerror = () => reject(request.error ?? new Error("Failed to load set"));
-  });
+  const db = await openHqccDexieDb();
+  const set = (await db.deckSets.get(setId)) ?? null;
   if (!set) return;
   const pair = await getPairById(pairId);
   if (!pair || !pair.frontFaceId || !pair.backFaceId) {
@@ -321,38 +297,15 @@ export async function validatePairEntry(setId: string, pairId: string): Promise<
 }
 
 export async function repairOrphanDeckEntries(): Promise<number> {
-  const db = await openHqccDb();
-  if (!db.objectStoreNames.contains(ENTRIES_STORE) || !db.objectStoreNames.contains(PAIRS_STORE)) {
-    return 0;
-  }
-
-  const readTx = db.transaction([ENTRIES_STORE, PAIRS_STORE], "readonly");
-  const entriesStore = readTx.objectStore(ENTRIES_STORE);
-  const pairsStore = readTx.objectStore(PAIRS_STORE);
-  const [entries, pairs] = await Promise.all([
-    new Promise<DeckEntryRecord[]>((resolve, reject) => {
-      const request = entriesStore.getAll();
-      request.onsuccess = () => resolve((request.result as DeckEntryRecord[] | undefined) ?? []);
-      request.onerror = () => reject(request.error ?? new Error("Failed to load deck entries"));
-    }),
-    new Promise<PairRecord[]>((resolve, reject) => {
-      const request = pairsStore.getAll();
-      request.onsuccess = () => resolve((request.result as PairRecord[] | undefined) ?? []);
-      request.onerror = () => reject(request.error ?? new Error("Failed to load pairs"));
-    }),
-  ]);
+  const db = await openHqccDexieDb();
+  const [entries, pairs] = await Promise.all([db.deckEntries.toArray(), db.pairs.toArray()]);
 
   const pairIds = new Set(pairs.map((pair) => pair.id));
   const orphans = entries.filter((entry) => !pairIds.has(entry.pairId));
   if (!orphans.length) return 0;
 
-  const writeTx = db.transaction(ENTRIES_STORE, "readwrite");
-  const writeEntriesStore = writeTx.objectStore(ENTRIES_STORE);
-  orphans.forEach((entry) => writeEntriesStore.delete(entry.id));
-  await new Promise<void>((resolve, reject) => {
-    writeTx.oncomplete = () => resolve();
-    writeTx.onerror = () => reject(writeTx.error ?? new Error("Failed to repair orphan entries"));
-    writeTx.onabort = () => reject(writeTx.error ?? new Error("Failed to repair orphan entries"));
+  await db.transaction("rw", db.deckEntries, async () => {
+    await db.deckEntries.bulkDelete(orphans.map((entry) => entry.id));
   });
   orphans.forEach((entry) => enqueueDbEstimateChange(ENTRIES_STORE, entry.id));
   // eslint-disable-next-line no-console
