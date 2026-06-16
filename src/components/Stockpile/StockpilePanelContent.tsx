@@ -11,10 +11,12 @@ import {
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { ChevronLeft, ChevronRight, FolderPlus, Pencil, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import type { CardRecord } from "@/api/cards";
 import { apiClient } from "@/api/client";
+import { invalidateCollectionsQueries } from "@/api/queryInvalidation";
 import styles from "@/app/page.module.css";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ModalShell from "@/components/common/ModalShell";
@@ -112,6 +114,7 @@ export default function StockpilePanelContent({
   frame = "panel",
 }: StockpilePanelContentProps) {
   const { t, language } = useI18n();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { track } = useAnalytics();
   const isPairFronts = mode === "pair-fronts";
@@ -653,6 +656,7 @@ export default function StockpilePanelContent({
       await apiClient.updateCollection({ cardIds: nextCardIds }, { params: { id: collectionId } });
       const refreshed = await apiClient.listCollections();
       setCollections(refreshed);
+      await invalidateCollectionsQueries(queryClient);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("[StockpileModal] Failed to add cards to collection", error);
@@ -822,6 +826,7 @@ export default function StockpilePanelContent({
     setCards(refreshedCards);
     const refreshedCollections = await apiClient.listCollections();
     setCollections(refreshedCollections);
+    await invalidateCollectionsQueries(queryClient);
     setSelectedIds([]);
   };
 
@@ -1040,6 +1045,7 @@ export default function StockpilePanelContent({
                           );
                           const refreshed = await apiClient.listCollections();
                           setCollections(refreshed);
+                          await invalidateCollectionsQueries(queryClient);
                           setSelectedIds([]);
                         } catch (error) {
                           // eslint-disable-next-line no-console
@@ -1392,6 +1398,7 @@ export default function StockpilePanelContent({
               setActiveFilter({ type: "collection", id: created.id });
               const refreshed = await apiClient.listCollections();
               setCollections(refreshed);
+              await invalidateCollectionsQueries(queryClient);
             } catch (error) {
               // eslint-disable-next-line no-console
               console.error("[StockpileModal] Failed to create collection", error);
@@ -1402,6 +1409,7 @@ export default function StockpilePanelContent({
               await apiClient.updateCollection({ name, description }, { params: { id } });
               const refreshed = await apiClient.listCollections();
               setCollections(refreshed);
+              await invalidateCollectionsQueries(queryClient);
             } catch (error) {
               // eslint-disable-next-line no-console
               console.error("[StockpileModal] Failed to update collection", error);
@@ -1426,6 +1434,7 @@ export default function StockpilePanelContent({
               });
               const refreshed = await apiClient.listCollections();
               setCollections(refreshed);
+              await invalidateCollectionsQueries(queryClient);
               if (activeFilter.type === "collection" && activeFilter.id === current.collectionId) {
                 setActiveFilter({ type: "all" });
               }

@@ -5,6 +5,8 @@ const mockUpdateCollection = jest.fn();
 const mockUseCardEditor = jest.fn();
 const mockSetExpandedPaths = jest.fn();
 const mockTogglePath = jest.fn();
+const mockInvalidateQueries = jest.fn();
+const mockRefetchQueries = jest.fn();
 
 let mockTreeEnabled = false;
 let mockExpandedPaths = new Set<string>();
@@ -60,6 +62,13 @@ jest.mock("@/i18n/I18nProvider", () => ({
   }),
 }));
 
+jest.mock("@tanstack/react-query", () => ({
+  useQueryClient: () => ({
+    invalidateQueries: (...args: unknown[]) => mockInvalidateQueries(...args),
+    refetchQueries: (...args: unknown[]) => mockRefetchQueries(...args),
+  }),
+}));
+
 import CollectionsInspectorPanel from "@/components/Cards/CardInspector/CollectionsInspectorPanel";
 
 describe("CollectionsInspectorPanel", () => {
@@ -69,6 +78,11 @@ describe("CollectionsInspectorPanel", () => {
     mockUseCardEditor.mockReset();
     mockSetExpandedPaths.mockReset();
     mockTogglePath.mockReset();
+    mockInvalidateQueries.mockReset();
+    mockRefetchQueries.mockReset();
+
+    mockInvalidateQueries.mockResolvedValue(undefined);
+    mockRefetchQueries.mockResolvedValue(undefined);
 
     mockTreeEnabled = false;
     mockExpandedPaths = new Set<string>();
@@ -463,6 +477,12 @@ describe("CollectionsInspectorPanel", () => {
         { params: { id: "col-1" } },
       );
     });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith(
+      expect.objectContaining({ predicate: expect.any(Function) }),
+    );
+    expect(mockRefetchQueries).toHaveBeenCalledWith(
+      expect.objectContaining({ predicate: expect.any(Function), type: "active" }),
+    );
     expect(await screen.findByText("This card is not in any collections.")).toBeInTheDocument();
   });
 
@@ -600,6 +620,12 @@ describe("CollectionsInspectorPanel", () => {
         { params: { id: "col-2" } },
       );
     });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith(
+      expect.objectContaining({ predicate: expect.any(Function) }),
+    );
+    expect(mockRefetchQueries).toHaveBeenCalledWith(
+      expect.objectContaining({ predicate: expect.any(Function), type: "active" }),
+    );
     expect(await screen.findByText("Quest Set")).toBeInTheDocument();
     expect(screen.queryByText("Bosses")).not.toBeInTheDocument();
   });

@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
+import type { CollectionRecord } from "@/api/collections";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import StockpileAddToCollectionModal from "@/components/Stockpile/StockpileAddToCollectionModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
-import type { CollectionRecord } from "@/api/collections";
+import { invalidateCollectionsQueries } from "@/api/queryInvalidation";
 
 type StockpileAddToCollectionControllerProps = {
   collections: CollectionRecord[];
@@ -27,6 +29,7 @@ export default function StockpileAddToCollectionController({
   onCollectionsUpdated,
 }: StockpileAddToCollectionControllerProps) {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const hasOtherCollections = useMemo(
     () =>
@@ -73,6 +76,7 @@ export default function StockpileAddToCollectionController({
             );
             const refreshed = await apiClient.listCollections();
             onCollectionsUpdated(refreshed);
+            await invalidateCollectionsQueries(queryClient);
           } catch (error) {
             // eslint-disable-next-line no-console
             console.error("[StockpileModal] Failed to add to collection", error);

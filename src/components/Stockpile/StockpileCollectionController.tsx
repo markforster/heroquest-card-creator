@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
+import type { CollectionRecord } from "@/api/collections";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import StockpileCollectionModal from "@/components/Stockpile/StockpileCollectionModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
-import type { CollectionRecord } from "@/api/collections";
+import { invalidateCollectionsQueries } from "@/api/queryInvalidation";
 
 type StockpileCollectionControllerProps = {
   activeFilter:
@@ -34,6 +36,7 @@ export default function StockpileCollectionController({
   onActiveFilterChange,
 }: StockpileCollectionControllerProps) {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<"create" | "edit">("create");
   const canEdit = useMemo(
@@ -84,6 +87,7 @@ export default function StockpileCollectionController({
             onActiveFilterChange({ type: "collection", id: created.id });
             const refreshed = await apiClient.listCollections();
             onCollectionsUpdated(refreshed);
+            await invalidateCollectionsQueries(queryClient);
           } catch (error) {
             // eslint-disable-next-line no-console
             console.error("[StockpileModal] Failed to create collection", error);
@@ -94,6 +98,7 @@ export default function StockpileCollectionController({
             await apiClient.updateCollection({ name, description }, { params: { id } });
             const refreshed = await apiClient.listCollections();
             onCollectionsUpdated(refreshed);
+            await invalidateCollectionsQueries(queryClient);
           } catch (error) {
             // eslint-disable-next-line no-console
             console.error("[StockpileModal] Failed to update collection", error);
