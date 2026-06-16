@@ -33,8 +33,6 @@ function createActions(): StockpileCardActions {
     onPairHoverLeave: jest.fn(),
     onTableThumbEnter: jest.fn(),
     onTableThumbLeave: jest.fn(),
-    onConflictHoverEnter: jest.fn(),
-    onConflictHoverLeave: jest.fn(),
   };
 }
 
@@ -69,7 +67,6 @@ function renderPane({
         isTableView={false}
         cardViews={[]}
         cardActions={createActions()}
-        conflictPopoverCardId={null}
         isPairMode={false}
         dragEnabled={false}
         onClearSelection={() => {}}

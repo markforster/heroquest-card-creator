@@ -236,7 +236,6 @@
   "label.collectionsTreeExampleGrouped": "Grupperet eksempel:",
   "label.collectionsTreeExampleAnd": "og",
   "warning.notPaired": "Ikke parret",
-  "warning.alreadyPairedWith": "Allerede parret med",
   "warning.pairingLossSingle": "1 kort bliver fjernet fra parring med {back}. Fortsæt?",
   "warning.pairingLossMultiple": "{count} kort bliver fjernet fra parring med {back}. Fortsæt?",
   "warning.missingAssetsTitle": "Manglende illustration",

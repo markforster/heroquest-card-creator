@@ -236,7 +236,6 @@
   "label.collectionsTreeExampleGrouped": "Пример с группировкой:",
   "label.collectionsTreeExampleAnd": "и",
   "warning.notPaired": "Не связано",
-  "warning.alreadyPairedWith": "Уже связано с",
   "warning.pairingLossSingle": "Связь 1 карты с {back} будет разорвана. Продолжить?",
   "warning.pairingLossMultiple": "Связь {count} карт с {back} будет разорвана. Продолжить?",
   "warning.missingAssetsTitle": "Отсутствующая иллюстрация",

@@ -236,7 +236,6 @@
   "label.collectionsTreeExampleGrouped": "Grupperat exempel:",
   "label.collectionsTreeExampleAnd": "och",
   "warning.notPaired": "Ej parat",
-  "warning.alreadyPairedWith": "Redan parat med",
   "warning.pairingLossSingle": "1 kort kommer att kopplas loss från {back}. Fortsätta?",
   "warning.pairingLossMultiple": "{count} kort kommer att kopplas loss från {back}. Fortsätta?",
   "warning.missingAssetsTitle": "Saknad grafik",

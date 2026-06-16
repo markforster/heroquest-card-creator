@@ -236,7 +236,6 @@
   "label.collectionsTreeExampleGrouped": "Grouped example:",
   "label.collectionsTreeExampleAnd": "and",
   "warning.notPaired": "Not paired",
-  "warning.alreadyPairedWith": "Already paired with",
   "warning.pairingLossSingle": "1 card will be unpaired from {back}. Continue?",
   "warning.pairingLossMultiple": "{count} cards will be unpaired from {back}. Continue?",
   "warning.missingAssetsTitle": "Missing artwork",

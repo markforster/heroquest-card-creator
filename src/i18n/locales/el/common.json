@@ -236,7 +236,6 @@
   "label.collectionsTreeExampleGrouped": "Παράδειγμα ομαδοποίησης:",
   "label.collectionsTreeExampleAnd": "και",
   "warning.notPaired": "Μη συζευγμένο",
-  "warning.alreadyPairedWith": "Ήδη συζευγμένο με",
   "warning.pairingLossSingle": "1 κάρτα θα αποσυζευχθεί από {back}. Συνέχεια;",
   "warning.pairingLossMultiple": "{count} κάρτες θα αποσυζευχθούν από {back}. Συνέχεια;",
   "warning.missingAssetsTitle": "Ελλείπουσα εικονογράφηση",

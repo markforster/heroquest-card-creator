@@ -236,7 +236,6 @@
   "label.collectionsTreeExampleGrouped": "Przykład grupowania:",
   "label.collectionsTreeExampleAnd": "i",
   "warning.notPaired": "Nie sparowane",
-  "warning.alreadyPairedWith": "Już sparowane z",
   "warning.pairingLossSingle": "1 karta zostanie rozłączona od {back}. Kontynuować?",
   "warning.pairingLossMultiple": "{count} kart zostanie rozłączonych od {back}. Kontynuować?",
   "warning.missingAssetsTitle": "Brak grafiki",

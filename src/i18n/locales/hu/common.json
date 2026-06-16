@@ -236,7 +236,6 @@
   "label.collectionsTreeExampleGrouped": "Csoportosított példa:",
   "label.collectionsTreeExampleAnd": "és",
   "warning.notPaired": "Nincs párosítva",
-  "warning.alreadyPairedWith": "Már párosítva",
   "warning.pairingLossSingle": "1 kártya leválik {back} hátlapról. Folytatja?",
   "warning.pairingLossMultiple": "{count} kártya leválik {back} hátlapról. Folytatja?",
   "warning.missingAssetsTitle": "Hiányzó illusztráció",

@@ -236,7 +236,6 @@
   "label.collectionsTreeExampleGrouped": "Exemplo agrupado:",
   "label.collectionsTreeExampleAnd": "e",
   "warning.notPaired": "Não emparelhado",
-  "warning.alreadyPairedWith": "Já emparelhado com",
   "warning.pairingLossSingle": "1 carta será desvinculada de {back}. Continuar?",
   "warning.pairingLossMultiple": "{count} cartas serão desvinculadas de {back}. Continuar?",
   "warning.missingAssetsTitle": "Arte em falta",

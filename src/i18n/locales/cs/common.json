@@ -236,7 +236,6 @@
   "label.collectionsTreeExampleGrouped": "Příklad seskupení:",
   "label.collectionsTreeExampleAnd": "a",
   "warning.notPaired": "Nespárováno",
-  "warning.alreadyPairedWith": "Již spárováno s",
   "warning.pairingLossSingle": "1 karta bude odpojena od {back}. Pokračovat?",
   "warning.pairingLossMultiple": "{count} karet bude odpojeno od {back}. Pokračovat?",
   "warning.missingAssetsTitle": "Chybějící grafika",

@@ -248,8 +248,6 @@ export default function StockpilePanelContent({
     id: string;
     rect: { top: number; left: number; bottom: number; right: number };
   } | null>(null);
-  const [conflictPopoverCardId, setConflictPopoverCardId] = useState<string | null>(null);
-  const conflictHoverTimeoutRef = useRef<number | null>(null);
   const tableThumbHoverTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -293,9 +291,6 @@ export default function StockpilePanelContent({
       }
       if (tableThumbHoverTimeoutRef.current) {
         window.clearTimeout(tableThumbHoverTimeoutRef.current);
-      }
-      if (conflictHoverTimeoutRef.current) {
-        window.clearTimeout(conflictHoverTimeoutRef.current);
       }
     };
   }, []);
@@ -540,13 +535,6 @@ export default function StockpilePanelContent({
       const pairedBack = pairedBackId ? (cardById.get(pairedBackId) ?? null) : null;
       const pairedFronts = pairedByTargetId.get(card.id) ?? [];
       const pairedFrontThumbs = pairedFronts.map((paired) => resolveCardThumb(paired));
-      const isPairingConflict = Boolean(
-        isPairFronts && pairedBackId && pairedBackId !== activeBackId,
-      );
-      const conflictPairedName = isPairingConflict
-        ? (pairedBack?.title ?? pairedBack?.name ?? t("label.untitledCard"))
-        : undefined;
-      const conflictLabel = isPairingConflict ? t("warning.alreadyPairedWith") : undefined;
       const updated = new Date(card.updatedAt);
 
       return {
@@ -578,9 +566,6 @@ export default function StockpilePanelContent({
           frontsOverflow: Math.max(0, pairedFrontThumbs.length - 3),
         },
         isSelected: selectedIds.includes(card.id),
-        isPairingConflict,
-        conflictPairedName,
-        conflictLabel,
       };
     });
   }, [
@@ -590,9 +575,6 @@ export default function StockpilePanelContent({
     cardById,
     pairedByTargetId,
     backByFrontId,
-    isPairFronts,
-    activeBackId,
-    t,
   ]);
   const resolveOverlayThumb = (id: string, blob: Blob | null) => {
     if (typeof window === "undefined") {
@@ -669,17 +651,11 @@ export default function StockpilePanelContent({
   };
   const cardActions: StockpileCardActions = useMemo(
     () => ({
-      onCardClick: (id, event, isPairMode, isPairingConflict) => {
+      onCardClick: (id, event, isPairMode) => {
         if (isPairMode) {
-          setSelectedIds((prev) => {
-            const next = prev.includes(id) ? prev.filter((cardId) => cardId !== id) : [...prev, id];
-            if (isPairingConflict && next.includes(id)) {
-              setConflictPopoverCardId(id);
-            } else if (isPairingConflict && !next.includes(id)) {
-              setConflictPopoverCardId((current) => (current === id ? null : current));
-            }
-            return next;
-          });
+          setSelectedIds((prev) =>
+            prev.includes(id) ? prev.filter((cardId) => cardId !== id) : [...prev, id],
+          );
           return;
         }
         const allowMulti = event.metaKey || event.ctrlKey;
@@ -691,21 +667,15 @@ export default function StockpilePanelContent({
         }
         setSelectedIds((prev) => resolveSingleSelectToggle(prev, id));
       },
-      onCardSetSelected: (id, selected, isPairMode, isPairingConflict) => {
+      onCardSetSelected: (id, selected, isPairMode) => {
         if (isPairMode) {
           setSelectedIds((prev) => {
             const isSelected = prev.includes(id);
-            const next = selected
+            return selected
               ? isSelected
                 ? prev
                 : [...prev, id]
               : prev.filter((cardId) => cardId !== id);
-            if (isPairingConflict && next.includes(id)) {
-              setConflictPopoverCardId(id);
-            } else if (isPairingConflict && !next.includes(id)) {
-              setConflictPopoverCardId((current) => (current === id ? null : current));
-            }
-            return next;
           });
           return;
         }
@@ -761,20 +731,6 @@ export default function StockpilePanelContent({
         }
         tableThumbHoverTimeoutRef.current = window.setTimeout(() => {
           setTableThumbAnchor((prev) => (prev?.id === id ? null : prev));
-        }, 200);
-      },
-      onConflictHoverEnter: (id) => {
-        if (conflictHoverTimeoutRef.current) {
-          window.clearTimeout(conflictHoverTimeoutRef.current);
-        }
-        setConflictPopoverCardId(id);
-      },
-      onConflictHoverLeave: (id) => {
-        if (conflictHoverTimeoutRef.current) {
-          window.clearTimeout(conflictHoverTimeoutRef.current);
-        }
-        conflictHoverTimeoutRef.current = window.setTimeout(() => {
-          setConflictPopoverCardId((prev) => (prev === id ? null : prev));
         }, 200);
       },
     }),
@@ -1213,7 +1169,6 @@ export default function StockpilePanelContent({
                       isTableView={isTableView}
                       cardViews={cardViews}
                       cardActions={cardActions}
-                      conflictPopoverCardId={conflictPopoverCardId}
                       isPairMode={isPairMode}
                       dragEnabled={dragEnabled}
                       onClearSelection={() => setSelectedIds([])}

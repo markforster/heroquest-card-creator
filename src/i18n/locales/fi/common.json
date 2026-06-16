@@ -236,7 +236,6 @@
   "label.collectionsTreeExampleGrouped": "Ryhmän esimerkki:",
   "label.collectionsTreeExampleAnd": "ja",
   "warning.notPaired": "Ei paritettu",
-  "warning.alreadyPairedWith": "Jo paritettu",
   "warning.pairingLossSingle": "1 kortti irrotetaan kohteesta {back}. Jatketaanko?",
   "warning.pairingLossMultiple": "{count} korttia irrotetaan kohteesta {back}. Jatketaanko?",
   "warning.missingAssetsTitle": "Puuttuva grafiikka",
