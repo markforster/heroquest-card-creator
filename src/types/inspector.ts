@@ -23,7 +23,6 @@ export type InspectorTextField = {
     showToolbar?: boolean;
     showTextColor?: boolean;
     showBackdropColor?: boolean;
-    showBodyTextFitToggle?: boolean;
   };
 };
 

@@ -1,7 +1,7 @@
-import smallLargeArtworkBorderMask from "@/assets/card-backgrounds/small-large-artwork-border-alpha-mask.png";
-import smallLargeArtworkBorderTexture from "@/assets/card-backgrounds/small-large-artwork-border-blend-texture.png";
 import heroBackBorderAndText from "@/assets/card-backgrounds/hero-back-border-and-text.png";
 import largeWindowFrame from "@/assets/card-backgrounds/large-window-frame.png";
+import smallLargeArtworkBorderMask from "@/assets/card-backgrounds/small-large-artwork-border-alpha-mask.png";
+import smallLargeArtworkBorderTexture from "@/assets/card-backgrounds/small-large-artwork-border-blend-texture.png";
 import smallWindowFrame from "@/assets/card-backgrounds/small-window-frame.png";
 import whitePaperBackground from "@/assets/card-backgrounds/white-paper.png";
 import { CARD_HEIGHT, CARD_WIDTH, savg, sx, sy } from "@/config/card-canvas";
@@ -133,6 +133,7 @@ const SMALL_TREASURE_BLUEPRINT: Blueprint = {
         fontSize: DESCRIPTION_FONT_SIZE,
         lineHeight: DESCRIPTION_LINE_HEIGHT,
         letterSpacingEm: DESCRIPTION_LETTER_SPACING,
+        textLayoutMode: "fixed-bounds",
       },
     },
     {
@@ -229,6 +230,7 @@ const LARGE_TREASURE_BLUEPRINT: Blueprint = {
         fontSize: DESCRIPTION_FONT_SIZE,
         lineHeight: DESCRIPTION_LINE_HEIGHT,
         letterSpacingEm: DESCRIPTION_LETTER_SPACING,
+        textLayoutMode: "fixed-bounds",
       },
     },
     {
@@ -331,6 +333,7 @@ const LABELLED_BACK_BLUEPRINT: Blueprint = {
         backdropFitMode: "full",
         backdropWhenImageKey: "imageAssetId",
         textPadding: savg(24),
+        textLayoutMode: "fixed-bounds",
       },
     },
     {
@@ -417,6 +420,7 @@ const HERO_BACK_BLUEPRINT: Blueprint = {
         letterSpacingEm: DESCRIPTION_LETTER_SPACING,
         fontWeight: 550,
         align: "center",
+        textLayoutMode: "fixed-bounds",
       },
     },
     {
@@ -508,6 +512,7 @@ const HERO_BLUEPRINT: Blueprint = {
             lineHeight: HERO_MONSTER_BODY_LINE_HEIGHT,
             letterSpacingEm: HERO_MONSTER_BODY_LETTER_SPACING,
             fontWeight: EMPHASIZED_LABEL_WEIGHT,
+            textLayoutMode: "auto-height",
           },
         },
         {
@@ -589,6 +594,7 @@ const MONSTER_BLUEPRINT: Blueprint = {
             lineHeight: HERO_MONSTER_BODY_LINE_HEIGHT,
             letterSpacingEm: HERO_MONSTER_BODY_LETTER_SPACING,
             fontWeight: EMPHASIZED_LABEL_WEIGHT,
+            textLayoutMode: "auto-height",
           },
         },
         {

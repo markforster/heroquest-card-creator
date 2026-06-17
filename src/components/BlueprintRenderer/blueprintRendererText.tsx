@@ -20,6 +20,7 @@ import {
   DEVELOPER_CREDIT_TOP_INSET,
 } from "@/config/developer-credit";
 import { cardTemplatesById } from "@/data/card-templates";
+import { supportsBlueprintTextFitToBounds } from "@/lib/blueprint-text";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import type { Blueprint, BlueprintBounds, BlueprintLayer } from "@/types/blueprints";
@@ -269,6 +270,8 @@ export function TextLayer({
     textKey === "description"
       ? ((cardData as { bodyTextFitToBounds?: boolean }).bodyTextFitToBounds ?? false)
       : false;
+  const allowBodyTextFitToBounds =
+    textKey === "description" ? supportsBlueprintTextFitToBounds(layer) : false;
   const fill = bodyTextColor ?? layerFill;
   const letterSpacingEm =
     typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;
@@ -610,7 +613,7 @@ export function TextLayer({
                 letterSpacingEm={letterSpacingEm}
                 align={align}
                 debug={showTextBounds}
-                fitToBounds={bodyTextFitToBounds}
+                fitToBounds={allowBodyTextFitToBounds && bodyTextFitToBounds}
               />
             </g>
           );
@@ -637,7 +640,7 @@ export function TextLayer({
         letterSpacingEm={letterSpacingEm}
         align={align}
         debug={showTextBounds}
-        fitToBounds={bodyTextFitToBounds}
+        fitToBounds={allowBodyTextFitToBounds && bodyTextFitToBounds}
       />
     </Layer>
   );

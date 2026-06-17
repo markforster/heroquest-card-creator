@@ -26,13 +26,19 @@ export type BlueprintLayerBind = {
   titleKey?: string;
 };
 
+export type BlueprintTextLayoutMode = "fixed-bounds" | "auto-height";
+
+export type BlueprintLayerProps = Record<string, string | number | boolean> & {
+  textLayoutMode?: BlueprintTextLayoutMode;
+};
+
 export type BlueprintLayerBase = {
   id: string;
   type: BlueprintLayerType;
   bounds?: BlueprintBounds;
   bind?: BlueprintLayerBind;
   when?: BlueprintLayerCondition;
-  props?: Record<string, string | number | boolean>;
+  props?: BlueprintLayerProps;
 };
 
 export type BlueprintImageClip = "bounds" | "canvas" | "none";

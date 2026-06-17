@@ -12,6 +12,7 @@ import MonsterStatsBlock, {
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { DEFAULT_BODY_TEXT_COLOR } from "@/config/colors";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
+import { supportsBlueprintTextFitToBounds } from "@/lib/blueprint-text";
 import type { Blueprint, BlueprintGroup } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
@@ -155,6 +156,10 @@ function buildGroupItems({
 
       const text = typeof textValue === "string" ? textValue : "";
       if (!text.trim()) return;
+      const fitToBounds =
+        textKey === "description" && supportsBlueprintTextFitToBounds(child)
+          ? ((cardData as { bodyTextFitToBounds?: boolean }).bodyTextFitToBounds ?? false)
+          : false;
 
       const fontSize = typeof child.props?.fontSize === "number" ? child.props.fontSize : 22;
       const lineHeight =
@@ -208,6 +213,7 @@ function buildGroupItems({
               letterSpacingEm={letterSpacingEm}
               align={align}
               debug={showTextBounds}
+              fitToBounds={fitToBounds}
             />
           </Layer>
         ),

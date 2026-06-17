@@ -6,6 +6,7 @@ import styles from "@/app/page.module.css";
 import { cardTemplatesById } from "@/data/card-templates";
 import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 import { useI18n } from "@/i18n/I18nProvider";
+import { descriptionSupportsBodyTextFitToBounds } from "@/lib/blueprint-text";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { getImageLayerBounds } from "@/lib/image-scale";
 import type { CardFace } from "@/types/card-face";
@@ -32,6 +33,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
   const fields = inspectorFieldsByTemplate[templateId];
   const template = cardTemplatesById[templateId];
   const effectiveFace = template ? resolveEffectiveFace(face, template.defaultFace) : undefined;
+  const showDescriptionFitToggle = descriptionSupportsBodyTextFitToBounds(templateId);
 
   if (!fields || fields.length === 0) {
     return <div>{t("ui.inspectorGenericWip")}</div>;
@@ -64,7 +66,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
               showFormattingHelp={field.bind === "description"}
               showTextColor={field.props?.showTextColor}
               showBackdropColor={field.props?.showBackdropColor}
-              showBodyTextFitToggle={field.props?.showBodyTextFitToggle}
+              showBodyTextFitToggle={field.bind === "description" && showDescriptionFitToggle}
             />
           );
         }
