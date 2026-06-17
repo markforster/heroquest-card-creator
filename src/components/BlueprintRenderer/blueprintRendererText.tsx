@@ -265,6 +265,10 @@ export function TextLayer({
     textKey === "description"
       ? ((cardData as { bodyTextColor?: string }).bodyTextColor ?? DEFAULT_BODY_TEXT_COLOR)
       : undefined;
+  const bodyTextFitToBounds =
+    textKey === "description"
+      ? ((cardData as { bodyTextFitToBounds?: boolean }).bodyTextFitToBounds ?? false)
+      : false;
   const fill = bodyTextColor ?? layerFill;
   const letterSpacingEm =
     typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;
@@ -606,6 +610,7 @@ export function TextLayer({
                 letterSpacingEm={letterSpacingEm}
                 align={align}
                 debug={showTextBounds}
+                fitToBounds={bodyTextFitToBounds}
               />
             </g>
           );
@@ -632,6 +637,7 @@ export function TextLayer({
         letterSpacingEm={letterSpacingEm}
         align={align}
         debug={showTextBounds}
+        fitToBounds={bodyTextFitToBounds}
       />
     </Layer>
   );

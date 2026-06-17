@@ -64,6 +64,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
               showFormattingHelp={field.bind === "description"}
               showTextColor={field.props?.showTextColor}
               showBackdropColor={field.props?.showBackdropColor}
+              showBodyTextFitToggle={field.props?.showBodyTextFitToggle}
             />
           );
         }

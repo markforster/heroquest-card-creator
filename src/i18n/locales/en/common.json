@@ -425,6 +425,7 @@
   "tooltip.bodyTextInset": "Toggle body text background inset",
   "tooltip.bodyTextCorners": "Toggle body text background corners",
   "tooltip.bodyTextFit": "Toggle body text background fit",
+  "tooltip.bodyTextScaleToFit": "Toggle scale to fit body text",
   "tooltip.bodyTextVisibility": "Toggle body text visibility",
   "label.pairedBackFacingSingle": "Paired with 1 Back Facing card",
   "label.pairedBackFacingMultiple": "Paired with {count} Back Facing cards",

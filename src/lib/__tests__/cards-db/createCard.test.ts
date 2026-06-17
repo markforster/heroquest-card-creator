@@ -74,4 +74,15 @@ describe("createCard", () => {
     expect(stored?.thumbnailBlob?.type).toBe("image/png");
     expect(thumbnail?.type).toBe("image/png");
   });
+
+  it("persists bodyTextFitToBounds when provided", async () => {
+    const created = await createCard({
+      templateId: "hero",
+      status: "saved",
+      name: "Fit Card",
+      bodyTextFitToBounds: true,
+    });
+
+    expect(created.bodyTextFitToBounds).toBe(true);
+  });
 });

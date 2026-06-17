@@ -36,6 +36,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       labelKey: "form.cardText",
       props: {
         showTextColor: true,
+        showBodyTextFitToggle: true,
       },
     },
     {
@@ -85,6 +86,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       labelKey: "form.cardText",
       props: {
         showTextColor: true,
+        showBodyTextFitToggle: true,
       },
     },
     {
@@ -116,6 +118,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       labelKey: "form.cardText",
       props: {
         showTextColor: true,
+        showBodyTextFitToggle: true,
       },
     },
     {
@@ -157,6 +160,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
       labelKey: "form.cardText",
       props: {
         showTextColor: true,
+        showBodyTextFitToggle: true,
       },
     },
     {
@@ -199,6 +203,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
         showToolbar: true,
         showTextColor: true,
         showBackdropColor: true,
+        showBodyTextFitToggle: true,
       },
     },
     {
@@ -236,6 +241,7 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
         showToolbar: true,
         showTextColor: true,
         showBackdropColor: true,
+        showBodyTextFitToggle: true,
       },
     },
     {

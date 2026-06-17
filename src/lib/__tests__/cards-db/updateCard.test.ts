@@ -55,4 +55,12 @@ describe("updateCard", () => {
     const next = await updateCard("c1", { name: "NEW NAME" });
     expect(next?.nameLower).toBe("new name");
   });
+
+  it("updates bodyTextFitToBounds when toggled", async () => {
+    const db = await openHqccDexieDb();
+    await db.cards.put(createCardRecord({ id: "c1", bodyTextFitToBounds: false }));
+
+    const next = await updateCard("c1", { bodyTextFitToBounds: true });
+    expect(next?.bodyTextFitToBounds).toBe(true);
+  });
 });

@@ -5,6 +5,7 @@ describe("createDefaultCardData", () => {
   it("returns hero defaults", () => {
     expect(createDefaultCardData("hero")).toEqual({
       bodyTextColor: DEFAULT_BODY_TEXT_COLOR,
+      bodyTextFitToBounds: false,
       attackDice: 3,
       defendDice: 2,
       bodyPoints: 8,
@@ -13,24 +14,37 @@ describe("createDefaultCardData", () => {
   });
 
   it("returns empty object for monster by default", () => {
-    expect(createDefaultCardData("monster")).toEqual({ bodyTextColor: DEFAULT_BODY_TEXT_COLOR });
+    expect(createDefaultCardData("monster")).toEqual({
+      bodyTextColor: DEFAULT_BODY_TEXT_COLOR,
+      bodyTextFitToBounds: false,
+    });
   });
 
   it("returns empty object for large-treasure by default", () => {
-    expect(createDefaultCardData("large-treasure")).toEqual({ bodyTextColor: DEFAULT_BODY_TEXT_COLOR });
+    expect(createDefaultCardData("large-treasure")).toEqual({
+      bodyTextColor: DEFAULT_BODY_TEXT_COLOR,
+      bodyTextFitToBounds: false,
+    });
   });
 
   it("returns empty object for small-treasure by default", () => {
-    expect(createDefaultCardData("small-treasure")).toEqual({ bodyTextColor: DEFAULT_BODY_TEXT_COLOR });
+    expect(createDefaultCardData("small-treasure")).toEqual({
+      bodyTextColor: DEFAULT_BODY_TEXT_COLOR,
+      bodyTextFitToBounds: false,
+    });
   });
 
   it("returns empty object for hero-back by default", () => {
-    expect(createDefaultCardData("hero-back")).toEqual({ bodyTextColor: DEFAULT_BODY_TEXT_COLOR });
+    expect(createDefaultCardData("hero-back")).toEqual({
+      bodyTextColor: DEFAULT_BODY_TEXT_COLOR,
+      bodyTextFitToBounds: false,
+    });
   });
 
   it("returns empty object for labelled-back by default", () => {
     expect(createDefaultCardData("labelled-back")).toEqual({
       bodyTextColor: DEFAULT_BODY_TEXT_COLOR,
+      bodyTextFitToBounds: false,
       titlePlacement: "bottom",
       titleStyle: "ribbon",
     });
@@ -39,6 +53,7 @@ describe("createDefaultCardData", () => {
   it("returns empty object for unknown template ids (runtime safety)", () => {
     expect(createDefaultCardData("unknown-template" as unknown as "hero")).toEqual({
       bodyTextColor: DEFAULT_BODY_TEXT_COLOR,
+      bodyTextFitToBounds: false,
     });
   });
 });
