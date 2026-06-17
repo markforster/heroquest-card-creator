@@ -28,6 +28,7 @@ function fitsWithinBounds(
 
 function runStrategyPipeline(
   baseLayout: TextLayoutResult,
+  text: string,
   bounds: TextBounds,
   orderedStrategies: StrategyId[],
   minFontPercent?: number,
@@ -39,7 +40,7 @@ function runStrategyPipeline(
   const fontFamily = CARD_TEXT_FONT_FAMILY;
   let context = {
     role: baseLayout.role,
-    text: baseLayout.lines.join(" "),
+    text,
     bounds,
     fontSize: baseLayout.fontSize,
     lineHeight: baseLayout.lineHeight ?? baseLayout.fontSize * 1.05,
@@ -145,6 +146,7 @@ export function fitTextWithEngine(
   const layout = role === "title" ? titleAlgorithm(text) : statHeadingAlgorithm(text, bounds);
   return runStrategyPipeline(
     layout,
+    text,
     bounds,
     orderedStrategies,
     resolvedPreferences.minFontPercent,
