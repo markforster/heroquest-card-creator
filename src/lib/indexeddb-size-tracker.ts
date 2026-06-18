@@ -5,7 +5,7 @@ import {
   estimateRecordBytes,
   type IndexedDbRecordSizes,
 } from "@/lib/indexeddb-size-estimate";
-import { openHqccDb } from "@/lib/hqcc-db";
+import { openHqccDexieDb } from "@/lib/hqcc-dexie";
 
 const QUEUE_KEY = "hqcc.dbEstimate.queue.v1";
 const TOTALS_KEY = "hqcc.dbEstimate.totals.v1";
@@ -191,23 +191,101 @@ export function enqueueDbEstimateChange(store: string, id: string) {
   });
 }
 
-async function getRecordSize(db: IDBDatabase, store: string, id: string): Promise<number> {
-  if (!db.objectStoreNames.contains(store)) return 0;
+async function readStoreRecord(
+  store: string,
+  id: string,
+): Promise<unknown | undefined> {
+  const db = await openHqccDexieDb();
 
-  return await new Promise<number>((resolve, reject) => {
-    const tx = db.transaction(store, "readonly");
-    const objectStore = tx.objectStore(store);
-    const request = objectStore.get(id);
-    request.onsuccess = () => {
-      const record = request.result as unknown;
-      if (!record) {
-        resolve(0);
-        return;
-      }
-      resolve(estimateRecordBytes(record).bytes);
-    };
-    request.onerror = () => reject(request.error ?? new Error("Failed to load record"));
-  });
+  switch (store) {
+    case "assets":
+      return db.assets.get(id);
+    case "collections":
+      return db.collections.get(id);
+    case "settings":
+      return db.settings.get(id);
+    case "pairs":
+      return db.pairs.get(id);
+    case "decks":
+      return db.decks.get(id);
+    case "deckGroups":
+      return db.deckGroups.get(id);
+    case "deckSets":
+      return db.deckSets.get(id);
+    case "deckEntries":
+      return db.deckEntries.get(id);
+    default:
+      return undefined;
+  }
+}
+
+async function getLogicalCardRecordSize(id: string): Promise<number> {
+  const db = await openHqccDexieDb();
+  const [
+    baseRecord,
+    thumbnailRecord,
+    slotLinks,
+    backgrounds,
+    borders,
+    titles,
+    texts,
+    copyrights,
+    images,
+    icons,
+    heroStats,
+    monsterStats,
+  ] = await Promise.all([
+    db.cardsBase.get(id),
+    db.cardThumbnails.get(id),
+    db.cardSlotLinks.where("cardId").equals(id).toArray(),
+    db.cardBackgroundComponents.where("cardId").equals(id).toArray(),
+    db.cardBorderComponents.where("cardId").equals(id).toArray(),
+    db.cardTitleComponents.where("cardId").equals(id).toArray(),
+    db.cardTextComponents.where("cardId").equals(id).toArray(),
+    db.cardCopyrightComponents.where("cardId").equals(id).toArray(),
+    db.cardImageComponents.where("cardId").equals(id).toArray(),
+    db.cardIconComponents.where("cardId").equals(id).toArray(),
+    db.cardHeroStatsComponents.where("cardId").equals(id).toArray(),
+    db.cardMonsterStatsComponents.where("cardId").equals(id).toArray(),
+  ]);
+
+  if (!baseRecord) {
+    return 0;
+  }
+
+  const records: unknown[] = [
+    baseRecord,
+    thumbnailRecord,
+    ...slotLinks,
+    ...backgrounds,
+    ...borders,
+    ...titles,
+    ...texts,
+    ...copyrights,
+    ...images,
+    ...icons,
+    ...heroStats,
+    ...monsterStats,
+  ].filter((record) => record != null);
+
+  let total = 0;
+  for (let index = 0; index < records.length; index += 1) {
+    total += estimateRecordBytes(records[index]).bytes;
+  }
+  return total;
+}
+
+async function getRecordSize(store: string, id: string): Promise<number> {
+  if (store === "cards") {
+    return getLogicalCardRecordSize(id);
+  }
+
+  const record = await readStoreRecord(store, id);
+  if (!record) {
+    return 0;
+  }
+
+  return estimateRecordBytes(record).bytes;
 }
 
 export async function processDbEstimateQueue(batchSize: number = DEFAULT_BATCH): Promise<void> {
@@ -223,7 +301,6 @@ export async function processDbEstimateQueue(batchSize: number = DEFAULT_BATCH):
       return;
     }
 
-    const db = await openHqccDb();
     const sizeMap = loadRecordSizes();
     const totalsState = loadTotals();
 
@@ -238,7 +315,7 @@ export async function processDbEstimateQueue(batchSize: number = DEFAULT_BATCH):
       const prevSize = prevStore[item.id] ?? 0;
       let nextSize = 0;
       try {
-        nextSize = await getRecordSize(db, item.store, item.id);
+        nextSize = await getRecordSize(item.store, item.id);
       } catch {
         nextSize = prevSize;
       }

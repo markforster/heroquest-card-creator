@@ -1,5 +1,5 @@
 import {
-  openHqccDb,
+  probeHqccDbVersion,
   readExistingHqccDbAppVersion,
   readExistingHqccDbVersion,
 } from "@/lib/hqcc-db";
@@ -21,9 +21,7 @@ export const checkDbVersionRequestPlugin: ZodiosPlugin = {
   request: async (apiDefinitions, config) => {
     const adapter = async (): Promise<AxiosResponse> => {
       try {
-        const db = await openHqccDb();
-        const version = Number.isFinite(db.version) ? db.version : null;
-        db.close();
+        const version = await probeHqccDbVersion();
 
         return {
           data: {

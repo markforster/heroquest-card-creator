@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import { Coffee, Facebook, MessageCircle, Twitter, UsersRound, Youtube } from "lucide-react";
 
 import styles from "@/app/page.module.css";
+import FooterUpdateNotice from "@/components/Layout/FooterUpdateNotice";
+import { useUpdateNotice } from "@/components/Providers/UpdateNoticeProvider";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { useI18n } from "@/i18n/I18nProvider";
 import RateCta from "@/components/Layout/RateCta";
@@ -21,6 +23,7 @@ export default function MainHeader({
   showMissingAssetsReminder = false,
 }: MainHeaderProps) {
   const { t } = useI18n();
+  const { isUpdateAvailable } = useUpdateNotice();
   const formatMessageWith = useCallback(
     (key: string, vars: Record<string, string | number>) => formatMessage(t(key as never), vars),
     [t],
@@ -37,6 +40,7 @@ export default function MainHeader({
       </div>
       <div className={styles.headerSpacer} aria-hidden="true" />
       <div className={`${styles.headerRight} d-flex align-items-center gap-2`}>
+        {isUpdateAvailable ? <FooterUpdateNotice /> : null}
         {showMissingAssetsReminder ? (
           <div className={styles.missingAssetsHeaderToast} role="status">
             <Link className={styles.missingAssetsHeaderToastLink} to="/cards?missingartwork">

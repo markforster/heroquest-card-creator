@@ -1,15 +1,36 @@
-import { installMockIndexedDbCollections } from "@/lib/__testutils__/mockIndexedDbCollections";
+const enqueueDbEstimateChange = jest.fn();
+
+jest.mock("@/lib/indexeddb-size-tracker", () => ({
+  enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
+}));
+
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
 import { createCollection } from "@/lib/collections-db";
 
+import { deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 
 describe("createCollection", () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
+  beforeEach(() => {
+    jest.resetModules();
+    installFakeIndexedDb();
+    enqueueDbEstimateChange.mockReset();
   });
 
-  it("creates a collection with defaults and persists via store.add", async () => {
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {
+      // Ignore teardown failures if the DB module was not opened.
+    }
+
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
+    jest.restoreAllMocks();
+    jest.resetModules();
+  });
+
+  it("creates a collection with defaults and persists it", async () => {
     jest.spyOn(Date, "now").mockReturnValue(123);
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: true });
 
     const record = await createCollection({ name: "My Collection" });
 
@@ -23,33 +44,8 @@ describe("createCollection", () => {
       schemaVersion: 1,
     });
 
-    expect(harness.collectionsStore.add).toHaveBeenCalledWith(record);
-    harness.cleanup();
-  });
-
-  it("rejects when the collections store is missing", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1);
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: false, triggerUpgrade: false });
-
-    await expect(createCollection({ name: "X" })).rejects.toThrow("Collections store not available");
-    harness.cleanup();
-  });
-
-  it("rejects when store.add fails with request.error", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1);
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: true });
-    harness.collectionsStore.failNext("add", new Error("add-failed"));
-
-    await expect(createCollection({ name: "X" })).rejects.toThrow("add-failed");
-    harness.cleanup();
-  });
-
-  it("rejects with a default error when store.add fails without request.error", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1);
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: true });
-    harness.collectionsStore.failNext("add", undefined);
-
-    await expect(createCollection({ name: "X" })).rejects.toThrow("Failed to create collection");
-    harness.cleanup();
+    const db = await openHqccDexieDb();
+    await expect(db.collections.get(record.id)).resolves.toEqual(record);
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("collections", record.id);
   });
 });

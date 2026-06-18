@@ -10,10 +10,13 @@ if (!global.TextDecoder) {
   global.TextDecoder = TextDecoder as unknown as typeof global.TextDecoder;
 }
 
+if (!(globalThis as { structuredClone?: typeof structuredClone }).structuredClone) {
+  (globalThis as { structuredClone?: typeof structuredClone }).structuredClone = <T>(value: T): T =>
+    JSON.parse(JSON.stringify(value)) as T;
+}
+
 if (!(globalThis as { TransformStream?: unknown }).TransformStream) {
-  (
-    globalThis as { TransformStream?: unknown }
-  ).TransformStream = TransformStream as unknown;
+  (globalThis as { TransformStream?: unknown }).TransformStream = TransformStream as unknown;
 }
 
 const originalEmitWarning = process.emitWarning.bind(process);
@@ -31,22 +34,18 @@ process.emitWarning = ((warning: string | Error, ...args: unknown[]) => {
         : undefined;
   const code =
     typeOrOptions &&
-      typeof typeOrOptions === "object" &&
-      "code" in typeOrOptions &&
-      typeof typeOrOptions.code === "string"
+    typeof typeOrOptions === "object" &&
+    "code" in typeOrOptions &&
+    typeof typeOrOptions.code === "string"
       ? typeOrOptions.code
       : typeof maybeCode === "string"
         ? maybeCode
         : undefined;
-  if (
-    type === "DeprecationWarning" &&
-    (code === "DEP0040" || message?.includes("punycode"))
-  ) {
+  if (type === "DeprecationWarning" && (code === "DEP0040" || message?.includes("punycode"))) {
     return;
   }
-  return Reflect.apply(
-    originalEmitWarning as (...callArgs: unknown[]) => unknown,
-    process,
-    [warning, ...args],
-  );
+  return Reflect.apply(originalEmitWarning as (...callArgs: unknown[]) => unknown, process, [
+    warning,
+    ...args,
+  ]);
 }) as typeof process.emitWarning;

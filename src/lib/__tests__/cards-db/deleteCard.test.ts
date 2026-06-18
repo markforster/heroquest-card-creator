@@ -1,40 +1,51 @@
-import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
 import { deleteCard, getCard } from "@/lib/cards-db";
-import type { CardRecord } from "@/types/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import {
+  seedNormalizedCard,
+  seedNormalizedThumbnail,
+} from "@/lib/test-support/normalized-card-test-helpers";
 
+import {
+  createCardRecord,
+  deleteDb,
+  installFakeIndexedDb,
+  restoreIndexedDb,
+} from "@/lib/test-support/cards-db-test-helpers";
+
+const enqueueDbEstimateChange = jest.fn();
+
+jest.mock("@/lib/indexeddb-size-tracker", () => ({
+  enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
+}));
 
 describe("deleteCard", () => {
+  beforeEach(() => {
+    installFakeIndexedDb();
+    enqueueDbEstimateChange.mockReset();
+  });
+
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {}
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
+    jest.restoreAllMocks();
+  });
+
   it("deletes a card", async () => {
-    const existing: CardRecord = {
-      id: "c1",
-      templateId: "hero",
-      status: "saved",
-      name: "Name",
-      nameLower: "name",
-      createdAt: 1,
-      updatedAt: 1,
-      schemaVersion: 1,
-    };
-    const harness = installMockIndexedDbCards({ hasCardsStore: true, initialCards: [existing] });
+    const db = await openHqccDexieDb();
+    await seedNormalizedCard(createCardRecord({ id: "c1" }));
+    await seedNormalizedThumbnail({
+      cardId: "c1",
+      thumbnailBlob: new Blob(["x"], { type: "image/png" }),
+    });
 
     await deleteCard("c1");
-    expect(harness.cardsStore.delete).toHaveBeenCalledWith("c1");
     await expect(getCard("c1")).resolves.toBeNull();
-    harness.cleanup();
-  });
-
-  it("rejects when store.delete fails", async () => {
-    const harness = installMockIndexedDbCards({ hasCardsStore: true });
-    harness.cardsStore.failNext("delete", new Error("delete-failed"));
-    await expect(deleteCard("c1")).rejects.toThrow("delete-failed");
-    harness.cleanup();
-  });
-
-  it("rejects with a default error when store.delete fails without request.error", async () => {
-    const harness = installMockIndexedDbCards({ hasCardsStore: true });
-    harness.cardsStore.failNext("delete", undefined);
-    await expect(deleteCard("c1")).rejects.toThrow("Failed to delete card");
-    harness.cleanup();
+    await expect(db.cardsBase.get("c1")).resolves.toBeUndefined();
+    await expect(db.cardThumbnails.get("c1")).resolves.toBeUndefined();
+    await expect(db.cardSlotLinks.where("cardId").equals("c1").count()).resolves.toBe(0);
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("cards", "c1");
   });
 });
-

@@ -28,8 +28,10 @@
   "actions.help": "Hjælp",
   "actions.about": "Om",
   "actions.download": "Hent",
+  "actions.downloadOnItch": "Download fra itch.io",
   "actions.getTheApp": "Hent appen",
   "actions.checkForUpdates": "Tjek for opdateringer?",
+  "actions.viewOnNpm": "Se på npm",
   "actions.rateOnItch": "Bedøm på itch.io",
   "actions.rateOnItchHover": "Klik for at bedømme",
   "actions.exportData": "Eksportér",
@@ -234,7 +236,6 @@
   "label.collectionsTreeExampleGrouped": "Grupperet eksempel:",
   "label.collectionsTreeExampleAnd": "og",
   "warning.notPaired": "Ikke parret",
-  "warning.alreadyPairedWith": "Allerede parret med",
   "warning.pairingLossSingle": "1 kort bliver fjernet fra parring med {back}. Fortsæt?",
   "warning.pairingLossMultiple": "{count} kort bliver fjernet fra parring med {back}. Fortsæt?",
   "warning.missingAssetsTitle": "Manglende illustration",
@@ -693,6 +694,7 @@
   "heading.desktopBrowserRecommended": "Desktopbrowser anbefales",
   "label.desktopOptimized": "Optimeret til desktop",
   "tooltip.desktopOptimizedNotice": "Få mere at vide om kompatibilitet med desktopbrowsere",
+  "notice.updateAvailable": "En ny version er tilgængelig: {{version}}.",
   "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator er i øjeblikket optimeret til desktopbrowsere.",
   "notice.desktopOptimizedBodySecondary": "Appen kan stadig åbne og delvist fungere på din enhed, men nogle layouts, interaktioner og redigeringsforløb kan være vanskelige på mindre skærme eller på primært touch-baserede enheder."
 }

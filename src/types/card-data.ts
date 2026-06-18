@@ -10,6 +10,7 @@ export interface BaseCardFields {
   titleStyle?: "ribbon" | "plain";
   titleColor?: string;
   bodyTextColor?: string;
+  bodyTextFitToBounds?: boolean;
   face?: CardFace;
   imageUrl?: string;
   imageAssetId?: string;
@@ -91,7 +92,7 @@ export type AnyCard = {
 
 export function createDefaultCardData<T extends TemplateId>(templateId: T): CardDataByTemplate[T] {
   const id: TemplateId = templateId;
-  const base = { bodyTextColor: DEFAULT_BODY_TEXT_COLOR };
+  const base = { bodyTextColor: DEFAULT_BODY_TEXT_COLOR, bodyTextFitToBounds: false };
 
   switch (id) {
     case "hero":

@@ -38,7 +38,6 @@ describe("StockpileCardsTable (UI)", () => {
       templateThumbSrc: null,
       paired: { back: null, fronts: [], frontsVisible: [], frontsOverflow: 0 },
       isSelected: false,
-      isPairingConflict: false,
     };
 
     render(
@@ -63,8 +62,6 @@ describe("StockpileCardsTable (UI)", () => {
           onPairHoverLeave: jest.fn(),
           onTableThumbEnter: jest.fn(),
           onTableThumbLeave: jest.fn(),
-          onConflictHoverEnter: jest.fn(),
-          onConflictHoverLeave: jest.fn(),
         }}
       />,
     );
@@ -74,6 +71,6 @@ describe("StockpileCardsTable (UI)", () => {
 
     fireEvent.click(checkbox);
     fireEvent.change(checkbox, { target: { checked: true } });
-    expect(onCardSetSelected).toHaveBeenCalledWith("card-1", true, false, false);
+    expect(onCardSetSelected).toHaveBeenCalledWith("card-1", true, false);
   });
 });

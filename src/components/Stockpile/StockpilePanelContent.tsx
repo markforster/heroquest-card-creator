@@ -11,10 +11,12 @@ import {
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { ChevronLeft, ChevronRight, FolderPlus, Pencil, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import type { CardRecord } from "@/api/cards";
 import { apiClient } from "@/api/client";
+import { invalidateCollectionsQueries } from "@/api/queryInvalidation";
 import styles from "@/app/page.module.css";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import ModalShell from "@/components/common/ModalShell";
@@ -112,6 +114,7 @@ export default function StockpilePanelContent({
   frame = "panel",
 }: StockpilePanelContentProps) {
   const { t, language } = useI18n();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { track } = useAnalytics();
   const isPairFronts = mode === "pair-fronts";
@@ -245,8 +248,6 @@ export default function StockpilePanelContent({
     id: string;
     rect: { top: number; left: number; bottom: number; right: number };
   } | null>(null);
-  const [conflictPopoverCardId, setConflictPopoverCardId] = useState<string | null>(null);
-  const conflictHoverTimeoutRef = useRef<number | null>(null);
   const tableThumbHoverTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -290,9 +291,6 @@ export default function StockpilePanelContent({
       }
       if (tableThumbHoverTimeoutRef.current) {
         window.clearTimeout(tableThumbHoverTimeoutRef.current);
-      }
-      if (conflictHoverTimeoutRef.current) {
-        window.clearTimeout(conflictHoverTimeoutRef.current);
       }
     };
   }, []);
@@ -537,13 +535,6 @@ export default function StockpilePanelContent({
       const pairedBack = pairedBackId ? (cardById.get(pairedBackId) ?? null) : null;
       const pairedFronts = pairedByTargetId.get(card.id) ?? [];
       const pairedFrontThumbs = pairedFronts.map((paired) => resolveCardThumb(paired));
-      const isPairingConflict = Boolean(
-        isPairFronts && pairedBackId && pairedBackId !== activeBackId,
-      );
-      const conflictPairedName = isPairingConflict
-        ? (pairedBack?.title ?? pairedBack?.name ?? t("label.untitledCard"))
-        : undefined;
-      const conflictLabel = isPairingConflict ? t("warning.alreadyPairedWith") : undefined;
       const updated = new Date(card.updatedAt);
 
       return {
@@ -575,9 +566,6 @@ export default function StockpilePanelContent({
           frontsOverflow: Math.max(0, pairedFrontThumbs.length - 3),
         },
         isSelected: selectedIds.includes(card.id),
-        isPairingConflict,
-        conflictPairedName,
-        conflictLabel,
       };
     });
   }, [
@@ -587,9 +575,6 @@ export default function StockpilePanelContent({
     cardById,
     pairedByTargetId,
     backByFrontId,
-    isPairFronts,
-    activeBackId,
-    t,
   ]);
   const resolveOverlayThumb = (id: string, blob: Blob | null) => {
     if (typeof window === "undefined") {
@@ -653,6 +638,7 @@ export default function StockpilePanelContent({
       await apiClient.updateCollection({ cardIds: nextCardIds }, { params: { id: collectionId } });
       const refreshed = await apiClient.listCollections();
       setCollections(refreshed);
+      await invalidateCollectionsQueries(queryClient);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("[StockpileModal] Failed to add cards to collection", error);
@@ -665,17 +651,11 @@ export default function StockpilePanelContent({
   };
   const cardActions: StockpileCardActions = useMemo(
     () => ({
-      onCardClick: (id, event, isPairMode, isPairingConflict) => {
+      onCardClick: (id, event, isPairMode) => {
         if (isPairMode) {
-          setSelectedIds((prev) => {
-            const next = prev.includes(id) ? prev.filter((cardId) => cardId !== id) : [...prev, id];
-            if (isPairingConflict && next.includes(id)) {
-              setConflictPopoverCardId(id);
-            } else if (isPairingConflict && !next.includes(id)) {
-              setConflictPopoverCardId((current) => (current === id ? null : current));
-            }
-            return next;
-          });
+          setSelectedIds((prev) =>
+            prev.includes(id) ? prev.filter((cardId) => cardId !== id) : [...prev, id],
+          );
           return;
         }
         const allowMulti = event.metaKey || event.ctrlKey;
@@ -687,21 +667,15 @@ export default function StockpilePanelContent({
         }
         setSelectedIds((prev) => resolveSingleSelectToggle(prev, id));
       },
-      onCardSetSelected: (id, selected, isPairMode, isPairingConflict) => {
+      onCardSetSelected: (id, selected, isPairMode) => {
         if (isPairMode) {
           setSelectedIds((prev) => {
             const isSelected = prev.includes(id);
-            const next = selected
+            return selected
               ? isSelected
                 ? prev
                 : [...prev, id]
               : prev.filter((cardId) => cardId !== id);
-            if (isPairingConflict && next.includes(id)) {
-              setConflictPopoverCardId(id);
-            } else if (isPairingConflict && !next.includes(id)) {
-              setConflictPopoverCardId((current) => (current === id ? null : current));
-            }
-            return next;
           });
           return;
         }
@@ -759,20 +733,6 @@ export default function StockpilePanelContent({
           setTableThumbAnchor((prev) => (prev?.id === id ? null : prev));
         }, 200);
       },
-      onConflictHoverEnter: (id) => {
-        if (conflictHoverTimeoutRef.current) {
-          window.clearTimeout(conflictHoverTimeoutRef.current);
-        }
-        setConflictPopoverCardId(id);
-      },
-      onConflictHoverLeave: (id) => {
-        if (conflictHoverTimeoutRef.current) {
-          window.clearTimeout(conflictHoverTimeoutRef.current);
-        }
-        conflictHoverTimeoutRef.current = window.setTimeout(() => {
-          setConflictPopoverCardId((prev) => (prev === id ? null : prev));
-        }, 200);
-      },
     }),
     [cardById, onClose, onLoadCard],
   );
@@ -799,22 +759,8 @@ export default function StockpilePanelContent({
       setActiveCard(templateId, null, null);
       if (selectedTemplateId === templateId) {
         resetWithSaved(createEditorDefaultValues(templateId));
-      }
+        }
     });
-
-    const updates = collections
-      .map((collection) => {
-        const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
-        return nextCardIds.length === collection.cardIds.length
-          ? null
-          : { id: collection.id, cardIds: nextCardIds };
-      })
-      .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
-    await Promise.all(
-      updates.map((update) =>
-        apiClient.updateCollection({ cardIds: update.cardIds }, { params: { id: update.id } }),
-      ),
-    );
 
     const refreshedCards = await apiClient.listCards({
       queries: { status: "saved", deleted: "include" },
@@ -822,6 +768,7 @@ export default function StockpilePanelContent({
     setCards(refreshedCards);
     const refreshedCollections = await apiClient.listCollections();
     setCollections(refreshedCollections);
+    await invalidateCollectionsQueries(queryClient);
     setSelectedIds([]);
   };
 
@@ -1040,6 +987,7 @@ export default function StockpilePanelContent({
                           );
                           const refreshed = await apiClient.listCollections();
                           setCollections(refreshed);
+                          await invalidateCollectionsQueries(queryClient);
                           setSelectedIds([]);
                         } catch (error) {
                           // eslint-disable-next-line no-console
@@ -1207,7 +1155,6 @@ export default function StockpilePanelContent({
                       isTableView={isTableView}
                       cardViews={cardViews}
                       cardActions={cardActions}
-                      conflictPopoverCardId={conflictPopoverCardId}
                       isPairMode={isPairMode}
                       dragEnabled={dragEnabled}
                       onClearSelection={() => setSelectedIds([])}
@@ -1392,6 +1339,7 @@ export default function StockpilePanelContent({
               setActiveFilter({ type: "collection", id: created.id });
               const refreshed = await apiClient.listCollections();
               setCollections(refreshed);
+              await invalidateCollectionsQueries(queryClient);
             } catch (error) {
               // eslint-disable-next-line no-console
               console.error("[StockpileModal] Failed to create collection", error);
@@ -1402,6 +1350,7 @@ export default function StockpilePanelContent({
               await apiClient.updateCollection({ name, description }, { params: { id } });
               const refreshed = await apiClient.listCollections();
               setCollections(refreshed);
+              await invalidateCollectionsQueries(queryClient);
             } catch (error) {
               // eslint-disable-next-line no-console
               console.error("[StockpileModal] Failed to update collection", error);
@@ -1426,6 +1375,7 @@ export default function StockpilePanelContent({
               });
               const refreshed = await apiClient.listCollections();
               setCollections(refreshed);
+              await invalidateCollectionsQueries(queryClient);
               if (activeFilter.type === "collection" && activeFilter.id === current.collectionId) {
                 setActiveFilter({ type: "all" });
               }

@@ -1,17 +1,34 @@
-import { installMockIndexedDbCollections } from "@/lib/__testutils__/mockIndexedDbCollections";
-import { listCollections } from "@/lib/collections-db";
 import type { CollectionRecord } from "@/types/collections-db";
 
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { listCollections } from "@/lib/collections-db";
 
+import { deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 
 describe("listCollections", () => {
-  it("returns an empty list when there are no collections", async () => {
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: true });
-    await expect(listCollections()).resolves.toEqual([]);
-    harness.cleanup();
+  beforeEach(() => {
+    jest.resetModules();
+    installFakeIndexedDb();
   });
 
-  it("iterates cursor results and returns case-insensitively sorted collections", async () => {
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {
+      // Ignore teardown failures if the DB module was not opened.
+    }
+
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
+    jest.restoreAllMocks();
+    jest.resetModules();
+  });
+
+  it("returns an empty list when there are no collections", async () => {
+    await expect(listCollections()).resolves.toEqual([]);
+  });
+
+  it("returns case-insensitively sorted collections", async () => {
     const a: CollectionRecord = {
       id: "a",
       name: "apple",
@@ -40,35 +57,9 @@ describe("listCollections", () => {
       schemaVersion: 1,
     };
 
-    const harness = installMockIndexedDbCollections({
-      hasCollectionsStore: true,
-      initialCollections: [c, b, a],
-    });
+    const db = await openHqccDexieDb();
+    await db.collections.bulkPut([c, b, a]);
 
     await expect(listCollections()).resolves.toEqual([a, b, c]);
-    harness.cleanup();
-  });
-
-  it("rejects when the collections store is missing", async () => {
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: false, triggerUpgrade: false });
-
-    await expect(listCollections()).rejects.toThrow("Collections store not available");
-    harness.cleanup();
-  });
-
-  it("rejects when openCursor fails", async () => {
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: true });
-    harness.collectionsStore.failNext("openCursor", new Error("cursor-failed"));
-
-    await expect(listCollections()).rejects.toThrow("cursor-failed");
-    harness.cleanup();
-  });
-
-  it("rejects with a default error when openCursor fails without request.error", async () => {
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: true });
-    harness.collectionsStore.failNext("openCursor", undefined);
-
-    await expect(listCollections()).rejects.toThrow("Failed to list collections");
-    harness.cleanup();
   });
 });

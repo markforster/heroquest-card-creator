@@ -31,6 +31,7 @@ export const cardRecordSchema = z.object({
   titleStyle: z.enum(["ribbon", "plain"]).optional(),
   titleColor: z.string().optional(),
   bodyTextColor: z.string().optional(),
+  bodyTextFitToBounds: z.boolean().optional(),
   titlePlacement: z.enum(["top", "bottom"]).optional(),
   bodyTextStyle: bodyTextStyleSchema,
   face: cardFaceSchema.optional(),

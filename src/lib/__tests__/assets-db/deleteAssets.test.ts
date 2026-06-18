@@ -1,47 +1,54 @@
-import { installMockIndexedDbAssets } from "@/lib/__testutils__/mockIndexedDbAssets";
+const enqueueDbEstimateChange = jest.fn();
+
+jest.mock("@/lib/indexeddb-size-tracker", () => ({
+  enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
+}));
+
 import type { AssetRecordWithBlob } from "@/lib/assets-db";
+
 import { deleteAssets, getAllAssetsWithBlobs } from "@/lib/assets-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+
+import { createTestBlob, deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 
 describe("deleteAssets", () => {
-  afterEach(() => {
+  beforeEach(() => {
+    jest.resetModules();
+    installFakeIndexedDb();
+    enqueueDbEstimateChange.mockReset();
+  });
+
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {
+      // Ignore teardown failures if the DB module was not opened.
+    }
+
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
     jest.restoreAllMocks();
+    jest.resetModules();
   });
 
   it("returns early when ids is empty", async () => {
-    const harness = installMockIndexedDbAssets({ hasAssetsStore: true });
+    const openSpy = jest.spyOn(indexedDB, "open");
     await deleteAssets([]);
-    expect(harness.open).not.toHaveBeenCalled();
-    harness.cleanup();
+    expect(openSpy).not.toHaveBeenCalled();
   });
 
-  it("deletes assets and resolves on tx completion", async () => {
-    const blob = new Blob(["x"], { type: "image/png" });
+  it("deletes assets and resolves after the transaction completes", async () => {
+    const blob = createTestBlob();
     const initial: AssetRecordWithBlob[] = [
       { id: "a", name: "a", mimeType: "image/png", width: 1, height: 1, createdAt: 1, blob },
-      { id: "b", name: "b", mimeType: "image/png", width: 1, height: 1, createdAt: 1, blob },
+      { id: "b", name: "b", mimeType: "image/png", width: 1, height: 1, createdAt: 2, blob },
     ];
-    const harness = installMockIndexedDbAssets({ hasAssetsStore: true, initialAssets: initial });
+    const db = await openHqccDexieDb();
+    await db.table("assets").bulkPut(initial);
 
     await expect(deleteAssets(["a", "b"])).resolves.toBeUndefined();
     await expect(getAllAssetsWithBlobs()).resolves.toEqual([]);
-
-    harness.cleanup();
-  });
-
-  it("rejects when the transaction errors with tx.error", async () => {
-    const harness = installMockIndexedDbAssets({ hasAssetsStore: true });
-    harness.assetsStore.failNextTransaction(new Error("tx-failed"));
-
-    await expect(deleteAssets(["a"])).rejects.toThrow("tx-failed");
-    harness.cleanup();
-  });
-
-  it("rejects with a default error when the transaction errors without tx.error", async () => {
-    const harness = installMockIndexedDbAssets({ hasAssetsStore: true });
-    harness.assetsStore.failNextTransaction(undefined);
-
-    await expect(deleteAssets(["a"])).rejects.toThrow("Failed to delete assets");
-    harness.cleanup();
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("assets", "a");
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("assets", "b");
   });
 });
-

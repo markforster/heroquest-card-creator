@@ -28,8 +28,10 @@
   "actions.help": "Ayuda",
   "actions.about": "Acerca de",
   "actions.download": "Descargar",
+  "actions.downloadOnItch": "Descargar en itch.io",
   "actions.getTheApp": "Obtén la app",
   "actions.checkForUpdates": "¿Buscar actualizaciones?",
+  "actions.viewOnNpm": "Ver en npm",
   "actions.rateOnItch": "Valorar en itch.io",
   "actions.rateOnItchHover": "Haz clic para valorar",
   "actions.exportData": "Exportar",
@@ -234,7 +236,6 @@
   "label.collectionsTreeExampleGrouped": "Ejemplo agrupado:",
   "label.collectionsTreeExampleAnd": "y",
   "warning.notPaired": "Sin emparejar",
-  "warning.alreadyPairedWith": "Ya emparejada con",
   "warning.pairingLossSingle": "1 carta se desvinculará de {back}. ¿Continuar?",
   "warning.pairingLossMultiple": "{count} cartas se desvincularán de {back}. ¿Continuar?",
   "warning.missingAssetsTitle": "Ilustración faltante",
@@ -693,6 +694,7 @@
   "heading.desktopBrowserRecommended": "Se recomienda usar un navegador de escritorio",
   "label.desktopOptimized": "Optimizado para escritorio",
   "tooltip.desktopOptimizedNotice": "Más información sobre la compatibilidad con navegadores de escritorio",
+  "notice.updateAvailable": "Hay una nueva versión disponible: {{version}}.",
   "notice.desktopOptimizedBodyPrimary": "HeroQuest Card Creator está actualmente optimizado para navegadores de escritorio.",
   "notice.desktopOptimizedBodySecondary": "La aplicación puede seguir abriéndose y funcionar parcialmente en tu dispositivo, pero algunos diseños, interacciones y flujos de edición pueden resultar difíciles en pantallas pequeñas o en dispositivos principalmente táctiles."
 }

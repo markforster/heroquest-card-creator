@@ -1,6 +1,6 @@
 "use client";
 
-import { openHqccDb } from "@/lib/hqcc-db";
+import { openHqccDexieDb } from "@/lib/hqcc-dexie";
 
 export type IndexedDbRecordSizes = Record<string, Record<string, number>>;
 
@@ -50,45 +50,36 @@ export async function estimateIndexedDbSize({
   batchSize?: number;
   includeRecordSizes?: boolean;
 } = {}): Promise<IndexedDbSizeEstimate> {
-  const db = await openHqccDb();
-  const storeNames = Array.from(db.objectStoreNames);
+  const db = await openHqccDexieDb();
   const byStore: Record<string, { bytes: number; records: number }> = {};
   let totalBytes = 0;
   let recordsScanned = 0;
   const recordSizes: IndexedDbRecordSizes | null = includeRecordSizes ? {} : null;
 
-  for (const storeName of storeNames) {
-    const storeResult = await new Promise<{ bytes: number; records: number }>((resolve, reject) => {
-      const tx = db.transaction(storeName, "readonly");
-      const store = tx.objectStore(storeName);
-      const request = store.openCursor();
+  for (const table of db.tables) {
+    const storeName = table.name;
+    const records = await table.toArray();
+    let storeBytes = 0;
+    let storeRecords = 0;
 
-      let storeBytes = 0;
-      let storeRecords = 0;
+    for (const record of records) {
+      const { bytes } = estimateRecordBytes(record);
+      storeBytes += bytes;
+      storeRecords += 1;
+      recordsScanned += 1;
+      totalBytes += bytes;
 
-      request.onsuccess = () => {
-        const cursor = request.result as IDBCursorWithValue | null;
-        if (!cursor) {
-          resolve({ bytes: storeBytes, records: storeRecords });
-          return;
+      if (recordSizes) {
+        const storeMap = (recordSizes[storeName] ??= {});
+        const key =
+          typeof record === "object" && record && "id" in record ? String(record.id) : "";
+        if (key) {
+          storeMap[key] = bytes;
         }
-        const { bytes } = estimateRecordBytes(cursor.value);
-        storeBytes += bytes;
-        storeRecords += 1;
-        recordsScanned += 1;
-        totalBytes += bytes;
-        if (recordSizes) {
-          const storeMap = (recordSizes[storeName] ??= {});
-          const key = cursor.primaryKey ?? cursor.key ?? "";
-          storeMap[String(key)] = bytes;
-        }
-        cursor.continue();
-      };
+      }
+    }
 
-      request.onerror = () => reject(request.error ?? new Error("Failed to scan store"));
-    });
-
-    byStore[storeName] = storeResult;
+    byStore[storeName] = { bytes: storeBytes, records: storeRecords };
   }
 
   return {

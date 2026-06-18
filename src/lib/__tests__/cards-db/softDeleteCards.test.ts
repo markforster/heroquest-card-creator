@@ -1,42 +1,43 @@
-import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
 import { listCards, softDeleteCards } from "@/lib/cards-db";
-import type { CardRecord } from "@/types/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
 
+import {
+  createCardRecord,
+  deleteDb,
+  installFakeIndexedDb,
+  restoreIndexedDb,
+} from "@/lib/test-support/cards-db-test-helpers";
+import { seedNormalizedCard } from "@/lib/test-support/normalized-card-test-helpers";
+
+const enqueueDbEstimateChange = jest.fn();
+
+jest.mock("@/lib/indexeddb-size-tracker", () => ({
+  enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
+}));
 
 describe("softDeleteCards", () => {
-  afterEach(() => {
+  beforeEach(() => {
+    installFakeIndexedDb();
+    enqueueDbEstimateChange.mockReset();
+  });
+
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {}
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
     jest.restoreAllMocks();
   });
 
-  it("marks cards as deleted with deletedAt and excludes them from listCards by default", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(200);
-    const existing: CardRecord = {
-      id: "c1",
-      templateId: "hero",
-      status: "saved",
-      name: "Card",
-      nameLower: "card",
-      createdAt: 100,
-      updatedAt: 100,
-      schemaVersion: 1,
-    };
-    const harness = installMockIndexedDbCards({ hasCardsStore: true, initialCards: [existing] });
+  it("marks cards as deleted and excludes them from default listCards results", async () => {
+    await seedNormalizedCard(createCardRecord({ id: "c1", createdAt: 100, updatedAt: 100 }));
 
     await softDeleteCards(["c1"], 123);
 
-    expect(harness.cardsStore.put).toHaveBeenCalledWith({
-      ...existing,
-      deletedAt: 123,
-      updatedAt: 200,
-    });
-
-    const defaultList = await listCards({ deleted: "exclude" });
-    expect(defaultList).toHaveLength(0);
-
-    const deletedOnly = await listCards({ deleted: "only" });
-    expect(deletedOnly.map((r) => r.id)).toEqual(["c1"]);
-
-    harness.cleanup();
+    await expect(listCards()).resolves.toEqual([]);
+    await expect(listCards({ deleted: "only" })).resolves.toEqual([
+      expect.objectContaining({ id: "c1", deletedAt: 123 }),
+    ]);
   });
 });
-

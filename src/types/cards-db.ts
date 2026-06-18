@@ -24,6 +24,7 @@ export interface CardRecord {
   titleStyle?: "ribbon" | "plain";
   titleColor?: string;
   bodyTextColor?: string;
+  bodyTextFitToBounds?: boolean;
   titlePlacement?: "top" | "bottom";
   bodyTextStyle?: BodyTextStyle;
   face?: CardFace;
