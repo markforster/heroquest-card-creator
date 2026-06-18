@@ -103,6 +103,13 @@ async function openDbVersion(version: number, seed?: StoreSeeder): Promise<IDBDa
         entriesStore.createIndex("pairId", "pairId", { unique: false });
       }
 
+      if (version >= 5 && !db.objectStoreNames.contains("pairs")) {
+        const pairsStore = db.createObjectStore("pairs", { keyPath: "id" });
+        pairsStore.createIndex("frontFaceId", "frontFaceId", { unique: false });
+        pairsStore.createIndex("backFaceId", "backFaceId", { unique: false });
+        pairsStore.createIndex("nameLower", "nameLower", { unique: false });
+      }
+
       if (!db.objectStoreNames.contains("meta")) {
         db.createObjectStore("meta", { keyPath: "id" });
       }
@@ -130,20 +137,6 @@ async function readAllFromDb(db: globalThis.IDBDatabase, storeName: string): Pro
   });
 }
 
-async function waitFor<T>(reader: () => Promise<T>, predicate: (value: T) => boolean): Promise<T> {
-  let lastValue: T | undefined;
-
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    lastValue = await reader();
-    if (predicate(lastValue)) {
-      return lastValue;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 0));
-  }
-
-  throw new Error(`Condition not met: ${JSON.stringify(lastValue)}`);
-}
-
 describe("openHqccDb", () => {
   beforeEach(() => {
     jest.resetModules();
@@ -161,6 +154,7 @@ describe("openHqccDb", () => {
     }
 
     await deleteDb("hqcc").catch(() => {});
+    await new Promise((resolve) => setTimeout(resolve, 0));
     restoreIndexedDb();
     jest.restoreAllMocks();
     jest.resetModules();
@@ -179,11 +173,23 @@ describe("openHqccDb", () => {
     const db = await openHqccDb();
 
     expect(db).toBeInstanceOf(IDBDatabase);
-    expect(db.version).toBe(6);
+    expect(db.version).toBe(9);
     expect(Array.from(db.objectStoreNames)).toEqual(
       expect.arrayContaining([
         "assets",
+        "cardBackgroundComponents",
+        "cardBorderComponents",
+        "cardCopyrightComponents",
+        "cardHeroStatsComponents",
+        "cardIconComponents",
+        "cardImageComponents",
+        "cardMonsterStatsComponents",
+        "cardSlotLinks",
+        "cardTextComponents",
+        "cardThumbnails",
+        "cardTitleComponents",
         "cards",
+        "cardsBase",
         "collections",
         "deckEntries",
         "deckGroups",
@@ -213,6 +219,9 @@ describe("openHqccDb", () => {
       expect.arrayContaining([
         "assets",
         "cards",
+        "cardsBase",
+        "cardSlotLinks",
+        "cardThumbnails",
         "collections",
         "deckEntries",
         "deckGroups",
@@ -227,7 +236,7 @@ describe("openHqccDb", () => {
     db.close();
   });
 
-  it("upgrades a legacy DB to version 6 and preserves post-open pair maintenance", async () => {
+  it("upgrades a legacy DB to version 9 and backfills pairs during DB open", async () => {
     const legacyDb = await openDbVersion(4, (_db, tx) => {
       tx.objectStore("cards").put({
         id: "front-1",
@@ -248,14 +257,13 @@ describe("openHqccDb", () => {
     const { openHqccDb, probeHqccDbVersion } = await import("@/lib/hqcc-db");
     const db = await openHqccDb();
 
-    expect(db.version).toBe(6);
-    expect(await probeHqccDbVersion()).toBe(6);
+    expect(db.version).toBe(9);
+    expect(await probeHqccDbVersion()).toBe(9);
 
-    const pairs = (await waitFor(
-      async () =>
-        (await readAllFromDb(db, "pairs")) as Array<{ frontFaceId: string; backFaceId: string }>,
-      (items) => items.length === 1,
-    )) as Array<{ frontFaceId: string; backFaceId: string }>;
+    const pairs = (await readAllFromDb(db, "pairs")) as Array<{
+      frontFaceId: string;
+      backFaceId: string;
+    }>;
 
     expect(pairs[0]).toEqual(
       expect.objectContaining({
@@ -264,15 +272,86 @@ describe("openHqccDb", () => {
       }),
     );
 
-    const cards = (await waitFor(
-      async () =>
-        (await readAllFromDb(db, "cards")) as Array<{ id: string; schemaVersion?: number }>,
-      (items) => items.every((item) => item.schemaVersion === 2),
-    )) as Array<{ id: string; schemaVersion?: number }>;
+    const cards = (await readAllFromDb(db, "cards")) as Array<{
+      id: string;
+      pairedWith?: string;
+      schemaVersion?: number;
+    }>;
 
     expect(cards).toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: "front-1", schemaVersion: 2 })]),
+      expect.arrayContaining([
+        expect.objectContaining({ id: "front-1", pairedWith: "back-1", schemaVersion: 1 }),
+      ]),
     );
+
+    db.close();
+  });
+
+  it("skips invalid and duplicate legacy pairedWith references during DB open", async () => {
+    const legacyDb = await openDbVersion(5, (_db, tx) => {
+      tx.objectStore("cards").put({
+        id: "front-1",
+        title: "Front One",
+        face: "front",
+        schemaVersion: 1,
+        pairedWith: "back-1",
+      });
+      tx.objectStore("cards").put({
+        id: "front-2",
+        title: "Front Two",
+        face: "front",
+        schemaVersion: 1,
+        pairedWith: "back-1",
+      });
+      tx.objectStore("cards").put({
+        id: "front-3",
+        title: "Front Three",
+        face: "front",
+        schemaVersion: 1,
+        pairedWith: "front-3",
+      });
+      tx.objectStore("cards").put({
+        id: "front-4",
+        title: "Front Four",
+        face: "front",
+        schemaVersion: 1,
+        pairedWith: "missing-back",
+      });
+      tx.objectStore("cards").put({
+        id: "back-1",
+        title: "Back One",
+        face: "back",
+        schemaVersion: 1,
+      });
+      tx.objectStore("pairs").put({
+        id: "pair-existing",
+        name: "Front One - Back One",
+        nameLower: "front one - back one",
+        frontFaceId: "front-1",
+        backFaceId: "back-1",
+        createdAt: 1,
+        updatedAt: 1,
+        schemaVersion: 1,
+      });
+    });
+    legacyDb.close();
+
+    const { openHqccDb } = await import("@/lib/hqcc-db");
+    const db = await openHqccDb();
+
+    const pairs = (await readAllFromDb(db, "pairs")) as Array<{
+      id: string;
+      frontFaceId: string;
+      backFaceId: string;
+    }>;
+
+    expect(pairs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "pair-existing", frontFaceId: "front-1", backFaceId: "back-1" }),
+        expect.objectContaining({ frontFaceId: "front-2", backFaceId: "back-1" }),
+      ]),
+    );
+    expect(pairs).toHaveLength(2);
 
     db.close();
   });

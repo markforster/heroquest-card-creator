@@ -7,6 +7,7 @@ import {
   installFakeIndexedDb,
   restoreIndexedDb,
 } from "@/lib/test-support/cards-db-test-helpers";
+import { seedNormalizedCard } from "@/lib/test-support/normalized-card-test-helpers";
 
 const enqueueDbEstimateChange = jest.fn();
 
@@ -35,11 +36,32 @@ describe("updateCardThumbnail", () => {
 
   it("updates and normalizes the thumbnail blob", async () => {
     const db = await openHqccDexieDb();
-    await db.cards.put(createCardRecord({ id: "c1" }));
+    await seedNormalizedCard(createCardRecord({ id: "c1", createdAt: 1, updatedAt: 1 }));
 
     const ok = await updateCardThumbnail("c1", new Blob(["x"]));
     expect(ok).toBe(true);
     expect((await getCardThumbnail("c1"))?.type).toBe("image/png");
+    const thumbnailRecord = await db.cardThumbnails.get("c1");
+    expect(thumbnailRecord?.id).toBe("c1");
+    expect(thumbnailRecord?.cardId).toBe("c1");
+    expect(thumbnailRecord).toBeDefined();
     expect(enqueueDbEstimateChange).toHaveBeenCalledWith("cards", "c1");
+  });
+
+  it("deletes the normalized thumbnail row when passed null", async () => {
+    const db = await openHqccDexieDb();
+    await seedNormalizedCard(createCardRecord({ id: "c1", createdAt: 1, updatedAt: 1 }));
+    await db.cardThumbnails.put({
+      id: "c1",
+      cardId: "c1",
+      thumbnailBlob: new Blob(["x"], { type: "image/png" }),
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 1,
+    });
+
+    await expect(updateCardThumbnail("c1", null)).resolves.toBe(true);
+    await expect(db.cardThumbnails.get("c1")).resolves.toBeUndefined();
+    await expect(getCardThumbnail("c1")).resolves.toBeNull();
   });
 });

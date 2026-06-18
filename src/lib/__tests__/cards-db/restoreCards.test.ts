@@ -7,6 +7,7 @@ import {
   installFakeIndexedDb,
   restoreIndexedDb,
 } from "@/lib/test-support/cards-db-test-helpers";
+import { seedNormalizedCard } from "@/lib/test-support/normalized-card-test-helpers";
 
 const enqueueDbEstimateChange = jest.fn();
 
@@ -30,8 +31,7 @@ describe("restoreCards", () => {
   });
 
   it("clears deletedAt and includes the card in listCards default results again", async () => {
-    const db = await openHqccDexieDb();
-    await db.cards.put(createCardRecord({ id: "c1", deletedAt: 123 }));
+    await seedNormalizedCard(createCardRecord({ id: "c1", deletedAt: 123 }));
 
     await expect(listCards()).resolves.toEqual([]);
     await restoreCards(["c1"]);

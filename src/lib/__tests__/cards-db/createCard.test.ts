@@ -54,7 +54,21 @@ describe("createCard", () => {
       nameLower: "my hero",
       schemaVersion: 2,
     });
-    await expect(getCard("card-1")).resolves.toEqual(created);
+    await expect(getCard("card-1")).resolves.toEqual(expect.objectContaining(created));
+    const db = await openHqccDexieDb();
+    await expect(db.cardsBase.get("card-1")).resolves.toEqual(
+      expect.objectContaining({
+        id: "card-1",
+        templateId: "hero",
+        name: "My HERO",
+        nameLower: "my hero",
+      }),
+    );
+    await expect(db.cardTitleComponents.get("card-1:hq.2021.title.main")).resolves.toEqual(
+      expect.objectContaining({
+        title: "Title",
+      }),
+    );
     expect(enqueueDbEstimateChange).toHaveBeenCalledWith("cards", "card-1");
 
     if (originalCrypto) Object.defineProperty(globalThis, "crypto", originalCrypto);
@@ -73,6 +87,10 @@ describe("createCard", () => {
     const thumbnail = await getCardThumbnail(created.id);
     expect(stored?.thumbnailBlob?.type).toBe("image/png");
     expect(thumbnail?.type).toBe("image/png");
+    const db = await openHqccDexieDb();
+    const thumbnailRecord = await db.cardThumbnails.get(created.id);
+    expect(thumbnailRecord?.cardId).toBe(created.id);
+    expect(thumbnailRecord).toBeDefined();
   });
 
   it("persists bodyTextFitToBounds when provided", async () => {
@@ -84,5 +102,53 @@ describe("createCard", () => {
     });
 
     expect(created.bodyTextFitToBounds).toBe(true);
+  });
+
+  it("creates normalized rows for monster-specific icon and stats data", async () => {
+    const created = await createCard({
+      templateId: "monster",
+      status: "saved",
+      name: "Goblin",
+      title: "Goblin",
+      monsterIconAssetId: "icon-1",
+      monsterAttackDice: [2, 0, 0],
+    });
+
+    const db = await openHqccDexieDb();
+    await expect(db.cardIconComponents.get(`${created.id}:hq.2021.icon.monster.primary`)).resolves.toEqual(
+      expect.objectContaining({
+        assetId: "icon-1",
+      }),
+    );
+    await expect(
+      db.cardMonsterStatsComponents.get(`${created.id}:hq.2021.stats.monster.primary`),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        attackDice: [2, 0, 0],
+      }),
+    );
+  });
+
+  it("rolls back the legacy create when normalized persistence fails", async () => {
+    const db = await openHqccDexieDb();
+    const baseCountBefore = await db.cardsBase.count();
+    const thumbCountBefore = await db.cardThumbnails.count();
+    const hook = () => {
+      throw new Error("normalized create failed");
+    };
+    db.cardTitleComponents.hook("creating", hook);
+
+    await expect(
+      createCard({
+        templateId: "hero",
+        status: "saved",
+        name: "Broken Card",
+        title: "Broken",
+      }),
+    ).rejects.toThrow("normalized create failed");
+
+    await expect(db.cardsBase.count()).resolves.toBe(baseCountBefore);
+    await expect(db.cardThumbnails.count()).resolves.toBe(thumbCountBefore);
+    db.cardTitleComponents.hook("creating").unsubscribe(hook);
   });
 });

@@ -12,6 +12,7 @@ import {
   installFakeIndexedDb,
   restoreIndexedDb,
 } from "@/lib/test-support/cards-db-test-helpers";
+import { seedNormalizedCard } from "@/lib/test-support/normalized-card-test-helpers";
 
 const deletePairsForFaces = jest.fn();
 const previewDeletePairsForFaces = jest.fn();
@@ -78,15 +79,14 @@ describe("deleteCardsWithCascade", () => {
 
   it("removes dependent set and entries, removes now-empty group, and keeps deck", async () => {
     const db = await openHqccDexieDb();
-    await db.cards.put(createCardRecord({ id: "back-1", face: "back", name: "Back One", nameLower: "back one" }));
+    await seedNormalizedCard(createCardRecord({ id: "back-1", face: "back", name: "Back One", nameLower: "back one" }));
     await db.decks.put(createDeckRecord({ id: "deck-1", title: "Hard Delete", updatedAt: TEST_NOW }));
     await db.deckGroups.put(createDeckGroupRecord({ id: "group-1", deckId: "deck-1", title: "New Group" }));
     await db.deckSets.put(createDeckSetRecord({ id: "set-1", deckId: "deck-1", groupId: "group-1", title: "New Set", backFaceId: "back-1" }));
     await db.deckEntries.put(createDeckEntryRecord({ id: "entry-1", deckId: "deck-1", setId: "set-1", pairId: "pair-1" }));
 
     await deleteCardsWithCascade(["back-1"], { mode: "confirmable-cascade", confirmCascade: true });
-
-    await expect(db.cards.get("back-1")).resolves.toBeUndefined();
+    await expect(db.cardsBase.get("back-1")).resolves.toBeUndefined();
     await expect(db.deckSets.get("set-1")).resolves.toBeUndefined();
     await expect(db.deckEntries.get("entry-1")).resolves.toBeUndefined();
     await expect(db.deckGroups.get("group-1")).resolves.toBeUndefined();
@@ -101,7 +101,7 @@ describe("deleteCardsWithCascade", () => {
 
   it("throws confirm-required when destructive impact exists and cascade is not confirmed", async () => {
     const db = await openHqccDexieDb();
-    await db.cards.put(createCardRecord({ id: "back-1", face: "back" }));
+    await seedNormalizedCard(createCardRecord({ id: "back-1", face: "back" }));
     await db.decks.put(createDeckRecord({ id: "deck-1", title: "Hard Delete" }));
     await db.deckGroups.put(createDeckGroupRecord({ id: "group-1", deckId: "deck-1" }));
     await db.deckSets.put(

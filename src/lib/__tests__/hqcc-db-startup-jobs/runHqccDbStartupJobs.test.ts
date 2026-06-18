@@ -1,12 +1,8 @@
 const dedupePairsFromStore = jest.fn();
-const backfillPairsFromLegacy = jest.fn();
-const cleanupLegacyPairedWith = jest.fn();
 const migrateCardCanvas = jest.fn();
 
 jest.mock("@/lib/hqcc-db-pair-jobs", () => ({
   dedupePairsFromStore: (...args: unknown[]) => dedupePairsFromStore(...args),
-  backfillPairsFromLegacy: (...args: unknown[]) => backfillPairsFromLegacy(...args),
-  cleanupLegacyPairedWith: (...args: unknown[]) => cleanupLegacyPairedWith(...args),
 }));
 
 jest.mock("@/lib/hqcc-db-card-canvas-job", () => ({
@@ -31,34 +27,18 @@ describe("runHqccDbStartupJobs", () => {
   beforeEach(() => {
     jest.resetModules();
     dedupePairsFromStore.mockReset();
-    backfillPairsFromLegacy.mockReset();
-    cleanupLegacyPairedWith.mockReset();
     migrateCardCanvas.mockReset();
   });
 
-  it("runs pair jobs in sequence and launches card canvas migration independently", async () => {
+  it("runs pair dedupe and launches card canvas migration independently", async () => {
     const order: string[] = [];
     const dedupe = createDeferred<void>();
-    const backfill = createDeferred<void>();
-    const cleanup = createDeferred<void>();
     const canvas = createDeferred<void>();
 
     dedupePairsFromStore.mockImplementation(() => {
       order.push("dedupe:start");
       return dedupe.promise.then(() => {
         order.push("dedupe:done");
-      });
-    });
-    backfillPairsFromLegacy.mockImplementation(() => {
-      order.push("backfill:start");
-      return backfill.promise.then(() => {
-        order.push("backfill:done");
-      });
-    });
-    cleanupLegacyPairedWith.mockImplementation(() => {
-      order.push("cleanup:start");
-      return cleanup.promise.then(() => {
-        order.push("cleanup:done");
       });
     });
     migrateCardCanvas.mockImplementation(() => {
@@ -72,38 +52,15 @@ describe("runHqccDbStartupJobs", () => {
     runHqccDbStartupJobs();
 
     expect(order).toEqual(["dedupe:start", "canvas:start"]);
-    expect(backfillPairsFromLegacy).not.toHaveBeenCalled();
-    expect(cleanupLegacyPairedWith).not.toHaveBeenCalled();
 
     dedupe.resolve();
     await flushMicrotasks();
-    expect(order).toEqual(["dedupe:start", "canvas:start", "dedupe:done", "backfill:start"]);
+    expect(order).toEqual(["dedupe:start", "canvas:start", "dedupe:done"]);
 
-    backfill.resolve();
-    await flushMicrotasks();
-    expect(order).toEqual([
-      "dedupe:start",
-      "canvas:start",
-      "dedupe:done",
-      "backfill:start",
-      "backfill:done",
-      "cleanup:start",
-    ]);
-
-    cleanup.resolve();
     canvas.resolve();
     await flushMicrotasks();
 
-    expect(order).toEqual([
-      "dedupe:start",
-      "canvas:start",
-      "dedupe:done",
-      "backfill:start",
-      "backfill:done",
-      "cleanup:start",
-      "cleanup:done",
-      "canvas:done",
-    ]);
+    expect(order).toEqual(["dedupe:start", "canvas:start", "dedupe:done", "canvas:done"]);
   });
 
   it("does not start duplicate in-flight branches on repeated calls", async () => {
@@ -111,8 +68,6 @@ describe("runHqccDbStartupJobs", () => {
     const canvas = createDeferred<void>();
 
     dedupePairsFromStore.mockImplementation(() => dedupe.promise);
-    backfillPairsFromLegacy.mockResolvedValue(undefined);
-    cleanupLegacyPairedWith.mockResolvedValue(undefined);
     migrateCardCanvas.mockImplementation(() => canvas.promise);
 
     const { runHqccDbStartupJobs } = await import("@/lib/hqcc-db-startup-jobs");

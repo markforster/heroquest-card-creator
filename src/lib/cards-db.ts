@@ -1,8 +1,18 @@
 "use client";
 
+import {
+  assembleNormalizedCardSummaryRecord,
+  assembleNormalizedCardRecord,
+  deleteNormalizedCardRecords,
+  replaceNormalizedCardRecords,
+  replaceNormalizedCardThumbnail,
+  touchNormalizedCardBaseLastViewed,
+} from "@/lib/cards-normalized";
 import type { CardRecord, CardStatus } from "@/types/cards-db";
 import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
+import type { CardThumbnailRecord } from "@/types/cards-normalized";
 import type { TemplateId } from "@/types/templates";
+import type { Table, Transaction } from "dexie";
 
 import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import {
@@ -21,20 +31,40 @@ const DECK_GROUPS_STORE = "deckGroups";
 const DECK_SETS_STORE = "deckSets";
 const DECK_ENTRIES_STORE = "deckEntries";
 
+function isDefined<T>(value: T | undefined): value is T {
+  return value !== undefined;
+}
+
+async function loadComponentRecords<T extends { id: string }>(
+  table: Pick<Table<T, string>, "bulkGet">,
+  ids: string[],
+): Promise<T[]> {
+  if (!ids.length) {
+    return [];
+  }
+
+  const records = await table.bulkGet(ids);
+  return records.filter(isDefined);
+}
+
 function dispatchCardsUpdated(): void {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
   }
 }
 
-async function repairThumbnailBlob(record: CardRecord): Promise<void> {
+async function repairThumbnailBlob(cardId: string, record: CardRecord): Promise<void> {
   if (!record.thumbnailBlob) return;
   const normalized = normalizeThumbnailBlob(record.thumbnailBlob);
   if (normalized === record.thumbnailBlob) return;
   try {
     const db = await openHqccDexieDb();
-    await db.cards.put({
-      ...record,
+    const existing = await db.cardThumbnails.get(cardId);
+    if (!existing || !(normalized instanceof Blob)) {
+      return;
+    }
+    await db.cardThumbnails.put({
+      ...existing,
       thumbnailBlob: normalized,
     });
   } catch {
@@ -60,11 +90,166 @@ function normalizeCardRecord(record: CardRecord): CardRecord {
   if (normalized === record.thumbnailBlob) {
     return record;
   }
-  void repairThumbnailBlob(record);
+  void repairThumbnailBlob(record.id, record);
   return {
     ...record,
     thumbnailBlob: normalized,
   };
+}
+
+async function getNormalizedThumbnailBlob(
+  id: string,
+  db: Awaited<ReturnType<typeof openHqccDexieDb>>,
+): Promise<Blob | null> {
+  const thumbnail = (await db.cardThumbnails.get(id)) as CardThumbnailRecord | undefined;
+  if (!thumbnail?.thumbnailBlob) {
+    return null;
+  }
+
+  return normalizeThumbnailBlob(thumbnail.thumbnailBlob as Blob) ?? null;
+}
+
+async function getNormalizedCardRecord(
+  id: string,
+  dbArg?: Awaited<ReturnType<typeof openHqccDexieDb>>,
+): Promise<CardRecord | null> {
+  const db = dbArg ?? (await openHqccDexieDb());
+  const baseRecord = await db.cardsBase.get(id);
+  if (!baseRecord) {
+    return null;
+  }
+
+  const [slotLinks, thumbnailBlob] = await Promise.all([
+    db.cardSlotLinks.where("cardId").equals(id).sortBy("order"),
+    getNormalizedThumbnailBlob(id, db),
+  ]);
+
+  if (!slotLinks.length) {
+    return null;
+  }
+
+  const backgroundIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "background")
+    .map((slotLink) => slotLink.dataRecordId);
+  const borderIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "border")
+    .map((slotLink) => slotLink.dataRecordId);
+  const titleIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "title")
+    .map((slotLink) => slotLink.dataRecordId);
+  const textIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "text")
+    .map((slotLink) => slotLink.dataRecordId);
+  const copyrightIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "copyright")
+    .map((slotLink) => slotLink.dataRecordId);
+  const imageIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "image")
+    .map((slotLink) => slotLink.dataRecordId);
+  const iconIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "icon")
+    .map((slotLink) => slotLink.dataRecordId);
+  const heroStatsIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "stats-hero")
+    .map((slotLink) => slotLink.dataRecordId);
+  const monsterStatsIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "stats-monster")
+    .map((slotLink) => slotLink.dataRecordId);
+
+  const [
+    backgrounds,
+    borders,
+    titles,
+    texts,
+    copyrights,
+    images,
+    icons,
+    heroStats,
+    monsterStats,
+  ] = await Promise.all([
+    loadComponentRecords(db.cardBackgroundComponents, backgroundIds),
+    loadComponentRecords(db.cardBorderComponents, borderIds),
+    loadComponentRecords(db.cardTitleComponents, titleIds),
+    loadComponentRecords(db.cardTextComponents, textIds),
+    loadComponentRecords(db.cardCopyrightComponents, copyrightIds),
+    loadComponentRecords(db.cardImageComponents, imageIds),
+    loadComponentRecords(db.cardIconComponents, iconIds),
+    loadComponentRecords(db.cardHeroStatsComponents, heroStatsIds),
+    loadComponentRecords(db.cardMonsterStatsComponents, monsterStatsIds),
+  ]);
+
+  const assembled = assembleNormalizedCardRecord({
+    baseRecord,
+    slotLinks,
+    backgrounds,
+    borders,
+    titles,
+    texts,
+    copyrights,
+    images,
+    icons,
+    heroStats,
+    monsterStats,
+    thumbnailBlob,
+  });
+
+  return assembled ? normalizeCardRecord(assembled) : null;
+}
+
+async function listNormalizedCardRecords(
+  dbArg?: Awaited<ReturnType<typeof openHqccDexieDb>>,
+): Promise<CardRecord[]> {
+  const db = dbArg ?? (await openHqccDexieDb());
+  const [baseRecords, thumbnailRecords] = await Promise.all([
+    db.cardsBase.toArray(),
+    db.cardThumbnails.toArray(),
+  ]);
+  const thumbnailMap = new Map(
+    thumbnailRecords.map((record) => [
+      record.cardId,
+      normalizeThumbnailBlob(record.thumbnailBlob) ?? null,
+    ]),
+  );
+
+  return baseRecords.map((baseRecord) =>
+    normalizeCardRecord(
+      assembleNormalizedCardSummaryRecord({
+        baseRecord,
+        thumbnailBlob: thumbnailMap.get(baseRecord.id) ?? undefined,
+      }),
+    ),
+  );
+}
+
+async function writeCardAndNormalizedState(
+  db: Awaited<ReturnType<typeof openHqccDexieDb>>,
+  record: CardRecord,
+): Promise<void> {
+  const writeTables = [
+    db.cardsBase,
+    db.cardThumbnails,
+    db.cardSlotLinks,
+    db.cardBackgroundComponents,
+    db.cardBorderComponents,
+    db.cardTitleComponents,
+    db.cardTextComponents,
+    db.cardCopyrightComponents,
+    db.cardImageComponents,
+    db.cardIconComponents,
+    db.cardHeroStatsComponents,
+    db.cardMonsterStatsComponents,
+  ];
+  await db.transaction(
+    "rw",
+    writeTables,
+    async (tx: Transaction) => {
+      const normalized = await replaceNormalizedCardRecords(tx, record);
+      if (!normalized) {
+        throw new Error(`Unable to derive normalized card rows for ${record.id}`);
+      }
+      await replaceNormalizedCardThumbnail(tx, record);
+    },
+  );
 }
 
 export async function createCard(
@@ -94,7 +279,7 @@ export async function createCard(
   };
 
   const db = await openHqccDexieDb();
-  await db.cards.add(base);
+  await writeCardAndNormalizedState(db, base);
   enqueueDbEstimateChange("cards", base.id);
   dispatchCardsUpdated();
 
@@ -114,7 +299,7 @@ export async function updateCard(
         }
       : patch;
 
-  const existing = (await db.cards.get(id)) ?? null;
+  const existing = await getNormalizedCardRecord(id, db);
 
   if (!existing) {
     return null;
@@ -131,7 +316,7 @@ export async function updateCard(
     next.nameLower = normalizedPatch.name.toLocaleLowerCase();
   }
 
-  await db.cards.put(next);
+  await writeCardAndNormalizedState(db, next);
   enqueueDbEstimateChange("cards", next.id);
   dispatchCardsUpdated();
 
@@ -152,45 +337,42 @@ export async function updateCards(
         }
       : patch;
 
-  await db.transaction("rw", db.cards, async () => {
-    const existingCards = await db.cards.bulkGet(ids);
-    const updates: CardRecord[] = [];
+  const existingCards = await Promise.all(ids.map((id) => getNormalizedCardRecord(id, db)));
+  const updates: CardRecord[] = [];
+  const now = Date.now();
 
-    existingCards.forEach((existing) => {
-      if (!existing) {
-        return;
-      }
-      const next: CardRecord = {
-        ...existing,
-        ...normalizedPatch,
-        updatedAt: Date.now(),
-      };
-      if (normalizedPatch.name) {
-        next.nameLower = normalizedPatch.name.toLocaleLowerCase();
-      }
-      updates.push(next);
-    });
-
-    if (updates.length > 0) {
-      await db.cards.bulkPut(updates);
+  existingCards.forEach((existing) => {
+    if (!existing) {
+      return;
     }
+
+    const next: CardRecord = {
+      ...existing,
+      ...normalizedPatch,
+      updatedAt: now,
+    };
+    if (normalizedPatch.name) {
+      next.nameLower = normalizedPatch.name.toLocaleLowerCase();
+    }
+    updates.push(next);
   });
+
+  if (updates.length > 0) {
+    for (let index = 0; index < updates.length; index += 1) {
+      await writeCardAndNormalizedState(db, updates[index]);
+    }
+  }
   ids.forEach((id) => enqueueDbEstimateChange("cards", id));
   dispatchCardsUpdated();
 }
 
 export async function getCard(id: string): Promise<CardRecord | null> {
-  const db = await openHqccDexieDb();
-  const record = (await db.cards.get(id)) ?? null;
-  return record ? normalizeCardRecord(record) : null;
+  return getNormalizedCardRecord(id);
 }
 
 export async function getCardThumbnail(id: string): Promise<Blob | null> {
-  const record = await getCard(id);
-  if (!record?.thumbnailBlob) {
-    return null;
-  }
-  return normalizeThumbnailBlob(record.thumbnailBlob) ?? null;
+  const db = await openHqccDexieDb();
+  return getNormalizedThumbnailBlob(id, db);
 }
 
 export async function touchCardLastViewed(
@@ -198,8 +380,7 @@ export async function touchCardLastViewed(
   viewedAt: number = Date.now(),
 ): Promise<CardRecord | null> {
   const db = await openHqccDexieDb();
-
-  const existing = (await db.cards.get(id)) ?? null;
+  const existing = await getNormalizedCardRecord(id, db);
 
   if (!existing) {
     return null;
@@ -210,10 +391,12 @@ export async function touchCardLastViewed(
     lastViewedAt: viewedAt,
   };
 
-  await db.cards.put(next);
+  await db.transaction("rw", db.cardsBase, async (tx) => {
+    await touchNormalizedCardBaseLastViewed(tx, id, viewedAt);
+  });
   dispatchCardsUpdated();
 
-  return normalizeCardRecord(next);
+  return next;
 }
 
 export async function updateCardThumbnail(
@@ -222,20 +405,30 @@ export async function updateCardThumbnail(
 ): Promise<boolean> {
   const db = await openHqccDexieDb();
 
-  const existing = (await db.cards.get(id)) ?? null;
+  const existing = await db.cardsBase.get(id);
 
   if (!existing) {
     return false;
   }
 
   const normalized = normalizeThumbnailBlob(thumbnailBlob ?? null);
-  const next: CardRecord = {
-    ...existing,
-    thumbnailBlob: normalized ?? null,
-  };
+  await db.transaction("rw", db.cardThumbnails, async () => {
+    if (!(normalized instanceof Blob)) {
+      await db.cardThumbnails.delete(id);
+      return;
+    }
 
-  await db.cards.put(next);
-  enqueueDbEstimateChange("cards", next.id);
+    const current = await db.cardThumbnails.get(id);
+    await db.cardThumbnails.put({
+      id,
+      cardId: id,
+      thumbnailBlob: normalized,
+      createdAt: current?.createdAt ?? existing.createdAt,
+      updatedAt: Date.now(),
+      schemaVersion: 1,
+    });
+  });
+  enqueueDbEstimateChange("cards", id);
   dispatchCardsUpdated();
 
   return true;
@@ -249,10 +442,8 @@ export type ListCardsFilter = {
 };
 
 export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecord[]> {
-  const db = await openHqccDexieDb();
-
   const { templateId, status, search, deleted = "exclude" } = filter;
-  let filtered = (await db.cards.toArray()).map(normalizeCardRecord);
+  let filtered = await listNormalizedCardRecords();
 
   if (templateId) {
     filtered = filtered.filter((card) => card.templateId === templateId);
@@ -379,7 +570,26 @@ export async function restoreCards(ids: string[]): Promise<void> {
 
 export async function deleteCard(id: string): Promise<void> {
   const db = await openHqccDexieDb();
-  await db.cards.delete(id);
+  await db.transaction(
+    "rw",
+    [
+      db.cardsBase,
+      db.cardThumbnails,
+      db.cardSlotLinks,
+      db.cardBackgroundComponents,
+      db.cardBorderComponents,
+      db.cardTitleComponents,
+      db.cardTextComponents,
+      db.cardCopyrightComponents,
+      db.cardImageComponents,
+      db.cardIconComponents,
+      db.cardHeroStatsComponents,
+      db.cardMonsterStatsComponents,
+    ],
+    async (tx) => {
+      await deleteNormalizedCardRecords(tx, id);
+    },
+  );
   enqueueDbEstimateChange("cards", id);
 }
 
@@ -388,9 +598,28 @@ async function deleteCardsRaw(ids: string[]): Promise<void> {
 
   const db = await openHqccDexieDb();
 
-  await db.transaction("rw", db.cards, async () => {
-    await db.cards.bulkDelete(ids);
-  });
+  await db.transaction(
+    "rw",
+    [
+      db.cardsBase,
+      db.cardThumbnails,
+      db.cardSlotLinks,
+      db.cardBackgroundComponents,
+      db.cardBorderComponents,
+      db.cardTitleComponents,
+      db.cardTextComponents,
+      db.cardCopyrightComponents,
+      db.cardImageComponents,
+      db.cardIconComponents,
+      db.cardHeroStatsComponents,
+      db.cardMonsterStatsComponents,
+    ],
+    async (tx) => {
+      for (let index = 0; index < ids.length; index += 1) {
+        await deleteNormalizedCardRecords(tx, ids[index]);
+      }
+    },
+  );
   ids.forEach((id) => enqueueDbEstimateChange("cards", id));
 }
 

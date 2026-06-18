@@ -25,6 +25,14 @@ type BitmapLike = {
 };
 
 type FakeCardRecord = ReturnType<typeof createSavedCardRecord>;
+type FakeThumbnailRecord = {
+  id: string;
+  cardId: string;
+  thumbnailBlob: Blob | null;
+  createdAt: number;
+  updatedAt: number;
+  schemaVersion: 1;
+};
 
 function createPngBlob(size: number): Blob {
   return new NodeBlob([new Uint8Array(size)], { type: "image/png" }) as unknown as Blob;
@@ -35,16 +43,28 @@ function createJpegBlob(size: number): Blob {
 }
 
 function createFakeDb(records: FakeCardRecord[]) {
-  const state = new Map(records.map((record) => [record.id, { ...record }]));
+  const state = new Map<string, FakeThumbnailRecord>(
+    records.map((record) => [
+      record.id,
+      {
+        id: record.id,
+        cardId: record.id,
+        thumbnailBlob: record.thumbnailBlob ?? null,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+        schemaVersion: 1 as const,
+      },
+    ]),
+  );
 
   return {
-    cards: {
+    cardThumbnails: {
       toArray: jest.fn(async () => Array.from(state.values()).map((record) => ({ ...record }))),
       get: jest.fn(async (id: string) => {
         const record = state.get(id);
         return record ? { ...record } : undefined;
       }),
-      put: jest.fn(async (record: FakeCardRecord) => {
+      put: jest.fn(async (record: FakeThumbnailRecord) => {
         state.set(record.id, { ...record });
         return record.id;
       }),
@@ -176,7 +196,7 @@ describe("startThumbnailJpegMigration", () => {
 
     await expect(startThumbnailJpegMigration()).resolves.toBeUndefined();
 
-    expect(db.cards.put).toHaveBeenCalledWith(
+    expect(db.cardThumbnails.put).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "card-1",
         thumbnailBlob: convertedBlob,
@@ -206,7 +226,7 @@ describe("startThumbnailJpegMigration", () => {
 
     await expect(startThumbnailJpegMigration()).resolves.toBeUndefined();
 
-    expect(db.cards.put).not.toHaveBeenCalled();
+    expect(db.cardThumbnails.put).not.toHaveBeenCalled();
     expect(getThumbnailJpegMigrationStatus()).toEqual(
       expect.objectContaining({
         converted: 0,
@@ -222,12 +242,12 @@ describe("startThumbnailJpegMigration", () => {
         thumbnailBlob: createPngBlob(30),
       }),
     ]);
-    db.cards.get.mockImplementationOnce(async () => undefined);
+    db.cardThumbnails.get.mockImplementationOnce(async () => undefined);
     openHqccDexieDb.mockResolvedValue(db);
 
     await expect(startThumbnailJpegMigration()).resolves.toBeUndefined();
 
-    expect(db.cards.put).not.toHaveBeenCalled();
+    expect(db.cardThumbnails.put).not.toHaveBeenCalled();
     expect(getThumbnailJpegMigrationStatus()).toEqual(
       expect.objectContaining({
         converted: 0,
@@ -248,7 +268,7 @@ describe("startThumbnailJpegMigration", () => {
 
     await expect(startThumbnailJpegMigration()).resolves.toBeUndefined();
 
-    expect(db.cards.put).not.toHaveBeenCalled();
+    expect(db.cardThumbnails.put).not.toHaveBeenCalled();
     expect(getThumbnailJpegMigrationStatus()).toEqual(
       expect.objectContaining({
         converted: 0,
@@ -287,7 +307,7 @@ describe("startThumbnailJpegMigration", () => {
     await expect(first).resolves.toBeUndefined();
     await expect(second).resolves.toBeUndefined();
     expect(createImageBitmapMock).toHaveBeenCalledTimes(1);
-    expect(db.cards.put).toHaveBeenCalledTimes(1);
+    expect(db.cardThumbnails.put).toHaveBeenCalledTimes(1);
     expect(getThumbnailJpegMigrationStatus()).toEqual(
       expect.objectContaining({
         converted: 1,

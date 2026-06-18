@@ -198,8 +198,6 @@ async function readStoreRecord(
   const db = await openHqccDexieDb();
 
   switch (store) {
-    case "cards":
-      return db.cards.get(id);
     case "assets":
       return db.assets.get(id);
     case "collections":
@@ -221,7 +219,67 @@ async function readStoreRecord(
   }
 }
 
+async function getLogicalCardRecordSize(id: string): Promise<number> {
+  const db = await openHqccDexieDb();
+  const [
+    baseRecord,
+    thumbnailRecord,
+    slotLinks,
+    backgrounds,
+    borders,
+    titles,
+    texts,
+    copyrights,
+    images,
+    icons,
+    heroStats,
+    monsterStats,
+  ] = await Promise.all([
+    db.cardsBase.get(id),
+    db.cardThumbnails.get(id),
+    db.cardSlotLinks.where("cardId").equals(id).toArray(),
+    db.cardBackgroundComponents.where("cardId").equals(id).toArray(),
+    db.cardBorderComponents.where("cardId").equals(id).toArray(),
+    db.cardTitleComponents.where("cardId").equals(id).toArray(),
+    db.cardTextComponents.where("cardId").equals(id).toArray(),
+    db.cardCopyrightComponents.where("cardId").equals(id).toArray(),
+    db.cardImageComponents.where("cardId").equals(id).toArray(),
+    db.cardIconComponents.where("cardId").equals(id).toArray(),
+    db.cardHeroStatsComponents.where("cardId").equals(id).toArray(),
+    db.cardMonsterStatsComponents.where("cardId").equals(id).toArray(),
+  ]);
+
+  if (!baseRecord) {
+    return 0;
+  }
+
+  const records: unknown[] = [
+    baseRecord,
+    thumbnailRecord,
+    ...slotLinks,
+    ...backgrounds,
+    ...borders,
+    ...titles,
+    ...texts,
+    ...copyrights,
+    ...images,
+    ...icons,
+    ...heroStats,
+    ...monsterStats,
+  ].filter((record) => record != null);
+
+  let total = 0;
+  for (let index = 0; index < records.length; index += 1) {
+    total += estimateRecordBytes(records[index]).bytes;
+  }
+  return total;
+}
+
 async function getRecordSize(store: string, id: string): Promise<number> {
+  if (store === "cards") {
+    return getLogicalCardRecordSize(id);
+  }
+
   const record = await readStoreRecord(store, id);
   if (!record) {
     return 0;

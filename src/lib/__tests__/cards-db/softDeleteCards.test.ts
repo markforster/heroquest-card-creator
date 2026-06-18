@@ -7,6 +7,7 @@ import {
   installFakeIndexedDb,
   restoreIndexedDb,
 } from "@/lib/test-support/cards-db-test-helpers";
+import { seedNormalizedCard } from "@/lib/test-support/normalized-card-test-helpers";
 
 const enqueueDbEstimateChange = jest.fn();
 
@@ -30,8 +31,7 @@ describe("softDeleteCards", () => {
   });
 
   it("marks cards as deleted and excludes them from default listCards results", async () => {
-    const db = await openHqccDexieDb();
-    await db.cards.put(createCardRecord({ id: "c1", createdAt: 100, updatedAt: 100 }));
+    await seedNormalizedCard(createCardRecord({ id: "c1", createdAt: 100, updatedAt: 100 }));
 
     await softDeleteCards(["c1"], 123);
 
