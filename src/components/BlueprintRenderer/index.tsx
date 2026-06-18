@@ -3,6 +3,7 @@
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { blueprintsByTemplateId } from "@/data/blueprints";
+import { layerTypes } from "@/data/card-systems/types";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -79,7 +80,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
   return (
     <>
       {blueprint.layers.map((layer) => {
-        if (layer.type === "background") {
+        if (layer.type === layerTypes.background) {
           return renderBackgroundLayer({
             blueprint,
             layer,
@@ -88,7 +89,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
             cardData: props.cardData,
           });
         }
-        if (layer.type === "border") {
+        if (layer.type === layerTypes.border) {
           return renderBorderLayer({
             blueprint,
             layer,
@@ -96,10 +97,10 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
             cardData: props.cardData,
           });
         }
-        if (layer.type === "overlay") {
+        if (layer.type === layerTypes.overlay) {
           return renderOverlayLayer({ blueprint, layer });
         }
-        if (layer.type === "image") {
+        if (layer.type === layerTypes.image) {
           return (
             <ImageLayer
               key={layer.id}
@@ -109,7 +110,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
             />
           );
         }
-        if (layer.type === "text") {
+        if (layer.type === layerTypes.text) {
           return (
             <TextLayer
               key={layer.id}
@@ -120,7 +121,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
             />
           );
         }
-        if (layer.type === "title") {
+        if (layer.type === layerTypes.title) {
           return (
             <TitleLayer
               key={layer.id}
@@ -131,7 +132,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
             />
           );
         }
-        if (layer.type === "copyright") {
+        if (layer.type === layerTypes.copyright) {
           return (
             <CopyrightLayer
               key={layer.id}

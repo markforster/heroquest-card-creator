@@ -48,6 +48,7 @@ jest.mock("@/components/Cards/CardParts/MonsterStatsBlock", () => ({
 }));
 
 import { renderGroups } from "@/components/BlueprintRenderer/blueprintRendererGroups";
+import { isPrimaryBodyTextLayer } from "@/components/BlueprintRenderer/blueprintRendererShared";
 import { TextLayer } from "@/components/BlueprintRenderer/blueprintRendererText";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 
@@ -58,7 +59,7 @@ describe("body text fit mode blueprint gating", () => {
 
   it("honors fit-to-bounds for fixed-bounds description layers", () => {
     const blueprint = blueprintsByTemplateId["small-treasure"];
-    const layer = blueprint?.layers.find((entry) => entry.id === "description");
+    const layer = blueprint?.layers.find((entry) => isPrimaryBodyTextLayer(blueprint, entry));
     if (!blueprint || !layer) {
       throw new Error("small-treasure description layer missing");
     }

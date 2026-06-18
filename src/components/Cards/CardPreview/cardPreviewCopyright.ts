@@ -2,6 +2,7 @@
 
 import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
 import { blueprintsByTemplateId } from "@/data/blueprints";
+import { layerTypes } from "@/data/card-systems/types";
 
 import type { CardPreviewProps } from "./types";
 
@@ -16,7 +17,7 @@ export function resolveCopyrightTextStyle(templateId?: CardPreviewProps["templat
     };
   }
   const blueprint = blueprintsByTemplateId[templateId];
-  const layer = blueprint?.layers.find((entry) => entry.type === "copyright");
+  const layer = blueprint?.layers.find((entry) => entry.type === layerTypes.copyright);
   const layerProps = layer?.props ?? {};
   const fontSize = typeof layerProps.fontSize === "number" ? layerProps.fontSize : 16;
   const fontWeight =

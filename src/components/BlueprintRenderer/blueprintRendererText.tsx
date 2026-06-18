@@ -20,6 +20,7 @@ import {
   DEVELOPER_CREDIT_TOP_INSET,
 } from "@/config/developer-credit";
 import { cardTemplatesById } from "@/data/card-templates";
+import { layerTypes } from "@/data/card-systems/types";
 import { supportsBlueprintTextFitToBounds } from "@/lib/blueprint-text";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
@@ -28,7 +29,7 @@ import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
-import { getLayerBounds } from "./blueprintRendererShared";
+import { getLayerBounds, isPrimaryBodyTextLayer } from "./blueprintRendererShared";
 
 function resolveVisibleCopyrightBounds({
   blueprint,
@@ -51,7 +52,7 @@ function resolveVisibleCopyrightBounds({
       : undefined;
   if (showCopyright === false) return null;
 
-  const copyrightLayer = blueprint.layers.find((entry) => entry.type === "copyright");
+  const copyrightLayer = blueprint.layers.find((entry) => entry.type === layerTypes.copyright);
   if (!copyrightLayer) return null;
 
   const textKey = copyrightLayer.bind?.textKey;
@@ -73,7 +74,7 @@ function resolveVisibleCopyrightBounds({
 }
 
 function resolveCopyrightTextStyle(blueprint: Blueprint) {
-  const copyrightLayer = blueprint.layers.find((entry) => entry.type === "copyright");
+  const copyrightLayer = blueprint.layers.find((entry) => entry.type === layerTypes.copyright);
   const layerProps = copyrightLayer?.props ?? {};
   const fontSize = typeof layerProps.fontSize === "number" ? layerProps.fontSize : 16;
   const fontWeight =
@@ -187,7 +188,7 @@ export function TextLayer({
 }) {
   const { defaultCopyright } = useCopyrightSettings();
 
-  if (layer.type !== "text") return null;
+  if (layer.type !== layerTypes.text) return null;
   if (!layer.bind?.textKey) return null;
   if (!cardData) return null;
 
@@ -326,7 +327,7 @@ export function TextLayer({
   };
 
   if (blueprint.templateId === "labelled-back" && placement === "bottom" && !hideTitle) {
-    const titleLayer = blueprint.layers.find((entry) => entry.type === "title");
+    const titleLayer = blueprint.layers.find((entry) => entry.type === layerTypes.title);
     const titleProps = titleLayer?.props ?? {};
 
     const ribbonBottomBounds = getTitleBounds(titleProps, "ribbon");
@@ -355,7 +356,7 @@ export function TextLayer({
     Math.max(0, Math.min(bounds.height, bottomLimitY - bounds.y));
 
   if (blueprint.templateId === "labelled-back" && placement === "bottom" && !hideTitle) {
-    const titleLayer = blueprint.layers.find((entry) => entry.type === "title");
+    const titleLayer = blueprint.layers.find((entry) => entry.type === layerTypes.title);
     const titleProps = titleLayer?.props ?? {};
     const ribbonBottomBounds = getTitleBounds(titleProps, "ribbon");
     if (ribbonBottomBounds) {
@@ -375,7 +376,7 @@ export function TextLayer({
 
   if (
     (blueprint.templateId === "small-treasure" || blueprint.templateId === "large-treasure") &&
-    layer.id === "description"
+    isPrimaryBodyTextLayer(blueprint, layer)
   ) {
     const copyrightBounds = resolveVisibleCopyrightBounds({
       blueprint,

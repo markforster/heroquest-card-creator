@@ -8,6 +8,7 @@ import CardTexturedBorder from "@/components/Cards/CardParts/CardTexturedBorder"
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+import { layerTypes } from "@/data/card-systems/types";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { computeContainScale } from "@/lib/image-scale";
@@ -36,7 +37,7 @@ export function renderBackgroundLayer({
   backgroundLoaded?: boolean;
   cardData?: CardDataByTemplate[TemplateId];
 }) {
-  if (layer.type !== "background") return null;
+  if (layer.type !== layerTypes.background) return null;
 
   const source = "source" in layer ? (layer.source ?? "template") : "template";
   const asset = "asset" in layer ? layer.asset : undefined;
@@ -115,7 +116,7 @@ export function renderBorderLayer({
   backgroundLoaded?: boolean;
   cardData?: CardDataByTemplate[TemplateId];
 }) {
-  if (layer.type !== "border") return null;
+  if (layer.type !== layerTypes.border) return null;
 
   const bounds = getLayerBounds(blueprint, layer);
   const borderColor =
@@ -166,7 +167,7 @@ export function renderOverlayLayer({
   blueprint: Blueprint;
   layer: BlueprintLayer;
 }) {
-  if (layer.type !== "overlay") return null;
+  if (layer.type !== layerTypes.overlay) return null;
   const overlayLayer = layer as Extract<BlueprintLayer, { type: "overlay" }>;
 
   const bounds = getLayerBounds(blueprint, layer);
@@ -201,16 +202,16 @@ export function ImageLayer({
 }) {
   const clipId = normalizeClipId(useId());
   const assetId =
-    layer.type === "image" && layer.bind?.imageKey && cardData
+    layer.type === layerTypes.image && layer.bind?.imageKey && cardData
       ? ((cardData as Record<string, unknown>)[layer.bind.imageKey] as string | undefined)
       : undefined;
   const assetName =
-    layer.type === "image" && cardData
+    layer.type === layerTypes.image && cardData
       ? ((cardData as { imageAssetName?: string }).imageAssetName as string | undefined)
       : undefined;
   const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
 
-  if (layer.type !== "image") return null;
+  if (layer.type !== layerTypes.image) return null;
   const imageLayer = layer as Extract<BlueprintLayer, { type: "image" }>;
   if (!layer.bind?.imageKey) return null;
   if (!cardData) return null;

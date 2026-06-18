@@ -11,13 +11,18 @@ import MonsterStatsBlock, {
 } from "@/components/Cards/CardParts/MonsterStatsBlock";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { DEFAULT_BODY_TEXT_COLOR } from "@/config/colors";
+import { layerTypes } from "@/data/card-systems/types";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { supportsBlueprintTextFitToBounds } from "@/lib/blueprint-text";
 import type { Blueprint, BlueprintGroup } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
-import { DEFAULT_CANVAS, MissingArtworkPlaceholder } from "./blueprintRendererShared";
+import {
+  DEFAULT_CANVAS,
+  MissingArtworkPlaceholder,
+  findPrimaryTitleLayer,
+} from "./blueprintRendererShared";
 
 function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | undefined {
   if (!cardData) return undefined;
@@ -147,7 +152,7 @@ function buildGroupItems({
   const items: GroupItem[] = [];
 
   group.children.forEach((child) => {
-    if (child.type === "text") {
+    if (child.type === layerTypes.text) {
       const textKey = child.bind?.textKey;
       const textValue =
         textKey && cardData
@@ -221,7 +226,7 @@ function buildGroupItems({
       return;
     }
 
-    if (child.type === "stats-hero") {
+    if (child.type === layerTypes.stats_hero) {
       const height =
         typeof child.props?.height === "number" ? child.props.height : HERO_STATS_HEIGHT;
       const stats = getHeroStats(cardData);
@@ -234,7 +239,7 @@ function buildGroupItems({
       return;
     }
 
-    if (child.type === "stats-monster") {
+    if (child.type === layerTypes.stats_monster) {
       const height =
         typeof child.props?.height === "number" ? child.props.height : MONSTER_STATS_HEIGHT;
       const stats = getMonsterStats(cardData);
@@ -247,7 +252,7 @@ function buildGroupItems({
       return;
     }
 
-    if (child.type === "icon") {
+    if (child.type === layerTypes.icon) {
       const iconKey = child.bind?.iconKey;
       const iconId =
         iconKey && cardData
@@ -293,7 +298,7 @@ function buildGroupItems({
       const canvasWidth = blueprint.canvas?.width ?? DEFAULT_CANVAS.width;
       const rightInset = baseX;
       const rightEdgeTarget = canvasWidth - rightInset;
-      const titleLayer = blueprint.layers?.find((layer) => layer.id === "title");
+      const titleLayer = findPrimaryTitleLayer(blueprint);
       const ribbonY = typeof titleLayer?.props?.ribbonY === "number" ? titleLayer.props.ribbonY : 0;
       const ribbonHeight =
         typeof titleLayer?.props?.ribbonHeight === "number" ? titleLayer.props.ribbonHeight : 0;

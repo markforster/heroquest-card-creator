@@ -1,4 +1,5 @@
 import { blueprintsByTemplateId } from "@/data/blueprints";
+import { layerTypes } from "@/data/card-systems/types";
 import type {
   Blueprint,
   BlueprintLayer,
@@ -7,7 +8,7 @@ import type {
 import type { TemplateId } from "@/types/templates";
 
 function isDescriptionTextLayer(layer: BlueprintLayer): boolean {
-  return layer.type === "text" && layer.bind?.textKey === "description";
+  return layer.type === layerTypes.text && layer.bind?.textKey === "description";
 }
 
 function findDescriptionTextEntry(blueprint: Blueprint | undefined): BlueprintLayer | undefined {

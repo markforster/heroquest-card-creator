@@ -4,6 +4,7 @@ import { AlertTriangle } from "lucide-react";
 
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+import { layerTypes } from "@/data/card-systems/types";
 import { useI18n } from "@/i18n/I18nProvider";
 import { clamp } from "@/lib/math";
 import type { Blueprint, BlueprintBounds, BlueprintLayer } from "@/types/blueprints";
@@ -23,6 +24,18 @@ export function getLayerBounds(blueprint: Blueprint, layer: BlueprintLayer) {
       width: blueprint.canvas?.width ?? DEFAULT_CANVAS.width,
       height: blueprint.canvas?.height ?? DEFAULT_CANVAS.height,
     }
+  );
+}
+
+export function findPrimaryTitleLayer(blueprint: Blueprint): BlueprintLayer | undefined {
+  return blueprint.layers.find((layer) => layer.type === layerTypes.title);
+}
+
+export function isPrimaryBodyTextLayer(blueprint: Blueprint, layer: BlueprintLayer): boolean {
+  return (
+    layer.type === layerTypes.text &&
+    layer.bind?.textKey === "description" &&
+    blueprint.layers.includes(layer)
   );
 }
 
