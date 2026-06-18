@@ -53,11 +53,11 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
   const activeStatus =
     currentTemplateId != null ? activeCardStatusByTemplate[currentTemplateId] : undefined;
   const draftValue = editorValues;
-  const rawTitle =
-    (draftValue && "title" in draftValue && (draftValue as { title?: string | null }).title) || "";
-  const hasTitle = Boolean(rawTitle && rawTitle.toString().trim().length > 0);
+  const rawName =
+    (draftValue && "name" in draftValue && (draftValue as { name?: string | null }).name) || "";
+  const hasName = Boolean(rawName && rawName.toString().trim().length > 0);
   const canSaveChanges = Boolean(
-    currentTemplateId && hasTitle && (activeCardId && activeStatus === "saved" ? isDirty : true),
+    currentTemplateId && hasName && (activeCardId && activeStatus === "saved" ? isDirty : true),
   );
   const canDuplicate = Boolean(activeCardId && activeStatus === "saved");
 

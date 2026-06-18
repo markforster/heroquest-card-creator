@@ -20,6 +20,7 @@ import HeroStatsInspector from "./HeroStatsInspector";
 import ImageField from "./ImageField";
 import MonsterIconField from "./MonsterIconField";
 import MonsterStatsInspector from "./MonsterStatsInspector";
+import NameField from "./NameField";
 import TitleField from "./TitleField";
 
 type GenericInspectorFormProps = {
@@ -42,6 +43,15 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
   return (
     <form className={styles.uStackLg}>
       {fields.map((field, index) => {
+        if (field.fieldType === "name") {
+          return (
+            <NameField
+              key={`${field.bind}-${index}`}
+              label={t(field.labelKey)}
+              required={field.required}
+            />
+          );
+        }
         if (field.fieldType === "title") {
           return (
             <TitleField

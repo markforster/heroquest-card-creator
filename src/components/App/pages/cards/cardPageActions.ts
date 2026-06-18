@@ -13,6 +13,7 @@ import type { TemplateId } from "@/types/templates";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import type { NavigateFunction } from "react-router-dom";
+import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 
 type SavingMode = "new" | "update" | null;
 type AnalyticsTrackProperties = Record<string, string | number | boolean | null | undefined>;
@@ -54,12 +55,12 @@ export function createCardPageActions({
     if (!currentTemplateId) return;
     const templateId = currentTemplateId as TemplateId;
     const currentDraftValue = methods.getValues() as CardDataByTemplate[TemplateId];
-    const draftTitle =
+    const draftName =
       (currentDraftValue &&
-        "title" in currentDraftValue &&
-        (currentDraftValue as { title?: string | null }).title) ||
+        "name" in currentDraftValue &&
+        (currentDraftValue as { name?: string | null }).name) ||
       "";
-    if (!draftTitle || !draftTitle.toString().trim()) {
+    if (!draftName || !draftName.toString().trim()) {
       return;
     }
 
@@ -70,7 +71,7 @@ export function createCardPageActions({
       previewRef,
       "[card-page] Failed to render thumbnail blob",
     );
-    const derivedName = (draftTitle ?? "").toString().trim() || `${templateId} card`;
+    const derivedName = (draftName ?? "").toString().trim() || `${templateId} card`;
     const patch = cardDataToCardRecordPatch(templateId, derivedName, currentDraftValue as never);
     const viewedAt = Date.now();
 
@@ -149,13 +150,18 @@ export function createCardPageActions({
     if (!currentTemplateId) return;
     const templateId = currentTemplateId as TemplateId;
     const currentValues = methods.getValues() as CardDataByTemplate[TemplateId];
-    const draftTitle =
-      (currentValues && "title" in currentValues
-        ? (currentValues as { title?: string | null }).title
+    const usesTitleField = inspectorFieldsByTemplate[templateId]?.some(
+      (field) => field.fieldType === "title",
+    );
+    const primaryName =
+      (currentValues && "name" in currentValues
+        ? (currentValues as { name?: string | null }).name
         : "") || "";
+    const nextLabel = primaryName ? nextDuplicateTitle(String(primaryName)) : "";
     const nextDraft = {
       ...currentValues,
-      ...(draftTitle ? { title: nextDuplicateTitle(String(draftTitle)) } : {}),
+      ...(nextLabel ? { name: nextLabel } : {}),
+      ...(usesTitleField && nextLabel ? { title: nextLabel } : {}),
     } as CardDataByTemplate[TemplateId];
     setSelectedTemplateId(templateId);
     saveDraft(templateId, nextDraft, { sourceCardId: activeCardId ?? null });

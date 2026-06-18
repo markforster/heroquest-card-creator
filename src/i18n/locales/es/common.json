@@ -97,6 +97,7 @@
   "form.backTitle": "Título del reverso",
   "form.backText": "Texto del reverso",
   "form.cardTitle": "Título de la carta",
+  "form.name": "Nombre",
   "form.cardImage": "Imagen de la carta",
   "form.backLabel": "Etiqueta del reverso",
   "form.backImage": "Imagen del reverso",
