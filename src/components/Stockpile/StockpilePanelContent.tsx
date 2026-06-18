@@ -759,22 +759,8 @@ export default function StockpilePanelContent({
       setActiveCard(templateId, null, null);
       if (selectedTemplateId === templateId) {
         resetWithSaved(createEditorDefaultValues(templateId));
-      }
+        }
     });
-
-    const updates = collections
-      .map((collection) => {
-        const nextCardIds = collection.cardIds.filter((id) => !idSet.has(id));
-        return nextCardIds.length === collection.cardIds.length
-          ? null
-          : { id: collection.id, cardIds: nextCardIds };
-      })
-      .filter(Boolean) as Array<{ id: string; cardIds: string[] }>;
-    await Promise.all(
-      updates.map((update) =>
-        apiClient.updateCollection({ cardIds: update.cardIds }, { params: { id: update.id } }),
-      ),
-    );
 
     const refreshedCards = await apiClient.listCards({
       queries: { status: "saved", deleted: "include" },

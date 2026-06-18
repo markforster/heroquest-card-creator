@@ -173,7 +173,7 @@ describe("openHqccDb", () => {
     const db = await openHqccDb();
 
     expect(db).toBeInstanceOf(IDBDatabase);
-    expect(db.version).toBe(9);
+    expect(db.version).toBe(10);
     expect(Array.from(db.objectStoreNames)).toEqual(
       expect.arrayContaining([
         "assets",
@@ -188,7 +188,6 @@ describe("openHqccDb", () => {
         "cardTextComponents",
         "cardThumbnails",
         "cardTitleComponents",
-        "cards",
         "cardsBase",
         "collections",
         "deckEntries",
@@ -200,6 +199,7 @@ describe("openHqccDb", () => {
         "settings",
       ]),
     );
+    expect(Array.from(db.objectStoreNames)).not.toContain("cards");
 
     db.close();
     await expect(readExistingHqccDbAppVersion()).resolves.toBe(APP_VERSION);
@@ -218,7 +218,6 @@ describe("openHqccDb", () => {
     expect(Array.from(db.objectStoreNames)).toEqual(
       expect.arrayContaining([
         "assets",
-        "cards",
         "cardsBase",
         "cardSlotLinks",
         "cardThumbnails",
@@ -232,6 +231,7 @@ describe("openHqccDb", () => {
         "settings",
       ]),
     );
+    expect(Array.from(db.objectStoreNames)).not.toContain("cards");
 
     db.close();
   });
@@ -257,8 +257,8 @@ describe("openHqccDb", () => {
     const { openHqccDb, probeHqccDbVersion } = await import("@/lib/hqcc-db");
     const db = await openHqccDb();
 
-    expect(db.version).toBe(9);
-    expect(await probeHqccDbVersion()).toBe(9);
+    expect(db.version).toBe(10);
+    expect(await probeHqccDbVersion()).toBe(10);
 
     const pairs = (await readAllFromDb(db, "pairs")) as Array<{
       frontFaceId: string;
@@ -272,17 +272,7 @@ describe("openHqccDb", () => {
       }),
     );
 
-    const cards = (await readAllFromDb(db, "cards")) as Array<{
-      id: string;
-      pairedWith?: string;
-      schemaVersion?: number;
-    }>;
-
-    expect(cards).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ id: "front-1", pairedWith: "back-1", schemaVersion: 1 }),
-      ]),
-    );
+    expect(Array.from(db.objectStoreNames)).not.toContain("cards");
 
     db.close();
   });
@@ -352,6 +342,7 @@ describe("openHqccDb", () => {
       ]),
     );
     expect(pairs).toHaveLength(2);
+    expect(Array.from(db.objectStoreNames)).not.toContain("cards");
 
     db.close();
   });

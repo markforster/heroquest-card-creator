@@ -1,4 +1,4 @@
-import { createSavedCardRecord } from "@/lib/test-support/decks-service-test-helpers";
+import { systemFamilies } from "@/data/card-systems/types";
 import {
   createTestBlob,
   deleteDb,
@@ -28,7 +28,25 @@ describe("estimateIndexedDbSize", () => {
     );
 
     const db = await openHqccDexieDb();
-    const card = createSavedCardRecord({ id: "card-1", thumbnailBlob: createTestBlob(["png"]) });
+    const baseRecord = {
+      id: "card-1",
+      templateId: "hero" as const,
+      systemFamily: systemFamilies.hq_2021,
+      status: "saved" as const,
+      name: "Card One",
+      nameLower: "card one",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 1 as const,
+    };
+    const thumbnailRecord = {
+      id: "card-1",
+      cardId: "card-1",
+      thumbnailBlob: createTestBlob(["png"]),
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 1 as const,
+    };
     const asset = {
       id: "asset-1",
       name: "Asset",
@@ -39,7 +57,8 @@ describe("estimateIndexedDbSize", () => {
       createdAt: 1,
     };
 
-    await db.cards.put(card);
+    await db.cardsBase.put(baseRecord);
+    await db.cardThumbnails.put(thumbnailRecord);
     await db.assets.put(asset);
     await db.meta.put({
       id: "customMeta",
@@ -48,7 +67,8 @@ describe("estimateIndexedDbSize", () => {
     });
 
     const estimate = await estimateIndexedDbSize({ includeRecordSizes: true });
-    const expectedCardBytes = estimateRecordBytes(card).bytes;
+    const expectedBaseBytes = estimateRecordBytes(baseRecord).bytes;
+    const expectedThumbnailBytes = estimateRecordBytes(thumbnailRecord).bytes;
     const expectedAssetBytes = estimateRecordBytes(asset).bytes;
     const expectedMetaBytes = estimateRecordBytes({
       id: "customMeta",
@@ -56,19 +76,21 @@ describe("estimateIndexedDbSize", () => {
       updatedAt: 1,
     }).bytes;
 
-    expect(estimate.byStore.cards).toEqual({ bytes: expectedCardBytes, records: 1 });
+    expect(estimate.byStore.cardsBase).toEqual({ bytes: expectedBaseBytes, records: 1 });
+    expect(estimate.byStore.cardThumbnails).toEqual({ bytes: expectedThumbnailBytes, records: 1 });
     expect(estimate.byStore.assets).toEqual({ bytes: expectedAssetBytes, records: 1 });
     expect(estimate.byStore.meta).toEqual({ bytes: expectedMetaBytes, records: 1 });
     expect(estimate.recordSizes).toEqual(
       expect.objectContaining({
-        cards: { "card-1": expectedCardBytes },
+        cardsBase: { "card-1": expectedBaseBytes },
+        cardThumbnails: { "card-1": expectedThumbnailBytes },
         assets: { "asset-1": expectedAssetBytes },
         meta: { customMeta: expectedMetaBytes },
       }),
     );
-    expect(estimate.recordsScanned).toBeGreaterThanOrEqual(3);
+    expect(estimate.recordsScanned).toBeGreaterThanOrEqual(4);
     expect(estimate.totalBytes).toBeGreaterThanOrEqual(
-      expectedCardBytes + expectedAssetBytes + expectedMetaBytes,
+      expectedBaseBytes + expectedThumbnailBytes + expectedAssetBytes + expectedMetaBytes,
     );
   });
 });

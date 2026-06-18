@@ -27,8 +27,8 @@ import { APP_VERSION } from "@/version";
 import { generateId } from ".";
 
 export const DB_NAME = "hqcc";
-export const DB_VERSION = 9;
-export const DEXIE_DB_VERSION = 0.9;
+export const DB_VERSION = 10;
+export const DEXIE_DB_VERSION = 1.0;
 export const META_STORE = "meta";
 export const META_APP_VERSION_KEY = "appVersion";
 export const META_PAIRS_MIGRATED_KEY = "pairsMigrated";
@@ -46,7 +46,6 @@ export type MetaRecord = {
 };
 
 type HqccDexieTables = {
-  cards: EntityTable<CardRecord, "id">;
   cardsBase: EntityTable<CardBaseRecord, "id">;
   cardThumbnails: EntityTable<CardThumbnailRecord, "id">;
   cardSlotLinks: EntityTable<CardSlotLinkRecord, "id">;
@@ -93,6 +92,31 @@ const HQCC_STORES_V5 = {
 
 const HQCC_STORES_V7 = {
   ...HQCC_STORES_V5,
+  cardsBase: "id, templateId, status, nameLower, updatedAt",
+  cardThumbnails: "id, cardId, updatedAt",
+  cardSlotLinks: "id, cardId, slotId, slotType, dataRecordId, order",
+  cardBackgroundComponents: "id, cardId, slotId, order",
+  cardBorderComponents: "id, cardId, slotId, order",
+  cardTitleComponents: "id, cardId, slotId, order",
+  cardTextComponents: "id, cardId, slotId, order",
+  cardCopyrightComponents: "id, cardId, slotId, order",
+  cardImageComponents: "id, cardId, slotId, order",
+  cardIconComponents: "id, cardId, slotId, order",
+  cardHeroStatsComponents: "id, cardId, slotId, order",
+  cardMonsterStatsComponents: "id, cardId, slotId, order",
+} as const;
+
+const HQCC_STORES_V10 = {
+  cards: null,
+  assets: "id, createdAt",
+  collections: "id",
+  settings: "id",
+  decks: "id",
+  deckGroups: "id, deckId",
+  deckSets: "id, deckId, groupId, backFaceId",
+  deckEntries: "id, deckId, setId, pairId",
+  meta: "id",
+  pairs: "id, frontFaceId, backFaceId, nameLower",
   cardsBase: "id, templateId, status, nameLower, updatedAt",
   cardThumbnails: "id, cardId, updatedAt",
   cardSlotLinks: "id, cardId, slotId, slotType, dataRecordId, order",
@@ -216,7 +240,6 @@ export async function ensureDexieMetaAppVersionRecord(db: HqccDexieDb): Promise<
 }
 
 class HqccDexieDb extends Dexie implements HqccDexieTables {
-  cards!: EntityTable<CardRecord, "id">;
   cardsBase!: EntityTable<CardBaseRecord, "id">;
   cardThumbnails!: EntityTable<CardThumbnailRecord, "id">;
   cardSlotLinks!: EntityTable<CardSlotLinkRecord, "id">;
@@ -355,7 +378,7 @@ class HqccDexieDb extends Dexie implements HqccDexieTables {
           updatedAt: Date.now(),
         });
       });
-    this.version(DEXIE_DB_VERSION)
+    this.version(0.9)
       .stores(HQCC_STORES_V7)
       .upgrade(async (tx) => {
         await backfillPairsFromLegacyCards(tx);
@@ -366,6 +389,7 @@ class HqccDexieDb extends Dexie implements HqccDexieTables {
           updatedAt: Date.now(),
         });
       });
+    this.version(DEXIE_DB_VERSION).stores(HQCC_STORES_V10);
   }
 }
 

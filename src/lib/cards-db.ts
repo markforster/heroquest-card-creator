@@ -8,8 +8,10 @@ import {
   replaceNormalizedCardThumbnail,
   touchNormalizedCardBaseLastViewed,
 } from "@/lib/cards-normalized";
+import type { CollectionRecord } from "@/types/collections-db";
 import type { CardRecord, CardStatus } from "@/types/cards-db";
 import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
+import type { PairRecord } from "@/types/pairs-db";
 import type { CardThumbnailRecord } from "@/types/cards-normalized";
 import type { TemplateId } from "@/types/templates";
 import type { Table, Transaction } from "dexie";
@@ -21,7 +23,7 @@ import {
   type CardDeleteMode,
   type CardDeleteUsageReport,
 } from "@/lib/decks-errors";
-import { previewDeletePairsForFaces, deletePairsForFaces } from "@/lib/pairs-service";
+import { previewDeletePairsForFaces } from "@/lib/pairs-service";
 import { openHqccDexieDb } from "./hqcc-dexie";
 
 import { generateId } from ".";
@@ -30,6 +32,8 @@ const DECKS_STORE = "decks";
 const DECK_GROUPS_STORE = "deckGroups";
 const DECK_SETS_STORE = "deckSets";
 const DECK_ENTRIES_STORE = "deckEntries";
+const COLLECTIONS_STORE = "collections";
+const PAIRS_STORE = "pairs";
 
 function isDefined<T>(value: T | undefined): value is T {
   return value !== undefined;
@@ -504,18 +508,49 @@ async function getDeckUsageForBackFaceIds(
   return usage;
 }
 
-async function cascadeDeleteDeckDataForBackFaceIds(backFaceIds: string[]): Promise<void> {
-  if (!backFaceIds.length) return;
+type DeckCascadePlan = {
+  deckEntryIds: string[];
+  deckSetIds: string[];
+  deckGroupIds: string[];
+  touchedDeckIds: string[];
+};
+
+type PairCascadePlan = {
+  pairIds: string[];
+  deckEntryIds: string[];
+  touchedDeckIds: string[];
+};
+
+type CollectionCleanupPlan = {
+  collectionsToUpdate: CollectionRecord[];
+};
+
+type CardDeleteCascadePlan = {
+  deck: DeckCascadePlan;
+  pairs: PairCascadePlan;
+  collections: CollectionCleanupPlan;
+};
+
+async function buildDeckCascadePlan(
+  tx: Transaction,
+  backFaceIds: string[],
+): Promise<DeckCascadePlan> {
+  if (!backFaceIds.length) {
+    return { deckEntryIds: [], deckSetIds: [], deckGroupIds: [], touchedDeckIds: [] };
+  }
+
   const backIdSet = new Set(backFaceIds);
-  const db = await openHqccDexieDb();
   const [sets, groups, entries] = await Promise.all([
-    db.deckSets.toArray(),
-    db.deckGroups.toArray(),
-    db.deckEntries.toArray(),
+    tx.table("deckSets").toArray() as Promise<DeckSetRecord[]>,
+    tx.table("deckGroups").toArray() as Promise<DeckGroupRecord[]>,
+    tx.table("deckEntries").toArray() as Promise<DeckEntryRecord[]>,
   ]);
 
   const setsToDelete = sets.filter((set) => backIdSet.has(set.backFaceId));
-  if (!setsToDelete.length) return;
+  if (!setsToDelete.length) {
+    return { deckEntryIds: [], deckSetIds: [], deckGroupIds: [], touchedDeckIds: [] };
+  }
+
   const setIdSet = new Set(setsToDelete.map((set) => set.id));
   const entriesToDelete = entries.filter((entry) => setIdSet.has(entry.setId));
   const touchedDeckIds = new Set(setsToDelete.map((set) => set.deckId));
@@ -526,33 +561,156 @@ async function cascadeDeleteDeckDataForBackFaceIds(backFaceIds: string[]): Promi
     (group) => touchedGroupIds.has(group.id) && !remainingGroupIds.has(group.id),
   );
 
-  await db.transaction("rw", db.deckEntries, db.deckSets, db.deckGroups, async () => {
-    await db.deckEntries.bulkDelete(entriesToDelete.map((entry) => entry.id));
-    await db.deckSets.bulkDelete(setsToDelete.map((set) => set.id));
-    await db.deckGroups.bulkDelete(groupsToDelete.map((group) => group.id));
-  });
+  return {
+    deckEntryIds: entriesToDelete.map((entry) => entry.id),
+    deckSetIds: setsToDelete.map((set) => set.id),
+    deckGroupIds: groupsToDelete.map((group) => group.id),
+    touchedDeckIds: Array.from(touchedDeckIds),
+  };
+}
 
-  entriesToDelete.forEach((entry) => enqueueDbEstimateChange(DECK_ENTRIES_STORE, entry.id));
-  setsToDelete.forEach((set) => enqueueDbEstimateChange(DECK_SETS_STORE, set.id));
-  groupsToDelete.forEach((group) => enqueueDbEstimateChange(DECK_GROUPS_STORE, group.id));
-  if (touchedDeckIds.size) {
-    await db.transaction("rw", db.decks, async () => {
-      const now = Date.now();
-      const decks = (await db.decks.bulkGet(Array.from(touchedDeckIds))).filter(
-        (deck): deck is DeckRecord => Boolean(deck),
-      );
-      if (!decks.length) {
-        return;
+async function buildPairCascadePlan(
+  tx: Transaction,
+  faceIds: string[],
+): Promise<PairCascadePlan> {
+  if (!faceIds.length) {
+    return { pairIds: [], deckEntryIds: [], touchedDeckIds: [] };
+  }
+
+  const faceIdSet = new Set(faceIds);
+  const pairs = (await tx.table("pairs").toArray()) as PairRecord[];
+  const pairsToDelete = pairs.filter((pair) => {
+    if (!pair.frontFaceId || !pair.backFaceId) {
+      return false;
+    }
+    return faceIdSet.has(pair.frontFaceId) || faceIdSet.has(pair.backFaceId);
+  });
+  if (!pairsToDelete.length) {
+    return { pairIds: [], deckEntryIds: [], touchedDeckIds: [] };
+  }
+
+  const pairIds = pairsToDelete.map((pair) => pair.id);
+  const entries = (await tx
+    .table("deckEntries")
+    .where("pairId")
+    .anyOf(pairIds)
+    .toArray()) as DeckEntryRecord[];
+
+  return {
+    pairIds,
+    deckEntryIds: entries.map((entry) => entry.id),
+    touchedDeckIds: Array.from(new Set(entries.map((entry) => entry.deckId))),
+  };
+}
+
+async function buildCollectionCleanupPlan(
+  tx: Transaction,
+  ids: string[],
+  now: number,
+): Promise<CollectionCleanupPlan> {
+  if (!ids.length) {
+    return { collectionsToUpdate: [] };
+  }
+
+  const idSet = new Set(ids);
+  const collections = (await tx.table("collections").toArray()) as CollectionRecord[];
+  const collectionsToUpdate = collections
+    .map((collection) => {
+      const nextCardIds = collection.cardIds.filter((cardId) => !idSet.has(cardId));
+      if (nextCardIds.length === collection.cardIds.length) {
+        return null;
       }
-      await db.decks.bulkPut(
+      return {
+        ...collection,
+        cardIds: nextCardIds,
+        updatedAt: now,
+      };
+    })
+    .filter((collection): collection is CollectionRecord => collection !== null);
+
+  return { collectionsToUpdate };
+}
+
+async function buildCardDeleteCascadePlan(
+  tx: Transaction,
+  ids: string[],
+  now: number,
+): Promise<CardDeleteCascadePlan> {
+  const [deck, pairs, collections] = await Promise.all([
+    buildDeckCascadePlan(tx, ids),
+    buildPairCascadePlan(tx, ids),
+    buildCollectionCleanupPlan(tx, ids, now),
+  ]);
+
+  return { deck, pairs, collections };
+}
+
+async function executeCardDeleteCascade(
+  tx: Transaction,
+  ids: string[],
+  plan: CardDeleteCascadePlan,
+  now: number,
+): Promise<void> {
+  const deckEntryIds = Array.from(
+    new Set([...plan.deck.deckEntryIds, ...plan.pairs.deckEntryIds]),
+  );
+
+  if (deckEntryIds.length) {
+    await tx.table("deckEntries").bulkDelete(deckEntryIds);
+  }
+  if (plan.pairs.pairIds.length) {
+    await tx.table("pairs").bulkDelete(plan.pairs.pairIds);
+  }
+  if (plan.deck.deckSetIds.length) {
+    await tx.table("deckSets").bulkDelete(plan.deck.deckSetIds);
+  }
+  if (plan.deck.deckGroupIds.length) {
+    await tx.table("deckGroups").bulkDelete(plan.deck.deckGroupIds);
+  }
+  if (plan.collections.collectionsToUpdate.length) {
+    await tx.table("collections").bulkPut(plan.collections.collectionsToUpdate);
+  }
+
+  const touchedDeckIds = Array.from(
+    new Set([...plan.deck.touchedDeckIds, ...plan.pairs.touchedDeckIds]),
+  );
+  if (touchedDeckIds.length) {
+    const decks = ((await tx.table("decks").bulkGet(touchedDeckIds)) as Array<
+      DeckRecord | undefined
+    >).filter(isDefined);
+    if (decks.length) {
+      await tx.table("decks").bulkPut(
         decks.map((deck) => ({
           ...deck,
           updatedAt: now,
         })),
       );
-    });
-    touchedDeckIds.forEach((deckId) => enqueueDbEstimateChange(DECKS_STORE, deckId));
+    }
   }
+
+  for (let index = 0; index < ids.length; index += 1) {
+    await deleteNormalizedCardRecords(tx, ids[index]);
+  }
+}
+
+function enqueueCardDeleteCascadeChanges(
+  ids: string[],
+  plan: CardDeleteCascadePlan,
+): void {
+  const deckEntryIds = Array.from(
+    new Set([...plan.deck.deckEntryIds, ...plan.pairs.deckEntryIds]),
+  );
+  deckEntryIds.forEach((entryId) => enqueueDbEstimateChange(DECK_ENTRIES_STORE, entryId));
+  plan.deck.deckSetIds.forEach((setId) => enqueueDbEstimateChange(DECK_SETS_STORE, setId));
+  plan.deck.deckGroupIds.forEach((groupId) => enqueueDbEstimateChange(DECK_GROUPS_STORE, groupId));
+  Array.from(new Set([...plan.deck.touchedDeckIds, ...plan.pairs.touchedDeckIds])).forEach(
+    (deckId) => enqueueDbEstimateChange(DECKS_STORE, deckId),
+  );
+  plan.pairs.pairIds.forEach((pairId) => enqueueDbEstimateChange(PAIRS_STORE, pairId));
+  plan.collections.collectionsToUpdate.forEach((collection) =>
+    enqueueDbEstimateChange(COLLECTIONS_STORE, collection.id),
+  );
+  ids.forEach((id) => enqueueDbEstimateChange("cards", id));
 }
 
 export async function softDeleteCards(
@@ -569,62 +727,11 @@ export async function restoreCards(ids: string[]): Promise<void> {
 }
 
 export async function deleteCard(id: string): Promise<void> {
-  const db = await openHqccDexieDb();
-  await db.transaction(
-    "rw",
-    [
-      db.cardsBase,
-      db.cardThumbnails,
-      db.cardSlotLinks,
-      db.cardBackgroundComponents,
-      db.cardBorderComponents,
-      db.cardTitleComponents,
-      db.cardTextComponents,
-      db.cardCopyrightComponents,
-      db.cardImageComponents,
-      db.cardIconComponents,
-      db.cardHeroStatsComponents,
-      db.cardMonsterStatsComponents,
-    ],
-    async (tx) => {
-      await deleteNormalizedCardRecords(tx, id);
-    },
-  );
-  enqueueDbEstimateChange("cards", id);
-}
-
-async function deleteCardsRaw(ids: string[]): Promise<void> {
-  if (!ids.length) return;
-
-  const db = await openHqccDexieDb();
-
-  await db.transaction(
-    "rw",
-    [
-      db.cardsBase,
-      db.cardThumbnails,
-      db.cardSlotLinks,
-      db.cardBackgroundComponents,
-      db.cardBorderComponents,
-      db.cardTitleComponents,
-      db.cardTextComponents,
-      db.cardCopyrightComponents,
-      db.cardImageComponents,
-      db.cardIconComponents,
-      db.cardHeroStatsComponents,
-      db.cardMonsterStatsComponents,
-    ],
-    async (tx) => {
-      for (let index = 0; index < ids.length; index += 1) {
-        await deleteNormalizedCardRecords(tx, ids[index]);
-      }
-    },
-  );
-  ids.forEach((id) => enqueueDbEstimateChange("cards", id));
+  await deleteCardsWithCascade([id], { mode: "confirmable-cascade", confirmCascade: true });
 }
 
 export async function deleteCards(ids: string[]): Promise<void> {
-  await deleteCardsRaw(ids);
+  await deleteCardsWithCascade(ids, { mode: "confirmable-cascade", confirmCascade: true });
 }
 
 export async function previewDeleteCardsImpact(
@@ -686,19 +793,10 @@ export async function deleteCardsWithCascade(
   },
 ): Promise<void> {
   if (!ids.length) return;
+  const uniqueIds = Array.from(new Set(ids));
   const mode = options?.mode ?? "confirmable-cascade";
   const confirmCascade = options?.confirmCascade ?? true;
-  if (mode === "confirmable-cascade" && confirmCascade) {
-    await cascadeDeleteDeckDataForBackFaceIds(ids);
-    try {
-      await deletePairsForFaces(ids, { mode: "confirmable-cascade", confirmCascade: true });
-    } catch {
-      // If pair stores are unavailable, continue card deletion.
-    }
-    await deleteCardsRaw(ids);
-    return;
-  }
-  const impact = await previewDeleteCardsImpact(ids, mode);
+  const impact = await previewDeleteCardsImpact(uniqueIds, mode);
   const hasImpact =
     impact.cascadePlan.deckSetIds.length > 0 || impact.cascadePlan.deckEntryIds.length > 0;
   if (hasImpact && mode === "block") {
@@ -708,13 +806,39 @@ export async function deleteCardsWithCascade(
     throw createCardDeleteConfirmRequiredError(impact);
   }
 
-  await cascadeDeleteDeckDataForBackFaceIds(ids);
-  if (impact.cascadePlan.deckEntryIds.length > 0 || impact.cascadePlan.pairUsage.length > 0) {
-    try {
-      await deletePairsForFaces(ids, { mode: "confirmable-cascade", confirmCascade: true });
-    } catch {
-      // If pair stores are unavailable, continue card deletion.
-    }
+  const db = await openHqccDexieDb();
+  const now = Date.now();
+  let plan: CardDeleteCascadePlan | null = null;
+
+  await db.transaction(
+    "rw",
+    [
+      db.cardsBase,
+      db.cardThumbnails,
+      db.cardSlotLinks,
+      db.cardBackgroundComponents,
+      db.cardBorderComponents,
+      db.cardTitleComponents,
+      db.cardTextComponents,
+      db.cardCopyrightComponents,
+      db.cardImageComponents,
+      db.cardIconComponents,
+      db.cardHeroStatsComponents,
+      db.cardMonsterStatsComponents,
+      db.pairs,
+      db.deckEntries,
+      db.deckSets,
+      db.deckGroups,
+      db.decks,
+      db.collections,
+    ],
+    async (tx) => {
+      plan = await buildCardDeleteCascadePlan(tx, uniqueIds, now);
+      await executeCardDeleteCascade(tx, uniqueIds, plan, now);
+    },
+  );
+
+  if (plan) {
+    enqueueCardDeleteCascadeChanges(uniqueIds, plan);
   }
-  await deleteCardsRaw(ids);
 }
