@@ -8,6 +8,7 @@ export function applyInspectorDefaults<T extends TemplateId>(
 ): CardDataByTemplate[T] {
   const fields = inspectorFieldsByTemplate[templateId];
   if (!fields) return data;
+  const hasTitleField = fields.some((field) => field.fieldType === "title");
   const showTitleToggle = fields.some((field) => field.fieldType === "title" && field.showToggle);
   const showTitlePlacement = fields.some(
     (field) => field.fieldType === "title" && field.showPlacement,
@@ -17,6 +18,15 @@ export function applyInspectorDefaults<T extends TemplateId>(
   );
   return {
     ...data,
+    ...(hasTitleField
+      ? {
+          name:
+            data.name ??
+            ((data as { title?: string }).title?.trim().length
+              ? (data as { title?: string }).title
+              : data.name),
+        }
+      : {}),
     ...(showTitleToggle ? { showTitle: data.showTitle ?? true } : {}),
     ...(showTitlePlacement
       ? {

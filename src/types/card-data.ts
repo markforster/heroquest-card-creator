@@ -5,6 +5,7 @@ import type { TemplateId } from "./templates";
 import { DEFAULT_BODY_TEXT_COLOR } from "@/config/colors";
 
 export interface BaseCardFields {
+  name?: string;
   title?: string;
   showTitle?: boolean;
   titleStyle?: "ribbon" | "plain";

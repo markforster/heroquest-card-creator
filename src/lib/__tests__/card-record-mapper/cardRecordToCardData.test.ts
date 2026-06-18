@@ -69,4 +69,19 @@ describe("cardRecordToCardData", () => {
     expect(cardRecordToCardData(legacyRecord).bodyTextFitToBounds).toBe(false);
     expect(cardRecordToCardData(explicitRecord).bodyTextFitToBounds).toBe(true);
   });
+
+  it("maps persisted name into editor form data", () => {
+    const record: CardRecord & { templateId: "labelled-back" } = {
+      id: "card-5",
+      templateId: "labelled-back",
+      status: "saved",
+      name: "Treasure Deck",
+      nameLower: "treasure deck",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 2,
+    };
+
+    expect(cardRecordToCardData(record).name).toBe("Treasure Deck");
+  });
 });

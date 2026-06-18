@@ -2,12 +2,10 @@ import type { InspectorField } from "@/types/inspector";
 
 export const HERO_BACK_INSPECTOR_FIELDS: InspectorField[] = [
   {
-    fieldType: "title",
-    bind: "title",
-    labelKey: "form.backTitle",
-    required: false,
-    showToolbar: true,
-    showTitleColor: true,
+    fieldType: "name",
+    bind: "name",
+    labelKey: "form.name",
+    required: true,
   },
   {
     fieldType: "backgroundTint",

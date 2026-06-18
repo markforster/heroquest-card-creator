@@ -22,6 +22,7 @@ export function cardRecordToCardData<T extends TemplateId>(
 ): CardDataByTemplate[T] {
   const normalizedScale = normalizeImageScale(record as CardRecord & { templateId: TemplateId });
   const base = {
+    name: record.name,
     title: record.title,
     showTitle: record.showTitle ?? true,
     titleStyle: record.titleStyle,
