@@ -9,26 +9,9 @@ import { measureCardTextMaxLineWidth } from "@/components/Cards/CardParts/CardTe
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
 import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
-import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
-import {
-  DEVELOPER_CREDIT_BLEND_COLOR,
-  DEVELOPER_CREDIT_BLEND_MODE,
-  DEVELOPER_CREDIT_FONT_SCALE,
-  DEVELOPER_CREDIT_OPACITY,
-  DEVELOPER_CREDIT_RIGHT_INSET,
-  DEVELOPER_CREDIT_TOP_INSET,
-  DEVELOPER_CREDIT_TEXT,
-} from "@/config/developer-credit";
 import { ENABLE_WATERMARK, USE_ROUNDED_CARD_CLIP } from "@/config/flags";
 import { blueprintsByTemplateId, getCopyrightBounds } from "@/data/blueprints";
 import { useI18n } from "@/i18n/I18nProvider";
-import {
-  composeBleedCanvas,
-  cloneSvgForBleed,
-  getBleedTrimOrigin,
-  setExportBackgroundFit,
-  setExportClip,
-} from "@/lib/bleed-export";
 import { collectCardAssetIds } from "@/lib/card-assets";
 import { resolveCardPreviewFileName } from "@/lib/card-preview";
 import { computeAverageLuminance } from "@/lib/color-contrast";
@@ -45,7 +28,6 @@ import {
   logSummary,
   startExportLogging,
 } from "@/lib/export-logging";
-import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { addPngTextChunk } from "@/lib/png-metadata";
 import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
@@ -56,204 +38,17 @@ import { APP_VERSION } from "@/version";
 
 import styles from "./CardPreview.module.css";
 import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "./consts";
+import { renderBleedCanvas } from "./cardPreviewBleedCanvas";
+import { resolveCopyrightTextStyle } from "./cardPreviewCopyright";
+import { drawDeveloperCredit } from "./cardPreviewDeveloperCredit";
+import { mutateSvgForExport } from "./cardPreviewExportSvg";
 
 import type { CardPreviewHandle, CardPreviewProps } from "./types";
-
 
 function normalizeCopyrightColor(value?: string) {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
-}
-
-function resolveCopyrightTextStyle(templateId?: CardPreviewProps["templateId"]) {
-  if (!templateId) {
-    return {
-      fontSize: 16,
-      fontWeight: undefined as number | string | undefined,
-      fontFamily: "Helvetica, Arial, sans-serif",
-      letterSpacingEm: undefined as number | undefined,
-      fill: DEFAULT_COPYRIGHT_COLOR,
-    };
-  }
-  const blueprint = blueprintsByTemplateId[templateId];
-  const layer = blueprint?.layers.find((entry) => entry.type === "copyright");
-  const layerProps = layer?.props ?? {};
-  const fontSize = typeof layerProps.fontSize === "number" ? layerProps.fontSize : 16;
-  const fontWeight =
-    typeof layerProps.fontWeight === "number" || typeof layerProps.fontWeight === "string"
-      ? layerProps.fontWeight
-      : undefined;
-  const fontFamily =
-    typeof layerProps.fontFamily === "string"
-      ? layerProps.fontFamily
-      : "Helvetica, Arial, sans-serif";
-  const letterSpacingEm =
-    typeof layerProps.letterSpacingEm === "number" ? layerProps.letterSpacingEm : undefined;
-  const fill = typeof layerProps.fill === "string" ? layerProps.fill : DEFAULT_COPYRIGHT_COLOR;
-  return { fontSize, fontWeight, fontFamily, letterSpacingEm, fill };
-}
-
-function removeDeveloperCreditLayer(svg: SVGSVGElement) {
-  svg.querySelectorAll('[data-layer-type="developer-credit"]').forEach((node) => node.remove());
-}
-
-function applyExportImageClip(svg: SVGSVGElement) {
-  const existing = svg.querySelector("clipPath#exportImageClip");
-  if (!existing) {
-    const svgNs = "http://www.w3.org/2000/svg";
-    const defs = svg.querySelector("defs") ?? svg.insertBefore(document.createElementNS(svgNs, "defs"), svg.firstChild);
-    const clipPath = document.createElementNS(svgNs, "clipPath");
-    clipPath.setAttribute("id", "exportImageClip");
-    clipPath.setAttribute("clipPathUnits", "userSpaceOnUse");
-    const rect = document.createElementNS(svgNs, "rect");
-    rect.setAttribute("x", "0");
-    rect.setAttribute("y", "0");
-    rect.setAttribute("width", String(CARD_WIDTH));
-    rect.setAttribute("height", String(CARD_HEIGHT));
-    clipPath.appendChild(rect);
-    defs.appendChild(clipPath);
-  }
-
-  svg
-    .querySelectorAll<SVGImageElement | SVGFEImageElement>("image, feImage")
-    .forEach((node) => {
-      if (node.hasAttribute("clip-path") || node.hasAttribute("clipPath")) {
-        return;
-      }
-      node.setAttribute("clip-path", "url(#exportImageClip)");
-    });
-}
-
-function zeroTreasureBorderOffsetsForExport(svg: SVGSVGElement) {
-  svg
-    .querySelectorAll<SVGImageElement | SVGFEImageElement>(
-      '[data-template-asset="border-mask"], [data-template-asset="border-texture"]',
-    )
-    .forEach((node) => {
-      node.setAttribute("x", "0");
-      node.setAttribute("y", "0");
-    });
-}
-
-type ExportSvgMutationOptions = {
-  mode: "standard" | "bleed-full" | "bleed-source";
-  roundedCorners?: boolean;
-  bleedPx?: number;
-  cropMarksEnabled?: boolean;
-  developerCreditEnabled?: boolean;
-  templateId?: CardPreviewProps["templateId"];
-};
-
-function mutateSvgForExport(
-  svg: SVGSVGElement,
-  {
-    mode,
-    roundedCorners = true,
-    bleedPx = 0,
-    cropMarksEnabled = false,
-    developerCreditEnabled = false,
-    templateId,
-  }: ExportSvgMutationOptions,
-) {
-  if (mode !== "standard") {
-    const cardClipRect = svg.querySelector<SVGRectElement>("clipPath#cardClip rect");
-    if (cardClipRect) {
-      cardClipRect.setAttribute("x", "0");
-      cardClipRect.setAttribute("y", "0");
-      cardClipRect.setAttribute("width", String(CARD_WIDTH));
-      cardClipRect.setAttribute("height", String(CARD_HEIGHT));
-      cardClipRect.setAttribute("rx", "0");
-      cardClipRect.setAttribute("ry", "0");
-    }
-  }
-
-  const outline = svg.querySelector('[data-card-outline="true"]');
-  if (outline) {
-    outline.remove();
-  }
-
-  if (bleedPx > 0 || cropMarksEnabled) {
-    setExportBackgroundFit(svg, "slice");
-  }
-
-  if (mode !== "bleed-source") {
-    setExportClip(svg, { rounded: roundedCorners });
-  }
-
-  if (developerCreditEnabled) {
-    removeDeveloperCreditLayer(svg);
-  }
-
-  applyExportImageClip(svg);
-
-  if (templateId === "small-treasure" || templateId === "large-treasure") {
-    zeroTreasureBorderOffsetsForExport(svg);
-  }
-}
-
-function shouldShowDeveloperCredit(
-  templateId?: CardPreviewProps["templateId"],
-  cardData?: CardPreviewProps["cardData"],
-) {
-  return Boolean(templateId && cardData);
-}
-
-function drawDeveloperCredit({
-  canvas,
-  templateId,
-  cardData,
-  bleedPx,
-  cropMarks,
-  cutMarks,
-}: {
-  canvas: HTMLCanvasElement;
-  templateId?: CardPreviewProps["templateId"];
-  cardData?: CardPreviewProps["cardData"];
-  bleedPx: number;
-  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
-  cutMarks?: { enabled: boolean; color: string };
-}) {
-  if (!shouldShowDeveloperCredit(templateId, cardData)) return;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  const style = resolveCopyrightTextStyle(templateId);
-  const fontSize = Math.max(1, Math.round(style.fontSize * DEVELOPER_CREDIT_FONT_SCALE));
-  const effectiveTopInset = Math.max(DEVELOPER_CREDIT_TOP_INSET, CARD_CORNER_RADIUS + 2);
-  const fontWeight = "400";
-  const fontFamily = CARD_TEXT_FONT_FAMILY;
-  ctx.font = `${fontWeight ? `${fontWeight} ` : ""}${fontSize}px ${fontFamily}`;
-  ctx.textAlign = "left";
-  ctx.textBaseline = "bottom";
-  ctx.fillStyle = DEVELOPER_CREDIT_BLEND_COLOR;
-
-  const { trimX, trimY } = getBleedTrimOrigin({
-    bleedPx,
-    cropMarks,
-    cutMarks,
-  });
-  const { maxLineWidth } = measureCardTextMaxLineWidth({
-    text: DEVELOPER_CREDIT_TEXT,
-    width: CARD_HEIGHT,
-    fontSize,
-    lineHeight: fontSize,
-    fontFamily,
-    fontWeight,
-    letterSpacingEm: undefined,
-    defaultAlign: "left",
-  });
-  const x = trimX + CARD_WIDTH - DEVELOPER_CREDIT_RIGHT_INSET;
-  const y = trimY + effectiveTopInset + Math.max(0, Math.floor(maxLineWidth));
-  ctx.save();
-  ctx.globalCompositeOperation = DEVELOPER_CREDIT_BLEND_MODE as GlobalCompositeOperation;
-  ctx.globalAlpha = DEVELOPER_CREDIT_OPACITY;
-  ctx.translate(x, y);
-  ctx.rotate(-Math.PI / 2);
-  ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-  ctx.fillText(DEVELOPER_CREDIT_TEXT, 0, 0);
-  ctx.restore();
 }
 
 const COPYRIGHT_LUMINANCE_THRESHOLD = 0.52;
@@ -642,14 +437,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           });
           setCopyrightTextColor(copyrightColor);
         }
-
       };
-    }, [
-      cardData,
-      templateId,
-      normalizedCopyrightTextColorProp,
-      defaultCopyright,
-    ]);
+    }, [cardData, templateId, normalizedCopyrightTextColorProp, defaultCopyright]);
 
     useEffect(() => {
       setCopyrightTextColor(normalizedCopyrightTextColorProp);
@@ -728,7 +517,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
               logCardSkip(session, { reason: `Missing ${missingSummary}` });
               return;
             }
-
 
             const waitStart = now();
             if (assetIds.length) {
@@ -1057,13 +845,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           });
         },
       }),
-      [
-        cardData,
-        templateId,
-        templateName,
-        syncCopyrightContrast,
-        developerCreditEnabled,
-      ],
+      [cardData, templateId, templateName, syncCopyrightContrast, developerCreditEnabled],
     );
 
     return (
@@ -1131,83 +913,6 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 );
 
 CardPreview.displayName = "CardPreview";
-
-async function renderBleedCanvas({
-  svgElement,
-  bleedPx,
-  cropMarks,
-  cutMarks,
-  roundedCorners,
-  loggingId,
-  assetBlobsById,
-  templateId,
-  developerCreditEnabled,
-}: {
-  svgElement: SVGSVGElement;
-  bleedPx: number;
-  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
-  cutMarks?: { enabled: boolean; color: string };
-  roundedCorners: boolean;
-  loggingId?: string;
-  assetBlobsById?: Map<string, Blob>;
-  templateId?: CardPreviewProps["templateId"];
-  developerCreditEnabled?: boolean;
-}): Promise<HTMLCanvasElement | null> {
-  const fullCanvas = await renderSvgToCanvas({
-    svgElement,
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    removeDebugBounds: true,
-    loggingId,
-    assetBlobsById,
-    mutateSvg: (svg) =>
-      mutateSvgForExport(svg, {
-        mode: "bleed-full",
-        roundedCorners,
-        bleedPx,
-        cropMarksEnabled: Boolean(cropMarks?.enabled),
-        developerCreditEnabled,
-        templateId,
-      }),
-  });
-  if (!fullCanvas) return null;
-  if (ENABLE_WATERMARK && shouldApplyWatermark(templateId)) {
-    applyWatermarkToCanvas(fullCanvas);
-  }
-
-  let bleedSourceCanvas: HTMLCanvasElement | null = null;
-  if (bleedPx > 0) {
-    bleedSourceCanvas = await renderSvgToCanvas({
-      svgElement,
-      width: CARD_WIDTH,
-      height: CARD_HEIGHT,
-      removeDebugBounds: true,
-      loggingId,
-      assetBlobsById,
-      mutateSvg: (svg) =>
-        mutateSvgForExport(svg, {
-          mode: "bleed-source",
-          bleedPx,
-          cropMarksEnabled: Boolean(cropMarks?.enabled),
-          developerCreditEnabled,
-          templateId,
-        }),
-    });
-  }
-
-  return composeBleedCanvas({
-    fullCanvas,
-    backgroundCanvas: bleedSourceCanvas,
-    bleedPx,
-    cropMarks,
-    cutMarks: cutMarks
-      ? {
-          enabled: cutMarks.enabled,
-          color: cutMarks.color,
-        }
-      : cutMarks,
-  });
-}
 
 export default CardPreview;
 export type { CardPreviewHandle, CardPreviewProps } from "./types";

@@ -27,19 +27,22 @@ async function flushMicrotasks() {
 
 describe("useAssetImageUrl", () => {
   const originalRevokeDescriptor = Object.getOwnPropertyDescriptor(URL, "revokeObjectURL");
+  let revokeSpy: jest.Mock;
+
+  beforeAll(() => {
+    revokeSpy = jest.fn();
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: (...args: unknown[]) => revokeSpy(...args),
+    });
+  });
 
   beforeEach(() => {
     jest.resetAllMocks();
-
-    if (typeof URL.revokeObjectURL !== "function") {
-      Object.defineProperty(URL, "revokeObjectURL", {
-        configurable: true,
-        value: jest.fn(),
-      });
-    }
+    revokeSpy.mockReset();
   });
 
-  afterEach(() => {
+  afterAll(() => {
     if (originalRevokeDescriptor) {
       Object.defineProperty(URL, "revokeObjectURL", originalRevokeDescriptor);
     } else {
@@ -55,27 +58,22 @@ describe("useAssetImageUrl", () => {
   });
 
   it("loads an object URL for an asset id and revokes it on unmount", async () => {
-    const revokeSpy = jest.spyOn(URL, "revokeObjectURL");
-
     (apiClient.getAssetObjectUrl as jest.Mock).mockResolvedValueOnce("blob:asset-1");
 
     const { result, unmount } = renderHook(() => useAssetImageUrl("asset-1"));
-    expect(result.current).toEqual({ url: null, status: "idle" });
+    expect(result.current).toEqual({ url: null, status: "loading" });
 
     await flushMicrotasks();
     expect(result.current).toEqual({ url: "blob:asset-1", status: "ready" });
-    expect(apiClient.getAssetObjectUrl).toHaveBeenCalledWith(undefined, {
+    expect(apiClient.getAssetObjectUrl).toHaveBeenCalledWith({
       params: { id: "asset-1" },
     });
 
     unmount();
     expect(revokeSpy).toHaveBeenCalledWith("blob:asset-1");
-    revokeSpy.mockRestore();
   });
 
   it("revokes the URL when the request resolves after being cancelled", async () => {
-    const revokeSpy = jest.spyOn(URL, "revokeObjectURL");
-
     const deferred = createDeferred<string | null>();
     (apiClient.getAssetObjectUrl as jest.Mock).mockReturnValueOnce(deferred.promise);
 
@@ -86,7 +84,7 @@ describe("useAssetImageUrl", () => {
       { initialProps: { assetId: "asset-1" } },
     );
 
-    expect(result.current).toEqual({ url: null, status: "idle" });
+    expect(result.current).toEqual({ url: null, status: "loading" });
 
     // Cancel the in-flight request by clearing the asset id.
     rerender({ assetId: undefined });
@@ -96,14 +94,13 @@ describe("useAssetImageUrl", () => {
 
     expect(result.current).toEqual({ url: null, status: "idle" });
     expect(revokeSpy).toHaveBeenCalledWith("blob:late-url");
-    revokeSpy.mockRestore();
   });
 
   it("returns null when getAssetObjectUrl throws", async () => {
     (apiClient.getAssetObjectUrl as jest.Mock).mockRejectedValueOnce(new Error("boom"));
 
     const { result } = renderHook(() => useAssetImageUrl("asset-1"));
-    expect(result.current).toEqual({ url: null, status: "idle" });
+    expect(result.current).toEqual({ url: null, status: "loading" });
 
     await flushMicrotasks();
     expect(result.current).toEqual({ url: null, status: "missing" });

@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { Gamepad2, TriangleAlert, Twitter } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { isMobile, isTablet } from "react-device-detect";
+
 import styles from "@/app/page.module.css";
+import ModalShell from "@/components/common/ModalShell";
+import { useMediaQuery } from "@/components/Layout/LeftNav/useMediaQuery";
 import HelpModal from "@/components/Modals/HelpModal";
 import ReleaseNotesModal from "@/components/Modals/ReleaseNotesModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
-import { useMediaQuery } from "@/components/Layout/LeftNav/useMediaQuery";
-import ModalShell from "@/components/common/ModalShell";
 import useIsTauriApp from "@/hooks/useIsTauriApp";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -93,7 +94,10 @@ export default function MainFooter() {
                 }}
                 title={t("tooltip.desktopOptimizedNotice")}
               >
-                <TriangleAlert className={styles.footerCompatibilityNoticeIcon} aria-hidden="true" />
+                <TriangleAlert
+                  className={styles.footerCompatibilityNoticeIcon}
+                  aria-hidden="true"
+                />
                 {t("label.desktopOptimized")}
               </button>
             ) : null}
@@ -159,7 +163,11 @@ export default function MainFooter() {
         onClose={desktopNoticeModal.close}
         title={t("heading.desktopBrowserRecommended")}
         footer={
-          <button type="button" className="btn btn-primary btn-sm" onClick={desktopNoticeModal.close}>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={desktopNoticeModal.close}
+          >
             {t("actions.ok")}
           </button>
         }

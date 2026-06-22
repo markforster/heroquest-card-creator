@@ -131,6 +131,41 @@ export default function FormattingHelpContent() {
           ]}
         />
         <CheatCard
+          title={t("formattingHelp.richText")}
+          rows={[
+            {
+              code: t("formattingHelp.richText.boldCode"),
+              output: <strong>{t("formattingHelp.richText.boldOutput")}</strong>,
+            },
+            {
+              code: t("formattingHelp.richText.italicCode"),
+              output: <em>{t("formattingHelp.richText.italicOutput")}</em>,
+            },
+            {
+              code: t("formattingHelp.richText.colorCode"),
+              output: (
+                <span style={{ color: "#ff0000" }}>{t("formattingHelp.richText.colorOutput")}</span>
+              ),
+            },
+            {
+              code: t("formattingHelp.richText.underlineCode"),
+              output: (
+                <span style={{ textDecoration: "underline" }}>
+                  {t("formattingHelp.richText.underlineOutput")}
+                </span>
+              ),
+            },
+            {
+              code: t("formattingHelp.richText.comboCode"),
+              output: (
+                <strong style={{ color: "#3366ff" }}>
+                  {t("formattingHelp.richText.comboOutput")}
+                </strong>
+              ),
+            },
+          ]}
+        />
+        <CheatCard
           title={t("formattingHelp.alignment")}
           rows={[
             {

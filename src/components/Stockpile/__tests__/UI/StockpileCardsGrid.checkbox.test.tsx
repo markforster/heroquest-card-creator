@@ -37,14 +37,12 @@ describe("StockpileCardsGrid (UI)", () => {
       templateThumbSrc: null,
       paired: { back: null, fronts: [], frontsVisible: [], frontsOverflow: 0 },
       isSelected: true,
-      isPairingConflict: false,
     };
 
     render(
       <StockpileCardsGrid
         items={[item]}
         isPairMode={false}
-        conflictPopoverCardId={null}
         dragEnabled={false}
         onClearSelection={jest.fn()}
         actions={{
@@ -56,8 +54,6 @@ describe("StockpileCardsGrid (UI)", () => {
           onPairHoverLeave: jest.fn(),
           onTableThumbEnter: jest.fn(),
           onTableThumbLeave: jest.fn(),
-          onConflictHoverEnter: jest.fn(),
-          onConflictHoverLeave: jest.fn(),
         }}
       />,
     );
@@ -67,6 +63,47 @@ describe("StockpileCardsGrid (UI)", () => {
 
     fireEvent.click(checkbox);
     fireEvent.change(checkbox, { target: { checked: false } });
-    expect(onCardSetSelected).toHaveBeenCalledWith("card-1", false, false, false);
+    expect(onCardSetSelected).toHaveBeenCalledWith("card-1", false, false);
+  });
+
+  it("toggles pair-mode card selection without conflict-specific args", () => {
+    const onCardClick = jest.fn();
+    const item: StockpileCardView = {
+      id: "card-1",
+      name: "Card 1",
+      templateId: "hero",
+      templateLabel: "Hero",
+      effectiveFace: "front",
+      faceLabel: "Front",
+      facePillLabel: "Front",
+      updatedLabel: "Today",
+      timeLabel: "Now",
+      thumbnailBlob: null,
+      templateThumbSrc: null,
+      paired: { back: null, fronts: [], frontsVisible: [], frontsOverflow: 0 },
+      isSelected: false,
+    };
+
+    render(
+      <StockpileCardsGrid
+        items={[item]}
+        isPairMode
+        dragEnabled={false}
+        onClearSelection={jest.fn()}
+        actions={{
+          onCardClick,
+          onCardSetSelected: jest.fn(),
+          onCardSelectSingle: jest.fn(),
+          onCardDoubleClick: jest.fn(),
+          onPairHoverEnter: jest.fn(),
+          onPairHoverLeave: jest.fn(),
+          onTableThumbEnter: jest.fn(),
+          onTableThumbLeave: jest.fn(),
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText("Card 1"));
+    expect(onCardClick).toHaveBeenCalledWith("card-1", expect.any(Object), true);
   });
 });

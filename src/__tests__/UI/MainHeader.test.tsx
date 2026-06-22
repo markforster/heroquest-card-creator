@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 
 import MainHeader from "@/components/Layout/MainHeader";
 import { I18nProvider } from "@/i18n/I18nProvider";
@@ -20,6 +20,7 @@ jest.mock("next/image", () => ({
 }));
 
 jest.mock("@/components/Providers/AnalyticsProvider", () => ({
+  __esModule: true,
   useAnalytics: () => ({
     track: jest.fn(),
   }),
@@ -62,6 +63,7 @@ describe("MainHeader", () => {
   it("renders the application branding", () => {
     renderMainHeader();
 
+    expect(screen.getByRole("img", { name: "HeroQuest Card Creator" })).toBeInTheDocument();
     expect(screen.getByText("HeroQuest Card Creator")).toBeInTheDocument();
   });
 
@@ -69,6 +71,20 @@ describe("MainHeader", () => {
     renderMainHeader();
 
     expect(screen.getByText("Rate on itch.io")).toBeInTheDocument();
+  });
+
+  it("renders the current social links", () => {
+    renderMainHeader();
+
+    const socialLinks = screen.getByLabelText("Social links");
+    expect(within(socialLinks).getByRole("link", { name: "Twitter" })).toHaveAttribute(
+      "href",
+      "https://x.com/hqcardcreator",
+    );
+    expect(within(socialLinks).getByRole("link", { name: "Discord" })).toHaveAttribute(
+      "href",
+      "https://discord.gg/gkVPyRjJ95",
+    );
   });
 
   it("renders YouTube after Facebook in social links", () => {
@@ -103,7 +119,7 @@ describe("MainHeader", () => {
     expect(screen.getByLabelText("Social links")).toBeInTheDocument();
   });
 
-  it("does not render the update notice when offline", () => {
+  it("keeps showing the update notice when offline after a confirmed update", () => {
     mockUseUpdateNotice.mockReturnValue({
       distribution: "download",
       isOnline: false,

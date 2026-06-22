@@ -27,7 +27,6 @@ type StockpileContentPaneProps = {
   isTableView: boolean;
   cardViews: StockpileCardView[];
   cardActions: StockpileCardActions;
-  conflictPopoverCardId: string | null;
   isPairMode: boolean;
   dragEnabled: boolean;
   onClearSelection: () => void;
@@ -55,7 +54,6 @@ export default function StockpileContentPane({
   isTableView,
   cardViews,
   cardActions,
-  conflictPopoverCardId,
   isPairMode,
   dragEnabled,
   onClearSelection,
@@ -112,7 +110,6 @@ export default function StockpileContentPane({
               items={cardViews}
               actions={cardActions}
               isPairMode={isPairMode}
-              conflictPopoverCardId={conflictPopoverCardId}
               dragEnabled={dragEnabled}
               onClearSelection={onClearSelection}
             />

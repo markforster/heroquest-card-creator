@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { RgbaColorPicker } from "react-colorful";
 
@@ -13,8 +13,11 @@ import { clamp } from "@/lib/math";
 
 import ColorInputField from "./ColorInputField";
 import styles from "./ColorPickerField.module.css";
+import SwatchActionButton from "./SwatchActionButton";
+import SwatchButton from "./SwatchButton";
+import SwatchWithRemove from "./SwatchWithRemove";
 
-import type { CSSProperties, ReactNode, RefObject } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 type SmartGroup = { id: string; colors: string[] };
 type ActiveTab = "picker" | "saved" | "smart";
@@ -642,101 +645,4 @@ function toNormalizedHex(value: string | undefined, allowAlpha: boolean): string
     alphaMode: allowAlpha ? "force" : "strip",
     case: "upper",
   });
-}
-
-type SwatchButtonProps = {
-  color: string;
-  label: string;
-  title?: string;
-  onClick: () => void;
-  className?: string;
-  isSelected?: boolean;
-};
-
-function SwatchButton({ color, label, title, onClick, className, isSelected }: SwatchButtonProps) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={title ?? label}
-      className={`${styles.swatchButton} ${isSelected ? styles.swatchSelected : ""} ${
-        className ?? ""
-      }`}
-      style={{ backgroundColor: color }}
-      onClick={onClick}
-    />
-  );
-}
-
-type SwatchActionButtonProps = {
-  label: string;
-  title: string;
-  disabled?: boolean;
-  onClick: () => void;
-  buttonRef?: RefObject<HTMLButtonElement>;
-  isActive?: boolean;
-  children: ReactNode;
-};
-
-function SwatchActionButton({
-  label,
-  title,
-  disabled,
-  onClick,
-  buttonRef,
-  isActive,
-  children,
-}: SwatchActionButtonProps) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={title}
-      className={`${styles.swatchAction} ${isActive ? styles.swatchActionActive : ""}`}
-      disabled={disabled}
-      onClick={onClick}
-      ref={buttonRef}
-    >
-      {children}
-    </button>
-  );
-}
-
-type SwatchWithRemoveProps = {
-  color: string;
-  onSelect: () => void;
-  onRemove: () => void;
-  ariaLabel: string;
-  removeLabel: string;
-  isSelected?: boolean;
-};
-
-function SwatchWithRemove({
-  color,
-  onSelect,
-  onRemove,
-  ariaLabel,
-  removeLabel,
-  isSelected,
-}: SwatchWithRemoveProps) {
-  return (
-    <div className={styles.swatchShell}>
-      <button
-        type="button"
-        aria-label={ariaLabel}
-        title={color}
-        className={`${styles.swatchButton} ${isSelected ? styles.swatchSelected : ""}`}
-        style={{ backgroundColor: color }}
-        onClick={onSelect}
-      />
-      <button
-        type="button"
-        aria-label={removeLabel}
-        className={styles.swatchRemove}
-        onClick={onRemove}
-      >
-        <X aria-hidden size={10} />
-      </button>
-    </div>
-  );
 }

@@ -2,10 +2,12 @@
 
 import { FolderPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import styles from "@/app/page.module.css";
 import type { CollectionRecord } from "@/api/collections";
 import { apiClient } from "@/api/client";
+import { invalidateCollectionsQueries } from "@/api/queryInvalidation";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -17,6 +19,7 @@ const sortCollections = (collections: CollectionRecord[]) =>
 
 export default function CollectionsInspectorPanel() {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate, activeCardStatusByTemplate },
   } = useCardEditor();
@@ -99,7 +102,7 @@ export default function CollectionsInspectorPanel() {
         { cardIds: nextCardIds },
         { params: { id: collection.id } },
       );
-      await refreshCollections();
+      await Promise.all([refreshCollections(), invalidateCollectionsQueries(queryClient)]);
     } catch {
       // Keep the current list visible if an update fails.
     } finally {
@@ -179,7 +182,7 @@ export default function CollectionsInspectorPanel() {
             );
           }
 
-          await refreshCollections();
+          await Promise.all([refreshCollections(), invalidateCollectionsQueries(queryClient)]);
         }}
       />
     </div>

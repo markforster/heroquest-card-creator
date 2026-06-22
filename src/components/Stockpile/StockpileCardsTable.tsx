@@ -45,7 +45,7 @@ function StockpileCardsTableRow({ card, actions, dragEnabled }: StockpileCardsTa
       className={`${styles.stockpileTableRow} ${
         card.isSelected ? styles.stockpileTableRowSelected : ""
       } ${isDragging ? styles.stockpileCardDragging : ""}`}
-      onClick={(event) => actions.onCardClick(card.id, event, false, card.isPairingConflict)}
+      onClick={(event) => actions.onCardClick(card.id, event, false)}
       onDoubleClick={() => actions.onCardDoubleClick(card.id)}
       aria-label={card.name}
       onKeyDown={(event) => {
@@ -56,7 +56,7 @@ function StockpileCardsTableRow({ card, actions, dragEnabled }: StockpileCardsTa
         }
         if (event.key === " ") {
           event.preventDefault();
-          actions.onCardSetSelected(card.id, !card.isSelected, false, card.isPairingConflict);
+          actions.onCardSetSelected(card.id, !card.isSelected, false);
         }
       }}
       {...attributes}

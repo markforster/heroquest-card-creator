@@ -1,34 +1,39 @@
-import { installMockIndexedDbAssets } from "@/lib/__testutils__/mockIndexedDbAssets";
 import { getAllAssetsWithBlobs } from "@/lib/assets-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+
+import { createTestBlob, deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 
 describe("getAllAssetsWithBlobs", () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
+  beforeEach(() => {
+    jest.resetModules();
+    installFakeIndexedDb();
   });
 
-  it("returns records with blobs", async () => {
-    const blob = new Blob(["x"], { type: "image/png" });
-    const harness = installMockIndexedDbAssets({
-      hasAssetsStore: true,
-      hasCreatedAtIndex: false,
-      initialAssets: [
-        { id: "a1", name: "a", mimeType: "image/png", width: 1, height: 1, createdAt: 1, blob },
-      ],
-    });
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {
+      // Ignore teardown failures if the DB module was not opened.
+    }
+
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
+    jest.restoreAllMocks();
+    jest.resetModules();
+  });
+
+  it("returns records with blobs ordered by createdAt", async () => {
+    const blob = createTestBlob();
+    const db = await openHqccDexieDb();
+    await db.table("assets").bulkPut([
+      { id: "a2", name: "b", mimeType: "image/png", width: 1, height: 1, createdAt: 2, blob },
+      { id: "a1", name: "a", mimeType: "image/png", width: 1, height: 1, createdAt: 1, blob },
+    ]);
 
     const results = await getAllAssetsWithBlobs();
-    expect(results).toHaveLength(1);
-    expect(results[0]?.blob).toBe(blob);
-
-    harness.cleanup();
-  });
-
-  it("rejects with a default error when getAll fails without request.error", async () => {
-    const harness = installMockIndexedDbAssets({ hasAssetsStore: true, hasCreatedAtIndex: false });
-    harness.assetsStore.failNextRequest("getAll", undefined);
-
-    await expect(getAllAssetsWithBlobs()).rejects.toThrow("Failed to load asset blobs");
-    harness.cleanup();
+    expect(results).toHaveLength(2);
+    expect(results[0]?.id).toBe("a1");
+    expect(results[0]?.blob).toEqual(expect.any(Object));
+    expect(results[1]?.id).toBe("a2");
   });
 });
-

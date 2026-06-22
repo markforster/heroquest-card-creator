@@ -1,4 +1,10 @@
 import type { TemplateId } from "@/types/templates";
+import type {
+  BlueprintGroupTypeValue,
+  BlueprintLayerTypeValue,
+  BlueprintSlotId,
+  SystemFamily,
+} from "@/data/card-systems/types";
 
 import type { StaticImageData } from "next/image";
 
@@ -26,13 +32,19 @@ export type BlueprintLayerBind = {
   titleKey?: string;
 };
 
+export type BlueprintTextLayoutMode = "fixed-bounds" | "auto-height";
+
+export type BlueprintLayerProps = Record<string, string | number | boolean> & {
+  textLayoutMode?: BlueprintTextLayoutMode;
+};
+
 export type BlueprintLayerBase = {
-  id: string;
+  id: BlueprintSlotId;
   type: BlueprintLayerType;
   bounds?: BlueprintBounds;
   bind?: BlueprintLayerBind;
   when?: BlueprintLayerCondition;
-  props?: Record<string, string | number | boolean>;
+  props?: BlueprintLayerProps;
 };
 
 export type BlueprintImageClip = "bounds" | "canvas" | "none";
@@ -71,21 +83,11 @@ export type BlueprintLayer =
   | BlueprintLayerImage
   | BlueprintLayerBase;
 
-export type BlueprintLayerType =
-  | "background"
-  | "border"
-  | "image"
-  | "text"
-  | "title"
-  | "overlay"
-  | "icon"
-  | "stats-hero"
-  | "stats-monster"
-  | "copyright";
+export type BlueprintLayerType = BlueprintLayerTypeValue;
 
 export type BlueprintGroup = {
-  id: string;
-  type: "stack";
+  id: BlueprintSlotId;
+  type: BlueprintGroupTypeValue;
   anchor: "bottom";
   direction: "up";
   origin: { x: number; y: number };
@@ -96,6 +98,7 @@ export type BlueprintGroup = {
 
 export type Blueprint = {
   schemaVersion: 1;
+  systemFamily: SystemFamily;
   templateId: TemplateId;
   canvas: BlueprintCanvas;
   layers: BlueprintLayer[];

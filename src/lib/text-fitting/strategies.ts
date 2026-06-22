@@ -1,4 +1,8 @@
 import { createTextMeasurer } from "./measure";
+import {
+  findBestStatHeadingTwoLineBreak,
+  wrapStatHeadingWithBreakpoints,
+} from "./statHeadingBreakpoints";
 
 import type { TextBounds, TextLayoutResult, TextRole } from "./types";
 
@@ -42,35 +46,17 @@ export function wrapStrategy(ctx: StrategyContext): StrategyResult {
 
   if (ctx.role === "statHeading") {
     const measure = createTextMeasurer(ctx.fontSize, ctx.fontFamily, ctx.fontWeight);
-    const words = ctx.text.split(" ");
-    const lines: string[] = [];
 
     const lineHeight = ctx.lineHeight;
     const canUseTwoLines = lineHeight * 2 <= ctx.bounds.height;
-    if (ctx.forceTwoLine && canUseTwoLines && words.length >= 2) {
-      let bestIndex = -1;
-      let bestScore = Number.POSITIVE_INFINITY;
-      for (let i = 1; i < words.length; i += 1) {
-        const left = words.slice(0, i).join(" ");
-        const right = words.slice(i).join(" ");
-        const leftWidth = measure(left);
-        const rightWidth = measure(right);
-        if (leftWidth <= ctx.bounds.width && rightWidth <= ctx.bounds.width) {
-          const score = Math.max(leftWidth, rightWidth);
-          if (score < bestScore) {
-            bestScore = score;
-            bestIndex = i;
-          }
-        }
-      }
-      if (bestIndex > 0) {
-        const left = words.slice(0, bestIndex).join(" ");
-        const right = words.slice(bestIndex).join(" ");
+    if (ctx.forceTwoLine && canUseTwoLines) {
+      const bestBreak = findBestStatHeadingTwoLineBreak(ctx.text, ctx.bounds.width, measure);
+      if (bestBreak) {
         return {
           success: true,
           layout: {
             role: ctx.role,
-            lines: [left, right],
+            lines: [bestBreak.left, bestBreak.right],
             fontSize: ctx.fontSize,
             lineHeight: ctx.lineHeight,
             ellipsis: false,
@@ -81,22 +67,7 @@ export function wrapStrategy(ctx: StrategyContext): StrategyResult {
       }
     }
 
-    let current = "";
-    for (const word of words) {
-      const candidate = current ? `${current} ${word}` : word;
-      const candidateWidth = measure(candidate);
-
-      if (!current || candidateWidth <= ctx.bounds.width) {
-        current = candidate;
-      } else {
-        lines.push(current);
-        current = word;
-      }
-    }
-
-    if (current) {
-      lines.push(current);
-    }
+    const lines = wrapStatHeadingWithBreakpoints(ctx.text, ctx.bounds.width, measure);
 
     return {
       success: true,
@@ -193,7 +164,24 @@ export function hyphenateStrategy(ctx: StrategyContext): StrategyResult {
     const maxWidth = ctx.bounds.width;
     const hyphen = "-";
     const hyphenWidth = measure(hyphen);
-    const tokens = ctx.lines.flatMap((line) => line.split(" "));
+
+    const preferredBreak = findBestStatHeadingTwoLineBreak(ctx.text, maxWidth, measure);
+    if (preferredBreak) {
+      return {
+        success: true,
+        layout: {
+          role: ctx.role,
+          lines: [preferredBreak.left, preferredBreak.right],
+          fontSize: ctx.fontSize,
+          lineHeight: ctx.lineHeight,
+          ellipsis: false,
+          overflow: false,
+          strategyUsed: "hyphenate",
+        },
+      };
+    }
+
+    const tokens = ctx.text.split(" ");
     const lines: string[] = [];
     let current = "";
 

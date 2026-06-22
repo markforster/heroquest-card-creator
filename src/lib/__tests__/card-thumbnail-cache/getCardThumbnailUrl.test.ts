@@ -61,7 +61,7 @@ describe("card-thumbnail-cache", () => {
 
   it("dedupes concurrent fetches for the same card id", async () => {
     const blob = new Blob(["thumb"], { type: "image/png" });
-    let resolveBlob: ((value: Blob | null) => void) | null = null;
+    let resolveBlob!: (value: Blob | null) => void;
     (apiClient.getCardThumbnail as jest.Mock).mockImplementationOnce(
       () =>
         new Promise<Blob | null>((resolve) => {
@@ -74,7 +74,7 @@ describe("card-thumbnail-cache", () => {
 
     expect(apiClient.getCardThumbnail).toHaveBeenCalledTimes(1);
 
-    resolveBlob?.(blob);
+    resolveBlob(blob);
     const [first, second] = await Promise.all([firstPromise, secondPromise]);
 
     expect(first).toBe("blob:thumb-1");

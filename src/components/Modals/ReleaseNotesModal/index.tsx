@@ -21,6 +21,8 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
       { id: "about-what-you-can-do-today", title: "What you can do today" },
       { id: "about-notes-future-work", title: "Notes & future work" },
       { id: "about-credits-attribution", title: "Credits & Attribution" },
+      { id: "about-update-v0-6-2", title: "Update 22/06/2026 (v0.6.2)" },
+      { id: "about-update-v0-6-1", title: "Update 13/06/2026 (v0.6.1)" },
       { id: "about-update-v0-6-0", title: "Update 31/05/2026 (v0.6.0)" },
       { id: "about-update-v0-5-7", title: "Update 30/03/2026 (v0.5.7)" },
       { id: "about-update-v0-5-6", title: "Update 15/03/2026 (v0.5.6)" },
@@ -296,6 +298,91 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
                   svg icons
                 </a>
                 &nbsp;is licensed by CC BY 4.0
+              </DocParagraph>
+            </DocSection>
+
+            <DocSection
+              id="about-update-v0-6-2"
+              title="Update 22/06/2026 (v0.6.2)"
+              className={docStyles.docSectionSpaced}
+            >
+              <DocParagraph>
+                This release is much more about polish, editing confidence, and stronger day-to-day
+                behavior than about one giant new feature. The most visible improvements focus on
+                card text, with richer formatting options, a new Scale To Fit mode for longer body
+                text, and better stat-heading wrapping for labels that need more careful line
+                breaks.
+              </DocParagraph>
+              <DocParagraph className={docStyles.docParagraphSpaced}>
+                It also makes the editor feel safer and less brittle while you move around the app.
+                Unsaved changes are better protected, collection updates refresh more reliably, and
+                older pairing warnings that no longer matched the current workflow have been cleaned
+                up so the UI feels clearer and less noisy.
+              </DocParagraph>
+              <DocParagraph className={docStyles.docParagraphSpaced}>
+                A lot of the work in v0.6.2 happened behind the scenes, but the end result should
+                be a tool that feels more deliberate, more solid, and easier to build on for later
+                releases.
+              </DocParagraph>
+              <DocList className={docStyles.docListSpaced}>
+                <li>Richer body text formatting with improved handling for longer card text.</li>
+                <li>New Scale To Fit option for body text and better stat-heading wrapping.</li>
+                <li>Stronger unsaved-changes protection while editing cards.</li>
+                <li>More reliable collection refresh behavior after in-editor changes.</li>
+                <li>Cleaner pairing workflows with stale conflict UI removed.</li>
+              </DocList>
+              <DocParagraph className={docStyles.docParagraphSpaced}>
+                Full release notes:{" "}
+                <a
+                  href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.6.2"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className={docStyles.docLink}
+                >
+                  v0.6.2
+                </a>
+              </DocParagraph>
+            </DocSection>
+
+            <DocSection
+              id="about-update-v0-6-1"
+              title="Update 13/06/2026 (v0.6.1)"
+              className={docStyles.docSectionSpaced}
+            >
+              <DocParagraph>
+                This release focused heavily on improving the parts of the app that get used every
+                day, especially the Assets workflow. Browsing artwork is clearer, newly uploaded
+                images are easier to find, multi-selection behaves more cleanly, and asset previews
+                now do a better job of helping you inspect and manage a growing library.
+              </DocParagraph>
+              <DocParagraph className={docStyles.docParagraphSpaced}>
+                Language and typography support also moved forward in a meaningful way. The app
+                gained Danish, Norwegian Bokmal, and Russian, while translation infrastructure,
+                Carter font support, and numeral controls were all improved to make the editor feel
+                more consistent across different workflows and languages.
+              </DocParagraph>
+              <DocParagraph className={docStyles.docParagraphSpaced}>
+                Around that, v0.6.1 includes a broad layer of workflow polish: cleaner inspector
+                tabs, in-editor collections management, clearer loading feedback, and a general pass
+                on reliability so the tool feels more comfortable to work in for longer sessions.
+              </DocParagraph>
+              <DocList className={docStyles.docListSpaced}>
+                <li>Larger asset thumbnails and a clearer, more visual Assets browsing experience.</li>
+                <li>Recently uploaded grouping, better selection behavior, and improved previews.</li>
+                <li>Zoomable asset preview and direct open-card-from-usage workflows.</li>
+                <li>New language support for Danish, Norwegian Bokmal, and Russian.</li>
+                <li>Typography, inspector, collections, and reliability improvements throughout.</li>
+              </DocList>
+              <DocParagraph className={docStyles.docParagraphSpaced}>
+                Full release notes:{" "}
+                <a
+                  href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.6.1"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className={docStyles.docLink}
+                >
+                  v0.6.1
+                </a>
               </DocParagraph>
             </DocSection>
 

@@ -48,4 +48,40 @@ describe("cardRecordToCardData", () => {
     expect(data.imageScaleMode).toBe("absolute");
     expect(data.imageScale).toBe(2.5);
   });
+
+  it("defaults bodyTextFitToBounds to false for older records and preserves explicit true", () => {
+    const legacyRecord: CardRecord & { templateId: "hero" } = {
+      id: "card-3",
+      templateId: "hero",
+      status: "saved",
+      name: "Legacy Hero Body Fit",
+      nameLower: "legacy hero body fit",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 1,
+    };
+    const explicitRecord: CardRecord & { templateId: "hero" } = {
+      ...legacyRecord,
+      id: "card-4",
+      bodyTextFitToBounds: true,
+    };
+
+    expect(cardRecordToCardData(legacyRecord).bodyTextFitToBounds).toBe(false);
+    expect(cardRecordToCardData(explicitRecord).bodyTextFitToBounds).toBe(true);
+  });
+
+  it("maps persisted name into editor form data", () => {
+    const record: CardRecord & { templateId: "labelled-back" } = {
+      id: "card-5",
+      templateId: "labelled-back",
+      status: "saved",
+      name: "Treasure Deck",
+      nameLower: "treasure deck",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 2,
+    };
+
+    expect(cardRecordToCardData(record).name).toBe("Treasure Deck");
+  });
 });

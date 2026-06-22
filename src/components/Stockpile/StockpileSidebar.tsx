@@ -1,16 +1,9 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import {
-  Folder,
-  FolderDown,
-  FolderUp,
-  LibrarySquare,
-  Pencil,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Folder, FolderDown, FolderUp, LibrarySquare, Pencil, Trash2, X } from "lucide-react";
 import { Fragment, useEffect, useMemo, useRef } from "react";
+import { Stack } from "react-bootstrap";
 
 import styles from "@/app/page.module.css";
 import { useCollectionsTreeSettings } from "@/components/Providers/CollectionsTreeSettingsContext";
@@ -112,10 +105,7 @@ export default function StockpileSidebar({
     type FolderNode = Extract<TreeNode, { type: "folder" }>;
     type LeafNode = Extract<TreeNode, { type: "leaf" }>;
 
-    const findAncestorFolders = (
-      nodes: TreeNode[],
-      ancestors: string[],
-    ): string[] | null => {
+    const findAncestorFolders = (nodes: TreeNode[], ancestors: string[]): string[] | null => {
       for (const node of nodes) {
         if (node.type === "leaf") {
           const leaf = node as LeafNode;
@@ -300,10 +290,7 @@ export default function StockpileSidebar({
           {isPairMode && selectedCountByCollection.get(collection.id) ? (
             <span className={styles.stockpileSelectedDot} aria-hidden="true" />
           ) : null}
-          {!isPairMode &&
-          isManagingCollections &&
-          onEditCollection &&
-          onDeleteCollection ? (
+          {!isPairMode && isManagingCollections && onEditCollection && onDeleteCollection ? (
             <div className={styles.stockpileSidebarItemActions}>
               <button
                 type="button"
@@ -349,7 +336,10 @@ export default function StockpileSidebar({
     />
   );
 
-  const renderTreeNodes = (nodes: ReturnType<typeof buildCollectionsTree>["nodes"], depth: number) =>
+  const renderTreeNodes = (
+    nodes: ReturnType<typeof buildCollectionsTree>["nodes"],
+    depth: number,
+  ) =>
     nodes.map((node) => {
       if (node.type === "folder") {
         const isExpanded =
@@ -373,7 +363,9 @@ export default function StockpileSidebar({
                 aria-hidden="true"
               />
               <Folder className={`${styles.stockpileTreeIcon} ${styles.stockpileTreeIconFolder}`} />
-              <span className={`${styles.stockpileSidebarItemLabel} flex-grow-1 text-truncate fs-6`}>
+              <span
+                className={`${styles.stockpileSidebarItemLabel} flex-grow-1 text-truncate fs-6`}
+              >
                 {node.label}
               </span>
               {!isPairMode && !isManagingCollections ? (
@@ -543,16 +535,14 @@ export default function StockpileSidebar({
         const noneExpanded = expandedPaths.size === 0 || contextExpanded;
 
         return (
-          <div className={styles.stockpileSidebarBottomToolbar}>
-            <div className={styles.stockpileSidebarBottomLeft}>
+          <Stack direction="horizontal" gap={3}>
+            <Stack direction="horizontal" gap={1}>
               {showTreeFooterControls ? (
                 <>
                   <button
                     type="button"
                     className={`${styles.stockpileCollectionsFooterButton} ${
-                      noneExpanded
-                        ? styles.stockpileCollectionsFooterButtonActive
-                        : ""
+                      noneExpanded ? styles.stockpileCollectionsFooterButtonActive : ""
                     }`}
                     title={collapseLabel}
                     aria-label={collapseLabel}
@@ -575,10 +565,10 @@ export default function StockpileSidebar({
                   </button>
                 </>
               ) : null}
-            </div>
-            <div className="flex-grow-1" />
-            <div className={styles.stockpileSidebarBottomRight}>{footerActions ?? null}</div>
-          </div>
+            </Stack>
+            <div className="ms-auto" />
+            <div className="">{footerActions ?? null}</div>
+          </Stack>
         );
       })()}
     </aside>

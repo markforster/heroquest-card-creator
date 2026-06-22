@@ -1,7 +1,7 @@
 "use client";
 
-import { openHqccDb } from "@/lib/hqcc-db";
-import type { CardRecord } from "@/types/cards-db";
+import { openHqccDexieDb } from "@/lib/hqcc-dexie";
+import type { CardThumbnailRecord } from "@/types/cards-normalized";
 
 const MIGRATION_KEY = "hqcc.migrations.thumbnailJpeg.v1";
 const BATCH_SIZE = 6;
@@ -117,80 +117,40 @@ async function convertPngToJpeg(blob: Blob): Promise<Blob | null> {
 }
 
 async function countPngThumbnails(): Promise<number> {
-  const db = await openHqccDb();
-  return await new Promise<number>((resolve, reject) => {
-    const tx = db.transaction("cards", "readonly");
-    const store = tx.objectStore("cards");
-    const request = store.openCursor();
-    let count = 0;
-
-    request.onsuccess = () => {
-      const cursor = request.result as IDBCursorWithValue | null;
-      if (!cursor) {
-        resolve(count);
-        return;
-      }
-      const record = cursor.value as CardRecord;
-      const blob = record.thumbnailBlob;
-      if (blob instanceof Blob && blob.type === "image/png") {
-        count += 1;
-      }
-      cursor.continue();
-    };
-    request.onerror = () => reject(request.error ?? new Error("Failed to count thumbnails"));
-  });
+  const db = await openHqccDexieDb();
+  const cards = await db.cardThumbnails.toArray();
+  return cards.reduce((count, record) => {
+    const blob = record.thumbnailBlob;
+    return blob instanceof Blob && blob.type === "image/png" ? count + 1 : count;
+  }, 0);
 }
 
 type PngThumbnailEntry = { id: string; blob: Blob };
 
 async function listPngThumbnails(): Promise<PngThumbnailEntry[]> {
-  const db = await openHqccDb();
-  return await new Promise<PngThumbnailEntry[]>((resolve, reject) => {
-    const tx = db.transaction("cards", "readonly");
-    const store = tx.objectStore("cards");
-    const request = store.openCursor();
-    const entries: PngThumbnailEntry[] = [];
-
-    request.onsuccess = () => {
-      const cursor = request.result as IDBCursorWithValue | null;
-      if (!cursor) {
-        resolve(entries);
-        return;
-      }
-      const record = cursor.value as CardRecord;
-      const blob = record.thumbnailBlob;
-      if (record.id && blob instanceof Blob && blob.type === "image/png") {
-        entries.push({ id: record.id, blob });
-      }
-      cursor.continue();
-    };
-    request.onerror = () => reject(request.error ?? new Error("Failed to list thumbnails"));
-  });
+  const db = await openHqccDexieDb();
+  const thumbnails = await db.cardThumbnails.toArray();
+  return thumbnails.reduce<PngThumbnailEntry[]>((entries, record) => {
+    const blob = record.thumbnailBlob;
+    if (record.cardId && blob instanceof Blob && blob.type === "image/png") {
+      entries.push({ id: record.cardId, blob });
+    }
+    return entries;
+  }, []);
 }
 
 async function updateThumbnailBlob(id: string, blob: Blob): Promise<boolean> {
-  const db = await openHqccDb();
-  return await new Promise<boolean>((resolve, reject) => {
-    const tx = db.transaction("cards", "readwrite");
-    const store = tx.objectStore("cards");
-    const getRequest = store.get(id);
-    getRequest.onsuccess = () => {
-      const record = getRequest.result as CardRecord | undefined;
-      if (!record) {
-        resolve(false);
-        return;
-      }
-      const putRequest = store.put({
-        ...record,
-        thumbnailBlob: blob,
-      });
-      putRequest.onsuccess = () => resolve(true);
-      putRequest.onerror = () =>
-        reject(putRequest.error ?? new Error("Failed to update thumbnail"));
-    };
-    getRequest.onerror = () =>
-      reject(getRequest.error ?? new Error("Failed to load thumbnail record"));
+  const db = await openHqccDexieDb();
+  const record = (await db.cardThumbnails.get(id)) as CardThumbnailRecord | undefined;
+  if (!record) {
+    return false;
+  }
+
+  await db.cardThumbnails.put({
+    ...record,
+    thumbnailBlob: blob,
   });
+  return true;
 }
 
 export async function startThumbnailJpegMigration(): Promise<void> {

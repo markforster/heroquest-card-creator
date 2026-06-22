@@ -37,10 +37,45 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
   }),
 }));
 
-jest.mock("@/components/Providers/EditorSaveContext", () => ({
+jest.mock("@/components/App/RouteShellCapabilitiesContext", () => ({
   __esModule: true,
-  useEditorSave: () => ({
+  useRouteShellCapabilities: () => ({
     repairCurrentCardThumbnail: jest.fn(),
+  }),
+}));
+
+jest.mock("@/components/Providers/AnalyticsProvider", () => ({
+  __esModule: true,
+  useAnalytics: () => ({
+    track: jest.fn(),
+  }),
+}));
+
+jest.mock("@/components/Providers/LibraryTransferContext", () => ({
+  __esModule: true,
+  useLibraryTransfer: () => ({
+    isBusy: false,
+    isExporting: false,
+    isImporting: false,
+    openExport: jest.fn(),
+    openImport: jest.fn(),
+  }),
+}));
+
+jest.mock("@/components/Providers/ThemeProvider", () => ({
+  __esModule: true,
+  useTheme: () => ({
+    preference: "light",
+    setPreference: jest.fn(),
+  }),
+}));
+
+jest.mock("@/components/Layout/LeftNav/useLeftNavCollapse", () => ({
+  __esModule: true,
+  useLeftNavCollapse: () => ({
+    isCollapsed: false,
+    isCollapsedReady: true,
+    setManualCollapsed: jest.fn(),
   }),
 }));
 
@@ -52,6 +87,8 @@ jest.mock("@/components/LanguageMenu", () => ({
 jest.mock("@/i18n/I18nProvider", () => ({
   __esModule: true,
   useI18n: () => ({
+    language: "en",
+    setLanguage: jest.fn(),
     t: (key: string) => {
       const lookup: Record<string, string> = {
         "actions.cards": "Cards",
@@ -91,16 +128,16 @@ describe("LeftNav (UI)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Recent cards" }));
     expect(openRecent).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole("button", { name: "Open global settings" }));
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
     expect(openSettings).toHaveBeenCalledTimes(1);
   });
 
-  it("renders the language menu placeholder", () => {
+  it("renders the language button", () => {
     render(
       <MemoryRouter>
         <LeftNav />
       </MemoryRouter>,
     );
-    expect(screen.getByTestId("language-menu")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "aria.language" })).toBeInTheDocument();
   });
 });

@@ -6,7 +6,15 @@ import styles from "@/components/Decks/detail/DeckGroupsSection2.module.css";
 
 const mockDeleteSet = jest.fn(async () => {});
 const mockReloadStructure = jest.fn(async () => {});
-let mockSelectionState = {
+type MockSelectionState = {
+  selectedSetId: string | null;
+  selectedGroupId: string | null;
+  orderedGroups: { id: string; title: string; sortIndex: number }[];
+  sets: { id: string; groupId: string; backFaceId: string; sortIndex: number }[];
+  setById: Map<string, { id: string; groupId: string; backFaceId: string; sortIndex: number }>;
+};
+
+let mockSelectionState: MockSelectionState = {
   selectedSetId: "set-2",
   selectedGroupId: "group-1",
   orderedGroups: [{ id: "group-1", title: "Group 1", sortIndex: 0 }],
@@ -242,7 +250,7 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
       ...mockSelectionState,
       setById: new Map([
         ["set-1", { id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 }],
-        ["set-2", { id: "set-2", groupId: "group-1", backFaceId: undefined, sortIndex: 1 }],
+        ["set-2", { id: "set-2", groupId: "group-1", backFaceId: "", sortIndex: 1 }],
         ["set-3", { id: "set-3", groupId: "group-2", backFaceId: "back-3", sortIndex: 0 }],
       ]),
     };

@@ -38,6 +38,13 @@ export default function TitleField({
     formState: { errors },
     setValue,
   } = useFormContext();
+  const titleRegistration = register("title", {
+    required: required ? `${label} ${t("errors.required")}` : false,
+    maxLength: {
+      value: 40,
+      message: t("errors.titleMaxLength"),
+    },
+  });
   const placementValue = useWatch({ name: "titlePlacement" }) as string | undefined;
   const showTitleValue = useWatch({ name: "showTitle" }) as boolean | undefined;
   const titleStyleValue = useWatch({ name: "titleStyle" }) as string | undefined;
@@ -153,13 +160,14 @@ export default function TitleField({
           className="form-control"
           disabled={titleDisabled}
           title={t("tooltip.titleShownOnRibbon")}
-          {...register("title", {
-            required: required ? `${label} ${t("errors.required")}` : false,
-            maxLength: {
-              value: 40,
-              message: t("errors.titleMaxLength"),
-            },
-          })}
+          {...titleRegistration}
+          onChange={(event) => {
+            titleRegistration.onChange(event);
+            setValue("name", event.target.value, {
+              shouldDirty: true,
+              shouldTouch: true,
+            });
+          }}
         />
       </div>
       {showTitleColor ? (

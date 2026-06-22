@@ -1,10 +1,5 @@
+import type { TextRun, TextWrapToken } from "@/components/Cards/CardParts/bodyText/types";
 import type { InlineDiceToken } from "@/lib/inline-dice";
-
-type TextRun = {
-  text: string;
-  bold?: boolean;
-  italic?: boolean;
-};
 
 export type WrapToken =
   | {
@@ -12,6 +7,8 @@ export type WrapToken =
       text: string;
       bold?: boolean;
       italic?: boolean;
+      underline?: boolean;
+      color?: string;
     }
   | {
       kind: "dice";
@@ -19,8 +16,6 @@ export type WrapToken =
       width: number;
       renderSize: number;
     };
-
-type TextWrapToken = Extract<WrapToken, { kind: "text" }>;
 
 export function runsToTokens(runs: TextRun[]): TextWrapToken[] {
   const tokens: TextWrapToken[] = [];
@@ -34,6 +29,8 @@ export function runsToTokens(runs: TextRun[]): TextWrapToken[] {
         text: part,
         bold: run.bold,
         italic: run.italic,
+        underline: run.underline,
+        color: run.color,
       });
     });
   });
@@ -80,7 +77,16 @@ export function wrapTokens(
         if (!isLast) {
           lines.push([{ kind: "text", ...run }]);
         } else {
-          currentTokens = [{ kind: "text", text: run.text, bold: run.bold, italic: run.italic }];
+          currentTokens = [
+            {
+              kind: "text",
+              text: run.text,
+              bold: run.bold,
+              italic: run.italic,
+              underline: run.underline,
+              color: run.color,
+            },
+          ];
           currentWidth = runWidth;
         }
       });
@@ -142,6 +148,8 @@ function splitTokenToRuns(
       text: needsHyphen ? `${chunk}-` : chunk,
       bold: token.bold,
       italic: token.italic,
+      underline: token.underline,
+      color: token.color,
     });
 
     if (isFinalChunk) {
@@ -167,15 +175,34 @@ function coalesceTokens(tokens: WrapToken[]): WrapToken[] {
     }
 
     if (!current) {
-      current = { kind: "text", text: token.text, bold: token.bold, italic: token.italic };
+      current = {
+        kind: "text",
+        text: token.text,
+        bold: token.bold,
+        italic: token.italic,
+        underline: token.underline,
+        color: token.color,
+      };
       return;
     }
 
-    if (current.bold === token.bold && current.italic === token.italic) {
+    if (
+      current.bold === token.bold &&
+      current.italic === token.italic &&
+      current.underline === token.underline &&
+      current.color === token.color
+    ) {
       current.text += token.text;
     } else {
       merged.push(current);
-      current = { kind: "text", text: token.text, bold: token.bold, italic: token.italic };
+      current = {
+        kind: "text",
+        text: token.text,
+        bold: token.bold,
+        italic: token.italic,
+        underline: token.underline,
+        color: token.color,
+      };
     }
   });
 

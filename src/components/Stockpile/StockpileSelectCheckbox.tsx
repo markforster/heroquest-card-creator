@@ -23,12 +23,7 @@ export default function StockpileSelectCheckbox({
       checked={card.isSelected}
       onChange={(event) => {
         event.stopPropagation();
-        actions.onCardSetSelected(
-          card.id,
-          event.target.checked,
-          isPairMode,
-          card.isPairingConflict,
-        );
+        actions.onCardSetSelected(card.id, event.target.checked, isPairMode);
       }}
       onClick={(event) => event.stopPropagation()}
       onPointerDown={(event) => event.stopPropagation()}

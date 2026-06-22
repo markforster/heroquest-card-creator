@@ -13,6 +13,13 @@ export type InspectorTitleField = {
   showTitleColor?: boolean;
 };
 
+export type InspectorNameField = {
+  fieldType: "name";
+  bind: "name";
+  labelKey: MessageKey;
+  required?: boolean;
+};
+
 export type InspectorTextField = {
   fieldType: "text";
   bind: "description";
@@ -72,6 +79,7 @@ export type InspectorCopyrightField = {
 };
 
 export type InspectorField =
+  | InspectorNameField
   | InspectorTitleField
   | InspectorTextField
   | InspectorStatsField

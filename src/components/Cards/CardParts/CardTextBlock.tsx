@@ -2,6 +2,9 @@
 
 import { useId } from "react";
 
+import { layoutCardTextToBounds } from "@/components/Cards/CardParts/bodyText/fit";
+import parseInlineRichText from "@/components/Cards/CardParts/bodyText/parseInlineRichText";
+import type { BodyTextToken, TextAlignment } from "@/components/Cards/CardParts/bodyText/types";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { tokenizeInlineDice, type InlineDiceSegment } from "@/lib/inline-dice";
 import { createTextMeasurer } from "@/lib/text-fitting/measure";
@@ -25,8 +28,9 @@ type CardTextBlockProps = {
   fontFamily?: string;
   fill?: string;
   letterSpacingEm?: number;
-  align?: "left" | "center" | "right";
+  align?: TextAlignment;
   debug?: boolean;
+  fitToBounds?: boolean;
 };
 
 const CARD_BODY_LINE_HEIGHT = 1.05;
@@ -42,27 +46,21 @@ const DICE_BG_COLOR = "#ffffff";
 const DICE_BORDER_COLOR = "#111111";
 const DICE_BORDER_WIDTH = 1;
 
-type TextRun = {
-  text: string;
-  bold?: boolean;
-  italic?: boolean;
-};
-
 type TextLine =
-  | { kind: "text"; tokens: WrapToken[]; align?: "left" | "center" | "right" }
+  | { kind: "text"; tokens: BodyTextToken[]; align?: TextAlignment }
   | {
       kind: "leader";
-      labelTokens: WrapToken[];
-      valueTokens: WrapToken[];
+      labelTokens: BodyTextToken[];
+      valueTokens: BodyTextToken[];
       separator: string;
       leaderLayout?: LeaderLayout;
-      align?: "left" | "center" | "right";
+      align?: TextAlignment;
     }
   | {
       kind: "leader-continuation";
-      valueTokens: WrapToken[];
+      valueTokens: BodyTextToken[];
       leaderLayout: LeaderLayout;
-      align?: "left" | "center" | "right";
+      align?: TextAlignment;
     };
 
 export type CardTextLayout = {
@@ -70,7 +68,7 @@ export type CardTextLayout = {
   lineHeight: number;
 };
 
-type TextToken = WrapToken;
+type TextToken = BodyTextToken;
 
 type LeaderLayout = {
   valueStartOffset: number;
@@ -102,7 +100,7 @@ export function layoutCardText({
   fontFamily?: string;
   fontWeight?: number | string;
   letterSpacingEm?: number;
-  defaultAlign?: "left" | "center" | "right";
+  defaultAlign?: TextAlignment;
 }): CardTextLayout {
   const effectiveLineHeight = lineHeight ?? fontSize * CARD_BODY_LINE_HEIGHT;
 
@@ -112,27 +110,13 @@ export function layoutCardText({
 
   const logicalLines = text.split(/\r?\n/);
   const visualLines: TextLine[] = [];
-  let currentAlign: "left" | "center" | "right" = defaultAlign;
-
-  const baseWeight = fontWeight ?? "400";
-  const measureNormal = createTextMeasurer(fontSize, fontFamily, baseWeight, "normal");
-  const measureItalic = createTextMeasurer(fontSize, fontFamily, baseWeight, "italic");
-  const measureBold = createTextMeasurer(fontSize, fontFamily, "700", "normal");
-  const measureBoldItalic = createTextMeasurer(fontSize, fontFamily, "700", "italic");
-  const letterSpacingPx = (letterSpacingEm ?? 0) * fontSize;
-
-  const measure = (text: string, token?: Extract<WrapToken, { kind: "text" }>) => {
-    const baseWidth =
-      token?.bold && token?.italic
-        ? measureBoldItalic(text)
-        : token?.bold
-          ? measureBold(text)
-          : token?.italic
-            ? measureItalic(text)
-            : measureNormal(text);
-    if (letterSpacingPx <= 0 || text.length <= 1) return baseWidth;
-    return baseWidth + (text.length - 1) * letterSpacingPx;
-  };
+  let currentAlign: TextAlignment = defaultAlign;
+  const measure = createStyledTextMeasure({
+    fontSize,
+    fontFamily,
+    fontWeight,
+    letterSpacingEm,
+  });
   const safeWidth = Math.max(0, width - fontSize * 0.4);
 
   const isGroupStartLine = (lineText: string) => lineText.trim() === "[[";
@@ -281,7 +265,7 @@ export function layoutCardText({
     return flags;
   })();
 
-  const pushWrappedTextLine = (lineText: string, align: "left" | "center" | "right") => {
+    const pushWrappedTextLine = (lineText: string, align: TextAlignment) => {
     // Preserve intentional blank lines (including lines with only whitespace) as visual gaps.
     if (lineText.trim() === "") {
       visualLines.push({ kind: "text", tokens: [{ kind: "text", text: "" }], align });
@@ -296,7 +280,7 @@ export function layoutCardText({
     });
   };
 
-  const pushAlignedLine = (lineText: string, align: "left" | "center" | "right") => {
+  const pushAlignedLine = (lineText: string, align: TextAlignment) => {
     // Preserve intentional blank lines (including lines with only whitespace) as visual gaps.
     if (lineText.trim() === "") {
       visualLines.push({ kind: "text", tokens: [{ kind: "text", text: "" }], align });
@@ -334,7 +318,7 @@ export function layoutCardText({
     pushWrappedTextLine(lineText, align);
   };
 
-  let inlineAlign: "left" | "center" | "right" | null = null;
+  let inlineAlign: TextAlignment | null = null;
 
   let groupActive = false;
   let groupSettings: LeaderGroupSettings = {
@@ -346,7 +330,7 @@ export function layoutCardText({
     labelTokens: WrapToken[];
     valueTokens: WrapToken[];
     separator: string;
-    align: "left" | "center" | "right";
+    align: TextAlignment;
   }> = [];
 
   const computeGroupLayout = (
@@ -544,17 +528,26 @@ export default function CardTextBlock({
   letterSpacingEm,
   align = "left",
   debug = false,
+  fitToBounds = false,
 }: CardTextBlockProps) {
   const maskPrefix = useId().replace(/:/g, "");
-  const { lines, lineHeight: effectiveLineHeight } = layoutCardText({
+  const {
+    lines,
+    lineHeight: effectiveLineHeight,
+    fittedFontSize,
+    overflowed,
+  } = layoutCardTextToBounds({
+    layout: layoutCardText,
     text,
     width: bounds.width,
+    height: bounds.height,
     fontSize,
     lineHeight,
     fontFamily,
     fontWeight,
     letterSpacingEm,
     defaultAlign: align,
+    fitToBounds,
   });
 
   if (lines.length === 0) {
@@ -562,23 +555,22 @@ export default function CardTextBlock({
   }
 
   const maxLines = Math.max(1, Math.floor(bounds.height / effectiveLineHeight));
-  const clippedLines = lines.slice(0, maxLines);
+  const clippedLines = overflowed ? lines.slice(0, maxLines) : lines;
 
   const textStyle: CSSProperties = {
     fontFamily,
-    fontSize,
+    fontSize: fittedFontSize,
     fontWeight,
     letterSpacing: letterSpacingEm != null ? `${letterSpacingEm}em` : undefined,
     fontKerning: "normal",
   };
 
-  const measure = createTextMeasurer(fontSize, fontFamily);
-  const letterSpacingPx = (letterSpacingEm ?? 0) * fontSize;
-  const measureWithSpacing = (text: string) => {
-    const base = measure(text);
-    if (letterSpacingPx <= 0 || text.length <= 1) return base;
-    return base + (text.length - 1) * letterSpacingPx;
-  };
+  const measureWithSpacing = createStyledTextMeasure({
+    fontSize: fittedFontSize,
+    fontFamily,
+    fontWeight,
+    letterSpacingEm,
+  });
 
   return (
     <g>
@@ -595,7 +587,7 @@ export default function CardTextBlock({
         />
       )}
       {clippedLines.flatMap((line, lineIndex) => {
-        const lineY = bounds.y + fontSize + effectiveLineHeight * lineIndex;
+        const lineY = bounds.y + fittedFontSize + effectiveLineHeight * lineIndex;
 
         if (line.kind === "text") {
           return renderTokenLine({
@@ -609,7 +601,7 @@ export default function CardTextBlock({
             textStyle,
             maskPrefix,
             lineIndex,
-            fontSize,
+            fontSize: fittedFontSize,
           });
         }
 
@@ -626,12 +618,12 @@ export default function CardTextBlock({
             maskPrefix,
             lineIndex,
             tokenGroup: "value",
-            fontSize,
+            fontSize: fittedFontSize,
           });
         }
 
         // Leader line rendering
-        const leaderPadding = line.leaderLayout?.leaderPadding ?? fontSize * 0.25;
+        const effectiveLeaderPadding = line.leaderLayout?.leaderPadding ?? fittedFontSize * 0.25;
         const leftX = bounds.x;
         const rightX = bounds.x + bounds.width;
 
@@ -644,8 +636,8 @@ export default function CardTextBlock({
             ? bounds.x + line.leaderLayout.valueStartOffset
             : rightX - valueWidth;
 
-        const gapStartX = labelStartX + labelWidth + leaderPadding;
-        const gapEndX = valueStartX - leaderPadding;
+        const gapStartX = labelStartX + labelWidth + effectiveLeaderPadding;
+        const gapEndX = valueStartX - effectiveLeaderPadding;
         const availableGapWidth = Math.max(0, gapEndX - gapStartX);
 
         const sepChar = line.separator || ".";
@@ -667,7 +659,7 @@ export default function CardTextBlock({
             maskPrefix,
             lineIndex,
             tokenGroup: "label",
-            fontSize,
+            fontSize: fittedFontSize,
           }),
         );
 
@@ -691,7 +683,7 @@ export default function CardTextBlock({
             maskPrefix,
             lineIndex,
             tokenGroup: "value",
-            fontSize,
+            fontSize: fittedFontSize,
           }),
         );
 
@@ -701,7 +693,7 @@ export default function CardTextBlock({
   );
 }
 
-function parseAlignmentDirective(line: string): "left" | "center" | "right" | "reset" | null {
+function parseAlignmentDirective(line: string): TextAlignment | "reset" | null {
   const trimmed = line.trim();
   if (!trimmed) return null;
   if (trimmed === ":::") return "reset";
@@ -710,7 +702,7 @@ function parseAlignmentDirective(line: string): "left" | "center" | "right" | "r
 }
 
 function parseInlineAlignmentStart(line: string): {
-  align: "left" | "center" | "right";
+  align: TextAlignment;
   text: string;
   trailing: string;
   closed: boolean;
@@ -732,8 +724,8 @@ function parseInlineAlignmentStart(line: string): {
   return { align, text: remainder, trailing: "", closed: false };
 }
 
-function getAlignmentToken(token: string): "left" | "center" | "right" | null {
-  const lookup: Record<string, "left" | "center" | "right"> = {
+function getAlignmentToken(token: string): TextAlignment | null {
+  const lookup: Record<string, TextAlignment> = {
     ":::align_center": "center",
     ":::align_c": "center",
     ":::ac": "center",
@@ -746,54 +738,6 @@ function getAlignmentToken(token: string): "left" | "center" | "right" | null {
   };
 
   return lookup[token] ?? null;
-}
-
-function parseInlineMarkdown(line: string): TextRun[] {
-  const runs: TextRun[] = [];
-
-  // Match either **bold** or *italic* segments where:
-  // - There is at least one non-space character inside.
-  // - The first and last characters inside are not spaces.
-  // Everything else (including stray *) is treated as plain text.
-  const pattern =
-    /\*\*\*(\S(?:[\s\S]*?\S)?)\*\*\*|\*\*(\S(?:[\s\S]*?\S)?)\*\*|\*(\S(?:[\s\S]*?\S)?)\*/g;
-
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  const pushRun = (text: string, bold?: boolean, italic?: boolean) => {
-    if (!text) return;
-    runs.push({ text, bold, italic });
-  };
-
-  // eslint-disable-next-line no-cond-assign
-  while ((match = pattern.exec(line)) !== null) {
-    const matchStart = match.index;
-
-    if (matchStart > lastIndex) {
-      pushRun(line.slice(lastIndex, matchStart));
-    }
-
-    const boldItalicText = match[1];
-    const boldText = match[2];
-    const italicText = match[3];
-
-    if (boldItalicText != null) {
-      pushRun(boldItalicText, true, true);
-    } else if (boldText != null) {
-      pushRun(boldText, true, false);
-    } else if (italicText != null) {
-      pushRun(italicText, false, true);
-    }
-
-    lastIndex = pattern.lastIndex;
-  }
-
-  if (lastIndex < line.length) {
-    pushRun(line.slice(lastIndex));
-  }
-
-  return runs;
 }
 
 function segmentsToTokens(segments: InlineDiceSegment[], fontSize: number): TextToken[] {
@@ -813,13 +757,8 @@ function segmentsToTokens(segments: InlineDiceSegment[], fontSize: number): Text
       return;
     }
 
-    const runs = parseInlineMarkdown(segment.text);
-    const textTokens = runsToTokens(runs).map((token) => ({
-      kind: "text" as const,
-      text: token.text,
-      bold: token.bold,
-      italic: token.italic,
-    }));
+    const runs = parseInlineRichText(segment.text);
+    const textTokens = runsToTokens(runs);
     tokens.push(...textTokens);
   });
 
@@ -850,6 +789,8 @@ function injectDiceAdjacentSpaces(tokens: TextToken[]): TextToken[] {
         text: " ",
         bold: prevToken.bold,
         italic: prevToken.italic,
+        underline: prevToken.underline,
+        color: prevToken.color,
       });
     }
 
@@ -861,6 +802,8 @@ function injectDiceAdjacentSpaces(tokens: TextToken[]): TextToken[] {
         text: " ",
         bold: nextToken.bold,
         italic: nextToken.italic,
+        underline: nextToken.underline,
+        color: nextToken.color,
       });
     }
   });
@@ -876,6 +819,38 @@ function measureTokensWidth(
     if (token.kind === "dice") return sum + token.width;
     return sum + measure(token.text, token);
   }, 0);
+}
+
+function createStyledTextMeasure({
+  fontSize,
+  fontFamily,
+  fontWeight,
+  letterSpacingEm,
+}: {
+  fontSize: number;
+  fontFamily: string;
+  fontWeight?: number | string;
+  letterSpacingEm?: number;
+}) {
+  const baseWeight = fontWeight ?? "400";
+  const measureNormal = createTextMeasurer(fontSize, fontFamily, baseWeight, "normal");
+  const measureItalic = createTextMeasurer(fontSize, fontFamily, baseWeight, "italic");
+  const measureBold = createTextMeasurer(fontSize, fontFamily, "700", "normal");
+  const measureBoldItalic = createTextMeasurer(fontSize, fontFamily, "700", "italic");
+  const letterSpacingPx = (letterSpacingEm ?? 0) * fontSize;
+
+  return (text: string, token?: Extract<WrapToken, { kind: "text" }>) => {
+    const baseWidth =
+      token?.bold && token?.italic
+        ? measureBoldItalic(text)
+        : token?.bold
+          ? measureBold(text)
+          : token?.italic
+            ? measureItalic(text)
+            : measureNormal(text);
+    if (letterSpacingPx <= 0 || text.length <= 1) return baseWidth;
+    return baseWidth + (text.length - 1) * letterSpacingPx;
+  };
 }
 
 export function measureCardTextMaxLineWidth({
@@ -912,14 +887,12 @@ export function measureCardTextMaxLineWidth({
     return { maxLineWidth: 0, lineHeight: effectiveLineHeight, lines };
   }
 
-  const baseWeight = fontWeight ?? "400";
-  const measureBase = createTextMeasurer(fontSize, fontFamily, baseWeight, "normal");
-  const letterSpacingPx = (letterSpacingEm ?? 0) * fontSize;
-  const measure = (textValue: string) => {
-    const base = measureBase(textValue);
-    if (letterSpacingPx <= 0 || textValue.length <= 1) return base;
-    return base + (textValue.length - 1) * letterSpacingPx;
-  };
+  const measure = createStyledTextMeasure({
+    fontSize,
+    fontFamily,
+    fontWeight,
+    letterSpacingEm,
+  });
 
   let maxLineWidth = 0;
 
@@ -1072,6 +1045,8 @@ function renderTokenSequence({
     const spanStyle: CSSProperties = {};
     if (token.bold) spanStyle.fontWeight = "700";
     if (token.italic) spanStyle.fontStyle = "italic";
+    if (token.underline) spanStyle.textDecoration = "underline";
+    if (token.color) spanStyle.fill = token.color;
 
     runSpans.push(
       <tspan key={`${tokenGroup}-${lineIndex}-${tokenIndex}`} style={spanStyle}>
@@ -1103,8 +1078,8 @@ function renderTokenLine({
   lineY: number;
   lineHeight: number;
   bounds: Bounds;
-  lineAlign: "left" | "center" | "right";
-  measure: (text: string) => number;
+  lineAlign: TextAlignment;
+  measure: (text: string, token?: Extract<WrapToken, { kind: "text" }>) => number;
   fill: string;
   textStyle: CSSProperties;
   maskPrefix: string;

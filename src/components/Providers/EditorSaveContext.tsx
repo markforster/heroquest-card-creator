@@ -4,10 +4,16 @@ import { createContext, useContext } from "react";
 
 import type { ReactNode } from "react";
 
-type EditorSaveContextValue = {
+export type EditorSaveContextValue = {
   saveCurrentCard: () => Promise<boolean>;
   repairCurrentCardThumbnail: () => Promise<boolean>;
   saveToken: number;
+};
+
+export const noopEditorSaveValue: EditorSaveContextValue = {
+  saveCurrentCard: async () => false,
+  repairCurrentCardThumbnail: async () => false,
+  saveToken: 0,
 };
 
 const EditorSaveContext = createContext<EditorSaveContextValue | null>(null);

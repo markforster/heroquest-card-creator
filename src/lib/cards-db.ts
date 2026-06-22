@@ -1,8 +1,20 @@
 "use client";
 
+import {
+  assembleNormalizedCardSummaryRecord,
+  assembleNormalizedCardRecord,
+  deleteNormalizedCardRecords,
+  replaceNormalizedCardRecords,
+  replaceNormalizedCardThumbnail,
+  touchNormalizedCardBaseLastViewed,
+} from "@/lib/cards-normalized";
+import type { CollectionRecord } from "@/types/collections-db";
 import type { CardRecord, CardStatus } from "@/types/cards-db";
 import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
+import type { PairRecord } from "@/types/pairs-db";
+import type { CardThumbnailRecord } from "@/types/cards-normalized";
 import type { TemplateId } from "@/types/templates";
+import type { Table, Transaction } from "dexie";
 
 import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import {
@@ -11,38 +23,53 @@ import {
   type CardDeleteMode,
   type CardDeleteUsageReport,
 } from "@/lib/decks-errors";
-import { previewDeletePairsForFaces, deletePairsForFaces } from "@/lib/pairs-service";
-import { openHqccDb } from "./hqcc-db";
+import { previewDeletePairsForFaces } from "@/lib/pairs-service";
+import { openHqccDexieDb } from "./hqcc-dexie";
 
 import { generateId } from ".";
-
-import type { HqccDb } from "./hqcc-db";
 
 const DECKS_STORE = "decks";
 const DECK_GROUPS_STORE = "deckGroups";
 const DECK_SETS_STORE = "deckSets";
 const DECK_ENTRIES_STORE = "deckEntries";
+const COLLECTIONS_STORE = "collections";
+const PAIRS_STORE = "pairs";
 
-async function getCardsStore(mode: IDBTransactionMode): Promise<IDBObjectStore> {
-  const db: HqccDb = await openHqccDb();
-  const tx = db.transaction("cards", mode);
-  return tx.objectStore("cards");
+function isDefined<T>(value: T | undefined): value is T {
+  return value !== undefined;
 }
 
-async function repairThumbnailBlob(record: CardRecord): Promise<void> {
+async function loadComponentRecords<T extends { id: string }>(
+  table: Pick<Table<T, string>, "bulkGet">,
+  ids: string[],
+): Promise<T[]> {
+  if (!ids.length) {
+    return [];
+  }
+
+  const records = await table.bulkGet(ids);
+  return records.filter(isDefined);
+}
+
+function dispatchCardsUpdated(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+  }
+}
+
+async function repairThumbnailBlob(cardId: string, record: CardRecord): Promise<void> {
   if (!record.thumbnailBlob) return;
   const normalized = normalizeThumbnailBlob(record.thumbnailBlob);
   if (normalized === record.thumbnailBlob) return;
   try {
-    const store = await getCardsStore("readwrite");
-    await new Promise<void>((resolve, reject) => {
-      const request = store.put({
-        ...record,
-        thumbnailBlob: normalized,
-      });
-      request.onsuccess = () => resolve();
-      request.onerror = () =>
-        reject(request.error ?? new Error("Failed to repair thumbnail blob"));
+    const db = await openHqccDexieDb();
+    const existing = await db.cardThumbnails.get(cardId);
+    if (!existing || !(normalized instanceof Blob)) {
+      return;
+    }
+    await db.cardThumbnails.put({
+      ...existing,
+      thumbnailBlob: normalized,
     });
   } catch {
     // Ignore repair failures.
@@ -67,11 +94,166 @@ function normalizeCardRecord(record: CardRecord): CardRecord {
   if (normalized === record.thumbnailBlob) {
     return record;
   }
-  void repairThumbnailBlob(record);
+  void repairThumbnailBlob(record.id, record);
   return {
     ...record,
     thumbnailBlob: normalized,
   };
+}
+
+async function getNormalizedThumbnailBlob(
+  id: string,
+  db: Awaited<ReturnType<typeof openHqccDexieDb>>,
+): Promise<Blob | null> {
+  const thumbnail = (await db.cardThumbnails.get(id)) as CardThumbnailRecord | undefined;
+  if (!thumbnail?.thumbnailBlob) {
+    return null;
+  }
+
+  return normalizeThumbnailBlob(thumbnail.thumbnailBlob as Blob) ?? null;
+}
+
+async function getNormalizedCardRecord(
+  id: string,
+  dbArg?: Awaited<ReturnType<typeof openHqccDexieDb>>,
+): Promise<CardRecord | null> {
+  const db = dbArg ?? (await openHqccDexieDb());
+  const baseRecord = await db.cardsBase.get(id);
+  if (!baseRecord) {
+    return null;
+  }
+
+  const [slotLinks, thumbnailBlob] = await Promise.all([
+    db.cardSlotLinks.where("cardId").equals(id).sortBy("order"),
+    getNormalizedThumbnailBlob(id, db),
+  ]);
+
+  if (!slotLinks.length) {
+    return null;
+  }
+
+  const backgroundIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "background")
+    .map((slotLink) => slotLink.dataRecordId);
+  const borderIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "border")
+    .map((slotLink) => slotLink.dataRecordId);
+  const titleIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "title")
+    .map((slotLink) => slotLink.dataRecordId);
+  const textIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "text")
+    .map((slotLink) => slotLink.dataRecordId);
+  const copyrightIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "copyright")
+    .map((slotLink) => slotLink.dataRecordId);
+  const imageIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "image")
+    .map((slotLink) => slotLink.dataRecordId);
+  const iconIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "icon")
+    .map((slotLink) => slotLink.dataRecordId);
+  const heroStatsIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "stats-hero")
+    .map((slotLink) => slotLink.dataRecordId);
+  const monsterStatsIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "stats-monster")
+    .map((slotLink) => slotLink.dataRecordId);
+
+  const [
+    backgrounds,
+    borders,
+    titles,
+    texts,
+    copyrights,
+    images,
+    icons,
+    heroStats,
+    monsterStats,
+  ] = await Promise.all([
+    loadComponentRecords(db.cardBackgroundComponents, backgroundIds),
+    loadComponentRecords(db.cardBorderComponents, borderIds),
+    loadComponentRecords(db.cardTitleComponents, titleIds),
+    loadComponentRecords(db.cardTextComponents, textIds),
+    loadComponentRecords(db.cardCopyrightComponents, copyrightIds),
+    loadComponentRecords(db.cardImageComponents, imageIds),
+    loadComponentRecords(db.cardIconComponents, iconIds),
+    loadComponentRecords(db.cardHeroStatsComponents, heroStatsIds),
+    loadComponentRecords(db.cardMonsterStatsComponents, monsterStatsIds),
+  ]);
+
+  const assembled = assembleNormalizedCardRecord({
+    baseRecord,
+    slotLinks,
+    backgrounds,
+    borders,
+    titles,
+    texts,
+    copyrights,
+    images,
+    icons,
+    heroStats,
+    monsterStats,
+    thumbnailBlob,
+  });
+
+  return assembled ? normalizeCardRecord(assembled) : null;
+}
+
+async function listNormalizedCardRecords(
+  dbArg?: Awaited<ReturnType<typeof openHqccDexieDb>>,
+): Promise<CardRecord[]> {
+  const db = dbArg ?? (await openHqccDexieDb());
+  const [baseRecords, thumbnailRecords] = await Promise.all([
+    db.cardsBase.toArray(),
+    db.cardThumbnails.toArray(),
+  ]);
+  const thumbnailMap = new Map(
+    thumbnailRecords.map((record) => [
+      record.cardId,
+      normalizeThumbnailBlob(record.thumbnailBlob) ?? null,
+    ]),
+  );
+
+  return baseRecords.map((baseRecord) =>
+    normalizeCardRecord(
+      assembleNormalizedCardSummaryRecord({
+        baseRecord,
+        thumbnailBlob: thumbnailMap.get(baseRecord.id) ?? undefined,
+      }),
+    ),
+  );
+}
+
+async function writeCardAndNormalizedState(
+  db: Awaited<ReturnType<typeof openHqccDexieDb>>,
+  record: CardRecord,
+): Promise<void> {
+  const writeTables = [
+    db.cardsBase,
+    db.cardThumbnails,
+    db.cardSlotLinks,
+    db.cardBackgroundComponents,
+    db.cardBorderComponents,
+    db.cardTitleComponents,
+    db.cardTextComponents,
+    db.cardCopyrightComponents,
+    db.cardImageComponents,
+    db.cardIconComponents,
+    db.cardHeroStatsComponents,
+    db.cardMonsterStatsComponents,
+  ];
+  await db.transaction(
+    "rw",
+    writeTables,
+    async (tx: Transaction) => {
+      const normalized = await replaceNormalizedCardRecords(tx, record);
+      if (!normalized) {
+        throw new Error(`Unable to derive normalized card rows for ${record.id}`);
+      }
+      await replaceNormalizedCardThumbnail(tx, record);
+    },
+  );
 }
 
 export async function createCard(
@@ -100,17 +282,10 @@ export async function createCard(
     schemaVersion: input.schemaVersion ?? 2,
   };
 
-  const store = await getCardsStore("readwrite");
-
-  await new Promise<void>((resolve, reject) => {
-    const request = store.add(base);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error ?? new Error("Failed to create card"));
-  });
+  const db = await openHqccDexieDb();
+  await writeCardAndNormalizedState(db, base);
   enqueueDbEstimateChange("cards", base.id);
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
-  }
+  dispatchCardsUpdated();
 
   return base;
 }
@@ -119,7 +294,7 @@ export async function updateCard(
   id: string,
   patch: Partial<Omit<CardRecord, "id" | "createdAt" | "schemaVersion">>,
 ): Promise<CardRecord | null> {
-  const store = await getCardsStore("readwrite");
+  const db = await openHqccDexieDb();
   const normalizedPatch =
     "thumbnailBlob" in patch
       ? {
@@ -128,15 +303,7 @@ export async function updateCard(
         }
       : patch;
 
-  const existing = await new Promise<CardRecord | null>((resolve, reject) => {
-    const getRequest = store.get(id);
-    getRequest.onsuccess = () => {
-      resolve((getRequest.result as CardRecord | undefined) ?? null);
-    };
-    getRequest.onerror = () => {
-      reject(getRequest.error ?? new Error("Failed to load card for update"));
-    };
-  });
+  const existing = await getNormalizedCardRecord(id, db);
 
   if (!existing) {
     return null;
@@ -153,15 +320,9 @@ export async function updateCard(
     next.nameLower = normalizedPatch.name.toLocaleLowerCase();
   }
 
-  await new Promise<void>((resolve, reject) => {
-    const putRequest = store.put(next);
-    putRequest.onsuccess = () => resolve();
-    putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update card"));
-  });
+  await writeCardAndNormalizedState(db, next);
   enqueueDbEstimateChange("cards", next.id);
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
-  }
+  dispatchCardsUpdated();
 
   return next;
 }
@@ -171,7 +332,7 @@ export async function updateCards(
   patch: Partial<Omit<CardRecord, "id" | "createdAt" | "schemaVersion">>,
 ): Promise<void> {
   if (!ids.length) return;
-  const store = await getCardsStore("readwrite");
+  const db = await openHqccDexieDb();
   const normalizedPatch =
     "thumbnailBlob" in patch
       ? {
@@ -180,90 +341,50 @@ export async function updateCards(
         }
       : patch;
 
-  await new Promise<void>((resolve, reject) => {
-    let remaining = ids.length;
-    let failed = false;
+  const existingCards = await Promise.all(ids.map((id) => getNormalizedCardRecord(id, db)));
+  const updates: CardRecord[] = [];
+  const now = Date.now();
 
-    ids.forEach((id) => {
-      const getRequest = store.get(id);
-      getRequest.onsuccess = () => {
-        if (failed) return;
-        const existing = getRequest.result as CardRecord | undefined;
-        if (!existing) {
-          remaining -= 1;
-          if (remaining === 0) resolve();
-          return;
-        }
-        const next: CardRecord = {
-          ...existing,
-          ...normalizedPatch,
-          updatedAt: Date.now(),
-        };
-        if (normalizedPatch.name) {
-          next.nameLower = normalizedPatch.name.toLocaleLowerCase();
-        }
-        const putRequest = store.put(next);
-        putRequest.onerror = () => {
-          if (failed) return;
-          failed = true;
-          reject(putRequest.error ?? new Error("Failed to update card"));
-        };
-        putRequest.onsuccess = () => {
-          remaining -= 1;
-          if (remaining === 0) resolve();
-        };
-      };
-      getRequest.onerror = () => {
-        if (failed) return;
-        failed = true;
-        reject(getRequest.error ?? new Error("Failed to load card for update"));
-      };
-    });
+  existingCards.forEach((existing) => {
+    if (!existing) {
+      return;
+    }
+
+    const next: CardRecord = {
+      ...existing,
+      ...normalizedPatch,
+      updatedAt: now,
+    };
+    if (normalizedPatch.name) {
+      next.nameLower = normalizedPatch.name.toLocaleLowerCase();
+    }
+    updates.push(next);
   });
-  ids.forEach((id) => enqueueDbEstimateChange("cards", id));
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+
+  if (updates.length > 0) {
+    for (let index = 0; index < updates.length; index += 1) {
+      await writeCardAndNormalizedState(db, updates[index]);
+    }
   }
+  ids.forEach((id) => enqueueDbEstimateChange("cards", id));
+  dispatchCardsUpdated();
 }
 
 export async function getCard(id: string): Promise<CardRecord | null> {
-  const store = await getCardsStore("readonly");
-
-  return new Promise<CardRecord | null>((resolve, reject) => {
-    const request = store.get(id);
-    request.onsuccess = () => {
-      const record = (request.result as CardRecord | undefined) ?? null;
-      resolve(record ? normalizeCardRecord(record) : null);
-    };
-    request.onerror = () => {
-      reject(request.error ?? new Error("Failed to load card"));
-    };
-  });
+  return getNormalizedCardRecord(id);
 }
 
 export async function getCardThumbnail(id: string): Promise<Blob | null> {
-  const record = await getCard(id);
-  if (!record?.thumbnailBlob) {
-    return null;
-  }
-  return normalizeThumbnailBlob(record.thumbnailBlob) ?? null;
+  const db = await openHqccDexieDb();
+  return getNormalizedThumbnailBlob(id, db);
 }
 
 export async function touchCardLastViewed(
   id: string,
   viewedAt: number = Date.now(),
 ): Promise<CardRecord | null> {
-  const store = await getCardsStore("readwrite");
-
-  const existing = await new Promise<CardRecord | null>((resolve, reject) => {
-    const getRequest = store.get(id);
-    getRequest.onsuccess = () => {
-      resolve((getRequest.result as CardRecord | undefined) ?? null);
-    };
-    getRequest.onerror = () => {
-      reject(getRequest.error ?? new Error("Failed to load card for lastViewed update"));
-    };
-  });
+  const db = await openHqccDexieDb();
+  const existing = await getNormalizedCardRecord(id, db);
 
   if (!existing) {
     return null;
@@ -274,56 +395,45 @@ export async function touchCardLastViewed(
     lastViewedAt: viewedAt,
   };
 
-  await new Promise<void>((resolve, reject) => {
-    const putRequest = store.put(next);
-    putRequest.onsuccess = () => resolve();
-    putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to update card view"));
+  await db.transaction("rw", db.cardsBase, async (tx) => {
+    await touchNormalizedCardBaseLastViewed(tx, id, viewedAt);
   });
+  dispatchCardsUpdated();
 
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
-  }
-
-  return normalizeCardRecord(next);
+  return next;
 }
 
 export async function updateCardThumbnail(
   id: string,
   thumbnailBlob: Blob | null,
 ): Promise<boolean> {
-  const store = await getCardsStore("readwrite");
+  const db = await openHqccDexieDb();
 
-  const existing = await new Promise<CardRecord | null>((resolve, reject) => {
-    const getRequest = store.get(id);
-    getRequest.onsuccess = () => {
-      resolve((getRequest.result as CardRecord | undefined) ?? null);
-    };
-    getRequest.onerror = () => {
-      reject(getRequest.error ?? new Error("Failed to load card for thumbnail update"));
-    };
-  });
+  const existing = await db.cardsBase.get(id);
 
   if (!existing) {
     return false;
   }
 
   const normalized = normalizeThumbnailBlob(thumbnailBlob ?? null);
-  const next: CardRecord = {
-    ...existing,
-    thumbnailBlob: normalized ?? null,
-  };
+  await db.transaction("rw", db.cardThumbnails, async () => {
+    if (!(normalized instanceof Blob)) {
+      await db.cardThumbnails.delete(id);
+      return;
+    }
 
-  await new Promise<void>((resolve, reject) => {
-    const putRequest = store.put(next);
-    putRequest.onsuccess = () => resolve();
-    putRequest.onerror = () =>
-      reject(putRequest.error ?? new Error("Failed to update card thumbnail"));
+    const current = await db.cardThumbnails.get(id);
+    await db.cardThumbnails.put({
+      id,
+      cardId: id,
+      thumbnailBlob: normalized,
+      createdAt: current?.createdAt ?? existing.createdAt,
+      updatedAt: Date.now(),
+      schemaVersion: 1,
+    });
   });
-  enqueueDbEstimateChange("cards", next.id);
-
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
-  }
+  enqueueDbEstimateChange("cards", id);
+  dispatchCardsUpdated();
 
   return true;
 }
@@ -336,43 +446,16 @@ export type ListCardsFilter = {
 };
 
 export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecord[]> {
-  const store = await getCardsStore("readonly");
-
   const { templateId, status, search, deleted = "exclude" } = filter;
-  const cards: CardRecord[] = [];
+  let filtered = await listNormalizedCardRecords();
 
-  await new Promise<void>((resolve, reject) => {
-    let request: IDBRequest;
+  if (templateId) {
+    filtered = filtered.filter((card) => card.templateId === templateId);
+  }
 
-    if (templateId && status && store.indexNames.contains("templateId_status")) {
-      const index = store.index("templateId_status");
-      request = index.openCursor(IDBKeyRange.only([templateId, status]));
-    } else if (status && store.indexNames.contains("status")) {
-      const index = store.index("status");
-      request = index.openCursor(IDBKeyRange.only(status));
-    } else if (templateId && store.indexNames.contains("templateId")) {
-      const index = store.index("templateId");
-      request = index.openCursor(IDBKeyRange.only(templateId));
-    } else {
-      request = store.openCursor();
-    }
-
-    request.onsuccess = () => {
-      const cursor = request.result as IDBCursorWithValue | null;
-      if (!cursor) {
-        resolve();
-        return;
-      }
-      cards.push(normalizeCardRecord(cursor.value as CardRecord));
-      cursor.continue();
-    };
-
-    request.onerror = () => {
-      reject(request.error ?? new Error("Failed to list cards"));
-    };
-  });
-
-  let filtered = cards;
+  if (status) {
+    filtered = filtered.filter((card) => card.status === status);
+  }
 
   if (deleted === "exclude") {
     filtered = filtered.filter((card) => card.deletedAt == null);
@@ -393,30 +476,16 @@ export async function normalizeSelfPairings(): Promise<number> {
   return 0;
 }
 
-async function listAllFromStore<T>(storeName: string): Promise<T[]> {
-  const db = await openHqccDb();
-  if (!db.objectStoreNames.contains(storeName)) return [];
-  const tx = db.transaction(storeName, "readonly");
-  const store = tx.objectStore(storeName);
-  if (typeof (store as IDBObjectStore & { getAll?: unknown }).getAll !== "function") {
-    return [];
-  }
-  return new Promise<T[]>((resolve, reject) => {
-    const request = store.getAll();
-    request.onsuccess = () => resolve((request.result as T[] | undefined) ?? []);
-    request.onerror = () => reject(request.error ?? new Error(`Failed to read ${storeName}`));
-  });
-}
-
 async function getDeckUsageForBackFaceIds(
   backFaceIds: string[],
 ): Promise<Array<DeckUsageLocation & { backFaceId: string }>> {
   if (!backFaceIds.length) return [];
   const backIdSet = new Set(backFaceIds);
+  const db = await openHqccDexieDb();
   const [sets, groups, decks] = await Promise.all([
-    listAllFromStore<DeckSetRecord>(DECK_SETS_STORE),
-    listAllFromStore<DeckGroupRecord>(DECK_GROUPS_STORE),
-    listAllFromStore<DeckRecord>(DECKS_STORE),
+    db.deckSets.toArray(),
+    db.deckGroups.toArray(),
+    db.decks.toArray(),
   ]);
   const groupMap = new Map(groups.map((group) => [group.id, group]));
   const deckMap = new Map(decks.map((deck) => [deck.id, deck]));
@@ -439,17 +508,49 @@ async function getDeckUsageForBackFaceIds(
   return usage;
 }
 
-async function cascadeDeleteDeckDataForBackFaceIds(backFaceIds: string[]): Promise<void> {
-  if (!backFaceIds.length) return;
+type DeckCascadePlan = {
+  deckEntryIds: string[];
+  deckSetIds: string[];
+  deckGroupIds: string[];
+  touchedDeckIds: string[];
+};
+
+type PairCascadePlan = {
+  pairIds: string[];
+  deckEntryIds: string[];
+  touchedDeckIds: string[];
+};
+
+type CollectionCleanupPlan = {
+  collectionsToUpdate: CollectionRecord[];
+};
+
+type CardDeleteCascadePlan = {
+  deck: DeckCascadePlan;
+  pairs: PairCascadePlan;
+  collections: CollectionCleanupPlan;
+};
+
+async function buildDeckCascadePlan(
+  tx: Transaction,
+  backFaceIds: string[],
+): Promise<DeckCascadePlan> {
+  if (!backFaceIds.length) {
+    return { deckEntryIds: [], deckSetIds: [], deckGroupIds: [], touchedDeckIds: [] };
+  }
+
   const backIdSet = new Set(backFaceIds);
   const [sets, groups, entries] = await Promise.all([
-    listAllFromStore<DeckSetRecord>(DECK_SETS_STORE),
-    listAllFromStore<DeckGroupRecord>(DECK_GROUPS_STORE),
-    listAllFromStore<DeckEntryRecord>(DECK_ENTRIES_STORE),
+    tx.table("deckSets").toArray() as Promise<DeckSetRecord[]>,
+    tx.table("deckGroups").toArray() as Promise<DeckGroupRecord[]>,
+    tx.table("deckEntries").toArray() as Promise<DeckEntryRecord[]>,
   ]);
 
   const setsToDelete = sets.filter((set) => backIdSet.has(set.backFaceId));
-  if (!setsToDelete.length) return;
+  if (!setsToDelete.length) {
+    return { deckEntryIds: [], deckSetIds: [], deckGroupIds: [], touchedDeckIds: [] };
+  }
+
   const setIdSet = new Set(setsToDelete.map((set) => set.id));
   const entriesToDelete = entries.filter((entry) => setIdSet.has(entry.setId));
   const touchedDeckIds = new Set(setsToDelete.map((set) => set.deckId));
@@ -460,53 +561,156 @@ async function cascadeDeleteDeckDataForBackFaceIds(backFaceIds: string[]): Promi
     (group) => touchedGroupIds.has(group.id) && !remainingGroupIds.has(group.id),
   );
 
-  const db = await openHqccDb();
-  const tx = db.transaction([DECK_ENTRIES_STORE, DECK_SETS_STORE, DECK_GROUPS_STORE], "readwrite");
-  const entriesStore = tx.objectStore(DECK_ENTRIES_STORE);
-  const setsStore = tx.objectStore(DECK_SETS_STORE);
-  const groupsStore = tx.objectStore(DECK_GROUPS_STORE);
-  entriesToDelete.forEach((entry) => entriesStore.delete(entry.id));
-  setsToDelete.forEach((set) => setsStore.delete(set.id));
-  groupsToDelete.forEach((group) => groupsStore.delete(group.id));
-  await new Promise<void>((resolve, reject) => {
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error ?? new Error("Failed to cascade delete deck data"));
-    tx.onabort = () => reject(tx.error ?? new Error("Failed to cascade delete deck data"));
-  });
+  return {
+    deckEntryIds: entriesToDelete.map((entry) => entry.id),
+    deckSetIds: setsToDelete.map((set) => set.id),
+    deckGroupIds: groupsToDelete.map((group) => group.id),
+    touchedDeckIds: Array.from(touchedDeckIds),
+  };
+}
 
-  entriesToDelete.forEach((entry) => enqueueDbEstimateChange(DECK_ENTRIES_STORE, entry.id));
-  setsToDelete.forEach((set) => enqueueDbEstimateChange(DECK_SETS_STORE, set.id));
-  groupsToDelete.forEach((group) => enqueueDbEstimateChange(DECK_GROUPS_STORE, group.id));
-  if (touchedDeckIds.size) {
-    const deckTx = db.transaction(DECKS_STORE, "readwrite");
-    const deckStore = deckTx.objectStore(DECKS_STORE);
-    const now = Date.now();
-    await Promise.all(
-      Array.from(touchedDeckIds).map(
-        (deckId) =>
-          new Promise<void>((resolve, reject) => {
-            const getRequest = deckStore.get(deckId);
-            getRequest.onsuccess = () => {
-              const deck = (getRequest.result as DeckRecord | undefined) ?? null;
-              if (!deck) {
-                resolve();
-                return;
-              }
-              const putRequest = deckStore.put({ ...deck, updatedAt: now });
-              putRequest.onsuccess = () => resolve();
-              putRequest.onerror = () => reject(putRequest.error ?? new Error("Failed to touch deck"));
-            };
-            getRequest.onerror = () => reject(getRequest.error ?? new Error("Failed to load deck"));
-          }),
-      ),
-    );
-    await new Promise<void>((resolve, reject) => {
-      deckTx.oncomplete = () => resolve();
-      deckTx.onerror = () => reject(deckTx.error ?? new Error("Failed to touch decks"));
-      deckTx.onabort = () => reject(deckTx.error ?? new Error("Failed to touch decks"));
-    });
-    touchedDeckIds.forEach((deckId) => enqueueDbEstimateChange(DECKS_STORE, deckId));
+async function buildPairCascadePlan(
+  tx: Transaction,
+  faceIds: string[],
+): Promise<PairCascadePlan> {
+  if (!faceIds.length) {
+    return { pairIds: [], deckEntryIds: [], touchedDeckIds: [] };
   }
+
+  const faceIdSet = new Set(faceIds);
+  const pairs = (await tx.table("pairs").toArray()) as PairRecord[];
+  const pairsToDelete = pairs.filter((pair) => {
+    if (!pair.frontFaceId || !pair.backFaceId) {
+      return false;
+    }
+    return faceIdSet.has(pair.frontFaceId) || faceIdSet.has(pair.backFaceId);
+  });
+  if (!pairsToDelete.length) {
+    return { pairIds: [], deckEntryIds: [], touchedDeckIds: [] };
+  }
+
+  const pairIds = pairsToDelete.map((pair) => pair.id);
+  const entries = (await tx
+    .table("deckEntries")
+    .where("pairId")
+    .anyOf(pairIds)
+    .toArray()) as DeckEntryRecord[];
+
+  return {
+    pairIds,
+    deckEntryIds: entries.map((entry) => entry.id),
+    touchedDeckIds: Array.from(new Set(entries.map((entry) => entry.deckId))),
+  };
+}
+
+async function buildCollectionCleanupPlan(
+  tx: Transaction,
+  ids: string[],
+  now: number,
+): Promise<CollectionCleanupPlan> {
+  if (!ids.length) {
+    return { collectionsToUpdate: [] };
+  }
+
+  const idSet = new Set(ids);
+  const collections = (await tx.table("collections").toArray()) as CollectionRecord[];
+  const collectionsToUpdate = collections
+    .map((collection) => {
+      const nextCardIds = collection.cardIds.filter((cardId) => !idSet.has(cardId));
+      if (nextCardIds.length === collection.cardIds.length) {
+        return null;
+      }
+      return {
+        ...collection,
+        cardIds: nextCardIds,
+        updatedAt: now,
+      };
+    })
+    .filter((collection): collection is CollectionRecord => collection !== null);
+
+  return { collectionsToUpdate };
+}
+
+async function buildCardDeleteCascadePlan(
+  tx: Transaction,
+  ids: string[],
+  now: number,
+): Promise<CardDeleteCascadePlan> {
+  const [deck, pairs, collections] = await Promise.all([
+    buildDeckCascadePlan(tx, ids),
+    buildPairCascadePlan(tx, ids),
+    buildCollectionCleanupPlan(tx, ids, now),
+  ]);
+
+  return { deck, pairs, collections };
+}
+
+async function executeCardDeleteCascade(
+  tx: Transaction,
+  ids: string[],
+  plan: CardDeleteCascadePlan,
+  now: number,
+): Promise<void> {
+  const deckEntryIds = Array.from(
+    new Set([...plan.deck.deckEntryIds, ...plan.pairs.deckEntryIds]),
+  );
+
+  if (deckEntryIds.length) {
+    await tx.table("deckEntries").bulkDelete(deckEntryIds);
+  }
+  if (plan.pairs.pairIds.length) {
+    await tx.table("pairs").bulkDelete(plan.pairs.pairIds);
+  }
+  if (plan.deck.deckSetIds.length) {
+    await tx.table("deckSets").bulkDelete(plan.deck.deckSetIds);
+  }
+  if (plan.deck.deckGroupIds.length) {
+    await tx.table("deckGroups").bulkDelete(plan.deck.deckGroupIds);
+  }
+  if (plan.collections.collectionsToUpdate.length) {
+    await tx.table("collections").bulkPut(plan.collections.collectionsToUpdate);
+  }
+
+  const touchedDeckIds = Array.from(
+    new Set([...plan.deck.touchedDeckIds, ...plan.pairs.touchedDeckIds]),
+  );
+  if (touchedDeckIds.length) {
+    const decks = ((await tx.table("decks").bulkGet(touchedDeckIds)) as Array<
+      DeckRecord | undefined
+    >).filter(isDefined);
+    if (decks.length) {
+      await tx.table("decks").bulkPut(
+        decks.map((deck) => ({
+          ...deck,
+          updatedAt: now,
+        })),
+      );
+    }
+  }
+
+  for (let index = 0; index < ids.length; index += 1) {
+    await deleteNormalizedCardRecords(tx, ids[index]);
+  }
+}
+
+function enqueueCardDeleteCascadeChanges(
+  ids: string[],
+  plan: CardDeleteCascadePlan,
+): void {
+  const deckEntryIds = Array.from(
+    new Set([...plan.deck.deckEntryIds, ...plan.pairs.deckEntryIds]),
+  );
+  deckEntryIds.forEach((entryId) => enqueueDbEstimateChange(DECK_ENTRIES_STORE, entryId));
+  plan.deck.deckSetIds.forEach((setId) => enqueueDbEstimateChange(DECK_SETS_STORE, setId));
+  plan.deck.deckGroupIds.forEach((groupId) => enqueueDbEstimateChange(DECK_GROUPS_STORE, groupId));
+  Array.from(new Set([...plan.deck.touchedDeckIds, ...plan.pairs.touchedDeckIds])).forEach(
+    (deckId) => enqueueDbEstimateChange(DECKS_STORE, deckId),
+  );
+  plan.pairs.pairIds.forEach((pairId) => enqueueDbEstimateChange(PAIRS_STORE, pairId));
+  plan.collections.collectionsToUpdate.forEach((collection) =>
+    enqueueDbEstimateChange(COLLECTIONS_STORE, collection.id),
+  );
+  ids.forEach((id) => enqueueDbEstimateChange("cards", id));
 }
 
 export async function softDeleteCards(
@@ -523,35 +727,11 @@ export async function restoreCards(ids: string[]): Promise<void> {
 }
 
 export async function deleteCard(id: string): Promise<void> {
-  const store = await getCardsStore("readwrite");
-
-  await new Promise<void>((resolve, reject) => {
-    const request = store.delete(id);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error ?? new Error("Failed to delete card"));
-  });
-  enqueueDbEstimateChange("cards", id);
-}
-
-async function deleteCardsRaw(ids: string[]): Promise<void> {
-  if (!ids.length) return;
-
-  const store = await getCardsStore("readwrite");
-
-  await new Promise<void>((resolve, reject) => {
-    ids.forEach((id) => {
-      store.delete(id);
-    });
-
-    const tx = store.transaction;
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error ?? new Error("Failed to delete cards"));
-  });
-  ids.forEach((id) => enqueueDbEstimateChange("cards", id));
+  await deleteCardsWithCascade([id], { mode: "confirmable-cascade", confirmCascade: true });
 }
 
 export async function deleteCards(ids: string[]): Promise<void> {
-  await deleteCardsRaw(ids);
+  await deleteCardsWithCascade(ids, { mode: "confirmable-cascade", confirmCascade: true });
 }
 
 export async function previewDeleteCardsImpact(
@@ -613,22 +793,10 @@ export async function deleteCardsWithCascade(
   },
 ): Promise<void> {
   if (!ids.length) return;
+  const uniqueIds = Array.from(new Set(ids));
   const mode = options?.mode ?? "confirmable-cascade";
   const confirmCascade = options?.confirmCascade ?? true;
-  if (mode === "confirmable-cascade" && confirmCascade) {
-    await cascadeDeleteDeckDataForBackFaceIds(ids);
-    try {
-      const db = await openHqccDb();
-      if (db.objectStoreNames.contains("pairs")) {
-        await deletePairsForFaces(ids, { mode: "confirmable-cascade", confirmCascade: true });
-      }
-    } catch {
-      // If pair stores are unavailable, continue card deletion.
-    }
-    await deleteCardsRaw(ids);
-    return;
-  }
-  const impact = await previewDeleteCardsImpact(ids, mode);
+  const impact = await previewDeleteCardsImpact(uniqueIds, mode);
   const hasImpact =
     impact.cascadePlan.deckSetIds.length > 0 || impact.cascadePlan.deckEntryIds.length > 0;
   if (hasImpact && mode === "block") {
@@ -638,13 +806,39 @@ export async function deleteCardsWithCascade(
     throw createCardDeleteConfirmRequiredError(impact);
   }
 
-  await cascadeDeleteDeckDataForBackFaceIds(ids);
-  if (impact.cascadePlan.deckEntryIds.length > 0 || impact.cascadePlan.pairUsage.length > 0) {
-    try {
-      await deletePairsForFaces(ids, { mode: "confirmable-cascade", confirmCascade: true });
-    } catch {
-      // If pair stores are unavailable, continue card deletion.
-    }
+  const db = await openHqccDexieDb();
+  const now = Date.now();
+  let plan: CardDeleteCascadePlan | null = null;
+
+  await db.transaction(
+    "rw",
+    [
+      db.cardsBase,
+      db.cardThumbnails,
+      db.cardSlotLinks,
+      db.cardBackgroundComponents,
+      db.cardBorderComponents,
+      db.cardTitleComponents,
+      db.cardTextComponents,
+      db.cardCopyrightComponents,
+      db.cardImageComponents,
+      db.cardIconComponents,
+      db.cardHeroStatsComponents,
+      db.cardMonsterStatsComponents,
+      db.pairs,
+      db.deckEntries,
+      db.deckSets,
+      db.deckGroups,
+      db.decks,
+      db.collections,
+    ],
+    async (tx) => {
+      plan = await buildCardDeleteCascadePlan(tx, uniqueIds, now);
+      await executeCardDeleteCascade(tx, uniqueIds, plan, now);
+    },
+  );
+
+  if (plan) {
+    enqueueCardDeleteCascadeChanges(uniqueIds, plan);
   }
-  await deleteCardsRaw(ids);
 }

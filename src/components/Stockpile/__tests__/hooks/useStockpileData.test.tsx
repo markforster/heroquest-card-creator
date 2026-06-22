@@ -1,8 +1,8 @@
 import { renderHook, waitFor } from "@testing-library/react";
 
-import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import type { CardRecord } from "@/api/cards";
 import type { CollectionRecord } from "@/api/collections";
+import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 
 const mockUseListCards = jest.fn();
 const mockUseListCollections = jest.fn();
@@ -86,6 +86,39 @@ describe("useStockpileData", () => {
       undefined,
       expect.objectContaining({ enabled: true }),
     );
+  });
+
+  it("seeds cards immediately from a cached query snapshot on mount", () => {
+    const cards: CardRecord[] = [
+      {
+        id: "card-1",
+        name: "Card 1",
+        nameLower: "card 1",
+        templateId: "hero",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        status: "saved",
+        schemaVersion: 1,
+      },
+    ];
+    mockUseListCards.mockReturnValue({
+      data: cards,
+      isLoading: false,
+      refetch: mockRefetchCards,
+    });
+
+    const setActiveFilter = jest.fn();
+    const { result } = renderHook(() =>
+      useStockpileData({
+        isOpen: true,
+        refreshToken: 0,
+        activeFilter: { type: "all" },
+        setActiveFilter,
+      }),
+    );
+
+    expect(result.current.cards).toEqual(cards);
+    expect(result.current.isLoadingCards).toBe(false);
   });
 
   it("does not load data when closed", () => {
@@ -174,7 +207,7 @@ describe("useStockpileData", () => {
     });
   });
 
-  it("passes through cards loading state from the query result", async () => {
+  it("keeps the stockpile loading until the first cards snapshot resolves", async () => {
     mockUseListCards.mockReturnValue({
       data: undefined,
       isLoading: true,
@@ -219,5 +252,52 @@ describe("useStockpileData", () => {
       expect(result.current.isLoadingCards).toBe(false);
       expect(result.current.cards).toEqual(cards);
     });
+  });
+
+  it("does not flash an empty cards state when the hook remounts with cached data", () => {
+    const cards: CardRecord[] = [
+      {
+        id: "card-1",
+        name: "Card 1",
+        nameLower: "card 1",
+        templateId: "hero",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        status: "saved",
+        schemaVersion: 1,
+      },
+    ];
+    mockUseListCards.mockReturnValue({
+      data: cards,
+      isLoading: false,
+      refetch: mockRefetchCards,
+    });
+
+    const setActiveFilter = jest.fn();
+    const { result, unmount } = renderHook(() =>
+      useStockpileData({
+        isOpen: true,
+        refreshToken: 0,
+        activeFilter: { type: "all" },
+        setActiveFilter,
+      }),
+    );
+
+    expect(result.current.cards).toEqual(cards);
+    expect(result.current.isLoadingCards).toBe(false);
+
+    unmount();
+
+    const remounted = renderHook(() =>
+      useStockpileData({
+        isOpen: true,
+        refreshToken: 0,
+        activeFilter: { type: "all" },
+        setActiveFilter,
+      }),
+    );
+
+    expect(remounted.result.current.cards).toEqual(cards);
+    expect(remounted.result.current.isLoadingCards).toBe(false);
   });
 });

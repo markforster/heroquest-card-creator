@@ -1,212 +1,349 @@
-import { openHqccDb } from "@/lib/hqcc-db";
+import Dexie from "dexie";
+import { IDBDatabase, IDBFactory, IDBKeyRange } from "fake-indexeddb";
 
-type MockStore = {
-  indexNames: { contains: (name: string) => boolean };
-  createIndex: jest.Mock;
-  put: jest.Mock;
-};
+import { APP_VERSION } from "@/version";
 
-type MockDb = {
-  objectStoreNames: { contains: (name: string) => boolean };
-  createObjectStore: jest.Mock;
-  transaction?: {
-    objectStore: (name: string) => MockStore;
-  };
-};
+type StoreSeeder = (db: IDBDatabase, tx: IDBTransaction) => void;
 
-type OpenRequest = {
-  result: MockDb;
-  error?: unknown;
-  transaction?: {
-    objectStore: (name: string) => MockStore;
-  };
-  onupgradeneeded: null | (() => void);
-  onsuccess: null | (() => void);
-  onerror: null | (() => void);
-};
+const originalIndexedDbDescriptor = Object.getOwnPropertyDescriptor(window, "indexedDB");
+const originalIdbKeyRangeDescriptor = Object.getOwnPropertyDescriptor(window, "IDBKeyRange");
 
-function createDb({
-  existingStores = [],
-  existingAssetIndexes = [],
-}: {
-  existingStores?: string[];
-  existingAssetIndexes?: string[];
-}): { db: MockDb; assetsStore: MockStore; metaStore: MockStore; settingsStore: MockStore } {
-  const storeSet = new Set(existingStores);
-  const assetsIndexSet = new Set(existingAssetIndexes);
+function installFakeIndexedDb(): void {
+  const indexedDb = new IDBFactory();
 
-  const assetsStore: MockStore = {
-    indexNames: { contains: (name) => assetsIndexSet.has(name) },
-    createIndex: jest.fn(),
-    put: jest.fn(),
-  };
+  Object.defineProperty(window, "indexedDB", { configurable: true, value: indexedDb });
+  Object.defineProperty(window, "IDBKeyRange", { configurable: true, value: IDBKeyRange });
+  Object.defineProperty(globalThis, "indexedDB", { configurable: true, value: indexedDb });
+  Object.defineProperty(globalThis, "IDBKeyRange", { configurable: true, value: IDBKeyRange });
 
-  const metaStore: MockStore = {
-    indexNames: { contains: () => false },
-    createIndex: jest.fn(),
-    put: jest.fn(),
-  };
-
-  const settingsStore: MockStore = {
-    indexNames: { contains: () => false },
-    createIndex: jest.fn(),
-    put: jest.fn(),
-  };
-
-  const db: MockDb = {
-    objectStoreNames: { contains: (name) => storeSet.has(name) },
-    createObjectStore: jest.fn((name: string) => {
-      storeSet.add(name);
-      if (name === "assets") return assetsStore;
-      if (name === "meta") return metaStore;
-      if (name === "settings") return settingsStore;
-      return undefined;
-    }),
-    transaction: {
-      objectStore: (name: string) => {
-        if (name === "meta") return metaStore;
-        if (name === "settings") return settingsStore;
-        return assetsStore;
-      },
-    },
-  };
-
-  return { db, assetsStore, metaStore, settingsStore };
+  Dexie.dependencies.indexedDB = indexedDb;
+  Dexie.dependencies.IDBKeyRange = IDBKeyRange;
 }
 
-function createOpenRequest(db: MockDb): OpenRequest {
-  return {
-    result: db,
-    transaction: db.transaction,
-    onupgradeneeded: null,
-    onsuccess: null,
-    onerror: null,
-  };
+function restoreIndexedDb(): void {
+  if (originalIndexedDbDescriptor) {
+    Object.defineProperty(window, "indexedDB", originalIndexedDbDescriptor);
+  } else {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).indexedDB;
+  }
+
+  if (originalIdbKeyRangeDescriptor) {
+    Object.defineProperty(window, "IDBKeyRange", originalIdbKeyRangeDescriptor);
+  } else {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).IDBKeyRange;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  delete (globalThis as any).indexedDB;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  delete (globalThis as any).IDBKeyRange;
+}
+
+async function deleteDb(name: string): Promise<void> {
+  if (!("indexedDB" in window)) {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const request = window.indexedDB.deleteDatabase(name);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error ?? new Error(`Failed to delete ${name}`));
+    request.onblocked = () => reject(new Error(`Failed to delete ${name}: blocked`));
+  });
+}
+
+async function openDbVersion(version: number, seed?: StoreSeeder): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = window.indexedDB.open("hqcc", version);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      const tx = request.transaction;
+      if (!tx) return;
+
+      if (!db.objectStoreNames.contains("cards")) {
+        db.createObjectStore("cards", { keyPath: "id" });
+      }
+
+      if (!db.objectStoreNames.contains("assets")) {
+        const assetsStore = db.createObjectStore("assets", { keyPath: "id" });
+        assetsStore.createIndex("createdAt", "createdAt", { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains("collections")) {
+        db.createObjectStore("collections", { keyPath: "id" });
+      }
+
+      if (!db.objectStoreNames.contains("settings")) {
+        db.createObjectStore("settings", { keyPath: "id" });
+      }
+
+      if (!db.objectStoreNames.contains("decks")) {
+        db.createObjectStore("decks", { keyPath: "id" });
+      }
+
+      if (!db.objectStoreNames.contains("deckGroups")) {
+        const groupsStore = db.createObjectStore("deckGroups", { keyPath: "id" });
+        groupsStore.createIndex("deckId", "deckId", { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains("deckSets")) {
+        const setsStore = db.createObjectStore("deckSets", { keyPath: "id" });
+        setsStore.createIndex("deckId", "deckId", { unique: false });
+        setsStore.createIndex("groupId", "groupId", { unique: false });
+        setsStore.createIndex("backFaceId", "backFaceId", { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains("deckEntries")) {
+        const entriesStore = db.createObjectStore("deckEntries", { keyPath: "id" });
+        entriesStore.createIndex("deckId", "deckId", { unique: false });
+        entriesStore.createIndex("setId", "setId", { unique: false });
+        entriesStore.createIndex("pairId", "pairId", { unique: false });
+      }
+
+      if (version >= 5 && !db.objectStoreNames.contains("pairs")) {
+        const pairsStore = db.createObjectStore("pairs", { keyPath: "id" });
+        pairsStore.createIndex("frontFaceId", "frontFaceId", { unique: false });
+        pairsStore.createIndex("backFaceId", "backFaceId", { unique: false });
+        pairsStore.createIndex("nameLower", "nameLower", { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains("meta")) {
+        db.createObjectStore("meta", { keyPath: "id" });
+      }
+
+      seed?.(db, tx);
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error("Failed to open test DB"));
+  });
+}
+
+async function readAllFromDb(db: globalThis.IDBDatabase, storeName: string): Promise<unknown[]> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, "readonly");
+    const request = tx.objectStore(storeName).getAll();
+
+    request.onsuccess = () => {
+      resolve((request.result as unknown[] | undefined) ?? []);
+    };
+
+    request.onerror = () => {
+      reject(request.error ?? new Error(`Failed to read ${storeName}`));
+    };
+  });
 }
 
 describe("openHqccDb", () => {
-  const originalIndexedDbDescriptor = Object.getOwnPropertyDescriptor(window, "indexedDB");
-
   beforeEach(() => {
+    jest.resetModules();
+    installFakeIndexedDb();
     jest.spyOn(console, "debug").mockImplementation(() => {});
     jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
-  afterEach(() => {
-    (console.debug as jest.Mock).mockRestore?.();
-    (console.error as jest.Mock).mockRestore?.();
-
-    if (originalIndexedDbDescriptor) {
-      Object.defineProperty(window, "indexedDB", originalIndexedDbDescriptor);
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (window as any).indexedDB;
+  afterEach(async () => {
+    try {
+      const { getHqccDexieDb } = await import("@/lib/hqcc-dexie");
+      getHqccDexieDb().close();
+    } catch {
+      // Ignore teardown import failures in tests that intentionally unset IndexedDB.
     }
+
+    await deleteDb("hqcc").catch(() => {});
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    restoreIndexedDb();
+    jest.restoreAllMocks();
+    jest.resetModules();
   });
 
   it("rejects when IndexedDB is not available", async () => {
-    // Ensure `"indexedDB" in window` is false.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (window as any).indexedDB;
+    restoreIndexedDb();
+    const { openHqccDb } = await import("@/lib/hqcc-db");
 
     await expect(openHqccDb()).rejects.toThrow("IndexedDB not available");
   });
 
-  it("opens the hqcc DB and resolves on success", async () => {
-    const { db } = createDb({});
-    const request = createOpenRequest(db);
-    const open = jest.fn(() => request);
+  it("opens the hqcc DB as a native database with the current stores", async () => {
+    const { openHqccDb, readExistingHqccDbAppVersion } = await import("@/lib/hqcc-db");
 
-    Object.defineProperty(window, "indexedDB", { configurable: true, value: { open } });
+    const db = await openHqccDb();
 
-    const promise = openHqccDb();
-
-    expect(open).toHaveBeenCalledWith("hqcc", 4);
-
-    request.onsuccess?.();
-    await expect(promise).resolves.toBe(db);
-  });
-
-  it("creates missing stores and indexes during upgrade", async () => {
-    const { db, assetsStore, metaStore } = createDb({ existingStores: [] });
-    const request = createOpenRequest(db);
-    const open = jest.fn(() => request);
-
-    Object.defineProperty(window, "indexedDB", { configurable: true, value: { open } });
-
-    const promise = openHqccDb();
-
-    request.onupgradeneeded?.();
-
-    expect(db.createObjectStore).toHaveBeenCalledWith("cards", { keyPath: "id" });
-    expect(db.createObjectStore).toHaveBeenCalledWith("assets", { keyPath: "id" });
-    expect(assetsStore.createIndex).toHaveBeenCalledWith("createdAt", "createdAt", { unique: false });
-    expect(db.createObjectStore).toHaveBeenCalledWith("collections", { keyPath: "id" });
-    expect(db.createObjectStore).toHaveBeenCalledWith("settings", { keyPath: "id" });
-    expect(db.createObjectStore).toHaveBeenCalledWith("meta", { keyPath: "id" });
-    expect(metaStore.put).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "appVersion",
-        dbVersion: 4,
-      }),
+    expect(db).toBeInstanceOf(IDBDatabase);
+    expect(db.version).toBe(10);
+    expect(Array.from(db.objectStoreNames)).toEqual(
+      expect.arrayContaining([
+        "assets",
+        "cardBackgroundComponents",
+        "cardBorderComponents",
+        "cardCopyrightComponents",
+        "cardHeroStatsComponents",
+        "cardIconComponents",
+        "cardImageComponents",
+        "cardMonsterStatsComponents",
+        "cardSlotLinks",
+        "cardTextComponents",
+        "cardThumbnails",
+        "cardTitleComponents",
+        "cardsBase",
+        "collections",
+        "deckEntries",
+        "deckGroups",
+        "decks",
+        "deckSets",
+        "meta",
+        "pairs",
+        "settings",
+      ]),
     );
+    expect(Array.from(db.objectStoreNames)).not.toContain("cards");
 
-    request.onsuccess?.();
-    await expect(promise).resolves.toBe(db);
+    db.close();
+    await expect(readExistingHqccDbAppVersion()).resolves.toBe(APP_VERSION);
   });
 
-  it("does not recreate existing stores or indexes during upgrade", async () => {
-    const { db, assetsStore, metaStore } = createDb({
-      existingStores: ["cards", "assets", "collections", "settings", "meta"],
-      existingAssetIndexes: ["createdAt"],
+  it("does not create an empty DB when probing a fresh install", async () => {
+    const { openHqccDb, probeHqccDbVersion, readExistingHqccDbVersion, readExistingHqccDbAppVersion } =
+      await import("@/lib/hqcc-db");
+
+    await expect(probeHqccDbVersion()).resolves.toBeNull();
+    await expect(readExistingHqccDbVersion()).resolves.toBeNull();
+    await expect(readExistingHqccDbAppVersion()).resolves.toBeNull();
+
+    const db = await openHqccDb();
+
+    expect(Array.from(db.objectStoreNames)).toEqual(
+      expect.arrayContaining([
+        "assets",
+        "cardsBase",
+        "cardSlotLinks",
+        "cardThumbnails",
+        "collections",
+        "deckEntries",
+        "deckGroups",
+        "decks",
+        "deckSets",
+        "meta",
+        "pairs",
+        "settings",
+      ]),
+    );
+    expect(Array.from(db.objectStoreNames)).not.toContain("cards");
+
+    db.close();
+  });
+
+  it("upgrades a legacy DB to version 9 and backfills pairs during DB open", async () => {
+    const legacyDb = await openDbVersion(4, (_db, tx) => {
+      tx.objectStore("cards").put({
+        id: "front-1",
+        title: "Front",
+        face: "front",
+        schemaVersion: 1,
+        pairedWith: "back-1",
+      });
+      tx.objectStore("cards").put({
+        id: "back-1",
+        title: "Back",
+        face: "back",
+        schemaVersion: 1,
+      });
     });
-    const request = createOpenRequest(db);
-    const open = jest.fn(() => request);
+    legacyDb.close();
 
-    Object.defineProperty(window, "indexedDB", { configurable: true, value: { open } });
+    const { openHqccDb, probeHqccDbVersion } = await import("@/lib/hqcc-db");
+    const db = await openHqccDb();
 
-    const promise = openHqccDb();
+    expect(db.version).toBe(10);
+    expect(await probeHqccDbVersion()).toBe(10);
 
-    request.onupgradeneeded?.();
+    const pairs = (await readAllFromDb(db, "pairs")) as Array<{
+      frontFaceId: string;
+      backFaceId: string;
+    }>;
 
-    expect(db.createObjectStore).not.toHaveBeenCalled();
-    expect(assetsStore.createIndex).not.toHaveBeenCalled();
-    expect(metaStore.put).toHaveBeenCalledWith(
+    expect(pairs[0]).toEqual(
       expect.objectContaining({
-        id: "appVersion",
-        dbVersion: 4,
+        frontFaceId: "front-1",
+        backFaceId: "back-1",
       }),
     );
 
-    request.onsuccess?.();
-    await expect(promise).resolves.toBe(db);
+    expect(Array.from(db.objectStoreNames)).not.toContain("cards");
+
+    db.close();
   });
 
-  it("rejects with request.error on error", async () => {
-    const { db } = createDb({});
-    const request = createOpenRequest(db);
-    request.error = new Error("boom");
-    const open = jest.fn(() => request);
+  it("skips invalid and duplicate legacy pairedWith references during DB open", async () => {
+    const legacyDb = await openDbVersion(5, (_db, tx) => {
+      tx.objectStore("cards").put({
+        id: "front-1",
+        title: "Front One",
+        face: "front",
+        schemaVersion: 1,
+        pairedWith: "back-1",
+      });
+      tx.objectStore("cards").put({
+        id: "front-2",
+        title: "Front Two",
+        face: "front",
+        schemaVersion: 1,
+        pairedWith: "back-1",
+      });
+      tx.objectStore("cards").put({
+        id: "front-3",
+        title: "Front Three",
+        face: "front",
+        schemaVersion: 1,
+        pairedWith: "front-3",
+      });
+      tx.objectStore("cards").put({
+        id: "front-4",
+        title: "Front Four",
+        face: "front",
+        schemaVersion: 1,
+        pairedWith: "missing-back",
+      });
+      tx.objectStore("cards").put({
+        id: "back-1",
+        title: "Back One",
+        face: "back",
+        schemaVersion: 1,
+      });
+      tx.objectStore("pairs").put({
+        id: "pair-existing",
+        name: "Front One - Back One",
+        nameLower: "front one - back one",
+        frontFaceId: "front-1",
+        backFaceId: "back-1",
+        createdAt: 1,
+        updatedAt: 1,
+        schemaVersion: 1,
+      });
+    });
+    legacyDb.close();
 
-    Object.defineProperty(window, "indexedDB", { configurable: true, value: { open } });
+    const { openHqccDb } = await import("@/lib/hqcc-db");
+    const db = await openHqccDb();
 
-    const promise = openHqccDb();
+    const pairs = (await readAllFromDb(db, "pairs")) as Array<{
+      id: string;
+      frontFaceId: string;
+      backFaceId: string;
+    }>;
 
-    request.onerror?.();
-    await expect(promise).rejects.toThrow("boom");
-  });
+    expect(pairs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "pair-existing", frontFaceId: "front-1", backFaceId: "back-1" }),
+        expect.objectContaining({ frontFaceId: "front-2", backFaceId: "back-1" }),
+      ]),
+    );
+    expect(pairs).toHaveLength(2);
+    expect(Array.from(db.objectStoreNames)).not.toContain("cards");
 
-  it("rejects with a default error when request.error is missing", async () => {
-    const { db } = createDb({});
-    const request = createOpenRequest(db);
-    request.error = undefined;
-    const open = jest.fn(() => request);
-
-    Object.defineProperty(window, "indexedDB", { configurable: true, value: { open } });
-
-    const promise = openHqccDb();
-
-    request.onerror?.();
-    await expect(promise).rejects.toThrow("Failed to open hqcc DB");
+    db.close();
   });
 });

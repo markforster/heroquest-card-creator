@@ -146,6 +146,13 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
 }));
 
 describe("DeckEntriesBoardController recover paired modal", () => {
+  const RECOVER_PAIRED_LABEL = "decks.entries.actions.recoverPaired";
+  const REMOVE_SELECTED_COUNT_LABEL = "decks.entries.actions.removeSelectedCount";
+  const RECOVER_MODAL_TITLE = "decks.entries.recover.modalTitle";
+  const RECOVER_SELECTED_LABEL = "decks.entries.recover.recoverSelected";
+  const SELECT_ALL_ARIA = "decks.entries.recover.selectAllAria";
+  const CANCEL_LABEL = "actions.cancel";
+
   const DeckEntriesBoardController =
     require("@/components/Decks/detail/boards/DeckEntriesBoardController").default;
 
@@ -218,12 +225,12 @@ describe("DeckEntriesBoardController recover paired modal", () => {
 
   it("shows disabled recover button with zero count", () => {
     render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
-    const button = screen.getByRole("button", { name: "Recover Paired (0)" });
+    const button = screen.getByRole("button", { name: RECOVER_PAIRED_LABEL });
     expect(button).toBeDisabled();
-    const removeSelectedButton = screen.getByRole("button", { name: "Remove Selected (0)" });
+    const removeSelectedButton = screen.getByRole("button", { name: REMOVE_SELECTED_COUNT_LABEL });
     expect(removeSelectedButton).toBeDisabled();
     expect(removeSelectedButton.className).toContain("removeSelectedButton");
-    expect(screen.getByRole("img", { name: "Selected set back" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "decks.entries.selectedSetBackAlt" })).toBeInTheDocument();
     expect(screen.getByText("Back Card Alpha")).toBeInTheDocument();
   });
 
@@ -234,9 +241,9 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
 
     expect(screen.queryByText("Entries")).toBeNull();
-    expect(screen.queryByRole("img", { name: "Selected set back" })).toBeNull();
+    expect(screen.queryByRole("img", { name: "decks.entries.selectedSetBackAlt" })).toBeNull();
     expect(screen.getByTestId("entries-empty-state-board")).toBeInTheDocument();
-    expect(screen.getByText("Select a set to view entries.")).toBeInTheDocument();
+    expect(screen.getByText("decks.entries.empty.selectSet")).toBeInTheDocument();
     expect(screen.queryByTestId("entry-entry:entry-1")).toBeNull();
   });
 
@@ -247,7 +254,7 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
 
     expect(screen.getByText("Entries")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Selected set back" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "decks.entries.selectedSetBackAlt" })).toBeInTheDocument();
   });
 
   it("supports single and ctrl/cmd additive entry selection and updates delete count", () => {
@@ -257,11 +264,11 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     const entry2 = screen.getByTestId("entry-entry:entry-2");
     fireEvent.click(entry1);
     expect(entry1.className).toContain("selected");
-    expect(screen.getByRole("button", { name: "Remove Selected (1)" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: REMOVE_SELECTED_COUNT_LABEL })).toBeEnabled();
 
     fireEvent.click(entry2, { ctrlKey: true });
     expect(entry2.className).toContain("selected");
-    expect(screen.getByRole("button", { name: "Remove Selected (2)" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: REMOVE_SELECTED_COUNT_LABEL })).toBeEnabled();
   });
 
   it("bulk Remove from set deletes all selected entries and refreshes", async () => {
@@ -269,9 +276,9 @@ describe("DeckEntriesBoardController recover paired modal", () => {
 
     fireEvent.click(screen.getByTestId("entry-entry:entry-1"));
     fireEvent.click(screen.getByTestId("entry-entry:entry-2"), { metaKey: true });
-    fireEvent.click(screen.getByRole("button", { name: "Remove Selected (2)" }));
+    fireEvent.click(screen.getByRole("button", { name: REMOVE_SELECTED_COUNT_LABEL }));
 
-    expect(screen.getByText("Remove 2 entries from set?")).toBeInTheDocument();
+    expect(screen.getByText("decks.entries.removePrompt.bulkTitle")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "decks.removeFromSet" }));
 
     await waitFor(() => {
@@ -286,7 +293,7 @@ describe("DeckEntriesBoardController recover paired modal", () => {
 
     fireEvent.click(screen.getByTestId("entry-entry:entry-1"));
     fireEvent.click(screen.getByTestId("entry-entry:entry-2"), { ctrlKey: true });
-    fireEvent.click(screen.getByRole("button", { name: "Remove Selected (2)" }));
+    fireEvent.click(screen.getByRole("button", { name: REMOVE_SELECTED_COUNT_LABEL }));
 
     fireEvent.click(screen.getByRole("button", { name: "decks.removeAndUnpair" }));
 
@@ -300,17 +307,17 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     pairedNotInSetFrontIds = ["front-1", "front-2"];
     render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Recover Paired (2)" }));
-    expect(screen.getByText("Recover Paired Cards")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: RECOVER_PAIRED_LABEL }));
+    expect(screen.getByText(RECOVER_MODAL_TITLE)).toBeInTheDocument();
     expect(document.querySelector(".cardsPopover")).not.toBeNull();
     expect(document.querySelector(".recoverModalScrollArea")).not.toBeNull();
     expect(screen.queryByRole("button", { name: "Add All" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Recover Selected" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Cancel" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: RECOVER_SELECTED_LABEL })).toBeDisabled();
+    expect(screen.getByRole("button", { name: CANCEL_LABEL })).toBeEnabled();
 
     fireEvent.click(screen.getByRole("button", { name: "front-1" }));
     fireEvent.click(screen.getByRole("button", { name: "front-2" }), { ctrlKey: true });
-    fireEvent.click(screen.getByRole("button", { name: "Recover Selected" }));
+    fireEvent.click(screen.getByRole("button", { name: RECOVER_SELECTED_LABEL }));
 
     await waitFor(() => {
       expect(mockAddFront).toHaveBeenCalledTimes(2);
@@ -324,9 +331,9 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     pairedNotInSetFrontIds = ["front-1", "front-2", "front-3"];
     render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Recover Paired (3)" }));
-    const selectAll = screen.getByRole("checkbox", { name: "Select all recoverable cards" }) as HTMLInputElement;
-    const recoverSelected = screen.getByRole("button", { name: "Recover Selected" });
+    fireEvent.click(screen.getByRole("button", { name: RECOVER_PAIRED_LABEL }));
+    const selectAll = screen.getByRole("checkbox", { name: SELECT_ALL_ARIA }) as HTMLInputElement;
+    const recoverSelected = screen.getByRole("button", { name: RECOVER_SELECTED_LABEL });
 
     expect(selectAll.checked).toBe(false);
     expect(recoverSelected).toBeDisabled();

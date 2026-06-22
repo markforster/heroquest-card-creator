@@ -29,30 +29,15 @@ export type StockpileCardView = {
     frontsOverflow: number;
   };
   isSelected: boolean;
-  isPairingConflict: boolean;
-  conflictPairedName?: string;
-  conflictLabel?: string;
 };
 
 export type StockpileCardActions = {
-  onCardClick: (
-    id: string,
-    event: MouseEvent<HTMLElement>,
-    isPairMode: boolean,
-    isPairingConflict: boolean,
-  ) => void;
-  onCardSetSelected: (
-    id: string,
-    selected: boolean,
-    isPairMode: boolean,
-    isPairingConflict: boolean,
-  ) => void;
+  onCardClick: (id: string, event: MouseEvent<HTMLElement>, isPairMode: boolean) => void;
+  onCardSetSelected: (id: string, selected: boolean, isPairMode: boolean) => void;
   onCardSelectSingle: (id: string) => void;
   onCardDoubleClick: (id: string) => void;
   onPairHoverEnter: (id: string, rect: DOMRect) => void;
   onPairHoverLeave: (id: string) => void;
   onTableThumbEnter: (id: string, rect: DOMRect) => void;
   onTableThumbLeave: (id: string) => void;
-  onConflictHoverEnter: (id: string) => void;
-  onConflictHoverLeave: (id: string) => void;
 };

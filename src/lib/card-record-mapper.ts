@@ -22,11 +22,13 @@ export function cardRecordToCardData<T extends TemplateId>(
 ): CardDataByTemplate[T] {
   const normalizedScale = normalizeImageScale(record as CardRecord & { templateId: TemplateId });
   const base = {
+    name: record.name,
     title: record.title,
     showTitle: record.showTitle ?? true,
     titleStyle: record.titleStyle,
     titleColor: record.titleColor,
     bodyTextColor: record.bodyTextColor,
+    bodyTextFitToBounds: record.bodyTextFitToBounds ?? false,
     titlePlacement: record.titlePlacement,
     bodyTextStyle: record.bodyTextStyle,
     face: record.face,
@@ -120,6 +122,7 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     titleStyle: data.titleStyle,
     titleColor: data.titleColor,
     bodyTextColor: data.bodyTextColor,
+    bodyTextFitToBounds: data.bodyTextFitToBounds,
     titlePlacement: (data as { titlePlacement?: "top" | "bottom" }).titlePlacement,
     bodyTextStyle: (data as { bodyTextStyle?: BodyTextStyle }).bodyTextStyle,
     face,

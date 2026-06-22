@@ -1,5 +1,6 @@
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 import { blueprintsByTemplateId } from "@/data/blueprints";
+import { layerTypes } from "@/data/card-systems/types";
 import { clamp } from "@/lib/math";
 import type { BlueprintBounds } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
@@ -69,7 +70,7 @@ export function getImageLayerBounds(
   const blueprint = blueprintsByTemplateId[templateId];
   if (!blueprint) return undefined;
   const layer = blueprint.layers?.find(
-    (entry) => entry.type === "image" && entry.bind?.imageKey === imageKey,
+    (entry) => entry.type === layerTypes.image && entry.bind?.imageKey === imageKey,
   );
   return layer?.bounds ?? undefined;
 }

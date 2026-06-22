@@ -8,6 +8,7 @@ import {
   EyeOff,
   ListChevronsDownUp,
   ListChevronsUpDown,
+  ScanText,
   Square,
   SquareRoundCorner,
   Shrink,
@@ -36,6 +37,7 @@ type ContentFieldProps = {
   showFormattingHelp?: boolean;
   showTextColor?: boolean;
   showBackdropColor?: boolean;
+  showBodyTextFitToggle?: boolean;
 };
 
 const DEFAULT_BODY_TEXT_STYLE: BodyTextStyle = {
@@ -57,6 +59,7 @@ export default function ContentField({
   showFormattingHelp = false,
   showTextColor = false,
   showBackdropColor = false,
+  showBodyTextFitToggle = false,
 }: ContentFieldProps) {
   const { t } = useI18n();
   const {
@@ -66,6 +69,7 @@ export default function ContentField({
   } = useFormContext();
   const bodyTextStyle = useWatch({ name: "bodyTextStyle" }) as BodyTextStyle | undefined;
   const bodyTextColorValue = useWatch({ name: "bodyTextColor" }) as string | undefined;
+  const bodyTextFitToBounds = useWatch({ name: "bodyTextFitToBounds" }) as boolean | undefined;
   const fieldError = (errors as Record<string, { message?: string }>).description;
   const [isBodyColorOpen, setIsBodyColorOpen] = useState(false);
   const [isBodyTextColorOpen, setIsBodyTextColorOpen] = useState(false);
@@ -127,6 +131,7 @@ export default function ContentField({
               effectiveBackdrop.enabled ? layoutStyles.bodyTextToolbarButtonActive : ""
             } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
             title={t("tooltip.bodyTextBackdrop")}
+            aria-pressed={effectiveBackdrop.enabled}
             disabled={!textEnabled}
             onClick={() => updateBackdrop({ enabled: !effectiveBackdrop.enabled })}
           >
@@ -144,6 +149,7 @@ export default function ContentField({
                 : ""
             } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
             title={t("tooltip.bodyTextInset")}
+            aria-pressed={effectiveBackdrop.insetMode === "matchBorder"}
             disabled={!textEnabled}
             onClick={() =>
               updateBackdrop({
@@ -166,6 +172,7 @@ export default function ContentField({
                 : ""
             } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
             title={t("tooltip.bodyTextCorners")}
+            aria-pressed={effectiveBackdrop.cornerMode === "all"}
             disabled={!textEnabled}
             onClick={() =>
               updateBackdrop({
@@ -187,6 +194,7 @@ export default function ContentField({
                 : ""
             } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
             title={t("tooltip.bodyTextFit")}
+            aria-pressed={effectiveBackdrop.fitMode === "fit-to-text"}
             disabled={!textEnabled}
             onClick={() =>
               updateBackdrop({
@@ -220,6 +228,28 @@ export default function ContentField({
               />
             </div>
           ) : null}
+        </div>
+      ) : null}
+      {showBodyTextFitToggle ? (
+        <div className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1`}>
+          <button
+            type="button"
+            className={`${layoutStyles.bodyTextToolbarButton} ${
+              bodyTextFitToBounds ? layoutStyles.bodyTextToolbarButtonActive : ""
+            } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+            title={t("tooltip.bodyTextScaleToFit")}
+            aria-label={t("tooltip.bodyTextScaleToFit")}
+            aria-pressed={bodyTextFitToBounds}
+            disabled={!textEnabled}
+            onClick={() =>
+              setValue("bodyTextFitToBounds", !bodyTextFitToBounds, {
+                shouldDirty: true,
+                shouldTouch: true,
+              })
+            }
+          >
+            <ScanText size={14} aria-hidden="true" />
+          </button>
         </div>
       ) : null}
     </div>

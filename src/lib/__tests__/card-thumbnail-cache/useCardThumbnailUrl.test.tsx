@@ -96,7 +96,7 @@ describe("useCardThumbnailUrl", () => {
       ({ cardId }: { cardId: string | null }) =>
         useCardThumbnailUrl(cardId, null, { enabled: true, useCache: true }),
       {
-        initialProps: { cardId: "card-1" },
+        initialProps: { cardId: "card-1" as string | null },
       },
     );
 
@@ -173,12 +173,13 @@ describe("useCardThumbnailUrl", () => {
 
   it("releases retained ownership when the card id becomes null", async () => {
     (apiClient.getCardThumbnail as jest.Mock).mockResolvedValue(new Blob(["a"], { type: "image/png" }));
+    const initialProps: { cardId: string | null } = { cardId: "card-1" };
 
     const { result, rerender } = renderHook(
       ({ cardId }: { cardId: string | null }) =>
         useCardThumbnailUrl(cardId, null, { enabled: true, useCache: true }),
       {
-        initialProps: { cardId: "card-1" },
+        initialProps,
       },
     );
 

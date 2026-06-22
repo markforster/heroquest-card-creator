@@ -1,12 +1,4 @@
-import { applyWatermarkToCanvas, resolveWatermarkColor } from "@/lib/watermark";
-
-jest.mock("@/lib/watermark", () => {
-  const original = jest.requireActual("@/lib/watermark");
-  return {
-    ...original,
-    resolveWatermarkColor: jest.fn(() => "rgb(6, 6, 6)"),
-  };
-});
+import { applyWatermarkToCanvas } from "@/lib/watermark";
 
 describe("applyWatermarkToCanvas", () => {
   it("draws five vertical lines at 25% alpha with 1px gaps", () => {
@@ -22,7 +14,7 @@ describe("applyWatermarkToCanvas", () => {
       fillRect: (x: number, y: number, w: number, h: number) => {
         fillCalls.push({ x, y, w, h });
       },
-      getImageData: () => ({ data: new Uint8ClampedArray(4) }) as ImageData,
+      getImageData: () => ({ data: new Uint8ClampedArray([255, 255, 255, 255]) }) as ImageData,
     };
 
     const canvas = {
@@ -33,9 +25,9 @@ describe("applyWatermarkToCanvas", () => {
 
     applyWatermarkToCanvas(canvas);
 
-    expect(resolveWatermarkColor).toHaveBeenCalled();
     expect(save).toHaveBeenCalledTimes(1);
     expect(restore).toHaveBeenCalledTimes(1);
+    expect((context as CanvasRenderingContext2D).fillStyle).toBe("rgb(6, 6, 6)");
     expect((context as CanvasRenderingContext2D).globalAlpha).toBe(0.25);
 
     const ys = new Set(fillCalls.map((call) => call.y));

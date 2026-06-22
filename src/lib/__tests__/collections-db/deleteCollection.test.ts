@@ -1,10 +1,36 @@
-import { installMockIndexedDbCollections } from "@/lib/__testutils__/mockIndexedDbCollections";
-import { deleteCollection, getCollection } from "@/lib/collections-db";
+const enqueueDbEstimateChange = jest.fn();
+
+jest.mock("@/lib/indexeddb-size-tracker", () => ({
+  enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
+}));
+
 import type { CollectionRecord } from "@/types/collections-db";
 
+import { deleteCollection, getCollection } from "@/lib/collections-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
 
+import { deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 
 describe("deleteCollection", () => {
+  beforeEach(() => {
+    jest.resetModules();
+    installFakeIndexedDb();
+    enqueueDbEstimateChange.mockReset();
+  });
+
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {
+      // Ignore teardown failures if the DB module was not opened.
+    }
+
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
+    jest.restoreAllMocks();
+    jest.resetModules();
+  });
+
   it("deletes an existing collection", async () => {
     const existing: CollectionRecord = {
       id: "c1",
@@ -16,38 +42,17 @@ describe("deleteCollection", () => {
       schemaVersion: 1,
     };
 
-    const harness = installMockIndexedDbCollections({
-      hasCollectionsStore: true,
-      initialCollections: [existing],
-    });
+    const db = await openHqccDexieDb();
+    await db.collections.put(existing);
 
     await deleteCollection("c1");
-    expect(harness.collectionsStore.delete).toHaveBeenCalledWith("c1");
+
     await expect(getCollection("c1")).resolves.toBeNull();
-
-    harness.cleanup();
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("collections", "c1");
   });
 
-  it("rejects when the collections store is missing", async () => {
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: false, triggerUpgrade: false });
-
-    await expect(deleteCollection("c1")).rejects.toThrow("Collections store not available");
-    harness.cleanup();
-  });
-
-  it("rejects when store.delete fails", async () => {
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: true });
-    harness.collectionsStore.failNext("delete", new Error("delete-failed"));
-
-    await expect(deleteCollection("c1")).rejects.toThrow("delete-failed");
-    harness.cleanup();
-  });
-
-  it("rejects with a default error when store.delete fails without request.error", async () => {
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: true });
-    harness.collectionsStore.failNext("delete", undefined);
-
-    await expect(deleteCollection("c1")).rejects.toThrow("Failed to delete collection");
-    harness.cleanup();
+  it("does not fail when deleting a missing collection", async () => {
+    await expect(deleteCollection("missing")).resolves.toBeUndefined();
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("collections", "missing");
   });
 });

@@ -7,8 +7,8 @@ const mockResolveDeckExportFaceIds = jest.fn();
 const mockListPairsMap = jest.fn();
 const mockCardFan = jest.fn();
 
-if (!(globalThis as { TransformStream?: typeof TransformStream }).TransformStream) {
-  (globalThis as { TransformStream?: typeof TransformStream }).TransformStream =
+if (!(globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream) {
+  (globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream =
     TransformStream;
 }
 

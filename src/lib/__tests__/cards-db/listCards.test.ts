@@ -1,183 +1,163 @@
-import { installMockIndexedDbCards } from "@/lib/__testutils__/mockIndexedDbCards";
+import { listCardsRequestPlugin } from "@/api/local/listCardsRequest";
 import { listCards } from "@/lib/cards-db";
-import type { CardRecord } from "@/types/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import {
+  seedNormalizedCard,
+  seedNormalizedThumbnail,
+} from "@/lib/test-support/normalized-card-test-helpers";
 
-
-function card(partial: Partial<CardRecord> & Pick<CardRecord, "id" | "templateId" | "status" | "name" | "nameLower">): CardRecord {
-  return {
-    createdAt: 1,
-    updatedAt: 1,
-    schemaVersion: 1,
-    ...partial,
-  };
-}
+import {
+  createCardRecord,
+  deleteDb,
+  installFakeIndexedDb,
+  restoreIndexedDb,
+} from "@/lib/test-support/cards-db-test-helpers";
 
 describe("listCards", () => {
-  afterEach(() => {
+  beforeEach(async () => {
+    installFakeIndexedDb();
+    try {
+      getHqccDexieDb().close();
+    } catch {}
+    await deleteDb("hqcc").catch(() => {});
+  });
+
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {}
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
     jest.restoreAllMocks();
   });
 
   it("excludes soft-deleted cards by default", async () => {
-    const cards = [
-      card({ id: "1", templateId: "hero", status: "saved", name: "A", nameLower: "a" }),
-      card({
-        id: "2",
-        templateId: "hero",
-        status: "saved",
-        name: "B",
-        nameLower: "b",
-        deletedAt: 123,
-      }),
-    ];
-    const harness = installMockIndexedDbCards({ hasCardsStore: true, initialCards: cards, indexNames: [] });
+    await seedNormalizedCard(createCardRecord({ id: "1", name: "A", nameLower: "a" }));
+    await seedNormalizedCard(createCardRecord({ id: "2", name: "B", nameLower: "b", deletedAt: 123 }));
 
     const result = await listCards();
     expect(result.map((r) => r.id)).toEqual(["1"]);
-
-    harness.cleanup();
   });
 
-  it("can include soft-deleted cards", async () => {
-    const cards = [
-      card({ id: "1", templateId: "hero", status: "saved", name: "A", nameLower: "a" }),
-      card({
-        id: "2",
+  it("can include or isolate soft-deleted cards", async () => {
+    await seedNormalizedCard(createCardRecord({ id: "1", name: "A", nameLower: "a" }));
+    await seedNormalizedCard(createCardRecord({ id: "2", name: "B", nameLower: "b", deletedAt: 123 }));
+
+    await expect(listCards({ deleted: "include" })).resolves.toHaveLength(2);
+    await expect(listCards({ deleted: "only" })).resolves.toEqual([
+      expect.objectContaining({ id: "2" }),
+    ]);
+  });
+
+  it("filters by templateId, status, and search via scan and filter", async () => {
+    await seedNormalizedCard(
+      createCardRecord({ id: "1", templateId: "hero", status: "saved", name: "Hello", nameLower: "hello" }),
+    );
+    await seedNormalizedCard(
+      createCardRecord({ id: "2", templateId: "hero", status: "draft", name: "World", nameLower: "world" }),
+    );
+    await seedNormalizedCard(
+      createCardRecord({ id: "3", templateId: "monster", status: "saved", name: "Other", nameLower: "other" }),
+    );
+
+    await expect(listCards({ templateId: "hero", status: "saved" })).resolves.toEqual([
+      expect.objectContaining({ id: "1" }),
+    ]);
+    await expect(listCards({ search: "HELL" })).resolves.toEqual([
+      expect.objectContaining({ id: "1" }),
+    ]);
+  });
+
+  it("returns normalized-backed summaries when cardsBase rows exist", async () => {
+    await seedNormalizedCard(
+      createCardRecord({
+        id: "summary-hero-1",
         templateId: "hero",
-        status: "saved",
-        name: "B",
-        nameLower: "b",
-        deletedAt: 123,
+        name: "Sir Ragnar",
+        nameLower: "sir ragnar",
       }),
-    ];
-    const harness = installMockIndexedDbCards({ hasCardsStore: true, initialCards: cards, indexNames: [] });
+    );
 
-    const result = await listCards({ deleted: "include" });
-    expect(result.map((r) => r.id)).toEqual(["1", "2"]);
-
-    harness.cleanup();
-  });
-
-  it("can list only soft-deleted cards", async () => {
-    const cards = [
-      card({ id: "1", templateId: "hero", status: "saved", name: "A", nameLower: "a" }),
-      card({
-        id: "2",
+    await expect(listCards({ search: "sir ragnar" })).resolves.toEqual([
+      expect.objectContaining({
+        id: "summary-hero-1",
         templateId: "hero",
-        status: "saved",
-        name: "B",
-        nameLower: "b",
-        deletedAt: 123,
+        name: "Sir Ragnar",
+        nameLower: "sir ragnar",
+        schemaVersion: 2,
       }),
-    ];
-    const harness = installMockIndexedDbCards({ hasCardsStore: true, initialCards: cards, indexNames: [] });
-
-    const result = await listCards({ deleted: "only" });
-    expect(result.map((r) => r.id)).toEqual(["2"]);
-
-    harness.cleanup();
+    ]);
   });
 
-  it("uses templateId_status index when available", async () => {
-    const cards = [
-      card({ id: "1", templateId: "hero", status: "saved", name: "A", nameLower: "a" }),
-      card({ id: "2", templateId: "hero", status: "draft", name: "B", nameLower: "b" }),
-      card({ id: "3", templateId: "monster", status: "saved", name: "C", nameLower: "c" }),
-    ];
-    const harness = installMockIndexedDbCards({
-      hasCardsStore: true,
-      initialCards: cards,
-      indexNames: ["templateId_status"],
-    });
+  it("reflects normalized rows only", async () => {
+    await seedNormalizedCard(
+      createCardRecord({
+        id: "normalized-win-1",
+        templateId: "hero",
+        name: "Normalized Name",
+        nameLower: "normalized name",
+      }),
+    );
 
-    const indexSpy = jest.spyOn(harness.cardsStore, "index");
-    const result = await listCards({ templateId: "hero", status: "saved" });
-
-    expect(indexSpy).toHaveBeenCalledWith("templateId_status");
-    expect(result.map((r) => r.id)).toEqual(["1"]);
-
-    harness.cleanup();
+    await expect(listCards({ search: "normalized name" })).resolves.toEqual([
+      expect.objectContaining({
+        id: "normalized-win-1",
+        templateId: "hero",
+        name: "Normalized Name",
+        nameLower: "normalized name",
+      }),
+    ]);
   });
 
-  it("uses status index when available and only status filter is provided", async () => {
-    const cards = [
-      card({ id: "1", templateId: "hero", status: "saved", name: "A", nameLower: "a" }),
-      card({ id: "2", templateId: "hero", status: "draft", name: "B", nameLower: "b" }),
-    ];
-    const harness = installMockIndexedDbCards({
-      hasCardsStore: true,
-      initialCards: cards,
-      indexNames: ["status"],
-    });
-
-    const indexSpy = jest.spyOn(harness.cardsStore, "index");
-    const result = await listCards({ status: "draft" });
-
-    expect(indexSpy).toHaveBeenCalledWith("status");
-    expect(result.map((r) => r.id)).toEqual(["2"]);
-
-    harness.cleanup();
+  it("does not include legacy-only rows", async () => {
+    await expect(listCards({ search: "legacy card" })).resolves.toEqual([]);
   });
 
-  it("uses templateId index when available and only templateId filter is provided", async () => {
-    const cards = [
-      card({ id: "1", templateId: "hero", status: "saved", name: "A", nameLower: "a" }),
-      card({ id: "2", templateId: "monster", status: "saved", name: "B", nameLower: "b" }),
-    ];
-    const harness = installMockIndexedDbCards({
-      hasCardsStore: true,
-      initialCards: cards,
-      indexNames: ["templateId"],
-    });
+  it("carries normalized thumbnails onto list results", async () => {
+    const thumbnailBlob = new Blob(["x"]);
+    await seedNormalizedCard(createCardRecord({ id: "thumb-hero-1", name: "Thumb Hero", nameLower: "thumb hero" }));
+    await seedNormalizedThumbnail({ cardId: "thumb-hero-1", thumbnailBlob });
 
-    const indexSpy = jest.spyOn(harness.cardsStore, "index");
-    const result = await listCards({ templateId: "monster" });
-
-    expect(indexSpy).toHaveBeenCalledWith("templateId");
-    expect(result.map((r) => r.id)).toEqual(["2"]);
-
-    harness.cleanup();
+    const [card] = await listCards({ search: "thumb hero" });
+    expect(card.thumbnailBlob?.type).toBe("image/png");
   });
 
-  it("falls back to store.openCursor when indexes are missing", async () => {
-    const cards = [
-      card({ id: "1", templateId: "hero", status: "saved", name: "A", nameLower: "a" }),
-      card({ id: "2", templateId: "hero", status: "draft", name: "B", nameLower: "b" }),
-    ];
-    const harness = installMockIndexedDbCards({ hasCardsStore: true, initialCards: cards, indexNames: [] });
+  it("lists normalized-backed cards even when the legacy row is missing", async () => {
+    await seedNormalizedCard(
+      createCardRecord({
+        id: "summary-only-1",
+        templateId: "hero",
+        name: "Summary Only",
+        nameLower: "summary only",
+      }),
+    );
 
-    const result = await listCards({ templateId: "hero" });
-    expect(harness.cardsStore.openCursor).toHaveBeenCalledTimes(1);
-    expect(result).toHaveLength(2);
-
-    harness.cleanup();
+    await expect(listCards({ search: "summary only" })).resolves.toEqual([
+      expect.objectContaining({
+        id: "summary-only-1",
+        name: "Summary Only",
+        thumbnailBlob: undefined,
+      }),
+    ]);
   });
 
-  it("filters by search against nameLower", async () => {
-    const cards = [
-      card({ id: "1", templateId: "hero", status: "saved", name: "Hello", nameLower: "hello" }),
-      card({ id: "2", templateId: "hero", status: "saved", name: "World", nameLower: "world" }),
-    ];
-    const harness = installMockIndexedDbCards({ hasCardsStore: true, initialCards: cards, indexNames: [] });
+  it("keeps the local API listCards response shape unchanged", async () => {
+    await seedNormalizedCard(
+      createCardRecord({ id: "api-hero-1", templateId: "hero", name: "Api Hero", nameLower: "api hero" }),
+    );
 
-    const result = await listCards({ search: "HELL" });
-    expect(result.map((r) => r.id)).toEqual(["1"]);
+    const resolved = await listCardsRequestPlugin.request?.([], { queries: { search: "api hero" } } as never);
+    const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
+    const response = await adapter?.();
 
-    harness.cleanup();
-  });
-
-  it("rejects when cursor request fails with request.error", async () => {
-    const harness = installMockIndexedDbCards({ hasCardsStore: true, indexNames: [] });
-    harness.cardsStore.failNext("openCursor", new Error("cursor-failed"));
-
-    await expect(listCards()).rejects.toThrow("cursor-failed");
-    harness.cleanup();
-  });
-
-  it("rejects with a default error when cursor request fails without request.error", async () => {
-    const harness = installMockIndexedDbCards({ hasCardsStore: true, indexNames: [] });
-    harness.cardsStore.failNext("openCursor", undefined);
-
-    await expect(listCards()).rejects.toThrow("Failed to list cards");
-    harness.cleanup();
+    expect(response?.status).toBe(200);
+    expect(response?.data).toEqual([
+      expect.objectContaining({
+        id: "api-hero-1",
+        templateId: "hero",
+        name: "Api Hero",
+      }),
+    ]);
+    expect(response?.data[0]).not.toHaveProperty("thumbnailBlob");
   });
 });

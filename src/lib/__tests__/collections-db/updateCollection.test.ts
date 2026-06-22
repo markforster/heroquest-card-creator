@@ -1,20 +1,43 @@
-import { installMockIndexedDbCollections } from "@/lib/__testutils__/mockIndexedDbCollections";
-import { updateCollection } from "@/lib/collections-db";
+const enqueueDbEstimateChange = jest.fn();
+
+jest.mock("@/lib/indexeddb-size-tracker", () => ({
+  enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
+}));
+
 import type { CollectionRecord } from "@/types/collections-db";
 
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { updateCollection } from "@/lib/collections-db";
 
+import { deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 
 describe("updateCollection", () => {
-  afterEach(() => {
+  beforeEach(() => {
+    jest.resetModules();
+    installFakeIndexedDb();
+    enqueueDbEstimateChange.mockReset();
+  });
+
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {
+      // Ignore teardown failures if the DB module was not opened.
+    }
+
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
     jest.restoreAllMocks();
+    jest.resetModules();
   });
 
   it("returns null when the collection does not exist", async () => {
     jest.spyOn(Date, "now").mockReturnValue(1);
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: true });
+
     const result = await updateCollection("missing", { name: "New" });
+
     expect(result).toBeNull();
-    harness.cleanup();
+    expect(enqueueDbEstimateChange).not.toHaveBeenCalled();
   });
 
   it("updates an existing collection and bumps updatedAt", async () => {
@@ -29,10 +52,8 @@ describe("updateCollection", () => {
       schemaVersion: 1,
     };
 
-    const harness = installMockIndexedDbCollections({
-      hasCollectionsStore: true,
-      initialCollections: [existing],
-    });
+    const db = await openHqccDexieDb();
+    await db.collections.put(existing);
 
     const next = await updateCollection("c1", { name: "New", description: undefined });
 
@@ -42,86 +63,7 @@ describe("updateCollection", () => {
       description: undefined,
       updatedAt: 200,
     });
-
-    expect(harness.collectionsStore.put).toHaveBeenCalledWith(next);
-    harness.cleanup();
-  });
-
-  it("rejects when the collections store is missing", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1);
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: false, triggerUpgrade: false });
-
-    await expect(updateCollection("c1", { name: "New" })).rejects.toThrow(
-      "Collections store not available",
-    );
-    harness.cleanup();
-  });
-
-  it("rejects when store.get fails", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1);
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: true });
-    harness.collectionsStore.failNext("get", new Error("get-failed"));
-
-    await expect(updateCollection("c1", { name: "New" })).rejects.toThrow(
-      "get-failed",
-    );
-    harness.cleanup();
-  });
-
-  it("rejects with a default error when store.get fails without request.error", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1);
-    const harness = installMockIndexedDbCollections({ hasCollectionsStore: true });
-    harness.collectionsStore.failNext("get", undefined);
-
-    await expect(updateCollection("c1", { name: "New" })).rejects.toThrow(
-      "Failed to load collection for update",
-    );
-    harness.cleanup();
-  });
-
-  it("rejects when store.put fails", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(2);
-    const existing: CollectionRecord = {
-      id: "c1",
-      name: "Old",
-      description: undefined,
-      cardIds: [],
-      createdAt: 1,
-      updatedAt: 1,
-      schemaVersion: 1,
-    };
-
-    const harness = installMockIndexedDbCollections({
-      hasCollectionsStore: true,
-      initialCollections: [existing],
-    });
-    harness.collectionsStore.failNext("put", new Error("put-failed"));
-
-    await expect(updateCollection("c1", { name: "New" })).rejects.toThrow("put-failed");
-    harness.cleanup();
-  });
-
-  it("rejects with a default error when store.put fails without request.error", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(2);
-    const existing: CollectionRecord = {
-      id: "c1",
-      name: "Old",
-      description: undefined,
-      cardIds: [],
-      createdAt: 1,
-      updatedAt: 1,
-      schemaVersion: 1,
-    };
-
-    const harness = installMockIndexedDbCollections({
-      hasCollectionsStore: true,
-      initialCollections: [existing],
-    });
-    harness.collectionsStore.failNext("put", undefined);
-
-    await expect(updateCollection("c1", { name: "New" })).rejects.toThrow(
-      "Failed to update collection",
-    );
-    harness.cleanup();
+    await expect(db.collections.get("c1")).resolves.toEqual(next);
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("collections", "c1");
   });
 });

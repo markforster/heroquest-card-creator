@@ -1,11 +1,9 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import { AlertTriangle } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import RemoteCardThumbnail from "@/components/common/CardThumbnail/RemoteCardThumbnail";
-import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import StockpilePairIndicator from "@/components/Stockpile/StockpilePairIndicator";
 import StockpileSelectCheckbox from "@/components/Stockpile/StockpileSelectCheckbox";
@@ -18,7 +16,6 @@ type StockpileCardsGridProps = {
   items: StockpileCardView[];
   actions: StockpileCardActions;
   isPairMode: boolean;
-  conflictPopoverCardId: string | null;
   dragEnabled: boolean;
   onClearSelection: () => void;
 };
@@ -27,7 +24,6 @@ type StockpileCardsGridItemProps = {
   card: StockpileCardView;
   actions: StockpileCardActions;
   isPairMode: boolean;
-  conflictPopoverCardId: string | null;
   dragEnabled: boolean;
 };
 
@@ -35,7 +31,6 @@ function StockpileCardsGridItem({
   card,
   actions,
   isPairMode,
-  conflictPopoverCardId,
   dragEnabled,
 }: StockpileCardsGridItemProps) {
   const { t } = useI18n();
@@ -44,30 +39,15 @@ function StockpileCardsGridItem({
     disabled: !dragEnabled,
   });
   const selectLabel = formatMessage(t("aria.selectCard"), { name: card.name });
-  const pairedTemplateThumb = card.paired.back?.templateThumbSrc ?? null;
 
   return (
     <div
       ref={setNodeRef}
-      className={`${styles.assetsItem} ${
-        card.isSelected
-          ? card.isPairingConflict
-            ? styles.assetsItemConflict
-            : styles.assetsItemSelected
-          : ""
-      } ${isDragging ? styles.stockpileCardDragging : ""}`}
+      className={`${styles.assetsItem} ${card.isSelected ? styles.assetsItemSelected : ""} ${
+        isDragging ? styles.stockpileCardDragging : ""
+      }`}
       aria-label={card.name}
-      onMouseEnter={() => {
-        if (!card.isPairingConflict || !card.isSelected) return;
-        actions.onConflictHoverEnter(card.id);
-      }}
-      onMouseLeave={() => {
-        if (!card.isPairingConflict || !card.isSelected) return;
-        actions.onConflictHoverLeave(card.id);
-      }}
-      onClick={(event) =>
-        actions.onCardClick(card.id, event, isPairMode, card.isPairingConflict)
-      }
+      onClick={(event) => actions.onCardClick(card.id, event, isPairMode)}
       onDoubleClick={() => {
         if (isPairMode) return;
         actions.onCardDoubleClick(card.id);
@@ -80,50 +60,12 @@ function StockpileCardsGridItem({
         }
         if (event.key === " ") {
           event.preventDefault();
-          actions.onCardSetSelected(
-            card.id,
-            !card.isSelected,
-            isPairMode,
-            card.isPairingConflict,
-          );
+          actions.onCardSetSelected(card.id, !card.isSelected, isPairMode);
         }
       }}
       {...attributes}
       {...listeners}
     >
-      {card.isPairingConflict ? (
-        <div className={styles.cardsConflictIndicator}>
-          <AlertTriangle className={styles.cardsConflictIcon} aria-hidden="true" />
-        </div>
-      ) : null}
-      {conflictPopoverCardId === card.id ? (
-        <div className={styles.cardsConflictOverlay}>
-          <div className={styles.cardsConflictPopover}>
-            <div className={styles.cardsConflictPopoverContent}>
-              <div className={styles.cardsConflictPopoverThumb}>
-                {card.paired.back ? (
-                  <StockpileThumbImage
-                    cardId={card.paired.back.id}
-                    thumbnailBlob={card.paired.back.thumbnailBlob ?? null}
-                    templateThumbSrc={pairedTemplateThumb}
-                    alt=""
-                    fallback={<div className={styles.cardsPairIndicatorPlaceholder} />}
-                  />
-                ) : pairedTemplateThumb ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={pairedTemplateThumb} alt="" />
-                ) : (
-                  <div className={styles.cardsPairIndicatorPlaceholder} />
-                )}
-              </div>
-              <div className={styles.cardsConflictPopoverText}>
-                {card.conflictLabel}
-                <span>{card.conflictPairedName}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
       {ENABLE_GRID_VARIANT ? (
         <div className={styles.stockpileGridVariant}>
           {isPairMode ? null : (
@@ -229,7 +171,6 @@ export default function StockpileCardsGrid({
   items,
   actions,
   isPairMode,
-  conflictPopoverCardId,
   dragEnabled,
   onClearSelection,
 }: StockpileCardsGridProps) {
@@ -247,7 +188,6 @@ export default function StockpileCardsGrid({
           card={card}
           actions={actions}
           isPairMode={isPairMode}
-          conflictPopoverCardId={conflictPopoverCardId}
           dragEnabled={dragEnabled}
         />
       ))}
