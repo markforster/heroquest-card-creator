@@ -3,8 +3,8 @@
 export const BASE_CARD_WIDTH = 750;
 export const BASE_CARD_HEIGHT = 1050;
 
-export const CARD_WIDTH = 756;
-export const CARD_HEIGHT = 1056;
+export const CARD_WIDTH = BASE_CARD_WIDTH;
+export const CARD_HEIGHT = BASE_CARD_HEIGHT;
 
 export const CARD_ASPECT = CARD_HEIGHT / CARD_WIDTH;
 

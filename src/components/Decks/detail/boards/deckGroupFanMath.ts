@@ -1,7 +1,9 @@
+import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+
 export type GroupFanMode = "collapsed" | "partial" | "expanded";
 
 export const FAN_CARD_WIDTH = 112;
-export const FAN_CARD_HEIGHT = (FAN_CARD_WIDTH * 1056) / 756;
+export const FAN_CARD_HEIGHT = (FAN_CARD_WIDTH * CARD_HEIGHT) / CARD_WIDTH;
 export const FAN_GROUP_HORIZONTAL_PADDING = 24;
 const FAN_PARTIAL_SPREAD_DELTA_MULTIPLIER = 0;
 

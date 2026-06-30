@@ -189,7 +189,7 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
                   workflows reduce accidental structural breakage during reorganization.
                 </li>
                 <li>
-                  Export the current card to a 756×1056 PNG with fonts and artwork baked in, ready
+                  Export the current card to a 750×1050 PNG with fonts and artwork baked in, ready
                   to drop into a print layout or share online. The exported image is generated from
                   the same SVG used for the on-screen preview.
                 </li>

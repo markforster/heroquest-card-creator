@@ -34,6 +34,7 @@ export const META_APP_VERSION_KEY = "appVersion";
 export const META_PAIRS_MIGRATED_KEY = "pairsMigrated";
 export const META_PAIRS_DEDUPED_KEY = "pairsDeduped";
 export const META_CARD_CANVAS_MIGRATED_KEY = "cardCanvasMigrated";
+export const META_CARD_CANVAS_ROLLBACK_MIGRATED_KEY = "cardCanvasRollbackMigrated";
 export const META_CARDS_NORMALIZED_TARGET_VERSION_KEY = "cardsNormalizedTargetVersion";
 export const META_CARDS_NORMALIZED_STARTED_AT_KEY = "cardsNormalizedStartedAt";
 export const META_CARDS_NORMALIZED_COMPLETE_KEY = "cardsNormalizedComplete";

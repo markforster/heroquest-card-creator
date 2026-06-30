@@ -36,6 +36,32 @@ function makeMockCanvas(ctx: ReturnType<typeof makeMockContext>): MockCanvas {
 }
 
 describe("composeBleedCanvas", () => {
+  it("uses 750x1050 trim geometry and expands by bleed padding", () => {
+    const sourceCtx = makeMockContext();
+    const sourceCanvas = makeMockCanvas(sourceCtx) as unknown as HTMLCanvasElement;
+    sourceCanvas.width = CARD_WIDTH;
+    sourceCanvas.height = CARD_HEIGHT;
+
+    const outputCtx = makeMockContext();
+    const outputCanvas = makeMockCanvas(outputCtx);
+
+    const createSpy = jest
+      .spyOn(document, "createElement")
+      .mockReturnValueOnce(outputCanvas as unknown as HTMLCanvasElement);
+
+    const result = composeBleedCanvas({
+      fullCanvas: sourceCanvas,
+      backgroundCanvas: sourceCanvas,
+      bleedPx: 12,
+    });
+
+    expect(result.width).toBe(CARD_WIDTH + 24);
+    expect(result.height).toBe(CARD_HEIGHT + 24);
+    expect(outputCtx.drawImage).toHaveBeenCalledWith(sourceCanvas, 12, 12, CARD_WIDTH, CARD_HEIGHT);
+
+    createSpy.mockRestore();
+  });
+
   it("keeps identical output dimensions whether bleed bands are rendered or not", () => {
     const sourceCtx = makeMockContext();
     const sourceCanvas = makeMockCanvas(sourceCtx) as unknown as HTMLCanvasElement;

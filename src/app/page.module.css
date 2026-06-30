@@ -1462,7 +1462,7 @@
 .templateSidebarThumbWrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 756 / 1056;
+  aspect-ratio: 750 / 1050;
   background: var(--hq-surface-900);
   border-radius: 3px;
   overflow: visible;
@@ -2600,7 +2600,7 @@
 
 .inspectorHeaderPreviewInner {
   height: 64px;
-  aspect-ratio: 756 / 1056;
+  aspect-ratio: 750 / 1050;
   border-radius: var(--radius-sm);
   border: 1px solid var(--hq-surface-700);
   background: var(--hq-surface-850);
@@ -4505,7 +4505,7 @@
 
 .templateCardThumbWrapper {
   width: 100%;
-  padding-top: calc(1056 / 756 * 100%);
+  padding-top: calc(1050 / 750 * 100%);
   position: relative;
   background: var(--hq-surface-900);
   border-radius: 4px;
