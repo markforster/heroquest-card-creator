@@ -1,6 +1,6 @@
 "use client";
 
-import { ENABLE_WATERMARK } from "@/config/flags";
+import { DISABLE_BLEED_BAND_RENDER_FOR_TESTING, ENABLE_WATERMARK } from "@/config/flags";
 import { composeBleedCanvas } from "@/lib/bleed-export";
 import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
 import { applyWatermarkToCanvas, shouldApplyWatermark } from "@/lib/watermark";
@@ -77,6 +77,7 @@ export async function renderBleedCanvas({
     fullCanvas,
     backgroundCanvas: bleedSourceCanvas,
     bleedPx,
+    renderBleedBands: !DISABLE_BLEED_BAND_RENDER_FOR_TESTING,
     cropMarks,
     cutMarks: cutMarks
       ? {

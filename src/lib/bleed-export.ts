@@ -33,8 +33,9 @@ export type BleedComposeOptions = {
 
 export const DEFAULT_CROP_MARK_LENGTH = 20;
 export const DEFAULT_CROP_MARK_THICKNESS = 2;
-export const DEFAULT_CUT_MARK_OFFSET = 2;
+export const DEFAULT_CUT_MARK_OFFSET = 0;
 export const DEFAULT_CUT_MARK_DASH: [number, number] = [6, 4];
+export const DEFAULT_CUT_MARK_RADIUS_ADJUST = 2;
 
 export function cloneSvgForBleed(svg: SVGSVGElement): void {
   svg.querySelectorAll<SVGElement>("[clip-path], [clipPath]").forEach((node) => {
@@ -446,11 +447,16 @@ export function drawCutMarks(
     dash?: [number, number];
   },
 ) {
-  const x = trimX - offset;
-  const y = trimY - offset;
-  const w = trimW + offset * 2;
-  const h = trimH + offset * 2;
-  const radius = CARD_CORNER_RADIUS + offset;
+  // Canvas strokes are centered on the path. Shift the path outward by half
+  // the stroke width so the inner edge of the cut mark sits flush with the
+  // trim edge instead of painting onto the card face.
+  const strokeInset = thickness / 2;
+  const effectiveOffset = offset + strokeInset;
+  const x = trimX - effectiveOffset;
+  const y = trimY - effectiveOffset;
+  const w = trimW + effectiveOffset * 2;
+  const h = trimH + effectiveOffset * 2;
+  const radius = CARD_CORNER_RADIUS + effectiveOffset + DEFAULT_CUT_MARK_RADIUS_ADJUST;
 
   ctx.save();
   ctx.strokeStyle = color;

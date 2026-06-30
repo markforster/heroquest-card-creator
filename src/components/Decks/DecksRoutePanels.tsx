@@ -27,6 +27,11 @@ import { useDecksDragController } from "@/components/Decks/hooks/useDecksDragCon
 import { useDeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
 import DeckPdfExportProgressModal from "@/components/Decks/pdf/DeckPdfExportProgressModal";
 import DeckPdfExportSummaryModal from "@/components/Decks/pdf/DeckPdfExportSummaryModal";
+import { resolveDeckPdfBleedOptions as resolveDeckPdfBleedConfig } from "@/components/Decks/pdf/deckPdfBleed";
+import {
+  buildDeckPdfAlignmentFileName,
+  buildDeckPdfFileName,
+} from "@/components/Decks/pdf/deckPdfFileName";
 import type { ExportOptionsFormState } from "@/components/Export/ExportOptionsForm";
 import {
   useBulkCardExport,
@@ -57,6 +62,7 @@ import {
   composePrintComposition,
   computeLayoutPlan,
   DEFAULT_PDF_PRINT_CONFIG,
+  getPdfFooterReserveMm,
   normalizePdfPrintConfig,
   parseAlignmentFaceId,
   renderPdf,
@@ -128,6 +134,18 @@ export default function DecksRoutePanels() {
 
   const isDeckDetail = Boolean(deckId);
   const isDecksIndex = !isDeckDetail;
+  const deckPdfDefaultConfig = normalizePdfPrintConfig(exportSettings.pdf ?? DEFAULT_PDF_PRINT_CONFIG);
+  const deckPdfDefaultBleedOptions: ExportOptionsFormState = {
+    bleedEnabled: exportSettings.bleed.enabled,
+    bleedPx: exportSettings.bleed.bleedPx,
+    askBeforeExport: false,
+    roundedCorners: exportSettings.roundedCorners,
+    cropMarksEnabled: exportSettings.cropMarks.enabled,
+    cropMarkColor: exportSettings.cropMarks.color,
+    cropMarkStyle: exportSettings.cropMarks.style ?? "lines",
+    cutMarksEnabled: exportSettings.cutMarks.enabled,
+    cutMarkColor: exportSettings.cutMarks.color,
+  };
 
   const detail = useDeckDetailState(deckId ?? null);
   const selectionModel = useDeckDetailSelectionModel(deckId ?? null);
@@ -219,22 +237,7 @@ export default function DecksRoutePanels() {
             cutMarksEnabled: exportSettings.cutMarks.enabled,
             cutMarkColor: exportSettings.cutMarks.color,
           };
-    const bleedPx = source.bleedEnabled ? source.bleedPx : 0;
-    const bleedMm = bleedPx > 0 ? (bleedPx * DEFAULT_PDF_PRINT_CONFIG.cardMm.width) / CARD_WIDTH : 0;
-    return {
-      bleedPx,
-      bleedMm,
-      cropMarks: {
-        enabled: source.bleedEnabled ? source.cropMarksEnabled : false,
-        color: source.cropMarkColor,
-        style: source.cropMarkStyle,
-      },
-      cutMarks: {
-        enabled: source.bleedEnabled ? source.cutMarksEnabled : false,
-        color: source.cutMarkColor,
-      },
-      roundedCorners: source.roundedCorners,
-    };
+    return resolveDeckPdfBleedConfig(source);
   }, [deckPdfBleedMode, deckPdfRunBleedOptions, exportSettings]);
 
   const refreshDeckPdfRun = useCallback(
@@ -348,7 +351,10 @@ export default function DecksRoutePanels() {
         bleedMm: exportOptions.bleedMm,
       };
 
-      const layout = computeLayoutPlan(configForRun);
+      const layout = computeLayoutPlan(configForRun, {
+        imagePaddingMm: exportOptions.imagePaddingMm,
+        reservedBottomMm: getPdfFooterReserveMm(),
+      });
       if (layout.grid.perPage <= 0) {
         window.alert(t("decks.pdf.errors.layoutCapacity"));
         return;
@@ -482,15 +488,17 @@ export default function DecksRoutePanels() {
 
       setIsDeckPdfExporting(true);
       try {
-        const now = new Date().toISOString().replace(/[:.]/g, "-");
+        const now = new Date();
+        const deck = await apiClient.getDeck({ params: { deckId: pending.deckId } }).catch(() => null);
+        const deckName = deck?.title?.trim() || t("decks.untitledDeck");
         const pdfResult = await renderPdf({
           config: configForRun,
           layout,
           composition,
-          fileName: `heroquest-deck-${pending.deckId}-${effectiveConfig.mode}-${now}.pdf`,
+          fileName: buildDeckPdfFileName({ deckName, date: now }),
           renderFacePngBytes,
           shouldCancel: () => deckPdfCancelRequestedRef.current,
-          includeCalibrationPage: process.env.NODE_ENV !== "production",
+          includeCalibrationPage: true,
           onPhase: (phase) => {
             setDeckPdfProgressPhase(
               phase === "finalizing" ? t("status.finalizing") : t("status.exportingImages"),
@@ -550,7 +558,10 @@ export default function DecksRoutePanels() {
         ...effectiveConfig,
         bleedMm: exportOptions.bleedMm,
       };
-      const layout = computeLayoutPlan(configForRun);
+      const layout = computeLayoutPlan(configForRun, {
+        imagePaddingMm: exportOptions.imagePaddingMm,
+        reservedBottomMm: getPdfFooterReserveMm(),
+      });
       if (layout.grid.perPage <= 0) {
         window.alert(t("decks.pdf.errors.layoutCapacity"));
         return;
@@ -699,15 +710,15 @@ export default function DecksRoutePanels() {
 
       setIsDeckPdfExporting(true);
       try {
-        const now = new Date().toISOString().replace(/[:.]/g, "-");
+        const now = new Date();
         const pdfResult = await renderPdf({
           config: configForRun,
           layout,
           composition: alignmentComposition,
-          fileName: `heroquest-deck-${pending.deckId}-alignment-test-${now}.pdf`,
+          fileName: buildDeckPdfAlignmentFileName(now),
           renderFacePngBytes,
           shouldCancel: () => deckPdfCancelRequestedRef.current,
-          includeCalibrationPage: process.env.NODE_ENV !== "production",
+          includeCalibrationPage: true,
           onPhase: (phase) => {
             setDeckPdfProgressPhase(
               phase === "finalizing" ? t("status.finalizing") : t("status.exportingImages"),
@@ -1051,7 +1062,9 @@ export default function DecksRoutePanels() {
         isExporting={isDeckPdfExporting}
         summary={deckPdfSummary}
         config={deckPdfRunConfig}
+        defaultConfig={deckPdfDefaultConfig}
         bleedOptions={deckPdfRunBleedOptions}
+        defaultBleedOptions={deckPdfDefaultBleedOptions}
         setScopeMode={deckPdfSetScopeMode}
         layoutMode={deckPdfLayoutMode}
         bleedMode={deckPdfBleedMode}

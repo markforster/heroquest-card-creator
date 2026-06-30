@@ -37,8 +37,21 @@ export type PrintComposition = {
 
 export type SlotPlacementMm = {
   slotIndex: number;
+  /**
+   * Physical trim bounds (63.5mm x 88.9mm for poker cards by default).
+   * Trim-only images must be drawn into this rect.
+   */
   innerRectMm: MmRect;
+  /**
+   * Physical bleed bounds. Baked-bleed artwork must cover this rect.
+   */
   outerRectMm: MmRect;
+  /**
+   * Actual rendered image bounds on the PDF page. In baked-image mode this may
+   * be larger than the bleed rect when crop/cut marks add extra padding around
+   * the card image.
+   */
+  imageRectMm: MmRect;
 };
 
 export type LayoutPlan = {

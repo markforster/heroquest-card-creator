@@ -129,6 +129,13 @@ export const USE_ROUNDED_CARD_CLIP = true;
 // export const USE_ROUNDED_CARD_CLIP = false;
 
 /**
+ * Test-only flag: preserve bleed area in exported images but leave the bleed
+ * band itself blank instead of extending artwork into it. Useful for checking
+ * whether crop marks and cut marks line up with the visible trim edge.
+ */
+export const DISABLE_BLEED_BAND_RENDER_FOR_TESTING = false;
+
+/**
  * Disables missing-asset checks to isolate performance issues.
  */
 export const ENABLE_MISSING_ASSET_CHECKS = true;

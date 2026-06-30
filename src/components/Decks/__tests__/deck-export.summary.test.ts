@@ -44,10 +44,13 @@ describe("resolveDeckPdfExportSummary", () => {
 
     const result = await resolveDeckPdfExportSummary("deck-1", "frontAndBack");
 
+    expect(result.totalSetCount).toBe(2);
     expect(result.includedSetCount).toBe(1);
-    expect(result.emptyIncludedSetCount).toBe(0);
-    expect(result.emptyExcludedSetCount).toBe(1);
+    expect(result.includedEmptySetCount).toBe(0);
+    expect(result.excludedEmptySetCount).toBe(1);
+    expect(result.excludedNonEmptySetCount).toBe(0);
     expect(result.totalEntryQuantity).toBe(3);
+    expect(result.exportSlotQuantity).toBe(3);
     expect(result.frontFaceCount).toBe(3);
     expect(result.backFaceCount).toBe(3);
     expect(result.totalFaceCount).toBe(6);
@@ -69,6 +72,7 @@ describe("resolveDeckPdfExportSummary", () => {
     const result = await resolveDeckPdfExportSummary("deck-1", "frontsOnly");
 
     expect(result.totalEntryQuantity).toBe(2);
+    expect(result.exportSlotQuantity).toBe(2);
     expect(result.frontFaceCount).toBe(2);
     expect(result.backFaceCount).toBe(0);
     expect(result.totalFaceCount).toBe(2);
@@ -97,26 +101,35 @@ describe("resolveDeckPdfExportSummary", () => {
     const placeholderSlot = runData.slotPairs.find((slot) => slot.slotId.startsWith("set-2:empty:"));
     expect(placeholderSlot?.frontId).toBeTruthy();
     expect(parseDeckPdfPlaceholderFrontId(placeholderSlot?.frontId ?? "")).toEqual({ setId: "set-2" });
-    expect(summary.emptyIncludedSetCount).toBe(1);
-    expect(summary.emptyExcludedSetCount).toBe(0);
+    expect(summary.includedSetCount).toBe(2);
+    expect(summary.includedEmptySetCount).toBe(1);
+    expect(summary.excludedEmptySetCount).toBe(0);
+    expect(summary.totalEntryQuantity).toBe(1);
+    expect(summary.exportSlotQuantity).toBe(2);
   });
 
-  it("selected scope honors explicit set selection", async () => {
+  it("selected scope honors explicit set selection and includes empty selected sets as placeholders", async () => {
     (apiClient.listDeckSets as jest.Mock).mockResolvedValue([
       { id: "set-1", title: "Set One", backFaceId: "back-1" },
       { id: "set-2", title: "Set Two", backFaceId: "back-2" },
     ]);
     (apiClient.listCards as jest.Mock).mockResolvedValue([]);
     (apiClient.listDeckEntries as jest.Mock).mockImplementation(
-      ({ params }: { params: { setId: string } }) =>
-        Promise.resolve([{ id: `${params.setId}-e1`, pairId: "pair-1", count: 1, sortIndex: 0 }]),
+      ({ params }: { params: { setId: string } }) => {
+        if (params.setId === "set-2") return Promise.resolve([]);
+        return Promise.resolve([{ id: `${params.setId}-e1`, pairId: "pair-1", count: 1, sortIndex: 0 }]);
+      },
     );
     (apiClient.listPairs as jest.Mock).mockResolvedValue([{ id: "pair-1", frontFaceId: "front-1" }]);
 
     const runData = await resolveDeckPdfRunData("deck-1", "frontsOnly", "selected", ["set-2"]);
     const summary = summarizeDeckPdfRunData(runData, "frontsOnly", "selected", new Set(["set-2"]));
     expect(runData.slotPairs).toHaveLength(1);
-    expect(runData.slotPairs[0]?.slotId.startsWith("set-2:")).toBe(true);
+    expect(runData.slotPairs[0]?.slotId.startsWith("set-2:empty:")).toBe(true);
     expect(summary.includedSetCount).toBe(1);
+    expect(summary.includedEmptySetCount).toBe(1);
+    expect(summary.excludedNonEmptySetCount).toBe(1);
+    expect(summary.totalEntryQuantity).toBe(0);
+    expect(summary.exportSlotQuantity).toBe(1);
   });
 });

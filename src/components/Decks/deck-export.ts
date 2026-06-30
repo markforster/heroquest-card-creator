@@ -24,6 +24,7 @@ export type DeckPdfSetMeta = {
   setTitle: string;
   backFaceId: string | null;
   hasEntries: boolean;
+  entryCount: number;
 };
 
 export type DeckPdfRunData = {
@@ -37,10 +38,13 @@ export type DeckPdfRunData = {
 };
 
 export type DeckPdfExportSummary = {
+  totalSetCount: number;
   includedSetCount: number;
-  emptyIncludedSetCount: number;
-  emptyExcludedSetCount: number;
+  includedEmptySetCount: number;
+  excludedEmptySetCount: number;
+  excludedNonEmptySetCount: number;
   totalEntryQuantity: number;
+  exportSlotQuantity: number;
   frontFaceCount: number;
   backFaceCount: number;
   totalFaceCount: number;
@@ -123,33 +127,31 @@ export function summarizeDeckPdfRunData(
   scopeMode: DeckPdfSetScopeMode,
   selectedSetIds: Set<string>,
 ): DeckPdfExportSummary {
-  const includedBySetId = new Set<string>();
-  const emptyIncludedBySetId = new Set<string>();
-  const setsById = new Map(runData.sets.map((set) => [set.setId, set]));
-  for (const slot of runData.slotPairs) {
-    const setId = slot.slotId.split(":")[0] ?? "";
-    if (!setId) continue;
-    includedBySetId.add(setId);
-    const set = setsById.get(setId);
-    if (set && !set.hasEntries) emptyIncludedBySetId.add(setId);
-  }
+  const includedSets = runData.sets.filter((set) => {
+    if (scopeMode === "all") return true;
+    if (scopeMode === "complete") return set.hasEntries;
+    return selectedSetIds.has(set.setId);
+  });
+  const excludedSets = runData.sets.filter((set) => !includedSets.some((included) => included.setId === set.setId));
+  const includedEmptySetCount = includedSets.filter((set) => !set.hasEntries).length;
+  const excludedEmptySetCount = excludedSets.filter((set) => !set.hasEntries).length;
+  const excludedNonEmptySetCount = excludedSets.filter((set) => set.hasEntries).length;
 
-  const emptyExcludedSetCount = runData.sets.reduce((sum, set) => {
-    if (set.hasEntries) return sum;
-    if (scopeMode === "all") return sum;
-    if (scopeMode === "complete") return sum + 1;
-    return selectedSetIds.has(set.setId) ? sum : sum + 1;
+  const exportSlotQuantity = runData.slotPairs.length;
+  const totalEntryQuantity = runData.slotPairs.reduce((sum, slot) => {
+    return parseDeckPdfPlaceholderFrontId(slot.frontId ?? "") ? sum : sum + 1;
   }, 0);
-
-  const totalEntryQuantity = runData.slotPairs.length;
-  const frontFaceCount = totalEntryQuantity;
-  const backFaceCount = mode === "frontAndBack" ? totalEntryQuantity : 0;
+  const frontFaceCount = exportSlotQuantity;
+  const backFaceCount = mode === "frontAndBack" ? exportSlotQuantity : 0;
   const totalFaceCount = frontFaceCount + backFaceCount;
   return {
-    includedSetCount: includedBySetId.size,
-    emptyIncludedSetCount: emptyIncludedBySetId.size,
-    emptyExcludedSetCount,
+    totalSetCount: runData.sets.length,
+    includedSetCount: includedSets.length,
+    includedEmptySetCount,
+    excludedEmptySetCount,
+    excludedNonEmptySetCount,
     totalEntryQuantity,
+    exportSlotQuantity,
     frontFaceCount,
     backFaceCount,
     totalFaceCount,
@@ -183,6 +185,7 @@ export async function resolveDeckPdfRunData(
     setTitle: set.title ?? cardTitleById.get(set.backFaceId) ?? set.id,
     backFaceId: set.backFaceId ?? null,
     hasEntries: entries.length > 0,
+    entryCount: entries.length,
   }));
   const selected = new Set(selectedSetIds);
   const effectiveSetMeta = setMeta.filter((set) => {
@@ -190,7 +193,7 @@ export async function resolveDeckPdfRunData(
     if (scopeMode === "complete") return set.hasEntries;
     return selected.has(set.setId);
   });
-  const includeEmptyPlaceholders = scopeMode === "all";
+  const includeEmptyPlaceholders = scopeMode === "all" || scopeMode === "selected";
   const slotPairs: DeckPdfRunData["slotPairs"] = [];
   for (const set of effectiveSetMeta) {
     const setEntries = entriesBySet.find((row) => row.set.id === set.setId)?.entries ?? [];
