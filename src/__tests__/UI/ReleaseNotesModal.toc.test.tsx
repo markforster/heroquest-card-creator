@@ -53,6 +53,12 @@ describe("ReleaseNotesModal TOC", () => {
       screen.getAllByRole("button", { name: "Credits & Attribution" }).length,
     ).toBeGreaterThan(0);
     expect(
+      screen.getAllByRole("button", { name: "Update 22/06/2026 (v0.6.2)" }).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("button", { name: "Update 13/06/2026 (v0.6.1)" }).length,
+    ).toBeGreaterThan(0);
+    expect(
       screen.getAllByRole("button", { name: "Update 31/05/2026 (v0.6.0)" }).length,
     ).toBeGreaterThan(0);
   });
@@ -74,6 +80,28 @@ describe("ReleaseNotesModal TOC", () => {
     expect(screen.getByRole("link", { name: "onlinewebfonts.com" })).toHaveAttribute(
       "href",
       "https://www.onlinewebfonts.com/package/Carter_Sans",
+    );
+  });
+
+  it("renders the new 0.6.1 and 0.6.2 release summaries", () => {
+    renderModal();
+
+    expect(screen.getByRole("heading", { name: "Update 22/06/2026 (v0.6.2)" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/New Scale To Fit option for body text and better stat-heading wrapping\./i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "v0.6.2" })).toHaveAttribute(
+      "href",
+      "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.6.2",
+    );
+
+    expect(screen.getByRole("heading", { name: "Update 13/06/2026 (v0.6.1)" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Zoomable asset preview and direct open-card-from-usage workflows\./i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "v0.6.1" })).toHaveAttribute(
+      "href",
+      "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.6.1",
     );
   });
 

@@ -33,6 +33,7 @@ import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData"
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
 import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collections-merge";
 import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
+import { hydrateCardsForExport } from "@/components/Stockpile/stockpile-export";
 import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
 import StockpileActionsBar from "@/components/Stockpile/StockpileActionsBar";
 import StockpileAddToCollectionController from "@/components/Stockpile/StockpileAddToCollectionController";
@@ -848,8 +849,9 @@ export default function StockpilePanelContent({
     cardsToExport: CardRecord[],
     options?: { skipIds?: Set<string>; skipNotes?: Map<string, string>; skipPrecheck?: boolean },
   ) => {
+    const hydratedCards = await hydrateCardsForExport(cardsToExport);
     const result = await exportFlow.startBulkCardExport({
-      cards: cardsToExport,
+      cards: hydratedCards,
       skipIds: options?.skipIds,
       skipNotes: options?.skipNotes,
       skipPrecheck: options?.skipPrecheck,

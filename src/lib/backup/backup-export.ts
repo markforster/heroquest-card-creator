@@ -92,7 +92,7 @@ async function loadExportInputs(): Promise<{
   }
   const { apiClient } = await import("@/api/client");
   const [
-    rawCards,
+    cardSummaries,
     rawAssets,
     collections,
     pairs,
@@ -114,6 +114,8 @@ async function loadExportInputs(): Promise<{
     apiClient.getBorderSwatches(),
     apiClient.getDefaultCopyright(),
   ]);
+
+  const rawCards = await hydrateCardsForBackup(cardSummaries, apiClient);
 
   await Promise.all(
     decks.map(async (deck) => {
@@ -260,6 +262,48 @@ async function loadExportInputs(): Promise<{
     settings,
     localStorage,
   };
+}
+
+async function hydrateCardsForBackup(
+  cards: CardRecord[],
+  apiClient: (typeof import("@/api/client"))["apiClient"],
+): Promise<CardRecord[]> {
+  if (!cards.length) {
+    return [];
+  }
+
+  const records = await Promise.all(
+    cards.map(async (card) => {
+      try {
+        return await apiClient.getCard({ params: { id: card.id } });
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  const missingIds: string[] = [];
+  const hydrated: CardRecord[] = [];
+
+  for (let index = 0; index < cards.length; index += 1) {
+    const record = records[index];
+    if (!record) {
+      missingIds.push(cards[index].id);
+      continue;
+    }
+    hydrated.push({
+      ...(record as CardRecord),
+      thumbnailBlob: cards[index].thumbnailBlob,
+    });
+  }
+
+  if (missingIds.length > 0) {
+    throw new Error(
+      `Backup export failed because ${missingIds.length} card(s) could not be fully loaded: ${missingIds.join(", ")}`,
+    );
+  }
+
+  return hydrated;
 }
 
 async function buildLegacyExportObject(

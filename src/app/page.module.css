@@ -1163,13 +1163,20 @@
 
 .leftNavCurrentCardLabel {
   flex: 1 1 auto;
+  min-width: 0;
   text-align: left;
   line-height: 1.2;
   font-weight: 600;
   color: var(--hq-text);
-  overflow: visible;
+  overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .leftNavCollapsed .leftNavCurrentCard {
