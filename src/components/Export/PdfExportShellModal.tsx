@@ -280,8 +280,9 @@ export default function PdfExportShellModal({
   );
 
   useEffect(() => {
+    if (!isOpen) return;
     onStateChange?.(shellState);
-  }, [onStateChange, shellState]);
+  }, [isOpen, onStateChange, shellState]);
 
   const layoutSummary = formatPdfExportLayoutSummary(effectiveConfig, t);
   const bleedSummary = formatPdfExportBleedSummary(effectiveBleedOptions, t);

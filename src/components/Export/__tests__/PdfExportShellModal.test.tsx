@@ -480,6 +480,51 @@ describe("PdfExportShellModal", () => {
     expect(screen.queryByText("Nothing available")).not.toBeInTheDocument();
   });
 
+  it("re-emits shell state when reopened with unchanged internal settings", () => {
+    const onStateChange = jest.fn();
+    const { rerender } = render(
+      <PdfExportShellModal
+        isOpen
+        title="Export shell"
+        slotPairs={slotPairs}
+        onCancel={jest.fn()}
+        onStateChange={onStateChange}
+        buildExportRun={jest.fn()}
+      />,
+    );
+
+    expect(onStateChange).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <PdfExportShellModal
+        isOpen={false}
+        title="Export shell"
+        slotPairs={slotPairs}
+        onCancel={jest.fn()}
+        onStateChange={onStateChange}
+        buildExportRun={jest.fn()}
+      />,
+    );
+
+    rerender(
+      <PdfExportShellModal
+        isOpen
+        title="Export shell"
+        slotPairs={slotPairs}
+        onCancel={jest.fn()}
+        onStateChange={onStateChange}
+        buildExportRun={jest.fn()}
+      />,
+    );
+
+    expect(onStateChange).toHaveBeenCalledTimes(2);
+    expect(onStateChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        effectiveConfig: expect.objectContaining({ mode: "frontsOnly" }),
+      }),
+    );
+  });
+
   it("owns custom layout and bleed state and builds normal export composition from slot pairs", async () => {
     const buildExportRun = jest.fn(() => makeRun());
     const buildAlignmentExportRun = jest.fn(() => makeAlignmentRun());
