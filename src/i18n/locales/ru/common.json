@@ -136,6 +136,7 @@
   "label.cropMarkStyle": "Стиль меток обрезки",
   "label.cropMarkStyleLines": "Линии",
   "label.cropMarkStyleSquares": "Квадраты",
+  "label.cropMarkStyleTriangles": "Треугольники",
   "label.cutMarks": "Режущие метки",
   "label.cutMarkColor": "Цвет режущих меток",
   "label.finalSize": "Итоговый размер",

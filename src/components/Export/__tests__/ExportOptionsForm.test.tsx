@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import ExportOptionsForm from "@/components/Export/ExportOptionsForm";
@@ -19,6 +19,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "label.cropMarkStyle": "Crop mark style",
           "label.cropMarkStyleLines": "Lines",
           "label.cropMarkStyleSquares": "Squares",
+          "label.cropMarkStyleTriangles": "Triangles",
           "label.cutMarks": "Cut marks",
           "label.cutMarkColor": "Cut mark color",
         } as Record<string, string>
@@ -87,5 +88,17 @@ describe("ExportOptionsForm", () => {
     expect(container.querySelector(".exportOptionsFormSectionsColumns")).toBeInTheDocument();
     expect(screen.getByText("Export Settings")).toBeInTheDocument();
     expect(screen.getByText("Export Marks")).toBeInTheDocument();
+  });
+
+  it("shows and emits the triangles crop mark style", () => {
+    const onChange = jest.fn();
+    render(<ExportOptionsForm {...baseProps} onChange={onChange} />);
+
+    const select = screen.getByDisplayValue("Lines");
+    expect(screen.getByRole("option", { name: "Triangles" })).toBeInTheDocument();
+
+    fireEvent.change(select, { target: { value: "triangles" } });
+
+    expect(onChange).toHaveBeenCalledWith({ cropMarkStyle: "triangles" });
   });
 });

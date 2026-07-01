@@ -37,7 +37,7 @@ export function drawDeveloperCredit({
   templateId?: CardPreviewProps["templateId"];
   cardData?: CardPreviewProps["cardData"];
   bleedPx: number;
-  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
   cutMarks?: { enabled: boolean; color: string };
 }) {
   if (!shouldShowDeveloperCredit(templateId, cardData)) return;

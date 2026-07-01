@@ -136,6 +136,7 @@
   "label.cropMarkStyle": "Leikkausmerkkien tyyli",
   "label.cropMarkStyleLines": "Viivat",
   "label.cropMarkStyleSquares": "Neliöt",
+  "label.cropMarkStyleTriangles": "Kolmiot",
   "label.cutMarks": "Leikkausmerkit",
   "label.cutMarkColor": "Leikkausmerkkien väri",
   "label.finalSize": "Lopullinen koko",

@@ -136,6 +136,7 @@
   "label.cropMarkStyle": "Crop Mark Style",
   "label.cropMarkStyleLines": "Lines",
   "label.cropMarkStyleSquares": "Squares",
+  "label.cropMarkStyleTriangles": "Triangles",
   "label.cutMarks": "Cut Marks",
   "label.cutMarkColor": "Cut Mark Color",
   "label.finalSize": "Final size",

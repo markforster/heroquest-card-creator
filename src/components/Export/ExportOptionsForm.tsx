@@ -19,7 +19,7 @@ export type ExportOptionsFormState = {
   roundedCorners: boolean;
   cropMarksEnabled: boolean;
   cropMarkColor: string;
-  cropMarkStyle: "lines" | "squares";
+  cropMarkStyle: "lines" | "squares" | "triangles";
   cutMarksEnabled: boolean;
   cutMarkColor: string;
 };
@@ -164,11 +164,12 @@ export default function ExportOptionsForm({
             value={cropMarkStyle}
             disabled={!cropMarksEnabled || !bleedEnabled}
             onChange={(event) =>
-              onChange({ cropMarkStyle: event.target.value as "lines" | "squares" })
+              onChange({ cropMarkStyle: event.target.value as "lines" | "squares" | "triangles" })
             }
           >
             <option value="lines">{t("label.cropMarkStyleLines")}</option>
             <option value="squares">{t("label.cropMarkStyleSquares")}</option>
+            <option value="triangles">{t("label.cropMarkStyleTriangles")}</option>
           </select>
         </label>
       </div>

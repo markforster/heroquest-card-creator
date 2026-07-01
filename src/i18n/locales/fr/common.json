@@ -136,6 +136,7 @@
   "label.cropMarkStyle": "Style des repères de coupe",
   "label.cropMarkStyleLines": "Lignes",
   "label.cropMarkStyleSquares": "Carrés",
+  "label.cropMarkStyleTriangles": "Triangles",
   "label.cutMarks": "Marques de découpe",
   "label.cutMarkColor": "Couleur des marques de découpe",
   "label.finalSize": "Taille finale",

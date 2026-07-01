@@ -919,9 +919,11 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
     drawCalibrationPage(calibrationPage, layout.paperMm, config, layout.placements[0]);
   }
   const bytes = await pdf.save();
+  const pdfBytes = new Uint8Array(bytes.byteLength);
+  pdfBytes.set(bytes);
   return {
     status: "success",
-    blob: new Blob([bytes], { type: "application/pdf" }),
+    blob: new Blob([pdfBytes], { type: "application/pdf" }),
     fileName,
     renderedFaces,
     skippedFaces,

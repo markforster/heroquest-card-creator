@@ -23,7 +23,7 @@ export async function renderBleedCanvas({
 }: {
   svgElement: SVGSVGElement;
   bleedPx: number;
-  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
   cutMarks?: { enabled: boolean; color: string };
   roundedCorners: boolean;
   loggingId?: string;

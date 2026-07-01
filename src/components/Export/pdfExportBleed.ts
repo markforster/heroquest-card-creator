@@ -12,7 +12,7 @@ export type PdfExportBleedSource = {
   roundedCorners: boolean;
   cropMarksEnabled: boolean;
   cropMarkColor?: string;
-  cropMarkStyle?: "lines" | "squares";
+  cropMarkStyle?: "lines" | "squares" | "triangles";
   cutMarksEnabled: boolean;
   cutMarkColor?: string;
 };

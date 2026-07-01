@@ -11,7 +11,7 @@ export type CropMarksOptions = {
   color: string;
   markLength?: number;
   thickness?: number;
-  style?: "lines" | "squares";
+  style?: "lines" | "squares" | "triangles";
 };
 
 export type CutMarksOptions = {
@@ -387,7 +387,7 @@ export function drawCropMarks(
     color: string;
     markLength?: number;
     thickness?: number;
-    style?: "lines" | "squares";
+    style?: "lines" | "squares" | "triangles";
   },
 ) {
   const right = trimX + trimW;
@@ -402,6 +402,41 @@ export function drawCropMarks(
     ctx.fillRect(right, trimY - size, size, size);
     ctx.fillRect(trimX - size, bottom, size, size);
     ctx.fillRect(right, bottom, size, size);
+    ctx.restore();
+    return;
+  }
+
+  if (style === "triangles") {
+    const size = markLength;
+
+    ctx.beginPath();
+    ctx.moveTo(trimX, trimY);
+    ctx.lineTo(trimX - size, trimY);
+    ctx.lineTo(trimX, trimY - size);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(right, trimY);
+    ctx.lineTo(right + size, trimY);
+    ctx.lineTo(right, trimY - size);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(trimX, bottom);
+    ctx.lineTo(trimX - size, bottom);
+    ctx.lineTo(trimX, bottom + size);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(right, bottom);
+    ctx.lineTo(right + size, bottom);
+    ctx.lineTo(right, bottom + size);
+    ctx.closePath();
+    ctx.fill();
+
     ctx.restore();
     return;
   }

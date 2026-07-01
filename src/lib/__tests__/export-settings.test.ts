@@ -53,4 +53,23 @@ describe("export-settings pdf defaults", () => {
     expect(loaded.pdf.mode).toBe(DEFAULT_PDF_PRINT_CONFIG.mode);
     expect(loaded.pdf.gapMm.x).toBe(DEFAULT_PDF_PRINT_CONFIG.gapMm.x);
   });
+
+  it("persists and restores triangle crop mark style", () => {
+    const current = getExportSettings();
+    const next = {
+      ...current,
+      cropMarks: {
+        ...current.cropMarks,
+        enabled: true,
+        style: "triangles" as const,
+      },
+    };
+
+    setExportSettings(next);
+
+    expect(window.localStorage.getItem(EXPORT_SETTINGS_STORAGE_KEYS.cropMarksStyle)).toBe(
+      "triangles",
+    );
+    expect(getExportSettings().cropMarks.style).toBe("triangles");
+  });
 });

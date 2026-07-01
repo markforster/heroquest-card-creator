@@ -23,7 +23,7 @@ import {
 
 export type ExportPromptResult = {
   bleedPx: number;
-  cropMarks: { enabled: boolean; color: string; style: "lines" | "squares" };
+  cropMarks: { enabled: boolean; color: string; style: "lines" | "squares" | "triangles" };
   cutMarks: { enabled: boolean; color: string };
   roundedCorners: boolean;
 };
@@ -34,7 +34,7 @@ type ExportBleedPromptProps = {
   initialBleedPx?: number;
   initialCropMarksEnabled?: boolean;
   initialCropMarkColor?: string;
-  initialCropMarkStyle?: "lines" | "squares";
+  initialCropMarkStyle?: "lines" | "squares" | "triangles";
   initialCutMarksEnabled?: boolean;
   initialCutMarkColor?: string;
   initialRoundedCorners?: boolean;
@@ -61,7 +61,7 @@ export default function ExportBleedPrompt({
   const [cropMarksEnabled, setCropMarksEnabled] = useState(initialCropMarksEnabled);
   const [cropMarkColor, setCropMarkColor] = useState(normalizeColor(initialCropMarkColor));
   const [cropMarkStyle, setCropMarkStyle] =
-    useState<"lines" | "squares">(initialCropMarkStyle);
+    useState<"lines" | "squares" | "triangles">(initialCropMarkStyle);
   const [cutMarksEnabled, setCutMarksEnabled] = useState(initialCutMarksEnabled);
   const [cutMarkColor, setCutMarkColor] = useState(normalizeColor(initialCutMarkColor));
   const [roundedCorners, setRoundedCorners] = useState(initialRoundedCorners);

@@ -43,7 +43,7 @@ export type BulkExportParams = {
   skipCardIds?: Set<string>;
   skipCardNotes?: Map<string, string>;
   bleedPx?: number;
-  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+  cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
   cutMarks?: { enabled: boolean; color: string };
   roundedCorners?: boolean;
 };

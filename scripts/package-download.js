@@ -3,6 +3,8 @@
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
+const matter = require("gray-matter");
+const { marked } = require("marked");
 
 const rootDir = path.join(__dirname, "..");
 const outDir = path.join(rootDir, "out");
@@ -14,8 +16,176 @@ const bundleReadme = path.join(outDir, "README.md");
 const packageJson = require(path.join(rootDir, "package.json"));
 const version = packageJson.version || "0.0.0";
 const outputZip = path.join(artefactsDir, `heroquest-card-maker.${version}.zip`);
+const readmePdf = path.join(outDir, "README.pdf");
 
-function main() {
+function buildReadmeHtml(markdownSource) {
+  const { content } = matter(markdownSource);
+  const bodyHtml = marked.parse(content, { gfm: true, breaks: true });
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HeroQuest Card Creator Download Bundle</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --text: #1f2937;
+        --muted: #4b5563;
+        --border: #d1d5db;
+        --surface: #ffffff;
+        --surface-alt: #f8fafc;
+        --accent: #7c2d12;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 11pt;
+        line-height: 1.55;
+        color: var(--text);
+        background: var(--surface);
+      }
+
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 28pt 32pt 40pt;
+      }
+
+      h1, h2, h3 {
+        line-height: 1.2;
+        color: #111827;
+        margin: 0 0 10pt;
+      }
+
+      h1 {
+        font-size: 22pt;
+        margin-bottom: 18pt;
+      }
+
+      h2 {
+        font-size: 15pt;
+        margin-top: 22pt;
+      }
+
+      h3 {
+        font-size: 12pt;
+        margin-top: 16pt;
+      }
+
+      p, ul, ol {
+        margin: 0 0 11pt;
+      }
+
+      ul, ol {
+        padding-left: 18pt;
+      }
+
+      li + li {
+        margin-top: 4pt;
+      }
+
+      hr {
+        border: 0;
+        border-top: 1px solid var(--border);
+        margin: 18pt 0;
+      }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.92em;
+        padding: 1pt 4pt;
+        border-radius: 4px;
+        background: var(--surface-alt);
+      }
+
+      pre {
+        overflow: hidden;
+        padding: 10pt 12pt;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-alt);
+      }
+
+      pre code {
+        padding: 0;
+        background: transparent;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      strong {
+        color: #111827;
+      }
+
+      blockquote {
+        margin: 0 0 14pt;
+        padding: 0 0 0 12pt;
+        border-left: 3px solid var(--border);
+        color: var(--muted);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0 0 14pt;
+      }
+
+      th, td {
+        border: 1px solid var(--border);
+        padding: 8pt 10pt;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--surface-alt);
+      }
+    </style>
+  </head>
+  <body>
+    <main>${bodyHtml}</main>
+  </body>
+</html>`;
+}
+
+async function generateReadmePdf(markdownSource, outputPath) {
+  const puppeteerModule = await import("puppeteer");
+  const puppeteer = puppeteerModule.default ?? puppeteerModule;
+  const html = buildReadmeHtml(markdownSource);
+  const browser = await puppeteer.launch({
+    headless: true,
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    await page.pdf({
+      path: outputPath,
+      format: "A4",
+      printBackground: true,
+      margin: {
+        top: "14mm",
+        right: "12mm",
+        bottom: "14mm",
+        left: "12mm",
+      },
+    });
+  } finally {
+    await browser.close();
+  }
+}
+
+async function main() {
   if (!fs.existsSync(outDir)) {
     console.error("[package-download] out/ directory not found. Run `next export` before packaging.");
     process.exit(1);
@@ -39,9 +209,8 @@ function main() {
   fs.writeFileSync(bundleReadme, readmeText, "utf8");
   console.log("[package-download] Copied bundle README into out/ as README.md");
 
-  const pdfCmd = "npx md-to-pdf README.md";
   console.log("[package-download] Generating README.pdf");
-  execSync(pdfCmd, { stdio: "inherit", cwd: outDir, shell: true });
+  await generateReadmePdf(readmeText, readmePdf);
 
   const serverBinaries = ["hqcc-server", "hqcc-server.exe"];
   if (fs.existsSync(serverDistDir)) {
@@ -98,4 +267,7 @@ function main() {
   console.log("[package-download] Done.");
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

@@ -65,6 +65,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "decks.pdf.summary.bleed.cutMarks": "Cut marks",
           "label.cropMarkStyleLines": "Lines",
           "label.cropMarkStyleSquares": "Squares",
+          "label.cropMarkStyleTriangles": "Triangles",
           "decks.pdf.errors.layoutCapacity": "Layout capacity error",
           "decks.pdf.errors.noSheets": "No sheets",
         } as Record<string, string>

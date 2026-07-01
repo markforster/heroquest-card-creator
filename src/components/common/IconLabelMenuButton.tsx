@@ -63,8 +63,9 @@ export default function IconLabelMenuButton({
       {isOpen ? (
         <div
           ref={panelRef}
-          className={styles.inspectorFacePopover}
-          style={placement.style}
+          className={`${styles.inspectorFacePopover} ${
+            placement === "up" ? styles.inspectorFacePopoverUp : ""
+          }`}
           role="menu"
         >
           {items.map((item) => (
@@ -88,4 +89,3 @@ export default function IconLabelMenuButton({
     </div>
   );
 }
-

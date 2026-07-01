@@ -15,7 +15,7 @@ export type ExportPngBleedSettings = {
 export type ExportCropMarksSettings = {
   enabled: boolean;
   color: string;
-  style: "lines" | "squares";
+  style: "lines" | "squares" | "triangles";
 };
 
 export type ExportCutMarksSettings = {
@@ -280,6 +280,7 @@ function readString(key: string, fallback: string): string {
 }
 
 function readCropMarksStyle(value: string | null): ExportCropMarksSettings["style"] {
+  if (value === "triangles") return "triangles";
   if (value === "squares") return "squares";
   return "lines";
 }

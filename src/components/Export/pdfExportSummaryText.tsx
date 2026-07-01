@@ -86,7 +86,9 @@ export function formatPdfExportBleedSummary(
       const style = t(
         (bleedOptions.cropMarkStyle === "squares"
           ? "label.cropMarkStyleSquares"
-          : "label.cropMarkStyleLines") as never,
+          : bleedOptions.cropMarkStyle === "triangles"
+            ? "label.cropMarkStyleTriangles"
+            : "label.cropMarkStyleLines") as never,
       ).toLowerCase();
       pushPart(
         <>

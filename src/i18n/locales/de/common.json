@@ -136,6 +136,7 @@
   "label.cropMarkStyle": "Stil der Schnittmarken",
   "label.cropMarkStyleLines": "Linien",
   "label.cropMarkStyleSquares": "Quadrate",
+  "label.cropMarkStyleTriangles": "Dreiecke",
   "label.cutMarks": "Schneidemarken",
   "label.cutMarkColor": "Farbe der Schneidemarken",
   "label.finalSize": "Endgröße",

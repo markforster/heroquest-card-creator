@@ -17,7 +17,7 @@ export type CardPreviewProps = {
 export type CardPreviewHandle = {
   exportAsPng: (options?: {
     bleedPx?: number;
-    cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+    cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
     cutMarks?: { enabled: boolean; color: string };
     roundedCorners?: boolean;
   }) => Promise<void>;
@@ -29,7 +29,7 @@ export type CardPreviewHandle = {
     loggingId?: string;
     assetBlobsById?: Map<string, Blob>;
     bleedPx?: number;
-    cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+    cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
     cutMarks?: { enabled: boolean; color: string };
     roundedCorners?: boolean;
   }) => Promise<Blob | null>;
@@ -39,7 +39,7 @@ export type CardPreviewHandle = {
     loggingId?: string;
     assetBlobsById?: Map<string, Blob>;
     bleedPx?: number;
-    cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" };
+    cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
     cutMarks?: { enabled: boolean; color: string };
     roundedCorners?: boolean;
   }) => Promise<Blob | null>;
