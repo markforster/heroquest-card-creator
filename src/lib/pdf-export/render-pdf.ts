@@ -214,6 +214,24 @@ const CALIBRATION_LABEL_EPSILON_MM = 0.001;
 const CALIBRATION_SECTION_LABEL_SIZE_PT = 8;
 const CALIBRATION_RULER_LABEL_SIZE_PT = 5.5;
 const CALIBRATION_RULER_UNIT_SIZE_PT = 5.5;
+const CALIBRATION_INSTRUCTION_TITLE_SIZE_PT = 8;
+const CALIBRATION_INSTRUCTION_TEXT_SIZE_PT = 6.25;
+const CALIBRATION_INSTRUCTION_LINE_HEIGHT_MM = 3.9;
+const CALIBRATION_INSTRUCTION_GAP_MM = 6;
+const CALIBRATION_INSTRUCTION_OFFSET_X_MM = 3;
+const CALIBRATION_INSTRUCTION_OFFSET_Y_MM = 8;
+
+const CALIBRATION_PRINT_INSTRUCTION_LINES = [
+  "Print this page correctly",
+  "Use these print settings:",
+  "- Print at 100% or Actual size",
+  "- Do not use Fit to page",
+  "  or Shrink to fit",
+  "- Match the paper size to this PDF",
+  "Then check after printing:",
+  "- 1 inch guide = exactly 1 inch",
+  "- 1 cm guide = exactly 1 cm",
+] as const;
 
 type CalibrationSectionLayout = {
   title: string;
@@ -510,6 +528,41 @@ function drawCalibrationLegendLine(
   });
 }
 
+function drawCalibrationPrintInstructions(
+  page: PDFPage,
+  pageMm: { width: number; height: number },
+  contentRectMm: MmRect,
+  occupiedWidthMm: number,
+): void {
+  const availableWidthMm = contentRectMm.wMm - occupiedWidthMm - CALIBRATION_INSTRUCTION_GAP_MM;
+  if (availableWidthMm < 38) {
+    return;
+  }
+
+  const xMm =
+    contentRectMm.xMm +
+    occupiedWidthMm +
+    CALIBRATION_INSTRUCTION_GAP_MM +
+    CALIBRATION_INSTRUCTION_OFFSET_X_MM;
+  const topYmm = contentRectMm.yMm + CALIBRATION_INSTRUCTION_OFFSET_Y_MM;
+
+  CALIBRATION_PRINT_INSTRUCTION_LINES.forEach((line, index) => {
+    const isTitle = index === 0;
+    const isSectionLabel = index === 1 || index === 6;
+    page.drawText(line, {
+      x: mmToPt(xMm),
+      y: mmToPt(pageMm.height - (topYmm + index * CALIBRATION_INSTRUCTION_LINE_HEIGHT_MM)),
+      size: isTitle ? CALIBRATION_INSTRUCTION_TITLE_SIZE_PT : CALIBRATION_INSTRUCTION_TEXT_SIZE_PT,
+      color: isTitle
+        ? grayscale(0.12)
+        : isSectionLabel
+          ? grayscale(0.22)
+          : grayscale(0.35),
+      maxWidth: mmToPt(availableWidthMm),
+    });
+  });
+}
+
 function drawCenteredCalibrationSquare(
   page: PDFPage,
   pageMm: { width: number; height: number },
@@ -638,6 +691,8 @@ function drawCalibrationCardTarget(
       rgb(0.1, 0.2, 0.8),
     );
   }
+
+  drawCalibrationPrintInstructions(page, pageMm, contentRectMm, imageW);
 }
 
 function drawCalibrationSection(

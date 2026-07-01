@@ -167,6 +167,15 @@ describe("pdf-export renderPdf", () => {
         "Trim / bleed card target",
         "Metric (cm/mm)",
         "Imperial (in)",
+        "Print this page correctly",
+        "Use these print settings:",
+        "- Print at 100% or Actual size",
+        "- Do not use Fit to page",
+        "  or Shrink to fit",
+        "- Match the paper size to this PDF",
+        "Then check after printing:",
+        "- 1 inch guide = exactly 1 inch",
+        "- 1 cm guide = exactly 1 cm",
       ]),
     );
     expect(drawnTexts).toContain("Rendered image: 71.50 x 96.90 mm");
