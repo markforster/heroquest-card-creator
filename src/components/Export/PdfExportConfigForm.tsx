@@ -7,10 +7,18 @@ import type { PrintConfig } from "@/lib/pdf-export";
 
 type PdfExportConfigFormProps = {
   config: PrintConfig;
+  hiddenFields?: {
+    mode?: boolean;
+    duplexPreset?: boolean;
+  };
   onChange: (next: PrintConfig) => void;
 };
 
-export default function PdfExportConfigForm({ config, onChange }: PdfExportConfigFormProps) {
+export default function PdfExportConfigForm({
+  config,
+  hiddenFields,
+  onChange,
+}: PdfExportConfigFormProps) {
   const { t } = useI18n();
   const showCardSizeFields = false;
 
@@ -54,22 +62,24 @@ export default function PdfExportConfigForm({ config, onChange }: PdfExportConfi
           </select>
         </div>
 
-        <div className={`${styles.pdfExportField} ${styles.pdfExportFieldMode}`}>
-          <label className={styles.pdfExportFieldLabel} htmlFor="pdf-mode">
-            {t("decks.pdf.mode")}
-          </label>
-          <select
-            id="pdf-mode"
-            className="form-select form-select-sm"
-            value={config.mode}
-            onChange={(event) =>
-              onChange({ ...config, mode: event.target.value as PrintConfig["mode"] })
-            }
-          >
-            <option value="frontAndBack">{t("decks.pdf.mode.frontBack")}</option>
-            <option value="frontsOnly">{t("decks.pdf.mode.fronts")}</option>
-          </select>
-        </div>
+        {!hiddenFields?.mode ? (
+          <div className={`${styles.pdfExportField} ${styles.pdfExportFieldMode}`}>
+            <label className={styles.pdfExportFieldLabel} htmlFor="pdf-mode">
+              {t("decks.pdf.mode")}
+            </label>
+            <select
+              id="pdf-mode"
+              className="form-select form-select-sm"
+              value={config.mode}
+              onChange={(event) =>
+                onChange({ ...config, mode: event.target.value as PrintConfig["mode"] })
+              }
+            >
+              <option value="frontAndBack">{t("decks.pdf.mode.frontBack")}</option>
+              <option value="frontsOnly">{t("decks.pdf.mode.fronts")}</option>
+            </select>
+          </div>
+        ) : null}
       </div>
 
       {showCardSizeFields ? (
@@ -110,11 +120,13 @@ export default function PdfExportConfigForm({ config, onChange }: PdfExportConfi
       ) : null}
 
       <div className={styles.pdfExportRowSecondary}>
-        <PdfDuplexPresetField
-          disabled={config.mode !== "frontAndBack"}
-          value={config.duplexPreset ?? "normal"}
-          onChange={(duplexPreset) => onChange({ ...config, duplexPreset })}
-        />
+        {!hiddenFields?.duplexPreset ? (
+          <PdfDuplexPresetField
+            disabled={config.mode !== "frontAndBack"}
+            value={config.duplexPreset ?? "normal"}
+            onChange={(duplexPreset) => onChange({ ...config, duplexPreset })}
+          />
+        ) : null}
 
         <div className={`${styles.pdfExportField} ${styles.pdfExportFieldBleedSource}`}>
           <label className={styles.pdfExportFieldLabel} htmlFor="pdf-bleed-source">

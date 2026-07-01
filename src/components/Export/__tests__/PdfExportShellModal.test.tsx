@@ -7,12 +7,33 @@ import type { ExportOptionsFormState } from "@/components/Export/ExportOptionsFo
 import type { PdfExportAlignmentRun, PdfExportRun } from "@/components/Export/PdfExportShellModal";
 import type { PrintConfig, SlotPair } from "@/lib/pdf-export";
 
+const mockGetCard = jest.fn();
 const mockComputeLayoutPlan = jest.fn();
 const mockComposePrintComposition = jest.fn();
 const mockRenderPdf = jest.fn();
 const mockCreateObjectURL = jest.fn(() => "blob:pdf");
 const mockRevokeObjectURL = jest.fn();
 const mockLinkClick = jest.fn();
+const mockWaitForAssetElements = jest.fn();
+const mockWaitForFrame = jest.fn();
+const mockBuildAssetCache = jest.fn();
+let mockExportSettings = {
+  bleed: { enabled: true, bleedPx: 18, askBeforeExport: false },
+  cropMarks: { enabled: true, color: "#00FFFF", style: "lines" },
+  cutMarks: { enabled: true, color: "#00FFFF" },
+  roundedCorners: true,
+  pdf: {
+    paper: "Letter",
+    orientation: "portrait",
+    marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
+    gapMm: { x: 0.5, y: 0.5 },
+    cardMm: { width: 63.5, height: 88.9 },
+    mode: "frontsOnly" as PrintConfig["mode"],
+    bleedMode: "bakedInImage" as PrintConfig["bleedMode"],
+    bleedMm: 3,
+    duplexPreset: "normal" as NonNullable<PrintConfig["duplexPreset"]>,
+  },
+};
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
@@ -53,24 +74,14 @@ jest.mock("@/i18n/I18nProvider", () => ({
 
 jest.mock("@/components/Providers/ExportSettingsContext", () => ({
   useExportSettingsState: () => ({
-    settings: {
-      bleed: { enabled: true, bleedPx: 18, askBeforeExport: false },
-      cropMarks: { enabled: true, color: "#00FFFF", style: "lines" },
-      cutMarks: { enabled: true, color: "#00FFFF" },
-      roundedCorners: true,
-      pdf: {
-        paper: "Letter",
-        orientation: "portrait",
-        marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
-        gapMm: { x: 0.5, y: 0.5 },
-        cardMm: { width: 63.5, height: 88.9 },
-        mode: "frontsOnly",
-        bleedMode: "bakedInImage",
-        bleedMm: 3,
-        duplexPreset: "normal",
-      },
-    },
+    settings: mockExportSettings,
   }),
+}));
+
+jest.mock("@/api/client", () => ({
+  apiClient: {
+    getCard: (...args: unknown[]) => mockGetCard(...args),
+  },
 }));
 
 jest.mock("@/components/common/ActionBar", () => ({
@@ -109,12 +120,16 @@ jest.mock("@/components/Export/PdfExportConfigForm", () => ({
   __esModule: true,
   default: ({
     config,
+    hiddenFields,
     onChange,
   }: {
     config: PrintConfig;
+    hiddenFields?: { mode?: boolean; duplexPreset?: boolean };
     onChange: (next: PrintConfig) => void;
   }) => (
     <div data-testid="pdf-config-form">
+      <div data-testid="pdf-config-hidden-mode">{String(Boolean(hiddenFields?.mode))}</div>
+      <div data-testid="pdf-config-hidden-duplex">{String(Boolean(hiddenFields?.duplexPreset))}</div>
       <button
         type="button"
         onClick={() =>
@@ -180,6 +195,53 @@ jest.mock("@/components/Export/PdfExportProgressModal", () => ({
         </button>
       </div>
     ) : null,
+}));
+
+jest.mock("@/components/Cards/CardPreview", () => {
+  const React = require("react");
+  return {
+    __esModule: true,
+    default: React.forwardRef((_props: unknown, ref: React.Ref<unknown>) => {
+      React.useImperativeHandle(ref, () => ({
+        waitForBackgroundLoaded: jest.fn().mockResolvedValue(undefined),
+        syncCopyrightContrast: jest.fn().mockResolvedValue(undefined),
+        getSvgElement: jest.fn().mockReturnValue(document.createElement("svg")),
+        renderToPngBlob: jest.fn().mockResolvedValue(new Blob(["png"], { type: "image/png" })),
+      }));
+      return <div data-testid="card-preview" />;
+    }),
+  };
+});
+
+jest.mock("@/components/Stockpile/stockpile-utils", () => ({
+  waitForAssetElements: (...args: unknown[]) => mockWaitForAssetElements(...args),
+  waitForFrame: (...args: unknown[]) => mockWaitForFrame(...args),
+}));
+
+jest.mock("@/lib/export-assets-cache", () => ({
+  buildAssetCache: (...args: unknown[]) => mockBuildAssetCache(...args),
+}));
+
+jest.mock("@/lib/card-assets", () => ({
+  collectCardAssetIds: () => [],
+}));
+
+jest.mock("@/lib/card-record-mapper", () => ({
+  cardRecordToCardData: () => ({ title: "Card" }),
+}));
+
+jest.mock("@/data/card-templates", () => ({
+  cardTemplatesById: {
+    hero: { id: "hero", background: "/hero.png" },
+  },
+}));
+
+jest.mock("@/i18n/getTemplateNameLabel", () => ({
+  getTemplateNameLabel: () => "Hero",
+}));
+
+jest.mock("@/lib/bleed-export", () => ({
+  composeBleedCanvas: ({ fullCanvas }: { fullCanvas: HTMLCanvasElement }) => fullCanvas,
 }));
 
 jest.mock("@/components/Export/pdfExportBleed", () => ({
@@ -252,9 +314,30 @@ function makeAlignmentRun(): PdfExportAlignmentRun {
 }
 
 beforeEach(() => {
+  mockGetCard.mockReset();
+  mockExportSettings = {
+    bleed: { enabled: true, bleedPx: 18, askBeforeExport: false },
+    cropMarks: { enabled: true, color: "#00FFFF", style: "lines" },
+    cutMarks: { enabled: true, color: "#00FFFF" },
+    roundedCorners: true,
+    pdf: {
+      paper: "Letter",
+      orientation: "portrait",
+      marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
+      gapMm: { x: 0.5, y: 0.5 },
+      cardMm: { width: 63.5, height: 88.9 },
+      mode: "frontsOnly",
+      bleedMode: "bakedInImage",
+      bleedMm: 3,
+      duplexPreset: "normal",
+    },
+  };
   mockComputeLayoutPlan.mockReset();
   mockComposePrintComposition.mockReset();
   mockRenderPdf.mockReset();
+  mockWaitForAssetElements.mockReset();
+  mockWaitForFrame.mockReset();
+  mockBuildAssetCache.mockReset();
   mockCreateObjectURL.mockClear();
   mockRevokeObjectURL.mockClear();
   mockLinkClick.mockClear();
@@ -268,6 +351,13 @@ beforeEach(() => {
     sheets: [{ sheetIndex: 0, slots: pairs }],
     totalSlots: Array.isArray(pairs) ? pairs.length : 0,
   }));
+  mockGetCard.mockResolvedValue({
+    id: "front-1",
+    name: "Front 1",
+    title: "Front 1",
+    templateId: "hero",
+  });
+  mockBuildAssetCache.mockResolvedValue({ cache: new Map(), clear: jest.fn() });
   mockRenderPdf.mockResolvedValue({
     status: "success",
     blob: new Blob(["pdf"], { type: "application/pdf" }),
@@ -276,6 +366,7 @@ beforeEach(() => {
     skippedFaces: 0,
     pageCount: 1,
   });
+  window.alert = jest.fn();
 
   Object.defineProperty(URL, "createObjectURL", {
     configurable: true,
@@ -295,6 +386,31 @@ beforeEach(() => {
       Object.defineProperty(element, "click", {
         configurable: true,
         value: mockLinkClick,
+      });
+    }
+    if (tagName === "canvas") {
+      Object.defineProperty(element, "getContext", {
+        configurable: true,
+        value: jest.fn(() => ({
+          fillStyle: "",
+          strokeStyle: "",
+          lineWidth: 1,
+          textAlign: "center",
+          textBaseline: "middle",
+          font: "",
+          fillRect: jest.fn(),
+          beginPath: jest.fn(),
+          roundRect: jest.fn(),
+          stroke: jest.fn(),
+          fillText: jest.fn(),
+        })),
+      });
+      Object.defineProperty(element, "toBlob", {
+        configurable: true,
+        value: (callback: (blob: { arrayBuffer: () => Promise<ArrayBuffer> } | null) => void) =>
+          callback({
+            arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+          }),
       });
     }
     return element;
@@ -421,6 +537,138 @@ describe("PdfExportShellModal", () => {
     );
     expect(mockComposePrintComposition).toHaveBeenCalledWith(slotPairs, 1);
     expect(mockRenderPdf).toHaveBeenCalledTimes(2);
+  });
+
+  it("renders normal export faces inside the shell for real cards and placeholders", async () => {
+    mockRenderPdf.mockImplementation(
+      async ({ renderFacePngBytes }: { renderFacePngBytes: (faceId: string) => Promise<Uint8Array | null> }) => {
+        await renderFacePngBytes("front-1");
+        await renderFacePngBytes("placeholder-1");
+        await renderFacePngBytes("missing-placeholder");
+        return {
+          status: "success",
+          blob: new Blob(["pdf"], { type: "application/pdf" }),
+          fileName: "cards.pdf",
+          renderedFaces: 2,
+          skippedFaces: 1,
+          pageCount: 1,
+        };
+      },
+    );
+
+    render(
+      <PdfExportShellModal
+        isOpen
+        title="Export shell"
+        slotPairs={[
+          { slotId: "slot-1", frontId: "front-1", backId: null },
+          { slotId: "slot-2", frontId: "placeholder-1", backId: null },
+          { slotId: "slot-3", frontId: "missing-placeholder", backId: null },
+        ]}
+        placeholderLookup={{
+          "placeholder-1": { variant: "empty-front", title: "EMPTY FRONT", subtitle: "Set One" },
+        }}
+        onCancel={jest.fn()}
+        buildExportRun={() => makeRun()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Export PDF" }));
+
+    await waitFor(() => {
+      expect(mockGetCard).toHaveBeenCalledWith({ params: { id: "front-1" } });
+    });
+    expect(mockGetCard).toHaveBeenCalledWith({ params: { id: "missing-placeholder" } });
+  });
+
+  it("applies forced mode and duplex values over export settings defaults", async () => {
+    mockExportSettings = {
+      ...mockExportSettings,
+      pdf: {
+        ...mockExportSettings.pdf,
+        mode: "frontAndBack",
+        duplexPreset: "mirrorX",
+      },
+    };
+    const onStateChange = jest.fn();
+    const buildExportRun = jest.fn(() => makeRun());
+
+    render(
+      <PdfExportShellModal
+        isOpen
+        title="Export shell"
+        slotPairs={slotPairs}
+        shellPolicy={{
+          mode: { forcedValue: "frontsOnly" },
+          duplexPreset: { forcedValue: "normal" },
+        }}
+        onCancel={jest.fn()}
+        onStateChange={onStateChange}
+        buildExportRun={buildExportRun}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(onStateChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          effectiveConfig: expect.objectContaining({
+            mode: "frontsOnly",
+            duplexPreset: "normal",
+          }),
+        }),
+      );
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Export PDF" }));
+
+    await waitFor(() => {
+      expect(buildExportRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            mode: "frontsOnly",
+            duplexPreset: "normal",
+          }),
+        }),
+      );
+    });
+  });
+
+  it("passes hidden mode and duplex policy into the config form", () => {
+    render(
+      <PdfExportShellModal
+        isOpen
+        title="Export shell"
+        slotPairs={slotPairs}
+        shellPolicy={{
+          mode: { hidden: true, forcedValue: "frontsOnly" },
+          duplexPreset: { hidden: true, forcedValue: "normal" },
+        }}
+        onCancel={jest.fn()}
+        buildExportRun={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText("Customise layout"));
+
+    expect(screen.getByTestId("pdf-config-form")).toBeInTheDocument();
+    expect(screen.getByTestId("pdf-config-hidden-mode")).toHaveTextContent("true");
+    expect(screen.getByTestId("pdf-config-hidden-duplex")).toHaveTextContent("true");
+  });
+
+  it("hides the alignment export action when policy disables it", () => {
+    render(
+      <PdfExportShellModal
+        isOpen
+        title="Export shell"
+        slotPairs={slotPairs}
+        shellPolicy={{ alignmentExportHidden: true }}
+        onCancel={jest.fn()}
+        buildExportRun={jest.fn()}
+        buildAlignmentExportRun={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Export alignment test" })).not.toBeInTheDocument();
   });
 
   it("shows progress and supports cancel during export", async () => {

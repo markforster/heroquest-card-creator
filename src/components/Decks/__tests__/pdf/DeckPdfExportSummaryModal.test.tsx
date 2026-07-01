@@ -24,6 +24,7 @@ jest.mock("@/api/client", () => ({
 }));
 
 jest.mock("@/components/Decks/deck-export", () => ({
+  createDeckPdfPlaceholderFrontId: (setId: string) => `deck-empty-front:${setId}`,
   parseDeckPdfPlaceholderFrontId: (faceId: string) =>
     faceId.startsWith("deck-empty-front:")
       ? { setId: faceId.slice("deck-empty-front:".length) }
@@ -120,6 +121,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
     default: (props: {
       title: string;
       slotPairs: SlotPair[];
+      placeholderLookup?: Record<string, { title: string; subtitle?: string; variant: "empty-front" }>;
       summaryContent?: {
         columns: Array<Array<{ text: string; tone?: "default" | "muted" }>>;
         notice?: { text: string; tone?: "default" | "muted" | "blocked" };
@@ -134,6 +136,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
       const {
         title,
         slotPairs,
+        placeholderLookup,
         summaryContent,
         onCancel,
         onStateChange,
@@ -180,6 +183,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
           <div>{title}</div>
           <div data-testid="shell-mode">{shellState.effectiveConfig.mode}</div>
           <div data-testid="shell-slot-pair-count">{slotPairs.length}</div>
+          <div data-testid="shell-placeholder-count">{Object.keys(placeholderLookup ?? {}).length}</div>
           <div data-testid="shell-summary-primary">
             {summaryContent?.columns[0]?.map((line) => line.text).join(" | ") ?? ""}
           </div>
@@ -251,7 +255,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
             Change mode
           </button>
           <div>{renderedTopContent}</div>
-          <div>{children}</div>
+          <div data-testid="shell-children">{children ? "present" : "empty"}</div>
         </div>
       );
     },
@@ -407,6 +411,8 @@ describe("DeckPdfExportSummaryModal", () => {
     expect(screen.getByTestId("shell-slot-pair-count")).toHaveTextContent("2");
     expect(screen.getByTestId("included-count")).toHaveTextContent("1");
     expect(screen.getByTestId("selected-size")).toHaveTextContent("1");
+    expect(screen.getByTestId("shell-placeholder-count")).toHaveTextContent("2");
+    expect(screen.getByTestId("shell-children")).toHaveTextContent("empty");
     expect(screen.getByTestId("shell-summary-primary")).toHaveTextContent(
       "Complete sets: 1 | Entries: 2 | Faces: 2",
     );
@@ -457,12 +463,12 @@ describe("DeckPdfExportSummaryModal", () => {
         expect.objectContaining({
           fileName: "deck.pdf",
           includeCalibrationPage: true,
-          renderFacePngBytes: expect.any(Function),
         }),
       );
     });
     expect(mockCapturedExportRun.mock.calls[0][0]).not.toHaveProperty("composition");
     expect(mockCapturedExportRun.mock.calls[0][0]).not.toHaveProperty("config");
+    expect(mockCapturedExportRun.mock.calls[0][0]).not.toHaveProperty("renderFacePngBytes");
     expect(mockGetDeck).toHaveBeenCalledWith({ params: { deckId: "deck-1" } });
   });
 

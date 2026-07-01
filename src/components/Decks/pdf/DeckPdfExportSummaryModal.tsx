@@ -3,11 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { apiClient } from "@/api/client";
-import CardPreview from "@/components/Cards/CardPreview";
 import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
-import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import {
-  parseDeckPdfPlaceholderFrontId,
   resolveDeckPdfRunData,
   summarizeDeckPdfRunData,
   type DeckPdfExportSummary,
@@ -18,6 +15,7 @@ import {
   buildDeckPdfAlignmentFileName,
   buildDeckPdfFileName,
 } from "@/components/Decks/pdf/deckPdfFileName";
+import { buildDeckPdfPlaceholderLookup } from "@/components/Decks/pdf/buildDeckPdfPlaceholderLookup";
 import { buildDeckPdfSummaryContent } from "@/components/Decks/pdf/buildDeckPdfSummaryContent";
 import PdfExportShellModal, {
   type PdfExportAlignmentRun,
@@ -25,19 +23,12 @@ import PdfExportShellModal, {
   type PdfExportRunBuildContext,
   type PdfExportShellState,
 } from "@/components/Export/PdfExportShellModal";
-import { waitForAssetElements, waitForFrame } from "@/components/Stockpile/stockpile-utils";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
-import { cardTemplatesById } from "@/data/card-templates";
-import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { composeBleedCanvas } from "@/lib/bleed-export";
-import { collectCardAssetIds } from "@/lib/card-assets";
-import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { buildAssetCache } from "@/lib/export-assets-cache";
 import {
   buildSingleSheetAlignmentComposition,
   parseAlignmentFaceId,
-  type PrintConfig,
 } from "@/lib/pdf-export";
 
 type DeckPdfRunData = Awaited<ReturnType<typeof resolveDeckPdfRunData>>;
@@ -55,18 +46,14 @@ export default function DeckPdfExportSummaryModal({
   scope,
   onClose,
 }: DeckPdfExportSummaryModalProps) {
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const [setScopeMode, setSetScopeMode] = useState<DeckPdfSetScopeMode>("complete");
   const [selectedSetIds, setSelectedSetIds] = useState<Set<string>>(new Set());
   const [slotPairs, setSlotPairs] = useState<DeckPdfRunData["slotPairs"]>([]);
   const [summary, setSummary] = useState<DeckPdfExportSummary | null>(null);
   const [runData, setRunData] = useState<DeckPdfRunData | null>(null);
   const [shellState, setShellState] = useState<PdfExportShellState | null>(null);
-  const [pdfRenderTarget, setPdfRenderTarget] = useState<Awaited<
-    ReturnType<typeof apiClient.getCard>
-  > | null>(null);
   const initializedForDeckRef = useRef<string | null>(null);
-  const pdfPreviewRef = useRef<CardPreviewHandle | null>(null);
   void scope;
 
   const resetState = useCallback(() => {
@@ -76,7 +63,6 @@ export default function DeckPdfExportSummaryModal({
     setSetScopeMode("complete");
     setSelectedSetIds(new Set());
     setShellState(null);
-    setPdfRenderTarget(null);
   }, []);
 
   const refreshDeckPdfRun = useCallback(
@@ -134,7 +120,6 @@ export default function DeckPdfExportSummaryModal({
       setRunData(initialRunData);
       setSlotPairs(initialRunData.slotPairs);
       setSummary(nextSummary);
-      setPdfRenderTarget(null);
       initializedForDeckRef.current = `${deckId}:${initialMode}`;
     })();
 
@@ -163,123 +148,8 @@ export default function DeckPdfExportSummaryModal({
     };
   }, [activeMode, deckId, isOpen, refreshDeckPdfRun, selectedSetIds, setScopeMode]);
 
-  const buildRenderFacePngBytes = useCallback(
-    (configForRun: PrintConfig, currentRunData: DeckPdfRunData, currentShellState: PdfExportShellState) => {
-      const cachedPngByFaceId = new Map<string, Uint8Array>();
-
-      return async (faceId: string): Promise<Uint8Array | null> => {
-        if (cachedPngByFaceId.has(faceId)) {
-          return cachedPngByFaceId.get(faceId) ?? null;
-        }
-
-        const placeholder = parseDeckPdfPlaceholderFrontId(faceId);
-        if (placeholder) {
-          const set = currentRunData.sets.find((item) => item.setId === placeholder.setId) ?? null;
-          const base = document.createElement("canvas");
-          base.width = CARD_WIDTH;
-          base.height = CARD_HEIGHT;
-          const ctx = base.getContext("2d");
-          if (!ctx) return null;
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, base.width, base.height);
-          ctx.strokeStyle = "#222222";
-          ctx.lineWidth = 1;
-          const edgeInset = 0.5;
-          const insetX = edgeInset;
-          const insetY = edgeInset;
-          const borderWidth = base.width - edgeInset * 2;
-          const borderHeight = base.height - edgeInset * 2;
-          const radius = Math.max(0, CARD_CORNER_RADIUS - edgeInset);
-          ctx.beginPath();
-          if (typeof ctx.roundRect === "function") {
-            ctx.roundRect(insetX, insetY, borderWidth, borderHeight, radius);
-          }
-          ctx.stroke();
-          ctx.fillStyle = "#111111";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.font = "700 28px sans-serif";
-          ctx.fillText("EMPTY FRONT", base.width / 2, base.height * 0.45);
-          ctx.font = "500 16px sans-serif";
-          ctx.fillText(set?.setTitle ?? "Set", base.width / 2, base.height * 0.55);
-          const finalCanvas =
-            currentShellState.resolvedBleedOptions.bleedPx > 0 &&
-            configForRun.bleedMode === "bakedInImage"
-              ? composeBleedCanvas({
-                  fullCanvas: base,
-                  backgroundCanvas: base,
-                  bleedPx: currentShellState.resolvedBleedOptions.bleedPx,
-                  renderBleedBands: false,
-                  cropMarks: currentShellState.resolvedBleedOptions.cropMarks,
-                  cutMarks: currentShellState.resolvedBleedOptions.cutMarks,
-                })
-              : base;
-          const blob = await new Promise<Blob | null>((resolve) =>
-            finalCanvas.toBlob((nextBlob) => resolve(nextBlob), "image/png"),
-          );
-          if (!blob) return null;
-          const bytes = new Uint8Array(await blob.arrayBuffer());
-          cachedPngByFaceId.set(faceId, bytes);
-          return bytes;
-        }
-
-        const card = await apiClient.getCard({ params: { id: faceId } }).catch(() => null);
-        if (!card) {
-          return null;
-        }
-
-        setPdfRenderTarget(card);
-        await waitForFrame();
-        await waitForFrame();
-        await pdfPreviewRef.current?.waitForBackgroundLoaded?.();
-        await pdfPreviewRef.current?.syncCopyrightContrast?.();
-
-        const assetIds = collectCardAssetIds(cardRecordToCardData(card as never));
-        const { cache } = await buildAssetCache(assetIds);
-        if (assetIds.length > 0) {
-          await waitForAssetElements(() => pdfPreviewRef.current?.getSvgElement(), assetIds);
-        }
-
-        const blob = await pdfPreviewRef.current?.renderToPngBlob({
-          bleedPx:
-            configForRun.bleedMode === "bakedInImage"
-              ? currentShellState.resolvedBleedOptions.bleedPx
-              : 0,
-          cropMarks:
-            configForRun.bleedMode === "bakedInImage"
-              ? currentShellState.resolvedBleedOptions.cropMarks
-              : {
-                  enabled: false,
-                  color: currentShellState.resolvedBleedOptions.cropMarks.color,
-                  style: currentShellState.resolvedBleedOptions.cropMarks.style,
-                },
-          cutMarks:
-            configForRun.bleedMode === "bakedInImage"
-              ? currentShellState.resolvedBleedOptions.cutMarks
-              : {
-                  enabled: false,
-                  color: currentShellState.resolvedBleedOptions.cutMarks.color,
-                },
-          roundedCorners: currentShellState.resolvedBleedOptions.roundedCorners,
-          assetBlobsById: cache,
-        });
-        cache.clear();
-        if (!blob) {
-          return null;
-        }
-        const bytes = new Uint8Array(await blob.arrayBuffer());
-        cachedPngByFaceId.set(faceId, bytes);
-        return bytes;
-      };
-    },
-    [],
-  );
-
   const buildExportRun = useCallback(
-    async ({
-      shellState: currentShellState,
-      config: configForRun,
-    }: PdfExportRunBuildContext): Promise<PdfExportRun | null> => {
+    async (): Promise<PdfExportRun | null> => {
       if (!deckId || !runData) {
         window.alert(t("alert.selectCardToExport"));
         return null;
@@ -291,10 +161,9 @@ export default function DeckPdfExportSummaryModal({
       return {
         fileName: buildDeckPdfFileName({ deckName, date: new Date() }),
         includeCalibrationPage: true,
-        renderFacePngBytes: buildRenderFacePngBytes(configForRun, runData, currentShellState),
       };
     },
-    [buildRenderFacePngBytes, deckId, runData, t],
+    [deckId, runData, t],
   );
 
   const buildAlignmentExportRun = useCallback(
@@ -434,6 +303,7 @@ export default function DeckPdfExportSummaryModal({
     slotPairs,
     t,
   });
+  const placeholderLookup = buildDeckPdfPlaceholderLookup(runData);
 
   const resolvedTopContent = useCallback(
     () => (
@@ -462,32 +332,14 @@ export default function DeckPdfExportSummaryModal({
         isOpen={isOpen}
         title={t("decks.pdf.modal.title") + " (Beta)"}
         slotPairs={slotPairs}
+        placeholderLookup={placeholderLookup}
         summaryContent={summaryContent}
         onCancel={handleClose}
         onStateChange={setShellState}
         buildExportRun={buildExportRun}
         buildAlignmentExportRun={buildAlignmentExportRun}
         topContent={resolvedTopContent}
-      >
-        {pdfRenderTarget ? (
-          <div
-            style={{ position: "fixed", left: -99999, top: -99999, pointerEvents: "none" }}
-            aria-hidden="true"
-          >
-            <CardPreview
-              ref={pdfPreviewRef}
-              templateId={pdfRenderTarget.templateId}
-              templateName={getTemplateNameLabel(
-                language,
-                cardTemplatesById[pdfRenderTarget.templateId],
-              )}
-              backgroundSrc={cardTemplatesById[pdfRenderTarget.templateId]?.background}
-              cardData={cardRecordToCardData(pdfRenderTarget as never)}
-              copyrightTextColor={pdfRenderTarget.copyrightColor ?? undefined}
-            />
-          </div>
-        ) : null}
-      </PdfExportShellModal>
+      />
     </>
   );
 }

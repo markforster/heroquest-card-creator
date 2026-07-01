@@ -2,10 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
+import CardPreview from "@/components/Cards/CardPreview";
+import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import ActionBar from "@/components/common/ActionBar";
 import ModalShell from "@/components/common/ModalShell";
 import PdfExportProgressModal from "@/components/Export/PdfExportProgressModal";
+import {
+  renderPdfCardFacePngBytes,
+  renderPdfPlaceholderFacePngBytes,
+} from "@/components/Export/pdfExportFaceRendering";
 import { resolvePdfExportBleedOptions } from "@/components/Export/pdfExportBleed";
 import {
   formatPdfExportBleedSummary,
@@ -16,7 +23,10 @@ import ExportOptionsForm, {
 } from "@/components/Export/ExportOptionsForm";
 import PdfExportConfigForm from "@/components/Export/PdfExportConfigForm";
 import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
+import { cardTemplatesById } from "@/data/card-templates";
+import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
+import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import {
   DEFAULT_PDF_PRINT_CONFIG,
   composePrintComposition,
@@ -45,7 +55,6 @@ export type PdfExportShellState = {
 export type PdfExportRun = {
   fileName: string;
   includeCalibrationPage?: boolean;
-  renderFacePngBytes: (faceId: string) => Promise<Uint8Array | null>;
 };
 
 export type PdfExportRunBuildContext = {
@@ -63,20 +72,42 @@ export type PdfExportSummaryContent = {
   notice?: { text: string; tone?: PdfExportSummaryNoticeTone };
 };
 
+export type PdfExportPlaceholderSpec = {
+  title: string;
+  subtitle?: string;
+  variant: "empty-front";
+};
+
+export type PdfExportShellPolicy = {
+  mode?: {
+    hidden?: boolean;
+    forcedValue?: PrintConfig["mode"];
+  };
+  duplexPreset?: {
+    hidden?: boolean;
+    forcedValue?: NonNullable<PrintConfig["duplexPreset"]>;
+  };
+  alignmentExportHidden?: boolean;
+};
+
 export type PdfExportAlignmentRun = PdfExportRun & {
   composition: PrintComposition;
+  renderFacePngBytes: (faceId: string) => Promise<Uint8Array | null>;
 };
 
 type ExecutablePdfExportRun = PdfExportRun & {
   config: PrintConfig;
   layout: LayoutPlan;
   composition: PrintComposition;
+  renderFacePngBytes: (faceId: string) => Promise<Uint8Array | null>;
 };
 
 type PdfExportShellModalProps = {
   isOpen: boolean;
   title: string;
   slotPairs: SlotPair[];
+  shellPolicy?: PdfExportShellPolicy;
+  placeholderLookup?: Record<string, PdfExportPlaceholderSpec>;
   summaryContent?: PdfExportSummaryContent;
   onCancel: () => void;
   onStateChange?: (state: PdfExportShellState) => void;
@@ -96,10 +127,28 @@ function countFaces(composition: PrintComposition, mode: PrintConfig["mode"]) {
   }, 0);
 }
 
+function applyShellPolicyToConfig(config: PrintConfig, shellPolicy?: PdfExportShellPolicy): PrintConfig {
+  const nextConfig = { ...config };
+
+  if (shellPolicy?.mode?.forcedValue) {
+    nextConfig.mode = shellPolicy.mode.forcedValue;
+  }
+
+  if (shellPolicy?.duplexPreset?.forcedValue) {
+    nextConfig.duplexPreset = shellPolicy.duplexPreset.forcedValue;
+  } else if (shellPolicy?.duplexPreset?.hidden) {
+    nextConfig.duplexPreset = "normal";
+  }
+
+  return nextConfig;
+}
+
 export default function PdfExportShellModal({
   isOpen,
   title,
   slotPairs,
+  shellPolicy,
+  placeholderLookup,
   summaryContent,
   onCancel,
   onStateChange,
@@ -108,10 +157,10 @@ export default function PdfExportShellModal({
   topContent,
   children,
 }: PdfExportShellModalProps) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { settings: exportSettings } = useExportSettingsState();
   const pdfSettings = exportSettings.pdf ?? DEFAULT_PDF_PRINT_CONFIG;
-  const defaultConfig = useMemo(
+  const baseDefaultConfig = useMemo(
     () => normalizePdfPrintConfig(pdfSettings),
     [
       pdfSettings.paper,
@@ -129,6 +178,10 @@ export default function PdfExportShellModal({
       pdfSettings.bleedMm,
       pdfSettings.duplexPreset,
     ],
+  );
+  const defaultConfig = useMemo(
+    () => applyShellPolicyToConfig(baseDefaultConfig, shellPolicy),
+    [baseDefaultConfig, shellPolicy],
   );
   const defaultBleedOptions = useMemo<ExportOptionsFormState>(
     () => ({
@@ -163,7 +216,11 @@ export default function PdfExportShellModal({
   const [progressTotal, setProgressTotal] = useState(0);
   const [progressPhase, setProgressPhase] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [pdfRenderTarget, setPdfRenderTarget] = useState<Awaited<
+    ReturnType<typeof apiClient.getCard>
+  > | null>(null);
   const cancelRequestedRef = useRef(false);
+  const pdfPreviewRef = useRef<CardPreviewHandle | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -177,10 +234,14 @@ export default function PdfExportShellModal({
     setProgressTotal(0);
     setProgressPhase(null);
     setIsCancelling(false);
+    setPdfRenderTarget(null);
     cancelRequestedRef.current = false;
   }, [defaultBleedOptions, defaultConfig, isOpen]);
 
-  const effectiveConfig = layoutMode === "custom" ? config : defaultConfig;
+  const effectiveConfig = useMemo(
+    () => applyShellPolicyToConfig(layoutMode === "custom" ? config : defaultConfig, shellPolicy),
+    [config, defaultConfig, layoutMode, shellPolicy],
+  );
   const effectiveBleedOptions = bleedMode === "custom" ? bleedOptions : defaultBleedOptions;
   const resolvedBleedOptions = useMemo(
     () =>
@@ -235,6 +296,7 @@ export default function PdfExportShellModal({
   const bleedSettingsLabel = t("decks.pdf.summary.bleedSettings.label" as never);
   const customizeBleedSettingsLabel = t("decks.pdf.summary.bleedSettings.customize" as never);
   const hasExportableContent = slotPairs.length > 0;
+  const isAlignmentExportVisible = !shellPolicy?.alignmentExportHidden;
 
   const closeProgress = useCallback(() => {
     setIsProgressOpen(false);
@@ -273,14 +335,48 @@ export default function PdfExportShellModal({
         return null;
       }
 
+      const cachedPngByFaceId = new Map<string, Uint8Array>();
+      const renderFacePngBytes = async (faceId: string): Promise<Uint8Array | null> => {
+        if (cachedPngByFaceId.has(faceId)) {
+          return cachedPngByFaceId.get(faceId) ?? null;
+        }
+
+        const placeholder = placeholderLookup?.[faceId];
+        if (placeholder) {
+          const bytes = await renderPdfPlaceholderFacePngBytes({
+            spec: placeholder,
+            configForRun,
+            shellState,
+          });
+          if (bytes) cachedPngByFaceId.set(faceId, bytes);
+          return bytes;
+        }
+
+        const card = await apiClient.getCard({ params: { id: faceId } }).catch(() => null);
+        if (!card) {
+          return null;
+        }
+
+        const bytes = await renderPdfCardFacePngBytes({
+          card,
+          previewRef: pdfPreviewRef,
+          setRenderTarget: setPdfRenderTarget,
+          configForRun,
+          shellState,
+        });
+        if (bytes) cachedPngByFaceId.set(faceId, bytes);
+        return bytes;
+      };
+
       return {
         ...builtRun,
         config: configForRun,
         layout,
         composition,
+        renderFacePngBytes,
       };
     },
-    [shellState, slotPairs, t],
+    [placeholderLookup, shellState, slotPairs, t],
   );
 
   const buildExecutableAlignmentRun = useCallback(
@@ -394,20 +490,22 @@ export default function PdfExportShellModal({
                 <button type="button" className="btn btn-outline-light btn-sm" onClick={onCancel}>
                   {cancelLabel}
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-outline-light btn-sm"
-                  disabled={!hasExportableContent || isExporting || !buildAlignmentExportRun}
-                  onClick={() => {
-                    if (!buildAlignmentExportRun) return;
-                    void buildExecutableAlignmentRun(buildAlignmentExportRun).then((run) => {
-                      if (!run) return;
-                      void executeRun(run);
-                    });
-                  }}
-                >
-                  {exportAlignmentTestLabel}
-                </button>
+                {isAlignmentExportVisible ? (
+                  <button
+                    type="button"
+                    className="btn btn-outline-light btn-sm"
+                    disabled={!hasExportableContent || isExporting || !buildAlignmentExportRun}
+                    onClick={() => {
+                      if (!buildAlignmentExportRun) return;
+                      void buildExecutableAlignmentRun(buildAlignmentExportRun).then((run) => {
+                        if (!run) return;
+                        void executeRun(run);
+                      });
+                    }}
+                  >
+                    {exportAlignmentTestLabel}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
@@ -483,7 +581,16 @@ export default function PdfExportShellModal({
                   />
                 </div>
               </div>
-              {showLayoutForm ? <PdfExportConfigForm config={config} onChange={setConfig} /> : null}
+              {showLayoutForm ? (
+                <PdfExportConfigForm
+                  config={config}
+                  hiddenFields={{
+                    mode: shellPolicy?.mode?.hidden,
+                    duplexPreset: shellPolicy?.duplexPreset?.hidden,
+                  }}
+                  onChange={setConfig}
+                />
+              ) : null}
             </div>
             <div className={`${styles.settingsGroup} ${styles.deckPdfSummaryControlGroup}`}>
               <div className={styles.deckPdfSummaryInlineControl}>
@@ -531,6 +638,24 @@ export default function PdfExportShellModal({
           setIsCancelling(true);
         }}
       />
+      {pdfRenderTarget ? (
+        <div
+          style={{ position: "fixed", left: -99999, top: -99999, pointerEvents: "none" }}
+          aria-hidden="true"
+        >
+          <CardPreview
+            ref={pdfPreviewRef}
+            templateId={pdfRenderTarget.templateId}
+            templateName={getTemplateNameLabel(
+              language,
+              cardTemplatesById[pdfRenderTarget.templateId],
+            )}
+            backgroundSrc={cardTemplatesById[pdfRenderTarget.templateId]?.background}
+            cardData={cardRecordToCardData(pdfRenderTarget as never)}
+            copyrightTextColor={pdfRenderTarget.copyrightColor ?? undefined}
+          />
+        </div>
+      ) : null}
     </>
   );
 }
