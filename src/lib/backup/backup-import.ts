@@ -159,6 +159,7 @@ function restoreLocalStorage(localStorage: HqccExportFileV1["localStorage"]) {
       exportCropMarksStyle,
       exportCutMarksEnabled,
       exportCutMarksColor,
+      exportCutMarksStyle,
       exportRoundedCorners,
     } = localStorage;
     void draftV1;
@@ -192,6 +193,9 @@ function restoreLocalStorage(localStorage: HqccExportFileV1["localStorage"]) {
     }
     if (typeof exportCutMarksColor === "string") {
       window.localStorage.setItem("hqcc.exportPng.cutMarksColor", exportCutMarksColor);
+    }
+    if (typeof exportCutMarksStyle === "string") {
+      window.localStorage.setItem("hqcc.exportPng.cutMarksStyle", exportCutMarksStyle);
     }
     if (typeof exportRoundedCorners === "string") {
       window.localStorage.setItem("hqcc.exportPng.roundedCorners", exportRoundedCorners);

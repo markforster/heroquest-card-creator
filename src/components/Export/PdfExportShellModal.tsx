@@ -194,6 +194,7 @@ export default function PdfExportShellModal({
       cropMarkStyle: exportSettings.cropMarks.style ?? "lines",
       cutMarksEnabled: exportSettings.cutMarks.enabled,
       cutMarkColor: exportSettings.cutMarks.color,
+      cutMarkStyle: exportSettings.cutMarks.style ?? "solid",
     }),
     [
       exportSettings.bleed.enabled,
@@ -204,6 +205,7 @@ export default function PdfExportShellModal({
       exportSettings.cropMarks.style,
       exportSettings.cutMarks.enabled,
       exportSettings.cutMarks.color,
+      exportSettings.cutMarks.style,
     ],
   );
   const [config, setConfig] = useState<PrintConfig>(defaultConfig);
@@ -254,6 +256,7 @@ export default function PdfExportShellModal({
         cropMarkStyle: effectiveBleedOptions.cropMarkStyle,
         cutMarksEnabled: effectiveBleedOptions.cutMarksEnabled,
         cutMarkColor: effectiveBleedOptions.cutMarkColor,
+        cutMarkStyle: effectiveBleedOptions.cutMarkStyle,
       }),
     [effectiveBleedOptions],
   );

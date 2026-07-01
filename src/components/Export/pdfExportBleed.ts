@@ -15,6 +15,7 @@ export type PdfExportBleedSource = {
   cropMarkStyle?: "lines" | "squares" | "triangles";
   cutMarksEnabled: boolean;
   cutMarkColor?: string;
+  cutMarkStyle?: "solid" | "dashed" | "dotted" | "ticks";
 };
 
 export type ResolvedPdfExportBleedOptions = {
@@ -45,6 +46,7 @@ export function resolvePdfExportBleedOptions(
   const cutMarks: CutMarksOptions = {
     enabled: source.bleedEnabled ? source.cutMarksEnabled : false,
     color: source.cutMarkColor ?? DEFAULT_CUT_MARK_COLOR,
+    style: source.cutMarkStyle ?? "solid",
   };
   const imagePaddingPx = source.bleedEnabled
     ? getBleedTrimOrigin({ bleedPx, cropMarks, cutMarks }).trimX

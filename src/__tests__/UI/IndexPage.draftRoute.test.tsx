@@ -87,7 +87,7 @@ jest.mock("@/components/Providers/ExportSettingsContext", () => ({
     settings: {
       bleed: { enabled: false, bleedPx: 0, askBeforeExport: false },
       cropMarks: { enabled: false, color: "#000000", style: "lines" },
-      cutMarks: { enabled: false, color: "#000000" },
+      cutMarks: { enabled: false, color: "#000000", style: "solid" },
       roundedCorners: false,
     },
   }),

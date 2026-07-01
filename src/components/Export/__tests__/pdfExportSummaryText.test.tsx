@@ -14,6 +14,7 @@ describe("formatPdfExportBleedSummary", () => {
         cropMarkStyle: "triangles",
         cutMarksEnabled: false,
         cutMarkColor: "#FF00FF",
+        cutMarkStyle: "solid",
       },
       ((key: string, options?: Record<string, unknown>) =>
         (
@@ -28,5 +29,32 @@ describe("formatPdfExportBleedSummary", () => {
     render(<div>{summary}</div>);
 
     expect(screen.getByText(/Crop marks \(triangles\)/i)).toBeInTheDocument();
+  });
+
+  it("includes the cut mark style label when selected", () => {
+    const summary = formatPdfExportBleedSummary(
+      {
+        bleedEnabled: true,
+        bleedPx: 18,
+        roundedCorners: false,
+        cropMarksEnabled: false,
+        cropMarkColor: "#00FFFF",
+        cropMarkStyle: "lines",
+        cutMarksEnabled: true,
+        cutMarkColor: "#FF00FF",
+        cutMarkStyle: "ticks",
+      },
+      ((key: string) =>
+        (
+          {
+            "decks.pdf.summary.bleed.cutMarks": "Cut marks",
+            "label.cutMarkStyleTicks": "Ticks",
+          } as Record<string, string>
+        )[key] ?? key) as never,
+    );
+
+    render(<div>{summary}</div>);
+
+    expect(screen.getByText(/Cut marks \(ticks\)/i)).toBeInTheDocument();
   });
 });

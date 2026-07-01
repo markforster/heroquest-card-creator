@@ -19,7 +19,7 @@ export type ExportFaceIdsOptions = {
   skipCardNotes?: Map<string, string>;
   bleedPx?: number;
   cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
-  cutMarks?: { enabled: boolean; color: string };
+  cutMarks?: { enabled: boolean; color: string; style?: "solid" | "dashed" | "dotted" | "ticks" };
   roundedCorners?: boolean;
 };
 

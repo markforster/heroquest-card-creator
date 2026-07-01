@@ -13,6 +13,7 @@ import {
   DEFAULT_CROP_MARK_COLOR,
   DEFAULT_CROP_MARK_STYLE,
   DEFAULT_CUT_MARK_COLOR,
+  DEFAULT_CUT_MARK_STYLE,
   DEFAULT_EXPORT_ROUNDED_CORNERS,
   normalizeBleedPx,
   normalizeColor,
@@ -36,6 +37,9 @@ export default function ExportSettingsPanel() {
   const [cutMarkColor, setCutMarkColor] = useState(
     settings.cutMarks.color ?? DEFAULT_CUT_MARK_COLOR,
   );
+  const [cutMarkStyle, setCutMarkStyle] = useState(
+    settings.cutMarks.style ?? DEFAULT_CUT_MARK_STYLE,
+  );
   const [roundedCorners, setRoundedCorners] = useState(
     settings.roundedCorners ?? DEFAULT_EXPORT_ROUNDED_CORNERS,
   );
@@ -50,6 +54,7 @@ export default function ExportSettingsPanel() {
     setCropMarkStyle(settings.cropMarks.style ?? DEFAULT_CROP_MARK_STYLE);
     setCutMarksEnabled(settings.cutMarks.enabled);
     setCutMarkColor(settings.cutMarks.color ?? DEFAULT_CUT_MARK_COLOR);
+    setCutMarkStyle(settings.cutMarks.style ?? DEFAULT_CUT_MARK_STYLE);
     setRoundedCorners(settings.roundedCorners ?? DEFAULT_EXPORT_ROUNDED_CORNERS);
     setPdfConfig(settings.pdf);
   }, [settings]);
@@ -68,6 +73,7 @@ export default function ExportSettingsPanel() {
     cropMarkStyle?: "lines" | "squares" | "triangles";
     cutMarksEnabled?: boolean;
     cutMarkColor?: string;
+    cutMarkStyle?: "solid" | "dashed" | "dotted" | "ticks";
     roundedCorners?: boolean;
   }) => {
     const resolvedBleedEnabled = next.bleedEnabled ?? bleedEnabled;
@@ -78,6 +84,7 @@ export default function ExportSettingsPanel() {
     const resolvedCropStyle = next.cropMarkStyle ?? cropMarkStyle;
     const requestedCutEnabled = next.cutMarksEnabled ?? cutMarksEnabled;
     const resolvedCutColor = normalizeColor(next.cutMarkColor ?? cutMarkColor);
+    const resolvedCutStyle = next.cutMarkStyle ?? cutMarkStyle;
     const resolvedRoundedCorners = next.roundedCorners ?? roundedCorners;
     const resolvedCropEnabled = resolvedBleedEnabled ? requestedCropEnabled : false;
     const resolvedCutEnabled = resolvedBleedEnabled ? requestedCutEnabled : false;
@@ -90,6 +97,7 @@ export default function ExportSettingsPanel() {
     setCropMarkStyle(resolvedCropStyle);
     setCutMarksEnabled(resolvedCutEnabled);
     setCutMarkColor(resolvedCutColor);
+    setCutMarkStyle(resolvedCutStyle);
     setRoundedCorners(resolvedRoundedCorners);
 
     updateSettings({
@@ -106,6 +114,7 @@ export default function ExportSettingsPanel() {
       cutMarks: {
         enabled: resolvedCutEnabled,
         color: resolvedCutColor,
+        style: resolvedCutStyle,
       },
       roundedCorners: resolvedRoundedCorners,
       pdf: settings.pdf,
@@ -119,6 +128,7 @@ export default function ExportSettingsPanel() {
     cropMarksEnabled,
     cutMarkColor,
     cutMarksEnabled,
+    cutMarkStyle,
     roundedCorners,
     settings.pdf,
     updateSettings,
@@ -148,6 +158,7 @@ export default function ExportSettingsPanel() {
         cropMarkStyle={cropMarkStyle}
         cutMarksEnabled={cutMarksEnabled}
         cutMarkColor={cutMarkColor}
+        cutMarkStyle={cutMarkStyle}
         bleedLabelKey="label.exportWithBleed"
         headingLabelKey="heading.exportSettings"
         finalSizeLabel={finalSizeLabel}

@@ -72,4 +72,23 @@ describe("export-settings pdf defaults", () => {
     );
     expect(getExportSettings().cropMarks.style).toBe("triangles");
   });
+
+  it("persists and restores dotted cut mark style", () => {
+    const current = getExportSettings();
+    const next = {
+      ...current,
+      cutMarks: {
+        ...current.cutMarks,
+        enabled: true,
+        style: "dotted" as const,
+      },
+    };
+
+    setExportSettings(next);
+
+    expect(window.localStorage.getItem(EXPORT_SETTINGS_STORAGE_KEYS.cutMarksStyle)).toBe(
+      "dotted",
+    );
+    expect(getExportSettings().cutMarks.style).toBe("dotted");
+  });
 });

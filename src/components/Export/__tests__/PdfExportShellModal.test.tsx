@@ -20,7 +20,7 @@ const mockBuildAssetCache = jest.fn();
 let mockExportSettings = {
   bleed: { enabled: true, bleedPx: 18, askBeforeExport: false },
   cropMarks: { enabled: true, color: "#00FFFF", style: "lines" },
-  cutMarks: { enabled: true, color: "#00FFFF" },
+  cutMarks: { enabled: true, color: "#00FFFF", style: "solid" },
   roundedCorners: true,
   pdf: {
     paper: "Letter",
@@ -66,6 +66,10 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "label.cropMarkStyleLines": "Lines",
           "label.cropMarkStyleSquares": "Squares",
           "label.cropMarkStyleTriangles": "Triangles",
+          "label.cutMarkStyleSolid": "Solid",
+          "label.cutMarkStyleDashed": "Dashed",
+          "label.cutMarkStyleDotted": "Dotted",
+          "label.cutMarkStyleTicks": "Ticks",
           "decks.pdf.errors.layoutCapacity": "Layout capacity error",
           "decks.pdf.errors.noSheets": "No sheets",
         } as Record<string, string>
@@ -164,6 +168,7 @@ jest.mock("@/components/Export/ExportOptionsForm", () => ({
             bleedPx: 0,
             cropMarksEnabled: false,
             cutMarksEnabled: false,
+            cutMarkStyle: "solid",
           })
         }
       >
@@ -259,6 +264,7 @@ jest.mock("@/components/Export/pdfExportBleed", () => ({
     cutMarks: {
       enabled: source.bleedEnabled ? source.cutMarksEnabled : false,
       color: source.cutMarkColor,
+      style: source.cutMarkStyle,
     },
   }),
 }));
@@ -319,7 +325,7 @@ beforeEach(() => {
   mockExportSettings = {
     bleed: { enabled: true, bleedPx: 18, askBeforeExport: false },
     cropMarks: { enabled: true, color: "#00FFFF", style: "lines" },
-    cutMarks: { enabled: true, color: "#00FFFF" },
+    cutMarks: { enabled: true, color: "#00FFFF", style: "solid" },
     roundedCorners: true,
     pdf: {
       paper: "Letter",

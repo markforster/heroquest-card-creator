@@ -24,7 +24,7 @@ export async function renderBleedCanvas({
   svgElement: SVGSVGElement;
   bleedPx: number;
   cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
-  cutMarks?: { enabled: boolean; color: string };
+  cutMarks?: { enabled: boolean; color: string; style?: "solid" | "dashed" | "dotted" | "ticks" };
   roundedCorners: boolean;
   loggingId?: string;
   assetBlobsById?: Map<string, Blob>;
@@ -80,9 +80,10 @@ export async function renderBleedCanvas({
     renderBleedBands: !DISABLE_BLEED_BAND_RENDER_FOR_TESTING,
     cropMarks,
     cutMarks: cutMarks
-      ? {
+        ? {
           enabled: cutMarks.enabled,
           color: cutMarks.color,
+          style: cutMarks.style,
         }
       : cutMarks,
   });

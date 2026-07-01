@@ -77,6 +77,10 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "label.cropMarkStyleLines": "Lines",
           "label.cropMarkStyleSquares": "Squares",
           "label.cropMarkStyleTriangles": "Triangles",
+          "label.cutMarkStyleSolid": "Solid",
+          "label.cutMarkStyleDashed": "Dashed",
+          "label.cutMarkStyleDotted": "Dotted",
+          "label.cutMarkStyleTicks": "Ticks",
         } as Record<string, string>
       )[key] ?? key,
   }),
@@ -115,6 +119,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
     cropMarkStyle: "squares",
     cutMarksEnabled: true,
     cutMarkColor: "#00FFFF",
+    cutMarkStyle: "solid",
   } satisfies ExportOptionsFormState;
 
   return {
@@ -168,6 +173,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
           cutMarks: {
             enabled: defaultBleedOptions.bleedEnabled ? defaultBleedOptions.cutMarksEnabled : false,
             color: defaultBleedOptions.cutMarkColor,
+            style: defaultBleedOptions.cutMarkStyle,
           },
         },
       });

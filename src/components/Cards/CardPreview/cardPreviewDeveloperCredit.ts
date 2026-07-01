@@ -38,7 +38,7 @@ export function drawDeveloperCredit({
   cardData?: CardPreviewProps["cardData"];
   bleedPx: number;
   cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
-  cutMarks?: { enabled: boolean; color: string };
+  cutMarks?: { enabled: boolean; color: string; style?: "solid" | "dashed" | "dotted" | "ticks" };
 }) {
   if (!shouldShowDeveloperCredit(templateId, cardData)) return;
   const ctx = canvas.getContext("2d");

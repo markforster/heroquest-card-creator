@@ -43,6 +43,17 @@ export function formatDeckPdfBleedSummary(
 ): ReactNode {
   const parts: ReactNode[] = [];
   let index = 0;
+  const cutMarkStyle = t(
+    (`label.cutMarkStyle${
+      bleedOptions.cutMarkStyle === "dashed"
+        ? "Dashed"
+        : bleedOptions.cutMarkStyle === "dotted"
+          ? "Dotted"
+          : bleedOptions.cutMarkStyle === "ticks"
+            ? "Ticks"
+            : "Solid"
+    }` as never),
+  ).toLowerCase();
 
   const pushPart = (content: ReactNode) => {
     if (parts.length > 0) parts.push(", ");
@@ -103,7 +114,8 @@ export function formatDeckPdfBleedSummary(
     if (bleedOptions.cutMarksEnabled) {
       pushPart(
         <>
-          {t("decks.pdf.summary.bleed.cutMarks" as never)} {renderColorDot(bleedOptions.cutMarkColor)}
+          {t("decks.pdf.summary.bleed.cutMarks" as never)} ({cutMarkStyle}){" "}
+          {renderColorDot(bleedOptions.cutMarkColor)}
         </>,
       );
     }

@@ -88,6 +88,7 @@ export function useBulkCardExport() {
         cutMarks: {
           enabled: settings.cutMarks.enabled,
           color: settings.cutMarks.color,
+          style: settings.cutMarks.style ?? "solid",
         },
         roundedCorners: settings.roundedCorners,
       };

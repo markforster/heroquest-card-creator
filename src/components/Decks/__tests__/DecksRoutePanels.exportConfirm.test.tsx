@@ -45,7 +45,7 @@ jest.mock("@/components/Providers/ExportSettingsContext", () => ({
     settings: {
       bleed: { enabled: false, bleedPx: 0, askBeforeExport: false },
       cropMarks: { enabled: false, color: "#00FFFF", style: "lines" },
-      cutMarks: { enabled: false, color: "#00FFFF" },
+      cutMarks: { enabled: false, color: "#00FFFF", style: "solid" },
       roundedCorners: true,
       pdf: {
         paper: "A4",

@@ -21,6 +21,7 @@ export type ExportCropMarksSettings = {
 export type ExportCutMarksSettings = {
   enabled: boolean;
   color: string;
+  style: "solid" | "dashed" | "dotted" | "ticks";
 };
 
 export type ExportSettings = {
@@ -36,6 +37,7 @@ export const MAX_BLEED_PX = 36;
 export const DEFAULT_CROP_MARK_COLOR = "#00FFFF";
 export const DEFAULT_CROP_MARK_STYLE: ExportCropMarksSettings["style"] = "lines";
 export const DEFAULT_CUT_MARK_COLOR = "#00FFFF";
+export const DEFAULT_CUT_MARK_STYLE: ExportCutMarksSettings["style"] = "solid";
 export const DEFAULT_EXPORT_ROUNDED_CORNERS = true;
 
 const STORAGE_KEYS = {
@@ -47,6 +49,7 @@ const STORAGE_KEYS = {
   cropMarksStyle: "hqcc.exportPng.cropMarksStyle",
   cutMarksEnabled: "hqcc.exportPng.cutMarksEnabled",
   cutMarksColor: "hqcc.exportPng.cutMarksColor",
+  cutMarksStyle: "hqcc.exportPng.cutMarksStyle",
   roundedCorners: "hqcc.exportPng.roundedCorners",
   pdfPaper: "hqcc.exportPdf.paper",
   pdfOrientation: "hqcc.exportPdf.orientation",
@@ -78,6 +81,7 @@ export function getExportSettings(): ExportSettings {
       cutMarks: {
         enabled: false,
         color: DEFAULT_CUT_MARK_COLOR,
+        style: DEFAULT_CUT_MARK_STYLE,
       },
       roundedCorners: DEFAULT_EXPORT_ROUNDED_CORNERS,
       pdf: DEFAULT_PDF_PRINT_CONFIG,
@@ -94,6 +98,9 @@ export function getExportSettings(): ExportSettings {
   );
   const cutMarksEnabled = readBool(STORAGE_KEYS.cutMarksEnabled, false);
   const cutMarksColor = normalizeColor(readString(STORAGE_KEYS.cutMarksColor, ""));
+  const cutMarksStyle = readCutMarksStyle(
+    readString(STORAGE_KEYS.cutMarksStyle, DEFAULT_CUT_MARK_STYLE),
+  );
   const roundedCorners = readBool(
     STORAGE_KEYS.roundedCorners,
     DEFAULT_EXPORT_ROUNDED_CORNERS,
@@ -130,7 +137,7 @@ export function getExportSettings(): ExportSettings {
   return {
     bleed: { enabled: bleedEnabled, bleedPx, askBeforeExport },
     cropMarks: { enabled: cropMarksEnabled, color: cropMarksColor, style: cropMarksStyle },
-    cutMarks: { enabled: cutMarksEnabled, color: cutMarksColor },
+    cutMarks: { enabled: cutMarksEnabled, color: cutMarksColor, style: cutMarksStyle },
     roundedCorners,
     pdf,
   };
@@ -164,6 +171,10 @@ export function setExportSettings(next: ExportSettings): void {
     window.localStorage.setItem(
       STORAGE_KEYS.cutMarksColor,
       normalizeColor(next.cutMarks.color),
+    );
+    window.localStorage.setItem(
+      STORAGE_KEYS.cutMarksStyle,
+      next.cutMarks.style ?? DEFAULT_CUT_MARK_STYLE,
     );
     window.localStorage.setItem(
       STORAGE_KEYS.roundedCorners,
@@ -212,6 +223,7 @@ export function readExportSettingKeys(): Record<string, string | null> {
       [STORAGE_KEYS.cropMarksStyle]: null,
       [STORAGE_KEYS.cutMarksEnabled]: null,
       [STORAGE_KEYS.cutMarksColor]: null,
+      [STORAGE_KEYS.cutMarksStyle]: null,
       [STORAGE_KEYS.roundedCorners]: null,
       [STORAGE_KEYS.pdfPaper]: null,
       [STORAGE_KEYS.pdfOrientation]: null,
@@ -236,6 +248,7 @@ export function readExportSettingKeys(): Record<string, string | null> {
     [STORAGE_KEYS.cropMarksStyle]: safeGetItem(STORAGE_KEYS.cropMarksStyle),
     [STORAGE_KEYS.cutMarksEnabled]: safeGetItem(STORAGE_KEYS.cutMarksEnabled),
     [STORAGE_KEYS.cutMarksColor]: safeGetItem(STORAGE_KEYS.cutMarksColor),
+    [STORAGE_KEYS.cutMarksStyle]: safeGetItem(STORAGE_KEYS.cutMarksStyle),
     [STORAGE_KEYS.roundedCorners]: safeGetItem(STORAGE_KEYS.roundedCorners),
     [STORAGE_KEYS.pdfPaper]: safeGetItem(STORAGE_KEYS.pdfPaper),
     [STORAGE_KEYS.pdfOrientation]: safeGetItem(STORAGE_KEYS.pdfOrientation),
@@ -283,6 +296,13 @@ function readCropMarksStyle(value: string | null): ExportCropMarksSettings["styl
   if (value === "triangles") return "triangles";
   if (value === "squares") return "squares";
   return "lines";
+}
+
+function readCutMarksStyle(value: string | null): ExportCutMarksSettings["style"] {
+  if (value === "dashed") return "dashed";
+  if (value === "dotted") return "dotted";
+  if (value === "ticks") return "ticks";
+  return "solid";
 }
 
 function readBool(key: string, fallback: boolean): boolean {

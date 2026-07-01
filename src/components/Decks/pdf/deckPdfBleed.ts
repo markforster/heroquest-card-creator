@@ -18,6 +18,7 @@ export type DeckPdfBleedSource = {
   cropMarkStyle?: "lines" | "squares" | "triangles";
   cutMarksEnabled: boolean;
   cutMarkColor?: string;
+  cutMarkStyle?: "solid" | "dashed" | "dotted" | "ticks";
 };
 
 export type ResolvedDeckPdfBleedOptions = {
@@ -48,6 +49,7 @@ export function resolveDeckPdfBleedOptions(
   const cutMarks: CutMarksOptions = {
     enabled: source.bleedEnabled ? source.cutMarksEnabled : false,
     color: source.cutMarkColor ?? DEFAULT_CUT_MARK_COLOR,
+    style: source.cutMarkStyle ?? "solid",
   };
   const imagePaddingPx = source.bleedEnabled
     ? getBleedTrimOrigin({ bleedPx, cropMarks, cutMarks }).trimX

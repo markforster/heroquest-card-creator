@@ -22,6 +22,7 @@ export type ExportOptionsFormState = {
   cropMarkStyle: "lines" | "squares" | "triangles";
   cutMarksEnabled: boolean;
   cutMarkColor: string;
+  cutMarkStyle: "solid" | "dashed" | "dotted" | "ticks";
 };
 
 type ExportOptionsFormProps = ExportOptionsFormState & {
@@ -44,6 +45,7 @@ export default function ExportOptionsForm({
   cropMarkStyle,
   cutMarksEnabled,
   cutMarkColor,
+  cutMarkStyle,
   bleedLabelKey,
   headingLabelKey,
   finalSizeLabel,
@@ -216,6 +218,24 @@ export default function ExportOptionsForm({
             />
           </div>
         </div>
+        <label className={styles.settingsPanelRow}>
+          <span>{t("label.cutMarkStyle")}</span>
+          <select
+            className="form-select form-select-sm"
+            value={cutMarkStyle}
+            disabled={!cutMarksEnabled || !bleedEnabled}
+            onChange={(event) =>
+              onChange({
+                cutMarkStyle: event.target.value as "solid" | "dashed" | "dotted" | "ticks",
+              })
+            }
+          >
+            <option value="solid">{t("label.cutMarkStyleSolid")}</option>
+            <option value="dashed">{t("label.cutMarkStyleDashed")}</option>
+            <option value="dotted">{t("label.cutMarkStyleDotted")}</option>
+            <option value="ticks">{t("label.cutMarkStyleTicks")}</option>
+          </select>
+        </label>
       </div>
     </div>
   );

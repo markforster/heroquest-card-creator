@@ -17,6 +17,7 @@ export type CropMarksOptions = {
 export type CutMarksOptions = {
   enabled: boolean;
   color: string;
+  style?: "solid" | "dashed" | "dotted" | "ticks";
   thickness?: number;
   offset?: number;
   dash?: [number, number];
@@ -36,6 +37,11 @@ export const DEFAULT_CROP_MARK_THICKNESS = 2;
 export const DEFAULT_CUT_MARK_OFFSET = 0;
 export const DEFAULT_CUT_MARK_DASH: [number, number] = [6, 4];
 export const DEFAULT_CUT_MARK_RADIUS_ADJUST = 2;
+export const DEFAULT_CUT_MARK_STYLE: NonNullable<CutMarksOptions["style"]> = "solid";
+export const DEFAULT_DASHED_CUT_MARK_DASH: [number, number] = [10, 6];
+export const DEFAULT_DOTTED_CUT_MARK_DASH: [number, number] = [1, 5];
+export const DEFAULT_TICK_CUT_MARK_LENGTH = 8;
+export const DEFAULT_TICK_CUT_MARK_SPACING = 14;
 
 export function cloneSvgForBleed(svg: SVGSVGElement): void {
   svg.querySelectorAll<SVGElement>("[clip-path], [clipPath]").forEach((node) => {
@@ -181,6 +187,7 @@ export function composeBleedCanvas({
       trimW,
       trimH,
       color: cutMarks.color,
+      style: cutMarks.style,
       thickness: cutThickness,
       offset: cutOffset,
       dash: cutMarks.dash ?? DEFAULT_CUT_MARK_DASH,
@@ -468,6 +475,7 @@ export function drawCutMarks(
     trimW,
     trimH,
     color,
+    style = DEFAULT_CUT_MARK_STYLE,
     thickness = DEFAULT_CROP_MARK_THICKNESS,
     offset = DEFAULT_CUT_MARK_OFFSET,
     dash = DEFAULT_CUT_MARK_DASH,
@@ -477,6 +485,7 @@ export function drawCutMarks(
     trimW: number;
     trimH: number;
     color: string;
+    style?: "solid" | "dashed" | "dotted" | "ticks";
     thickness?: number;
     offset?: number;
     dash?: [number, number];
@@ -496,7 +505,39 @@ export function drawCutMarks(
   ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = thickness;
-  ctx.setLineDash(dash);
+  ctx.lineCap = style === "dotted" || style === "ticks" ? "round" : "butt";
+  ctx.lineJoin = "round";
+
+  if (style === "ticks") {
+    ctx.setLineDash([]);
+    drawCutMarkTicks(ctx, { x, y, w, h, radius });
+    ctx.restore();
+    return;
+  }
+
+  ctx.setLineDash(
+    style === "dashed"
+      ? DEFAULT_DASHED_CUT_MARK_DASH
+      : style === "dotted"
+        ? DEFAULT_DOTTED_CUT_MARK_DASH
+        : dash,
+  );
+  traceRoundedCutPath(ctx, { x, y, w, h, radius });
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function traceRoundedCutPath(
+  ctx: CanvasRenderingContext2D,
+  {
+    x,
+    y,
+    w,
+    h,
+    radius,
+  }: { x: number; y: number; w: number; h: number; radius: number },
+) {
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
   ctx.lineTo(x + w - radius, y);
@@ -507,7 +548,145 @@ export function drawCutMarks(
   ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
   ctx.lineTo(x, y + radius);
   ctx.quadraticCurveTo(x, y, x + radius, y);
+}
+
+function strokeLineSegment(
+  ctx: CanvasRenderingContext2D,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
   ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.restore();
+}
+
+function drawCutMarkTicks(
+  ctx: CanvasRenderingContext2D,
+  {
+    x,
+    y,
+    w,
+    h,
+    radius,
+  }: { x: number; y: number; w: number; h: number; radius: number },
+) {
+  const straightW = Math.max(0, w - radius * 2);
+  const straightH = Math.max(0, h - radius * 2);
+  const arcLen = radius > 0 ? (Math.PI * radius) / 2 : 0;
+  const segmentLengths = [
+    straightW,
+    arcLen,
+    straightH,
+    arcLen,
+    straightW,
+    arcLen,
+    straightH,
+    arcLen,
+  ];
+  const totalLength = segmentLengths.reduce((sum, len) => sum + len, 0);
+  if (totalLength <= 0) return;
+
+  const startOffset = DEFAULT_TICK_CUT_MARK_SPACING / 2;
+  for (let distance = startOffset; distance < totalLength; distance += DEFAULT_TICK_CUT_MARK_SPACING) {
+    const { px, py, nx, ny } = resolveRoundedPathSample({
+      distance,
+      x,
+      y,
+      w,
+      h,
+      radius,
+      straightW,
+      straightH,
+      arcLen,
+    });
+
+    strokeLineSegment(
+      ctx,
+      px,
+      py,
+      px + nx * DEFAULT_TICK_CUT_MARK_LENGTH,
+      py + ny * DEFAULT_TICK_CUT_MARK_LENGTH,
+    );
+  }
+}
+
+function resolveRoundedPathSample({
+  distance,
+  x,
+  y,
+  w,
+  h,
+  radius,
+  straightW,
+  straightH,
+  arcLen,
+}: {
+  distance: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  radius: number;
+  straightW: number;
+  straightH: number;
+  arcLen: number;
+}) {
+  let remaining = distance;
+
+  if (remaining <= straightW) {
+    return { px: x + radius + remaining, py: y, nx: 0, ny: -1 };
+  }
+  remaining -= straightW;
+
+  if (remaining <= arcLen && radius > 0) {
+    const angle = -Math.PI / 2 + remaining / radius;
+    return resolveArcSample(x + w - radius, y + radius, radius, angle);
+  }
+  remaining -= arcLen;
+
+  if (remaining <= straightH) {
+    return { px: x + w, py: y + radius + remaining, nx: 1, ny: 0 };
+  }
+  remaining -= straightH;
+
+  if (remaining <= arcLen && radius > 0) {
+    const angle = remaining / radius;
+    return resolveArcSample(x + w - radius, y + h - radius, radius, angle);
+  }
+  remaining -= arcLen;
+
+  if (remaining <= straightW) {
+    return { px: x + w - radius - remaining, py: y + h, nx: 0, ny: 1 };
+  }
+  remaining -= straightW;
+
+  if (remaining <= arcLen && radius > 0) {
+    const angle = Math.PI / 2 + remaining / radius;
+    return resolveArcSample(x + radius, y + h - radius, radius, angle);
+  }
+  remaining -= arcLen;
+
+  if (remaining <= straightH) {
+    return { px: x, py: y + h - radius - remaining, nx: -1, ny: 0 };
+  }
+  remaining -= straightH;
+
+  if (radius > 0) {
+    const angle = Math.PI + remaining / radius;
+    return resolveArcSample(x + radius, y + radius, radius, angle);
+  }
+
+  return { px: x + radius, py: y, nx: 0, ny: -1 };
+}
+
+function resolveArcSample(cx: number, cy: number, radius: number, angle: number) {
+  return {
+    px: cx + Math.cos(angle) * radius,
+    py: cy + Math.sin(angle) * radius,
+    nx: Math.cos(angle),
+    ny: Math.sin(angle),
+  };
 }

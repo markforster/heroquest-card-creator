@@ -22,6 +22,11 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "label.cropMarkStyleTriangles": "Triangles",
           "label.cutMarks": "Cut marks",
           "label.cutMarkColor": "Cut mark color",
+          "label.cutMarkStyle": "Cut mark style",
+          "label.cutMarkStyleSolid": "Solid",
+          "label.cutMarkStyleDashed": "Dashed",
+          "label.cutMarkStyleDotted": "Dotted",
+          "label.cutMarkStyleTicks": "Ticks",
         } as Record<string, string>
       )[key] ?? key,
   }),
@@ -67,6 +72,7 @@ const baseProps = {
   cropMarkStyle: "lines" as const,
   cutMarksEnabled: true,
   cutMarkColor: "#FF00FF",
+  cutMarkStyle: "solid" as const,
   bleedLabelKey: "label.exportWithBleed" as const,
   headingLabelKey: "heading.exportSettings" as const,
   useSettingsGroup: true,
@@ -100,5 +106,17 @@ describe("ExportOptionsForm", () => {
     fireEvent.change(select, { target: { value: "triangles" } });
 
     expect(onChange).toHaveBeenCalledWith({ cropMarkStyle: "triangles" });
+  });
+
+  it("shows and emits the ticks cut mark style", () => {
+    const onChange = jest.fn();
+    render(<ExportOptionsForm {...baseProps} onChange={onChange} />);
+
+    const select = screen.getByDisplayValue("Solid");
+    expect(screen.getByRole("option", { name: "Ticks" })).toBeInTheDocument();
+
+    fireEvent.change(select, { target: { value: "ticks" } });
+
+    expect(onChange).toHaveBeenCalledWith({ cutMarkStyle: "ticks" });
   });
 });
