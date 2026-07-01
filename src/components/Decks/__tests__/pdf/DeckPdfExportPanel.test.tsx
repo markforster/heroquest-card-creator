@@ -28,12 +28,6 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "decks.pdf.summary.includedSets.complete": `Complete sets: ${vars?.count ?? ""}`,
           "decks.pdf.summary.includedSets.all": `All sets: ${vars?.count ?? ""}`,
           "decks.pdf.summary.includedSets.selected": `Selected sets: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.totalEntryQuantity": `Entries: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.exportSlots": `Export slots: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.includedEmptySets": `Empty placeholder sets: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.faces": `Faces: ${vars?.totalCount ?? ""}`,
-          "decks.pdf.summary.emptyExcluded": `Empty excluded: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.noneAvailable": "None available",
           "ui.loading": "Loading",
         } as Record<string, string>
       )[key] ?? key,
@@ -99,7 +93,7 @@ describe("DeckPdfExportPanel", () => {
     expect(completeSet).toHaveAttribute("data-interactive", "false");
     expect(incompleteSet).toHaveAttribute("data-included", "false");
     expect(incompleteSet).toHaveAttribute("data-disabled", "true");
-    expect(screen.getByText("Empty excluded: 1")).toBeInTheDocument();
+    expect(screen.queryByText("Empty excluded: 1")).not.toBeInTheDocument();
   });
 
   it("shows all sets as included in all mode without the hide filter", () => {

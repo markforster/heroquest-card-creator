@@ -4,9 +4,11 @@ import type { ReactNode } from "react";
 import PdfExportShellModal from "@/components/Export/PdfExportShellModal";
 
 import type { ExportOptionsFormState } from "@/components/Export/ExportOptionsForm";
-import type { PdfExportRun } from "@/components/Export/PdfExportShellModal";
-import type { PrintConfig } from "@/lib/pdf-export";
+import type { PdfExportAlignmentRun, PdfExportRun } from "@/components/Export/PdfExportShellModal";
+import type { PrintConfig, SlotPair } from "@/lib/pdf-export";
 
+const mockComputeLayoutPlan = jest.fn();
+const mockComposePrintComposition = jest.fn();
 const mockRenderPdf = jest.fn();
 const mockCreateObjectURL = jest.fn(() => "blob:pdf");
 const mockRevokeObjectURL = jest.fn();
@@ -42,6 +44,8 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "decks.pdf.summary.bleed.cutMarks": "Cut marks",
           "label.cropMarkStyleLines": "Lines",
           "label.cropMarkStyleSquares": "Squares",
+          "decks.pdf.errors.layoutCapacity": "Layout capacity error",
+          "decks.pdf.errors.noSheets": "No sheets",
         } as Record<string, string>
       )[key] ?? key,
   }),
@@ -209,6 +213,9 @@ jest.mock("@/lib/pdf-export", () => ({
     duplexPreset: "mirrorX",
   },
   normalizePdfPrintConfig: (next: PrintConfig) => next,
+  getPdfFooterReserveMm: () => 0,
+  computeLayoutPlan: (...args: unknown[]) => mockComputeLayoutPlan(...args),
+  composePrintComposition: (...args: unknown[]) => mockComposePrintComposition(...args),
   renderPdf: (...args: unknown[]) => mockRenderPdf(...args),
 }));
 
@@ -224,42 +231,43 @@ const config: PrintConfig = {
   duplexPreset: "normal",
 };
 
-const bleedOptions: ExportOptionsFormState = {
-  bleedEnabled: true,
-  bleedPx: 18,
-  askBeforeExport: false,
-  roundedCorners: true,
-  cropMarksEnabled: true,
-  cropMarkColor: "#00FFFF",
-  cropMarkStyle: "lines",
-  cutMarksEnabled: true,
-  cutMarkColor: "#00FFFF",
-};
+const slotPairs: SlotPair[] = [{ slotId: "slot-1", frontId: "front-1", backId: null }];
 
-function makeRun(runConfig: PrintConfig): PdfExportRun {
+function makeRun(): PdfExportRun {
   return {
-    composition: {
-      sheets: [{ sheetIndex: 0, slots: [{ frontId: "front-1", backId: null }] }],
-      totalSlots: 1,
-    },
-    config: runConfig,
     fileName: "cards.pdf",
     includeCalibrationPage: true,
-    layout: {
-      paperMm: { width: 210, height: 297 },
-      grid: { cols: 1, rows: 1, perPage: 1 },
-      placements: [],
-    },
     renderFacePngBytes: async () => new Uint8Array([1, 2, 3]),
   };
 }
 
+function makeAlignmentRun(): PdfExportAlignmentRun {
+  return {
+    ...makeRun(),
+    composition: {
+      sheets: [{ sheetIndex: 0, slots: [{ frontId: "alignment:front:0:1", backId: null }] }],
+      totalSlots: 1,
+    },
+  };
+}
+
 beforeEach(() => {
+  mockComputeLayoutPlan.mockReset();
+  mockComposePrintComposition.mockReset();
   mockRenderPdf.mockReset();
   mockCreateObjectURL.mockClear();
   mockRevokeObjectURL.mockClear();
   mockLinkClick.mockClear();
 
+  mockComputeLayoutPlan.mockReturnValue({
+    paperMm: { width: 210, height: 297 },
+    grid: { cols: 1, rows: 1, perPage: 1 },
+    placements: [],
+  });
+  mockComposePrintComposition.mockImplementation((pairs: unknown[]) => ({
+    sheets: [{ sheetIndex: 0, slots: pairs }],
+    totalSlots: Array.isArray(pairs) ? pairs.length : 0,
+  }));
   mockRenderPdf.mockResolvedValue({
     status: "success",
     blob: new Blob(["pdf"], { type: "application/pdf" }),
@@ -298,32 +306,37 @@ afterEach(() => {
 });
 
 describe("PdfExportShellModal", () => {
-  it("renders top content, seeds internal state, and hides custom forms by default", () => {
+  it("renders top content, seeds internal state, hides custom forms, and disables export when no slot pairs exist", () => {
     const onStateChange = jest.fn();
 
     render(
       <PdfExportShellModal
         isOpen
         title="Export shell"
-        hasExportableContent
+        slotPairs={[]}
         onCancel={jest.fn()}
         onStateChange={onStateChange}
         buildExportRun={jest.fn()}
         buildAlignmentExportRun={jest.fn()}
+        summaryContent={{
+          columns: [
+            [{ text: "Primary line" }],
+            [{ text: "Secondary line", tone: "muted" }],
+          ],
+          notice: { text: "Nothing available", tone: "blocked" },
+        }}
         topContent={(state) => <div>Mode: {state.effectiveConfig.mode}</div>}
       />,
     );
 
     expect(screen.getByText("Export shell")).toBeInTheDocument();
     expect(screen.getByText("Mode: frontsOnly")).toBeInTheDocument();
+    expect(screen.getByText("Primary line")).toBeInTheDocument();
+    expect(screen.getByText("Secondary line")).toBeInTheDocument();
+    expect(screen.getByText("Nothing available")).toHaveClass("deckPdfSummaryBlocked");
     expect(screen.getByText("Letter, Portrait, Fronts only")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        (_content, element) =>
-          element?.className === "deckPdfSummaryInlineSummary" &&
-          (element.textContent?.includes("Bleed 18px") ?? false),
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Export PDF" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Export alignment test" })).toBeDisabled();
     expect(screen.queryByTestId("pdf-config-form")).not.toBeInTheDocument();
     expect(screen.queryByTestId("bleed-options-form")).not.toBeInTheDocument();
     expect(onStateChange).toHaveBeenCalledWith(
@@ -335,15 +348,31 @@ describe("PdfExportShellModal", () => {
     );
   });
 
-  it("owns custom layout and bleed state and passes current settings into export builders", async () => {
-    const buildExportRun = jest.fn((state) => makeRun(state.effectiveConfig));
-    const buildAlignmentExportRun = jest.fn((state) => makeRun(state.effectiveConfig));
+  it("omits the summary area when no summary payload is provided", () => {
+    render(
+      <PdfExportShellModal
+        isOpen
+        title="Export shell"
+        slotPairs={slotPairs}
+        onCancel={jest.fn()}
+        buildExportRun={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByText("Primary line")).not.toBeInTheDocument();
+    expect(screen.queryByText("Secondary line")).not.toBeInTheDocument();
+    expect(screen.queryByText("Nothing available")).not.toBeInTheDocument();
+  });
+
+  it("owns custom layout and bleed state and builds normal export composition from slot pairs", async () => {
+    const buildExportRun = jest.fn(() => makeRun());
+    const buildAlignmentExportRun = jest.fn(() => makeAlignmentRun());
 
     render(
       <PdfExportShellModal
         isOpen
         title="Export shell"
-        hasExportableContent
+        slotPairs={slotPairs}
         onCancel={jest.fn()}
         buildExportRun={buildExportRun}
         buildAlignmentExportRun={buildAlignmentExportRun}
@@ -363,25 +392,34 @@ describe("PdfExportShellModal", () => {
     await waitFor(() => {
       expect(buildAlignmentExportRun).toHaveBeenCalledWith(
         expect.objectContaining({
-          layoutMode: "custom",
-          bleedMode: "custom",
-          effectiveConfig: expect.objectContaining({
+          config: expect.objectContaining({
             mode: "frontAndBack",
             orientation: "landscape",
             duplexPreset: "mirrorX",
           }),
-          effectiveBleedOptions: expect.objectContaining({
-            bleedEnabled: false,
-            bleedPx: 0,
+          shellState: expect.objectContaining({
+            layoutMode: "custom",
+            bleedMode: "custom",
+            effectiveBleedOptions: expect.objectContaining({
+              bleedEnabled: false,
+              bleedPx: 0,
+            }),
+          }),
+          layout: expect.objectContaining({
+            grid: expect.objectContaining({ perPage: 1 }),
           }),
         }),
       );
     });
     expect(buildExportRun).toHaveBeenCalledWith(
       expect.objectContaining({
-        effectiveConfig: expect.objectContaining({ mode: "frontAndBack" }),
+        config: expect.objectContaining({ mode: "frontAndBack" }),
+        layout: expect.objectContaining({
+          grid: expect.objectContaining({ perPage: 1 }),
+        }),
       }),
     );
+    expect(mockComposePrintComposition).toHaveBeenCalledWith(slotPairs, 1);
     expect(mockRenderPdf).toHaveBeenCalledTimes(2);
   });
 
@@ -399,9 +437,9 @@ describe("PdfExportShellModal", () => {
       <PdfExportShellModal
         isOpen
         title="Export shell"
-        hasExportableContent
+        slotPairs={slotPairs}
         onCancel={jest.fn()}
-        buildExportRun={() => makeRun(config)}
+        buildExportRun={() => makeRun()}
         buildAlignmentExportRun={jest.fn()}
       />,
     );

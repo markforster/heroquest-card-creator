@@ -97,12 +97,6 @@ export default function DeckPdfExportPanel({
       : setScopeMode === "selected"
         ? t("decks.pdf.summary.selection.help.selected" as never)
         : t("decks.pdf.summary.selection.help.complete" as never);
-  const scopeIncludedLabelKey =
-    setScopeMode === "all"
-      ? "decks.pdf.summary.includedSets.all"
-      : setScopeMode === "selected"
-        ? "decks.pdf.summary.includedSets.selected"
-        : "decks.pdf.summary.includedSets.complete";
   const filteredSets = summary
     ? summary.sets.filter((set) => {
         if (!hideEmptySets) return true;
@@ -193,55 +187,6 @@ export default function DeckPdfExportPanel({
           ) : null}
         </div>
       </div>
-      <div className={`${styles.settingsGroup} ${styles.deckPdfSummaryBody}`}>
-        <div className={styles.deckPdfSummaryGrid}>
-          <div className={styles.deckPdfSummaryLine}>
-            {t(scopeIncludedLabelKey as never, {
-              count: summary.includedSetCount,
-            })}
-          </div>
-          <div className={styles.deckPdfSummaryLine}>
-            {t("decks.pdf.summary.totalEntryQuantity" as never, {
-              count: summary.totalEntryQuantity,
-            })}
-          </div>
-          <div className={styles.deckPdfSummaryLine}>
-            {t("decks.pdf.summary.faces" as never, {
-              frontCount: summary.frontFaceCount,
-              backCount: summary.backFaceCount,
-              totalCount: summary.totalFaceCount,
-            })}
-          </div>
-        </div>
-        <div className={styles.deckPdfSummaryNotes}>
-          {summary.includedEmptySetCount > 0 && setScopeMode !== "complete" ? (
-            <div className={styles.deckPdfSummaryLineMuted}>
-              {t("decks.pdf.summary.includedEmptySets" as never, {
-                count: summary.includedEmptySetCount,
-              })}
-            </div>
-          ) : null}
-          {summary.exportSlotQuantity !== summary.totalEntryQuantity ? (
-            <div className={styles.deckPdfSummaryLineMuted}>
-              {t("decks.pdf.summary.exportSlots" as never, {
-                count: summary.exportSlotQuantity,
-              })}
-            </div>
-          ) : null}
-          {setScopeMode === "complete" && summary.excludedEmptySetCount > 0 ? (
-            <div className={styles.deckPdfSummaryLineMuted}>
-              {t("decks.pdf.summary.emptyExcluded" as never, {
-                count: summary.excludedEmptySetCount,
-              })}
-            </div>
-          ) : null}
-        </div>
-      </div>
-      {summary.exportSlotQuantity <= 0 ? (
-        <div className={styles.deckPdfSummaryBlocked}>
-          {t("decks.pdf.summary.noneAvailable" as never)}
-        </div>
-      ) : null}
     </>
   );
 }

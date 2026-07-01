@@ -18,8 +18,11 @@ import {
   buildDeckPdfAlignmentFileName,
   buildDeckPdfFileName,
 } from "@/components/Decks/pdf/deckPdfFileName";
+import { buildDeckPdfSummaryContent } from "@/components/Decks/pdf/buildDeckPdfSummaryContent";
 import PdfExportShellModal, {
+  type PdfExportAlignmentRun,
   type PdfExportRun,
+  type PdfExportRunBuildContext,
   type PdfExportShellState,
 } from "@/components/Export/PdfExportShellModal";
 import { waitForAssetElements, waitForFrame } from "@/components/Stockpile/stockpile-utils";
@@ -33,10 +36,8 @@ import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { buildAssetCache } from "@/lib/export-assets-cache";
 import {
   buildSingleSheetAlignmentComposition,
-  composePrintComposition,
-  computeLayoutPlan,
-  getPdfFooterReserveMm,
   parseAlignmentFaceId,
+  type PrintConfig,
 } from "@/lib/pdf-export";
 
 type DeckPdfRunData = Awaited<ReturnType<typeof resolveDeckPdfRunData>>;
@@ -64,6 +65,7 @@ export default function DeckPdfExportSummaryModal({
   const [pdfRenderTarget, setPdfRenderTarget] = useState<Awaited<
     ReturnType<typeof apiClient.getCard>
   > | null>(null);
+  const initializedForDeckRef = useRef<string | null>(null);
   const pdfPreviewRef = useRef<CardPreviewHandle | null>(null);
   void scope;
 
@@ -106,6 +108,7 @@ export default function DeckPdfExportSummaryModal({
 
   useEffect(() => {
     if (!isOpen || !deckId || !shellState) return;
+    if (initializedForDeckRef.current === `${deckId}:${shellState.effectiveConfig.mode}`) return;
     let active = true;
 
     void (async () => {
@@ -131,8 +134,8 @@ export default function DeckPdfExportSummaryModal({
       setRunData(initialRunData);
       setSlotPairs(initialRunData.slotPairs);
       setSummary(nextSummary);
-      setShellState(null);
       setPdfRenderTarget(null);
+      initializedForDeckRef.current = `${deckId}:${initialMode}`;
     })();
 
     return () => {
@@ -160,10 +163,8 @@ export default function DeckPdfExportSummaryModal({
     };
   }, [activeMode, deckId, isOpen, refreshDeckPdfRun, selectedSetIds, setScopeMode]);
 
-  const hasExportableContent = slotPairs.length > 0;
-
   const buildRenderFacePngBytes = useCallback(
-    (configForRun: PdfExportRun["config"], currentRunData: DeckPdfRunData, currentShellState: PdfExportShellState) => {
+    (configForRun: PrintConfig, currentRunData: DeckPdfRunData, currentShellState: PdfExportShellState) => {
       const cachedPngByFaceId = new Map<string, Uint8Array>();
 
       return async (faceId: string): Promise<Uint8Array | null> => {
@@ -275,28 +276,12 @@ export default function DeckPdfExportSummaryModal({
   );
 
   const buildExportRun = useCallback(
-    async (currentShellState: PdfExportShellState): Promise<PdfExportRun | null> => {
-      if (!deckId || !runData || !slotPairs.length) {
+    async ({
+      shellState: currentShellState,
+      config: configForRun,
+    }: PdfExportRunBuildContext): Promise<PdfExportRun | null> => {
+      if (!deckId || !runData) {
         window.alert(t("alert.selectCardToExport"));
-        return null;
-      }
-
-      const configForRun = {
-        ...currentShellState.effectiveConfig,
-        bleedMm: currentShellState.resolvedBleedOptions.bleedMm,
-      };
-      const layout = computeLayoutPlan(configForRun, {
-        imagePaddingMm: currentShellState.resolvedBleedOptions.imagePaddingMm,
-        reservedBottomMm: getPdfFooterReserveMm(),
-      });
-      if (layout.grid.perPage <= 0) {
-        window.alert(t("decks.pdf.errors.layoutCapacity"));
-        return null;
-      }
-
-      const composition = composePrintComposition(slotPairs, layout.grid.perPage);
-      if (!composition.sheets.length) {
-        window.alert(t("decks.pdf.errors.noSheets"));
         return null;
       }
 
@@ -304,34 +289,22 @@ export default function DeckPdfExportSummaryModal({
       const deckName = deck?.title?.trim() || t("decks.untitledDeck");
 
       return {
-        config: configForRun,
-        layout,
-        composition,
         fileName: buildDeckPdfFileName({ deckName, date: new Date() }),
         includeCalibrationPage: true,
         renderFacePngBytes: buildRenderFacePngBytes(configForRun, runData, currentShellState),
       };
     },
-    [buildRenderFacePngBytes, deckId, runData, slotPairs, t],
+    [buildRenderFacePngBytes, deckId, runData, t],
   );
 
   const buildAlignmentExportRun = useCallback(
-    async (currentShellState: PdfExportShellState): Promise<PdfExportRun | null> => {
+    async ({
+      shellState: currentShellState,
+      config: configForRun,
+      layout,
+    }: PdfExportRunBuildContext): Promise<PdfExportAlignmentRun | null> => {
       if (!slotPairs.length) {
         window.alert(t("alert.selectCardToExport"));
-        return null;
-      }
-
-      const configForRun = {
-        ...currentShellState.effectiveConfig,
-        bleedMm: currentShellState.resolvedBleedOptions.bleedMm,
-      };
-      const layout = computeLayoutPlan(configForRun, {
-        imagePaddingMm: currentShellState.resolvedBleedOptions.imagePaddingMm,
-        reservedBottomMm: getPdfFooterReserveMm(),
-      });
-      if (layout.grid.perPage <= 0) {
-        window.alert(t("decks.pdf.errors.layoutCapacity"));
         return null;
       }
 
@@ -339,10 +312,6 @@ export default function DeckPdfExportSummaryModal({
         layout.grid.perPage,
         configForRun.mode === "frontAndBack",
       );
-      if (!composition.sheets.length) {
-        window.alert(t("decks.pdf.errors.noSheets"));
-        return null;
-      }
 
       const renderFacePngBytes = async (faceId: string): Promise<Uint8Array | null> => {
         const parsed = parseAlignmentFaceId(faceId);
@@ -444,8 +413,6 @@ export default function DeckPdfExportSummaryModal({
       };
 
       return {
-        config: configForRun,
-        layout,
         composition,
         fileName: buildDeckPdfAlignmentFileName(new Date()),
         includeCalibrationPage: true,
@@ -456,9 +423,17 @@ export default function DeckPdfExportSummaryModal({
   );
 
   const handleClose = useCallback(() => {
+    initializedForDeckRef.current = null;
     resetState();
     onClose();
   }, [onClose, resetState]);
+
+  const summaryContent = buildDeckPdfSummaryContent({
+    summary,
+    setScopeMode,
+    slotPairs,
+    t,
+  });
 
   const resolvedTopContent = useCallback(
     () => (
@@ -486,7 +461,8 @@ export default function DeckPdfExportSummaryModal({
       <PdfExportShellModal
         isOpen={isOpen}
         title={t("decks.pdf.modal.title") + " (Beta)"}
-        hasExportableContent={hasExportableContent}
+        slotPairs={slotPairs}
+        summaryContent={summaryContent}
         onCancel={handleClose}
         onStateChange={setShellState}
         buildExportRun={buildExportRun}

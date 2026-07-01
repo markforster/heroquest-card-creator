@@ -19,11 +19,15 @@ import { useExportSettingsState } from "@/components/Providers/ExportSettingsCon
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   DEFAULT_PDF_PRINT_CONFIG,
+  composePrintComposition,
+  computeLayoutPlan,
+  getPdfFooterReserveMm,
   normalizePdfPrintConfig,
   renderPdf,
   type LayoutPlan,
   type PrintComposition,
   type PrintConfig,
+  type SlotPair,
 } from "@/lib/pdf-export";
 
 type ResolvedBleedOptions = ReturnType<typeof resolvePdfExportBleedOptions>;
@@ -39,22 +43,45 @@ export type PdfExportShellState = {
 };
 
 export type PdfExportRun = {
-  composition: PrintComposition;
-  config: PrintConfig;
   fileName: string;
   includeCalibrationPage?: boolean;
-  layout: LayoutPlan;
   renderFacePngBytes: (faceId: string) => Promise<Uint8Array | null>;
+};
+
+export type PdfExportRunBuildContext = {
+  shellState: PdfExportShellState;
+  config: PrintConfig;
+  layout: LayoutPlan;
+};
+
+export type PdfExportSummaryLineTone = "default" | "muted";
+
+export type PdfExportSummaryNoticeTone = PdfExportSummaryLineTone | "blocked";
+
+export type PdfExportSummaryContent = {
+  columns: Array<Array<{ text: string; tone?: PdfExportSummaryLineTone }>>;
+  notice?: { text: string; tone?: PdfExportSummaryNoticeTone };
+};
+
+export type PdfExportAlignmentRun = PdfExportRun & {
+  composition: PrintComposition;
+};
+
+type ExecutablePdfExportRun = PdfExportRun & {
+  config: PrintConfig;
+  layout: LayoutPlan;
+  composition: PrintComposition;
 };
 
 type PdfExportShellModalProps = {
   isOpen: boolean;
   title: string;
-  hasExportableContent: boolean;
+  slotPairs: SlotPair[];
+  summaryContent?: PdfExportSummaryContent;
   onCancel: () => void;
   onStateChange?: (state: PdfExportShellState) => void;
-  buildExportRun: (state: PdfExportShellState) => Promise<PdfExportRun | null> | PdfExportRun | null;
-  buildAlignmentExportRun?: (state: PdfExportShellState) => Promise<PdfExportRun | null> | PdfExportRun | null;
+  buildExportRun: (context: PdfExportRunBuildContext) => Promise<PdfExportRun | null> | PdfExportRun | null;
+  buildAlignmentExportRun?: (context: PdfExportRunBuildContext) => Promise<PdfExportAlignmentRun | null> | PdfExportAlignmentRun | null;
   topContent?: ReactNode | ((state: PdfExportShellState) => ReactNode);
   children?: ReactNode;
 };
@@ -72,7 +99,8 @@ function countFaces(composition: PrintComposition, mode: PrintConfig["mode"]) {
 export default function PdfExportShellModal({
   isOpen,
   title,
-  hasExportableContent,
+  slotPairs,
+  summaryContent,
   onCancel,
   onStateChange,
   buildExportRun,
@@ -206,6 +234,7 @@ export default function PdfExportShellModal({
   const customizeLayoutLabel = t("decks.pdf.summary.layout.customize" as never);
   const bleedSettingsLabel = t("decks.pdf.summary.bleedSettings.label" as never);
   const customizeBleedSettingsLabel = t("decks.pdf.summary.bleedSettings.customize" as never);
+  const hasExportableContent = slotPairs.length > 0;
 
   const closeProgress = useCallback(() => {
     setIsProgressOpen(false);
@@ -216,11 +245,83 @@ export default function PdfExportShellModal({
     cancelRequestedRef.current = false;
   }, []);
 
-  const executeRun = useCallback(
-    async (buildRun: PdfExportShellModalProps["buildExportRun"]) => {
-      const run = await buildRun(shellState);
-      if (!run) return;
+  const buildExecutableNormalRun = useCallback(
+    async (buildRun: PdfExportShellModalProps["buildExportRun"]): Promise<ExecutablePdfExportRun | null> => {
+      const configForRun = {
+        ...shellState.effectiveConfig,
+        bleedMm: shellState.resolvedBleedOptions.bleedMm,
+      };
+      const layout = computeLayoutPlan(configForRun, {
+        imagePaddingMm: shellState.resolvedBleedOptions.imagePaddingMm,
+        reservedBottomMm: getPdfFooterReserveMm(),
+      });
+      if (layout.grid.perPage <= 0) {
+        window.alert(t("decks.pdf.errors.layoutCapacity"));
+        return null;
+      }
 
+      const builtRun = await buildRun({
+        shellState,
+        config: configForRun,
+        layout,
+      });
+      if (!builtRun) return null;
+
+      const composition = composePrintComposition(slotPairs, layout.grid.perPage);
+      if (!composition.sheets.length) {
+        window.alert(t("decks.pdf.errors.noSheets"));
+        return null;
+      }
+
+      return {
+        ...builtRun,
+        config: configForRun,
+        layout,
+        composition,
+      };
+    },
+    [shellState, slotPairs, t],
+  );
+
+  const buildExecutableAlignmentRun = useCallback(
+    async (
+      buildRun: NonNullable<PdfExportShellModalProps["buildAlignmentExportRun"]>,
+    ): Promise<ExecutablePdfExportRun | null> => {
+      const configForRun = {
+        ...shellState.effectiveConfig,
+        bleedMm: shellState.resolvedBleedOptions.bleedMm,
+      };
+      const layout = computeLayoutPlan(configForRun, {
+        imagePaddingMm: shellState.resolvedBleedOptions.imagePaddingMm,
+        reservedBottomMm: getPdfFooterReserveMm(),
+      });
+      if (layout.grid.perPage <= 0) {
+        window.alert(t("decks.pdf.errors.layoutCapacity"));
+        return null;
+      }
+
+      const builtRun = await buildRun({
+        shellState,
+        config: configForRun,
+        layout,
+      });
+      if (!builtRun) return null;
+      if (!builtRun.composition.sheets.length) {
+        window.alert(t("decks.pdf.errors.noSheets"));
+        return null;
+      }
+
+      return {
+        ...builtRun,
+        config: configForRun,
+        layout,
+      };
+    },
+    [shellState, t],
+  );
+
+  const executeRun = useCallback(
+    async (run: ExecutablePdfExportRun) => {
       const totalFaces = countFaces(run.composition, run.config.mode);
       cancelRequestedRef.current = false;
       setIsCancelling(false);
@@ -269,11 +370,15 @@ export default function PdfExportShellModal({
         closeProgress();
       }
     },
-    [closeProgress, shellState, t],
+    [closeProgress, t],
   );
 
   const resolvedTopContent =
     typeof topContent === "function" ? topContent(shellState) : topContent;
+  const hasSummaryContent = Boolean(
+    summaryContent &&
+      (summaryContent.columns.some((column) => column.length > 0) || summaryContent.notice),
+  );
 
   return (
     <>
@@ -295,7 +400,10 @@ export default function PdfExportShellModal({
                   disabled={!hasExportableContent || isExporting || !buildAlignmentExportRun}
                   onClick={() => {
                     if (!buildAlignmentExportRun) return;
-                    void executeRun(buildAlignmentExportRun);
+                    void buildExecutableAlignmentRun(buildAlignmentExportRun).then((run) => {
+                      if (!run) return;
+                      void executeRun(run);
+                    });
                   }}
                 >
                   {exportAlignmentTestLabel}
@@ -305,7 +413,10 @@ export default function PdfExportShellModal({
                   className="btn btn-primary btn-sm"
                   disabled={!hasExportableContent || isExporting}
                   onClick={() => {
-                    void executeRun(buildExportRun);
+                    void buildExecutableNormalRun(buildExportRun).then((run) => {
+                      if (!run) return;
+                      void executeRun(run);
+                    });
                   }}
                 >
                   {isExporting ? exportingLabel : exportLabel}
@@ -318,6 +429,41 @@ export default function PdfExportShellModal({
         <div className={styles.settingsPanelScroll}>
           <div className={styles.settingsPanelBody}>
             {resolvedTopContent}
+            {hasSummaryContent ? (
+              <div className={`${styles.settingsGroup} ${styles.deckPdfSummaryBody}`}>
+                <div className={styles.deckPdfSummaryGrid}>
+                  {summaryContent?.columns.map((column, columnIndex) => (
+                    <div key={columnIndex} className={styles.deckPdfSummaryNotes}>
+                      {column.map((line, lineIndex) => (
+                        <div
+                          key={`${columnIndex}-${lineIndex}-${line.text}`}
+                          className={
+                            line.tone === "muted"
+                              ? styles.deckPdfSummaryLineMuted
+                              : styles.deckPdfSummaryLine
+                          }
+                        >
+                          {line.text}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                {summaryContent?.notice ? (
+                  <div
+                    className={
+                      summaryContent.notice.tone === "blocked"
+                        ? styles.deckPdfSummaryBlocked
+                        : summaryContent.notice.tone === "muted"
+                          ? styles.deckPdfSummaryLineMuted
+                          : styles.deckPdfSummaryLine
+                    }
+                  >
+                    {summaryContent.notice.text}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
             <div className={`${styles.settingsGroup} ${styles.deckPdfSummaryControlGroup}`}>
               <div className={styles.deckPdfSummaryInlineControl}>
                 <div className={styles.deckPdfSummaryInlineHeader}>

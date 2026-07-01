@@ -4,15 +4,12 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import DeckPdfExportSummaryModal from "@/components/Decks/pdf/DeckPdfExportSummaryModal";
 
 import type { ExportOptionsFormState } from "@/components/Export/ExportOptionsForm";
-import type { PrintConfig } from "@/lib/pdf-export";
+import type { PrintConfig, SlotPair } from "@/lib/pdf-export";
 
 const mockResolveDeckPdfRunData = jest.fn();
 const mockSummarizeDeckPdfRunData = jest.fn();
 const mockGetDeck = jest.fn();
 const mockGetCard = jest.fn();
-const mockComputeLayoutPlan = jest.fn();
-const mockComposePrintComposition = jest.fn();
-const mockBuildSingleSheetAlignmentComposition = jest.fn();
 const mockBuildAssetCache = jest.fn();
 const mockWaitForAssetElements = jest.fn();
 const mockWaitForFrame = jest.fn();
@@ -40,28 +37,6 @@ jest.mock("@/components/Decks/pdf/deckPdfFileName", () => ({
   buildDeckPdfAlignmentFileName: () => "alignment.pdf",
 }));
 
-jest.mock("@/components/Providers/ExportSettingsContext", () => ({
-  useExportSettingsState: () => ({
-    settings: {
-      bleed: { enabled: true, bleedPx: 18, askBeforeExport: false },
-      cropMarks: { enabled: true, color: "#00FFFF", style: "squares" },
-      cutMarks: { enabled: true, color: "#00FFFF" },
-      roundedCorners: false,
-      pdf: {
-        paper: "Letter",
-        orientation: "portrait",
-        marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
-        gapMm: { x: 0.5, y: 0.5 },
-        cardMm: { width: 63.5, height: 88.9 },
-        mode: "frontsOnly",
-        bleedMode: "bakedInImage",
-        bleedMm: 3,
-        duplexPreset: "normal",
-      },
-    },
-  }),
-}));
-
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     language: "en",
@@ -69,10 +44,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
       (
         {
           "decks.pdf.modal.title": "Export deck PDF",
-          "decks.pdf.modal.exportAlignmentTest": "Export alignment test",
-          "decks.pdf.modal.export": "Export PDF",
           "actions.cancel": "Cancel",
-          "actions.exporting": "Exporting",
           "decks.untitledDeck": "Untitled deck",
           "alert.selectCardToExport": "Select a card",
           "decks.pdf.errors.layoutCapacity": "Layout capacity error",
@@ -83,6 +55,15 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "decks.pdf.summary.bleedSettings.customize": "Customise bleed settings",
           "decks.pdf.summary.runMode.frontBack": "Front + back",
           "decks.pdf.summary.runMode.frontsOnly": "Fronts only",
+          "decks.pdf.summary.includedSets.complete": `Complete sets: ${vars?.count ?? ""}`,
+          "decks.pdf.summary.includedSets.all": `All sets: ${vars?.count ?? ""}`,
+          "decks.pdf.summary.includedSets.selected": `Selected sets: ${vars?.count ?? ""}`,
+          "decks.pdf.summary.totalEntryQuantity": `Entries: ${vars?.count ?? ""}`,
+          "decks.pdf.summary.exportSlots": `Export slots: ${vars?.count ?? ""}`,
+          "decks.pdf.summary.includedEmptySets": `Empty placeholder sets: ${vars?.count ?? ""}`,
+          "decks.pdf.summary.faces": `Faces: ${vars?.totalCount ?? ""}`,
+          "decks.pdf.summary.emptyExcluded": `Empty excluded: ${vars?.count ?? ""}`,
+          "decks.pdf.summary.noneAvailable": "None available",
           "decks.pdf.orientation.portrait": "Portrait",
           "decks.pdf.orientation.landscape": "Landscape",
           "decks.pdf.duplex.normal": "Normal",
@@ -138,7 +119,11 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
     __esModule: true,
     default: (props: {
       title: string;
-      hasExportableContent: boolean;
+      slotPairs: SlotPair[];
+      summaryContent?: {
+        columns: Array<Array<{ text: string; tone?: "default" | "muted" }>>;
+        notice?: { text: string; tone?: "default" | "muted" | "blocked" };
+      };
       onCancel: () => void;
       onStateChange?: (state: unknown) => void;
       buildExportRun: (state: unknown) => Promise<unknown>;
@@ -148,7 +133,8 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
     }) => {
       const {
         title,
-        hasExportableContent,
+        slotPairs,
+        summaryContent,
         onCancel,
         onStateChange,
         buildExportRun,
@@ -192,11 +178,19 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
       return (
         <div>
           <div>{title}</div>
-          <div data-testid="has-content">{String(hasExportableContent)}</div>
           <div data-testid="shell-mode">{shellState.effectiveConfig.mode}</div>
-          <div data-testid="shell-has-default-props">
-            {String(Object.prototype.hasOwnProperty.call(props, "defaultConfig"))}/
-            {String(Object.prototype.hasOwnProperty.call(props, "defaultBleedOptions"))}
+          <div data-testid="shell-slot-pair-count">{slotPairs.length}</div>
+          <div data-testid="shell-summary-primary">
+            {summaryContent?.columns[0]?.map((line) => line.text).join(" | ") ?? ""}
+          </div>
+          <div data-testid="shell-summary-secondary">
+            {summaryContent?.columns[1]?.map((line) => `${line.tone ?? "default"}:${line.text}`).join(" | ") ??
+              ""}
+          </div>
+          <div data-testid="shell-summary-notice">
+            {summaryContent?.notice
+              ? `${summaryContent.notice.tone ?? "default"}:${summaryContent.notice.text}`
+              : ""}
           </div>
           <button type="button" onClick={onCancel}>
             Cancel
@@ -204,7 +198,14 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
           <button
             type="button"
             onClick={async () => {
-              const result = await buildExportRun(shellState);
+              const result = await buildExportRun({
+                shellState,
+                config: {
+                  ...shellState.effectiveConfig,
+                  bleedMm: shellState.resolvedBleedOptions.bleedMm,
+                },
+                layout: { paperMm: { width: 210, height: 297 }, grid: { cols: 2, rows: 1, perPage: 2 }, placements: [] },
+              });
               mockCapturedExportRun(result);
             }}
           >
@@ -213,7 +214,14 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
           <button
             type="button"
             onClick={async () => {
-              const result = await buildAlignmentExportRun?.(shellState);
+              const result = await buildAlignmentExportRun?.({
+                shellState,
+                config: {
+                  ...shellState.effectiveConfig,
+                  bleedMm: shellState.resolvedBleedOptions.bleedMm,
+                },
+                layout: { paperMm: { width: 210, height: 297 }, grid: { cols: 2, rows: 1, perPage: 2 }, placements: [] },
+              });
               mockCapturedAlignmentRun(result);
             }}
           >
@@ -312,23 +320,10 @@ jest.mock("@/lib/card-record-mapper", () => ({
 }));
 
 jest.mock("@/lib/pdf-export", () => ({
-  DEFAULT_PDF_PRINT_CONFIG: {
-    paper: "A4",
-    orientation: "landscape",
-    marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
-    gapMm: { x: 0.5, y: 0.5 },
-    cardMm: { width: 63.5, height: 88.9 },
-    mode: "frontAndBack",
-    bleedMode: "bakedInImage",
-    bleedMm: 3,
-    duplexPreset: "mirrorX",
-  },
-  normalizePdfPrintConfig: (config: PrintConfig) => config,
-  getPdfFooterReserveMm: () => 0,
-  computeLayoutPlan: (...args: unknown[]) => mockComputeLayoutPlan(...args),
-  composePrintComposition: (...args: unknown[]) => mockComposePrintComposition(...args),
-  buildSingleSheetAlignmentComposition: (...args: unknown[]) =>
-    mockBuildSingleSheetAlignmentComposition(...args),
+  buildSingleSheetAlignmentComposition: () => ({
+    sheets: [{ sheetIndex: 0, slots: [{ frontId: "alignment:front:0:1", backId: null }] }],
+    totalSlots: 1,
+  }),
   parseAlignmentFaceId: (faceId: string) => {
     const match = /^alignment:(front|back):(\d+):(\d+)$/.exec(faceId);
     if (!match) return null;
@@ -349,9 +344,6 @@ beforeEach(() => {
   mockSummarizeDeckPdfRunData.mockReset();
   mockGetDeck.mockReset();
   mockGetCard.mockReset();
-  mockComputeLayoutPlan.mockReset();
-  mockComposePrintComposition.mockReset();
-  mockBuildSingleSheetAlignmentComposition.mockReset();
   mockBuildAssetCache.mockReset();
   mockWaitForAssetElements.mockReset();
   mockWaitForFrame.mockReset();
@@ -392,19 +384,6 @@ beforeEach(() => {
       ],
     }),
   );
-  mockComputeLayoutPlan.mockReturnValue({
-    paperMm: { width: 1, height: 1 },
-    grid: { cols: 2, rows: 1, perPage: 2 },
-    placements: [],
-  });
-  mockComposePrintComposition.mockImplementation((slotPairs: unknown[]) => ({
-    sheets: [{ sheetIndex: 0, slots: slotPairs }],
-    totalSlots: Array.isArray(slotPairs) ? slotPairs.length : 0,
-  }));
-  mockBuildSingleSheetAlignmentComposition.mockReturnValue({
-    sheets: [{ sheetIndex: 0, slots: [{ frontId: "alignment:front:0:1", backId: null }] }],
-    totalSlots: 1,
-  });
   mockGetDeck.mockResolvedValue({ title: "Deck One" });
   mockGetCard.mockResolvedValue({
     id: "front-1",
@@ -417,7 +396,7 @@ beforeEach(() => {
 });
 
 describe("DeckPdfExportSummaryModal", () => {
-  it("initializes from export settings and resolved deck run on open", async () => {
+  it("initializes deck selection state and passes slot pairs directly to the shell and panel", async () => {
     render(
       <DeckPdfExportSummaryModal isOpen deckId="deck-1" scope="deck_detail" onClose={jest.fn()} />,
     );
@@ -425,13 +404,17 @@ describe("DeckPdfExportSummaryModal", () => {
     await waitFor(() => {
       expect(screen.getByTestId("shell-mode")).toHaveTextContent("frontsOnly");
     });
-    expect(screen.getByTestId("shell-has-default-props")).toHaveTextContent("false/false");
+    expect(screen.getByTestId("shell-slot-pair-count")).toHaveTextContent("2");
     expect(screen.getByTestId("included-count")).toHaveTextContent("1");
     expect(screen.getByTestId("selected-size")).toHaveTextContent("1");
+    expect(screen.getByTestId("shell-summary-primary")).toHaveTextContent(
+      "Complete sets: 1 | Entries: 2 | Faces: 2",
+    );
+    expect(screen.getByTestId("shell-summary-secondary")).toHaveTextContent("muted:Empty excluded: 1");
     expect(mockResolveDeckPdfRunData).toHaveBeenCalledWith("deck-1", "frontsOnly", "complete", []);
   });
 
-  it("recomputes summary when shell mode and set selection change", async () => {
+  it("recomputes stored slot pairs when selection state and shell mode change", async () => {
     render(
       <DeckPdfExportSummaryModal isOpen deckId="deck-1" scope="deck_detail" onClose={jest.fn()} />,
     );
@@ -440,27 +423,31 @@ describe("DeckPdfExportSummaryModal", () => {
       expect(screen.getByTestId("scope-mode")).toHaveTextContent("complete");
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Change mode" }));
     fireEvent.click(screen.getByRole("button", { name: "Scope selected" }));
-    fireEvent.click(screen.getByRole("button", { name: "Toggle set 2" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("shell-slot-pair-count")).toHaveTextContent("1");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Change mode" }));
 
     await waitFor(() => {
       expect(mockResolveDeckPdfRunData).toHaveBeenCalledWith(
         "deck-1",
         "frontAndBack",
         "selected",
-        ["set-1", "set-2"],
+        ["set-1"],
       );
     });
   });
 
-  it("builds a normalized export run for the shell from deck slot pairs", async () => {
+  it("narrows normal export to deck-specific metadata only", async () => {
     render(
       <DeckPdfExportSummaryModal isOpen deckId="deck-1" scope="deck_detail" onClose={jest.fn()} />,
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId("has-content")).toHaveTextContent("true");
+      expect(screen.getByTestId("shell-slot-pair-count")).toHaveTextContent("2");
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Run export" }));
@@ -469,21 +456,23 @@ describe("DeckPdfExportSummaryModal", () => {
       expect(mockCapturedExportRun).toHaveBeenCalledWith(
         expect.objectContaining({
           fileName: "deck.pdf",
-          config: expect.objectContaining({ mode: "frontsOnly", bleedMm: 1.5 }),
+          includeCalibrationPage: true,
+          renderFacePngBytes: expect.any(Function),
         }),
       );
     });
-    expect(mockComposePrintComposition).toHaveBeenCalled();
+    expect(mockCapturedExportRun.mock.calls[0][0]).not.toHaveProperty("composition");
+    expect(mockCapturedExportRun.mock.calls[0][0]).not.toHaveProperty("config");
     expect(mockGetDeck).toHaveBeenCalledWith({ params: { deckId: "deck-1" } });
   });
 
-  it("builds an alignment export run for the shell", async () => {
+  it("keeps alignment export as a separate callback with synthetic composition", async () => {
     render(
       <DeckPdfExportSummaryModal isOpen deckId="deck-1" scope="deck_detail" onClose={jest.fn()} />,
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId("has-content")).toHaveTextContent("true");
+      expect(screen.getByTestId("shell-slot-pair-count")).toHaveTextContent("2");
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Run alignment export" }));
@@ -492,10 +481,46 @@ describe("DeckPdfExportSummaryModal", () => {
       expect(mockCapturedAlignmentRun).toHaveBeenCalledWith(
         expect.objectContaining({
           fileName: "alignment.pdf",
-          config: expect.objectContaining({ mode: "frontsOnly", bleedMm: 1.5 }),
+          composition: expect.objectContaining({
+            sheets: expect.any(Array),
+          }),
         }),
       );
     });
-    expect(mockBuildSingleSheetAlignmentComposition).toHaveBeenCalledWith(2, false);
+  });
+
+  it("passes a blocked summary notice when no slot pairs are available", async () => {
+    const blockedRunData = {
+      sets: [
+        { setId: "set-1", setTitle: "Set One", backFaceId: "back-1", hasEntries: false, entryCount: 0 },
+      ],
+      selectedSetIds: [],
+      slotPairs: [],
+    };
+    const blockedSummary = {
+      totalSetCount: 1,
+      includedSetCount: 0,
+      includedEmptySetCount: 0,
+      excludedEmptySetCount: 1,
+      excludedNonEmptySetCount: 0,
+      totalEntryQuantity: 0,
+      exportSlotQuantity: 0,
+      frontFaceCount: 0,
+      backFaceCount: 0,
+      totalFaceCount: 0,
+      sets: [{ setId: "set-1", setTitle: "Set One", backFaceId: "back-1", hasEntries: false, entryCount: 0 }],
+    };
+    mockResolveDeckPdfRunData.mockImplementation(async () => blockedRunData);
+    mockSummarizeDeckPdfRunData.mockImplementation(() => blockedSummary);
+
+    render(
+      <DeckPdfExportSummaryModal isOpen deckId="deck-1" scope="deck_detail" onClose={jest.fn()} />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("shell-slot-pair-count")).toHaveTextContent("0");
+    });
+
+    expect(screen.getByTestId("shell-summary-notice")).toHaveTextContent("blocked:None available");
   });
 });
