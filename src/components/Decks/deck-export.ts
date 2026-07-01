@@ -141,8 +141,8 @@ export function summarizeDeckPdfRunData(
   const totalEntryQuantity = runData.slotPairs.reduce((sum, slot) => {
     return parseDeckPdfPlaceholderFrontId(slot.frontId ?? "") ? sum : sum + 1;
   }, 0);
-  const frontFaceCount = exportSlotQuantity;
-  const backFaceCount = mode === "frontAndBack" ? exportSlotQuantity : 0;
+  const frontFaceCount = totalEntryQuantity;
+  const backFaceCount = mode === "frontAndBack" ? includedSets.length : 0;
   const totalFaceCount = frontFaceCount + backFaceCount;
   return {
     totalSetCount: runData.sets.length,

@@ -32,6 +32,9 @@ type StockpileFooterProps = {
   onBulkExport: () => void;
   canExport: boolean;
   exportLabel: string;
+  onPdfExport?: () => void;
+  canPdfExport?: boolean;
+  pdfExportLabel?: string;
   selectedCard?: CardRecord;
   hasMultiSelection: boolean;
   onLoadSelectedCard: () => void;
@@ -50,6 +53,9 @@ export default function StockpileFooter({
   onBulkExport,
   canExport,
   exportLabel,
+  onPdfExport,
+  canPdfExport = false,
+  pdfExportLabel,
   selectedCard,
   hasMultiSelection,
   onLoadSelectedCard,
@@ -249,6 +255,16 @@ export default function StockpileFooter({
             </div>
             <div className="flex-grow-1 flex-shrink-0" />
             <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">
+              {onPdfExport && pdfExportLabel ? (
+                <button
+                  type="button"
+                  className="btn btn-outline-light btn-sm"
+                  onClick={onPdfExport}
+                  disabled={!canPdfExport}
+                >
+                  {pdfExportLabel}
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="btn btn-outline-light btn-sm"

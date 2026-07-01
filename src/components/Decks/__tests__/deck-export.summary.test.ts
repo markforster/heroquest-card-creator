@@ -94,8 +94,8 @@ describe("resolveDeckPdfExportSummary", () => {
     expect(result.totalEntryQuantity).toBe(3);
     expect(result.exportSlotQuantity).toBe(3);
     expect(result.frontFaceCount).toBe(3);
-    expect(result.backFaceCount).toBe(3);
-    expect(result.totalFaceCount).toBe(6);
+    expect(result.backFaceCount).toBe(1);
+    expect(result.totalFaceCount).toBe(4);
     expect(result.sets).toHaveLength(2);
   });
 
@@ -148,6 +148,9 @@ describe("resolveDeckPdfExportSummary", () => {
     expect(summary.excludedEmptySetCount).toBe(0);
     expect(summary.totalEntryQuantity).toBe(1);
     expect(summary.exportSlotQuantity).toBe(2);
+    expect(summary.frontFaceCount).toBe(1);
+    expect(summary.backFaceCount).toBe(2);
+    expect(summary.totalFaceCount).toBe(3);
   });
 
   it("selected scope honors explicit set selection and includes empty selected sets as placeholders", async () => {
@@ -173,6 +176,9 @@ describe("resolveDeckPdfExportSummary", () => {
     expect(summary.excludedNonEmptySetCount).toBe(1);
     expect(summary.totalEntryQuantity).toBe(0);
     expect(summary.exportSlotQuantity).toBe(1);
+    expect(summary.frontFaceCount).toBe(0);
+    expect(summary.backFaceCount).toBe(0);
+    expect(summary.totalFaceCount).toBe(0);
   });
 
   it("creates and parses placeholder ids and rejects non-placeholder values", () => {

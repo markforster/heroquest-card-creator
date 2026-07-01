@@ -62,7 +62,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "decks.pdf.summary.totalEntryQuantity": `Entries: ${vars?.count ?? ""}`,
           "decks.pdf.summary.exportSlots": `Export slots: ${vars?.count ?? ""}`,
           "decks.pdf.summary.includedEmptySets": `Empty placeholder sets: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.faces": `Faces: ${vars?.totalCount ?? ""}`,
+          "decks.pdf.summary.faces": `Exported faces: ${vars?.frontCount ?? ""}/${vars?.backCount ?? ""}/${vars?.totalCount ?? ""}`,
           "decks.pdf.summary.emptyExcluded": `Empty excluded: ${vars?.count ?? ""}`,
           "decks.pdf.summary.noneAvailable": "None available",
           "decks.pdf.orientation.portrait": "Portrait",
@@ -379,9 +379,11 @@ beforeEach(() => {
       excludedNonEmptySetCount: 0,
       totalEntryQuantity: runData.slotPairs.length,
       exportSlotQuantity: runData.slotPairs.length,
-      frontFaceCount: runData.slotPairs.length,
-      backFaceCount: mode === "frontAndBack" ? runData.slotPairs.length : 0,
-      totalFaceCount: mode === "frontAndBack" ? runData.slotPairs.length * 2 : runData.slotPairs.length,
+      frontFaceCount: runData.slotPairs.filter((slot) => !String(slot.frontId ?? "").startsWith("deck-empty-front:")).length,
+      backFaceCount: mode === "frontAndBack" ? (selectedSetIds.size || 1) : 0,
+      totalFaceCount:
+        runData.slotPairs.filter((slot) => !String(slot.frontId ?? "").startsWith("deck-empty-front:")).length +
+        (mode === "frontAndBack" ? (selectedSetIds.size || 1) : 0),
       sets: [
         { setId: "set-1", setTitle: "Set One", backFaceId: "back-1", hasEntries: true, entryCount: 2 },
         { setId: "set-2", setTitle: "Set Two", backFaceId: "back-2", hasEntries: false, entryCount: 0 },
@@ -414,7 +416,7 @@ describe("DeckPdfExportSummaryModal", () => {
     expect(screen.getByTestId("shell-placeholder-count")).toHaveTextContent("2");
     expect(screen.getByTestId("shell-children")).toHaveTextContent("empty");
     expect(screen.getByTestId("shell-summary-primary")).toHaveTextContent(
-      "Complete sets: 1 | Entries: 2 | Faces: 2",
+      "Complete sets: 1 | Entries: 2 | Exported faces: 2/0/2",
     );
     expect(screen.getByTestId("shell-summary-secondary")).toHaveTextContent("muted:Empty excluded: 1");
     expect(mockResolveDeckPdfRunData).toHaveBeenCalledWith("deck-1", "frontsOnly", "complete", []);

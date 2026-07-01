@@ -35,6 +35,7 @@ import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collect
 import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
 import { hydrateCardsForExport } from "@/components/Stockpile/stockpile-export";
 import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
+import CollectionPdfExportSummaryModal from "@/components/Stockpile/pdf/CollectionPdfExportSummaryModal";
 import StockpileActionsBar from "@/components/Stockpile/StockpileActionsBar";
 import StockpileAddToCollectionController from "@/components/Stockpile/StockpileAddToCollectionController";
 import StockpileCollectionModal from "@/components/Stockpile/StockpileCollectionModal";
@@ -52,7 +53,10 @@ import type {
   StockpileCardThumb,
   StockpileCardView,
 } from "@/components/Stockpile/types";
-import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import {
+  ENABLE_CARD_THUMB_CACHE,
+  ENABLE_STOCKPILE_COLLECTION_PDF_EXPORT,
+} from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -238,6 +242,10 @@ export default function StockpilePanelContent({
     exportLabel: string;
     exportOnlyLabel: string;
     previewRows: { left: CardRecord[]; right: CardRecord[] }[];
+  } | null>(null);
+  const [pendingCollectionPdfExport, setPendingCollectionPdfExport] = useState<{
+    collectionName: string | null;
+    faceIds: string[];
   } | null>(null);
   const [hoveredPairCardId, setHoveredPairCardId] = useState<string | null>(null);
   const pairHoverTimeoutRef = useRef<number | null>(null);
@@ -837,6 +845,10 @@ export default function StockpilePanelContent({
     (activeFilter.type === "collection" ||
       ((activeFilter.type === "all" || activeFilter.type === "unfiled") &&
         selectedVisibleCards.length > 0));
+  const canExportCollectionPdf =
+    ENABLE_STOCKPILE_COLLECTION_PDF_EXPORT &&
+    activeFilter.type === "collection" &&
+    exportCards.length > 0;
   const exportCount = exportCards.length;
   const exportLabel = exportFlow.isExporting
     ? t("actions.exporting")
@@ -845,6 +857,10 @@ export default function StockpilePanelContent({
       : activeFilter.type === "collection"
         ? `${t("actions.export")} (${exportCount}) ${t("actions.fromThisCollection")}`
         : `${t("actions.export")} (${exportCount})`;
+  const pdfExportLabel =
+    activeFilter.type === "collection" && selectedVisibleCards.length === 0
+      ? `${t("actions.export")} PDF ${t("actions.fromThisCollection")}`
+      : `${t("actions.export")} PDF (${exportCount}) ${t("actions.fromThisCollection")}`;
   const handleExportCards = async (
     cardsToExport: CardRecord[],
     options?: { skipIds?: Set<string>; skipNotes?: Map<string, string>; skipPrecheck?: boolean },
@@ -1177,6 +1193,21 @@ export default function StockpilePanelContent({
                   onBulkExport={handleBulkExport}
                   canExport={canExport}
                   exportLabel={exportLabel}
+                  onPdfExport={
+                    ENABLE_STOCKPILE_COLLECTION_PDF_EXPORT && activeFilter.type === "collection"
+                      ? () =>
+                          setPendingCollectionPdfExport({
+                            collectionName: activeCollection?.name ?? null,
+                            faceIds: exportCards.map((card) => card.id),
+                          })
+                      : undefined
+                  }
+                  canPdfExport={canExportCollectionPdf}
+                  pdfExportLabel={
+                    ENABLE_STOCKPILE_COLLECTION_PDF_EXPORT && activeFilter.type === "collection"
+                      ? pdfExportLabel
+                      : undefined
+                  }
                   selectedCard={selectedCard}
                   hasMultiSelection={hasMultiSelection}
                   onLoadSelectedCard={() => {
@@ -1361,6 +1392,12 @@ export default function StockpilePanelContent({
           onClose={() => setCollectionModalState(null)}
         />
       ) : null}
+      <CollectionPdfExportSummaryModal
+        isOpen={Boolean(pendingCollectionPdfExport)}
+        collectionName={pendingCollectionPdfExport?.collectionName ?? null}
+        faceIds={pendingCollectionPdfExport?.faceIds ?? []}
+        onClose={() => setPendingCollectionPdfExport(null)}
+      />
       {deleteCollectionPrompt ? (
         <ConfirmModal
           isOpen={Boolean(deleteCollectionPrompt)}

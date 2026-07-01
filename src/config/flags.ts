@@ -147,3 +147,10 @@ export const ENABLE_MISSING_ASSET_CHECKS = true;
 export const ENABLE_MISSING_ASSET_INITIAL_SCAN = true;
 export const ENABLE_MISSING_ASSET_PERIODIC_SCAN = true;
 export const ENABLE_MISSING_ASSET_DELETE_SCAN = false;
+
+/**
+ * Controls whether the experimental collection PDF export entry point is shown
+ * in the Stockpile footer. Keep disabled until the collection PDF workflow is
+ * ready for broader release.
+ */
+export const ENABLE_STOCKPILE_COLLECTION_PDF_EXPORT = false;

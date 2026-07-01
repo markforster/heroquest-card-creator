@@ -65,7 +65,7 @@
   "decks.pdf.summary.totalEntryQuantity": "{{count}} total entry quantity.",
   "decks.pdf.summary.exportSlots": "{{count}} export slots will be generated.",
   "decks.pdf.summary.includedEmptySets": "{{count}} empty sets will export with placeholder fronts.",
-  "decks.pdf.summary.faces": "Faces: {{frontCount}} front, {{backCount}} back, {{totalCount}} total.",
+  "decks.pdf.summary.faces": "Exported faces: {{frontCount}} front, {{backCount}} back, {{totalCount}} total.",
   "decks.pdf.summary.runSettings": "Run settings: {{paper}}, {{orientation}}, {{mode}}",
   "decks.pdf.summary.runMode.frontBack": "front + back",
   "decks.pdf.summary.runMode.frontsOnly": "fronts only",
