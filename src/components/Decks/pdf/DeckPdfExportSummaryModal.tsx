@@ -1,386 +1,517 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import styles from "@/app/page.module.css";
-import ActionBar from "@/components/common/ActionBar";
-import CardThumbnail from "@/components/common/CardThumbnail";
-import ModalShell from "@/components/common/ModalShell";
-import type {
-  DeckPdfExportSummary,
-  DeckPdfSetMeta,
-  DeckPdfSetScopeMode,
-} from "@/components/Decks/deck-export";
+import { apiClient } from "@/api/client";
+import CardPreview from "@/components/Cards/CardPreview";
+import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
+import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import {
-  formatDeckPdfBleedSummary,
-  formatDeckPdfLayoutSummary,
-} from "@/components/Decks/pdf/deckPdfSummaryText";
-import ExportOptionsForm, {
-  type ExportOptionsFormState,
-} from "@/components/Export/ExportOptionsForm";
-import PdfExportConfigForm from "@/components/Export/PdfExportConfigForm";
+  parseDeckPdfPlaceholderFrontId,
+  resolveDeckPdfRunData,
+  summarizeDeckPdfRunData,
+  type DeckPdfExportSummary,
+  type DeckPdfSetScopeMode,
+} from "@/components/Decks/deck-export";
+import DeckPdfExportPanel from "@/components/Decks/pdf/DeckPdfExportPanel";
+import {
+  buildDeckPdfAlignmentFileName,
+  buildDeckPdfFileName,
+} from "@/components/Decks/pdf/deckPdfFileName";
+import PdfExportShellModal, {
+  type PdfExportRun,
+  type PdfExportShellState,
+} from "@/components/Export/PdfExportShellModal";
+import { waitForAssetElements, waitForFrame } from "@/components/Stockpile/stockpile-utils";
+import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+import { cardTemplatesById } from "@/data/card-templates";
+import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
-import type { PrintConfig } from "@/lib/pdf-export";
+import { composeBleedCanvas } from "@/lib/bleed-export";
+import { collectCardAssetIds } from "@/lib/card-assets";
+import { cardRecordToCardData } from "@/lib/card-record-mapper";
+import { buildAssetCache } from "@/lib/export-assets-cache";
+import {
+  buildSingleSheetAlignmentComposition,
+  composePrintComposition,
+  computeLayoutPlan,
+  getPdfFooterReserveMm,
+  parseAlignmentFaceId,
+} from "@/lib/pdf-export";
+
+type DeckPdfRunData = Awaited<ReturnType<typeof resolveDeckPdfRunData>>;
 
 type DeckPdfExportSummaryModalProps = {
   isOpen: boolean;
-  isExporting: boolean;
-  summary: DeckPdfExportSummary | null;
-  config: PrintConfig;
-  defaultConfig: PrintConfig;
-  bleedOptions: ExportOptionsFormState;
-  defaultBleedOptions: ExportOptionsFormState;
-  setScopeMode: DeckPdfSetScopeMode;
-  layoutMode: "default" | "custom";
-  bleedMode: "default" | "custom";
-  selectedSetIds: Set<string>;
-  onCancel: () => void;
-  onSetScopeMode: (mode: DeckPdfSetScopeMode) => void;
-  onLayoutMode: (mode: "default" | "custom") => void;
-  onBleedMode: (mode: "default" | "custom") => void;
-  onToggleSet: (setId: string) => void;
-  onConfigChange: (next: PrintConfig) => void;
-  onBleedOptionsChange: (next: Partial<ExportOptionsFormState>) => void;
-  onExport: () => void;
-  onExportAlignmentTest: () => void;
+  deckId: string | null;
+  scope: "decks_grid" | "deck_detail";
+  onClose: () => void;
 };
-
-function SetThumb({
-  set,
-  isIncluded,
-  isInteractive,
-  isDisabled,
-  onToggle,
-  t,
-}: {
-  set: DeckPdfSetMeta;
-  isIncluded: boolean;
-  isInteractive: boolean;
-  isDisabled: boolean;
-  onToggle: () => void;
-  t: (key: never, options?: Record<string, unknown>) => string;
-}) {
-  const url = useCardThumbnailUrl(set.backFaceId, null, {
-    enabled: Boolean(set.backFaceId),
-    useCache: true,
-  });
-  const entryCountLabel =
-    set.entryCount === 1
-      ? t("decks.pdf.summary.entryCount.one" as never, { count: set.entryCount })
-      : t("decks.pdf.summary.entryCount.other" as never, { count: set.entryCount });
-  return (
-    <button
-      type="button"
-      className={styles.deckPdfSetItem}
-      title={set.setTitle}
-      aria-label={set.setTitle}
-      data-included={String(isIncluded)}
-      data-interactive={String(isInteractive)}
-      data-disabled={String(isDisabled)}
-      onClick={isInteractive ? onToggle : undefined}
-      disabled={isDisabled}
-    >
-      <CardThumbnail
-        src={url}
-        alt=""
-        variant="smMd"
-        fit="contain"
-        className={styles.deckPdfExcludedThumb}
-        fallback={<div className={styles.deckPdfExcludedThumbFallback} />}
-      />
-      <div
-        className={
-          set.entryCount === 0
-            ? `${styles.deckPdfSummaryLineMuted} ${styles.deckPdfEntryCountZero}`
-            : styles.deckPdfSummaryLineMuted
-        }
-      >
-        {entryCountLabel}
-      </div>
-    </button>
-  );
-}
 
 export default function DeckPdfExportSummaryModal({
   isOpen,
-  isExporting,
-  summary,
-  config,
-  defaultConfig,
-  bleedOptions,
-  defaultBleedOptions,
-  setScopeMode,
-  layoutMode,
-  bleedMode,
-  selectedSetIds,
-  onCancel,
-  onSetScopeMode,
-  onLayoutMode,
-  onBleedMode,
-  onToggleSet,
-  onConfigChange,
-  onBleedOptionsChange,
-  onExport,
-  onExportAlignmentTest,
+  deckId,
+  scope,
+  onClose,
 }: DeckPdfExportSummaryModalProps) {
-  const { t } = useI18n();
-  const [hideEmptySets, setHideEmptySets] = useState(false);
-  const hasIncludedSets = Boolean(summary && summary.exportSlotQuantity > 0);
-  const showLayoutForm = layoutMode !== "default";
-  const showBleedForm = bleedMode !== "default";
-  const effectiveLayoutConfig = layoutMode === "custom" ? config : defaultConfig;
-  const effectiveBleedOptions = bleedMode === "custom" ? bleedOptions : defaultBleedOptions;
-  const showHideEmptyFilter =
-    setScopeMode !== "all" && Boolean(summary?.sets.some((set) => set.entryCount === 0));
-  const scopeHelpText =
-    setScopeMode === "all"
-      ? t("decks.pdf.summary.selection.help.all" as never)
-      : setScopeMode === "selected"
-        ? t("decks.pdf.summary.selection.help.selected" as never)
-        : t("decks.pdf.summary.selection.help.complete" as never);
-  const scopeIncludedLabelKey =
-    setScopeMode === "all"
-      ? "decks.pdf.summary.includedSets.all"
-      : setScopeMode === "selected"
-        ? "decks.pdf.summary.includedSets.selected"
-        : "decks.pdf.summary.includedSets.complete";
-  const filteredSets = summary
-    ? summary.sets.filter((set) => {
-        if (!hideEmptySets) return true;
-        if (setScopeMode === "selected") return selectedSetIds.has(set.setId);
-        if (!showHideEmptyFilter || set.entryCount > 0) return true;
-        if (setScopeMode === "complete") return false;
-        if (setScopeMode === "all") return false;
-        return true;
-      })
-    : [];
-  const hiddenSetCount = summary ? summary.sets.length - filteredSets.length : 0;
-  const hideEmptyLabelKey =
-    setScopeMode === "selected"
-      ? "decks.pdf.summary.hideUnselected"
-      : "decks.pdf.summary.hideEmpty";
-  const hideEmptyLabel = hideEmptySets
-    ? t(`${hideEmptyLabelKey}.hidden` as never, { count: hiddenSetCount })
-    : t(`${hideEmptyLabelKey}.label` as never);
-  const layoutSummary = formatDeckPdfLayoutSummary(effectiveLayoutConfig, t);
-  const bleedSummary = formatDeckPdfBleedSummary(effectiveBleedOptions, t);
+  const { t, language } = useI18n();
+  const [setScopeMode, setSetScopeMode] = useState<DeckPdfSetScopeMode>("complete");
+  const [selectedSetIds, setSelectedSetIds] = useState<Set<string>>(new Set());
+  const [slotPairs, setSlotPairs] = useState<DeckPdfRunData["slotPairs"]>([]);
+  const [summary, setSummary] = useState<DeckPdfExportSummary | null>(null);
+  const [runData, setRunData] = useState<DeckPdfRunData | null>(null);
+  const [shellState, setShellState] = useState<PdfExportShellState | null>(null);
+  const [pdfRenderTarget, setPdfRenderTarget] = useState<Awaited<
+    ReturnType<typeof apiClient.getCard>
+  > | null>(null);
+  const pdfPreviewRef = useRef<CardPreviewHandle | null>(null);
+  void scope;
+
+  const resetState = useCallback(() => {
+    setSummary(null);
+    setRunData(null);
+    setSlotPairs([]);
+    setSetScopeMode("complete");
+    setSelectedSetIds(new Set());
+    setShellState(null);
+    setPdfRenderTarget(null);
+  }, []);
+
+  const refreshDeckPdfRun = useCallback(
+    async (
+      deckIdValue: string,
+      mode: PdfExportShellState["effectiveConfig"]["mode"],
+      nextSetScopeMode: DeckPdfSetScopeMode,
+      nextSelectedSetIds: Set<string>,
+    ) => {
+      const nextRunData = await resolveDeckPdfRunData(
+        deckIdValue,
+        mode,
+        nextSetScopeMode,
+        [...nextSelectedSetIds],
+      );
+      const nextSummary = summarizeDeckPdfRunData(
+        nextRunData,
+        mode,
+        nextSetScopeMode,
+        nextSelectedSetIds,
+      );
+      setRunData(nextRunData);
+      setSlotPairs(nextRunData.slotPairs);
+      setSummary(nextSummary);
+      return { nextRunData, nextSummary };
+    },
+    [],
+  );
 
   useEffect(() => {
-    if (isOpen) setHideEmptySets(false);
-  }, [isOpen]);
+    if (!isOpen || !deckId || !shellState) return;
+    let active = true;
+
+    void (async () => {
+      const initialMode = shellState.effectiveConfig.mode;
+      const initialRunData = await resolveDeckPdfRunData(
+        deckId,
+        initialMode,
+        "complete",
+        [],
+      );
+      if (!active) return;
+      const autoSelectedIds = new Set(
+        initialRunData.sets.filter((set) => set.hasEntries).map((set) => set.setId),
+      );
+      const nextSummary = summarizeDeckPdfRunData(
+        initialRunData,
+        initialMode,
+        "complete",
+        autoSelectedIds,
+      );
+      setSetScopeMode("complete");
+      setSelectedSetIds(autoSelectedIds);
+      setRunData(initialRunData);
+      setSlotPairs(initialRunData.slotPairs);
+      setSummary(nextSummary);
+      setShellState(null);
+      setPdfRenderTarget(null);
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [deckId, isOpen, shellState]);
+
+  const activeMode = shellState?.effectiveConfig.mode ?? null;
+
+  useEffect(() => {
+    if (!isOpen || !deckId || !activeMode) return;
+    let active = true;
+
+    void refreshDeckPdfRun(deckId, activeMode, setScopeMode, selectedSetIds).then(
+      ({ nextRunData, nextSummary }) => {
+        if (!active) return;
+        setRunData(nextRunData);
+        setSlotPairs(nextRunData.slotPairs);
+        setSummary(nextSummary);
+      },
+    );
+
+    return () => {
+      active = false;
+    };
+  }, [activeMode, deckId, isOpen, refreshDeckPdfRun, selectedSetIds, setScopeMode]);
+
+  const hasExportableContent = slotPairs.length > 0;
+
+  const buildRenderFacePngBytes = useCallback(
+    (configForRun: PdfExportRun["config"], currentRunData: DeckPdfRunData, currentShellState: PdfExportShellState) => {
+      const cachedPngByFaceId = new Map<string, Uint8Array>();
+
+      return async (faceId: string): Promise<Uint8Array | null> => {
+        if (cachedPngByFaceId.has(faceId)) {
+          return cachedPngByFaceId.get(faceId) ?? null;
+        }
+
+        const placeholder = parseDeckPdfPlaceholderFrontId(faceId);
+        if (placeholder) {
+          const set = currentRunData.sets.find((item) => item.setId === placeholder.setId) ?? null;
+          const base = document.createElement("canvas");
+          base.width = CARD_WIDTH;
+          base.height = CARD_HEIGHT;
+          const ctx = base.getContext("2d");
+          if (!ctx) return null;
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, base.width, base.height);
+          ctx.strokeStyle = "#222222";
+          ctx.lineWidth = 1;
+          const edgeInset = 0.5;
+          const insetX = edgeInset;
+          const insetY = edgeInset;
+          const borderWidth = base.width - edgeInset * 2;
+          const borderHeight = base.height - edgeInset * 2;
+          const radius = Math.max(0, CARD_CORNER_RADIUS - edgeInset);
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(insetX, insetY, borderWidth, borderHeight, radius);
+          }
+          ctx.stroke();
+          ctx.fillStyle = "#111111";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.font = "700 28px sans-serif";
+          ctx.fillText("EMPTY FRONT", base.width / 2, base.height * 0.45);
+          ctx.font = "500 16px sans-serif";
+          ctx.fillText(set?.setTitle ?? "Set", base.width / 2, base.height * 0.55);
+          const finalCanvas =
+            currentShellState.resolvedBleedOptions.bleedPx > 0 &&
+            configForRun.bleedMode === "bakedInImage"
+              ? composeBleedCanvas({
+                  fullCanvas: base,
+                  backgroundCanvas: base,
+                  bleedPx: currentShellState.resolvedBleedOptions.bleedPx,
+                  renderBleedBands: false,
+                  cropMarks: currentShellState.resolvedBleedOptions.cropMarks,
+                  cutMarks: currentShellState.resolvedBleedOptions.cutMarks,
+                })
+              : base;
+          const blob = await new Promise<Blob | null>((resolve) =>
+            finalCanvas.toBlob((nextBlob) => resolve(nextBlob), "image/png"),
+          );
+          if (!blob) return null;
+          const bytes = new Uint8Array(await blob.arrayBuffer());
+          cachedPngByFaceId.set(faceId, bytes);
+          return bytes;
+        }
+
+        const card = await apiClient.getCard({ params: { id: faceId } }).catch(() => null);
+        if (!card) {
+          return null;
+        }
+
+        setPdfRenderTarget(card);
+        await waitForFrame();
+        await waitForFrame();
+        await pdfPreviewRef.current?.waitForBackgroundLoaded?.();
+        await pdfPreviewRef.current?.syncCopyrightContrast?.();
+
+        const assetIds = collectCardAssetIds(cardRecordToCardData(card as never));
+        const { cache } = await buildAssetCache(assetIds);
+        if (assetIds.length > 0) {
+          await waitForAssetElements(() => pdfPreviewRef.current?.getSvgElement(), assetIds);
+        }
+
+        const blob = await pdfPreviewRef.current?.renderToPngBlob({
+          bleedPx:
+            configForRun.bleedMode === "bakedInImage"
+              ? currentShellState.resolvedBleedOptions.bleedPx
+              : 0,
+          cropMarks:
+            configForRun.bleedMode === "bakedInImage"
+              ? currentShellState.resolvedBleedOptions.cropMarks
+              : {
+                  enabled: false,
+                  color: currentShellState.resolvedBleedOptions.cropMarks.color,
+                  style: currentShellState.resolvedBleedOptions.cropMarks.style,
+                },
+          cutMarks:
+            configForRun.bleedMode === "bakedInImage"
+              ? currentShellState.resolvedBleedOptions.cutMarks
+              : {
+                  enabled: false,
+                  color: currentShellState.resolvedBleedOptions.cutMarks.color,
+                },
+          roundedCorners: currentShellState.resolvedBleedOptions.roundedCorners,
+          assetBlobsById: cache,
+        });
+        cache.clear();
+        if (!blob) {
+          return null;
+        }
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        cachedPngByFaceId.set(faceId, bytes);
+        return bytes;
+      };
+    },
+    [],
+  );
+
+  const buildExportRun = useCallback(
+    async (currentShellState: PdfExportShellState): Promise<PdfExportRun | null> => {
+      if (!deckId || !runData || !slotPairs.length) {
+        window.alert(t("alert.selectCardToExport"));
+        return null;
+      }
+
+      const configForRun = {
+        ...currentShellState.effectiveConfig,
+        bleedMm: currentShellState.resolvedBleedOptions.bleedMm,
+      };
+      const layout = computeLayoutPlan(configForRun, {
+        imagePaddingMm: currentShellState.resolvedBleedOptions.imagePaddingMm,
+        reservedBottomMm: getPdfFooterReserveMm(),
+      });
+      if (layout.grid.perPage <= 0) {
+        window.alert(t("decks.pdf.errors.layoutCapacity"));
+        return null;
+      }
+
+      const composition = composePrintComposition(slotPairs, layout.grid.perPage);
+      if (!composition.sheets.length) {
+        window.alert(t("decks.pdf.errors.noSheets"));
+        return null;
+      }
+
+      const deck = await apiClient.getDeck({ params: { deckId } }).catch(() => null);
+      const deckName = deck?.title?.trim() || t("decks.untitledDeck");
+
+      return {
+        config: configForRun,
+        layout,
+        composition,
+        fileName: buildDeckPdfFileName({ deckName, date: new Date() }),
+        includeCalibrationPage: true,
+        renderFacePngBytes: buildRenderFacePngBytes(configForRun, runData, currentShellState),
+      };
+    },
+    [buildRenderFacePngBytes, deckId, runData, slotPairs, t],
+  );
+
+  const buildAlignmentExportRun = useCallback(
+    async (currentShellState: PdfExportShellState): Promise<PdfExportRun | null> => {
+      if (!slotPairs.length) {
+        window.alert(t("alert.selectCardToExport"));
+        return null;
+      }
+
+      const configForRun = {
+        ...currentShellState.effectiveConfig,
+        bleedMm: currentShellState.resolvedBleedOptions.bleedMm,
+      };
+      const layout = computeLayoutPlan(configForRun, {
+        imagePaddingMm: currentShellState.resolvedBleedOptions.imagePaddingMm,
+        reservedBottomMm: getPdfFooterReserveMm(),
+      });
+      if (layout.grid.perPage <= 0) {
+        window.alert(t("decks.pdf.errors.layoutCapacity"));
+        return null;
+      }
+
+      const composition = buildSingleSheetAlignmentComposition(
+        layout.grid.perPage,
+        configForRun.mode === "frontAndBack",
+      );
+      if (!composition.sheets.length) {
+        window.alert(t("decks.pdf.errors.noSheets"));
+        return null;
+      }
+
+      const renderFacePngBytes = async (faceId: string): Promise<Uint8Array | null> => {
+        const parsed = parseAlignmentFaceId(faceId);
+        if (!parsed) {
+          throw new Error(`Invalid alignment face id: ${faceId}`);
+        }
+        const base = document.createElement("canvas");
+        base.width = CARD_WIDTH;
+        base.height = CARD_HEIGHT;
+        const ctx = base.getContext("2d");
+        if (!ctx) {
+          throw new Error("Unable to create alignment canvas context");
+        }
+
+        const sideLabel = parsed.side === "front" ? "FRONT" : "BACK";
+        const title = `S${parsed.sheetIndex + 1} • ${sideLabel}`;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, base.width, base.height);
+
+        ctx.strokeStyle = "#222222";
+        ctx.lineWidth = 1;
+        const edgeInset = 0.5;
+        const insetX = edgeInset;
+        const insetY = edgeInset;
+        const borderWidth = base.width - edgeInset * 2;
+        const borderHeight = base.height - edgeInset * 2;
+        const radius = Math.max(0, CARD_CORNER_RADIUS - edgeInset);
+        ctx.beginPath();
+        if (typeof ctx.roundRect === "function") {
+          ctx.roundRect(insetX, insetY, borderWidth, borderHeight, radius);
+        } else {
+          const right = insetX + borderWidth;
+          const bottom = insetY + borderHeight;
+          const r = Math.min(radius, borderWidth / 2, borderHeight / 2);
+          ctx.moveTo(insetX + r, insetY);
+          ctx.lineTo(right - r, insetY);
+          ctx.quadraticCurveTo(right, insetY, right, insetY + r);
+          ctx.lineTo(right, bottom - r);
+          ctx.quadraticCurveTo(right, bottom, right - r, bottom);
+          ctx.lineTo(insetX + r, bottom);
+          ctx.quadraticCurveTo(insetX, bottom, insetX, bottom - r);
+          ctx.lineTo(insetX, insetY + r);
+          ctx.quadraticCurveTo(insetX, insetY, insetX + r, insetY);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = "#333333";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(base.width / 2, insetY);
+        ctx.lineTo(base.width / 2, base.height - insetY);
+        ctx.moveTo(insetX, base.height / 2);
+        ctx.lineTo(base.width - insetX, base.height / 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "#111111";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "700 112px sans-serif";
+        ctx.fillText(String(parsed.slotNumber), base.width / 2, base.height * 0.4);
+
+        ctx.font = "500 20px sans-serif";
+        ctx.fillText(title, base.width / 2, base.height * 0.56);
+        ctx.font = "400 13px monospace";
+        ctx.fillText(`slot ${parsed.slotNumber}`, base.width / 2, base.height * 0.63);
+
+        const triangle = 14;
+        const markerInset = 28;
+        ctx.beginPath();
+        ctx.moveTo(insetX + markerInset, insetY + markerInset);
+        ctx.lineTo(insetX + markerInset + triangle, insetY + markerInset);
+        ctx.lineTo(insetX + markerInset, insetY + markerInset + triangle);
+        ctx.closePath();
+        ctx.fillStyle = "#111111";
+        ctx.fill();
+
+        const finalCanvas =
+          currentShellState.resolvedBleedOptions.bleedPx > 0 &&
+          configForRun.bleedMode === "bakedInImage"
+            ? composeBleedCanvas({
+                fullCanvas: base,
+                backgroundCanvas: base,
+                bleedPx: currentShellState.resolvedBleedOptions.bleedPx,
+                renderBleedBands: false,
+                cropMarks: currentShellState.resolvedBleedOptions.cropMarks,
+                cutMarks: currentShellState.resolvedBleedOptions.cutMarks,
+              })
+            : base;
+
+        const blob = await new Promise<Blob | null>((resolve) =>
+          finalCanvas.toBlob((nextBlob) => resolve(nextBlob), "image/png"),
+        );
+        if (!blob) {
+          throw new Error("Unable to encode alignment image");
+        }
+        return new Uint8Array(await blob.arrayBuffer());
+      };
+
+      return {
+        config: configForRun,
+        layout,
+        composition,
+        fileName: buildDeckPdfAlignmentFileName(new Date()),
+        includeCalibrationPage: true,
+        renderFacePngBytes,
+      };
+    },
+    [slotPairs.length, t],
+  );
+
+  const handleClose = useCallback(() => {
+    resetState();
+    onClose();
+  }, [onClose, resetState]);
+
+  const resolvedTopContent = useCallback(
+    () => (
+      <DeckPdfExportPanel
+        isOpen={isOpen}
+        summary={summary}
+        setScopeMode={setScopeMode}
+        selectedSetIds={selectedSetIds}
+        onSetScopeMode={setSetScopeMode}
+        onToggleSet={(setId) =>
+          setSelectedSetIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(setId)) next.delete(setId);
+            else next.add(setId);
+            return next;
+          })
+        }
+      />
+    ),
+    [isOpen, selectedSetIds, setScopeMode, summary],
+  );
 
   return (
-    <ModalShell
-      isOpen={isOpen}
-      onClose={onCancel}
-      title={t("decks.pdf.modal.title") + " (Beta)"}
-      contentClassName={styles.settingsPopover}
-      footer={
-        <ActionBar
-          right={
-            <>
-              <button type="button" className="btn btn-outline-light btn-sm" onClick={onCancel}>
-                {t("actions.cancel")}
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline-light btn-sm"
-                disabled={!hasIncludedSets || isExporting}
-                onClick={onExportAlignmentTest}
-              >
-                {t("decks.pdf.modal.exportAlignmentTest")}
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                disabled={!hasIncludedSets || isExporting}
-                onClick={onExport}
-              >
-                {isExporting ? t("actions.exporting") : t("decks.pdf.modal.export")}
-              </button>
-            </>
-          }
-        />
-      }
-    >
-      {summary ? (
-        <div className={styles.settingsPanelScroll}>
-          <div className={styles.settingsPanelBody}>
-            <div className={`${styles.settingsGroup} ${styles.deckPdfSummaryControlGroup}`}>
-              <label className={styles.deckPdfSummaryInlineControl}>
-                <span className={styles.deckPdfSummaryInlineLabel}>
-                  {t("decks.pdf.summary.scope.label" as never)}
-                </span>
-                <select
-                  className="form-select form-select-sm"
-                  value={setScopeMode}
-                  onChange={(event) => onSetScopeMode(event.target.value as DeckPdfSetScopeMode)}
-                >
-                  <option value="complete">{t("decks.pdf.summary.scope.complete" as never)}</option>
-                  <option value="all">{t("decks.pdf.summary.scope.all" as never)}</option>
-                  <option value="selected">{t("decks.pdf.summary.scope.selected" as never)}</option>
-                </select>
-              </label>
-              <div className={styles.deckPdfTrayFrame}>
-                <div className={styles.deckPdfExcludedRow}>
-                  {filteredSets.map((set) => {
-                    const isInteractive = setScopeMode === "selected";
-                    const isIncluded =
-                      setScopeMode === "all"
-                        ? true
-                        : setScopeMode === "selected"
-                          ? selectedSetIds.has(set.setId)
-                          : set.hasEntries;
-                    const isDisabled = setScopeMode === "complete" && !set.hasEntries;
-                    return (
-                      <SetThumb
-                        key={set.setId}
-                        set={set}
-                        t={t}
-                        isIncluded={isIncluded}
-                        isInteractive={isInteractive}
-                        isDisabled={isDisabled}
-                        onToggle={() => onToggleSet(set.setId)}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-              <div className={styles.deckPdfTrayFooter}>
-                <div className={`form-text ${styles.deckPdfTrayHelpText}`}>{scopeHelpText}</div>
-                {showHideEmptyFilter ? (
-                  <div className={`form-check ${styles.deckPdfTrayFilter}`}>
-                    <label
-                      className={`form-check-label ${styles.deckPdfTrayFilterLabel}`}
-                      htmlFor="deck-pdf-hide-empty-sets"
-                    >
-                      {hideEmptyLabel}
-                    </label>
-                    <input
-                      id="deck-pdf-hide-empty-sets"
-                      className="form-check-input"
-                      type="checkbox"
-                      checked={hideEmptySets}
-                      onChange={(event) => setHideEmptySets(event.target.checked)}
-                    />
-                  </div>
-                ) : null}
-              </div>
-            </div>
-            <div className={`${styles.settingsGroup} ${styles.deckPdfSummaryControlGroup}`}>
-              <div className={styles.deckPdfSummaryInlineControl}>
-                <div className={styles.deckPdfSummaryInlineHeader}>
-                  <span className={styles.deckPdfSummaryInlineLabel}>
-                    {t("decks.pdf.summary.layout.label" as never)}:
-                  </span>
-                  <span className={styles.deckPdfSummaryInlineSummary}>{layoutSummary}</span>
-                </div>
-                <div className={`form-check form-switch m-0 ${styles.deckPdfSummaryToggle}`}>
-                  <span className={`form-check-label ${styles.deckPdfSummaryToggleLabel}`}>
-                    {t("decks.pdf.summary.layout.customize" as never)}
-                  </span>
-                  <input
-                    type="checkbox"
-                    className="form-check-input hq-toggle"
-                    checked={layoutMode === "custom"}
-                    onChange={(event) =>
-                      onLayoutMode(event.target.checked ? "custom" : "default")
-                    }
-                    aria-label={t("decks.pdf.summary.layout.customize" as never)}
-                  />
-                </div>
-              </div>
-              {showLayoutForm ? (
-                <PdfExportConfigForm config={config} onChange={onConfigChange} />
-              ) : null}
-            </div>
-            <div className={`${styles.settingsGroup} ${styles.deckPdfSummaryControlGroup}`}>
-              <div className={styles.deckPdfSummaryInlineControl}>
-                <div className={styles.deckPdfSummaryInlineHeader}>
-                  <span className={styles.deckPdfSummaryInlineLabel}>
-                    {t("decks.pdf.summary.bleedSettings.label" as never)}:
-                  </span>
-                  <span className={styles.deckPdfSummaryInlineSummary}>{bleedSummary}</span>
-                </div>
-                <div className={`form-check form-switch m-0 ${styles.deckPdfSummaryToggle}`}>
-                  <span className={`form-check-label ${styles.deckPdfSummaryToggleLabel}`}>
-                    {t("decks.pdf.summary.bleedSettings.customize" as never)}
-                  </span>
-                  <input
-                    type="checkbox"
-                    className="form-check-input hq-toggle"
-                    checked={bleedMode === "custom"}
-                    onChange={(event) => onBleedMode(event.target.checked ? "custom" : "default")}
-                    aria-label={t("decks.pdf.summary.bleedSettings.customize" as never)}
-                  />
-                </div>
-              </div>
-              {showBleedForm ? (
-                <ExportOptionsForm
-                  {...bleedOptions}
-                  bleedLabelKey="label.exportWithBleed"
-                  headingLabelKey="heading.exportSettings"
-                  onChange={onBleedOptionsChange}
-                  sectionLayout="columns"
-                  useSettingsGroup
-                />
-              ) : null}
-            </div>
-            <div className={`${styles.settingsGroup} ${styles.deckPdfSummaryBody}`}>
-              <div className={styles.deckPdfSummaryGrid}>
-                <div className={styles.deckPdfSummaryLine}>
-                  {t(scopeIncludedLabelKey as never, {
-                    count: summary.includedSetCount,
-                  })}
-                </div>
-                <div className={styles.deckPdfSummaryLine}>
-                  {t("decks.pdf.summary.totalEntryQuantity" as never, {
-                    count: summary.totalEntryQuantity,
-                  })}
-                </div>
-                <div className={styles.deckPdfSummaryLine}>
-                  {t("decks.pdf.summary.faces" as never, {
-                    frontCount: summary.frontFaceCount,
-                    backCount: summary.backFaceCount,
-                    totalCount: summary.totalFaceCount,
-                  })}
-                </div>
-              </div>
-              <div className={styles.deckPdfSummaryNotes}>
-                {summary.includedEmptySetCount > 0 && setScopeMode !== "complete" ? (
-                  <div className={styles.deckPdfSummaryLineMuted}>
-                    {t("decks.pdf.summary.includedEmptySets" as never, {
-                      count: summary.includedEmptySetCount,
-                    })}
-                  </div>
-                ) : null}
-                {summary.exportSlotQuantity !== summary.totalEntryQuantity ? (
-                  <div className={styles.deckPdfSummaryLineMuted}>
-                    {t("decks.pdf.summary.exportSlots" as never, {
-                      count: summary.exportSlotQuantity,
-                    })}
-                  </div>
-                ) : null}
-                {setScopeMode === "complete" && summary.excludedEmptySetCount > 0 ? (
-                  <div className={styles.deckPdfSummaryLineMuted}>
-                    {t("decks.pdf.summary.emptyExcluded" as never, {
-                      count: summary.excludedEmptySetCount,
-                    })}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-            {!hasIncludedSets ? (
-              <div className={styles.deckPdfSummaryBlocked}>
-                {t("decks.pdf.summary.noneAvailable" as never)}
-              </div>
-            ) : null}
+    <>
+      <PdfExportShellModal
+        isOpen={isOpen}
+        title={t("decks.pdf.modal.title") + " (Beta)"}
+        hasExportableContent={hasExportableContent}
+        onCancel={handleClose}
+        onStateChange={setShellState}
+        buildExportRun={buildExportRun}
+        buildAlignmentExportRun={buildAlignmentExportRun}
+        topContent={resolvedTopContent}
+      >
+        {pdfRenderTarget ? (
+          <div
+            style={{ position: "fixed", left: -99999, top: -99999, pointerEvents: "none" }}
+            aria-hidden="true"
+          >
+            <CardPreview
+              ref={pdfPreviewRef}
+              templateId={pdfRenderTarget.templateId}
+              templateName={getTemplateNameLabel(
+                language,
+                cardTemplatesById[pdfRenderTarget.templateId],
+              )}
+              backgroundSrc={cardTemplatesById[pdfRenderTarget.templateId]?.background}
+              cardData={cardRecordToCardData(pdfRenderTarget as never)}
+              copyrightTextColor={pdfRenderTarget.copyrightColor ?? undefined}
+            />
           </div>
-        </div>
-      ) : (
-        <div className={styles.deckPdfSummaryLineMuted}>{t("ui.loading")}</div>
-      )}
-    </ModalShell>
+        ) : null}
+      </PdfExportShellModal>
+    </>
   );
 }

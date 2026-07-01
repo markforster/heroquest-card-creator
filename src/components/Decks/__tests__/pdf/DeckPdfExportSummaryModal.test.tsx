@@ -1,14 +1,70 @@
-import { useState, type ReactNode } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { forwardRef, useImperativeHandle } from "react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import DeckPdfExportSummaryModal from "@/components/Decks/pdf/DeckPdfExportSummaryModal";
 
-import type { DeckPdfExportSummary } from "@/components/Decks/deck-export";
 import type { ExportOptionsFormState } from "@/components/Export/ExportOptionsForm";
 import type { PrintConfig } from "@/lib/pdf-export";
 
+const mockResolveDeckPdfRunData = jest.fn();
+const mockSummarizeDeckPdfRunData = jest.fn();
+const mockGetDeck = jest.fn();
+const mockGetCard = jest.fn();
+const mockComputeLayoutPlan = jest.fn();
+const mockComposePrintComposition = jest.fn();
+const mockBuildSingleSheetAlignmentComposition = jest.fn();
+const mockBuildAssetCache = jest.fn();
+const mockWaitForAssetElements = jest.fn();
+const mockWaitForFrame = jest.fn();
+const mockCapturedExportRun = jest.fn();
+const mockCapturedAlignmentRun = jest.fn();
+
+jest.mock("@/api/client", () => ({
+  apiClient: {
+    getDeck: (...args: unknown[]) => mockGetDeck(...args),
+    getCard: (...args: unknown[]) => mockGetCard(...args),
+  },
+}));
+
+jest.mock("@/components/Decks/deck-export", () => ({
+  parseDeckPdfPlaceholderFrontId: (faceId: string) =>
+    faceId.startsWith("deck-empty-front:")
+      ? { setId: faceId.slice("deck-empty-front:".length) }
+      : null,
+  resolveDeckPdfRunData: (...args: unknown[]) => mockResolveDeckPdfRunData(...args),
+  summarizeDeckPdfRunData: (...args: unknown[]) => mockSummarizeDeckPdfRunData(...args),
+}));
+
+jest.mock("@/components/Decks/pdf/deckPdfFileName", () => ({
+  buildDeckPdfFileName: () => "deck.pdf",
+  buildDeckPdfAlignmentFileName: () => "alignment.pdf",
+}));
+
+jest.mock("@/components/Providers/ExportSettingsContext", () => ({
+  useExportSettingsState: () => ({
+    settings: {
+      bleed: { enabled: true, bleedPx: 18, askBeforeExport: false },
+      cropMarks: { enabled: true, color: "#00FFFF", style: "squares" },
+      cutMarks: { enabled: true, color: "#00FFFF" },
+      roundedCorners: false,
+      pdf: {
+        paper: "Letter",
+        orientation: "portrait",
+        marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
+        gapMm: { x: 0.5, y: 0.5 },
+        cardMm: { width: 63.5, height: 88.9 },
+        mode: "frontsOnly",
+        bleedMode: "bakedInImage",
+        bleedMm: 3,
+        duplexPreset: "normal",
+      },
+    },
+  }),
+}));
+
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
+    language: "en",
     t: (key: string, vars?: Record<string, unknown>) =>
       (
         {
@@ -17,599 +73,429 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "decks.pdf.modal.export": "Export PDF",
           "actions.cancel": "Cancel",
           "actions.exporting": "Exporting",
-          "decks.pdf.summary.scope.label": "Sets to include",
-          "decks.pdf.summary.scope.complete": "Complete deck",
-          "decks.pdf.summary.scope.all": "All sets",
-          "decks.pdf.summary.scope.selected": "Selected sets",
-          "decks.pdf.summary.selection.label": "Select sets",
-          "decks.pdf.summary.selection.help.complete": "Include only sets that have entries.",
-          "decks.pdf.summary.selection.help.all":
-            "Include all sets, even sets with no entries. Empty sets export their back face with a single front placeholder.",
-          "decks.pdf.summary.selection.help.selected":
-            "Select sets to include. Empty sets export their back face with a single front placeholder.",
-          "decks.pdf.summary.hideEmpty.label": "Hide empty sets",
-          "decks.pdf.summary.hideEmpty.hidden": `Hide empty sets (${vars?.count ?? ""} hidden)`,
-          "decks.pdf.summary.hideUnselected.label": "Hide unselected sets",
-          "decks.pdf.summary.hideUnselected.hidden": `Hide unselected sets (${vars?.count ?? ""} hidden)`,
-          "decks.pdf.summary.entryCount.one": `${vars?.count ?? ""} entry`,
-          "decks.pdf.summary.entryCount.other": `${vars?.count ?? ""} entries`,
+          "decks.untitledDeck": "Untitled deck",
+          "alert.selectCardToExport": "Select a card",
+          "decks.pdf.errors.layoutCapacity": "Layout capacity error",
+          "decks.pdf.errors.noSheets": "No sheets",
           "decks.pdf.summary.layout.label": "Layout",
           "decks.pdf.summary.layout.customize": "Customise layout",
           "decks.pdf.summary.bleedSettings.label": "Bleed settings",
           "decks.pdf.summary.bleedSettings.customize": "Customise bleed settings",
+          "decks.pdf.summary.runMode.frontBack": "Front + back",
+          "decks.pdf.summary.runMode.frontsOnly": "Fronts only",
           "decks.pdf.orientation.portrait": "Portrait",
           "decks.pdf.orientation.landscape": "Landscape",
           "decks.pdf.duplex.normal": "Normal",
           "decks.pdf.duplex.mirrorX": "Mirror horizontally",
-          "decks.pdf.duplex.rotate180": "Rotate 180°",
-          "decks.pdf.duplex.mirrorXRotate180": "Mirror + rotate 180°",
           "decks.pdf.summary.bleed.none": "No bleed",
           "decks.pdf.summary.bleed.amount": `Bleed ${vars?.count ?? ""}px`,
           "decks.pdf.summary.bleed.roundedCorners": "Rounded corners",
           "decks.pdf.summary.bleed.cropMarks": `Crop marks (${vars?.style ?? ""})`,
           "decks.pdf.summary.bleed.cutMarks": "Cut marks",
-          "decks.pdf.summary.includedSets.complete": `Complete sets: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.includedSets.all": `All sets: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.includedSets.selected": `Selected sets: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.totalEntryQuantity": `Entries: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.exportSlots": `Export slots: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.includedEmptySets": `Empty placeholder sets: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.faces": `Faces: ${vars?.totalCount ?? ""}`,
-          "decks.pdf.summary.runMode.frontBack": "Front + back",
-          "decks.pdf.summary.runMode.frontsOnly": "Fronts only",
-          "decks.pdf.summary.runSettings": "Run settings",
-          "decks.pdf.summary.emptyExcluded": `Empty excluded: ${vars?.count ?? ""}`,
-          "decks.pdf.summary.noneAvailable": "None available",
           "label.cropMarkStyleLines": "Lines",
           "label.cropMarkStyleSquares": "Squares",
-          "ui.loading": "Loading",
         } as Record<string, string>
       )[key] ?? key,
   }),
 }));
 
-jest.mock("@/components/common/ActionBar", () => ({
-  __esModule: true,
-  default: ({ right }: { right: ReactNode }) => <div>{right}</div>,
+jest.mock("@/data/card-templates", () => ({
+  cardTemplatesById: {
+    hero: { id: "hero", background: "/hero.png" },
+  },
 }));
 
-jest.mock("@/components/common/ModalShell", () => ({
+jest.mock("@/i18n/getTemplateNameLabel", () => ({
+  getTemplateNameLabel: () => "Hero",
+}));
+
+jest.mock("@/components/Export/PdfExportShellModal", () => {
+  const React = require("react");
+  const defaultConfig = {
+    paper: "Letter",
+    orientation: "portrait",
+    marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
+    gapMm: { x: 0.5, y: 0.5 },
+    cardMm: { width: 63.5, height: 88.9 },
+    mode: "frontsOnly",
+    bleedMode: "bakedInImage",
+    bleedMm: 3,
+    duplexPreset: "normal",
+  } satisfies PrintConfig;
+  const defaultBleedOptions = {
+    bleedEnabled: true,
+    bleedPx: 18,
+    askBeforeExport: false,
+    roundedCorners: false,
+    cropMarksEnabled: true,
+    cropMarkColor: "#00FFFF",
+    cropMarkStyle: "squares",
+    cutMarksEnabled: true,
+    cutMarkColor: "#00FFFF",
+  } satisfies ExportOptionsFormState;
+
+  return {
+    __esModule: true,
+    default: (props: {
+      title: string;
+      hasExportableContent: boolean;
+      onCancel: () => void;
+      onStateChange?: (state: unknown) => void;
+      buildExportRun: (state: unknown) => Promise<unknown>;
+      buildAlignmentExportRun?: (state: unknown) => Promise<unknown>;
+      topContent: React.ReactNode | ((state: unknown) => React.ReactNode);
+      children?: React.ReactNode;
+    }) => {
+      const {
+        title,
+        hasExportableContent,
+        onCancel,
+        onStateChange,
+        buildExportRun,
+        buildAlignmentExportRun,
+        topContent,
+        children,
+      } = props;
+      const [shellState, setShellState] = React.useState({
+        config: defaultConfig,
+        bleedOptions: defaultBleedOptions,
+        layoutMode: "default",
+        bleedMode: "default",
+        effectiveConfig: defaultConfig,
+        effectiveBleedOptions: defaultBleedOptions,
+        resolvedBleedOptions: {
+          bleedMm: defaultBleedOptions.bleedEnabled ? 1.5 : 0,
+          imagePaddingMm: 0,
+          bleedPx: defaultBleedOptions.bleedEnabled ? defaultBleedOptions.bleedPx : 0,
+          roundedCorners: defaultBleedOptions.roundedCorners,
+          cropMarks: {
+            enabled: defaultBleedOptions.bleedEnabled
+              ? defaultBleedOptions.cropMarksEnabled
+              : false,
+            color: defaultBleedOptions.cropMarkColor,
+            style: defaultBleedOptions.cropMarkStyle,
+          },
+          cutMarks: {
+            enabled: defaultBleedOptions.bleedEnabled ? defaultBleedOptions.cutMarksEnabled : false,
+            color: defaultBleedOptions.cutMarkColor,
+          },
+        },
+      });
+
+      React.useEffect(() => {
+        onStateChange?.(shellState);
+      }, [onStateChange, shellState]);
+
+      const renderedTopContent =
+        typeof topContent === "function" ? topContent(shellState) : topContent;
+
+      return (
+        <div>
+          <div>{title}</div>
+          <div data-testid="has-content">{String(hasExportableContent)}</div>
+          <div data-testid="shell-mode">{shellState.effectiveConfig.mode}</div>
+          <div data-testid="shell-has-default-props">
+            {String(Object.prototype.hasOwnProperty.call(props, "defaultConfig"))}/
+            {String(Object.prototype.hasOwnProperty.call(props, "defaultBleedOptions"))}
+          </div>
+          <button type="button" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              const result = await buildExportRun(shellState);
+              mockCapturedExportRun(result);
+            }}
+          >
+            Run export
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              const result = await buildAlignmentExportRun?.(shellState);
+              mockCapturedAlignmentRun(result);
+            }}
+          >
+            Run alignment export
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setShellState((prev: typeof shellState) => ({
+                ...prev,
+                config: {
+                  ...prev.config,
+                  mode: "frontAndBack",
+                  orientation: "landscape",
+                  duplexPreset: "mirrorX",
+                },
+                layoutMode: "custom",
+                effectiveConfig: {
+                  ...prev.effectiveConfig,
+                  mode: "frontAndBack",
+                  orientation: "landscape",
+                  duplexPreset: "mirrorX",
+                },
+              }))
+            }
+          >
+            Change mode
+          </button>
+          <div>{renderedTopContent}</div>
+          <div>{children}</div>
+        </div>
+      );
+    },
+  };
+});
+
+jest.mock("@/components/Decks/pdf/DeckPdfExportPanel", () => ({
   __esModule: true,
   default: ({
-    isOpen,
-    title,
-    children,
-    footer,
+    summary,
+    setScopeMode,
+    selectedSetIds,
+    onSetScopeMode,
+    onToggleSet,
   }: {
-    isOpen: boolean;
-    title: ReactNode;
-    children: ReactNode;
-    footer: ReactNode;
-  }) =>
-    isOpen ? (
-      <div>
-        <div>{title}</div>
-        <div>{children}</div>
-        <div>{footer}</div>
-      </div>
-    ) : null,
-}));
-
-jest.mock("@/components/common/CardThumbnail", () => ({
-  __esModule: true,
-  default: () => <div data-testid="card-thumbnail" />,
-}));
-
-jest.mock("@/lib/card-thumbnail-cache", () => ({
-  useCardThumbnailUrl: () => null,
-}));
-
-jest.mock("@/components/Export/PdfExportConfigForm", () => ({
-  __esModule: true,
-  default: ({
-    config,
-    onChange,
-  }: {
-    config: PrintConfig;
-    onChange: (next: PrintConfig) => void;
+    summary: { includedSetCount: number; totalFaceCount: number; exportSlotQuantity: number } | null;
+    setScopeMode: string;
+    selectedSetIds: Set<string>;
+    onSetScopeMode: (mode: "complete" | "all" | "selected") => void;
+    onToggleSet: (setId: string) => void;
   }) => (
-    <div data-testid="pdf-config-form">
-      <div>Paper</div>
-      <div>Orientation</div>
-      <label>
-        Mode
-        <select
-          aria-label="Mode"
-          value={config.mode}
-          onChange={(event) =>
-            onChange({ ...config, mode: event.target.value as PrintConfig["mode"] })
-          }
-        >
-          <option value="frontAndBack">Front + back</option>
-          <option value="frontsOnly">Fronts only</option>
-        </select>
-      </label>
-      <label>
-        Duplex preset
-        <select
-          aria-label="Duplex preset"
-          value={config.duplexPreset ?? "normal"}
-          onChange={(event) =>
-            onChange({ ...config, duplexPreset: event.target.value as PrintConfig["duplexPreset"] })
-          }
-        >
-          <option value="normal">Normal</option>
-          <option value="mirrorX">Mirror horizontally</option>
-          <option value="rotate180">Rotate 180°</option>
-          <option value="mirrorXRotate180">Mirror + rotate 180°</option>
-        </select>
-      </label>
+    <div>
+      <div data-testid="scope-mode">{setScopeMode}</div>
+      <div data-testid="selected-size">{selectedSetIds.size}</div>
+      <div data-testid="included-count">{summary?.includedSetCount ?? -1}</div>
+      <div data-testid="total-faces">{summary?.totalFaceCount ?? -1}</div>
+      <div data-testid="slot-count">{summary?.exportSlotQuantity ?? -1}</div>
+      <button type="button" onClick={() => onSetScopeMode("selected")}>
+        Scope selected
+      </button>
+      <button type="button" onClick={() => onToggleSet("set-2")}>
+        Toggle set 2
+      </button>
     </div>
   ),
 }));
 
-jest.mock("@/components/Export/ExportOptionsForm", () => ({
+jest.mock("@/components/Cards/CardPreview", () => ({
   __esModule: true,
-  default: ({
-    bleedEnabled,
-    bleedPx,
-    onChange,
-  }: {
-    bleedEnabled: boolean;
-    bleedPx: number;
-    onChange: (next: Partial<ExportOptionsFormState>) => void;
-  }) => (
-    <div data-testid="bleed-options-form">
-      <label>
-        Export with bleed
-        <input
-          type="checkbox"
-          aria-label="Export with bleed"
-          checked={bleedEnabled}
-          onChange={(event) => onChange({ bleedEnabled: event.target.checked })}
-        />
-      </label>
-      <label>
-        Bleed per edge (mm)
-        <input
-          aria-label="Bleed per edge (mm)"
-          value={bleedPx}
-          onChange={(event) => onChange({ bleedPx: Number(event.target.value) })}
-        />
-      </label>
-    </div>
-  ),
+  default: forwardRef((_props, ref) => {
+    useImperativeHandle(ref, () => ({
+      waitForBackgroundLoaded: jest.fn().mockResolvedValue(undefined),
+      syncCopyrightContrast: jest.fn().mockResolvedValue(undefined),
+      getSvgElement: jest.fn().mockReturnValue(document.createElement("svg")),
+      renderToPngBlob: jest.fn().mockResolvedValue(new Blob(["png"], { type: "image/png" })),
+    }));
+    return <div data-testid="card-preview" />;
+  }),
 }));
 
-const config: PrintConfig = {
-  paper: "A4",
-  orientation: "landscape",
-  marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
-  gapMm: { x: 0.5, y: 0.5 },
-  cardMm: { width: 63.5, height: 88.9 },
-  mode: "frontAndBack",
-  bleedMode: "bakedInImage",
-  bleedMm: 3,
-  duplexPreset: "mirrorX",
-};
+jest.mock("@/components/Stockpile/stockpile-utils", () => ({
+  waitForAssetElements: (...args: unknown[]) => mockWaitForAssetElements(...args),
+  waitForFrame: (...args: unknown[]) => mockWaitForFrame(...args),
+}));
 
-const bleedOptions: ExportOptionsFormState = {
-  bleedEnabled: false,
-  bleedPx: 0,
-  askBeforeExport: false,
-  roundedCorners: true,
-  cropMarksEnabled: false,
-  cropMarkColor: "#00FFFF",
-  cropMarkStyle: "lines",
-  cutMarksEnabled: false,
-  cutMarkColor: "#00FFFF",
-};
+jest.mock("@/lib/export-assets-cache", () => ({
+  buildAssetCache: (...args: unknown[]) => mockBuildAssetCache(...args),
+}));
 
-const defaultConfig: PrintConfig = {
-  ...config,
-  paper: "Letter",
-  orientation: "portrait",
-  mode: "frontsOnly",
-  duplexPreset: "normal",
-};
+jest.mock("@/lib/card-assets", () => ({
+  collectCardAssetIds: () => [],
+}));
 
-const defaultBleedOptions: ExportOptionsFormState = {
-  ...bleedOptions,
-  roundedCorners: false,
-  bleedEnabled: true,
-  bleedPx: 18,
-  cropMarksEnabled: true,
-  cropMarkStyle: "squares",
-  cutMarksEnabled: true,
-};
+jest.mock("@/lib/card-record-mapper", () => ({
+  cardRecordToCardData: () => ({ title: "Card" }),
+}));
 
-const summary: DeckPdfExportSummary = {
-  totalSetCount: 2,
-  includedSetCount: 1,
-  includedEmptySetCount: 0,
-  excludedEmptySetCount: 1,
-  excludedNonEmptySetCount: 0,
-  totalEntryQuantity: 8,
-  exportSlotQuantity: 8,
-  frontFaceCount: 8,
-  backFaceCount: 8,
-  totalFaceCount: 16,
-  sets: [
-    {
-      setId: "set-1",
-      setTitle: "Set One",
-      backFaceId: "back-1",
-      hasEntries: true,
-      entryCount: 2,
-    },
-    {
-      setId: "set-2",
-      setTitle: "Set Two",
-      backFaceId: "back-2",
-      hasEntries: false,
-      entryCount: 0,
-    },
-  ],
-};
+jest.mock("@/lib/pdf-export", () => ({
+  DEFAULT_PDF_PRINT_CONFIG: {
+    paper: "A4",
+    orientation: "landscape",
+    marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
+    gapMm: { x: 0.5, y: 0.5 },
+    cardMm: { width: 63.5, height: 88.9 },
+    mode: "frontAndBack",
+    bleedMode: "bakedInImage",
+    bleedMm: 3,
+    duplexPreset: "mirrorX",
+  },
+  normalizePdfPrintConfig: (config: PrintConfig) => config,
+  getPdfFooterReserveMm: () => 0,
+  computeLayoutPlan: (...args: unknown[]) => mockComputeLayoutPlan(...args),
+  composePrintComposition: (...args: unknown[]) => mockComposePrintComposition(...args),
+  buildSingleSheetAlignmentComposition: (...args: unknown[]) =>
+    mockBuildSingleSheetAlignmentComposition(...args),
+  parseAlignmentFaceId: (faceId: string) => {
+    const match = /^alignment:(front|back):(\d+):(\d+)$/.exec(faceId);
+    if (!match) return null;
+    return {
+      side: match[1],
+      sheetIndex: Number(match[2]),
+      slotNumber: Number(match[3]),
+    };
+  },
+}));
 
-function expectTextContent(text: string) {
-  expect(
-    screen.queryAllByText((_, element) => (element?.textContent ?? "").includes(text)).length,
-  ).toBeGreaterThan(0);
-}
+jest.mock("@/lib/bleed-export", () => ({
+  composeBleedCanvas: ({ fullCanvas }: { fullCanvas: HTMLCanvasElement }) => fullCanvas,
+}));
+
+beforeEach(() => {
+  mockResolveDeckPdfRunData.mockReset();
+  mockSummarizeDeckPdfRunData.mockReset();
+  mockGetDeck.mockReset();
+  mockGetCard.mockReset();
+  mockComputeLayoutPlan.mockReset();
+  mockComposePrintComposition.mockReset();
+  mockBuildSingleSheetAlignmentComposition.mockReset();
+  mockBuildAssetCache.mockReset();
+  mockWaitForAssetElements.mockReset();
+  mockWaitForFrame.mockReset();
+  mockCapturedExportRun.mockReset();
+  mockCapturedAlignmentRun.mockReset();
+
+  mockResolveDeckPdfRunData.mockImplementation(
+    async (_deckId: string, mode: string, scopeMode: string, selectedSetIds: string[]) => ({
+      sets: [
+        { setId: "set-1", setTitle: "Set One", backFaceId: "back-1", hasEntries: true, entryCount: 2 },
+        { setId: "set-2", setTitle: "Set Two", backFaceId: "back-2", hasEntries: false, entryCount: 0 },
+      ],
+      selectedSetIds,
+      slotPairs:
+        scopeMode === "selected" && selectedSetIds.length === 1
+          ? [{ slotId: "slot-1", frontId: "front-1", backId: mode === "frontAndBack" ? "back-1" : null }]
+          : [
+              { slotId: "slot-1", frontId: "front-1", backId: mode === "frontAndBack" ? "back-1" : null },
+              { slotId: "slot-2", frontId: "front-2", backId: mode === "frontAndBack" ? "back-2" : null },
+            ],
+    }),
+  );
+  mockSummarizeDeckPdfRunData.mockImplementation(
+    (runData: { slotPairs: unknown[] }, mode: string, _scopeMode: string, selectedSetIds: Set<string>) => ({
+      totalSetCount: 2,
+      includedSetCount: selectedSetIds.size || 1,
+      includedEmptySetCount: 0,
+      excludedEmptySetCount: 1,
+      excludedNonEmptySetCount: 0,
+      totalEntryQuantity: runData.slotPairs.length,
+      exportSlotQuantity: runData.slotPairs.length,
+      frontFaceCount: runData.slotPairs.length,
+      backFaceCount: mode === "frontAndBack" ? runData.slotPairs.length : 0,
+      totalFaceCount: mode === "frontAndBack" ? runData.slotPairs.length * 2 : runData.slotPairs.length,
+      sets: [
+        { setId: "set-1", setTitle: "Set One", backFaceId: "back-1", hasEntries: true, entryCount: 2 },
+        { setId: "set-2", setTitle: "Set Two", backFaceId: "back-2", hasEntries: false, entryCount: 0 },
+      ],
+    }),
+  );
+  mockComputeLayoutPlan.mockReturnValue({
+    paperMm: { width: 1, height: 1 },
+    grid: { cols: 2, rows: 1, perPage: 2 },
+    placements: [],
+  });
+  mockComposePrintComposition.mockImplementation((slotPairs: unknown[]) => ({
+    sheets: [{ sheetIndex: 0, slots: slotPairs }],
+    totalSlots: Array.isArray(slotPairs) ? slotPairs.length : 0,
+  }));
+  mockBuildSingleSheetAlignmentComposition.mockReturnValue({
+    sheets: [{ sheetIndex: 0, slots: [{ frontId: "alignment:front:0:1", backId: null }] }],
+    totalSlots: 1,
+  });
+  mockGetDeck.mockResolvedValue({ title: "Deck One" });
+  mockGetCard.mockResolvedValue({
+    id: "front-1",
+    name: "Front 1",
+    title: "Front 1",
+    templateId: "hero",
+  });
+  mockBuildAssetCache.mockResolvedValue({ cache: new Map(), clear: jest.fn() });
+  window.alert = jest.fn();
+});
 
 describe("DeckPdfExportSummaryModal", () => {
-  it("keeps layout inside the main PDF settings surface and only reveals custom controls when selected", () => {
+  it("initializes from export settings and resolved deck run on open", async () => {
     render(
-      <DeckPdfExportSummaryModal
-        isOpen
-        isExporting={false}
-        summary={summary}
-        config={config}
-        defaultConfig={defaultConfig}
-        bleedOptions={bleedOptions}
-        defaultBleedOptions={defaultBleedOptions}
-        setScopeMode="complete"
-        layoutMode="default"
-        bleedMode="default"
-        selectedSetIds={new Set(["set-1"])}
-        onCancel={jest.fn()}
-        onSetScopeMode={jest.fn()}
-        onLayoutMode={jest.fn()}
-        onBleedMode={jest.fn()}
-        onToggleSet={jest.fn()}
-        onConfigChange={jest.fn()}
-        onBleedOptionsChange={jest.fn()}
-        onExport={jest.fn()}
-        onExportAlignmentTest={jest.fn()}
-      />,
+      <DeckPdfExportSummaryModal isOpen deckId="deck-1" scope="deck_detail" onClose={jest.fn()} />,
     );
 
-    expectTextContent("Layout:");
-    expectTextContent("Letter, Portrait, Fronts only");
-    expectTextContent("Bleed 18px");
-    expectTextContent("Crop marks (squares)");
-    expectTextContent("Cut marks");
-    expect(screen.getByLabelText("Customise layout")).not.toBeChecked();
-    expect(screen.getByLabelText("Customise bleed settings")).not.toBeChecked();
-    expect(screen.queryByTestId("pdf-config-form")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("bleed-options-form")).not.toBeInTheDocument();
-    expect(screen.getByText("Complete sets: 1")).toBeInTheDocument();
-    expect(screen.getByText("Empty excluded: 1")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("shell-mode")).toHaveTextContent("frontsOnly");
+    });
+    expect(screen.getByTestId("shell-has-default-props")).toHaveTextContent("false/false");
+    expect(screen.getByTestId("included-count")).toHaveTextContent("1");
+    expect(screen.getByTestId("selected-size")).toHaveTextContent("1");
+    expect(mockResolveDeckPdfRunData).toHaveBeenCalledWith("deck-1", "frontsOnly", "complete", []);
   });
 
-  it("shows a read-only tray in complete mode and dims incomplete sets", () => {
+  it("recomputes summary when shell mode and set selection change", async () => {
     render(
-      <DeckPdfExportSummaryModal
-        isOpen
-        isExporting={false}
-        summary={summary}
-        config={config}
-        defaultConfig={defaultConfig}
-        bleedOptions={bleedOptions}
-        defaultBleedOptions={defaultBleedOptions}
-        setScopeMode="complete"
-        layoutMode="default"
-        bleedMode="default"
-        selectedSetIds={new Set(["set-1"])}
-        onCancel={jest.fn()}
-        onSetScopeMode={jest.fn()}
-        onLayoutMode={jest.fn()}
-        onBleedMode={jest.fn()}
-        onToggleSet={jest.fn()}
-        onConfigChange={jest.fn()}
-        onBleedOptionsChange={jest.fn()}
-        onExport={jest.fn()}
-        onExportAlignmentTest={jest.fn()}
-      />,
+      <DeckPdfExportSummaryModal isOpen deckId="deck-1" scope="deck_detail" onClose={jest.fn()} />,
     );
 
-    const completeSet = screen.getByRole("button", { name: /set one/i });
-    const incompleteSet = screen.getByRole("button", { name: /set two/i });
-    const hideEmptyCheckbox = screen.getByLabelText("Hide empty sets");
+    await waitFor(() => {
+      expect(screen.getByTestId("scope-mode")).toHaveTextContent("complete");
+    });
 
-    expect(screen.getByText("Include only sets that have entries.")).toBeInTheDocument();
-    expect(hideEmptyCheckbox).not.toBeChecked();
-    expect(completeSet).toHaveAttribute("data-included", "true");
-    expect(completeSet).toHaveAttribute("data-interactive", "false");
-    expect(completeSet).not.toBeDisabled();
-    expect(screen.getByText("2 entries")).toBeInTheDocument();
-    expect(incompleteSet).toHaveAttribute("data-included", "false");
-    expect(incompleteSet).toHaveAttribute("data-disabled", "true");
-    expect(incompleteSet).toBeDisabled();
-    expect(screen.getByText("0 entries")).toHaveClass("deckPdfEntryCountZero");
+    fireEvent.click(screen.getByRole("button", { name: "Change mode" }));
+    fireEvent.click(screen.getByRole("button", { name: "Scope selected" }));
+    fireEvent.click(screen.getByRole("button", { name: "Toggle set 2" }));
 
-    fireEvent.click(hideEmptyCheckbox);
-
-    expect(screen.getByLabelText("Hide empty sets (1 hidden)")).toBeChecked();
-    expect(screen.queryByRole("button", { name: /set two/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /set one/i })).toBeInTheDocument();
-  });
-
-  it("shows all sets as included in all mode without the hide-sets filter", () => {
-    render(
-      <DeckPdfExportSummaryModal
-        isOpen
-        isExporting={false}
-        summary={summary}
-        config={config}
-        defaultConfig={defaultConfig}
-        bleedOptions={bleedOptions}
-        defaultBleedOptions={defaultBleedOptions}
-        setScopeMode="all"
-        layoutMode="default"
-        bleedMode="default"
-        selectedSetIds={new Set(["set-1"])}
-        onCancel={jest.fn()}
-        onSetScopeMode={jest.fn()}
-        onLayoutMode={jest.fn()}
-        onBleedMode={jest.fn()}
-        onToggleSet={jest.fn()}
-        onConfigChange={jest.fn()}
-        onBleedOptionsChange={jest.fn()}
-        onExport={jest.fn()}
-        onExportAlignmentTest={jest.fn()}
-      />,
-    );
-
-    const completeSet = screen.getByRole("button", { name: /set one/i });
-    const incompleteSet = screen.getByRole("button", { name: /set two/i });
-
-    expect(
-      screen.getByText(
-        "Include all sets, even sets with no entries. Empty sets export their back face with a single front placeholder.",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByText("All sets: 1")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Hide empty sets")).not.toBeInTheDocument();
-    expect(completeSet).toHaveAttribute("data-included", "true");
-    expect(completeSet).toHaveAttribute("data-interactive", "false");
-    expect(incompleteSet).toHaveAttribute("data-included", "true");
-    expect(incompleteSet).toHaveAttribute("data-disabled", "false");
-    expect(incompleteSet).not.toBeDisabled();
-    expect(screen.queryByText("Empty excluded: 1")).not.toBeInTheDocument();
-  });
-
-  it("renders set selection content within the scope section and hides newly unselected sets when enabled", () => {
-    const selectedEmptySummary: DeckPdfExportSummary = {
-      ...summary,
-      includedSetCount: 2,
-      includedEmptySetCount: 1,
-    };
-
-    function StatefulSelectedModal() {
-      const [selectedSetIds, setSelectedSetIds] = useState(new Set(["set-1", "set-2"]));
-
-      return (
-        <DeckPdfExportSummaryModal
-          isOpen
-          isExporting={false}
-          summary={selectedEmptySummary}
-          config={config}
-          defaultConfig={defaultConfig}
-          bleedOptions={bleedOptions}
-          defaultBleedOptions={defaultBleedOptions}
-          setScopeMode="selected"
-          layoutMode="default"
-          bleedMode="default"
-          selectedSetIds={selectedSetIds}
-          onCancel={jest.fn()}
-          onSetScopeMode={jest.fn()}
-          onLayoutMode={jest.fn()}
-          onBleedMode={jest.fn()}
-          onToggleSet={(setId) =>
-            setSelectedSetIds((prev) => {
-              const next = new Set(prev);
-              if (next.has(setId)) next.delete(setId);
-              else next.add(setId);
-              return next;
-            })
-          }
-          onConfigChange={jest.fn()}
-          onBleedOptionsChange={jest.fn()}
-          onExport={jest.fn()}
-          onExportAlignmentTest={jest.fn()}
-        />
+    await waitFor(() => {
+      expect(mockResolveDeckPdfRunData).toHaveBeenCalledWith(
+        "deck-1",
+        "frontAndBack",
+        "selected",
+        ["set-1", "set-2"],
       );
-    }
-
-    render(<StatefulSelectedModal />);
-
-    expect(screen.getByLabelText("Sets to include")).toHaveValue("selected");
-    expect(screen.getByLabelText("Hide unselected sets")).not.toBeChecked();
-    expect(
-      screen.getByText(
-        "Select sets to include. Empty sets export their back face with a single front placeholder.",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Selected sets: 2")).toBeInTheDocument();
-    expect(screen.getAllByTestId("card-thumbnail")).toHaveLength(2);
-    expect(screen.getByRole("button", { name: /set one/i })).toHaveAttribute("data-included", "true");
-    expect(screen.getByRole("button", { name: /set two/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /set two/i })).toHaveAttribute("data-included", "true");
-    expect(screen.getByRole("button", { name: /set one/i })).toHaveAttribute("data-interactive", "true");
-    expect(screen.queryByText("Empty excluded: 1")).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText("Hide unselected sets"));
-
-    expect(screen.getByLabelText("Hide unselected sets (0 hidden)")).toBeChecked();
-    expect(screen.getByRole("button", { name: /set one/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /set two/i })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /set two/i }));
-
-    expect(screen.getByLabelText("Hide unselected sets (1 hidden)")).toBeChecked();
-    expect(screen.getByRole("button", { name: /set one/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /set two/i })).not.toBeInTheDocument();
+    });
   });
 
-  it("renders the PDF config form when layout is custom", () => {
+  it("builds a normalized export run for the shell from deck slot pairs", async () => {
     render(
-      <DeckPdfExportSummaryModal
-        isOpen
-        isExporting={false}
-        summary={summary}
-        config={config}
-        defaultConfig={defaultConfig}
-        bleedOptions={bleedOptions}
-        defaultBleedOptions={defaultBleedOptions}
-        setScopeMode="complete"
-        layoutMode="custom"
-        bleedMode="default"
-        selectedSetIds={new Set(["set-1"])}
-        onCancel={jest.fn()}
-        onSetScopeMode={jest.fn()}
-        onLayoutMode={jest.fn()}
-        onBleedMode={jest.fn()}
-        onToggleSet={jest.fn()}
-        onConfigChange={jest.fn()}
-        onBleedOptionsChange={jest.fn()}
-        onExport={jest.fn()}
-        onExportAlignmentTest={jest.fn()}
-      />,
+      <DeckPdfExportSummaryModal isOpen deckId="deck-1" scope="deck_detail" onClose={jest.fn()} />,
     );
 
-    expect(screen.getByLabelText("Customise layout")).toBeChecked();
-    expectTextContent("A4, Landscape, Front + back, Mirror horizontally");
-    expect(screen.getByTestId("pdf-config-form")).toBeInTheDocument();
-    expect(screen.getByText("Paper")).toBeInTheDocument();
-    expect(screen.getByText("Orientation")).toBeInTheDocument();
-    expect(screen.getByText("Mode")).toBeInTheDocument();
-  });
+    await waitFor(() => {
+      expect(screen.getByTestId("has-content")).toHaveTextContent("true");
+    });
 
-  it("renders bleed options within the bleed settings section when bleed mode is custom", () => {
-    render(
-      <DeckPdfExportSummaryModal
-        isOpen
-        isExporting={false}
-        summary={summary}
-        config={config}
-        defaultConfig={defaultConfig}
-        bleedOptions={bleedOptions}
-        defaultBleedOptions={defaultBleedOptions}
-        setScopeMode="complete"
-        layoutMode="default"
-        bleedMode="custom"
-        selectedSetIds={new Set(["set-1"])}
-        onCancel={jest.fn()}
-        onSetScopeMode={jest.fn()}
-        onLayoutMode={jest.fn()}
-        onBleedMode={jest.fn()}
-        onToggleSet={jest.fn()}
-        onConfigChange={jest.fn()}
-        onBleedOptionsChange={jest.fn()}
-        onExport={jest.fn()}
-        onExportAlignmentTest={jest.fn()}
-      />,
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Run export" }));
 
-    expect(screen.getByLabelText("Customise bleed settings")).toBeChecked();
-    expectTextContent("No bleed, Rounded corners");
-    expect(screen.getByTestId("bleed-options-form")).toBeInTheDocument();
-  });
-
-  it("toggles layout and bleed switches to reveal their custom sections and reverts summaries to defaults", () => {
-    function StatefulSummaryModal() {
-      const [layoutMode, setLayoutMode] = useState<"default" | "custom">("default");
-      const [bleedMode, setBleedMode] = useState<"default" | "custom">("default");
-      const [draftConfig, setDraftConfig] = useState(config);
-      const [draftBleedOptions, setDraftBleedOptions] = useState(bleedOptions);
-
-      return (
-        <DeckPdfExportSummaryModal
-          isOpen
-          isExporting={false}
-          summary={summary}
-          config={draftConfig}
-          defaultConfig={defaultConfig}
-          bleedOptions={draftBleedOptions}
-          defaultBleedOptions={defaultBleedOptions}
-          setScopeMode="complete"
-          layoutMode={layoutMode}
-          bleedMode={bleedMode}
-          selectedSetIds={new Set(["set-1"])}
-          onCancel={jest.fn()}
-          onSetScopeMode={jest.fn()}
-          onLayoutMode={setLayoutMode}
-          onBleedMode={setBleedMode}
-          onToggleSet={jest.fn()}
-          onConfigChange={setDraftConfig}
-          onBleedOptionsChange={(next) =>
-            setDraftBleedOptions((prev) => ({ ...prev, ...next }))
-          }
-          onExport={jest.fn()}
-          onExportAlignmentTest={jest.fn()}
-        />
+    await waitFor(() => {
+      expect(mockCapturedExportRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fileName: "deck.pdf",
+          config: expect.objectContaining({ mode: "frontsOnly", bleedMm: 1.5 }),
+        }),
       );
-    }
-
-    render(<StatefulSummaryModal />);
-
-    const customizeLayout = screen.getByLabelText("Customise layout");
-    const customizeBleed = screen.getByLabelText("Customise bleed settings");
-
-    expect(customizeLayout).not.toBeChecked();
-    expect(customizeBleed).not.toBeChecked();
-    expectTextContent("Letter, Portrait, Fronts only");
-    expectTextContent("Bleed 18px");
-    expectTextContent("Crop marks (squares)");
-    expectTextContent("Cut marks");
-    expect(screen.queryByTestId("pdf-config-form")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("bleed-options-form")).not.toBeInTheDocument();
-
-    fireEvent.click(customizeLayout);
-    fireEvent.click(customizeBleed);
-
-    expect(screen.getByLabelText("Customise layout")).toBeChecked();
-    expect(screen.getByLabelText("Customise bleed settings")).toBeChecked();
-    expect(screen.getByTestId("pdf-config-form")).toBeInTheDocument();
-    expect(screen.getByTestId("bleed-options-form")).toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText("Mode"), {
-      target: { value: "frontsOnly" },
     });
-    fireEvent.change(screen.getByLabelText("Duplex preset"), {
-      target: { value: "rotate180" },
-    });
-    fireEvent.click(screen.getByLabelText("Export with bleed"));
-    fireEvent.change(screen.getByLabelText("Bleed per edge (mm)"), {
-      target: { value: "4.5" },
+    expect(mockComposePrintComposition).toHaveBeenCalled();
+    expect(mockGetDeck).toHaveBeenCalledWith({ params: { deckId: "deck-1" } });
+  });
+
+  it("builds an alignment export run for the shell", async () => {
+    render(
+      <DeckPdfExportSummaryModal isOpen deckId="deck-1" scope="deck_detail" onClose={jest.fn()} />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("has-content")).toHaveTextContent("true");
     });
 
-    expectTextContent("A4, Landscape, Fronts only");
-    expect(screen.queryByText(/A4, Landscape, Fronts only, /)).not.toBeInTheDocument();
-    expectTextContent("Bleed 4.5px, Rounded corners");
+    fireEvent.click(screen.getByRole("button", { name: "Run alignment export" }));
 
-    fireEvent.click(customizeLayout);
-    fireEvent.click(customizeBleed);
-
-    expect(screen.getByLabelText("Customise layout")).not.toBeChecked();
-    expect(screen.getByLabelText("Customise bleed settings")).not.toBeChecked();
-    expectTextContent("Letter, Portrait, Fronts only");
-    expectTextContent("Bleed 18px");
-    expectTextContent("Crop marks (squares)");
-    expectTextContent("Cut marks");
-    expect(screen.queryByTestId("pdf-config-form")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("bleed-options-form")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockCapturedAlignmentRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fileName: "alignment.pdf",
+          config: expect.objectContaining({ mode: "frontsOnly", bleedMm: 1.5 }),
+        }),
+      );
+    });
+    expect(mockBuildSingleSheetAlignmentComposition).toHaveBeenCalledWith(2, false);
   });
 });

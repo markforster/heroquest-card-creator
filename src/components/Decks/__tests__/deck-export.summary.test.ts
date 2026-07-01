@@ -1,6 +1,8 @@
 import { apiClient } from "@/api/client";
 import {
+  createDeckPdfPlaceholderFrontId,
   parseDeckPdfPlaceholderFrontId,
+  resolveDeckExportFaceIds,
   resolveDeckPdfExportSummary,
   resolveDeckPdfRunData,
   summarizeDeckPdfRunData,
@@ -18,6 +20,46 @@ jest.mock("@/api/client", () => ({
 describe("resolveDeckPdfExportSummary", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it("resolves unique export face ids with backs first and ordered fronts after them", async () => {
+    (apiClient.listDeckSets as jest.Mock).mockResolvedValue([
+      { id: "set-b", groupId: "group-b", sortIndex: 1, backFaceId: "back-2" },
+      { id: "set-a2", groupId: "group-a", sortIndex: 2, backFaceId: "back-1" },
+      { id: "set-a1", groupId: "group-a", sortIndex: 1, backFaceId: "back-1" },
+      { id: "set-c", groupId: "group-c", sortIndex: 1, backFaceId: null },
+    ]);
+    (apiClient.listDeckEntries as jest.Mock).mockImplementation(
+      ({ params }: { params: { setId: string } }) => {
+        if (params.setId === "set-a1") {
+          return Promise.resolve([
+            { id: "e2", pairId: "pair-2", sortIndex: 2 },
+            { id: "e1", pairId: "pair-1", sortIndex: 1 },
+          ]);
+        }
+        if (params.setId === "set-a2") {
+          return Promise.resolve([{ id: "e3", pairId: "pair-1", sortIndex: 1 }]);
+        }
+        if (params.setId === "set-b") {
+          return Promise.resolve([{ id: "e4", pairId: "pair-3", sortIndex: 1 }]);
+        }
+        return Promise.resolve([{ id: "e5", pairId: "pair-missing", sortIndex: 1 }]);
+      },
+    );
+    (apiClient.listPairs as jest.Mock).mockResolvedValue([
+      { id: "pair-1", frontFaceId: "front-1" },
+      { id: "pair-2", frontFaceId: "front-2" },
+      { id: "pair-3", frontFaceId: "front-1" },
+      { id: "pair-missing", frontFaceId: null },
+    ]);
+
+    await expect(resolveDeckExportFaceIds("deck-1")).resolves.toEqual({
+      faceIds: ["back-1", "back-2", "front-1", "front-2"],
+      setCount: 4,
+      backCount: 2,
+      frontCount: 2,
+      totalCount: 4,
+    });
   });
 
   it("excludes empty sets and computes totals for front+back", async () => {
@@ -131,5 +173,14 @@ describe("resolveDeckPdfExportSummary", () => {
     expect(summary.excludedNonEmptySetCount).toBe(1);
     expect(summary.totalEntryQuantity).toBe(0);
     expect(summary.exportSlotQuantity).toBe(1);
+  });
+
+  it("creates and parses placeholder ids and rejects non-placeholder values", () => {
+    const placeholder = createDeckPdfPlaceholderFrontId("set-42");
+
+    expect(placeholder).toBe("deck-empty-front:set-42");
+    expect(parseDeckPdfPlaceholderFrontId(placeholder)).toEqual({ setId: "set-42" });
+    expect(parseDeckPdfPlaceholderFrontId("front-1")).toBeNull();
+    expect(parseDeckPdfPlaceholderFrontId("deck-empty-front:")).toBeNull();
   });
 });
