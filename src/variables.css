@@ -72,6 +72,9 @@
   --hq-pill-treasure-text: #f3e1b6;
   --hq-pill-back-bg: rgba(150, 154, 170, 0.25);
   --hq-pill-back-text: #d6dae8;
+  --hq-asset-kind-unknown-bg: rgba(51, 65, 85, 0.42);
+  --hq-asset-kind-unknown-border: rgba(148, 163, 184, 0.6);
+  --hq-asset-kind-unknown-text: #cbd5e1;
   --hq-status-bg: var(--hq-white-08);
   --hq-status-border: var(--hq-white-15);
   --hq-status-text: var(--hq-gray-200);
@@ -326,6 +329,9 @@
   --hq-pill-treasure-text: #4a3a1c;
   --hq-pill-back-bg: rgba(120, 120, 140, 0.25);
   --hq-pill-back-text: #353648;
+  --hq-asset-kind-unknown-bg: rgba(60, 52, 45, 0.08);
+  --hq-asset-kind-unknown-border: rgba(60, 52, 45, 0.22);
+  --hq-asset-kind-unknown-text: #5b5246;
   --hq-status-bg: rgba(60, 52, 45, 0.08);
   --hq-status-border: rgba(60, 52, 45, 0.25);
   --hq-status-text: #3a332b;

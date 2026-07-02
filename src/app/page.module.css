@@ -6710,8 +6710,9 @@ button.assetsKindBadge:disabled {
 }
 
 .assetsKindBadgeUnknown {
-  border-color: rgba(148, 163, 184, 0.6);
-  color: var(--hq-text-muted);
+  border-color: var(--hq-asset-kind-unknown-border);
+  background: var(--hq-asset-kind-unknown-bg);
+  color: var(--hq-asset-kind-unknown-text);
 }
 
 .assetsKindBadgeIcon {
