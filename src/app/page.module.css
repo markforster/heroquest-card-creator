@@ -2086,10 +2086,30 @@
 
 .assetsInspectorReplaceToggle {
   display: inline-flex;
+  flex-direction: row;
   align-items: center;
-  gap: var(--space-6);
+  justify-content: flex-start;
+  gap: var(--space-3);
   font-size: var(--text-lg);
   color: var(--hq-text);
+  line-height: 1.2;
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.assetsInspectorReplaceToggle :global(.form-check-input) {
+  margin: 0;
+  flex: 0 0 auto;
+  float: none;
+  display: inline-block;
+}
+
+.assetsInspectorReplaceToggleLabel {
+  display: inline-block;
+  margin: 0;
+  white-space: nowrap;
+  line-height: 1.2;
+  cursor: pointer;
 }
 
 .assetsReplaceLayout {
@@ -2113,6 +2133,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  min-width: 0;
   min-height: 0;
   height: 100%;
 }
@@ -2126,6 +2147,7 @@
 
 .assetsReplaceFrame {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
   border-radius: var(--radius-md);
   border: 1px solid var(--hq-white-10);
@@ -2133,7 +2155,7 @@
   display: grid;
   place-items: center;
   padding: 0;
-  overflow: visible;
+  overflow: hidden;
   position: relative;
 }
 
