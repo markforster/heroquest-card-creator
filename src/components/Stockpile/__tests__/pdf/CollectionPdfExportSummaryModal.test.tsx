@@ -27,6 +27,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => ({
   default: ({
     isOpen,
     title,
+    sourceType,
     slotPairs,
     shellPolicy,
     placeholderLookup,
@@ -37,6 +38,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => ({
   }: {
     isOpen: boolean;
     title: string;
+    sourceType: "deck" | "collection" | "alignment";
     slotPairs: SlotPair[];
     shellPolicy?: {
       mode?: { hidden?: boolean; forcedValue?: string };
@@ -53,9 +55,10 @@ jest.mock("@/components/Export/PdfExportShellModal", () => ({
     topContent?: ReactNode;
   }) =>
     isOpen ? (
-      <div>
-        <div>{title}</div>
-        <div data-testid="shell-slot-pairs">{JSON.stringify(slotPairs)}</div>
+        <div>
+          <div>{title}</div>
+          <div data-testid="shell-source-type">{sourceType}</div>
+          <div data-testid="shell-slot-pairs">{JSON.stringify(slotPairs)}</div>
         <div data-testid="shell-mode-policy">{JSON.stringify(shellPolicy?.mode ?? null)}</div>
         <div data-testid="shell-duplex-policy">
           {JSON.stringify(shellPolicy?.duplexPreset ?? null)}
@@ -111,6 +114,7 @@ describe("CollectionPdfExportSummaryModal", () => {
     );
 
     expect(screen.getByText("Export PDF")).toBeInTheDocument();
+    expect(screen.getByTestId("shell-source-type")).toHaveTextContent("collection");
     expect(screen.getByTestId("shell-slot-pairs")).toHaveTextContent(
       JSON.stringify([
         { slotId: "collection-slot-1", frontId: "face-a", backId: null },

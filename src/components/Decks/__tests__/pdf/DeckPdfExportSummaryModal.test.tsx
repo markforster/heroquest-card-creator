@@ -126,6 +126,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
     __esModule: true,
     default: (props: {
       title: string;
+      sourceType: "deck" | "collection" | "alignment";
       slotPairs: SlotPair[];
       placeholderLookup?: Record<string, { title: string; subtitle?: string; variant: "empty-front" }>;
       summaryContent?: {
@@ -141,6 +142,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
     }) => {
       const {
         title,
+        sourceType,
         slotPairs,
         placeholderLookup,
         summaryContent,
@@ -188,6 +190,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
       return (
         <div>
           <div>{title}</div>
+          <div data-testid="shell-source-type">{sourceType}</div>
           <div data-testid="shell-mode">{shellState.effectiveConfig.mode}</div>
           <div data-testid="shell-slot-pair-count">{slotPairs.length}</div>
           <div data-testid="shell-placeholder-count">{Object.keys(placeholderLookup ?? {}).length}</div>
@@ -417,6 +420,7 @@ describe("DeckPdfExportSummaryModal", () => {
     await waitFor(() => {
       expect(screen.getByTestId("shell-mode")).toHaveTextContent("frontsOnly");
     });
+    expect(screen.getByTestId("shell-source-type")).toHaveTextContent("deck");
     expect(screen.getByTestId("shell-slot-pair-count")).toHaveTextContent("2");
     expect(screen.getByTestId("included-count")).toHaveTextContent("1");
     expect(screen.getByTestId("selected-size")).toHaveTextContent("1");

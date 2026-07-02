@@ -1,6 +1,7 @@
-import { PDFPage } from "pdf-lib";
+import { PDFDocument, PDFPage } from "pdf-lib";
 
 import { renderPdf } from "@/lib/pdf-export/render-pdf";
+import { APP_VERSION } from "@/version";
 
 import type { PrintConfig } from "@/lib/pdf-export/types";
 
@@ -17,6 +18,22 @@ const ONE_BY_ONE_PNG_BYTES = Uint8Array.from(
     "base64",
   ),
 );
+
+async function readBlobBytes(blob: Blob): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error("Unable to read blob"));
+    reader.onload = () => {
+      const result = reader.result;
+      if (!(result instanceof ArrayBuffer)) {
+        reject(new Error("Expected ArrayBuffer from FileReader"));
+        return;
+      }
+      resolve(new Uint8Array(result));
+    };
+    reader.readAsArrayBuffer(blob);
+  });
+}
 
 describe("pdf-export renderPdf", () => {
   const config: PrintConfig = {
@@ -70,6 +87,7 @@ describe("pdf-export renderPdf", () => {
         ],
       },
       fileName: "test.pdf",
+      sourceType: "deck",
       renderFacePngBytes: async () => ONE_BY_ONE_PNG_BYTES,
       onPhase: (phase) => phases.push(phase),
       onProgress: (progress) => progressCalls.push(progress),
@@ -107,6 +125,7 @@ describe("pdf-export renderPdf", () => {
         sheets: [{ sheetIndex: 0, slots: [{ slotId: "s1", frontId: "f1", backId: "b1" }] }],
       },
       fileName: "test.pdf",
+      sourceType: "deck",
       renderFacePngBytes: async () => ONE_BY_ONE_PNG_BYTES,
     });
 
@@ -129,6 +148,7 @@ describe("pdf-export renderPdf", () => {
         sheets: [{ sheetIndex: 0, slots: [{ slotId: "s1", frontId: "f1", backId: null }] }],
       },
       fileName: "test.pdf",
+      sourceType: "deck",
       renderFacePngBytes: async () => ONE_BY_ONE_PNG_BYTES,
       shouldCancel: () => true,
     });
@@ -150,6 +170,7 @@ describe("pdf-export renderPdf", () => {
         sheets: [{ sheetIndex: 0, slots: [{ slotId: "s1", frontId: "f1", backId: null }] }],
       },
       fileName: "test.pdf",
+      sourceType: "alignment",
       renderFacePngBytes: async () => ONE_BY_ONE_PNG_BYTES,
       includeCalibrationPage: true,
     });
@@ -197,6 +218,7 @@ describe("pdf-export renderPdf", () => {
         sheets: [{ sheetIndex: 0, slots: [{ slotId: "s1", frontId: "f1", backId: null }] }],
       },
       fileName: "test.pdf",
+      sourceType: "collection",
       renderFacePngBytes: async () => ONE_BY_ONE_PNG_BYTES,
     });
 
@@ -210,5 +232,48 @@ describe("pdf-export renderPdf", () => {
       }),
     );
     drawImageSpy.mockRestore();
+  });
+
+  it("applies app metadata using source type and print mode", async () => {
+    jest.useFakeTimers();
+    const now = new Date("2026-07-02T10:11:12.000Z");
+    jest.setSystemTime(now);
+
+    const result = await renderPdf({
+      config: { ...config, mode: "frontAndBack", duplexPreset: "normal" },
+      layout: {
+        paperMm: { width: 210, height: 297 },
+        grid: { cols: 1, rows: 1, perPage: 1 },
+        placements: [placement],
+      },
+      composition: {
+        totalSlots: 1,
+        sheets: [{ sheetIndex: 0, slots: [{ slotId: "s1", frontId: "f1", backId: "b1" }] }],
+      },
+      fileName: "HQCC--Deck One-2026-07-02.pdf",
+      sourceType: "deck",
+      renderFacePngBytes: async () => ONE_BY_ONE_PNG_BYTES,
+    });
+
+    expect(result.status).toBe("success");
+    if (result.status !== "success") {
+      throw new Error("Expected successful pdf render");
+    }
+
+    const pdfBytes = await readBlobBytes(result.blob);
+    const pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false });
+
+    expect(pdfDoc.getTitle()).toBe("HQCC--Deck One-2026-07-02");
+    expect(pdfDoc.getSubject()).toBe("Printable deck export");
+    expect(pdfDoc.getAuthor()).toBe("");
+    expect(pdfDoc.getCreator()).toBe("HeroQuest Card Creator");
+    expect(pdfDoc.getProducer()).toBe(`HeroQuest Card Creator ${APP_VERSION}`);
+    expect(pdfDoc.getKeywords()).toBe(
+      "HeroQuest CardCreator source:deck print-mode:front-and-back",
+    );
+    expect(pdfDoc.getCreationDate()?.toISOString()).toBe(now.toISOString());
+    expect(pdfDoc.getModificationDate()?.toISOString()).toBe(now.toISOString());
+
+    jest.useRealTimers();
   });
 });

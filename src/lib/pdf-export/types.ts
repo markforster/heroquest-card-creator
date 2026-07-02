@@ -7,6 +7,8 @@ export type Orientation = "portrait" | "landscape";
 
 export type DuplexPreset = "normal" | "mirrorX" | "rotate180" | "mirrorXRotate180";
 
+export type PdfExportSourceType = "deck" | "collection" | "alignment";
+
 export type PrintConfig = {
   paper: PaperSize;
   orientation: Orientation;

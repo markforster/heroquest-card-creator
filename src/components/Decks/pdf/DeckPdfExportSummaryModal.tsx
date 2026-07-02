@@ -331,6 +331,7 @@ export default function DeckPdfExportSummaryModal({
       <PdfExportShellModal
         isOpen={isOpen}
         title={t("decks.pdf.modal.title") + " (Beta)"}
+        sourceType="deck"
         slotPairs={slotPairs}
         placeholderLookup={placeholderLookup}
         summaryContent={summaryContent}

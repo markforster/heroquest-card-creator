@@ -34,6 +34,7 @@ export type BleedComposeOptions = {
 
 export const DEFAULT_CROP_MARK_LENGTH = 20;
 export const DEFAULT_CROP_MARK_THICKNESS = 2;
+export const DEFAULT_CROP_MARK_INWARD_RATIO = 0.25;
 export const DEFAULT_CUT_MARK_OFFSET = 0;
 export const DEFAULT_CUT_MARK_DASH: [number, number] = [6, 4];
 export const DEFAULT_CUT_MARK_RADIUS_ADJUST = 2;
@@ -448,21 +449,23 @@ export function drawCropMarks(
     return;
   }
 
+  const inwardExtension = Math.round(markLength * DEFAULT_CROP_MARK_INWARD_RATIO);
+
   // Top-left
-  ctx.fillRect(trimX - markLength, trimY - thickness, markLength, thickness);
-  ctx.fillRect(trimX - thickness, trimY - markLength, thickness, markLength);
+  ctx.fillRect(trimX - markLength, trimY - thickness, markLength + inwardExtension, thickness);
+  ctx.fillRect(trimX - thickness, trimY - markLength, thickness, markLength + inwardExtension);
 
   // Top-right
-  ctx.fillRect(right, trimY - thickness, markLength, thickness);
-  ctx.fillRect(right, trimY - markLength, thickness, markLength);
+  ctx.fillRect(right - inwardExtension, trimY - thickness, markLength + inwardExtension, thickness);
+  ctx.fillRect(right, trimY - markLength, thickness, markLength + inwardExtension);
 
   // Bottom-left
-  ctx.fillRect(trimX - markLength, bottom, markLength, thickness);
-  ctx.fillRect(trimX - thickness, bottom, thickness, markLength);
+  ctx.fillRect(trimX - markLength, bottom, markLength + inwardExtension, thickness);
+  ctx.fillRect(trimX - thickness, bottom - inwardExtension, thickness, markLength + inwardExtension);
 
   // Bottom-right
-  ctx.fillRect(right, bottom, markLength, thickness);
-  ctx.fillRect(right, bottom, thickness, markLength);
+  ctx.fillRect(right - inwardExtension, bottom, markLength + inwardExtension, thickness);
+  ctx.fillRect(right, bottom - inwardExtension, thickness, markLength + inwardExtension);
 
   ctx.restore();
 }

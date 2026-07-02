@@ -37,6 +37,7 @@ import {
   type LayoutPlan,
   type PrintComposition,
   type PrintConfig,
+  type PdfExportSourceType,
   type SlotPair,
 } from "@/lib/pdf-export";
 
@@ -96,6 +97,7 @@ export type PdfExportAlignmentRun = PdfExportRun & {
 };
 
 type ExecutablePdfExportRun = PdfExportRun & {
+  sourceType: PdfExportSourceType;
   config: PrintConfig;
   layout: LayoutPlan;
   composition: PrintComposition;
@@ -105,6 +107,7 @@ type ExecutablePdfExportRun = PdfExportRun & {
 type PdfExportShellModalProps = {
   isOpen: boolean;
   title: string;
+  sourceType: PdfExportSourceType;
   slotPairs: SlotPair[];
   shellPolicy?: PdfExportShellPolicy;
   placeholderLookup?: Record<string, PdfExportPlaceholderSpec>;
@@ -146,6 +149,7 @@ function applyShellPolicyToConfig(config: PrintConfig, shellPolicy?: PdfExportSh
 export default function PdfExportShellModal({
   isOpen,
   title,
+  sourceType,
   slotPairs,
   shellPolicy,
   placeholderLookup,
@@ -374,6 +378,7 @@ export default function PdfExportShellModal({
 
       return {
         ...builtRun,
+        sourceType,
         config: configForRun,
         layout,
         composition,
@@ -413,6 +418,7 @@ export default function PdfExportShellModal({
 
       return {
         ...builtRun,
+        sourceType: "alignment",
         config: configForRun,
         layout,
       };
@@ -437,6 +443,7 @@ export default function PdfExportShellModal({
           layout: run.layout,
           composition: run.composition,
           fileName: run.fileName,
+          sourceType: run.sourceType,
           renderFacePngBytes: run.renderFacePngBytes,
           shouldCancel: () => cancelRequestedRef.current,
           includeCalibrationPage: run.includeCalibrationPage ?? true,

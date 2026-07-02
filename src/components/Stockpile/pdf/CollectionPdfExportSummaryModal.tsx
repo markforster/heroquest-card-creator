@@ -62,6 +62,7 @@ export default function CollectionPdfExportSummaryModal({
     <PdfExportShellModal
       isOpen={isOpen}
       title={`${t("actions.export")} PDF`}
+      sourceType="collection"
       slotPairs={slotPairs}
       shellPolicy={COLLECTION_PDF_SHELL_POLICY}
       summaryContent={summaryContent}

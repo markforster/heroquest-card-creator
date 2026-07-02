@@ -436,6 +436,7 @@ describe("PdfExportShellModal", () => {
       <PdfExportShellModal
         isOpen
         title="Export shell"
+        sourceType="deck"
         slotPairs={[]}
         onCancel={jest.fn()}
         onStateChange={onStateChange}
@@ -476,6 +477,7 @@ describe("PdfExportShellModal", () => {
       <PdfExportShellModal
         isOpen
         title="Export shell"
+        sourceType="deck"
         slotPairs={slotPairs}
         onCancel={jest.fn()}
         buildExportRun={jest.fn()}
@@ -493,6 +495,7 @@ describe("PdfExportShellModal", () => {
       <PdfExportShellModal
         isOpen
         title="Export shell"
+        sourceType="deck"
         slotPairs={slotPairs}
         onCancel={jest.fn()}
         onStateChange={onStateChange}
@@ -506,6 +509,7 @@ describe("PdfExportShellModal", () => {
       <PdfExportShellModal
         isOpen={false}
         title="Export shell"
+        sourceType="deck"
         slotPairs={slotPairs}
         onCancel={jest.fn()}
         onStateChange={onStateChange}
@@ -517,6 +521,7 @@ describe("PdfExportShellModal", () => {
       <PdfExportShellModal
         isOpen
         title="Export shell"
+        sourceType="deck"
         slotPairs={slotPairs}
         onCancel={jest.fn()}
         onStateChange={onStateChange}
@@ -540,6 +545,7 @@ describe("PdfExportShellModal", () => {
       <PdfExportShellModal
         isOpen
         title="Export shell"
+        sourceType="deck"
         slotPairs={slotPairs}
         onCancel={jest.fn()}
         buildExportRun={buildExportRun}
@@ -589,6 +595,14 @@ describe("PdfExportShellModal", () => {
     );
     expect(mockComposePrintComposition).toHaveBeenCalledWith(slotPairs, 1);
     expect(mockRenderPdf).toHaveBeenCalledTimes(2);
+    expect(mockRenderPdf).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ sourceType: "alignment" }),
+    );
+    expect(mockRenderPdf).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ sourceType: "deck" }),
+    );
   });
 
   it("renders normal export faces inside the shell for real cards and placeholders", async () => {
@@ -612,6 +626,7 @@ describe("PdfExportShellModal", () => {
       <PdfExportShellModal
         isOpen
         title="Export shell"
+        sourceType="deck"
         slotPairs={[
           { slotId: "slot-1", frontId: "front-1", backId: null },
           { slotId: "slot-2", frontId: "placeholder-1", backId: null },
@@ -649,6 +664,7 @@ describe("PdfExportShellModal", () => {
       <PdfExportShellModal
         isOpen
         title="Export shell"
+        sourceType="deck"
         slotPairs={slotPairs}
         shellPolicy={{
           mode: { forcedValue: "frontsOnly" },
@@ -690,6 +706,7 @@ describe("PdfExportShellModal", () => {
       <PdfExportShellModal
         isOpen
         title="Export shell"
+        sourceType="deck"
         slotPairs={slotPairs}
         shellPolicy={{
           mode: { hidden: true, forcedValue: "frontsOnly" },
@@ -712,6 +729,7 @@ describe("PdfExportShellModal", () => {
       <PdfExportShellModal
         isOpen
         title="Export shell"
+        sourceType="deck"
         slotPairs={slotPairs}
         shellPolicy={{ alignmentExportHidden: true }}
         onCancel={jest.fn()}
@@ -737,6 +755,7 @@ describe("PdfExportShellModal", () => {
       <PdfExportShellModal
         isOpen
         title="Export shell"
+        sourceType="deck"
         slotPairs={slotPairs}
         onCancel={jest.fn()}
         buildExportRun={() => makeRun()}

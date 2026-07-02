@@ -9,12 +9,14 @@ import {
   PDF_ATTRIBUTION_TEXT_GAP_MM,
   PDF_ATTRIBUTION_TEXT_SIZE_PT,
 } from "@/lib/pdf-export/footer";
+import { applyPdfMetadata } from "@/lib/pdf-export/metadata";
 import { mmToPt } from "@/lib/pdf-export/units";
 
 import type {
   LayoutPlan,
   MmRect,
   PdfExportResult,
+  PdfExportSourceType,
   PrintComposition,
   PrintConfig,
   SlotPlacementMm,
@@ -25,6 +27,7 @@ type RenderPdfOptions = {
   layout: LayoutPlan;
   composition: PrintComposition;
   fileName: string;
+  sourceType: PdfExportSourceType;
   renderFacePngBytes: (faceId: string) => Promise<Uint8Array | null>;
   shouldCancel?: () => boolean;
   onPhase?: (phase: "rendering" | "finalizing") => void;
@@ -760,13 +763,15 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
     layout,
     composition,
     fileName,
+    sourceType,
     renderFacePngBytes,
     shouldCancel,
     onPhase,
     onProgress,
     includeCalibrationPage = false,
   } = options;
-  const pdf = await PDFDocument.create();
+  const pdf = await PDFDocument.create({ updateMetadata: false });
+  applyPdfMetadata({ pdf, fileName, sourceType, config });
   const pageWidthPt = mmToPt(layout.paperMm.width);
   const pageHeightPt = mmToPt(layout.paperMm.height);
   const footerFont = await pdf.embedFont(StandardFonts.Helvetica);
