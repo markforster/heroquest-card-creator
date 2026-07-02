@@ -27,6 +27,7 @@ import {
   isPairInUseError,
   type PairUsageReport,
 } from "@/lib/decks-errors";
+import { getCardDisplayName } from "@/lib/card-display-name";
 import { previewDeletePair } from "@/lib/pairs-service";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import type { CardFace } from "@/types/card-face";
@@ -557,7 +558,7 @@ export default function PairingInspectorPanel({
                       pairedBacks.map((back) => ({
                         frontFaceId: activeCardId,
                         backFaceId: back.id,
-                        backTitle: back.title ?? fallbackTitle,
+                        backTitle: getCardDisplayName(back, fallbackTitle),
                       })),
                     );
                   }}
@@ -660,7 +661,7 @@ export default function PairingInspectorPanel({
             {pairedBacks.map((backCard) => {
               const backTemplateThumb = cardTemplatesById[backCard.templateId]?.thumbnail;
               const groupFrontCards = pairedBackFrontsMap.get(backCard.id) ?? [];
-              const backTitle = backCard.title ?? fallbackTitle;
+              const backTitle = getCardDisplayName(backCard, fallbackTitle);
               const groupCountLabel =
                 groupFrontCards.length === 1
                   ? t("label.frontFacingCountSingle")
@@ -726,7 +727,7 @@ export default function PairingInspectorPanel({
                             {
                               frontFaceId: activeCardId,
                               backFaceId: backCard.id,
-                              backTitle: backCard.title ?? fallbackTitle,
+                              backTitle: getCardDisplayName(backCard, fallbackTitle),
                             },
                           ]);
                         }}
