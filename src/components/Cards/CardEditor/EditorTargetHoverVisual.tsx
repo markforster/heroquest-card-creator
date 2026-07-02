@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, SVGProps } from "react";
 import { ENABLE_EDITOR_TARGET_INTERACTIONS } from "@/config/flags";
 import type { BlueprintBounds } from "@/types/blueprints";
@@ -14,6 +15,10 @@ const HOVER_STYLE: CSSProperties = {
 
 const HOVER_FILTER =
   "drop-shadow(0 0 1px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.28))";
+const HOVER_FILL = "rgba(255, 255, 255, 0.08)";
+const HOVER_STROKE = "rgba(255, 255, 255, 0.9)";
+const HOVER_STROKE_WIDTH = 3.5;
+const HOVER_FADE_MS = 250;
 
 type HoverVisualProps = {
   targetId: EditorTargetId;
@@ -64,9 +69,9 @@ export function EditorTargetHoverRect({
       height={height}
       rx={radius}
       ry={radius}
-      fill="rgba(255, 255, 255, 0.08)"
-      stroke="rgba(255, 255, 255, 0.52)"
-      strokeWidth={2}
+      fill={HOVER_FILL}
+      stroke={HOVER_STROKE}
+      strokeWidth={HOVER_STROKE_WIDTH}
       data-hqcc-hover-target={targetId}
       data-hqcc-hover-visible={visible ? "true" : "false"}
       style={getEditorTargetHoverStyle(visible)}
@@ -79,9 +84,9 @@ export function EditorTargetHoverPath({ targetId, visible, d, ...rest }: HoverPa
   return (
     <path
       d={d}
-      fill="rgba(255, 255, 255, 0.08)"
-      stroke="rgba(255, 255, 255, 0.52)"
-      strokeWidth={2}
+      fill={HOVER_FILL}
+      stroke={HOVER_STROKE}
+      strokeWidth={HOVER_STROKE_WIDTH}
       strokeLinejoin="round"
       data-hqcc-hover-target={targetId}
       data-hqcc-hover-visible={visible ? "true" : "false"}
@@ -128,15 +133,68 @@ export function EditorTargetAdornmentLayer() {
   if (!editorTargets) return null;
 
   const { hoveredTargetId, hoverAdornmentDescriptor } = editorTargets;
+  const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const [renderedTargetId, setRenderedTargetId] = useState<EditorTargetId | null>(null);
+  const [renderedDescriptor, setRenderedDescriptor] = useState<HoverAdornmentDescriptor | null>(null);
+  const [visible, setVisible] = useState(false);
 
-  if (!hoveredTargetId || !hoverAdornmentDescriptor) return null;
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+
+    if (hoveredTargetId && hoverAdornmentDescriptor) {
+      const isSameTarget =
+        renderedTargetId === hoveredTargetId &&
+        renderedDescriptor === hoverAdornmentDescriptor;
+
+      setRenderedTargetId(hoveredTargetId);
+      setRenderedDescriptor(hoverAdornmentDescriptor);
+
+      if (isSameTarget) {
+        setVisible(true);
+        return;
+      }
+
+      setVisible(false);
+      rafRef.current = requestAnimationFrame(() => {
+        setVisible(true);
+        rafRef.current = null;
+      });
+      return;
+    }
+
+    if (!renderedTargetId || !renderedDescriptor) return;
+
+    setVisible(false);
+    fadeTimeoutRef.current = setTimeout(() => {
+      setRenderedTargetId(null);
+      setRenderedDescriptor(null);
+      fadeTimeoutRef.current = null;
+    }, HOVER_FADE_MS);
+  }, [hoveredTargetId, hoverAdornmentDescriptor, renderedTargetId, renderedDescriptor]);
+
+  if (!renderedTargetId || !renderedDescriptor) return null;
 
   return (
     <g data-hqcc-hover-overlay="true" pointerEvents="none">
       <HoverAdornmentDescriptorShape
-        targetId={hoveredTargetId}
-        visible={true}
-        descriptor={hoverAdornmentDescriptor}
+        targetId={renderedTargetId}
+        visible={visible}
+        descriptor={renderedDescriptor}
       />
     </g>
   );

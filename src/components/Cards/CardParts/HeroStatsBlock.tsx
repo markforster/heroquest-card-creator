@@ -4,6 +4,7 @@ import {
   useRegisterHoverAdornment,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import StatsPair from "@/components/Cards/CardParts/StatsPair";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
@@ -40,18 +41,28 @@ const defaultStats: HeroStats = {
 };
 
 export const HERO_STATS_HEIGHT = STATS_HEIGHT;
+const HOVER_OUTSET = sx(10);
 
 export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlockProps) {
   const { t } = useI18n();
   const { overrides } = useStatLabelOverrides();
   const { showTextBounds } = useDebugVisuals();
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.statsHero);
+  const hoverBounds = padBounds(
+    {
+      x: STATS_X,
+      y: y ?? STATS_Y,
+      width: STATS_WIDTH,
+      height: STATS_HEIGHT,
+    },
+    HOVER_OUTSET,
+  );
   useRegisterHoverAdornment(EDITOR_TARGET_IDS.statsHero, {
     kind: "rect",
-    x: STATS_X,
-    y: y ?? STATS_Y,
-    width: STATS_WIDTH,
-    height: STATS_HEIGHT,
+    x: hoverBounds.x,
+    y: hoverBounds.y,
+    width: hoverBounds.width,
+    height: hoverBounds.height,
     radius: 18,
   });
 

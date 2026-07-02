@@ -42,6 +42,8 @@ const RIBBON_IMAGE_INSET_X = sx(10);
 const RIBBON_IMAGE_INSET_Y = sy(1);
 
 const TITLE_LETTER_SPACING = savg(-0.5);
+const PLAIN_TITLE_VERTICAL_HOVER_OUTSET = sy(12);
+const RIBBON_TITLE_TOP_HOVER_OUTSET = sy(12);
 
 export default function RibbonTitle({
   title,
@@ -112,7 +114,19 @@ export default function RibbonTitle({
     fontKerning: "normal",
     ...numericStyle,
   };
-  const hoverBounds = showRibbon ? ribbonImageBounds : resolvedTextBounds;
+  const hoverBounds = showRibbon
+    ? {
+        x: ribbonImageBounds.x,
+        y: ribbonImageBounds.y - RIBBON_TITLE_TOP_HOVER_OUTSET,
+        width: ribbonImageBounds.width,
+        height: ribbonImageBounds.height + RIBBON_TITLE_TOP_HOVER_OUTSET,
+      }
+    : {
+        x: resolvedTextBounds.x,
+        y: resolvedTextBounds.y - PLAIN_TITLE_VERTICAL_HOVER_OUTSET,
+        width: resolvedTextBounds.width,
+        height: resolvedTextBounds.height + PLAIN_TITLE_VERTICAL_HOVER_OUTSET * 2,
+      };
   useRegisterHoverAdornment(EDITOR_TARGET_IDS.title, {
     kind: "rect",
     x: hoverBounds.x,

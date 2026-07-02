@@ -131,6 +131,13 @@ describe("BlueprintRenderer SVG focus targets", () => {
       fireEvent.click(node as Element);
       expect(mockRequestFocusTarget).toHaveBeenCalledWith(targetId);
     });
+
+    const copyrightHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.copyright}"]`,
+    );
+    expect(copyrightHitArea).not.toBeNull();
+    fireEvent.click(copyrightHitArea as Element);
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.copyright);
   });
 
   it("requests focus for monster-only targets and omits absent optional targets", () => {

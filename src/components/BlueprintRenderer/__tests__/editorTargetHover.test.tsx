@@ -7,7 +7,7 @@ import {
   useEditorTargets,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import {
-  getLabelledBackImageHoverInset,
+  getImageHoverEdgeInset,
 } from "@/components/BlueprintRenderer/blueprintRendererSimpleLayers";
 import { CARD_WIDTH, sx, sy } from "@/config/card-canvas";
 
@@ -45,10 +45,26 @@ jest.mock("@/lib/typography-settings", () => ({
 }));
 
 jest.mock("@/hooks/useAssetImageUrl", () => ({
-  useAssetImageUrl: (assetId?: string) => ({
-    url: assetId ? `asset://${assetId}` : null,
-    status: assetId ? "ready" : "missing",
-  }),
+  useAssetImageUrl: (assetId?: string) => {
+    const dimensionsByAssetId: Record<string, { width: number; height: number }> = {
+      "art-1": { width: 750, height: 1050 },
+      "art-2": { width: 750, height: 1050 },
+      "art-3": { width: 506, height: 183 },
+      "art-4": { width: 509, height: 359 },
+      "art-6": { width: 750, height: 1050 },
+      "icon-1": { width: 126, height: 126 },
+      "icon-wide": { width: 200, height: 100 },
+      "icon-tall": { width: 100, height: 200 },
+    };
+
+    const dimensions = assetId ? dimensionsByAssetId[assetId] : undefined;
+    return {
+      url: assetId && assetId !== "missing-icon" ? `asset://${assetId}` : null,
+      status: assetId ? (assetId === "missing-icon" ? "missing" : "ready") : "missing",
+      width: dimensions?.width ?? null,
+      height: dimensions?.height ?? null,
+    };
+  },
 }));
 
 jest.mock("@/i18n/I18nProvider", () => ({
@@ -105,7 +121,9 @@ describe("BlueprintRenderer SVG hover targets", () => {
   });
 
   afterEach(() => {
-    jest.runOnlyPendingTimers();
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
     jest.useRealTimers();
   });
 
@@ -144,6 +162,13 @@ describe("BlueprintRenderer SVG hover targets", () => {
       jest.advanceTimersByTime(50);
     });
     expect(screen.getByTestId("hovered-target")).toHaveTextContent("none");
+    const fadedTitleHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.title}"]`,
+    ) as Element;
+    expect(fadedTitleHover).toHaveAttribute("data-hqcc-hover-visible", "false");
+    act(() => {
+      jest.advanceTimersByTime(250);
+    });
     expect(
       container.querySelector(`[data-hqcc-hover-target="${EDITOR_TARGET_IDS.title}"]`),
     ).toBeNull();
@@ -176,6 +201,13 @@ describe("BlueprintRenderer SVG hover targets", () => {
 
     fireEvent.pointerEnter(statsTarget);
     expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.statsMonster);
+    const monsterStatsHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsMonster}"]`,
+    ) as SVGRectElement;
+    expect(monsterStatsHover).toHaveAttribute("x", "29");
+    expect(monsterStatsHover).toHaveAttribute("width", "692");
+    expect(monsterStatsHover).toHaveAttribute("height", "199");
+    expect(Number(monsterStatsHover.getAttribute("y"))).toBeLessThan(790);
 
     fireEvent.pointerLeave(statsTarget);
     expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.statsMonster);
@@ -191,6 +223,120 @@ describe("BlueprintRenderer SVG hover targets", () => {
       jest.advanceTimersByTime(50);
     });
     expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.imageIcon);
+  });
+
+  it("uses fitted icon image bounds for square icon hover adornment", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="monster"
+        templateName="Monster"
+        cardData={{
+          title: "Fimir",
+          description: "Rules text",
+          imageAssetId: "art-2",
+          iconAssetId: "icon-1",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const hitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.imageIcon}"]`,
+    ) as SVGRectElement;
+    expect(hitArea).not.toBeNull();
+
+    fireEvent.pointerEnter(hitArea);
+    const iconHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageIcon}"]`,
+    ) as SVGRectElement;
+    expect(iconHover.getAttribute("width")).toBe(hitArea.getAttribute("width"));
+    expect(iconHover.getAttribute("height")).toBe(hitArea.getAttribute("height"));
+  });
+
+  it("shrinks non-square icon hover adornment to the fitted image footprint", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="monster"
+        templateName="Monster"
+        cardData={{
+          title: "Fimir",
+          description: "Rules text",
+          imageAssetId: "art-2",
+          iconAssetId: "icon-wide",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const hitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.imageIcon}"]`,
+    ) as SVGRectElement;
+
+    fireEvent.pointerEnter(hitArea);
+    const iconHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageIcon}"]`,
+    ) as SVGRectElement;
+    expect(hitArea).not.toBe(iconHover);
+    expect(Number(iconHover.getAttribute("width"))).toBeGreaterThan(Number(iconHover.getAttribute("height")));
+    expect(Number(iconHover.getAttribute("height"))).toBeLessThan(Number(hitArea.getAttribute("height")));
+    expect(Number(iconHover.getAttribute("width"))).toBe(Number(hitArea.getAttribute("width")));
+  });
+
+  it("scales icon hover adornment with the rendered icon image", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="monster"
+        templateName="Monster"
+        cardData={{
+          title: "Fimir",
+          description: "Rules text",
+          imageAssetId: "art-2",
+          iconAssetId: "icon-tall",
+          iconScale: 1.5,
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const hitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.imageIcon}"]`,
+    ) as SVGRectElement;
+
+    fireEvent.pointerEnter(hitArea);
+    const iconHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageIcon}"]`,
+    ) as SVGRectElement;
+    expect(Number(iconHover.getAttribute("height"))).toBeGreaterThan(Number(hitArea.getAttribute("height")));
+    expect(Number(iconHover.getAttribute("width"))).toBeLessThan(Number(iconHover.getAttribute("height")));
+  });
+
+  it("keeps missing icon hover adornment on the full slot bounds", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="monster"
+        templateName="Monster"
+        cardData={{
+          title: "Fimir",
+          description: "Rules text",
+          imageAssetId: "art-2",
+          iconAssetId: "missing-icon",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const hitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.imageIcon}"]`,
+    ) as SVGRectElement;
+
+    fireEvent.pointerEnter(hitArea);
+    const iconHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageIcon}"]`,
+    ) as SVGRectElement;
+    expect(iconHover.getAttribute("x")).toBe(hitArea.getAttribute("x"));
+    expect(iconHover.getAttribute("y")).toBe(hitArea.getAttribute("y"));
+    expect(iconHover.getAttribute("width")).toBe(hitArea.getAttribute("width"));
+    expect(iconHover.getAttribute("height")).toBe(hitArea.getAttribute("height"));
   });
 
   it("uses an authored-region hit area for hero body text instead of glyph-only interaction", () => {
@@ -219,6 +365,12 @@ describe("BlueprintRenderer SVG hover targets", () => {
     ) as SVGElement;
     expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.textMain);
     expect(textHover).toHaveAttribute("data-hqcc-hover-visible", "true");
+    expect(Number(textHover.getAttribute("x"))).toBe(Number(hitArea.getAttribute("x")) - 16);
+    expect(Number(textHover.getAttribute("y"))).toBe(Number(hitArea.getAttribute("y")) - 16);
+    expect(Number(textHover.getAttribute("width"))).toBe(Number(hitArea.getAttribute("width")) + 32);
+    expect(Number(textHover.getAttribute("height"))).toBe(
+      Number(hitArea.getAttribute("height")) + 32,
+    );
 
     fireEvent.click(hitArea);
     expect(screen.getByTestId("selected-target")).toHaveTextContent(EDITOR_TARGET_IDS.textMain);
@@ -284,6 +436,15 @@ describe("BlueprintRenderer SVG hover targets", () => {
 
     fireEvent.pointerEnter(hitArea);
     expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.textMain);
+    const textHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.textMain}"]`,
+    ) as SVGRectElement;
+    expect(Number(textHover.getAttribute("x"))).toBe(Number(hitArea.getAttribute("x")) - 16);
+    expect(Number(textHover.getAttribute("y"))).toBe(Number(hitArea.getAttribute("y")) - 16);
+    expect(Number(textHover.getAttribute("width"))).toBe(Number(hitArea.getAttribute("width")) + 32);
+    expect(Number(textHover.getAttribute("height"))).toBe(
+      Number(hitArea.getAttribute("height")) + 32,
+    );
 
     fireEvent.click(hitArea);
     expect(screen.getByTestId("selected-target")).toHaveTextContent(EDITOR_TARGET_IDS.textMain);
@@ -324,10 +485,10 @@ describe("BlueprintRenderer SVG hover targets", () => {
     const imageHover = container.querySelector(
       `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageMain}"]`,
     ) as SVGRectElement;
-    expect(Number(imageHover.getAttribute("x"))).toBeGreaterThanOrEqual(0);
-    expect(Number(imageHover.getAttribute("y"))).toBeGreaterThanOrEqual(0);
-    expect(Number(imageHover.getAttribute("width"))).toBeGreaterThan(300);
-    expect(Number(imageHover.getAttribute("height"))).toBeGreaterThan(250);
+    expect(imageHover).toHaveAttribute("x", "18");
+    expect(imageHover).toHaveAttribute("y", "120");
+    expect(imageHover).toHaveAttribute("width", "714");
+    expect(imageHover).toHaveAttribute("height", "730");
 
     const heroStatsTarget = container.querySelector(
       `[data-hqcc-edit="${EDITOR_TARGET_IDS.statsHero}"]`,
@@ -336,13 +497,15 @@ describe("BlueprintRenderer SVG hover targets", () => {
     const heroStatsHover = container.querySelector(
       `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsHero}"]`,
     ) as SVGRectElement;
-    expect(Number(heroStatsHover.getAttribute("x"))).toBeGreaterThan(0);
-    expect(Number(heroStatsHover.getAttribute("width"))).toBeGreaterThan(600);
-    expect(Number(heroStatsHover.getAttribute("height"))).toBeGreaterThan(100);
+    expect(heroStatsHover).toHaveAttribute("x", "41");
+    expect(heroStatsHover).toHaveAttribute("width", "668");
+    expect(heroStatsHover).toHaveAttribute("height", "190");
+    expect(Number(heroStatsHover.getAttribute("y"))).toBeLessThan(800);
 
     const copyrightTarget = container.querySelector(
-      `[data-hqcc-edit="${EDITOR_TARGET_IDS.copyright}"]`,
-    ) as Element;
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.copyright}"]`,
+    ) as SVGRectElement;
+    expect(copyrightTarget).not.toBeNull();
     fireEvent.pointerEnter(copyrightTarget);
     const copyrightHover = container.querySelector(
       `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.copyright}"]`,
@@ -351,6 +514,68 @@ describe("BlueprintRenderer SVG hover targets", () => {
     expect(Number(copyrightHover.getAttribute("y"))).toBeGreaterThan(900);
     expect(Number(copyrightHover.getAttribute("width"))).toBeGreaterThan(250);
     expect(Number(copyrightHover.getAttribute("height"))).toBeGreaterThan(20);
+  });
+
+  it("adds vertical-only hover breathing room for plain titles without widening them", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="small-treasure"
+        templateName="Small Treasure"
+        cardData={{
+          title: "Haunted Mirror",
+          description: "Treasure text",
+          imageAssetId: "art-3",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const titleTarget = container.querySelector(
+      `[data-hqcc-edit="${EDITOR_TARGET_IDS.title}"]`,
+    ) as SVGElement;
+    expect(titleTarget).not.toBeNull();
+
+    fireEvent.pointerEnter(titleTarget);
+    const titleHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.title}"]`,
+    ) as SVGRectElement;
+
+    expect(titleHover).not.toBeNull();
+    expect(Number(titleHover.getAttribute("x"))).toBeCloseTo(81, 0);
+    expect(Number(titleHover.getAttribute("width"))).toBeCloseTo(588, 0);
+    expect(Number(titleHover.getAttribute("y"))).toBeLessThan(82);
+    expect(Number(titleHover.getAttribute("height"))).toBeGreaterThan(80);
+  });
+
+  it("adds top-edge breathing room for ribbon titles without widening them", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={{
+          title: "Warden",
+          description: "Body text",
+          imageAssetId: "art-1",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const titleTarget = container.querySelector(
+      `[data-hqcc-edit="${EDITOR_TARGET_IDS.title}"]`,
+    ) as SVGElement;
+    expect(titleTarget).not.toBeNull();
+
+    fireEvent.pointerEnter(titleTarget);
+    const titleHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.title}"]`,
+    ) as SVGRectElement;
+
+    expect(titleHover).not.toBeNull();
+    expect(Number(titleHover.getAttribute("x"))).toBeCloseTo(76, 0);
+    expect(Number(titleHover.getAttribute("width"))).toBeCloseTo(598, 0);
+    expect(Number(titleHover.getAttribute("y"))).toBeLessThan(45);
+    expect(Number(titleHover.getAttribute("height"))).toBeGreaterThan(154);
   });
 
   it("omits optional icon and copyright hover layers when those targets are absent", () => {
@@ -409,6 +634,10 @@ describe("BlueprintRenderer SVG hover targets", () => {
     expect(adornment.contains(imageHover)).toBe(true);
     expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.imageMain);
     expect(imageHover).toHaveAttribute("data-hqcc-hover-visible", "true");
+    expect(imageHover).toHaveAttribute("x", "106");
+    expect(imageHover).toHaveAttribute("y", "150");
+    expect(imageHover).toHaveAttribute("width", "538");
+    expect(imageHover).toHaveAttribute("height", "215");
 
     fireEvent.click(hitArea);
     expect(screen.getByTestId("selected-target")).toHaveTextContent(EDITOR_TARGET_IDS.imageMain);
@@ -448,12 +677,51 @@ describe("BlueprintRenderer SVG hover targets", () => {
     expect(adornment.contains(imageHover)).toBe(true);
     expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.imageMain);
     expect(imageHover).toHaveAttribute("data-hqcc-hover-visible", "true");
+    expect(imageHover).toHaveAttribute("x", "107");
+    expect(imageHover).toHaveAttribute("y", "151");
+    expect(imageHover).toHaveAttribute("width", "541");
+    expect(imageHover).toHaveAttribute("height", "391");
 
     fireEvent.click(hitArea);
     expect(screen.getByTestId("selected-target")).toHaveTextContent(EDITOR_TARGET_IDS.imageMain);
   });
 
-  it("insets labelled-back artwork hover adornment while keeping the hit area full-card", () => {
+  it("uses canvas-clipped visible artwork bounds for hero hover adornment and insets only touched edges", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={{
+          title: "Sir Ragnar",
+          description: "Body text",
+          imageAssetId: "art-1",
+          imageOriginalWidth: 750,
+          imageOriginalHeight: 1050,
+          imageScaleMode: "absolute",
+          imageScale: 1,
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const inset = getImageHoverEdgeInset();
+    const hitArea = container.querySelector(
+      `[data-hqcc-edit="${EDITOR_TARGET_IDS.imageMain}"]`,
+    ) as SVGElement;
+
+    expect(hitArea).not.toBeNull();
+
+    fireEvent.pointerEnter(hitArea);
+    const imageHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageMain}"]`,
+    ) as SVGRectElement;
+    expect(imageHover).toHaveAttribute("x", `${inset}`);
+    expect(imageHover).toHaveAttribute("y", `${inset}`);
+    expect(imageHover).toHaveAttribute("width", `${750 - inset * 2}`);
+    expect(imageHover).toHaveAttribute("height", "992");
+  });
+
+  it("insets canvas-clipped full-card artwork hover adornment while keeping the hit area full-card", () => {
     const { container } = renderWithTargets(
       <BlueprintRenderer
         templateId="labelled-back"
@@ -468,7 +736,7 @@ describe("BlueprintRenderer SVG hover targets", () => {
       />,
     );
 
-    const inset = getLabelledBackImageHoverInset();
+    const inset = getImageHoverEdgeInset();
     const hitArea = container.querySelector(
       `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.imageMain}"]`,
     ) as SVGRectElement;

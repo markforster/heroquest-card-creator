@@ -27,7 +27,10 @@ async function flushMicrotasks() {
 
 describe("useAssetImageUrl", () => {
   const originalRevokeDescriptor = Object.getOwnPropertyDescriptor(URL, "revokeObjectURL");
+  const OriginalImage = global.Image;
   let revokeSpy: jest.Mock;
+  let imageWidth = 320;
+  let imageHeight = 160;
 
   beforeAll(() => {
     revokeSpy = jest.fn();
@@ -35,14 +38,33 @@ describe("useAssetImageUrl", () => {
       configurable: true,
       value: (...args: unknown[]) => revokeSpy(...args),
     });
+    class MockImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      naturalWidth = imageWidth;
+      naturalHeight = imageHeight;
+
+      set src(_value: string) {
+        this.naturalWidth = imageWidth;
+        this.naturalHeight = imageHeight;
+        queueMicrotask(() => {
+          this.onload?.();
+        });
+      }
+    }
+    // @ts-expect-error test shim
+    global.Image = MockImage;
   });
 
   beforeEach(() => {
     jest.resetAllMocks();
     revokeSpy.mockReset();
+    imageWidth = 320;
+    imageHeight = 160;
   });
 
   afterAll(() => {
+    global.Image = OriginalImage;
     if (originalRevokeDescriptor) {
       Object.defineProperty(URL, "revokeObjectURL", originalRevokeDescriptor);
     } else {
@@ -53,7 +75,7 @@ describe("useAssetImageUrl", () => {
 
   it("returns null and does not fetch when assetId is missing", () => {
     const { result } = renderHook(() => useAssetImageUrl(undefined));
-    expect(result.current).toEqual({ url: null, status: "idle" });
+    expect(result.current).toEqual({ url: null, status: "idle", width: null, height: null });
     expect(apiClient.getAssetObjectUrl).not.toHaveBeenCalled();
   });
 
@@ -61,10 +83,11 @@ describe("useAssetImageUrl", () => {
     (apiClient.getAssetObjectUrl as jest.Mock).mockResolvedValueOnce("blob:asset-1");
 
     const { result, unmount } = renderHook(() => useAssetImageUrl("asset-1"));
-    expect(result.current).toEqual({ url: null, status: "loading" });
+    expect(result.current).toEqual({ url: null, status: "loading", width: null, height: null });
 
     await flushMicrotasks();
-    expect(result.current).toEqual({ url: "blob:asset-1", status: "ready" });
+    await flushMicrotasks();
+    expect(result.current).toEqual({ url: "blob:asset-1", status: "ready", width: 320, height: 160 });
     expect(apiClient.getAssetObjectUrl).toHaveBeenCalledWith({
       params: { id: "asset-1" },
     });
@@ -84,7 +107,7 @@ describe("useAssetImageUrl", () => {
       { initialProps: { assetId: "asset-1" } },
     );
 
-    expect(result.current).toEqual({ url: null, status: "loading" });
+    expect(result.current).toEqual({ url: null, status: "loading", width: null, height: null });
 
     // Cancel the in-flight request by clearing the asset id.
     rerender({ assetId: undefined });
@@ -92,7 +115,7 @@ describe("useAssetImageUrl", () => {
     deferred.resolve("blob:late-url");
     await flushMicrotasks();
 
-    expect(result.current).toEqual({ url: null, status: "idle" });
+    expect(result.current).toEqual({ url: null, status: "idle", width: null, height: null });
     expect(revokeSpy).toHaveBeenCalledWith("blob:late-url");
   });
 
@@ -100,9 +123,9 @@ describe("useAssetImageUrl", () => {
     (apiClient.getAssetObjectUrl as jest.Mock).mockRejectedValueOnce(new Error("boom"));
 
     const { result } = renderHook(() => useAssetImageUrl("asset-1"));
-    expect(result.current).toEqual({ url: null, status: "loading" });
+    expect(result.current).toEqual({ url: null, status: "loading", width: null, height: null });
 
     await flushMicrotasks();
-    expect(result.current).toEqual({ url: null, status: "missing" });
+    expect(result.current).toEqual({ url: null, status: "missing", width: null, height: null });
   });
 });

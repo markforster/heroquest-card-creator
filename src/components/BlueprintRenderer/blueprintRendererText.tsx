@@ -40,6 +40,8 @@ import type { TemplateId } from "@/types/templates";
 
 import { getLayerBounds, isPrimaryBodyTextLayer } from "./blueprintRendererShared";
 
+const TEXT_HOVER_OUTSET = 16;
+
 function resolveVisibleCopyrightBounds({
   blueprint,
   cardData,
@@ -205,10 +207,7 @@ export function TextLayer({
     showBodyTextHover && initialTextBounds
       ? {
           kind: "rect",
-          x: initialTextBounds.x,
-          y: initialTextBounds.y,
-          width: initialTextBounds.width,
-          height: initialTextBounds.height,
+          ...padBounds(initialTextBounds, TEXT_HOVER_OUTSET),
           radius: 14,
         }
       : null,
@@ -798,6 +797,15 @@ export function CopyrightLayer({
 
   return (
     <Layer key={layer.id} data-layer-type="copyright" {...svgFocusProps}>
+      <rect
+        x={bounds.x}
+        y={bounds.y}
+        width={bounds.width}
+        height={bounds.height}
+        fill="transparent"
+        pointerEvents="all"
+        data-hqcc-hit-area={EDITOR_TARGET_IDS.copyright}
+      />
       {showTextBounds ? (
         <rect
           x={bounds.x}

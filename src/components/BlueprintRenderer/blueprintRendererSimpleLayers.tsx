@@ -8,6 +8,7 @@ import {
   useRegisterHoverAdornment,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
 import CardTexturedBorder from "@/components/Cards/CardParts/CardTexturedBorder";
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
@@ -29,10 +30,82 @@ import {
 
 import type { StaticImageData } from "next/image";
 
-const LABELLED_BACK_IMAGE_HOVER_INSET = 18;
+const IMAGE_HOVER_EDGE_INSET = 18;
+const IMAGE_HOVER_RADIUS = 16;
+const TREASURE_HOVER_OUTSET = 16;
 
-export function getLabelledBackImageHoverInset() {
-  return LABELLED_BACK_IMAGE_HOVER_INSET;
+export function getImageHoverEdgeInset() {
+  return IMAGE_HOVER_EDGE_INSET;
+}
+
+function intersectRect(
+  first: { x: number; y: number; width: number; height: number },
+  second: { x: number; y: number; width: number; height: number },
+) {
+  const left = Math.max(first.x, second.x);
+  const top = Math.max(first.y, second.y);
+  const right = Math.min(first.x + first.width, second.x + second.width);
+  const bottom = Math.min(first.y + first.height, second.y + second.height);
+
+  if (right <= left || bottom <= top) return null;
+
+  return {
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+  };
+}
+
+function buildImageHoverBounds({
+  clipMode,
+  layerBounds,
+  renderedBounds,
+  canvasBounds,
+}: {
+  clipMode: "bounds" | "canvas" | "none";
+  layerBounds: { x: number; y: number; width: number; height: number };
+  renderedBounds: { x: number; y: number; width: number; height: number } | null;
+  canvasBounds: { x: number; y: number; width: number; height: number };
+}) {
+  if (clipMode !== "canvas" || !renderedBounds) {
+    const baseBounds = {
+      x: layerBounds.x,
+      y: layerBounds.y,
+      width: layerBounds.width,
+      height: layerBounds.height,
+      radius: IMAGE_HOVER_RADIUS,
+    };
+    return clipMode === "bounds"
+      ? {
+          ...padBounds(baseBounds, TREASURE_HOVER_OUTSET),
+          radius: IMAGE_HOVER_RADIUS,
+        }
+      : baseBounds;
+  }
+
+  const visibleBounds = intersectRect(renderedBounds, canvasBounds);
+  if (!visibleBounds) return null;
+
+  const touchesLeft = renderedBounds.x <= canvasBounds.x;
+  const touchesTop = renderedBounds.y <= canvasBounds.y;
+  const touchesRight =
+    renderedBounds.x + renderedBounds.width >= canvasBounds.x + canvasBounds.width;
+  const touchesBottom =
+    renderedBounds.y + renderedBounds.height >= canvasBounds.y + canvasBounds.height;
+
+  const insetLeft = touchesLeft ? IMAGE_HOVER_EDGE_INSET : 0;
+  const insetTop = touchesTop ? IMAGE_HOVER_EDGE_INSET : 0;
+  const insetRight = touchesRight ? IMAGE_HOVER_EDGE_INSET : 0;
+  const insetBottom = touchesBottom ? IMAGE_HOVER_EDGE_INSET : 0;
+
+  return {
+    x: visibleBounds.x + insetLeft,
+    y: visibleBounds.y + insetTop,
+    width: Math.max(0, visibleBounds.width - insetLeft - insetRight),
+    height: Math.max(0, visibleBounds.height - insetTop - insetBottom),
+    radius: IMAGE_HOVER_RADIUS,
+  };
 }
 
 export function renderBackgroundLayer({
@@ -223,24 +296,64 @@ export function ImageLayer({
   const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.imageMain);
   const bounds = layer.type === layerTypes.image ? getLayerBounds(blueprint, layer) : null;
+  if (layer.type !== layerTypes.image) return null;
+  const imageLayer = layer as Extract<BlueprintLayer, { type: "image" }>;
+  const clipMode = imageLayer.clip ?? "bounds";
+  const canvasBounds = {
+    x: 0,
+    y: 0,
+    width: blueprint.canvas?.width ?? CARD_WIDTH,
+    height: blueprint.canvas?.height ?? CARD_HEIGHT,
+  };
+  const hasImageBinding = !!layer.bind?.imageKey;
+  const hasRenderInputs = hasImageBinding && !!cardData && !!bounds;
+  const scale = hasRenderInputs ? ((cardData as { imageScale?: number }).imageScale ?? 1) : 1;
+  const scaleMode = hasRenderInputs
+    ? ((cardData as { imageScaleMode?: "absolute" | "relative" }).imageScaleMode ?? "relative")
+    : "relative";
+  const offsetX = hasRenderInputs ? ((cardData as { imageOffsetX?: number }).imageOffsetX ?? 0) : 0;
+  const offsetY = hasRenderInputs ? ((cardData as { imageOffsetY?: number }).imageOffsetY ?? 0) : 0;
+  const rotation = hasRenderInputs ? ((cardData as { imageRotation?: number }).imageRotation ?? 0) : 0;
+  const layerOffsetX = typeof layer.props?.offsetX === "number" ? layer.props.offsetX : 0;
+  const layerOffsetY = typeof layer.props?.offsetY === "number" ? layer.props.offsetY : 0;
+  const baseWidth =
+    hasRenderInputs && bounds
+      ? ((cardData as { imageOriginalWidth?: number }).imageOriginalWidth ?? bounds.width)
+      : 0;
+  const baseHeight =
+    hasRenderInputs && bounds
+      ? ((cardData as { imageOriginalHeight?: number }).imageOriginalHeight ?? bounds.height)
+      : 0;
+  const fitScale =
+    hasRenderInputs && bounds ? computeContainScale(bounds, baseWidth, baseHeight) : 1;
+  const effectiveScale = scaleMode === "relative" ? fitScale * scale : scale;
+  const scaledWidth = baseWidth * effectiveScale;
+  const scaledHeight = baseHeight * effectiveScale;
+  const x =
+    hasRenderInputs && bounds
+      ? bounds.x + (bounds.width - scaledWidth) / 2 + offsetX + layerOffsetX
+      : 0;
+  const y =
+    hasRenderInputs && bounds
+      ? bounds.y + (bounds.height - scaledHeight) / 2 + offsetY + layerOffsetY
+      : 0;
   const hoverBounds =
     bounds == null
       ? null
-      : blueprint.templateId === "labelled-back"
-        ? {
-            x: bounds.x + LABELLED_BACK_IMAGE_HOVER_INSET,
-            y: bounds.y + LABELLED_BACK_IMAGE_HOVER_INSET,
-            width: Math.max(0, bounds.width - LABELLED_BACK_IMAGE_HOVER_INSET * 2),
-            height: Math.max(0, bounds.height - LABELLED_BACK_IMAGE_HOVER_INSET * 2),
-            radius: 16,
-          }
-        : {
-            x: bounds.x,
-            y: bounds.y,
-            width: bounds.width,
-            height: bounds.height,
-            radius: 16,
-          };
+      : buildImageHoverBounds({
+          clipMode,
+          layerBounds: bounds,
+          renderedBounds:
+            hasRenderInputs && imageUrl
+              ? {
+                  x,
+                  y,
+                  width: scaledWidth,
+                  height: scaledHeight,
+                }
+              : null,
+          canvasBounds,
+        });
 
   useRegisterHoverAdornment(
     EDITOR_TARGET_IDS.imageMain,
@@ -252,8 +365,6 @@ export function ImageLayer({
       : null,
   );
 
-  if (layer.type !== layerTypes.image) return null;
-  const imageLayer = layer as Extract<BlueprintLayer, { type: "image" }>;
   if (!layer.bind?.imageKey) return null;
   if (!cardData) return null;
   if (!bounds) return null;
@@ -268,41 +379,11 @@ export function ImageLayer({
     return null;
   }
 
-  const scale = (cardData as { imageScale?: number }).imageScale ?? 1;
-  const scaleMode =
-    (cardData as { imageScaleMode?: "absolute" | "relative" }).imageScaleMode ?? "relative";
-  const offsetX = (cardData as { imageOffsetX?: number }).imageOffsetX ?? 0;
-  const offsetY = (cardData as { imageOffsetY?: number }).imageOffsetY ?? 0;
-  const rotation = (cardData as { imageRotation?: number }).imageRotation ?? 0;
-  const layerOffsetX = typeof layer.props?.offsetX === "number" ? layer.props.offsetX : 0;
-  const layerOffsetY = typeof layer.props?.offsetY === "number" ? layer.props.offsetY : 0;
-
-  const baseWidth =
-    (cardData as { imageOriginalWidth?: number }).imageOriginalWidth ?? bounds.width;
-  const baseHeight =
-    (cardData as { imageOriginalHeight?: number }).imageOriginalHeight ?? bounds.height;
-
-  const fitScale = computeContainScale(bounds, baseWidth, baseHeight);
-  const effectiveScale = scaleMode === "relative" ? fitScale * scale : scale;
-  const scaledWidth = baseWidth * effectiveScale;
-  const scaledHeight = baseHeight * effectiveScale;
-
-  const x = bounds.x + (bounds.width - scaledWidth) / 2 + offsetX + layerOffsetX;
-  const y = bounds.y + (bounds.height - scaledHeight) / 2 + offsetY + layerOffsetY;
   const cx = x + scaledWidth / 2;
   const cy = y + scaledHeight / 2;
   const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
-  const clipMode = imageLayer.clip ?? "bounds";
   const shouldClip = clipMode !== "none";
-  const clipBounds =
-    clipMode === "canvas"
-      ? {
-          x: 0,
-          y: 0,
-          width: blueprint.canvas?.width ?? CARD_WIDTH,
-          height: blueprint.canvas?.height ?? CARD_HEIGHT,
-        }
-      : bounds;
+  const clipBounds = clipMode === "canvas" ? canvasBounds : bounds;
 
   return (
     <Layer key={layer.id} {...svgFocusProps}>

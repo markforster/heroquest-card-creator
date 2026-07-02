@@ -5,6 +5,7 @@ import {
   useRegisterHoverAdornment,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import CardTextBlock, { layoutCardText } from "@/components/Cards/CardParts/CardTextBlock";
 import HeroStatsBlock, {
   HERO_STATS_HEIGHT,
@@ -19,6 +20,7 @@ import { DEFAULT_BODY_TEXT_COLOR } from "@/config/colors";
 import { layerTypes } from "@/data/card-systems/types";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { supportsBlueprintTextFitToBounds } from "@/lib/blueprint-text";
+import { computeContainScale } from "@/lib/image-scale";
 import type { Blueprint, BlueprintGroup } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
@@ -28,6 +30,8 @@ import {
   MissingArtworkPlaceholder,
   findPrimaryTitleLayer,
 } from "./blueprintRendererShared";
+
+const TEXT_HOVER_OUTSET = 16;
 
 function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | undefined {
   if (!cardData) return undefined;
@@ -121,10 +125,7 @@ function GroupTextLayer({
     interactive
       ? {
           kind: "rect",
-          x: bounds.x,
-          y: bounds.y,
-          width: bounds.width,
-          height: bounds.height,
+          ...padBounds(bounds, TEXT_HOVER_OUTSET),
           radius: 18,
         }
       : null,
@@ -179,20 +180,50 @@ function GroupIconLayer({
   scale: number;
   rotation: number;
 }) {
-  const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
+  const {
+    url: imageUrl,
+    status: imageStatus,
+    width: imageWidth,
+    height: imageHeight,
+  } = useAssetImageUrl(assetId);
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.imageIcon);
+  const slotBounds = { x, y, width: size, height: size };
+  const fitScale = computeContainScale(slotBounds, imageWidth ?? undefined, imageHeight ?? undefined);
+  const baseRenderedWidth = (imageWidth ?? size) * fitScale;
+  const baseRenderedHeight = (imageHeight ?? size) * fitScale;
+  const renderedWidth = baseRenderedWidth * scale;
+  const renderedHeight = baseRenderedHeight * scale;
+  const renderedBounds =
+    imageUrl && imageWidth && imageHeight
+      ? {
+          x: x + size / 2 - renderedWidth / 2,
+          y: y + size / 2 - renderedHeight / 2,
+          width: renderedWidth,
+          height: renderedHeight,
+        }
+      : slotBounds;
+
   useRegisterHoverAdornment(EDITOR_TARGET_IDS.imageIcon, {
     kind: "rect",
-    x,
-    y,
-    width: size,
-    height: size,
+    x: renderedBounds.x,
+    y: renderedBounds.y,
+    width: renderedBounds.width,
+    height: renderedBounds.height,
     radius: 14,
   });
   if (!imageUrl) {
     if (imageStatus === "missing") {
       return (
         <Layer {...svgFocusProps}>
+          <rect
+            x={x}
+            y={y}
+            width={size}
+            height={size}
+            fill="transparent"
+            pointerEvents="all"
+            data-hqcc-hit-area={EDITOR_TARGET_IDS.imageIcon}
+          />
           <MissingArtworkPlaceholder
             bounds={{ x, y, width: size, height: size }}
             assetName={assetName}
@@ -213,6 +244,15 @@ function GroupIconLayer({
 
   return (
     <Layer {...svgFocusProps}>
+      <rect
+        x={x}
+        y={y}
+        width={size}
+        height={size}
+        fill="transparent"
+        pointerEvents="all"
+        data-hqcc-hit-area={EDITOR_TARGET_IDS.imageIcon}
+      />
       <image
         href={imageUrl}
         data-user-asset-id={assetId}
@@ -223,6 +263,7 @@ function GroupIconLayer({
         height={size}
         preserveAspectRatio="xMidYMid meet"
         transform={transform}
+        pointerEvents="none"
       />
     </Layer>
   );

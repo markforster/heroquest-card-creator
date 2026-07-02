@@ -40,6 +40,7 @@ export const LABELLED_BACK_BLUEPRINT: Blueprint = {
       bounds: scaleBounds({ x: 0, y: 0, width: 750, height: 1050 }),
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
+      clip: "canvas",
     },
     {
       id: blueprintIds.hq_2021_text_body,
