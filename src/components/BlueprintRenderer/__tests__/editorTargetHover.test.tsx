@@ -224,6 +224,71 @@ describe("BlueprintRenderer SVG hover targets", () => {
     expect(screen.getByTestId("selected-target")).toHaveTextContent(EDITOR_TARGET_IDS.textMain);
   });
 
+  it("does not expose hero body text interaction when the description is empty", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={{
+          title: "Sir Ragnar",
+          description: "",
+          imageAssetId: "art-1",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    expect(
+      container.querySelector(`[data-hqcc-hit-area="${EDITOR_TARGET_IDS.textMain}"]`),
+    ).toBeNull();
+  });
+
+  it("does not expose monster body text interaction when the description is empty", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="monster"
+        templateName="Monster"
+        cardData={{
+          title: "Fimir",
+          description: "",
+          imageAssetId: "art-2",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    expect(
+      container.querySelector(`[data-hqcc-hit-area="${EDITOR_TARGET_IDS.textMain}"]`),
+    ).toBeNull();
+  });
+
+  it("keeps fixed-bounds body text hoverable when the description is empty", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="small-treasure"
+        templateName="Small Treasure"
+        cardData={{
+          title: "Potion",
+          description: "",
+          imageAssetId: "art-3",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const hitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.textMain}"]`,
+    ) as SVGRectElement;
+
+    expect(hitArea).not.toBeNull();
+
+    fireEvent.pointerEnter(hitArea);
+    expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.textMain);
+
+    fireEvent.click(hitArea);
+    expect(screen.getByTestId("selected-target")).toHaveTextContent(EDITOR_TARGET_IDS.textMain);
+  });
+
   it("renders title, artwork, hero stats, and copyright hover layers against authored bounds", () => {
     const { container } = renderWithTargets(
       <BlueprintRenderer

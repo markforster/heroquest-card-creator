@@ -425,7 +425,6 @@ function buildGroupItems({
 
   return items;
 }
-
 export function renderGroups({
   blueprint,
   cardData,
@@ -444,7 +443,6 @@ export function renderGroups({
 
     const items = buildGroupItems({ group, cardData, blueprint, showTextBounds });
     let cursor = group.origin.y;
-
     return items.map((item) => {
       const topY = cursor - item.height;
       cursor = topY - group.gap;
