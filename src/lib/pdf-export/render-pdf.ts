@@ -11,6 +11,7 @@ import {
 } from "@/lib/pdf-export/footer";
 import { applyPdfMetadata } from "@/lib/pdf-export/metadata";
 import { mmToPt } from "@/lib/pdf-export/units";
+import { applyPdfViewerPreferences } from "@/lib/pdf-export/viewer-preferences";
 
 import type {
   LayoutPlan,
@@ -772,6 +773,7 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
   } = options;
   const pdf = await PDFDocument.create({ updateMetadata: false });
   applyPdfMetadata({ pdf, fileName, sourceType, config });
+  applyPdfViewerPreferences({ pdf });
   const pageWidthPt = mmToPt(layout.paperMm.width);
   const pageHeightPt = mmToPt(layout.paperMm.height);
   const footerFont = await pdf.embedFont(StandardFonts.Helvetica);

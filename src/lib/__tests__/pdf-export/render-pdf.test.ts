@@ -1,4 +1,4 @@
-import { PDFDocument, PDFPage } from "pdf-lib";
+import { PDFDocument, PDFPage, PrintScaling } from "pdf-lib";
 
 import { renderPdf } from "@/lib/pdf-export/render-pdf";
 import { APP_VERSION } from "@/version";
@@ -273,6 +273,10 @@ describe("pdf-export renderPdf", () => {
     );
     expect(pdfDoc.getCreationDate()?.toISOString()).toBe(now.toISOString());
     expect(pdfDoc.getModificationDate()?.toISOString()).toBe(now.toISOString());
+
+    const viewerPreferences = pdfDoc.catalog.getOrCreateViewerPreferences();
+    expect(viewerPreferences.getPrintScaling()).toBe(PrintScaling.None);
+    expect(viewerPreferences.getDisplayDocTitle()).toBe(true);
 
     jest.useRealTimers();
   });
