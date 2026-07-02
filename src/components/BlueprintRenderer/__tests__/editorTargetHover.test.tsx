@@ -502,6 +502,50 @@ describe("BlueprintRenderer SVG hover targets", () => {
     ).toBeNull();
   });
 
+  it("renders a single-line hero description high enough to remain visible above the bottom stack floor", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={{
+          title: "Sir Ragnar",
+          description: "Single line",
+          imageAssetId: "art-1",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const textNode = Array.from(container.querySelectorAll("text")).find(
+      (node) => node.textContent === "Single line",
+    ) as SVGTextElement | undefined;
+
+    expect(textNode).toBeDefined();
+    expect(Number(textNode?.getAttribute("y"))).toBeLessThan(998);
+  });
+
+  it("renders a single-line monster description high enough to remain visible above the bottom stack floor", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="monster"
+        templateName="Monster"
+        cardData={{
+          title: "Fimir",
+          description: "Single line",
+          imageAssetId: "art-2",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const textNode = Array.from(container.querySelectorAll("text")).find(
+      (node) => node.textContent === "Single line",
+    ) as SVGTextElement | undefined;
+
+    expect(textNode).toBeDefined();
+    expect(Number(textNode?.getAttribute("y"))).toBeLessThan(998);
+  });
+
   it("keeps fixed-bounds body text hoverable when the description is empty", () => {
     const { container } = renderWithTargets(
       <BlueprintRenderer

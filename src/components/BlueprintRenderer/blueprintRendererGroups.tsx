@@ -32,6 +32,7 @@ import {
 } from "./blueprintRendererShared";
 
 const TEXT_HOVER_OUTSET = 16;
+const GROUP_TEXT_BOTTOM_BASELINE_PADDING_RATIO = 0.2;
 
 function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | undefined {
   if (!cardData) return undefined;
@@ -336,23 +337,36 @@ function buildGroupItems({
       items.push({
         id: child.id,
         height,
-        render: (topY) => (
-          <GroupTextLayer
-            key={child.id}
-            text={text}
-            bounds={{ x: group.origin.x, y: topY, width: group.width, height }}
-            fontSize={fontSize}
-            lineHeight={measuredLineHeight}
-            fontWeight={fontWeight}
-            fontFamily={fontFamily}
-            fill={fill}
-            letterSpacingEm={letterSpacingEm}
-            align={align}
-            debug={showTextBounds}
-            fitToBounds={fitToBounds}
-            interactive={textKey === "description"}
-          />
-        ),
+        render: (topY) => {
+          const bottomBaselinePadding = Math.max(
+            measuredLineHeight - fontSize,
+            fontSize * GROUP_TEXT_BOTTOM_BASELINE_PADDING_RATIO,
+          );
+          const renderBounds = {
+            x: group.origin.x,
+            y: topY - bottomBaselinePadding,
+            width: group.width,
+            height: height + bottomBaselinePadding,
+          };
+
+          return (
+            <GroupTextLayer
+              key={child.id}
+              text={text}
+              bounds={renderBounds}
+              fontSize={fontSize}
+              lineHeight={measuredLineHeight}
+              fontWeight={fontWeight}
+              fontFamily={fontFamily}
+              fill={fill}
+              letterSpacingEm={letterSpacingEm}
+              align={align}
+              debug={showTextBounds}
+              fitToBounds={fitToBounds}
+              interactive={textKey === "description"}
+            />
+          );
+        },
       });
       return;
     }
