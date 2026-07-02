@@ -2,6 +2,7 @@
 
 import { Brain, Footprints, ShieldHalf, Swords, UserRound } from "lucide-react";
 
+import { EDITOR_TARGET_IDS } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import type { MonsterCardData } from "@/types/card-data";
 
 import BaseStatsInspector, { type BaseStatField } from "./BaseStatsInspector";
@@ -28,6 +29,7 @@ export default function MonsterStatsInspector({
   return (
     <BaseStatsInspector<MonsterCardData>
       fields={MONSTER_FIELDS}
+      targetId={EDITOR_TARGET_IDS.statsMonster}
       allowSplit={allowSplit}
       allowWildcard={allowWildcard}
       splitSecondaryDefault={splitSecondaryDefault}

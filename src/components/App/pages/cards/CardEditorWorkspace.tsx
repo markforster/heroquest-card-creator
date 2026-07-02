@@ -2,6 +2,7 @@
 
 import styles from "@/app/page.module.css";
 import CardPreviewContainer from "@/components/Cards/CardEditor/CardPreviewContainer";
+import { EditorTargetsProvider } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CardInspector from "@/components/Cards/CardInspector/CardInspector";
 import TemplateChooser from "@/components/Cards/CardInspector/TemplateChooser";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
@@ -77,7 +78,7 @@ export default function CardEditorWorkspace({
   }
 
   return (
-    <>
+    <EditorTargetsProvider>
       <section className={`${styles.leftPanel} d-flex align-items-stretch gap-3 p-3`}>
         <div
           className={`${styles.previewContainer} d-flex align-items-center justify-content-center`}
@@ -114,6 +115,6 @@ export default function CardEditorWorkspace({
           onDuplicateWithPairing={onDuplicateWithPairing}
         />
       </aside>
-    </>
+    </EditorTargetsProvider>
   );
 }

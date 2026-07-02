@@ -6,6 +6,12 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
   useCardEditor: () => mockUseCardEditor(),
 }));
 
+jest.mock("@/components/Cards/CardEditor/EditorTargetsContext", () => ({
+  useEditorTargets: () => ({
+    requestedFocusTargetId: null,
+  }),
+}));
+
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) => {

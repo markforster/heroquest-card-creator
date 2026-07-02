@@ -22,6 +22,10 @@ import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
 import { AssetsModal } from "@/components/Assets";
+import {
+  EDITOR_TARGET_IDS,
+  useInspectorTargetRegistration,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import { addPinnedAsset, getAssetKindLabel } from "@/components/Cards/CardInspector/asset-utils";
 import { computeCardInspectorPopoverPosition } from "@/components/Cards/CardInspector/card-inspector-popover-position";
 import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
@@ -78,9 +82,15 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
   const [adjustmentsStyle, setAdjustmentsStyle] = useState<CSSProperties | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [lastCleared, setLastCleared] = useState<LastClearedIcon | null>(null);
+  const fieldRef = useRef<HTMLDivElement | null>(null);
   const inputWrapRef = useRef<HTMLDivElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const handleFieldFocusCapture = useInspectorTargetRegistration({
+    targetId: EDITOR_TARGET_IDS.imageIcon,
+    containerRef: fieldRef,
+    focusRef: inputRef,
+  });
 
   const MIN_SCALE = 0.2;
   const MAX_SCALE = 3;
@@ -263,7 +273,12 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
   }, [isAdjustmentsOpen]);
 
   return (
-    <div className="mb-2">
+    <div
+      ref={fieldRef}
+      className="mb-2"
+      data-hqcc-edit={EDITOR_TARGET_IDS.imageIcon}
+      onFocusCapture={handleFieldFocusCapture}
+    >
       <div className={layoutStyles.inspectorFieldHeader}>
         <FormLabelWithIcon label={label} icon={Image} className="form-label" />
       </div>

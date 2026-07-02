@@ -1,10 +1,11 @@
 "use client";
 
 import { Combine, Info, Layers, SquareStack } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 
 import styles from "@/app/page.module.css";
+import { useEditorTargets } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -40,6 +41,7 @@ export default function CardInspector({
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
+  const { requestedFocusTargetId } = useEditorTargets();
   const [mode, setMode] = useState<InspectorMode>("form");
   const modes: InspectorModeConfig[] = [
     { id: "form", label: t("label.formView"), Icon: Info },
@@ -53,6 +55,12 @@ export default function CardInspector({
   const key = selectedTemplateId
     ? activeCardIdByTemplate[selectedTemplateId] ?? `${selectedTemplateId}-draft`
     : "no-template";
+
+  useEffect(() => {
+    if (!requestedFocusTargetId) return;
+    if (mode === "form") return;
+    setMode("form");
+  }, [mode, requestedFocusTargetId]);
 
   if (!selectedTemplateId) {
     return <div className={styles.inspectorModeEmpty}>{t("empty.selectTemplate")}</div>;

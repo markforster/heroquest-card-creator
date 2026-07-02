@@ -1,4 +1,5 @@
 import ribbon from "@/assets/card-parts/ribbon.png";
+import { EDITOR_TARGET_IDS, useSvgFocusTarget } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useTextFittingPreferences } from "@/components/Providers/TextFittingPreferencesContext";
@@ -68,6 +69,7 @@ export default function RibbonTitle({
   const centerX = resolvedTextBounds.x + resolvedTextBounds.width / 2;
   const centerY = resolvedTextBounds.y + resolvedTextBounds.height / 2;
   const { preferences } = useTextFittingPreferences();
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.title);
   const titleLayout = fitText(
     "title",
     title,
@@ -108,7 +110,7 @@ export default function RibbonTitle({
   };
 
   return (
-    <Layer>
+    <Layer {...svgFocusProps}>
       {showRibbon ? (
         <>
           <image

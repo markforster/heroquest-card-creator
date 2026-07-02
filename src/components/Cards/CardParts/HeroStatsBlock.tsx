@@ -1,4 +1,5 @@
 import heroStatsBg from "@/assets/card-parts/hero-stats.png";
+import { EDITOR_TARGET_IDS, useSvgFocusTarget } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import StatsPair from "@/components/Cards/CardParts/StatsPair";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
@@ -40,9 +41,10 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
   const { t } = useI18n();
   const { overrides } = useStatLabelOverrides();
   const { showTextBounds } = useDebugVisuals();
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.statsHero);
 
   return (
-    <Layer>
+    <Layer {...svgFocusProps}>
       <g transform={`translate(${STATS_X}, ${y ?? STATS_Y})`}>
         <image
           href={normalizeFileProtocolAssetUrl(heroStatsBg.src)}

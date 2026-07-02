@@ -21,6 +21,10 @@ import { createPortal } from "react-dom";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
+import {
+  EDITOR_TARGET_IDS,
+  useInspectorTargetRegistration,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import { AssetsModal } from "@/components/Assets";
 import { addPinnedAsset, getAssetKindLabel } from "@/components/Cards/CardInspector/asset-utils";
 import { computeCardInspectorPopoverPosition } from "@/components/Cards/CardInspector/card-inspector-popover-position";
@@ -114,11 +118,17 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const [adjustmentsStyle, setAdjustmentsStyle] = useState<CSSProperties | null>(null);
   const [isClient, setIsClient] = useState(false);
   const inputWrapRef = useRef<HTMLDivElement | null>(null);
+  const fieldRef = useRef<HTMLDivElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const previousImageRef = useRef<ImageSnapshot | null>(null);
   const scaleSliderRef = useRef<HTMLInputElement | null>(null);
   const [scaleSliderWidthPx, setScaleSliderWidthPx] = useState(0);
+  const handleFieldFocusCapture = useInspectorTargetRegistration({
+    targetId: EDITOR_TARGET_IDS.imageMain,
+    containerRef: fieldRef,
+    focusRef: inputRef,
+  });
 
   const maxOffsetX = boundsWidth ? Math.round(boundsWidth) : 300;
   const maxOffsetY = boundsHeight ? Math.round(boundsHeight) : 300;
@@ -483,7 +493,12 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   }, [isAdjustmentsOpen, sliderMin, sliderMax, imageScaleMode]);
 
   return (
-    <div className="mb-2">
+    <div
+      ref={fieldRef}
+      className="mb-2"
+      data-hqcc-edit={EDITOR_TARGET_IDS.imageMain}
+      onFocusCapture={handleFieldFocusCapture}
+    >
       <div className={layoutStyles.inspectorFieldHeader}>
         <FormLabelWithIcon label={label} icon={Image} className="form-label" />
       </div>

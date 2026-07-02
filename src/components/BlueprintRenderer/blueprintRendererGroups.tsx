@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  EDITOR_TARGET_IDS,
+  useSvgFocusTarget,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CardTextBlock, { layoutCardText } from "@/components/Cards/CardParts/CardTextBlock";
 import HeroStatsBlock, {
   HERO_STATS_HEIGHT,
@@ -83,6 +87,54 @@ type GroupItem = {
   render: (topY: number) => JSX.Element | null;
 };
 
+function GroupTextLayer({
+  text,
+  bounds,
+  fontSize,
+  lineHeight,
+  fontWeight,
+  fontFamily,
+  fill,
+  letterSpacingEm,
+  align,
+  debug,
+  fitToBounds,
+  interactive = false,
+}: {
+  text: string;
+  bounds: { x: number; y: number; width: number; height: number };
+  fontSize?: number;
+  lineHeight?: number;
+  fontWeight?: number | string;
+  fontFamily?: string;
+  fill?: string;
+  letterSpacingEm?: number;
+  align?: "left" | "center" | "right";
+  debug?: boolean;
+  fitToBounds?: boolean;
+  interactive?: boolean;
+}) {
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.textMain);
+
+  return (
+    <Layer {...(interactive ? svgFocusProps : {})}>
+      <CardTextBlock
+        text={text}
+        bounds={bounds}
+        fontSize={fontSize}
+        lineHeight={lineHeight}
+        fontWeight={fontWeight}
+        fontFamily={fontFamily}
+        fill={fill}
+        letterSpacingEm={letterSpacingEm}
+        align={align}
+        debug={debug}
+        fitToBounds={fitToBounds}
+      />
+    </Layer>
+  );
+}
+
 function GroupIconLayer({
   assetId,
   assetName,
@@ -101,14 +153,17 @@ function GroupIconLayer({
   rotation: number;
 }) {
   const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.imageIcon);
   if (!imageUrl) {
     if (imageStatus === "missing") {
       return (
-        <MissingArtworkPlaceholder
-          bounds={{ x, y, width: size, height: size }}
-          assetName={assetName}
-          scale={1}
-        />
+        <Layer {...svgFocusProps}>
+          <MissingArtworkPlaceholder
+            bounds={{ x, y, width: size, height: size }}
+            assetName={assetName}
+            scale={1}
+          />
+        </Layer>
       );
     }
     return null;
@@ -122,7 +177,7 @@ function GroupIconLayer({
       : undefined;
 
   return (
-    <Layer>
+    <Layer {...svgFocusProps}>
       <image
         href={imageUrl}
         data-user-asset-id={assetId}
@@ -206,21 +261,21 @@ function buildGroupItems({
         id: child.id,
         height,
         render: (topY) => (
-          <Layer key={child.id}>
-            <CardTextBlock
-              text={text}
-              bounds={{ x: group.origin.x, y: topY, width: group.width, height }}
-              fontSize={fontSize}
-              lineHeight={measuredLineHeight}
-              fontWeight={fontWeight}
-              fontFamily={fontFamily}
-              fill={fill}
-              letterSpacingEm={letterSpacingEm}
-              align={align}
-              debug={showTextBounds}
-              fitToBounds={fitToBounds}
-            />
-          </Layer>
+          <GroupTextLayer
+            key={child.id}
+            text={text}
+            bounds={{ x: group.origin.x, y: topY, width: group.width, height }}
+            fontSize={fontSize}
+            lineHeight={measuredLineHeight}
+            fontWeight={fontWeight}
+            fontFamily={fontFamily}
+            fill={fill}
+            letterSpacingEm={letterSpacingEm}
+            align={align}
+            debug={showTextBounds}
+            fitToBounds={fitToBounds}
+            interactive={textKey === "description"}
+          />
         ),
       });
       return;

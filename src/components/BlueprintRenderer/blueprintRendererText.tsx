@@ -5,6 +5,10 @@ import CardTextBlock, {
   layoutCardText,
   measureCardTextMaxLineWidth,
 } from "@/components/Cards/CardParts/CardTextBlock";
+import {
+  EDITOR_TARGET_IDS,
+  useSvgFocusTarget,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
@@ -188,6 +192,7 @@ export function TextLayer({
   showTextBounds?: boolean;
 }) {
   const { defaultCopyright } = useCopyrightSettings();
+  const bodyTextFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.textMain);
 
   if (layer.type !== layerTypes.text) return null;
   if (!layer.bind?.textKey) return null;
@@ -584,7 +589,7 @@ export function TextLayer({
     const segmentCount = segmentItems.length;
 
     return (
-      <Layer key={layer.id}>
+      <Layer key={layer.id} {...(isPrimaryBodyTextLayer(blueprint, layer) ? bodyTextFocusProps : {})}>
         {segmentItems.map((segment, index) => {
           const segmentCornerRadius = flushBackdrop
             ? { top: 0, bottom: 0 }
@@ -627,7 +632,7 @@ export function TextLayer({
   const backdropPath = buildBackdropPath(backdropBounds, effectiveCornerRadius);
 
   return (
-    <Layer key={layer.id}>
+    <Layer key={layer.id} {...(isPrimaryBodyTextLayer(blueprint, layer) ? bodyTextFocusProps : {})}>
       {shouldShowBackdrop ? (
         <path d={backdropPath} fill={effectiveBackdrop.color} opacity={effectiveBackdrop.opacity} />
       ) : null}
@@ -662,6 +667,7 @@ export function CopyrightLayer({
 }) {
   const { defaultCopyright } = useCopyrightSettings();
   const { showTextBounds } = useDebugVisuals();
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.copyright);
 
   if (layer.type !== "copyright") return null;
   if (!cardData) return null;
@@ -714,7 +720,7 @@ export function CopyrightLayer({
       : undefined;
 
   return (
-    <Layer key={layer.id} data-layer-type="copyright">
+    <Layer key={layer.id} data-layer-type="copyright" {...svgFocusProps}>
       {showTextBounds ? (
         <rect
           x={bounds.x}

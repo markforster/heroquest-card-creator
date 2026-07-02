@@ -1,4 +1,5 @@
 import monsterStatsBg from "@/assets/card-parts/monster-stats.png";
+import { EDITOR_TARGET_IDS, useSvgFocusTarget } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useStatLabelOverrides } from "@/components/Providers/StatLabelOverridesProvider";
@@ -42,9 +43,10 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
   const { t } = useI18n();
   const { overrides } = useStatLabelOverrides();
   const { showTextBounds } = useDebugVisuals();
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.statsMonster);
 
   return (
-    <Layer>
+    <Layer {...svgFocusProps}>
       <g transform={`translate(${STATS_X}, ${y ?? STATS_Y})`}>
         <image
           href={normalizeFileProtocolAssetUrl(monsterStatsBg.src)}

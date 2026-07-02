@@ -2,6 +2,7 @@
 
 import { Brain, ShieldHalf, Swords, UserRound } from "lucide-react";
 
+import { EDITOR_TARGET_IDS } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import type { HeroCardData } from "@/types/card-data";
 
 import BaseStatsInspector, { type BaseStatField } from "./BaseStatsInspector";
@@ -27,6 +28,7 @@ export default function HeroStatsInspector({
   return (
     <BaseStatsInspector<HeroCardData>
       fields={HERO_FIELDS}
+      targetId={EDITOR_TARGET_IDS.statsHero}
       allowSplit={allowSplit}
       allowWildcard={allowWildcard}
       splitSecondaryDefault={splitSecondaryDefault}

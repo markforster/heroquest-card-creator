@@ -1,10 +1,14 @@
 "use client";
 
 import { BookType, PanelBottom, PanelTop, Tag, Type } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
+import {
+  EDITOR_TARGET_IDS,
+  useInspectorTargetRegistration,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { DEFAULT_TITLE_COLOR } from "@/config/colors";
@@ -45,6 +49,7 @@ export default function TitleField({
       message: t("errors.titleMaxLength"),
     },
   });
+  const { ref: titleInputRegistrationRef, ...titleInputProps } = titleRegistration;
   const placementValue = useWatch({ name: "titlePlacement" }) as string | undefined;
   const showTitleValue = useWatch({ name: "showTitle" }) as boolean | undefined;
   const titleStyleValue = useWatch({ name: "titleStyle" }) as string | undefined;
@@ -55,11 +60,25 @@ export default function TitleField({
   const titleColor = titleColorValue ?? DEFAULT_TITLE_COLOR;
   const [isTitleColorOpen, setIsTitleColorOpen] = useState(false);
   const { renderPreviewCanvas } = usePreviewCanvas();
+  const fieldRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const { smartGroups, isSmartBusy, requestSmart } = useSmartSwatches({
     renderPreviewCanvas,
     width: 300,
     height: 420,
   });
+  const handleFieldFocusCapture = useInspectorTargetRegistration({
+    targetId: EDITOR_TARGET_IDS.title,
+    containerRef: fieldRef,
+    focusRef: inputRef,
+  });
+  const setTitleInputRef = useCallback(
+    (node: HTMLInputElement | null) => {
+      inputRef.current = node;
+      titleInputRegistrationRef(node);
+    },
+    [titleInputRegistrationRef],
+  );
 
   const fieldError = (errors as Record<string, { message?: string }>).title;
 
@@ -157,12 +176,13 @@ export default function TitleField({
         <input
           id="title"
           type="text"
+          ref={setTitleInputRef}
           className="form-control"
           disabled={titleDisabled}
           title={t("tooltip.titleShownOnRibbon")}
-          {...titleRegistration}
+          {...titleInputProps}
           onChange={(event) => {
-            titleRegistration.onChange(event);
+            titleInputProps.onChange(event);
             setValue("name", event.target.value, {
               shouldDirty: true,
               shouldTouch: true,
@@ -256,9 +276,12 @@ export default function TitleField({
       id="title"
       label={label}
       icon={BookType}
+      fieldRef={fieldRef}
       error={fieldError?.message ?? (fieldError ? t("errors.invalidValue") : null)}
       disabled={titleDisabled}
+      onFocusCapture={handleFieldFocusCapture}
       showToggle={showToggle}
+      targetId={EDITOR_TARGET_IDS.title}
       toggleProps={
         showToggle
           ? {

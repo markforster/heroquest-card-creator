@@ -1,10 +1,14 @@
 "use client";
 
 import { Copyright } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
+import {
+  EDITOR_TARGET_IDS,
+  useInspectorTargetRegistration,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
@@ -26,16 +30,30 @@ export default function CopyrightField({
 }: CopyrightFieldProps) {
   const { t } = useI18n();
   const { register, setValue } = useFormContext();
+  const copyrightRegistration = register("copyright", {
+    maxLength: {
+      value: 120,
+      message: t("errors.contentMaxLength"),
+    },
+  });
+  const { ref: copyrightRegistrationRef, ...copyrightInputProps } = copyrightRegistration;
   const { defaultCopyright, isReady } = useCopyrightSettings();
   const overrideValue = useWatch({ name: "copyright" }) as string | undefined;
   const colorValue = useWatch({ name: "copyrightColor" }) as string | undefined;
   const showValue = useWatch({ name: "showCopyright" }) as boolean | undefined;
   const [isColorOpen, setIsColorOpen] = useState(false);
+  const fieldRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const { renderPreviewCanvas } = usePreviewCanvas();
   const { smartGroups, isSmartBusy, requestSmart } = useSmartSwatches({
     renderPreviewCanvas,
     width: 300,
     height: 420,
+  });
+  const handleFieldFocusCapture = useInspectorTargetRegistration({
+    targetId: EDITOR_TARGET_IDS.copyright,
+    containerRef: fieldRef,
+    focusRef: inputRef,
   });
 
   const normalizedDefault = defaultCopyright.trim();
@@ -65,7 +83,12 @@ export default function CopyrightField({
   };
 
   return (
-    <div className="mb-2">
+    <div
+      ref={fieldRef}
+      className="mb-2"
+      data-hqcc-edit={EDITOR_TARGET_IDS.copyright}
+      onFocusCapture={handleFieldFocusCapture}
+    >
       <div className={`d-flex align-items-center gap-2 ${layoutStyles.inspectorFieldHeader}`}>
         <FormLabelWithIcon
           htmlFor={inputId}
@@ -92,15 +115,14 @@ export default function CopyrightField({
           <input
             id={inputId}
             type="text"
+            ref={(node) => {
+              inputRef.current = node;
+              copyrightRegistrationRef(node);
+            }}
             className="form-control form-control-sm"
             placeholder={placeholder ?? (hasDefault ? normalizedDefault : undefined)}
             disabled={!effectiveVisible}
-            {...register("copyright", {
-              maxLength: {
-                value: 120,
-                message: t("errors.contentMaxLength"),
-              },
-            })}
+            {...copyrightInputProps}
           />
         </div>
         <div style={{ flex: "0 1 auto" }}>

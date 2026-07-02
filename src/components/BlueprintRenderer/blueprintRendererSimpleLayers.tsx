@@ -3,6 +3,10 @@
 import { useId } from "react";
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
+import {
+  EDITOR_TARGET_IDS,
+  useSvgFocusTarget,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
 import CardTexturedBorder from "@/components/Cards/CardParts/CardTexturedBorder";
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
@@ -210,6 +214,7 @@ export function ImageLayer({
       ? ((cardData as { imageAssetName?: string }).imageAssetName as string | undefined)
       : undefined;
   const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.imageMain);
 
   if (layer.type !== layerTypes.image) return null;
   const imageLayer = layer as Extract<BlueprintLayer, { type: "image" }>;
@@ -218,7 +223,11 @@ export function ImageLayer({
   const bounds = getLayerBounds(blueprint, layer);
   if (!imageUrl) {
     if (imageStatus === "missing") {
-      return <MissingArtworkPlaceholder bounds={bounds} assetName={assetName} scale={2} />;
+      return (
+        <Layer key={layer.id} {...svgFocusProps}>
+          <MissingArtworkPlaceholder bounds={bounds} assetName={assetName} scale={2} />
+        </Layer>
+      );
     }
     return null;
   }
@@ -260,7 +269,7 @@ export function ImageLayer({
       : bounds;
 
   return (
-    <Layer key={layer.id}>
+    <Layer key={layer.id} {...svgFocusProps}>
       {shouldClip ? (
         <defs>
           <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
