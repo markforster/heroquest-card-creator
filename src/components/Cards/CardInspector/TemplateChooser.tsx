@@ -16,6 +16,7 @@ import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
 import { resolveEffectiveFace } from "@/lib/card-face";
+import { getCardDisplayName } from "@/lib/card-display-name";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 import {
   type PairUsageReport,
@@ -162,7 +163,7 @@ export default function TemplateChooser() {
             const pairedRecord = await apiClient.getCard({
               params: { id: match.backFaceId },
             });
-            const pairedTitle = pairedRecord?.title ?? fallbackTitle;
+            const pairedTitle = getCardDisplayName(pairedRecord, fallbackTitle);
             setPendingChange({
               mode: "front-to-back",
               nextFace,
@@ -210,7 +211,7 @@ export default function TemplateChooser() {
       ? `Confirm unpairing from card ${pendingChange.pairedTitle}`
       : formatMessageWith("warning.pairingLossMultiple", {
           count: pendingChange.affectedCount,
-          back: currentCard?.title ?? fallbackTitle,
+          back: getCardDisplayName(currentCard, fallbackTitle),
         })
     : "";
 
