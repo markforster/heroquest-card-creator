@@ -85,4 +85,65 @@ describe("CardTextBlock rich text rendering", () => {
     expect(screen.getByText("Alpha")).toBeInTheDocument();
     expect(screen.queryByText("Beta")).toBeNull();
   });
+
+  it("renders a preview-only overflow warning strip for fixed-bounds overflow", () => {
+    const { container } = render(
+      <svg>
+        <CardTextBlock
+          text={"Alpha\nBeta"}
+          bounds={{ x: 0, y: 0, width: 300, height: 30 }}
+          fontSize={20}
+          lineHeight={20}
+          showOverflowWarning
+        />
+      </svg>,
+    );
+
+    const warningGroup = container.querySelector('[data-preview-only="overflow-warning"]');
+    const warningLines = warningGroup?.querySelectorAll("line") ?? [];
+    const warningFill = warningGroup?.querySelector('rect[fill^="url("]');
+    const warningLabel = screen.getByText("Text clipped");
+    const warningGradient = warningGroup?.querySelector("linearGradient");
+
+    expect(warningGroup).toBeInTheDocument();
+    expect(warningGroup).toHaveAttribute("data-overflow-warning", "true");
+    expect(warningFill).toBeInTheDocument();
+    expect(warningFill?.getAttribute("fill")).toMatch(/^url\(#.+\)$/);
+    expect(warningGradient).toBeInTheDocument();
+    expect(warningLabel).toBeInTheDocument();
+    expect(warningLabel).toHaveAttribute("fill", "#ffffff");
+    expect(warningLabel).toHaveAttribute("text-anchor", "middle");
+    expect(warningLines.length).toBeGreaterThan(3);
+  });
+
+  it("does not render the overflow warning strip when text fits", () => {
+    const { container } = render(
+      <svg>
+        <CardTextBlock
+          text="Alpha"
+          bounds={{ x: 0, y: 0, width: 300, height: 60 }}
+          fontSize={20}
+          lineHeight={20}
+          showOverflowWarning
+        />
+      </svg>,
+    );
+
+    expect(container.querySelector('[data-preview-only="overflow-warning"]')).toBeNull();
+  });
+
+  it("does not render the overflow warning strip unless enabled by the caller", () => {
+    const { container } = render(
+      <svg>
+        <CardTextBlock
+          text={"Alpha\nBeta"}
+          bounds={{ x: 0, y: 0, width: 300, height: 30 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    expect(container.querySelector('[data-preview-only="overflow-warning"]')).toBeNull();
+  });
 });

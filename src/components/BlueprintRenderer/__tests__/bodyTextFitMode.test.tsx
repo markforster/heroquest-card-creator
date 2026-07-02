@@ -2,6 +2,7 @@ import { render } from "@testing-library/react";
 
 type MockCardTextBlockProps = {
   fitToBounds?: boolean;
+  showOverflowWarning?: boolean;
 };
 
 const mockCardTextBlock = jest.fn<null, [MockCardTextBlockProps]>(() => null);
@@ -76,6 +77,7 @@ describe("body text fit mode blueprint gating", () => {
 
     const lastCall = (mockCardTextBlock.mock.calls as Array<[MockCardTextBlockProps]>).at(-1)?.[0];
     expect(lastCall?.fitToBounds).toBe(true);
+    expect(lastCall?.showOverflowWarning).toBe(true);
   });
 
   it("ignores fit-to-bounds for auto-height stacked description blocks", () => {
@@ -96,5 +98,6 @@ describe("body text fit mode blueprint gating", () => {
 
     const lastCall = (mockCardTextBlock.mock.calls as Array<[MockCardTextBlockProps]>).at(-1)?.[0];
     expect(lastCall?.fitToBounds).toBe(false);
+    expect(lastCall?.showOverflowWarning).toBeUndefined();
   });
 });

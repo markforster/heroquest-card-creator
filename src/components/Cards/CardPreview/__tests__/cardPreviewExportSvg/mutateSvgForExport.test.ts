@@ -96,4 +96,18 @@ describe("mutateSvgForExport", () => {
 
     expect(svg.querySelector('[data-layer-type="developer-credit"]')).toBeNull();
   });
+
+  it("removes preview-only overflow warning nodes", () => {
+    const svg = createSvg();
+    const overflowWarning = document.createElementNS(svg.namespaceURI, "g");
+    overflowWarning.setAttribute("data-preview-only", "overflow-warning");
+    const otherNode = document.createElementNS(svg.namespaceURI, "g");
+    otherNode.setAttribute("data-preview-only", "other");
+    svg.append(overflowWarning, otherNode);
+
+    mutateSvgForExport(svg, { mode: "standard" });
+
+    expect(svg.querySelector('[data-preview-only="overflow-warning"]')).toBeNull();
+    expect(svg.querySelector('[data-preview-only="other"]')).toBe(otherNode);
+  });
 });

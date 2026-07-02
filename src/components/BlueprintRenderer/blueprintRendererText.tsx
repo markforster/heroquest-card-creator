@@ -274,6 +274,7 @@ export function TextLayer({
       : false;
   const allowBodyTextFitToBounds =
     textKey === "description" ? supportsBlueprintTextFitToBounds(layer) : false;
+  const showOverflowWarning = layer.props?.textLayoutMode === "fixed-bounds";
   const fill = bodyTextColor ?? layerFill;
   const letterSpacingEm =
     typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;
@@ -614,6 +615,7 @@ export function TextLayer({
                 align={align}
                 debug={showTextBounds}
                 fitToBounds={allowBodyTextFitToBounds && bodyTextFitToBounds}
+                showOverflowWarning={showOverflowWarning}
               />
             </g>
           );
@@ -641,6 +643,7 @@ export function TextLayer({
         align={align}
         debug={showTextBounds}
         fitToBounds={allowBodyTextFitToBounds && bodyTextFitToBounds}
+        showOverflowWarning={showOverflowWarning}
       />
     </Layer>
   );

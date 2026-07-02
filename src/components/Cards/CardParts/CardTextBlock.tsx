@@ -31,9 +31,24 @@ type CardTextBlockProps = {
   align?: TextAlignment;
   debug?: boolean;
   fitToBounds?: boolean;
+  showOverflowWarning?: boolean;
 };
 
 const CARD_BODY_LINE_HEIGHT = 1.05;
+const OVERFLOW_WARNING_COLOR = "#d62839";
+const OVERFLOW_WARNING_FILL_OPACITY = 0.2;
+const OVERFLOW_WARNING_HATCH_OPACITY = 0.5;
+const OVERFLOW_WARNING_LABEL_COLOR = "#ffffff";
+const OVERFLOW_WARNING_STROKE_WIDTH = 1.75;
+const OVERFLOW_WARNING_LABEL = "Text clipped";
+const OVERFLOW_WARNING_LABEL_FONT_SIZE = 16;
+const OVERFLOW_WARNING_LABEL_FONT_WEIGHT = 700;
+const OVERFLOW_WARNING_LABEL_LETTER_SPACING_EM = 0.02;
+const OVERFLOW_WARNING_STRIP_HEIGHT = 36;
+const OVERFLOW_WARNING_BORDER_RISE = 6;
+const OVERFLOW_WARNING_HATCH_SPACING = 6;
+const OVERFLOW_WARNING_HATCH_WIDTH = 6;
+const OVERFLOW_WARNING_HATCH_RISE = 6;
 const DICE_SIZE_RATIO = 1.18;
 const DICE_TEXT_GAP_RATIO = 0.14;
 const DICE_TEXT_GAP_PX = 2;
@@ -556,6 +571,7 @@ export default function CardTextBlock({
   align = "left",
   debug = false,
   fitToBounds = false,
+  showOverflowWarning = false,
 }: CardTextBlockProps) {
   const maskPrefix = useId().replace(/:/g, "");
   const {
@@ -601,6 +617,9 @@ export default function CardTextBlock({
 
   return (
     <g>
+      {showOverflowWarning && overflowed ? (
+        <OverflowWarningStrip bounds={bounds} idPrefix={maskPrefix} />
+      ) : null}
       {debug && (
         <rect
           x={bounds.x}
@@ -745,6 +764,113 @@ export default function CardTextBlock({
 
         return elements;
       })()}
+    </g>
+  );
+}
+
+function OverflowWarningStrip({
+  bounds,
+  idPrefix,
+}: {
+  bounds: Bounds;
+  idPrefix: string;
+}) {
+  const stripHeight = Math.min(OVERFLOW_WARNING_STRIP_HEIGHT, Math.max(bounds.height, 0));
+  if (stripHeight <= 0 || bounds.width <= 0) return null;
+
+  const stripY = bounds.y + bounds.height - stripHeight;
+  const clipPathId = `${idPrefix}-overflow-warning-strip`;
+  const gradientId = `${idPrefix}-overflow-warning-gradient`;
+  const hatchCount = Math.max(
+    1,
+    Math.ceil((bounds.width + OVERFLOW_WARNING_HATCH_WIDTH) / OVERFLOW_WARNING_HATCH_SPACING),
+  );
+  const borderTopY = Math.max(bounds.y, stripY - OVERFLOW_WARNING_BORDER_RISE);
+
+  return (
+    <g data-preview-only="overflow-warning" data-overflow-warning="true">
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={OVERFLOW_WARNING_COLOR} stopOpacity={0} />
+          <stop
+            offset="100%"
+            stopColor={OVERFLOW_WARNING_COLOR}
+            stopOpacity={OVERFLOW_WARNING_FILL_OPACITY}
+          />
+        </linearGradient>
+        <clipPath id={clipPathId}>
+          <rect x={bounds.x} y={stripY} width={bounds.width} height={stripHeight} />
+        </clipPath>
+      </defs>
+      <rect
+        x={bounds.x}
+        y={stripY}
+        width={bounds.width}
+        height={stripHeight}
+        fill={`url(#${gradientId})`}
+      />
+      <g clipPath={`url(#${clipPathId})`}>
+        {Array.from({ length: hatchCount }, (_, index) => {
+          const startX = bounds.x + index * OVERFLOW_WARNING_HATCH_SPACING;
+          const startY = bounds.y + bounds.height;
+          const endX = startX + OVERFLOW_WARNING_HATCH_WIDTH;
+          const endY = startY - Math.min(stripHeight, OVERFLOW_WARNING_HATCH_RISE);
+
+          return (
+            <line
+              key={`${idPrefix}-overflow-hatch-${index}`}
+              x1={startX}
+              y1={startY}
+              x2={endX}
+              y2={endY}
+              stroke={OVERFLOW_WARNING_COLOR}
+              strokeOpacity={OVERFLOW_WARNING_HATCH_OPACITY}
+              strokeWidth={OVERFLOW_WARNING_STROKE_WIDTH}
+              strokeLinecap="round"
+            />
+          );
+        })}
+      </g>
+      <text
+        x={bounds.x + bounds.width / 2}
+        y={stripY + stripHeight / 2}
+        fill={OVERFLOW_WARNING_LABEL_COLOR}
+        fontFamily={CARD_TEXT_FONT_FAMILY}
+        fontSize={Math.min(
+          OVERFLOW_WARNING_LABEL_FONT_SIZE,
+          Math.max(10, stripHeight * 0.45),
+        )}
+        fontWeight={OVERFLOW_WARNING_LABEL_FONT_WEIGHT}
+        letterSpacing={`${OVERFLOW_WARNING_LABEL_LETTER_SPACING_EM}em`}
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
+        {OVERFLOW_WARNING_LABEL}
+      </text>
+      <line
+        x1={bounds.x}
+        y1={borderTopY}
+        x2={bounds.x}
+        y2={bounds.y + bounds.height}
+        stroke={OVERFLOW_WARNING_COLOR}
+        strokeWidth={OVERFLOW_WARNING_STROKE_WIDTH}
+      />
+      <line
+        x1={bounds.x + bounds.width}
+        y1={borderTopY}
+        x2={bounds.x + bounds.width}
+        y2={bounds.y + bounds.height}
+        stroke={OVERFLOW_WARNING_COLOR}
+        strokeWidth={OVERFLOW_WARNING_STROKE_WIDTH}
+      />
+      <line
+        x1={bounds.x}
+        y1={bounds.y + bounds.height}
+        x2={bounds.x + bounds.width}
+        y2={bounds.y + bounds.height}
+        stroke={OVERFLOW_WARNING_COLOR}
+        strokeWidth={OVERFLOW_WARNING_STROKE_WIDTH}
+      />
     </g>
   );
 }

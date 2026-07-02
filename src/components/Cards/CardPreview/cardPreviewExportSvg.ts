@@ -19,6 +19,10 @@ function removeDeveloperCreditLayer(svg: SVGSVGElement) {
   svg.querySelectorAll('[data-layer-type="developer-credit"]').forEach((node) => node.remove());
 }
 
+function removePreviewOnlyOverflowWarnings(svg: SVGSVGElement) {
+  svg.querySelectorAll('[data-preview-only="overflow-warning"]').forEach((node) => node.remove());
+}
+
 function applyExportImageClip(svg: SVGSVGElement) {
   const existing = svg.querySelector("clipPath#exportImageClip");
   if (!existing) {
@@ -96,6 +100,8 @@ export function mutateSvgForExport(
   if (developerCreditEnabled) {
     removeDeveloperCreditLayer(svg);
   }
+
+  removePreviewOnlyOverflowWarnings(svg);
 
   applyExportImageClip(svg);
 
