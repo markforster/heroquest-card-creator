@@ -201,13 +201,9 @@ describe("BlueprintRenderer SVG hover targets", () => {
 
     fireEvent.pointerEnter(statsTarget);
     expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.statsMonster);
-    const monsterStatsHover = container.querySelector(
-      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsMonster}"]`,
-    ) as SVGRectElement;
-    expect(monsterStatsHover).toHaveAttribute("x", "29");
-    expect(monsterStatsHover).toHaveAttribute("width", "692");
-    expect(monsterStatsHover).toHaveAttribute("height", "199");
-    expect(Number(monsterStatsHover.getAttribute("y"))).toBeLessThan(790);
+    expect(
+      container.querySelector(`[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsMonster}"]`),
+    ).toBeNull();
 
     fireEvent.pointerLeave(statsTarget);
     expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.statsMonster);
@@ -223,6 +219,98 @@ describe("BlueprintRenderer SVG hover targets", () => {
       jest.advanceTimersByTime(50);
     });
     expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.imageIcon);
+  });
+
+  it("shows only the hovered monster stat cell border", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="monster"
+        templateName="Monster"
+        cardData={{
+          title: "Fimir",
+          description: "Rules text",
+          imageAssetId: "art-2",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const panelHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.statsMonster}"]`,
+    ) as SVGRectElement;
+    const bodyHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.statsMonsterBodyPoints}"]`,
+    ) as SVGRectElement;
+
+    fireEvent.pointerEnter(panelHitArea);
+    expect(
+      container.querySelector(`[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsMonster}"]`),
+    ).toBeNull();
+
+    fireEvent.pointerLeave(panelHitArea);
+    fireEvent.pointerEnter(bodyHitArea);
+    const cellHoverShapes = container.querySelectorAll(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsMonsterBodyPoints}"]`,
+    );
+    expect(screen.getByTestId("hovered-target")).toHaveTextContent(
+      EDITOR_TARGET_IDS.statsMonsterBodyPoints,
+    );
+    expect(cellHoverShapes).toHaveLength(1);
+    expect(
+      container.querySelectorAll(
+        `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsMonsterBodyPoints}"][data-hqcc-hover-tone="active"]`,
+      ),
+    ).toHaveLength(1);
+    const monsterActiveCell = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsMonsterBodyPoints}"][data-hqcc-hover-tone="active"]`,
+    ) as SVGRectElement;
+    expect(Number(monsterActiveCell.getAttribute("x"))).toBeLessThan(466);
+  });
+
+  it("shows only the hovered hero stat cell border", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={{
+          title: "Sir Ragnar",
+          description: "Body text",
+          imageAssetId: "art-1",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const panelHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.statsHero}"]`,
+    ) as SVGRectElement;
+    const mindHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.statsHeroMindPoints}"]`,
+    ) as SVGRectElement;
+
+    fireEvent.pointerEnter(panelHitArea);
+    expect(
+      container.querySelector(`[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsHero}"]`),
+    ).toBeNull();
+
+    fireEvent.pointerLeave(panelHitArea);
+    fireEvent.pointerEnter(mindHitArea);
+    const cellHoverShapes = container.querySelectorAll(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsHeroMindPoints}"]`,
+    );
+    expect(screen.getByTestId("hovered-target")).toHaveTextContent(
+      EDITOR_TARGET_IDS.statsHeroMindPoints,
+    );
+    expect(cellHoverShapes).toHaveLength(1);
+    expect(
+      container.querySelectorAll(
+        `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsHeroMindPoints}"][data-hqcc-hover-tone="active"]`,
+      ),
+    ).toHaveLength(1);
+    const heroActiveCell = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsHeroMindPoints}"][data-hqcc-hover-tone="active"]`,
+    ) as SVGRectElement;
+    expect(Number(heroActiveCell.getAttribute("x"))).toBeLessThan(547);
   });
 
   it("uses fitted icon image bounds for square icon hover adornment", () => {
@@ -494,13 +582,9 @@ describe("BlueprintRenderer SVG hover targets", () => {
       `[data-hqcc-edit="${EDITOR_TARGET_IDS.statsHero}"]`,
     ) as Element;
     fireEvent.pointerEnter(heroStatsTarget);
-    const heroStatsHover = container.querySelector(
-      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsHero}"]`,
-    ) as SVGRectElement;
-    expect(heroStatsHover).toHaveAttribute("x", "41");
-    expect(heroStatsHover).toHaveAttribute("width", "668");
-    expect(heroStatsHover).toHaveAttribute("height", "190");
-    expect(Number(heroStatsHover.getAttribute("y"))).toBeLessThan(800);
+    expect(
+      container.querySelector(`[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsHero}"]`),
+    ).toBeNull();
 
     const copyrightTarget = container.querySelector(
       `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.copyright}"]`,
@@ -686,7 +770,7 @@ describe("BlueprintRenderer SVG hover targets", () => {
     expect(screen.getByTestId("selected-target")).toHaveTextContent(EDITOR_TARGET_IDS.imageMain);
   });
 
-  it("uses canvas-clipped visible artwork bounds for hero hover adornment and insets only touched edges", () => {
+  it("uses canvas-clipped visible artwork bounds for hero hover adornment and insets touched edges", () => {
     const { container } = renderWithTargets(
       <BlueprintRenderer
         templateId="hero"
@@ -719,6 +803,46 @@ describe("BlueprintRenderer SVG hover targets", () => {
     expect(imageHover).toHaveAttribute("y", `${inset}`);
     expect(imageHover).toHaveAttribute("width", `${750 - inset * 2}`);
     expect(imageHover).toHaveAttribute("height", "992");
+  });
+
+  it("clamps near-edge canvas-clipped artwork hover bounds per edge without insetting every side", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={{
+          title: "Sir Ragnar",
+          description: "Body text",
+          imageAssetId: "art-1",
+          imageOriginalWidth: 750,
+          imageOriginalHeight: 1050,
+          imageScaleMode: "absolute",
+          imageScale: 0.6,
+          imageOffsetX: 140,
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const inset = getImageHoverEdgeInset();
+    const hitArea = container.querySelector(
+      `[data-hqcc-edit="${EDITOR_TARGET_IDS.imageMain}"]`,
+    ) as SVGElement;
+
+    expect(hitArea).not.toBeNull();
+
+    fireEvent.pointerEnter(hitArea);
+    const imageHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageMain}"]`,
+    ) as SVGRectElement;
+    expect(imageHover).toHaveAttribute("x", "290");
+    expect(imageHover).toHaveAttribute("y", "170");
+    expect(imageHover).toHaveAttribute("width", `${732 - 290}`);
+    expect(imageHover).toHaveAttribute("height", "630");
+    expect(Number(imageHover.getAttribute("x"))).toBeGreaterThan(inset);
+    expect(Number(imageHover.getAttribute("x")) + Number(imageHover.getAttribute("width"))).toBe(
+      750 - inset,
+    );
   });
 
   it("insets canvas-clipped full-card artwork hover adornment while keeping the hit area full-card", () => {

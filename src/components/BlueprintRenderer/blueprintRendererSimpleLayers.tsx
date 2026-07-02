@@ -87,23 +87,20 @@ function buildImageHoverBounds({
   const visibleBounds = intersectRect(renderedBounds, canvasBounds);
   if (!visibleBounds) return null;
 
-  const touchesLeft = renderedBounds.x <= canvasBounds.x;
-  const touchesTop = renderedBounds.y <= canvasBounds.y;
-  const touchesRight =
-    renderedBounds.x + renderedBounds.width >= canvasBounds.x + canvasBounds.width;
-  const touchesBottom =
-    renderedBounds.y + renderedBounds.height >= canvasBounds.y + canvasBounds.height;
-
-  const insetLeft = touchesLeft ? IMAGE_HOVER_EDGE_INSET : 0;
-  const insetTop = touchesTop ? IMAGE_HOVER_EDGE_INSET : 0;
-  const insetRight = touchesRight ? IMAGE_HOVER_EDGE_INSET : 0;
-  const insetBottom = touchesBottom ? IMAGE_HOVER_EDGE_INSET : 0;
+  const minLeft = canvasBounds.x + IMAGE_HOVER_EDGE_INSET;
+  const minTop = canvasBounds.y + IMAGE_HOVER_EDGE_INSET;
+  const maxRight = canvasBounds.x + canvasBounds.width - IMAGE_HOVER_EDGE_INSET;
+  const maxBottom = canvasBounds.y + canvasBounds.height - IMAGE_HOVER_EDGE_INSET;
+  const left = Math.max(visibleBounds.x, minLeft);
+  const top = Math.max(visibleBounds.y, minTop);
+  const right = Math.min(visibleBounds.x + visibleBounds.width, maxRight);
+  const bottom = Math.min(visibleBounds.y + visibleBounds.height, maxBottom);
 
   return {
-    x: visibleBounds.x + insetLeft,
-    y: visibleBounds.y + insetTop,
-    width: Math.max(0, visibleBounds.width - insetLeft - insetRight),
-    height: Math.max(0, visibleBounds.height - insetTop - insetBottom),
+    x: left,
+    y: top,
+    width: Math.max(0, right - left),
+    height: Math.max(0, bottom - top),
     radius: IMAGE_HOVER_RADIUS,
   };
 }

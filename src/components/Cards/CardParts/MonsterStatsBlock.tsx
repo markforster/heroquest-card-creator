@@ -1,7 +1,9 @@
 import monsterStatsBg from "@/assets/card-parts/monster-stats.png";
 import {
   EDITOR_TARGET_IDS,
-  useRegisterHoverAdornment,
+  MONSTER_STAT_TARGET_IDS,
+  type EditorTargetId,
+  useRegisterHoverAdornments,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
@@ -12,6 +14,7 @@ import { CARD_WIDTH, sx, sy } from "@/config/card-canvas";
 import { useI18n } from "@/i18n/I18nProvider";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { getStatLabel } from "@/lib/stat-labels";
+import type { BlueprintBounds } from "@/types/blueprints";
 import type { StatValue } from "@/types/stats";
 
 import StatsPair from "./StatsPair";
@@ -43,34 +46,109 @@ const defaultStats: MonsterStats = {
 };
 
 export const MONSTER_STATS_HEIGHT = STATS_HEIGHT;
-const HOVER_OUTSET = sx(10);
+const CELL_RADIUS = 12;
+const CELL_HOVER_OUTSET = sx(10);
+
+type MonsterStatCell = {
+  key: keyof MonsterStats;
+  targetId: (typeof MONSTER_STAT_TARGET_IDS)[keyof typeof MONSTER_STAT_TARGET_IDS];
+  header: string;
+  value?: StatValue;
+  bounds: BlueprintBounds;
+};
+
+function StatsHitArea({ targetId, bounds }: { targetId: EditorTargetId; bounds: BlueprintBounds }) {
+  const focusProps = useSvgFocusTarget(targetId);
+
+  return (
+    <rect
+      x={bounds.x}
+      y={bounds.y}
+      width={bounds.width}
+      height={bounds.height}
+      fill="transparent"
+      pointerEvents="all"
+      data-hqcc-hit-area={targetId}
+      {...focusProps}
+    />
+  );
+}
 
 export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterStatsBlockProps) {
   const { t } = useI18n();
   const { overrides } = useStatLabelOverrides();
   const { showTextBounds } = useDebugVisuals();
-  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.statsMonster);
-  const hoverBounds = padBounds(
+  const panelFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.statsMonster);
+  const panelY = y ?? STATS_Y;
+  const statCells: MonsterStatCell[] = [
     {
-      x: STATS_X,
-      y: y ?? STATS_Y,
-      width: STATS_WIDTH,
-      height: STATS_HEIGHT,
+      key: "movementSquares",
+      targetId: MONSTER_STAT_TARGET_IDS.movementSquares,
+      header: getStatLabel("statsLabelMove", t("stats.movementSquares"), overrides),
+      value: stats.movementSquares,
+      bounds: { x: sx(11), y: sy(14), width: sx(176), height: sy(138) },
     },
-    HOVER_OUTSET,
-  );
-  useRegisterHoverAdornment(EDITOR_TARGET_IDS.statsMonster, {
-    kind: "rect",
-    x: hoverBounds.x,
-    y: hoverBounds.y,
-    width: hoverBounds.width,
-    height: hoverBounds.height,
-    radius: 18,
-  });
+    {
+      key: "attackDice",
+      targetId: MONSTER_STAT_TARGET_IDS.attackDice,
+      header: getStatLabel("statsLabelAttack", t("stats.attackDice"), overrides),
+      value: stats.attackDice,
+      bounds: { x: sx(191), y: sy(14), width: sx(116), height: sy(138) },
+    },
+    {
+      key: "defendDice",
+      targetId: MONSTER_STAT_TARGET_IDS.defendDice,
+      header: getStatLabel("statsLabelDefend", t("stats.defendDice"), overrides),
+      value: stats.defendDice,
+      bounds: { x: sx(307), y: sy(14), width: sx(116), height: sy(138) },
+    },
+    {
+      key: "bodyPoints",
+      targetId: MONSTER_STAT_TARGET_IDS.bodyPoints,
+      header: getStatLabel("statsLabelMonsterBodyPoints", t("stats.bodyPoints"), overrides),
+      value: stats.bodyPoints,
+      bounds: { x: sx(427), y: sy(14), width: sx(116), height: sy(138) },
+    },
+    {
+      key: "mindPoints",
+      targetId: MONSTER_STAT_TARGET_IDS.mindPoints,
+      header: getStatLabel("statsLabelMonsterMindPoints", t("stats.mindPoints"), overrides),
+      value: stats.mindPoints,
+      bounds: { x: sx(542), y: sy(14), width: sx(116), height: sy(138) },
+    },
+  ];
+  useRegisterHoverAdornments([
+    {
+      targetId: EDITOR_TARGET_IDS.statsMonster,
+      descriptor: null,
+    },
+    ...statCells.map((cell) => ({
+      targetId: cell.targetId,
+      descriptor: {
+        kind: "group" as const,
+        items: [
+          {
+            kind: "rect" as const,
+            ...padBounds(
+              {
+                x: STATS_X + cell.bounds.x,
+                y: panelY + cell.bounds.y,
+                width: cell.bounds.width,
+                height: cell.bounds.height,
+              },
+              CELL_HOVER_OUTSET,
+            ),
+            radius: CELL_RADIUS,
+            tone: "active" as const,
+          },
+        ],
+      },
+    })),
+  ]);
 
   return (
-    <Layer {...svgFocusProps}>
-      <g transform={`translate(${STATS_X}, ${y ?? STATS_Y})`}>
+    <Layer>
+      <g transform={`translate(${STATS_X}, ${panelY})`}>
         <image
           href={normalizeFileProtocolAssetUrl(monsterStatsBg.src)}
           x={0}
@@ -80,52 +158,18 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
           // preserveAspectRatio="xMidYMid meet"
           preserveAspectRatio="none"
         />
-        <StatsPair
-          header={getStatLabel("statsLabelMove", t("stats.movementSquares"), overrides)}
-          value={stats.movementSquares}
-          x={sx(11)}
-          y={sy(14)}
-          width={sx(176)}
-          height={sy(138)}
-          // headerHeight={headerHeight}
-          debug={showTextBounds}
-        />
-        <StatsPair
-          header={getStatLabel("statsLabelAttack", t("stats.attackDice"), overrides)}
-          value={stats.attackDice}
-          x={sx(191)}
-          y={sy(14)}
-          width={sx(116)}
-          height={sy(138)}
-          debug={showTextBounds}
-        />
-        <StatsPair
-          header={getStatLabel("statsLabelDefend", t("stats.defendDice"), overrides)}
-          value={stats.defendDice}
-          x={sx(307)}
-          y={sy(14)}
-          width={sx(116)}
-          height={sy(138)}
-          debug={showTextBounds}
-        />
-        <StatsPair
-          header={getStatLabel("statsLabelMonsterBodyPoints", t("stats.bodyPoints"), overrides)}
-          value={stats.bodyPoints}
-          x={sx(427)}
-          y={sy(14)}
-          width={sx(116)}
-          height={sy(138)}
-          debug={showTextBounds}
-        />
-        <StatsPair
-          header={getStatLabel("statsLabelMonsterMindPoints", t("stats.mindPoints"), overrides)}
-          value={stats.mindPoints}
-          x={sx(542)}
-          y={sy(14)}
-          width={sx(116)}
-          height={sy(138)}
-          debug={showTextBounds}
-        />
+        {statCells.map((cell) => (
+          <StatsPair
+            key={cell.key}
+            header={cell.header}
+            value={cell.value}
+            x={cell.bounds.x}
+            y={cell.bounds.y}
+            width={cell.bounds.width}
+            height={cell.bounds.height}
+            debug={showTextBounds}
+          />
+        ))}
         {showTextBounds && (
           <rect
             x={0}
@@ -138,6 +182,19 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
             data-debug-bounds="true"
           />
         )}
+        <rect
+          x={0}
+          y={0}
+          width={STATS_WIDTH}
+          height={STATS_HEIGHT}
+          fill="transparent"
+          pointerEvents="all"
+          data-hqcc-hit-area={EDITOR_TARGET_IDS.statsMonster}
+          {...panelFocusProps}
+        />
+        {statCells.map((cell) => (
+          <StatsHitArea key={cell.targetId} targetId={cell.targetId} bounds={cell.bounds} />
+        ))}
       </g>
     </Layer>
   );

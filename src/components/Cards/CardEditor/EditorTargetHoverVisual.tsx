@@ -6,7 +6,12 @@ import { ENABLE_EDITOR_TARGET_INTERACTIONS } from "@/config/flags";
 import type { BlueprintBounds } from "@/types/blueprints";
 
 import * as EditorTargetsContext from "./EditorTargetsContext";
-import type { EditorTargetId, HoverAdornmentDescriptor } from "./EditorTargetsContext";
+import type {
+  EditorTargetId,
+  HoverAdornmentDescriptor,
+  HoverAdornmentShape,
+  HoverAdornmentTone,
+} from "./EditorTargetsContext";
 
 const HOVER_STYLE: CSSProperties = {
   pointerEvents: "none",
@@ -18,11 +23,18 @@ const HOVER_FILTER =
 const HOVER_FILL = "rgba(255, 255, 255, 0.08)";
 const HOVER_STROKE = "rgba(255, 255, 255, 0.9)";
 const HOVER_STROKE_WIDTH = 3.5;
+const HOVER_SECONDARY_FILL = "rgba(255, 255, 255, 0.02)";
+const HOVER_SECONDARY_STROKE = "rgba(255, 255, 255, 0.45)";
+const HOVER_SECONDARY_STROKE_WIDTH = 2;
+const HOVER_ACTIVE_FILL = "rgba(255, 255, 255, 0.12)";
+const HOVER_ACTIVE_STROKE = "rgba(255, 255, 255, 1)";
+const HOVER_ACTIVE_STROKE_WIDTH = 4;
 const HOVER_FADE_MS = 250;
 
 type HoverVisualProps = {
   targetId: EditorTargetId;
   visible: boolean;
+  tone?: HoverAdornmentTone;
 };
 
 type HoverRectProps = HoverVisualProps &
@@ -39,6 +51,28 @@ export function getEditorTargetHoverStyle(visible: boolean): CSSProperties {
     ...HOVER_STYLE,
     opacity: visible ? 1 : 0,
     filter: HOVER_FILTER,
+  };
+}
+
+function getHoverToneVisuals(tone: HoverAdornmentTone | undefined) {
+  if (tone === "secondary") {
+    return {
+      fill: HOVER_SECONDARY_FILL,
+      stroke: HOVER_SECONDARY_STROKE,
+      strokeWidth: HOVER_SECONDARY_STROKE_WIDTH,
+    };
+  }
+  if (tone === "active") {
+    return {
+      fill: HOVER_ACTIVE_FILL,
+      stroke: HOVER_ACTIVE_STROKE,
+      strokeWidth: HOVER_ACTIVE_STROKE_WIDTH,
+    };
+  }
+  return {
+    fill: HOVER_FILL,
+    stroke: HOVER_STROKE,
+    strokeWidth: HOVER_STROKE_WIDTH,
   };
 }
 
@@ -59,8 +93,10 @@ export function EditorTargetHoverRect({
   width,
   height,
   radius = 12,
+  tone,
   ...rest
 }: HoverRectProps) {
+  const visuals = getHoverToneVisuals(tone);
   return (
     <rect
       x={x}
@@ -69,29 +105,66 @@ export function EditorTargetHoverRect({
       height={height}
       rx={radius}
       ry={radius}
-      fill={HOVER_FILL}
-      stroke={HOVER_STROKE}
-      strokeWidth={HOVER_STROKE_WIDTH}
+      fill={visuals.fill}
+      stroke={visuals.stroke}
+      strokeWidth={visuals.strokeWidth}
       data-hqcc-hover-target={targetId}
       data-hqcc-hover-visible={visible ? "true" : "false"}
+      data-hqcc-hover-tone={tone ?? "primary"}
       style={getEditorTargetHoverStyle(visible)}
       {...rest}
     />
   );
 }
 
-export function EditorTargetHoverPath({ targetId, visible, d, ...rest }: HoverPathProps) {
+export function EditorTargetHoverPath({ targetId, visible, d, tone, ...rest }: HoverPathProps) {
+  const visuals = getHoverToneVisuals(tone);
   return (
     <path
       d={d}
-      fill={HOVER_FILL}
-      stroke={HOVER_STROKE}
-      strokeWidth={HOVER_STROKE_WIDTH}
+      fill={visuals.fill}
+      stroke={visuals.stroke}
+      strokeWidth={visuals.strokeWidth}
       strokeLinejoin="round"
       data-hqcc-hover-target={targetId}
       data-hqcc-hover-visible={visible ? "true" : "false"}
+      data-hqcc-hover-tone={tone ?? "primary"}
       style={getEditorTargetHoverStyle(visible)}
       {...rest}
+    />
+  );
+}
+
+export function HoverAdornmentShapeNode({
+  targetId,
+  visible,
+  shape,
+}: {
+  targetId: EditorTargetId;
+  visible: boolean;
+  shape: HoverAdornmentShape;
+}) {
+  if (shape.kind === "path") {
+    return (
+      <EditorTargetHoverPath
+        targetId={targetId}
+        visible={visible}
+        d={shape.d}
+        tone={shape.tone}
+      />
+    );
+  }
+
+  return (
+    <EditorTargetHoverRect
+      targetId={targetId}
+      visible={visible}
+      x={shape.x}
+      y={shape.y}
+      width={shape.width}
+      height={shape.height}
+      radius={shape.radius}
+      tone={shape.tone}
     />
   );
 }
@@ -105,21 +178,22 @@ export function HoverAdornmentDescriptorShape({
   visible: boolean;
   descriptor: HoverAdornmentDescriptor;
 }) {
-  if (descriptor.kind === "path") {
-    return <EditorTargetHoverPath targetId={targetId} visible={visible} d={descriptor.d} />;
+  if (descriptor.kind === "group") {
+    return (
+      <>
+        {descriptor.items.map((shape, index) => (
+          <HoverAdornmentShapeNode
+            key={`${targetId}-${index}`}
+            targetId={targetId}
+            visible={visible}
+            shape={shape}
+          />
+        ))}
+      </>
+    );
   }
 
-  return (
-    <EditorTargetHoverRect
-      targetId={targetId}
-      visible={visible}
-      x={descriptor.x}
-      y={descriptor.y}
-      width={descriptor.width}
-      height={descriptor.height}
-      radius={descriptor.radius}
-    />
-  );
+  return <HoverAdornmentShapeNode targetId={targetId} visible={visible} shape={descriptor} />;
 }
 
 export function EditorTargetAdornmentLayer() {

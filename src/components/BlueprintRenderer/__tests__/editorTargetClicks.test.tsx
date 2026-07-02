@@ -12,13 +12,36 @@ jest.mock("@/components/Cards/CardEditor/EditorTargetsContext", () => ({
     imageIcon: "image.icon",
     textMain: "text.main",
     statsHero: "stats.hero",
+    statsHeroAttackDice: "stats.hero.attackDice",
+    statsHeroDefendDice: "stats.hero.defendDice",
+    statsHeroBodyPoints: "stats.hero.bodyPoints",
+    statsHeroMindPoints: "stats.hero.mindPoints",
     statsMonster: "stats.monster",
+    statsMonsterMovementSquares: "stats.monster.movementSquares",
+    statsMonsterAttackDice: "stats.monster.attackDice",
+    statsMonsterDefendDice: "stats.monster.defendDice",
+    statsMonsterBodyPoints: "stats.monster.bodyPoints",
+    statsMonsterMindPoints: "stats.monster.mindPoints",
     copyright: "copyright",
+  },
+  HERO_STAT_TARGET_IDS: {
+    attackDice: "stats.hero.attackDice",
+    defendDice: "stats.hero.defendDice",
+    bodyPoints: "stats.hero.bodyPoints",
+    mindPoints: "stats.hero.mindPoints",
+  },
+  MONSTER_STAT_TARGET_IDS: {
+    movementSquares: "stats.monster.movementSquares",
+    attackDice: "stats.monster.attackDice",
+    defendDice: "stats.monster.defendDice",
+    bodyPoints: "stats.monster.bodyPoints",
+    mindPoints: "stats.monster.mindPoints",
   },
   useEditorTargets: () => ({
     hoveredTargetId: null,
   }),
   useRegisterHoverAdornment: () => undefined,
+  useRegisterHoverAdornments: () => undefined,
   useSvgFocusTarget: (targetId: string) => ({
     "data-hqcc-edit": targetId,
     onClick: () => mockRequestFocusTarget(targetId),
@@ -140,6 +163,45 @@ describe("BlueprintRenderer SVG focus targets", () => {
     expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.copyright);
   });
 
+  it("requests focus for individual hero stat cell targets and keeps panel fallback", () => {
+    const { container } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="hero"
+          templateName="Hero"
+          cardData={{
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            showCopyright: false,
+          } as never}
+        />
+      </svg>,
+    );
+
+    const panelHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.statsHero}"]`,
+    );
+    const attackHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.statsHeroAttackDice}"]`,
+    );
+    const mindHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.statsHeroMindPoints}"]`,
+    );
+
+    expect(panelHitArea).not.toBeNull();
+    expect(attackHitArea).not.toBeNull();
+    expect(mindHitArea).not.toBeNull();
+
+    fireEvent.click(panelHitArea as Element);
+    fireEvent.click(attackHitArea as Element);
+    fireEvent.click(mindHitArea as Element);
+
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.statsHero);
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.statsHeroAttackDice);
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.statsHeroMindPoints);
+  });
+
   it("requests focus for monster-only targets and omits absent optional targets", () => {
     const { container, rerender } = render(
       <svg>
@@ -195,6 +257,49 @@ describe("BlueprintRenderer SVG focus targets", () => {
     expect(
       container.querySelector(`[data-hqcc-edit="${EDITOR_TARGET_IDS.copyright}"]`),
     ).toBeNull();
+  });
+
+  it("requests focus for individual monster stat cell targets and keeps panel fallback", () => {
+    const { container } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="monster"
+          templateName="Monster"
+          cardData={{
+            title: "Fimir",
+            description: "Rules text",
+            imageAssetId: "art-2",
+            showCopyright: false,
+          } as never}
+        />
+      </svg>,
+    );
+
+    const panelHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.statsMonster}"]`,
+    );
+    const moveHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.statsMonsterMovementSquares}"]`,
+    );
+    const bodyHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.statsMonsterBodyPoints}"]`,
+    );
+
+    expect(panelHitArea).not.toBeNull();
+    expect(moveHitArea).not.toBeNull();
+    expect(bodyHitArea).not.toBeNull();
+
+    fireEvent.click(panelHitArea as Element);
+    fireEvent.click(moveHitArea as Element);
+    fireEvent.click(bodyHitArea as Element);
+
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.statsMonster);
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(
+      EDITOR_TARGET_IDS.statsMonsterMovementSquares,
+    );
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(
+      EDITOR_TARGET_IDS.statsMonsterBodyPoints,
+    );
   });
 
   it("requests focus for labelled-back image and title hit areas in both placements", () => {

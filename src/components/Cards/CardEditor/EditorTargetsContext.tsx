@@ -20,21 +20,52 @@ export const EDITOR_TARGET_IDS = {
   imageIcon: "image.icon",
   textMain: "text.main",
   statsHero: "stats.hero",
+  statsHeroAttackDice: "stats.hero.attackDice",
+  statsHeroDefendDice: "stats.hero.defendDice",
+  statsHeroBodyPoints: "stats.hero.bodyPoints",
+  statsHeroMindPoints: "stats.hero.mindPoints",
   statsMonster: "stats.monster",
+  statsMonsterMovementSquares: "stats.monster.movementSquares",
+  statsMonsterAttackDice: "stats.monster.attackDice",
+  statsMonsterDefendDice: "stats.monster.defendDice",
+  statsMonsterBodyPoints: "stats.monster.bodyPoints",
+  statsMonsterMindPoints: "stats.monster.mindPoints",
   copyright: "copyright",
 } as const;
 
 export type EditorTargetId = (typeof EDITOR_TARGET_IDS)[keyof typeof EDITOR_TARGET_IDS];
+export const HERO_STAT_TARGET_IDS = {
+  attackDice: EDITOR_TARGET_IDS.statsHeroAttackDice,
+  defendDice: EDITOR_TARGET_IDS.statsHeroDefendDice,
+  bodyPoints: EDITOR_TARGET_IDS.statsHeroBodyPoints,
+  mindPoints: EDITOR_TARGET_IDS.statsHeroMindPoints,
+} as const;
+export const MONSTER_STAT_TARGET_IDS = {
+  movementSquares: EDITOR_TARGET_IDS.statsMonsterMovementSquares,
+  attackDice: EDITOR_TARGET_IDS.statsMonsterAttackDice,
+  defendDice: EDITOR_TARGET_IDS.statsMonsterDefendDice,
+  bodyPoints: EDITOR_TARGET_IDS.statsMonsterBodyPoints,
+  mindPoints: EDITOR_TARGET_IDS.statsMonsterMindPoints,
+} as const;
 type FocusRequest = { targetId: EditorTargetId; requestId: number };
 type FocusTargetHandler = () => void;
-export type HoverAdornmentDescriptor =
+export type HoverAdornmentTone = "primary" | "secondary" | "active";
+export type HoverAdornmentShape =
   | ({
       kind: "rect";
       radius?: number;
+      tone?: HoverAdornmentTone;
     } & BlueprintBounds)
   | {
       kind: "path";
       d: string;
+      tone?: HoverAdornmentTone;
+    };
+export type HoverAdornmentDescriptor =
+  | HoverAdornmentShape
+  | {
+      kind: "group";
+      items: HoverAdornmentShape[];
     };
 
 const HOVER_CLEAR_DELAY_MS = 50;
@@ -331,4 +362,40 @@ export function useRegisterHoverAdornment(
     if (!stableDescriptor) return;
     return registerHoverAdornment(targetId, stableDescriptor);
   }, [descriptorKey, registerHoverAdornment, stableDescriptor, targetId]);
+}
+
+export function useRegisterHoverAdornments(
+  entries: Array<{ targetId: EditorTargetId; descriptor: HoverAdornmentDescriptor | null }>,
+) {
+  const editorTargets = useOptionalEditorTargets();
+  const registerHoverAdornment = editorTargets?.registerHoverAdornment;
+  const descriptorKey = useMemo(
+    () =>
+      JSON.stringify(
+        entries.map((entry) => ({
+          targetId: entry.targetId,
+          descriptor: entry.descriptor,
+        })),
+      ),
+    [entries],
+  );
+  const stableEntries = useMemo(() => entries, [descriptorKey]);
+
+  useEffect(() => {
+    if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
+    if (!registerHoverAdornment) return;
+
+    const cleanups = stableEntries
+      .filter(
+        (
+          entry,
+        ): entry is { targetId: EditorTargetId; descriptor: HoverAdornmentDescriptor } =>
+          entry.descriptor != null,
+      )
+      .map((entry) => registerHoverAdornment(entry.targetId, entry.descriptor));
+
+    return () => {
+      cleanups.forEach((cleanup) => cleanup());
+    };
+  }, [descriptorKey, registerHoverAdornment, stableEntries]);
 }

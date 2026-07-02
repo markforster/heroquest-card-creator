@@ -21,6 +21,7 @@ export type BaseStatField<T extends FieldValues> = {
   name: Path<T>;
   labelKey: MessageKey;
   icon: LucideIcon;
+  targetId: EditorTargetId;
 };
 
 export type BaseStatsInspectorProps<T extends FieldValues> = {
@@ -63,20 +64,59 @@ export default function BaseStatsInspector<T extends FieldValues>({
       <StatsAccordion label={t("form.stats")} previewValues={previewValues}>
         <div className={layoutStyles.statRows}>
           {fields.map((field) => (
-            <div key={String(field.name)} className={layoutStyles.statRow}>
-              <StatControl
-              name={field.name}
-              label={t(field.labelKey)}
-              icon={field.icon}
-              min={0}
-              max={999}
+            <StatInspectorRow
+              key={String(field.name)}
+              field={field}
               allowWildcard={allowWildcard}
               splitSecondaryDefault={splitSecondaryDefault}
+              StatControl={StatControl}
+              label={t(field.labelKey)}
             />
-          </div>
-        ))}
+          ))}
         </div>
       </StatsAccordion>
+    </div>
+  );
+}
+
+type StatInspectorRowProps<T extends FieldValues> = {
+  field: BaseStatField<T>;
+  allowWildcard: boolean;
+  splitSecondaryDefault: number;
+  StatControl: typeof SplitStatStepper<T> | typeof StatStepper<T>;
+  label: string;
+};
+
+function StatInspectorRow<T extends FieldValues>({
+  field,
+  allowWildcard,
+  splitSecondaryDefault,
+  StatControl,
+  label,
+}: StatInspectorRowProps<T>) {
+  const fieldRef = useRef<HTMLDivElement | null>(null);
+  const handleFieldFocusCapture = useInspectorTargetRegistration({
+    targetId: field.targetId,
+    containerRef: fieldRef,
+    focusSelectors: ["input:not([disabled])", "button:not([disabled])"],
+  });
+
+  return (
+    <div
+      ref={fieldRef}
+      className={layoutStyles.statRow}
+      data-hqcc-edit={field.targetId}
+      onFocusCapture={handleFieldFocusCapture}
+    >
+      <StatControl
+        name={field.name}
+        label={label}
+        icon={field.icon}
+        min={0}
+        max={999}
+        allowWildcard={allowWildcard}
+        splitSecondaryDefault={splitSecondaryDefault}
+      />
     </div>
   );
 }
