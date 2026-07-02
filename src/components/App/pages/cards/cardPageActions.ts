@@ -2,6 +2,7 @@
 
 import type { CardRecord, CardStatus } from "@/api/cards";
 import { apiClient } from "@/api/client";
+import { invalidateCollectionsQueries } from "@/api/queryInvalidation";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import type { CardEditorContextValue } from "@/components/Providers/CardEditorContext";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
@@ -13,6 +14,7 @@ import type { TemplateId } from "@/types/templates";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import type { NavigateFunction } from "react-router-dom";
+import type { QueryClient } from "@tanstack/react-query";
 import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 
 type SavingMode = "new" | "update" | null;
@@ -23,9 +25,11 @@ type CreateCardPageActionsArgs = {
   activeStatus?: CardStatus;
   bypassNextNavigation: () => void;
   currentTemplateId: TemplateId | null;
+  draftSourceCardId: string | null;
   methods: Pick<UseFormReturn<CardDataByTemplate[TemplateId]>, "getValues">;
   navigate: NavigateFunction;
   previewRef: RefObject<CardPreviewHandle>;
+  queryClient: QueryClient;
   resetWithSaved: (values: CardDataByTemplate[TemplateId]) => void;
   setActiveCard: CardEditorContextValue["setActiveCard"];
   setDraftSourceCardId: Dispatch<SetStateAction<string | null>>;
@@ -40,9 +44,11 @@ export function createCardPageActions({
   activeStatus,
   bypassNextNavigation,
   currentTemplateId,
+  draftSourceCardId,
   methods,
   navigate,
   previewRef,
+  queryClient,
   resetWithSaved,
   setActiveCard,
   setDraftSourceCardId,
@@ -77,8 +83,10 @@ export function createCardPageActions({
 
     let didSave = false;
     let didCreateNew = false;
+    let copiedCollectionMemberships = false;
     try {
       if (mode === "new") {
+        const duplicateFromCardId = draftSourceCardId;
         const record = await apiClient.createCard({
           ...patch,
           templateId,
@@ -86,6 +94,7 @@ export function createCardPageActions({
           thumbnailBlob,
           name: derivedName,
           lastViewedAt: viewedAt,
+          ...(duplicateFromCardId ? { duplicateFromCardId } : {}),
         });
         setActiveCard(templateId, record.id, record.status);
         bypassNextNavigation();
@@ -93,6 +102,7 @@ export function createCardPageActions({
         resetWithSaved(mapCardRecordToFormValues(templateId, record));
         didSave = true;
         didCreateNew = true;
+        copiedCollectionMemberships = Boolean(duplicateFromCardId);
       } else if (mode === "update") {
         if (!activeCardId || activeStatus !== "saved") return;
         const record = await apiClient.updateCard(
@@ -109,6 +119,9 @@ export function createCardPageActions({
       // eslint-disable-next-line no-console
       console.error("[card-page] Failed to save card", error);
     } finally {
+      if (didSave && copiedCollectionMemberships) {
+        await invalidateCollectionsQueries(queryClient);
+      }
       if (didSave) {
         setSaveToken((prev) => prev + 1);
       }

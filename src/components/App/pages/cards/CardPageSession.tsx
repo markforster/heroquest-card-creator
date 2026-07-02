@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormState, useWatch } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 import type { CardRecord } from "@/api/cards";
 import { useGetCard } from "@/api/hooks";
@@ -28,6 +29,7 @@ type UseCardPageSessionArgs = {
 };
 
 export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
+  const queryClient = useQueryClient();
   const { cardId } = useParams();
   const navigate = useNavigate();
   const { bypassNextNavigation } = useUnsavedChangesGuardControls();
@@ -189,9 +191,11 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
       activeStatus,
       bypassNextNavigation,
       currentTemplateId,
+      draftSourceCardId,
       methods,
       navigate,
       previewRef,
+      queryClient,
       resetWithSaved,
       setActiveCard,
       setDraftSourceCardId,

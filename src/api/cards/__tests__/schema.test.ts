@@ -12,6 +12,17 @@ describe("card schemas", () => {
     expect(parsed.bodyTextFitToBounds).toBe(true);
   });
 
+  it("accepts duplicateFromCardId in create payloads", () => {
+    const parsed = cardCreateInputSchema.parse({
+      templateId: "hero",
+      status: "saved",
+      name: "Schema Card",
+      duplicateFromCardId: "source-card",
+    });
+
+    expect(parsed.duplicateFromCardId).toBe("source-card");
+  });
+
   it("accepts bodyTextFitToBounds in update payloads", () => {
     const parsed = cardUpdateInputSchema.parse({
       bodyTextFitToBounds: true,

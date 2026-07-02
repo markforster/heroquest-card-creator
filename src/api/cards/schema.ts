@@ -86,6 +86,7 @@ export const cardCreateInputSchema = cardRecordSchema
     updatedAt: z.number().optional(),
     nameLower: z.string().optional(),
     schemaVersion: cardSchemaVersionSchema.optional(),
+    duplicateFromCardId: z.string().nullable().optional(),
   });
 
 export const cardUpdateInputSchema = cardRecordSchema

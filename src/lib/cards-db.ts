@@ -243,17 +243,47 @@ async function writeCardAndNormalizedState(
     db.cardHeroStatsComponents,
     db.cardMonsterStatsComponents,
   ];
-  await db.transaction(
-    "rw",
-    writeTables,
-    async (tx: Transaction) => {
-      const normalized = await replaceNormalizedCardRecords(tx, record);
-      if (!normalized) {
-        throw new Error(`Unable to derive normalized card rows for ${record.id}`);
-      }
-      await replaceNormalizedCardThumbnail(tx, record);
-    },
-  );
+  await db.transaction("rw", writeTables, async (tx: Transaction) => {
+    await writeCardAndNormalizedStateInTransaction(tx, record);
+  });
+}
+
+async function writeCardAndNormalizedStateInTransaction(
+  tx: Transaction,
+  record: CardRecord,
+): Promise<void> {
+  const normalized = await replaceNormalizedCardRecords(tx, record);
+  if (!normalized) {
+    throw new Error(`Unable to derive normalized card rows for ${record.id}`);
+  }
+  await replaceNormalizedCardThumbnail(tx, record);
+}
+
+async function copyDuplicateSourceCollectionMemberships(
+  tx: Transaction,
+  sourceCardId: string,
+  duplicatedCardId: string,
+  now: number,
+): Promise<string[]> {
+  const collections = (await tx.table("collections").toArray()) as CollectionRecord[];
+  const collectionsToUpdate = collections
+    .filter(
+      (collection) =>
+        collection.cardIds.includes(sourceCardId) &&
+        !collection.cardIds.includes(duplicatedCardId),
+    )
+    .map((collection) => ({
+      ...collection,
+      cardIds: [...collection.cardIds, duplicatedCardId],
+      updatedAt: now,
+    }));
+
+  if (!collectionsToUpdate.length) {
+    return [];
+  }
+
+  await tx.table("collections").bulkPut(collectionsToUpdate);
+  return collectionsToUpdate.map((collection) => collection.id);
 }
 
 export async function createCard(
@@ -263,15 +293,17 @@ export async function createCard(
     updatedAt?: number;
     nameLower?: string;
     schemaVersion?: 1 | 2;
+    duplicateFromCardId?: string | null;
   },
 ): Promise<CardRecord> {
+  const { duplicateFromCardId, ...persistedInput } = input;
   const now = Date.now();
   const createdAt = input.createdAt ?? now;
   const updatedAt = input.updatedAt ?? createdAt;
   const id = input.id ?? generateId();
   const normalizedThumbnail = normalizeThumbnailBlob(input.thumbnailBlob);
   const base: CardRecord = {
-    ...input,
+    ...persistedInput,
     ...(normalizedThumbnail !== input.thumbnailBlob
       ? { thumbnailBlob: normalizedThumbnail }
       : {}),
@@ -283,8 +315,37 @@ export async function createCard(
   };
 
   const db = await openHqccDexieDb();
-  await writeCardAndNormalizedState(db, base);
+  const writeTables = [
+    db.cardsBase,
+    db.cardThumbnails,
+    db.cardSlotLinks,
+    db.cardBackgroundComponents,
+    db.cardBorderComponents,
+    db.cardTitleComponents,
+    db.cardTextComponents,
+    db.cardCopyrightComponents,
+    db.cardImageComponents,
+    db.cardIconComponents,
+    db.cardHeroStatsComponents,
+    db.cardMonsterStatsComponents,
+    db.collections,
+  ];
+  let touchedCollectionIds: string[] = [];
+  await db.transaction("rw", writeTables, async (tx: Transaction) => {
+    await writeCardAndNormalizedStateInTransaction(tx, base);
+    if (duplicateFromCardId) {
+      touchedCollectionIds = await copyDuplicateSourceCollectionMemberships(
+        tx,
+        duplicateFromCardId,
+        base.id,
+        now,
+      );
+    }
+  });
   enqueueDbEstimateChange("cards", base.id);
+  touchedCollectionIds.forEach((collectionId) => {
+    enqueueDbEstimateChange(COLLECTIONS_STORE, collectionId);
+  });
   dispatchCardsUpdated();
 
   return base;

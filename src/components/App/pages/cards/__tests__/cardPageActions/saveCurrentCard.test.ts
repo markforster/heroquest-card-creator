@@ -1,12 +1,19 @@
 import { createCardPageActions } from "@/components/App/pages/cards/cardPageActions";
 
 const createCardMock = jest.fn();
+const updateCardMock = jest.fn();
 const clearDraftMock = jest.fn();
+const invalidateCollectionsQueriesMock = jest.fn();
 
 jest.mock("@/api/client", () => ({
   apiClient: {
     createCard: (...args: unknown[]) => createCardMock(...args),
+    updateCard: (...args: unknown[]) => updateCardMock(...args),
   },
+}));
+
+jest.mock("@/api/queryInvalidation", () => ({
+  invalidateCollectionsQueries: (...args: unknown[]) => invalidateCollectionsQueriesMock(...args),
 }));
 
 jest.mock("@/lib/draft-storage", () => ({
@@ -17,7 +24,9 @@ jest.mock("@/lib/draft-storage", () => ({
 describe("createCardPageActions saveCurrentCard", () => {
   beforeEach(() => {
     createCardMock.mockReset();
+    updateCardMock.mockReset();
     clearDraftMock.mockReset();
+    invalidateCollectionsQueriesMock.mockReset();
   });
 
   it("persists labelled-back cards from the canonical name field without requiring title", async () => {
@@ -44,6 +53,7 @@ describe("createCardPageActions saveCurrentCard", () => {
     const actions = createCardPageActions({
       bypassNextNavigation: jest.fn(),
       currentTemplateId: "labelled-back",
+      draftSourceCardId: "source-card",
       methods: {
         getValues: () =>
           ({
@@ -55,6 +65,7 @@ describe("createCardPageActions saveCurrentCard", () => {
       },
       navigate: jest.fn(),
       previewRef: previewRef as never,
+      queryClient: {} as never,
       resetWithSaved: jest.fn(),
       setActiveCard: jest.fn(),
       setDraftSourceCardId: jest.fn(),
@@ -71,7 +82,113 @@ describe("createCardPageActions saveCurrentCard", () => {
         templateId: "labelled-back",
         name: "Treasure Deck",
         title: undefined,
+        duplicateFromCardId: "source-card",
       }),
     );
+    expect(invalidateCollectionsQueriesMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not send duplicateFromCardId for ordinary new cards", async () => {
+    createCardMock.mockResolvedValue({
+      id: "card-1",
+      templateId: "hero",
+      status: "saved",
+      name: "Hero",
+      nameLower: "hero",
+      createdAt: 100,
+      updatedAt: 100,
+      schemaVersion: 2,
+      title: "Hero",
+      bodyTextColor: "#231f20",
+      bodyTextFitToBounds: false,
+    });
+
+    const actions = createCardPageActions({
+      bypassNextNavigation: jest.fn(),
+      currentTemplateId: "hero",
+      draftSourceCardId: null,
+      methods: {
+        getValues: () =>
+          ({
+            name: "Hero",
+            title: "Hero",
+            bodyTextColor: "#231f20",
+            bodyTextFitToBounds: false,
+          }) as never,
+      },
+      navigate: jest.fn(),
+      previewRef: { current: { renderToJpegBlob: jest.fn().mockResolvedValue(null) } } as never,
+      queryClient: {} as never,
+      resetWithSaved: jest.fn(),
+      setActiveCard: jest.fn(),
+      setDraftSourceCardId: jest.fn(),
+      setSaveToken: jest.fn(),
+      setSavingMode: jest.fn(),
+      setSelectedTemplateId: jest.fn(),
+      track: jest.fn(),
+    });
+
+    await actions.saveCurrentCard();
+
+    expect(createCardMock).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        duplicateFromCardId: expect.anything(),
+      }),
+    );
+    expect(invalidateCollectionsQueriesMock).not.toHaveBeenCalled();
+  });
+
+  it("never sends duplicateFromCardId when updating an existing saved card", async () => {
+    updateCardMock.mockResolvedValue({
+      id: "card-1",
+      templateId: "hero",
+      status: "saved",
+      name: "Hero",
+      nameLower: "hero",
+      createdAt: 100,
+      updatedAt: 200,
+      schemaVersion: 2,
+      title: "Hero",
+      bodyTextColor: "#231f20",
+      bodyTextFitToBounds: false,
+    });
+
+    const actions = createCardPageActions({
+      activeCardId: "card-1",
+      activeStatus: "saved",
+      bypassNextNavigation: jest.fn(),
+      currentTemplateId: "hero",
+      draftSourceCardId: "source-card",
+      methods: {
+        getValues: () =>
+          ({
+            name: "Hero",
+            title: "Hero",
+            bodyTextColor: "#231f20",
+            bodyTextFitToBounds: false,
+          }) as never,
+      },
+      navigate: jest.fn(),
+      previewRef: { current: { renderToJpegBlob: jest.fn().mockResolvedValue(null) } } as never,
+      queryClient: {} as never,
+      resetWithSaved: jest.fn(),
+      setActiveCard: jest.fn(),
+      setDraftSourceCardId: jest.fn(),
+      setSaveToken: jest.fn(),
+      setSavingMode: jest.fn(),
+      setSelectedTemplateId: jest.fn(),
+      track: jest.fn(),
+    });
+
+    await actions.saveCurrentCard();
+
+    expect(updateCardMock).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        duplicateFromCardId: expect.anything(),
+      }),
+      { params: { id: "card-1" } },
+    );
+    expect(createCardMock).not.toHaveBeenCalled();
+    expect(invalidateCollectionsQueriesMock).not.toHaveBeenCalled();
   });
 });
