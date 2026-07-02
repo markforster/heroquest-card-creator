@@ -1,6 +1,7 @@
 "use client";
 
 import CardTextBlock, {
+  clipRowsToHeight,
   layoutCardText,
   measureCardTextMaxLineWidth,
 } from "@/components/Cards/CardParts/CardTextBlock";
@@ -19,8 +20,8 @@ import {
   DEVELOPER_CREDIT_TEXT,
   DEVELOPER_CREDIT_TOP_INSET,
 } from "@/config/developer-credit";
-import { cardTemplatesById } from "@/data/card-templates";
 import { layerTypes } from "@/data/card-systems/types";
+import { cardTemplatesById } from "@/data/card-templates";
 import { supportsBlueprintTextFitToBounds } from "@/lib/blueprint-text";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
@@ -442,7 +443,7 @@ export function TextLayer({
   if (effectiveBackdrop.fitMode === "fit-to-text" && shouldShowBackdrop) {
     const fontSizeResolved = fontSize ?? 22;
     const safeWidth = Math.max(0, textBoundsBase.width - textPadding * 2);
-    const { lines, lineHeight: effectiveLineHeight } = layoutCardText({
+    const { totalHeight } = layoutCardText({
       text: text as string,
       width: safeWidth,
       fontSize: fontSizeResolved,
@@ -455,9 +456,7 @@ export function TextLayer({
         ? fontSizeResolved
         : 0;
     const maxTextHeight = Math.max(0, backdropBounds.height - textPadding * 2 - minBottomPadding);
-    const maxLinesByHeight = Math.floor(maxTextHeight / effectiveLineHeight);
-    const effectiveLines = Math.min(lines.length, Math.max(0, maxLinesByHeight));
-    const textHeight = effectiveLines * effectiveLineHeight;
+    const textHeight = Math.min(totalHeight, maxTextHeight);
     const desiredHeight = Math.min(
       backdropBounds.height,
       textHeight + textPadding * 2 + minBottomPadding,
@@ -517,7 +516,7 @@ export function TextLayer({
       const remainingBubbleHeight = backdropBounds.y + backdropBounds.height - cursorBubbleY;
       if (remainingBubbleHeight <= 0) return;
 
-      const { lines, lineHeight: resolvedLineHeight } = layoutCardText({
+      const { rows, lines, lineHeight: resolvedLineHeight } = layoutCardText({
         text: segment,
         width: textAreaWidth,
         fontSize: fontSizeResolved,
@@ -546,11 +545,11 @@ export function TextLayer({
         0,
         availableForThisSegment - bubbleTopPadding - textPadding - minBottomPadding,
       );
-      const maxLines = Math.floor(maxTextHeight / resolvedLineHeight);
-      if (maxLines <= 0) return;
+      const visibleRows = clipRowsToHeight(rows, maxTextHeight);
+      const visibleTextRows = visibleRows.filter((row) => row.kind !== "paragraph-gap");
+      if (visibleTextRows.length === 0) return;
 
-      const visibleLines = Math.min(lines.length, maxLines);
-      const textHeight = visibleLines * resolvedLineHeight;
+      const textHeight = visibleRows.reduce((sum, row) => sum + row.height, 0);
       const bubbleHeight =
         isLastSegment && isFullHeight
           ? availableForThisSegment

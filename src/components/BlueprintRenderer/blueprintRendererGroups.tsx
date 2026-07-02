@@ -172,7 +172,7 @@ function buildGroupItems({
       const fontFamily =
         typeof child.props?.fontFamily === "string" ? child.props.fontFamily : undefined;
 
-      const { lines, lineHeight: measuredLineHeight } = layoutCardText({
+      const { lines, lineHeight: measuredLineHeight, totalHeight } = layoutCardText({
         text,
         width: group.width,
         fontSize,
@@ -182,7 +182,7 @@ function buildGroupItems({
 
       if (!lines.length) return;
 
-      const height = lines.length * measuredLineHeight;
+      const height = totalHeight;
       const fontWeight =
         typeof child.props?.fontWeight === "number" || typeof child.props?.fontWeight === "string"
           ? child.props.fontWeight

@@ -63,8 +63,7 @@ export function layoutCardTextToBounds({
     });
   };
 
-  const overflowsHeight = (candidate: CardTextLayout) =>
-    candidate.lines.length * candidate.lineHeight > height;
+  const overflowsHeight = (candidate: CardTextLayout) => candidate.totalHeight > height;
 
   const initial = resolveLayout(fontSize);
   if (!fitToBounds || !text?.trim() || !Number.isFinite(height) || height <= 0) {
@@ -96,7 +95,7 @@ export function layoutCardTextToBounds({
     };
   }
 
-  const initialScaleGuess = Math.max(clampedMin, (fontSize * height) / (initial.lines.length * initial.lineHeight));
+  const initialScaleGuess = Math.max(clampedMin, (fontSize * height) / initial.totalHeight);
   let low = clampedMin;
   let high = fontSize;
   let bestFontSize = Math.max(clampedMin, Math.min(fontSize, initialScaleGuess));

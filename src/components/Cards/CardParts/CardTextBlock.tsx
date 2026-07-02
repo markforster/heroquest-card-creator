@@ -47,7 +47,7 @@ const DICE_BORDER_COLOR = "#111111";
 const DICE_BORDER_WIDTH = 1;
 
 type TextLine =
-  | { kind: "text"; tokens: BodyTextToken[]; align?: TextAlignment }
+  | { kind: "text"; tokens: BodyTextToken[]; align?: TextAlignment; height: number }
   | {
       kind: "leader";
       labelTokens: BodyTextToken[];
@@ -55,17 +55,26 @@ type TextLine =
       separator: string;
       leaderLayout?: LeaderLayout;
       align?: TextAlignment;
+      height: number;
     }
   | {
       kind: "leader-continuation";
       valueTokens: BodyTextToken[];
       leaderLayout: LeaderLayout;
       align?: TextAlignment;
+      height: number;
+    }
+  | {
+      kind: "paragraph-gap";
+      height: number;
     };
 
 export type CardTextLayout = {
+  rows: TextLine[];
   lines: TextLine[];
   lineHeight: number;
+  paragraphGap: number;
+  totalHeight: number;
 };
 
 type TextToken = BodyTextToken;
@@ -103,13 +112,20 @@ export function layoutCardText({
   defaultAlign?: TextAlignment;
 }): CardTextLayout {
   const effectiveLineHeight = lineHeight ?? fontSize * CARD_BODY_LINE_HEIGHT;
+  const paragraphGap = effectiveLineHeight;
 
   if (!text || !text.trim()) {
-    return { lines: [], lineHeight: effectiveLineHeight };
+    return {
+      rows: [],
+      lines: [],
+      lineHeight: effectiveLineHeight,
+      paragraphGap,
+      totalHeight: 0,
+    };
   }
 
   const logicalLines = text.split(/\r?\n/);
-  const visualLines: TextLine[] = [];
+  const rows: TextLine[] = [];
   let currentAlign: TextAlignment = defaultAlign;
   const measure = createStyledTextMeasure({
     fontSize,
@@ -265,10 +281,14 @@ export function layoutCardText({
     return flags;
   })();
 
-    const pushWrappedTextLine = (lineText: string, align: TextAlignment) => {
+  const pushParagraphGap = () => {
+    rows.push({ kind: "paragraph-gap", height: paragraphGap });
+  };
+
+  const pushWrappedTextLine = (lineText: string, align: TextAlignment) => {
     // Preserve intentional blank lines (including lines with only whitespace) as visual gaps.
     if (lineText.trim() === "") {
-      visualLines.push({ kind: "text", tokens: [{ kind: "text", text: "" }], align });
+      pushParagraphGap();
       return;
     }
 
@@ -276,14 +296,14 @@ export function layoutCardText({
     const tokens = injectDiceAdjacentSpaces(segmentsToTokens(inlineSegments, fontSize));
     const wrapped = wrapTokens(tokens, safeWidth, measure);
     wrapped.forEach((lineTokens) => {
-      visualLines.push({ kind: "text", tokens: lineTokens, align });
+      rows.push({ kind: "text", tokens: lineTokens, align, height: effectiveLineHeight });
     });
   };
 
   const pushAlignedLine = (lineText: string, align: TextAlignment) => {
     // Preserve intentional blank lines (including lines with only whitespace) as visual gaps.
     if (lineText.trim() === "") {
-      visualLines.push({ kind: "text", tokens: [{ kind: "text", text: "" }], align });
+      pushParagraphGap();
       return;
     }
 
@@ -305,12 +325,13 @@ export function layoutCardText({
         segmentsToTokens(tokenizeInlineDice(valueRaw), fontSize),
       );
 
-      visualLines.push({
+      rows.push({
         kind: "leader",
         labelTokens,
         valueTokens,
         separator,
         align,
+        height: effectiveLineHeight,
       });
       return;
     }
@@ -381,12 +402,13 @@ export function layoutCardText({
 
     if (!groupSettings.explicit) {
       groupLines.forEach((line) => {
-        visualLines.push({
+        rows.push({
           kind: "leader",
           labelTokens: line.labelTokens,
           valueTokens: line.valueTokens,
           separator: line.separator,
           align: line.align,
+          height: effectiveLineHeight,
         });
       });
     } else {
@@ -397,20 +419,22 @@ export function layoutCardText({
             ? wrapTokens(line.valueTokens, layout.valueColumnWidth, measure)
             : [line.valueTokens];
         const [firstLine, ...restLines] = wrappedValue;
-        visualLines.push({
+        rows.push({
           kind: "leader",
           labelTokens: line.labelTokens,
           valueTokens: firstLine ?? [],
           separator: line.separator,
           leaderLayout: layout,
           align: line.align,
+          height: effectiveLineHeight,
         });
         restLines.forEach((valueTokens) => {
-          visualLines.push({
+          rows.push({
             kind: "leader-continuation",
             valueTokens,
             leaderLayout: layout,
             align: line.align,
+            height: effectiveLineHeight,
           });
         });
       });
@@ -514,7 +538,10 @@ export function layoutCardText({
     flushLeaderGroup();
   }
 
-  return { lines: visualLines, lineHeight: effectiveLineHeight };
+  const lines = rows.filter((row) => row.kind !== "paragraph-gap");
+  const totalHeight = rows.reduce((sum, row) => sum + row.height, 0);
+
+  return { rows, lines, lineHeight: effectiveLineHeight, paragraphGap, totalHeight };
 }
 
 export default function CardTextBlock({
@@ -532,6 +559,7 @@ export default function CardTextBlock({
 }: CardTextBlockProps) {
   const maskPrefix = useId().replace(/:/g, "");
   const {
+    rows,
     lines,
     lineHeight: effectiveLineHeight,
     fittedFontSize,
@@ -554,8 +582,7 @@ export default function CardTextBlock({
     return null;
   }
 
-  const maxLines = Math.max(1, Math.floor(bounds.height / effectiveLineHeight));
-  const clippedLines = overflowed ? lines.slice(0, maxLines) : lines;
+  const clippedRows = overflowed ? clipRowsToHeight(rows, bounds.height) : rows;
 
   const textStyle: CSSProperties = {
     fontFamily,
@@ -586,111 +613,159 @@ export default function CardTextBlock({
           data-debug-bounds="true"
         />
       )}
-      {clippedLines.flatMap((line, lineIndex) => {
-        const lineY = bounds.y + fittedFontSize + effectiveLineHeight * lineIndex;
-
-        if (line.kind === "text") {
-          return renderTokenLine({
-            lineTokens: line.tokens,
-            lineY,
-            lineHeight: effectiveLineHeight,
-            bounds,
-            lineAlign: line.align ?? align,
-            measure: measureWithSpacing,
-            fill,
-            textStyle,
-            maskPrefix,
-            lineIndex,
-            fontSize: fittedFontSize,
-          });
-        }
-
-        if (line.kind === "leader-continuation") {
-          const valueStartX = bounds.x + line.leaderLayout.valueStartOffset;
-          return renderTokenSequence({
-            tokens: line.valueTokens,
-            startX: valueStartX,
-            y: lineY,
-            lineHeight: effectiveLineHeight,
-            measure: measureWithSpacing,
-            fill,
-            textStyle,
-            maskPrefix,
-            lineIndex,
-            tokenGroup: "value",
-            fontSize: fittedFontSize,
-          });
-        }
-
-        // Leader line rendering
-        const effectiveLeaderPadding = line.leaderLayout?.leaderPadding ?? fittedFontSize * 0.25;
-        const leftX = bounds.x;
-        const rightX = bounds.x + bounds.width;
-
-        const labelWidth = measureTokensWidth(line.labelTokens, measureWithSpacing);
-        const valueWidth = measureTokensWidth(line.valueTokens, measureWithSpacing);
-
-        const labelStartX = leftX;
-        const valueStartX =
-          line.leaderLayout?.valueStartOffset != null
-            ? bounds.x + line.leaderLayout.valueStartOffset
-            : rightX - valueWidth;
-
-        const gapStartX = labelStartX + labelWidth + effectiveLeaderPadding;
-        const gapEndX = valueStartX - effectiveLeaderPadding;
-        const availableGapWidth = Math.max(0, gapEndX - gapStartX);
-
-        const sepChar = line.separator || ".";
-        const sepWidth = measureWithSpacing(sepChar);
-        const sepCount = sepWidth > 0 ? Math.max(0, Math.floor(availableGapWidth / sepWidth)) : 0;
-        const sepText = sepCount > 0 ? sepChar.repeat(sepCount) : "";
-
+      {(() => {
+        let verticalOffset = 0;
+        let renderedLineIndex = 0;
         const elements: JSX.Element[] = [];
 
-        elements.push(
-          ...renderTokenSequence({
-            tokens: line.labelTokens,
-            startX: labelStartX,
-            y: lineY,
-            lineHeight: effectiveLineHeight,
-            measure: measureWithSpacing,
-            fill,
-            textStyle,
-            maskPrefix,
-            lineIndex,
-            tokenGroup: "label",
-            fontSize: fittedFontSize,
-          }),
-        );
+        clippedRows.forEach((line) => {
+          if (line.kind === "paragraph-gap") {
+            verticalOffset += line.height;
+            return;
+          }
 
-        if (sepText) {
+          const lineY = bounds.y + verticalOffset + fittedFontSize;
+
+          if (line.kind === "text") {
+            elements.push(
+              ...renderTokenLine({
+                lineTokens: line.tokens,
+                lineY,
+                lineHeight: effectiveLineHeight,
+                bounds,
+                lineAlign: line.align ?? align,
+                measure: measureWithSpacing,
+                fill,
+                textStyle,
+                maskPrefix,
+                lineIndex: renderedLineIndex,
+                fontSize: fittedFontSize,
+              }),
+            );
+            verticalOffset += line.height;
+            renderedLineIndex += 1;
+            return;
+          }
+
+          if (line.kind === "leader-continuation") {
+            const valueStartX = bounds.x + line.leaderLayout.valueStartOffset;
+            elements.push(
+              ...renderTokenSequence({
+                tokens: line.valueTokens,
+                startX: valueStartX,
+                y: lineY,
+                lineHeight: effectiveLineHeight,
+                measure: measureWithSpacing,
+                fill,
+                textStyle,
+                maskPrefix,
+                lineIndex: renderedLineIndex,
+                tokenGroup: "value",
+                fontSize: fittedFontSize,
+              }),
+            );
+            verticalOffset += line.height;
+            renderedLineIndex += 1;
+            return;
+          }
+
+          // Leader line rendering
+          const effectiveLeaderPadding = line.leaderLayout?.leaderPadding ?? fittedFontSize * 0.25;
+          const leftX = bounds.x;
+          const rightX = bounds.x + bounds.width;
+
+          const labelWidth = measureTokensWidth(line.labelTokens, measureWithSpacing);
+          const valueWidth = measureTokensWidth(line.valueTokens, measureWithSpacing);
+
+          const labelStartX = leftX;
+          const valueStartX =
+            line.leaderLayout?.valueStartOffset != null
+              ? bounds.x + line.leaderLayout.valueStartOffset
+              : rightX - valueWidth;
+
+          const gapStartX = labelStartX + labelWidth + effectiveLeaderPadding;
+          const gapEndX = valueStartX - effectiveLeaderPadding;
+          const availableGapWidth = Math.max(0, gapEndX - gapStartX);
+
+          const sepChar = line.separator || ".";
+          const sepWidth = measureWithSpacing(sepChar);
+          const sepCount =
+            sepWidth > 0 ? Math.max(0, Math.floor(availableGapWidth / sepWidth)) : 0;
+          const sepText = sepCount > 0 ? sepChar.repeat(sepCount) : "";
+
           elements.push(
-            <text key={`${lineIndex}-sep`} x={gapStartX} y={lineY} fill={fill} style={textStyle}>
-              {sepText}
-            </text>,
+            ...renderTokenSequence({
+              tokens: line.labelTokens,
+              startX: labelStartX,
+              y: lineY,
+              lineHeight: effectiveLineHeight,
+              measure: measureWithSpacing,
+              fill,
+              textStyle,
+              maskPrefix,
+              lineIndex: renderedLineIndex,
+              tokenGroup: "label",
+              fontSize: fittedFontSize,
+            }),
           );
-        }
 
-        elements.push(
-          ...renderTokenSequence({
-            tokens: line.valueTokens,
-            startX: valueStartX,
-            y: lineY,
-            lineHeight: effectiveLineHeight,
-            measure: measureWithSpacing,
-            fill,
-            textStyle,
-            maskPrefix,
-            lineIndex,
-            tokenGroup: "value",
-            fontSize: fittedFontSize,
-          }),
-        );
+          if (sepText) {
+            elements.push(
+              <text
+                key={`${renderedLineIndex}-sep`}
+                x={gapStartX}
+                y={lineY}
+                fill={fill}
+                style={textStyle}
+              >
+                {sepText}
+              </text>,
+            );
+          }
+
+          elements.push(
+            ...renderTokenSequence({
+              tokens: line.valueTokens,
+              startX: valueStartX,
+              y: lineY,
+              lineHeight: effectiveLineHeight,
+              measure: measureWithSpacing,
+              fill,
+              textStyle,
+              maskPrefix,
+              lineIndex: renderedLineIndex,
+              tokenGroup: "value",
+              fontSize: fittedFontSize,
+            }),
+          );
+
+          verticalOffset += line.height;
+          renderedLineIndex += 1;
+        });
 
         return elements;
-      })}
+      })()}
     </g>
   );
+}
+
+export function clipRowsToHeight(rows: TextLine[], maxHeight: number): TextLine[] {
+  if (!Number.isFinite(maxHeight) || maxHeight <= 0) return [];
+
+  const clipped: TextLine[] = [];
+  let consumedHeight = 0;
+
+  rows.forEach((row) => {
+    if (consumedHeight + row.height > maxHeight) return;
+    clipped.push(row);
+    consumedHeight += row.height;
+  });
+
+  while (clipped.length > 0 && clipped[clipped.length - 1]?.kind === "paragraph-gap") {
+    clipped.pop();
+  }
+
+  return clipped;
 }
 
 function parseAlignmentDirective(line: string): TextAlignment | "reset" | null {
@@ -906,6 +981,9 @@ export function measureCardTextMaxLineWidth({
       const valueWidth = measureTokensWidth(line.valueTokens, measure);
       const widthValue = line.leaderLayout.valueStartOffset + valueWidth;
       maxLineWidth = Math.max(maxLineWidth, widthValue);
+      return;
+    }
+    if (line.kind === "paragraph-gap") {
       return;
     }
     const labelWidth = measureTokensWidth(line.labelTokens, measure);
