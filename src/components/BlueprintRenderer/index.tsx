@@ -1,5 +1,6 @@
 "use client";
 
+import { EditorTargetAdornmentLayer } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { blueprintsByTemplateId } from "@/data/blueprints";
@@ -12,6 +13,8 @@ import type { StaticImageData } from "next/image";
 import { renderGroups } from "./blueprintRendererGroups";
 import {
   ImageLayer,
+  ImageLayerHitArea,
+  TitleLayerHitArea,
   TitleLayer,
   renderBackgroundLayer,
   renderBorderLayer,
@@ -76,6 +79,24 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
       </Layer>
     );
   }
+
+  const renderTreasureArtworkHitArea =
+    blueprint.templateId === "small-treasure" || blueprint.templateId === "large-treasure";
+  const treasureArtworkLayer = renderTreasureArtworkHitArea
+    ? blueprint.layers.find(
+        (layer) => layer.type === layerTypes.image && layer.bind?.imageKey === "imageAssetId",
+      )
+    : undefined;
+  const labelledBackImageLayer =
+    blueprint.templateId === "labelled-back"
+      ? blueprint.layers.find(
+          (layer) => layer.type === layerTypes.image && layer.bind?.imageKey === "imageAssetId",
+        )
+      : undefined;
+  const labelledBackTitleLayer =
+    blueprint.templateId === "labelled-back"
+      ? blueprint.layers.find((layer) => layer.type === layerTypes.title)
+      : undefined;
 
   return (
     <>
@@ -145,12 +166,27 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
         }
         return null;
       })}
+      {treasureArtworkLayer ? (
+        <ImageLayerHitArea blueprint={blueprint} layer={treasureArtworkLayer} />
+      ) : null}
+      {labelledBackImageLayer ? (
+        <ImageLayerHitArea blueprint={blueprint} layer={labelledBackImageLayer} />
+      ) : null}
+      {labelledBackTitleLayer ? (
+        <TitleLayerHitArea
+          layer={labelledBackTitleLayer}
+          cardData={props.cardData}
+          templateName={templateName}
+          templateId={blueprint.templateId}
+        />
+      ) : null}
       <DeveloperCreditLayer
         blueprint={blueprint}
         cardData={props.cardData}
         developerCreditEnabled={props.developerCreditEnabled}
       />
       {renderGroups({ blueprint, cardData: props.cardData, showTextBounds })}
+      <EditorTargetAdornmentLayer />
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import {
   EDITOR_TARGET_IDS,
+  useRegisterHoverAdornment,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CardTextBlock, { layoutCardText } from "@/components/Cards/CardParts/CardTextBlock";
@@ -115,9 +116,35 @@ function GroupTextLayer({
   interactive?: boolean;
 }) {
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.textMain);
+  useRegisterHoverAdornment(
+    EDITOR_TARGET_IDS.textMain,
+    interactive
+      ? {
+          kind: "rect",
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+          radius: 18,
+        }
+      : null,
+  );
 
   return (
     <Layer {...(interactive ? svgFocusProps : {})}>
+      {interactive ? (
+        <>
+          <rect
+            x={bounds.x}
+            y={bounds.y}
+            width={bounds.width}
+            height={bounds.height}
+            fill="transparent"
+            pointerEvents="all"
+            data-hqcc-hit-area={EDITOR_TARGET_IDS.textMain}
+          />
+        </>
+      ) : null}
       <CardTextBlock
         text={text}
         bounds={bounds}
@@ -154,6 +181,14 @@ function GroupIconLayer({
 }) {
   const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.imageIcon);
+  useRegisterHoverAdornment(EDITOR_TARGET_IDS.imageIcon, {
+    kind: "rect",
+    x,
+    y,
+    width: size,
+    height: size,
+    radius: 14,
+  });
   if (!imageUrl) {
     if (imageStatus === "missing") {
       return (

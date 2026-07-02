@@ -1,5 +1,9 @@
 import monsterStatsBg from "@/assets/card-parts/monster-stats.png";
-import { EDITOR_TARGET_IDS, useSvgFocusTarget } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import {
+  EDITOR_TARGET_IDS,
+  useRegisterHoverAdornment,
+  useSvgFocusTarget,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useStatLabelOverrides } from "@/components/Providers/StatLabelOverridesProvider";
@@ -44,6 +48,14 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
   const { overrides } = useStatLabelOverrides();
   const { showTextBounds } = useDebugVisuals();
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.statsMonster);
+  useRegisterHoverAdornment(EDITOR_TARGET_IDS.statsMonster, {
+    kind: "rect",
+    x: STATS_X,
+    y: y ?? STATS_Y,
+    width: STATS_WIDTH,
+    height: STATS_HEIGHT,
+    radius: 18,
+  });
 
   return (
     <Layer {...svgFocusProps}>

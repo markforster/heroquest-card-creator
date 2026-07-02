@@ -154,3 +154,16 @@ export const ENABLE_MISSING_ASSET_DELETE_SCAN = false;
  * ready for broader release.
  */
 export const ENABLE_STOCKPILE_COLLECTION_PDF_EXPORT = false;
+
+/**
+ * Master switch for editor SVG target interactions and hover adornments.
+ * Disable to turn off click-to-focus, hover highlights, and related registration
+ * while isolating route/render regressions.
+ */
+export const ENABLE_EDITOR_TARGET_INTERACTIONS = true;
+
+/**
+ * Master switch for the route-level unsaved changes blocker.
+ * Disable to verify whether blocked navigations are causing URL-only route changes.
+ */
+export const ENABLE_UNSAVED_CHANGES_GUARD = true;

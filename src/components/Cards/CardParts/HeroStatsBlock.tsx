@@ -1,5 +1,9 @@
 import heroStatsBg from "@/assets/card-parts/hero-stats.png";
-import { EDITOR_TARGET_IDS, useSvgFocusTarget } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import {
+  EDITOR_TARGET_IDS,
+  useRegisterHoverAdornment,
+  useSvgFocusTarget,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import StatsPair from "@/components/Cards/CardParts/StatsPair";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
@@ -42,6 +46,14 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
   const { overrides } = useStatLabelOverrides();
   const { showTextBounds } = useDebugVisuals();
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.statsHero);
+  useRegisterHoverAdornment(EDITOR_TARGET_IDS.statsHero, {
+    kind: "rect",
+    x: STATS_X,
+    y: y ?? STATS_Y,
+    width: STATS_WIDTH,
+    height: STATS_HEIGHT,
+    radius: 18,
+  });
 
   return (
     <Layer {...svgFocusProps}>

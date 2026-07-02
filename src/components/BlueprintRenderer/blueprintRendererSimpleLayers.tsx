@@ -5,6 +5,7 @@ import { useId } from "react";
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
 import {
   EDITOR_TARGET_IDS,
+  useRegisterHoverAdornment,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
@@ -27,6 +28,12 @@ import {
 } from "./blueprintRendererShared";
 
 import type { StaticImageData } from "next/image";
+
+const LABELLED_BACK_IMAGE_HOVER_INSET = 18;
+
+export function getLabelledBackImageHoverInset() {
+  return LABELLED_BACK_IMAGE_HOVER_INSET;
+}
 
 export function renderBackgroundLayer({
   blueprint,
@@ -215,12 +222,41 @@ export function ImageLayer({
       : undefined;
   const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.imageMain);
+  const bounds = layer.type === layerTypes.image ? getLayerBounds(blueprint, layer) : null;
+  const hoverBounds =
+    bounds == null
+      ? null
+      : blueprint.templateId === "labelled-back"
+        ? {
+            x: bounds.x + LABELLED_BACK_IMAGE_HOVER_INSET,
+            y: bounds.y + LABELLED_BACK_IMAGE_HOVER_INSET,
+            width: Math.max(0, bounds.width - LABELLED_BACK_IMAGE_HOVER_INSET * 2),
+            height: Math.max(0, bounds.height - LABELLED_BACK_IMAGE_HOVER_INSET * 2),
+            radius: 16,
+          }
+        : {
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.width,
+            height: bounds.height,
+            radius: 16,
+          };
+
+  useRegisterHoverAdornment(
+    EDITOR_TARGET_IDS.imageMain,
+    hoverBounds
+      ? {
+          kind: "rect",
+          ...hoverBounds,
+        }
+      : null,
+  );
 
   if (layer.type !== layerTypes.image) return null;
   const imageLayer = layer as Extract<BlueprintLayer, { type: "image" }>;
   if (!layer.bind?.imageKey) return null;
   if (!cardData) return null;
-  const bounds = getLayerBounds(blueprint, layer);
+  if (!bounds) return null;
   if (!imageUrl) {
     if (imageStatus === "missing") {
       return (
@@ -293,6 +329,116 @@ export function ImageLayer({
         transform={transform}
         preserveAspectRatio="xMidYMid meet"
         clipPath={shouldClip ? `url(#${clipId})` : undefined}
+      />
+    </Layer>
+  );
+}
+
+export function ImageLayerHitArea({
+  blueprint,
+  layer,
+  targetId = EDITOR_TARGET_IDS.imageMain,
+}: {
+  blueprint: Blueprint;
+  layer: BlueprintLayer;
+  targetId?: typeof EDITOR_TARGET_IDS.imageMain | typeof EDITOR_TARGET_IDS.title;
+}) {
+  const svgFocusProps = useSvgFocusTarget(targetId);
+
+  if (layer.type !== layerTypes.image) return null;
+
+  const bounds = getLayerBounds(blueprint, layer);
+
+  return (
+    <Layer {...svgFocusProps}>
+      <rect
+        x={bounds.x}
+        y={bounds.y}
+        width={bounds.width}
+        height={bounds.height}
+        fill="transparent"
+        pointerEvents="all"
+        data-hqcc-hit-area={targetId}
+      />
+    </Layer>
+  );
+}
+
+export function TitleLayerHitArea({
+  layer,
+  cardData,
+  templateName,
+  templateId,
+}: {
+  layer: BlueprintLayer;
+  cardData?: CardDataByTemplate[TemplateId];
+  templateName?: string;
+  templateId?: TemplateId;
+}) {
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.title);
+
+  if (layer.type !== "title") return null;
+
+  const showTitle =
+    cardData && typeof (cardData as { showTitle?: boolean }).showTitle === "boolean"
+      ? (cardData as { showTitle?: boolean }).showTitle
+      : true;
+
+  if (!showTitle) return null;
+
+  const titleKey = layer.bind?.titleKey;
+  const titleValue =
+    titleKey && cardData
+      ? ((cardData as Record<string, unknown>)[titleKey] as string | null | undefined)
+      : undefined;
+  const title = titleValue ?? templateName;
+  if (!title) return null;
+
+  const showRibbonDefault =
+    typeof layer.props?.showRibbon === "boolean" ? layer.props.showRibbon : true;
+  const titleStyle = cardData
+    ? (cardData as { titleStyle?: "ribbon" | "plain" }).titleStyle
+    : undefined;
+  const showRibbon =
+    titleStyle === "ribbon" ? true : titleStyle === "plain" ? false : showRibbonDefault;
+  const getBound = (prefix: string) => {
+    const x = layer.props?.[`${prefix}X`];
+    const y = layer.props?.[`${prefix}Y`];
+    const width = layer.props?.[`${prefix}Width`];
+    const height = layer.props?.[`${prefix}Height`];
+    if (
+      typeof x === "number" &&
+      typeof y === "number" &&
+      typeof width === "number" &&
+      typeof height === "number"
+    ) {
+      return { x, y, width, height };
+    }
+    return undefined;
+  };
+  const placement =
+    templateId === "labelled-back"
+      ? (cardData as { titlePlacement?: "top" | "bottom" } | undefined)?.titlePlacement
+      : undefined;
+  const ribbonBounds = getBound(placement === "top" ? "ribbonTop" : "ribbon");
+  const textBounds = getBound(placement === "top" ? "textTop" : "text");
+  const textBoundsNoRibbon = getBound(placement === "top" ? "textNoRibbonTop" : "textNoRibbon");
+  const baseBounds = showRibbon
+    ? ribbonBounds ?? textBounds
+    : textBoundsNoRibbon ?? textBounds ?? ribbonBounds;
+
+  if (!baseBounds) return null;
+
+  return (
+    <Layer {...svgFocusProps}>
+      <rect
+        x={baseBounds.x}
+        y={baseBounds.y}
+        width={baseBounds.width}
+        height={baseBounds.height}
+        fill="transparent"
+        pointerEvents="all"
+        data-hqcc-hit-area={EDITOR_TARGET_IDS.title}
       />
     </Layer>
   );

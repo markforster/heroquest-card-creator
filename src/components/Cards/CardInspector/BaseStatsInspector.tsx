@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useFormContext, useWatch, type FieldValues, type Path } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
@@ -47,10 +47,14 @@ export default function BaseStatsInspector<T extends FieldValues>({
     containerRef: fieldRef,
     focusSelectors: ["input:not([disabled])", "button:not([disabled])"],
   });
+  const watchedFieldNames = useMemo(
+    () => fields.map((field) => field.name),
+    [fields],
+  );
 
   const watchedValues = useWatch({
     control,
-    name: fields.map((field) => field.name),
+    name: watchedFieldNames,
   }) as Array<StatValue | undefined>;
   const previewValues = watchedValues.map((value) => formatStatValue(value) ?? "0");
 

@@ -7,8 +7,12 @@ import CardTextBlock, {
 } from "@/components/Cards/CardParts/CardTextBlock";
 import {
   EDITOR_TARGET_IDS,
+  useRegisterHoverAdornment,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import {
+  padBounds,
+} from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
@@ -193,6 +197,22 @@ export function TextLayer({
 }) {
   const { defaultCopyright } = useCopyrightSettings();
   const bodyTextFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.textMain);
+  const showBodyTextHover = layer.type === layerTypes.text && isPrimaryBodyTextLayer(blueprint, layer);
+  const initialTextBounds = layer.type === layerTypes.text ? getLayerBounds(blueprint, layer) : null;
+
+  useRegisterHoverAdornment(
+    EDITOR_TARGET_IDS.textMain,
+    showBodyTextHover && initialTextBounds
+      ? {
+          kind: "rect",
+          x: initialTextBounds.x,
+          y: initialTextBounds.y,
+          width: initialTextBounds.width,
+          height: initialTextBounds.height,
+          radius: 14,
+        }
+      : null,
+  );
 
   if (layer.type !== layerTypes.text) return null;
   if (!layer.bind?.textKey) return null;
@@ -502,6 +522,7 @@ export function TextLayer({
 
   const flushBackdrop = effectiveBackdrop.insetMode === "flush";
   const effectiveCornerRadius = flushBackdrop ? { top: 0, bottom: 0 } : cornerRadius;
+  const hoverBounds = shouldShowBackdrop ? backdropBounds : textBoundsBase;
 
   if (useSegmentedBackdrop) {
     const fontSizeResolved = fontSize ?? 22;
@@ -589,7 +610,20 @@ export function TextLayer({
     const segmentCount = segmentItems.length;
 
     return (
-      <Layer key={layer.id} {...(isPrimaryBodyTextLayer(blueprint, layer) ? bodyTextFocusProps : {})}>
+      <Layer key={layer.id} {...(showBodyTextHover ? bodyTextFocusProps : {})}>
+        {showBodyTextHover ? (
+          <>
+            <rect
+              x={hoverBounds.x}
+              y={hoverBounds.y}
+              width={hoverBounds.width}
+              height={hoverBounds.height}
+              fill="transparent"
+              pointerEvents="all"
+              data-hqcc-hit-area={EDITOR_TARGET_IDS.textMain}
+            />
+          </>
+        ) : null}
         {segmentItems.map((segment, index) => {
           const segmentCornerRadius = flushBackdrop
             ? { top: 0, bottom: 0 }
@@ -632,7 +666,34 @@ export function TextLayer({
   const backdropPath = buildBackdropPath(backdropBounds, effectiveCornerRadius);
 
   return (
-    <Layer key={layer.id} {...(isPrimaryBodyTextLayer(blueprint, layer) ? bodyTextFocusProps : {})}>
+    <Layer key={layer.id} {...(showBodyTextHover ? bodyTextFocusProps : {})}>
+      {showBodyTextHover ? (
+        shouldShowBackdrop ? (
+          <>
+            <rect
+              x={hoverBounds.x}
+              y={hoverBounds.y}
+              width={hoverBounds.width}
+              height={hoverBounds.height}
+              fill="transparent"
+              pointerEvents="all"
+              data-hqcc-hit-area={EDITOR_TARGET_IDS.textMain}
+            />
+          </>
+        ) : (
+          <>
+            <rect
+              x={hoverBounds.x}
+              y={hoverBounds.y}
+              width={hoverBounds.width}
+              height={hoverBounds.height}
+              fill="transparent"
+              pointerEvents="all"
+              data-hqcc-hit-area={EDITOR_TARGET_IDS.textMain}
+            />
+          </>
+        )
+      ) : null}
       {shouldShowBackdrop ? (
         <path d={backdropPath} fill={effectiveBackdrop.color} opacity={effectiveBackdrop.opacity} />
       ) : null}
@@ -668,6 +729,22 @@ export function CopyrightLayer({
   const { defaultCopyright } = useCopyrightSettings();
   const { showTextBounds } = useDebugVisuals();
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.copyright);
+  const bounds = layer.type === "copyright" ? getLayerBounds(blueprint, layer) : null;
+  const hoverBounds = bounds ? padBounds(bounds, 6) : null;
+
+  useRegisterHoverAdornment(
+    EDITOR_TARGET_IDS.copyright,
+    hoverBounds
+      ? {
+          kind: "rect",
+          x: hoverBounds.x,
+          y: hoverBounds.y,
+          width: hoverBounds.width,
+          height: hoverBounds.height,
+          radius: 10,
+        }
+      : null,
+  );
 
   if (layer.type !== "copyright") return null;
   if (!cardData) return null;
@@ -697,8 +774,8 @@ export function CopyrightLayer({
         ? normalizedDefault
         : "";
   if (!resolvedText) return null;
+  if (!bounds) return null;
 
-  const bounds = getLayerBounds(blueprint, layer);
   const fontSize = typeof layer.props?.fontSize === "number" ? layer.props.fontSize : undefined;
   const lineHeight =
     typeof layer.props?.lineHeight === "number" ? layer.props.lineHeight : undefined;

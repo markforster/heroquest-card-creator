@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useBeforeUnload, useBlocker } from "react-router-dom";
 
+import { ENABLE_UNSAVED_CHANGES_GUARD } from "@/config/flags";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 
 import type { Location } from "react-router-dom";
@@ -54,6 +55,7 @@ export function UnsavedChangesGuardProvider({ children }: { children: ReactNode 
   }, [registration]);
 
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    if (!ENABLE_UNSAVED_CHANGES_GUARD) return false;
     if (bypassNextNavigationCountRef.current > 0) {
       bypassNextNavigationCountRef.current -= 1;
       return false;
@@ -67,6 +69,7 @@ export function UnsavedChangesGuardProvider({ children }: { children: ReactNode 
   });
 
   useBeforeUnload((event) => {
+    if (!ENABLE_UNSAVED_CHANGES_GUARD) return;
     const current = registrationRef.current;
     if (!current.enabled || !current.isDirty) return;
     event.preventDefault();
@@ -87,7 +90,7 @@ export function UnsavedChangesGuardProvider({ children }: { children: ReactNode 
     <UnsavedChangesGuardContext.Provider value={contextValue}>
       {children}
       <ConfirmModal
-        isOpen={blocker.state === "blocked"}
+        isOpen={ENABLE_UNSAVED_CHANGES_GUARD && blocker.state === "blocked"}
         title={registration.title}
         confirmLabel={undefined}
         cancelLabel={undefined}
@@ -110,6 +113,10 @@ export function usePublishUnsavedChangesGuard(registration: UnsavedChangesRegist
   const { setRegistration } = useContext(UnsavedChangesGuardContext);
 
   useEffect(() => {
+    if (!ENABLE_UNSAVED_CHANGES_GUARD) {
+      setRegistration(DEFAULT_REGISTRATION);
+      return;
+    }
     setRegistration(registration);
     return () => {
       setRegistration(DEFAULT_REGISTRATION);

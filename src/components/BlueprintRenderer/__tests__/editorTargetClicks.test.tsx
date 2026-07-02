@@ -15,6 +15,10 @@ jest.mock("@/components/Cards/CardEditor/EditorTargetsContext", () => ({
     statsMonster: "stats.monster",
     copyright: "copyright",
   },
+  useEditorTargets: () => ({
+    hoveredTargetId: null,
+  }),
+  useRegisterHoverAdornment: () => undefined,
   useSvgFocusTarget: (targetId: string) => ({
     "data-hqcc-edit": targetId,
     onClick: () => mockRequestFocusTarget(targetId),
@@ -184,5 +188,71 @@ describe("BlueprintRenderer SVG focus targets", () => {
     expect(
       container.querySelector(`[data-hqcc-edit="${EDITOR_TARGET_IDS.copyright}"]`),
     ).toBeNull();
+  });
+
+  it("requests focus for labelled-back image and title hit areas in both placements", () => {
+    const { container, rerender } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="labelled-back"
+          templateName="Labelled Back"
+          cardData={{
+            title: "Lore Card",
+            description: "Back text",
+            imageAssetId: "art-5",
+            titlePlacement: "bottom",
+            showTitle: true,
+          } as never}
+        />
+      </svg>,
+    );
+
+    const imageHitAreaBottom = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.imageMain}"]`,
+    );
+    const titleHitAreaBottom = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.title}"]`,
+    );
+
+    expect(imageHitAreaBottom).not.toBeNull();
+    expect(titleHitAreaBottom).not.toBeNull();
+
+    fireEvent.click(imageHitAreaBottom as Element);
+    fireEvent.click(titleHitAreaBottom as Element);
+
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.imageMain);
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.title);
+
+    rerender(
+      <svg>
+        <BlueprintRenderer
+          templateId="labelled-back"
+          templateName="Labelled Back"
+          cardData={{
+            title: "Lore Card",
+            description: "Back text",
+            imageAssetId: "art-5",
+            titlePlacement: "top",
+            showTitle: true,
+          } as never}
+        />
+      </svg>,
+    );
+
+    const imageHitAreaTop = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.imageMain}"]`,
+    );
+    const titleHitAreaTop = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.title}"]`,
+    );
+
+    expect(imageHitAreaTop).not.toBeNull();
+    expect(titleHitAreaTop).not.toBeNull();
+
+    fireEvent.click(imageHitAreaTop as Element);
+    fireEvent.click(titleHitAreaTop as Element);
+
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.imageMain);
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.title);
   });
 });

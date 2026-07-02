@@ -10,7 +10,9 @@ import {
   useState,
 } from "react";
 
-import type { MouseEvent, ReactNode, RefObject } from "react";
+import type { MouseEvent, PointerEvent, ReactNode, RefObject } from "react";
+import { ENABLE_EDITOR_TARGET_INTERACTIONS } from "@/config/flags";
+import type { BlueprintBounds } from "@/types/blueprints";
 
 export const EDITOR_TARGET_IDS = {
   title: "title",
@@ -25,12 +27,32 @@ export const EDITOR_TARGET_IDS = {
 export type EditorTargetId = (typeof EDITOR_TARGET_IDS)[keyof typeof EDITOR_TARGET_IDS];
 type FocusRequest = { targetId: EditorTargetId; requestId: number };
 type FocusTargetHandler = () => void;
+export type HoverAdornmentDescriptor =
+  | ({
+      kind: "rect";
+      radius?: number;
+    } & BlueprintBounds)
+  | {
+      kind: "path";
+      d: string;
+    };
+
+const HOVER_CLEAR_DELAY_MS = 50;
 
 type EditorTargetsContextValue = {
   requestedFocusTargetId: EditorTargetId | null;
+  hoveredTargetId: EditorTargetId | null;
   selectedTargetId: EditorTargetId | null;
+  hoverAdornmentDescriptor: HoverAdornmentDescriptor | null;
+  beginHoverTarget: (targetId: EditorTargetId) => void;
+  endHoverTarget: (targetId: EditorTargetId) => void;
+  setHoveredTargetId: (targetId: EditorTargetId | null) => void;
   setSelectedTargetId: (targetId: EditorTargetId | null) => void;
   registerFocusTarget: (targetId: EditorTargetId, handler: FocusTargetHandler) => () => void;
+  registerHoverAdornment: (
+    targetId: EditorTargetId,
+    descriptor: HoverAdornmentDescriptor,
+  ) => () => void;
   requestFocusTarget: (targetId: EditorTargetId) => void;
 };
 
@@ -38,27 +60,52 @@ const EditorTargetsContext = createContext<EditorTargetsContextValue | null>(nul
 
 export function EditorTargetsProvider({ children }: { children: ReactNode }) {
   const handlersRef = useRef(new Map<EditorTargetId, FocusTargetHandler>());
+  const hoverAdornmentsRef = useRef(new Map<EditorTargetId, HoverAdornmentDescriptor>());
+  const focusRequestRef = useRef<FocusRequest | null>(null);
   const handledRequestIdRef = useRef<number | null>(null);
+  const hoveredTargetIdRef = useRef<EditorTargetId | null>(null);
+  const hoverClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nextRequestIdRef = useRef(1);
+  const [hoveredTargetId, setHoveredTargetId] = useState<EditorTargetId | null>(null);
   const [selectedTargetId, setSelectedTargetId] = useState<EditorTargetId | null>(null);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
-  const [registryVersion, setRegistryVersion] = useState(0);
+  const [hoverRegistryVersion, setHoverRegistryVersion] = useState(0);
+
+  const tryHandleFocusRequest = useCallback((request: FocusRequest | null) => {
+    if (!request) return;
+
+    const handler = handlersRef.current.get(request.targetId);
+    if (!handler) return;
+    if (handledRequestIdRef.current === request.requestId) return;
+
+    handledRequestIdRef.current = request.requestId;
+    handler();
+    setFocusRequest((current) =>
+      current?.requestId === request.requestId ? null : current,
+    );
+  }, []);
 
   const registerFocusTarget = useCallback(
     (targetId: EditorTargetId, handler: FocusTargetHandler) => {
+      if (!ENABLE_EDITOR_TARGET_INTERACTIONS) {
+        return () => {};
+      }
       handlersRef.current.set(targetId, handler);
-      setRegistryVersion((version) => version + 1);
+      const pendingRequest = focusRequestRef.current;
+      if (pendingRequest?.targetId === targetId) {
+        tryHandleFocusRequest(pendingRequest);
+      }
       return () => {
         if (handlersRef.current.get(targetId) === handler) {
           handlersRef.current.delete(targetId);
-          setRegistryVersion((version) => version + 1);
         }
       };
     },
-    [],
+    [tryHandleFocusRequest],
   );
 
   const requestFocusTarget = useCallback((targetId: EditorTargetId) => {
+    if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
     setSelectedTargetId(targetId);
     setFocusRequest({
       targetId,
@@ -66,29 +113,106 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const clearPendingHoverTimeout = useCallback(() => {
+    if (!hoverClearTimeoutRef.current) return;
+    clearTimeout(hoverClearTimeoutRef.current);
+    hoverClearTimeoutRef.current = null;
+  }, []);
+
+  const commitHoveredTarget = useCallback(
+    (targetId: EditorTargetId | null) => {
+      hoveredTargetIdRef.current = targetId;
+      setHoveredTargetId(targetId);
+    },
+    [],
+  );
+
+  const beginHoverTarget = useCallback(
+    (targetId: EditorTargetId) => {
+      if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
+      clearPendingHoverTimeout();
+      if (hoveredTargetIdRef.current === targetId) return;
+      commitHoveredTarget(targetId);
+    },
+    [clearPendingHoverTimeout, commitHoveredTarget],
+  );
+
+  const endHoverTarget = useCallback(
+    (targetId: EditorTargetId) => {
+      if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
+      if (hoveredTargetIdRef.current !== targetId) return;
+      clearPendingHoverTimeout();
+      hoverClearTimeoutRef.current = setTimeout(() => {
+        hoverClearTimeoutRef.current = null;
+        if (hoveredTargetIdRef.current === targetId) {
+          commitHoveredTarget(null);
+        }
+      }, HOVER_CLEAR_DELAY_MS);
+    },
+    [clearPendingHoverTimeout, commitHoveredTarget],
+  );
+
+  const registerHoverAdornment = useCallback(
+    (targetId: EditorTargetId, descriptor: HoverAdornmentDescriptor) => {
+      if (!ENABLE_EDITOR_TARGET_INTERACTIONS) {
+        return () => {};
+      }
+      hoverAdornmentsRef.current.set(targetId, descriptor);
+      setHoverRegistryVersion((version) => version + 1);
+      return () => {
+        if (hoverAdornmentsRef.current.get(targetId) === descriptor) {
+          hoverAdornmentsRef.current.delete(targetId);
+          setHoverRegistryVersion((version) => version + 1);
+        }
+      };
+    },
+    [],
+  );
+
   useEffect(() => {
-    if (!focusRequest) return;
+    focusRequestRef.current = focusRequest;
+  }, [focusRequest]);
 
-    const handler = handlersRef.current.get(focusRequest.targetId);
-    if (!handler) return;
-    if (handledRequestIdRef.current === focusRequest.requestId) return;
+  useEffect(() => {
+    hoveredTargetIdRef.current = hoveredTargetId;
+  }, [hoveredTargetId]);
 
-    handledRequestIdRef.current = focusRequest.requestId;
-    handler();
-    setFocusRequest((current) =>
-      current?.requestId === focusRequest.requestId ? null : current,
-    );
-  }, [focusRequest, registryVersion]);
+  useEffect(() => {
+    tryHandleFocusRequest(focusRequest);
+  }, [focusRequest, tryHandleFocusRequest]);
+
+  useEffect(() => {
+    return () => {
+      clearPendingHoverTimeout();
+    };
+  }, [clearPendingHoverTimeout]);
 
   const value = useMemo<EditorTargetsContextValue>(
     () => ({
       requestedFocusTargetId: focusRequest?.targetId ?? null,
+      hoveredTargetId,
       selectedTargetId,
+      hoverAdornmentDescriptor:
+        hoveredTargetId != null ? (hoverAdornmentsRef.current.get(hoveredTargetId) ?? null) : null,
+      beginHoverTarget,
+      endHoverTarget,
+      setHoveredTargetId,
       setSelectedTargetId,
       registerFocusTarget,
+      registerHoverAdornment,
       requestFocusTarget,
     }),
-    [focusRequest?.targetId, registerFocusTarget, requestFocusTarget, selectedTargetId],
+    [
+      focusRequest?.targetId,
+      beginHoverTarget,
+      endHoverTarget,
+      hoveredTargetId,
+      hoverRegistryVersion,
+      registerHoverAdornment,
+      registerFocusTarget,
+      requestFocusTarget,
+      selectedTargetId,
+    ],
   );
 
   return (
@@ -102,6 +226,10 @@ export function useEditorTargets() {
     throw new Error("useEditorTargets must be used within an EditorTargetsProvider");
   }
   return context;
+}
+
+export function useOptionalEditorTargets() {
+  return useContext(EditorTargetsContext);
 }
 
 type InspectorTargetRegistrationOptions = {
@@ -127,8 +255,14 @@ export function useInspectorTargetRegistration({
   focusSelectors = focusSelector ? [focusSelector] : DEFAULT_FOCUS_SELECTORS,
 }: InspectorTargetRegistrationOptions) {
   const { registerFocusTarget, setSelectedTargetId } = useEditorTargets();
+  const latestFocusSelectorsRef = useRef(focusSelectors);
 
   useEffect(() => {
+    latestFocusSelectorsRef.current = focusSelectors;
+  }, [focusSelectors]);
+
+  useEffect(() => {
+    if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
     return registerFocusTarget(targetId, () => {
       const container = containerRef.current;
       if (!container) return;
@@ -138,7 +272,7 @@ export function useInspectorTargetRegistration({
       }
       const focusTarget =
         focusRef?.current ??
-        focusSelectors
+        latestFocusSelectorsRef.current
           .map((selector) => container.querySelector<HTMLElement>(selector))
           .find((candidate): candidate is HTMLElement => candidate != null) ??
         undefined;
@@ -146,32 +280,55 @@ export function useInspectorTargetRegistration({
       focusTarget?.focus();
       setSelectedTargetId(targetId);
     });
-  }, [
-    containerRef,
-    focusRef,
-    focusSelectors,
-    registerFocusTarget,
-    setSelectedTargetId,
-    targetId,
-  ]);
+  }, [containerRef, focusRef, registerFocusTarget, setSelectedTargetId, targetId]);
 
   return useCallback(() => {
+    if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
     setSelectedTargetId(targetId);
   }, [setSelectedTargetId, targetId]);
 }
 
 export function useSvgFocusTarget(targetId: EditorTargetId) {
-  const { requestFocusTarget } = useEditorTargets();
+  const editorTargets = useOptionalEditorTargets();
 
   return useMemo(
-    () => ({
-      "data-hqcc-edit": targetId,
-      onClick: (event: MouseEvent<SVGGElement | SVGImageElement | SVGPathElement>) => {
-        event.stopPropagation();
-        requestFocusTarget(targetId);
-      },
-      style: { cursor: "pointer" },
-    }),
-    [requestFocusTarget, targetId],
+    () =>
+      ENABLE_EDITOR_TARGET_INTERACTIONS && editorTargets
+        ? {
+            "data-hqcc-edit": targetId,
+            onClick: (event: MouseEvent<SVGElement>) => {
+              event.stopPropagation();
+              editorTargets.requestFocusTarget(targetId);
+            },
+            onPointerEnter: (_event: PointerEvent<SVGElement>) => {
+              editorTargets.beginHoverTarget(targetId);
+            },
+            onPointerLeave: (_event: PointerEvent<SVGElement>) => {
+              editorTargets.endHoverTarget(targetId);
+            },
+            style: { cursor: "pointer" },
+          }
+        : {},
+    [editorTargets, targetId],
   );
+}
+
+export function useRegisterHoverAdornment(
+  targetId: EditorTargetId,
+  descriptor: HoverAdornmentDescriptor | null,
+) {
+  const editorTargets = useOptionalEditorTargets();
+  const registerHoverAdornment = editorTargets?.registerHoverAdornment;
+  const descriptorKey = useMemo(
+    () => (descriptor ? JSON.stringify(descriptor) : null),
+    [descriptor],
+  );
+  const stableDescriptor = useMemo(() => descriptor, [descriptorKey]);
+
+  useEffect(() => {
+    if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
+    if (!registerHoverAdornment) return;
+    if (!stableDescriptor) return;
+    return registerHoverAdornment(targetId, stableDescriptor);
+  }, [descriptorKey, registerHoverAdornment, stableDescriptor, targetId]);
 }

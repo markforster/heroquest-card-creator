@@ -1,5 +1,9 @@
 import ribbon from "@/assets/card-parts/ribbon.png";
-import { EDITOR_TARGET_IDS, useSvgFocusTarget } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import {
+  EDITOR_TARGET_IDS,
+  useRegisterHoverAdornment,
+  useSvgFocusTarget,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useTextFittingPreferences } from "@/components/Providers/TextFittingPreferencesContext";
@@ -108,6 +112,15 @@ export default function RibbonTitle({
     fontKerning: "normal",
     ...numericStyle,
   };
+  const hoverBounds = showRibbon ? ribbonImageBounds : resolvedTextBounds;
+  useRegisterHoverAdornment(EDITOR_TARGET_IDS.title, {
+    kind: "rect",
+    x: hoverBounds.x,
+    y: hoverBounds.y,
+    width: hoverBounds.width,
+    height: hoverBounds.height,
+    radius: showRibbon ? 20 : 14,
+  });
 
   return (
     <Layer {...svgFocusProps}>
