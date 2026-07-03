@@ -47,13 +47,14 @@ export const MONSTER_STAT_TARGET_IDS = {
   bodyPoints: EDITOR_TARGET_IDS.statsMonsterBodyPoints,
   mindPoints: EDITOR_TARGET_IDS.statsMonsterMindPoints,
 } as const;
-export type EditorTargetActionIntent = "focus" | "reveal";
+export type EditorTargetActionIntent = "focus" | "reveal" | "secondary";
 type TargetActionRequest = {
   targetId: EditorTargetId;
   intent: EditorTargetActionIntent;
   requestId: number;
 };
 type FocusTargetHandler = (intent: EditorTargetActionIntent) => void;
+type SecondaryTargetHandler = () => void;
 export type HoverAdornmentTone = "primary" | "secondary" | "active";
 export type HoverAdornmentShape =
   | ({
@@ -87,12 +88,17 @@ type EditorTargetsContextValue = {
   setHoveredTargetId: (targetId: EditorTargetId | null) => void;
   setSelectedTargetId: (targetId: EditorTargetId | null) => void;
   registerFocusTarget: (targetId: EditorTargetId, handler: FocusTargetHandler) => () => void;
+  registerSecondaryAction: (
+    targetId: EditorTargetId,
+    handler: SecondaryTargetHandler,
+  ) => () => void;
   registerHoverAdornment: (
     targetId: EditorTargetId,
     descriptor: HoverAdornmentDescriptor,
   ) => () => void;
   requestRevealTarget: (targetId: EditorTargetId) => void;
   requestFocusTarget: (targetId: EditorTargetId) => void;
+  requestSecondaryTarget: (targetId: EditorTargetId) => void;
 };
 
 const EditorTargetsContext = createContext<EditorTargetsContextValue | null>(null);
@@ -104,6 +110,7 @@ type HoverAdornmentRegistration = {
 
 export function EditorTargetsProvider({ children }: { children: ReactNode }) {
   const handlersRef = useRef(new Map<EditorTargetId, FocusTargetHandler>());
+  const secondaryHandlersRef = useRef(new Map<EditorTargetId, SecondaryTargetHandler>());
   const hoverAdornmentsRef = useRef(
     new Map<EditorTargetId, HoverAdornmentRegistration[]>(),
   );
@@ -121,13 +128,24 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
 
   const tryHandleActionRequest = useCallback((request: TargetActionRequest | null) => {
     if (!request) return;
-
-    const handler = handlersRef.current.get(request.targetId);
-    if (!handler) return;
     if (handledRequestIdRef.current === request.requestId) return;
 
     handledRequestIdRef.current = request.requestId;
-    handler(request.intent);
+    if (request.intent === "secondary") {
+      const handler = secondaryHandlersRef.current.get(request.targetId);
+      if (!handler) {
+        handledRequestIdRef.current = null;
+        return;
+      }
+      handler();
+    } else {
+      const handler = handlersRef.current.get(request.targetId);
+      if (!handler) {
+        handledRequestIdRef.current = null;
+        return;
+      }
+      handler(request.intent);
+    }
     setActionRequest((current) =>
       current?.requestId === request.requestId ? null : current,
     );
@@ -146,6 +164,25 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
       return () => {
         if (handlersRef.current.get(targetId) === handler) {
           handlersRef.current.delete(targetId);
+        }
+      };
+    },
+    [tryHandleActionRequest],
+  );
+
+  const registerSecondaryAction = useCallback(
+    (targetId: EditorTargetId, handler: SecondaryTargetHandler) => {
+      if (!ENABLE_EDITOR_TARGET_INTERACTIONS) {
+        return () => {};
+      }
+      secondaryHandlersRef.current.set(targetId, handler);
+      const pendingRequest = actionRequestRef.current;
+      if (pendingRequest?.targetId === targetId && pendingRequest.intent === "secondary") {
+        tryHandleActionRequest(pendingRequest);
+      }
+      return () => {
+        if (secondaryHandlersRef.current.get(targetId) === handler) {
+          secondaryHandlersRef.current.delete(targetId);
         }
       };
     },
@@ -173,6 +210,10 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
 
   const requestRevealTarget = useCallback((targetId: EditorTargetId) => {
     requestTargetAction(targetId, "reveal");
+  }, [requestTargetAction]);
+
+  const requestSecondaryTarget = useCallback((targetId: EditorTargetId) => {
+    requestTargetAction(targetId, "secondary");
   }, [requestTargetAction]);
 
   const clearPendingHoverRevealTimeout = useCallback(() => {
@@ -298,9 +339,11 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
       setHoveredTargetId,
       setSelectedTargetId,
       registerFocusTarget,
+      registerSecondaryAction,
       registerHoverAdornment,
       requestRevealTarget,
       requestFocusTarget,
+      requestSecondaryTarget,
     }),
     [
       actionRequest,
@@ -310,8 +353,10 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
       hoverRegistryVersion,
       registerHoverAdornment,
       registerFocusTarget,
+      registerSecondaryAction,
       requestRevealTarget,
       requestFocusTarget,
+      requestSecondaryTarget,
       selectedTargetId,
     ],
   );
@@ -440,6 +485,19 @@ export function useInspectorTargetRegistration({
   }, [setSelectedTargetId, targetId]);
 }
 
+export function useSecondaryTargetActionRegistration(
+  targetId: EditorTargetId,
+  handler: SecondaryTargetHandler | null,
+) {
+  const { registerSecondaryAction } = useEditorTargets();
+
+  useEffect(() => {
+    if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
+    if (!handler) return;
+    return registerSecondaryAction(targetId, handler);
+  }, [handler, registerSecondaryAction, targetId]);
+}
+
 export function useSvgFocusTarget(targetId: EditorTargetId) {
   const editorTargets = useOptionalEditorTargets();
 
@@ -451,6 +509,10 @@ export function useSvgFocusTarget(targetId: EditorTargetId) {
             onClick: (event: MouseEvent<SVGElement>) => {
               event.stopPropagation();
               editorTargets.requestFocusTarget(targetId);
+            },
+            onDoubleClick: (event: MouseEvent<SVGElement>) => {
+              event.stopPropagation();
+              editorTargets.requestSecondaryTarget(targetId);
             },
             onPointerEnter: (_event: PointerEvent<SVGElement>) => {
               editorTargets.beginHoverTarget(targetId);

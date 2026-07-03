@@ -26,6 +26,7 @@ import {
   EDITOR_TARGET_IDS,
   useInspectorTargetRegistration,
   useIsEditorTargetHovered,
+  useSecondaryTargetActionRegistration,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import { addPinnedAsset, getAssetKindLabel } from "@/components/Cards/CardInspector/asset-utils";
 import { computeCardInspectorPopoverPosition } from "@/components/Cards/CardInspector/card-inspector-popover-position";
@@ -93,6 +94,7 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
     containerRef: fieldRef,
     focusRef: inputRef,
   });
+  useSecondaryTargetActionRegistration(EDITOR_TARGET_IDS.imageIcon, picker.open);
 
   const MIN_SCALE = 0.2;
   const MAX_SCALE = 3;

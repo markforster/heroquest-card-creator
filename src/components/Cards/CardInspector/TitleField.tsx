@@ -8,6 +8,7 @@ import layoutStyles from "@/app/page.module.css";
 import {
   EDITOR_TARGET_IDS,
   useInspectorTargetRegistration,
+  useSecondaryTargetActionRegistration,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
@@ -72,6 +73,10 @@ export default function TitleField({
     containerRef: fieldRef,
     focusRef: inputRef,
   });
+  useSecondaryTargetActionRegistration(
+    EDITOR_TARGET_IDS.title,
+    showTitleColor && !titleDisabled ? () => setIsTitleColorOpen(true) : null,
+  );
   const setTitleInputRef = useCallback(
     (node: HTMLInputElement | null) => {
       inputRef.current = node;

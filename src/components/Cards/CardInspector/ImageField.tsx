@@ -25,6 +25,7 @@ import {
   EDITOR_TARGET_IDS,
   useInspectorTargetRegistration,
   useIsEditorTargetHovered,
+  useSecondaryTargetActionRegistration,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import { AssetsModal } from "@/components/Assets";
 import { addPinnedAsset, getAssetKindLabel } from "@/components/Cards/CardInspector/asset-utils";
@@ -131,6 +132,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     containerRef: fieldRef,
     focusRef: inputRef,
   });
+  useSecondaryTargetActionRegistration(EDITOR_TARGET_IDS.imageMain, picker.open);
 
   const maxOffsetX = boundsWidth ? Math.round(boundsWidth) : 300;
   const maxOffsetY = boundsHeight ? Math.round(boundsHeight) : 300;

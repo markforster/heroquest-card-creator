@@ -1,10 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
+import type { AssetKind } from "@/api/assets";
 
 import {
   EDITOR_TARGET_IDS,
   EditorTargetsProvider,
   useEditorTargets,
+  useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CopyrightField from "@/components/Cards/CardInspector/CopyrightField";
 import HeroStatsInspector from "@/components/Cards/CardInspector/HeroStatsInspector";
@@ -21,7 +23,18 @@ jest.mock("@/i18n/I18nProvider", () => ({
 
 jest.mock("@/components/Assets", () => ({
   __esModule: true,
-  AssetsModal: () => null,
+  AssetsModal: ({
+    isOpen,
+    preferredKindOrder,
+  }: {
+    isOpen: boolean;
+    preferredKindOrder?: AssetKind[];
+  }) =>
+    isOpen ? (
+      <div>
+        {preferredKindOrder?.[0] === "icon" ? "ICON_ASSETS_MODAL_OPEN" : "ARTWORK_ASSETS_MODAL_OPEN"}
+      </div>
+    ) : null,
 }));
 
 jest.mock("@/api/client", () => ({
@@ -47,7 +60,9 @@ jest.mock("@/hooks/useSmartSwatches", () => ({
 
 jest.mock("@/components/common/ColorPickerField", () => ({
   __esModule: true,
-  default: () => <div>COLOR_PICKER</div>,
+  default: ({ isOpen }: { isOpen: boolean }) => (
+    <div>{isOpen ? "COLOR_PICKER_OPEN" : "COLOR_PICKER_CLOSED"}</div>
+  ),
 }));
 
 jest.mock("@/components/Providers/CopyrightSettingsContext", () => ({
@@ -64,6 +79,29 @@ function FocusRequestButton({ targetId }: { targetId: keyof typeof EDITOR_TARGET
     <button type="button" onClick={() => requestFocusTarget(EDITOR_TARGET_IDS[targetId])}>
       focus-{targetId}
     </button>
+  );
+}
+
+function SecondaryRequestButton({ targetId }: { targetId: keyof typeof EDITOR_TARGET_IDS }) {
+  const { requestSecondaryTarget } = useEditorTargets();
+
+  return (
+    <button
+      type="button"
+      onClick={() => requestSecondaryTarget(EDITOR_TARGET_IDS[targetId])}
+    >
+      secondary-{targetId}
+    </button>
+  );
+}
+
+function SvgTargetProbe({ targetId }: { targetId: keyof typeof EDITOR_TARGET_IDS }) {
+  const svgTargetProps = useSvgFocusTarget(EDITOR_TARGET_IDS[targetId]);
+
+  return (
+    <svg>
+      <rect data-testid={`svg-${targetId}`} width="10" height="10" {...svgTargetProps} />
+    </svg>
   );
 }
 
@@ -150,6 +188,63 @@ describe("editor target field registration", () => {
     fireEvent.click(screen.getByRole("button", { name: "focus-statsHero" }));
     await waitFor(() => {
       expect(screen.getByDisplayValue("3")).toHaveFocus();
+    });
+  });
+
+  it("runs registered secondary actions when requested directly", async () => {
+    renderWithForm(
+      <>
+        <SecondaryRequestButton targetId="title" />
+        <SecondaryRequestButton targetId="imageMain" />
+        <SecondaryRequestButton targetId="imageIcon" />
+        <TitleField label="Title" showTitleColor />
+        <ImageField label="Artwork" boundsWidth={100} boundsHeight={100} />
+        <MonsterIconField label="Monster Icon" />
+      </>,
+      {
+        title: "Sir Ragnar",
+        name: "Sir Ragnar",
+        imageAssetId: "asset-1",
+        imageAssetName: "Art",
+        iconAssetId: "icon-1",
+        iconAssetName: "Icon",
+      },
+    );
+
+    expect(screen.getByText("COLOR_PICKER_CLOSED")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "secondary-title" }));
+    await waitFor(() => {
+      expect(screen.getByText("COLOR_PICKER_OPEN")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "secondary-imageMain" }));
+    await waitFor(() => {
+      expect(screen.getByText("ARTWORK_ASSETS_MODAL_OPEN")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "secondary-imageIcon" }));
+    await waitFor(() => {
+      expect(screen.getByText("ICON_ASSETS_MODAL_OPEN")).toBeInTheDocument();
+    });
+  });
+
+  it("routes svg double click through the registered secondary action", async () => {
+    renderWithForm(
+      <>
+        <SvgTargetProbe targetId="imageMain" />
+        <ImageField label="Artwork" boundsWidth={100} boundsHeight={100} />
+      </>,
+      {
+        imageAssetId: "asset-1",
+        imageAssetName: "Art",
+      },
+    );
+
+    fireEvent.doubleClick(screen.getByTestId("svg-imageMain"));
+
+    await waitFor(() => {
+      expect(screen.getByText("ARTWORK_ASSETS_MODAL_OPEN")).toBeInTheDocument();
     });
   });
 });
