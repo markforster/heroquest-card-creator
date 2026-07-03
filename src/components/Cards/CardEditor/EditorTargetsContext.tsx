@@ -47,8 +47,13 @@ export const MONSTER_STAT_TARGET_IDS = {
   bodyPoints: EDITOR_TARGET_IDS.statsMonsterBodyPoints,
   mindPoints: EDITOR_TARGET_IDS.statsMonsterMindPoints,
 } as const;
-type FocusRequest = { targetId: EditorTargetId; requestId: number };
-type FocusTargetHandler = () => void;
+export type EditorTargetActionIntent = "focus" | "reveal";
+type TargetActionRequest = {
+  targetId: EditorTargetId;
+  intent: EditorTargetActionIntent;
+  requestId: number;
+};
+type FocusTargetHandler = (intent: EditorTargetActionIntent) => void;
 export type HoverAdornmentTone = "primary" | "secondary" | "active";
 export type HoverAdornmentShape =
   | ({
@@ -69,9 +74,11 @@ export type HoverAdornmentDescriptor =
     };
 
 const HOVER_CLEAR_DELAY_MS = 50;
+const HOVER_REVEAL_DELAY_MS = 3000;
+const INSPECTOR_REVEAL_MARGIN_PX = 8;
 
 type EditorTargetsContextValue = {
-  requestedFocusTargetId: EditorTargetId | null;
+  requestedTargetAction: TargetActionRequest | null;
   hoveredTargetId: EditorTargetId | null;
   selectedTargetId: EditorTargetId | null;
   hoverAdornmentDescriptor: HoverAdornmentDescriptor | null;
@@ -84,6 +91,7 @@ type EditorTargetsContextValue = {
     targetId: EditorTargetId,
     descriptor: HoverAdornmentDescriptor,
   ) => () => void;
+  requestRevealTarget: (targetId: EditorTargetId) => void;
   requestFocusTarget: (targetId: EditorTargetId) => void;
 };
 
@@ -92,17 +100,19 @@ const EditorTargetsContext = createContext<EditorTargetsContextValue | null>(nul
 export function EditorTargetsProvider({ children }: { children: ReactNode }) {
   const handlersRef = useRef(new Map<EditorTargetId, FocusTargetHandler>());
   const hoverAdornmentsRef = useRef(new Map<EditorTargetId, HoverAdornmentDescriptor>());
-  const focusRequestRef = useRef<FocusRequest | null>(null);
+  const actionRequestRef = useRef<TargetActionRequest | null>(null);
   const handledRequestIdRef = useRef<number | null>(null);
   const hoveredTargetIdRef = useRef<EditorTargetId | null>(null);
   const hoverClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverRevealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverRevealTargetIdRef = useRef<EditorTargetId | null>(null);
   const nextRequestIdRef = useRef(1);
   const [hoveredTargetId, setHoveredTargetId] = useState<EditorTargetId | null>(null);
   const [selectedTargetId, setSelectedTargetId] = useState<EditorTargetId | null>(null);
-  const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
+  const [actionRequest, setActionRequest] = useState<TargetActionRequest | null>(null);
   const [hoverRegistryVersion, setHoverRegistryVersion] = useState(0);
 
-  const tryHandleFocusRequest = useCallback((request: FocusRequest | null) => {
+  const tryHandleActionRequest = useCallback((request: TargetActionRequest | null) => {
     if (!request) return;
 
     const handler = handlersRef.current.get(request.targetId);
@@ -110,8 +120,8 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
     if (handledRequestIdRef.current === request.requestId) return;
 
     handledRequestIdRef.current = request.requestId;
-    handler();
-    setFocusRequest((current) =>
+    handler(request.intent);
+    setActionRequest((current) =>
       current?.requestId === request.requestId ? null : current,
     );
   }, []);
@@ -122,9 +132,9 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
         return () => {};
       }
       handlersRef.current.set(targetId, handler);
-      const pendingRequest = focusRequestRef.current;
+      const pendingRequest = actionRequestRef.current;
       if (pendingRequest?.targetId === targetId) {
-        tryHandleFocusRequest(pendingRequest);
+        tryHandleActionRequest(pendingRequest);
       }
       return () => {
         if (handlersRef.current.get(targetId) === handler) {
@@ -132,17 +142,50 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
         }
       };
     },
-    [tryHandleFocusRequest],
+    [tryHandleActionRequest],
+  );
+
+  const requestTargetAction = useCallback(
+    (targetId: EditorTargetId, intent: EditorTargetActionIntent) => {
+      if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
+      if (intent === "focus") {
+        setSelectedTargetId(targetId);
+      }
+      setActionRequest({
+        targetId,
+        intent,
+        requestId: nextRequestIdRef.current++,
+      });
+    },
+    [],
   );
 
   const requestFocusTarget = useCallback((targetId: EditorTargetId) => {
-    if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
-    setSelectedTargetId(targetId);
-    setFocusRequest({
-      targetId,
-      requestId: nextRequestIdRef.current++,
-    });
+    requestTargetAction(targetId, "focus");
+  }, [requestTargetAction]);
+
+  const requestRevealTarget = useCallback((targetId: EditorTargetId) => {
+    requestTargetAction(targetId, "reveal");
+  }, [requestTargetAction]);
+
+  const clearPendingHoverRevealTimeout = useCallback(() => {
+    if (!hoverRevealTimeoutRef.current) return;
+    clearTimeout(hoverRevealTimeoutRef.current);
+    hoverRevealTimeoutRef.current = null;
+    hoverRevealTargetIdRef.current = null;
   }, []);
+
+  const scheduleHoverReveal = useCallback((targetId: EditorTargetId) => {
+    if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
+    clearPendingHoverRevealTimeout();
+    hoverRevealTargetIdRef.current = targetId;
+    hoverRevealTimeoutRef.current = setTimeout(() => {
+      hoverRevealTimeoutRef.current = null;
+      hoverRevealTargetIdRef.current = null;
+      if (hoveredTargetIdRef.current !== targetId) return;
+      requestTargetAction(targetId, "reveal");
+    }, HOVER_REVEAL_DELAY_MS);
+  }, [clearPendingHoverRevealTimeout, requestTargetAction]);
 
   const clearPendingHoverTimeout = useCallback(() => {
     if (!hoverClearTimeoutRef.current) return;
@@ -162,15 +205,19 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
     (targetId: EditorTargetId) => {
       if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
       clearPendingHoverTimeout();
+      scheduleHoverReveal(targetId);
       if (hoveredTargetIdRef.current === targetId) return;
       commitHoveredTarget(targetId);
     },
-    [clearPendingHoverTimeout, commitHoveredTarget],
+    [clearPendingHoverTimeout, commitHoveredTarget, scheduleHoverReveal],
   );
 
   const endHoverTarget = useCallback(
     (targetId: EditorTargetId) => {
       if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
+      if (hoverRevealTargetIdRef.current === targetId) {
+        clearPendingHoverRevealTimeout();
+      }
       if (hoveredTargetIdRef.current !== targetId) return;
       clearPendingHoverTimeout();
       hoverClearTimeoutRef.current = setTimeout(() => {
@@ -180,7 +227,7 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
         }
       }, HOVER_CLEAR_DELAY_MS);
     },
-    [clearPendingHoverTimeout, commitHoveredTarget],
+    [clearPendingHoverRevealTimeout, clearPendingHoverTimeout, commitHoveredTarget],
   );
 
   const registerHoverAdornment = useCallback(
@@ -201,26 +248,27 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    focusRequestRef.current = focusRequest;
-  }, [focusRequest]);
+    actionRequestRef.current = actionRequest;
+  }, [actionRequest]);
 
   useEffect(() => {
     hoveredTargetIdRef.current = hoveredTargetId;
   }, [hoveredTargetId]);
 
   useEffect(() => {
-    tryHandleFocusRequest(focusRequest);
-  }, [focusRequest, tryHandleFocusRequest]);
+    tryHandleActionRequest(actionRequest);
+  }, [actionRequest, tryHandleActionRequest]);
 
   useEffect(() => {
     return () => {
       clearPendingHoverTimeout();
+      clearPendingHoverRevealTimeout();
     };
-  }, [clearPendingHoverTimeout]);
+  }, [clearPendingHoverRevealTimeout, clearPendingHoverTimeout]);
 
   const value = useMemo<EditorTargetsContextValue>(
     () => ({
-      requestedFocusTargetId: focusRequest?.targetId ?? null,
+      requestedTargetAction: actionRequest,
       hoveredTargetId,
       selectedTargetId,
       hoverAdornmentDescriptor:
@@ -231,16 +279,18 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
       setSelectedTargetId,
       registerFocusTarget,
       registerHoverAdornment,
+      requestRevealTarget,
       requestFocusTarget,
     }),
     [
-      focusRequest?.targetId,
+      actionRequest,
       beginHoverTarget,
       endHoverTarget,
       hoveredTargetId,
       hoverRegistryVersion,
       registerHoverAdornment,
       registerFocusTarget,
+      requestRevealTarget,
       requestFocusTarget,
       selectedTargetId,
     ],
@@ -266,6 +316,52 @@ export function useOptionalEditorTargets() {
 export function useIsEditorTargetHovered(targetId: EditorTargetId) {
   const editorTargets = useOptionalEditorTargets();
   return editorTargets?.hoveredTargetId === targetId;
+}
+
+function clampScrollTop(value: number, scrollContainer: HTMLElement) {
+  const maxScrollTop = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+  return Math.min(Math.max(0, value), maxScrollTop);
+}
+
+function revealInspectorComponent(container: HTMLElement) {
+  const scrollContainer = container.closest<HTMLElement>(
+    '[data-hqcc-inspector-scroll-container="true"]',
+  );
+
+  if (!scrollContainer) {
+    if (typeof container.scrollIntoView === "function") {
+      container.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    }
+    return;
+  }
+
+  const containerRect = container.getBoundingClientRect();
+  const scrollRect = scrollContainer.getBoundingClientRect();
+  const revealHeight = scrollRect.height - INSPECTOR_REVEAL_MARGIN_PX * 2;
+  const topDelta = containerRect.top - scrollRect.top - INSPECTOR_REVEAL_MARGIN_PX;
+  const bottomDelta = containerRect.bottom - scrollRect.bottom + INSPECTOR_REVEAL_MARGIN_PX;
+
+  let nextScrollTop = scrollContainer.scrollTop;
+
+  if (containerRect.height > revealHeight) {
+    if (topDelta !== 0) {
+      nextScrollTop += topDelta;
+    }
+  } else if (topDelta < 0) {
+    nextScrollTop += topDelta;
+  } else if (bottomDelta > 0) {
+    nextScrollTop += bottomDelta;
+  }
+
+  const clampedScrollTop = clampScrollTop(nextScrollTop, scrollContainer);
+  if (clampedScrollTop === scrollContainer.scrollTop) return;
+
+  if (typeof scrollContainer.scrollTo === "function") {
+    scrollContainer.scrollTo({ top: clampedScrollTop, behavior: "smooth" });
+    return;
+  }
+
+  scrollContainer.scrollTop = clampedScrollTop;
 }
 
 type InspectorTargetRegistrationOptions = {
@@ -299,13 +395,13 @@ export function useInspectorTargetRegistration({
 
   useEffect(() => {
     if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
-    return registerFocusTarget(targetId, () => {
+    return registerFocusTarget(targetId, (intent) => {
       const container = containerRef.current;
       if (!container) return;
 
-      if (typeof container.scrollIntoView === "function") {
-        container.scrollIntoView({ behavior: "auto", block: "nearest", inline: "nearest" });
-      }
+      revealInspectorComponent(container);
+      if (intent !== "focus") return;
+
       const focusTarget =
         focusRef?.current ??
         latestFocusSelectorsRef.current
@@ -313,7 +409,7 @@ export function useInspectorTargetRegistration({
           .find((candidate): candidate is HTMLElement => candidate != null) ??
         undefined;
 
-      focusTarget?.focus();
+      focusTarget?.focus({ preventScroll: true });
       setSelectedTargetId(targetId);
     });
   }, [containerRef, focusRef, registerFocusTarget, setSelectedTargetId, targetId]);

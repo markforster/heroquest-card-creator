@@ -8,7 +8,7 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
 
 jest.mock("@/components/Cards/CardEditor/EditorTargetsContext", () => ({
   useEditorTargets: () => ({
-    requestedFocusTargetId: null,
+    requestedTargetAction: null,
   }),
 }));
 

@@ -3622,7 +3622,7 @@
 
 .editorTargetInspectorSurface {
   position: relative;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: transparent;
   box-shadow: none;
   transition:
@@ -3638,7 +3638,7 @@
   left: -4px;
   right: -4px;
   border: 1px solid rgba(255, 255, 255, 0);
-  border-radius: calc(var(--radius-lg) + 2px);
+  border-radius: calc(var(--radius-md) + 2px);
   pointer-events: none;
   transition:
     border-color 180ms ease-out,

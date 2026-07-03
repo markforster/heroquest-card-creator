@@ -41,7 +41,7 @@ export default function CardInspector({
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
-  const { requestedFocusTargetId } = useEditorTargets();
+  const { requestedTargetAction } = useEditorTargets();
   const [mode, setMode] = useState<InspectorMode>("form");
   const modes: InspectorModeConfig[] = [
     { id: "form", label: t("label.formView"), Icon: Info },
@@ -57,10 +57,10 @@ export default function CardInspector({
     : "no-template";
 
   useEffect(() => {
-    if (!requestedFocusTargetId) return;
+    if (!requestedTargetAction) return;
     if (mode === "form") return;
     setMode("form");
-  }, [mode, requestedFocusTargetId]);
+  }, [mode, requestedTargetAction]);
 
   if (!selectedTemplateId) {
     return <div className={styles.inspectorModeEmpty}>{t("empty.selectTemplate")}</div>;
@@ -72,7 +72,10 @@ export default function CardInspector({
         <div className={styles.deckFaceModeHeader}>
           <div className={styles.deckFaceModeTitle}>{activeMode.label}</div>
         </div>
-        <div className={styles.inspectorModeBody}>
+        <div
+          className={styles.inspectorModeBody}
+          data-hqcc-inspector-scroll-container="true"
+        >
           {mode === "form" ? (
             <GenericInspectorForm key={key} templateId={selectedTemplateId} />
           ) : mode === "pairing" ? (
