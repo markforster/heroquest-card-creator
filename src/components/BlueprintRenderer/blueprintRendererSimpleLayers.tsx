@@ -33,6 +33,7 @@ import type { StaticImageData } from "next/image";
 const IMAGE_HOVER_EDGE_INSET = 18;
 const IMAGE_HOVER_RADIUS = 16;
 const TREASURE_HOVER_OUTSET = 16;
+const CANVAS_IMAGE_HOVER_OUTSET = 16;
 
 export function getImageHoverEdgeInset() {
   return IMAGE_HOVER_EDGE_INSET;
@@ -48,6 +49,51 @@ function intersectRect(
   const bottom = Math.min(first.y + first.height, second.y + second.height);
 
   if (right <= left || bottom <= top) return null;
+
+  return {
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+  };
+}
+
+function getRotatedRectBounds({
+  bounds,
+  rotation,
+  cx,
+  cy,
+}: {
+  bounds: { x: number; y: number; width: number; height: number };
+  rotation: number;
+  cx: number;
+  cy: number;
+}) {
+  if (rotation === 0) return bounds;
+
+  const radians = (rotation * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const corners = [
+    { x: bounds.x, y: bounds.y },
+    { x: bounds.x + bounds.width, y: bounds.y },
+    { x: bounds.x + bounds.width, y: bounds.y + bounds.height },
+    { x: bounds.x, y: bounds.y + bounds.height },
+  ].map((corner) => {
+    const translatedX = corner.x - cx;
+    const translatedY = corner.y - cy;
+    return {
+      x: cx + translatedX * cos - translatedY * sin,
+      y: cy + translatedX * sin + translatedY * cos,
+    };
+  });
+
+  const xs = corners.map((corner) => corner.x);
+  const ys = corners.map((corner) => corner.y);
+  const left = Math.min(...xs);
+  const right = Math.max(...xs);
+  const top = Math.min(...ys);
+  const bottom = Math.max(...ys);
 
   return {
     x: left,
@@ -91,10 +137,16 @@ function buildImageHoverBounds({
   const minTop = canvasBounds.y + IMAGE_HOVER_EDGE_INSET;
   const maxRight = canvasBounds.x + canvasBounds.width - IMAGE_HOVER_EDGE_INSET;
   const maxBottom = canvasBounds.y + canvasBounds.height - IMAGE_HOVER_EDGE_INSET;
-  const left = Math.max(visibleBounds.x, minLeft);
-  const top = Math.max(visibleBounds.y, minTop);
-  const right = Math.min(visibleBounds.x + visibleBounds.width, maxRight);
-  const bottom = Math.min(visibleBounds.y + visibleBounds.height, maxBottom);
+  const left = Math.max(visibleBounds.x - CANVAS_IMAGE_HOVER_OUTSET, minLeft);
+  const top = Math.max(visibleBounds.y - CANVAS_IMAGE_HOVER_OUTSET, minTop);
+  const right = Math.min(
+    visibleBounds.x + visibleBounds.width + CANVAS_IMAGE_HOVER_OUTSET,
+    maxRight,
+  );
+  const bottom = Math.min(
+    visibleBounds.y + visibleBounds.height + CANVAS_IMAGE_HOVER_OUTSET,
+    maxBottom,
+  );
 
   return {
     x: left,
@@ -334,21 +386,29 @@ export function ImageLayer({
     hasRenderInputs && bounds
       ? bounds.y + (bounds.height - scaledHeight) / 2 + offsetY + layerOffsetY
       : 0;
+  const cx = x + scaledWidth / 2;
+  const cy = y + scaledHeight / 2;
+  const effectiveRenderedBounds =
+    hasRenderInputs && imageUrl
+      ? getRotatedRectBounds({
+          bounds: {
+            x,
+            y,
+            width: scaledWidth,
+            height: scaledHeight,
+          },
+          rotation,
+          cx,
+          cy,
+        })
+      : null;
   const hoverBounds =
     bounds == null
       ? null
       : buildImageHoverBounds({
           clipMode,
           layerBounds: bounds,
-          renderedBounds:
-            hasRenderInputs && imageUrl
-              ? {
-                  x,
-                  y,
-                  width: scaledWidth,
-                  height: scaledHeight,
-                }
-              : null,
+          renderedBounds: effectiveRenderedBounds,
           canvasBounds,
         });
 
@@ -376,8 +436,6 @@ export function ImageLayer({
     return null;
   }
 
-  const cx = x + scaledWidth / 2;
-  const cy = y + scaledHeight / 2;
   const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
   const shouldClip = clipMode !== "none";
   const clipBounds = clipMode === "canvas" ? canvasBounds : bounds;

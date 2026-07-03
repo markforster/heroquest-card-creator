@@ -618,9 +618,9 @@ describe("BlueprintRenderer SVG hover targets", () => {
       `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageMain}"]`,
     ) as SVGRectElement;
     expect(imageHover).toHaveAttribute("x", "18");
-    expect(imageHover).toHaveAttribute("y", "120");
+    expect(imageHover).toHaveAttribute("y", "104");
     expect(imageHover).toHaveAttribute("width", "714");
-    expect(imageHover).toHaveAttribute("height", "730");
+    expect(imageHover).toHaveAttribute("height", "762");
 
     const heroStatsTarget = container.querySelector(
       `[data-hqcc-edit="${EDITOR_TARGET_IDS.statsHero}"]`,
@@ -846,7 +846,7 @@ describe("BlueprintRenderer SVG hover targets", () => {
     expect(imageHover).toHaveAttribute("x", `${inset}`);
     expect(imageHover).toHaveAttribute("y", `${inset}`);
     expect(imageHover).toHaveAttribute("width", `${750 - inset * 2}`);
-    expect(imageHover).toHaveAttribute("height", "992");
+    expect(imageHover).toHaveAttribute("height", "1008");
   });
 
   it("clamps near-edge canvas-clipped artwork hover bounds per edge without insetting every side", () => {
@@ -879,14 +879,93 @@ describe("BlueprintRenderer SVG hover targets", () => {
     const imageHover = container.querySelector(
       `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageMain}"]`,
     ) as SVGRectElement;
-    expect(imageHover).toHaveAttribute("x", "290");
-    expect(imageHover).toHaveAttribute("y", "170");
-    expect(imageHover).toHaveAttribute("width", `${732 - 290}`);
-    expect(imageHover).toHaveAttribute("height", "630");
+    expect(imageHover).toHaveAttribute("x", "274");
+    expect(imageHover).toHaveAttribute("y", "154");
+    expect(imageHover).toHaveAttribute("width", `${732 - 274}`);
+    expect(imageHover).toHaveAttribute("height", "662");
     expect(Number(imageHover.getAttribute("x"))).toBeGreaterThan(inset);
     expect(Number(imageHover.getAttribute("x")) + Number(imageHover.getAttribute("width"))).toBe(
       750 - inset,
     );
+    expect(Number(imageHover.getAttribute("y"))).toBeGreaterThan(inset);
+  });
+
+  it("encloses rotated centered canvas-clipped artwork before applying outset and edge clearance", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={{
+          title: "Sir Ragnar",
+          description: "Body text",
+          imageAssetId: "art-1",
+          imageOriginalWidth: 750,
+          imageOriginalHeight: 1050,
+          imageScaleMode: "absolute",
+          imageScale: 0.6,
+          imageRotation: 15,
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const hitArea = container.querySelector(
+      `[data-hqcc-edit="${EDITOR_TARGET_IDS.imageMain}"]`,
+    ) as SVGElement;
+
+    expect(hitArea).not.toBeNull();
+
+    fireEvent.pointerEnter(hitArea);
+    const imageHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageMain}"]`,
+    ) as SVGRectElement;
+
+    expect(Number(imageHover.getAttribute("x"))).toBeCloseTo(60.13868987766561, 6);
+    expect(Number(imageHover.getAttribute("width"))).toBeCloseTo(629.7226202446688, 6);
+    expect(Number(imageHover.getAttribute("y"))).toBeGreaterThan(18);
+    expect(Number(imageHover.getAttribute("y"))).toBeLessThan(154);
+    expect(Number(imageHover.getAttribute("height"))).toBeGreaterThan(630);
+    expect(Number(imageHover.getAttribute("height"))).toBeLessThan(1008);
+  });
+
+  it("encloses rotated near-edge canvas-clipped artwork while still clamping only affected edges", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={{
+          title: "Sir Ragnar",
+          description: "Body text",
+          imageAssetId: "art-1",
+          imageOriginalWidth: 750,
+          imageOriginalHeight: 1050,
+          imageScaleMode: "absolute",
+          imageScale: 0.6,
+          imageOffsetX: 140,
+          imageRotation: 15,
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const inset = getImageHoverEdgeInset();
+    const hitArea = container.querySelector(
+      `[data-hqcc-edit="${EDITOR_TARGET_IDS.imageMain}"]`,
+    ) as SVGElement;
+
+    expect(hitArea).not.toBeNull();
+
+    fireEvent.pointerEnter(hitArea);
+    const imageHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageMain}"]`,
+    ) as SVGRectElement;
+
+    expect(Number(imageHover.getAttribute("x"))).toBeGreaterThan(inset);
+    expect(Number(imageHover.getAttribute("y"))).toBeGreaterThan(inset);
+    expect(Number(imageHover.getAttribute("x")) + Number(imageHover.getAttribute("width"))).toBe(
+      750 - inset,
+    );
+    expect(Number(imageHover.getAttribute("height"))).toBeGreaterThan(662);
   });
 
   it("insets canvas-clipped full-card artwork hover adornment while keeping the hit area full-card", () => {

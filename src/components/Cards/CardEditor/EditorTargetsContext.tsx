@@ -97,9 +97,16 @@ type EditorTargetsContextValue = {
 
 const EditorTargetsContext = createContext<EditorTargetsContextValue | null>(null);
 
+type HoverAdornmentRegistration = {
+  token: symbol;
+  descriptor: HoverAdornmentDescriptor;
+};
+
 export function EditorTargetsProvider({ children }: { children: ReactNode }) {
   const handlersRef = useRef(new Map<EditorTargetId, FocusTargetHandler>());
-  const hoverAdornmentsRef = useRef(new Map<EditorTargetId, HoverAdornmentDescriptor>());
+  const hoverAdornmentsRef = useRef(
+    new Map<EditorTargetId, HoverAdornmentRegistration[]>(),
+  );
   const actionRequestRef = useRef<TargetActionRequest | null>(null);
   const handledRequestIdRef = useRef<number | null>(null);
   const hoveredTargetIdRef = useRef<EditorTargetId | null>(null);
@@ -235,13 +242,24 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
       if (!ENABLE_EDITOR_TARGET_INTERACTIONS) {
         return () => {};
       }
-      hoverAdornmentsRef.current.set(targetId, descriptor);
+      const token = Symbol(targetId);
+      const registrations = hoverAdornmentsRef.current.get(targetId) ?? [];
+      registrations.push({ token, descriptor });
+      hoverAdornmentsRef.current.set(targetId, registrations);
       setHoverRegistryVersion((version) => version + 1);
       return () => {
-        if (hoverAdornmentsRef.current.get(targetId) === descriptor) {
+        const current = hoverAdornmentsRef.current.get(targetId);
+        if (!current) return;
+
+        const next = current.filter((registration) => registration.token !== token);
+        if (next.length === current.length) return;
+
+        if (next.length === 0) {
           hoverAdornmentsRef.current.delete(targetId);
-          setHoverRegistryVersion((version) => version + 1);
+        } else {
+          hoverAdornmentsRef.current.set(targetId, next);
         }
+        setHoverRegistryVersion((version) => version + 1);
       };
     },
     [],
@@ -272,7 +290,9 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
       hoveredTargetId,
       selectedTargetId,
       hoverAdornmentDescriptor:
-        hoveredTargetId != null ? (hoverAdornmentsRef.current.get(hoveredTargetId) ?? null) : null,
+        hoveredTargetId != null
+          ? (hoverAdornmentsRef.current.get(hoveredTargetId)?.at(-1)?.descriptor ?? null)
+          : null,
       beginHoverTarget,
       endHoverTarget,
       setHoveredTargetId,

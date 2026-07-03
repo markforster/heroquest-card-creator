@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import CardPreview, { CardPreviewHandle } from "@/components/Cards/CardPreview";
+import { useEditorTargets } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import WebglPreview from "@/components/Cards/CardPreview/WebglPreview";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
@@ -36,6 +37,7 @@ export default function CardPreviewContainer({
 }: CardPreviewContainerProps) {
   const { language, t } = useI18n();
   const { previewRenderer, rotationResetToken, recenterToken } = usePreviewRenderer();
+  const { setHoveredTargetId } = useEditorTargets();
   const { preferences, isDragging } = useTextFittingPreferences();
   const { showTextBounds } = useDebugVisuals();
   const preferencesKey = JSON.stringify(preferences);
@@ -74,6 +76,10 @@ export default function CardPreviewContainer({
     template?.defaultFace ?? "front",
   );
   const assetIds = useMemo(() => collectCardAssetIds(cardData), [cardData]);
+
+  useEffect(() => {
+    setHoveredTargetId(null);
+  }, [previewRenderer, setHoveredTargetId]);
 
   useEffect(() => {
     if (!showWebgl || isDragging) return;
