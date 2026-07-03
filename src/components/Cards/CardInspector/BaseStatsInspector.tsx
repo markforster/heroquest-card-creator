@@ -4,8 +4,11 @@ import { useMemo, useRef } from "react";
 import { useFormContext, useWatch, type FieldValues, type Path } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
-import type { EditorTargetId } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import { useInspectorTargetRegistration } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import {
+  type EditorTargetId,
+  useInspectorTargetRegistration,
+  useIsEditorTargetHovered,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { MessageKey } from "@/i18n/messages";
 import { formatStatValue } from "@/lib/stat-values";
@@ -43,6 +46,7 @@ export default function BaseStatsInspector<T extends FieldValues>({
   const { control } = useFormContext<T>();
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const StatControl = allowSplit ? SplitStatStepper<T> : StatStepper<T>;
+  const isGroupHovered = useIsEditorTargetHovered(targetId);
   const handleFieldFocusCapture = useInspectorTargetRegistration({
     targetId,
     containerRef: fieldRef,
@@ -60,7 +64,13 @@ export default function BaseStatsInspector<T extends FieldValues>({
   const previewValues = watchedValues.map((value) => formatStatValue(value) ?? "0");
 
   return (
-    <div ref={fieldRef} data-hqcc-edit={targetId} onFocusCapture={handleFieldFocusCapture}>
+    <div
+      ref={fieldRef}
+      className={layoutStyles.editorTargetInspectorSurface}
+      data-hqcc-edit={targetId}
+      data-hqcc-hovered={isGroupHovered ? "true" : "false"}
+      onFocusCapture={handleFieldFocusCapture}
+    >
       <StatsAccordion label={t("form.stats")} previewValues={previewValues}>
         <div className={layoutStyles.statRows}>
           {fields.map((field) => (
@@ -95,6 +105,7 @@ function StatInspectorRow<T extends FieldValues>({
   label,
 }: StatInspectorRowProps<T>) {
   const fieldRef = useRef<HTMLDivElement | null>(null);
+  const isHovered = useIsEditorTargetHovered(field.targetId);
   const handleFieldFocusCapture = useInspectorTargetRegistration({
     targetId: field.targetId,
     containerRef: fieldRef,
@@ -104,8 +115,9 @@ function StatInspectorRow<T extends FieldValues>({
   return (
     <div
       ref={fieldRef}
-      className={layoutStyles.statRow}
+      className={`${layoutStyles.statRow} ${layoutStyles.editorTargetInspectorSurface}`}
       data-hqcc-edit={field.targetId}
+      data-hqcc-hovered={isHovered ? "true" : "false"}
       onFocusCapture={handleFieldFocusCapture}
     >
       <StatControl

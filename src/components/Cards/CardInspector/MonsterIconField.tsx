@@ -25,6 +25,7 @@ import { AssetsModal } from "@/components/Assets";
 import {
   EDITOR_TARGET_IDS,
   useInspectorTargetRegistration,
+  useIsEditorTargetHovered,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import { addPinnedAsset, getAssetKindLabel } from "@/components/Cards/CardInspector/asset-utils";
 import { computeCardInspectorPopoverPosition } from "@/components/Cards/CardInspector/card-inspector-popover-position";
@@ -86,6 +87,7 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
   const inputWrapRef = useRef<HTMLDivElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const isHovered = useIsEditorTargetHovered(EDITOR_TARGET_IDS.imageIcon);
   const handleFieldFocusCapture = useInspectorTargetRegistration({
     targetId: EDITOR_TARGET_IDS.imageIcon,
     containerRef: fieldRef,
@@ -275,8 +277,9 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
   return (
     <div
       ref={fieldRef}
-      className="mb-2"
+      className={layoutStyles.editorTargetInspectorSurface}
       data-hqcc-edit={EDITOR_TARGET_IDS.imageIcon}
+      data-hqcc-hovered={isHovered ? "true" : "false"}
       onFocusCapture={handleFieldFocusCapture}
     >
       <div className={layoutStyles.inspectorFieldHeader}>

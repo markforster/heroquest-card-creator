@@ -835,6 +835,12 @@
   gap: var(--space-10);
 }
 
+.inspectorFieldStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
 /* Main panels */
 
 .leftNav {
@@ -3612,6 +3618,42 @@
 
 .inspectorFieldHeader {
   margin-bottom: var(--inspector-label-field-gap);
+}
+
+.editorTargetInspectorSurface {
+  position: relative;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  box-shadow: none;
+  transition:
+    background-color 180ms ease-out,
+    box-shadow 180ms ease-out;
+}
+
+.editorTargetInspectorSurface::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: -4px;
+  right: -4px;
+  border: 1px solid rgba(255, 255, 255, 0);
+  border-radius: calc(var(--radius-lg) + 2px);
+  pointer-events: none;
+  transition:
+    border-color 180ms ease-out,
+    box-shadow 180ms ease-out;
+}
+
+.editorTargetInspectorSurface[data-hqcc-hovered="true"] {
+  background: var(--hq-white-08);
+}
+
+.editorTargetInspectorSurface[data-hqcc-hovered="true"]::after {
+  border-color: var(--hq-outline-border);
+  box-shadow:
+    0 0 0 1px var(--hq-outline-hover-bg),
+    0 0 8px var(--hq-black-35);
 }
 
 .rightPanel .inspectorLabel {

@@ -263,6 +263,11 @@ export function useOptionalEditorTargets() {
   return useContext(EditorTargetsContext);
 }
 
+export function useIsEditorTargetHovered(targetId: EditorTargetId) {
+  const editorTargets = useOptionalEditorTargets();
+  return editorTargets?.hoveredTargetId === targetId;
+}
+
 type InspectorTargetRegistrationOptions = {
   targetId: EditorTargetId;
   containerRef: RefObject<HTMLElement | null>;

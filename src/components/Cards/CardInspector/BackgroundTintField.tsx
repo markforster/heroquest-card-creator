@@ -69,7 +69,7 @@ export default function BackgroundTintField({ label, templateId }: BackgroundTin
   };
 
   return (
-    <div className="mb-2">
+    <div>
       <div className={layoutStyles.inspectorFieldHeader}>
         <FormLabelWithIcon label={label} icon={Droplet} className="form-label" />
       </div>

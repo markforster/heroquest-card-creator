@@ -8,6 +8,7 @@ import layoutStyles from "@/app/page.module.css";
 import {
   EDITOR_TARGET_IDS,
   useInspectorTargetRegistration,
+  useIsEditorTargetHovered,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 import ColorPickerField from "@/components/common/ColorPickerField";
@@ -44,6 +45,7 @@ export default function CopyrightField({
   const [isColorOpen, setIsColorOpen] = useState(false);
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const isHovered = useIsEditorTargetHovered(EDITOR_TARGET_IDS.copyright);
   const { renderPreviewCanvas } = usePreviewCanvas();
   const { smartGroups, isSmartBusy, requestSmart } = useSmartSwatches({
     renderPreviewCanvas,
@@ -85,8 +87,9 @@ export default function CopyrightField({
   return (
     <div
       ref={fieldRef}
-      className="mb-2"
+      className={layoutStyles.editorTargetInspectorSurface}
       data-hqcc-edit={EDITOR_TARGET_IDS.copyright}
+      data-hqcc-hovered={isHovered ? "true" : "false"}
       onFocusCapture={handleFieldFocusCapture}
     >
       <div className={`d-flex align-items-center gap-2 ${layoutStyles.inspectorFieldHeader}`}>

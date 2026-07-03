@@ -2,6 +2,10 @@
 
 
 import layoutStyles from "@/app/page.module.css";
+import {
+  type EditorTargetId,
+  useIsEditorTargetHovered,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 
 import type { LucideIcon } from "lucide-react";
@@ -25,7 +29,7 @@ export type BaseInspectorFieldProps = {
   disabled?: boolean;
   showToggle?: boolean;
   onFocusCapture?: FocusEventHandler<HTMLDivElement>;
-  targetId?: string;
+  targetId?: EditorTargetId;
   toggleProps?: BaseInspectorFieldToggleProps;
   toolbar?: ReactNode;
   headerExtras?: ReactNode;
@@ -48,11 +52,14 @@ export default function BaseInspectorField({
   input,
   footer,
 }: BaseInspectorFieldProps) {
+  const isHovered = targetId ? useIsEditorTargetHovered(targetId) : false;
+
   return (
     <div
       ref={fieldRef}
-      className="mb-2"
+      className={layoutStyles.editorTargetInspectorSurface}
       data-hqcc-edit={targetId}
+      data-hqcc-hovered={isHovered ? "true" : "false"}
       onFocusCapture={onFocusCapture}
     >
       <div className={`d-flex align-items-center gap-2 ${layoutStyles.inspectorFieldHeader}`}>

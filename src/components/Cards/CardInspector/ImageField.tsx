@@ -24,6 +24,7 @@ import layoutStyles from "@/app/page.module.css";
 import {
   EDITOR_TARGET_IDS,
   useInspectorTargetRegistration,
+  useIsEditorTargetHovered,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import { AssetsModal } from "@/components/Assets";
 import { addPinnedAsset, getAssetKindLabel } from "@/components/Cards/CardInspector/asset-utils";
@@ -124,6 +125,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const previousImageRef = useRef<ImageSnapshot | null>(null);
   const scaleSliderRef = useRef<HTMLInputElement | null>(null);
   const [scaleSliderWidthPx, setScaleSliderWidthPx] = useState(0);
+  const isHovered = useIsEditorTargetHovered(EDITOR_TARGET_IDS.imageMain);
   const handleFieldFocusCapture = useInspectorTargetRegistration({
     targetId: EDITOR_TARGET_IDS.imageMain,
     containerRef: fieldRef,
@@ -495,15 +497,16 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   return (
     <div
       ref={fieldRef}
-      className="mb-2"
+      className={layoutStyles.editorTargetInspectorSurface}
       data-hqcc-edit={EDITOR_TARGET_IDS.imageMain}
+      data-hqcc-hovered={isHovered ? "true" : "false"}
       onFocusCapture={handleFieldFocusCapture}
     >
       <div className={layoutStyles.inspectorFieldHeader}>
         <FormLabelWithIcon label={label} icon={Image} className="form-label" />
       </div>
       <div ref={inputWrapRef} className={layoutStyles.imageAutocompleteWrap}>
-        <div className="input-group input-group-sm mb-2">
+        <div className="input-group input-group-sm">
           <span className={`input-group-text ${layoutStyles.imageSearchAddon}`}>
             <Search className={layoutStyles.icon} aria-hidden="true" />
           </span>

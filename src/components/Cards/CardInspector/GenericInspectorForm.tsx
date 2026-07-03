@@ -41,7 +41,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
   }
 
   return (
-    <form className={styles.uStackLg}>
+    <form className={styles.inspectorFieldStack}>
       {fields.map((field, index) => {
         if (field.fieldType === "name") {
           return (
