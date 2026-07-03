@@ -47,8 +47,9 @@ export default function CardPage() {
         isDirty: session.isEditorDirty,
         title: t("heading.discardChanges"),
         body: t("confirm.leaveCardEditorBody"),
+        saveCurrentCard: session.saveCurrentCard,
       }),
-      [session.isEditorDirty, t],
+      [session.isEditorDirty, session.saveCurrentCard, t],
     ),
   );
 

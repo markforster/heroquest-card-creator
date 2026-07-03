@@ -14,18 +14,34 @@ import {
 
 import type { ReactNode } from "react";
 
+jest.mock("@/i18n/I18nProvider", () => ({
+  __esModule: true,
+  useI18n: () => ({
+    t: (key: string) =>
+      ({
+        "actions.save": "Save",
+        "actions.discard": "Discard",
+        "actions.cancel": "Cancel",
+      })[key] ?? key,
+  }),
+}));
+
 jest.mock("@/components/Modals/ConfirmModal", () => ({
   __esModule: true,
   default: ({
     isOpen,
     title,
     children,
+    extraLabel,
+    onExtra,
     onConfirm,
     onCancel,
   }: {
     isOpen: boolean;
     title: string;
     children: ReactNode;
+    extraLabel?: string;
+    onExtra?: () => void;
     onConfirm: () => void;
     onCancel: () => void;
   }) =>
@@ -35,6 +51,11 @@ jest.mock("@/components/Modals/ConfirmModal", () => ({
         <button type="button" onClick={onCancel}>
           Cancel
         </button>
+        {extraLabel && onExtra ? (
+          <button type="button" onClick={onExtra}>
+            {extraLabel}
+          </button>
+        ) : null}
         <button type="button" onClick={onConfirm}>
           Discard
         </button>
@@ -94,6 +115,27 @@ function DirtyCardPage() {
     <div>
       <div>Card page</div>
       <Link to="/assets">Open assets link</Link>
+      <button type="button" onClick={() => navigate("/assets")}>
+        Open assets button
+      </button>
+    </div>
+  );
+}
+
+function DirtyCardPageWithSave({ saveCurrentCard }: { saveCurrentCard: () => Promise<boolean> }) {
+  const navigate = useNavigate();
+
+  usePublishUnsavedChangesGuard({
+    enabled: true,
+    isDirty: true,
+    title: "Discard changes?",
+    body: "You have unsaved changes.",
+    saveCurrentCard,
+  });
+
+  return (
+    <div>
+      <div>Card page</div>
       <button type="button" onClick={() => navigate("/assets")}>
         Open assets button
       </button>
@@ -206,6 +248,66 @@ describe("UnsavedChangesGuardProvider", () => {
     await waitFor(() => {
       expect(screen.getByText("Assets page")).toBeInTheDocument();
     });
+  });
+
+  it("saves before continuing blocked navigation when save succeeds", async () => {
+    const saveCurrentCard = jest.fn().mockResolvedValue(true);
+    const router = createMemoryRouter(
+      [
+        {
+          element: <Layout />,
+          children: [
+            {
+              path: "/cards/1",
+              element: <DirtyCardPageWithSave saveCurrentCard={saveCurrentCard} />,
+            },
+            { path: "/assets", element: <AssetsPage /> },
+          ],
+        },
+      ],
+      { initialEntries: ["/cards/1"] },
+    );
+
+    render(<RouterProvider router={router} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Open assets button" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Assets page")).toBeInTheDocument();
+    });
+
+    expect(saveCurrentCard).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not continue blocked navigation when save fails", async () => {
+    const saveCurrentCard = jest.fn().mockResolvedValue(false);
+    const router = createMemoryRouter(
+      [
+        {
+          element: <Layout />,
+          children: [
+            {
+              path: "/cards/1",
+              element: <DirtyCardPageWithSave saveCurrentCard={saveCurrentCard} />,
+            },
+            { path: "/assets", element: <AssetsPage /> },
+          ],
+        },
+      ],
+      { initialEntries: ["/cards/1"] },
+    );
+
+    render(<RouterProvider router={router} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Open assets button" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(saveCurrentCard).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByText("Card page")).toBeInTheDocument();
+    expect(screen.queryByText("Assets page")).not.toBeInTheDocument();
   });
 
   it("registers beforeunload protection while dirty", () => {

@@ -2,10 +2,8 @@
 
 import { createContext, useContext, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useFormState } from "react-hook-form";
 
 import AssetsModal from "@/components/Assets/AssetsModal";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
 import RecentCardsModal from "@/components/Modals/RecentCardsModal";
 import SettingsModal from "@/components/Modals/SettingsModal/SettingsModal";
 import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesGuardContext";
@@ -60,17 +58,16 @@ type AppActionsProviderProps = {
 };
 
 export function AppActionsProvider({ children }: AppActionsProviderProps) {
-  const { t, language } = useI18n();
+  const { language } = useI18n();
   const navigate = useNavigate();
-  const { bypassNextNavigation } = useUnsavedChangesGuardControls();
+  const { bypassNextNavigation, runWithUnsavedChangesGuard } = useUnsavedChangesGuardControls();
   const { track } = useAnalytics();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
     setSelectedTemplateId,
     setActiveCard,
   } = useCardEditor();
-  const { methods, resetWithSaved } = useEditorForm();
-  const { isDirty } = useFormState({ control: methods.control });
+  const { resetWithSaved } = useEditorForm();
 
   const templatePicker = usePopupState(false);
   const assetsModal = usePopupState(false);
@@ -86,10 +83,6 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
   const [stockpileTitleOverride, setStockpileTitleOverride] = useState<string | null>(null);
   const settingsModal = usePopupState(false);
   const [stockpileRefreshToken, setStockpileRefreshToken] = useState(0);
-  const [pendingCard, setPendingCard] = useState<CardRecord | null>(null);
-  const [pendingCardSource, setPendingCardSource] = useState<"stockpile" | "recent" | null>(null);
-  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
-  const [pendingNewTemplate, setPendingNewTemplate] = useState(false);
 
   const selectedTemplate = selectedTemplateId ? cardTemplatesById[selectedTemplateId] : undefined;
   const currentTemplateName = selectedTemplate
@@ -101,6 +94,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
 
   const handleLoadCard = async (card: CardRecord | null) => {
     if (!card) return;
+    bypassNextNavigation();
     navigate(`/cards/${card.id}`);
     setStockpileRefreshToken((prev) => prev + 1);
   };
@@ -115,12 +109,9 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
       hasTemplate: Boolean(selectedTemplateId),
       currentTemplateName,
       openTemplatePicker: () => {
-        if (isDirty) {
-          setPendingNewTemplate(true);
-          setIsDiscardConfirmOpen(true);
-          return;
-        }
-        templatePickerOpen();
+        runWithUnsavedChangesGuard(() => {
+          templatePickerOpen();
+        });
       },
       openAssets: assetsModal.open,
       openStockpile: (options?: StockpileOpenOptions) => {
@@ -155,7 +146,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
       recentModal.isOpen,
       templatePickerOpen,
       templatePickerIsOpen,
-      isDirty,
+      runWithUnsavedChangesGuard,
     ],
   );
 
@@ -203,60 +194,21 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
             : undefined
         }
         onLoadCard={async (card) => {
-          if (isDirty) {
-            setPendingCard(card);
-            setPendingCardSource("stockpile");
-            setIsDiscardConfirmOpen(true);
-            return;
-          }
-          await handleLoadCard(card);
+          runWithUnsavedChangesGuard(async () => {
+            await handleLoadCard(card);
+          });
         }}
       />
       <RecentCardsModal
         isOpen={recentModal.isOpen}
         onClose={recentModal.close}
         onSelectCard={(card) => {
-          if (isDirty) {
-            setPendingCard(card);
-            setPendingCardSource("recent");
-            setIsDiscardConfirmOpen(true);
-            return false;
-          }
-          void handleLoadCard(card);
-          return true;
+          return runWithUnsavedChangesGuard(async () => {
+            await handleLoadCard(card);
+            recentModal.close();
+          });
         }}
       />
-      <ConfirmModal
-        isOpen={isDiscardConfirmOpen}
-        title={t("heading.discardChanges")}
-        confirmLabel={t("actions.discard")}
-        cancelLabel={t("actions.cancel")}
-        onConfirm={async () => {
-          setIsDiscardConfirmOpen(false);
-          const card = pendingCard;
-          const source = pendingCardSource;
-          setPendingCard(null);
-          setPendingCardSource(null);
-          if (pendingNewTemplate) {
-            setPendingNewTemplate(false);
-            templatePicker.open();
-            return;
-          }
-          bypassNextNavigation();
-          await handleLoadCard(card);
-          if (source === "recent") {
-            recentModal.close();
-          }
-        }}
-        onCancel={() => {
-          setIsDiscardConfirmOpen(false);
-          setPendingCard(null);
-          setPendingCardSource(null);
-          setPendingNewTemplate(false);
-        }}
-      >
-        {t("confirm.discardChangesBody")}
-      </ConfirmModal>
     </AppActionsContext.Provider>
   );
 }

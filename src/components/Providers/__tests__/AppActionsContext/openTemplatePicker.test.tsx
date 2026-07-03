@@ -29,6 +29,17 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
   }),
 }));
 
+jest.mock("@/components/App/UnsavedChangesGuardContext", () => ({
+  __esModule: true,
+  useUnsavedChangesGuardControls: () => ({
+    bypassNextNavigation: jest.fn(),
+    runWithUnsavedChangesGuard: (action: () => void) => {
+      action();
+      return true;
+    },
+  }),
+}));
+
 jest.mock("@/i18n/I18nProvider", () => ({
   __esModule: true,
   useI18n: () => ({

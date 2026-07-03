@@ -75,7 +75,7 @@ describe("createCardPageActions saveCurrentCard", () => {
       track: jest.fn(),
     });
 
-    await actions.saveCurrentCard();
+    await expect(actions.saveCurrentCard()).resolves.toBe(true);
 
     expect(createCardMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -190,5 +190,97 @@ describe("createCardPageActions saveCurrentCard", () => {
     );
     expect(createCardMock).not.toHaveBeenCalled();
     expect(invalidateCollectionsQueriesMock).not.toHaveBeenCalled();
+  });
+
+  it("returns false when required card name is missing", async () => {
+    const actions = createCardPageActions({
+      bypassNextNavigation: jest.fn(),
+      currentTemplateId: "hero",
+      methods: {
+        getValues: () =>
+          ({
+            name: "",
+          }) as never,
+      },
+      navigate: jest.fn(),
+      previewRef: { current: null } as never,
+      resetWithSaved: jest.fn(),
+      setActiveCard: jest.fn(),
+      setDraftSourceCardId: jest.fn(),
+      setSaveToken: jest.fn(),
+      setSavingMode: jest.fn(),
+      setSelectedTemplateId: jest.fn(),
+      track: jest.fn(),
+    });
+
+    await expect(actions.saveCurrentCard()).resolves.toBe(false);
+    expect(createCardMock).not.toHaveBeenCalled();
+    expect(updateCardMock).not.toHaveBeenCalled();
+  });
+
+  it("returns false when create fails", async () => {
+    createCardMock.mockRejectedValue(new Error("save failed"));
+
+    const actions = createCardPageActions({
+      bypassNextNavigation: jest.fn(),
+      currentTemplateId: "hero",
+      methods: {
+        getValues: () =>
+          ({
+            name: "Hero",
+          }) as never,
+      },
+      navigate: jest.fn(),
+      previewRef: { current: { renderToJpegBlob: jest.fn().mockResolvedValue(null) } } as never,
+      resetWithSaved: jest.fn(),
+      setActiveCard: jest.fn(),
+      setDraftSourceCardId: jest.fn(),
+      setSaveToken: jest.fn(),
+      setSavingMode: jest.fn(),
+      setSelectedTemplateId: jest.fn(),
+      track: jest.fn(),
+    });
+
+    await expect(actions.saveCurrentCard()).resolves.toBe(false);
+  });
+
+  it("returns true after updating an existing saved card", async () => {
+    updateCardMock.mockResolvedValue({
+      id: "card-1",
+      templateId: "hero",
+      status: "saved",
+      name: "Updated Hero",
+      nameLower: "updated hero",
+      createdAt: 100,
+      updatedAt: 200,
+      schemaVersion: 2,
+      bodyTextColor: "#231f20",
+      bodyTextFitToBounds: false,
+    });
+
+    const actions = createCardPageActions({
+      activeCardId: "card-1",
+      activeStatus: "saved",
+      bypassNextNavigation: jest.fn(),
+      currentTemplateId: "hero",
+      methods: {
+        getValues: () =>
+          ({
+            name: "Updated Hero",
+          }) as never,
+      },
+      navigate: jest.fn(),
+      previewRef: { current: { renderToJpegBlob: jest.fn().mockResolvedValue(null) } } as never,
+      resetWithSaved: jest.fn(),
+      setActiveCard: jest.fn(),
+      setDraftSourceCardId: jest.fn(),
+      setSaveToken: jest.fn(),
+      setSavingMode: jest.fn(),
+      setSelectedTemplateId: jest.fn(),
+      track: jest.fn(),
+    });
+
+    await expect(actions.saveCurrentCard()).resolves.toBe(true);
+    expect(updateCardMock).toHaveBeenCalledTimes(1);
   });
 });
