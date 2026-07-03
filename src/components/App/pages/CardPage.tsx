@@ -70,6 +70,7 @@ export default function CardPage() {
         draftSourceCardId={session.draftSourceCardId}
         exportMenuItems={exportController.exportMenuItems}
         frontViewToken={session.frontViewToken}
+        isRouteLoadingCard={session.isRouteLoadingCard}
         onBackToCards={() => navigate("/cards", { replace: true })}
         onDuplicate={() => {
           void session.duplicateCurrentCard(false);
