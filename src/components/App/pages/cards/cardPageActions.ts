@@ -52,7 +52,7 @@ export function createCardPageActions({
   track,
 }: CreateCardPageActionsArgs) {
   const handleSave = async (mode: Exclude<SavingMode, null>) => {
-    if (!currentTemplateId) return;
+    if (!currentTemplateId) return false;
     const templateId = currentTemplateId as TemplateId;
     const currentDraftValue = methods.getValues() as CardDataByTemplate[TemplateId];
     const draftName =
@@ -61,7 +61,7 @@ export function createCardPageActions({
         (currentDraftValue as { name?: string | null }).name) ||
       "";
     if (!draftName || !draftName.toString().trim()) {
-      return;
+      return false;
     }
 
     const startedAt = Date.now();
@@ -94,7 +94,7 @@ export function createCardPageActions({
         didSave = true;
         didCreateNew = true;
       } else if (mode === "update") {
-        if (!activeCardId || activeStatus !== "saved") return;
+        if (!activeCardId || activeStatus !== "saved") return false;
         const record = await apiClient.updateCard(
           { ...patch, thumbnailBlob, lastViewedAt: viewedAt },
           { params: { id: activeCardId } },
@@ -119,14 +119,14 @@ export function createCardPageActions({
       await settleSavingState(startedAt);
       setSavingMode(null);
     }
+    return didSave;
   };
 
   const saveCurrentCard = async () => {
     if (!currentTemplateId) return false;
     const mode = activeCardId && activeStatus === "saved" ? "update" : "new";
     track("save_started", { mode });
-    await handleSave(mode);
-    return true;
+    return await handleSave(mode);
   };
 
   const repairCurrentCardThumbnail = async () => {
