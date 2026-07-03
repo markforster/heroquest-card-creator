@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderPlus } from "lucide-react";
+import { CircleAlert, FolderPlus, Info, LoaderCircle, SquareStack } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -13,6 +13,8 @@ import { useI18n } from "@/i18n/I18nProvider";
 
 import CollectionsMembershipModal from "./CollectionsMembershipModal";
 import CollectionsMembershipTree from "./CollectionsMembershipTree";
+import InspectorPanelHeader from "./InspectorPanelHeader";
+import InspectorStateNotice from "./InspectorStateNotice";
 
 const sortCollections = (collections: CollectionRecord[]) =>
   [...collections].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
@@ -111,35 +113,63 @@ export default function CollectionsInspectorPanel() {
   };
 
   if (!savedCardId) {
-    return <div className={styles.inspectorModeEmpty}>{t("empty.saveCardToManageCollections")}</div>;
+    return (
+      <InspectorStateNotice
+        variant="prerequisite"
+        icon={<Info size={18} aria-hidden="true" />}
+        title={t("empty.saveCardToManageCollectionsTitle")}
+        body={t("empty.saveCardToManageCollectionsBody")}
+        hint={t("empty.saveCardToManageCollectionsHint")}
+      />
+    );
   }
 
   if (isLoading) {
-    return <div className={styles.inspectorModeEmpty}>{t("status.loadingCollections")}</div>;
+    return (
+      <InspectorStateNotice
+        variant="loading"
+        icon={<LoaderCircle size={18} aria-hidden="true" />}
+        title={t("status.loadingCollections")}
+        body={t("status.loadingCollectionsBody")}
+      />
+    );
   }
 
   if (loadError) {
-    return <div className={styles.inspectorModeEmpty}>{t("error.failedToLoadCollections")}</div>;
+    return (
+      <InspectorStateNotice
+        variant="error"
+        icon={<CircleAlert size={18} aria-hidden="true" />}
+        title={t("error.failedToLoadCollections")}
+        body={t("error.failedToLoadCollectionsBody")}
+        role="alert"
+      />
+    );
   }
 
   return (
     <div className={styles.inspectorCollectionsPanel}>
-      <div className={styles.inspectorPairRow}>
-        <div className={styles.inspectorPairTitle}>{t("heading.collectionsForCard")}</div>
-        <div className={`${styles.inspectorPairActions} ${styles.uRowSm}`}>
+      <InspectorPanelHeader
+        reserveTitleSpace
+        actions={
           <button
             type="button"
-            className={styles.stockpileCollectionsFooterButton}
+            className={styles.inspectorPanelHeaderActionButton}
             onClick={() => setIsModalOpen(true)}
             aria-label={t("actions.addToCollection")}
             title={t("actions.addToCollection")}
           >
             <FolderPlus size={18} aria-hidden="true" />
           </button>
-        </div>
-      </div>
+        }
+      />
       {memberCollections.length === 0 ? (
-        <div className={styles.inspectorModeEmpty}>{t("empty.cardNotInCollections")}</div>
+        <InspectorStateNotice
+          icon={<SquareStack size={18} aria-hidden="true" />}
+          title={t("empty.cardNotInCollectionsTitle")}
+          body={t("empty.cardNotInCollectionsBody")}
+          hint={t("empty.cardNotInCollectionsHint")}
+        />
       ) : (
         <div className={styles.inspectorCollectionsList} data-testid="collections-inspector-list">
           <CollectionsMembershipTree

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { CircleAlert, Info, Layers, LoaderCircle } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
@@ -12,6 +13,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
 import type { CardDeckMembership } from "@/api/cards";
 import InspectorEntityRow from "./InspectorEntityRow";
+import InspectorStateNotice from "./InspectorStateNotice";
 
 export default function DecksInspectorPanel() {
   const { t } = useI18n();
@@ -29,8 +31,6 @@ export default function DecksInspectorPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(false);
   const [memberships, setMemberships] = useState<CardDeckMembership[]>([]);
-
-  const heading = useMemo(() => t("heading.decksForCard"), [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,18 +68,43 @@ export default function DecksInspectorPanel() {
   }, [savedCardId]);
 
   if (!savedCardId) {
-    return <div className={styles.inspectorModeEmpty}>{t("empty.saveCardToViewDecks")}</div>;
+    return (
+      <InspectorStateNotice
+        variant="prerequisite"
+        icon={<Info size={18} aria-hidden="true" />}
+        title={t("empty.saveCardToViewDecksTitle")}
+        body={t("empty.saveCardToViewDecksBody")}
+        hint={t("empty.saveCardToViewDecksHint")}
+      />
+    );
   }
 
   return (
     <div className="d-flex flex-column gap-2">
-      <div className={styles.inspectorPairTitle}>{heading}</div>
-      {isLoading ? <div className={styles.inspectorModeEmpty}>{t("status.loadingDecks")}</div> : null}
+      {isLoading ? (
+        <InspectorStateNotice
+          variant="loading"
+          icon={<LoaderCircle size={18} aria-hidden="true" />}
+          title={t("status.loadingDecks")}
+          body={t("status.loadingDecksBody")}
+        />
+      ) : null}
       {!isLoading && error ? (
-        <div className={styles.inspectorModeEmpty}>{t("error.failedToLoadDecks")}</div>
+        <InspectorStateNotice
+          variant="error"
+          icon={<CircleAlert size={18} aria-hidden="true" />}
+          title={t("error.failedToLoadDecks")}
+          body={t("error.failedToLoadDecksBody")}
+          role="alert"
+        />
       ) : null}
       {!isLoading && !error && memberships.length === 0 ? (
-        <div className={styles.inspectorModeEmpty}>{t("empty.cardNotInDecks")}</div>
+        <InspectorStateNotice
+          icon={<Layers size={18} aria-hidden="true" />}
+          title={t("empty.cardNotInDecksTitle")}
+          body={t("empty.cardNotInDecksBody")}
+          hint={t("empty.cardNotInDecksHint")}
+        />
       ) : null}
       {!isLoading && !error && memberships.length > 0 ? (
         <div className="d-flex flex-column gap-2" data-testid="decks-inspector-list">

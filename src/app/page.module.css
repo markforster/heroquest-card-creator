@@ -2497,6 +2497,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  gap: var(--space-6);
   overflow: hidden;
   background: var(--inspector-mode-view-bg);
   border-right: 1px solid var(--hq-border-strong);
@@ -2599,6 +2600,105 @@
 
 .inspectorModeEmpty {
   padding: var(--space-10) 0;
+}
+
+.inspectorStateNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+  padding: var(--space-8);
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--hq-border-strong) 86%, white 14%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--hq-white-12) 72%, transparent 28%),
+      color-mix(in srgb, var(--hq-black-35) 62%, transparent 38%)
+    ),
+    color-mix(in srgb, var(--hq-surface-850) 84%, var(--hq-right-panel-bg-start) 16%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hq-white-12) 88%, transparent 12%);
+}
+
+.inspectorStateNoticeEmpty {
+  border-color: color-mix(in srgb, var(--hq-border-strong) 84%, white 16%);
+}
+
+.inspectorStateNoticePrerequisite {
+  border-color: color-mix(in srgb, var(--hq-accent) 42%, var(--hq-border-strong) 58%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--hq-accent-soft) 54%, var(--hq-white-12) 46%),
+      color-mix(in srgb, var(--hq-accent-soft) 22%, var(--hq-surface-900) 78%)
+    ),
+    color-mix(in srgb, var(--hq-surface-850) 78%, var(--hq-accent-soft) 22%);
+}
+
+.inspectorStateNoticeLoading {
+  border-color: color-mix(in srgb, #6f86b8 36%, var(--hq-border-strong) 64%);
+}
+
+.inspectorStateNoticeError {
+  border-color: color-mix(in srgb, #c86458 44%, var(--hq-border-strong) 56%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #7b342c 40%, var(--hq-white-12) 60%),
+      color-mix(in srgb, #5a241d 30%, var(--hq-surface-900) 70%)
+    ),
+    color-mix(in srgb, var(--hq-surface-850) 76%, #5a241d 24%);
+}
+
+.inspectorStateNoticeIcon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: color-mix(in srgb, var(--hq-text) 86%, var(--hq-text-muted) 14%);
+  background: color-mix(in srgb, var(--hq-white-10) 88%, transparent 12%);
+  border: 1px solid color-mix(in srgb, var(--hq-white-15) 86%, transparent 14%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hq-white-05) 72%, transparent 28%);
+}
+
+.inspectorStateNoticePrerequisite .inspectorStateNoticeIcon {
+  color: color-mix(in srgb, var(--hq-accent) 84%, white 16%);
+}
+
+.inspectorStateNoticeLoading .inspectorStateNoticeIcon {
+  color: color-mix(in srgb, #9db6eb 76%, white 24%);
+}
+
+.inspectorStateNoticeError .inspectorStateNoticeIcon {
+  color: color-mix(in srgb, #ff9f91 78%, white 22%);
+}
+
+.inspectorStateNoticeContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.inspectorStateNoticeTitle {
+  font-size: var(--text-lg);
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--hq-text);
+}
+
+.inspectorStateNoticeBody {
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--hq-text) 88%, var(--hq-text-muted) 12%);
+}
+
+.inspectorStateNoticeHint {
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  color: var(--hq-text-muted);
 }
 
 .inspectorPairingPlaceholder {
@@ -3007,20 +3107,25 @@
   color: var(--hq-text-muted);
 }
 
+.inspectorPanelHeader,
 .inspectorPairRow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-7);
+  min-height: 34px;
 }
 
+.inspectorPanelHeaderDisabled,
 .inspectorPairRowDisabled {
   opacity: 0.55;
 }
 
+.inspectorPanelHeaderDisabled .inspectorPanelHeaderActionButton,
 .inspectorPairRowDisabled .inspectorPairActionButton {
   cursor: not-allowed;
 }
 
+.inspectorPanelHeaderDisabled .inspectorPanelHeaderActionButton:disabled,
 .inspectorPairRowDisabled .inspectorPairActionButton:disabled {
   opacity: 0.7;
 }
@@ -3073,27 +3178,46 @@
   display: block;
 }
 
+.inspectorPanelHeaderMain {
+  flex: 1 0 auto;
+  min-width: 0;
+}
+
+.inspectorPanelHeaderTitle,
 .inspectorPairTitle {
-  flex: 1 1 auto;
   font-size: var(--text-lg);
   color: var(--hq-text);
 }
 
+.inspectorPanelHeaderTitleSpacer {
+  width: 100%;
+  min-height: 34px;
+}
+
+.inspectorPanelHeaderSpacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.inspectorPanelHeaderActions,
 .inspectorPairActions {
-  margin-left: auto;
-  flex: 0 1 auto;
+  flex: 0 0 auto;
 }
 
 .pairingPanelBody {
-  margin-top: var(--space-14);
+  display: flex;
+  flex-direction: column;
   gap: var(--space-14);
   flex: 1 1 auto;
-  overflow-y: auto;
+  min-height: 0;
 }
 
 .pairingPanel {
   height: 100%;
   overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 .pairingPanelGrid,
 .pairingPanelGroupGrid {
@@ -3358,17 +3482,24 @@
   justify-content: center;
 }
 
+.inspectorPanelHeaderActionButton,
 .inspectorPairActionButton {
   border: 1px solid var(--hq-white-15);
-  background: var(--hq-white-05);
+  background: var(--hq-white-06);
   color: var(--hq-text);
   border-radius: var(--radius-sm);
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  padding: 0;
+}
+
+.inspectorPanelHeaderActionButton:hover:enabled,
+.inspectorPairActionButton:hover:enabled {
+  background: var(--hq-white-12);
 }
 
 .inspectorPairActionButtonEmpty {
@@ -5758,23 +5889,6 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-2);
-}
-
-.stockpileCollectionsFooterButton {
-  border: 1px solid var(--hq-white-15);
-  background: var(--hq-white-06);
-  color: var(--hq-text);
-  border-radius: var(--radius-sm);
-  width: 34px;
-  height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.stockpileCollectionsFooterButton:hover {
-  background: var(--hq-white-12);
 }
 
 .stockpileCollectionsFooterButtonActive {
@@ -8618,7 +8732,7 @@ button.assetsKindBadge:disabled {
 .inspectorCollectionsPanel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .inspectorCollectionsList {

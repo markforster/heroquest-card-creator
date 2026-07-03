@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Combine, Unlink2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Combine, Info, Unlink2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -37,6 +37,8 @@ import type { TemplateId } from "@/types/templates";
 
 import CollapsibleGroup from "./CollapsibleGroup";
 import InspectorEntityRow from "./InspectorEntityRow";
+import InspectorPanelHeader from "./InspectorPanelHeader";
+import InspectorStateNotice from "./InspectorStateNotice";
 
 type PairingInspectorPanelProps = {
   activeFrontId?: string | null;
@@ -344,6 +346,10 @@ export default function PairingInspectorPanel({
   const hasPairedBacks = pairedBacks.length > 0;
   const pairedBackCount = pairedBacks.length;
   const selectedFrontId = effectiveFace === "back" ? activeFrontId ?? null : activeCardId ?? null;
+  const showSaveFirstNotice = pairingDisabled;
+  const showEmptyFrontNotice = !showSaveFirstNotice && effectiveFace === "front" && !hasPairedBacks;
+  const showEmptyBackNotice =
+    !showSaveFirstNotice && effectiveFace === "back" && pairedFronts.length === 0;
 
   if (!template) {
     return null;
@@ -492,26 +498,23 @@ export default function PairingInspectorPanel({
 
   return (
     <div className={styles.pairingPanel}>
-      <div
-        className={`${styles.inspectorPairRow} ${
-          pairingDisabled ? styles.inspectorPairRowDisabled : ""
-        }`}
-      >
-        {effectiveFace === "front" ? (
-          <>
-            <div className={styles.inspectorPairTitle}>
-              {hasPairedBacks
-                ? pairedBacks.length === 1
-                  ? t("label.pairedBackFacingSingle")
-                  : formatMessageWith("label.pairedBackFacingMultiple", {
-                      count: pairedBacks.length,
-                    })
-                : t("cardFace.unpaired")}
-            </div>
-            <div className={`${styles.inspectorPairActions} ${styles.uRowSm}`}>
+      {effectiveFace === "front" ? (
+        <InspectorPanelHeader
+          disabled={pairingDisabled}
+          title={
+            hasPairedBacks
+              ? pairedBacks.length === 1
+                ? t("label.pairedBackFacingSingle")
+                : formatMessageWith("label.pairedBackFacingMultiple", {
+                    count: pairedBacks.length,
+                  })
+              : t("cardFace.unpaired")
+          }
+          actions={
+            <>
               <button
                 type="button"
-                className={`${styles.inspectorPairActionButton} ${
+                className={`${styles.inspectorPanelHeaderActionButton} ${
                   hasPairedBacks ? "" : styles.inspectorPairActionButtonEmpty
                 }`}
                 title={pairingDisabled ? t("tooltip.saveBeforePairing") : t("tooltip.pairBack")}
@@ -546,7 +549,7 @@ export default function PairingInspectorPanel({
               {hasPairedBacks ? (
                 <button
                   type="button"
-                  className={styles.inspectorPairActionButton}
+                  className={styles.inspectorPanelHeaderActionButton}
                   title={
                     pairingDisabled ? t("tooltip.saveBeforePairing") : t("tooltip.unpairBackAll")
                   }
@@ -566,23 +569,26 @@ export default function PairingInspectorPanel({
                   <Unlink2 size={18} aria-hidden="true" />
                 </button>
               ) : null}
-            </div>
-          </>
-        ) : null}
-        {effectiveFace === "back" ? (
-          <>
-            <div className={styles.inspectorPairTitle}>
-              {pairedFronts.length === 0
-                ? t("cardFace.unpaired")
-                : pairedFronts.length === 1
-                  ? t("label.pairedFrontFacingSingle")
-                  : formatMessageWith("label.pairedFrontFacingMultiple", {
-                      count: pairedFronts.length,
-                    })}
-            </div>
+            </>
+          }
+        />
+      ) : null}
+      {effectiveFace === "back" ? (
+        <InspectorPanelHeader
+          disabled={pairingDisabled}
+          title={
+            pairedFronts.length === 0
+              ? t("cardFace.unpaired")
+              : pairedFronts.length === 1
+                ? t("label.pairedFrontFacingSingle")
+                : formatMessageWith("label.pairedFrontFacingMultiple", {
+                    count: pairedFronts.length,
+                  })
+          }
+          actions={
             <button
               type="button"
-              className={`${styles.inspectorPairActionButton} ${
+              className={`${styles.inspectorPanelHeaderActionButton} ${
                 pairedFronts.length > 0 ? "" : styles.inspectorPairActionButtonEmpty
               }`}
               title={pairingDisabled ? t("tooltip.saveBeforePairing") : t("tooltip.managePairings")}
@@ -611,12 +617,36 @@ export default function PairingInspectorPanel({
             >
               <Combine size={18} aria-hidden="true" />
             </button>
-            <div className={`${styles.inspectorPairActions} ${styles.uRowSm}`} />
-          </>
-        ) : null}
-      </div>
+          }
+        />
+      ) : null}
       <div className={styles.pairingPanelBody}>
-        {effectiveFace === "back" ? (
+        {showSaveFirstNotice ? (
+          <InspectorStateNotice
+            variant="prerequisite"
+            icon={<Info size={18} aria-hidden="true" />}
+            title={t("empty.saveCardToManagePairingsTitle")}
+            body={t("empty.saveCardToManagePairingsBody")}
+            hint={t("empty.saveCardToManagePairingsHint")}
+          />
+        ) : null}
+        {showEmptyFrontNotice ? (
+          <InspectorStateNotice
+            icon={<Combine size={18} aria-hidden="true" />}
+            title={t("empty.noBackPairingsTitle")}
+            body={t("empty.noBackPairingsBody")}
+            hint={t("empty.noBackPairingsHint")}
+          />
+        ) : null}
+        {showEmptyBackNotice ? (
+          <InspectorStateNotice
+            icon={<Combine size={18} aria-hidden="true" />}
+            title={t("empty.noFrontPairingsTitle")}
+            body={t("empty.noFrontPairingsBody")}
+            hint={t("empty.noFrontPairingsHint")}
+          />
+        ) : null}
+        {effectiveFace === "back" && pairedFronts.length > 0 ? (
           <div className={styles.pairingPanelGrid}>
             {pairedFronts.map((card, index) => {
               const templateThumb = cardTemplatesById[card.templateId]?.thumbnail;
@@ -653,7 +683,7 @@ export default function PairingInspectorPanel({
             })}
           </div>
         ) : null}
-        {effectiveFace === "front" ? (
+        {effectiveFace === "front" && pairedBacks.length > 0 ? (
           <div
             key={`pairing-groups-${frontViewToken ?? 0}`}
             className={styles.pairingPanelGroups}
