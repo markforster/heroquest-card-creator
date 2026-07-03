@@ -63,6 +63,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
       backgroundSrc,
       cardData,
       copyrightTextColor: copyrightTextColorProp,
+      suppressPreviewOnlyWarnings = false,
     },
     ref,
   ) => {
@@ -889,6 +890,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                 cardData={cardData}
                 copyrightTextColor={copyrightTextColor}
                 developerCreditEnabled={developerCreditEnabled}
+                suppressPreviewOnlyWarnings={suppressPreviewOnlyWarnings}
               />
             </g>
             <rect

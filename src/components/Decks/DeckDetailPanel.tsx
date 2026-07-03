@@ -156,44 +156,46 @@ function DeckDetailPanelContent({
   return (
     <>
       <DeckMockDndProvider boardModels={boardModels}>
-        <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
-          <div className={styles.deckRoutePanel}>
-            <DeckDetailHeader
-              deckId={deckId}
-              deckTitle={deckTitle}
-              deckPreviewCardIds={deckPreviewCardIds}
-            />
-
-            <DeckDetailSelectionProvider model={selectionModel}>
-              <DeckSetEntriesProvider model={entriesModel}>
-                <div className={styles.deckRouteMiddle}>
-                  <DeckGroupsBoardController
+        <DeckDetailSelectionProvider model={selectionModel}>
+          <DeckSetEntriesProvider model={entriesModel}>
+            <>
+              <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
+                <div className={styles.deckRoutePanel}>
+                  <DeckDetailHeader
                     deckId={deckId}
-                    keySetId={keySetId}
-                    enableFanLayout
-                    onRequestDeleteSet={actions.deleteSetFromGroupCard}
-                    onOpenCardEditor={actions.onOpenCardEditor}
+                    deckTitle={deckTitle}
+                    deckPreviewCardIds={deckPreviewCardIds}
                   />
-                  <DeckEntriesBoardController onOpenCardEditor={actions.onOpenCardEditor} />
+
+                  <div className={styles.deckRouteMiddle}>
+                    <DeckGroupsBoardController
+                      deckId={deckId}
+                      keySetId={keySetId}
+                      enableFanLayout
+                      onRequestDeleteSet={actions.deleteSetFromGroupCard}
+                      onOpenCardEditor={actions.onOpenCardEditor}
+                    />
+                    <DeckEntriesBoardController onOpenCardEditor={actions.onOpenCardEditor} />
+                  </div>
                 </div>
-              </DeckSetEntriesProvider>
-            </DeckDetailSelectionProvider>
-          </div>
-        </section>
-        <aside
-          className={`${styles.rightPanel} ${styles.decksRightPanel} ${
-            isRightPanelVisible ? styles.decksRightPanelExpanded : styles.decksRightPanelCollapsed
-          }`}
-        >
-          <DeckBacksPanel
-            deckId={deckId}
-            usedBackFaceIds={usedBackFaceIds}
-            usedFrontFaceIds={usedFrontFaceIds}
-            finalizingBackFaceId={drag.finalizingBackFaceId}
-            finalizingFrontFaceId={drag.finalizingFrontFaceId}
-            gridOverride={<DeckSourceBoardController />}
-          />
-        </aside>
+              </section>
+              <aside
+                className={`${styles.rightPanel} ${styles.decksRightPanel} ${
+                  isRightPanelVisible ? styles.decksRightPanelExpanded : styles.decksRightPanelCollapsed
+                }`}
+              >
+                <DeckBacksPanel
+                  deckId={deckId}
+                  usedBackFaceIds={usedBackFaceIds}
+                  usedFrontFaceIds={usedFrontFaceIds}
+                  finalizingBackFaceId={drag.finalizingBackFaceId}
+                  finalizingFrontFaceId={drag.finalizingFrontFaceId}
+                  gridOverride={<DeckSourceBoardController />}
+                />
+              </aside>
+            </>
+          </DeckSetEntriesProvider>
+        </DeckDetailSelectionProvider>
       </DeckMockDndProvider>
 
       <DeckDetailModals

@@ -35,6 +35,7 @@ type BlueprintRendererProps = {
   cardData?: CardDataByTemplate[TemplateId];
   copyrightTextColor?: string;
   developerCreditEnabled?: boolean;
+  suppressPreviewOnlyWarnings?: boolean;
 };
 
 export default function BlueprintRenderer(props: BlueprintRendererProps) {
@@ -139,6 +140,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
               layer={layer}
               cardData={props.cardData}
               showTextBounds={showTextBounds}
+              suppressPreviewOnlyWarnings={props.suppressPreviewOnlyWarnings}
             />
           );
         }
@@ -185,7 +187,12 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
         cardData={props.cardData}
         developerCreditEnabled={props.developerCreditEnabled}
       />
-      {renderGroups({ blueprint, cardData: props.cardData, showTextBounds })}
+      {renderGroups({
+        blueprint,
+        cardData: props.cardData,
+        showTextBounds,
+        suppressPreviewOnlyWarnings: props.suppressPreviewOnlyWarnings,
+      })}
       <EditorTargetAdornmentLayer />
     </>
   );

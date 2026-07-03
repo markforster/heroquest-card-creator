@@ -106,6 +106,7 @@ function GroupTextLayer({
   debug,
   fitToBounds,
   interactive = false,
+  suppressPreviewOnlyWarnings = false,
 }: {
   text: string;
   bounds: { x: number; y: number; width: number; height: number };
@@ -119,6 +120,7 @@ function GroupTextLayer({
   debug?: boolean;
   fitToBounds?: boolean;
   interactive?: boolean;
+  suppressPreviewOnlyWarnings?: boolean;
 }) {
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.textMain);
   useRegisterHoverAdornment(
@@ -159,6 +161,7 @@ function GroupTextLayer({
         align={align}
         debug={debug}
         fitToBounds={fitToBounds}
+        showOverflowWarning={!suppressPreviewOnlyWarnings}
       />
     </Layer>
   );
@@ -275,11 +278,13 @@ function buildGroupItems({
   cardData,
   blueprint,
   showTextBounds = false,
+  suppressPreviewOnlyWarnings = false,
 }: {
   group: BlueprintGroup;
   cardData?: CardDataByTemplate[TemplateId];
   blueprint: Blueprint;
   showTextBounds?: boolean;
+  suppressPreviewOnlyWarnings?: boolean;
 }): GroupItem[] {
   const items: GroupItem[] = [];
 
@@ -364,6 +369,7 @@ function buildGroupItems({
               debug={showTextBounds}
               fitToBounds={fitToBounds}
               interactive={textKey === "description"}
+              suppressPreviewOnlyWarnings={suppressPreviewOnlyWarnings}
             />
           );
         },
@@ -484,10 +490,12 @@ export function renderGroups({
   blueprint,
   cardData,
   showTextBounds = false,
+  suppressPreviewOnlyWarnings = false,
 }: {
   blueprint: Blueprint;
   cardData?: CardDataByTemplate[TemplateId];
   showTextBounds?: boolean;
+  suppressPreviewOnlyWarnings?: boolean;
 }) {
   if (!blueprint.groups?.length) return null;
 
@@ -496,7 +504,13 @@ export function renderGroups({
       return null;
     }
 
-    const items = buildGroupItems({ group, cardData, blueprint, showTextBounds });
+    const items = buildGroupItems({
+      group,
+      cardData,
+      blueprint,
+      showTextBounds,
+      suppressPreviewOnlyWarnings,
+    });
     let cursor = group.origin.y;
     return items.map((item) => {
       const topY = cursor - item.height;

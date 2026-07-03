@@ -6,6 +6,7 @@ const mockUseStockpileFilters = jest.fn();
 const mockResolveDeckExportFaceIds = jest.fn();
 const mockListPairsMap = jest.fn();
 const mockCardFan = jest.fn();
+const mockUseGetCard = jest.fn();
 
 if (!(globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream) {
   (globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream =
@@ -14,6 +15,10 @@ if (!(globalThis as unknown as { TransformStream?: typeof TransformStream }).Tra
 
 jest.mock("@/components/Decks/detail/context/DeckRightPanelContext", () => ({
   useDeckRightPanel: () => mockUseDeckRightPanel(),
+}));
+
+jest.mock("@/api/hooks", () => ({
+  useGetCard: (...args: unknown[]) => mockUseGetCard(...args),
 }));
 
 jest.mock("@/i18n/I18nProvider", () => ({
@@ -65,6 +70,7 @@ const DeckBacksPanel =
 describe("DeckBacksPanel metadata tab", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseGetCard.mockReturnValue({ data: null });
     mockUseDeckRightPanel.mockReturnValue({
       isRightPanelVisible: true,
       setIsRightPanelVisible: jest.fn(),
@@ -78,6 +84,10 @@ describe("DeckBacksPanel metadata tab", () => {
       setRightPanelFaceMode: jest.fn(),
       sourceSearch: "",
       setSourceSearch: jest.fn(),
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
     });
     mockUseStockpileFilters.mockReturnValue({
       filteredCards: [],

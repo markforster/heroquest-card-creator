@@ -191,11 +191,13 @@ export function TextLayer({
   layer,
   cardData,
   showTextBounds = false,
+  suppressPreviewOnlyWarnings = false,
 }: {
   blueprint: Blueprint;
   layer: BlueprintLayer;
   cardData?: CardDataByTemplate[TemplateId];
   showTextBounds?: boolean;
+  suppressPreviewOnlyWarnings?: boolean;
 }) {
   const { defaultCopyright } = useCopyrightSettings();
   const bodyTextFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.textMain);
@@ -298,7 +300,8 @@ export function TextLayer({
       : false;
   const allowBodyTextFitToBounds =
     textKey === "description" ? supportsBlueprintTextFitToBounds(layer) : false;
-  const showOverflowWarning = layer.props?.textLayoutMode === "fixed-bounds";
+  const showOverflowWarning =
+    !suppressPreviewOnlyWarnings && layer.props?.textLayoutMode === "fixed-bounds";
   const fill = bodyTextColor ?? layerFill;
   const letterSpacingEm =
     typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;

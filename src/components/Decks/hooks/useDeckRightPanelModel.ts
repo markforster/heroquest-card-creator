@@ -28,6 +28,11 @@ export function useDeckRightPanelModel() {
   const [backFilter, setBackFilter] = useState<DeckFaceFilter>({ type: "all" });
   const [rightPanelFaceMode, setRightPanelFaceMode] = useState<RightPanelFaceMode>("back");
   const [sourceSearch, setSourceSearch] = useState("");
+  const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set());
+  const [activePreviewEntryId, setActivePreviewEntryId] = useState<string | null>(null);
+  const [previewSelectionSource, setPreviewSelectionSource] = useState<"set" | "entry" | null>(
+    null,
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -70,6 +75,12 @@ export function useDeckRightPanelModel() {
     setRightPanelFaceMode,
     sourceSearch,
     setSourceSearch,
+    selectedEntryIds,
+    setSelectedEntryIds,
+    activePreviewEntryId,
+    setActivePreviewEntryId,
+    previewSelectionSource,
+    setPreviewSelectionSource,
     backCollections: collectionsQuery.data ?? [],
     backCards: cardsQuery.data ?? [],
     rightPanelEmptyLabel,

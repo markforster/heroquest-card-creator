@@ -12,6 +12,7 @@ export type CardPreviewProps = {
   backgroundSrc?: StaticImageData;
   cardData?: CardDataByTemplate[TemplateId];
   copyrightTextColor?: string;
+  suppressPreviewOnlyWarnings?: boolean;
 };
 
 export type CardPreviewHandle = {

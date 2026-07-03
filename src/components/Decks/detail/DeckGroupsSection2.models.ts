@@ -20,6 +20,7 @@ export function useDeckBoardsModels({
 }): Record<BoardId, BoardModel> {
   const { t } = useI18n();
   const rightPanel = useDeckRightPanel();
+  const sourceFaceMode = rightPanel.rightPanelFaceMode === "front" ? "front" : "back";
 
   const usedBackFaceIds = useMemo(
     () => new Set(selection.sets.map((set) => set.backFaceId)),
@@ -37,10 +38,10 @@ export function useDeckBoardsModels({
 
   const sourceCards = useMemo(
     () =>
-      rightPanel.rightPanelFaceMode === "back"
+      sourceFaceMode === "back"
         ? rightPanel.backCards.filter((card) => !usedBackFaceIds.has(card.id))
         : rightPanel.backCards.filter((card) => !usedFrontFaceIds.has(card.id)),
-    [rightPanel.backCards, rightPanel.rightPanelFaceMode, usedBackFaceIds, usedFrontFaceIds],
+    [rightPanel.backCards, sourceFaceMode, usedBackFaceIds, usedFrontFaceIds],
   );
   const cardNameById = useMemo(
     () => new Map(rightPanel.backCards.map((card) => [card.id, card.name])),
@@ -51,10 +52,10 @@ export function useDeckBoardsModels({
     cards: sourceCards,
     collections: rightPanel.backCollections,
     search: rightPanel.sourceSearch,
-    templateFilter: rightPanel.rightPanelFaceMode,
+    templateFilter: sourceFaceMode,
     activeFilter: rightPanel.backFilter,
     isPairMode: true,
-    isPairBacks: rightPanel.rightPanelFaceMode === "back",
+    isPairBacks: sourceFaceMode === "back",
     showUnpairedOnly: false,
     showMissingArtworkOnly: false,
   });
@@ -94,10 +95,10 @@ export function useDeckBoardsModels({
     () =>
       toSourceBoardModel({
         cards: filteredCards.map((card) => ({ id: card.id, name: card.name })),
-        sourceFaceMode: rightPanel.rightPanelFaceMode === "back" ? "back" : "front",
+        sourceFaceMode,
         laneLabel: t("decks.boards.cards"),
       }),
-    [filteredCards, rightPanel.rightPanelFaceMode, t],
+    [filteredCards, sourceFaceMode, t],
   );
 
   return {

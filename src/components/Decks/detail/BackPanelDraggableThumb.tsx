@@ -3,7 +3,6 @@
 import { useDraggable } from "@dnd-kit/core";
 
 import styles from "@/app/page.module.css";
-import type { RightPanelFaceMode } from "@/components/Decks/types/deck-backs";
 
 import { BackPanelThumb } from "./BackPanelThumb";
 
@@ -12,7 +11,7 @@ export function BackPanelDraggableThumb({
   faceMode,
 }: {
   cardId: string;
-  faceMode: RightPanelFaceMode;
+  faceMode: "back" | "front";
 }) {
   const dragType = faceMode === "back" ? "back-face" : "front-face";
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
