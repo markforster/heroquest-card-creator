@@ -768,6 +768,7 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
             setLastCleared(null);
           }}
           preferredKindOrder={["icon"]}
+          initialSelectedAssetId={iconAssetId}
         />
     </div>
   );

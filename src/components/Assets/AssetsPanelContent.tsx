@@ -65,6 +65,7 @@ type AssetsPanelProps = OpenCloseProps & {
   onSelectionChange?: (assets: AssetRecord[]) => void;
   refreshKey?: number;
   preferredKindOrder?: AssetKindGroupId[];
+  initialSelectedAssetId?: string;
 };
 
 type ConfirmState = {
@@ -162,6 +163,7 @@ export default function AssetsPanelContent({
   onSelectionChange,
   refreshKey,
   preferredKindOrder,
+  initialSelectedAssetId,
 }: AssetsPanelProps) {
   const { t } = useI18n();
   const listAssetsQuery = useListAssets(undefined, {
@@ -189,6 +191,8 @@ export default function AssetsPanelContent({
   const [uploadProgress, setUploadProgress] = useState<UploadProgressState | null>(null);
   const [uploadReview, setUploadReview] = useState<UploadNotice | null>(null);
   const reviewResolverRef = useRef<((shouldContinue: boolean) => void) | null>(null);
+  const seededSelectionScrollIdRef = useRef<string | null>(null);
+  const lastAppliedInitialSelectionRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const assetsGridRef = useRef<HTMLDivElement | null>(null);
   const recentlyUploadedSectionRef = useRef<HTMLElement | null>(null);
@@ -496,6 +500,8 @@ export default function AssetsPanelContent({
     setSelectedIds(new Set());
     setSelectedOrder([]);
     setSelectionAnchorId(null);
+    seededSelectionScrollIdRef.current = null;
+    lastAppliedInitialSelectionRef.current = null;
   }, [isOpen, selectedIds, selectionAnchorId]);
 
   useEffect(() => {
@@ -614,6 +620,40 @@ export default function AssetsPanelContent({
   }, [assets, selectionAnchorId]);
 
   useEffect(() => {
+    if (!isOpen || mode !== "select") return;
+
+    const nextInitialId = initialSelectedAssetId ?? null;
+    if (lastAppliedInitialSelectionRef.current === nextInitialId) return;
+
+    if (!nextInitialId) {
+      lastAppliedInitialSelectionRef.current = nextInitialId;
+      seededSelectionScrollIdRef.current = null;
+      return;
+    }
+
+    // Any in-session selection should win over delayed initial seeding.
+    if (selectedOrder.length > 0) {
+      lastAppliedInitialSelectionRef.current = nextInitialId;
+      seededSelectionScrollIdRef.current = null;
+      return;
+    }
+
+    const selectedAssetExists = assets.some((asset) => asset.id === nextInitialId);
+    if (!selectedAssetExists) {
+      if (isLoadingAssets) return;
+      lastAppliedInitialSelectionRef.current = nextInitialId;
+      seededSelectionScrollIdRef.current = null;
+      return;
+    }
+
+    lastAppliedInitialSelectionRef.current = nextInitialId;
+    setSelectedIds(new Set([nextInitialId]));
+    setSelectedOrder([nextInitialId]);
+    setSelectionAnchorId(nextInitialId);
+    seededSelectionScrollIdRef.current = nextInitialId;
+  }, [assets, initialSelectedAssetId, isLoadingAssets, isOpen, mode, selectedOrder]);
+
+  useEffect(() => {
     if (!confirmState) {
       setAffectedCardCount(null);
       return;
@@ -660,11 +700,18 @@ export default function AssetsPanelContent({
     onSelectionChange(selectedAssets);
   }, [assets, onSelectionChange, selectedOrder]);
 
+  const pinnedSelectedAssetId =
+    mode === "select" ? (selectedOrder[0] ?? initialSelectedAssetId ?? null) : null;
+
   const searchFiltered = search
-    ? assets.filter((asset) => asset.name.toLowerCase().includes(search.toLowerCase()))
+    ? assets.filter((asset) => {
+        if (asset.id === pinnedSelectedAssetId) return true;
+        return asset.name.toLowerCase().includes(search.toLowerCase());
+      })
     : assets;
 
   const filteredAssets = searchFiltered.filter((asset) => {
+    if (asset.id === pinnedSelectedAssetId) return true;
     if (assetKindFilter === "all") return true;
     if (assetKindFilter === "artwork") {
       return asset.assetKindStatus === "classified" && asset.assetKind === "artwork";
@@ -674,6 +721,7 @@ export default function AssetsPanelContent({
     }
     return asset.assetKindStatus !== "classified";
   }).filter((asset) => {
+    if (asset.id === pinnedSelectedAssetId) return true;
     if (mimeTypeFilter === "all") return true;
     return asset.mimeType === mimeTypeFilter;
   });
@@ -759,6 +807,19 @@ export default function AssetsPanelContent({
     section.scrollIntoView({ behavior: "auto", block: "start" });
     setShouldScrollToRecentlyUploaded(false);
   }, [recentlyUploadedVisibleAssets.length, shouldScrollToRecentlyUploaded]);
+
+  useEffect(() => {
+    if (!isOpen || mode !== "select") return;
+    const seededSelectionId = seededSelectionScrollIdRef.current;
+    if (!seededSelectionId) return;
+    if (!visibleAssetIdsInGridOrder.includes(seededSelectionId)) return;
+
+    const tile = document.querySelector<HTMLElement>(`[data-asset-id="${seededSelectionId}"]`);
+    if (!tile) return;
+
+    tile.scrollIntoView({ behavior: "auto", block: "nearest" });
+    seededSelectionScrollIdRef.current = null;
+  }, [isOpen, mode, visibleAssetIdsInGridOrder]);
 
   const handleConfirmDelete = async (ids: string[]) => {
     try {
@@ -1143,6 +1204,7 @@ export default function AssetsPanelContent({
         if (mode === "select" && recentIds.length === 1) {
           setSelectedIds(new Set(recentIds));
           setSelectedOrder(recentIds);
+          setSelectionAnchorId(recentIds[0] ?? null);
         }
       } catch (error) {
         // eslint-disable-next-line no-console

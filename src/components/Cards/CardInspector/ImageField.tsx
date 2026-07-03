@@ -1072,6 +1072,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
         mode="select"
         onSelect={handleSelect}
         preferredKindOrder={["artwork"]}
+        initialSelectedAssetId={imageAssetId}
       />
     </div>
   );

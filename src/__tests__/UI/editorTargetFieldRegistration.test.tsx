@@ -26,13 +26,16 @@ jest.mock("@/components/Assets", () => ({
   AssetsModal: ({
     isOpen,
     preferredKindOrder,
+    initialSelectedAssetId,
   }: {
     isOpen: boolean;
     preferredKindOrder?: AssetKind[];
+    initialSelectedAssetId?: string;
   }) =>
     isOpen ? (
       <div>
         {preferredKindOrder?.[0] === "icon" ? "ICON_ASSETS_MODAL_OPEN" : "ARTWORK_ASSETS_MODAL_OPEN"}
+        {initialSelectedAssetId ? `:${initialSelectedAssetId}` : ""}
       </div>
     ) : null,
 }));
@@ -220,12 +223,12 @@ describe("editor target field registration", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "secondary-imageMain" }));
     await waitFor(() => {
-      expect(screen.getByText("ARTWORK_ASSETS_MODAL_OPEN")).toBeInTheDocument();
+      expect(screen.getByText("ARTWORK_ASSETS_MODAL_OPEN:asset-1")).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: "secondary-imageIcon" }));
     await waitFor(() => {
-      expect(screen.getByText("ICON_ASSETS_MODAL_OPEN")).toBeInTheDocument();
+      expect(screen.getByText("ICON_ASSETS_MODAL_OPEN:icon-1")).toBeInTheDocument();
     });
   });
 
@@ -244,7 +247,7 @@ describe("editor target field registration", () => {
     fireEvent.doubleClick(screen.getByTestId("svg-imageMain"));
 
     await waitFor(() => {
-      expect(screen.getByText("ARTWORK_ASSETS_MODAL_OPEN")).toBeInTheDocument();
+      expect(screen.getByText("ARTWORK_ASSETS_MODAL_OPEN:asset-1")).toBeInTheDocument();
     });
   });
 });
