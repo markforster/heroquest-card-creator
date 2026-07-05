@@ -247,6 +247,46 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
           </DocList>
         </DocSection>
 
+        <DocSection title="PDF export">
+          <DocParagraph>
+            Deck PDF export creates a print-ready PDF from a deck using real paper sizes, deck
+            order, and optional front+back layout. Open Decks, choose a deck, and use the PDF
+            export action to review the run before exporting.
+          </DocParagraph>
+          <DocList>
+            <li>
+              The export flow is summary-first, so you can see what will be included before
+              changing layout or bleed settings.
+            </li>
+            <li>
+              <strong>Complete sets</strong> exports sets with entries, <strong>All sets</strong>{" "}
+              includes every set, and <strong>Selected sets</strong> lets you choose exactly which
+              sets to print.
+            </li>
+            <li>
+              In scopes that include them, empty sets can export with placeholder fronts so the set
+              still prints with its back face.
+            </li>
+            <li>
+              <strong>Fronts only</strong> exports front pages only. <strong>Front + back</strong>{" "}
+              exports paired front and back pages.
+            </li>
+            <li>
+              Duplex presets change how back pages are positioned for double-sided printing. Use
+              the alignment test PDF before a larger print run to check scale, placement, and which
+              preset works best on your printer.
+            </li>
+            <li>
+              Layout settings control paper size, orientation, run mode, duplex preset, and bleed
+              source. Bleed settings control bleed, rounded corners, crop marks, and cut marks.
+            </li>
+            <li>
+              Large deck exports can take a little time. The app shows progress while rendering and
+              lets you cancel the run if needed.
+            </li>
+          </DocList>
+        </DocSection>
+
         <DocSection title="Card faces and pairing">
           <DocList>
             <li>

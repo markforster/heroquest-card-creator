@@ -21,6 +21,7 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
       { id: "about-what-you-can-do-today", title: "What you can do today" },
       { id: "about-notes-future-work", title: "Notes & future work" },
       { id: "about-credits-attribution", title: "Credits & Attribution" },
+      { id: "about-update-v0-7-0", title: "Update 05/07/2026 (v0.7.0)" },
       { id: "about-update-v0-6-2", title: "Update 22/06/2026 (v0.6.2)" },
       { id: "about-update-v0-6-1", title: "Update 13/06/2026 (v0.6.1)" },
       { id: "about-update-v0-6-0", title: "Update 31/05/2026 (v0.6.0)" },
@@ -194,9 +195,9 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
                   the same SVG used for the on-screen preview.
                 </li>
                 <li>
-                  Export decks directly from Decks workflows. Current deck export focuses on
-                  structured organization/export preparation and lays important groundwork for
-                  future print/PDF workflows planned for later releases.
+                  Export decks directly to print-ready PDF from Decks workflows, with scoped set
+                  selection, layout controls, bleed settings, and front-only or front+back export
+                  modes.
                 </li>
                 <li>
                   Back up your entire library of cards and image assets to a single{" "}
@@ -298,6 +299,49 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
                   svg icons
                 </a>
                 &nbsp;is licensed by CC BY 4.0
+              </DocParagraph>
+            </DocSection>
+
+            <DocSection
+              id="about-update-v0-7-0"
+              title="Update 05/07/2026 (v0.7.0)"
+              className={docStyles.docSectionSpaced}
+            >
+              <DocParagraph>
+                This release introduces PDF export as a real deck workflow rather than a future
+                placeholder. Decks can now be turned into print-ready PDFs with summary-first run
+                planning, physical paper layout, and stronger print-specific controls before the
+                export begins.
+              </DocParagraph>
+              <DocParagraph className={docStyles.docParagraphSpaced}>
+                The export flow is designed to help you understand what will print before committing
+                to a run. You can choose between Complete sets, All sets, and Selected sets, review
+                entry and face counts, and decide whether to keep the default layout and bleed
+                settings or customise them for a specific print job.
+              </DocParagraph>
+              <DocParagraph className={docStyles.docParagraphSpaced}>
+                v0.7.0 also adds front-only and front+back PDF modes, duplex presets for back-page
+                positioning, and a separate alignment test PDF so printer scale and double-sided
+                placement can be checked before larger runs.
+              </DocParagraph>
+              <DocList className={docStyles.docListSpaced}>
+                <li>Deck PDF export with printable A4 and Letter layouts.</li>
+                <li>Summary-first export flow with scoped set selection.</li>
+                <li>Fronts only and front + back export modes.</li>
+                <li>Duplex presets and a dedicated alignment test PDF.</li>
+                <li>Per-run layout, bleed, crop mark, and cut mark customization.</li>
+                <li>Progress, cancellation, and more readable PDF filenames.</li>
+              </DocList>
+              <DocParagraph className={docStyles.docParagraphSpaced}>
+                Full release notes:{" "}
+                <a
+                  href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.7.0"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className={docStyles.docLink}
+                >
+                  v0.7.0
+                </a>
               </DocParagraph>
             </DocSection>
 
