@@ -38,6 +38,34 @@ jest.mock("@/components/common/ColorPickerField", () => ({
   default: ({ label }: { label: string }) => <div>{label}</div>,
 }));
 
+jest.mock("@/components/common/FormSelect", () => ({
+  __esModule: true,
+  default: ({
+    options,
+    value,
+    disabled,
+    onChange,
+  }: {
+    options: Array<{ value: string; label: string }>;
+    value: string;
+    disabled?: boolean;
+    onChange: (next: string) => void;
+  }) => (
+    <select
+      data-testid="mock-form-select"
+      value={value}
+      disabled={disabled}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  ),
+}));
+
 jest.mock("@/components/Export/CutMarkStyleSelect", () => ({
   __esModule: true,
   default: ({
@@ -122,7 +150,7 @@ describe("ExportOptionsForm", () => {
     const onChange = jest.fn();
     render(<ExportOptionsForm {...baseProps} onChange={onChange} />);
 
-    const select = screen.getByDisplayValue("Lines");
+    const select = screen.getByTestId("mock-form-select");
     expect(screen.getByRole("option", { name: "Triangles" })).toBeInTheDocument();
 
     fireEvent.change(select, { target: { value: "triangles" } });
@@ -140,5 +168,17 @@ describe("ExportOptionsForm", () => {
     fireEvent.click(screen.getByText("Set ticks"));
 
     expect(onChange).toHaveBeenCalledWith({ cutMarkStyle: "ticks" });
+  });
+
+  it("disables the crop mark style select when crop marks are unavailable", () => {
+    render(
+      <ExportOptionsForm
+        {...baseProps}
+        bleedEnabled={false}
+        cropMarksEnabled={false}
+      />,
+    );
+
+    expect(screen.getByTestId("mock-form-select")).toBeDisabled();
   });
 });

@@ -2829,7 +2829,7 @@
   margin-top: var(--space-5);
 }
 
-.deckPdfSummaryInlineControl :global(.form-select) {
+.deckPdfSummaryFormSelect {
   flex: 0 1 220px;
   width: auto;
   min-width: 160px;

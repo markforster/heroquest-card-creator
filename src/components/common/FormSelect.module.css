@@ -1,0 +1,27 @@
+.selectRoot {
+  width: 100%;
+  min-width: 0;
+}
+
+.optionContent {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  font-family: var(--hq-font-form);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--hq-text);
+}
+
+.optionLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: inherit;
+  color: inherit;
+}

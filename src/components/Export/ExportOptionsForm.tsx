@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import styles from "@/app/page.module.css";
 import ColorPickerField from "@/components/common/ColorPickerField";
+import FormSelect from "@/components/common/FormSelect";
 import CutMarkStyleSelect, { type CutMarkStyleValue } from "@/components/Export/CutMarkStyleSelect";
 import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { usePopupState } from "@/hooks/usePopupState";
@@ -162,18 +163,18 @@ export default function ExportOptionsForm({
         </div>
         <label className={styles.settingsPanelRow}>
           <span>{t("label.cropMarkStyle")}</span>
-          <select
-            className="form-select form-select-sm"
+          <FormSelect
             value={cropMarkStyle}
             disabled={!cropMarksEnabled || !bleedEnabled}
-            onChange={(event) =>
-              onChange({ cropMarkStyle: event.target.value as "lines" | "squares" | "triangles" })
+            options={[
+              { value: "lines", label: t("label.cropMarkStyleLines") },
+              { value: "squares", label: t("label.cropMarkStyleSquares") },
+              { value: "triangles", label: t("label.cropMarkStyleTriangles") },
+            ]}
+            onChange={(next) =>
+              onChange({ cropMarkStyle: next as "lines" | "squares" | "triangles" })
             }
-          >
-            <option value="lines">{t("label.cropMarkStyleLines")}</option>
-            <option value="squares">{t("label.cropMarkStyleSquares")}</option>
-            <option value="triangles">{t("label.cropMarkStyleTriangles")}</option>
-          </select>
+          />
         </label>
       </div>
       <div className={styles.exportMarksColumn}>
