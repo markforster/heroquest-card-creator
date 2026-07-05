@@ -24,6 +24,7 @@ jest.mock("@/components/Export/hooks/useBulkCardExport", () => ({
 }));
 
 jest.mock("@/components/Decks/DecksGridPanel", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useDeckExport } = require("@/components/Decks/context/DeckExportContext");
   return function MockDecksGridPanel() {
     const ctx = useDeckExport();
@@ -37,6 +38,28 @@ jest.mock("@/components/Decks/DecksGridPanel", () => {
 
 jest.mock("@/components/Decks/DeckDetailPanel", () => () => null);
 jest.mock("@/components/Stockpile/StockpileMissingAssetsModal", () => () => null);
+jest.mock("@/components/Cards/CardPreview", () => () => null);
+jest.mock("@/components/Decks/pdf/DeckPdfExportModal", () => () => null);
+jest.mock("@/components/Providers/ExportSettingsContext", () => ({
+  useExportSettingsState: () => ({
+    settings: {
+      bleed: { enabled: false, bleedPx: 0, askBeforeExport: false },
+      cropMarks: { enabled: false, color: "#00FFFF", style: "lines" },
+      cutMarks: { enabled: false, color: "#00FFFF", style: "solid" },
+      roundedCorners: true,
+      pdf: {
+        paper: "A4",
+        orientation: "landscape",
+        marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
+        gapMm: { x: 0.5, y: 0.5 },
+        cardMm: { width: 63.5, height: 89 },
+        mode: "frontAndBack",
+        bleedMode: "bakedInImage",
+        duplexPreset: "mirrorX",
+      },
+    },
+  }),
+}));
 
 jest.mock("@/components/Providers/AnalyticsProvider", () => ({
   useAnalytics: () => ({ track: jest.fn() }),
@@ -212,4 +235,3 @@ describe("DecksRoutePanels export confirmation", () => {
     });
   });
 });
-

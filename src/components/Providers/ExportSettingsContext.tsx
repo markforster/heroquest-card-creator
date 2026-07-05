@@ -7,7 +7,9 @@ import {
   DEFAULT_CROP_MARK_COLOR,
   DEFAULT_CROP_MARK_STYLE,
   DEFAULT_CUT_MARK_COLOR,
+  DEFAULT_CUT_MARK_STYLE,
   DEFAULT_EXPORT_ROUNDED_CORNERS,
+  DEFAULT_PDF_PRINT_CONFIG,
   getExportSettings,
   setExportSettings,
   type ExportSettings,
@@ -24,8 +26,9 @@ type ExportSettingsContextValue = {
 const DEFAULT_SETTINGS: ExportSettings = {
   bleed: { enabled: false, bleedPx: DEFAULT_BLEED_PX, askBeforeExport: false },
   cropMarks: { enabled: false, color: DEFAULT_CROP_MARK_COLOR, style: DEFAULT_CROP_MARK_STYLE },
-  cutMarks: { enabled: false, color: DEFAULT_CUT_MARK_COLOR },
+  cutMarks: { enabled: false, color: DEFAULT_CUT_MARK_COLOR, style: DEFAULT_CUT_MARK_STYLE },
   roundedCorners: DEFAULT_EXPORT_ROUNDED_CORNERS,
+  pdf: DEFAULT_PDF_PRINT_CONFIG,
 };
 
 const ExportSettingsContext = createContext<ExportSettingsContextValue | null>(null);

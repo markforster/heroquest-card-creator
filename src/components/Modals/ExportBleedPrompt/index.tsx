@@ -23,8 +23,8 @@ import {
 
 export type ExportPromptResult = {
   bleedPx: number;
-  cropMarks: { enabled: boolean; color: string; style: "lines" | "squares" };
-  cutMarks: { enabled: boolean; color: string };
+  cropMarks: { enabled: boolean; color: string; style: "lines" | "squares" | "triangles" };
+  cutMarks: { enabled: boolean; color: string; style: "solid" | "dashed" | "dotted" | "ticks" };
   roundedCorners: boolean;
 };
 
@@ -34,9 +34,10 @@ type ExportBleedPromptProps = {
   initialBleedPx?: number;
   initialCropMarksEnabled?: boolean;
   initialCropMarkColor?: string;
-  initialCropMarkStyle?: "lines" | "squares";
+  initialCropMarkStyle?: "lines" | "squares" | "triangles";
   initialCutMarksEnabled?: boolean;
   initialCutMarkColor?: string;
+  initialCutMarkStyle?: "solid" | "dashed" | "dotted" | "ticks";
   initialRoundedCorners?: boolean;
   onConfirm: (result: ExportPromptResult) => void;
   onCancel: () => void;
@@ -51,6 +52,7 @@ export default function ExportBleedPrompt({
   initialCropMarkStyle = DEFAULT_CROP_MARK_STYLE,
   initialCutMarksEnabled = false,
   initialCutMarkColor = DEFAULT_CUT_MARK_COLOR,
+  initialCutMarkStyle = "solid",
   initialRoundedCorners = DEFAULT_EXPORT_ROUNDED_CORNERS,
   onConfirm,
   onCancel,
@@ -61,9 +63,11 @@ export default function ExportBleedPrompt({
   const [cropMarksEnabled, setCropMarksEnabled] = useState(initialCropMarksEnabled);
   const [cropMarkColor, setCropMarkColor] = useState(normalizeColor(initialCropMarkColor));
   const [cropMarkStyle, setCropMarkStyle] =
-    useState<"lines" | "squares">(initialCropMarkStyle);
+    useState<"lines" | "squares" | "triangles">(initialCropMarkStyle);
   const [cutMarksEnabled, setCutMarksEnabled] = useState(initialCutMarksEnabled);
   const [cutMarkColor, setCutMarkColor] = useState(normalizeColor(initialCutMarkColor));
+  const [cutMarkStyle, setCutMarkStyle] =
+    useState<"solid" | "dashed" | "dotted" | "ticks">(initialCutMarkStyle);
   const [roundedCorners, setRoundedCorners] = useState(initialRoundedCorners);
 
   useEffect(() => {
@@ -75,6 +79,7 @@ export default function ExportBleedPrompt({
     setCropMarkStyle(initialCropMarkStyle);
     setCutMarksEnabled(initialCutMarksEnabled);
     setCutMarkColor(normalizeColor(initialCutMarkColor));
+    setCutMarkStyle(initialCutMarkStyle);
     setRoundedCorners(initialRoundedCorners);
   }, [
     isOpen,
@@ -85,6 +90,7 @@ export default function ExportBleedPrompt({
     initialCropMarkStyle,
     initialCutMarksEnabled,
     initialCutMarkColor,
+    initialCutMarkStyle,
     initialRoundedCorners,
   ]);
 
@@ -115,6 +121,7 @@ export default function ExportBleedPrompt({
       cutMarks: {
         enabled: cutMarksEnabled,
         color: normalizeColor(cutMarkColor),
+        style: cutMarkStyle,
       },
       roundedCorners,
     });
@@ -146,6 +153,7 @@ export default function ExportBleedPrompt({
         cropMarkStyle={cropMarkStyle}
         cutMarksEnabled={cutMarksEnabled}
         cutMarkColor={cutMarkColor}
+        cutMarkStyle={cutMarkStyle}
         bleedLabelKey="label.includeBleed"
         finalSizeLabel={finalSize}
         onChange={(next) => {
@@ -157,6 +165,7 @@ export default function ExportBleedPrompt({
           if (next.cropMarkStyle !== undefined) setCropMarkStyle(next.cropMarkStyle);
           if (next.cutMarksEnabled !== undefined) setCutMarksEnabled(next.cutMarksEnabled);
           if (next.cutMarkColor !== undefined) setCutMarkColor(normalizeColor(next.cutMarkColor));
+          if (next.cutMarkStyle !== undefined) setCutMarkStyle(next.cutMarkStyle);
         }}
       />
     </ModalShell>

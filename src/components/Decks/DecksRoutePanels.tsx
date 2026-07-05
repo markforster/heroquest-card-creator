@@ -6,7 +6,9 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { apiClient } from "@/api/client";
 import { DeckExportProvider } from "@/components/Decks/context/DeckExportContext";
-import { resolveDeckExportFaceIds } from "@/components/Decks/deck-export";
+import {
+  resolveDeckExportFaceIds,
+} from "@/components/Decks/deck-export";
 import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import DeckDetailPanel from "@/components/Decks/DeckDetailPanel";
 import DecksGridPanel from "@/components/Decks/DecksGridPanel";
@@ -15,6 +17,7 @@ import { useDeckDetailState } from "@/components/Decks/hooks/useDeckDetailState"
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useDecksDragController } from "@/components/Decks/hooks/useDecksDragController";
 import { useDeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
+import DeckPdfExportSummaryModal from "@/components/Decks/pdf/DeckPdfExportSummaryModal";
 import {
   useBulkCardExport,
   type MissingAssetsExportPrompt,
@@ -22,7 +25,10 @@ import {
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
-import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
+import {
+  resolveExportFileName,
+  resolveZipFileName,
+} from "@/components/Stockpile/stockpile-utils";
 import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import formatMessageWith from "@/lib/format-message-with";
@@ -55,6 +61,10 @@ export default function DecksRoutePanels() {
     totalCount: number;
     frontCount: number;
     backCount: number;
+  } | null>(null);
+  const [pendingDeckPdfExport, setPendingDeckPdfExport] = useState<{
+    deckId: string;
+    scope: "decks_grid" | "deck_detail";
   } | null>(null);
 
   const isDeckDetail = Boolean(deckId);
@@ -134,6 +144,13 @@ export default function DecksRoutePanels() {
       });
     },
     [t],
+  );
+
+  const startDeckPdfExport = useCallback(
+    async (deckIdValue: string, scope: "decks_grid" | "deck_detail") => {
+      setPendingDeckPdfExport({ deckId: deckIdValue, scope });
+    },
+    [],
   );
 
   const createSetFromBackFace = async (
@@ -321,7 +338,10 @@ export default function DecksRoutePanels() {
     });
   };
 
-  const exportProviderValue = useMemo(() => ({ exportDeck: startDeckExport }), [startDeckExport]);
+  const exportProviderValue = useMemo(
+    () => ({ exportDeck: startDeckExport, exportDeckPdf: startDeckPdfExport }),
+    [startDeckExport, startDeckPdfExport],
+  );
 
   return (
     <DeckExportProvider value={exportProviderValue}>
@@ -426,6 +446,12 @@ export default function DecksRoutePanels() {
           </div>
         ) : null}
       </ConfirmModal>
+      <DeckPdfExportSummaryModal
+        isOpen={Boolean(pendingDeckPdfExport)}
+        deckId={pendingDeckPdfExport?.deckId ?? null}
+        scope={pendingDeckPdfExport?.scope ?? "decks_grid"}
+        onClose={() => setPendingDeckPdfExport(null)}
+      />
     </DeckExportProvider>
   );
 }

@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 
 import styles from "@/app/page.module.css";
+import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesGuardContext";
 import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
 import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
@@ -27,6 +28,7 @@ import {
   isPairInUseError,
   type PairUsageReport,
 } from "@/lib/decks-errors";
+import { getCardDisplayName } from "@/lib/card-display-name";
 import { previewDeletePair } from "@/lib/pairs-service";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import type { CardFace } from "@/types/card-face";
@@ -122,6 +124,7 @@ export default function PairingInspectorPanel({
     [t],
   );
   const { requestRecenter } = usePreviewRenderer();
+  const { bypassNextNavigation, runWithUnsavedChangesGuard } = useUnsavedChangesGuardControls();
   const recenterTimeoutRef = useRef<number | null>(null);
   const navigate = useNavigate();
   const { openStockpile } = useAppActions();
@@ -131,7 +134,7 @@ export default function PairingInspectorPanel({
   const { control } = useFormContext();
   const { isDirty } = useFormState({ control });
   const faceValue = useWatch({ control, name: "face" }) as CardFace | undefined;
-  const { saveCurrentCard, saveToken } = useEditorSave();
+  const { saveToken } = useEditorSave();
 
   const [pairedBacks, setPairedBacks] = useState<CardRecord[]>([]);
   const [pairedBacksToken, setPairedBacksToken] = useState(0);
@@ -141,8 +144,6 @@ export default function PairingInspectorPanel({
   const [cardsById, setCardsById] = useState<Map<string, CardRecord>>(new Map());
   const [pairedFronts, setPairedFronts] = useState<CardRecord[]>([]);
   const [pairedFrontsToken, setPairedFrontsToken] = useState(0);
-  const [pendingOpenCard, setPendingOpenCard] = useState<CardRecord | null>(null);
-  const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
   const [pendingUnpairImpact, setPendingUnpairImpact] = useState<PendingUnpairImpact | null>(null);
   const [pairUsagePrompt, setPairUsagePrompt] = useState<PairUsageReport | null>(null);
   const [loadedThumbs, setLoadedThumbs] = useState<Record<string, boolean>>({});
@@ -177,6 +178,7 @@ export default function PairingInspectorPanel({
     });
 
   const openCard = async (cardId: string) => {
+    bypassNextNavigation();
     navigate(`/cards/${cardId}`);
     if (ENABLE_WEBGL_RECENTER_ON_FACE_SELECT) {
       if (recenterTimeoutRef.current) {
@@ -191,10 +193,9 @@ export default function PairingInspectorPanel({
   const requestOpenCard = async (cardId: string) => {
     const currentTemplate = selectedTemplateId;
     if (currentTemplate && isDirty) {
-      const record = await apiClient.getCard({ params: { id: cardId } });
-      if (!record) return;
-      setPendingOpenCard(record);
-      setIsSavePromptOpen(true);
+      runWithUnsavedChangesGuard(async () => {
+        await openCard(cardId);
+      });
       return;
     }
     await openCard(cardId);
@@ -557,7 +558,7 @@ export default function PairingInspectorPanel({
                       pairedBacks.map((back) => ({
                         frontFaceId: activeCardId,
                         backFaceId: back.id,
-                        backTitle: back.title ?? fallbackTitle,
+                        backTitle: getCardDisplayName(back, fallbackTitle),
                       })),
                     );
                   }}
@@ -660,7 +661,7 @@ export default function PairingInspectorPanel({
             {pairedBacks.map((backCard) => {
               const backTemplateThumb = cardTemplatesById[backCard.templateId]?.thumbnail;
               const groupFrontCards = pairedBackFrontsMap.get(backCard.id) ?? [];
-              const backTitle = backCard.title ?? fallbackTitle;
+              const backTitle = getCardDisplayName(backCard, fallbackTitle);
               const groupCountLabel =
                 groupFrontCards.length === 1
                   ? t("label.frontFacingCountSingle")
@@ -726,7 +727,7 @@ export default function PairingInspectorPanel({
                             {
                               frontFaceId: activeCardId,
                               backFaceId: backCard.id,
-                              backTitle: backCard.title ?? fallbackTitle,
+                              backTitle: getCardDisplayName(backCard, fallbackTitle),
                             },
                           ]);
                         }}
@@ -784,28 +785,6 @@ export default function PairingInspectorPanel({
           </div>
         ) : null}
       </div>
-      <ConfirmModal
-        isOpen={isSavePromptOpen}
-        title={t("heading.saveBeforeView")}
-        confirmLabel={t("actions.save")}
-        cancelLabel={t("actions.cancel")}
-        onConfirm={async () => {
-          setIsSavePromptOpen(false);
-          const nextOpenCard = pendingOpenCard;
-          setPendingOpenCard(null);
-          const saved = await saveCurrentCard();
-          if (!saved) return;
-          if (nextOpenCard) {
-            await openCard(nextOpenCard.id);
-          }
-        }}
-        onCancel={() => {
-          setIsSavePromptOpen(false);
-          setPendingOpenCard(null);
-        }}
-      >
-        {t("confirm.saveBeforeViewBody")}
-      </ConfirmModal>
       <ConfirmModal
         isOpen={Boolean(pendingUnpairImpact)}
         title={pendingUnpairImpact?.usage.length ? t("decks.pairInUseTitle") : "Confirm unpair"}

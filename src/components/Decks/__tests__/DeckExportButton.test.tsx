@@ -40,24 +40,26 @@ describe("DeckExportButton", () => {
 
   it("is disabled when deck has zero sets", () => {
     render(
-      <DeckExportProvider value={{ exportDeck: async () => {} }}>
+      <DeckExportProvider value={{ exportDeck: async () => {}, exportDeckPdf: async () => {} }}>
         <DeckExportButton deckId="deck-1" scope="decks_grid" />
       </DeckExportProvider>,
     );
 
-    expect(screen.getByRole("button", { name: "Export" })).toBeDisabled();
+    const buttons = screen.getAllByRole("button", { name: "Export" });
+    expect(buttons[0]).toBeDisabled();
   });
 
   it("is enabled when deck has one or more sets", () => {
     mockUseListDeckSets.mockReturnValue({ data: [{ id: "set-1" }], isLoading: false });
 
     render(
-      <DeckExportProvider value={{ exportDeck: async () => {} }}>
+      <DeckExportProvider value={{ exportDeck: async () => {}, exportDeckPdf: async () => {} }}>
         <DeckExportButton deckId="deck-1" scope="decks_grid" />
       </DeckExportProvider>,
     );
 
-    expect(screen.getByRole("button", { name: "Export" })).toBeEnabled();
+    const buttons = screen.getAllByRole("button", { name: "Export" });
+    expect(buttons[0]).toBeEnabled();
   });
 
   it("remains safely disabled without provider", () => {

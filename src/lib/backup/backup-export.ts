@@ -158,6 +158,7 @@ async function loadExportInputs(): Promise<{
   let exportCropMarksStyle: string | null | undefined;
   let exportCutMarksEnabled: string | null | undefined;
   let exportCutMarksColor: string | null | undefined;
+  let exportCutMarksStyle: string | null | undefined;
   let exportRoundedCorners: string | null | undefined;
 
   try {
@@ -229,6 +230,11 @@ async function loadExportInputs(): Promise<{
     exportCutMarksColor = undefined;
   }
   try {
+    exportCutMarksStyle = window.localStorage.getItem("hqcc.exportPng.cutMarksStyle");
+  } catch {
+    exportCutMarksStyle = undefined;
+  }
+  try {
     exportRoundedCorners = window.localStorage.getItem("hqcc.exportPng.roundedCorners");
   } catch {
     exportRoundedCorners = undefined;
@@ -247,6 +253,7 @@ async function loadExportInputs(): Promise<{
     exportCropMarksStyle,
     exportCutMarksEnabled,
     exportCutMarksColor,
+    exportCutMarksStyle,
     exportRoundedCorners,
   };
 

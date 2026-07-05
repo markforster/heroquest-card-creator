@@ -518,7 +518,7 @@
 
 .setContentEmptySlot {
   width: 112px;
-  height: calc(112px * 1056 / 756);
+  height: calc(112px * 1050 / 750);
   background: transparent;
   border-radius: 12px;
 }
@@ -531,21 +531,21 @@
 .setShellFanCollapsed {
   position: absolute;
   width: 112px;
-  height: calc((112px * 1056 / 756) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom));
+  height: calc((112px * 1050 / 750) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom));
   z-index: 1;
 }
 
 .setShellFanPartial {
   position: absolute;
   width: 112px;
-  height: calc((112px * 1056 / 756) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom));
+  height: calc((112px * 1050 / 750) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom));
   z-index: 2;
 }
 
 .setShellFanExpanded {
   position: absolute;
   width: 112px;
-  height: calc((112px * 1056 / 756) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom));
+  height: calc((112px * 1050 / 750) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom));
   z-index: 3;
 }
 
@@ -635,7 +635,7 @@
 
 .keyCardOverlayShellSpacer {
   width: 112px;
-  height: calc(112px * 1056 / 756);
+  height: calc(112px * 1050 / 750);
 }
 
 .keyCardSetShellCollapsed {
@@ -961,7 +961,7 @@
 
 .setThumbFallback {
   width: 100%;
-  aspect-ratio: 756 / 1056;
+  aspect-ratio: 750 / 1050;
   border-radius: 5px;
   background: #a8afc0;
 }

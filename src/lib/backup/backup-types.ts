@@ -60,6 +60,7 @@ export interface HqccExportLocalStorageV1 {
   exportCropMarksStyle?: string | null;
   exportCutMarksEnabled?: string | null;
   exportCutMarksColor?: string | null;
+  exportCutMarksStyle?: string | null;
   exportRoundedCorners?: string | null;
 }
 

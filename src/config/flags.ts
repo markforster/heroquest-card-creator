@@ -129,6 +129,13 @@ export const USE_ROUNDED_CARD_CLIP = true;
 // export const USE_ROUNDED_CARD_CLIP = false;
 
 /**
+ * Test-only flag: preserve bleed area in exported images but leave the bleed
+ * band itself blank instead of extending artwork into it. Useful for checking
+ * whether crop marks and cut marks line up with the visible trim edge.
+ */
+export const DISABLE_BLEED_BAND_RENDER_FOR_TESTING = false;
+
+/**
  * Disables missing-asset checks to isolate performance issues.
  */
 export const ENABLE_MISSING_ASSET_CHECKS = true;
@@ -140,3 +147,10 @@ export const ENABLE_MISSING_ASSET_CHECKS = true;
 export const ENABLE_MISSING_ASSET_INITIAL_SCAN = true;
 export const ENABLE_MISSING_ASSET_PERIODIC_SCAN = true;
 export const ENABLE_MISSING_ASSET_DELETE_SCAN = false;
+
+/**
+ * Controls whether the experimental collection PDF export entry point is shown
+ * in the Stockpile footer. Keep disabled until the collection PDF workflow is
+ * ready for broader release.
+ */
+export const ENABLE_STOCKPILE_COLLECTION_PDF_EXPORT = false;

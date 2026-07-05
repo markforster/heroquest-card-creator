@@ -1,9 +1,11 @@
 "use client";
 
-import { Download } from "lucide-react";
-import { useState } from "react";
+import { Download, FileText, Image } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { useMemo, useState } from "react";
 
-import IconButton from "@/components/common/IconButton";
+import styles from "@/app/page.module.css";
+import IconLabelMenuButton from "@/components/common/IconLabelMenuButton";
 import { useDeckExport } from "@/components/Decks/context/DeckExportContext";
 import { useDeckHasSets } from "@/components/Decks/hooks/useDeckHasSets";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -26,29 +28,67 @@ export default function DeckExportButton({
   const { t } = useI18n();
   const exportContext = useDeckExport();
   const exportDeck = exportContext?.exportDeck;
+  const exportDeckPdf = exportContext?.exportDeckPdf;
   const { hasSets } = useDeckHasSets(deckId);
   const [isLoading, setIsLoading] = useState(false);
   const resolvedLabel = label ?? t("decks.actions.exportDeck");
 
-  const isDisabled = disabled || !deckId || !hasSets || isLoading || !exportDeck;
+  const baseDisabled = disabled || !deckId || !hasSets || isLoading;
+  const isDisabled = baseDisabled || (!exportDeck && !exportDeckPdf);
+
+  const menuItems = useMemo(() => {
+    const items: Array<{
+      id: string;
+      label: string;
+      icon: LucideIcon;
+      onSelect: () => Promise<void>;
+    }> = [];
+
+    if (exportDeck) {
+      items.push({
+        id: "export-png",
+        label: t("decks.actions.exportDeckImages"),
+        icon: Image,
+        onSelect: async () => {
+          if (!deckId || isLoading || !exportDeck) return;
+          setIsLoading(true);
+          try {
+            await exportDeck(deckId, scope);
+          } finally {
+            setIsLoading(false);
+          }
+        },
+      });
+    }
+
+    if (exportDeckPdf) {
+      items.push({
+        id: "export-pdf",
+        label: t("decks.actions.exportDeckPdfMenu"),
+        icon: FileText,
+        onSelect: async () => {
+          if (!deckId || isLoading || !exportDeckPdf) return;
+          setIsLoading(true);
+          try {
+            await exportDeckPdf(deckId, scope);
+          } finally {
+            setIsLoading(false);
+          }
+        },
+      });
+    }
+
+    return items;
+  }, [deckId, exportDeck, exportDeckPdf, isLoading, scope, t]);
 
   return (
-    <IconButton
-      className={className}
+    <IconLabelMenuButton
+      label={resolvedLabel}
       icon={Download}
-      title={resolvedLabel}
       disabled={Boolean(isDisabled)}
-      onClick={async () => {
-        if (!deckId || isLoading || !exportDeck) return;
-        setIsLoading(true);
-        try {
-          await exportDeck(deckId, scope);
-        } finally {
-          setIsLoading(false);
-        }
-      }}
-    >
-      {resolvedLabel}
-    </IconButton>
+      ariaLabel={resolvedLabel}
+      className={`${styles.inspectorFaceButton} ${className}`.trim()}
+      items={menuItems}
+    />
   );
 }

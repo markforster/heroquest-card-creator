@@ -107,6 +107,11 @@ jest.mock("@/components/Stockpile/StockpileCollectionModal", () => ({
   default: () => null,
 }));
 
+jest.mock("@/components/Stockpile/pdf/CollectionPdfExportSummaryModal", () => ({
+  __esModule: true,
+  default: () => null,
+}));
+
 jest.mock("@/components/Stockpile/StockpileConfirmModal", () => ({
   __esModule: true,
   default: () => null,

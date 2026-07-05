@@ -14,11 +14,10 @@ import AssetsInspectorActions from "@/components/Assets/AssetsInspectorActions";
 import AssetsInspectorDetails from "@/components/Assets/AssetsInspectorDetails";
 import AssetsInspectorHero from "@/components/Assets/AssetsInspectorHero";
 import type { AssetUsage, AssetUsageBounds } from "@/components/Assets/AssetsRoutePanels.types";
+import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesGuardContext";
 import { AssetsPreviewModal } from "@/components/Assets/modals";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
-import { useEditorSave } from "@/components/Providers/EditorSaveContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -44,11 +43,11 @@ export default function AssetsInspector({
   const { t } = useI18n();
   const navigate = useNavigate();
   const { requestRecenter } = usePreviewRenderer();
+  const { bypassNextNavigation, runWithUnsavedChangesGuard } = useUnsavedChangesGuardControls();
   const {
     state: { selectedTemplateId },
   } = useCardEditor();
   const { isDirty } = useFormState();
-  const { saveCurrentCard } = useEditorSave();
   const { enqueueAsset } = useAssetKindQueue();
 
   const safeIndex = Math.min(currentIndex, assets.length - 1);
@@ -61,13 +60,12 @@ export default function AssetsInspector({
   const [assetSizeBytes, setAssetSizeBytes] = useState<number | null>(null);
   const [usage, setUsage] = useState<AssetUsage>({ total: 0, cards: [] });
   const [usageBounds, setUsageBounds] = useState<AssetUsageBounds | null>(null);
-  const [pendingOpenCard, setPendingOpenCard] = useState<CardRecord | null>(null);
-  const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const recenterTimeoutRef = useRef<number | null>(null);
   const showCarousel = assets.length > 1;
 
   const openCard = async (cardId: string) => {
+    bypassNextNavigation();
     navigate(`/cards/${cardId}`);
     if (ENABLE_WEBGL_RECENTER_ON_FACE_SELECT) {
       if (recenterTimeoutRef.current) {
@@ -81,10 +79,9 @@ export default function AssetsInspector({
 
   const requestOpenCard = async (cardId: string) => {
     if (selectedTemplateId && isDirty) {
-      const record = await apiClient.getCard({ params: { id: cardId } });
-      if (!record) return;
-      setPendingOpenCard(record);
-      setIsSavePromptOpen(true);
+      runWithUnsavedChangesGuard(async () => {
+        await openCard(cardId);
+      });
       return;
     }
     await openCard(cardId);
@@ -268,11 +265,6 @@ export default function AssetsInspector({
   }, [asset.id]);
 
   useEffect(() => {
-    setPendingOpenCard(null);
-    setIsSavePromptOpen(false);
-  }, [asset.id]);
-
-  useEffect(() => {
     setIsPreviewModalOpen(false);
   }, [asset.id]);
 
@@ -344,28 +336,6 @@ export default function AssetsInspector({
           onOpenCard={(cardId) => void requestOpenCard(cardId)}
         />
       </div>
-      <ConfirmModal
-        isOpen={isSavePromptOpen}
-        title={t("heading.saveBeforeView")}
-        confirmLabel={t("actions.save")}
-        cancelLabel={t("actions.cancel")}
-        onConfirm={async () => {
-          setIsSavePromptOpen(false);
-          const nextOpenCard = pendingOpenCard;
-          setPendingOpenCard(null);
-          const saved = await saveCurrentCard();
-          if (!saved) return;
-          if (nextOpenCard) {
-            await openCard(nextOpenCard.id);
-          }
-        }}
-        onCancel={() => {
-          setIsSavePromptOpen(false);
-          setPendingOpenCard(null);
-        }}
-      >
-        {t("confirm.saveBeforeViewBody")}
-      </ConfirmModal>
       <AssetsPreviewModal
         isOpen={isPreviewModalOpen}
         onClose={() => setIsPreviewModalOpen(false)}

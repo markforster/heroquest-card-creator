@@ -545,6 +545,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                       ? {
                           enabled: cutMarks.enabled,
                           color: cutMarks.color,
+                          style: cutMarks.style ?? "solid",
                         }
                       : cutMarks,
                     roundedCorners: effectiveRounded,
@@ -666,6 +667,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                     ? {
                         enabled: cutMarks.enabled,
                         color: cutMarks.color,
+                        style: cutMarks.style ?? "solid",
                       }
                     : cutMarks,
                   roundedCorners: effectiveRounded,
@@ -752,6 +754,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                     ? {
                         enabled: cutMarks.enabled,
                         color: cutMarks.color,
+                        style: cutMarks.style ?? "solid",
                       }
                     : cutMarks,
                   roundedCorners: effectiveRounded,

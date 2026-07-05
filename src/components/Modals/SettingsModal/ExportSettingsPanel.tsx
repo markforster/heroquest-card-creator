@@ -4,19 +4,24 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import ExportOptionsForm from "@/components/Export/ExportOptionsForm";
+import PdfExportConfigForm from "@/components/Export/PdfExportConfigForm";
 import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   DEFAULT_BLEED_PX,
   DEFAULT_CROP_MARK_COLOR,
   DEFAULT_CROP_MARK_STYLE,
   DEFAULT_CUT_MARK_COLOR,
+  DEFAULT_CUT_MARK_STYLE,
   DEFAULT_EXPORT_ROUNDED_CORNERS,
   normalizeBleedPx,
   normalizeColor,
 } from "@/lib/export-settings";
+import { normalizePdfPrintConfig, type PrintConfig } from "@/lib/pdf-export";
 
 export default function ExportSettingsPanel() {
+  const { t } = useI18n();
   const { settings, updateSettings } = useExportSettingsState();
   const [bleedEnabled, setBleedEnabled] = useState(settings.bleed.enabled);
   const [bleedPx, setBleedPx] = useState(settings.bleed.bleedPx ?? DEFAULT_BLEED_PX);
@@ -32,9 +37,13 @@ export default function ExportSettingsPanel() {
   const [cutMarkColor, setCutMarkColor] = useState(
     settings.cutMarks.color ?? DEFAULT_CUT_MARK_COLOR,
   );
+  const [cutMarkStyle, setCutMarkStyle] = useState(
+    settings.cutMarks.style ?? DEFAULT_CUT_MARK_STYLE,
+  );
   const [roundedCorners, setRoundedCorners] = useState(
     settings.roundedCorners ?? DEFAULT_EXPORT_ROUNDED_CORNERS,
   );
+  const [pdfConfig, setPdfConfig] = useState<PrintConfig>(settings.pdf);
 
   useEffect(() => {
     setBleedEnabled(settings.bleed.enabled);
@@ -45,7 +54,9 @@ export default function ExportSettingsPanel() {
     setCropMarkStyle(settings.cropMarks.style ?? DEFAULT_CROP_MARK_STYLE);
     setCutMarksEnabled(settings.cutMarks.enabled);
     setCutMarkColor(settings.cutMarks.color ?? DEFAULT_CUT_MARK_COLOR);
+    setCutMarkStyle(settings.cutMarks.style ?? DEFAULT_CUT_MARK_STYLE);
     setRoundedCorners(settings.roundedCorners ?? DEFAULT_EXPORT_ROUNDED_CORNERS);
+    setPdfConfig(settings.pdf);
   }, [settings]);
 
   const finalSizeLabel = useMemo(() => {
@@ -59,9 +70,10 @@ export default function ExportSettingsPanel() {
     askBeforeExport?: boolean;
     cropMarksEnabled?: boolean;
     cropMarkColor?: string;
-    cropMarkStyle?: "lines" | "squares";
+    cropMarkStyle?: "lines" | "squares" | "triangles";
     cutMarksEnabled?: boolean;
     cutMarkColor?: string;
+    cutMarkStyle?: "solid" | "dashed" | "dotted" | "ticks";
     roundedCorners?: boolean;
   }) => {
     const resolvedBleedEnabled = next.bleedEnabled ?? bleedEnabled;
@@ -72,6 +84,7 @@ export default function ExportSettingsPanel() {
     const resolvedCropStyle = next.cropMarkStyle ?? cropMarkStyle;
     const requestedCutEnabled = next.cutMarksEnabled ?? cutMarksEnabled;
     const resolvedCutColor = normalizeColor(next.cutMarkColor ?? cutMarkColor);
+    const resolvedCutStyle = next.cutMarkStyle ?? cutMarkStyle;
     const resolvedRoundedCorners = next.roundedCorners ?? roundedCorners;
     const resolvedCropEnabled = resolvedBleedEnabled ? requestedCropEnabled : false;
     const resolvedCutEnabled = resolvedBleedEnabled ? requestedCutEnabled : false;
@@ -84,6 +97,7 @@ export default function ExportSettingsPanel() {
     setCropMarkStyle(resolvedCropStyle);
     setCutMarksEnabled(resolvedCutEnabled);
     setCutMarkColor(resolvedCutColor);
+    setCutMarkStyle(resolvedCutStyle);
     setRoundedCorners(resolvedRoundedCorners);
 
     updateSettings({
@@ -100,8 +114,10 @@ export default function ExportSettingsPanel() {
       cutMarks: {
         enabled: resolvedCutEnabled,
         color: resolvedCutColor,
+        style: resolvedCutStyle,
       },
       roundedCorners: resolvedRoundedCorners,
+      pdf: settings.pdf,
     });
   }, [
     askBeforeExport,
@@ -112,9 +128,23 @@ export default function ExportSettingsPanel() {
     cropMarksEnabled,
     cutMarkColor,
     cutMarksEnabled,
+    cutMarkStyle,
     roundedCorners,
+    settings.pdf,
     updateSettings,
   ]);
+
+  const persistPdf = useCallback((next: PrintConfig) => {
+    const resolved = normalizePdfPrintConfig(next);
+    setPdfConfig(resolved);
+    updateSettings({
+      bleed: settings.bleed,
+      cropMarks: settings.cropMarks,
+      cutMarks: settings.cutMarks,
+      roundedCorners: settings.roundedCorners,
+      pdf: resolved,
+    });
+  }, [settings, updateSettings]);
 
   return (
     <div className={styles.settingsPanelBody}>
@@ -128,6 +158,7 @@ export default function ExportSettingsPanel() {
         cropMarkStyle={cropMarkStyle}
         cutMarksEnabled={cutMarksEnabled}
         cutMarkColor={cutMarkColor}
+        cutMarkStyle={cutMarkStyle}
         bleedLabelKey="label.exportWithBleed"
         headingLabelKey="heading.exportSettings"
         finalSizeLabel={finalSizeLabel}
@@ -135,6 +166,10 @@ export default function ExportSettingsPanel() {
         useSettingsGroup
         onChange={persist}
       />
+      <div className={styles.settingsGroup}>
+        <div className={styles.settingsGroupTitle}>{t("decks.meta.pdf.section")}</div>
+        <PdfExportConfigForm config={pdfConfig} onChange={persistPdf} />
+      </div>
     </div>
   );
 }

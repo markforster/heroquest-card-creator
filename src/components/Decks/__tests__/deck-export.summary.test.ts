@@ -1,0 +1,192 @@
+import { apiClient } from "@/api/client";
+import {
+  createDeckPdfPlaceholderFrontId,
+  parseDeckPdfPlaceholderFrontId,
+  resolveDeckExportFaceIds,
+  resolveDeckPdfExportSummary,
+  resolveDeckPdfRunData,
+  summarizeDeckPdfRunData,
+} from "@/components/Decks/deck-export";
+
+jest.mock("@/api/client", () => ({
+  apiClient: {
+    listDeckSets: jest.fn(),
+    listCards: jest.fn(),
+    listDeckEntries: jest.fn(),
+    listPairs: jest.fn(),
+  },
+}));
+
+describe("resolveDeckPdfExportSummary", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("resolves unique export face ids with backs first and ordered fronts after them", async () => {
+    (apiClient.listDeckSets as jest.Mock).mockResolvedValue([
+      { id: "set-b", groupId: "group-b", sortIndex: 1, backFaceId: "back-2" },
+      { id: "set-a2", groupId: "group-a", sortIndex: 2, backFaceId: "back-1" },
+      { id: "set-a1", groupId: "group-a", sortIndex: 1, backFaceId: "back-1" },
+      { id: "set-c", groupId: "group-c", sortIndex: 1, backFaceId: null },
+    ]);
+    (apiClient.listDeckEntries as jest.Mock).mockImplementation(
+      ({ params }: { params: { setId: string } }) => {
+        if (params.setId === "set-a1") {
+          return Promise.resolve([
+            { id: "e2", pairId: "pair-2", sortIndex: 2 },
+            { id: "e1", pairId: "pair-1", sortIndex: 1 },
+          ]);
+        }
+        if (params.setId === "set-a2") {
+          return Promise.resolve([{ id: "e3", pairId: "pair-1", sortIndex: 1 }]);
+        }
+        if (params.setId === "set-b") {
+          return Promise.resolve([{ id: "e4", pairId: "pair-3", sortIndex: 1 }]);
+        }
+        return Promise.resolve([{ id: "e5", pairId: "pair-missing", sortIndex: 1 }]);
+      },
+    );
+    (apiClient.listPairs as jest.Mock).mockResolvedValue([
+      { id: "pair-1", frontFaceId: "front-1" },
+      { id: "pair-2", frontFaceId: "front-2" },
+      { id: "pair-3", frontFaceId: "front-1" },
+      { id: "pair-missing", frontFaceId: null },
+    ]);
+
+    await expect(resolveDeckExportFaceIds("deck-1")).resolves.toEqual({
+      faceIds: ["back-1", "back-2", "front-1", "front-2"],
+      setCount: 4,
+      backCount: 2,
+      frontCount: 2,
+      totalCount: 4,
+    });
+  });
+
+  it("excludes empty sets and computes totals for front+back", async () => {
+    (apiClient.listDeckSets as jest.Mock).mockResolvedValue([
+      { id: "set-1", title: "Set One", backFaceId: "back-1" },
+      { id: "set-2", title: "Set Two", backFaceId: "back-2" },
+    ]);
+    (apiClient.listCards as jest.Mock).mockResolvedValue([]);
+    (apiClient.listDeckEntries as jest.Mock).mockImplementation(
+      ({ params }: { params: { setId: string } }) => {
+        if (params.setId === "set-1") {
+          return Promise.resolve([
+            { id: "e1", pairId: "pair-1", count: 2, sortIndex: 0 },
+            { id: "e2", pairId: "pair-2", count: 1, sortIndex: 1 },
+          ]);
+        }
+        return Promise.resolve([]);
+      },
+    );
+    (apiClient.listPairs as jest.Mock).mockResolvedValue([
+      { id: "pair-1", frontFaceId: "front-1" },
+      { id: "pair-2", frontFaceId: "front-2" },
+    ]);
+
+    const result = await resolveDeckPdfExportSummary("deck-1", "frontAndBack");
+
+    expect(result.totalSetCount).toBe(2);
+    expect(result.includedSetCount).toBe(1);
+    expect(result.includedEmptySetCount).toBe(0);
+    expect(result.excludedEmptySetCount).toBe(1);
+    expect(result.excludedNonEmptySetCount).toBe(0);
+    expect(result.totalEntryQuantity).toBe(3);
+    expect(result.exportSlotQuantity).toBe(3);
+    expect(result.frontFaceCount).toBe(3);
+    expect(result.backFaceCount).toBe(1);
+    expect(result.totalFaceCount).toBe(4);
+    expect(result.sets).toHaveLength(2);
+  });
+
+  it("uses fronts-only mode totals and defaults quantity to one", async () => {
+    (apiClient.listDeckSets as jest.Mock).mockResolvedValue([{ id: "set-1", title: null, backFaceId: "back-1" }]);
+    (apiClient.listCards as jest.Mock).mockResolvedValue([{ id: "back-1", title: "Fallback Title", name: "" }]);
+    (apiClient.listDeckEntries as jest.Mock).mockResolvedValue([
+      { id: "e1", pairId: "pair-1", sortIndex: 0 },
+      { id: "e2", pairId: "pair-2", count: 0, sortIndex: 1 },
+    ]);
+    (apiClient.listPairs as jest.Mock).mockResolvedValue([
+      { id: "pair-1", frontFaceId: "front-1" },
+      { id: "pair-2", frontFaceId: "front-2" },
+    ]);
+
+    const result = await resolveDeckPdfExportSummary("deck-1", "frontsOnly");
+
+    expect(result.totalEntryQuantity).toBe(2);
+    expect(result.exportSlotQuantity).toBe(2);
+    expect(result.frontFaceCount).toBe(2);
+    expect(result.backFaceCount).toBe(0);
+    expect(result.totalFaceCount).toBe(2);
+  });
+
+  it("includes empty sets as placeholders in all-sets scope", async () => {
+    (apiClient.listDeckSets as jest.Mock).mockResolvedValue([
+      { id: "set-1", title: "Set One", backFaceId: "back-1" },
+      { id: "set-2", title: "Set Two", backFaceId: "back-2" },
+    ]);
+    (apiClient.listCards as jest.Mock).mockResolvedValue([]);
+    (apiClient.listDeckEntries as jest.Mock).mockImplementation(
+      ({ params }: { params: { setId: string } }) => {
+        if (params.setId === "set-1") {
+          return Promise.resolve([{ id: "e1", pairId: "pair-1", count: 1, sortIndex: 0 }]);
+        }
+        return Promise.resolve([]);
+      },
+    );
+    (apiClient.listPairs as jest.Mock).mockResolvedValue([{ id: "pair-1", frontFaceId: "front-1" }]);
+
+    const runData = await resolveDeckPdfRunData("deck-1", "frontAndBack", "all", []);
+    const summary = summarizeDeckPdfRunData(runData, "frontAndBack", "all", new Set());
+
+    expect(runData.slotPairs).toHaveLength(2);
+    const placeholderSlot = runData.slotPairs.find((slot) => slot.slotId.startsWith("set-2:empty:"));
+    expect(placeholderSlot?.frontId).toBeTruthy();
+    expect(parseDeckPdfPlaceholderFrontId(placeholderSlot?.frontId ?? "")).toEqual({ setId: "set-2" });
+    expect(summary.includedSetCount).toBe(2);
+    expect(summary.includedEmptySetCount).toBe(1);
+    expect(summary.excludedEmptySetCount).toBe(0);
+    expect(summary.totalEntryQuantity).toBe(1);
+    expect(summary.exportSlotQuantity).toBe(2);
+    expect(summary.frontFaceCount).toBe(1);
+    expect(summary.backFaceCount).toBe(2);
+    expect(summary.totalFaceCount).toBe(3);
+  });
+
+  it("selected scope honors explicit set selection and includes empty selected sets as placeholders", async () => {
+    (apiClient.listDeckSets as jest.Mock).mockResolvedValue([
+      { id: "set-1", title: "Set One", backFaceId: "back-1" },
+      { id: "set-2", title: "Set Two", backFaceId: "back-2" },
+    ]);
+    (apiClient.listCards as jest.Mock).mockResolvedValue([]);
+    (apiClient.listDeckEntries as jest.Mock).mockImplementation(
+      ({ params }: { params: { setId: string } }) => {
+        if (params.setId === "set-2") return Promise.resolve([]);
+        return Promise.resolve([{ id: `${params.setId}-e1`, pairId: "pair-1", count: 1, sortIndex: 0 }]);
+      },
+    );
+    (apiClient.listPairs as jest.Mock).mockResolvedValue([{ id: "pair-1", frontFaceId: "front-1" }]);
+
+    const runData = await resolveDeckPdfRunData("deck-1", "frontsOnly", "selected", ["set-2"]);
+    const summary = summarizeDeckPdfRunData(runData, "frontsOnly", "selected", new Set(["set-2"]));
+    expect(runData.slotPairs).toHaveLength(1);
+    expect(runData.slotPairs[0]?.slotId.startsWith("set-2:empty:")).toBe(true);
+    expect(summary.includedSetCount).toBe(1);
+    expect(summary.includedEmptySetCount).toBe(1);
+    expect(summary.excludedNonEmptySetCount).toBe(1);
+    expect(summary.totalEntryQuantity).toBe(0);
+    expect(summary.exportSlotQuantity).toBe(1);
+    expect(summary.frontFaceCount).toBe(0);
+    expect(summary.backFaceCount).toBe(0);
+    expect(summary.totalFaceCount).toBe(0);
+  });
+
+  it("creates and parses placeholder ids and rejects non-placeholder values", () => {
+    const placeholder = createDeckPdfPlaceholderFrontId("set-42");
+
+    expect(placeholder).toBe("deck-empty-front:set-42");
+    expect(parseDeckPdfPlaceholderFrontId(placeholder)).toEqual({ setId: "set-42" });
+    expect(parseDeckPdfPlaceholderFrontId("front-1")).toBeNull();
+    expect(parseDeckPdfPlaceholderFrontId("deck-empty-front:")).toBeNull();
+  });
+});
