@@ -91,4 +91,29 @@ describe("export-settings pdf defaults", () => {
     );
     expect(getExportSettings().cutMarks.style).toBe("dotted");
   });
+
+  it("treats persisted solid cut mark style as the legacy dashed default", () => {
+    window.localStorage.setItem(EXPORT_SETTINGS_STORAGE_KEYS.cutMarksStyle, "solid");
+
+    expect(getExportSettings().cutMarks.style).toBe("dashed");
+  });
+
+  it("persists and restores long-dashed cut mark style", () => {
+    const current = getExportSettings();
+    const next = {
+      ...current,
+      cutMarks: {
+        ...current.cutMarks,
+        enabled: true,
+        style: "long-dashed" as const,
+      },
+    };
+
+    setExportSettings(next);
+
+    expect(window.localStorage.getItem(EXPORT_SETTINGS_STORAGE_KEYS.cutMarksStyle)).toBe(
+      "long-dashed",
+    );
+    expect(getExportSettings().cutMarks.style).toBe("long-dashed");
+  });
 });

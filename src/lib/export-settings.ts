@@ -21,7 +21,7 @@ export type ExportCropMarksSettings = {
 export type ExportCutMarksSettings = {
   enabled: boolean;
   color: string;
-  style: "solid" | "dashed" | "dotted" | "ticks";
+  style: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks";
 };
 
 export type ExportSettings = {
@@ -37,7 +37,7 @@ export const MAX_BLEED_PX = 36;
 export const DEFAULT_CROP_MARK_COLOR = "#00FFFF";
 export const DEFAULT_CROP_MARK_STYLE: ExportCropMarksSettings["style"] = "lines";
 export const DEFAULT_CUT_MARK_COLOR = "#00FFFF";
-export const DEFAULT_CUT_MARK_STYLE: ExportCutMarksSettings["style"] = "solid";
+export const DEFAULT_CUT_MARK_STYLE: ExportCutMarksSettings["style"] = "dashed";
 export const DEFAULT_EXPORT_ROUNDED_CORNERS = true;
 
 const STORAGE_KEYS = {
@@ -299,10 +299,12 @@ function readCropMarksStyle(value: string | null): ExportCropMarksSettings["styl
 }
 
 function readCutMarksStyle(value: string | null): ExportCutMarksSettings["style"] {
+  if (value === "long-dashed") return "long-dashed";
   if (value === "dashed") return "dashed";
   if (value === "dotted") return "dotted";
   if (value === "ticks") return "ticks";
-  return "solid";
+  if (value === "solid") return "dashed";
+  return DEFAULT_CUT_MARK_STYLE;
 }
 
 function readBool(key: string, fallback: boolean): boolean {

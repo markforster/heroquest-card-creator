@@ -25,6 +25,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "label.cutMarkStyle": "Cut mark style",
           "label.cutMarkStyleSolid": "Solid",
           "label.cutMarkStyleDashed": "Dashed",
+          "label.cutMarkStyleLongDashed": "Long dashed",
           "label.cutMarkStyleDotted": "Dotted",
           "label.cutMarkStyleTicks": "Ticks",
         } as Record<string, string>
@@ -32,17 +33,30 @@ jest.mock("@/i18n/I18nProvider", () => ({
   }),
 }));
 
-jest.mock("@/hooks/usePopupState", () => ({
-  usePopupState: () => ({
-    isOpen: false,
-    toggle: jest.fn(),
-    close: jest.fn(),
-  }),
-}));
-
 jest.mock("@/components/common/ColorPickerField", () => ({
   __esModule: true,
   default: ({ label }: { label: string }) => <div>{label}</div>,
+}));
+
+jest.mock("@/components/Export/CutMarkStyleSelect", () => ({
+  __esModule: true,
+  default: ({
+    value,
+    disabled,
+    onChange,
+  }: {
+    value: string;
+    disabled?: boolean;
+    onChange: (next: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks") => void;
+  }) => (
+    <div>
+      <div data-testid="mock-cut-mark-style-select-value">{value}</div>
+      <div data-testid="mock-cut-mark-style-select-disabled">{String(Boolean(disabled))}</div>
+      <button type="button" onClick={() => onChange("ticks")}>
+        Set ticks
+      </button>
+    </div>
+  ),
 }));
 
 jest.mock("@/components/Modals/SettingsModal/SettingsGroup", () => ({
@@ -63,6 +77,14 @@ jest.mock("@/components/Modals/SettingsModal/SettingsGroup", () => ({
   ),
 }));
 
+jest.mock("@/hooks/usePopupState", () => ({
+  usePopupState: () => ({
+    isOpen: false,
+    toggle: jest.fn(),
+    close: jest.fn(),
+  }),
+}));
+
 const baseProps = {
   bleedEnabled: true,
   bleedPx: 12,
@@ -72,7 +94,7 @@ const baseProps = {
   cropMarkStyle: "lines" as const,
   cutMarksEnabled: true,
   cutMarkColor: "#FF00FF",
-  cutMarkStyle: "solid" as const,
+  cutMarkStyle: "dashed" as const,
   bleedLabelKey: "label.exportWithBleed" as const,
   headingLabelKey: "heading.exportSettings" as const,
   useSettingsGroup: true,
@@ -112,10 +134,10 @@ describe("ExportOptionsForm", () => {
     const onChange = jest.fn();
     render(<ExportOptionsForm {...baseProps} onChange={onChange} />);
 
-    const select = screen.getByDisplayValue("Solid");
-    expect(screen.getByRole("option", { name: "Ticks" })).toBeInTheDocument();
+    expect(screen.getByTestId("mock-cut-mark-style-select-value")).toHaveTextContent("dashed");
+    expect(screen.getByTestId("mock-cut-mark-style-select-disabled")).toHaveTextContent("false");
 
-    fireEvent.change(select, { target: { value: "ticks" } });
+    fireEvent.click(screen.getByText("Set ticks"));
 
     expect(onChange).toHaveBeenCalledWith({ cutMarkStyle: "ticks" });
   });

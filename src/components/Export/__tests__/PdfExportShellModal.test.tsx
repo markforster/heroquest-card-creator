@@ -20,7 +20,7 @@ const mockBuildAssetCache = jest.fn();
 let mockExportSettings = {
   bleed: { enabled: true, bleedPx: 18, askBeforeExport: false },
   cropMarks: { enabled: true, color: "#00FFFF", style: "lines" },
-  cutMarks: { enabled: true, color: "#00FFFF", style: "solid" },
+  cutMarks: { enabled: true, color: "#00FFFF", style: "dashed" },
   roundedCorners: true,
   pdf: {
     paper: "Letter",
@@ -68,6 +68,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "label.cropMarkStyleTriangles": "Triangles",
           "label.cutMarkStyleSolid": "Solid",
           "label.cutMarkStyleDashed": "Dashed",
+          "label.cutMarkStyleLongDashed": "Long dashed",
           "label.cutMarkStyleDotted": "Dotted",
           "label.cutMarkStyleTicks": "Ticks",
           "decks.pdf.errors.layoutCapacity": "Layout capacity error",

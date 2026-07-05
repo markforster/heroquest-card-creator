@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import styles from "@/app/page.module.css";
 import ColorPickerField from "@/components/common/ColorPickerField";
+import CutMarkStyleSelect, { type CutMarkStyleValue } from "@/components/Export/CutMarkStyleSelect";
 import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -22,7 +23,7 @@ export type ExportOptionsFormState = {
   cropMarkStyle: "lines" | "squares" | "triangles";
   cutMarksEnabled: boolean;
   cutMarkColor: string;
-  cutMarkStyle: "solid" | "dashed" | "dotted" | "ticks";
+  cutMarkStyle: CutMarkStyleValue;
 };
 
 type ExportOptionsFormProps = ExportOptionsFormState & {
@@ -220,21 +221,11 @@ export default function ExportOptionsForm({
         </div>
         <label className={styles.settingsPanelRow}>
           <span>{t("label.cutMarkStyle")}</span>
-          <select
-            className="form-select form-select-sm"
+          <CutMarkStyleSelect
             value={cutMarkStyle}
             disabled={!cutMarksEnabled || !bleedEnabled}
-            onChange={(event) =>
-              onChange({
-                cutMarkStyle: event.target.value as "solid" | "dashed" | "dotted" | "ticks",
-              })
-            }
-          >
-            <option value="solid">{t("label.cutMarkStyleSolid")}</option>
-            <option value="dashed">{t("label.cutMarkStyleDashed")}</option>
-            <option value="dotted">{t("label.cutMarkStyleDotted")}</option>
-            <option value="ticks">{t("label.cutMarkStyleTicks")}</option>
-          </select>
+            onChange={(next) => onChange({ cutMarkStyle: next })}
+          />
         </label>
       </div>
     </div>

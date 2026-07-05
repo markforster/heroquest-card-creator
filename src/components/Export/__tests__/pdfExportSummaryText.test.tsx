@@ -57,4 +57,31 @@ describe("formatPdfExportBleedSummary", () => {
 
     expect(screen.getByText(/Cut marks \(ticks\)/i)).toBeInTheDocument();
   });
+
+  it("includes the long-dashed cut mark style label when selected", () => {
+    const summary = formatPdfExportBleedSummary(
+      {
+        bleedEnabled: true,
+        bleedPx: 18,
+        roundedCorners: false,
+        cropMarksEnabled: false,
+        cropMarkColor: "#00FFFF",
+        cropMarkStyle: "lines",
+        cutMarksEnabled: true,
+        cutMarkColor: "#FF00FF",
+        cutMarkStyle: "long-dashed",
+      },
+      ((key: string) =>
+        (
+          {
+            "decks.pdf.summary.bleed.cutMarks": "Cut marks",
+            "label.cutMarkStyleLongDashed": "Long dashed",
+          } as Record<string, string>
+        )[key] ?? key) as never,
+    );
+
+    render(<div>{summary}</div>);
+
+    expect(screen.getByText(/Cut marks \(long dashed\)/i)).toBeInTheDocument();
+  });
 });

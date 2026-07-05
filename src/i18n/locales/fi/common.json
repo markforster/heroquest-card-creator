@@ -142,6 +142,7 @@
   "label.cutMarkStyle": "Leikkausmerkkien tyyli",
   "label.cutMarkStyleSolid": "Solid",
   "label.cutMarkStyleDashed": "Dashed",
+  "label.cutMarkStyleLongDashed": "Long dashed",
   "label.cutMarkStyleDotted": "Dotted",
   "label.cutMarkStyleTicks": "Ticks",
   "label.finalSize": "Lopullinen koko",

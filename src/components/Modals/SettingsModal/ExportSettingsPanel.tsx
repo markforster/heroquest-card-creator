@@ -73,7 +73,7 @@ export default function ExportSettingsPanel() {
     cropMarkStyle?: "lines" | "squares" | "triangles";
     cutMarksEnabled?: boolean;
     cutMarkColor?: string;
-    cutMarkStyle?: "solid" | "dashed" | "dotted" | "ticks";
+    cutMarkStyle?: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks";
     roundedCorners?: boolean;
   }) => {
     const resolvedBleedEnabled = next.bleedEnabled ?? bleedEnabled;

@@ -63,7 +63,39 @@ describe("drawCutMarks", () => {
       style: "dashed",
     });
 
+    expect(ctx.setLineDash).toHaveBeenNthCalledWith(1, [6, 4]);
+    expect(ctx.lineCap).toBe("butt");
+  });
+
+  it("uses the longer dashed pattern for long-dashed cut marks", () => {
+    const ctx = makeMockContext();
+
+    drawCutMarks(ctx as unknown as CanvasRenderingContext2D, {
+      trimX: 12,
+      trimY: 12,
+      trimW: 750,
+      trimH: 1050,
+      color: "#00ff00",
+      style: "long-dashed",
+    });
+
     expect(ctx.setLineDash).toHaveBeenNthCalledWith(1, [10, 6]);
+    expect(ctx.lineCap).toBe("butt");
+  });
+
+  it("uses no dash pattern for solid cut marks", () => {
+    const ctx = makeMockContext();
+
+    drawCutMarks(ctx as unknown as CanvasRenderingContext2D, {
+      trimX: 12,
+      trimY: 12,
+      trimW: 750,
+      trimH: 1050,
+      color: "#00ff00",
+      style: "solid",
+    });
+
+    expect(ctx.setLineDash).toHaveBeenNthCalledWith(1, []);
     expect(ctx.lineCap).toBe("butt");
   });
 

@@ -142,6 +142,7 @@
   "label.cutMarkStyle": "Cut Mark Style",
   "label.cutMarkStyleSolid": "Solid",
   "label.cutMarkStyleDashed": "Dashed",
+  "label.cutMarkStyleLongDashed": "Long dashed",
   "label.cutMarkStyleDotted": "Dotted",
   "label.cutMarkStyleTicks": "Ticks",
   "label.finalSize": "Final size",

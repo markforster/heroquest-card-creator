@@ -19,7 +19,7 @@ describe("deckPdfBleed", () => {
       cropMarkStyle: "lines",
       cutMarksEnabled: false,
       cutMarkColor: "#00ffff",
-      cutMarkStyle: "solid",
+      cutMarkStyle: "dashed",
     });
 
     expect(resolved.bleedPx).toBe(12);
@@ -37,7 +37,7 @@ describe("deckPdfBleed", () => {
       roundedCorners: false,
       cropMarksEnabled: true,
       cutMarksEnabled: true,
-      cutMarkStyle: "solid",
+      cutMarkStyle: "dashed",
     });
 
     expect(resolved.bleedPx).toBe(0);
