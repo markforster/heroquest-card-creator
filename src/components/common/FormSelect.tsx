@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import Select, {
   components,
   type DropdownIndicatorProps,
   type GroupBase,
+  type FormatOptionLabelMeta,
   type SingleValue,
   type StylesConfig,
 } from "react-select";
@@ -24,6 +25,7 @@ type FormSelectProps = {
   inputId?: string;
   ariaLabel?: string;
   className?: string;
+  renderOptionLabel?: (option: FormSelectOption) => ReactNode;
 };
 
 export function FormSelectDropdownIndicator<Option extends FormSelectOption>(
@@ -154,7 +156,7 @@ export function renderPlainFormSelectOption(option: FormSelectOption) {
   );
 }
 
-export default function FormSelect({
+export default function FormSelect<Option extends FormSelectOption>({
   options,
   value,
   onChange,
@@ -162,19 +164,26 @@ export default function FormSelect({
   inputId,
   ariaLabel,
   className,
-}: FormSelectProps) {
-  const selectStyles = useMemo(() => getFormSelectStyles<FormSelectOption>(disabled), [disabled]);
+  renderOptionLabel,
+}: Omit<FormSelectProps, "options" | "renderOptionLabel"> & {
+  options: Option[];
+  renderOptionLabel?: (option: Option) => ReactNode;
+}) {
+  const selectStyles = useMemo(() => getFormSelectStyles<Option>(disabled), [disabled]);
   const menuPortalTarget = typeof document === "undefined" ? undefined : document.body;
   const selected = options.find((option) => option.value === value) ?? options[0] ?? null;
 
-  const handleChange = (next: SingleValue<FormSelectOption>) => {
+  const handleChange = (next: SingleValue<Option>) => {
     if (!next) return;
     onChange(next.value);
   };
 
+  const formatOptionLabel = (option: Option, _meta: FormatOptionLabelMeta<Option>) =>
+    renderOptionLabel ? renderOptionLabel(option) : renderPlainFormSelectOption(option);
+
   return (
     <div className={`${styles.selectRoot}${className ? ` ${className}` : ""}`}>
-      <Select<FormSelectOption, false>
+      <Select<Option, false>
         inputId={inputId}
         aria-label={ariaLabel}
         classNamePrefix="form-select"
@@ -188,7 +197,7 @@ export default function FormSelect({
         onChange={handleChange}
         styles={selectStyles}
         components={{ DropdownIndicator: FormSelectDropdownIndicator }}
-        formatOptionLabel={renderPlainFormSelectOption}
+        formatOptionLabel={formatOptionLabel}
       />
     </div>
   );

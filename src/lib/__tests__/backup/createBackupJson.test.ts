@@ -17,7 +17,13 @@ jest.mock("@/lib/cards-db", () => ({
 import { apiClient } from "@/api/client";
 import { createBackupJson } from "@/lib/backup/backup-export";
 import { listCards } from "@/lib/cards-db";
+import { getHqccDexieDb } from "@/lib/hqcc-dexie";
 import { createCardRecord } from "@/lib/test-support/cards-db-test-helpers";
+import {
+  deleteDb,
+  installFakeIndexedDb,
+  restoreIndexedDb,
+} from "@/lib/test-support/decks-service-test-helpers";
 
 const mockedApiClient = apiClient as unknown as Record<string, jest.Mock>;
 const mockedListCards = listCards as jest.MockedFunction<typeof listCards>;
@@ -33,6 +39,7 @@ function readBlobAsText(blob: Blob): Promise<string> {
 
 describe("createBackupJson", () => {
   beforeEach(() => {
+    installFakeIndexedDb();
     mockedListCards.mockReset();
     mockedApiClient.getCard.mockReset();
     mockedApiClient.listAssetsWithBlobs.mockReset();
@@ -50,6 +57,17 @@ describe("createBackupJson", () => {
     mockedApiClient.getDefaultCopyright.mockResolvedValue("");
 
     window.localStorage.clear();
+  });
+
+  afterEach(async () => {
+    try {
+      getHqccDexieDb().close();
+    } catch {
+      // Ignore teardown failures if the DB module was not opened.
+    }
+
+    await deleteDb("hqcc").catch(() => {});
+    restoreIndexedDb();
   });
 
   it("hydrates full card records before serializing the backup", async () => {
@@ -82,6 +100,9 @@ describe("createBackupJson", () => {
     const text = await readBlobAsText(result.blob);
     const parsed = JSON.parse(text) as {
       cards: Array<Record<string, unknown>>;
+      exportProfiles?: {
+        profiles: Array<{ name: string }>;
+      };
     };
 
     expect(mockedApiClient.getCard).toHaveBeenCalledWith({ params: { id: "hero-1" } });
@@ -98,6 +119,9 @@ describe("createBackupJson", () => {
         heroMindPoints: [3, 0, 0],
         thumbnailDataUrl: expect.stringMatching(/^data:image\/png;base64,/),
       }),
+    );
+    expect(parsed.exportProfiles?.profiles).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "Default" })]),
     );
   });
 

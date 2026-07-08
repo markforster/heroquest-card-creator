@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
+import ExportProfileSelect from "@/components/Export/ExportProfileSelect";
 import ExportOptionsForm from "@/components/Export/ExportOptionsForm";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { ExportProfile } from "@/lib/export-profiles";
 import {
   DEFAULT_CROP_MARK_LENGTH,
   DEFAULT_CROP_MARK_THICKNESS,
@@ -35,6 +37,8 @@ export type ExportPromptResult = {
 
 type ExportBleedPromptProps = {
   isOpen: boolean;
+  profiles?: ExportProfile[];
+  selectedProfileId?: string;
   initialBleedEnabled?: boolean;
   initialBleedPx?: number;
   initialCropMarksEnabled?: boolean;
@@ -44,12 +48,15 @@ type ExportBleedPromptProps = {
   initialCutMarkColor?: string;
   initialCutMarkStyle?: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks";
   initialRoundedCorners?: boolean;
+  onSelectProfile?: (profileId: string) => void;
   onConfirm: (result: ExportPromptResult) => void;
   onCancel: () => void;
 };
 
 export default function ExportBleedPrompt({
   isOpen,
+  profiles = [],
+  selectedProfileId,
   initialBleedEnabled = false,
   initialBleedPx = DEFAULT_BLEED_PX,
   initialCropMarksEnabled = false,
@@ -59,6 +66,7 @@ export default function ExportBleedPrompt({
   initialCutMarkColor = DEFAULT_CUT_MARK_COLOR,
   initialCutMarkStyle = DEFAULT_CUT_MARK_STYLE,
   initialRoundedCorners = DEFAULT_EXPORT_ROUNDED_CORNERS,
+  onSelectProfile,
   onConfirm,
   onCancel,
 }: ExportBleedPromptProps) {
@@ -149,6 +157,19 @@ export default function ExportBleedPrompt({
         </div>
       }
     >
+      {profiles.length > 0 ? (
+        <div className={styles.exportPromptProfileRow}>
+          <div className={styles.exportPromptProfileLabel}>{t("label.profile")}</div>
+          <div className={styles.exportPromptProfileSelect}>
+            <ExportProfileSelect
+              profiles={profiles}
+              selectedProfileId={selectedProfileId}
+              ariaLabel={t("label.profile")}
+              onChange={(profileId) => onSelectProfile?.(profileId)}
+            />
+          </div>
+        </div>
+      ) : null}
       <ExportOptionsForm
         bleedEnabled={bleedEnabled}
         bleedPx={bleedPx}

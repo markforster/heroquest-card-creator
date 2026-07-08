@@ -99,4 +99,20 @@ describe("FormSelect", () => {
 
     expect(screen.getByTestId("mock-react-select-searchable")).toHaveTextContent("false");
   });
+
+  it("supports custom option rendering for both selected value and menu options", () => {
+    render(
+      <FormSelect
+        options={options}
+        value="alpha"
+        onChange={jest.fn()}
+        renderOptionLabel={(option) => (
+          <span>{option.label === "Alpha" ? `${option.label} default` : option.label}</span>
+        )}
+      />,
+    );
+
+    expect(screen.getByTestId("mock-react-select-selected")).toHaveTextContent("Alpha default");
+    expect(screen.getByTestId("mock-react-select-options")).toHaveTextContent("Alpha default");
+  });
 });

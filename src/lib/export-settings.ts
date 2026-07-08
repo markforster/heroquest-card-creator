@@ -65,27 +65,31 @@ const STORAGE_KEYS = {
   pdfDuplexPreset: "hqcc.exportPdf.duplexPreset",
 } as const;
 
+export function createDefaultExportSettings(): ExportSettings {
+  return {
+    bleed: {
+      enabled: false,
+      bleedPx: DEFAULT_BLEED_PX,
+      askBeforeExport: false,
+    },
+    cropMarks: {
+      enabled: false,
+      color: DEFAULT_CROP_MARK_COLOR,
+      style: DEFAULT_CROP_MARK_STYLE,
+    },
+    cutMarks: {
+      enabled: false,
+      color: DEFAULT_CUT_MARK_COLOR,
+      style: DEFAULT_CUT_MARK_STYLE,
+    },
+    roundedCorners: DEFAULT_EXPORT_ROUNDED_CORNERS,
+    pdf: DEFAULT_PDF_PRINT_CONFIG,
+  };
+}
+
 export function getExportSettings(): ExportSettings {
   if (typeof window === "undefined") {
-    return {
-      bleed: {
-        enabled: false,
-        bleedPx: DEFAULT_BLEED_PX,
-        askBeforeExport: false,
-      },
-      cropMarks: {
-        enabled: false,
-        color: DEFAULT_CROP_MARK_COLOR,
-        style: DEFAULT_CROP_MARK_STYLE,
-      },
-      cutMarks: {
-        enabled: false,
-        color: DEFAULT_CUT_MARK_COLOR,
-        style: DEFAULT_CUT_MARK_STYLE,
-      },
-      roundedCorners: DEFAULT_EXPORT_ROUNDED_CORNERS,
-      pdf: DEFAULT_PDF_PRINT_CONFIG,
-    };
+    return createDefaultExportSettings();
   }
 
   const bleedEnabled = readBool(STORAGE_KEYS.bleedEnabled, false);
@@ -272,6 +276,22 @@ export function restoreExportSettingKeys(values: Record<string, string | null | 
       if (typeof value === "string") {
         window.localStorage.setItem(key, value);
       }
+    });
+  } catch {
+    // ignore
+  }
+}
+
+export function hasLegacyExportSettings(): boolean {
+  const values = readExportSettingKeys();
+  return Object.values(values).some((value) => value != null);
+}
+
+export function clearExportSettingKeys(): void {
+  if (typeof window === "undefined") return;
+  try {
+    Object.values(STORAGE_KEYS).forEach((key) => {
+      window.localStorage.removeItem(key);
     });
   } catch {
     // ignore

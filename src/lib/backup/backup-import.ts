@@ -29,6 +29,23 @@ import {
 } from "./backup-compact-container";
 import { dataUrlToBlob } from "./backup-blob-codec";
 import {
+  synthesizeExportProfilesFromLegacySettings,
+  restoreExportProfilesState,
+} from "@/lib/export-profiles";
+import {
+  DEFAULT_BLEED_PX,
+  DEFAULT_CROP_MARK_COLOR,
+  DEFAULT_CROP_MARK_STYLE,
+  DEFAULT_CUT_MARK_COLOR,
+  DEFAULT_CUT_MARK_STYLE,
+  DEFAULT_EXPORT_ROUNDED_CORNERS,
+  DEFAULT_PDF_PRINT_CONFIG,
+  normalizeBleedPx,
+  normalizeColor,
+  type ExportSettings,
+} from "@/lib/export-settings";
+import { normalizePdfPrintConfig } from "@/lib/pdf-export";
+import {
   parseBackupJson,
   parseBackupMetadata,
   restoreDeckHierarchyAtomic,
@@ -146,22 +163,7 @@ async function restorePairs(
 
 function restoreLocalStorage(localStorage: HqccExportFileV1["localStorage"]) {
   try {
-    const {
-      draftV1,
-      draftTemplateIdV1,
-      activeCardsV1,
-      statLabels,
-      exportBleedEnabled,
-      exportBleedPx,
-      exportAskBeforeExport,
-      exportCropMarksEnabled,
-      exportCropMarksColor,
-      exportCropMarksStyle,
-      exportCutMarksEnabled,
-      exportCutMarksColor,
-      exportCutMarksStyle,
-      exportRoundedCorners,
-    } = localStorage;
+    const { draftV1, draftTemplateIdV1, activeCardsV1, statLabels } = localStorage;
     void draftV1;
     void draftTemplateIdV1;
     if (typeof activeCardsV1 === "string") {
@@ -170,38 +172,82 @@ function restoreLocalStorage(localStorage: HqccExportFileV1["localStorage"]) {
     if (typeof statLabels === "string") {
       window.localStorage.setItem("hqcc.statLabels", statLabels);
     }
-    if (typeof exportBleedEnabled === "string") {
-      window.localStorage.setItem("hqcc.exportPng.bleedEnabled", exportBleedEnabled);
-    }
-    if (typeof exportBleedPx === "string") {
-      window.localStorage.setItem("hqcc.exportPng.bleedPx", exportBleedPx);
-    }
-    if (typeof exportAskBeforeExport === "string") {
-      window.localStorage.setItem("hqcc.exportPng.askBeforeExport", exportAskBeforeExport);
-    }
-    if (typeof exportCropMarksEnabled === "string") {
-      window.localStorage.setItem("hqcc.exportPng.cropMarksEnabled", exportCropMarksEnabled);
-    }
-    if (typeof exportCropMarksColor === "string") {
-      window.localStorage.setItem("hqcc.exportPng.cropMarksColor", exportCropMarksColor);
-    }
-    if (typeof exportCropMarksStyle === "string") {
-      window.localStorage.setItem("hqcc.exportPng.cropMarksStyle", exportCropMarksStyle);
-    }
-    if (typeof exportCutMarksEnabled === "string") {
-      window.localStorage.setItem("hqcc.exportPng.cutMarksEnabled", exportCutMarksEnabled);
-    }
-    if (typeof exportCutMarksColor === "string") {
-      window.localStorage.setItem("hqcc.exportPng.cutMarksColor", exportCutMarksColor);
-    }
-    if (typeof exportCutMarksStyle === "string") {
-      window.localStorage.setItem("hqcc.exportPng.cutMarksStyle", exportCutMarksStyle);
-    }
-    if (typeof exportRoundedCorners === "string") {
-      window.localStorage.setItem("hqcc.exportPng.roundedCorners", exportRoundedCorners);
-    }
   } catch {
     // Ignore localStorage restore errors
+  }
+}
+
+function parseLegacyExportSettings(localStorage: HqccExportFileV1["localStorage"]): ExportSettings | null {
+  const hasLegacyValues =
+    typeof localStorage.exportBleedEnabled === "string" ||
+    typeof localStorage.exportBleedPx === "string" ||
+    typeof localStorage.exportAskBeforeExport === "string" ||
+    typeof localStorage.exportCropMarksEnabled === "string" ||
+    typeof localStorage.exportCropMarksColor === "string" ||
+    typeof localStorage.exportCropMarksStyle === "string" ||
+    typeof localStorage.exportCutMarksEnabled === "string" ||
+    typeof localStorage.exportCutMarksColor === "string" ||
+    typeof localStorage.exportCutMarksStyle === "string" ||
+    typeof localStorage.exportRoundedCorners === "string";
+
+  if (!hasLegacyValues) {
+    return null;
+  }
+
+  const readBool = (value: string | null | undefined, fallback: boolean) => {
+    if (typeof value !== "string") return fallback;
+    const normalized = value.toLowerCase();
+    if (["1", "true", "yes", "on"].includes(normalized)) return true;
+    if (["0", "false", "no", "off"].includes(normalized)) return false;
+    return fallback;
+  };
+
+  return {
+    bleed: {
+      enabled: readBool(localStorage.exportBleedEnabled, false),
+      bleedPx: normalizeBleedPx(localStorage.exportBleedPx ?? DEFAULT_BLEED_PX),
+      askBeforeExport: readBool(localStorage.exportAskBeforeExport, false),
+    },
+    cropMarks: {
+      enabled: readBool(localStorage.exportCropMarksEnabled, false),
+      color: normalizeColor(localStorage.exportCropMarksColor ?? DEFAULT_CROP_MARK_COLOR),
+      style:
+        localStorage.exportCropMarksStyle === "triangles"
+          ? "triangles"
+          : localStorage.exportCropMarksStyle === "squares"
+            ? "squares"
+            : DEFAULT_CROP_MARK_STYLE,
+    },
+    cutMarks: {
+      enabled: readBool(localStorage.exportCutMarksEnabled, false),
+      color: normalizeColor(localStorage.exportCutMarksColor ?? DEFAULT_CUT_MARK_COLOR),
+      style:
+        localStorage.exportCutMarksStyle === "long-dashed"
+          ? "long-dashed"
+          : localStorage.exportCutMarksStyle === "dotted"
+            ? "dotted"
+            : localStorage.exportCutMarksStyle === "ticks"
+              ? "ticks"
+              : localStorage.exportCutMarksStyle === "solid"
+                ? "dashed"
+                : DEFAULT_CUT_MARK_STYLE,
+    },
+    roundedCorners: readBool(localStorage.exportRoundedCorners, DEFAULT_EXPORT_ROUNDED_CORNERS),
+    pdf: normalizePdfPrintConfig(DEFAULT_PDF_PRINT_CONFIG),
+  };
+}
+
+async function restoreExportProfiles(
+  exportData: HqccExportFileV1 | HqccExportCompactFileV1,
+): Promise<void> {
+  if (exportData.exportProfiles) {
+    await restoreExportProfilesState(exportData.exportProfiles);
+    return;
+  }
+
+  const legacySettings = parseLegacyExportSettings(exportData.localStorage);
+  if (legacySettings) {
+    await restoreExportProfilesState(synthesizeExportProfilesFromLegacySettings(legacySettings));
   }
 }
 
@@ -322,6 +368,7 @@ async function applyBackupObject(
     deckEntriesCount = deckEntries.length;
   }
 
+  await restoreExportProfiles(exportData);
   restoreLocalStorage(exportData.localStorage);
 
   return {
@@ -475,6 +522,7 @@ async function applyCompactBackupObject(
     deckEntriesCount = deckEntries.length;
   }
 
+  await restoreExportProfiles(exportData);
   restoreLocalStorage(exportData.localStorage);
 
   return {
