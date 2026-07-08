@@ -62,4 +62,32 @@ describe("StockpileToolbar (UI)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Collections" }));
     expect(onOpenCollections).toHaveBeenCalledTimes(1);
   });
+
+  it("can suppress the standalone Not paired checkbox", () => {
+    render(
+      <StockpileToolbar
+        onOpenCollections={() => {}}
+        collectionsToggleLabel="All cards"
+        search=""
+        onSearchChange={() => {}}
+        templateFilter="all"
+        onTemplateFilterChange={() => {}}
+        filterLabel="All types"
+        totalCount={0}
+        faceCounts={{ front: 0, back: 0 }}
+        typeCounts={new Map()}
+        isPairMode={false}
+        isPairBacks={false}
+        isPairFronts={false}
+        showUnpairedOnly={false}
+        onShowUnpairedOnlyChange={() => {}}
+        showMissingArtworkOnly={false}
+        onShowMissingArtworkOnlyChange={() => {}}
+        selectedCount={0}
+        showUnpairedToggle={false}
+      />,
+    );
+
+    expect(screen.queryByText("Not paired")).not.toBeInTheDocument();
+  });
 });

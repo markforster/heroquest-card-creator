@@ -65,7 +65,7 @@ export default function StockpileContentPane({
 
   return (
     <div
-      className={styles.assetsGridContainer}
+      className={styles.stockpileResultsContainer}
       onClick={(event) => {
         if (event.target !== event.currentTarget) return;
         onClearSelection();

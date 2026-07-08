@@ -29,6 +29,8 @@ type StockpileToolbarProps = {
   showMissingArtworkOnly: boolean;
   onShowMissingArtworkOnlyChange: (next: boolean) => void;
   selectedCount: number;
+  showSearchAndFilterControls?: boolean;
+  showUnpairedToggle?: boolean;
 };
 
 export default function StockpileToolbar({
@@ -50,10 +52,15 @@ export default function StockpileToolbar({
   showMissingArtworkOnly,
   onShowMissingArtworkOnlyChange,
   selectedCount,
+  showSearchAndFilterControls = true,
+  showUnpairedToggle = true,
 }: StockpileToolbarProps) {
   const { t, language } = useI18n();
   const { missingArtworkIds } = useMissingAssets();
   const showMissingArtworkToggle = ENABLE_MISSING_ASSET_CHECKS && missingArtworkIds.size > 0;
+  const hasLeftControls =
+    showSearchAndFilterControls || (!isPairMode && showUnpairedToggle);
+  const hasRightControls = (!isPairMode && showMissingArtworkToggle) || isPairMode;
   const filterMenuRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
@@ -69,6 +76,10 @@ export default function StockpileToolbar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  if (!hasLeftControls && !hasRightControls) {
+    return null;
+  }
+
   return (
     <div className={`${styles.assetsToolbar} d-flex align-items-center gap-2 px-2 py-2`}>
       <div className={`${styles.cardsFiltersRow} ${styles.uRowLg}`}>
@@ -83,144 +94,148 @@ export default function StockpileToolbar({
             <span className={styles.collectionsToggleTitle}>{t("label.collections")}</span>
             <span className={styles.collectionsToggleValue}>{collectionsToggleLabel}</span>
           </button>
-          <div
-            className={`input-group input-group-sm ${styles.cardsSearchGroup}`}
-            style={{ width: "17.25em" }}
-          >
-            <span className={`input-group-text ${styles.themedInputGroupText}`}>
-              <Search className={styles.icon} aria-hidden="true" />
-            </span>
-            <input
-              ref={searchInputRef}
-              type="search"
-              placeholder={t("placeholders.searchCards")}
-              className={`form-control form-control-sm ${styles.assetsSearch} ${styles.themedFormControl} ${styles.cardsSearchInputFixed} ${styles.cardsSearchInputWithClear}`}
-              title={t("tooltip.searchCards")}
-              value={search}
-              onChange={(event) => onSearchChange(event.target.value)}
-            />
-            {search.trim().length > 0 ? (
-              <button
-                type="button"
-                className={`btn-close ${styles.cardsSearchClearButton}`}
-                aria-label={t("actions.clear")}
-                title={t("actions.clear")}
-                onClick={() => {
-                  onSearchChange("");
-                  searchInputRef.current?.focus();
-                }}
-              />
-            ) : null}
-          </div>
           <div className="d-flex align-items-center gap-2">
-            <div className={styles.cardsFilterMenu} ref={filterMenuRef}>
-              <button
-                type="button"
-                className={styles.cardsFilterButton}
-                title={t("tooltip.filterCards")}
-                aria-expanded={isFilterMenuOpen}
-                onClick={() => setIsFilterMenuOpen((prev) => !prev)}
-              >
-                <span>{filterLabel}</span>
-              </button>
-              {isFilterMenuOpen ? (
-                <div className={styles.cardsFilterPopover} role="menu">
-                  <button
-                    type="button"
-                    className={`${styles.cardsFilterItem} ${
-                      templateFilter === "all" ? styles.cardsFilterItemActive : ""
-                    }`}
-                    role="menuitem"
-                    onClick={() => {
-                      onTemplateFilterChange("all");
-                      setIsFilterMenuOpen(false);
-                    }}
-                  >
-                    <span>{t("ui.allTypes")}</span>
-                    <span className={styles.cardsFilterCount}>{totalCount}</span>
-                  </button>
-                  {!isPairBacks ? (
-                    <>
-                      <button
-                        type="button"
-                        className={`${styles.cardsFilterItem} ${
-                          templateFilter === "front" ? styles.cardsFilterItemActive : ""
-                        }`}
-                        role="menuitem"
-                        onClick={() => {
-                          onTemplateFilterChange("front");
-                          setIsFilterMenuOpen(false);
-                        }}
-                      >
-                        <span>{t("cardFace.frontFacing")}</span>
-                        <span className={styles.cardsFilterCount}>{faceCounts.front}</span>
-                      </button>
-                      {cardTemplates
-                        .filter((template) => template.defaultFace === "front")
-                        .map((template) => (
-                          <button
-                            key={template.id}
-                            type="button"
-                            className={`${styles.cardsFilterItem} ${
-                              templateFilter === template.id ? styles.cardsFilterItemActive : ""
-                            }`}
-                            role="menuitem"
-                            onClick={() => {
-                              onTemplateFilterChange(template.id);
-                              setIsFilterMenuOpen(false);
-                            }}
-                          >
-                            <span>{getTemplateNameLabel(language, template)}</span>
-                            <span className={styles.cardsFilterCount}>
-                              {typeCounts.get(template.id) ?? 0}
-                            </span>
-                          </button>
-                        ))}
-                    </>
-                  ) : null}
-                  {!isPairFronts ? (
-                    <>
-                      <button
-                        type="button"
-                        className={`${styles.cardsFilterItem} ${
-                          templateFilter === "back" ? styles.cardsFilterItemActive : ""
-                        }`}
-                        role="menuitem"
-                        onClick={() => {
-                          onTemplateFilterChange("back");
-                          setIsFilterMenuOpen(false);
-                        }}
-                      >
-                        <span>{t("cardFace.backFacing")}</span>
-                        <span className={styles.cardsFilterCount}>{faceCounts.back}</span>
-                      </button>
-                      {cardTemplates
-                        .filter((template) => template.defaultFace === "back")
-                        .map((template) => (
-                          <button
-                            key={template.id}
-                            type="button"
-                            className={`${styles.cardsFilterItem} ${
-                              templateFilter === template.id ? styles.cardsFilterItemActive : ""
-                            }`}
-                            role="menuitem"
-                            onClick={() => {
-                              onTemplateFilterChange(template.id);
-                              setIsFilterMenuOpen(false);
-                            }}
-                          >
-                            <span>{getTemplateNameLabel(language, template)}</span>
-                            <span className={styles.cardsFilterCount}>
-                              {typeCounts.get(template.id) ?? 0}
-                            </span>
-                          </button>
-                        ))}
-                    </>
+            {showSearchAndFilterControls ? (
+              <>
+                <div
+                  className={`input-group input-group-sm ${styles.cardsSearchGroup}`}
+                  style={{ width: "17.25em" }}
+                >
+                  <span className={`input-group-text ${styles.themedInputGroupText}`}>
+                    <Search className={styles.icon} aria-hidden="true" />
+                  </span>
+                  <input
+                    ref={searchInputRef}
+                    type="search"
+                    placeholder={t("placeholders.searchCards")}
+                    className={`form-control form-control-sm ${styles.assetsSearch} ${styles.themedFormControl} ${styles.cardsSearchInputFixed} ${styles.cardsSearchInputWithClear}`}
+                    title={t("tooltip.searchCards")}
+                    value={search}
+                    onChange={(event) => onSearchChange(event.target.value)}
+                  />
+                  {search.trim().length > 0 ? (
+                    <button
+                      type="button"
+                      className={`btn-close ${styles.cardsSearchClearButton}`}
+                      aria-label={t("actions.clear")}
+                      title={t("actions.clear")}
+                      onClick={() => {
+                        onSearchChange("");
+                        searchInputRef.current?.focus();
+                      }}
+                    />
                   ) : null}
                 </div>
-              ) : null}
-            </div>
-            {!isPairMode ? (
+                <div className={styles.cardsFilterMenu} ref={filterMenuRef}>
+                  <button
+                    type="button"
+                    className={styles.cardsFilterButton}
+                    title={t("tooltip.filterCards")}
+                    aria-expanded={isFilterMenuOpen}
+                    onClick={() => setIsFilterMenuOpen((prev) => !prev)}
+                  >
+                    <span>{filterLabel}</span>
+                  </button>
+                  {isFilterMenuOpen ? (
+                    <div className={styles.cardsFilterPopover} role="menu">
+                      <button
+                        type="button"
+                        className={`${styles.cardsFilterItem} ${
+                          templateFilter === "all" ? styles.cardsFilterItemActive : ""
+                        }`}
+                        role="menuitem"
+                        onClick={() => {
+                          onTemplateFilterChange("all");
+                          setIsFilterMenuOpen(false);
+                        }}
+                      >
+                        <span>{t("ui.allTypes")}</span>
+                        <span className={styles.cardsFilterCount}>{totalCount}</span>
+                      </button>
+                      {!isPairBacks ? (
+                        <>
+                          <button
+                            type="button"
+                            className={`${styles.cardsFilterItem} ${
+                              templateFilter === "front" ? styles.cardsFilterItemActive : ""
+                            }`}
+                            role="menuitem"
+                            onClick={() => {
+                              onTemplateFilterChange("front");
+                              setIsFilterMenuOpen(false);
+                            }}
+                          >
+                            <span>{t("cardFace.frontFacing")}</span>
+                            <span className={styles.cardsFilterCount}>{faceCounts.front}</span>
+                          </button>
+                          {cardTemplates
+                            .filter((template) => template.defaultFace === "front")
+                            .map((template) => (
+                              <button
+                                key={template.id}
+                                type="button"
+                                className={`${styles.cardsFilterItem} ${
+                                  templateFilter === template.id ? styles.cardsFilterItemActive : ""
+                                }`}
+                                role="menuitem"
+                                onClick={() => {
+                                  onTemplateFilterChange(template.id);
+                                  setIsFilterMenuOpen(false);
+                                }}
+                              >
+                                <span>{getTemplateNameLabel(language, template)}</span>
+                                <span className={styles.cardsFilterCount}>
+                                  {typeCounts.get(template.id) ?? 0}
+                                </span>
+                              </button>
+                            ))}
+                        </>
+                      ) : null}
+                      {!isPairFronts ? (
+                        <>
+                          <button
+                            type="button"
+                            className={`${styles.cardsFilterItem} ${
+                              templateFilter === "back" ? styles.cardsFilterItemActive : ""
+                            }`}
+                            role="menuitem"
+                            onClick={() => {
+                              onTemplateFilterChange("back");
+                              setIsFilterMenuOpen(false);
+                            }}
+                          >
+                            <span>{t("cardFace.backFacing")}</span>
+                            <span className={styles.cardsFilterCount}>{faceCounts.back}</span>
+                          </button>
+                          {cardTemplates
+                            .filter((template) => template.defaultFace === "back")
+                            .map((template) => (
+                              <button
+                                key={template.id}
+                                type="button"
+                                className={`${styles.cardsFilterItem} ${
+                                  templateFilter === template.id ? styles.cardsFilterItemActive : ""
+                                }`}
+                                role="menuitem"
+                                onClick={() => {
+                                  onTemplateFilterChange(template.id);
+                                  setIsFilterMenuOpen(false);
+                                }}
+                              >
+                                <span>{getTemplateNameLabel(language, template)}</span>
+                                <span className={styles.cardsFilterCount}>
+                                  {typeCounts.get(template.id) ?? 0}
+                                </span>
+                              </button>
+                            ))}
+                        </>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
+            {!isPairMode && showUnpairedToggle ? (
               <label className="form-check form-check-inline mb-0 ms-2">
                 <input
                   className="form-check-input hq-checkbox"

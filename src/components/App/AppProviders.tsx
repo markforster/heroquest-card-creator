@@ -4,6 +4,7 @@ import { AssetHashIndexProvider } from "@/components/Providers/AssetHashIndexPro
 import { CardEditorProvider } from "@/components/Providers/CardEditorContext";
 import { DebugVisualsProvider } from "@/components/Providers/DebugVisualsContext";
 import { EditorFormProvider } from "@/components/Providers/EditorFormContext";
+import { FooterTipProvider } from "@/components/Providers/FooterTipContext";
 import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
 import { MissingAssetsProvider } from "@/components/Providers/MissingAssetsContext";
 import { PreviewRendererProvider } from "@/components/Providers/PreviewRendererContext";
@@ -28,7 +29,9 @@ export default function AppProviders({ children }: AppProvidersProps) {
                 <PreviewRendererProvider>
                   <WebglPreviewSettingsProvider>
                     <TextFittingPreferencesProvider>
-                      <MissingAssetsProvider>{children}</MissingAssetsProvider>
+                      <MissingAssetsProvider>
+                        <FooterTipProvider>{children}</FooterTipProvider>
+                      </MissingAssetsProvider>
                     </TextFittingPreferencesProvider>
                   </WebglPreviewSettingsProvider>
                 </PreviewRendererProvider>

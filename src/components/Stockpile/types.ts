@@ -41,3 +41,46 @@ export type StockpileCardActions = {
   onTableThumbEnter: (id: string, rect: DOMRect) => void;
   onTableThumbLeave: (id: string) => void;
 };
+
+export type StockpilePrimaryToolbarFilterOption = {
+  value: string;
+  label: string;
+};
+
+export type StockpilePrimaryToolbarFilterGroup = {
+  label: string;
+  options: StockpilePrimaryToolbarFilterOption[];
+};
+
+export type StockpilePrimaryToolbarProps = {
+  search: string;
+  onSearchChange: (value: string) => void;
+  viewMode: "grid" | "table";
+  onViewModeChange: (next: "grid" | "table") => void;
+  filterValue: string;
+  onFilterChange: (next: string) => void;
+  filterOptions: StockpilePrimaryToolbarFilterGroup[];
+  showUnpairedOnly?: boolean;
+  onShowUnpairedOnlyChange?: (next: boolean) => void;
+  isUnpairedToggleDisabled?: boolean;
+  isSearchDisabled?: boolean;
+  isFilterDisabled?: boolean;
+  isViewModeDisabled?: boolean;
+};
+
+export type StockpileBottomToolbarProps = {
+  isSelectAllChecked: boolean;
+  isSelectAllIndeterminate: boolean;
+  isSelectAllDisabled: boolean;
+  isSelectNoneDisabled: boolean;
+  onSelectAllToggle: () => void;
+  onSelectNone: () => void;
+  isAddToCollectionDisabled?: boolean;
+  isDeleteDisabled?: boolean;
+  isExportDisabled?: boolean;
+  isLoadDisabled?: boolean;
+  onAddToCollection: () => void;
+  onDelete: () => void;
+  onExport: () => void;
+  onLoad: () => void;
+};

@@ -11,6 +11,10 @@ import StockpileSelectCheckbox from "@/components/Stockpile/StockpileSelectCheck
 import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
 import { useI18n } from "@/i18n/I18nProvider";
 
+const DEBUG_DISABLE_STOCKPILE_TABLE_ITEMS = false;
+const DEBUG_DISABLE_STOCKPILE_TABLE_ROW_CONTENT = false;
+const DEBUG_DISABLE_STOCKPILE_TABLE_THUMBNAIL = false;
+
 type StockpileCardsTableProps = {
   items: StockpileCardView[];
   actions: StockpileCardActions;
@@ -62,63 +66,75 @@ function StockpileCardsTableRow({ card, actions, dragEnabled }: StockpileCardsTa
       {...attributes}
       {...listeners}
     >
-      <div
-        className={styles.stockpileTableCell}
-        role="cell"
-        onMouseEnter={(event) => {
-          actions.onTableThumbEnter(card.id, event.currentTarget.getBoundingClientRect());
-        }}
-        onMouseLeave={() => actions.onTableThumbLeave(card.id)}
-      >
-        <RemoteCardThumbnail
-          cardId={card.id}
-          thumbnailBlob={card.thumbnailBlob}
-          templateThumbSrc={card.templateThumbSrc ?? null}
-          alt={card.name}
-          variant="sm"
-          fit="contain"
-        />
-      </div>
-      <div
-        className={`${styles.stockpileTableCell} ${styles.stockpileTableName}`}
-        role="cell"
-        title={card.name}
-      >
-        <div className={styles.stockpileTableNameInner}>
-          <span className={styles.stockpileTableNameLabel}>{card.name}</span>
-        </div>
-      </div>
-      <div className={styles.stockpileTableCell} role="cell">
-        <span
-          className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}
-        >
-          {card.templateLabel}
-        </span>
-      </div>
-      <div className={`${styles.stockpileTableCell} ${styles.stockpileTableValue}`} role="cell">
-        <span className={`${styles.inspectorFaceButton} ${styles.stockpileFacePill}`}>
-          {card.effectiveFace === "back" ? (
-            <SendToBack size={16} className={styles.inspectorFaceItemIcon} />
-          ) : (
-            <BringToFront size={16} className={styles.inspectorFaceItemIcon} />
-          )}
-          <span>{card.facePillLabel}</span>
-        </span>
-      </div>
-      <div className={`${styles.stockpileTableCell} ${styles.stockpileTableValue}`} role="cell">
-        {card.updatedLabel} {card.timeLabel}
-      </div>
-      <div className={`${styles.stockpileTableCell} ${styles.stockpileTablePairing}`} role="cell">
-        <StockpilePairIndicator card={card} actions={actions} variant="table" />
-      </div>
-      <div className={`${styles.stockpileTableCell} ${styles.stockpileTableSelectCell}`} role="cell">
-        <StockpileSelectCheckbox
-          card={card}
-          actions={actions}
-          isPairMode={false}
-          label={formatMessage(t("aria.selectCard"), { name: card.name })}
-        />
-      </div>
+      {DEBUG_DISABLE_STOCKPILE_TABLE_ROW_CONTENT ? null : (
+        <>
+          <div
+            className={styles.stockpileTableCell}
+            role="cell"
+            onMouseEnter={(event) => {
+              actions.onTableThumbEnter(card.id, event.currentTarget.getBoundingClientRect());
+            }}
+            onMouseLeave={() => actions.onTableThumbLeave(card.id)}
+          >
+            {DEBUG_DISABLE_STOCKPILE_TABLE_THUMBNAIL ? null : (
+              <RemoteCardThumbnail
+                cardId={card.id}
+                thumbnailBlob={card.thumbnailBlob}
+                templateThumbSrc={card.templateThumbSrc ?? null}
+                alt={card.name}
+                variant="sm"
+                fit="contain"
+              />
+            )}
+          </div>
+          <div
+            className={`${styles.stockpileTableCell} ${styles.stockpileTableName}`}
+            role="cell"
+            title={card.name}
+          >
+            <div className={styles.stockpileTableNameInner}>
+              <span className={styles.stockpileTableNameLabel}>{card.name}</span>
+            </div>
+          </div>
+          <div className={styles.stockpileTableCell} role="cell">
+            <span
+              className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}
+            >
+              {card.templateLabel}
+            </span>
+          </div>
+          <div className={`${styles.stockpileTableCell} ${styles.stockpileTableValue}`} role="cell">
+            <span className={`${styles.inspectorFaceButton} ${styles.stockpileFacePill}`}>
+              {card.effectiveFace === "back" ? (
+                <SendToBack size={16} className={styles.inspectorFaceItemIcon} />
+              ) : (
+                <BringToFront size={16} className={styles.inspectorFaceItemIcon} />
+              )}
+              <span>{card.facePillLabel}</span>
+            </span>
+          </div>
+          <div className={`${styles.stockpileTableCell} ${styles.stockpileTableValue}`} role="cell">
+            {card.updatedLabel} {card.timeLabel}
+          </div>
+          <div
+            className={`${styles.stockpileTableCell} ${styles.stockpileTablePairing}`}
+            role="cell"
+          >
+            <StockpilePairIndicator card={card} actions={actions} variant="table" />
+          </div>
+          <div
+            className={`${styles.stockpileTableCell} ${styles.stockpileTableSelectCell}`}
+            role="cell"
+          >
+            <StockpileSelectCheckbox
+              card={card}
+              actions={actions}
+              isPairMode={false}
+              label={formatMessage(t("aria.selectCard"), { name: card.name })}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -166,14 +182,16 @@ export default function StockpileCardsTable({
         />
       </div>
       <div className={styles.stockpileTableBody} role="rowgroup">
-        {items.map((card) => (
-          <StockpileCardsTableRow
-            key={card.id}
-            card={card}
-            actions={actions}
-            dragEnabled={dragEnabled}
-          />
-        ))}
+        {DEBUG_DISABLE_STOCKPILE_TABLE_ITEMS
+          ? null
+          : items.map((card) => (
+              <StockpileCardsTableRow
+                key={card.id}
+                card={card}
+                actions={actions}
+                dragEnabled={dragEnabled}
+              />
+            ))}
       </div>
     </div>
   );

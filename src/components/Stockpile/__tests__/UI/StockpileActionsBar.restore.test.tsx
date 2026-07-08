@@ -60,5 +60,24 @@ describe("StockpileActionsBar (UI)", () => {
 
     expect(screen.getByRole("button", { name: /Restore/i })).toBeDisabled();
   });
-});
 
+  it("can suppress the loose Select all control", () => {
+    render(
+      <StockpileActionsBar
+        viewMode="grid"
+        onViewModeChange={() => {}}
+        isPairBacks={false}
+        filteredCards={[{ id: "a" } as never]}
+        selectedIds={[]}
+        activeFilter={{ type: "recentlyDeleted" }}
+        onRemoveFromCollection={() => {}}
+        onRestoreCards={() => {}}
+        onDeleteCards={() => {}}
+        onSelectAllToggle={() => {}}
+        showSelectAll={false}
+      />,
+    );
+
+    expect(screen.queryByRole("checkbox", { name: "Select all" })).not.toBeInTheDocument();
+  });
+});

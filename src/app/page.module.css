@@ -25,6 +25,32 @@
   min-width: 0;
 }
 
+.footerTipText {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--hq-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-align: center;
+  transition: opacity 180ms ease;
+}
+
+.footerTipIcon {
+  width: 0.82rem;
+  height: 0.82rem;
+  flex: 0 0 auto;
+  color: var(--hq-accent);
+}
+
+.footerTipTextVisible {
+  opacity: 1;
+}
+
+.footerTipTextHidden {
+  opacity: 0;
+}
+
 .footerSpacer {
   flex: 1 1 auto;
   min-width: 0;
@@ -1368,7 +1394,7 @@
 .leftNavMenuText,
 .assetsPanel,
 .assetsToolbarSpacer,
-.stockpileContentPane .assetsGridContainer,
+.stockpileResultsContainer,
 .stockpilePanelBody,
 .stockpilePanelBody > .stockpileLayout {
   flex: 1 1 auto;
@@ -1407,6 +1433,7 @@
 .leftPanel {
   flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
   position: relative;
   background-size: 1200px 1200px;
@@ -4727,7 +4754,7 @@
 }
 .settingsPanelFooter,
 .stockpilePanelBody > .assetsToolbar,
-.stockpilePanelBody > .stockpilePanelFooter {
+.stockpileCenterBottom > .stockpilePanelFooter {
   flex: 0 0 auto;
 }
 
@@ -4743,8 +4770,7 @@
 }
 .statLabelsSection + .statLabelsSection,
 .confirmPopover :global(.modal-footer),
-.cardsPopover :global(.modal-footer),
-.stockpilePanelFooter {
+.cardsPopover :global(.modal-footer) {
   margin-top: var(--space-10);
 }
 
@@ -5837,6 +5863,21 @@
   margin-bottom: 0;
 }
 
+.stockpileResultsContainer {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--hq-border-mid);
+  background: linear-gradient(180deg, var(--hq-white-05), var(--hq-black-35));
+  padding: var(--space-6);
+  color: var(--hq-text-muted);
+  font-size: var(--text-lg);
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-bottom: 0;
+}
+
 /* Stockpile collections sidebar */
 
 .stockpileLayout {
@@ -5853,15 +5894,278 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--space-14) var(--space-14) 0 var(--space-14);
+  gap: var(--space-14);
+  padding: var(--space-14);
 }
 
-.stockpileCenterStack {
+.stockpileCenterTop {
+  flex: 0 0 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.stockpileCenterMiddle {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.stockpileCenterBottom {
+  flex: 0 0 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.stockpileCenterStack {
+  flex: 0 0 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-14);
+}
+
+.stockpilePrimaryToolbar {
+  flex: 0 0 auto;
+  --stockpile-toolbar-spacer-width: var(--space-4);
+}
+
+.stockpilePrimaryToolbarRow {
+  flex-wrap: nowrap;
+  gap: 0;
+}
+
+.stockpilePrimaryToolbarSearch {
+  flex: 1 1 auto;
+  min-width: 14rem;
+  max-width: 32rem;
+}
+
+.stockpilePrimaryToolbarSearchIcon {
+  background: var(--hq-input-bg);
+  border-color: var(--hq-border-mid);
+  color: var(--hq-text-muted);
+}
+
+.stockpilePrimaryToolbarSearchInput {
+  min-width: 0;
+}
+
+.stockpilePrimaryToolbarClearButton {
+  white-space: nowrap;
+}
+
+.stockpilePrimaryToolbarControls {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.stockpileToolbarSpacer {
+  min-width: 0;
+}
+
+.stockpileToolbarSpacerFixed {
+  flex: 0 0 auto;
+  width: var(--stockpile-toolbar-spacer-width, var(--space-4));
+}
+
+.stockpileToolbarSpacerGrow {
+  flex: 1 1 auto;
+  min-width: var(--stockpile-toolbar-spacer-width, var(--space-4));
+}
+
+.stockpilePrimaryToolbarFilter {
+  min-width: 12rem;
+  flex: 0 0 auto;
+}
+
+.stockpilePrimaryToolbarGroupShell {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid var(--hq-border-mid);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--hq-surface-2) 76%, transparent);
+}
+
+.stockpilePrimaryToolbarTextToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--hq-border-mid);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--hq-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.stockpilePrimaryToolbarTextToggle:hover:enabled,
+.stockpilePrimaryToolbarTextToggle:focus-visible:enabled {
+  background: var(--hq-white-06);
+  border-color: var(--hq-white-15);
+  color: var(--hq-text);
+  box-shadow: none;
+}
+
+.stockpilePrimaryToolbarTextToggle:disabled {
+  opacity: 0.52;
+}
+
+.stockpilePrimaryToolbarTextToggleActive {
+  background: rgba(230, 179, 90, 0.1);
+  border-color: rgba(230, 179, 90, 0.65);
+  color: var(--hq-text);
+}
+
+.stockpilePrimaryToolbarFilterGroupLabel {
+  padding: 0.35rem 0.5rem;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hq-text-muted);
+}
+
+.stockpilePrimaryToolbarFilterValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.stockpilePrimaryToolbarFilterOption {
+  display: flex;
+  align-items: center;
+}
+
+.stockpilePrimaryToolbarFilterOptionText {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.stockpilePrimaryToolbarToggleGroup {
+  flex: 0 0 auto;
+}
+
+.stockpilePrimaryToolbarViewGroup {
+  overflow: hidden;
+}
+
+.stockpilePrimaryToolbarIconToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  min-width: 2.75rem;
+  border-color: var(--hq-border-mid) !important;
+  background: transparent !important;
+  color: var(--hq-text-muted) !important;
+  box-shadow: none !important;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.stockpilePrimaryToolbarIconToggle:hover:not(.disabled),
+.stockpilePrimaryToolbarIconToggle:focus-visible:not(.disabled) {
+  background: var(--hq-white-06) !important;
+  border-color: var(--hq-white-15) !important;
+  color: var(--hq-text) !important;
+}
+
+.stockpilePrimaryToolbarToggleGroup :global(.btn-check:checked) + .stockpilePrimaryToolbarIconToggle,
+.stockpilePrimaryToolbarToggleGroup :global(.btn-check:active) + .stockpilePrimaryToolbarIconToggle,
+.stockpilePrimaryToolbarIconToggle:active:not(.disabled) {
+  background: var(--hq-white-15) !important;
+  border-color: var(--hq-white-15) !important;
+  color: var(--hq-white) !important;
+  box-shadow: none !important;
+}
+
+.stockpilePrimaryToolbarToggleGroup :global(.btn-check:focus-visible) + .stockpilePrimaryToolbarIconToggle {
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--hq-white) 18%, transparent) !important;
+}
+
+.stockpilePrimaryToolbarActionGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.125rem;
+}
+
+.stockpilePrimaryToolbarButtonGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.stockpileUtilityIconButton,
+.stockpileCollectionsFooterButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--hq-white-15);
+  background: var(--hq-white-06);
+  color: var(--hq-text);
+  border-radius: var(--radius-sm);
+  box-shadow: none !important;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.stockpileUtilityIconButton:hover:enabled,
+.stockpileUtilityIconButton:focus-visible:enabled,
+.stockpileCollectionsFooterButton:hover:enabled,
+.stockpileCollectionsFooterButton:focus-visible:enabled {
+  background: var(--hq-white-12);
+  border-color: var(--hq-white-15);
+  color: var(--hq-text);
+  box-shadow: none !important;
+}
+
+.stockpileUtilityIconButton:disabled,
+.stockpileCollectionsFooterButton:disabled {
+  opacity: 0.52;
+  color: var(--hq-text);
+  background: var(--hq-white-06);
+  border-color: var(--hq-white-15);
+}
+
+.stockpileUtilityIconButtonDanger:hover:enabled,
+.stockpileUtilityIconButtonDanger:focus-visible:enabled {
+  background: color-mix(in srgb, var(--bs-danger) 6%, transparent);
+  border-color: color-mix(in srgb, var(--bs-danger) 55%, white);
+  color: var(--bs-danger);
+  box-shadow: none !important;
+}
+
+.stockpileUtilityIconButtonActive,
+.stockpileCollectionsFooterButtonActive {
+  border-color: rgba(230, 179, 90, 0.65);
+  background: rgba(230, 179, 90, 0.1);
 }
 
 .stockpileCenterStack .assetsToolbar {
@@ -5872,14 +6176,68 @@
   margin-bottom: 0;
 }
 
+.stockpileBottomToolbar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.stockpileBottomToolbarSelection {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 0 0 auto;
+}
+
+.stockpileBottomToolbarTextAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--hq-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+.stockpileBottomToolbarTextAction:hover:enabled,
+.stockpileBottomToolbarTextAction:focus-visible:enabled {
+  color: var(--hq-text);
+  opacity: 1;
+}
+
+.stockpileBottomToolbarTextAction:disabled {
+  opacity: 0.52;
+}
+
+.stockpileBottomToolbarTextActionActive {
+  color: var(--hq-accent);
+}
+
+.stockpileBottomToolbarActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
 .stockpileCenterResults {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
-.stockpileCenterResultsNoScroll .assetsGridContainer {
+.stockpileCenterMiddle.stockpileCenterResultsNoScroll .stockpileResultsContainer {
   overflow: visible;
 }
 
@@ -6054,29 +6412,6 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-2);
-}
-
-.stockpileCollectionsFooterButton {
-  border: 1px solid var(--hq-white-15);
-  background: var(--hq-white-06);
-  color: var(--hq-text);
-  border-radius: var(--radius-sm);
-  width: 34px;
-  height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.stockpileCollectionsFooterButton:hover:enabled,
-.stockpileCollectionsFooterButton:focus-visible:enabled {
-  background: var(--hq-white-12);
-}
-
-.stockpileCollectionsFooterButtonActive {
-  border-color: rgba(230, 179, 90, 0.65);
-  background: rgba(230, 179, 90, 0.1);
 }
 
 .stockpileSidebarItem {
@@ -6377,47 +6712,6 @@
 .stockpileFooter {
   justify-content: space-between;
   width: 100%;
-}
-
-.stockpileFooterHints {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  margin-left: var(--space-10);
-  color: var(--hq-text-muted);
-}
-
-.stockpileFooterHint {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-  font-size: 0.85rem;
-  letter-spacing: 0.01em;
-  opacity: 0;
-  transition: opacity 350ms ease;
-}
-
-.stockpileFooterHintVisible {
-  opacity: 1;
-}
-
-.stockpileFooterHintHidden {
-  opacity: 0;
-}
-
-.stockpileFooterHintIcon {
-  width: 16px;
-  height: 16px;
-  color: var(--hq-text-muted);
-  opacity: 0.85;
-  flex: 0 0 auto;
-}
-
-.stockpileFooterHintText {
-  white-space: nowrap;
-  overflow: visible;
-  text-overflow: ellipsis;
 }
 
 .stockpileOverlayBackdrop {
@@ -6752,6 +7046,12 @@
 }
 
 .assetsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-6);
+}
+
+.stockpileCardsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: var(--space-6);
@@ -7194,6 +7494,40 @@ button.assetsKindBadge:disabled {
 }
 
 .assetsItemSelected {
+  border-color: var(--hq-accent);
+  box-shadow: 0 0 0 1px rgba(230, 179, 90, 0.9);
+  transform: translateY(-1px);
+}
+
+.stockpileCardTile {
+  text-align: left;
+  background: var(--hq-surface-card);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hq-border-mid);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  cursor: pointer;
+  position: relative;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.05s ease;
+}
+
+.stockpileCardTile:hover {
+  border-color: rgba(230, 179, 90, 0.7);
+  box-shadow: 0 0 0 1px rgba(230, 179, 90, 0.5);
+  transform: translateY(-1px);
+}
+
+.stockpileCardTile:focus-visible {
+  outline: 2px solid rgba(230, 179, 90, 0.9);
+  outline-offset: 2px;
+}
+
+.stockpileCardTileSelected {
   border-color: var(--hq-accent);
   box-shadow: 0 0 0 1px rgba(230, 179, 90, 0.9);
   transform: translateY(-1px);

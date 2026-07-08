@@ -25,6 +25,10 @@ type StockpileActionsBarProps = {
   onRestoreCards?: () => void;
   onDeleteCards: () => void;
   onSelectAllToggle: (visibleIds: string[]) => void;
+  showViewToggle?: boolean;
+  showAddToCollectionAction?: boolean;
+  showDeleteAction?: boolean;
+  showSelectAll?: boolean;
 };
 
 export default function StockpileActionsBar({
@@ -39,6 +43,10 @@ export default function StockpileActionsBar({
   onRestoreCards,
   onDeleteCards,
   onSelectAllToggle,
+  showViewToggle = true,
+  showAddToCollectionAction = true,
+  showDeleteAction = true,
+  showSelectAll = true,
 }: StockpileActionsBarProps) {
   const { t } = useI18n();
   const selectAllRef = useRef<HTMLInputElement | null>(null);
@@ -59,33 +67,35 @@ export default function StockpileActionsBar({
 
   return (
     <div className={styles.stockpileActionsBar}>
-      <div
-        className={styles.stockpileViewToggle}
-        role="group"
-        aria-label={t("aria.viewMode")}
-      >
-        <button
-          type="button"
-          className={`${styles.stockpileViewButton} ${
-            viewMode === "grid" ? styles.stockpileViewButtonActive : ""
-          }`}
-          aria-pressed={viewMode === "grid"}
-          onClick={() => onViewModeChange("grid")}
+      {showViewToggle ? (
+        <div
+          className={styles.stockpileViewToggle}
+          role="group"
+          aria-label={t("aria.viewMode")}
         >
-          {t("label.gridView")}
-        </button>
-        <button
-          type="button"
-          className={`${styles.stockpileViewButton} ${
-            viewMode === "table" ? styles.stockpileViewButtonActive : ""
-          }`}
-          aria-pressed={viewMode === "table"}
-          onClick={() => onViewModeChange("table")}
-        >
-          {t("label.tableView")}
-        </button>
-      </div>
-      {isPairBacks ? null : (
+          <button
+            type="button"
+            className={`${styles.stockpileViewButton} ${
+              viewMode === "grid" ? styles.stockpileViewButtonActive : ""
+            }`}
+            aria-pressed={viewMode === "grid"}
+            onClick={() => onViewModeChange("grid")}
+          >
+            {t("label.gridView")}
+          </button>
+          <button
+            type="button"
+            className={`${styles.stockpileViewButton} ${
+              viewMode === "table" ? styles.stockpileViewButtonActive : ""
+            }`}
+            aria-pressed={viewMode === "table"}
+            onClick={() => onViewModeChange("table")}
+          >
+            {t("label.tableView")}
+          </button>
+        </div>
+      ) : null}
+      {isPairBacks || !showSelectAll ? null : (
         <label
           className="form-check form-check-inline mb-0"
           title={t("tooltip.selectAllCards")}
@@ -105,7 +115,7 @@ export default function StockpileActionsBar({
         </label>
       )}
       <div className={`${styles.assetsActions} d-flex align-items-center gap-2 ms-auto`}>
-        {addToCollectionControl ?? null}
+        {showAddToCollectionAction ? addToCollectionControl ?? null : null}
         {activeFilter.type === "collection" ? (
           <button
             type="button"
@@ -128,23 +138,25 @@ export default function StockpileActionsBar({
               : t("actions.restore")}
           </button>
         ) : null}
-        <button
-          type="button"
-          className="btn btn-outline-danger btn-sm"
-          disabled={!selectedIds.length}
-          onClick={onDeleteCards}
-        >
-          {(() => {
-            const baseLabel =
-              activeFilter.type === "recentlyDeleted"
-                ? t("actions.deletePermanently")
-                : t("actions.delete");
-            if (selectedIds.length > 1) {
-              return `${baseLabel} (${selectedIds.length})`;
-            }
-            return baseLabel;
-          })()}
-        </button>
+        {showDeleteAction ? (
+          <button
+            type="button"
+            className="btn btn-outline-danger btn-sm"
+            disabled={!selectedIds.length}
+            onClick={onDeleteCards}
+          >
+            {(() => {
+              const baseLabel =
+                activeFilter.type === "recentlyDeleted"
+                  ? t("actions.deletePermanently")
+                  : t("actions.delete");
+              if (selectedIds.length > 1) {
+                return `${baseLabel} (${selectedIds.length})`;
+              }
+              return baseLabel;
+            })()}
+          </button>
+        ) : null}
       </div>
     </div>
   );
