@@ -1,6 +1,7 @@
 "use client";
 
 import styles from "@/app/page.module.css";
+import FormSelect from "@/components/common/FormSelect";
 import { useModalEscape } from "@/components/common/ModalShell/useModalEscape";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -79,18 +80,21 @@ export default function PdfDuplexPresetField({
           ) : null}
         </div>
       </div>
-      <select
-        id="pdf-duplex"
-        className="form-select form-select-sm"
+      <FormSelect
+        inputId="pdf-duplex"
         disabled={disabled}
         value={value}
-        onChange={(event) => onChange(event.target.value as DuplexPreset)}
-      >
-        <option value="normal">{t("decks.pdf.duplex.normal" as never)}</option>
-        <option value="mirrorX">{t("decks.pdf.duplex.mirrorX" as never)}</option>
-        <option value="rotate180">{t("decks.pdf.duplex.rotate180" as never)}</option>
-        <option value="mirrorXRotate180">{t("decks.pdf.duplex.mirrorXRotate180" as never)}</option>
-      </select>
+        options={[
+          { value: "normal", label: t("decks.pdf.duplex.normal" as never) },
+          { value: "mirrorX", label: t("decks.pdf.duplex.mirrorX" as never) },
+          { value: "rotate180", label: t("decks.pdf.duplex.rotate180" as never) },
+          {
+            value: "mirrorXRotate180",
+            label: t("decks.pdf.duplex.mirrorXRotate180" as never),
+          },
+        ]}
+        onChange={(next) => onChange(next as DuplexPreset)}
+      />
     </div>
   );
 }

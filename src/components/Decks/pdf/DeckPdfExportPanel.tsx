@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
+import FormSelect from "@/components/common/FormSelect";
 import CardThumbnail from "@/components/common/CardThumbnail";
 import type {
   DeckPdfExportSummary,
@@ -131,15 +132,16 @@ export default function DeckPdfExportPanel({
           <span className={styles.deckPdfSummaryInlineLabel}>
             {t("decks.pdf.summary.scope.label" as never)}
           </span>
-          <select
-            className="form-select form-select-sm"
+          <FormSelect
+            className={styles.deckPdfSummaryFormSelect}
             value={setScopeMode}
-            onChange={(event) => onSetScopeMode(event.target.value as DeckPdfSetScopeMode)}
-          >
-            <option value="complete">{t("decks.pdf.summary.scope.complete" as never)}</option>
-            <option value="all">{t("decks.pdf.summary.scope.all" as never)}</option>
-            <option value="selected">{t("decks.pdf.summary.scope.selected" as never)}</option>
-          </select>
+            options={[
+              { value: "complete", label: t("decks.pdf.summary.scope.complete" as never) },
+              { value: "all", label: t("decks.pdf.summary.scope.all" as never) },
+              { value: "selected", label: t("decks.pdf.summary.scope.selected" as never) },
+            ]}
+            onChange={(next) => onSetScopeMode(next as DeckPdfSetScopeMode)}
+          />
         </label>
         <div className={styles.deckPdfTrayFrame}>
           <div className={styles.deckPdfExcludedRow}>

@@ -1,6 +1,7 @@
 "use client";
 
 import styles from "@/app/page.module.css";
+import FormSelect from "@/components/common/FormSelect";
 import PdfDuplexPresetField from "@/components/Export/PdfDuplexPresetField";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { PrintConfig } from "@/lib/pdf-export";
@@ -29,37 +30,35 @@ export default function PdfExportConfigForm({
           <label className={styles.pdfExportFieldLabel} htmlFor="pdf-paper">
             {t("decks.pdf.paper")}
           </label>
-          <select
-            id="pdf-paper"
-            className="form-select form-select-sm"
+          <FormSelect
+            inputId="pdf-paper"
             value={config.paper}
-            onChange={(event) =>
-              onChange({ ...config, paper: event.target.value as PrintConfig["paper"] })
-            }
-          >
-            <option value="A4">A4</option>
-            <option value="Letter">Letter</option>
-          </select>
+            options={[
+              { value: "A4", label: "A4" },
+              { value: "Letter", label: "Letter" },
+            ]}
+            onChange={(paper) => onChange({ ...config, paper: paper as PrintConfig["paper"] })}
+          />
         </div>
 
         <div className={styles.pdfExportField}>
           <label className={styles.pdfExportFieldLabel} htmlFor="pdf-orientation">
             {t("decks.pdf.orientation")}
           </label>
-          <select
-            id="pdf-orientation"
-            className="form-select form-select-sm"
+          <FormSelect
+            inputId="pdf-orientation"
             value={config.orientation}
-            onChange={(event) =>
+            options={[
+              { value: "landscape", label: t("decks.pdf.orientation.landscape") },
+              { value: "portrait", label: t("decks.pdf.orientation.portrait") },
+            ]}
+            onChange={(orientation) =>
               onChange({
                 ...config,
-                orientation: event.target.value as PrintConfig["orientation"],
+                orientation: orientation as PrintConfig["orientation"],
               })
             }
-          >
-            <option value="landscape">{t("decks.pdf.orientation.landscape")}</option>
-            <option value="portrait">{t("decks.pdf.orientation.portrait")}</option>
-          </select>
+          />
         </div>
 
         {!hiddenFields?.mode ? (
@@ -67,17 +66,15 @@ export default function PdfExportConfigForm({
             <label className={styles.pdfExportFieldLabel} htmlFor="pdf-mode">
               {t("decks.pdf.mode")}
             </label>
-            <select
-              id="pdf-mode"
-              className="form-select form-select-sm"
+            <FormSelect
+              inputId="pdf-mode"
               value={config.mode}
-              onChange={(event) =>
-                onChange({ ...config, mode: event.target.value as PrintConfig["mode"] })
-              }
-            >
-              <option value="frontAndBack">{t("decks.pdf.mode.frontBack")}</option>
-              <option value="frontsOnly">{t("decks.pdf.mode.fronts")}</option>
-            </select>
+              options={[
+                { value: "frontAndBack", label: t("decks.pdf.mode.frontBack") },
+                { value: "frontsOnly", label: t("decks.pdf.mode.fronts") },
+              ]}
+              onChange={(mode) => onChange({ ...config, mode: mode as PrintConfig["mode"] })}
+            />
           </div>
         ) : null}
       </div>
@@ -132,21 +129,23 @@ export default function PdfExportConfigForm({
           <label className={styles.pdfExportFieldLabel} htmlFor="pdf-bleed-source">
             {t("decks.pdf.bleedSource" as never)}
           </label>
-          <select
-            id="pdf-bleed-source"
-            className="form-select form-select-sm"
+          <FormSelect
+            inputId="pdf-bleed-source"
             value={config.bleedMode}
-            onChange={(event) =>
-              onChange({ ...config, bleedMode: event.target.value as PrintConfig["bleedMode"] })
+            options={[
+              {
+                value: "bakedInImage",
+                label: t("decks.pdf.bleedSource.bakedInImage" as never),
+              },
+              {
+                value: "layoutBleed",
+                label: t("decks.pdf.bleedSource.layoutBleed" as never),
+              },
+            ]}
+            onChange={(bleedMode) =>
+              onChange({ ...config, bleedMode: bleedMode as PrintConfig["bleedMode"] })
             }
-          >
-            <option value="bakedInImage">
-              {t("decks.pdf.bleedSource.bakedInImage" as never)}
-            </option>
-            <option value="layoutBleed">
-              {t("decks.pdf.bleedSource.layoutBleed" as never)}
-            </option>
-          </select>
+          />
         </div>
 
         <div className={`${styles.pdfExportField} ${styles.pdfExportFieldBleedAmount}`}>

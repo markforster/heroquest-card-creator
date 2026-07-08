@@ -32,6 +32,7 @@ import {
   type HqccExportCompactFileV1,
   type HqccExportFileV1,
   type HqccExportLocalStorageV1,
+  type HqccExportProfilesV1,
   type HqccExportSettingsV1,
 } from "./backup-types";
 import {
@@ -85,12 +86,14 @@ async function loadExportInputs(): Promise<{
   deckSets: DeckSetRecord[];
   deckEntries: DeckEntryRecord[];
   settings?: HqccExportSettingsV1;
+  exportProfiles?: HqccExportProfilesV1;
   localStorage: HqccExportLocalStorageV1;
 }> {
   if (typeof window === "undefined") {
     throw new Error("Backup export is only available in the browser");
   }
   const { apiClient } = await import("@/api/client");
+  const { getExportProfilesState } = await import("@/lib/export-profiles");
   const [
     cardSummaries,
     rawAssets,
@@ -116,6 +119,7 @@ async function loadExportInputs(): Promise<{
   ]);
 
   const rawCards = await hydrateCardsForBackup(cardSummaries, apiClient);
+  const exportProfiles = await getExportProfilesState();
 
   await Promise.all(
     decks.map(async (deck) => {
@@ -150,17 +154,6 @@ async function loadExportInputs(): Promise<{
   let draftTemplateIdV1: string | null | undefined;
   let activeCardsV1: string | null | undefined;
   let statLabels: string | null | undefined;
-  let exportBleedEnabled: string | null | undefined;
-  let exportBleedPx: string | null | undefined;
-  let exportAskBeforeExport: string | null | undefined;
-  let exportCropMarksEnabled: string | null | undefined;
-  let exportCropMarksColor: string | null | undefined;
-  let exportCropMarksStyle: string | null | undefined;
-  let exportCutMarksEnabled: string | null | undefined;
-  let exportCutMarksColor: string | null | undefined;
-  let exportCutMarksStyle: string | null | undefined;
-  let exportRoundedCorners: string | null | undefined;
-
   try {
     draftV1 = window.localStorage.getItem("hqcc.draft.v1");
   } catch {
@@ -185,76 +178,11 @@ async function loadExportInputs(): Promise<{
     statLabels = undefined;
   }
 
-  try {
-    exportBleedEnabled = window.localStorage.getItem("hqcc.exportPng.bleedEnabled");
-  } catch {
-    exportBleedEnabled = undefined;
-  }
-
-  try {
-    exportBleedPx = window.localStorage.getItem("hqcc.exportPng.bleedPx");
-  } catch {
-    exportBleedPx = undefined;
-  }
-
-  try {
-    exportAskBeforeExport = window.localStorage.getItem("hqcc.exportPng.askBeforeExport");
-  } catch {
-    exportAskBeforeExport = undefined;
-  }
-
-  try {
-    exportCropMarksEnabled = window.localStorage.getItem("hqcc.exportPng.cropMarksEnabled");
-  } catch {
-    exportCropMarksEnabled = undefined;
-  }
-
-  try {
-    exportCropMarksColor = window.localStorage.getItem("hqcc.exportPng.cropMarksColor");
-  } catch {
-    exportCropMarksColor = undefined;
-  }
-  try {
-    exportCropMarksStyle = window.localStorage.getItem("hqcc.exportPng.cropMarksStyle");
-  } catch {
-    exportCropMarksStyle = undefined;
-  }
-  try {
-    exportCutMarksEnabled = window.localStorage.getItem("hqcc.exportPng.cutMarksEnabled");
-  } catch {
-    exportCutMarksEnabled = undefined;
-  }
-  try {
-    exportCutMarksColor = window.localStorage.getItem("hqcc.exportPng.cutMarksColor");
-  } catch {
-    exportCutMarksColor = undefined;
-  }
-  try {
-    exportCutMarksStyle = window.localStorage.getItem("hqcc.exportPng.cutMarksStyle");
-  } catch {
-    exportCutMarksStyle = undefined;
-  }
-  try {
-    exportRoundedCorners = window.localStorage.getItem("hqcc.exportPng.roundedCorners");
-  } catch {
-    exportRoundedCorners = undefined;
-  }
-
   const localStorage: HqccExportLocalStorageV1 = {
     draftV1,
     draftTemplateIdV1,
     activeCardsV1,
     statLabels,
-    exportBleedEnabled,
-    exportBleedPx,
-    exportAskBeforeExport,
-    exportCropMarksEnabled,
-    exportCropMarksColor,
-    exportCropMarksStyle,
-    exportCutMarksEnabled,
-    exportCutMarksColor,
-    exportCutMarksStyle,
-    exportRoundedCorners,
   };
 
   return {
@@ -267,6 +195,7 @@ async function loadExportInputs(): Promise<{
     deckSets: deckSets as DeckSetRecord[],
     deckEntries: deckEntries as DeckEntryRecord[],
     settings,
+    exportProfiles,
     localStorage,
   };
 }
@@ -326,6 +255,7 @@ async function buildLegacyExportObject(
     deckSets,
     deckEntries,
     settings,
+    exportProfiles,
     localStorage,
   } = await loadExportInputs();
   const deckValidation = validateDeckReferences({
@@ -397,6 +327,7 @@ async function buildLegacyExportObject(
     deckSets,
     deckEntries,
     settings,
+    exportProfiles,
     localStorage,
   };
 }
@@ -417,6 +348,7 @@ async function buildCompactExportBundle(
     deckSets,
     deckEntries,
     settings,
+    exportProfiles,
     localStorage,
   } = await loadExportInputs();
   const deckValidation = validateDeckReferences({
@@ -486,6 +418,7 @@ async function buildCompactExportBundle(
     deckSets,
     deckEntries,
     settings,
+    exportProfiles,
     localStorage,
   };
 

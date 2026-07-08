@@ -52,6 +52,7 @@
   "decks.pdf.summary.entryCount.other": "{{count}} entries",
   "decks.pdf.summary.layout.label": "Layout",
   "decks.pdf.summary.layout.customize": "Customise layout",
+  "decks.pdf.summary.profile.label": "Export Profile",
   "decks.pdf.summary.bleedSettings.label": "Bleed settings",
   "decks.pdf.summary.bleedSettings.customize": "Customise bleed settings",
   "decks.pdf.summary.bleed.none": "No bleed",

@@ -47,6 +47,8 @@ export function formatPdfExportBleedSummary(
     (`label.cutMarkStyle${
       bleedOptions.cutMarkStyle === "dashed"
         ? "Dashed"
+        : bleedOptions.cutMarkStyle === "long-dashed"
+          ? "LongDashed"
         : bleedOptions.cutMarkStyle === "dotted"
           ? "Dotted"
           : bleedOptions.cutMarkStyle === "ticks"

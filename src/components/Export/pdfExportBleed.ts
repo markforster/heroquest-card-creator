@@ -15,7 +15,7 @@ export type PdfExportBleedSource = {
   cropMarkStyle?: "lines" | "squares" | "triangles";
   cutMarksEnabled: boolean;
   cutMarkColor?: string;
-  cutMarkStyle?: "solid" | "dashed" | "dotted" | "ticks";
+  cutMarkStyle?: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks";
 };
 
 export type ResolvedPdfExportBleedOptions = {

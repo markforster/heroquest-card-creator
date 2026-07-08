@@ -18,11 +18,12 @@ import {
   formatPdfExportBleedSummary,
   formatPdfExportLayoutSummary,
 } from "@/components/Export/pdfExportSummaryText";
+import ExportProfileSelect from "@/components/Export/ExportProfileSelect";
 import ExportOptionsForm, {
   type ExportOptionsFormState,
 } from "@/components/Export/ExportOptionsForm";
 import PdfExportConfigForm from "@/components/Export/PdfExportConfigForm";
-import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
+import { useExportProfilesState } from "@/components/Providers/ExportSettingsContext";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -40,6 +41,8 @@ import {
   type PdfExportSourceType,
   type SlotPair,
 } from "@/lib/pdf-export";
+
+import type { ExportSettings } from "@/lib/export-settings";
 
 type ResolvedBleedOptions = ReturnType<typeof resolvePdfExportBleedOptions>;
 
@@ -146,6 +149,33 @@ function applyShellPolicyToConfig(config: PrintConfig, shellPolicy?: PdfExportSh
   return nextConfig;
 }
 
+function createProfileDefaultConfig(
+  settings: ExportSettings | undefined,
+  shellPolicy?: PdfExportShellPolicy,
+): PrintConfig {
+  const pdfSettings = settings?.pdf ?? DEFAULT_PDF_PRINT_CONFIG;
+  return applyShellPolicyToConfig(normalizePdfPrintConfig(pdfSettings), shellPolicy);
+}
+
+function createProfileDefaultBleedOptions(settings: ExportSettings | undefined): ExportOptionsFormState {
+  return {
+    bleedEnabled: settings?.bleed.enabled ?? false,
+    bleedPx: settings?.bleed.bleedPx ?? 0,
+    askBeforeExport: false,
+    roundedCorners: settings?.roundedCorners ?? true,
+    cropMarksEnabled: settings?.cropMarks.enabled ?? false,
+    cropMarkColor: settings?.cropMarks.color ?? "#00FFFF",
+    cropMarkStyle: settings?.cropMarks.style ?? "lines",
+    cutMarksEnabled: settings?.cutMarks.enabled ?? false,
+    cutMarkColor: settings?.cutMarks.color ?? "#00FFFF",
+    cutMarkStyle: settings?.cutMarks.style ?? "solid",
+  };
+}
+
+function areValuesEqual<T>(left: T, right: T): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
 export default function PdfExportShellModal({
   isOpen,
   title,
@@ -162,55 +192,17 @@ export default function PdfExportShellModal({
   children,
 }: PdfExportShellModalProps) {
   const { t, language } = useI18n();
-  const { settings: exportSettings } = useExportSettingsState();
-  const pdfSettings = exportSettings.pdf ?? DEFAULT_PDF_PRINT_CONFIG;
-  const baseDefaultConfig = useMemo(
-    () => normalizePdfPrintConfig(pdfSettings),
-    [
-      pdfSettings.paper,
-      pdfSettings.orientation,
-      pdfSettings.marginsMm.top,
-      pdfSettings.marginsMm.right,
-      pdfSettings.marginsMm.bottom,
-      pdfSettings.marginsMm.left,
-      pdfSettings.gapMm.x,
-      pdfSettings.gapMm.y,
-      pdfSettings.cardMm.width,
-      pdfSettings.cardMm.height,
-      pdfSettings.mode,
-      pdfSettings.bleedMode,
-      pdfSettings.bleedMm,
-      pdfSettings.duplexPreset,
-    ],
-  );
+  const { profiles, defaultProfile } = useExportProfilesState();
+  const [selectedProfileId, setSelectedProfileId] = useState<string | undefined>(defaultProfile?.id);
+  const selectedProfile =
+    profiles.find((profile) => profile.id === selectedProfileId) ?? defaultProfile ?? null;
   const defaultConfig = useMemo(
-    () => applyShellPolicyToConfig(baseDefaultConfig, shellPolicy),
-    [baseDefaultConfig, shellPolicy],
+    () => createProfileDefaultConfig(selectedProfile?.settings, shellPolicy),
+    [selectedProfile?.settings, shellPolicy],
   );
-  const defaultBleedOptions = useMemo<ExportOptionsFormState>(
-    () => ({
-      bleedEnabled: exportSettings.bleed.enabled,
-      bleedPx: exportSettings.bleed.bleedPx,
-      askBeforeExport: false,
-      roundedCorners: exportSettings.roundedCorners,
-      cropMarksEnabled: exportSettings.cropMarks.enabled,
-      cropMarkColor: exportSettings.cropMarks.color,
-      cropMarkStyle: exportSettings.cropMarks.style ?? "lines",
-      cutMarksEnabled: exportSettings.cutMarks.enabled,
-      cutMarkColor: exportSettings.cutMarks.color,
-      cutMarkStyle: exportSettings.cutMarks.style ?? "solid",
-    }),
-    [
-      exportSettings.bleed.enabled,
-      exportSettings.bleed.bleedPx,
-      exportSettings.roundedCorners,
-      exportSettings.cropMarks.enabled,
-      exportSettings.cropMarks.color,
-      exportSettings.cropMarks.style,
-      exportSettings.cutMarks.enabled,
-      exportSettings.cutMarks.color,
-      exportSettings.cutMarks.style,
-    ],
+  const defaultBleedOptions = useMemo(
+    () => createProfileDefaultBleedOptions(selectedProfile?.settings),
+    [selectedProfile?.settings],
   );
   const [config, setConfig] = useState<PrintConfig>(defaultConfig);
   const [bleedOptions, setBleedOptions] = useState<ExportOptionsFormState>(defaultBleedOptions);
@@ -227,22 +219,43 @@ export default function PdfExportShellModal({
   > | null>(null);
   const cancelRequestedRef = useRef(false);
   const pdfPreviewRef = useRef<CardPreviewHandle | null>(null);
+  const wasOpenRef = useRef(false);
+  const hasSeenOpenRef = useRef(false);
 
   useEffect(() => {
-    if (!isOpen) return;
-    setConfig(defaultConfig);
-    setBleedOptions(defaultBleedOptions);
-    setLayoutMode("default");
-    setBleedMode("default");
-    setIsExporting(false);
-    setIsProgressOpen(false);
-    setProgressCurrent(0);
-    setProgressTotal(0);
-    setProgressPhase(null);
-    setIsCancelling(false);
-    setPdfRenderTarget(null);
+    if (!isOpen) {
+      wasOpenRef.current = false;
+      return;
+    }
+    if (!hasSeenOpenRef.current) {
+      hasSeenOpenRef.current = true;
+      wasOpenRef.current = true;
+      return;
+    }
+    if (wasOpenRef.current) return;
+
+    const nextSettings = defaultProfile?.settings;
+    const nextProfileId = defaultProfile?.id;
+    const nextConfig = createProfileDefaultConfig(nextSettings, shellPolicy);
+    const nextBleedOptions = createProfileDefaultBleedOptions(nextSettings);
+
+    setSelectedProfileId((current) => (current === nextProfileId ? current : nextProfileId));
+    setConfig((current) => (areValuesEqual(current, nextConfig) ? current : nextConfig));
+    setBleedOptions((current) =>
+      areValuesEqual(current, nextBleedOptions) ? current : nextBleedOptions,
+    );
+    setLayoutMode((current) => (current === "default" ? current : "default"));
+    setBleedMode((current) => (current === "default" ? current : "default"));
+    setIsExporting((current) => (current ? false : current));
+    setIsProgressOpen((current) => (current ? false : current));
+    setProgressCurrent((current) => (current === 0 ? current : 0));
+    setProgressTotal((current) => (current === 0 ? current : 0));
+    setProgressPhase((current) => (current === null ? current : null));
+    setIsCancelling((current) => (current ? false : current));
+    setPdfRenderTarget((current) => (current === null ? current : null));
     cancelRequestedRef.current = false;
-  }, [defaultBleedOptions, defaultConfig, isOpen]);
+    wasOpenRef.current = true;
+  }, [defaultProfile?.id, defaultProfile?.settings, isOpen, shellPolicy]);
 
   const effectiveConfig = useMemo(
     () => applyShellPolicyToConfig(layoutMode === "custom" ? config : defaultConfig, shellPolicy),
@@ -303,6 +316,7 @@ export default function PdfExportShellModal({
   const customizeLayoutLabel = t("decks.pdf.summary.layout.customize" as never);
   const bleedSettingsLabel = t("decks.pdf.summary.bleedSettings.label" as never);
   const customizeBleedSettingsLabel = t("decks.pdf.summary.bleedSettings.customize" as never);
+  const exportProfileLabel = t("decks.pdf.summary.profile.label" as never);
   const hasExportableContent = slotPairs.length > 0;
   const isAlignmentExportVisible = !shellPolicy?.alignmentExportHidden;
 
@@ -314,6 +328,17 @@ export default function PdfExportShellModal({
     setIsCancelling(false);
     cancelRequestedRef.current = false;
   }, []);
+
+  const handleProfileChange = useCallback(
+    (profileId: string) => {
+      const nextProfile = profiles.find((profile) => profile.id === profileId) ?? defaultProfile;
+
+      setSelectedProfileId(profileId);
+      setConfig(createProfileDefaultConfig(nextProfile?.settings, shellPolicy));
+      setBleedOptions(createProfileDefaultBleedOptions(nextProfile?.settings));
+    },
+    [defaultProfile, profiles, shellPolicy],
+  );
 
   const buildExecutableNormalRun = useCallback(
     async (buildRun: PdfExportShellModalProps["buildExportRun"]): Promise<ExecutablePdfExportRun | null> => {
@@ -573,65 +598,88 @@ export default function PdfExportShellModal({
                 ) : null}
               </div>
             ) : null}
-            <div className={`${styles.settingsGroup} ${styles.deckPdfSummaryControlGroup}`}>
-              <div className={styles.deckPdfSummaryInlineControl}>
-                <div className={styles.deckPdfSummaryInlineHeader}>
-                  <span className={styles.deckPdfSummaryInlineLabel}>{layoutLabel}:</span>
-                  <span className={styles.deckPdfSummaryInlineSummary}>{layoutSummary}</span>
+            <div className={`${styles.settingsGroup} ${styles.deckPdfProfileGroup}`}>
+              {profiles.length > 0 ? (
+                <div className={styles.deckPdfProfileHeader}>
+                  <div className={styles.deckPdfSummaryInlineLabel}>{exportProfileLabel}</div>
+                  <div className={styles.deckPdfProfileSelectWrap}>
+                    <ExportProfileSelect
+                      profiles={profiles}
+                      selectedProfileId={selectedProfile?.id}
+                      defaultProfileId={defaultProfile?.id}
+                      ariaLabel={exportProfileLabel}
+                      onChange={handleProfileChange}
+                    />
+                  </div>
                 </div>
-                <div className={`form-check form-switch m-0 ${styles.deckPdfSummaryToggle}`}>
-                  <span className={`form-check-label ${styles.deckPdfSummaryToggleLabel}`}>
-                    {customizeLayoutLabel}
-                  </span>
-                  <input
-                    type="checkbox"
-                    className="form-check-input hq-toggle"
-                    checked={layoutMode === "custom"}
-                    onChange={(event) => setLayoutMode(event.target.checked ? "custom" : "default")}
-                    aria-label={customizeLayoutLabel}
-                  />
+              ) : null}
+              <div className={styles.deckPdfProfileSections}>
+                <div className={styles.deckPdfSummaryControlGroup}>
+                  <div className={styles.deckPdfSummaryInlineControl}>
+                    <div className={styles.deckPdfSummaryInlineHeader}>
+                      <span className={styles.deckPdfSummaryInlineLabel}>{layoutLabel}:</span>
+                      <span className={styles.deckPdfSummaryInlineSummary}>{layoutSummary}</span>
+                    </div>
+                    <div className={`form-check form-switch m-0 ${styles.deckPdfSummaryToggle}`}>
+                      <span className={`form-check-label ${styles.deckPdfSummaryToggleLabel}`}>
+                        {customizeLayoutLabel}
+                      </span>
+                      <input
+                        type="checkbox"
+                        className="form-check-input hq-toggle"
+                        checked={layoutMode === "custom"}
+                        onChange={(event) =>
+                          setLayoutMode(event.target.checked ? "custom" : "default")
+                        }
+                        aria-label={customizeLayoutLabel}
+                      />
+                    </div>
+                  </div>
+                  {showLayoutForm ? (
+                    <PdfExportConfigForm
+                      config={config}
+                      hiddenFields={{
+                        mode: shellPolicy?.mode?.hidden,
+                        duplexPreset: shellPolicy?.duplexPreset?.hidden,
+                      }}
+                      onChange={setConfig}
+                    />
+                  ) : null}
+                </div>
+
+                <div className={styles.deckPdfSummaryControlGroup}>
+                  <div className={styles.deckPdfSummaryInlineControl}>
+                    <div className={styles.deckPdfSummaryInlineHeader}>
+                      <span className={styles.deckPdfSummaryInlineLabel}>{bleedSettingsLabel}:</span>
+                      <span className={styles.deckPdfSummaryInlineSummary}>{bleedSummary}</span>
+                    </div>
+                    <div className={`form-check form-switch m-0 ${styles.deckPdfSummaryToggle}`}>
+                      <span className={`form-check-label ${styles.deckPdfSummaryToggleLabel}`}>
+                        {customizeBleedSettingsLabel}
+                      </span>
+                      <input
+                        type="checkbox"
+                        className="form-check-input hq-toggle"
+                        checked={bleedMode === "custom"}
+                        onChange={(event) =>
+                          setBleedMode(event.target.checked ? "custom" : "default")
+                        }
+                        aria-label={customizeBleedSettingsLabel}
+                      />
+                    </div>
+                  </div>
+                  {showBleedForm ? (
+                    <ExportOptionsForm
+                      {...bleedOptions}
+                      bleedLabelKey="label.exportWithBleed"
+                      headingLabelKey="heading.exportSettings"
+                      onChange={(next) => setBleedOptions((prev) => ({ ...prev, ...next }))}
+                      sectionLayout="columns"
+                      useSettingsGroup
+                    />
+                  ) : null}
                 </div>
               </div>
-              {showLayoutForm ? (
-                <PdfExportConfigForm
-                  config={config}
-                  hiddenFields={{
-                    mode: shellPolicy?.mode?.hidden,
-                    duplexPreset: shellPolicy?.duplexPreset?.hidden,
-                  }}
-                  onChange={setConfig}
-                />
-              ) : null}
-            </div>
-            <div className={`${styles.settingsGroup} ${styles.deckPdfSummaryControlGroup}`}>
-              <div className={styles.deckPdfSummaryInlineControl}>
-                <div className={styles.deckPdfSummaryInlineHeader}>
-                  <span className={styles.deckPdfSummaryInlineLabel}>{bleedSettingsLabel}:</span>
-                  <span className={styles.deckPdfSummaryInlineSummary}>{bleedSummary}</span>
-                </div>
-                <div className={`form-check form-switch m-0 ${styles.deckPdfSummaryToggle}`}>
-                  <span className={`form-check-label ${styles.deckPdfSummaryToggleLabel}`}>
-                    {customizeBleedSettingsLabel}
-                  </span>
-                  <input
-                    type="checkbox"
-                    className="form-check-input hq-toggle"
-                    checked={bleedMode === "custom"}
-                    onChange={(event) => setBleedMode(event.target.checked ? "custom" : "default")}
-                    aria-label={customizeBleedSettingsLabel}
-                  />
-                </div>
-              </div>
-              {showBleedForm ? (
-                <ExportOptionsForm
-                  {...bleedOptions}
-                  bleedLabelKey="label.exportWithBleed"
-                  headingLabelKey="heading.exportSettings"
-                  onChange={(next) => setBleedOptions((prev) => ({ ...prev, ...next }))}
-                  sectionLayout="columns"
-                  useSettingsGroup
-                />
-              ) : null}
             </div>
             {children}
           </div>

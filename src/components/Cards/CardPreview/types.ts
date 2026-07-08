@@ -19,7 +19,11 @@ export type CardPreviewHandle = {
   exportAsPng: (options?: {
     bleedPx?: number;
     cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
-    cutMarks?: { enabled: boolean; color: string; style?: "solid" | "dashed" | "dotted" | "ticks" };
+    cutMarks?: {
+      enabled: boolean;
+      color: string;
+      style?: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks";
+    };
     roundedCorners?: boolean;
   }) => Promise<void>;
   waitForBackgroundLoaded?: (timeoutMs?: number) => Promise<void>;
@@ -31,7 +35,11 @@ export type CardPreviewHandle = {
     assetBlobsById?: Map<string, Blob>;
     bleedPx?: number;
     cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
-    cutMarks?: { enabled: boolean; color: string; style?: "solid" | "dashed" | "dotted" | "ticks" };
+    cutMarks?: {
+      enabled: boolean;
+      color: string;
+      style?: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks";
+    };
     roundedCorners?: boolean;
   }) => Promise<Blob | null>;
   renderToJpegBlob: (options?: {
@@ -41,7 +49,11 @@ export type CardPreviewHandle = {
     assetBlobsById?: Map<string, Blob>;
     bleedPx?: number;
     cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
-    cutMarks?: { enabled: boolean; color: string; style?: "solid" | "dashed" | "dotted" | "ticks" };
+    cutMarks?: {
+      enabled: boolean;
+      color: string;
+      style?: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks";
+    };
     roundedCorners?: boolean;
   }) => Promise<Blob | null>;
   renderToCanvas: (options?: {

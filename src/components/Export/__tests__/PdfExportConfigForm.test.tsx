@@ -5,6 +5,37 @@ import PdfExportConfigForm from "@/components/Export/PdfExportConfigForm";
 
 import type { PrintConfig } from "@/lib/pdf-export";
 
+jest.mock("@/components/common/FormSelect", () => ({
+  __esModule: true,
+  default: ({
+    options,
+    value,
+    onChange,
+    disabled,
+    inputId,
+  }: {
+    options: Array<{ value: string; label: string }>;
+    value: string;
+    onChange: (next: string) => void;
+    disabled?: boolean;
+    inputId?: string;
+  }) => (
+    <select
+      data-testid={`mock-form-select-${inputId ?? "unknown"}`}
+      id={inputId}
+      value={value}
+      disabled={disabled}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  ),
+}));
+
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) =>
@@ -76,36 +107,36 @@ describe("PdfExportConfigForm", () => {
   it("updates mode and disables duplex controls when fronts-only is selected", () => {
     render(<Harness />);
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Mode" }), {
+    fireEvent.change(screen.getByTestId("mock-form-select-pdf-mode"), {
       target: { value: "frontsOnly" },
     });
 
-    expect(screen.getByRole("combobox", { name: "Mode" })).toHaveValue("frontsOnly");
-    expect(screen.getByRole("combobox", { name: "Duplex preset" })).toBeDisabled();
+    expect(screen.getByTestId("mock-form-select-pdf-mode")).toHaveValue("frontsOnly");
+    expect(screen.getByTestId("mock-form-select-pdf-duplex")).toBeDisabled();
     expect(screen.getByRole("button", { name: "More info" })).toBeInTheDocument();
   });
 
   it("updates paper and orientation through the standard dropdowns", () => {
     render(<Harness />);
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Paper" }), {
+    fireEvent.change(screen.getByTestId("mock-form-select-pdf-paper"), {
       target: { value: "Letter" },
     });
-    fireEvent.change(screen.getByRole("combobox", { name: "Orientation" }), {
+    fireEvent.change(screen.getByTestId("mock-form-select-pdf-orientation"), {
       target: { value: "portrait" },
     });
 
-    expect(screen.getByRole("combobox", { name: "Paper" })).toHaveValue("Letter");
-    expect(screen.getByRole("combobox", { name: "Orientation" })).toHaveValue("portrait");
+    expect(screen.getByTestId("mock-form-select-pdf-paper")).toHaveValue("Letter");
+    expect(screen.getByTestId("mock-form-select-pdf-orientation")).toHaveValue("portrait");
   });
 
   it("orders the common orientation and mode options first", () => {
     render(<Harness />);
 
     const orientationOptions = screen
-      .getByRole("combobox", { name: "Orientation" })
+      .getByTestId("mock-form-select-pdf-orientation")
       .querySelectorAll("option");
-    const modeOptions = screen.getByRole("combobox", { name: "Mode" }).querySelectorAll("option");
+    const modeOptions = screen.getByTestId("mock-form-select-pdf-mode").querySelectorAll("option");
 
     expect(Array.from(orientationOptions).map((option) => option.textContent)).toEqual([
       "Landscape",
@@ -120,25 +151,25 @@ describe("PdfExportConfigForm", () => {
   it("updates bleed source and bleed amount with the compact controls", () => {
     render(<Harness />);
 
-    fireEvent.change(screen.getByRole("combobox", { name: "PDF bleed source" }), {
+    fireEvent.change(screen.getByTestId("mock-form-select-pdf-bleed-source"), {
       target: { value: "layoutBleed" },
     });
     fireEvent.change(screen.getByRole("spinbutton", { name: "Bleed per edge (mm)" }), {
       target: { value: "4.5" },
     });
 
-    expect(screen.getByRole("combobox", { name: "PDF bleed source" })).toHaveValue("layoutBleed");
+    expect(screen.getByTestId("mock-form-select-pdf-bleed-source")).toHaveValue("layoutBleed");
     expect(screen.getByRole("spinbutton", { name: "Bleed per edge (mm)" })).toHaveValue(4.5);
   });
 
   it("updates duplex preset through the dropdown", () => {
     render(<Harness />);
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Duplex preset" }), {
+    fireEvent.change(screen.getByTestId("mock-form-select-pdf-duplex"), {
       target: { value: "rotate180" },
     });
 
-    expect(screen.getByRole("combobox", { name: "Duplex preset" })).toHaveValue("rotate180");
+    expect(screen.getByTestId("mock-form-select-pdf-duplex")).toHaveValue("rotate180");
   });
 
   it("shows duplex help copy and closes it on escape", () => {

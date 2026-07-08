@@ -5,6 +5,31 @@ import DeckPdfExportPanel from "@/components/Decks/pdf/DeckPdfExportPanel";
 
 import type { DeckPdfExportSummary } from "@/components/Decks/deck-export";
 
+jest.mock("@/components/common/FormSelect", () => ({
+  __esModule: true,
+  default: ({
+    options,
+    value,
+    onChange,
+  }: {
+    options: Array<{ value: string; label: string }>;
+    value: string;
+    onChange: (next: string) => void;
+  }) => (
+    <select
+      data-testid="mock-form-select"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  ),
+}));
+
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string, vars?: Record<string, unknown>) =>
@@ -147,5 +172,25 @@ describe("DeckPdfExportPanel", () => {
 
     expect(screen.getByLabelText("Hide unselected sets (1 hidden)")).toBeChecked();
     expect(screen.queryByRole("button", { name: /set two/i })).not.toBeInTheDocument();
+  });
+
+  it("emits scope mode changes through the shared form select", () => {
+    const onSetScopeMode = jest.fn();
+    render(
+      <DeckPdfExportPanel
+        isOpen
+        summary={summary}
+        setScopeMode="complete"
+        selectedSetIds={new Set(["set-1"])}
+        onSetScopeMode={onSetScopeMode}
+        onToggleSet={jest.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId("mock-form-select"), {
+      target: { value: "selected" },
+    });
+
+    expect(onSetScopeMode).toHaveBeenCalledWith("selected");
   });
 });

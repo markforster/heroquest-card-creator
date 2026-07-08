@@ -9,6 +9,7 @@ import type {
   DeckSetRecord,
 } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
+import type { ExportSettings } from "@/lib/export-settings";
 
 export const BACKUP_SCHEMA_VERSION = 2 as const;
 export const BACKUP_FILE_EXTENSION = ".hqcc.json" as const;
@@ -69,6 +70,20 @@ export interface HqccExportSettingsV1 {
   defaultCopyright?: string;
 }
 
+export interface HqccExportProfileV1 {
+  id: string;
+  name: string;
+  updatedAt: number;
+  settings: ExportSettings;
+}
+
+export interface HqccExportProfilesV1 {
+  schemaVersion: 1;
+  defaultProfileId: string;
+  selectedProfileId?: string;
+  profiles: HqccExportProfileV1[];
+}
+
 export interface HqccExportFileV1 {
   schemaVersion: HqccExportSchemaVersion;
   createdAt: string;
@@ -83,6 +98,7 @@ export interface HqccExportFileV1 {
   deckSets?: DeckSetRecord[];
   deckEntries?: DeckEntryRecord[];
   settings?: HqccExportSettingsV1;
+  exportProfiles?: HqccExportProfilesV1;
   localStorage: HqccExportLocalStorageV1;
 }
 
@@ -100,6 +116,7 @@ export interface HqccExportCompactFileV1 {
   deckSets?: DeckSetRecord[];
   deckEntries?: DeckEntryRecord[];
   settings?: HqccExportSettingsV1;
+  exportProfiles?: HqccExportProfilesV1;
   localStorage: HqccExportLocalStorageV1;
 }
 

@@ -1,0 +1,43 @@
+.selectRoot {
+  width: 100%;
+  min-width: 0;
+}
+
+.optionContent {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  font-family: var(--hq-font-form);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--hq-text);
+}
+
+.optionLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: inherit;
+  color: inherit;
+}
+
+.optionPill {
+  flex: 0 0 auto;
+  margin-left: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.05rem 0.35rem;
+  font-size: 0.62rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(230, 179, 90, 0.35);
+  background: rgba(230, 179, 90, 0.12);
+  color: var(--hq-accent);
+}
