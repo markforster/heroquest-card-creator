@@ -25,5 +25,14 @@ describe("HelpModal", () => {
     expect(
       screen.getByText(/Use the alignment test PDF before a larger print run/i),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/save a reusable combination of PDF layout defaults/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Manage Export Profiles from Export Settings/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Customise layout/i),
+    ).toBeInTheDocument();
   });
 });

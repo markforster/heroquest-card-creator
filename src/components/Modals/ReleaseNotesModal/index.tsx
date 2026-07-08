@@ -21,6 +21,7 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
       { id: "about-what-you-can-do-today", title: "What you can do today" },
       { id: "about-notes-future-work", title: "Notes & future work" },
       { id: "about-credits-attribution", title: "Credits & Attribution" },
+      { id: "about-update-v0-7-1", title: "Update 12/07/2026 (v0.7.1)" },
       { id: "about-update-v0-7-0", title: "Update 05/07/2026 (v0.7.0)" },
       { id: "about-update-v0-6-2", title: "Update 22/06/2026 (v0.6.2)" },
       { id: "about-update-v0-6-1", title: "Update 13/06/2026 (v0.6.1)" },
@@ -299,6 +300,48 @@ export default function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModal
                   svg icons
                 </a>
                 &nbsp;is licensed by CC BY 4.0
+              </DocParagraph>
+            </DocSection>
+
+            <DocSection
+              id="about-update-v0-7-1"
+              title="Update 12/07/2026 (v0.7.1)"
+              className={docStyles.docSectionSpaced}
+            >
+              <DocParagraph>
+                This release introduces Export Profiles so print/export setup can be saved once and
+                reused instead of being rebuilt every time you prepare a PDF run. The goal is to
+                make repeat printing more deliberate and less fiddly, especially when you switch
+                between different paper, bleed, and finishing setups.
+              </DocParagraph>
+              <DocParagraph className={docStyles.docParagraphSpaced}>
+                Each Export Profile carries both PDF layout defaults and bleed-related defaults
+                together, so one profile can represent a complete print preset. You can create more
+                than one profile, mark one as the default, and then switch profiles directly inside
+                PDF export without going back through Settings first.
+              </DocParagraph>
+              <DocParagraph className={docStyles.docParagraphSpaced}>
+                v0.7.1 also improves continuity around that workflow by preserving export profile
+                state in backup/import flows, so saved print setups move with the rest of your
+                library instead of being lost between browsers or machines.
+              </DocParagraph>
+              <DocList className={docStyles.docListSpaced}>
+                <li>Saved reusable print/export presets via Export Profiles.</li>
+                <li>One profile can be marked as the default export setup.</li>
+                <li>Profiles store layout defaults and bleed/mark defaults together.</li>
+                <li>PDF export can switch profiles without re-entering Export Settings.</li>
+                <li>Backup and restore now preserve export profile state.</li>
+              </DocList>
+              <DocParagraph className={docStyles.docParagraphSpaced}>
+                Full release notes:{" "}
+                <a
+                  href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.7.1"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className={docStyles.docLink}
+                >
+                  v0.7.1
+                </a>
               </DocParagraph>
             </DocSection>
 

@@ -53,6 +53,9 @@ describe("ReleaseNotesModal TOC", () => {
       screen.getAllByRole("button", { name: "Credits & Attribution" }).length,
     ).toBeGreaterThan(0);
     expect(
+      screen.getAllByRole("button", { name: "Update 12/07/2026 (v0.7.1)" }).length,
+    ).toBeGreaterThan(0);
+    expect(
       screen.getAllByRole("button", { name: "Update 05/07/2026 (v0.7.0)" }).length,
     ).toBeGreaterThan(0);
     expect(
@@ -86,8 +89,17 @@ describe("ReleaseNotesModal TOC", () => {
     );
   });
 
-  it("renders the new 0.6.1 and 0.6.2 release summaries", () => {
+  it("renders the new 0.7.1, 0.6.1 and 0.6.2 release summaries", () => {
     renderModal();
+
+    expect(screen.getByRole("heading", { name: "Update 12/07/2026 (v0.7.1)" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Saved reusable print\/export presets via Export Profiles\./i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "v0.7.1" })).toHaveAttribute(
+      "href",
+      "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.7.1",
+    );
 
     expect(screen.getByRole("heading", { name: "Update 05/07/2026 (v0.7.0)" })).toBeInTheDocument();
     expect(

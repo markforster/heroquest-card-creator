@@ -281,6 +281,24 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               source. Bleed settings control bleed, rounded corners, crop marks, and cut marks.
             </li>
             <li>
+              <strong>Export Profiles</strong> save a reusable combination of PDF layout defaults
+              and bleed/mark defaults together, so you can keep different print setups ready for
+              later runs.
+            </li>
+            <li>
+              Manage Export Profiles from Export Settings, where you can create additional profiles
+              and mark one as the default.
+            </li>
+            <li>
+              In Deck PDF export, choose an Export Profile for the current run before deciding
+              whether to keep its saved defaults or customise the run further.
+            </li>
+            <li>
+              <strong>Customise layout</strong> and <strong>Customise bleed settings</strong> act
+              as per-run overrides on top of the selected profile rather than replacing the saved
+              profile itself.
+            </li>
+            <li>
               Large deck exports can take a little time. The app shows progress while rendering and
               lets you cancel the run if needed.
             </li>
