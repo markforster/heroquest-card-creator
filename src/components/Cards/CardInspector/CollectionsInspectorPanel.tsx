@@ -154,7 +154,7 @@ export default function CollectionsInspectorPanel() {
         actions={
           <button
             type="button"
-            className={styles.inspectorPanelHeaderActionButton}
+            className={styles.stockpileCollectionsFooterButton}
             onClick={() => setIsModalOpen(true)}
             aria-label={t("actions.addToCollection")}
             title={t("actions.addToCollection")}
