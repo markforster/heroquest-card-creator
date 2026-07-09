@@ -2,7 +2,12 @@
 
 import { useMemo } from "react";
 import { Filter } from "lucide-react";
-import Select, { type FormatOptionLabelMeta, type GroupBase, type SingleValue } from "react-select";
+import Select, {
+  type FormatOptionLabelMeta,
+  type GroupBase,
+  type SingleValue,
+  type StylesConfig,
+} from "react-select";
 
 import styles from "@/app/page.module.css";
 import {
@@ -24,6 +29,57 @@ type StockpileToolbarFilterSelectProps = {
   ariaLabel: string;
 };
 
+function getStockpileToolbarFilterStyles(
+  disabled: boolean,
+): StylesConfig<
+  StockpilePrimaryToolbarFilterOption,
+  false,
+  GroupBase<StockpilePrimaryToolbarFilterOption>
+> {
+  const baseStyles = getFormSelectStyles<StockpilePrimaryToolbarFilterOption>(disabled);
+
+  return {
+    ...baseStyles,
+    menu: (base) => ({
+      ...base,
+      zIndex: 5,
+      backgroundColor: "var(--hq-popover-bg)",
+      border: "1px solid var(--hq-popover-border)",
+      borderRadius: 12,
+      boxShadow: "var(--shadow-popover)",
+      overflow: "hidden",
+    }),
+    menuList: (base) => ({
+      ...base,
+      padding: "0.35rem",
+      maxHeight: 320,
+    }),
+    group: (base) => ({
+      ...base,
+      paddingTop: 0,
+      paddingBottom: 0,
+    }),
+    groupHeading: (base) => ({
+      ...base,
+      margin: 0,
+      padding: 0,
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isSelected
+        ? "rgba(230, 179, 90, 0.12)"
+        : state.isFocused
+          ? "rgba(230, 179, 90, 0.08)"
+          : "transparent",
+      color: "var(--hq-text)",
+      padding: 0,
+      borderRadius: 8,
+      border: state.isSelected ? "1px solid rgba(230, 179, 90, 0.6)" : "1px solid transparent",
+      cursor: state.isDisabled ? "not-allowed" : "pointer",
+    }),
+  };
+}
+
 export default function StockpileToolbarFilterSelect({
   value,
   onChange,
@@ -33,7 +89,7 @@ export default function StockpileToolbarFilterSelect({
   ariaLabel,
 }: StockpileToolbarFilterSelectProps) {
   const selectStyles = useMemo(
-    () => getFormSelectStyles<StockpilePrimaryToolbarFilterOption>(disabled),
+    () => getStockpileToolbarFilterStyles(disabled),
     [disabled],
   );
   const menuPortalTarget = typeof document === "undefined" ? undefined : document.body;
@@ -60,9 +116,14 @@ export default function StockpileToolbarFilterSelect({
 
     return (
       <div className={styles.stockpilePrimaryToolbarFilterOption}>
-        <span className={styles.stockpilePrimaryToolbarFilterOptionText}>
-          {renderPlainFormSelectOption(option)}
-        </span>
+        <div className={styles.stockpilePrimaryToolbarFilterOptionStart}>
+          <span className={styles.stockpilePrimaryToolbarFilterOptionText}>
+            {renderPlainFormSelectOption(option)}
+          </span>
+        </div>
+        {typeof option.count === "number" ? (
+          <span className={styles.stockpilePrimaryToolbarFilterOptionCountBadge}>{option.count}</span>
+        ) : null}
       </div>
     );
   };

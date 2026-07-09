@@ -468,23 +468,24 @@ export default function StockpilePanelContent({
       {
         label: t("label.cardFace"),
         options: [
-          { value: "face:all", label: "All faces" },
-          { value: "face:front", label: t("cardFace.front") },
-          { value: "face:back", label: t("cardFace.back") },
+          { value: "face:all", label: "All faces", count: totalCount },
+          { value: "face:front", label: t("cardFace.front"), count: faceCounts.front },
+          { value: "face:back", label: t("cardFace.back"), count: faceCounts.back },
         ],
       },
       {
         label: t("label.cardType"),
         options: [
-          { value: "type:all", label: t("ui.allTypes") },
+          { value: "type:all", label: t("ui.allTypes"), count: totalCount },
           ...cardTemplates.map((template) => ({
             value: `type:${template.id}`,
             label: getTemplateNameLabel(language, template),
+            count: typeCounts.get(template.id) ?? 0,
           })),
         ],
       },
     ],
-    [language, t],
+    [faceCounts.back, faceCounts.front, language, t, totalCount, typeCounts],
   );
   const cardById = useMemo(() => {
     const map = new Map<string, CardRecord>();
@@ -916,6 +917,14 @@ export default function StockpilePanelContent({
     activeFilter.type === "collection" && selectedVisibleCards.length === 0
       ? `${t("actions.export")} PDF ${t("actions.fromThisCollection")}`
       : `${t("actions.export")} PDF (${exportCount}) ${t("actions.fromThisCollection")}`;
+  const deleteLabel =
+    activeFilter.type === "recentlyDeleted"
+      ? selectedIds.length > 1
+        ? `${t("actions.deletePermanently")} (${selectedIds.length})`
+        : t("actions.deletePermanently")
+      : selectedIds.length > 1
+        ? `${t("actions.delete")} (${selectedIds.length})`
+        : t("actions.delete");
   const handleExportCards = async (
     cardsToExport: CardRecord[],
     options?: { skipIds?: Set<string>; skipNotes?: Map<string, string>; skipPrecheck?: boolean },
@@ -1246,6 +1255,8 @@ export default function StockpilePanelContent({
     isSelectAllIndeterminate: someVisibleSelected,
     isSelectAllDisabled: filteredCards.length === 0,
     isSelectNoneDisabled: selectedIds.length === 0,
+    deleteLabel,
+    exportLabel,
     onSelectAllToggle: () => {
       const visibleIds = filteredCards.map((card) => card.id);
       if (!visibleIds.length) return;

@@ -29,6 +29,8 @@ describe("StockpileBottomToolbar", () => {
         isSelectAllIndeterminate={false}
         isSelectAllDisabled={false}
         isSelectNoneDisabled={false}
+        deleteLabel="Delete"
+        exportLabel="Export"
         onSelectAllToggle={() => {}}
         onSelectNone={() => {}}
         onAddToCollection={() => {}}
@@ -45,6 +47,10 @@ describe("StockpileBottomToolbar", () => {
     expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Export" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Load" })).toBeInTheDocument();
+    expect(screen.getAllByText("Add to collection")).toHaveLength(1);
+    expect(screen.getAllByText("Delete")).toHaveLength(1);
+    expect(screen.getAllByText("Export")).toHaveLength(1);
+    expect(screen.getAllByText("Load")).toHaveLength(1);
   });
 
   it("wires the selection and action callbacks", () => {
@@ -61,6 +67,8 @@ describe("StockpileBottomToolbar", () => {
         isSelectAllIndeterminate={false}
         isSelectAllDisabled={false}
         isSelectNoneDisabled={false}
+        deleteLabel="Delete (2)"
+        exportLabel="Export (2)"
         isAddToCollectionDisabled={false}
         isDeleteDisabled={false}
         isExportDisabled={false}
@@ -77,8 +85,8 @@ describe("StockpileBottomToolbar", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Select all" }));
     fireEvent.click(screen.getByRole("button", { name: "Select none" }));
     fireEvent.click(screen.getByRole("button", { name: "Add to collection" }));
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-    fireEvent.click(screen.getByRole("button", { name: "Export" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete (2)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Export (2)" }));
     fireEvent.click(screen.getByRole("button", { name: "Load" }));
 
     expect(onSelectNone).toHaveBeenCalledTimes(1);
@@ -96,6 +104,8 @@ describe("StockpileBottomToolbar", () => {
         isSelectAllIndeterminate={false}
         isSelectAllDisabled={true}
         isSelectNoneDisabled={true}
+        deleteLabel="Delete"
+        exportLabel="Export"
         isAddToCollectionDisabled={true}
         isDeleteDisabled={true}
         isExportDisabled={true}
@@ -124,6 +134,8 @@ describe("StockpileBottomToolbar", () => {
         isSelectAllIndeterminate={true}
         isSelectAllDisabled={false}
         isSelectNoneDisabled={false}
+        deleteLabel="Delete"
+        exportLabel="Export"
         onSelectAllToggle={() => {}}
         onSelectNone={() => {}}
         onAddToCollection={() => {}}

@@ -10,16 +10,12 @@ import { useI18n } from "@/i18n/I18nProvider";
 
 function FolderBookmarkIcon() {
   return (
-    <span
-      className="position-relative d-inline-flex align-items-center justify-content-center"
-      aria-hidden="true"
-    >
+    <span className={styles.stockpileBottomToolbarFolderBookmarkIcon} aria-hidden="true">
       <Folder size={16} strokeWidth={1.8} />
       <Bookmark
         size={9}
         strokeWidth={2}
-        className="position-absolute"
-        style={{ right: -1, bottom: -1 }}
+        className={styles.stockpileBottomToolbarFolderBookmarkGlyph}
       />
     </span>
   );
@@ -30,6 +26,8 @@ export default function StockpileBottomToolbar({
   isSelectAllIndeterminate,
   isSelectAllDisabled,
   isSelectNoneDisabled,
+  deleteLabel,
+  exportLabel,
   onSelectAllToggle,
   onSelectNone,
   isAddToCollectionDisabled = true,
@@ -93,40 +91,52 @@ export default function StockpileBottomToolbar({
           disabled={isAddToCollectionDisabled}
           aria-label={t("actions.addToCollection")}
           title={t("actions.addToCollection")}
-          className={`btn btn-outline-secondary ${styles.stockpileUtilityIconButton}`}
+          className={`btn btn-outline-light btn-sm ${styles.stockpileBottomToolbarActionButton}`}
           onClick={onAddToCollection}
         >
-          <FolderBookmarkIcon />
+          <span className={styles.stockpileBottomToolbarActionIcon}>
+            <FolderBookmarkIcon />
+          </span>
+          <span className={styles.stockpileBottomToolbarActionLabel}>{t("actions.addToCollection")}</span>
         </button>
         <button
           type="button"
           disabled={isDeleteDisabled}
-          aria-label={t("actions.delete")}
-          title={t("actions.delete")}
-          className={`btn btn-outline-danger ${styles.stockpileUtilityIconButton} ${styles.stockpileUtilityIconButtonDanger}`}
+          aria-label={deleteLabel}
+          title={deleteLabel}
+          className={`btn btn-outline-danger btn-sm ${styles.stockpileBottomToolbarActionButton}`}
           onClick={onDelete}
         >
-          <Trash2 size={16} aria-hidden="true" />
+          <span className={styles.stockpileBottomToolbarActionIcon}>
+            <Trash2 size={16} aria-hidden="true" />
+          </span>
+          <span className={styles.stockpileBottomToolbarActionLabel}>{deleteLabel}</span>
         </button>
         <button
           type="button"
           disabled={isExportDisabled}
-          aria-label={t("actions.export")}
-          title={t("actions.export")}
-          className={`btn btn-outline-secondary ${styles.stockpileUtilityIconButton}`}
+          aria-label={exportLabel}
+          title={exportLabel}
+          className={`btn btn-outline-light btn-sm ${styles.stockpileBottomToolbarActionButton}`}
           onClick={onExport}
         >
-          <Download size={16} aria-hidden="true" />
+          <span className={styles.stockpileBottomToolbarActionIcon}>
+            <Download size={16} aria-hidden="true" />
+          </span>
+          <span className={styles.stockpileBottomToolbarActionLabel}>{exportLabel}</span>
         </button>
         <button
           type="button"
           disabled={isLoadDisabled}
           aria-label={t("actions.load")}
           title={t("actions.load")}
-          className={`btn btn-outline-secondary ${styles.stockpileUtilityIconButton}`}
+          className={`btn btn-primary btn-sm ${styles.stockpileBottomToolbarActionButton}`}
           onClick={onLoad}
         >
-          <Eye size={16} aria-hidden="true" />
+          <span className={styles.stockpileBottomToolbarActionIcon}>
+            <Eye size={16} aria-hidden="true" />
+          </span>
+          <span className={styles.stockpileBottomToolbarActionLabel}>{t("actions.load")}</span>
         </button>
       </div>
     </div>

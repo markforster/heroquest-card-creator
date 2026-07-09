@@ -45,6 +45,7 @@ export type StockpileCardActions = {
 export type StockpilePrimaryToolbarFilterOption = {
   value: string;
   label: string;
+  count?: number;
 };
 
 export type StockpilePrimaryToolbarFilterGroup = {
@@ -73,6 +74,8 @@ export type StockpileBottomToolbarProps = {
   isSelectAllIndeterminate: boolean;
   isSelectAllDisabled: boolean;
   isSelectNoneDisabled: boolean;
+  deleteLabel: string;
+  exportLabel: string;
   onSelectAllToggle: () => void;
   onSelectNone: () => void;
   isAddToCollectionDisabled?: boolean;
