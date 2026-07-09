@@ -53,6 +53,13 @@ export type StockpilePrimaryToolbarFilterGroup = {
   options: StockpilePrimaryToolbarFilterOption[];
 };
 
+export type StockpilePrimaryToolbarSortValue = "modified" | "name" | "created";
+
+export type StockpilePrimaryToolbarSortOption = {
+  value: StockpilePrimaryToolbarSortValue;
+  label: string;
+};
+
 export type StockpilePrimaryToolbarProps = {
   search: string;
   onSearchChange: (value: string) => void;
@@ -61,11 +68,15 @@ export type StockpilePrimaryToolbarProps = {
   filterValue: string;
   onFilterChange: (next: string) => void;
   filterOptions: StockpilePrimaryToolbarFilterGroup[];
+  sortValue: StockpilePrimaryToolbarSortValue;
+  onSortChange: (next: StockpilePrimaryToolbarSortValue) => void;
+  sortOptions: StockpilePrimaryToolbarSortOption[];
   showUnpairedOnly?: boolean;
   onShowUnpairedOnlyChange?: (next: boolean) => void;
   isUnpairedToggleDisabled?: boolean;
   isSearchDisabled?: boolean;
   isFilterDisabled?: boolean;
+  isSortDisabled?: boolean;
   isViewModeDisabled?: boolean;
 };
 

@@ -38,6 +38,75 @@ const baseCollection = (overrides: Partial<CollectionRecord>): CollectionRecord 
 });
 
 describe("useStockpileFilters", () => {
+  it("defaults normal stockpile results to modified desc, then name asc, then created desc", () => {
+    const cards = [
+      baseCard({ id: "c", name: "Beta", nameLower: "beta", updatedAt: 10, createdAt: 10 }),
+      baseCard({ id: "a", name: "Alpha", nameLower: "alpha", updatedAt: 20, createdAt: 5 }),
+      baseCard({ id: "b", name: "Zulu", nameLower: "zulu", updatedAt: 20, createdAt: 9 }),
+      baseCard({ id: "d", name: "Alpha", nameLower: "alpha", updatedAt: 20, createdAt: 7 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+      }),
+    );
+
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["d", "a", "b", "c"]);
+  });
+
+  it("supports sorting normal stockpile results by name", () => {
+    const cards = [
+      baseCard({ id: "a", name: "Gamma", nameLower: "gamma", updatedAt: 1, createdAt: 1 }),
+      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", updatedAt: 2, createdAt: 2 }),
+      baseCard({ id: "c", name: "Alpha", nameLower: "alpha", updatedAt: 5, createdAt: 3 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+        sortMode: "name",
+      }),
+    );
+
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["c", "b", "a"]);
+  });
+
+  it("supports sorting normal stockpile results by created date", () => {
+    const cards = [
+      baseCard({ id: "a", name: "Zulu", nameLower: "zulu", updatedAt: 1, createdAt: 1 }),
+      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", updatedAt: 2, createdAt: 9 }),
+      baseCard({ id: "c", name: "Alpha", nameLower: "alpha", updatedAt: 5, createdAt: 9 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+        sortMode: "created",
+      }),
+    );
+
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["c", "b", "a"]);
+  });
+
   it("returns recentCards sorted by lastViewedAt then updatedAt", () => {
     const cards = [
       baseCard({ id: "a", lastViewedAt: 100, updatedAt: 5, nameLower: "a" }),
@@ -79,6 +148,29 @@ describe("useStockpileFilters", () => {
     );
 
     expect(result.current.filteredCards.map((card) => card.id)).toEqual(["back-1"]);
+  });
+
+  it("keeps recent results ordered by last viewed semantics even when sort mode changes", () => {
+    const cards = [
+      baseCard({ id: "a", name: "Zulu", nameLower: "zulu", lastViewedAt: 100, updatedAt: 5, createdAt: 1 }),
+      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", lastViewedAt: 200, updatedAt: 1, createdAt: 2 }),
+      baseCard({ id: "c", name: "Beta", nameLower: "beta", lastViewedAt: 100, updatedAt: 10, createdAt: 3 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "recent" },
+        isPairMode: false,
+        isPairBacks: false,
+        sortMode: "name",
+      }),
+    );
+
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["b", "c", "a"]);
   });
 
   it("computes collection counts and unfiled count", () => {
@@ -265,5 +357,51 @@ describe("useStockpileFilters", () => {
 
     expect(filteredTypeDeletedView.current.recentlyDeletedTotalCount).toBe(1);
     expect(filteredTypeDeletedView.current.recentlyDeletedCount).toBe(0);
+  });
+
+  it("keeps recently deleted results ordered by deletedAt semantics even when sort mode changes", () => {
+    const cards = [
+      baseCard({ id: "a", name: "Zulu", nameLower: "zulu", deletedAt: 100, updatedAt: 5, createdAt: 1 }),
+      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", deletedAt: 200, updatedAt: 1, createdAt: 2 }),
+      baseCard({ id: "c", name: "Beta", nameLower: "beta", deletedAt: 100, updatedAt: 10, createdAt: 3 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "recentlyDeleted" },
+        isPairMode: false,
+        isPairBacks: false,
+        sortMode: "name",
+      }),
+    );
+
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["b", "c", "a"]);
+  });
+
+  it("keeps pair mode ordering unchanged even when sort mode changes", () => {
+    const cards = [
+      baseCard({ id: "a", name: "Zulu", nameLower: "zulu", updatedAt: 5, createdAt: 1, lastViewedAt: 100 }),
+      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", updatedAt: 1, createdAt: 2, lastViewedAt: 200 }),
+      baseCard({ id: "c", name: "Beta", nameLower: "beta", updatedAt: 10, createdAt: 3, lastViewedAt: 100 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: true,
+        isPairBacks: false,
+        sortMode: "name",
+      }),
+    );
+
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["b", "c", "a"]);
   });
 });

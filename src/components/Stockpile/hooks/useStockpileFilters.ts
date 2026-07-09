@@ -4,6 +4,7 @@ import { cardTemplatesById } from "@/data/card-templates";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import type { CardRecord } from "@/api/cards";
 import type { CollectionRecord } from "@/types/collections-db";
+import type { StockpilePrimaryToolbarSortValue } from "@/components/Stockpile/types";
 
 type ActiveFilter =
   | { type: "all" }
@@ -20,6 +21,7 @@ type UseStockpileFiltersOptions = {
   activeFilter: ActiveFilter;
   isPairMode: boolean;
   isPairBacks: boolean;
+  sortMode?: StockpilePrimaryToolbarSortValue;
   showUnpairedOnly?: boolean;
   pairedIdSet?: Set<string>;
   showMissingArtworkOnly?: boolean;
@@ -34,11 +36,42 @@ export const useStockpileFilters = ({
   activeFilter,
   isPairMode,
   isPairBacks,
+  sortMode = "modified",
   showUnpairedOnly = false,
   pairedIdSet,
   showMissingArtworkOnly = false,
   missingArtworkIdSet,
 }: UseStockpileFiltersOptions) => {
+  const compareCardsByNameAsc = (a: CardRecord, b: CardRecord) => {
+    const aName = a.nameLower ?? a.name.toLocaleLowerCase();
+    const bName = b.nameLower ?? b.name.toLocaleLowerCase();
+    return aName.localeCompare(bName);
+  };
+  const compareCardsBySortMode = (
+    sort: StockpilePrimaryToolbarSortValue,
+    a: CardRecord,
+    b: CardRecord,
+  ) => {
+    if (sort === "name") {
+      const byName = compareCardsByNameAsc(a, b);
+      if (byName !== 0) return byName;
+      if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
+      return b.createdAt - a.createdAt;
+    }
+
+    if (sort === "created") {
+      if (b.createdAt !== a.createdAt) return b.createdAt - a.createdAt;
+      const byName = compareCardsByNameAsc(a, b);
+      if (byName !== 0) return byName;
+      return b.updatedAt - a.updatedAt;
+    }
+
+    if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
+    const byName = compareCardsByNameAsc(a, b);
+    if (byName !== 0) return byName;
+    return b.createdAt - a.createdAt;
+  };
+
   const recentCards = useMemo(() => {
     const withViewed = cards
       .filter((card) => card.deletedAt == null)
@@ -246,6 +279,8 @@ export const useStockpileFilters = ({
         const bName = b.nameLower ?? b.name.toLocaleLowerCase();
         return aName.localeCompare(bName);
       });
+    } else if (activeFilter.type !== "recent" && activeFilter.type !== "recentlyDeleted") {
+      filtered = [...filtered].sort((a, b) => compareCardsBySortMode(sortMode, a, b));
     }
 
     return {
@@ -270,6 +305,7 @@ export const useStockpileFilters = ({
     collections,
     isPairMode,
     isPairBacks,
+    sortMode,
     showUnpairedOnly,
     pairedIdSet,
     showMissingArtworkOnly,

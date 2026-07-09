@@ -5986,6 +5986,11 @@
   flex: 0 0 auto;
 }
 
+.stockpilePrimaryToolbarSort {
+  min-width: 11rem;
+  flex: 0 0 auto;
+}
+
 .stockpilePrimaryToolbarGroupShell {
   display: inline-flex;
   align-items: center;
@@ -6048,6 +6053,12 @@
   gap: 0.4rem;
 }
 
+.stockpilePrimaryToolbarSortValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .stockpilePrimaryToolbarFilterOption {
   display: flex;
   align-items: center;
@@ -6074,6 +6085,18 @@
   line-height: 1;
   color: var(--hq-text-muted);
   flex: 0 0 auto;
+}
+
+.stockpilePrimaryToolbarSortOption {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-3) var(--space-6);
+}
+
+.stockpilePrimaryToolbarSortOptionText {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .stockpilePrimaryToolbarToggleGroup {

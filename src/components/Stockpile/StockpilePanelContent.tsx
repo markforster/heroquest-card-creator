@@ -55,6 +55,7 @@ import type {
   StockpileCardActions,
   StockpileCardThumb,
   StockpileCardView,
+  StockpilePrimaryToolbarSortValue,
 } from "@/components/Stockpile/types";
 import {
   ENABLE_CARD_THUMB_CACHE,
@@ -155,6 +156,7 @@ export default function StockpilePanelContent({
   } | null>(null);
   const [search, setSearch] = useState("");
   const [templateFilter, setTemplateFilter] = useState<string>("all");
+  const [sortMode, setSortMode] = useState<StockpilePrimaryToolbarSortValue>("modified");
   const [showUnpairedOnly, setShowUnpairedOnly] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [isFiltersPanelOpen, setIsFiltersPanelOpen] = useLocalStorageBoolean(
@@ -251,6 +253,7 @@ export default function StockpilePanelContent({
     activeFilter,
     isPairMode,
     isPairBacks,
+    sortMode,
     showUnpairedOnly,
     pairedIdSet,
     showMissingArtworkOnly,
@@ -486,6 +489,14 @@ export default function StockpilePanelContent({
       },
     ],
     [faceCounts.back, faceCounts.front, language, t, totalCount, typeCounts],
+  );
+  const primaryToolbarSortOptions = useMemo(
+    () => [
+      { value: "modified" as const, label: t("label.lastModified") },
+      { value: "name" as const, label: t("label.cardName") },
+      { value: "created" as const, label: t("label.dateCreated") },
+    ],
+    [t],
   );
   const cardById = useMemo(() => {
     const map = new Map<string, CardRecord>();
@@ -1243,11 +1254,16 @@ export default function StockpilePanelContent({
     filterValue: mapTemplateFilterToPrimaryToolbarValue(templateFilter),
     onFilterChange: (next: string) => setTemplateFilter(mapPrimaryToolbarValueToTemplateFilter(next)),
     filterOptions: primaryToolbarFilterOptions,
+    sortValue: sortMode,
+    onSortChange: setSortMode,
+    sortOptions: primaryToolbarSortOptions,
     showUnpairedOnly,
     onShowUnpairedOnlyChange: setShowUnpairedOnly,
     isUnpairedToggleDisabled: false,
     isSearchDisabled: false,
     isFilterDisabled: false,
+    isSortDisabled:
+      isPairMode || activeFilter.type === "recent" || activeFilter.type === "recentlyDeleted",
     isViewModeDisabled: false,
   } as const;
   const bottomToolbarProps = {
