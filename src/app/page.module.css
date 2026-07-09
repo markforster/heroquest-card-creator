@@ -7591,6 +7591,76 @@ button.assetsKindBadge:disabled {
   transform: translateY(-1px);
 }
 
+.stockpileCardShell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  height: 100%;
+  overflow: visible;
+}
+
+.stockpileCardTopToolbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 18px;
+  overflow: visible;
+}
+
+.stockpileCardTitlePill {
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--hq-border-strong) 52%, white 48%);
+  background: color-mix(in srgb, white 92%, var(--hq-surface-card) 8%);
+  color: color-mix(in srgb, #2d2418 88%, var(--hq-black) 12%);
+  box-shadow: var(--shadow-soft);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stockpileCardCore {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.stockpileCardCore > * {
+  width: 100%;
+}
+
+.stockpileCardBottomToolbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 18px;
+  overflow: visible;
+}
+
+.stockpileCardTypePill {
+  max-width: 100%;
+}
+
 .cardsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

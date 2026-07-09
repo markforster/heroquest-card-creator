@@ -10,7 +10,7 @@ import StockpileSelectCheckbox from "@/components/Stockpile/StockpileSelectCheck
 import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
 import { useI18n } from "@/i18n/I18nProvider";
 
-const ENABLE_GRID_VARIANT = false;
+const ENABLE_LEGACY_GRID_CARD_LAYOUT = false;
 const DEBUG_DISABLE_STOCKPILE_GRID_ITEMS = false;
 const DEBUG_DISABLE_STOCKPILE_GRID_ITEM_CONTENT = false;
 const DEBUG_DISABLE_STOCKPILE_GRID_THUMBNAIL = false;
@@ -73,7 +73,7 @@ function StockpileCardsGridItem({
       {...attributes}
       {...listeners}
     >
-      {DEBUG_DISABLE_STOCKPILE_GRID_ITEM_CONTENT ? null : ENABLE_GRID_VARIANT ? (
+      {DEBUG_DISABLE_STOCKPILE_GRID_ITEM_CONTENT ? null : ENABLE_LEGACY_GRID_CARD_LAYOUT ? (
         <div className={styles.stockpileGridVariant}>
           {isPairMode ? null : (
             <div className={styles.stockpileGridRowHeader}>
@@ -129,48 +129,47 @@ function StockpileCardsGridItem({
         </div>
       ) : (
         <>
-          {isPairMode ? null : (
-            <div className={styles.cardsItemHeader}>
-              <div className={styles.stockpileCardTitleRow}>
-                <StockpileSelectCheckbox
-                  card={card}
-                  actions={actions}
-                  isPairMode={isPairMode}
-                  label={selectLabel}
-                />
-                <div className={styles.cardsItemName} title={card.name}>
+          {isPairMode ? (
+            DEBUG_DISABLE_STOCKPILE_GRID_THUMBNAIL ? null : (
+              <RemoteCardThumbnail
+                cardId={card.id}
+                thumbnailBlob={card.thumbnailBlob}
+                templateThumbSrc={card.templateThumbSrc ?? null}
+                alt={card.name}
+                variant="md"
+                fit="contain"
+              />
+            )
+          ) : (
+            <div className={styles.stockpileCardShell}>
+              <div className={styles.stockpileCardTopToolbar} data-testid="stockpile-card-top-toolbar">
+                <div className={styles.stockpileCardTitlePill} title={card.name}>
                   {card.name}
                 </div>
               </div>
-              {DEBUG_DISABLE_STOCKPILE_GRID_PAIR_INDICATOR ? null : (
-                <StockpilePairIndicator
-                  card={card}
-                  actions={actions}
-                  isPairMode={isPairMode}
-                  variant="grid"
-                />
-              )}
-            </div>
-          )}
-          {DEBUG_DISABLE_STOCKPILE_GRID_THUMBNAIL ? null : (
-            <RemoteCardThumbnail
-              cardId={card.id}
-              thumbnailBlob={card.thumbnailBlob}
-              templateThumbSrc={card.templateThumbSrc ?? null}
-              alt={card.name}
-              variant="md"
-              fit="contain"
-            />
-          )}
-          {isPairMode || DEBUG_DISABLE_STOCKPILE_GRID_META ? null : (
-            <div className={styles.cardsItemMeta}>
-              <div
-                className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}
-              >
-                {card.templateLabel}
+              <div className={styles.stockpileCardCore}>
+                {DEBUG_DISABLE_STOCKPILE_GRID_THUMBNAIL ? null : (
+                  <RemoteCardThumbnail
+                    cardId={card.id}
+                    thumbnailBlob={card.thumbnailBlob}
+                    templateThumbSrc={card.templateThumbSrc ?? null}
+                    alt={card.name}
+                    variant="md"
+                    fit="contain"
+                  />
+                )}
               </div>
-              <div className={styles.cardsItemDetails}>
-                {card.updatedLabel} {card.timeLabel}
+              <div
+                className={styles.stockpileCardBottomToolbar}
+                data-testid="stockpile-card-bottom-toolbar"
+              >
+                <div
+                  className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]} ${
+                    styles.stockpileCardTypePill
+                  }`}
+                >
+                  {card.templateLabel}
+                </div>
               </div>
             </div>
           )}
