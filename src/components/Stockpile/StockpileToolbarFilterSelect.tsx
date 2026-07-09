@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { Filter } from "lucide-react";
 import Select, {
   type FormatOptionLabelMeta,
-  type GroupBase,
   type SingleValue,
   type StylesConfig,
 } from "react-select";
@@ -13,7 +12,6 @@ import styles from "@/app/page.module.css";
 import {
   FormSelectDropdownIndicator,
   getFormSelectStyles,
-  renderPlainFormSelectOption,
 } from "@/components/common/FormSelect";
 import type {
   StockpilePrimaryToolbarFilterGroup,
@@ -31,15 +29,21 @@ type StockpileToolbarFilterSelectProps = {
 
 function getStockpileToolbarFilterStyles(
   disabled: boolean,
-): StylesConfig<
-  StockpilePrimaryToolbarFilterOption,
-  false,
-  GroupBase<StockpilePrimaryToolbarFilterOption>
-> {
+): StylesConfig<StockpilePrimaryToolbarFilterOption, false> {
   const baseStyles = getFormSelectStyles<StockpilePrimaryToolbarFilterOption>(disabled);
 
   return {
     ...baseStyles,
+    control: (base, state) => ({
+      ...baseStyles.control?.(base, state),
+      fontSize: "var(--text-md)",
+      lineHeight: 1.4,
+    }),
+    singleValue: (base, state) => ({
+      ...baseStyles.singleValue?.(base, state),
+      fontSize: "var(--text-md)",
+      lineHeight: 1.4,
+    }),
     menu: (base) => ({
       ...base,
       zIndex: 5,
@@ -72,10 +76,22 @@ function getStockpileToolbarFilterStyles(
           ? "rgba(230, 179, 90, 0.08)"
           : "transparent",
       color: "var(--hq-text)",
+      fontSize: "var(--text-md)",
+      lineHeight: 1.4,
       padding: 0,
       borderRadius: 8,
       border: state.isSelected ? "1px solid rgba(230, 179, 90, 0.6)" : "1px solid transparent",
       cursor: state.isDisabled ? "not-allowed" : "pointer",
+    }),
+    placeholder: (base, state) => ({
+      ...baseStyles.placeholder?.(base, state),
+      fontSize: "var(--text-md)",
+      lineHeight: 1.4,
+    }),
+    input: (base, state) => ({
+      ...baseStyles.input?.(base, state),
+      fontSize: "var(--text-md)",
+      lineHeight: 1.4,
     }),
   };
 }
@@ -117,9 +133,7 @@ export default function StockpileToolbarFilterSelect({
     return (
       <div className={styles.stockpilePrimaryToolbarFilterOption}>
         <div className={styles.stockpilePrimaryToolbarFilterOptionStart}>
-          <span className={styles.stockpilePrimaryToolbarFilterOptionText}>
-            {renderPlainFormSelectOption(option)}
-          </span>
+          <span className={styles.stockpilePrimaryToolbarFilterOptionText}>{option.label}</span>
         </div>
         {typeof option.count === "number" ? (
           <span className={styles.stockpilePrimaryToolbarFilterOptionCountBadge}>{option.count}</span>
@@ -130,7 +144,7 @@ export default function StockpileToolbarFilterSelect({
 
   return (
     <div className={styles.stockpilePrimaryToolbarFilter}>
-      <Select<StockpilePrimaryToolbarFilterOption, false, GroupBase<StockpilePrimaryToolbarFilterOption>>
+      <Select<StockpilePrimaryToolbarFilterOption, false>
         inputId={inputId}
         aria-label={ariaLabel}
         classNamePrefix="form-select"
@@ -139,15 +153,12 @@ export default function StockpileToolbarFilterSelect({
         isDisabled={disabled}
         menuPortalTarget={menuPortalTarget}
         menuPosition="fixed"
-        options={options}
+        options={flatOptions}
         value={selected}
         onChange={handleChange}
         styles={selectStyles}
         components={{ DropdownIndicator: FormSelectDropdownIndicator }}
         formatOptionLabel={formatOptionLabel}
-        formatGroupLabel={(group) => (
-          <div className={styles.stockpilePrimaryToolbarFilterGroupLabel}>{group.label}</div>
-        )}
       />
     </div>
   );

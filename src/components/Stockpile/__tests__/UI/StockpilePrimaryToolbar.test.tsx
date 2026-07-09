@@ -132,8 +132,6 @@ describe("StockpilePrimaryToolbar", () => {
     );
 
     expect(screen.getByRole("searchbox", { name: "Search cards" })).toBeInTheDocument();
-    expect(screen.getAllByTestId("mock-react-select-group-labels")[0]).toHaveTextContent("Face");
-    expect(screen.getAllByTestId("mock-react-select-group-labels")[0]).toHaveTextContent("Type");
     expect(screen.getAllByTestId("mock-react-select")).toHaveLength(2);
     expect(screen.getByRole("button", { name: "Not paired" })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "View mode" })).toBeInTheDocument();
