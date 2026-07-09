@@ -7591,7 +7591,8 @@ button.assetsKindBadge:disabled {
   transform: translateY(-1px);
 }
 
-.stockpileCardShell {
+.stockpileCardShell,
+.savedCardTileShell {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -7601,7 +7602,13 @@ button.assetsKindBadge:disabled {
   overflow: visible;
 }
 
-.stockpileCardTopToolbar {
+.savedCardTileShellStockpile,
+.savedCardTileShellRecent {
+  min-height: 0;
+}
+
+.stockpileCardTopToolbar,
+.savedCardTileTopToolbar {
   position: relative;
   display: flex;
   align-items: center;
@@ -7611,7 +7618,8 @@ button.assetsKindBadge:disabled {
   overflow: visible;
 }
 
-.stockpileCardTitlePill {
+.stockpileCardTitlePill,
+.savedCardTileTitlePill {
   max-width: 100%;
   display: inline-flex;
   align-items: center;
@@ -7630,7 +7638,8 @@ button.assetsKindBadge:disabled {
   text-overflow: ellipsis;
 }
 
-.stockpileCardCore {
+.stockpileCardCore,
+.savedCardTileCore {
   flex: 1 1 auto;
   width: 100%;
   min-height: 0;
@@ -7643,11 +7652,13 @@ button.assetsKindBadge:disabled {
   overflow: visible;
 }
 
-.stockpileCardCore > * {
+.stockpileCardCore > *,
+.savedCardTileCore > * {
   width: 100%;
 }
 
-.stockpileCardBottomToolbar {
+.stockpileCardBottomToolbar,
+.savedCardTileBottomToolbar {
   position: relative;
   display: flex;
   align-items: center;
@@ -7657,7 +7668,8 @@ button.assetsKindBadge:disabled {
   overflow: visible;
 }
 
-.stockpileCardTypePill {
+.stockpileCardTypePill,
+.savedCardTileTypePill {
   max-width: 100%;
 }
 
@@ -7701,28 +7713,31 @@ button.assetsKindBadge:disabled {
 }
 
 .recentCardsItem {
+  text-align: left;
   width: 100%;
-  align-items: flex-start;
-}
-
-.recentCardsItemName {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  overflow: visible;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recentCardsGrid .cardsItem {
   padding: var(--space-4);
-  gap: var(--space-3);
+  background: var(--hq-surface-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hq-card-border);
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.05s ease;
 }
 
-.recentCardsGrid .cardsItemHeader {
-  width: 100%;
-  margin-bottom: 0;
-  padding-left: 0;
+.recentCardsItem:hover {
+  border-color: rgba(230, 179, 90, 0.7);
+  box-shadow: 0 0 0 1px rgba(230, 179, 90, 0.5);
+  transform: translateY(-1px);
+}
+
+.recentCardsItem:focus-visible {
+  outline: 2px solid rgba(230, 179, 90, 0.9);
+  outline-offset: 2px;
 }
 
 .cardsItem {

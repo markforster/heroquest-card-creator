@@ -4,6 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 
 import styles from "@/app/page.module.css";
 import RemoteCardThumbnail from "@/components/common/CardThumbnail/RemoteCardThumbnail";
+import SavedCardTile from "@/components/common/SavedCardTile";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import StockpilePairIndicator from "@/components/Stockpile/StockpilePairIndicator";
 import StockpileSelectCheckbox from "@/components/Stockpile/StockpileSelectCheckbox";
@@ -141,14 +142,15 @@ function StockpileCardsGridItem({
               />
             )
           ) : (
-            <div className={styles.stockpileCardShell}>
-              <div className={styles.stockpileCardTopToolbar} data-testid="stockpile-card-top-toolbar">
-                <div className={styles.stockpileCardTitlePill} title={card.name}>
-                  {card.name}
-                </div>
-              </div>
-              <div className={styles.stockpileCardCore}>
-                {DEBUG_DISABLE_STOCKPILE_GRID_THUMBNAIL ? null : (
+            <SavedCardTile
+              title={card.name}
+              templateLabel={card.templateLabel}
+              variant="stockpile"
+              topToolbarTestId="stockpile-card-top-toolbar"
+              bottomToolbarTestId="stockpile-card-bottom-toolbar"
+              typePillClassName={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}
+              thumbnail={
+                DEBUG_DISABLE_STOCKPILE_GRID_THUMBNAIL ? null : (
                   <RemoteCardThumbnail
                     cardId={card.id}
                     thumbnailBlob={card.thumbnailBlob}
@@ -157,21 +159,9 @@ function StockpileCardsGridItem({
                     variant="md"
                     fit="contain"
                   />
-                )}
-              </div>
-              <div
-                className={styles.stockpileCardBottomToolbar}
-                data-testid="stockpile-card-bottom-toolbar"
-              >
-                <div
-                  className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]} ${
-                    styles.stockpileCardTypePill
-                  }`}
-                >
-                  {card.templateLabel}
-                </div>
-              </div>
-            </div>
+                )
+              }
+            />
           )}
         </>
       )}
