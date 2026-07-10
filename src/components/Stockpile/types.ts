@@ -60,6 +60,19 @@ export type StockpilePrimaryToolbarSortOption = {
   label: string;
 };
 
+export type StockpilePrimaryToolbarGroupValue = "none" | "type";
+
+export type StockpilePrimaryToolbarGroupOption = {
+  value: StockpilePrimaryToolbarGroupValue;
+  label: string;
+};
+
+export type StockpileCardGroupView = {
+  id: string;
+  label: string;
+  cards: StockpileCardView[];
+};
+
 export type StockpilePrimaryToolbarProps = {
   search: string;
   onSearchChange: (value: string) => void;
@@ -71,12 +84,16 @@ export type StockpilePrimaryToolbarProps = {
   sortValue: StockpilePrimaryToolbarSortValue;
   onSortChange: (next: StockpilePrimaryToolbarSortValue) => void;
   sortOptions: StockpilePrimaryToolbarSortOption[];
+  groupValue: StockpilePrimaryToolbarGroupValue;
+  onGroupChange: (next: StockpilePrimaryToolbarGroupValue) => void;
+  groupOptions: StockpilePrimaryToolbarGroupOption[];
   showUnpairedOnly?: boolean;
   onShowUnpairedOnlyChange?: (next: boolean) => void;
   isUnpairedToggleDisabled?: boolean;
   isSearchDisabled?: boolean;
   isFilterDisabled?: boolean;
   isSortDisabled?: boolean;
+  isGroupDisabled?: boolean;
   isViewModeDisabled?: boolean;
 };
 

@@ -1,7 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import StockpileCardsGrid from "@/components/Stockpile/StockpileCardsGrid";
-import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
+import type {
+  StockpileCardActions,
+  StockpileCardGroupView,
+  StockpileCardView,
+} from "@/components/Stockpile/types";
 
 jest.mock("@/components/common/CardThumbnail/RemoteCardThumbnail", () => ({
   __esModule: true,
@@ -120,5 +124,33 @@ describe("StockpileCardsGrid (UI)", () => {
 
     fireEvent.click(screen.getByLabelText("Card 1"));
     expect(onCardClick).toHaveBeenCalledWith("card-1", expect.any(Object), true);
+  });
+
+  it("renders grouped sections when grouped cards are provided", () => {
+    const item = buildCard();
+    const groups: StockpileCardGroupView[] = [{ id: "hero", label: "Hero", cards: [item] }];
+
+    render(
+      <StockpileCardsGrid
+        items={[item]}
+        groups={groups}
+        isPairMode={false}
+        dragEnabled={false}
+        onClearSelection={jest.fn()}
+        actions={{
+          onCardClick: jest.fn(),
+          onCardSetSelected: jest.fn(),
+          onCardSelectSingle: jest.fn(),
+          onCardDoubleClick: jest.fn(),
+          onPairHoverEnter: jest.fn(),
+          onPairHoverLeave: jest.fn(),
+          onTableThumbEnter: jest.fn(),
+          onTableThumbLeave: jest.fn(),
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Hero" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Card 1")).toBeInTheDocument();
   });
 });

@@ -113,6 +113,41 @@ describe("useStockpileFilters", () => {
     expect(result.current.filteredCards.map((card) => card.id)).toEqual(["d", "c", "b", "a"]);
   });
 
+  it("groups normal stockpile results by localized card type while preserving in-group sort order", () => {
+    const cards = [
+      baseCard({ id: "a", templateId: "monster", name: "Zulu", nameLower: "zulu", updatedAt: 1 }),
+      baseCard({ id: "b", templateId: "hero", name: "Beta", nameLower: "beta", updatedAt: 2 }),
+      baseCard({ id: "c", templateId: "hero", name: "Alpha", nameLower: "alpha", updatedAt: 5 }),
+      baseCard({ id: "d", templateId: "labelled-back", name: "Back", nameLower: "back", updatedAt: 3 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        templateLabelMap: {
+          hero: "Hero Card",
+          monster: "Monster Card",
+          "labelled-back": "Labelled Back",
+        },
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+        sortMode: "modified",
+        groupMode: "type",
+      }),
+    );
+
+    expect(result.current.groupedCards.map((group) => group.label)).toEqual([
+      "Hero Card",
+      "Labelled Back",
+      "Monster Card",
+    ]);
+    expect(result.current.groupedCards[0]?.cards.map((card) => card.id)).toEqual(["c", "b"]);
+  });
+
   it("returns recentCards sorted by lastViewedAt then updatedAt", () => {
     const cards = [
       baseCard({ id: "a", lastViewedAt: 100, updatedAt: 5, nameLower: "a" }),

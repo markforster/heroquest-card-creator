@@ -4,7 +4,10 @@ import { cardTemplatesById } from "@/data/card-templates";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import type { CardRecord } from "@/api/cards";
 import type { CollectionRecord } from "@/types/collections-db";
-import type { StockpilePrimaryToolbarSortValue } from "@/components/Stockpile/types";
+import type {
+  StockpilePrimaryToolbarGroupValue,
+  StockpilePrimaryToolbarSortValue,
+} from "@/components/Stockpile/types";
 
 type ActiveFilter =
   | { type: "all" }
@@ -23,10 +26,17 @@ type UseStockpileFiltersOptions = {
   isPairMode: boolean;
   isPairBacks: boolean;
   sortMode?: StockpilePrimaryToolbarSortValue;
+  groupMode?: StockpilePrimaryToolbarGroupValue;
   showUnpairedOnly?: boolean;
   pairedIdSet?: Set<string>;
   showMissingArtworkOnly?: boolean;
   missingArtworkIdSet?: Set<string>;
+};
+
+type StockpileCardGroup = {
+  id: string;
+  label: string;
+  cards: CardRecord[];
 };
 
 export const useStockpileFilters = ({
@@ -39,6 +49,7 @@ export const useStockpileFilters = ({
   isPairMode,
   isPairBacks,
   sortMode = "modified",
+  groupMode = "none",
   showUnpairedOnly = false,
   pairedIdSet,
   showMissingArtworkOnly = false,
@@ -114,6 +125,7 @@ export const useStockpileFilters = ({
     overallCount,
     recentlyDeletedCount,
     recentlyDeletedTotalCount,
+    groupedCards,
   } = useMemo(() => {
     const isFrontCard = (card: CardRecord) => {
       const template = cardTemplatesById[card.templateId];
@@ -229,6 +241,7 @@ export const useStockpileFilters = ({
           overallCount: countsBase.length,
           recentlyDeletedCount,
           recentlyDeletedTotalCount,
+          groupedCards: [] as StockpileCardGroup[],
         };
       }
       const allowed = new Set(collection.cardIds);
@@ -291,6 +304,34 @@ export const useStockpileFilters = ({
       filtered = [...filtered].sort((a, b) => compareCardsBySortMode(sortMode, a, b));
     }
 
+    const supportsGrouping =
+      groupMode === "type" &&
+      !isPairMode &&
+      activeFilter.type !== "recent" &&
+      activeFilter.type !== "recentlyDeleted";
+
+    const groupedCards = supportsGrouping
+      ? (() => {
+          const groups = new Map<string, StockpileCardGroup>();
+
+          filtered.forEach((card) => {
+            const label = templateLabelMap?.[card.templateId] ?? card.templateId;
+            const existing = groups.get(card.templateId);
+            if (existing) {
+              existing.cards.push(card);
+              return;
+            }
+            groups.set(card.templateId, {
+              id: card.templateId,
+              label,
+              cards: [card],
+            });
+          });
+
+          return Array.from(groups.values()).sort((a, b) => a.label.localeCompare(b.label));
+        })()
+      : [];
+
     return {
       filteredCards: filtered,
       collectionCounts: counts,
@@ -303,6 +344,7 @@ export const useStockpileFilters = ({
       overallCount: countsBase.length,
       recentlyDeletedCount,
       recentlyDeletedTotalCount,
+      groupedCards,
     };
   }, [
     cards,
@@ -315,6 +357,7 @@ export const useStockpileFilters = ({
     isPairMode,
     isPairBacks,
     sortMode,
+    groupMode,
     showUnpairedOnly,
     pairedIdSet,
     showMissingArtworkOnly,
@@ -334,5 +377,6 @@ export const useStockpileFilters = ({
     overallCount,
     recentlyDeletedCount,
     recentlyDeletedTotalCount,
+    groupedCards,
   };
 };

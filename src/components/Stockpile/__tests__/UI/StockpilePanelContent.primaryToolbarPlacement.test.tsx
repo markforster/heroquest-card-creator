@@ -212,6 +212,12 @@ jest.mock("@/components/Stockpile/StockpilePrimaryToolbar", () => ({
         >
           Primary not paired
         </button>
+        <button
+          type="button"
+          onClick={() => (props.onGroupChange as (value: "none" | "type") => void)("type")}
+        >
+          Primary group change
+        </button>
       </div>
     );
   },
@@ -294,6 +300,7 @@ describe("StockpilePanelContent primary toolbar placement (UI)", () => {
       visibleCollectionIds: new Set(),
       eligibleIdSet: new Set(),
       overallCount: 0,
+      groupedCards: [],
     });
   });
 
@@ -328,6 +335,8 @@ describe("StockpilePanelContent primary toolbar placement (UI)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Primary not paired" }));
     expect(lastPrimaryToolbarProps?.showUnpairedOnly).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Primary group change" }));
+    expect(lastPrimaryToolbarProps?.groupValue).toBe("type");
     expect(mockSetTip).toHaveBeenLastCalledWith(
       "stockpile",
       "Select a card by clicking on it.",
@@ -390,6 +399,7 @@ describe("StockpilePanelContent primary toolbar placement (UI)", () => {
       visibleCollectionIds: new Set(),
       eligibleIdSet: new Set(["card-1"]),
       overallCount: 1,
+      groupedCards: [],
     });
 
     renderPanel({ initialSelectedIds: ["card-1"], onLoadCard: () => {} });
@@ -452,6 +462,7 @@ describe("StockpilePanelContent primary toolbar placement (UI)", () => {
       visibleCollectionIds: new Set(),
       eligibleIdSet: new Set(["card-1"]),
       overallCount: 1,
+      groupedCards: [],
     });
 
     renderPanel({ initialSelectedIds: ["card-1"] });

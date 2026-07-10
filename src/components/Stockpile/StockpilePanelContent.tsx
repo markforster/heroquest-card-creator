@@ -53,8 +53,10 @@ import StockpileTableThumbPopover from "@/components/Stockpile/StockpileTableThu
 import StockpileToolbar from "@/components/Stockpile/StockpileToolbar";
 import type {
   StockpileCardActions,
+  StockpileCardGroupView,
   StockpileCardThumb,
   StockpileCardView,
+  StockpilePrimaryToolbarGroupValue,
   StockpilePrimaryToolbarSortValue,
 } from "@/components/Stockpile/types";
 import {
@@ -157,6 +159,7 @@ export default function StockpilePanelContent({
   const [search, setSearch] = useState("");
   const [templateFilter, setTemplateFilter] = useState<string>("all");
   const [sortMode, setSortMode] = useState<StockpilePrimaryToolbarSortValue>("modified");
+  const [groupMode, setGroupMode] = useState<StockpilePrimaryToolbarGroupValue>("none");
   const [showUnpairedOnly, setShowUnpairedOnly] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [isFiltersPanelOpen, setIsFiltersPanelOpen] = useLocalStorageBoolean(
@@ -252,6 +255,7 @@ export default function StockpilePanelContent({
     visibleCollectionIds,
     eligibleIdSet,
     overallCount,
+    groupedCards,
   } = useStockpileFilters({
     cards,
     collections,
@@ -262,6 +266,7 @@ export default function StockpilePanelContent({
     isPairMode,
     isPairBacks,
     sortMode,
+    groupMode,
     showUnpairedOnly,
     pairedIdSet,
     showMissingArtworkOnly,
@@ -498,6 +503,13 @@ export default function StockpilePanelContent({
     ],
     [t],
   );
+  const primaryToolbarGroupOptions = useMemo(
+    () => [
+      { value: "none" as const, label: t("label.none") },
+      { value: "type" as const, label: t("label.cardType") },
+    ],
+    [t],
+  );
   const cardById = useMemo(() => {
     const map = new Map<string, CardRecord>();
     cards.forEach((card) => {
@@ -652,6 +664,26 @@ export default function StockpilePanelContent({
     pairedByTargetId,
     backByFrontId,
   ]);
+  const cardViewsById = useMemo(() => {
+    const map = new Map<string, StockpileCardView>();
+    cardViews.forEach((card) => {
+      map.set(card.id, card);
+    });
+    return map;
+  }, [cardViews]);
+  const groupedCardViews = useMemo<StockpileCardGroupView[]>(() => {
+    if (!groupedCards.length) return [];
+
+    return groupedCards
+      .map((group) => ({
+        id: group.id,
+        label: group.label,
+        cards: group.cards
+          .map((card) => cardViewsById.get(card.id))
+          .filter((card): card is StockpileCardView => Boolean(card)),
+      }))
+      .filter((group) => group.cards.length > 0);
+  }, [cardViewsById, groupedCards]);
   const resolveOverlayThumb = (id: string, blob: Blob | null) => {
     if (typeof window === "undefined") {
       return { url: null as string | null, onLoad: undefined as (() => void) | undefined };
@@ -1257,12 +1289,17 @@ export default function StockpilePanelContent({
     sortValue: sortMode,
     onSortChange: setSortMode,
     sortOptions: primaryToolbarSortOptions,
+    groupValue: groupMode,
+    onGroupChange: setGroupMode,
+    groupOptions: primaryToolbarGroupOptions,
     showUnpairedOnly,
     onShowUnpairedOnlyChange: setShowUnpairedOnly,
     isUnpairedToggleDisabled: false,
     isSearchDisabled: false,
     isFilterDisabled: false,
     isSortDisabled:
+      isPairMode || activeFilter.type === "recent" || activeFilter.type === "recentlyDeleted",
+    isGroupDisabled:
       isPairMode || activeFilter.type === "recent" || activeFilter.type === "recentlyDeleted",
     isViewModeDisabled: false,
   } as const;
@@ -1408,6 +1445,7 @@ export default function StockpilePanelContent({
                       hasActiveNarrowing={hasActiveNarrowing}
                       isTableView={isTableView}
                       cardViews={cardViews}
+                      groupedCardViews={groupedCardViews}
                       cardActions={cardActions}
                       isPairMode={isPairMode}
                       dragEnabled={dragEnabled}

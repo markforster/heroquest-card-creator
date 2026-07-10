@@ -8,7 +8,11 @@ import RemoteCardThumbnail from "@/components/common/CardThumbnail/RemoteCardThu
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import StockpilePairIndicator from "@/components/Stockpile/StockpilePairIndicator";
 import StockpileSelectCheckbox from "@/components/Stockpile/StockpileSelectCheckbox";
-import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
+import type {
+  StockpileCardActions,
+  StockpileCardGroupView,
+  StockpileCardView,
+} from "@/components/Stockpile/types";
 import { useI18n } from "@/i18n/I18nProvider";
 
 const DEBUG_DISABLE_STOCKPILE_TABLE_ITEMS = false;
@@ -17,6 +21,7 @@ const DEBUG_DISABLE_STOCKPILE_TABLE_THUMBNAIL = false;
 
 type StockpileCardsTableProps = {
   items: StockpileCardView[];
+  groups?: StockpileCardGroupView[];
   actions: StockpileCardActions;
   dragEnabled: boolean;
   onClearSelection: () => void;
@@ -141,6 +146,7 @@ function StockpileCardsTableRow({ card, actions, dragEnabled }: StockpileCardsTa
 
 export default function StockpileCardsTable({
   items,
+  groups = [],
   actions,
   headers,
   dragEnabled,
@@ -182,16 +188,32 @@ export default function StockpileCardsTable({
         />
       </div>
       <div className={styles.stockpileTableBody} role="rowgroup">
-        {DEBUG_DISABLE_STOCKPILE_TABLE_ITEMS
-          ? null
-          : items.map((card) => (
-              <StockpileCardsTableRow
-                key={card.id}
-                card={card}
-                actions={actions}
-                dragEnabled={dragEnabled}
-              />
-            ))}
+        {DEBUG_DISABLE_STOCKPILE_TABLE_ITEMS ? null : groups.length > 0 ? (
+          groups.map((group) => (
+            <div key={group.id} className={styles.stockpileTableGroup} role="rowgroup">
+              <div className={styles.stockpileTableGroupHeader} role="row">
+                <div className={styles.stockpileTableGroupHeaderText}>{group.label}</div>
+              </div>
+              {group.cards.map((card) => (
+                <StockpileCardsTableRow
+                  key={card.id}
+                  card={card}
+                  actions={actions}
+                  dragEnabled={dragEnabled}
+                />
+              ))}
+            </div>
+          ))
+        ) : (
+          items.map((card) => (
+            <StockpileCardsTableRow
+              key={card.id}
+              card={card}
+              actions={actions}
+              dragEnabled={dragEnabled}
+            />
+          ))
+        )}
       </div>
     </div>
   );

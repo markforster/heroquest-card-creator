@@ -81,8 +81,10 @@ jest.mock("@/i18n/I18nProvider", () => ({
         "actions.allCards": "All cards",
         "label.gridView": "Grid",
         "label.tableView": "Table",
+        "label.none": "None",
         "tooltip.filterCards": "Filter cards",
         "tooltip.sortCards": "Sort cards",
+        "tooltip.groupCards": "Group cards",
         "aria.viewMode": "View mode",
         "warning.notPaired": "Not paired",
       };
@@ -109,7 +111,7 @@ describe("StockpilePrimaryToolbar", () => {
     },
   ];
 
-  it("renders search, grouped filter, the Not paired toggle, and the view switcher", () => {
+  it("renders search, filter, sort, group-by, the Not paired toggle, and the view switcher", () => {
     render(
       <StockpilePrimaryToolbar
         search=""
@@ -126,13 +128,19 @@ describe("StockpilePrimaryToolbar", () => {
           { value: "name", label: "Card name" },
           { value: "type", label: "Card type" },
         ]}
+        groupValue="none"
+        onGroupChange={() => {}}
+        groupOptions={[
+          { value: "none", label: "None" },
+          { value: "type", label: "Card type" },
+        ]}
         showUnpairedOnly={false}
         onShowUnpairedOnlyChange={() => {}}
       />,
     );
 
     expect(screen.getByRole("searchbox", { name: "Search cards" })).toBeInTheDocument();
-    expect(screen.getAllByTestId("mock-react-select")).toHaveLength(2);
+    expect(screen.getAllByTestId("mock-react-select")).toHaveLength(3);
     expect(screen.getByRole("button", { name: "Not paired" })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "View mode" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Grid" })).toBeInTheDocument();
@@ -154,6 +162,9 @@ describe("StockpilePrimaryToolbar", () => {
         sortValue="modified"
         onSortChange={() => {}}
         sortOptions={[{ value: "modified", label: "Last modified" }]}
+        groupValue="none"
+        onGroupChange={() => {}}
+        groupOptions={[{ value: "none", label: "None" }]}
       />,
     );
 
@@ -176,6 +187,9 @@ describe("StockpilePrimaryToolbar", () => {
         sortValue="modified"
         onSortChange={() => {}}
         sortOptions={[{ value: "modified", label: "Last modified" }]}
+        groupValue="none"
+        onGroupChange={() => {}}
+        groupOptions={[{ value: "none", label: "None" }]}
       />,
     );
 
@@ -202,11 +216,45 @@ describe("StockpilePrimaryToolbar", () => {
           { value: "name", label: "Card name" },
           { value: "type", label: "Card type" },
         ]}
+        groupValue="none"
+        onGroupChange={() => {}}
+        groupOptions={[
+          { value: "none", label: "None" },
+          { value: "type", label: "Card type" },
+        ]}
       />,
     );
 
     fireEvent.change(screen.getAllByTestId("mock-react-select")[1], { target: { value: "name" } });
     expect(onSortChange).toHaveBeenCalledWith("name");
+  });
+
+  it("calls onGroupChange with the selected group option value", () => {
+    const onGroupChange = jest.fn();
+
+    render(
+      <StockpilePrimaryToolbar
+        search=""
+        onSearchChange={() => {}}
+        viewMode="grid"
+        onViewModeChange={() => {}}
+        filterValue="all"
+        onFilterChange={() => {}}
+        filterOptions={filterOptions}
+        sortValue="modified"
+        onSortChange={() => {}}
+        sortOptions={[{ value: "modified", label: "Last modified" }]}
+        groupValue="none"
+        onGroupChange={onGroupChange}
+        groupOptions={[
+          { value: "none", label: "None" },
+          { value: "type", label: "Card type" },
+        ]}
+      />,
+    );
+
+    fireEvent.change(screen.getAllByTestId("mock-react-select")[2], { target: { value: "type" } });
+    expect(onGroupChange).toHaveBeenCalledWith("type");
   });
 
   it("calls onViewModeChange when switching views", () => {
@@ -224,6 +272,9 @@ describe("StockpilePrimaryToolbar", () => {
         sortValue="modified"
         onSortChange={() => {}}
         sortOptions={[{ value: "modified", label: "Last modified" }]}
+        groupValue="none"
+        onGroupChange={() => {}}
+        groupOptions={[{ value: "none", label: "None" }]}
       />,
     );
 
@@ -244,11 +295,15 @@ describe("StockpilePrimaryToolbar", () => {
         sortValue="modified"
         onSortChange={() => {}}
         sortOptions={[{ value: "modified", label: "Last modified" }]}
+        groupValue="none"
+        onGroupChange={() => {}}
+        groupOptions={[{ value: "none", label: "None" }]}
         showUnpairedOnly={false}
         onShowUnpairedOnlyChange={() => {}}
         isSearchDisabled
         isFilterDisabled
         isSortDisabled
+        isGroupDisabled
         isViewModeDisabled
         isUnpairedToggleDisabled
       />,
@@ -257,6 +312,7 @@ describe("StockpilePrimaryToolbar", () => {
     expect(screen.getByRole("searchbox", { name: "Search cards" })).toBeDisabled();
     expect(screen.getAllByTestId("mock-react-select")[0]).toBeDisabled();
     expect(screen.getAllByTestId("mock-react-select")[1]).toBeDisabled();
+    expect(screen.getAllByTestId("mock-react-select")[2]).toBeDisabled();
     expect(screen.getByRole("button", { name: "Not paired" })).toBeDisabled();
     expect(screen.getByRole("radio", { name: "Grid" })).toBeDisabled();
     expect(screen.getByRole("radio", { name: "Table" })).toBeDisabled();
@@ -277,6 +333,9 @@ describe("StockpilePrimaryToolbar", () => {
         sortValue="modified"
         onSortChange={() => {}}
         sortOptions={[{ value: "modified", label: "Last modified" }]}
+        groupValue="none"
+        onGroupChange={() => {}}
+        groupOptions={[{ value: "none", label: "None" }]}
         showUnpairedOnly={false}
         onShowUnpairedOnlyChange={onShowUnpairedOnlyChange}
       />,

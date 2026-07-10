@@ -6,6 +6,7 @@ import { ToggleButton, ToggleButtonGroup } from "react-bootstrap";
 
 import styles from "@/app/page.module.css";
 import StockpileToolbarFilterSelect from "@/components/Stockpile/StockpileToolbarFilterSelect";
+import StockpileToolbarGroupSelect from "@/components/Stockpile/StockpileToolbarGroupSelect";
 import StockpileToolbarSortSelect from "@/components/Stockpile/StockpileToolbarSortSelect";
 import StockpileToolbarSpacer from "@/components/Stockpile/StockpileToolbarSpacer";
 import type { StockpilePrimaryToolbarProps } from "@/components/Stockpile/types";
@@ -22,12 +23,16 @@ export default function StockpilePrimaryToolbar({
   sortValue,
   onSortChange,
   sortOptions,
+  groupValue,
+  onGroupChange,
+  groupOptions,
   showUnpairedOnly = false,
   onShowUnpairedOnlyChange,
   isUnpairedToggleDisabled = false,
   isSearchDisabled = false,
   isFilterDisabled = false,
   isSortDisabled = false,
+  isGroupDisabled = false,
   isViewModeDisabled = false,
 }: StockpilePrimaryToolbarProps) {
   const { t } = useI18n();
@@ -37,6 +42,7 @@ export default function StockpilePrimaryToolbar({
   const clearLabel = t("actions.clear");
   const filterLabel = t("tooltip.filterCards");
   const sortLabel = t("tooltip.sortCards");
+  const groupLabel = t("tooltip.groupCards");
   const notPairedLabel = t("warning.notPaired");
   const gridViewLabel = t("label.gridView");
   const tableViewLabel = t("label.tableView");
@@ -96,6 +102,14 @@ export default function StockpilePrimaryToolbar({
             options={sortOptions}
             disabled={isSortDisabled}
             ariaLabel={sortLabel}
+          />
+          <StockpileToolbarSpacer />
+          <StockpileToolbarGroupSelect
+            value={groupValue}
+            onChange={onGroupChange}
+            options={groupOptions}
+            disabled={isGroupDisabled}
+            ariaLabel={groupLabel}
           />
           {onShowUnpairedOnlyChange ? (
             <>

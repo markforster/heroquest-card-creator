@@ -254,6 +254,7 @@ describe("StockpilePanelContent collection pdf export", () => {
       visibleCollectionIds: new Set(),
       eligibleIdSet: new Set(),
       overallCount: 0,
+      groupedCards: [],
     });
   });
 

@@ -8,7 +8,11 @@ import SavedCardTile from "@/components/common/SavedCardTile";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import StockpilePairIndicator from "@/components/Stockpile/StockpilePairIndicator";
 import StockpileSelectCheckbox from "@/components/Stockpile/StockpileSelectCheckbox";
-import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
+import type {
+  StockpileCardActions,
+  StockpileCardGroupView,
+  StockpileCardView,
+} from "@/components/Stockpile/types";
 import { useI18n } from "@/i18n/I18nProvider";
 
 const ENABLE_LEGACY_GRID_CARD_LAYOUT = false;
@@ -20,6 +24,7 @@ const DEBUG_DISABLE_STOCKPILE_GRID_PAIR_INDICATOR = false;
 
 type StockpileCardsGridProps = {
   items: StockpileCardView[];
+  groups?: StockpileCardGroupView[];
   actions: StockpileCardActions;
   isPairMode: boolean;
   dragEnabled: boolean;
@@ -171,6 +176,7 @@ function StockpileCardsGridItem({
 
 export default function StockpileCardsGrid({
   items,
+  groups = [],
   actions,
   isPairMode,
   dragEnabled,
@@ -178,23 +184,46 @@ export default function StockpileCardsGrid({
 }: StockpileCardsGridProps) {
   return (
     <div
-      className={styles.stockpileCardsGrid}
+      className={groups.length > 0 ? styles.stockpileCardsGridSurface : styles.stockpileCardsGrid}
       onClick={(event) => {
         if (event.target !== event.currentTarget) return;
         onClearSelection();
       }}
     >
-      {DEBUG_DISABLE_STOCKPILE_GRID_ITEMS
-        ? null
-        : items.map((card) => (
-            <StockpileCardsGridItem
-              key={card.id}
-              card={card}
-              actions={actions}
-              isPairMode={isPairMode}
-              dragEnabled={dragEnabled}
-            />
+      {DEBUG_DISABLE_STOCKPILE_GRID_ITEMS ? null : groups.length > 0 ? (
+        <div className={styles.stockpileCardGroups}>
+          {groups.map((group) => (
+            <section
+              key={group.id}
+              className={styles.stockpileCardGroup}
+              aria-label={group.label}
+            >
+              <h3 className={styles.stockpileCardGroupTitle}>{group.label}</h3>
+              <div className={styles.stockpileCardsGrid}>
+                {group.cards.map((card) => (
+                  <StockpileCardsGridItem
+                    key={card.id}
+                    card={card}
+                    actions={actions}
+                    isPairMode={isPairMode}
+                    dragEnabled={dragEnabled}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
+        </div>
+      ) : (
+        items.map((card) => (
+          <StockpileCardsGridItem
+            key={card.id}
+            card={card}
+            actions={actions}
+            isPairMode={isPairMode}
+            dragEnabled={dragEnabled}
+          />
+        ))
+      )}
     </div>
   );
 }
