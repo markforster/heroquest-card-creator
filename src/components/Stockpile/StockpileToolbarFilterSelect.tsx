@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Filter } from "lucide-react";
+import { BringToFront, Layers3, SendToBack } from "lucide-react";
 import Select, {
   type FormatOptionLabelMeta,
   type SingleValue,
@@ -27,6 +27,43 @@ type StockpileToolbarFilterSelectProps = {
   ariaLabel: string;
 };
 
+function renderFilterLeadingVisual(value: string) {
+  if (value === "all") {
+    return <Layers3 size={12} aria-hidden="true" className={styles.stockpilePrimaryToolbarFilterOptionIcon} />;
+  }
+  if (value === "face:front") {
+    return (
+      <BringToFront size={12} aria-hidden="true" className={styles.stockpilePrimaryToolbarFilterOptionIcon} />
+    );
+  }
+  if (value === "face:back") {
+    return <SendToBack size={12} aria-hidden="true" className={styles.stockpilePrimaryToolbarFilterOptionIcon} />;
+  }
+  return (
+    <span
+      aria-hidden="true"
+      className={`${styles.stockpilePrimaryToolbarFilterOptionMarker} ${getFilterMarkerClassName(value)}`}
+    />
+  );
+}
+
+function getFilterMarkerClassName(value: string): string {
+  if (!value.startsWith("type:")) return styles.stockpilePrimaryToolbarFilterMarkerSpacer;
+
+  const templateId = value.slice("type:".length);
+  if (!templateId || templateId === "all") return styles.stockpilePrimaryToolbarFilterMarkerSpacer;
+  if (templateId === "hero") return styles.stockpilePrimaryToolbarFilterMarkerHero;
+  if (templateId === "monster") return styles.stockpilePrimaryToolbarFilterMarkerMonster;
+  if (templateId === "spell") return styles.stockpilePrimaryToolbarFilterMarkerSpell;
+  if (templateId === "large-treasure" || templateId === "small-treasure") {
+    return styles.stockpilePrimaryToolbarFilterMarkerTreasure;
+  }
+  if (templateId === "hero-back" || templateId === "labelled-back") {
+    return styles.stockpilePrimaryToolbarFilterMarkerBack;
+  }
+  return styles.stockpilePrimaryToolbarFilterMarkerDefault;
+}
+
 function getStockpileToolbarFilterStyles(
   disabled: boolean,
 ): StylesConfig<StockpilePrimaryToolbarFilterOption, false> {
@@ -36,17 +73,20 @@ function getStockpileToolbarFilterStyles(
     ...baseStyles,
     control: (base, state) => ({
       ...baseStyles.control?.(base, state),
-      fontSize: "var(--text-md)",
-      lineHeight: 1.4,
+      fontSize: "var(--hq-control-text-primary)",
+      lineHeight: "var(--hq-control-line-height)",
     }),
     singleValue: (base, state) => ({
       ...baseStyles.singleValue?.(base, state),
-      fontSize: "var(--text-md)",
-      lineHeight: 1.4,
+      fontSize: "var(--hq-control-text-primary)",
+      lineHeight: "var(--hq-control-line-height)",
     }),
     menu: (base) => ({
       ...base,
       zIndex: 5,
+      width: "max-content",
+      minWidth: "100%",
+      maxWidth: "min(28rem, calc(100vw - 2rem))",
       backgroundColor: "var(--hq-popover-bg)",
       border: "1px solid var(--hq-popover-border)",
       borderRadius: 12,
@@ -76,8 +116,9 @@ function getStockpileToolbarFilterStyles(
           ? "rgba(230, 179, 90, 0.08)"
           : "transparent",
       color: "var(--hq-text)",
-      fontSize: "var(--text-md)",
-      lineHeight: 1.4,
+      fontSize: "var(--hq-control-text-primary)",
+      lineHeight: "var(--hq-control-line-height)",
+      whiteSpace: "nowrap",
       padding: 0,
       borderRadius: 8,
       border: state.isSelected ? "1px solid rgba(230, 179, 90, 0.6)" : "1px solid transparent",
@@ -85,13 +126,13 @@ function getStockpileToolbarFilterStyles(
     }),
     placeholder: (base, state) => ({
       ...baseStyles.placeholder?.(base, state),
-      fontSize: "var(--text-md)",
-      lineHeight: 1.4,
+      fontSize: "var(--hq-control-text-primary)",
+      lineHeight: "var(--hq-control-line-height)",
     }),
     input: (base, state) => ({
       ...baseStyles.input?.(base, state),
-      fontSize: "var(--text-md)",
-      lineHeight: 1.4,
+      fontSize: "var(--hq-control-text-primary)",
+      lineHeight: "var(--hq-control-line-height)",
     }),
   };
 }
@@ -124,7 +165,7 @@ export default function StockpileToolbarFilterSelect({
     if (meta.context === "value") {
       return (
         <span className={styles.stockpilePrimaryToolbarFilterValue}>
-          <Filter size={14} aria-hidden="true" />
+          {renderFilterLeadingVisual(option.value)}
           <span>{option.label}</span>
         </span>
       );
@@ -133,6 +174,7 @@ export default function StockpileToolbarFilterSelect({
     return (
       <div className={styles.stockpilePrimaryToolbarFilterOption}>
         <div className={styles.stockpilePrimaryToolbarFilterOptionStart}>
+          {renderFilterLeadingVisual(option.value)}
           <span className={styles.stockpilePrimaryToolbarFilterOptionText}>{option.label}</span>
         </div>
         {typeof option.count === "number" ? (

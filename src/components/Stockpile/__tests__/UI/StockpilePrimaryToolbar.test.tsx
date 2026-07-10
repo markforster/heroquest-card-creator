@@ -78,6 +78,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
         "tooltip.searchCards": "Search cards",
         "placeholders.searchCards": "Search cards...",
         "actions.clear": "Clear",
+        "actions.allCards": "All cards",
         "label.gridView": "Grid",
         "label.tableView": "Table",
         "tooltip.filterCards": "Filter cards",
@@ -95,7 +96,7 @@ describe("StockpilePrimaryToolbar", () => {
     {
       label: "Face",
       options: [
-        { value: "face:all", label: "All faces" },
+        { value: "all", label: "All cards" },
         { value: "face:front", label: "Front" },
         { value: "face:back", label: "Back" },
       ],
@@ -103,7 +104,6 @@ describe("StockpilePrimaryToolbar", () => {
     {
       label: "Type",
       options: [
-        { value: "type:all", label: "All types" },
         { value: "type:monster", label: "Monster card" },
       ],
     },
@@ -116,7 +116,7 @@ describe("StockpilePrimaryToolbar", () => {
         onSearchChange={() => {}}
         viewMode="grid"
         onViewModeChange={() => {}}
-        filterValue="type:all"
+        filterValue="all"
         onFilterChange={() => {}}
         filterOptions={filterOptions}
         sortValue="modified"
@@ -124,7 +124,7 @@ describe("StockpilePrimaryToolbar", () => {
         sortOptions={[
           { value: "modified", label: "Last modified" },
           { value: "name", label: "Card name" },
-          { value: "created", label: "Date created" },
+          { value: "type", label: "Card type" },
         ]}
         showUnpairedOnly={false}
         onShowUnpairedOnlyChange={() => {}}
@@ -148,7 +148,7 @@ describe("StockpilePrimaryToolbar", () => {
         onSearchChange={onSearchChange}
         viewMode="grid"
         onViewModeChange={() => {}}
-        filterValue="type:all"
+        filterValue="all"
         onFilterChange={() => {}}
         filterOptions={filterOptions}
         sortValue="modified"
@@ -170,7 +170,7 @@ describe("StockpilePrimaryToolbar", () => {
         onSearchChange={() => {}}
         viewMode="grid"
         onViewModeChange={() => {}}
-        filterValue="type:all"
+        filterValue="all"
         onFilterChange={onFilterChange}
         filterOptions={filterOptions}
         sortValue="modified"
@@ -192,7 +192,7 @@ describe("StockpilePrimaryToolbar", () => {
         onSearchChange={() => {}}
         viewMode="grid"
         onViewModeChange={() => {}}
-        filterValue="type:all"
+        filterValue="all"
         onFilterChange={() => {}}
         filterOptions={filterOptions}
         sortValue="modified"
@@ -200,7 +200,7 @@ describe("StockpilePrimaryToolbar", () => {
         sortOptions={[
           { value: "modified", label: "Last modified" },
           { value: "name", label: "Card name" },
-          { value: "created", label: "Date created" },
+          { value: "type", label: "Card type" },
         ]}
       />,
     );
@@ -218,7 +218,7 @@ describe("StockpilePrimaryToolbar", () => {
         onSearchChange={() => {}}
         viewMode="grid"
         onViewModeChange={onViewModeChange}
-        filterValue="type:all"
+        filterValue="all"
         onFilterChange={() => {}}
         filterOptions={filterOptions}
         sortValue="modified"
@@ -238,7 +238,7 @@ describe("StockpilePrimaryToolbar", () => {
         onSearchChange={() => {}}
         viewMode="grid"
         onViewModeChange={() => {}}
-        filterValue="type:all"
+        filterValue="all"
         onFilterChange={() => {}}
         filterOptions={filterOptions}
         sortValue="modified"
@@ -271,7 +271,7 @@ describe("StockpilePrimaryToolbar", () => {
         onSearchChange={() => {}}
         viewMode="grid"
         onViewModeChange={() => {}}
-        filterValue="type:all"
+        filterValue="all"
         onFilterChange={() => {}}
         filterOptions={filterOptions}
         sortValue="modified"

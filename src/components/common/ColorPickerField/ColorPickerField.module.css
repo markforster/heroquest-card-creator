@@ -26,8 +26,9 @@
   border: 1px solid var(--hq-input-border);
   background: var(--hq-input-bg);
   color: var(--hq-input-text);
-  font-size: 13px;
+  font-size: var(--hq-control-text-primary);
   font-family: var(--hq-font-form);
+  line-height: var(--hq-control-line-height);
   text-transform: uppercase;
 }
 
@@ -95,7 +96,8 @@
   border: none;
   background: transparent;
   color: var(--hq-tab-text);
-  font-size: 11px;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 6px 10px;
@@ -320,7 +322,8 @@
 }
 
 .smartPopoverHeader {
-  font-size: 12px;
+  font-size: var(--hq-control-text-secondary);
+  line-height: var(--hq-control-line-height);
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--hq-text-muted);
@@ -347,7 +350,8 @@
 }
 
 .smartPopoverGroupLabel {
-  font-size: 11px;
+  font-size: var(--hq-control-text-helper);
+  line-height: var(--hq-control-line-height);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--hq-text-muted);
@@ -364,6 +368,7 @@
 }
 
 .smartPopoverHint {
-  font-size: 12px;
+  font-size: var(--hq-control-text-helper);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text-muted);
 }

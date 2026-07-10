@@ -29,17 +29,20 @@ function getStockpileToolbarSortStyles(
     ...baseStyles,
     control: (base, state) => ({
       ...baseStyles.control?.(base, state),
-      fontSize: "var(--text-md)",
-      lineHeight: 1.4,
+      fontSize: "var(--hq-control-text-primary)",
+      lineHeight: "var(--hq-control-line-height)",
     }),
     singleValue: (base, state) => ({
       ...baseStyles.singleValue?.(base, state),
-      fontSize: "var(--text-md)",
-      lineHeight: 1.4,
+      fontSize: "var(--hq-control-text-primary)",
+      lineHeight: "var(--hq-control-line-height)",
     }),
     menu: (base) => ({
       ...base,
       zIndex: 5,
+      width: "max-content",
+      minWidth: "100%",
+      maxWidth: "min(24rem, calc(100vw - 2rem))",
       backgroundColor: "var(--hq-popover-bg)",
       border: "1px solid var(--hq-popover-border)",
       borderRadius: 12,
@@ -59,8 +62,9 @@ function getStockpileToolbarSortStyles(
           ? "rgba(230, 179, 90, 0.08)"
           : "transparent",
       color: "var(--hq-text)",
-      fontSize: "var(--text-md)",
-      lineHeight: 1.4,
+      fontSize: "var(--hq-control-text-primary)",
+      lineHeight: "var(--hq-control-line-height)",
+      whiteSpace: "nowrap",
       padding: 0,
       borderRadius: 8,
       border: state.isSelected ? "1px solid rgba(230, 179, 90, 0.6)" : "1px solid transparent",
@@ -68,13 +72,13 @@ function getStockpileToolbarSortStyles(
     }),
     placeholder: (base, state) => ({
       ...baseStyles.placeholder?.(base, state),
-      fontSize: "var(--text-md)",
-      lineHeight: 1.4,
+      fontSize: "var(--hq-control-text-primary)",
+      lineHeight: "var(--hq-control-line-height)",
     }),
     input: (base, state) => ({
       ...baseStyles.input?.(base, state),
-      fontSize: "var(--text-md)",
-      lineHeight: 1.4,
+      fontSize: "var(--hq-control-text-primary)",
+      lineHeight: "var(--hq-control-line-height)",
     }),
   };
 }

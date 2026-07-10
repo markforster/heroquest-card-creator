@@ -195,6 +195,9 @@ jest.mock("@/components/Stockpile/StockpilePrimaryToolbar", () => ({
         <button type="button" onClick={() => (props.onFilterChange as (value: string) => void)("face:back")}>
           Primary filter change
         </button>
+        <button type="button" onClick={() => (props.onFilterChange as (value: string) => void)("all")}>
+          Primary filter all cards
+        </button>
         <button
           type="button"
           onClick={() => (props.onViewModeChange as (value: "grid" | "table") => void)("table")}
@@ -330,6 +333,15 @@ describe("StockpilePanelContent primary toolbar placement (UI)", () => {
       "Select a card by clicking on it.",
       "lightbulb",
     );
+  });
+
+  it("uses a single all-cards toolbar option for the unfiltered state", () => {
+    renderPanel();
+
+    expect(lastPrimaryToolbarProps?.filterValue).toBe("all");
+
+    fireEvent.click(screen.getByRole("button", { name: "Primary filter all cards" }));
+    expect(lastPrimaryToolbarProps?.filterValue).toBe("all");
   });
 
   it("moves standard actions into the bottom toolbar and keeps the top toolbar focused on view controls", () => {

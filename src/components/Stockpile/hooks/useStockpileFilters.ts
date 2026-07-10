@@ -16,6 +16,7 @@ type ActiveFilter =
 type UseStockpileFiltersOptions = {
   cards: CardRecord[];
   collections: CollectionRecord[];
+  templateLabelMap?: Record<string, string>;
   search: string;
   templateFilter: string;
   activeFilter: ActiveFilter;
@@ -31,6 +32,7 @@ type UseStockpileFiltersOptions = {
 export const useStockpileFilters = ({
   cards,
   collections,
+  templateLabelMap,
   search,
   templateFilter,
   activeFilter,
@@ -47,6 +49,11 @@ export const useStockpileFilters = ({
     const bName = b.nameLower ?? b.name.toLocaleLowerCase();
     return aName.localeCompare(bName);
   };
+  const compareCardsByTypeAsc = (a: CardRecord, b: CardRecord) => {
+    const aType = templateLabelMap?.[a.templateId] ?? a.templateId;
+    const bType = templateLabelMap?.[b.templateId] ?? b.templateId;
+    return aType.localeCompare(bType);
+  };
   const compareCardsBySortMode = (
     sort: StockpilePrimaryToolbarSortValue,
     a: CardRecord,
@@ -59,8 +66,9 @@ export const useStockpileFilters = ({
       return b.createdAt - a.createdAt;
     }
 
-    if (sort === "created") {
-      if (b.createdAt !== a.createdAt) return b.createdAt - a.createdAt;
+    if (sort === "type") {
+      const byType = compareCardsByTypeAsc(a, b);
+      if (byType !== 0) return byType;
       const byName = compareCardsByNameAsc(a, b);
       if (byName !== 0) return byName;
       return b.updatedAt - a.updatedAt;
@@ -299,6 +307,7 @@ export const useStockpileFilters = ({
   }, [
     cards,
     recentCards,
+    templateLabelMap,
     search,
     templateFilter,
     activeFilter,

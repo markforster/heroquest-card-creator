@@ -11,9 +11,9 @@
   min-width: 0;
   padding: 0;
   font-family: var(--hq-font-form);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
   font-weight: 400;
-  line-height: 1.5;
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text);
 }
 

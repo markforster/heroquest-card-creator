@@ -84,27 +84,33 @@ describe("useStockpileFilters", () => {
     expect(result.current.filteredCards.map((card) => card.id)).toEqual(["c", "b", "a"]);
   });
 
-  it("supports sorting normal stockpile results by created date", () => {
+  it("supports sorting normal stockpile results by localized card type", () => {
     const cards = [
-      baseCard({ id: "a", name: "Zulu", nameLower: "zulu", updatedAt: 1, createdAt: 1 }),
-      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", updatedAt: 2, createdAt: 9 }),
-      baseCard({ id: "c", name: "Alpha", nameLower: "alpha", updatedAt: 5, createdAt: 9 }),
+      baseCard({ id: "a", templateId: "monster", name: "Zulu", nameLower: "zulu", updatedAt: 1, createdAt: 1 }),
+      baseCard({ id: "b", templateId: "hero", name: "Beta", nameLower: "beta", updatedAt: 2, createdAt: 9 }),
+      baseCard({ id: "c", templateId: "hero", name: "Alpha", nameLower: "alpha", updatedAt: 5, createdAt: 9 }),
+      baseCard({ id: "d", templateId: "hero-back", name: "Alpha", nameLower: "alpha", updatedAt: 3, createdAt: 4 }),
     ];
 
     const { result } = renderHook(() =>
       useStockpileFilters({
         cards,
         collections: [],
+        templateLabelMap: {
+          hero: "Hero Card",
+          monster: "Monster Card",
+          "hero-back": "Hero Back",
+        },
         search: "",
         templateFilter: "all",
         activeFilter: { type: "all" },
         isPairMode: false,
         isPairBacks: false,
-        sortMode: "created",
+        sortMode: "type",
       }),
     );
 
-    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["c", "b", "a"]);
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["d", "c", "b", "a"]);
   });
 
   it("returns recentCards sorted by lastViewedAt then updatedAt", () => {

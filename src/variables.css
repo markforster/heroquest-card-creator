@@ -189,6 +189,12 @@
   --text-4xl: 1.05rem;
   --text-5xl: 1.15rem;
 
+  /* Interactive control typography */
+  --hq-control-text-primary: var(--text-md);
+  --hq-control-text-secondary: var(--text-sm);
+  --hq-control-text-helper: var(--text-sm);
+  --hq-control-line-height: 1.4;
+
   /* Consolidation tokens: radii */
   --radius-sm: 6px;
   --radius-md: 8px;

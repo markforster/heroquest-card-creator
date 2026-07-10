@@ -722,7 +722,7 @@
   border-radius: var(--radius-sm);
   padding: var(--space-5) var(--space-7);
   text-align: left;
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
   letter-spacing: 0.04em;
   cursor: pointer;
   display: inline-flex;
@@ -1109,7 +1109,8 @@
   text-decoration: none;
   padding: var(--space-4) var(--space-6);
   border-radius: var(--radius-sm);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
@@ -1317,7 +1318,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-6);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
@@ -1373,7 +1375,7 @@
   border-radius: var(--radius-sm);
   padding: var(--space-5) var(--space-7);
   text-align: left;
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
   letter-spacing: 0.04em;
   cursor: pointer;
   display: inline-flex;
@@ -1668,7 +1670,8 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 0.82rem;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-accent);
 }
 
@@ -1676,7 +1679,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.82rem;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text);
 }
 .toolsToolbarPopoverLabel input[type="range"],
@@ -1691,7 +1695,7 @@
 }
 
 .toolsToolbarPopoverHint {
-  font-size: 0.72rem;
+  font-size: var(--hq-control-text-helper);
   color: var(--hq-text-muted);
 }
 
@@ -1790,7 +1794,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--inspector-label-field-gap);
-  font-size: 0.78rem;
+  font-size: var(--hq-control-text-secondary);
+  line-height: var(--hq-control-line-height);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--hq-accent);
@@ -1808,7 +1813,8 @@
   border: 1px solid var(--hq-border-mid);
   background: var(--hq-input-bg);
   color: var(--hq-text);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   font-family: var(--hq-font-form);
 }
 
@@ -2158,7 +2164,7 @@
   align-items: center;
   justify-content: flex-start;
   gap: var(--space-3);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
   color: var(--hq-text);
   line-height: 1.2;
   align-self: flex-start;
@@ -3764,7 +3770,8 @@
   text-align: left;
   padding: var(--space-5) var(--space-7);
   border-radius: 0.35rem;
-  font-size: 0.82rem;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   letter-spacing: 0.01em;
 }
 
@@ -4250,7 +4257,8 @@
   padding: var(--space-4) var(--space-6);
   background: var(--hq-white-05);
   color: inherit;
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: left;
@@ -4306,7 +4314,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   letter-spacing: 0.02em;
   flex-wrap: wrap;
 }
@@ -4419,7 +4428,8 @@
 }
 
 .settingsPanelOption {
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text);
 }
 
@@ -4427,12 +4437,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  font-size: 0.82rem;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text);
 }
 
 .settingsPanelToggle {
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text);
 }
 
@@ -4690,7 +4702,8 @@
 }
 
 .exportPromptProfileLabel {
-  font-size: 0.78rem;
+  font-size: var(--hq-control-text-secondary);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text-muted);
   white-space: nowrap;
 }
@@ -4790,7 +4803,8 @@
 
 .statLabelsFieldHeader :global(.form-label) {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: var(--hq-control-text-secondary);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text-muted);
 }
 
@@ -4805,7 +4819,8 @@
   border: 1px solid var(--hq-border-mid);
   background: var(--hq-input-bg);
   color: var(--hq-text);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   font-family: var(--hq-font-form);
 }
 
@@ -4833,13 +4848,15 @@
 
 .settingsPopover .settingsGroup :global(.form-label) {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: var(--hq-control-text-secondary);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text-muted);
 }
 
 .settingsPopover .settingsGroup :global(.form-text),
 .settingsPopover .settingsPanelRow {
-  font-size: 0.72rem;
+  font-size: var(--hq-control-text-helper);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text-muted);
 }
 
@@ -4859,7 +4876,8 @@
   border: 0;
   background: transparent;
   padding: 0;
-  font-size: 0.65rem;
+  font-size: var(--hq-control-text-helper);
+  line-height: var(--hq-control-line-height);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--hq-text-muted);
@@ -4944,7 +4962,8 @@
 
 .pdfExportFieldLabel {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: var(--hq-control-text-secondary);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text-muted);
 }
 
@@ -5010,7 +5029,7 @@
 }
 
 .pdfDuplexHelpPopoverTitle {
-  font-size: var(--text-sm);
+  font-size: var(--hq-control-text-secondary);
   font-weight: 700;
   color: var(--hq-text);
 }
@@ -5028,13 +5047,14 @@
 }
 
 .pdfDuplexHelpItemLabel {
-  font-size: var(--text-sm);
+  font-size: var(--hq-control-text-secondary);
+  line-height: var(--hq-control-line-height);
   font-weight: 600;
   color: var(--hq-text);
 }
 
 .pdfDuplexHelpItemText {
-  font-size: 0.78rem;
+  font-size: var(--hq-control-text-helper);
   line-height: 1.35;
   color: var(--hq-text-muted);
 }
@@ -5105,15 +5125,15 @@
 }
 
 .pdfChoiceTileLabel {
-  font-size: 0.93rem;
+  font-size: var(--hq-control-text-primary);
   font-weight: 600;
-  line-height: 1.15;
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text);
 }
 
 .pdfChoiceTileDescription {
-  font-size: 0.72rem;
-  line-height: 1.25;
+  font-size: var(--hq-control-text-helper);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text-muted);
 }
 
@@ -5168,15 +5188,15 @@
 }
 
 .pdfVisualSelectOptionLabel {
-  font-size: 0.92rem;
+  font-size: var(--hq-control-text-primary);
   font-weight: 600;
-  line-height: 1.15;
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text);
 }
 
 .pdfVisualSelectOptionDescription {
-  font-size: 0.72rem;
-  line-height: 1.25;
+  font-size: var(--hq-control-text-helper);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text-muted);
 }
 
@@ -5197,7 +5217,8 @@
 
 .pdfVisualSelectValueLabel {
   min-width: 0;
-  font-size: 0.92rem;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   font-weight: 600;
   color: var(--hq-text);
   white-space: nowrap;
@@ -5219,7 +5240,8 @@
 }
 
 .pdfBleedUnit {
-  font-size: 0.82rem;
+  font-size: var(--hq-control-text-secondary);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text-muted);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -5351,18 +5373,21 @@
 }
 
 .exportFormatOption {
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text);
 }
 
 .exportFormatLabel {
   display: block;
-  font-size: 0.9rem;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
 }
 
 .exportFormatHint {
   display: block;
-  font-size: 0.72rem;
+  font-size: var(--hq-control-text-helper);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text-muted);
 }
 
@@ -5580,17 +5605,23 @@
   outline: none;
   background: transparent;
   color: var(--hq-text);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
 }
 
 .themedFormControl {
   background: var(--hq-input-bg) !important;
   color: var(--hq-input-text) !important;
   border: 1px solid var(--hq-border-mid) !important;
+  font-size: var(--hq-control-text-primary) !important;
+  line-height: var(--hq-control-line-height) !important;
+  font-family: var(--hq-font-form) !important;
 }
 
 .themedFormControl::placeholder {
   color: var(--hq-input-placeholder) !important;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
 }
 
 .themedFormControl:focus {
@@ -5624,7 +5655,8 @@
 }
 
 .cardsSelectionLabel {
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   color: #cbd5f5;
 }
 
@@ -5642,7 +5674,8 @@
 
 .missingArtworkLabel {
   color: #f87171;
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
 }
 
 .cardsFilterSelect {
@@ -5654,7 +5687,8 @@
   border: 1px solid var(--hq-border-mid);
   background: var(--hq-surface-900);
   color: var(--hq-text);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
 }
 
 .cardsFilterMenu {
@@ -5670,7 +5704,8 @@
   border: 1px solid var(--hq-border-mid);
   background: var(--hq-surface-900);
   color: var(--hq-text);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   padding: 0.3rem var(--space-7);
   display: flex;
   align-items: center;
@@ -5710,7 +5745,7 @@
   border: 1px solid transparent;
   background: transparent;
   color: var(--hq-text);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
   text-align: left;
   cursor: pointer;
 }
@@ -5722,7 +5757,7 @@
 
 .cardsFilterCount {
   color: var(--hq-text-muted);
-  font-size: var(--text-md);
+  font-size: var(--hq-control-text-helper);
 }
 
 .cardsPairIndicator {
@@ -5982,12 +6017,12 @@
 }
 
 .stockpilePrimaryToolbarFilter {
-  min-width: 12rem;
+  min-width: 10rem;
   flex: 0 0 auto;
 }
 
 .stockpilePrimaryToolbarSort {
-  min-width: 11rem;
+  min-width: 9rem;
   flex: 0 0 auto;
 }
 
@@ -6010,8 +6045,9 @@
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--hq-text-muted);
-  font-size: var(--text-sm);
+  font-size: var(--hq-control-text-primary);
   font-weight: 600;
+  line-height: var(--hq-control-line-height);
   white-space: nowrap;
   transition:
     background-color 160ms ease,
@@ -6040,7 +6076,7 @@
 
 .stockpilePrimaryToolbarFilterGroupLabel {
   padding: 0.45rem 0.55rem 0.25rem;
-  font-size: var(--text-sm);
+  font-size: var(--hq-control-text-secondary);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -6051,16 +6087,16 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: var(--text-md);
-  line-height: 1.4;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
 }
 
 .stockpilePrimaryToolbarSortValue {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: var(--text-md);
-  line-height: 1.4;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
 }
 
 .stockpilePrimaryToolbarFilterOption {
@@ -6075,19 +6111,74 @@
 .stockpilePrimaryToolbarFilterOptionStart {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-4);
   min-width: 0;
   flex: 1 1 auto;
+}
+
+.stockpilePrimaryToolbarFilterOptionMarker {
+  width: 0.62rem;
+  height: 0.62rem;
+  min-width: 0.62rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  flex: 0 0 auto;
+}
+
+.stockpilePrimaryToolbarFilterOptionIcon {
+  width: 0.62rem;
+  height: 0.62rem;
+  min-width: 0.62rem;
+  flex: 0 0 auto;
+  color: var(--hq-text-muted);
+}
+
+.stockpilePrimaryToolbarFilterMarkerSpacer {
+  border-color: transparent;
+  background: transparent;
+}
+
+.stockpilePrimaryToolbarFilterMarkerDefault {
+  background: var(--hq-pill-bg);
+  border-color: var(--hq-pill-border);
+}
+
+.stockpilePrimaryToolbarFilterMarkerHero {
+  background: var(--hq-pill-hero-bg);
+  border-color: color-mix(in srgb, var(--hq-pill-hero-text) 28%, transparent);
+}
+
+.stockpilePrimaryToolbarFilterMarkerMonster {
+  background: var(--hq-pill-monster-bg);
+  border-color: color-mix(in srgb, var(--hq-pill-monster-text) 28%, transparent);
+}
+
+.stockpilePrimaryToolbarFilterMarkerSpell {
+  background: var(--hq-pill-spell-bg);
+  border-color: color-mix(in srgb, var(--hq-pill-spell-text) 28%, transparent);
+}
+
+.stockpilePrimaryToolbarFilterMarkerTreasure {
+  background: var(--hq-pill-treasure-bg);
+  border-color: color-mix(in srgb, var(--hq-pill-treasure-text) 28%, transparent);
+}
+
+.stockpilePrimaryToolbarFilterMarkerBack {
+  background: var(--hq-pill-back-bg);
+  border-color: color-mix(in srgb, var(--hq-pill-back-text) 28%, transparent);
 }
 
 .stockpilePrimaryToolbarFilterOptionText {
   min-width: 0;
   flex: 1 1 auto;
-  font-size: var(--text-md);
-  line-height: 1.4;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
+  white-space: nowrap;
 }
 
 .stockpilePrimaryToolbarFilterOptionCountBadge {
-  font-size: var(--text-sm);
+  font-size: var(--hq-control-text-helper);
   line-height: 1;
   color: var(--hq-text-muted);
   flex: 0 0 auto;
@@ -6103,8 +6194,9 @@
 .stockpilePrimaryToolbarSortOptionText {
   min-width: 0;
   flex: 1 1 auto;
-  font-size: var(--text-md);
-  line-height: 1.4;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
+  white-space: nowrap;
 }
 
 .stockpilePrimaryToolbarToggleGroup {
@@ -6249,8 +6341,9 @@
   border: 0;
   background: transparent;
   color: var(--hq-text-muted);
-  font-size: var(--text-sm);
+  font-size: var(--hq-control-text-primary);
   font-weight: 600;
+  line-height: var(--hq-control-line-height);
   text-decoration: none;
   transition:
     color 160ms ease,
@@ -6299,7 +6392,8 @@
 .stockpileBottomToolbarActionLabel {
   display: inline-flex;
   align-items: center;
-  line-height: 1;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
 }
 
 .stockpileBottomToolbarFolderBookmarkIcon {
@@ -6510,7 +6604,8 @@
   background: transparent;
   color: var(--hq-gray-200);
   text-align: left;
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   cursor: pointer;
 }
 
@@ -6625,7 +6720,7 @@
 }
 
 .stockpileCountBadge {
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-helper);
   line-height: 1;
   color: var(--hq-text);
   border: 1px solid var(--hq-accent);
@@ -6700,7 +6795,8 @@
 }
 
 .collectionsToggleTitle {
-  font-size: 0.72rem;
+  font-size: var(--hq-control-text-helper);
+  line-height: var(--hq-control-line-height);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--hq-accent);
@@ -6778,7 +6874,8 @@
   color: var(--hq-text-muted);
   padding: 0.35rem 0.9rem;
   border-radius: var(--radius-pill);
-  font-size: var(--text-sm);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
@@ -7378,6 +7475,8 @@
 
 .selectAllLabel {
   white-space: nowrap;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
 }
 
 .exportProgressTrack {
@@ -7535,7 +7634,8 @@ button.assetsKindBadge:disabled {
   border: 1px solid transparent;
   background: transparent;
   color: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
 }
 
 .assetsKindPopoverOption:hover {
@@ -8129,7 +8229,8 @@ button.assetsKindBadge:disabled {
   padding: var(--space-5) var(--space-8);
   background: var(--hq-surface-800);
   color: var(--hq-gray-200);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   box-shadow: none;
 }
 .imageAccordionButton:not(.collapsed),
@@ -8195,7 +8296,8 @@ button.assetsKindBadge:disabled {
   padding: var(--space-5) var(--space-8);
   background: var(--hq-surface-800);
   color: var(--hq-gray-200);
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
   box-shadow: none;
   display: flex;
   align-items: center;
@@ -9474,7 +9576,8 @@ button.assetsKindBadge:disabled {
   align-items: center;
   justify-content: center;
   padding: 0 var(--space-4);
-  font-size: var(--text-sm);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
 }
 
 .inspectorCollectionsActionButton:hover:enabled {
@@ -11121,10 +11224,12 @@ button.assetsKindBadge:disabled {
   overflow: visible;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
 }
 
 .deckFaceCardsFilterOptionCountBadge {
-  font-size: var(--text-lg);
+  font-size: var(--hq-control-text-helper);
   line-height: 1;
   color: var(--hq-text);
   border: 1px solid var(--hq-accent);

@@ -114,14 +114,14 @@ const STOCKPILE_FOOTER_TIP_SOURCE = "stockpile";
 function mapTemplateFilterToPrimaryToolbarValue(templateFilter: string) {
   if (templateFilter === "front") return "face:front";
   if (templateFilter === "back") return "face:back";
-  if (templateFilter === "all") return "type:all";
+  if (templateFilter === "all") return "all";
   return `type:${templateFilter}`;
 }
 
 function mapPrimaryToolbarValueToTemplateFilter(filterValue: string) {
+  if (filterValue === "all") return "all";
   if (filterValue === "face:front") return "front";
   if (filterValue === "face:back") return "back";
-  if (filterValue === "face:all" || filterValue === "type:all") return "all";
   if (filterValue.startsWith("type:")) return filterValue.slice("type:".length) || "all";
   return "all";
 }
@@ -232,6 +232,13 @@ export default function StockpilePanelContent({
   const hasMissingArtworkParam = useMemo(() => {
     return new URLSearchParams(location.search).has("missingartwork");
   }, [location.search]);
+  const templateFilterLabelMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    cardTemplates.forEach((template) => {
+      map[template.id] = getTemplateNameLabel(language, template);
+    });
+    return map;
+  }, [language]);
   const {
     recentlyDeletedCount,
     recentlyDeletedTotalCount,
@@ -248,6 +255,7 @@ export default function StockpilePanelContent({
   } = useStockpileFilters({
     cards,
     collections,
+    templateLabelMap: templateFilterLabelMap,
     search,
     templateFilter,
     activeFilter,
@@ -451,27 +459,20 @@ export default function StockpilePanelContent({
     showUnpairedOnly ||
     showMissingArtworkOnly ||
     activeFilter.type !== "all";
-  const templateFilterLabelMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    cardTemplates.forEach((template) => {
-      map[template.id] = getTemplateNameLabel(language, template);
-    });
-    return map;
-  }, [language]);
   const filterLabel =
     templateFilter === "all"
-      ? t("ui.allTypes")
+      ? t("actions.allCards")
       : templateFilter === "front"
         ? t("cardFace.frontFacing")
         : templateFilter === "back"
-        ? t("cardFace.backFacing")
+          ? t("cardFace.backFacing")
           : (templateFilterLabelMap[templateFilter] ?? templateFilter);
   const primaryToolbarFilterOptions = useMemo(
     () => [
       {
         label: t("label.cardFace"),
         options: [
-          { value: "face:all", label: "All faces", count: totalCount },
+          { value: "all", label: t("actions.allCards"), count: totalCount },
           { value: "face:front", label: t("cardFace.front"), count: faceCounts.front },
           { value: "face:back", label: t("cardFace.back"), count: faceCounts.back },
         ],
@@ -479,7 +480,6 @@ export default function StockpilePanelContent({
       {
         label: t("label.cardType"),
         options: [
-          { value: "type:all", label: t("ui.allTypes"), count: totalCount },
           ...cardTemplates.map((template) => ({
             value: `type:${template.id}`,
             label: getTemplateNameLabel(language, template),
@@ -494,7 +494,7 @@ export default function StockpilePanelContent({
     () => [
       { value: "modified" as const, label: t("label.lastModified") },
       { value: "name" as const, label: t("label.cardName") },
-      { value: "created" as const, label: t("label.dateCreated") },
+      { value: "type" as const, label: t("label.cardType") },
     ],
     [t],
   );

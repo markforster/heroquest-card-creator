@@ -53,7 +53,7 @@ export type StockpilePrimaryToolbarFilterGroup = {
   options: StockpilePrimaryToolbarFilterOption[];
 };
 
-export type StockpilePrimaryToolbarSortValue = "modified" | "name" | "created";
+export type StockpilePrimaryToolbarSortValue = "modified" | "name" | "type";
 
 export type StockpilePrimaryToolbarSortOption = {
   value: StockpilePrimaryToolbarSortValue;
