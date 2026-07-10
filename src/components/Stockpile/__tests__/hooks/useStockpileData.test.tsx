@@ -68,6 +68,7 @@ describe("useStockpileData", () => {
     const { result } = renderHook(() =>
       useStockpileData({
         isOpen: true,
+        isPairMode: false,
         refreshToken: 1,
         activeFilter: { type: "all" },
         setActiveFilter,
@@ -111,6 +112,7 @@ describe("useStockpileData", () => {
     const { result } = renderHook(() =>
       useStockpileData({
         isOpen: true,
+        isPairMode: false,
         refreshToken: 0,
         activeFilter: { type: "all" },
         setActiveFilter,
@@ -126,6 +128,7 @@ describe("useStockpileData", () => {
     renderHook(() =>
       useStockpileData({
         isOpen: false,
+        isPairMode: false,
         refreshToken: 1,
         activeFilter: { type: "all" },
         setActiveFilter,
@@ -162,6 +165,7 @@ describe("useStockpileData", () => {
     renderHook(() =>
       useStockpileData({
         isOpen: true,
+        isPairMode: false,
         refreshToken: 0,
         activeFilter: { type: "all" },
         setActiveFilter,
@@ -178,6 +182,7 @@ describe("useStockpileData", () => {
     renderHook(() =>
       useStockpileData({
         isOpen: true,
+        isPairMode: false,
         refreshToken: 0,
         activeFilter: { type: "collection", id: "col-2" },
         setActiveFilter,
@@ -196,6 +201,7 @@ describe("useStockpileData", () => {
     renderHook(() =>
       useStockpileData({
         isOpen: true,
+        isPairMode: false,
         refreshToken: 0,
         activeFilter: { type: "all" },
         setActiveFilter,
@@ -205,6 +211,60 @@ describe("useStockpileData", () => {
     await waitFor(() => {
       expect(window.localStorage.getItem("hqcc.selectedCollectionId")).toBeNull();
     });
+  });
+
+  it("does not rehydrate a stored collection while in pair mode", async () => {
+    window.localStorage.setItem("hqcc.selectedCollectionId", "col-1");
+    mockUseListCollections.mockReturnValue({
+      data: [
+        {
+          id: "col-1",
+          name: "Collection",
+          cardIds: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          schemaVersion: 1,
+        },
+      ],
+      isLoading: false,
+    });
+
+    const setActiveFilter = jest.fn();
+    renderHook(() =>
+      useStockpileData({
+        isOpen: true,
+        isPairMode: true,
+        refreshToken: 0,
+        activeFilter: { type: "all" },
+        setActiveFilter,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mockUseListCollections).toHaveBeenCalled();
+    });
+
+    expect(setActiveFilter).not.toHaveBeenCalledWith({ type: "collection", id: "col-1" });
+    expect(window.localStorage.getItem("hqcc.selectedCollectionId")).toBe("col-1");
+  });
+
+  it("does not persist collection scope changes while in pair mode", async () => {
+    const setActiveFilter = jest.fn();
+    renderHook(() =>
+      useStockpileData({
+        isOpen: true,
+        isPairMode: true,
+        refreshToken: 0,
+        activeFilter: { type: "collection", id: "col-2" },
+        setActiveFilter,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mockUseListCards).toHaveBeenCalled();
+    });
+
+    expect(window.localStorage.getItem("hqcc.selectedCollectionId")).toBeNull();
   });
 
   it("keeps the stockpile loading until the first cards snapshot resolves", async () => {
@@ -218,6 +278,7 @@ describe("useStockpileData", () => {
     const { result, rerender } = renderHook(() =>
       useStockpileData({
         isOpen: true,
+        isPairMode: false,
         refreshToken: 0,
         activeFilter: { type: "all" },
         setActiveFilter,
@@ -277,6 +338,7 @@ describe("useStockpileData", () => {
     const { result, unmount } = renderHook(() =>
       useStockpileData({
         isOpen: true,
+        isPairMode: false,
         refreshToken: 0,
         activeFilter: { type: "all" },
         setActiveFilter,
@@ -291,6 +353,7 @@ describe("useStockpileData", () => {
     const remounted = renderHook(() =>
       useStockpileData({
         isOpen: true,
+        isPairMode: false,
         refreshToken: 0,
         activeFilter: { type: "all" },
         setActiveFilter,

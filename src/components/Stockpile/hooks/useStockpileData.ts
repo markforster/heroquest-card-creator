@@ -13,6 +13,7 @@ type ActiveFilter =
 
 type UseStockpileDataOptions = {
   isOpen: boolean;
+  isPairMode: boolean;
   refreshToken?: number;
   activeFilter: ActiveFilter;
   setActiveFilter: (filter: ActiveFilter) => void;
@@ -20,6 +21,7 @@ type UseStockpileDataOptions = {
 
 export const useStockpileData = ({
   isOpen,
+  isPairMode,
   refreshToken,
   activeFilter,
   setActiveFilter,
@@ -66,6 +68,10 @@ export const useStockpileData = ({
   }, [isOpen, listCollectionsQuery.data, listCollectionsQuery.isLoading, refreshToken]);
 
   useEffect(() => {
+    if (isPairMode) {
+      hasResolvedStoredCollection.current = true;
+      return;
+    }
     if (!storedCollectionId) {
       return;
     }
@@ -85,11 +91,12 @@ export const useStockpileData = ({
     }
     setStoredCollectionId(null);
     hasResolvedStoredCollection.current = true;
-  }, [collections, storedCollectionId, setActiveFilter]);
+  }, [collections, isPairMode, storedCollectionId, setActiveFilter]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!isOpen) return;
+    if (isPairMode) return;
     if (!hasHydratedStoredCollection.current) {
       return;
     }
@@ -105,12 +112,18 @@ export const useStockpileData = ({
 
     window.localStorage.removeItem("hqcc.selectedCollectionId");
     setStoredCollectionId(null);
-  }, [activeFilter, isOpen]);
+  }, [activeFilter, isOpen, isPairMode]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     if (typeof window !== "undefined") {
+      if (isPairMode) {
+        setStoredCollectionId(null);
+        hasHydratedStoredCollection.current = true;
+        hasResolvedStoredCollection.current = true;
+        return;
+      }
       const storedId = window.localStorage.getItem("hqcc.selectedCollectionId");
       setStoredCollectionId(storedId);
       hasHydratedStoredCollection.current = true;
@@ -118,7 +131,7 @@ export const useStockpileData = ({
         hasResolvedStoredCollection.current = true;
       }
     }
-  }, [isOpen]);
+  }, [isOpen, isPairMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

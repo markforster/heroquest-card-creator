@@ -209,6 +209,7 @@ export default function StockpilePanelContent({
   const { resetWithSaved } = useEditorForm();
   const { cards, setCards, isLoadingCards, collections, setCollections } = useStockpileData({
     isOpen,
+    isPairMode,
     refreshToken,
     activeFilter,
     setActiveFilter,
@@ -343,6 +344,7 @@ export default function StockpilePanelContent({
 
   useEffect(() => {
     if (!isOpen || !isPairMode) return;
+    setActiveFilter({ type: "all" });
     setTemplateFilter("all");
     setSelectedIds([]);
     setShowUnpairedOnly(false);

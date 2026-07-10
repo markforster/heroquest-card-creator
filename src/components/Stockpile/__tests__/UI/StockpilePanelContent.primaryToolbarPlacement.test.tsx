@@ -19,6 +19,7 @@ let lastBottomToolbarProps: Record<string, unknown> | null = null;
 let lastStockpileToolbarProps: Record<string, unknown> | null = null;
 let lastStockpileActionsBarProps: Record<string, unknown> | null = null;
 let lastStockpileFooterProps: Record<string, unknown> | null = null;
+let lastUseStockpileDataArgs: Record<string, unknown> | null = null;
 
 jest.mock("@/api/client", () => ({
   __esModule: true,
@@ -94,7 +95,10 @@ jest.mock("@/components/Providers/MissingAssetsContext", () => ({
 
 jest.mock("@/components/Stockpile/hooks/useStockpileData", () => ({
   __esModule: true,
-  useStockpileData: (...args: unknown[]) => mockUseStockpileData(...args),
+  useStockpileData: (...args: unknown[]) => {
+    lastUseStockpileDataArgs = (args[0] as Record<string, unknown>) ?? null;
+    return mockUseStockpileData(...args);
+  },
 }));
 
 jest.mock("@/components/Stockpile/hooks/useStockpileFilters", () => ({
@@ -278,6 +282,7 @@ describe("StockpilePanelContent primary toolbar placement (UI)", () => {
     lastStockpileToolbarProps = null;
     lastStockpileActionsBarProps = null;
     lastStockpileFooterProps = null;
+    lastUseStockpileDataArgs = null;
 
     mockUseStockpileData.mockReturnValue({
       cards: [],
@@ -492,5 +497,7 @@ describe("StockpilePanelContent primary toolbar placement (UI)", () => {
     expect(lastStockpileFooterProps?.isPairMode).toBe(true);
     expect(lastStockpileFooterProps?.showBulkExportAction).toBe(true);
     expect(lastStockpileFooterProps?.showLoadAction).toBe(true);
+    expect(lastUseStockpileDataArgs?.isPairMode).toBe(true);
+    expect(lastUseStockpileDataArgs?.activeFilter).toEqual({ type: "all" });
   });
 });
