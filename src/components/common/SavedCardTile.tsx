@@ -54,7 +54,7 @@ export default function SavedCardTile({
             className={[styles.savedCardTileTitlePill, titlePillClassName].filter(Boolean).join(" ")}
             title={title}
           >
-            {title}
+            <span className={styles.savedCardTileTitlePillText}>{title}</span>
           </div>
         ) : null}
       </div>
@@ -65,7 +65,7 @@ export default function SavedCardTile({
           <div
             className={[styles.savedCardTileTypePill, typePillClassName].filter(Boolean).join(" ")}
           >
-            {templateLabel}
+            <span className={styles.savedCardTileTypePillText}>{templateLabel}</span>
           </div>
         ) : null}
       </div>

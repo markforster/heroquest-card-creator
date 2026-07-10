@@ -7837,16 +7837,20 @@ button.assetsKindBadge:disabled {
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
   min-height: 18px;
   overflow: visible;
 }
 
 .stockpileCardTitlePill,
 .savedCardTileTitlePill {
-  max-width: 100%;
+  max-width: min(100%, calc(100% - var(--space-2)));
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 1 auto;
+  min-width: 0;
   padding: 0.25rem 0.7rem;
   border-radius: var(--radius-pill);
   border: 1px solid color-mix(in srgb, var(--hq-border-strong) 52%, white 48%);
@@ -7859,6 +7863,15 @@ button.assetsKindBadge:disabled {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.savedCardTileTitlePillText {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stockpileCardCore,
@@ -7887,13 +7900,29 @@ button.assetsKindBadge:disabled {
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
   min-height: 18px;
   overflow: visible;
 }
 
 .stockpileCardTypePill,
 .savedCardTileTypePill {
+  max-width: min(100%, calc(100% - var(--space-2)));
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.savedCardTileTypePillText {
+  display: block;
+  min-width: 0;
   max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cardsGrid {
