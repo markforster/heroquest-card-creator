@@ -98,15 +98,13 @@ describe("StockpileToolbar (UI)", () => {
     },
   ];
 
-  it("renders a clear button when search is non-empty and clears search on click", () => {
-    const onSearchChange = jest.fn();
-
+  it("does not render the old outer clear button when search is non-empty", () => {
     render(
       <StockpileToolbar
         onOpenCollections={() => {}}
         collectionsToggleLabel="All cards"
         search="hello"
-        onSearchChange={onSearchChange}
+        onSearchChange={() => {}}
         templateFilter="all"
         onTemplateFilterChange={() => {}}
         filterValue="all"
@@ -126,9 +124,7 @@ describe("StockpileToolbar (UI)", () => {
         selectedCount={0}
       />,
     );
-
-    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
-    expect(onSearchChange).toHaveBeenCalledWith("");
+    expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
   });
 
   it("renders the shared react-select filter field and propagates changes", () => {

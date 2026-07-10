@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import { LayoutGrid, Search, TableProperties } from "lucide-react";
 import { ToggleButton, ToggleButtonGroup } from "react-bootstrap";
 
@@ -36,10 +35,8 @@ export default function StockpilePrimaryToolbar({
   isViewModeDisabled = false,
 }: StockpilePrimaryToolbarProps) {
   const { t } = useI18n();
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const searchLabel = t("tooltip.searchCards");
   const searchPlaceholder = t("placeholders.searchCards");
-  const clearLabel = t("actions.clear");
   const filterLabel = t("tooltip.filterCards");
   const sortLabel = t("tooltip.sortCards");
   const groupLabel = t("tooltip.groupCards");
@@ -57,7 +54,6 @@ export default function StockpilePrimaryToolbar({
               <Search size={16} aria-hidden="true" />
             </span>
             <input
-              ref={searchInputRef}
               type="search"
               value={search}
               disabled={isSearchDisabled}
@@ -67,21 +63,6 @@ export default function StockpilePrimaryToolbar({
               className={`form-control form-control-sm ${styles.assetsSearch} ${styles.themedFormControl} ${styles.stockpilePrimaryToolbarSearchInput}`}
               onChange={(event) => onSearchChange(event.target.value)}
             />
-            {search.trim().length > 0 ? (
-              <button
-                type="button"
-                disabled={isSearchDisabled}
-                className={`btn-close ${styles.stockpilePrimaryToolbarClearButton}`}
-                aria-label={clearLabel}
-                title={clearLabel}
-                onClick={() => {
-                  onSearchChange("");
-                  searchInputRef.current?.focus();
-                }}
-              >
-                <span className="visually-hidden">{clearLabel}</span>
-              </button>
-            ) : null}
           </div>
         </div>
 

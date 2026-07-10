@@ -5989,10 +5989,6 @@
   min-width: 0;
 }
 
-.stockpilePrimaryToolbarClearButton {
-  white-space: nowrap;
-}
-
 .stockpilePrimaryToolbarControls {
   display: inline-flex;
   align-items: center;
@@ -6792,23 +6788,6 @@
 
 .cardsSearchGroup {
   position: relative;
-}
-
-.cardsSearchClearButton {
-  position: absolute;
-  right: 0.45rem;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 5;
-  opacity: 0.6;
-}
-
-.cardsSearchClearButton:hover {
-  opacity: 1;
-}
-
-.cardsSearchInputWithClear {
-  padding-right: 2rem;
 }
 
 .collectionsToggleButton {

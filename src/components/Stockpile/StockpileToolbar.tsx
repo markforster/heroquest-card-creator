@@ -1,7 +1,6 @@
 "use client";
 
 import { AlertTriangle, Search } from "lucide-react";
-import { useRef } from "react";
 
 import styles from "@/app/page.module.css";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
@@ -67,7 +66,6 @@ export default function StockpileToolbar({
   const hasLeftControls =
     showSearchAndFilterControls || (!isPairMode && showUnpairedToggle);
   const hasRightControls = (!isPairMode && showMissingArtworkToggle) || isPairMode;
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   if (!hasLeftControls && !hasRightControls) {
     return null;
@@ -98,26 +96,13 @@ export default function StockpileToolbar({
                     <Search className={styles.icon} aria-hidden="true" />
                   </span>
                   <input
-                    ref={searchInputRef}
                     type="search"
                     placeholder={t("placeholders.searchCards")}
-                    className={`form-control form-control-sm ${styles.assetsSearch} ${styles.themedFormControl} ${styles.cardsSearchInputFixed} ${styles.cardsSearchInputWithClear}`}
+                    className={`form-control form-control-sm ${styles.assetsSearch} ${styles.themedFormControl} ${styles.cardsSearchInputFixed}`}
                     title={t("tooltip.searchCards")}
                     value={search}
                     onChange={(event) => onSearchChange(event.target.value)}
                   />
-                  {search.trim().length > 0 ? (
-                    <button
-                      type="button"
-                      className={`btn-close ${styles.cardsSearchClearButton}`}
-                      aria-label={t("actions.clear")}
-                      title={t("actions.clear")}
-                      onClick={() => {
-                        onSearchChange("");
-                        searchInputRef.current?.focus();
-                      }}
-                    />
-                  ) : null}
                 </div>
                 <div className={styles.stockpileToolbarSharedFilter}>
                   <StockpileToolbarFilterSelect

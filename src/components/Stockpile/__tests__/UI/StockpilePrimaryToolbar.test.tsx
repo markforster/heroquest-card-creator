@@ -148,13 +148,11 @@ describe("StockpilePrimaryToolbar", () => {
     expect(screen.getByRole("radio", { name: "Table" })).toBeInTheDocument();
   });
 
-  it("renders the clear button for non-empty search and clears it on click", () => {
-    const onSearchChange = jest.fn();
-
+  it("does not render the old outer clear button for non-empty search", () => {
     render(
       <StockpilePrimaryToolbar
         search="hello"
-        onSearchChange={onSearchChange}
+        onSearchChange={() => {}}
         viewMode="grid"
         onViewModeChange={() => {}}
         filterValue="all"
@@ -169,8 +167,7 @@ describe("StockpilePrimaryToolbar", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
-    expect(onSearchChange).toHaveBeenCalledWith("");
+    expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
   });
 
   it("calls onFilterChange with the selected grouped option value", () => {
