@@ -60,7 +60,7 @@ export type StockpilePrimaryToolbarSortOption = {
   label: string;
 };
 
-export type StockpilePrimaryToolbarGroupValue = "none" | "type";
+export type StockpilePrimaryToolbarGroupValue = "none" | "type" | "face";
 
 export type StockpilePrimaryToolbarGroupOption = {
   value: StockpilePrimaryToolbarGroupValue;

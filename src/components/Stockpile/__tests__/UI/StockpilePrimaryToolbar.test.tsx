@@ -133,6 +133,7 @@ describe("StockpilePrimaryToolbar", () => {
         groupOptions={[
           { value: "none", label: "None" },
           { value: "type", label: "Card type" },
+          { value: "face", label: "Face" },
         ]}
         showUnpairedOnly={false}
         onShowUnpairedOnlyChange={() => {}}
@@ -221,6 +222,7 @@ describe("StockpilePrimaryToolbar", () => {
         groupOptions={[
           { value: "none", label: "None" },
           { value: "type", label: "Card type" },
+          { value: "face", label: "Face" },
         ]}
       />,
     );
@@ -249,12 +251,18 @@ describe("StockpilePrimaryToolbar", () => {
         groupOptions={[
           { value: "none", label: "None" },
           { value: "type", label: "Card type" },
+          { value: "face", label: "Face" },
         ]}
       />,
     );
 
-    fireEvent.change(screen.getAllByTestId("mock-react-select")[2], { target: { value: "type" } });
-    expect(onGroupChange).toHaveBeenCalledWith("type");
+    const groupOptions = Array.from(
+      screen.getAllByTestId("mock-react-select")[2].querySelectorAll("option"),
+    ).map((option) => option.textContent);
+    expect(groupOptions).toEqual(["None", "Card type", "Face"]);
+
+    fireEvent.change(screen.getAllByTestId("mock-react-select")[2], { target: { value: "face" } });
+    expect(onGroupChange).toHaveBeenCalledWith("face");
   });
 
   it("calls onViewModeChange when switching views", () => {

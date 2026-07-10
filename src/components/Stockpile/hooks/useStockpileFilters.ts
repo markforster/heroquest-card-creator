@@ -20,6 +20,7 @@ type UseStockpileFiltersOptions = {
   cards: CardRecord[];
   collections: CollectionRecord[];
   templateLabelMap?: Record<string, string>;
+  faceLabelMap?: { front: string; back: string };
   search: string;
   templateFilter: string;
   activeFilter: ActiveFilter;
@@ -43,6 +44,7 @@ export const useStockpileFilters = ({
   cards,
   collections,
   templateLabelMap,
+  faceLabelMap,
   search,
   templateFilter,
   activeFilter,
@@ -305,7 +307,7 @@ export const useStockpileFilters = ({
     }
 
     const supportsGrouping =
-      groupMode === "type" &&
+      (groupMode === "type" || groupMode === "face") &&
       !isPairMode &&
       activeFilter.type !== "recent" &&
       activeFilter.type !== "recentlyDeleted";
@@ -313,6 +315,33 @@ export const useStockpileFilters = ({
     const groupedCards = supportsGrouping
       ? (() => {
           const groups = new Map<string, StockpileCardGroup>();
+
+          if (groupMode === "face") {
+            filtered.forEach((card) => {
+              const template = cardTemplatesById[card.templateId];
+              if (!template) return;
+              const effectiveFace = resolveEffectiveFace(card.face, template.defaultFace);
+              const id = effectiveFace;
+              const label =
+                effectiveFace === "back"
+                  ? (faceLabelMap?.back ?? "Back")
+                  : (faceLabelMap?.front ?? "Front");
+              const existing = groups.get(id);
+              if (existing) {
+                existing.cards.push(card);
+                return;
+              }
+              groups.set(id, {
+                id,
+                label,
+                cards: [card],
+              });
+            });
+
+            return ["front", "back"]
+              .map((id) => groups.get(id))
+              .filter((group): group is StockpileCardGroup => Boolean(group));
+          }
 
           filtered.forEach((card) => {
             const label = templateLabelMap?.[card.templateId] ?? card.templateId;
@@ -350,6 +379,7 @@ export const useStockpileFilters = ({
     cards,
     recentCards,
     templateLabelMap,
+    faceLabelMap,
     search,
     templateFilter,
     activeFilter,

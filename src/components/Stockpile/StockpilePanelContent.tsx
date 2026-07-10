@@ -261,6 +261,10 @@ export default function StockpilePanelContent({
     cards,
     collections,
     templateLabelMap: templateFilterLabelMap,
+    faceLabelMap: {
+      front: t("cardFace.front"),
+      back: t("cardFace.back"),
+    },
     search,
     templateFilter,
     activeFilter,
@@ -509,6 +513,7 @@ export default function StockpilePanelContent({
     () => [
       { value: "none" as const, label: t("label.none") },
       { value: "type" as const, label: t("label.cardType") },
+      { value: "face" as const, label: t("label.cardFace") },
     ],
     [t],
   );

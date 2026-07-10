@@ -148,6 +148,38 @@ describe("useStockpileFilters", () => {
     expect(result.current.groupedCards[0]?.cards.map((card) => card.id)).toEqual(["c", "b"]);
   });
 
+  it("groups normal stockpile results by face with front first and keeps in-group sort order", () => {
+    const cards = [
+      baseCard({ id: "front-a", templateId: "hero", name: "Alpha", nameLower: "alpha", updatedAt: 4 }),
+      baseCard({ id: "back-b", templateId: "hero-back", name: "Beta Back", nameLower: "beta back", updatedAt: 2 }),
+      baseCard({ id: "front-c", templateId: "monster", name: "Gamma", nameLower: "gamma", updatedAt: 1 }),
+      baseCard({ id: "back-a", templateId: "labelled-back", name: "Alpha Back", nameLower: "alpha back", updatedAt: 5 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        faceLabelMap: {
+          front: "Front",
+          back: "Back",
+        },
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+        sortMode: "name",
+        groupMode: "face",
+      }),
+    );
+
+    expect(result.current.groupedCards.map((group) => group.id)).toEqual(["front", "back"]);
+    expect(result.current.groupedCards.map((group) => group.label)).toEqual(["Front", "Back"]);
+    expect(result.current.groupedCards[0]?.cards.map((card) => card.id)).toEqual(["front-a", "front-c"]);
+    expect(result.current.groupedCards[1]?.cards.map((card) => card.id)).toEqual(["back-a", "back-b"]);
+  });
+
   it("returns recentCards sorted by lastViewedAt then updatedAt", () => {
     const cards = [
       baseCard({ id: "a", lastViewedAt: 100, updatedAt: 5, nameLower: "a" }),
@@ -208,10 +240,12 @@ describe("useStockpileFilters", () => {
         isPairMode: false,
         isPairBacks: false,
         sortMode: "name",
+        groupMode: "face",
       }),
     );
 
     expect(result.current.filteredCards.map((card) => card.id)).toEqual(["b", "c", "a"]);
+    expect(result.current.groupedCards).toEqual([]);
   });
 
   it("computes collection counts and unfiled count", () => {
@@ -417,10 +451,12 @@ describe("useStockpileFilters", () => {
         isPairMode: false,
         isPairBacks: false,
         sortMode: "name",
+        groupMode: "face",
       }),
     );
 
     expect(result.current.filteredCards.map((card) => card.id)).toEqual(["b", "c", "a"]);
+    expect(result.current.groupedCards).toEqual([]);
   });
 
   it("keeps pair mode ordering unchanged even when sort mode changes", () => {
@@ -440,9 +476,11 @@ describe("useStockpileFilters", () => {
         isPairMode: true,
         isPairBacks: false,
         sortMode: "name",
+        groupMode: "face",
       }),
     );
 
     expect(result.current.filteredCards.map((card) => card.id)).toEqual(["b", "c", "a"]);
+    expect(result.current.groupedCards).toEqual([]);
   });
 });
