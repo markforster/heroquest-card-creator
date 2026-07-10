@@ -6021,6 +6021,11 @@
   flex: 0 0 auto;
 }
 
+.stockpileToolbarSharedFilter {
+  min-width: 10rem;
+  flex: 0 0 auto;
+}
+
 .stockpilePrimaryToolbarSort {
   min-width: 9rem;
   flex: 0 0 auto;

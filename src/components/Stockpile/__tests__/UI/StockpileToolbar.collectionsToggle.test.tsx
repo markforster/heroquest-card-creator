@@ -2,6 +2,35 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import StockpileToolbar from "@/components/Stockpile/StockpileToolbar";
 
+jest.mock("react-select", () => {
+  return function MockReactSelect(props: {
+    options: Array<{ value: string; label: string } | { label: string; options: Array<{ value: string; label: string }> }>;
+    value: { value: string; label: string } | null;
+    onChange: (option: { value: string; label: string } | null) => void;
+    isDisabled?: boolean;
+  }) {
+    const flatOptions = props.options.flatMap((option) => ("options" in option ? option.options : [option]));
+
+    return (
+      <select
+        data-testid="mock-react-select"
+        value={props.value?.value ?? ""}
+        disabled={props.isDisabled}
+        onChange={(event) => {
+          const next = flatOptions.find((option) => option.value === event.target.value) ?? null;
+          props.onChange(next);
+        }}
+      >
+        {flatOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  };
+});
+
 jest.mock("@/components/Providers/MissingAssetsContext", () => ({
   __esModule: true,
   useMissingAssets: () => ({
@@ -33,6 +62,17 @@ jest.mock("@/i18n/I18nProvider", () => ({
 }));
 
 describe("StockpileToolbar (UI)", () => {
+  const filterOptions = [
+    {
+      label: "Face",
+      options: [
+        { value: "all", label: "All cards" },
+        { value: "face:front", label: "Front" },
+        { value: "face:back", label: "Back" },
+      ],
+    },
+  ];
+
   it("renders collections toggle and triggers handler", () => {
     const onOpenCollections = jest.fn();
 
@@ -44,6 +84,9 @@ describe("StockpileToolbar (UI)", () => {
         onSearchChange={() => {}}
         templateFilter="all"
         onTemplateFilterChange={() => {}}
+        filterValue="all"
+        onFilterValueChange={() => {}}
+        filterOptions={filterOptions}
         filterLabel="All types"
         totalCount={0}
         faceCounts={{ front: 0, back: 0 }}
@@ -72,6 +115,9 @@ describe("StockpileToolbar (UI)", () => {
         onSearchChange={() => {}}
         templateFilter="all"
         onTemplateFilterChange={() => {}}
+        filterValue="all"
+        onFilterValueChange={() => {}}
+        filterOptions={filterOptions}
         filterLabel="All types"
         totalCount={0}
         faceCounts={{ front: 0, back: 0 }}

@@ -1378,6 +1378,11 @@ export default function StockpilePanelContent({
                       onSearchChange={setSearch}
                       templateFilter={templateFilter}
                       onTemplateFilterChange={setTemplateFilter}
+                      filterValue={mapTemplateFilterToPrimaryToolbarValue(templateFilter)}
+                      onFilterValueChange={(next) =>
+                        setTemplateFilter(mapPrimaryToolbarValueToTemplateFilter(next))
+                      }
+                      filterOptions={primaryToolbarFilterOptions}
                       filterLabel={filterLabel}
                       totalCount={totalCount}
                       faceCounts={faceCounts}
