@@ -7867,11 +7867,9 @@ button.assetsKindBadge:disabled {
 
 .savedCardTileTitlePillText {
   display: block;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .stockpileCardCore,
@@ -7918,11 +7916,51 @@ button.assetsKindBadge:disabled {
 
 .savedCardTileTypePillText {
   display: block;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
+}
+
+.overflowMarquee {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.overflowMarqueeViewport {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.overflowMarqueeTrack {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  will-change: transform;
+  transition-property: transform;
+  transition-timing-function: linear;
+}
+
+.overflowMarquee[data-marquee-active="true"] .overflowMarqueeTrack {
+  display: inline-block;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overflowMarqueeTrack {
+    transition-duration: 0ms !important;
+  }
 }
 
 .cardsGrid {

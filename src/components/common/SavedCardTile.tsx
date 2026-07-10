@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
+
 import styles from "@/app/page.module.css";
+import OverflowMarqueeText from "@/components/common/OverflowMarqueeText";
 
 import type { ReactNode } from "react";
 
@@ -37,6 +40,8 @@ export default function SavedCardTile({
   topToolbarTestId,
   bottomToolbarTestId,
 }: SavedCardTileProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
     <div
       className={[
@@ -46,6 +51,12 @@ export default function SavedCardTile({
       ]
         .filter(Boolean)
         .join(" ")}
+      onMouseEnter={() => {
+        setIsHovered(true);
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+      }}
     >
       <div className={styles.savedCardTileTopToolbar} data-testid={topToolbarTestId}>
         {topContent}
@@ -54,7 +65,11 @@ export default function SavedCardTile({
             className={[styles.savedCardTileTitlePill, titlePillClassName].filter(Boolean).join(" ")}
             title={title}
           >
-            <span className={styles.savedCardTileTitlePillText}>{title}</span>
+            <OverflowMarqueeText
+              active={isHovered}
+              text={title}
+              className={styles.savedCardTileTitlePillText}
+            />
           </div>
         ) : null}
       </div>
@@ -64,8 +79,13 @@ export default function SavedCardTile({
         {showDefaultTypePill ? (
           <div
             className={[styles.savedCardTileTypePill, typePillClassName].filter(Boolean).join(" ")}
+            title={templateLabel}
           >
-            <span className={styles.savedCardTileTypePillText}>{templateLabel}</span>
+            <OverflowMarqueeText
+              active={isHovered}
+              text={templateLabel}
+              className={styles.savedCardTileTypePillText}
+            />
           </div>
         ) : null}
       </div>
