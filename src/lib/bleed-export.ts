@@ -17,7 +17,7 @@ export type CropMarksOptions = {
 export type CutMarksOptions = {
   enabled: boolean;
   color: string;
-  style?: "solid" | "dashed" | "dotted" | "ticks";
+  style?: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks";
   thickness?: number;
   offset?: number;
   dash?: [number, number];
@@ -38,8 +38,8 @@ export const DEFAULT_CROP_MARK_INWARD_RATIO = 0.25;
 export const DEFAULT_CUT_MARK_OFFSET = 0;
 export const DEFAULT_CUT_MARK_DASH: [number, number] = [6, 4];
 export const DEFAULT_CUT_MARK_RADIUS_ADJUST = 2;
-export const DEFAULT_CUT_MARK_STYLE: NonNullable<CutMarksOptions["style"]> = "solid";
-export const DEFAULT_DASHED_CUT_MARK_DASH: [number, number] = [10, 6];
+export const DEFAULT_CUT_MARK_STYLE: NonNullable<CutMarksOptions["style"]> = "dashed";
+export const DEFAULT_LONG_DASHED_CUT_MARK_DASH: [number, number] = [10, 6];
 export const DEFAULT_DOTTED_CUT_MARK_DASH: [number, number] = [1, 5];
 export const DEFAULT_TICK_CUT_MARK_LENGTH = 8;
 export const DEFAULT_TICK_CUT_MARK_SPACING = 14;
@@ -488,7 +488,7 @@ export function drawCutMarks(
     trimW: number;
     trimH: number;
     color: string;
-    style?: "solid" | "dashed" | "dotted" | "ticks";
+    style?: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks";
     thickness?: number;
     offset?: number;
     dash?: [number, number];
@@ -520,10 +520,12 @@ export function drawCutMarks(
 
   ctx.setLineDash(
     style === "dashed"
-      ? DEFAULT_DASHED_CUT_MARK_DASH
+      ? dash
+      : style === "long-dashed"
+        ? DEFAULT_LONG_DASHED_CUT_MARK_DASH
       : style === "dotted"
         ? DEFAULT_DOTTED_CUT_MARK_DASH
-        : dash,
+        : [],
   );
   traceRoundedCutPath(ctx, { x, y, w, h, radius });
   ctx.stroke();

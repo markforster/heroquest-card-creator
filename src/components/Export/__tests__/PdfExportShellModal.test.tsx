@@ -20,7 +20,7 @@ const mockBuildAssetCache = jest.fn();
 let mockExportSettings = {
   bleed: { enabled: true, bleedPx: 18, askBeforeExport: false },
   cropMarks: { enabled: true, color: "#00FFFF", style: "lines" },
-  cutMarks: { enabled: true, color: "#00FFFF", style: "solid" },
+  cutMarks: { enabled: true, color: "#00FFFF", style: "dashed" },
   roundedCorners: true,
   pdf: {
     paper: "Letter",
@@ -34,6 +34,30 @@ let mockExportSettings = {
     duplexPreset: "normal" as NonNullable<PrintConfig["duplexPreset"]>,
   },
 };
+const mockProfiles = [
+  {
+    id: "profile-default",
+    name: "Default",
+    updatedAt: 1,
+    settings: mockExportSettings,
+  },
+  {
+    id: "profile-tight",
+    name: "Tight",
+    updatedAt: 2,
+    settings: {
+      ...mockExportSettings,
+      bleed: { enabled: false, bleedPx: 0, askBeforeExport: false },
+      cropMarks: { enabled: false, color: "#00FFFF", style: "lines" as const },
+      cutMarks: { enabled: false, color: "#00FFFF", style: "dashed" as const },
+      pdf: {
+        ...mockExportSettings.pdf,
+        paper: "A4" as const,
+        orientation: "landscape" as const,
+      },
+    },
+  },
+];
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
@@ -50,6 +74,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "decks.pdf.modal.exportAlignmentTest": "Export alignment test",
           "decks.pdf.summary.layout.label": "Layout",
           "decks.pdf.summary.layout.customize": "Customise layout",
+          "decks.pdf.summary.profile.label": "Export Profile",
           "decks.pdf.summary.bleedSettings.label": "Bleed settings",
           "decks.pdf.summary.bleedSettings.customize": "Customise bleed settings",
           "decks.pdf.orientation.portrait": "Portrait",
@@ -68,6 +93,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "label.cropMarkStyleTriangles": "Triangles",
           "label.cutMarkStyleSolid": "Solid",
           "label.cutMarkStyleDashed": "Dashed",
+          "label.cutMarkStyleLongDashed": "Long dashed",
           "label.cutMarkStyleDotted": "Dotted",
           "label.cutMarkStyleTicks": "Ticks",
           "decks.pdf.errors.layoutCapacity": "Layout capacity error",
@@ -78,9 +104,38 @@ jest.mock("@/i18n/I18nProvider", () => ({
 }));
 
 jest.mock("@/components/Providers/ExportSettingsContext", () => ({
-  useExportSettingsState: () => ({
-    settings: mockExportSettings,
+  useExportProfilesState: () => ({
+    profiles: mockProfiles,
+    defaultProfile: mockProfiles[0],
   }),
+}));
+
+jest.mock("@/components/Export/ExportProfileSelect", () => ({
+  __esModule: true,
+  default: ({
+    profiles,
+    selectedProfileId,
+    ariaLabel,
+    onChange,
+  }: {
+    profiles: Array<{ id: string; name: string }>;
+    selectedProfileId?: string;
+    ariaLabel?: string;
+    onChange: (profileId: string) => void;
+  }) => (
+    <select
+      data-testid="export-profile-select"
+      aria-label={ariaLabel}
+      value={selectedProfileId ?? ""}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      {profiles.map((profile) => (
+        <option key={profile.id} value={profile.id}>
+          {profile.name}
+        </option>
+      ))}
+    </select>
+  ),
 }));
 
 jest.mock("@/api/client", () => ({
@@ -458,6 +513,7 @@ describe("PdfExportShellModal", () => {
     expect(screen.getByText("Primary line")).toBeInTheDocument();
     expect(screen.getByText("Secondary line")).toBeInTheDocument();
     expect(screen.getByText("Nothing available")).toHaveClass("deckPdfSummaryBlocked");
+    expect(screen.getByText("Export Profile")).toBeInTheDocument();
     expect(screen.getByText("Letter, Portrait, Fronts only")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Export PDF" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Export alignment test" })).toBeDisabled();
@@ -722,6 +778,85 @@ describe("PdfExportShellModal", () => {
     expect(screen.getByTestId("pdf-config-form")).toBeInTheDocument();
     expect(screen.getByTestId("pdf-config-hidden-mode")).toHaveTextContent("true");
     expect(screen.getByTestId("pdf-config-hidden-duplex")).toHaveTextContent("true");
+  });
+
+  it("reseeds layout and bleed values from the selected profile without closing custom sections", async () => {
+    const onStateChange = jest.fn();
+
+    render(
+      <PdfExportShellModal
+        isOpen
+        title="Export shell"
+        sourceType="deck"
+        slotPairs={slotPairs}
+        onCancel={jest.fn()}
+        onStateChange={onStateChange}
+        buildExportRun={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText("Customise layout"));
+    fireEvent.click(screen.getByLabelText("Customise bleed settings"));
+    fireEvent.click(screen.getByRole("button", { name: "Set duplex layout" }));
+    fireEvent.click(screen.getByRole("button", { name: "Disable bleed" }));
+
+    fireEvent.change(screen.getByTestId("export-profile-select"), {
+      target: { value: "profile-tight" },
+    });
+
+    await waitFor(() => {
+      expect(onStateChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          layoutMode: "custom",
+          bleedMode: "custom",
+          config: expect.objectContaining({
+            paper: "A4",
+            orientation: "landscape",
+            duplexPreset: "normal",
+          }),
+          bleedOptions: expect.objectContaining({
+            bleedEnabled: false,
+            bleedPx: 0,
+            cropMarksEnabled: false,
+            cutMarksEnabled: false,
+          }),
+          effectiveConfig: expect.objectContaining({
+            paper: "A4",
+            orientation: "landscape",
+          }),
+          effectiveBleedOptions: expect.objectContaining({
+            bleedEnabled: false,
+            bleedPx: 0,
+          }),
+        }),
+      );
+    });
+
+    expect(screen.getByTestId("pdf-config-form")).toBeInTheDocument();
+    expect(screen.getByTestId("bleed-options-form")).toBeInTheDocument();
+  });
+
+  it("updates the default layout summary when switching profile with custom sections off", async () => {
+    render(
+      <PdfExportShellModal
+        isOpen
+        title="Export shell"
+        sourceType="deck"
+        slotPairs={slotPairs}
+        onCancel={jest.fn()}
+        buildExportRun={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Letter, Portrait, Fronts only")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId("export-profile-select"), {
+      target: { value: "profile-tight" },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("A4, Landscape, Fronts only")).toBeInTheDocument();
+    });
   });
 
   it("hides the alignment export action when policy disables it", () => {

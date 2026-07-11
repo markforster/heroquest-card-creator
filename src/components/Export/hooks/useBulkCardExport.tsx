@@ -6,14 +6,16 @@ import CardPreview from "@/components/Cards/CardPreview";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import ExportBleedPrompt, { type ExportPromptResult } from "@/components/Modals/ExportBleedPrompt";
-import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
+import {
+  useExportProfilesState,
+  useExportSettingsState,
+} from "@/components/Providers/ExportSettingsContext";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { runBulkExport, type BulkExportResult } from "@/lib/export-cards";
-import type { ExportSettings } from "@/lib/export-settings";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import type { CardRecord } from "@/types/cards-db";
 
@@ -55,6 +57,7 @@ function buildSkipNotesFromReport(report: MissingAssetReport[]): Map<string, str
 export function useBulkCardExport() {
   const { t, language } = useI18n();
   const { settings: exportSettings } = useExportSettingsState();
+  const { profiles, defaultProfile } = useExportProfilesState();
 
   const previewRef = useRef<CardPreviewHandle | null>(null);
   const cancelExportRef = useRef(false);
@@ -72,7 +75,7 @@ export function useBulkCardExport() {
 
   const [exportPrompt, setExportPrompt] = useState<{
     resolve: (result: ExportPromptResult | null) => void;
-    initial: ExportSettings;
+    selectedProfileId?: string;
   } | null>(null);
 
   const requestExportOptions = async (): Promise<ExportPromptResult | null> => {
@@ -94,7 +97,7 @@ export function useBulkCardExport() {
       };
     }
     return new Promise<ExportPromptResult | null>((resolve) => {
-      setExportPrompt({ resolve, initial: settings });
+      setExportPrompt({ resolve, selectedProfileId: defaultProfile?.id });
     });
   };
 
@@ -194,6 +197,9 @@ export function useBulkCardExport() {
   const exportTemplateName =
     exportTemplate && exportTarget ? getTemplateNameLabel(language, exportTemplate) : "";
   const exportCardData = exportTarget ? cardRecordToCardData(exportTarget as never) : undefined;
+  const exportPromptProfile =
+    profiles.find((profile) => profile.id === exportPrompt?.selectedProfileId) ?? defaultProfile;
+  const exportPromptSettings = exportPromptProfile?.settings ?? exportSettings;
 
   const exportUi = useMemo(
     () => (
@@ -213,14 +219,27 @@ export function useBulkCardExport() {
         {exportPrompt ? (
           <ExportBleedPrompt
             isOpen={Boolean(exportPrompt)}
-            initialBleedEnabled={exportPrompt.initial.bleed.enabled}
-            initialBleedPx={exportPrompt.initial.bleed.bleedPx}
-            initialCropMarksEnabled={exportPrompt.initial.cropMarks.enabled}
-            initialCropMarkColor={exportPrompt.initial.cropMarks.color}
-            initialCropMarkStyle={exportPrompt.initial.cropMarks.style ?? "lines"}
-            initialCutMarksEnabled={exportPrompt.initial.cutMarks.enabled}
-            initialCutMarkColor={exportPrompt.initial.cutMarks.color}
-            initialRoundedCorners={exportPrompt.initial.roundedCorners}
+            profiles={profiles}
+            selectedProfileId={exportPromptProfile?.id}
+            initialBleedEnabled={exportPromptSettings.bleed.enabled}
+            initialBleedPx={exportPromptSettings.bleed.bleedPx}
+            initialCropMarksEnabled={exportPromptSettings.cropMarks.enabled}
+            initialCropMarkColor={exportPromptSettings.cropMarks.color}
+            initialCropMarkStyle={exportPromptSettings.cropMarks.style ?? "lines"}
+            initialCutMarksEnabled={exportPromptSettings.cutMarks.enabled}
+            initialCutMarkColor={exportPromptSettings.cutMarks.color}
+            initialCutMarkStyle={exportPromptSettings.cutMarks.style ?? "solid"}
+            initialRoundedCorners={exportPromptSettings.roundedCorners}
+            onSelectProfile={(profileId) =>
+              setExportPrompt((current) =>
+                current
+                  ? {
+                      ...current,
+                      selectedProfileId: profileId,
+                    }
+                  : current,
+              )
+            }
             onConfirm={(result) => {
               const prompt = exportPrompt;
               if (!prompt) return;
@@ -256,6 +275,9 @@ export function useBulkCardExport() {
       exportTemplateName,
       exportCardData,
       exportPrompt,
+      exportPromptProfile?.id,
+      exportPromptSettings,
+      profiles,
       isExporting,
       exportTotal,
       exportProgress,

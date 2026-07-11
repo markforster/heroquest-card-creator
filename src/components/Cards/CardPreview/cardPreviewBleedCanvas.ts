@@ -24,7 +24,11 @@ export async function renderBleedCanvas({
   svgElement: SVGSVGElement;
   bleedPx: number;
   cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
-  cutMarks?: { enabled: boolean; color: string; style?: "solid" | "dashed" | "dotted" | "ticks" };
+  cutMarks?: {
+    enabled: boolean;
+    color: string;
+    style?: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks";
+  };
   roundedCorners: boolean;
   loggingId?: string;
   assetBlobsById?: Map<string, Blob>;

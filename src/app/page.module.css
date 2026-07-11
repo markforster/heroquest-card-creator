@@ -2823,13 +2823,41 @@
   gap: var(--space-8);
 }
 
+.deckPdfProfileGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.deckPdfProfileHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  font-size: var(--text-md);
+}
+
+.deckPdfProfileSelectWrap {
+  flex: 0 0 240px;
+  width: 240px;
+  min-width: min(240px, 100%);
+  max-width: 240px;
+}
+
+.deckPdfProfileSections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
 .settingsPanelBody .deckPdfSummaryControlGroup + .deckPdfSummaryControlGroup,
 .settingsPanelBody .deckPdfSummaryBody + .deckPdfSummaryControlGroup,
 .settingsPanelBody .deckPdfSummaryControlGroup + .deckPdfSummaryBody {
   margin-top: var(--space-5);
 }
 
-.deckPdfSummaryInlineControl :global(.form-select) {
+.deckPdfSummaryFormSelect {
   flex: 0 1 220px;
   width: auto;
   min-width: 160px;
@@ -4183,6 +4211,70 @@
   overflow: visible;
 }
 
+.exportProfilesToolbar {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.exportSettingsPanelLayout {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.exportSettingsScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+.exportSettingsPanelContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-6) 0;
+}
+
+.exportProfilesToolbarMain {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.exportProfilesToolbarSelect {
+  min-width: min(280px, 100%);
+  flex: 1 1 260px;
+}
+
+.exportProfilesToolbarBadgeMuted {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.exportProfilesToolbarBadgeMuted {
+  border: 1px solid var(--hq-border-mid);
+  background: var(--hq-white-06);
+  color: var(--hq-text-muted);
+}
+
+.exportProfilesToolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
 .storageBreakdownCharts {
   display: flex;
   flex-direction: column;
@@ -4291,6 +4383,15 @@
   .storageDetailRow {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .exportProfilesToolbarMain,
+  .exportPromptProfileRow {
+    align-items: stretch;
+  }
+
+  .exportProfilesToolbarActions {
+    justify-content: stretch;
+  }
 }
 
 .exportMarksGrid {
@@ -4322,6 +4423,35 @@
   margin-left: auto;
   display: flex;
   align-items: center;
+}
+
+.exportPromptProfileRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.exportPromptProfileLabel {
+  font-size: 0.78rem;
+  color: var(--hq-text-muted);
+  white-space: nowrap;
+}
+
+.exportPromptProfileSelect {
+  min-width: min(280px, 100%);
+  flex: 1 1 240px;
+}
+
+@media (max-width: 720px) {
+  .deckPdfProfileHeader {
+    align-items: stretch;
+  }
+
+  .deckPdfProfileSelectWrap {
+    width: 100%;
+    max-width: none;
+  }
 }
 
 .settingsPanelScroll[data-panel-id="stat-label-overrides"] {

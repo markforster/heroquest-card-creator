@@ -11,7 +11,10 @@ import ExportProgressOverlay from "@/components/ExportProgressOverlay";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import ExportBleedPrompt, { type ExportPromptResult } from "@/components/Modals/ExportBleedPrompt";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
-import { useExportSettingsState } from "@/components/Providers/ExportSettingsContext";
+import {
+  useExportProfilesState,
+  useExportSettingsState,
+} from "@/components/Providers/ExportSettingsContext";
 import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
@@ -44,6 +47,7 @@ export function useCardExportController({
   const { t, language } = useI18n();
   const { track } = useAnalytics();
   const { settings: exportSettings } = useExportSettingsState();
+  const { profiles, defaultProfile } = useExportProfilesState();
 
   const exportPreviewRef = useRef<CardPreviewHandle>(null!);
   const exportCancelRef = useRef(false);
@@ -61,7 +65,7 @@ export function useCardExportController({
   const [exportCancelled, setExportCancelled] = useState(false);
   const [exportPrompt, setExportPrompt] = useState<{
     resolve: (result: ExportPromptResult | null) => void;
-    initial: typeof exportSettings;
+    selectedProfileId?: string;
     token: number;
   } | null>(null);
   const [missingAssetsPrompt, setMissingAssetsPrompt] = useState<{
@@ -113,7 +117,7 @@ export function useCardExportController({
     return new Promise<ExportPromptResult | null>((resolve) => {
       const token = Date.now() + Math.random();
       exportPromptRef.current = token;
-      setExportPrompt({ resolve, initial: settings, token });
+      setExportPrompt({ resolve, selectedProfileId: defaultProfile?.id, token });
       let resolved = false;
       const safeResolve = (result: ExportPromptResult) => {
         if (resolved) return;
@@ -329,6 +333,9 @@ export function useCardExportController({
   const exportTemplateName =
     exportTemplate && exportTarget ? getTemplateNameLabel(language, exportTemplate) : "";
   const exportCardData = exportTarget ? cardRecordToCardData(exportTarget) : undefined;
+  const exportPromptProfile =
+    profiles.find((profile) => profile.id === exportPrompt?.selectedProfileId) ?? defaultProfile;
+  const exportPromptSettings = exportPromptProfile?.settings ?? exportSettings;
 
   const onExportPng = () => {
     track("export_started", { scope: "editor_single" });
@@ -422,14 +429,27 @@ export function useCardExportController({
       {exportPrompt ? (
         <ExportBleedPrompt
           isOpen={Boolean(exportPrompt)}
-          initialBleedEnabled={exportPrompt.initial.bleed.enabled}
-          initialBleedPx={exportPrompt.initial.bleed.bleedPx}
-          initialCropMarksEnabled={exportPrompt.initial.cropMarks.enabled}
-          initialCropMarkColor={exportPrompt.initial.cropMarks.color}
-          initialCropMarkStyle={exportPrompt.initial.cropMarks.style ?? "lines"}
-          initialCutMarksEnabled={exportPrompt.initial.cutMarks.enabled}
-          initialCutMarkColor={exportPrompt.initial.cutMarks.color}
-          initialRoundedCorners={exportPrompt.initial.roundedCorners}
+          profiles={profiles}
+          selectedProfileId={exportPromptProfile?.id}
+          initialBleedEnabled={exportPromptSettings.bleed.enabled}
+          initialBleedPx={exportPromptSettings.bleed.bleedPx}
+          initialCropMarksEnabled={exportPromptSettings.cropMarks.enabled}
+          initialCropMarkColor={exportPromptSettings.cropMarks.color}
+          initialCropMarkStyle={exportPromptSettings.cropMarks.style ?? "lines"}
+          initialCutMarksEnabled={exportPromptSettings.cutMarks.enabled}
+          initialCutMarkColor={exportPromptSettings.cutMarks.color}
+          initialCutMarkStyle={exportPromptSettings.cutMarks.style ?? "solid"}
+          initialRoundedCorners={exportPromptSettings.roundedCorners}
+          onSelectProfile={(profileId) =>
+            setExportPrompt((current) =>
+              current
+                ? {
+                    ...current,
+                    selectedProfileId: profileId,
+                  }
+                : current,
+            )
+          }
           onConfirm={(result) => {
             const prompt = exportPrompt;
             if (!prompt) return;

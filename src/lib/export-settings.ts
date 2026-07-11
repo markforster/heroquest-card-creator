@@ -21,7 +21,7 @@ export type ExportCropMarksSettings = {
 export type ExportCutMarksSettings = {
   enabled: boolean;
   color: string;
-  style: "solid" | "dashed" | "dotted" | "ticks";
+  style: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks";
 };
 
 export type ExportSettings = {
@@ -37,7 +37,7 @@ export const MAX_BLEED_PX = 36;
 export const DEFAULT_CROP_MARK_COLOR = "#00FFFF";
 export const DEFAULT_CROP_MARK_STYLE: ExportCropMarksSettings["style"] = "lines";
 export const DEFAULT_CUT_MARK_COLOR = "#00FFFF";
-export const DEFAULT_CUT_MARK_STYLE: ExportCutMarksSettings["style"] = "solid";
+export const DEFAULT_CUT_MARK_STYLE: ExportCutMarksSettings["style"] = "dashed";
 export const DEFAULT_EXPORT_ROUNDED_CORNERS = true;
 
 const STORAGE_KEYS = {
@@ -65,27 +65,31 @@ const STORAGE_KEYS = {
   pdfDuplexPreset: "hqcc.exportPdf.duplexPreset",
 } as const;
 
+export function createDefaultExportSettings(): ExportSettings {
+  return {
+    bleed: {
+      enabled: false,
+      bleedPx: DEFAULT_BLEED_PX,
+      askBeforeExport: false,
+    },
+    cropMarks: {
+      enabled: false,
+      color: DEFAULT_CROP_MARK_COLOR,
+      style: DEFAULT_CROP_MARK_STYLE,
+    },
+    cutMarks: {
+      enabled: false,
+      color: DEFAULT_CUT_MARK_COLOR,
+      style: DEFAULT_CUT_MARK_STYLE,
+    },
+    roundedCorners: DEFAULT_EXPORT_ROUNDED_CORNERS,
+    pdf: DEFAULT_PDF_PRINT_CONFIG,
+  };
+}
+
 export function getExportSettings(): ExportSettings {
   if (typeof window === "undefined") {
-    return {
-      bleed: {
-        enabled: false,
-        bleedPx: DEFAULT_BLEED_PX,
-        askBeforeExport: false,
-      },
-      cropMarks: {
-        enabled: false,
-        color: DEFAULT_CROP_MARK_COLOR,
-        style: DEFAULT_CROP_MARK_STYLE,
-      },
-      cutMarks: {
-        enabled: false,
-        color: DEFAULT_CUT_MARK_COLOR,
-        style: DEFAULT_CUT_MARK_STYLE,
-      },
-      roundedCorners: DEFAULT_EXPORT_ROUNDED_CORNERS,
-      pdf: DEFAULT_PDF_PRINT_CONFIG,
-    };
+    return createDefaultExportSettings();
   }
 
   const bleedEnabled = readBool(STORAGE_KEYS.bleedEnabled, false);
@@ -278,6 +282,22 @@ export function restoreExportSettingKeys(values: Record<string, string | null | 
   }
 }
 
+export function hasLegacyExportSettings(): boolean {
+  const values = readExportSettingKeys();
+  return Object.values(values).some((value) => value != null);
+}
+
+export function clearExportSettingKeys(): void {
+  if (typeof window === "undefined") return;
+  try {
+    Object.values(STORAGE_KEYS).forEach((key) => {
+      window.localStorage.removeItem(key);
+    });
+  } catch {
+    // ignore
+  }
+}
+
 function safeGetItem(key: string): string | null {
   try {
     return window.localStorage.getItem(key);
@@ -299,10 +319,12 @@ function readCropMarksStyle(value: string | null): ExportCropMarksSettings["styl
 }
 
 function readCutMarksStyle(value: string | null): ExportCutMarksSettings["style"] {
+  if (value === "long-dashed") return "long-dashed";
   if (value === "dashed") return "dashed";
   if (value === "dotted") return "dotted";
   if (value === "ticks") return "ticks";
-  return "solid";
+  if (value === "solid") return "dashed";
+  return DEFAULT_CUT_MARK_STYLE;
 }
 
 function readBool(key: string, fallback: boolean): boolean {
