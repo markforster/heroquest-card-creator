@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
+import { DEFAULT_BODY_TEXT_COLOR } from "@/config/colors";
+
 import type { CardFace } from "./card-face";
 import type { StatValue } from "./stats";
 import type { TemplateId } from "./templates";
-import { DEFAULT_BODY_TEXT_COLOR } from "@/config/colors";
 
 export interface BaseCardFields {
   name?: string;
@@ -56,7 +57,15 @@ export interface SmallTreasureCardData extends BaseCardFields {}
 
 export interface LargeTreasureCardData extends BaseCardFields {}
 
-export interface HeroBackCardData extends BaseCardFields {}
+export type HeroBackLogoMode = "default" | "none" | "custom";
+
+export interface HeroBackCardData extends BaseCardFields {
+  heroBackLogoMode?: HeroBackLogoMode;
+  heroBackLogoId?: string;
+  heroBackLogoName?: string;
+  heroBackLogoOriginalWidth?: number;
+  heroBackLogoOriginalHeight?: number;
+}
 
 export type BodyTextStyle = {
   enabled?: boolean;
@@ -111,7 +120,7 @@ export function createDefaultCardData<T extends TemplateId>(templateId: T): Card
     case "small-treasure":
       return { ...base } as CardDataByTemplate[T];
     case "hero-back":
-      return { ...base } as CardDataByTemplate[T];
+      return { ...base, heroBackLogoMode: "default" } as CardDataByTemplate[T];
     case "labelled-back":
       return {
         ...base,

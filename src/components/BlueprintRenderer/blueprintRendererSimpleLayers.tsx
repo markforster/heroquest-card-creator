@@ -3,12 +3,12 @@
 import { useId } from "react";
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
+import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import {
   EDITOR_TARGET_IDS,
   useRegisterHoverAdornment,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
 import CardTexturedBorder from "@/components/Cards/CardParts/CardTexturedBorder";
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
@@ -16,7 +16,9 @@ import Layer from "@/components/Cards/CardPreview/Layer";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 import { layerTypes } from "@/data/card-systems/types";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
+import { useHeroBackLogoImageUrl } from "@/hooks/useHeroBackLogoImageUrl";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
+import { getHeroBackLogoPlacement } from "@/lib/hero-back-logo-layout";
 import { computeContainScale } from "@/lib/image-scale";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -334,20 +336,20 @@ export function ImageLayer({
   cardData?: CardDataByTemplate[TemplateId];
 }) {
   const clipId = normalizeClipId(useId());
+  const isImageLayer = layer.type === layerTypes.image;
   const assetId =
-    layer.type === layerTypes.image && layer.bind?.imageKey && cardData
+    isImageLayer && layer.bind?.imageKey && cardData
       ? ((cardData as Record<string, unknown>)[layer.bind.imageKey] as string | undefined)
       : undefined;
   const assetName =
-    layer.type === layerTypes.image && cardData
+    isImageLayer && cardData
       ? ((cardData as { imageAssetName?: string }).imageAssetName as string | undefined)
       : undefined;
   const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.imageMain);
-  const bounds = layer.type === layerTypes.image ? getLayerBounds(blueprint, layer) : null;
-  if (layer.type !== layerTypes.image) return null;
-  const imageLayer = layer as Extract<BlueprintLayer, { type: "image" }>;
-  const clipMode = imageLayer.clip ?? "bounds";
+  const bounds = isImageLayer ? getLayerBounds(blueprint, layer) : null;
+  const imageLayer = isImageLayer ? (layer as Extract<BlueprintLayer, { type: "image" }>) : null;
+  const clipMode = imageLayer?.clip ?? "bounds";
   const canvasBounds = {
     x: 0,
     y: 0,
@@ -414,13 +416,15 @@ export function ImageLayer({
 
   useRegisterHoverAdornment(
     EDITOR_TARGET_IDS.imageMain,
-    hoverBounds
+    isImageLayer && hoverBounds
       ? {
           kind: "rect",
           ...hoverBounds,
         }
       : null,
   );
+
+  if (!isImageLayer) return null;
 
   if (!layer.bind?.imageKey) return null;
   if (!cardData) return null;
@@ -465,6 +469,68 @@ export function ImageLayer({
         transform={transform}
         preserveAspectRatio="xMidYMid meet"
         clipPath={shouldClip ? `url(#${clipId})` : undefined}
+      />
+    </Layer>
+  );
+}
+
+export function HeroBackLogoLayer({
+  blueprint,
+  layer,
+  cardData,
+}: {
+  blueprint: Blueprint;
+  layer: BlueprintLayer;
+  cardData?: CardDataByTemplate[TemplateId];
+}) {
+  const isLogoLayer = layer.type === layerTypes.logo;
+  const bounds = isLogoLayer ? getLayerBounds(blueprint, layer) : null;
+  const logoLayer = isLogoLayer ? (layer as Extract<BlueprintLayer, { type: "logo" }>) : null;
+  const logoMode = (cardData as { heroBackLogoMode?: "default" | "none" | "custom" } | undefined)
+    ?.heroBackLogoMode ?? "default";
+  const logoId = (cardData as { heroBackLogoId?: string } | undefined)?.heroBackLogoId;
+  const logoName = (cardData as { heroBackLogoName?: string } | undefined)?.heroBackLogoName;
+  const { url: customUrl, status, width, height } = useHeroBackLogoImageUrl(logoId);
+
+  if (!isLogoLayer || !bounds || !logoLayer) return null;
+
+  if (logoMode === "none") {
+    return null;
+  }
+
+  if (logoMode !== "custom" || !logoId || !customUrl || status !== "ready" || !width || !height) {
+    return (
+      <Layer key={layer.id}>
+        <image
+          href={normalizeFileProtocolAssetUrl(logoLayer.asset.src)}
+          data-template-asset="hero-back-logo"
+          x={bounds.x}
+          y={bounds.y}
+          width={bounds.width}
+          height={bounds.height}
+          preserveAspectRatio="none"
+        />
+      </Layer>
+    );
+  }
+
+  const placement = getHeroBackLogoPlacement({
+    bounds,
+    imageWidth: width,
+    imageHeight: height,
+  });
+
+  return (
+    <Layer key={layer.id}>
+      <image
+        href={customUrl}
+        data-user-hero-back-logo-id={logoId}
+        data-user-hero-back-logo-name={logoName}
+        x={placement.x}
+        y={placement.y}
+        width={placement.renderedWidth}
+        height={placement.renderedHeight}
+        preserveAspectRatio="xMidYMid meet"
       />
     </Layer>
   );

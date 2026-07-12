@@ -12,11 +12,12 @@ import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
 import { ENABLE_WATERMARK, USE_ROUNDED_CARD_CLIP } from "@/config/flags";
 import { blueprintsByTemplateId, getCopyrightBounds } from "@/data/blueprints";
 import { useI18n } from "@/i18n/I18nProvider";
-import { collectCardAssetIds } from "@/lib/card-assets";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
+import { collectCardAssetIds, collectCardHeroBackLogoIds } from "@/lib/card-assets";
 import { resolveCardPreviewFileName } from "@/lib/card-preview";
 import { computeAverageLuminance } from "@/lib/color-contrast";
 import { getSvgImageHref } from "@/lib/dom";
-import { buildAssetCache } from "@/lib/export-assets-cache";
+import { buildAssetCache, buildHeroBackLogoCache } from "@/lib/export-assets-cache";
 import {
   endExportLogging,
   logCardInfo,
@@ -28,7 +29,6 @@ import {
   logSummary,
   startExportLogging,
 } from "@/lib/export-logging";
-import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { addPngTextChunk } from "@/lib/png-metadata";
 import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
@@ -37,11 +37,10 @@ import { applyWatermarkToCanvas, shouldApplyWatermark } from "@/lib/watermark";
 import { APP_VERSION } from "@/version";
 
 import styles from "./CardPreview.module.css";
-import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "./consts";
 import { renderBleedCanvas } from "./cardPreviewBleedCanvas";
-import { resolveCopyrightTextStyle } from "./cardPreviewCopyright";
 import { drawDeveloperCredit } from "./cardPreviewDeveloperCredit";
 import { mutateSvgForExport } from "./cardPreviewExportSvg";
+import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "./consts";
 
 import type { CardPreviewHandle, CardPreviewProps } from "./types";
 
@@ -487,11 +486,14 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             await this.syncCopyrightContrast?.();
 
             const assetIds = collectCardAssetIds(cardData);
+            const heroBackLogoIds = collectCardHeroBackLogoIds(cardData);
             const { cache, missing } = await buildAssetCache(assetIds);
+            const { cache: heroBackLogoCache, missing: missingLogos } =
+              await buildHeroBackLogoCache(heroBackLogoIds);
             logAssetPrefetch(session, {
-              total: assetIds.length,
-              cached: cache.size,
-              missing: missing.size,
+              total: assetIds.length + heroBackLogoIds.length,
+              cached: cache.size + heroBackLogoCache.size,
+              missing: missing.size + missingLogos.size,
             });
             const missingAssets: { label: string; id: string; name?: string | null }[] = [];
             if (imageAssetId && missing.has(imageAssetId)) {
@@ -508,6 +510,16 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                 name: iconAssetName ?? null,
               });
             }
+            const heroBackLogoMode = (cardData as { heroBackLogoMode?: string })?.heroBackLogoMode;
+            const heroBackLogoId = (cardData as { heroBackLogoId?: string })?.heroBackLogoId;
+            const heroBackLogoName = (cardData as { heroBackLogoName?: string })?.heroBackLogoName;
+            if (heroBackLogoMode === "custom" && heroBackLogoId && missingLogos.has(heroBackLogoId)) {
+              missingAssets.push({
+                label: "logo",
+                id: heroBackLogoId,
+                name: heroBackLogoName ?? null,
+              });
+            }
             if (missingAssets.length > 0) {
               failures += 1;
               const missingSummary = missingAssets
@@ -520,8 +532,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             }
 
             const waitStart = now();
-            if (assetIds.length) {
-              await waitForAssetElements(() => svgRef.current, assetIds);
+            if (assetIds.length || heroBackLogoIds.length) {
+              await waitForAssetElements(() => svgRef.current, assetIds, heroBackLogoIds);
             }
             logCardWait(session, { durationMs: now() - waitStart });
 
@@ -552,6 +564,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                     roundedCorners: effectiveRounded,
                     loggingId: session.sessionId,
                     assetBlobsById: cache,
+                    heroBackLogoBlobsById: heroBackLogoCache,
                     templateId,
                     developerCreditEnabled,
                   })
@@ -563,6 +576,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                     removeDebugBounds: true,
                     loggingId: session.sessionId,
                     assetBlobsById: cache,
+                    heroBackLogoBlobsById: heroBackLogoCache,
                     mutateSvg: (svg) =>
                       mutateSvgForExport(svg, {
                         mode: "standard",
@@ -674,6 +688,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   roundedCorners: effectiveRounded,
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
+                  heroBackLogoBlobsById: options?.heroBackLogoBlobsById,
                   templateId,
                   developerCreditEnabled,
                 })
@@ -685,6 +700,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   removeDebugBounds: true,
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
+                  heroBackLogoBlobsById: options?.heroBackLogoBlobsById,
                   mutateSvg: (svg) =>
                     mutateSvgForExport(svg, {
                       mode: "standard",
@@ -761,6 +777,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   roundedCorners: effectiveRounded,
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
+                  heroBackLogoBlobsById: options?.heroBackLogoBlobsById,
                   templateId,
                   developerCreditEnabled,
                 })
@@ -772,6 +789,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   removeDebugBounds: true,
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
+                  heroBackLogoBlobsById: options?.heroBackLogoBlobsById,
                   mutateSvg: (svg) =>
                     mutateSvgForExport(svg, {
                       mode: "standard",

@@ -33,6 +33,7 @@ export type CardPreviewHandle = {
     height?: number;
     loggingId?: string;
     assetBlobsById?: Map<string, Blob>;
+    heroBackLogoBlobsById?: Map<string, Blob>;
     bleedPx?: number;
     cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
     cutMarks?: {
@@ -47,6 +48,7 @@ export type CardPreviewHandle = {
     height?: number;
     loggingId?: string;
     assetBlobsById?: Map<string, Blob>;
+    heroBackLogoBlobsById?: Map<string, Blob>;
     bleedPx?: number;
     cropMarks?: { enabled: boolean; color: string; style?: "lines" | "squares" | "triangles" };
     cutMarks?: {

@@ -79,4 +79,21 @@ describe("waitForAssetElements", () => {
       waitForAssetElements(() => svg, ["missing"], 5),
     ).resolves.toBeUndefined();
   });
+
+  it("waits for Hero Back logo elements as well", async () => {
+    global.requestAnimationFrame = (callback: FrameRequestCallback) => {
+      callback(0);
+      return 1;
+    };
+    Date.now = () => 0;
+
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+    img.setAttribute("data-user-hero-back-logo-id", "logo-1");
+    svg.appendChild(img);
+
+    await expect(
+      waitForAssetElements(() => svg, [], ["logo-1"]),
+    ).resolves.toBeUndefined();
+  });
 });

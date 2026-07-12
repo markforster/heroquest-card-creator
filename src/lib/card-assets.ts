@@ -15,3 +15,17 @@ export function collectCardAssetIds(
   }
   return ids;
 }
+
+export function collectCardHeroBackLogoIds(
+  cardData?: CardDataByTemplate[TemplateId] | null,
+): string[] {
+  if (!cardData) return [];
+  const logoMode = (cardData as { heroBackLogoMode?: string }).heroBackLogoMode;
+  const logoId = (cardData as { heroBackLogoId?: string }).heroBackLogoId;
+
+  if (logoMode !== "custom" || typeof logoId !== "string" || !logoId) {
+    return [];
+  }
+
+  return [logoId];
+}

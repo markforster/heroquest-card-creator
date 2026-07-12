@@ -18,6 +18,9 @@ export async function seedNormalizedCard(record: CardRecord): Promise<void> {
   if (bundle.texts.length) await db.cardTextComponents.bulkPut(bundle.texts);
   if (bundle.copyrights.length) await db.cardCopyrightComponents.bulkPut(bundle.copyrights);
   if (bundle.images.length) await db.cardImageComponents.bulkPut(bundle.images);
+  if (bundle.heroBackLogos.length) {
+    await db.cardHeroBackLogoComponents.bulkPut(bundle.heroBackLogos);
+  }
   if (bundle.icons.length) await db.cardIconComponents.bulkPut(bundle.icons);
   if (bundle.heroStats.length) await db.cardHeroStatsComponents.bulkPut(bundle.heroStats);
   if (bundle.monsterStats.length) {

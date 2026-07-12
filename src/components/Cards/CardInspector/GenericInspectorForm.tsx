@@ -17,6 +17,7 @@ import BorderColorField from "./BorderColorField";
 import ContentField from "./ContentField";
 import CopyrightField from "./CopyrightField";
 import HeroStatsInspector from "./HeroStatsInspector";
+import HeroBackLogoField from "./HeroBackLogoField";
 import ImageField from "./ImageField";
 import MonsterIconField from "./MonsterIconField";
 import MonsterStatsInspector from "./MonsterStatsInspector";
@@ -150,6 +151,9 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
               showToggle={field.showToggle}
             />
           );
+        }
+        if (field.fieldType === "heroBackLogo") {
+          return <HeroBackLogoField key={`${field.bind}-${index}`} label={t(field.labelKey)} />;
         }
         return null;
       })}

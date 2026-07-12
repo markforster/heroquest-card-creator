@@ -1,4 +1,4 @@
-import { collectCardAssetIds } from "@/lib/card-assets";
+import { collectCardAssetIds, collectCardHeroBackLogoIds } from "@/lib/card-assets";
 
 describe("collectCardAssetIds", () => {
   it("returns empty array when card data is missing", () => {
@@ -29,5 +29,20 @@ describe("collectCardAssetIds", () => {
         iconAssetId: "icon-2",
       }),
     ).toEqual(["icon-2"]);
+  });
+
+  it("collects custom Hero Back logo ids separately", () => {
+    expect(
+      collectCardHeroBackLogoIds({
+        heroBackLogoMode: "custom",
+        heroBackLogoId: "logo-1",
+      }),
+    ).toEqual(["logo-1"]);
+    expect(
+      collectCardHeroBackLogoIds({
+        heroBackLogoMode: "default",
+        heroBackLogoId: "logo-1",
+      }),
+    ).toEqual([]);
   });
 });

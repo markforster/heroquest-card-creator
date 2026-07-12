@@ -201,4 +201,48 @@ describe("importBackupJson", () => {
     await expect(db.deckSets.toArray()).resolves.toEqual([]);
     await expect(db.deckEntries.toArray()).resolves.toEqual([]);
   });
+
+  it("restores Hero Back logo library records from backup JSON", async () => {
+    const exportData = {
+      schemaVersion: 2 as const,
+      createdAt: "2026-06-15T12:00:00.000Z",
+      cards: [],
+      assets: [],
+      heroBackLogos: [
+        {
+          id: "logo-1",
+          name: "Clan Crest",
+          mimeType: "image/png",
+          width: 200,
+          height: 80,
+          createdAt: 10,
+          updatedAt: 20,
+          dataUrl: "data:image/png;base64,bG9nbw==",
+        },
+      ],
+      collections: [],
+      settings: { borderSwatches: [], defaultCopyright: "" },
+      localStorage: {},
+    };
+
+    const file = {
+      text: jest.fn().mockResolvedValue(JSON.stringify(exportData)),
+    } as unknown as File;
+
+    await expect(importBackupJson(file)).resolves.toEqual(
+      expect.objectContaining({
+        heroBackLogosCount: 1,
+      }),
+    );
+
+    const db = await openHqccDexieDb();
+    await expect(db.heroBackLogos.get("logo-1")).resolves.toEqual(
+      expect.objectContaining({
+        id: "logo-1",
+        name: "Clan Crest",
+        width: 200,
+        height: 80,
+      }),
+    );
+  });
 });

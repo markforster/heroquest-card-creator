@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
-import CardPreview, { CardPreviewHandle } from "@/components/Cards/CardPreview";
+import { apiClient } from "@/api/client";
 import { useEditorTargets } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import CardPreview, { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import WebglPreview from "@/components/Cards/CardPreview/WebglPreview";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
@@ -15,8 +16,7 @@ import { KEEP_WEBGL_MOUNTED } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiClient } from "@/api/client";
-import { collectCardAssetIds } from "@/lib/card-assets";
+import { collectCardAssetIds, collectCardHeroBackLogoIds } from "@/lib/card-assets";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -76,6 +76,7 @@ export default function CardPreviewContainer({
     template?.defaultFace ?? "front",
   );
   const assetIds = useMemo(() => collectCardAssetIds(cardData), [cardData]);
+  const heroBackLogoIds = useMemo(() => collectCardHeroBackLogoIds(cardData), [cardData]);
 
   useEffect(() => {
     setHoveredTargetId(null);
@@ -104,8 +105,8 @@ export default function CardPreviewContainer({
             window.requestAnimationFrame(() => resolve());
           });
           await handle.waitForBackgroundLoaded?.();
-          if (assetIds.length) {
-            await waitForAssetElements(() => handle.getSvgElement(), assetIds);
+          if (assetIds.length || heroBackLogoIds.length) {
+            await waitForAssetElements(() => handle.getSvgElement(), assetIds, heroBackLogoIds);
           }
           const canvas = await handle.renderToCanvas({
             width,
@@ -159,6 +160,7 @@ export default function CardPreviewContainer({
     showTextBounds,
     activeCardId,
     assetIds,
+    heroBackLogoIds,
   ]);
 
   useEffect(() => {
@@ -287,6 +289,10 @@ export default function CardPreviewContainer({
     () => collectCardAssetIds(reverseCard?.cardData),
     [reverseCard?.cardData],
   );
+  const reverseHeroBackLogoIds = useMemo(
+    () => collectCardHeroBackLogoIds(reverseCard?.cardData),
+    [reverseCard?.cardData],
+  );
 
   useEffect(() => {
     if (!showWebgl || !reverseCard || isDragging) {
@@ -311,8 +317,12 @@ export default function CardPreviewContainer({
             window.requestAnimationFrame(() => resolve());
           });
           await handle.waitForBackgroundLoaded?.();
-          if (reverseAssetIds.length) {
-            await waitForAssetElements(() => handle.getSvgElement(), reverseAssetIds);
+          if (reverseAssetIds.length || reverseHeroBackLogoIds.length) {
+            await waitForAssetElements(
+              () => handle.getSvgElement(),
+              reverseAssetIds,
+              reverseHeroBackLogoIds,
+            );
           }
           const canvas = await handle.renderToCanvas({
             width,
@@ -355,6 +365,7 @@ export default function CardPreviewContainer({
     isDragging,
     showTextBounds,
     reverseAssetIds,
+    reverseHeroBackLogoIds,
   ]);
 
   useEffect(() => {

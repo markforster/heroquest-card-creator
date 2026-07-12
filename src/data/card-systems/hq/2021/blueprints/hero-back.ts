@@ -1,4 +1,5 @@
-import heroBackBorderAndText from "@/assets/card-backgrounds/hero-back-border-and-text.png";
+import heroBackJustBorder from "@/assets/card-backgrounds/hero-back-just-border.png";
+import heroBackJustLogo from "@/assets/card-backgrounds/hero-back-just-logo.png";
 import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
 import { blueprintIds, layerTypes, systemFamilies } from "@/data/card-systems/types";
 import type { Blueprint } from "@/types/blueprints";
@@ -30,8 +31,15 @@ export const HERO_BACK_BLUEPRINT: Blueprint = {
     {
       id: blueprintIds.hq_2021_overlay_border,
       type: layerTypes.overlay,
-      asset: heroBackBorderAndText,
+      asset: heroBackJustBorder,
       bounds: scaleBounds({ x: 0, y: 0, width: 750, height: 1050 }),
+    },
+    {
+      id: blueprintIds.hq_2021_logo_hero_back,
+      type: layerTypes.logo,
+      asset: heroBackJustLogo,
+      bounds: scaleBounds({ x: 82, y: 72, width: 586, height: 210 }),
+      bind: { logoKey: "heroBackLogoId" },
     },
     {
       id: blueprintIds.hq_2021_text_body,

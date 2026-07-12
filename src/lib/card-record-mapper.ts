@@ -92,6 +92,11 @@ export function cardRecordToCardData<T extends TemplateId>(
     case "hero-back": {
       const data: CardDataByTemplate["hero-back"] = {
         ...base,
+        heroBackLogoMode: record.heroBackLogoMode ?? "default",
+        heroBackLogoId: record.heroBackLogoId,
+        heroBackLogoName: record.heroBackLogoName,
+        heroBackLogoOriginalWidth: record.heroBackLogoOriginalWidth,
+        heroBackLogoOriginalHeight: record.heroBackLogoOriginalHeight,
       };
       return data as CardDataByTemplate[T];
     }
@@ -173,10 +178,20 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     }
     case "large-treasure":
     case "small-treasure":
-    case "hero-back":
     case "labelled-back":
     default:
       return basePatch;
+    case "hero-back": {
+      const heroBack = data as CardDataByTemplate["hero-back"];
+      return {
+        ...basePatch,
+        heroBackLogoMode: heroBack.heroBackLogoMode,
+        heroBackLogoId: heroBack.heroBackLogoId,
+        heroBackLogoName: heroBack.heroBackLogoName,
+        heroBackLogoOriginalWidth: heroBack.heroBackLogoOriginalWidth,
+        heroBackLogoOriginalHeight: heroBack.heroBackLogoOriginalHeight,
+      };
+    }
   }
 }
 

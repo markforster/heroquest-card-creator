@@ -1,36 +1,11 @@
 "use client";
 
-import { BlobReader, BlobWriter, TextWriter, Uint8ArrayWriter, ZipReader } from "@zip.js/zip.js";
 import { decode as decodeMsgpack } from "@msgpack/msgpack";
+import { BlobReader, BlobWriter, TextWriter, Uint8ArrayWriter, ZipReader } from "@zip.js/zip.js";
 
-import { configureZipJs } from "@/lib/zip-config";
-import type { CardRecord } from "@/types/cards-db";
-import type { PairRecord } from "@/types/pairs-db";
-
-import { generateId } from "..";
-import type {
-  BackupProgressCallback,
-  BackupSecondaryProgressCallback,
-  BackupStatusCallback,
-  CardRecordExportCompactV1,
-  CardRecordExportV1,
-  HqccExportCompactFileV1,
-  HqccExportFileV1,
-  ImportResult,
-} from "./backup-types";
 import {
-  BACKUP_LEGACY_FILENAME,
-  BACKUP_MANIFEST_FILENAME,
-  BACKUP_METADATA_FILENAME_V1,
-  BACKUP_METADATA_FILENAME_V2,
-  COMPACT_PAYLOAD_ID_V1,
-  COMPACT_PAYLOAD_ID_V2,
-  isValidObfuscatedBlobRef,
-} from "./backup-compact-container";
-import { dataUrlToBlob } from "./backup-blob-codec";
-import {
-  synthesizeExportProfilesFromLegacySettings,
   restoreExportProfilesState,
+  synthesizeExportProfilesFromLegacySettings,
 } from "@/lib/export-profiles";
 import {
   DEFAULT_BLEED_PX,
@@ -44,7 +19,25 @@ import {
   normalizeColor,
   type ExportSettings,
 } from "@/lib/export-settings";
+import { addHeroBackLogo } from "@/lib/hero-back-logos-db";
+import { openHqccDexieDb } from "@/lib/hqcc-dexie";
 import { normalizePdfPrintConfig } from "@/lib/pdf-export";
+import { configureZipJs } from "@/lib/zip-config";
+import type { CardRecord } from "@/types/cards-db";
+import type { PairRecord } from "@/types/pairs-db";
+
+import { generateId } from "..";
+
+import { dataUrlToBlob } from "./backup-blob-codec";
+import {
+  BACKUP_LEGACY_FILENAME,
+  BACKUP_MANIFEST_FILENAME,
+  BACKUP_METADATA_FILENAME_V1,
+  BACKUP_METADATA_FILENAME_V2,
+  COMPACT_PAYLOAD_ID_V1,
+  COMPACT_PAYLOAD_ID_V2,
+  isValidObfuscatedBlobRef,
+} from "./backup-compact-container";
 import {
   parseBackupJson,
   parseBackupMetadata,
@@ -54,10 +47,26 @@ import {
   validateDeckReferences,
 } from "./backup-validation";
 
-type ZipEntry = { filename: string; directory?: boolean; getData?: Function };
+import type {
+  BackupProgressCallback,
+  BackupSecondaryProgressCallback,
+  BackupStatusCallback,
+  CardRecordExportCompactV1,
+  CardRecordExportV1,
+  HqccExportCompactFileV1,
+  HqccExportFileV1,
+  ImportResult,
+} from "./backup-types";
+
+type ZipEntry = {
+  filename: string;
+  directory?: boolean;
+  getData?: <T>(writer: unknown) => Promise<T>;
+};
 
 async function clearExistingLibrary() {
   const { apiClient } = await import("@/api/client");
+  const db = await openHqccDexieDb();
   const [existingCards, existingAssets, existingCollections, existingPairs, existingDecks] =
     await Promise.all([
       apiClient.listCards({ queries: { deleted: "include" } }),
@@ -102,6 +111,8 @@ async function clearExistingLibrary() {
       }),
     );
   }
+
+  await db.heroBackLogos.clear();
 
   return { apiClient };
 }
@@ -275,6 +286,7 @@ async function applyBackupObject(
 
   let cardsCount = 0;
   let assetsCount = 0;
+  let heroBackLogosCount = 0;
   let collectionsCount = 0;
   let decksCount = 0;
   let deckGroupsCount = 0;
@@ -282,6 +294,7 @@ async function applyBackupObject(
   let deckEntriesCount = 0;
   const total =
     exportData.assets.length +
+    (Array.isArray(exportData.heroBackLogos) ? exportData.heroBackLogos.length : 0) +
     exportData.cards.length +
     (Array.isArray(exportData.collections) ? exportData.collections.length : 0);
 
@@ -305,6 +318,20 @@ async function applyBackupObject(
     }
   }
 
+  if (Array.isArray(exportData.heroBackLogos) && exportData.heroBackLogos.length > 0) {
+    for (const logoExport of exportData.heroBackLogos) {
+      try {
+        const { dataUrl, id, ...rest } = logoExport;
+        const blob = dataUrlToBlob(dataUrl);
+        await addHeroBackLogo(id, blob, rest);
+        heroBackLogosCount += 1;
+        onProgress?.(assetsCount + heroBackLogosCount + cardsCount + collectionsCount, total, "import");
+      } catch {
+        // Skip invalid logo entries
+      }
+    }
+  }
+
   if (exportData.cards.length > 0) {
     for (const cardExport of exportData.cards) {
       let thumbnailBlob: Blob | null = null;
@@ -316,7 +343,9 @@ async function applyBackupObject(
         }
       }
 
-      const { thumbnailDataUrl, pairedWith, ...rest } = cardExport as CardRecordExportV1;
+      const { thumbnailDataUrl: _thumbnailDataUrl, pairedWith, ...rest } =
+        cardExport as CardRecordExportV1;
+      void _thumbnailDataUrl;
       void pairedWith;
       const record: CardRecord = {
         ...(rest as CardRecord),
@@ -324,7 +353,7 @@ async function applyBackupObject(
       };
       await apiClient.createCard(record);
       cardsCount += 1;
-      onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
+      onProgress?.(assetsCount + heroBackLogosCount + cardsCount + collectionsCount, total, "import");
     }
   }
 
@@ -332,7 +361,7 @@ async function applyBackupObject(
     for (const collection of exportData.collections) {
       await apiClient.createCollection(collection);
       collectionsCount += 1;
-      onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
+      onProgress?.(assetsCount + heroBackLogosCount + cardsCount + collectionsCount, total, "import");
     }
   }
 
@@ -374,6 +403,7 @@ async function applyBackupObject(
   return {
     cardsCount,
     assetsCount,
+    heroBackLogosCount,
     collectionsCount,
     decksCount,
     deckGroupsCount,
@@ -408,6 +438,7 @@ async function applyCompactBackupObject(
 
   let cardsCount = 0;
   let assetsCount = 0;
+  let heroBackLogosCount = 0;
   let collectionsCount = 0;
   let decksCount = 0;
   let deckGroupsCount = 0;
@@ -415,6 +446,7 @@ async function applyCompactBackupObject(
   let deckEntriesCount = 0;
   const total =
     exportData.assets.length +
+    (Array.isArray(exportData.heroBackLogos) ? exportData.heroBackLogos.length : 0) +
     exportData.cards.length +
     (Array.isArray(exportData.collections) ? exportData.collections.length : 0);
 
@@ -441,6 +473,27 @@ async function applyCompactBackupObject(
         onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
       } catch {
         // Skip invalid asset entries
+      }
+    }
+  }
+
+  if (Array.isArray(exportData.heroBackLogos) && exportData.heroBackLogos.length > 0) {
+    for (const logoExport of exportData.heroBackLogos) {
+      try {
+        const { blobRef, id, ...rest } = logoExport;
+        if (!blobRef || !isValidObfuscatedBlobRef("asset", `hero-back-logo-${id}`, blobRef)) {
+          continue;
+        }
+        const entry = entryByName.get(blobRef);
+        if (!entry || entry.directory || !entry.getData) {
+          continue;
+        }
+        const blob = await entry.getData(new BlobWriter(rest.mimeType ?? "application/octet-stream"));
+        await addHeroBackLogo(id, blob, rest);
+        heroBackLogosCount += 1;
+        onProgress?.(assetsCount + heroBackLogosCount + cardsCount + collectionsCount, total, "import");
+      } catch {
+        // Skip invalid logo entries
       }
     }
   }
@@ -478,7 +531,7 @@ async function applyCompactBackupObject(
       };
       await apiClient.createCard(record);
       cardsCount += 1;
-      onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
+      onProgress?.(assetsCount + heroBackLogosCount + cardsCount + collectionsCount, total, "import");
     }
   }
 
@@ -486,7 +539,7 @@ async function applyCompactBackupObject(
     for (const collection of exportData.collections) {
       await apiClient.createCollection(collection);
       collectionsCount += 1;
-      onProgress?.(assetsCount + cardsCount + collectionsCount, total, "import");
+      onProgress?.(assetsCount + heroBackLogosCount + cardsCount + collectionsCount, total, "import");
     }
   }
 
@@ -528,6 +581,7 @@ async function applyCompactBackupObject(
   return {
     cardsCount,
     assetsCount,
+    heroBackLogosCount,
     collectionsCount,
     decksCount,
     deckGroupsCount,

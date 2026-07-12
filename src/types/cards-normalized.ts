@@ -1,7 +1,7 @@
-import type { BodyTextStyle } from "@/types/card-data";
+import type { BlueprintGroupTypeValue, BlueprintLayerTypeValue, BlueprintSlotId, SystemFamily } from "@/data/card-systems/types";
+import type { BodyTextStyle, HeroBackLogoMode } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { CardStatus } from "@/types/cards-db";
-import type { BlueprintGroupTypeValue, BlueprintLayerTypeValue, BlueprintSlotId, SystemFamily } from "@/data/card-systems/types";
 import type { StatValue } from "@/types/stats";
 import type { TemplateId } from "@/types/templates";
 
@@ -90,6 +90,14 @@ export interface CardImageComponentRecord extends NormalizedCardComponentBase {
   offsetX?: number;
   offsetY?: number;
   rotation?: number;
+  originalWidth?: number;
+  originalHeight?: number;
+}
+
+export interface CardHeroBackLogoComponentRecord extends NormalizedCardComponentBase {
+  mode: HeroBackLogoMode;
+  logoId?: string;
+  logoName?: string;
   originalWidth?: number;
   originalHeight?: number;
 }

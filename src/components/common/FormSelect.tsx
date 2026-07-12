@@ -17,6 +17,10 @@ export type FormSelectOption = {
   label: string;
 };
 
+export type FormSelectRenderMeta = {
+  context: "menu" | "value";
+};
+
 type FormSelectProps = {
   options: FormSelectOption[];
   value: string;
@@ -25,7 +29,7 @@ type FormSelectProps = {
   inputId?: string;
   ariaLabel?: string;
   className?: string;
-  renderOptionLabel?: (option: FormSelectOption) => ReactNode;
+  renderOptionLabel?: (option: FormSelectOption, meta: FormSelectRenderMeta) => ReactNode;
 };
 
 export function FormSelectDropdownIndicator<Option extends FormSelectOption>(
@@ -63,7 +67,7 @@ export function getFormSelectStyles<Option extends FormSelectOption>(
     control: (base, state) => ({
       ...base,
       minHeight: 0,
-      alignItems: "center",
+      alignItems: "stretch",
       backgroundColor,
       borderColor: state.isFocused ? "var(--hq-focus-ring)" : "var(--hq-border-mid)",
       borderRadius: 4,
@@ -79,24 +83,24 @@ export function getFormSelectStyles<Option extends FormSelectOption>(
     }),
     valueContainer: (base) => ({
       ...base,
-      display: "flex",
       alignItems: "center",
       backgroundColor,
-      padding: "0.25rem 0.5rem",
+      padding: "0 0.5rem",
     }),
     singleValue: (base) => ({
       ...base,
-      display: "flex",
-      alignItems: "center",
       position: "static",
       transform: "none",
       top: "auto",
-      margin: 0,
+      marginLeft: 0,
+      marginRight: 0,
+      width: "100%",
       maxWidth: "100%",
       color: "var(--hq-text)",
       fontSize: "var(--hq-control-text-primary)",
       fontFamily: "var(--hq-font-form)",
       lineHeight: "var(--hq-control-line-height)",
+      overflow: "hidden",
     }),
     menu: (base) => ({
       ...base,
@@ -132,17 +136,18 @@ export function getFormSelectStyles<Option extends FormSelectOption>(
     indicatorSeparator: () => ({ display: "none" }),
     dropdownIndicator: (base) => ({
       ...base,
-      alignSelf: "stretch",
+      alignSelf: "center",
       display: "flex",
       alignItems: "center",
       backgroundColor,
-      padding: "0.25rem 0.5rem 0.25rem 0",
+      padding: "0 0.5rem 0 0",
       color: "var(--hq-text)",
       "&:hover": { color: "var(--hq-text)" },
     }),
     indicatorsContainer: (base) => ({
       ...base,
-      alignSelf: "stretch",
+      alignSelf: "center",
+      alignItems: "center",
       backgroundColor,
     }),
     input: (base) => ({
@@ -151,7 +156,7 @@ export function getFormSelectStyles<Option extends FormSelectOption>(
       margin: 0,
       padding: 0,
       fontSize: "var(--hq-control-text-primary)",
-      lineHeight: "var(--hq-control-line-height)",
+      lineHeight: 0,
     }),
   };
 }
@@ -177,7 +182,7 @@ export default function FormSelect<Option extends FormSelectOption>({
   renderOptionLabel,
 }: Omit<FormSelectProps, "options" | "renderOptionLabel"> & {
   options: Option[];
-  renderOptionLabel?: (option: Option) => ReactNode;
+  renderOptionLabel?: (option: Option, meta: FormSelectRenderMeta) => ReactNode;
 }) {
   const selectStyles = useMemo(() => getFormSelectStyles<Option>(disabled), [disabled]);
   const menuPortalTarget = typeof document === "undefined" ? undefined : document.body;
@@ -188,8 +193,10 @@ export default function FormSelect<Option extends FormSelectOption>({
     onChange(next.value);
   };
 
-  const formatOptionLabel = (option: Option, _meta: FormatOptionLabelMeta<Option>) =>
-    renderOptionLabel ? renderOptionLabel(option) : renderPlainFormSelectOption(option);
+  const formatOptionLabel = (option: Option, meta: FormatOptionLabelMeta<Option>) =>
+    renderOptionLabel
+      ? renderOptionLabel(option, { context: meta.context })
+      : renderPlainFormSelectOption(option);
 
   return (
     <div className={`${styles.selectRoot}${className ? ` ${className}` : ""}`}>

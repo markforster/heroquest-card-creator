@@ -8,25 +8,28 @@ import {
   replaceNormalizedCardThumbnail,
   touchNormalizedCardBaseLastViewed,
 } from "@/lib/cards-normalized";
-import type { CollectionRecord } from "@/types/collections-db";
-import type { CardRecord, CardStatus } from "@/types/cards-db";
-import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
-import type { PairRecord } from "@/types/pairs-db";
-import type { CardThumbnailRecord } from "@/types/cards-normalized";
-import type { TemplateId } from "@/types/templates";
-import type { Table, Transaction } from "dexie";
-
-import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import {
   createCardDeleteConfirmRequiredError,
-  type DeckUsageLocation,
   type CardDeleteMode,
   type CardDeleteUsageReport,
+  type DeckUsageLocation,
 } from "@/lib/decks-errors";
+import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import { previewDeletePairsForFaces } from "@/lib/pairs-service";
+import type { CardRecord, CardStatus } from "@/types/cards-db";
+import type {
+  CardThumbnailRecord,
+} from "@/types/cards-normalized";
+import type { CollectionRecord } from "@/types/collections-db";
+import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
+import type { PairRecord } from "@/types/pairs-db";
+import type { TemplateId } from "@/types/templates";
+
 import { openHqccDexieDb } from "./hqcc-dexie";
 
 import { generateId } from ".";
+
+import type { Table, Transaction } from "dexie";
 
 const DECKS_STORE = "decks";
 const DECK_GROUPS_STORE = "deckGroups";
@@ -150,6 +153,9 @@ async function getNormalizedCardRecord(
   const imageIds = slotLinks
     .filter((slotLink) => slotLink.slotType === "image")
     .map((slotLink) => slotLink.dataRecordId);
+  const heroBackLogoIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "logo")
+    .map((slotLink) => slotLink.dataRecordId);
   const iconIds = slotLinks
     .filter((slotLink) => slotLink.slotType === "icon")
     .map((slotLink) => slotLink.dataRecordId);
@@ -167,6 +173,7 @@ async function getNormalizedCardRecord(
     texts,
     copyrights,
     images,
+    heroBackLogos,
     icons,
     heroStats,
     monsterStats,
@@ -177,6 +184,7 @@ async function getNormalizedCardRecord(
     loadComponentRecords(db.cardTextComponents, textIds),
     loadComponentRecords(db.cardCopyrightComponents, copyrightIds),
     loadComponentRecords(db.cardImageComponents, imageIds),
+    loadComponentRecords(db.cardHeroBackLogoComponents, heroBackLogoIds),
     loadComponentRecords(db.cardIconComponents, iconIds),
     loadComponentRecords(db.cardHeroStatsComponents, heroStatsIds),
     loadComponentRecords(db.cardMonsterStatsComponents, monsterStatsIds),
@@ -191,6 +199,7 @@ async function getNormalizedCardRecord(
     texts,
     copyrights,
     images,
+    heroBackLogos,
     icons,
     heroStats,
     monsterStats,
@@ -239,6 +248,7 @@ async function writeCardAndNormalizedState(
     db.cardTextComponents,
     db.cardCopyrightComponents,
     db.cardImageComponents,
+    db.cardHeroBackLogoComponents,
     db.cardIconComponents,
     db.cardHeroStatsComponents,
     db.cardMonsterStatsComponents,
@@ -325,6 +335,7 @@ export async function createCard(
     db.cardTextComponents,
     db.cardCopyrightComponents,
     db.cardImageComponents,
+    db.cardHeroBackLogoComponents,
     db.cardIconComponents,
     db.cardHeroStatsComponents,
     db.cardMonsterStatsComponents,
@@ -840,7 +851,11 @@ export async function previewDeleteCardsImpact(
       cardIds: uniqueIds,
       deckSetIds,
       deckEntryIds: pairReport.cascadePlan.entryIds,
-      deletedDeckUsage: deletedDeckUsage.map(({ backFaceId: _backFaceId, ...usage }) => usage),
+      deletedDeckUsage: deletedDeckUsage.map((usage) => {
+        const { backFaceId, ...rest } = usage;
+        void backFaceId;
+        return rest;
+      }),
       pairUsage,
     },
   };
@@ -883,6 +898,7 @@ export async function deleteCardsWithCascade(
       db.cardTextComponents,
       db.cardCopyrightComponents,
       db.cardImageComponents,
+      db.cardHeroBackLogoComponents,
       db.cardIconComponents,
       db.cardHeroStatsComponents,
       db.cardMonsterStatsComponents,

@@ -1,4 +1,4 @@
-import type { BodyTextStyle } from "./card-data";
+import type { BodyTextStyle, HeroBackLogoMode } from "./card-data";
 import type { CardFace } from "./card-face";
 import type { StatValue } from "./stats";
 import type { TemplateId } from "./templates";
@@ -44,6 +44,11 @@ export interface CardRecord {
   imageOriginalHeight?: number;
   borderColor?: string;
   backgroundTint?: string;
+  heroBackLogoMode?: HeroBackLogoMode;
+  heroBackLogoId?: string;
+  heroBackLogoName?: string;
+  heroBackLogoOriginalWidth?: number;
+  heroBackLogoOriginalHeight?: number;
 
   heroAttackDice?: StatValue;
   heroDefendDice?: StatValue;

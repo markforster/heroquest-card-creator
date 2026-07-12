@@ -13,6 +13,11 @@ export const HERO_BACK_INSPECTOR_FIELDS: InspectorField[] = [
     labelKey: "form.backgroundTint",
   },
   {
+    fieldType: "heroBackLogo",
+    bind: "heroBackLogoMode",
+    labelKey: "form.heroBackLogo",
+  },
+  {
     fieldType: "text",
     bind: "description",
     labelKey: "form.backText",

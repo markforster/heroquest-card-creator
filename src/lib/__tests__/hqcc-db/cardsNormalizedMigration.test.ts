@@ -162,7 +162,7 @@ describe("cards normalized migration", () => {
 
     const db = await openHqccDexieDb();
 
-    expect(db.backendDB()?.version).toBe(10);
+    expect(db.backendDB()?.version).toBe(11);
     expect(Array.from(db.backendDB()?.objectStoreNames ?? [])).not.toContain("cards");
 
     const baseRecord = await db.cardsBase.get("monster-1");

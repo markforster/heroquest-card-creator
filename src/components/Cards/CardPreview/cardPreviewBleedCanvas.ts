@@ -18,6 +18,7 @@ export async function renderBleedCanvas({
   roundedCorners,
   loggingId,
   assetBlobsById,
+  heroBackLogoBlobsById,
   templateId,
   developerCreditEnabled,
 }: {
@@ -32,6 +33,7 @@ export async function renderBleedCanvas({
   roundedCorners: boolean;
   loggingId?: string;
   assetBlobsById?: Map<string, Blob>;
+  heroBackLogoBlobsById?: Map<string, Blob>;
   templateId?: CardPreviewProps["templateId"];
   developerCreditEnabled?: boolean;
 }): Promise<HTMLCanvasElement | null> {
@@ -42,6 +44,7 @@ export async function renderBleedCanvas({
     removeDebugBounds: true,
     loggingId,
     assetBlobsById,
+    heroBackLogoBlobsById,
     mutateSvg: (svg) =>
       mutateSvgForExport(svg, {
         mode: "bleed-full",
@@ -66,6 +69,7 @@ export async function renderBleedCanvas({
       removeDebugBounds: true,
       loggingId,
       assetBlobsById,
+      heroBackLogoBlobsById,
       mutateSvg: (svg) =>
         mutateSvgForExport(svg, {
           mode: "bleed-source",

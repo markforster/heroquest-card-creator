@@ -8,12 +8,12 @@ import { layerTypes } from "@/data/card-systems/types";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
-import type { StaticImageData } from "next/image";
-
 import { renderGroups } from "./blueprintRendererGroups";
+import { DEFAULT_CANVAS } from "./blueprintRendererShared";
 import {
   ImageLayer,
   ImageLayerHitArea,
+  HeroBackLogoLayer,
   TitleLayerHitArea,
   TitleLayer,
   renderBackgroundLayer,
@@ -25,7 +25,8 @@ import {
   DeveloperCreditLayer,
   TextLayer,
 } from "./blueprintRendererText";
-import { DEFAULT_CANVAS } from "./blueprintRendererShared";
+
+import type { StaticImageData } from "next/image";
 
 type BlueprintRendererProps = {
   templateId?: TemplateId;
@@ -125,6 +126,16 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
         if (layer.type === layerTypes.image) {
           return (
             <ImageLayer
+              key={layer.id}
+              blueprint={blueprint}
+              layer={layer}
+              cardData={props.cardData}
+            />
+          );
+        }
+        if (layer.type === layerTypes.logo) {
+          return (
+            <HeroBackLogoLayer
               key={layer.id}
               blueprint={blueprint}
               layer={layer}

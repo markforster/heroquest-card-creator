@@ -7,6 +7,7 @@ import type {
   CardBaseRecord,
   CardBorderComponentRecord,
   CardCopyrightComponentRecord,
+  CardHeroBackLogoComponentRecord,
   CardHeroStatsComponentRecord,
   CardIconComponentRecord,
   CardImageComponentRecord,
@@ -17,6 +18,7 @@ import type {
   CardTitleComponentRecord,
 } from "@/types/cards-normalized";
 import type { TemplateId } from "@/types/templates";
+
 import type { Transaction } from "dexie";
 
 type EditableBlueprintNode = BlueprintLayer & {
@@ -24,6 +26,7 @@ type EditableBlueprintNode = BlueprintLayer & {
     | typeof layerTypes.background
     | typeof layerTypes.border
     | typeof layerTypes.image
+    | typeof layerTypes.logo
     | typeof layerTypes.text
     | typeof layerTypes.title
     | typeof layerTypes.copyright
@@ -41,6 +44,7 @@ export type NormalizedCardMigrationBundle = {
   texts: CardTextComponentRecord[];
   copyrights: CardCopyrightComponentRecord[];
   images: CardImageComponentRecord[];
+  heroBackLogos: CardHeroBackLogoComponentRecord[];
   icons: CardIconComponentRecord[];
   heroStats: CardHeroStatsComponentRecord[];
   monsterStats: CardMonsterStatsComponentRecord[];
@@ -55,6 +59,7 @@ export type NormalizedCardAssemblySource = {
   texts: CardTextComponentRecord[];
   copyrights: CardCopyrightComponentRecord[];
   images: CardImageComponentRecord[];
+  heroBackLogos: CardHeroBackLogoComponentRecord[];
   icons: CardIconComponentRecord[];
   heroStats: CardHeroStatsComponentRecord[];
   monsterStats: CardMonsterStatsComponentRecord[];
@@ -70,6 +75,7 @@ const EDITABLE_LAYER_TYPES = new Set<EditableBlueprintNode["type"]>([
   layerTypes.background,
   layerTypes.border,
   layerTypes.image,
+  layerTypes.logo,
   layerTypes.text,
   layerTypes.title,
   layerTypes.copyright,
@@ -132,6 +138,13 @@ function hasAllExpectedEditableSlots(
     const node = editableNodes[index];
     const slotLink = slotLinkMap.get(node.id);
     if (!slotLink) {
+      if (
+        templateId === "hero-back" &&
+        node.type === layerTypes.logo &&
+        node.id === "hq.2021.logo.hero-back"
+      ) {
+        continue;
+      }
       return false;
     }
     if (slotLink.slotType !== node.type) {
@@ -157,6 +170,7 @@ export function assembleNormalizedCardRecord(
   const textMap = buildComponentMap(source.texts);
   const copyrightMap = buildComponentMap(source.copyrights);
   const imageMap = buildComponentMap(source.images);
+  const heroBackLogoMap = buildComponentMap(source.heroBackLogos);
   const iconMap = buildComponentMap(source.icons);
   const heroStatsMap = buildComponentMap(source.heroStats);
   const monsterStatsMap = buildComponentMap(source.monsterStats);
@@ -175,6 +189,10 @@ export function assembleNormalizedCardRecord(
     schemaVersion: 2,
     thumbnailBlob: source.thumbnailBlob,
   };
+
+  if (baseRecord.templateId === "hero-back") {
+    result.heroBackLogoMode = "default";
+  }
 
   for (let index = 0; index < slotLinks.length; index += 1) {
     const slotLink = slotLinks[index];
@@ -231,6 +249,16 @@ export function assembleNormalizedCardRecord(
         result.imageRotation = component.rotation;
         result.imageOriginalWidth = component.originalWidth;
         result.imageOriginalHeight = component.originalHeight;
+        break;
+      }
+      case layerTypes.logo: {
+        const component = heroBackLogoMap.get(slotLink.dataRecordId);
+        if (!component) return null;
+        result.heroBackLogoMode = component.mode;
+        result.heroBackLogoId = component.logoId;
+        result.heroBackLogoName = component.logoName;
+        result.heroBackLogoOriginalWidth = component.originalWidth;
+        result.heroBackLogoOriginalHeight = component.originalHeight;
         break;
       }
       case layerTypes.icon: {
@@ -327,6 +355,7 @@ export function buildNormalizedCardRecords(
   const texts: CardTextComponentRecord[] = [];
   const copyrights: CardCopyrightComponentRecord[] = [];
   const images: CardImageComponentRecord[] = [];
+  const heroBackLogos: CardHeroBackLogoComponentRecord[] = [];
   const icons: CardIconComponentRecord[] = [];
   const heroStats: CardHeroStatsComponentRecord[] = [];
   const monsterStats: CardMonsterStatsComponentRecord[] = [];
@@ -409,6 +438,19 @@ export function buildNormalizedCardRecords(
           originalHeight: record.imageOriginalHeight,
         });
         return;
+      case layerTypes.logo:
+        heroBackLogos.push({
+          ...shared,
+          mode:
+            record.templateId === "hero-back"
+              ? (record.heroBackLogoMode ?? "default")
+              : "default",
+          logoId: record.heroBackLogoId,
+          logoName: record.heroBackLogoName,
+          originalWidth: record.heroBackLogoOriginalWidth,
+          originalHeight: record.heroBackLogoOriginalHeight,
+        });
+        return;
       case layerTypes.icon:
         icons.push({
           ...shared,
@@ -451,6 +493,7 @@ export function buildNormalizedCardRecords(
     texts,
     copyrights,
     images,
+    heroBackLogos,
     icons,
     heroStats,
     monsterStats,
@@ -465,6 +508,7 @@ const NORMALIZED_COMPONENT_STORE_NAMES = [
   "cardTextComponents",
   "cardCopyrightComponents",
   "cardImageComponents",
+  "cardHeroBackLogoComponents",
   "cardIconComponents",
   "cardHeroStatsComponents",
   "cardMonsterStatsComponents",
@@ -506,6 +550,9 @@ export async function replaceNormalizedCardRecords(
   }
   if (bundle.images.length > 0) {
     await tx.table("cardImageComponents").bulkPut(bundle.images);
+  }
+  if (bundle.heroBackLogos.length > 0) {
+    await tx.table("cardHeroBackLogoComponents").bulkPut(bundle.heroBackLogos);
   }
   if (bundle.icons.length > 0) {
     await tx.table("cardIconComponents").bulkPut(bundle.icons);

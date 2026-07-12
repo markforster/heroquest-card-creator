@@ -78,6 +78,12 @@ export type InspectorCopyrightField = {
   placeholderKey?: MessageKey;
 };
 
+export type InspectorHeroBackLogoField = {
+  fieldType: "heroBackLogo";
+  bind: "heroBackLogoMode";
+  labelKey: MessageKey;
+};
+
 export type InspectorField =
   | InspectorNameField
   | InspectorTitleField
@@ -87,6 +93,7 @@ export type InspectorField =
   | InspectorMonsterIconField
   | InspectorBorderColorField
   | InspectorBackgroundTintField
-  | InspectorCopyrightField;
+  | InspectorCopyrightField
+  | InspectorHeroBackLogoField;
 
 export type InspectorFieldsByTemplate = Record<TemplateId, InspectorField[]>;

@@ -51,6 +51,11 @@ export const cardRecordSchema = z.object({
   imageOriginalHeight: z.number().optional(),
   borderColor: z.string().optional(),
   backgroundTint: z.string().optional(),
+  heroBackLogoMode: z.enum(["default", "none", "custom"]).optional(),
+  heroBackLogoId: z.string().optional(),
+  heroBackLogoName: z.string().optional(),
+  heroBackLogoOriginalWidth: z.number().optional(),
+  heroBackLogoOriginalHeight: z.number().optional(),
 
   heroAttackDice: statValueSchema.optional(),
   heroDefendDice: statValueSchema.optional(),
