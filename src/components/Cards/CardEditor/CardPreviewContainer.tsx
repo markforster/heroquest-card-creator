@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import { apiClient } from "@/api/client";
+import { resolvePairedOppositeFace } from "@/components/App/pages/cards/pairedFaceResolver";
 import { useEditorTargets } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CardPreview, { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import WebglPreview from "@/components/Cards/CardPreview/WebglPreview";
@@ -185,15 +186,18 @@ export default function CardPreviewContainer({
         try {
           let backId: string | null = null;
           if (activeCardId) {
+            const cards = await apiClient.listCards({ queries: { status: "saved" } });
+            if (!active) return;
             const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
-            const preferredMatch = preferredBackId
-              ? pairs.find((pair) => pair.backFaceId === preferredBackId)
-              : undefined;
-            const match =
-              preferredMatch ??
-              pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
-              pairs.find((pair) => pair.backFaceId);
-            backId = match?.backFaceId ?? null;
+            if (!active) return;
+            const result = resolvePairedOppositeFace({
+              activeFaceId: activeCardId,
+              effectiveFace: "front",
+              preferredOppositeFaceId: preferredBackId,
+              pairs,
+              cards,
+            });
+            backId = result.resolvedCardId;
           }
           if (!backId) {
             setReverseCard(null);
@@ -233,32 +237,29 @@ export default function CardPreviewContainer({
           if (!active) return;
           const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
           if (!active) return;
-          const frontIds = new Set(
-            pairs.map((pair) => pair.frontFaceId).filter((id): id is string => Boolean(id)),
-          );
-          const matches = cards.filter((card) => frontIds.has(card.id));
-          matches.sort((a, b) => {
-            const aViewed = a.lastViewedAt ?? 0;
-            const bViewed = b.lastViewedAt ?? 0;
-            if (bViewed !== aViewed) return bViewed - aViewed;
-            if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
-            const aName = a.nameLower ?? a.name.toLocaleLowerCase();
-            const bName = b.nameLower ?? b.name.toLocaleLowerCase();
-            return aName.localeCompare(bName);
+          const { resolvedCardId } = resolvePairedOppositeFace({
+            activeFaceId: activeCardId,
+            effectiveFace: "back",
+            pairs,
+            cards,
           });
-          const preferred = matches[0];
-          if (!preferred) {
+          if (!resolvedCardId) {
             setReverseCard(null);
             return;
           }
-          const pairedTemplate = cardTemplatesById[preferred.templateId];
+          const record = await apiClient.getCard({ params: { id: resolvedCardId } });
+          if (!active || !record) {
+            setReverseCard(null);
+            return;
+          }
+          const pairedTemplate = cardTemplatesById[record.templateId];
           if (!pairedTemplate) {
             setReverseCard(null);
             return;
           }
-          const pairedData = cardRecordToCardData(preferred);
+          const pairedData = cardRecordToCardData(record);
           setReverseCard({
-            templateId: preferred.templateId,
+            templateId: record.templateId,
             templateName: getTemplateNameLabel(language, pairedTemplate),
             cardData: pairedData,
           });

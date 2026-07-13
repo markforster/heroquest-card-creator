@@ -3,14 +3,17 @@
 import { ChevronDown, ChevronUp, Combine, Info, Unlink2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 
+import type { CardRecord } from "@/api/cards";
+import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
+import { sortPairedCandidateCards } from "@/components/App/pages/cards/pairedFaceResolver";
 import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesGuardContext";
-import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
 import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
+import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
@@ -20,7 +23,8 @@ import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { ENABLE_CARD_THUMB_CACHE, ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiClient } from "@/api/client";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
+import { getCardDisplayName } from "@/lib/card-display-name";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 import {
@@ -28,12 +32,8 @@ import {
   isPairInUseError,
   type PairUsageReport,
 } from "@/lib/decks-errors";
-import { getCardDisplayName } from "@/lib/card-display-name";
 import { previewDeletePair } from "@/lib/pairs-service";
-import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import type { CardFace } from "@/types/card-face";
-import type { CardRecord } from "@/api/cards";
-import type { TemplateId } from "@/types/templates";
 
 import CollapsibleGroup from "./CollapsibleGroup";
 import InspectorEntityRow from "./InspectorEntityRow";
@@ -171,14 +171,6 @@ export default function PairingInspectorPanel({
     return resolveEffectiveFace(faceValue, template.defaultFace);
   }, [faceValue, template]);
 
-  const sortByUpdated = (cards: CardRecord[]) =>
-    cards.sort((a, b) => {
-      if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
-      const aName = a.nameLower ?? a.name.toLocaleLowerCase();
-      const bName = b.nameLower ?? b.name.toLocaleLowerCase();
-      return aName.localeCompare(bName);
-    });
-
   const openCard = async (cardId: string) => {
     bypassNextNavigation();
     navigate(`/cards/${cardId}`);
@@ -240,7 +232,7 @@ export default function PairingInspectorPanel({
       const matches = backIds
         .map((id) => byId.get(id))
         .filter((card): card is CardRecord => Boolean(card));
-      const sorted = sortByUpdated(matches);
+      const sorted = sortPairedCandidateCards(matches);
       setPairedBacks(sorted);
     };
 
@@ -262,7 +254,7 @@ export default function PairingInspectorPanel({
     let active = true;
     const loadFronts = async (cards: CardRecord[]) => {
       if (!active) return;
-      const sorted = sortByUpdated([...cards]);
+      const sorted = sortPairedCandidateCards(cards);
       setPairedFronts(sorted);
     };
     apiClient
@@ -327,7 +319,7 @@ export default function PairingInspectorPanel({
           const fronts = frontIds
             .map((id) => cardsById.get(id))
             .filter((card): card is CardRecord => Boolean(card));
-          const sorted = sortByUpdated(fronts);
+          const sorted = sortPairedCandidateCards(fronts);
           nextMap.set(back.id, sorted);
         }),
       );
@@ -344,7 +336,6 @@ export default function PairingInspectorPanel({
   }, [cardsById, effectiveFace, pairedBacks]);
 
   const hasPairedBacks = pairedBacks.length > 0;
-  const pairedBackCount = pairedBacks.length;
   const selectedFrontId = effectiveFace === "back" ? activeFrontId ?? null : activeCardId ?? null;
   const showSaveFirstNotice = pairingDisabled;
   const showEmptyFrontNotice = !showSaveFirstNotice && effectiveFace === "front" && !hasPairedBacks;
@@ -384,18 +375,6 @@ export default function PairingInspectorPanel({
       }
       throw error;
     }
-  };
-
-  const deletePairsForFrontIdSafe = async (frontFaceId: string) => {
-    const pairs = await listPairsForFaceId(frontFaceId);
-    const deletions = pairs.filter(
-      (pair) => pair.frontFaceId === frontFaceId && pair.backFaceId,
-    );
-    for (const pair of deletions) {
-      const ok = await deletePairBySafe(frontFaceId, pair.backFaceId as string);
-      if (!ok) return false;
-    }
-    return true;
   };
 
   const replacePairsForBackIdSafe = async (backFaceId: string, frontFaceIds: string[]) => {

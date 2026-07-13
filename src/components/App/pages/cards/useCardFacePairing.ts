@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type { CardRecord } from "@/api/cards";
 import { apiClient } from "@/api/client";
 import type { CardFace } from "@/types/card-face";
+
+import { resolvePairedOppositeFace } from "./pairedFaceResolver";
 
 type UseCardFacePairingArgs = {
   activeCardId?: string;
@@ -36,13 +37,15 @@ export function useCardFacePairing({ activeCardId, effectiveFace }: UseCardFaceP
         const cards = Array.isArray(cardsResponse) ? cardsResponse : [];
         const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
         if (!active) return;
-        const frontIds = new Set(
-          pairs.map((pair) => pair.frontFaceId).filter((id): id is string => Boolean(id)),
-        );
-        const matches = sortByRecent(cards.filter((card) => frontIds.has(card.id)));
-        setPairedFrontCount(matches.length);
-        setPairedFrontIds(matches.map((card) => card.id));
-        setActiveFrontId(matches[0]?.id ?? null);
+        const { resolvedCardId, sortedCandidateIds } = resolvePairedOppositeFace({
+          activeFaceId: activeCardId,
+          effectiveFace: "back",
+          pairs,
+          cards,
+        });
+        setPairedFrontCount(sortedCandidateIds.length);
+        setPairedFrontIds(sortedCandidateIds);
+        setActiveFrontId(resolvedCardId);
       })
       .catch(() => {
         if (!active) return;
@@ -62,12 +65,18 @@ export function useCardFacePairing({ activeCardId, effectiveFace }: UseCardFaceP
     }
     let active = true;
     const loadPairedBack = async () => {
+      const cards = await apiClient.listCards({ queries: { status: "saved" } });
+      if (!active) return;
       const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
       if (!active) return;
-      const match =
-        pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
-        pairs.find((pair) => pair.backFaceId);
-      setPairedBackId(match?.backFaceId ?? null);
+      const { resolvedCardId } = resolvePairedOppositeFace({
+        activeFaceId: activeCardId,
+        effectiveFace: "front",
+        preferredOppositeFaceId: lastRememberedBackId,
+        pairs,
+        cards,
+      });
+      setPairedBackId(resolvedCardId);
     };
     void loadPairedBack().catch(() => {
       if (!active) return;
@@ -76,7 +85,7 @@ export function useCardFacePairing({ activeCardId, effectiveFace }: UseCardFaceP
     return () => {
       active = false;
     };
-  }, [activeCardId, effectiveFace]);
+  }, [activeCardId, effectiveFace, lastRememberedBackId]);
 
   useEffect(() => {
     const previousFace = lastFaceRef.current;
@@ -95,16 +104,4 @@ export function useCardFacePairing({ activeCardId, effectiveFace }: UseCardFaceP
     pairedFrontIds,
     setLastRememberedBackId,
   };
-}
-
-function sortByRecent(cards: CardRecord[]) {
-  return cards.sort((a, b) => {
-    const aViewed = a.lastViewedAt ?? 0;
-    const bViewed = b.lastViewedAt ?? 0;
-    if (bViewed !== aViewed) return bViewed - aViewed;
-    if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
-    const aName = a.nameLower ?? a.name.toLocaleLowerCase();
-    const bName = b.nameLower ?? b.name.toLocaleLowerCase();
-    return aName.localeCompare(bName);
-  });
 }
