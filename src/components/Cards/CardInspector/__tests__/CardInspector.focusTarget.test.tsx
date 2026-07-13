@@ -8,8 +8,10 @@ import {
   useInspectorTargetRegistration,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CardInspector from "@/components/Cards/CardInspector/CardInspector";
+import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
 
 const mockUseCardEditor = jest.fn();
+const INSPECTOR_MODE_STORAGE_KEY = "hqcc.cards.inspectorMode";
 
 jest.mock("@/components/Providers/CardEditorContext", () => ({
   useCardEditor: () => mockUseCardEditor(),
@@ -181,9 +183,21 @@ function configureScrollScenario(): ScrollScenario {
   return { scrollContainer, scrollToMock };
 }
 
+function renderInspectorWithProviders() {
+  return render(
+    <LocalStorageProvider>
+      <EditorTargetsProvider>
+        <FocusTrigger />
+        <CardInspector />
+      </EditorTargetsProvider>
+    </LocalStorageProvider>,
+  );
+}
+
 describe("CardInspector focus target coordination", () => {
   beforeEach(() => {
     jest.useRealTimers();
+    window.localStorage.clear();
     mockUseCardEditor.mockReset();
     mockUseCardEditor.mockReturnValue({
       state: {
@@ -194,12 +208,7 @@ describe("CardInspector focus target coordination", () => {
   });
 
   it("switches to form mode, reveals the wrapper, and focuses the requested field", async () => {
-    render(
-      <EditorTargetsProvider>
-        <FocusTrigger />
-        <CardInspector />
-      </EditorTargetsProvider>,
-    );
+    renderInspectorWithProviders();
 
     fireEvent.click(screen.getByRole("tab", { name: "Collections" }));
     expect(screen.getByText("COLLECTIONS_PANEL")).toBeInTheDocument();
@@ -221,12 +230,7 @@ describe("CardInspector focus target coordination", () => {
   });
 
   it("switches to form mode and reveals the wrapper without focusing on reveal requests", async () => {
-    render(
-      <EditorTargetsProvider>
-        <FocusTrigger />
-        <CardInspector />
-      </EditorTargetsProvider>,
-    );
+    renderInspectorWithProviders();
 
     fireEvent.click(screen.getByRole("tab", { name: "Collections" }));
     expect(screen.getByText("COLLECTIONS_PANEL")).toBeInTheDocument();
@@ -247,12 +251,7 @@ describe("CardInspector focus target coordination", () => {
   it("reveals after 3 seconds of hover without focusing", async () => {
     jest.useFakeTimers();
 
-    render(
-      <EditorTargetsProvider>
-        <FocusTrigger />
-        <CardInspector />
-      </EditorTargetsProvider>,
-    );
+    renderInspectorWithProviders();
 
     fireEvent.click(screen.getByRole("tab", { name: "Collections" }));
     expect(screen.getByText("COLLECTIONS_PANEL")).toBeInTheDocument();
@@ -281,12 +280,7 @@ describe("CardInspector focus target coordination", () => {
   it("cancels pending hover reveal when leaving or switching targets", async () => {
     jest.useFakeTimers();
 
-    render(
-      <EditorTargetsProvider>
-        <FocusTrigger />
-        <CardInspector />
-      </EditorTargetsProvider>,
-    );
+    renderInspectorWithProviders();
 
     fireEvent.click(screen.getByRole("tab", { name: "Collections" }));
     expect(screen.getByText("COLLECTIONS_PANEL")).toBeInTheDocument();
@@ -315,5 +309,26 @@ describe("CardInspector focus target coordination", () => {
       jest.advanceTimersByTime(2000);
     });
     expect(screen.queryByText("FORM_PANEL")).not.toBeInTheDocument();
+  });
+
+  it("uses the remembered tab on initial render but still switches to form for focus requests", async () => {
+    window.localStorage.setItem(INSPECTOR_MODE_STORAGE_KEY, "collections");
+
+    renderInspectorWithProviders();
+
+    expect(screen.getByText("COLLECTIONS_PANEL")).toBeInTheDocument();
+    expect(screen.getByText("Collections")).toBeInTheDocument();
+
+    const { scrollToMock } = configureScrollScenario();
+
+    fireEvent.click(screen.getByRole("button", { name: "Trigger focus" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("FORM_PANEL")).toBeInTheDocument();
+      expect(screen.getByLabelText("Title input")).toHaveFocus();
+    });
+
+    expect(scrollToMock).toHaveBeenCalledWith({ top: 88, behavior: "smooth" });
+    expect(window.localStorage.getItem(INSPECTOR_MODE_STORAGE_KEY)).toBe("form");
   });
 });

@@ -1,12 +1,13 @@
 "use client";
 
 import { Combine, Info, Layers, SquareStack } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import { useEditorTargets } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useLocalStorageValue } from "@/components/Providers/LocalStorageProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 
 import CollectionsInspectorPanel from "./CollectionsInspectorPanel";
@@ -15,6 +16,15 @@ import DecksInspectorPanel from "./DecksInspectorPanel";
 import PairingInspectorPanel from "./PairingInspectorPanel";
 
 type InspectorMode = "form" | "pairing" | "collections" | "decks";
+const INSPECTOR_MODE_STORAGE_KEY = "hqcc.cards.inspectorMode";
+const DEFAULT_INSPECTOR_MODE: InspectorMode = "form";
+
+function parseInspectorMode(raw: string): InspectorMode | null {
+  if (raw === "form" || raw === "pairing" || raw === "collections" || raw === "decks") {
+    return raw;
+  }
+  return null;
+}
 
 type InspectorModeConfig = {
   id: InspectorMode;
@@ -42,7 +52,14 @@ export default function CardInspector({
     state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
   const { requestedTargetAction } = useEditorTargets();
-  const [mode, setMode] = useState<InspectorMode>("form");
+  const [mode, setMode] = useLocalStorageValue<InspectorMode>(
+    INSPECTOR_MODE_STORAGE_KEY,
+    DEFAULT_INSPECTOR_MODE,
+    {
+      parse: parseInspectorMode,
+      serialize: (value) => value,
+    },
+  );
   const modes: InspectorModeConfig[] = [
     { id: "form", label: t("label.formView"), Icon: Info },
     { id: "pairing", label: t("label.pairingView"), Icon: Combine },
@@ -60,7 +77,7 @@ export default function CardInspector({
     if (!requestedTargetAction) return;
     if (mode === "form") return;
     setMode("form");
-  }, [mode, requestedTargetAction]);
+  }, [mode, requestedTargetAction, setMode]);
 
   if (!selectedTemplateId) {
     return <div className={styles.inspectorModeEmpty}>{t("empty.selectTemplate")}</div>;

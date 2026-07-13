@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
+import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
+
 const mockUseCardEditor = jest.fn();
 
 jest.mock("@/components/Providers/CardEditorContext", () => ({
@@ -50,20 +52,30 @@ jest.mock("@/components/Cards/CardInspector/DecksInspectorPanel", () => ({
 
 import CardInspector from "@/components/Cards/CardInspector/CardInspector";
 
+const INSPECTOR_MODE_STORAGE_KEY = "hqcc.cards.inspectorMode";
+
+function renderInspector() {
+  return render(
+    <LocalStorageProvider>
+      <CardInspector />
+    </LocalStorageProvider>,
+  );
+}
+
 describe("CardInspector modes", () => {
   beforeEach(() => {
     mockUseCardEditor.mockReset();
-  });
-
-  it("renders inspector mode tabs and toggles panels", () => {
+    window.localStorage.clear();
     mockUseCardEditor.mockReturnValue({
       state: {
         selectedTemplateId: "hero",
         activeCardIdByTemplate: { hero: "card-1" },
       },
     });
+  });
 
-    render(<CardInspector />);
+  it("renders inspector mode tabs and toggles panels", () => {
+    renderInspector();
 
     expect(screen.getAllByRole("tab").map((tab) => tab.getAttribute("aria-label"))).toEqual([
       "Properties",
@@ -83,5 +95,38 @@ describe("CardInspector modes", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Pairing" }));
     expect(screen.getByText("PAIRING_PANEL")).toBeInTheDocument();
     expect(screen.getByText("Pairing")).toBeInTheDocument();
+  });
+
+  it("hydrates the initial inspector mode from localStorage", () => {
+    window.localStorage.setItem(INSPECTOR_MODE_STORAGE_KEY, "decks");
+
+    renderInspector();
+
+    expect(screen.getByText("DECKS_PANEL")).toBeInTheDocument();
+    expect(screen.getByText("Decks")).toBeInTheDocument();
+  });
+
+  it("falls back to form mode when localStorage contains an invalid value", () => {
+    window.localStorage.setItem(INSPECTOR_MODE_STORAGE_KEY, "bad-value");
+
+    renderInspector();
+
+    expect(screen.getByText("FORM_PANEL")).toBeInTheDocument();
+    expect(screen.getByText("Properties")).toBeInTheDocument();
+  });
+
+  it("persists manual tab selection across remounts", () => {
+    const view = renderInspector();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Collections" }));
+    expect(window.localStorage.getItem(INSPECTOR_MODE_STORAGE_KEY)).toBe("collections");
+    expect(screen.getByText("COLLECTIONS_PANEL")).toBeInTheDocument();
+
+    view.unmount();
+
+    renderInspector();
+
+    expect(screen.getByText("COLLECTIONS_PANEL")).toBeInTheDocument();
+    expect(screen.getByText("Collections")).toBeInTheDocument();
   });
 });
