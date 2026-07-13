@@ -13,6 +13,7 @@ export default function GlobalAppShortcuts() {
   const {
     openRecent,
     openSettings,
+    openTemplatePicker,
     isAssetsOpen,
     isRecentOpen,
     isSettingsOpen,
@@ -30,9 +31,10 @@ export default function GlobalAppShortcuts() {
       c: () => navigate("/cards"),
       a: () => navigate("/assets"),
       q: () => openSettings(),
+      n: () => openTemplatePicker(),
       s: () => focusPrimarySearch(),
     }),
-    [focusPrimarySearch, navigate, openRecent, openSettings],
+    [focusPrimarySearch, navigate, openRecent, openSettings, openTemplatePicker],
   );
 
   useEffect(() => {
@@ -47,7 +49,9 @@ export default function GlobalAppShortcuts() {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [handlers, isSuppressed]);
 
   return null;

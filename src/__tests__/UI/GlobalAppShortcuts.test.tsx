@@ -5,11 +5,13 @@ import GlobalAppShortcuts from "@/components/App/GlobalAppShortcuts";
 
 const openRecent = jest.fn();
 const openSettings = jest.fn();
+const openTemplatePicker = jest.fn();
 const focusPrimarySearch = jest.fn();
 
 const appActionsState = {
   openRecent,
   openSettings,
+  openTemplatePicker,
   isAssetsOpen: false,
   isRecentOpen: false,
   isSettingsOpen: false,
@@ -61,6 +63,7 @@ describe("GlobalAppShortcuts (UI)", () => {
   beforeEach(() => {
     openRecent.mockReset();
     openSettings.mockReset();
+    openTemplatePicker.mockReset();
     focusPrimarySearch.mockReset().mockReturnValue(true);
     appActionsState.isAssetsOpen = false;
     appActionsState.isRecentOpen = false;
@@ -74,6 +77,7 @@ describe("GlobalAppShortcuts (UI)", () => {
 
     fireEvent.keyDown(window, { key: "r" });
     fireEvent.keyDown(window, { key: "q" });
+    fireEvent.keyDown(window, { key: "n" });
     fireEvent.keyDown(window, { key: "d" });
     expect(screen.getByTestId("location")).toHaveTextContent("/decks");
 
@@ -85,6 +89,7 @@ describe("GlobalAppShortcuts (UI)", () => {
 
     expect(openRecent).toHaveBeenCalledTimes(1);
     expect(openSettings).toHaveBeenCalledTimes(1);
+    expect(openTemplatePicker).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("location")).toHaveTextContent("/cards");
     expect(focusPrimarySearch).toHaveBeenCalledTimes(1);
   });
@@ -99,12 +104,14 @@ describe("GlobalAppShortcuts (UI)", () => {
 
     fireEvent.keyDown(screen.getByLabelText("Editable input"), { key: "r" });
     editableDiv.dispatchEvent(new KeyboardEvent("keydown", { key: "q", bubbles: true }));
+    fireEvent.keyDown(window, { key: "n", altKey: true });
     fireEvent.keyDown(window, { key: "d", metaKey: true });
     fireEvent.keyDown(window, { key: "a", ctrlKey: true });
     fireEvent.keyDown(window, { key: "s", repeat: true });
 
     expect(openRecent).not.toHaveBeenCalled();
     expect(openSettings).not.toHaveBeenCalled();
+    expect(openTemplatePicker).not.toHaveBeenCalled();
     expect(focusPrimarySearch).not.toHaveBeenCalled();
     expect(screen.getByTestId("location")).toHaveTextContent("/cards");
   });
@@ -130,10 +137,12 @@ describe("GlobalAppShortcuts (UI)", () => {
     );
 
     fireEvent.keyDown(window, { key: "r" });
+    fireEvent.keyDown(window, { key: "n" });
     fireEvent.keyDown(window, { key: "d" });
     fireEvent.keyDown(window, { key: "s" });
 
     expect(openRecent).not.toHaveBeenCalled();
+    expect(openTemplatePicker).not.toHaveBeenCalled();
     expect(focusPrimarySearch).not.toHaveBeenCalled();
     expect(screen.getByTestId("location")).toHaveTextContent("/cards");
   });
