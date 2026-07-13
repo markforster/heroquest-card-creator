@@ -21,6 +21,8 @@ export type FormSelectRenderMeta = {
   context: "menu" | "value";
 };
 
+export type FormSelectLayoutVariant = "default" | "preview";
+
 type FormSelectProps = {
   options: FormSelectOption[];
   value: string;
@@ -29,6 +31,7 @@ type FormSelectProps = {
   inputId?: string;
   ariaLabel?: string;
   className?: string;
+  layoutVariant?: FormSelectLayoutVariant;
   renderOptionLabel?: (option: FormSelectOption, meta: FormSelectRenderMeta) => ReactNode;
 };
 
@@ -53,10 +56,12 @@ export function FormSelectDropdownIndicator<Option extends FormSelectOption>(
 
 export function getFormSelectStyles<Option extends FormSelectOption>(
   disabled: boolean,
+  layoutVariant: FormSelectLayoutVariant = "default",
 ): StylesConfig<Option, false, GroupBase<Option>> {
   const backgroundColor = disabled
     ? "color-mix(in srgb, var(--hq-input-bg) 82%, var(--hq-surface) 18%)"
     : "var(--hq-input-bg)";
+  const isPreviewLayout = layoutVariant === "preview";
 
   return {
     container: (base) => ({
@@ -67,7 +72,7 @@ export function getFormSelectStyles<Option extends FormSelectOption>(
     control: (base, state) => ({
       ...base,
       minHeight: 0,
-      alignItems: "stretch",
+      alignItems: isPreviewLayout ? "stretch" : "center",
       backgroundColor,
       borderColor: state.isFocused ? "var(--hq-focus-ring)" : "var(--hq-border-mid)",
       borderRadius: 4,
@@ -83,24 +88,28 @@ export function getFormSelectStyles<Option extends FormSelectOption>(
     }),
     valueContainer: (base) => ({
       ...base,
+      display: isPreviewLayout ? base.display : "flex",
       alignItems: "center",
       backgroundColor,
-      padding: "0 0.5rem",
+      padding: isPreviewLayout ? "0 0.5rem" : "0.25rem 0.5rem",
     }),
     singleValue: (base) => ({
       ...base,
       position: "static",
       transform: "none",
       top: "auto",
-      marginLeft: 0,
-      marginRight: 0,
-      width: "100%",
+      margin: isPreviewLayout ? undefined : 0,
+      marginLeft: isPreviewLayout ? 0 : undefined,
+      marginRight: isPreviewLayout ? 0 : undefined,
+      width: isPreviewLayout ? "100%" : undefined,
       maxWidth: "100%",
       color: "var(--hq-text)",
       fontSize: "var(--hq-control-text-primary)",
       fontFamily: "var(--hq-font-form)",
       lineHeight: "var(--hq-control-line-height)",
-      overflow: "hidden",
+      display: isPreviewLayout ? undefined : "flex",
+      alignItems: isPreviewLayout ? undefined : "center",
+      overflow: isPreviewLayout ? "hidden" : undefined,
     }),
     menu: (base) => ({
       ...base,
@@ -136,17 +145,17 @@ export function getFormSelectStyles<Option extends FormSelectOption>(
     indicatorSeparator: () => ({ display: "none" }),
     dropdownIndicator: (base) => ({
       ...base,
-      alignSelf: "center",
+      alignSelf: isPreviewLayout ? "center" : "stretch",
       display: "flex",
       alignItems: "center",
       backgroundColor,
-      padding: "0 0.5rem 0 0",
+      padding: isPreviewLayout ? "0 0.5rem 0 0" : "0.25rem 0.5rem 0.25rem 0",
       color: "var(--hq-text)",
       "&:hover": { color: "var(--hq-text)" },
     }),
     indicatorsContainer: (base) => ({
       ...base,
-      alignSelf: "center",
+      alignSelf: isPreviewLayout ? "center" : "stretch",
       alignItems: "center",
       backgroundColor,
     }),
@@ -156,7 +165,7 @@ export function getFormSelectStyles<Option extends FormSelectOption>(
       margin: 0,
       padding: 0,
       fontSize: "var(--hq-control-text-primary)",
-      lineHeight: 0,
+      lineHeight: isPreviewLayout ? 0 : "var(--hq-control-line-height)",
     }),
   };
 }
@@ -179,12 +188,16 @@ export default function FormSelect<Option extends FormSelectOption>({
   inputId,
   ariaLabel,
   className,
+  layoutVariant = "default",
   renderOptionLabel,
 }: Omit<FormSelectProps, "options" | "renderOptionLabel"> & {
   options: Option[];
   renderOptionLabel?: (option: Option, meta: FormSelectRenderMeta) => ReactNode;
 }) {
-  const selectStyles = useMemo(() => getFormSelectStyles<Option>(disabled), [disabled]);
+  const selectStyles = useMemo(
+    () => getFormSelectStyles<Option>(disabled, layoutVariant),
+    [disabled, layoutVariant],
+  );
   const menuPortalTarget = typeof document === "undefined" ? undefined : document.body;
   const selected = options.find((option) => option.value === value) ?? options[0] ?? null;
 

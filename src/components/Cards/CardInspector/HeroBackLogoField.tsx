@@ -249,6 +249,7 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
               options={options}
               value={selectedValue}
               disabled={isBusy}
+              layoutVariant="preview"
               onChange={(nextValue) => {
                 if (nextValue === DEFAULT_OPTION_VALUE) {
                   applyDefaultLogo();
