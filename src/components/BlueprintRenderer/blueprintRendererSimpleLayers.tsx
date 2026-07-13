@@ -536,6 +536,40 @@ export function HeroBackLogoLayer({
   );
 }
 
+export function HeroBackLogoLayerHitArea({
+  blueprint,
+  layer,
+}: {
+  blueprint: Blueprint;
+  layer: BlueprintLayer;
+}) {
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.heroBackLogo);
+
+  if (layer.type !== layerTypes.logo) return null;
+
+  const bounds = getLayerBounds(blueprint, layer);
+
+  useRegisterHoverAdornment(EDITOR_TARGET_IDS.heroBackLogo, {
+    kind: "rect",
+    ...bounds,
+    radius: IMAGE_HOVER_RADIUS,
+  });
+
+  return (
+    <Layer {...svgFocusProps}>
+      <rect
+        x={bounds.x}
+        y={bounds.y}
+        width={bounds.width}
+        height={bounds.height}
+        fill="transparent"
+        pointerEvents="all"
+        data-hqcc-hit-area={EDITOR_TARGET_IDS.heroBackLogo}
+      />
+    </Layer>
+  );
+}
+
 export function ImageLayerHitArea({
   blueprint,
   layer,

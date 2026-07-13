@@ -1,6 +1,11 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 
+import {
+  EDITOR_TARGET_IDS,
+  EditorTargetsProvider,
+  useEditorTargets,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import HeroBackLogoField from "@/components/Cards/CardInspector/HeroBackLogoField";
 
 import type { ReactNode } from "react";
@@ -140,6 +145,16 @@ function StateProbe() {
   );
 }
 
+function FocusRequestButton() {
+  const { requestFocusTarget } = useEditorTargets();
+
+  return (
+    <button type="button" onClick={() => requestFocusTarget(EDITOR_TARGET_IDS.heroBackLogo)}>
+      focus-hero-back-logo
+    </button>
+  );
+}
+
 function TestHarness({
   defaultValues,
 }: {
@@ -159,10 +174,13 @@ function TestHarness({
   });
 
   return (
-    <FormProvider {...methods}>
-      <HeroBackLogoField label="Hero Back logo" />
-      <StateProbe />
-    </FormProvider>
+    <EditorTargetsProvider>
+      <FormProvider {...methods}>
+        <HeroBackLogoField label="Hero Back logo" />
+        <StateProbe />
+        <FocusRequestButton />
+      </FormProvider>
+    </EditorTargetsProvider>
   );
 }
 
@@ -172,6 +190,10 @@ describe("HeroBackLogoField", () => {
     getImageDimensions.mockReset();
     listHeroBackLogos.mockReset();
     refreshCardThumbnails.mockReset();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: jest.fn(),
+    });
   });
 
   it("renders image-only previews for default and saved logos in the select", async () => {
@@ -284,5 +306,24 @@ describe("HeroBackLogoField", () => {
     expect(screen.getByTestId("hero-back-logo-state")).toHaveTextContent(
       JSON.stringify({ mode: "default", logoId: undefined, logoName: undefined }),
     );
+  });
+
+  it("registers the Hero Back logo field as an inspector target and focuses the select", async () => {
+    listHeroBackLogos.mockResolvedValue([
+      { id: "logo-1", name: "Clan Raven", width: 320, height: 90 },
+    ]);
+
+    const { container } = render(<TestHarness />);
+
+    const wrapper = container.querySelector(`[data-hqcc-edit="${EDITOR_TARGET_IDS.heroBackLogo}"]`);
+    expect(wrapper).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "focus-hero-back-logo" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-react-select")).toHaveFocus();
+    });
+
+    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalled();
   });
 });

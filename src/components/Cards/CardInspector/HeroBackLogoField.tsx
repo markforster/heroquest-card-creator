@@ -6,6 +6,10 @@ import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
+import {
+  EDITOR_TARGET_IDS,
+  useInspectorTargetRegistration,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import BaseInspectorField from "@/components/Cards/CardInspector/BaseInspectorField";
 import FormSelect, { type FormSelectOption, type FormSelectRenderMeta } from "@/components/common/FormSelect";
 import { useEditorSave } from "@/components/Providers/EditorSaveContext";
@@ -63,6 +67,7 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
   const { t } = useI18n();
   const { setValue } = useFormContext();
   const { refreshCardThumbnails } = useEditorSave();
+  const fieldRef = useRef<HTMLDivElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
@@ -74,6 +79,11 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
     | undefined) ?? "default";
   const logoId = useWatch({ name: "heroBackLogoId" }) as string | undefined;
   const logoName = useWatch({ name: "heroBackLogoName" }) as string | undefined;
+  const handleFieldFocusCapture = useInspectorTargetRegistration({
+    targetId: EDITOR_TARGET_IDS.heroBackLogo,
+    containerRef: fieldRef,
+    focusSelector: "#hero-back-logo-mode",
+  });
 
   const reloadLogos = async () => {
     const next = await listHeroBackLogos();
@@ -195,6 +205,9 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
         id="hero-back-logo-mode"
         label={label}
         icon={Badge}
+        fieldRef={fieldRef}
+        onFocusCapture={handleFieldFocusCapture}
+        targetId={EDITOR_TARGET_IDS.heroBackLogo}
         toolbar={(
           <div className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1 ms-auto`}>
             <button

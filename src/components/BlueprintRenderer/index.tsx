@@ -14,6 +14,7 @@ import {
   ImageLayer,
   ImageLayerHitArea,
   HeroBackLogoLayer,
+  HeroBackLogoLayerHitArea,
   TitleLayerHitArea,
   TitleLayer,
   renderBackgroundLayer,
@@ -98,6 +99,10 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
   const labelledBackTitleLayer =
     blueprint.templateId === "labelled-back"
       ? blueprint.layers.find((layer) => layer.type === layerTypes.title)
+      : undefined;
+  const heroBackLogoLayer =
+    blueprint.templateId === "hero-back"
+      ? blueprint.layers.find((layer) => layer.type === layerTypes.logo)
       : undefined;
 
   return (
@@ -192,6 +197,9 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
           templateName={templateName}
           templateId={blueprint.templateId}
         />
+      ) : null}
+      {heroBackLogoLayer ? (
+        <HeroBackLogoLayerHitArea blueprint={blueprint} layer={heroBackLogoLayer} />
       ) : null}
       <DeveloperCreditLayer
         blueprint={blueprint}

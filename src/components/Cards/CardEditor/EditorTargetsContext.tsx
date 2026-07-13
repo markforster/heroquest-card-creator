@@ -18,6 +18,7 @@ export const EDITOR_TARGET_IDS = {
   title: "title",
   imageMain: "image.main",
   imageIcon: "image.icon",
+  heroBackLogo: "heroBack.logo",
   textMain: "text.main",
   statsHero: "stats.hero",
   statsHeroAttackDice: "stats.hero.attackDice",

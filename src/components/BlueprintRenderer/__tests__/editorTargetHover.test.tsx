@@ -67,6 +67,15 @@ jest.mock("@/hooks/useAssetImageUrl", () => ({
   },
 }));
 
+jest.mock("@/hooks/useHeroBackLogoImageUrl", () => ({
+  useHeroBackLogoImageUrl: () => ({
+    url: null,
+    status: "idle",
+    width: null,
+    height: null,
+  }),
+}));
+
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) => key,
@@ -265,6 +274,34 @@ describe("BlueprintRenderer SVG hover targets", () => {
       `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.statsMonsterBodyPoints}"][data-hqcc-hover-tone="active"]`,
     ) as SVGRectElement;
     expect(Number(monsterActiveCell.getAttribute("x"))).toBeLessThan(466);
+  });
+
+  it("uses the Hero Back logo slot as a stable hover target", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero-back"
+        templateName="Hero Back"
+        cardData={{
+          description: "Body text",
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const logoHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.heroBackLogo}"]`,
+    ) as Element;
+
+    fireEvent.pointerEnter(logoHitArea);
+
+    expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.heroBackLogo);
+
+    const hoverAdornment = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.heroBackLogo}"]`,
+    ) as Element;
+
+    expect(hoverAdornment).not.toBeNull();
+    expect(hoverAdornment).toHaveAttribute("data-hqcc-hover-visible", "true");
   });
 
   it("shows only the hovered hero stat cell border", () => {

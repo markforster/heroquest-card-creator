@@ -10,6 +10,7 @@ jest.mock("@/components/Cards/CardEditor/EditorTargetsContext", () => ({
     title: "title",
     imageMain: "image.main",
     imageIcon: "image.icon",
+    heroBackLogo: "heroBack.logo",
     textMain: "text.main",
     statsHero: "stats.hero",
     statsHeroAttackDice: "stats.hero.attackDice",
@@ -89,6 +90,15 @@ jest.mock("@/hooks/useAssetImageUrl", () => ({
   }),
 }));
 
+jest.mock("@/hooks/useHeroBackLogoImageUrl", () => ({
+  useHeroBackLogoImageUrl: () => ({
+    url: null,
+    status: "idle",
+    width: null,
+    height: null,
+  }),
+}));
+
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) => key,
@@ -161,6 +171,29 @@ describe("BlueprintRenderer SVG focus targets", () => {
     expect(copyrightHitArea).not.toBeNull();
     fireEvent.click(copyrightHitArea as Element);
     expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.copyright);
+  });
+
+  it("requests focus for the Hero Back logo hit area", () => {
+    const { container } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="hero-back"
+          templateName="Hero Back"
+          cardData={{
+            description: "Body text",
+            showCopyright: false,
+          } as never}
+        />
+      </svg>,
+    );
+
+    const logoHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.heroBackLogo}"]`,
+    );
+
+    expect(logoHitArea).not.toBeNull();
+    fireEvent.click(logoHitArea as Element);
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.heroBackLogo);
   });
 
   it("requests focus for individual hero stat cell targets and keeps panel fallback", () => {
