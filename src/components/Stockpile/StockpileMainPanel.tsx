@@ -13,6 +13,7 @@ type StockpileMainPanelProps = {
   onConfirmSelection?: (cardIds: string[]) => void;
   initialSelectedIds?: string[];
   titleOverride?: string;
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
 };
 
 export default function StockpileMainPanel({
@@ -25,6 +26,7 @@ export default function StockpileMainPanel({
   onConfirmSelection,
   initialSelectedIds,
   titleOverride,
+  onPrimarySearchReady,
 }: StockpileMainPanelProps) {
   return (
     <StockpilePanelContent
@@ -37,6 +39,7 @@ export default function StockpileMainPanel({
       onConfirmSelection={onConfirmSelection}
       initialSelectedIds={initialSelectedIds}
       titleOverride={titleOverride}
+      onPrimarySearchReady={onPrimarySearchReady}
       frame="panel"
     />
   );

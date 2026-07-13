@@ -6,10 +6,12 @@ import type { ReactNode } from "react";
 
 export type RouteShellCapabilities = {
   repairCurrentCardThumbnail: () => Promise<boolean>;
+  focusPrimarySearch: () => boolean | Promise<boolean>;
 };
 
 export const noopRouteShellCapabilities: RouteShellCapabilities = {
   repairCurrentCardThumbnail: async () => false,
+  focusPrimarySearch: () => false,
 };
 
 type RouteShellCapabilitiesProviderValue = {

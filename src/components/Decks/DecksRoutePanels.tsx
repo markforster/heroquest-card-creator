@@ -33,7 +33,11 @@ import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissing
 import { useI18n } from "@/i18n/I18nProvider";
 import formatMessageWith from "@/lib/format-message-with";
 
-export default function DecksRoutePanels() {
+export default function DecksRoutePanels({
+  onPrimarySearchReady,
+}: {
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
+}) {
   const { t } = useI18n();
   const { track } = useAnalytics();
   const formatMessage = useMemo(
@@ -346,7 +350,7 @@ export default function DecksRoutePanels() {
   return (
     <DeckExportProvider value={exportProviderValue}>
       {isDecksIndex ? (
-        <DecksGridPanel />
+        <DecksGridPanel onPrimarySearchReady={onPrimarySearchReady} />
       ) : (
         <DeckDetailPanel
           deckId={deckId ?? null}
@@ -391,6 +395,7 @@ export default function DecksRoutePanels() {
           entriesRowRef={entriesRowRef}
           selectionModel={selectionModel}
           entriesModel={entriesModel}
+          onPrimarySearchReady={onPrimarySearchReady}
         />
       )}
       {exportFlow.exportUi}

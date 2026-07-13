@@ -208,6 +208,32 @@ describe("AssetsPanelContent empty state (UI)", () => {
     expect(screen.queryByRole("heading", { name: "Your asset library is empty" })).not.toBeInTheDocument();
   });
 
+  it("registers a primary search handler that focuses the assets search field", () => {
+    const onPrimarySearchReady = jest.fn();
+
+    function Wrapper() {
+      const methods = useForm();
+      return (
+        <I18nProvider>
+          <FormProvider {...methods}>
+            <AssetsPanelContent
+              isOpen
+              onClose={() => undefined}
+              onPrimarySearchReady={onPrimarySearchReady}
+            />
+          </FormProvider>
+        </I18nProvider>
+      );
+    }
+
+    render(<Wrapper />);
+
+    const handler = onPrimarySearchReady.mock.calls.at(-1)?.[0] as (() => boolean) | undefined;
+    expect(handler).toBeDefined();
+    expect(handler?.()).toBe(true);
+    expect(screen.getByRole("searchbox", { name: "Search assets by name" })).toHaveFocus();
+  });
+
   it("renders the BookOpen resources menu and opens/closes with correct links", () => {
     const asset = buildAsset();
     mockUseListAssets.mockReturnValue({

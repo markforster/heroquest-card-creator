@@ -100,6 +100,7 @@ type StockpilePanelContentProps = OpenCloseProps & {
   initialSelectedIds?: string[];
   titleOverride?: string;
   frame?: "panel" | "modal";
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
 };
 
 type MissingAssetsPrompt = {
@@ -139,6 +140,7 @@ export default function StockpilePanelContent({
   initialSelectedIds,
   titleOverride,
   frame = "panel",
+  onPrimarySearchReady,
 }: StockpilePanelContentProps) {
   const { t, language } = useI18n();
   const queryClient = useQueryClient();
@@ -1288,6 +1290,7 @@ export default function StockpilePanelContent({
   const primaryToolbarProps = {
     search,
     onSearchChange: setSearch,
+    onPrimarySearchReady,
     viewMode,
     onViewModeChange: handleViewModeChange,
     filterValue: mapTemplateFilterToPrimaryToolbarValue(templateFilter),

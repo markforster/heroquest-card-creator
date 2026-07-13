@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { apiClient } from "@/api/client";
@@ -30,12 +30,27 @@ export default function CardsPage() {
   } = useCardEditor();
   const { resetWithSaved } = useEditorForm();
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
+  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<(() => boolean) | null>(
+    null,
+  );
 
   const currentTemplateId = selectedTemplateId ?? null;
   const activeCardId =
     currentTemplateId != null ? activeCardIdByTemplate[currentTemplateId] : undefined;
 
-  usePublishRouteShellCapabilities(noopRouteShellCapabilities);
+  const shellCapabilities = useMemo(
+    () => ({
+      ...noopRouteShellCapabilities,
+      focusPrimarySearch: () => focusPrimarySearchHandler?.() ?? false,
+    }),
+    [focusPrimarySearchHandler],
+  );
+
+  usePublishRouteShellCapabilities(shellCapabilities);
+
+  const handlePrimarySearchReady = useCallback((focusSearch: (() => boolean) | null) => {
+    setFocusPrimarySearchHandler(() => focusSearch);
+  }, []);
 
   useEffect(() => {
     track("page_view", { page_path: "/cards", page_title: "Cards" });
@@ -105,6 +120,7 @@ export default function CardsPage() {
           isOpen
           onClose={() => {}}
           onLoadCard={(card) => navigate(`/cards/${card.id}`)}
+          onPrimarySearchReady={handlePrimarySearchReady}
         />
       </section>
       <WelcomeTemplateModal

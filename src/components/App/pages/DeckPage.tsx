@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   noopRouteShellCapabilities,
@@ -11,12 +11,27 @@ import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 
 export default function DeckPage() {
   const { track } = useAnalytics();
+  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<(() => boolean) | null>(
+    null,
+  );
 
-  usePublishRouteShellCapabilities(noopRouteShellCapabilities);
+  const shellCapabilities = useMemo(
+    () => ({
+      ...noopRouteShellCapabilities,
+      focusPrimarySearch: () => focusPrimarySearchHandler?.() ?? false,
+    }),
+    [focusPrimarySearchHandler],
+  );
+
+  usePublishRouteShellCapabilities(shellCapabilities);
+
+  const handlePrimarySearchReady = useCallback((focusSearch: (() => boolean) | null) => {
+    setFocusPrimarySearchHandler(() => focusSearch);
+  }, []);
 
   useEffect(() => {
     track("page_view", { page_path: "/decks/:id", page_title: "Deck Detail" });
   }, [track]);
 
-  return <DecksRoutePanels />;
+  return <DecksRoutePanels onPrimarySearchReady={handlePrimarySearchReady} />;
 }

@@ -9,7 +9,7 @@ import {
   Search,
   SendToBack,
 } from "lucide-react";
-import { useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import styles from "@/app/page.module.css";
 import DeckInfoPanel from "@/components/Decks/detail/DeckInfoPanel";
@@ -35,6 +35,7 @@ export default function DeckBacksPanel({
   finalizingBackFaceId,
   finalizingFrontFaceId,
   gridOverride,
+  onPrimarySearchReady,
 }: {
   deckId: string | null;
   usedBackFaceIds: Set<string>;
@@ -42,6 +43,7 @@ export default function DeckBacksPanel({
   finalizingBackFaceId: string | null;
   finalizingFrontFaceId: string | null;
   gridOverride?: ReactNode;
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
 }) {
   const { t } = useI18n();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -109,6 +111,25 @@ export default function DeckBacksPanel({
   const faceModeTitle = faceMode === "front" ? t("decks.faces.front") : t("decks.faces.back");
   const isPreviewMode = faceMode === "preview";
   const isMetaMode = faceMode === "meta";
+  const focusPrimarySearch = useCallback(() => {
+    if (isMetaMode || isPreviewMode) return false;
+    if (!isViewOpen) {
+      setIsRightPanelVisible(true);
+    }
+    window.requestAnimationFrame(() => {
+      const input = searchInputRef.current;
+      if (!input || input.disabled) return;
+      input.focus();
+      input.select();
+    });
+    return true;
+  }, [isMetaMode, isPreviewMode, isViewOpen, setIsRightPanelVisible]);
+
+  useEffect(() => {
+    if (!onPrimarySearchReady) return;
+    onPrimarySearchReady(focusPrimarySearch);
+    return () => onPrimarySearchReady(null);
+  }, [focusPrimarySearch, onPrimarySearchReady]);
 
   return (
     <div className={styles.deckBacksPanel}>

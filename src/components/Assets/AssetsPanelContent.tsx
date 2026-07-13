@@ -66,6 +66,7 @@ type AssetsPanelProps = OpenCloseProps & {
   refreshKey?: number;
   preferredKindOrder?: AssetKindGroupId[];
   initialSelectedAssetId?: string;
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
 };
 
 type ConfirmState = {
@@ -164,6 +165,7 @@ export default function AssetsPanelContent({
   refreshKey,
   preferredKindOrder,
   initialSelectedAssetId,
+  onPrimarySearchReady,
 }: AssetsPanelProps) {
   const { t } = useI18n();
   const listAssetsQuery = useListAssets(undefined, {
@@ -194,6 +196,7 @@ export default function AssetsPanelContent({
   const seededSelectionScrollIdRef = useRef<string | null>(null);
   const lastAppliedInitialSelectionRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const assetsGridRef = useRef<HTMLDivElement | null>(null);
   const recentlyUploadedSectionRef = useRef<HTMLElement | null>(null);
   const [isKindFilterOpen, setIsKindFilterOpen] = useState(false);
@@ -218,6 +221,18 @@ export default function AssetsPanelContent({
   const hasResolvedInitialAssetsLoad = useRef(
     !isOpen || listAssetsQuery.data !== undefined || !listAssetsQuery.isLoading,
   );
+
+  useEffect(() => {
+    if (!onPrimarySearchReady) return;
+    onPrimarySearchReady(() => {
+      const input = searchInputRef.current;
+      if (!input || input.disabled) return false;
+      input.focus();
+      input.select();
+      return true;
+    });
+    return () => onPrimarySearchReady(null);
+  }, [onPrimarySearchReady]);
   const isLoadingAssets = isOpen && !hasResolvedInitialAssetsLoad.current;
 
   useEffect(() => {
@@ -1294,6 +1309,7 @@ export default function AssetsPanelContent({
             <Search className={styles.icon} aria-hidden="true" />
           </span>
           <input
+            ref={searchInputRef}
             type="search"
             placeholder={t("placeholders.searchAssets")}
             className={`form-control form-control-sm ${styles.assetsSearch} ${styles.themedFormControl}`}

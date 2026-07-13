@@ -178,4 +178,47 @@ describe("DeckBacksPanel metadata tab", () => {
       }),
     );
   });
+
+  it("registers a primary search handler that focuses the source search when available", async () => {
+    const setIsRightPanelVisible = jest.fn();
+    const onPrimarySearchReady = jest.fn();
+
+    mockUseDeckRightPanel.mockReturnValue({
+      isRightPanelVisible: true,
+      setIsRightPanelVisible,
+      toggleRightPanel: jest.fn(),
+      backCollections: [],
+      backCards: [],
+      rightPanelEmptyLabel: "No cards",
+      backFilter: { type: "all" },
+      setBackFilter: jest.fn(),
+      rightPanelFaceMode: "back",
+      setRightPanelFaceMode: jest.fn(),
+      sourceSearch: "",
+      setSourceSearch: jest.fn(),
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
+    });
+
+    render(
+      <DeckBacksPanel
+        deckId="deck-1"
+        usedBackFaceIds={new Set()}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+        onPrimarySearchReady={onPrimarySearchReady}
+      />,
+    );
+
+    const handler = onPrimarySearchReady.mock.calls.at(-1)?.[0] as (() => boolean) | undefined;
+    expect(handler).toBeDefined();
+    expect(handler?.()).toBe(true);
+    expect(setIsRightPanelVisible).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByRole("searchbox", { name: "tooltip.searchCards" })).toHaveFocus();
+    });
+  });
 });

@@ -42,6 +42,7 @@ export type DeckDetailPanelProps = {
   entriesRowRef: (node: HTMLDivElement | null) => void;
   selectionModel: DeckDetailSelectionModel;
   entriesModel: DeckSetEntriesModel;
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
 };
 
 export default function DeckDetailPanel({
@@ -55,6 +56,7 @@ export default function DeckDetailPanel({
   entriesRowRef,
   selectionModel,
   entriesModel,
+  onPrimarySearchReady,
 }: DeckDetailPanelProps) {
   const { deckTitle, keySetId } = useDeckHeaderModel(deckId);
 
@@ -73,6 +75,7 @@ export default function DeckDetailPanel({
         entriesRowRef={entriesRowRef}
         selectionModel={selectionModel}
         entriesModel={entriesModel}
+        onPrimarySearchReady={onPrimarySearchReady}
       />
     </DeckRightPanelProvider>
   );
@@ -89,6 +92,7 @@ function DeckDetailPanelContent({
   modalActions,
   selectionModel,
   entriesModel,
+  onPrimarySearchReady,
 }: {
   deckId: string | null;
   deckTitle: string;
@@ -102,6 +106,7 @@ function DeckDetailPanelContent({
   entriesRowRef: (node: HTMLDivElement | null) => void;
   selectionModel: DeckDetailSelectionModel;
   entriesModel: DeckSetEntriesModel;
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
 }) {
   const { isRightPanelVisible } = useDeckRightPanel();
   const usedBackFaceIds = useMemo(
@@ -191,6 +196,7 @@ function DeckDetailPanelContent({
                   finalizingBackFaceId={drag.finalizingBackFaceId}
                   finalizingFrontFaceId={drag.finalizingFrontFaceId}
                   gridOverride={<DeckSourceBoardController />}
+                  onPrimarySearchReady={onPrimarySearchReady}
                 />
               </aside>
             </>

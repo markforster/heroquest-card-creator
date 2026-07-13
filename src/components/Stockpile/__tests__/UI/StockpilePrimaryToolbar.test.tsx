@@ -170,6 +170,34 @@ describe("StockpilePrimaryToolbar", () => {
     expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
   });
 
+  it("registers a primary search handler that focuses the search field", () => {
+    const onPrimarySearchReady = jest.fn();
+
+    render(
+      <StockpilePrimaryToolbar
+        search=""
+        onSearchChange={() => {}}
+        onPrimarySearchReady={onPrimarySearchReady}
+        viewMode="grid"
+        onViewModeChange={() => {}}
+        filterValue="all"
+        onFilterChange={() => {}}
+        filterOptions={filterOptions}
+        sortValue="modified"
+        onSortChange={() => {}}
+        sortOptions={[{ value: "modified", label: "Last modified" }]}
+        groupValue="none"
+        onGroupChange={() => {}}
+        groupOptions={[{ value: "none", label: "None" }]}
+      />,
+    );
+
+    const handler = onPrimarySearchReady.mock.calls.at(-1)?.[0] as (() => boolean) | undefined;
+    expect(handler).toBeDefined();
+    expect(handler?.()).toBe(true);
+    expect(screen.getByRole("searchbox", { name: "Search cards" })).toHaveFocus();
+  });
+
   it("calls onFilterChange with the selected grouped option value", () => {
     const onFilterChange = jest.fn();
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { LayoutGrid, Search, TableProperties } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { ToggleButton, ToggleButtonGroup } from "react-bootstrap";
 
 import styles from "@/app/page.module.css";
@@ -14,6 +15,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 export default function StockpilePrimaryToolbar({
   search,
   onSearchChange,
+  onPrimarySearchReady,
   viewMode,
   onViewModeChange,
   filterValue,
@@ -44,6 +46,19 @@ export default function StockpilePrimaryToolbar({
   const gridViewLabel = t("label.gridView");
   const tableViewLabel = t("label.tableView");
   const viewGroupLabel = t("aria.viewMode");
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!onPrimarySearchReady) return;
+    onPrimarySearchReady(() => {
+      const input = searchInputRef.current;
+      if (!input || input.disabled) return false;
+      input.focus();
+      input.select();
+      return true;
+    });
+    return () => onPrimarySearchReady(null);
+  }, [onPrimarySearchReady]);
 
   return (
     <div className={styles.stockpilePrimaryToolbar}>
@@ -54,6 +69,7 @@ export default function StockpilePrimaryToolbar({
               <Search size={16} aria-hidden="true" />
             </span>
             <input
+              ref={searchInputRef}
               type="search"
               value={search}
               disabled={isSearchDisabled}

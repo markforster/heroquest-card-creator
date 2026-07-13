@@ -76,6 +76,7 @@ export type StockpileCardGroupView = {
 export type StockpilePrimaryToolbarProps = {
   search: string;
   onSearchChange: (value: string) => void;
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
   viewMode: "grid" | "table";
   onViewModeChange: (next: "grid" | "table") => void;
   filterValue: string;

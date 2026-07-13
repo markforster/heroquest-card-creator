@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -22,12 +22,27 @@ export default function AssetsPage() {
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
+  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<(() => boolean) | null>(
+    null,
+  );
 
   const currentTemplateId = selectedTemplateId ?? null;
   const activeCardId =
     currentTemplateId != null ? activeCardIdByTemplate[currentTemplateId] : undefined;
 
-  usePublishRouteShellCapabilities(noopRouteShellCapabilities);
+  const shellCapabilities = useMemo(
+    () => ({
+      ...noopRouteShellCapabilities,
+      focusPrimarySearch: () => focusPrimarySearchHandler?.() ?? false,
+    }),
+    [focusPrimarySearchHandler],
+  );
+
+  usePublishRouteShellCapabilities(shellCapabilities);
+
+  const handlePrimarySearchReady = useCallback((focusSearch: (() => boolean) | null) => {
+    setFocusPrimarySearchHandler(() => focusSearch);
+  }, []);
 
   useEffect(() => {
     track("page_view", { page_path: "/assets", page_title: "Assets" });
@@ -48,7 +63,7 @@ export default function AssetsPage() {
 
   return (
     <EditorSaveProvider value={noopEditorSaveValue}>
-      <AssetsRoutePanels />
+      <AssetsRoutePanels onPrimarySearchReady={handlePrimarySearchReady} />
     </EditorSaveProvider>
   );
 }
