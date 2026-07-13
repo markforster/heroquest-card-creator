@@ -1,12 +1,14 @@
 "use client";
 
-import { Badge } from "lucide-react";
+import { Badge, Plus, Settings2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
+import layoutStyles from "@/app/page.module.css";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
 import BaseInspectorField from "@/components/Cards/CardInspector/BaseInspectorField";
 import FormSelect, { type FormSelectOption, type FormSelectRenderMeta } from "@/components/common/FormSelect";
+import { useEditorSave } from "@/components/Providers/EditorSaveContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
 import {
@@ -29,7 +31,6 @@ type HeroBackLogoSelectOption = FormSelectOption & {
 };
 
 const DEFAULT_OPTION_VALUE = "__default__";
-const ADD_OPTION_VALUE = "__add__";
 
 function buildRemediationPatch(
   remediation: DeleteHeroBackLogoRemediation,
@@ -61,6 +62,7 @@ function buildLogoSelectValue(logoMode?: "default" | "none" | "custom", logoId?:
 export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
   const { t } = useI18n();
   const { setValue } = useFormContext();
+  const { refreshCardThumbnails } = useEditorSave();
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
@@ -123,7 +125,6 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
       { value: DEFAULT_OPTION_VALUE, label: t("status.default"), kind: "default" },
       ...savedLogoOptions,
       ...missingCurrentOption,
-      { value: ADD_OPTION_VALUE, label: t("actions.addAnother"), kind: "add" },
     ];
   }, [logoId, logoMode, logoName, logos, t]);
 
@@ -195,14 +196,28 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
         label={label}
         icon={Badge}
         toolbar={(
-          <button
-            type="button"
-            className="btn btn-outline-secondary btn-sm"
-            onClick={() => setIsModalOpen(true)}
-            disabled={isBusy}
-          >
-            {t("actions.manageLogos")}
-          </button>
+          <div className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1 ms-auto`}>
+            <button
+              type="button"
+              className={`${layoutStyles.bodyTextToolbarButton} ${isBusy ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+              title={t("actions.addAnother")}
+              aria-label={t("actions.addAnother")}
+              onClick={() => uploadInputRef.current?.click()}
+              disabled={isBusy}
+            >
+              <Plus size={14} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${layoutStyles.bodyTextToolbarButton} ${isBusy ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+              title={t("actions.manageLogos")}
+              aria-label={t("actions.manageLogos")}
+              onClick={() => setIsModalOpen(true)}
+              disabled={isBusy}
+            >
+              <Settings2 size={14} aria-hidden="true" />
+            </button>
+          </div>
         )}
         input={(
           <div className="d-flex flex-column gap-2">
@@ -227,11 +242,6 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
                   return;
                 }
 
-                if (nextValue === ADD_OPTION_VALUE) {
-                  uploadInputRef.current?.click();
-                  return;
-                }
-
                 const selectedLogo = logos.find((logo) => logo.id === nextValue);
                 if (selectedLogo) {
                   applyCustomLogo(selectedLogo);
@@ -247,9 +257,10 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
         isOpen={isModalOpen}
         currentLogoId={logoId}
         onClose={() => setIsModalOpen(false)}
-        onDeleted={(deletedLogoId, remediation, replacement) => {
+        onDeleted={async (deletedLogoId, remediation, replacement, affectedCardIds) => {
           void reloadLogos();
           if (logoId !== deletedLogoId) {
+            await refreshCardThumbnails(affectedCardIds);
             return;
           }
           const patch = buildRemediationPatch(remediation, replacement);
@@ -264,6 +275,7 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
             shouldDirty: true,
             shouldTouch: true,
           });
+          await refreshCardThumbnails(affectedCardIds);
         }}
       />
     </>

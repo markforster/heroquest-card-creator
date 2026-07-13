@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 
+import type { CardRecord } from "@/api/cards";
+import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
-import { apiClient } from "@/api/client";
-import type { CardRecord } from "@/api/cards";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { OpenCloseProps } from "@/types/ui";
 
@@ -25,24 +25,44 @@ export default function RecentCardsModal({ isOpen, onClose, onSelectCard }: Rece
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
-    setIsLoading(true);
-    apiClient
-      .listCards({ queries: { status: "saved" } })
-      .then((items) => {
-        if (!active) return;
-        setCards(items);
-      })
-      .catch(() => {
-        if (!active) return;
-        setCards([]);
-      })
-      .finally(() => {
-        if (!active) return;
-        setIsLoading(false);
-      });
+    let timeoutId: number | null = null;
+
+    const loadCards = () => {
+      setIsLoading(true);
+      apiClient
+        .listCards({ queries: { status: "saved" } })
+        .then((items) => {
+          if (!active) return;
+          setCards(items);
+        })
+        .catch(() => {
+          if (!active) return;
+          setCards([]);
+        })
+        .finally(() => {
+          if (!active) return;
+          setIsLoading(false);
+        });
+    };
+
+    const handleCardsUpdated = () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+      timeoutId = window.setTimeout(() => {
+        loadCards();
+      }, 250);
+    };
+
+    loadCards();
+    window.addEventListener("hqcc-cards-updated", handleCardsUpdated);
 
     return () => {
       active = false;
+      window.removeEventListener("hqcc-cards-updated", handleCardsUpdated);
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
     };
   }, [isOpen]);
 

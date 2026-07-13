@@ -1,4 +1,5 @@
 import { renderHook, waitFor } from "@testing-library/react";
+import { act } from "react";
 
 import { apiClient } from "@/api/client";
 import {
@@ -30,8 +31,11 @@ describe("useCardThumbnailUrl", () => {
   const originalRevokeDescriptor = Object.getOwnPropertyDescriptor(URL, "revokeObjectURL");
 
   beforeEach(() => {
-    invalidateCardThumbnail();
+    act(() => {
+      invalidateCardThumbnail();
+    });
     jest.restoreAllMocks();
+    (apiClient.getCardThumbnail as jest.Mock).mockReset();
     let counter = 0;
     Object.defineProperty(URL, "createObjectURL", {
       configurable: true,
@@ -44,7 +48,9 @@ describe("useCardThumbnailUrl", () => {
   });
 
   afterEach(() => {
-    invalidateCardThumbnail();
+    act(() => {
+      invalidateCardThumbnail();
+    });
     if (originalCreateDescriptor) {
       Object.defineProperty(URL, "createObjectURL", originalCreateDescriptor);
     } else {
@@ -197,5 +203,72 @@ describe("useCardThumbnailUrl", () => {
     churnCache(MAX_ENTRIES * 2);
 
     expect(URL.revokeObjectURL).toHaveBeenCalledWith(retainedUrl);
+  });
+
+  it("refetches a mounted cached thumbnail when that card id is invalidated", async () => {
+    (apiClient.getCardThumbnail as jest.Mock)
+      .mockResolvedValueOnce(new Blob(["a"], { type: "image/png" }))
+      .mockResolvedValueOnce(new Blob(["b"], { type: "image/png" }));
+
+    const { result } = renderHook(() =>
+      useCardThumbnailUrl("card-1", null, { enabled: true, useCache: true }),
+    );
+
+    await waitFor(() => {
+      expect(result.current).toBe("blob:thumb-1");
+    });
+
+    act(() => {
+      invalidateCardThumbnail("card-1");
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBe("blob:thumb-2");
+    });
+    expect(apiClient.getCardThumbnail).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not refetch when a different card id is invalidated", async () => {
+    (apiClient.getCardThumbnail as jest.Mock).mockResolvedValue(new Blob(["a"], { type: "image/png" }));
+
+    const { result } = renderHook(() =>
+      useCardThumbnailUrl("card-1", null, { enabled: true, useCache: true }),
+    );
+
+    await waitFor(() => {
+      expect(result.current).toBe("blob:thumb-1");
+    });
+
+    act(() => {
+      invalidateCardThumbnail("card-2");
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBe("blob:thumb-1");
+    });
+    expect(apiClient.getCardThumbnail).toHaveBeenCalledTimes(1);
+  });
+
+  it("refetches a mounted cached thumbnail when the full cache is invalidated", async () => {
+    (apiClient.getCardThumbnail as jest.Mock)
+      .mockResolvedValueOnce(new Blob(["a"], { type: "image/png" }))
+      .mockResolvedValueOnce(new Blob(["b"], { type: "image/png" }));
+
+    const { result } = renderHook(() =>
+      useCardThumbnailUrl("card-1", null, { enabled: true, useCache: true }),
+    );
+
+    await waitFor(() => {
+      expect(result.current).toBe("blob:thumb-1");
+    });
+
+    act(() => {
+      invalidateCardThumbnail();
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBe("blob:thumb-2");
+    });
+    expect(apiClient.getCardThumbnail).toHaveBeenCalledTimes(2);
   });
 });

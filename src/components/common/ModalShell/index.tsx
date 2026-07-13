@@ -1,5 +1,7 @@
 "use client";
 
+import { createPortal } from "react-dom";
+
 import ModalBackdrop from "./ModalBackdrop";
 import ModalBody from "./ModalBody";
 import ModalFooter from "./ModalFooter";
@@ -36,8 +38,9 @@ export default function ModalShell({
   useModalEscape({ isOpen, onClose });
 
   if (!isOpen && !keepMounted) return null;
+  if (typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <ModalBackdrop isOpen={isOpen} onClose={onClose}>
       <ModalPanel contentClassName={contentClassName}>
         <ModalHeader
@@ -49,6 +52,7 @@ export default function ModalShell({
         <ModalBody>{children}</ModalBody>
         <ModalFooter>{footer}</ModalFooter>
       </ModalPanel>
-    </ModalBackdrop>
+    </ModalBackdrop>,
+    document.body,
   );
 }

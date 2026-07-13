@@ -131,8 +131,9 @@ export async function addHeroBackLogo(
 export async function deleteHeroBackLogo(
   logoId: string,
   remediation: DeleteHeroBackLogoRemediation,
-): Promise<void> {
+): Promise<string[]> {
   const db = await openHqccDexieDb();
+  let affectedCardIds: string[] = [];
 
   try {
     await db.transaction("rw", db.heroBackLogos, db.cardHeroBackLogoComponents, async () => {
@@ -140,6 +141,7 @@ export async function deleteHeroBackLogo(
         .where("logoId")
         .equals(logoId)
         .toArray();
+      affectedCardIds = dependents.map((record) => record.cardId);
 
       if (dependents.length > 0) {
         const updated = dependents.map((record) => {
@@ -175,6 +177,7 @@ export async function deleteHeroBackLogo(
   }
 
   enqueueDbEstimateChange(STORE_NAME, logoId);
+  return affectedCardIds;
 }
 
 export async function getHeroBackLogoUsage(

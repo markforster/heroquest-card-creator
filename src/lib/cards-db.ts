@@ -480,7 +480,6 @@ export async function updateCardThumbnail(
   thumbnailBlob: Blob | null,
 ): Promise<boolean> {
   const db = await openHqccDexieDb();
-
   const existing = await db.cardsBase.get(id);
 
   if (!existing) {

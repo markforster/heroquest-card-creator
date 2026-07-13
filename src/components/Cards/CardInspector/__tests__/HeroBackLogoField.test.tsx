@@ -13,6 +13,7 @@ type MockOption = {
 const addHeroBackLogo = jest.fn();
 const getImageDimensions = jest.fn();
 const listHeroBackLogos = jest.fn();
+const refreshCardThumbnails = jest.fn();
 
 jest.mock("react-select", () => {
   return function MockReactSelect(props: {
@@ -94,9 +95,37 @@ jest.mock("@/lib/hero-back-logos-db", () => ({
   listHeroBackLogos: (...args: unknown[]) => listHeroBackLogos(...args),
 }));
 
+jest.mock("@/components/Providers/EditorSaveContext", () => ({
+  useEditorSave: () => ({
+    refreshCardThumbnails: (...args: unknown[]) => refreshCardThumbnails(...args),
+  }),
+}));
+
 jest.mock("@/components/Cards/CardInspector/HeroBackLogoModal", () => ({
   __esModule: true,
-  default: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div>MODAL_OPEN</div> : null),
+  default: ({
+    isOpen,
+    onDeleted,
+  }: {
+    isOpen: boolean;
+    onDeleted?: (
+      deletedLogoId: string,
+      remediation: { mode: "default" | "custom"; logoId?: string; logoName?: string; width?: number; height?: number },
+      replacement?: { id: string; name: string; width: number; height: number } | null,
+      affectedCardIds?: string[],
+    ) => void | Promise<void>;
+  }) =>
+    isOpen ? (
+      <div>
+        MODAL_OPEN
+        <button
+          type="button"
+          onClick={() => void onDeleted?.("logo-1", { mode: "default" }, null, ["card-1", "card-2"])}
+        >
+          Trigger delete
+        </button>
+      </div>
+    ) : null,
 }));
 
 function StateProbe() {
@@ -142,9 +171,10 @@ describe("HeroBackLogoField", () => {
     addHeroBackLogo.mockReset();
     getImageDimensions.mockReset();
     listHeroBackLogos.mockReset();
+    refreshCardThumbnails.mockReset();
   });
 
-  it("renders image-only previews for default and saved logos, plus add another", async () => {
+  it("renders image-only previews for default and saved logos in the select", async () => {
     listHeroBackLogos.mockResolvedValue([
       { id: "logo-1", name: "Clan Raven", width: 320, height: 90 },
     ]);
@@ -155,16 +185,16 @@ describe("HeroBackLogoField", () => {
     expect(Array.from(select.querySelectorAll("option")).map((option) => option.value)).toEqual([
       "__default__",
       "logo-1",
-      "__add__",
     ]);
     expect(screen.getByTestId("hero-back-logo-select-value")).toHaveAttribute(
       "data-preview-variant",
       "default",
     );
     expect(screen.getByTestId("mock-react-select-options").querySelectorAll("img")).toHaveLength(2);
-    expect(screen.getByTestId("mock-react-select-options")).toHaveTextContent("Add another...");
     expect(screen.getByTestId("mock-react-select-options")).not.toHaveTextContent("Default");
     expect(screen.getByTestId("mock-react-select-options")).not.toHaveTextContent("Clan Raven");
+    expect(screen.getByRole("button", { name: "Add another..." })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Manage logos" })).toBeInTheDocument();
   });
 
   it("assigns a saved logo when the user selects it", async () => {
@@ -189,7 +219,7 @@ describe("HeroBackLogoField", () => {
     expect(screen.getByTestId("hero-back-logo-select-value")).not.toHaveTextContent("Clan Raven");
   });
 
-  it("uploads and assigns a new logo when add another is chosen", async () => {
+  it("uploads and assigns a new logo when the add action is used", async () => {
     listHeroBackLogos
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([
@@ -200,7 +230,7 @@ describe("HeroBackLogoField", () => {
 
     const { container } = render(<TestHarness />);
 
-    fireEvent.change(await screen.findByTestId("mock-react-select"), { target: { value: "__add__" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add another..." }));
 
     const hiddenInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(["logo"], "uploaded-logo.png", { type: "image/png" });
@@ -228,5 +258,31 @@ describe("HeroBackLogoField", () => {
         }),
       );
     });
+  });
+
+  it("refreshes affected saved thumbnails after logo deletion remediation", async () => {
+    listHeroBackLogos.mockResolvedValue([
+      { id: "logo-1", name: "Clan Raven", width: 320, height: 90 },
+    ]);
+
+    render(
+      <TestHarness
+        defaultValues={{
+          heroBackLogoMode: "custom",
+          heroBackLogoId: "logo-1",
+          heroBackLogoName: "Clan Raven",
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Manage logos" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Trigger delete" }));
+
+    await waitFor(() => {
+      expect(refreshCardThumbnails).toHaveBeenCalledWith(["card-1", "card-2"]);
+    });
+    expect(screen.getByTestId("hero-back-logo-state")).toHaveTextContent(
+      JSON.stringify({ mode: "default", logoId: undefined, logoName: undefined }),
+    );
   });
 });

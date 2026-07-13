@@ -9797,6 +9797,67 @@ button.assetsKindBadge:disabled {
   overflow-y: auto;
 }
 
+.heroBackLogosModalBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-top: var(--space-2);
+  padding-right: var(--space-2);
+}
+
+.heroBackLogoCard {
+  cursor: default;
+  padding: var(--space-4);
+}
+
+.heroBackLogoCardCurrent {
+  border-color: var(--hq-accent);
+  box-shadow: 0 0 0 1px rgba(230, 179, 90, 0.9);
+}
+
+.heroBackLogoCardMetaRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.heroBackLogoCardMeta {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.heroBackLogoDeleteButton {
+  flex: 0 0 auto;
+}
+
+.heroBackLogoRemediationOption {
+  margin: 0;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.heroBackLogoRemediationLabel {
+  min-width: 0;
+  margin: 0;
+  line-height: var(--hq-control-line-height);
+}
+
+.heroBackLogoRemediationSelect {
+  margin-left: calc(1rem + var(--space-3));
+  min-width: 0;
+}
+
+.heroBackLogosPopover :global(.modal-body) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 .decksRightTitle {
   font-size: var(--text-md);
   font-weight: 600;

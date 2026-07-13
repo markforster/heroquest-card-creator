@@ -93,7 +93,7 @@ describe("HeroBackLogoModal", () => {
     const onDeleted = jest.fn();
     listHeroBackLogos.mockResolvedValue([{ id: "logo-1", name: "Clan Raven", width: 320, height: 90 }]);
     getHeroBackLogoUsage.mockResolvedValue([]);
-    deleteHeroBackLogo.mockResolvedValue(undefined);
+    deleteHeroBackLogo.mockResolvedValue([]);
 
     render(
       <HeroBackLogoModal
@@ -109,6 +109,6 @@ describe("HeroBackLogoModal", () => {
     await waitFor(() => {
       expect(deleteHeroBackLogo).toHaveBeenCalledWith("logo-1", { mode: "default" });
     });
-    expect(onDeleted).toHaveBeenCalledWith("logo-1", { mode: "default" }, null);
+    expect(onDeleted).toHaveBeenCalledWith("logo-1", { mode: "default" }, null, []);
   });
 });
