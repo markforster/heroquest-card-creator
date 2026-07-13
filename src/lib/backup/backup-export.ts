@@ -370,6 +370,7 @@ async function buildCompactExportBundle(
   const {
     rawCards,
     rawAssets,
+    rawHeroBackLogos,
     collections,
     pairs,
     decks,
