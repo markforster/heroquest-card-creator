@@ -1,7 +1,14 @@
 "use client";
 
 import { decode as decodeMsgpack } from "@msgpack/msgpack";
-import { BlobReader, BlobWriter, TextWriter, Uint8ArrayWriter, ZipReader } from "@zip.js/zip.js";
+import {
+  BlobReader,
+  BlobWriter,
+  TextWriter,
+  Uint8ArrayWriter,
+  ZipReader,
+  type Entry as ZipEntry,
+} from "@zip.js/zip.js";
 
 import {
   restoreExportProfilesState,
@@ -57,12 +64,6 @@ import type {
   HqccExportFileV1,
   ImportResult,
 } from "./backup-types";
-
-type ZipEntry = {
-  filename: string;
-  directory?: boolean;
-  getData?: <T>(writer: unknown) => Promise<T>;
-};
 
 async function clearExistingLibrary() {
   const { apiClient } = await import("@/api/client");

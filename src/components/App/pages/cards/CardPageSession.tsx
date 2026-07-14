@@ -14,7 +14,6 @@ import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useEditorForm } from "@/components/Providers/EditorFormContext";
-import type { EditorSaveContextValue } from "@/components/Providers/EditorSaveContext";
 import { cardTemplatesById } from "@/data/card-templates";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
@@ -238,7 +237,7 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
       track,
     });
 
-  const editorSaveValue: EditorSaveContextValue = {
+  const editorSaveValue = {
     saveCurrentCard,
     repairCurrentCardThumbnail,
     saveToken,

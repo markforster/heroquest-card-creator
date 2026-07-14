@@ -26,9 +26,7 @@ import {
 } from "three";
 
 import { blueprintDataUrl } from "@/assets/blueprint-data";
-import blueprintFallback from "@/assets/blueprint.png";
 import { linen5DataUrl } from "@/assets/linen-5-data";
-import linenNormal3 from "@/assets/linen-5.png";
 import { spinnerBlueprintDataUrl } from "@/assets/spinner-blueprint-data";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { useWebglPreviewSettings } from "@/components/Providers/WebglPreviewSettingsContext";
@@ -67,7 +65,6 @@ const MAX_ROTATION_Y_DEG = 60;
 const ROTATION_SMOOTHING = 0.12;
 const RECENTER_SMOOTHING = 0.26;
 const RECENTER_DURATION_MS = 320;
-const LINEN_NORMAL_MAP = linenNormal3;
 const LINEN_NORMAL_REPEAT = new Vector2(2.4, 3.2);
 const LINEN_NORMAL_STRENGTH = 3.0;
 const LINEN_NORMAL_HIGHLIGHT = 1.8;
@@ -115,12 +112,7 @@ function CardPlane({
   unpairedLabelTexture?: Texture | null;
 }) {
   const geometry = useMemo(() => new PlaneGeometry(1, CARD_ASPECT), []);
-  const linenNormalSource = useMemo(() => {
-    if (typeof window !== "undefined" && window.location.protocol === "file:") {
-      return linen5DataUrl;
-    }
-    return LINEN_NORMAL_MAP.src;
-  }, []);
+  const linenNormalSource = useMemo(() => linen5DataUrl, []);
   const linenNormalTexture = useLoader(TextureLoader, linenNormalSource);
   linenNormalTexture.colorSpace = NoColorSpace;
   linenNormalTexture.wrapS = RepeatWrapping;
@@ -607,13 +599,10 @@ export default function WebglPreview({
   const pitchGroupRef = useRef<Group | null>(null);
   const spotLightRef = useRef<SpotLight | null>(null);
   const directionalLightRef = useRef<DirectionalLight | null>(null);
-  const fallbackTextureSource = useMemo(() => {
-    if (fallbackTextureSrc) return fallbackTextureSrc;
-    if (typeof window !== "undefined" && window.location.protocol === "file:") {
-      return blueprintDataUrl;
-    }
-    return blueprintFallback.src;
-  }, [fallbackTextureSrc]);
+  const fallbackTextureSource = useMemo(
+    () => fallbackTextureSrc ?? blueprintDataUrl,
+    [fallbackTextureSrc],
+  );
   const fallbackTexture = useLoader(TextureLoader, fallbackTextureSource);
   const fallbackFrontTexture = useMemo(() => fallbackTexture.clone(), [fallbackTexture]);
   const fallbackBackTexture = useMemo(() => fallbackTexture.clone(), [fallbackTexture]);

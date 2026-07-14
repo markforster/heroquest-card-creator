@@ -25,8 +25,8 @@ type HeroBackLogoModalProps = {
   onDeleted: (
     deletedLogoId: string,
     remediation: DeleteHeroBackLogoRemediation,
-    replacement?: HeroBackLogoRecord | null,
-    affectedCardIds?: string[],
+    replacement: HeroBackLogoRecord | null,
+    affectedCardIds: string[],
   ) => void | Promise<void>;
 };
 

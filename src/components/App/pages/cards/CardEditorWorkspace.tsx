@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import blueprintFallback from "@/assets/blueprint.png";
+import { blueprintDataUrl } from "@/assets/blueprint-data";
 import styles from "@/app/page.module.css";
 import CardPreviewContainer from "@/components/Cards/CardEditor/CardPreviewContainer";
 import { EditorTargetsProvider } from "@/components/Cards/CardEditor/EditorTargetsContext";
@@ -122,7 +122,7 @@ export default function CardEditorWorkspace({
                 aria-hidden="true"
               >
                 <image
-                  href={blueprintFallback.src}
+                  href={blueprintDataUrl}
                   x="0"
                   y="0"
                   width={CARD_WIDTH}
