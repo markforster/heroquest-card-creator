@@ -9,6 +9,7 @@ export type WrapToken =
       italic?: boolean;
       underline?: boolean;
       color?: string;
+      scale?: number;
     }
   | {
       kind: "dice";
@@ -31,6 +32,7 @@ export function runsToTokens(runs: TextRun[]): TextWrapToken[] {
         italic: run.italic,
         underline: run.underline,
         color: run.color,
+        scale: run.scale,
       });
     });
   });
@@ -85,6 +87,7 @@ export function wrapTokens(
               italic: run.italic,
               underline: run.underline,
               color: run.color,
+              scale: run.scale,
             },
           ];
           currentWidth = runWidth;
@@ -150,6 +153,7 @@ function splitTokenToRuns(
       italic: token.italic,
       underline: token.underline,
       color: token.color,
+      scale: token.scale,
     });
 
     if (isFinalChunk) {
@@ -182,6 +186,7 @@ function coalesceTokens(tokens: WrapToken[]): WrapToken[] {
         italic: token.italic,
         underline: token.underline,
         color: token.color,
+        scale: token.scale,
       };
       return;
     }
@@ -190,7 +195,8 @@ function coalesceTokens(tokens: WrapToken[]): WrapToken[] {
       current.bold === token.bold &&
       current.italic === token.italic &&
       current.underline === token.underline &&
-      current.color === token.color
+      current.color === token.color &&
+      current.scale === token.scale
     ) {
       current.text += token.text;
     } else {
@@ -202,6 +208,7 @@ function coalesceTokens(tokens: WrapToken[]): WrapToken[] {
         italic: token.italic,
         underline: token.underline,
         color: token.color,
+        scale: token.scale,
       };
     }
   });

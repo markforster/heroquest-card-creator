@@ -38,4 +38,21 @@ describe("layoutCardText", () => {
     ]);
     expect(result.totalHeight).toBe(80);
   });
+
+  it("uses the largest scaled span on a visual line to determine row height", () => {
+    const result = layoutCardText({
+      text: "Alpha <scale=1.5>Beta</scale>",
+      width: 300,
+      fontSize: 20,
+      lineHeight: 20,
+    });
+
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0]).toMatchObject({
+      kind: "text",
+      height: 30,
+      baselineOffset: 30,
+      maxFontSize: 30,
+    });
+  });
 });

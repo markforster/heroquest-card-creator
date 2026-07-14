@@ -34,6 +34,13 @@ type CardTextBlockProps = {
   showOverflowWarning?: boolean;
 };
 
+type TextMeasureToken = Extract<WrapToken, { kind: "text" }>;
+type RowMetrics = {
+  height: number;
+  maxFontSize: number;
+  baselineOffset: number;
+};
+
 const CARD_BODY_LINE_HEIGHT = 1.05;
 const OVERFLOW_WARNING_COLOR = "#d62839";
 const OVERFLOW_WARNING_FILL_OPACITY = 0.2;
@@ -62,23 +69,21 @@ const DICE_BORDER_COLOR = "#111111";
 const DICE_BORDER_WIDTH = 1;
 
 type TextLine =
-  | { kind: "text"; tokens: BodyTextToken[]; align?: TextAlignment; height: number }
-  | {
+  | ({ kind: "text"; tokens: BodyTextToken[]; align?: TextAlignment } & RowMetrics)
+  | ({
       kind: "leader";
       labelTokens: BodyTextToken[];
       valueTokens: BodyTextToken[];
       separator: string;
       leaderLayout?: LeaderLayout;
       align?: TextAlignment;
-      height: number;
-    }
-  | {
+    } & RowMetrics)
+  | ({
       kind: "leader-continuation";
       valueTokens: BodyTextToken[];
       leaderLayout: LeaderLayout;
       align?: TextAlignment;
-      height: number;
-    }
+    } & RowMetrics)
   | {
       kind: "paragraph-gap";
       height: number;
@@ -128,6 +133,7 @@ export function layoutCardText({
 }): CardTextLayout {
   const effectiveLineHeight = lineHeight ?? fontSize * CARD_BODY_LINE_HEIGHT;
   const paragraphGap = effectiveLineHeight;
+  const lineHeightRatio = fontSize > 0 ? effectiveLineHeight / fontSize : CARD_BODY_LINE_HEIGHT;
 
   if (!text || !text.trim()) {
     return {
@@ -215,10 +221,10 @@ export function layoutCardText({
     const valueRaw = leaderMatch[3];
     const separator = sepRaw || ".";
     const labelTokens = injectDiceAdjacentSpaces(
-      segmentsToTokens(tokenizeInlineDice(labelRaw), fontSize),
+      segmentsToTokens(tokenizeInlineDice(labelRaw), fontSize, { allowScale: false }),
     );
     const valueTokens = injectDiceAdjacentSpaces(
-      segmentsToTokens(tokenizeInlineDice(valueRaw), fontSize),
+      segmentsToTokens(tokenizeInlineDice(valueRaw), fontSize, { allowScale: false }),
     );
     return { labelTokens, valueTokens, separator };
   };
@@ -311,7 +317,12 @@ export function layoutCardText({
     const tokens = injectDiceAdjacentSpaces(segmentsToTokens(inlineSegments, fontSize));
     const wrapped = wrapTokens(tokens, safeWidth, measure);
     wrapped.forEach((lineTokens) => {
-      rows.push({ kind: "text", tokens: lineTokens, align, height: effectiveLineHeight });
+      rows.push({
+        kind: "text",
+        tokens: lineTokens,
+        align,
+        ...computeRowMetrics(lineTokens, fontSize, lineHeightRatio),
+      });
     });
   };
 
@@ -334,10 +345,10 @@ export function layoutCardText({
 
       const separator = sepRaw || ".";
       const labelTokens = injectDiceAdjacentSpaces(
-        segmentsToTokens(tokenizeInlineDice(labelRaw), fontSize),
+        segmentsToTokens(tokenizeInlineDice(labelRaw), fontSize, { allowScale: false }),
       );
       const valueTokens = injectDiceAdjacentSpaces(
-        segmentsToTokens(tokenizeInlineDice(valueRaw), fontSize),
+        segmentsToTokens(tokenizeInlineDice(valueRaw), fontSize, { allowScale: false }),
       );
 
       rows.push({
@@ -346,7 +357,7 @@ export function layoutCardText({
         valueTokens,
         separator,
         align,
-        height: effectiveLineHeight,
+        ...createFixedRowMetrics(fontSize, lineHeightRatio),
       });
       return;
     }
@@ -423,7 +434,7 @@ export function layoutCardText({
           valueTokens: line.valueTokens,
           separator: line.separator,
           align: line.align,
-          height: effectiveLineHeight,
+          ...createFixedRowMetrics(fontSize, lineHeightRatio),
         });
       });
     } else {
@@ -441,7 +452,7 @@ export function layoutCardText({
           separator: line.separator,
           leaderLayout: layout,
           align: line.align,
-          height: effectiveLineHeight,
+          ...createFixedRowMetrics(fontSize, lineHeightRatio),
         });
         restLines.forEach((valueTokens) => {
           rows.push({
@@ -449,7 +460,7 @@ export function layoutCardText({
             valueTokens,
             leaderLayout: layout,
             align: line.align,
-            height: effectiveLineHeight,
+            ...createFixedRowMetrics(fontSize, lineHeightRatio),
           });
         });
       });
@@ -577,7 +588,6 @@ export default function CardTextBlock({
   const {
     rows,
     lines,
-    lineHeight: effectiveLineHeight,
     fittedFontSize,
     overflowed,
   } = layoutCardTextToBounds({
@@ -643,14 +653,14 @@ export default function CardTextBlock({
             return;
           }
 
-          const lineY = bounds.y + verticalOffset + fittedFontSize;
+          const lineY = bounds.y + verticalOffset + line.baselineOffset;
 
           if (line.kind === "text") {
             elements.push(
               ...renderTokenLine({
                 lineTokens: line.tokens,
                 lineY,
-                lineHeight: effectiveLineHeight,
+                lineHeight: line.height,
                 bounds,
                 lineAlign: line.align ?? align,
                 measure: measureWithSpacing,
@@ -658,7 +668,8 @@ export default function CardTextBlock({
                 textStyle,
                 maskPrefix,
                 lineIndex: renderedLineIndex,
-                fontSize: fittedFontSize,
+                baseFontSize: fittedFontSize,
+                baselineOffset: line.baselineOffset,
               }),
             );
             verticalOffset += line.height;
@@ -670,19 +681,20 @@ export default function CardTextBlock({
             const valueStartX = bounds.x + line.leaderLayout.valueStartOffset;
             elements.push(
               ...renderTokenSequence({
-                tokens: line.valueTokens,
-                startX: valueStartX,
-                y: lineY,
-                lineHeight: effectiveLineHeight,
-                measure: measureWithSpacing,
-                fill,
-                textStyle,
-                maskPrefix,
-                lineIndex: renderedLineIndex,
-                tokenGroup: "value",
-                fontSize: fittedFontSize,
-              }),
-            );
+                  tokens: line.valueTokens,
+                  startX: valueStartX,
+                  y: lineY,
+                  lineHeight: line.height,
+                  measure: measureWithSpacing,
+                  fill,
+                  textStyle,
+                  maskPrefix,
+                  lineIndex: renderedLineIndex,
+                  tokenGroup: "value",
+                  baseFontSize: fittedFontSize,
+                  baselineOffset: line.baselineOffset,
+                }),
+              );
             verticalOffset += line.height;
             renderedLineIndex += 1;
             return;
@@ -714,19 +726,20 @@ export default function CardTextBlock({
 
           elements.push(
             ...renderTokenSequence({
-              tokens: line.labelTokens,
-              startX: labelStartX,
-              y: lineY,
-              lineHeight: effectiveLineHeight,
-              measure: measureWithSpacing,
-              fill,
-              textStyle,
-              maskPrefix,
-              lineIndex: renderedLineIndex,
-              tokenGroup: "label",
-              fontSize: fittedFontSize,
-            }),
-          );
+                tokens: line.labelTokens,
+                startX: labelStartX,
+                y: lineY,
+                lineHeight: line.height,
+                measure: measureWithSpacing,
+                fill,
+                textStyle,
+                maskPrefix,
+                lineIndex: renderedLineIndex,
+                tokenGroup: "label",
+                baseFontSize: fittedFontSize,
+                baselineOffset: line.baselineOffset,
+              }),
+            );
 
           if (sepText) {
             elements.push(
@@ -744,19 +757,20 @@ export default function CardTextBlock({
 
           elements.push(
             ...renderTokenSequence({
-              tokens: line.valueTokens,
-              startX: valueStartX,
-              y: lineY,
-              lineHeight: effectiveLineHeight,
-              measure: measureWithSpacing,
-              fill,
-              textStyle,
-              maskPrefix,
-              lineIndex: renderedLineIndex,
-              tokenGroup: "value",
-              fontSize: fittedFontSize,
-            }),
-          );
+                tokens: line.valueTokens,
+                startX: valueStartX,
+                y: lineY,
+                lineHeight: line.height,
+                measure: measureWithSpacing,
+                fill,
+                textStyle,
+                maskPrefix,
+                lineIndex: renderedLineIndex,
+                tokenGroup: "value",
+                baseFontSize: fittedFontSize,
+                baselineOffset: line.baselineOffset,
+              }),
+            );
 
           verticalOffset += line.height;
           renderedLineIndex += 1;
@@ -941,31 +955,6 @@ function getAlignmentToken(token: string): TextAlignment | null {
   return lookup[token] ?? null;
 }
 
-function segmentsToTokens(segments: InlineDiceSegment[], fontSize: number): TextToken[] {
-  const tokens: TextToken[] = [];
-  const diceSize = fontSize * DICE_SIZE_RATIO;
-  const diceGap = fontSize * DICE_TEXT_GAP_RATIO + DICE_TEXT_GAP_PX;
-  const diceAdvance = diceSize + diceGap * 2;
-
-  segments.forEach((segment) => {
-    if (segment.kind === "dice") {
-      tokens.push({
-        kind: "dice",
-        dice: segment.token,
-        width: diceAdvance,
-        renderSize: diceSize,
-      });
-      return;
-    }
-
-    const runs = parseInlineRichText(segment.text);
-    const textTokens = runsToTokens(runs);
-    tokens.push(...textTokens);
-  });
-
-  return tokens;
-}
-
 function injectDiceAdjacentSpaces(tokens: TextToken[]): TextToken[] {
   const output: TextToken[] = [];
 
@@ -992,6 +981,7 @@ function injectDiceAdjacentSpaces(tokens: TextToken[]): TextToken[] {
         italic: prevToken.italic,
         underline: prevToken.underline,
         color: prevToken.color,
+        scale: prevToken.scale,
       });
     }
 
@@ -1005,6 +995,7 @@ function injectDiceAdjacentSpaces(tokens: TextToken[]): TextToken[] {
         italic: nextToken.italic,
         underline: nextToken.underline,
         color: nextToken.color,
+        scale: nextToken.scale,
       });
     }
   });
@@ -1034,21 +1025,24 @@ function createStyledTextMeasure({
   letterSpacingEm?: number;
 }) {
   const baseWeight = fontWeight ?? "400";
-  const measureNormal = createTextMeasurer(fontSize, fontFamily, baseWeight, "normal");
-  const measureItalic = createTextMeasurer(fontSize, fontFamily, baseWeight, "italic");
-  const measureBold = createTextMeasurer(fontSize, fontFamily, "700", "normal");
-  const measureBoldItalic = createTextMeasurer(fontSize, fontFamily, "700", "italic");
-  const letterSpacingPx = (letterSpacingEm ?? 0) * fontSize;
+  const measureCache = new Map<string, (text: string) => number>();
 
-  return (text: string, token?: Extract<WrapToken, { kind: "text" }>) => {
-    const baseWidth =
-      token?.bold && token?.italic
-        ? measureBoldItalic(text)
-        : token?.bold
-          ? measureBold(text)
-          : token?.italic
-            ? measureItalic(text)
-            : measureNormal(text);
+  return (text: string, token?: TextMeasureToken) => {
+    const resolvedFontSize = getResolvedTextTokenFontSize(token, fontSize);
+    const styleKey = token?.bold && token?.italic ? "boldItalic" : token?.bold ? "bold" : token?.italic ? "italic" : "normal";
+    const cacheKey = `${resolvedFontSize}:${styleKey}`;
+    let measure = measureCache.get(cacheKey);
+    if (!measure) {
+      measure = createTextMeasurer(
+        resolvedFontSize,
+        fontFamily,
+        token?.bold ? "700" : baseWeight,
+        token?.italic ? "italic" : "normal",
+      );
+      measureCache.set(cacheKey, measure);
+    }
+    const baseWidth = measure(text);
+    const letterSpacingPx = (letterSpacingEm ?? 0) * resolvedFontSize;
     if (letterSpacingPx <= 0 || text.length <= 1) return baseWidth;
     return baseWidth + (text.length - 1) * letterSpacingPx;
   };
@@ -1142,19 +1136,21 @@ function renderTokenSequence({
   maskPrefix,
   lineIndex,
   tokenGroup,
-  fontSize,
+  baseFontSize,
+  baselineOffset,
 }: {
   tokens: TextToken[];
   startX: number;
   y: number;
   lineHeight: number;
-  measure: (text: string, token?: Extract<WrapToken, { kind: "text" }>) => number;
+  measure: (text: string, token?: TextMeasureToken) => number;
   fill: string;
   textStyle: CSSProperties;
   maskPrefix: string;
   lineIndex: number;
   tokenGroup: string;
-  fontSize: number;
+  baseFontSize: number;
+  baselineOffset: number;
 }): JSX.Element[] {
   let cursorX = startX;
   const elements: JSX.Element[] = [];
@@ -1187,9 +1183,9 @@ function renderTokenSequence({
 
       const maskId = getMaskId(maskPrefix, lineIndex, tokenGroup, tokenIndex);
       const size = token.renderSize;
-      const baseGap = fontSize * DICE_TEXT_GAP_RATIO + DICE_TEXT_GAP_PX;
+      const baseGap = baseFontSize * DICE_TEXT_GAP_RATIO + DICE_TEXT_GAP_PX;
       const maskX = cursorX + baseGap;
-      const textCenterY = y - fontSize + lineHeight * DICE_TEXT_CENTER_RATIO + DICE_Y_OFFSET_PX;
+      const textCenterY = y - baselineOffset + lineHeight * DICE_TEXT_CENTER_RATIO + DICE_Y_OFFSET_PX;
       const maskY = textCenterY - size / 2;
       const padding = size * DICE_ICON_PADDING_RATIO;
       const innerSize = Math.max(0, size - padding * 2);
@@ -1251,6 +1247,7 @@ function renderTokenSequence({
     if (token.italic) spanStyle.fontStyle = "italic";
     if (token.underline) spanStyle.textDecoration = "underline";
     if (token.color) spanStyle.fill = token.color;
+    spanStyle.fontSize = `${getResolvedTextTokenFontSize(token, baseFontSize)}px`;
 
     runSpans.push(
       <tspan key={`${tokenGroup}-${lineIndex}-${tokenIndex}`} style={spanStyle}>
@@ -1276,19 +1273,21 @@ function renderTokenLine({
   textStyle,
   maskPrefix,
   lineIndex,
-  fontSize,
+  baseFontSize,
+  baselineOffset,
 }: {
   lineTokens: TextToken[];
   lineY: number;
   lineHeight: number;
   bounds: Bounds;
   lineAlign: TextAlignment;
-  measure: (text: string, token?: Extract<WrapToken, { kind: "text" }>) => number;
+  measure: (text: string, token?: TextMeasureToken) => number;
   fill: string;
   textStyle: CSSProperties;
   maskPrefix: string;
   lineIndex: number;
-  fontSize: number;
+  baseFontSize: number;
+  baselineOffset: number;
 }): JSX.Element[] {
   const lineWidth = measureTokensWidth(lineTokens, measure);
   const originX =
@@ -1309,8 +1308,72 @@ function renderTokenLine({
     maskPrefix,
     lineIndex,
     tokenGroup: "text",
-    fontSize,
+    baseFontSize,
+    baselineOffset,
   });
+}
+
+function stripScaleMarkup(text: string): string {
+  return text.replace(/<\/?\s*scale(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?\s*>/gi, "");
+}
+
+function segmentsToTokens(
+  segments: InlineDiceSegment[],
+  fontSize: number,
+  options?: { allowScale?: boolean },
+): TextToken[] {
+  const tokens: TextToken[] = [];
+  const diceSize = fontSize * DICE_SIZE_RATIO;
+  const diceGap = fontSize * DICE_TEXT_GAP_RATIO + DICE_TEXT_GAP_PX;
+  const diceAdvance = diceSize + diceGap * 2;
+  const allowScale = options?.allowScale ?? true;
+
+  segments.forEach((segment) => {
+    if (segment.kind === "dice") {
+      tokens.push({
+        kind: "dice",
+        dice: segment.token,
+        width: diceAdvance,
+        renderSize: diceSize,
+      });
+      return;
+    }
+
+    const runs = parseInlineRichText(allowScale ? segment.text : stripScaleMarkup(segment.text));
+    const textTokens = runsToTokens(runs);
+    tokens.push(...textTokens);
+  });
+
+  return tokens;
+}
+
+function getResolvedTextTokenFontSize(token: TextMeasureToken | undefined, baseFontSize: number): number {
+  return baseFontSize * (token?.scale ?? 1);
+}
+
+function createFixedRowMetrics(baseFontSize: number, lineHeightRatio: number): RowMetrics {
+  return {
+    height: baseFontSize * lineHeightRatio,
+    maxFontSize: baseFontSize,
+    baselineOffset: baseFontSize,
+  };
+}
+
+function computeRowMetrics(
+  tokens: BodyTextToken[],
+  baseFontSize: number,
+  lineHeightRatio: number,
+): RowMetrics {
+  const maxFontSize = tokens.reduce((maxSize, token) => {
+    if (token.kind !== "text") return maxSize;
+    return Math.max(maxSize, getResolvedTextTokenFontSize(token, baseFontSize));
+  }, baseFontSize);
+
+  return {
+    height: maxFontSize * lineHeightRatio,
+    maxFontSize,
+    baselineOffset: maxFontSize,
+  };
 }
 
 // createTextMeasurer moved to shared lib for reuse.

@@ -5,6 +5,7 @@ export type InlineTextStyle = {
   italic?: boolean;
   underline?: boolean;
   color?: string;
+  scale?: number;
 };
 
 export type TextRun = {

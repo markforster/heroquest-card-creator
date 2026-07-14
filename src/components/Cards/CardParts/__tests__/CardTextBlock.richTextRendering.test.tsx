@@ -34,6 +34,54 @@ describe("CardTextBlock rich text rendering", () => {
     expect((colorSpan as unknown as SVGElement).style.fill).toBe("#ff0000");
   });
 
+  it("renders scaled inline spans with token-specific font sizes", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"Alpha <scale=1.5>Beta</scale>"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    const scaledSpan = screen.getByText("Beta");
+    expect((scaledSpan as unknown as SVGElement).style.fontSize).toBe("30px");
+  });
+
+  it("renders sc alias spans with token-specific font sizes", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"Alpha <sc=1.5>Beta</sc>"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    const scaledSpan = screen.getByText("Beta");
+    expect((scaledSpan as unknown as SVGElement).style.fontSize).toBe("30px");
+  });
+
+  it("ignores scale markup inside leader lines", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"[Loot[.]<scale=1.5>Gold</scale>]"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    const leaderValue = screen.getByText("Gold");
+    expect((leaderValue as unknown as SVGElement).style.fontSize).toBe("20px");
+  });
+
   it("reduces paragraph spacing when fit-to-bounds shrinks multi-paragraph text", () => {
     const { container: unfittedContainer } = render(
       <svg>

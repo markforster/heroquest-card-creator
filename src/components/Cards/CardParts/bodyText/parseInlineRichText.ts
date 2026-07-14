@@ -1,13 +1,17 @@
 import type { InlineTextStyle, TextRun } from "./types";
 
+const MIN_SCALE = 0.5;
+const MAX_SCALE = 1.5;
+
 type StyleScope = {
-  tag: "b" | "i" | "u" | "color";
+  tag: "b" | "i" | "u" | "color" | "scale";
   style: InlineTextStyle;
 };
 
 type TagParseResult =
   | { kind: "open"; scope: StyleScope }
   | { kind: "close"; tag: StyleScope["tag"] }
+  | { kind: "ignore" }
   | { kind: "invalid" };
 
 export default function parseInlineRichText(line: string): TextRun[] {
@@ -18,7 +22,7 @@ export default function parseInlineRichText(line: string): TextRun[] {
 
   const flushBuffer = () => {
     if (!buffer) return;
-    runs.push({ text: buffer, ...resolveStyle(scopes) });
+    runs.push({ text: buffer, ...compactStyle(resolveStyle(scopes)) });
     buffer = "";
   };
 
@@ -30,7 +34,7 @@ export default function parseInlineRichText(line: string): TextRun[] {
         flushBuffer();
         if (parsed.kind === "open") {
           scopes.push(parsed.scope);
-        } else {
+        } else if (parsed.kind === "close") {
           closeScope(scopes, parsed.tag);
         }
         index = richTag.nextIndex;
@@ -56,7 +60,14 @@ export default function parseInlineRichText(line: string): TextRun[] {
 }
 
 function resolveStyle(scopes: StyleScope[]): InlineTextStyle {
-  return scopes.reduce<InlineTextStyle>((acc, scope) => ({ ...acc, ...scope.style }), {});
+  return scopes.reduce<InlineTextStyle>((acc, scope) => ({
+    ...acc,
+    ...scope.style,
+    scale:
+      typeof scope.style.scale === "number"
+        ? clampScale((acc.scale ?? 1) * scope.style.scale)
+        : acc.scale,
+  }), {});
 }
 
 function closeScope(scopes: StyleScope[], tag: StyleScope["tag"]) {
@@ -66,6 +77,16 @@ function closeScope(scopes: StyleScope[], tag: StyleScope["tag"]) {
       return;
     }
   }
+}
+
+function compactStyle(style: InlineTextStyle): InlineTextStyle {
+  const compacted: InlineTextStyle = {};
+  if (style.bold) compacted.bold = true;
+  if (style.italic) compacted.italic = true;
+  if (style.underline) compacted.underline = true;
+  if (style.color) compacted.color = style.color;
+  if (typeof style.scale === "number" && style.scale !== 1) compacted.scale = style.scale;
+  return compacted;
 }
 
 function readRichTextTag(line: string, start: number): { raw: string; nextIndex: number } | null {
@@ -85,11 +106,28 @@ function parseRichTag(raw: string): TagParseResult {
   if (/^<\/i>$/i.test(trimmed)) return { kind: "close", tag: "i" };
   if (/^<\/u>$/i.test(trimmed)) return { kind: "close", tag: "u" };
   if (/^<\/color>$/i.test(trimmed)) return { kind: "close", tag: "color" };
+  if (/^<\/(?:scale|sc)>$/i.test(trimmed)) return { kind: "close", tag: "scale" };
 
   if (/^<b>$/i.test(trimmed)) return { kind: "open", scope: { tag: "b", style: { bold: true } } };
   if (/^<i>$/i.test(trimmed)) return { kind: "open", scope: { tag: "i", style: { italic: true } } };
   if (/^<u>$/i.test(trimmed))
     return { kind: "open", scope: { tag: "u", style: { underline: true } } };
+
+  const scaleMatch = trimmed.match(
+    /^<\s*(?:scale|sc)\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))\s*>$/i,
+  );
+  if (scaleMatch) {
+    const rawValue = scaleMatch[1] ?? scaleMatch[2] ?? scaleMatch[3];
+    const scale = normalizeScale(rawValue);
+    if (typeof scale !== "number") return { kind: "ignore" };
+    return {
+      kind: "open",
+      scope: { tag: "scale", style: { scale } },
+    };
+  }
+  if (/^<\s*(?:scale|sc)\b[^>]*>$/i.test(trimmed)) {
+    return { kind: "ignore" };
+  }
 
   const shorthandMatch = trimmed.match(/^<\s*(#[0-9a-fA-F]{3,8})\s*>$/);
   if (shorthandMatch) {
@@ -122,6 +160,19 @@ function normalizeColor(value: string | undefined): string | undefined {
   if (/^#[0-9a-fA-F]{3,8}$/.test(trimmed)) return trimmed;
   if (/^[a-zA-Z]+$/.test(trimmed)) return trimmed.toLowerCase();
   return undefined;
+}
+
+function normalizeScale(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number.parseFloat(trimmed);
+  if (!Number.isFinite(parsed)) return undefined;
+  return clampScale(parsed);
+}
+
+function clampScale(value: number): number {
+  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, value));
 }
 
 function readMarkdownEmphasis(
@@ -167,12 +218,20 @@ function applyMarkdownRuns(
   emphasisStyle: InlineTextStyle,
 ): TextRun[] {
   const nestedRuns = parseInlineRichText(content);
-  return nestedRuns.map((run) => ({
-    ...run,
-    ...baseStyle,
-    bold: emphasisStyle.bold || run.bold || baseStyle.bold,
-    italic: emphasisStyle.italic || run.italic || baseStyle.italic,
-    underline: run.underline ?? baseStyle.underline,
-    color: run.color ?? baseStyle.color,
-  }));
+  return nestedRuns.map((run) => {
+    const mergedRun: TextRun = {
+      text: run.text,
+      ...compactStyle({
+        ...baseStyle,
+        ...run,
+        bold: emphasisStyle.bold || run.bold || baseStyle.bold,
+        italic: emphasisStyle.italic || run.italic || baseStyle.italic,
+        underline: run.underline ?? baseStyle.underline,
+        color: run.color ?? baseStyle.color,
+        scale: clampScale((run.scale ?? 1) * (baseStyle.scale ?? 1)),
+      }),
+    };
+
+    return mergedRun;
+  });
 }

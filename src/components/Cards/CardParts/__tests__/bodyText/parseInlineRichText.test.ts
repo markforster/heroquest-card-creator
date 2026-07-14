@@ -18,6 +18,26 @@ describe("parseInlineRichText", () => {
     ]);
   });
 
+  it("parses numeric scale tags and nested scale combinations", () => {
+    expect(parseInlineRichText('<scale="1.25">Big</scale> <scale=1.5><scale=0.5>Mix</scale></scale>')).toEqual([
+      { text: "Big", scale: 1.25 },
+      { text: " " },
+      { text: "Mix", scale: 0.75 },
+    ]);
+  });
+
+  it("accepts sc as a scale alias", () => {
+    expect(parseInlineRichText("<sc=1.25>Big</sc>")).toEqual([{ text: "Big", scale: 1.25 }]);
+  });
+
+  it("clamps out-of-range scale values and ignores malformed scale tags", () => {
+    expect(parseInlineRichText("<scale=2>Huge</scale> <scale=oops>Broken</scale>")).toEqual([
+      { text: "Huge", scale: 1.5 },
+      { text: " " },
+      { text: "Broken" },
+    ]);
+  });
+
   it("leaves unsupported tags as literal text", () => {
     expect(parseInlineRichText("Use <foo>plain</foo> text")).toEqual([
       { text: "Use <foo>plain</foo> text" },
