@@ -80,6 +80,7 @@ export type BlueprintLayerImage = BlueprintLayerBase & {
 export type BlueprintLayerLogo = BlueprintLayerBase & {
   type: "logo";
   asset: StaticImageData;
+  rotation?: -90 | 0 | 90;
 };
 
 export type BlueprintLayer =

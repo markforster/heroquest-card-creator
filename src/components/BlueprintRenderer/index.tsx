@@ -101,7 +101,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
       ? blueprint.layers.find((layer) => layer.type === layerTypes.title)
       : undefined;
   const heroBackLogoLayer =
-    blueprint.templateId === "hero-back"
+    blueprint.templateId === "hero-back" || blueprint.templateId === "logo-back"
       ? blueprint.layers.find((layer) => layer.type === layerTypes.logo)
       : undefined;
 

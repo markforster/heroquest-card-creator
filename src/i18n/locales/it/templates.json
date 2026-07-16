@@ -3,6 +3,8 @@
   "templates.monster": "Carta mostro",
   "templates.small-treasure": "Carta con illustrazione piccola",
   "templates.large-treasure": "Carta con illustrazione grande",
+  "templates.rules": "Regole",
   "templates.hero-back": "Retro eroe",
+  "templates.logo-back": "Retro con logo",
   "templates.labelled-back": "Retro etichettato"
 }

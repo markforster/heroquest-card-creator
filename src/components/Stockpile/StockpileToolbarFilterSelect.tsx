@@ -58,7 +58,11 @@ function getFilterMarkerClassName(value: string): string {
   if (templateId === "large-treasure" || templateId === "small-treasure") {
     return styles.stockpilePrimaryToolbarFilterMarkerTreasure;
   }
-  if (templateId === "hero-back" || templateId === "labelled-back") {
+  if (
+    templateId === "hero-back" ||
+    templateId === "logo-back" ||
+    templateId === "labelled-back"
+  ) {
     return styles.stockpilePrimaryToolbarFilterMarkerBack;
   }
   return styles.stockpilePrimaryToolbarFilterMarkerDefault;

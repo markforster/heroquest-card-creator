@@ -84,4 +84,59 @@ describe("cardRecordToCardData", () => {
 
     expect(cardRecordToCardData(record).name).toBe("Treasure Deck");
   });
+
+  it("maps persisted Rules fields into editor form data", () => {
+    const record: CardRecord & { templateId: "rules" } = {
+      id: "rules-1",
+      templateId: "rules",
+      status: "saved",
+      name: "Turn Summary",
+      nameLower: "turn summary",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 2,
+      face: "front",
+      description: "**Movement**\nMove around the board.",
+      bodyTextColor: "#22170f",
+      bodyTextFitToBounds: true,
+    };
+
+    expect(cardRecordToCardData(record)).toEqual(
+      expect.objectContaining({
+        name: "Turn Summary",
+        face: "front",
+        description: "**Movement**\nMove around the board.",
+        bodyTextColor: "#22170f",
+        bodyTextFitToBounds: true,
+      }),
+    );
+  });
+
+  it("maps persisted logo selection into Logo Back editor data", () => {
+    const record: CardRecord & { templateId: "logo-back" } = {
+      id: "logo-back-1",
+      templateId: "logo-back",
+      status: "saved",
+      name: "Rules Logo",
+      nameLower: "rules logo",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 2,
+      heroBackLogoMode: "custom",
+      heroBackLogoId: "logo-1",
+      heroBackLogoName: "Custom Logo",
+      heroBackLogoOriginalWidth: 600,
+      heroBackLogoOriginalHeight: 200,
+    };
+
+    expect(cardRecordToCardData(record)).toEqual(
+      expect.objectContaining({
+        heroBackLogoMode: "custom",
+        heroBackLogoId: "logo-1",
+        heroBackLogoName: "Custom Logo",
+        heroBackLogoOriginalWidth: 600,
+        heroBackLogoOriginalHeight: 200,
+      }),
+    );
+  });
 });

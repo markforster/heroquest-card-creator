@@ -7,7 +7,9 @@ export const templateIdSchema = z.enum([
   "monster",
   "large-treasure",
   "small-treasure",
+  "rules",
   "hero-back",
+  "logo-back",
   "labelled-back",
 ]);
 

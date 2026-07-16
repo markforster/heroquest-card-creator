@@ -89,8 +89,15 @@ export function cardRecordToCardData<T extends TemplateId>(
       };
       return data as CardDataByTemplate[T];
     }
-    case "hero-back": {
-      const data: CardDataByTemplate["hero-back"] = {
+    case "rules": {
+      const data: CardDataByTemplate["rules"] = {
+        ...base,
+      };
+      return data as CardDataByTemplate[T];
+    }
+    case "hero-back":
+    case "logo-back": {
+      const data: CardDataByTemplate["logo-back"] = {
         ...base,
         heroBackLogoMode: record.heroBackLogoMode ?? "default",
         heroBackLogoId: record.heroBackLogoId,
@@ -178,11 +185,13 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     }
     case "large-treasure":
     case "small-treasure":
+    case "rules":
     case "labelled-back":
     default:
       return basePatch;
-    case "hero-back": {
-      const heroBack = data as CardDataByTemplate["hero-back"];
+    case "hero-back":
+    case "logo-back": {
+      const heroBack = data as CardDataByTemplate["logo-back"];
       return {
         ...basePatch,
         heroBackLogoMode: heroBack.heroBackLogoMode,

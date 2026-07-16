@@ -4,6 +4,12 @@ import BlueprintRenderer from "@/components/BlueprintRenderer";
 import { EDITOR_TARGET_IDS } from "@/components/Cards/CardEditor/EditorTargetsContext";
 
 const mockRequestFocusTarget = jest.fn();
+const mockUseHeroBackLogoImageUrl = jest.fn(() => ({
+  url: null as string | null,
+  status: "idle",
+  width: null as number | null,
+  height: null as number | null,
+}));
 
 jest.mock("@/components/Cards/CardEditor/EditorTargetsContext", () => ({
   EDITOR_TARGET_IDS: {
@@ -91,12 +97,7 @@ jest.mock("@/hooks/useAssetImageUrl", () => ({
 }));
 
 jest.mock("@/hooks/useHeroBackLogoImageUrl", () => ({
-  useHeroBackLogoImageUrl: () => ({
-    url: null,
-    status: "idle",
-    width: null,
-    height: null,
-  }),
+  useHeroBackLogoImageUrl: () => mockUseHeroBackLogoImageUrl(),
 }));
 
 jest.mock("@/i18n/I18nProvider", () => ({
@@ -131,6 +132,12 @@ jest.mock("@/components/Cards/CardParts/CardTextBlock", () => ({
 describe("BlueprintRenderer SVG focus targets", () => {
   beforeEach(() => {
     mockRequestFocusTarget.mockReset();
+    mockUseHeroBackLogoImageUrl.mockReturnValue({
+      url: null,
+      status: "idle",
+      width: null,
+      height: null,
+    });
   });
 
   it("requests focus for the mapped hero targets", () => {
@@ -194,6 +201,95 @@ describe("BlueprintRenderer SVG focus targets", () => {
     expect(logoHitArea).not.toBeNull();
     fireEvent.click(logoHitArea as Element);
     expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.heroBackLogo);
+  });
+
+  it("renders Logo Back with an anticlockwise stock logo and matching hit bounds", () => {
+    const { container } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="logo-back"
+          templateName="Logo Back"
+          cardData={{ heroBackLogoMode: "default" } as never}
+        />
+      </svg>,
+    );
+
+    const logo = container.querySelector('image[data-template-asset="hero-back-logo"]');
+    const hitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.heroBackLogo}"]`,
+    );
+
+    expect(logo).toHaveAttribute("x", "0");
+    expect(logo).toHaveAttribute("y", "0");
+    expect(logo).toHaveAttribute("width", "1");
+    expect(Number(logo?.getAttribute("height"))).toBeGreaterThan(0);
+    expect(Number(logo?.getAttribute("height"))).toBeLessThanOrEqual(1);
+    expect(logo?.getAttribute("transform")).toMatch(
+      /^translate\(379 519\) rotate\(-90\) scale\(.+\) translate\(/,
+    );
+    expect(hitArea).toHaveAttribute("x", "218");
+    expect(hitArea).toHaveAttribute("y", "70");
+    expect(hitArea).toHaveAttribute("width", "322");
+    expect(hitArea).toHaveAttribute("height", "898");
+  });
+
+  it("preserves horizontal Hero Back logo rendering", () => {
+    const { container } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="hero-back"
+          templateName="Hero Back"
+          cardData={{ heroBackLogoMode: "default" } as never}
+        />
+      </svg>,
+    );
+
+    const logo = container.querySelector('image[data-template-asset="hero-back-logo"]');
+    expect(logo).not.toHaveAttribute("transform");
+    expect(Number(logo?.getAttribute("x"))).toBeGreaterThanOrEqual(0);
+  });
+
+  it("rotates custom Logo Back logos and supports hiding the logo", () => {
+    mockUseHeroBackLogoImageUrl.mockReturnValue({
+      url: "asset://logo-1",
+      status: "ready",
+      width: 300,
+      height: 100,
+    });
+    const { container, rerender } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="logo-back"
+          templateName="Logo Back"
+          cardData={{
+            heroBackLogoMode: "custom",
+            heroBackLogoId: "logo-1",
+            heroBackLogoName: "Custom Logo",
+          } as never}
+        />
+      </svg>,
+    );
+
+    const customLogo = container.querySelector('image[data-user-hero-back-logo-id="logo-1"]');
+    expect(customLogo).toHaveAttribute("x", "0");
+    expect(customLogo).toHaveAttribute("y", "0");
+    expect(customLogo).toHaveAttribute("width", "1");
+    expect(customLogo).toHaveAttribute("height", String(1 / 3));
+    expect(customLogo?.getAttribute("transform")).toMatch(
+      /^translate\(379 519\) rotate\(-90\) scale\(/,
+    );
+
+    rerender(
+      <svg>
+        <BlueprintRenderer
+          templateId="logo-back"
+          templateName="Logo Back"
+          cardData={{ heroBackLogoMode: "none" } as never}
+        />
+      </svg>,
+    );
+    expect(container.querySelector('image[data-template-asset="hero-back-logo"]')).toBeNull();
+    expect(container.querySelector('image[data-user-hero-back-logo-id]')).toBeNull();
   });
 
   it("requests focus for individual hero stat cell targets and keeps panel fallback", () => {
@@ -399,5 +495,28 @@ describe("BlueprintRenderer SVG focus targets", () => {
 
     expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.imageMain);
     expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.title);
+  });
+
+  it("requests focus from the full inset Rules text hit area", () => {
+    const { container } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="rules"
+          templateName="Rules"
+          cardData={{ description: "**Movement**\nMove around the board." }}
+        />
+      </svg>,
+    );
+
+    const hitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.textMain}"]`,
+    );
+    expect(hitArea).toHaveAttribute("x", "45");
+    expect(hitArea).toHaveAttribute("y", "55");
+    expect(hitArea).toHaveAttribute("width", "660");
+    expect(hitArea).toHaveAttribute("height", "955");
+
+    fireEvent.click(hitArea as Element);
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.textMain);
   });
 });

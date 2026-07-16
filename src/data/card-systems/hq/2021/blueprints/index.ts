@@ -5,7 +5,9 @@ import { HERO_BACK_BLUEPRINT } from "./hero-back";
 import { HERO_BLUEPRINT } from "./hero";
 import { LABELLED_BACK_BLUEPRINT } from "./labelled-back";
 import { LARGE_TREASURE_BLUEPRINT } from "./large-treasure";
+import { LOGO_BACK_BLUEPRINT } from "./logo-back";
 import { MONSTER_BLUEPRINT } from "./monster";
+import { RULES_BLUEPRINT } from "./rules";
 import { SMALL_TREASURE_BLUEPRINT } from "./small-treasure";
 import { COPYRIGHT_BOUNDS, COPYRIGHT_BOUNDS_ARTWORK } from "./shared";
 
@@ -14,7 +16,9 @@ export {
   HERO_BLUEPRINT,
   LABELLED_BACK_BLUEPRINT,
   LARGE_TREASURE_BLUEPRINT,
+  LOGO_BACK_BLUEPRINT,
   MONSTER_BLUEPRINT,
+  RULES_BLUEPRINT,
   SMALL_TREASURE_BLUEPRINT,
 };
 
@@ -23,7 +27,9 @@ export const blueprintsByTemplateId: Partial<Record<TemplateId, Blueprint>> = {
   monster: MONSTER_BLUEPRINT,
   "small-treasure": SMALL_TREASURE_BLUEPRINT,
   "large-treasure": LARGE_TREASURE_BLUEPRINT,
+  rules: RULES_BLUEPRINT,
   "hero-back": HERO_BACK_BLUEPRINT,
+  "logo-back": LOGO_BACK_BLUEPRINT,
   "labelled-back": LABELLED_BACK_BLUEPRINT,
 };
 

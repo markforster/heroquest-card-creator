@@ -3,6 +3,8 @@
   "templates.monster": "Szörnykártya",
   "templates.small-treasure": "Kis illusztráció",
   "templates.large-treasure": "Nagy illusztráció",
+  "templates.rules": "Szabályok",
   "templates.hero-back": "Hős hátoldal",
+  "templates.logo-back": "Logós hátoldal",
   "templates.labelled-back": "Címkézett hátoldal"
 }

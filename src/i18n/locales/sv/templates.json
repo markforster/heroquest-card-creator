@@ -3,6 +3,8 @@
   "templates.monster": "Monterkort",
   "templates.small-treasure": "Liten illustration",
   "templates.large-treasure": "Stor illustration",
+  "templates.rules": "Regler",
   "templates.hero-back": "Hjältebaksida",
+  "templates.logo-back": "Baksida med logotyp",
   "templates.labelled-back": "Baksida med etikett"
 }

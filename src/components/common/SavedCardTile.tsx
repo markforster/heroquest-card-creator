@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import styles from "@/app/page.module.css";
+import CardTitlePill from "@/components/common/CardTitlePill";
 import OverflowMarqueeText from "@/components/common/OverflowMarqueeText";
 
 import type { ReactNode } from "react";
@@ -61,16 +62,7 @@ export default function SavedCardTile({
       <div className={styles.savedCardTileTopToolbar} data-testid={topToolbarTestId}>
         {topContent}
         {showDefaultTitlePill ? (
-          <div
-            className={[styles.savedCardTileTitlePill, titlePillClassName].filter(Boolean).join(" ")}
-            title={title}
-          >
-            <OverflowMarqueeText
-              active={isHovered}
-              text={title}
-              className={styles.savedCardTileTitlePillText}
-            />
-          </div>
+          <CardTitlePill text={title} active={isHovered} className={titlePillClassName} />
         ) : null}
       </div>
       <div className={styles.savedCardTileCore}>{thumbnail}</div>

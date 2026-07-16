@@ -124,6 +124,10 @@ function buildComponentMap<T extends { id: string }>(records: T[]): Map<string, 
   return map;
 }
 
+function supportsHeroBackLogo(templateId: TemplateId): boolean {
+  return templateId === "hero-back" || templateId === "logo-back";
+}
+
 function hasAllExpectedEditableSlots(
   templateId: TemplateId,
   slotLinks: CardSlotLinkRecord[],
@@ -190,7 +194,7 @@ export function assembleNormalizedCardRecord(
     thumbnailBlob: source.thumbnailBlob,
   };
 
-  if (baseRecord.templateId === "hero-back") {
+  if (supportsHeroBackLogo(baseRecord.templateId)) {
     result.heroBackLogoMode = "default";
   }
 
@@ -441,10 +445,9 @@ export function buildNormalizedCardRecords(
       case layerTypes.logo:
         heroBackLogos.push({
           ...shared,
-          mode:
-            record.templateId === "hero-back"
-              ? (record.heroBackLogoMode ?? "default")
-              : "default",
+          mode: supportsHeroBackLogo(record.templateId)
+            ? (record.heroBackLogoMode ?? "default")
+            : "default",
           logoId: record.heroBackLogoId,
           logoName: record.heroBackLogoName,
           originalWidth: record.heroBackLogoOriginalWidth,

@@ -499,16 +499,24 @@ export function HeroBackLogoLayer({
   }
 
   if (logoMode !== "custom" || !logoId || !customUrl || status !== "ready" || !width || !height) {
+    const placement = getHeroBackLogoPlacement({
+      bounds,
+      imageWidth: logoLayer.asset.width,
+      imageHeight: logoLayer.asset.height,
+      rotation: logoLayer.rotation,
+    });
+
     return (
       <Layer key={layer.id}>
         <image
           href={normalizeFileProtocolAssetUrl(logoLayer.asset.src)}
           data-template-asset="hero-back-logo"
-          x={bounds.x}
-          y={bounds.y}
-          width={bounds.width}
-          height={bounds.height}
-          preserveAspectRatio="none"
+          x={placement.imageBox.x}
+          y={placement.imageBox.y}
+          width={placement.imageBox.width}
+          height={placement.imageBox.height}
+          transform={placement.imageBox.transform}
+          preserveAspectRatio="xMidYMid meet"
         />
       </Layer>
     );
@@ -518,6 +526,7 @@ export function HeroBackLogoLayer({
     bounds,
     imageWidth: width,
     imageHeight: height,
+    rotation: logoLayer.rotation,
   });
 
   return (
@@ -526,10 +535,11 @@ export function HeroBackLogoLayer({
         href={customUrl}
         data-user-hero-back-logo-id={logoId}
         data-user-hero-back-logo-name={logoName}
-        x={placement.x}
-        y={placement.y}
-        width={placement.renderedWidth}
-        height={placement.renderedHeight}
+        x={placement.imageBox.x}
+        y={placement.imageBox.y}
+        width={placement.imageBox.width}
+        height={placement.imageBox.height}
+        transform={placement.imageBox.transform}
         preserveAspectRatio="xMidYMid meet"
       />
     </Layer>

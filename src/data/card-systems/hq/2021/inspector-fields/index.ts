@@ -4,7 +4,9 @@ import { HERO_BACK_INSPECTOR_FIELDS } from "./hero-back";
 import { HERO_INSPECTOR_FIELDS } from "./hero";
 import { LABELLED_BACK_INSPECTOR_FIELDS } from "./labelled-back";
 import { LARGE_TREASURE_INSPECTOR_FIELDS } from "./large-treasure";
+import { LOGO_BACK_INSPECTOR_FIELDS } from "./logo-back";
 import { MONSTER_INSPECTOR_FIELDS } from "./monster";
+import { RULES_INSPECTOR_FIELDS } from "./rules";
 import { SMALL_TREASURE_INSPECTOR_FIELDS } from "./small-treasure";
 
 export {
@@ -12,7 +14,9 @@ export {
   HERO_INSPECTOR_FIELDS,
   LABELLED_BACK_INSPECTOR_FIELDS,
   LARGE_TREASURE_INSPECTOR_FIELDS,
+  LOGO_BACK_INSPECTOR_FIELDS,
   MONSTER_INSPECTOR_FIELDS,
+  RULES_INSPECTOR_FIELDS,
   SMALL_TREASURE_INSPECTOR_FIELDS,
 };
 
@@ -21,6 +25,8 @@ export const inspectorFieldsByTemplate: InspectorFieldsByTemplate = {
   monster: MONSTER_INSPECTOR_FIELDS,
   "small-treasure": SMALL_TREASURE_INSPECTOR_FIELDS,
   "large-treasure": LARGE_TREASURE_INSPECTOR_FIELDS,
+  rules: RULES_INSPECTOR_FIELDS,
   "hero-back": HERO_BACK_INSPECTOR_FIELDS,
+  "logo-back": LOGO_BACK_INSPECTOR_FIELDS,
   "labelled-back": LABELLED_BACK_INSPECTOR_FIELDS,
 };

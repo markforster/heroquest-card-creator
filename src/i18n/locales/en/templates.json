@@ -3,6 +3,8 @@
   "templates.monster": "Monster Card",
   "templates.small-treasure": "Small Artwork",
   "templates.large-treasure": "Large Artwork",
+  "templates.rules": "Rules",
   "templates.hero-back": "Hero Back",
+  "templates.logo-back": "Logo Back",
   "templates.labelled-back": "Labelled Back"
 }

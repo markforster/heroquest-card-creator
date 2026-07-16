@@ -5493,8 +5493,7 @@
 
 .templateGrid {
   display: grid;
-  /* grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); */
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-10);
   overflow-y: auto;
   padding: var(--space-2) 0;
@@ -5531,9 +5530,9 @@
   font-size: var(--text-md);
 }
 
-.templateCardName {
-  font-weight: 600;
-  margin-bottom: var(--space-2);
+.templateCardTitlePill {
+  align-self: center;
+  width: 100%;
 }
 
 .templateCardDescription {
@@ -7823,7 +7822,8 @@ button.assetsKindBadge:disabled {
 }
 
 .stockpileCardTitlePill,
-.savedCardTileTitlePill {
+.savedCardTileTitlePill,
+.cardTitlePill {
   max-width: min(100%, calc(100% - var(--space-2)));
   display: inline-flex;
   align-items: center;
@@ -7844,7 +7844,8 @@ button.assetsKindBadge:disabled {
   text-overflow: ellipsis;
 }
 
-.savedCardTileTitlePillText {
+.savedCardTileTitlePillText,
+.cardTitlePillText {
   display: block;
   width: 100%;
   min-width: 0;
@@ -8294,6 +8295,7 @@ button.assetsKindBadge:disabled {
 }
 
 .cardsType_hero-back,
+.cardsType_logo-back,
 .cardsType_labelled-back {
   background: var(--hq-pill-back-bg);
   color: var(--hq-pill-back-text);

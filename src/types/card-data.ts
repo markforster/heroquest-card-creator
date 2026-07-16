@@ -57,6 +57,8 @@ export interface SmallTreasureCardData extends BaseCardFields {}
 
 export interface LargeTreasureCardData extends BaseCardFields {}
 
+export interface RulesCardData extends BaseCardFields {}
+
 export type HeroBackLogoMode = "default" | "none" | "custom";
 
 export interface HeroBackCardData extends BaseCardFields {
@@ -66,6 +68,8 @@ export interface HeroBackCardData extends BaseCardFields {
   heroBackLogoOriginalWidth?: number;
   heroBackLogoOriginalHeight?: number;
 }
+
+export type LogoBackCardData = HeroBackCardData;
 
 export type BodyTextStyle = {
   enabled?: boolean;
@@ -89,7 +93,9 @@ export type CardDataByTemplate = {
   monster: MonsterCardData;
   "large-treasure": LargeTreasureCardData;
   "small-treasure": SmallTreasureCardData;
+  rules: RulesCardData;
   "hero-back": HeroBackCardData;
+  "logo-back": LogoBackCardData;
   "labelled-back": LabelledBackCardData;
 };
 
@@ -118,8 +124,10 @@ export function createDefaultCardData<T extends TemplateId>(templateId: T): Card
     case "large-treasure":
       return { ...base } as CardDataByTemplate[T];
     case "small-treasure":
+    case "rules":
       return { ...base } as CardDataByTemplate[T];
     case "hero-back":
+    case "logo-back":
       return { ...base, heroBackLogoMode: "default" } as CardDataByTemplate[T];
     case "labelled-back":
       return {

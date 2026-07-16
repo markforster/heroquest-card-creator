@@ -117,7 +117,9 @@ const TEMPLATE_LABEL_KEYS: Record<TemplateId, MessageKey> = {
   monster: "templates.monster",
   "small-treasure": "templates.small-treasure",
   "large-treasure": "templates.large-treasure",
+  rules: "templates.rules",
   "hero-back": "templates.hero-back",
+  "logo-back": "templates.logo-back",
   "labelled-back": "templates.labelled-back",
 };
 

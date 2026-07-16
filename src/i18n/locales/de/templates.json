@@ -3,6 +3,8 @@
   "templates.monster": "Monsterkarte",
   "templates.small-treasure": "Karte mit kleinem Bild",
   "templates.large-treasure": "Karte mit großem Bild",
+  "templates.rules": "Regeln",
   "templates.hero-back": "Heldenrückseite",
+  "templates.logo-back": "Rückseite mit Logo",
   "templates.labelled-back": "Beschriftete Rückseite"
 }

@@ -10,6 +10,7 @@ jest.mock("@/data/card-templates", () => ({
     monster: { defaultFace: "front" },
     "large-treasure": { defaultFace: "front" },
     "small-treasure": { defaultFace: "front" },
+    rules: { defaultFace: "front" },
     "hero-back": { defaultFace: "back" },
     "labelled-back": { defaultFace: "back" },
   },
@@ -38,6 +39,39 @@ const baseCollection = (overrides: Partial<CollectionRecord>): CollectionRecord 
 });
 
 describe("useStockpileFilters", () => {
+  it("classifies Rules as front-facing and supports its template filter", () => {
+    const cards = [
+      baseCard({ id: "rules", templateId: "rules", name: "Rules", nameLower: "rules" }),
+      baseCard({ id: "back", templateId: "hero-back", name: "Back", nameLower: "back" }),
+    ];
+
+    const frontResult = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "front",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+      }),
+    );
+    expect(frontResult.result.current.filteredCards.map((card) => card.id)).toEqual(["rules"]);
+
+    const templateResult = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "rules",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+      }),
+    );
+    expect(templateResult.result.current.filteredCards.map((card) => card.id)).toEqual(["rules"]);
+  });
+
   it("defaults normal stockpile results to modified desc, then name asc, then created desc", () => {
     const cards = [
       baseCard({ id: "c", name: "Beta", nameLower: "beta", updatedAt: 10, createdAt: 10 }),
