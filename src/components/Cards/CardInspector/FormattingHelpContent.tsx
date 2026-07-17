@@ -163,6 +163,14 @@ export default function FormattingHelpContent() {
                 </strong>
               ),
             },
+            {
+              code: t("formattingHelp.richText.titleCode"),
+              output: <strong>{t("formattingHelp.richText.titleOutput")}</strong>,
+            },
+            {
+              code: t("formattingHelp.richText.subtitleCode"),
+              output: <em>{t("formattingHelp.richText.subtitleOutput")}</em>,
+            },
           ]}
         />
         <CheatCard

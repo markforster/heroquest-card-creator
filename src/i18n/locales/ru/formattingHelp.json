@@ -81,5 +81,9 @@
   "formattingHelp.diceStructure.colorsCode": "Цвета: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Допустимые цвета",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Hex-цвета"
+  "formattingHelp.diceStructure.hexOutput": "Hex-цвета",
+  "formattingHelp.richText.titleCode": "<title>Quest Rules</title>",
+  "formattingHelp.richText.titleOutput": "Quest Rules",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Movement</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Movement"
 }

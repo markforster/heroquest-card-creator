@@ -66,6 +66,70 @@ describe("CardTextBlock rich text rendering", () => {
     expect((scaledSpan as unknown as SVGElement).style.fontSize).toBe("30px");
   });
 
+  it("renders title and subtitle blocks with their default macro styles", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"<title>Alpha</title>\n<subtitle>Beta</subtitle>"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    const titleSpan = screen.getByText("Alpha");
+    const subtitleSpan = screen.getByText("Beta");
+
+    expect((titleSpan as unknown as SVGElement).style.fontSize).toBe("24px");
+    expect((titleSpan as unknown as SVGElement).style.fontWeight).toBe("700");
+    expect((subtitleSpan as unknown as SVGElement).style.fontSize).toBe("24px");
+    expect((subtitleSpan as unknown as SVGElement).style.fontStyle).toBe("italic");
+  });
+
+  it("preserves nested inline formatting inside title and subtitle blocks", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"<title><color=#ff0000>Alpha</color></title>\n<subtitle><u>Beta</u></subtitle>"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    const titleSpan = screen.getByText("Alpha");
+    const subtitleSpan = screen.getByText("Beta");
+
+    expect((titleSpan as unknown as SVGElement).style.fill).toBe("#ff0000");
+    expect((titleSpan as unknown as SVGElement).style.fontWeight).toBe("700");
+    expect((subtitleSpan as unknown as SVGElement).style.textDecoration).toBe("underline");
+    expect((subtitleSpan as unknown as SVGElement).style.fontStyle).toBe("italic");
+  });
+
+  it("preserves block macro scale differences when fit-to-bounds shrinks the block", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"<title>Alpha</title>\nBeta"}
+          bounds={{ x: 0, y: 0, width: 300, height: 40 }}
+          fontSize={20}
+          lineHeight={20}
+          fitToBounds
+        />
+      </svg>,
+    );
+
+    const titleSpan = screen.getByText("Alpha");
+    const bodySpan = screen.getByText("Beta");
+    const titleFontSize = Number.parseFloat((titleSpan as unknown as SVGElement).style.fontSize);
+    const bodyFontSize = Number.parseFloat((bodySpan as unknown as SVGElement).style.fontSize);
+
+    expect(titleFontSize).toBeGreaterThan(bodyFontSize);
+    expect(titleFontSize / bodyFontSize).toBeCloseTo(1.2, 1);
+  });
+
   it("ignores scale markup inside leader lines", () => {
     render(
       <svg>

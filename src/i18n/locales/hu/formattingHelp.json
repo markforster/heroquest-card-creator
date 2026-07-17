@@ -81,5 +81,9 @@
   "formattingHelp.diceStructure.colorsCode": "Színek: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Érvényes színek",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Hex színek"
+  "formattingHelp.diceStructure.hexOutput": "Hex színek",
+  "formattingHelp.richText.titleCode": "<title>Quest Rules</title>",
+  "formattingHelp.richText.titleOutput": "Quest Rules",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Movement</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Movement"
 }

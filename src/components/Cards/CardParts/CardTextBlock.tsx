@@ -4,7 +4,12 @@ import { useId } from "react";
 
 import { layoutCardTextToBounds } from "@/components/Cards/CardParts/bodyText/fit";
 import parseInlineRichText from "@/components/Cards/CardParts/bodyText/parseInlineRichText";
-import type { BodyTextToken, TextAlignment } from "@/components/Cards/CardParts/bodyText/types";
+import type {
+  BodyTextToken,
+  InlineTextStyle,
+  TextAlignment,
+  TextRun,
+} from "@/components/Cards/CardParts/bodyText/types";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { tokenizeInlineDice, type InlineDiceSegment } from "@/lib/inline-dice";
 import { createTextMeasurer } from "@/lib/text-fitting/measure";
@@ -110,6 +115,23 @@ type LeaderGroupSettings = {
   pivotValue?: number;
   wrap: "value" | "none";
   explicit: boolean;
+};
+
+type BlockMacroKind = "title" | "subtitle";
+
+type BlockMacroPreset = {
+  style: InlineTextStyle;
+};
+
+const MIN_INLINE_SCALE = 0.5;
+const MAX_INLINE_SCALE = 1.5;
+const BLOCK_MACRO_PRESETS: Record<BlockMacroKind, BlockMacroPreset> = {
+  title: {
+    style: { bold: true, scale: 1.2 },
+  },
+  subtitle: {
+    style: { italic: true, scale: 1.2 },
+  },
 };
 
 export function layoutCardText({
@@ -282,6 +304,19 @@ export function layoutCardText({
     return { settings, leaders };
   };
 
+  const parseBlockMacroLine = (
+    lineText: string,
+  ): { preset: BlockMacroPreset; content: string } | null => {
+    const match = lineText.match(/^\s*<(title|subtitle)>([\s\S]*?)<\/\1>\s*$/i);
+    if (!match) return null;
+
+    const kind = match[1].toLowerCase() as BlockMacroKind;
+    return {
+      preset: BLOCK_MACRO_PRESETS[kind],
+      content: match[2],
+    };
+  };
+
   const hasMatchingGroupEnd = (() => {
     const flags = new Array(logicalLines.length).fill(false);
     let i = 0;
@@ -306,7 +341,11 @@ export function layoutCardText({
     rows.push({ kind: "paragraph-gap", height: paragraphGap });
   };
 
-  const pushWrappedTextLine = (lineText: string, align: TextAlignment) => {
+  const pushWrappedTextLine = (
+    lineText: string,
+    align: TextAlignment,
+    options?: { presetStyle?: InlineTextStyle },
+  ) => {
     // Preserve intentional blank lines (including lines with only whitespace) as visual gaps.
     if (lineText.trim() === "") {
       pushParagraphGap();
@@ -314,7 +353,9 @@ export function layoutCardText({
     }
 
     const inlineSegments = tokenizeInlineDice(lineText);
-    const tokens = injectDiceAdjacentSpaces(segmentsToTokens(inlineSegments, fontSize));
+    const tokens = injectDiceAdjacentSpaces(
+      segmentsToTokens(inlineSegments, fontSize, { presetStyle: options?.presetStyle }),
+    );
     const wrapped = wrapTokens(tokens, safeWidth, measure);
     wrapped.forEach((lineTokens) => {
       rows.push({
@@ -324,6 +365,14 @@ export function layoutCardText({
         ...computeRowMetrics(lineTokens, fontSize, lineHeightRatio),
       });
     });
+  };
+
+  const pushBlockMacroLine = (
+    lineText: string,
+    align: TextAlignment,
+    preset: BlockMacroPreset,
+  ) => {
+    pushWrappedTextLine(lineText, align, { presetStyle: preset.style });
   };
 
   const pushAlignedLine = (lineText: string, align: TextAlignment) => {
@@ -543,6 +592,12 @@ export function layoutCardText({
         });
       });
       flushLeaderGroup();
+      continue;
+    }
+
+    const blockMacro = parseBlockMacroLine(logicalLine);
+    if (blockMacro) {
+      pushBlockMacroLine(blockMacro.content, currentAlign, blockMacro.preset);
       continue;
     }
 
@@ -1317,16 +1372,39 @@ function stripScaleMarkup(text: string): string {
   return text.replace(/<\/?\s*scale(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?\s*>/gi, "");
 }
 
+function clampInlineScale(value: number): number {
+  return Math.min(MAX_INLINE_SCALE, Math.max(MIN_INLINE_SCALE, value));
+}
+
+function applyPresetToRuns(runs: TextRun[], presetStyle: InlineTextStyle): TextRun[] {
+  return runs.map((run) => {
+    const resolvedScale =
+      typeof presetStyle.scale === "number" || typeof run.scale === "number"
+        ? clampInlineScale((presetStyle.scale ?? 1) * (run.scale ?? 1))
+        : undefined;
+
+    return {
+      text: run.text,
+      bold: presetStyle.bold || run.bold || undefined,
+      italic: presetStyle.italic || run.italic || undefined,
+      underline: presetStyle.underline || run.underline || undefined,
+      color: run.color ?? presetStyle.color,
+      scale: typeof resolvedScale === "number" && resolvedScale !== 1 ? resolvedScale : undefined,
+    };
+  });
+}
+
 function segmentsToTokens(
   segments: InlineDiceSegment[],
   fontSize: number,
-  options?: { allowScale?: boolean },
+  options?: { allowScale?: boolean; presetStyle?: InlineTextStyle },
 ): TextToken[] {
   const tokens: TextToken[] = [];
   const diceSize = fontSize * DICE_SIZE_RATIO;
   const diceGap = fontSize * DICE_TEXT_GAP_RATIO + DICE_TEXT_GAP_PX;
   const diceAdvance = diceSize + diceGap * 2;
   const allowScale = options?.allowScale ?? true;
+  const presetStyle = options?.presetStyle;
 
   segments.forEach((segment) => {
     if (segment.kind === "dice") {
@@ -1340,7 +1418,8 @@ function segmentsToTokens(
     }
 
     const runs = parseInlineRichText(allowScale ? segment.text : stripScaleMarkup(segment.text));
-    const textTokens = runsToTokens(runs);
+    const styledRuns = presetStyle ? applyPresetToRuns(runs, presetStyle) : runs;
+    const textTokens = runsToTokens(styledRuns);
     tokens.push(...textTokens);
   });
 

@@ -81,5 +81,9 @@
   "formattingHelp.diceStructure.colorsCode": "Couleurs : w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Couleurs valides",
   "formattingHelp.diceStructure.hexCode": "Hexadécimal : #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Couleurs hexadécimales"
+  "formattingHelp.diceStructure.hexOutput": "Couleurs hexadécimales",
+  "formattingHelp.richText.titleCode": "<title>Quest Rules</title>",
+  "formattingHelp.richText.titleOutput": "Quest Rules",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Movement</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Movement"
 }

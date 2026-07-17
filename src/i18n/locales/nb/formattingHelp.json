@@ -81,5 +81,9 @@
   "formattingHelp.diceStructure.colorsCode": "Farger: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Gyldige farger",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Hex-farger"
+  "formattingHelp.diceStructure.hexOutput": "Hex-farger",
+  "formattingHelp.richText.titleCode": "<title>Quest Rules</title>",
+  "formattingHelp.richText.titleOutput": "Quest Rules",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Movement</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Movement"
 }
