@@ -164,6 +164,20 @@ export default function FormattingHelpContent() {
               ),
             },
             {
+              code: t("formattingHelp.richText.scaleCode"),
+              output: (
+                <span style={{ fontSize: "1.25em" }}>{t("formattingHelp.richText.scaleOutput")}</span>
+              ),
+            },
+            {
+              code: t("formattingHelp.richText.scaleAliasCode"),
+              output: (
+                <span style={{ fontSize: "0.75em" }}>
+                  {t("formattingHelp.richText.scaleAliasOutput")}
+                </span>
+              ),
+            },
+            {
               code: t("formattingHelp.richText.titleCode"),
               output: <strong>{t("formattingHelp.richText.titleOutput")}</strong>,
             },

@@ -85,5 +85,9 @@
   "formattingHelp.richText.titleCode": "<title>Quest Rules</title>",
   "formattingHelp.richText.titleOutput": "Quest Rules",
   "formattingHelp.richText.subtitleCode": "<subtitle>Movement</subtitle>",
-  "formattingHelp.richText.subtitleOutput": "Movement"
+  "formattingHelp.richText.subtitleOutput": "Movement",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>large text</scale>",
+  "formattingHelp.richText.scaleOutput": "large text",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>small text</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "small text"
 }

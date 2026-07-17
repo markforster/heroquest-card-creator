@@ -85,5 +85,9 @@
   "formattingHelp.diceStructure.colorsCode": "Colors: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Valid colors",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Hex colors"
+  "formattingHelp.diceStructure.hexOutput": "Hex colors",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>large text</scale>",
+  "formattingHelp.richText.scaleOutput": "large text",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>small text</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "small text"
 }
