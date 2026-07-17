@@ -623,14 +623,10 @@ export function TitleLayerHitArea({
 }) {
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.title);
 
-  if (layer.type !== "title") return null;
-
   const showTitle =
     cardData && typeof (cardData as { showTitle?: boolean }).showTitle === "boolean"
       ? (cardData as { showTitle?: boolean }).showTitle
       : true;
-
-  if (!showTitle) return null;
 
   const titleKey = layer.bind?.titleKey;
   const titleValue =
@@ -638,7 +634,7 @@ export function TitleLayerHitArea({
       ? ((cardData as Record<string, unknown>)[titleKey] as string | null | undefined)
       : undefined;
   const title = titleValue ?? templateName;
-  if (!title) return null;
+  const hasVisibleTitle = hasVisibleTitleText(title);
 
   const showRibbonDefault =
     typeof layer.props?.showRibbon === "boolean" ? layer.props.showRibbon : true;
@@ -672,8 +668,26 @@ export function TitleLayerHitArea({
   const baseBounds = showRibbon
     ? ribbonBounds ?? textBounds
     : textBoundsNoRibbon ?? textBounds ?? ribbonBounds;
+  const shouldRenderHitArea =
+    layer.type === "title" &&
+    showTitle &&
+    (templateId === "labelled-back" || !hasVisibleTitle);
 
-  if (!baseBounds) return null;
+  useRegisterHoverAdornment(
+    EDITOR_TARGET_IDS.title,
+    shouldRenderHitArea && !hasVisibleTitle && baseBounds
+      ? {
+          kind: "rect",
+          x: baseBounds.x,
+          y: baseBounds.y,
+          width: baseBounds.width,
+          height: baseBounds.height,
+          radius: showRibbon ? 20 : 14,
+        }
+      : null,
+  );
+
+  if (!shouldRenderHitArea || !baseBounds) return null;
 
   return (
     <Layer {...svgFocusProps}>
@@ -716,7 +730,7 @@ export function TitleLayer({
       ? ((cardData as Record<string, unknown>)[titleKey] as string | null | undefined)
       : undefined;
   const title = titleValue ?? templateName;
-  if (!title) return null;
+  if (!hasVisibleTitleText(title)) return null;
 
   const showRibbonDefault =
     typeof layer.props?.showRibbon === "boolean" ? layer.props.showRibbon : true;
@@ -761,4 +775,8 @@ export function TitleLayer({
       textBoundsNoRibbon={textBoundsNoRibbon}
     />
   );
+}
+
+function hasVisibleTitleText(title: string | null | undefined): title is string {
+  return typeof title === "string" && title.trim().length > 0;
 }

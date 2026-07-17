@@ -96,10 +96,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
           (layer) => layer.type === layerTypes.image && layer.bind?.imageKey === "imageAssetId",
         )
       : undefined;
-  const labelledBackTitleLayer =
-    blueprint.templateId === "labelled-back"
-      ? blueprint.layers.find((layer) => layer.type === layerTypes.title)
-      : undefined;
+  const titleLayer = blueprint.layers.find((layer) => layer.type === layerTypes.title);
   const heroBackLogoLayer =
     blueprint.templateId === "hero-back" || blueprint.templateId === "logo-back"
       ? blueprint.layers.find((layer) => layer.type === layerTypes.logo)
@@ -190,9 +187,9 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
       {labelledBackImageLayer ? (
         <ImageLayerHitArea blueprint={blueprint} layer={labelledBackImageLayer} />
       ) : null}
-      {labelledBackTitleLayer ? (
+      {titleLayer ? (
         <TitleLayerHitArea
-          layer={labelledBackTitleLayer}
+          layer={titleLayer}
           cardData={props.cardData}
           templateName={templateName}
           templateId={blueprint.templateId}

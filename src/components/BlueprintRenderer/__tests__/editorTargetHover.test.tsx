@@ -183,6 +183,45 @@ describe("BlueprintRenderer SVG hover targets", () => {
     ).toBeNull();
   });
 
+  it("renders authored hover geometry for a whitespace-only title", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={{
+          title: "   ",
+          description: "Body text",
+          imageAssetId: "art-1",
+        } as never}
+      />,
+    );
+
+    const titleHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.title}"]`,
+    ) as SVGRectElement;
+
+    expect(titleHitArea).not.toBeNull();
+    expect(container.querySelector('image[href*="ribbon"]')).toBeNull();
+
+    fireEvent.pointerEnter(titleHitArea);
+
+    const titleHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.title}"]`,
+    ) as SVGRectElement;
+    expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.title);
+    expect(titleHover).toHaveAttribute("x", titleHitArea.getAttribute("x"));
+    expect(titleHover).toHaveAttribute("y", titleHitArea.getAttribute("y"));
+    expect(titleHover).toHaveAttribute("width", titleHitArea.getAttribute("width"));
+    expect(titleHover).toHaveAttribute("height", titleHitArea.getAttribute("height"));
+    expect(titleHover).toHaveAttribute("data-hqcc-hover-visible", "true");
+
+    fireEvent.pointerLeave(titleHitArea);
+    act(() => {
+      jest.advanceTimersByTime(50);
+    });
+    expect(screen.getByTestId("hovered-target")).toHaveTextContent("none");
+  });
+
   it("switches immediately between targets while suppressing transient clear flicker", () => {
     const { container } = renderWithTargets(
       <BlueprintRenderer

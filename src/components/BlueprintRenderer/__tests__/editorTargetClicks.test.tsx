@@ -4,6 +4,7 @@ import BlueprintRenderer from "@/components/BlueprintRenderer";
 import { EDITOR_TARGET_IDS } from "@/components/Cards/CardEditor/EditorTargetsContext";
 
 const mockRequestFocusTarget = jest.fn();
+const mockRequestSecondaryTarget = jest.fn();
 const mockUseHeroBackLogoImageUrl = jest.fn(() => ({
   url: null as string | null,
   status: "idle",
@@ -52,6 +53,7 @@ jest.mock("@/components/Cards/CardEditor/EditorTargetsContext", () => ({
   useSvgFocusTarget: (targetId: string) => ({
     "data-hqcc-edit": targetId,
     onClick: () => mockRequestFocusTarget(targetId),
+    onDoubleClick: () => mockRequestSecondaryTarget(targetId),
     style: { cursor: "pointer" },
   }),
 }));
@@ -132,6 +134,7 @@ jest.mock("@/components/Cards/CardParts/CardTextBlock", () => ({
 describe("BlueprintRenderer SVG focus targets", () => {
   beforeEach(() => {
     mockRequestFocusTarget.mockReset();
+    mockRequestSecondaryTarget.mockReset();
     mockUseHeroBackLogoImageUrl.mockReturnValue({
       url: null,
       status: "idle",
@@ -172,12 +175,90 @@ describe("BlueprintRenderer SVG focus targets", () => {
       expect(mockRequestFocusTarget).toHaveBeenCalledWith(targetId);
     });
 
+    expect(
+      container.querySelectorAll(`[data-hqcc-edit="${EDITOR_TARGET_IDS.title}"]`),
+    ).toHaveLength(1);
+
     const copyrightHitArea = container.querySelector(
       `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.copyright}"]`,
     );
     expect(copyrightHitArea).not.toBeNull();
     fireEvent.click(copyrightHitArea as Element);
     expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.copyright);
+  });
+
+  it("keeps empty titles available to primary and secondary SVG actions", () => {
+    const { container, rerender } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="hero"
+          templateName="Hero"
+          cardData={{
+            title: "",
+            description: "Body text",
+            imageAssetId: "art-1",
+          } as never}
+        />
+      </svg>,
+    );
+
+    const emptyHeroTitleTarget = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.title}"]`,
+    );
+
+    expect(emptyHeroTitleTarget).not.toBeNull();
+    expect(
+      container.querySelectorAll(`[data-hqcc-edit="${EDITOR_TARGET_IDS.title}"]`),
+    ).toHaveLength(1);
+    expect(container.querySelector('image[href*="ribbon"]')).toBeNull();
+
+    fireEvent.click(emptyHeroTitleTarget as Element);
+    fireEvent.doubleClick(emptyHeroTitleTarget as Element);
+
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.title);
+    expect(mockRequestSecondaryTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.title);
+
+    rerender(
+      <svg>
+        <BlueprintRenderer
+          templateId="labelled-back"
+          templateName="Labelled Back"
+          cardData={{
+            title: "",
+            description: "Back text",
+            imageAssetId: "art-5",
+            titlePlacement: "top",
+            showTitle: true,
+          } as never}
+        />
+      </svg>,
+    );
+
+    expect(
+      container.querySelector(`[data-hqcc-hit-area="${EDITOR_TARGET_IDS.title}"]`),
+    ).not.toBeNull();
+  });
+
+  it("does not expose a title target when the title is disabled", () => {
+    const { container } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="hero"
+          templateName="Hero"
+          cardData={{
+            title: "",
+            description: "Body text",
+            imageAssetId: "art-1",
+            showTitle: false,
+          } as never}
+        />
+      </svg>,
+    );
+
+    expect(container.querySelector(`[data-hqcc-edit="${EDITOR_TARGET_IDS.title}"]`)).toBeNull();
+    expect(
+      container.querySelector(`[data-hqcc-hit-area="${EDITOR_TARGET_IDS.title}"]`),
+    ).toBeNull();
   });
 
   it("requests focus for the Hero Back logo hit area", () => {
