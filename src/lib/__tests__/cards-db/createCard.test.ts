@@ -49,6 +49,7 @@ describe("createCard", () => {
       status: "saved",
       name: "My HERO",
       title: "Title",
+      showCopyright: true,
       id: "card-1",
       createdAt: 100,
       updatedAt: 100,

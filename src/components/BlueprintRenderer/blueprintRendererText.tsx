@@ -29,13 +29,15 @@ import {
   DEVELOPER_CREDIT_TOP_INSET,
 } from "@/config/developer-credit";
 import { layerTypes } from "@/data/card-systems/types";
-import { cardTemplatesById } from "@/data/card-templates";
 import { supportsBlueprintTextFitToBounds } from "@/lib/blueprint-text";
-import { resolveEffectiveFace } from "@/lib/card-face";
+import {
+  getCardShowCopyrightValue,
+  getCopyrightLayerRotation,
+  resolveCardCopyrightText,
+} from "@/lib/copyright-defaults";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import type { Blueprint, BlueprintBounds, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
-import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
 import { getLayerBounds, isPrimaryBodyTextLayer } from "./blueprintRendererShared";
@@ -52,33 +54,18 @@ function resolveVisibleCopyrightBounds({
   defaultCopyright: string;
 }) {
   if (!cardData) return null;
-  const template = cardTemplatesById[blueprint.templateId];
-  const effectiveFace = template
-    ? resolveEffectiveFace((cardData as { face?: CardFace }).face, template.defaultFace)
-    : (cardData as { face?: CardFace }).face;
-  if (effectiveFace !== "front") return null;
-  const showCopyright =
-    typeof (cardData as { showCopyright?: boolean }).showCopyright === "boolean"
-      ? (cardData as { showCopyright?: boolean }).showCopyright
-      : undefined;
+  const showCopyright = getCardShowCopyrightValue(cardData);
   if (showCopyright === false) return null;
 
   const copyrightLayer = blueprint.layers.find((entry) => entry.type === layerTypes.copyright);
   if (!copyrightLayer) return null;
 
   const textKey = copyrightLayer.bind?.textKey;
-  const overrideValue =
-    textKey && cardData
-      ? ((cardData as Record<string, unknown>)[textKey] as string | null | undefined)
-      : undefined;
-  const normalizedOverride = typeof overrideValue === "string" ? overrideValue.trim() : "";
-  const normalizedDefault = defaultCopyright.trim();
-  const resolvedText =
-    normalizedOverride.length > 0
-      ? normalizedOverride
-      : normalizedDefault.length > 0
-        ? normalizedDefault
-        : "";
+  const resolvedText = resolveCardCopyrightText(
+    cardData as Record<string, unknown> | undefined,
+    defaultCopyright,
+    textKey,
+  );
   if (!resolvedText) return null;
 
   return getLayerBounds(blueprint, copyrightLayer);
@@ -733,6 +720,11 @@ export function CopyrightLayer({
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.copyright);
   const bounds = layer.type === "copyright" ? getLayerBounds(blueprint, layer) : null;
   const hoverBounds = bounds ? padBounds(bounds, 6) : null;
+  const rotation = getCopyrightLayerRotation(layer);
+  const centerX = bounds ? bounds.x + bounds.width / 2 : 0;
+  const centerY = bounds ? bounds.y + bounds.height / 2 : 0;
+  const rotationTransform =
+    rotation === 0 ? undefined : `rotate(${rotation} ${centerX} ${centerY})`;
 
   useRegisterHoverAdornment(
     EDITOR_TARGET_IDS.copyright,
@@ -744,6 +736,7 @@ export function CopyrightLayer({
           width: hoverBounds.width,
           height: hoverBounds.height,
           radius: 10,
+          transform: rotationTransform,
         }
       : null,
   );
@@ -751,30 +744,15 @@ export function CopyrightLayer({
   if (layer.type !== "copyright") return null;
   if (!cardData) return null;
 
-  const template = cardTemplatesById[blueprint.templateId];
-  const effectiveFace = template
-    ? resolveEffectiveFace((cardData as { face?: CardFace }).face, template.defaultFace)
-    : (cardData as { face?: CardFace }).face;
-  if (effectiveFace !== "front") return null;
-  const showCopyright =
-    typeof (cardData as { showCopyright?: boolean }).showCopyright === "boolean"
-      ? (cardData as { showCopyright?: boolean }).showCopyright
-      : undefined;
+  const showCopyright = getCardShowCopyrightValue(cardData);
   if (showCopyright === false) return null;
 
   const textKey = layer.bind?.textKey;
-  const overrideValue =
-    textKey && cardData
-      ? ((cardData as Record<string, unknown>)[textKey] as string | null | undefined)
-      : undefined;
-  const normalizedOverride = typeof overrideValue === "string" ? overrideValue.trim() : "";
-  const normalizedDefault = defaultCopyright.trim();
-  const resolvedText =
-    normalizedOverride.length > 0
-      ? normalizedOverride
-      : normalizedDefault.length > 0
-        ? normalizedDefault
-        : "";
+  const resolvedText = resolveCardCopyrightText(
+    cardData as Record<string, unknown> | undefined,
+    defaultCopyright,
+    textKey,
+  );
   if (!resolvedText) return null;
   if (!bounds) return null;
 
@@ -800,15 +778,6 @@ export function CopyrightLayer({
 
   return (
     <Layer key={layer.id} data-layer-type="copyright" {...svgFocusProps}>
-      <rect
-        x={bounds.x}
-        y={bounds.y}
-        width={bounds.width}
-        height={bounds.height}
-        fill="transparent"
-        pointerEvents="all"
-        data-hqcc-hit-area={EDITOR_TARGET_IDS.copyright}
-      />
       {showTextBounds ? (
         <rect
           x={bounds.x}
@@ -819,18 +788,71 @@ export function CopyrightLayer({
           stroke="#00e5ff"
           strokeWidth={2}
           data-debug-bounds="true"
+          transform={rotationTransform}
         />
       ) : null}
-      <CardTextBlock
-        text={resolvedText}
-        bounds={bounds}
-        fontSize={fontSize}
-        lineHeight={lineHeight}
-        fontWeight={fontWeight}
-        fontFamily={fontFamily}
-        fill={fill}
-        letterSpacingEm={letterSpacingEm}
-        align={align}
+      <g transform={rotationTransform}>
+        <CardTextBlock
+          text={resolvedText}
+          bounds={bounds}
+          fontSize={fontSize}
+          lineHeight={lineHeight}
+          fontWeight={fontWeight}
+          fontFamily={fontFamily}
+          fill={fill}
+          letterSpacingEm={letterSpacingEm}
+          align={align}
+        />
+      </g>
+    </Layer>
+  );
+}
+
+export function CopyrightLayerHitArea({
+  blueprint,
+  layer,
+  cardData,
+}: {
+  blueprint: Blueprint;
+  layer: BlueprintLayer;
+  cardData?: CardDataByTemplate[TemplateId];
+}) {
+  const { defaultCopyright } = useCopyrightSettings();
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.copyright);
+  const bounds = layer.type === "copyright" ? getLayerBounds(blueprint, layer) : null;
+
+  if (layer.type !== "copyright") return null;
+  if (!cardData) return null;
+
+  const showCopyright = getCardShowCopyrightValue(cardData);
+  if (showCopyright === false) return null;
+
+  const textKey = layer.bind?.textKey;
+  const resolvedText = resolveCardCopyrightText(
+    cardData as Record<string, unknown> | undefined,
+    defaultCopyright,
+    textKey,
+  );
+  if (!resolvedText) return null;
+  if (!bounds) return null;
+
+  const rotation = getCopyrightLayerRotation(layer);
+  const centerX = bounds.x + bounds.width / 2;
+  const centerY = bounds.y + bounds.height / 2;
+  const rotationTransform =
+    rotation === 0 ? undefined : `rotate(${rotation} ${centerX} ${centerY})`;
+
+  return (
+    <Layer {...svgFocusProps}>
+      <rect
+        x={bounds.x}
+        y={bounds.y}
+        width={bounds.width}
+        height={bounds.height}
+        fill="transparent"
+        pointerEvents="all"
+        data-hqcc-hit-area={EDITOR_TARGET_IDS.copyright}
+        transform={rotationTransform}
       />
     </Layer>
   );

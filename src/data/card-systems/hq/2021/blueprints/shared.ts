@@ -37,6 +37,13 @@ export const scaleBounds = (bounds: BlueprintBounds): BlueprintBounds => ({
   height: sy(bounds.height),
 });
 
+export const COPYRIGHT_BOUNDS_ROTATED_RIGHT = scaleBounds({
+  x: 355,
+  y: 514,
+  width: 630,
+  height: 22,
+});
+
 export const makeRibbonBounds = (overrides?: Partial<typeof RIBBON_BOUNDS>) =>
   scaleBounds({
     ...RIBBON_BOUNDS,

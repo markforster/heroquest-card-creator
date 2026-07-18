@@ -13,6 +13,7 @@ import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import WelcomeTemplateModal from "@/components/Modals/WelcomeTemplateModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { StockpileMainPanel } from "@/components/Stockpile";
 import { saveDraft } from "@/lib/draft-storage";
@@ -22,6 +23,7 @@ import type { TemplateId } from "@/types/templates";
 
 export default function CardsPage() {
   const { track } = useAnalytics();
+  const { getTemplateDefault } = useCopyrightSettings();
   const navigate = useNavigate();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
@@ -131,7 +133,9 @@ export default function CardsPage() {
             template_id: templateId,
             source: "welcome_modal",
           });
-          const nextDraft = createEditorDefaultValues(templateId);
+          const nextDraft = createEditorDefaultValues(templateId, {
+            showCopyright: getTemplateDefault(templateId),
+          });
           setSelectedTemplateId(templateId);
           saveDraft(templateId, nextDraft, { sourceCardId: null });
           resetWithSaved(nextDraft as CardDataByTemplate[TemplateId]);

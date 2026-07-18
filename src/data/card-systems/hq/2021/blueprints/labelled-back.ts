@@ -6,7 +6,6 @@ import type { Blueprint } from "@/types/blueprints";
 import {
   CARD_HEIGHT,
   CARD_WIDTH,
-  COPYRIGHT_BOUNDS,
   COPYRIGHT_FONT_SIZE,
   COPYRIGHT_LINE_HEIGHT,
   DESCRIPTION_FONT_SIZE,
@@ -127,9 +126,10 @@ export const LABELLED_BACK_BLUEPRINT: Blueprint = {
     {
       id: blueprintIds.hq_2021_text_copyright,
       type: layerTypes.copyright,
-      bounds: COPYRIGHT_BOUNDS,
+      bounds: scaleBounds({ x: 60, y: 998, width: 630, height: 22 }),
       bind: { textKey: "copyright" },
       props: {
+        defaultVisible: false,
         fontSize: COPYRIGHT_FONT_SIZE,
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,

@@ -23,6 +23,7 @@ import {
 } from "./blueprintRendererSimpleLayers";
 import {
   CopyrightLayer,
+  CopyrightLayerHitArea,
   DeveloperCreditLayer,
   TextLayer,
 } from "./blueprintRendererText";
@@ -101,6 +102,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
     blueprint.templateId === "hero-back" || blueprint.templateId === "logo-back"
       ? blueprint.layers.find((layer) => layer.type === layerTypes.logo)
       : undefined;
+  const copyrightLayer = blueprint.layers.find((layer) => layer.type === layerTypes.copyright);
 
   return (
     <>
@@ -197,6 +199,13 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
       ) : null}
       {heroBackLogoLayer ? (
         <HeroBackLogoLayerHitArea blueprint={blueprint} layer={heroBackLogoLayer} />
+      ) : null}
+      {copyrightLayer ? (
+        <CopyrightLayerHitArea
+          blueprint={blueprint}
+          layer={copyrightLayer}
+          cardData={props.cardData}
+        />
       ) : null}
       <DeveloperCreditLayer
         blueprint={blueprint}

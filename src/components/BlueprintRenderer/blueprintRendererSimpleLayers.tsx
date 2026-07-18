@@ -13,11 +13,17 @@ import CardBorder from "@/components/Cards/CardParts/CardBorder";
 import CardTexturedBorder from "@/components/Cards/CardParts/CardTexturedBorder";
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import Layer from "@/components/Cards/CardPreview/Layer";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+import { getCopyrightBounds } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { useHeroBackLogoImageUrl } from "@/hooks/useHeroBackLogoImageUrl";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
+import {
+  getCardShowCopyrightValue,
+  resolveCardCopyrightText,
+} from "@/lib/copyright-defaults";
 import { getHeroBackLogoPlacement } from "@/lib/hero-back-logo-layout";
 import { computeContainScale } from "@/lib/image-scale";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
@@ -621,6 +627,7 @@ export function TitleLayerHitArea({
   templateName?: string;
   templateId?: TemplateId;
 }) {
+  const { defaultCopyright } = useCopyrightSettings();
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.title);
 
   const showTitle =
@@ -668,6 +675,27 @@ export function TitleLayerHitArea({
   const baseBounds = showRibbon
     ? ribbonBounds ?? textBounds
     : textBoundsNoRibbon ?? textBounds ?? ribbonBounds;
+  const copyrightBounds =
+    templateId === "labelled-back" ? getCopyrightBounds(templateId) : null;
+  const resolvedCopyrightText =
+    templateId === "labelled-back" && cardData
+      ? resolveCardCopyrightText(cardData as Record<string, unknown>, defaultCopyright, "copyright")
+      : "";
+  const isCopyrightVisible =
+    templateId === "labelled-back" &&
+    getCardShowCopyrightValue(cardData) !== false &&
+    resolvedCopyrightText.length > 0;
+  const effectiveBaseBounds =
+    templateId === "labelled-back" &&
+    placement === "bottom" &&
+    baseBounds &&
+    copyrightBounds &&
+    isCopyrightVisible
+      ? {
+          ...baseBounds,
+          height: Math.max(0, Math.min(baseBounds.height, copyrightBounds.y - baseBounds.y)),
+        }
+      : baseBounds;
   const shouldRenderHitArea =
     layer.type === "title" &&
     showTitle &&
@@ -675,27 +703,27 @@ export function TitleLayerHitArea({
 
   useRegisterHoverAdornment(
     EDITOR_TARGET_IDS.title,
-    shouldRenderHitArea && !hasVisibleTitle && baseBounds
+    shouldRenderHitArea && !hasVisibleTitle && effectiveBaseBounds
       ? {
           kind: "rect",
-          x: baseBounds.x,
-          y: baseBounds.y,
-          width: baseBounds.width,
-          height: baseBounds.height,
+          x: effectiveBaseBounds.x,
+          y: effectiveBaseBounds.y,
+          width: effectiveBaseBounds.width,
+          height: effectiveBaseBounds.height,
           radius: showRibbon ? 20 : 14,
         }
       : null,
   );
 
-  if (!shouldRenderHitArea || !baseBounds) return null;
+  if (!shouldRenderHitArea || !effectiveBaseBounds) return null;
 
   return (
     <Layer {...svgFocusProps}>
       <rect
-        x={baseBounds.x}
-        y={baseBounds.y}
-        width={baseBounds.width}
-        height={baseBounds.height}
+        x={effectiveBaseBounds.x}
+        y={effectiveBaseBounds.y}
+        width={effectiveBaseBounds.width}
+        height={effectiveBaseBounds.height}
         fill="transparent"
         pointerEvents="all"
         data-hqcc-hit-area={EDITOR_TARGET_IDS.title}

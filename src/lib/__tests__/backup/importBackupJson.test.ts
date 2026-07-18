@@ -14,6 +14,7 @@ jest.mock("@/api/client", () => ({
     createCollection: jest.fn(),
     setBorderSwatches: jest.fn(),
     setDefaultCopyright: jest.fn(),
+    setCopyrightTemplateDefaults: jest.fn(),
     createPair: jest.fn(),
   },
 }));
@@ -54,6 +55,7 @@ describe("importBackupJson", () => {
     mockedApiClient.createCollection.mockResolvedValue(undefined as never);
     mockedApiClient.setBorderSwatches.mockResolvedValue(undefined as never);
     mockedApiClient.setDefaultCopyright.mockResolvedValue(undefined as never);
+    mockedApiClient.setCopyrightTemplateDefaults.mockResolvedValue(undefined as never);
     mockedApiClient.createPair.mockResolvedValue(undefined as never);
   });
 

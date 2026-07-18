@@ -40,10 +40,12 @@ type HoverVisualProps = {
 type HoverRectProps = HoverVisualProps &
   BlueprintBounds & {
     radius?: number;
+    transform?: string;
   } & Omit<SVGProps<SVGRectElement>, "x" | "y" | "width" | "height" | "style">;
 
 type HoverPathProps = HoverVisualProps & {
   d: string;
+  transform?: string;
 } & Omit<SVGProps<SVGPathElement>, "d" | "style">;
 
 export function getEditorTargetHoverStyle(visible: boolean): CSSProperties {
@@ -94,6 +96,7 @@ export function EditorTargetHoverRect({
   height,
   radius = 12,
   tone,
+  transform,
   ...rest
 }: HoverRectProps) {
   const visuals = getHoverToneVisuals(tone);
@@ -111,13 +114,21 @@ export function EditorTargetHoverRect({
       data-hqcc-hover-target={targetId}
       data-hqcc-hover-visible={visible ? "true" : "false"}
       data-hqcc-hover-tone={tone ?? "primary"}
+      transform={transform}
       style={getEditorTargetHoverStyle(visible)}
       {...rest}
     />
   );
 }
 
-export function EditorTargetHoverPath({ targetId, visible, d, tone, ...rest }: HoverPathProps) {
+export function EditorTargetHoverPath({
+  targetId,
+  visible,
+  d,
+  tone,
+  transform,
+  ...rest
+}: HoverPathProps) {
   const visuals = getHoverToneVisuals(tone);
   return (
     <path
@@ -129,6 +140,7 @@ export function EditorTargetHoverPath({ targetId, visible, d, tone, ...rest }: H
       data-hqcc-hover-target={targetId}
       data-hqcc-hover-visible={visible ? "true" : "false"}
       data-hqcc-hover-tone={tone ?? "primary"}
+      transform={transform}
       style={getEditorTargetHoverStyle(visible)}
       {...rest}
     />
@@ -151,6 +163,7 @@ export function HoverAdornmentShapeNode({
         visible={visible}
         d={shape.d}
         tone={shape.tone}
+        transform={shape.transform}
       />
     );
   }
@@ -165,6 +178,7 @@ export function HoverAdornmentShapeNode({
       height={shape.height}
       radius={shape.radius}
       tone={shape.tone}
+      transform={shape.transform}
     />
   );
 }

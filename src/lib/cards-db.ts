@@ -9,6 +9,11 @@ import {
   touchNormalizedCardBaseLastViewed,
 } from "@/lib/cards-normalized";
 import {
+  normalizeCopyrightTemplateDefaults,
+  resolveTemplateCopyrightDefault,
+} from "@/lib/copyright-defaults";
+import { backfillCardCopyrightComponents } from "@/lib/hqcc-db-copyright-backfill-job";
+import {
   createCardDeleteConfirmRequiredError,
   type CardDeleteMode,
   type CardDeleteUsageReport,
@@ -26,6 +31,7 @@ import type { PairRecord } from "@/types/pairs-db";
 import type { TemplateId } from "@/types/templates";
 
 import { openHqccDexieDb } from "./hqcc-dexie";
+import { COPYRIGHT_TEMPLATE_DEFAULTS_KEY } from "./settings-db";
 
 import { generateId } from ".";
 
@@ -125,6 +131,8 @@ async function getNormalizedCardRecord(
   if (!baseRecord) {
     return null;
   }
+
+  await backfillCardCopyrightComponents(db, { cardId: id });
 
   const [slotLinks, thumbnailBlob] = await Promise.all([
     db.cardSlotLinks.where("cardId").equals(id).sortBy("order"),
@@ -312,7 +320,7 @@ export async function createCard(
   const updatedAt = input.updatedAt ?? createdAt;
   const id = input.id ?? generateId();
   const normalizedThumbnail = normalizeThumbnailBlob(input.thumbnailBlob);
-  const base: CardRecord = {
+  let base: CardRecord = {
     ...persistedInput,
     ...(normalizedThumbnail !== input.thumbnailBlob
       ? { thumbnailBlob: normalizedThumbnail }
@@ -325,6 +333,14 @@ export async function createCard(
   };
 
   const db = await openHqccDexieDb();
+  if (typeof base.showCopyright !== "boolean") {
+    const settingsRecord = await db.settings.get(COPYRIGHT_TEMPLATE_DEFAULTS_KEY);
+    const templateDefaults = normalizeCopyrightTemplateDefaults(settingsRecord?.value);
+    base = {
+      ...base,
+      showCopyright: resolveTemplateCopyrightDefault(base.templateId, templateDefaults),
+    };
+  }
   const writeTables = [
     db.cardsBase,
     db.cardThumbnails,

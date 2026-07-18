@@ -15,4 +15,11 @@ export const RULES_INSPECTOR_FIELDS: InspectorField[] = [
       showTextColor: true,
     },
   },
+  {
+    fieldType: "copyright",
+    bind: "copyright",
+    labelKey: "form.copyright",
+    placeholderKey: "placeholders.copyright",
+    showToggle: true,
+  },
 ];

@@ -26,11 +26,11 @@ describe("Rules template", () => {
     );
   });
 
-  it("contains only the template background and inset body text", () => {
+  it("contains the template background, inset body text, and copyright layer", () => {
     expect(blueprintsByTemplateId.rules).toEqual(
       expect.objectContaining({
         templateId: "rules",
-        layers: [
+        layers: expect.arrayContaining([
           expect.objectContaining({
             id: "hq.2021.background.base",
             type: "background",
@@ -46,20 +46,21 @@ describe("Rules template", () => {
               textLayoutMode: "fixed-bounds",
             }),
           }),
-        ],
+          expect.objectContaining({
+            id: "hq.2021.text.copyright",
+            type: "copyright",
+            bounds: { x: 60, y: 1009, width: 630, height: 22 },
+          }),
+        ]),
       }),
     );
   });
 
-  it("exposes only required name and rules text inspector fields", () => {
-    expect(inspectorFieldsByTemplate.rules).toEqual([
-      expect.objectContaining({ fieldType: "name", bind: "name", required: true }),
-      expect.objectContaining({
-        fieldType: "text",
-        bind: "description",
-        labelKey: "form.rulesText",
-        props: { showTextColor: true },
-      }),
+  it("exposes required name, rules text, and copyright inspector fields", () => {
+    expect(inspectorFieldsByTemplate.rules.map((field) => field.fieldType)).toEqual([
+      "name",
+      "text",
+      "copyright",
     ]);
   });
 

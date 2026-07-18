@@ -1,6 +1,7 @@
 "use client";
 
 import type { AssetRecord } from "@/api/assets";
+import type { CopyrightTemplateDefaults } from "@/lib/copyright-defaults";
 import type { ExportSettings } from "@/lib/export-settings";
 import type { HeroBackLogoRecord } from "@/lib/hero-back-logos-db";
 import type { CardRecord } from "@/types/cards-db";
@@ -77,6 +78,7 @@ export interface HqccExportLocalStorageV1 {
 export interface HqccExportSettingsV1 {
   borderSwatches?: string[];
   defaultCopyright?: string;
+  copyrightTemplateDefaults?: CopyrightTemplateDefaults;
 }
 
 export interface HqccExportProfileV1 {

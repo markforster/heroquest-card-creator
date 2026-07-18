@@ -11,6 +11,17 @@ export type TemplateId =
   | "logo-back"
   | "labelled-back";
 
+export const TEMPLATE_IDS: TemplateId[] = [
+  "hero",
+  "monster",
+  "large-treasure",
+  "small-treasure",
+  "rules",
+  "hero-back",
+  "logo-back",
+  "labelled-back",
+];
+
 export type TemplateKind = "character" | "monster" | "treasure" | "back" | "custom" | "other";
 
 export type CardTemplateMeta = {

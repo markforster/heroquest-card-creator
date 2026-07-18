@@ -32,6 +32,7 @@ import { getCardRequestPlugin } from "@/api/local/getCardRequest";
 import { getCardThumbnailRequestPlugin } from "@/api/local/getCardThumbnailRequest";
 import { getCollectionRequestPlugin } from "@/api/local/getCollectionRequest";
 import { getDefaultCopyrightRequestPlugin } from "@/api/local/getDefaultCopyrightRequest";
+import { getCopyrightTemplateDefaultsRequestPlugin } from "@/api/local/getCopyrightTemplateDefaultsRequest";
 import { importLibraryRequestPlugin } from "@/api/local/importLibraryRequest";
 import { listAssetsRequestPlugin } from "@/api/local/listAssetsRequest";
 import { listAssetsWithBlobsRequestPlugin } from "@/api/local/listAssetsWithBlobsRequest";
@@ -56,6 +57,7 @@ import { resetAssetClassificationRequestPlugin } from "@/api/local/resetAssetCla
 import { restoreCardsRequestPlugin } from "@/api/local/restoreCardsRequest";
 import { setBorderSwatchesRequestPlugin } from "@/api/local/setBorderSwatchesRequest";
 import { setDefaultCopyrightRequestPlugin } from "@/api/local/setDefaultCopyrightRequest";
+import { setCopyrightTemplateDefaultsRequestPlugin } from "@/api/local/setCopyrightTemplateDefaultsRequest";
 import { softDeleteCardsRequestPlugin } from "@/api/local/softDeleteCardsRequest";
 import { touchCardLastViewedRequestPlugin } from "@/api/local/touchCardLastViewedRequest";
 import { updateAssetMetadataRequestPlugin } from "@/api/local/updateAssetMetadataRequest";
@@ -178,6 +180,8 @@ if (apiConfig.mode === "remote") {
   apiClient.use("setBorderSwatches", setBorderSwatchesRequestPlugin);
   apiClient.use("getDefaultCopyright", getDefaultCopyrightRequestPlugin);
   apiClient.use("setDefaultCopyright", setDefaultCopyrightRequestPlugin);
+  apiClient.use("getCopyrightTemplateDefaults", getCopyrightTemplateDefaultsRequestPlugin);
+  apiClient.use("setCopyrightTemplateDefaults", setCopyrightTemplateDefaultsRequestPlugin);
 
   apiClient.use("checkDbVersion", checkDbVersionRequestPlugin);
 }

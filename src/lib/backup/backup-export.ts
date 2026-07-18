@@ -113,6 +113,7 @@ async function loadExportInputs(): Promise<{
     deckEntriesBySet,
     borderSwatches,
     defaultCopyright,
+    copyrightTemplateDefaults,
   ] = await Promise.all([
     listCards({ deleted: "include" }),
     apiClient.listAssetsWithBlobs(),
@@ -125,6 +126,7 @@ async function loadExportInputs(): Promise<{
     Promise.resolve(new Map<string, DeckEntryRecord[]>()),
     apiClient.getBorderSwatches(),
     apiClient.getDefaultCopyright(),
+    apiClient.getCopyrightTemplateDefaults(),
   ]);
 
   const rawCards = await hydrateCardsForBackup(cardSummaries, apiClient);
@@ -152,10 +154,13 @@ async function loadExportInputs(): Promise<{
   const hasBorderSwatches = Array.isArray(borderSwatches) && borderSwatches.length > 0;
   const hasDefaultCopyright =
     typeof defaultCopyright === "string" && defaultCopyright.trim().length > 0;
-  if (hasBorderSwatches || hasDefaultCopyright) {
+  const hasCopyrightTemplateDefaults =
+    Object.keys(copyrightTemplateDefaults ?? {}).length > 0;
+  if (hasBorderSwatches || hasDefaultCopyright || hasCopyrightTemplateDefaults) {
     settings = {
       ...(hasBorderSwatches ? { borderSwatches } : {}),
       ...(hasDefaultCopyright ? { defaultCopyright } : {}),
+      ...(hasCopyrightTemplateDefaults ? { copyrightTemplateDefaults } : {}),
     };
   }
 

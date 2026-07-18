@@ -51,6 +51,7 @@ import StockpilePrimaryToolbar from "@/components/Stockpile/StockpilePrimaryTool
 import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
 import StockpileTableThumbPopover from "@/components/Stockpile/StockpileTableThumbPopover";
 import StockpileToolbar from "@/components/Stockpile/StockpileToolbar";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import type {
   StockpileCardActions,
   StockpileCardGroupView,
@@ -143,6 +144,7 @@ export default function StockpilePanelContent({
   onPrimarySearchReady,
 }: StockpilePanelContentProps) {
   const { t, language } = useI18n();
+  const { getTemplateDefault } = useCopyrightSettings();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { track } = useAnalytics();
@@ -875,7 +877,11 @@ export default function StockpilePanelContent({
       if (!activeId || !idSet.has(activeId)) return;
       setActiveCard(templateId, null, null);
       if (selectedTemplateId === templateId) {
-        resetWithSaved(createEditorDefaultValues(templateId));
+        resetWithSaved(
+          createEditorDefaultValues(templateId, {
+            showCopyright: getTemplateDefault(templateId),
+          }),
+        );
         }
     });
 
@@ -1114,7 +1120,11 @@ export default function StockpilePanelContent({
         if (!activeId || !idSet.has(activeId)) return;
         setActiveCard(templateId, null, null);
         if (selectedTemplateId === templateId) {
-          resetWithSaved(createEditorDefaultValues(templateId));
+          resetWithSaved(
+            createEditorDefaultValues(templateId, {
+              showCopyright: getTemplateDefault(templateId),
+            }),
+          );
         }
       });
     };

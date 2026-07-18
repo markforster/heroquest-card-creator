@@ -1082,6 +1082,51 @@ describe("BlueprintRenderer SVG hover targets", () => {
     expect(imageHover).toHaveAttribute("data-hqcc-hover-visible", "true");
   });
 
+  it("keeps labelled-back bottom title hit area above visible copyright and lets copyright own the lower lane", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="labelled-back"
+        templateName="Labelled Back"
+        cardData={{
+          title: "Artifact",
+          description: "Back text",
+          imageAssetId: "art-6",
+          titlePlacement: "bottom",
+          showTitle: true,
+          showCopyright: true,
+          copyright:
+            "asdasd asd as da sd as d asd as d as da sd as da sd as d asd as d",
+        } as never}
+      />,
+    );
+
+    const titleHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.title}"]`,
+    ) as SVGRectElement;
+    const copyrightHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.copyright}"]`,
+    ) as SVGRectElement;
+
+    expect(titleHitArea).not.toBeNull();
+    expect(copyrightHitArea).not.toBeNull();
+    expect(
+      Number(titleHitArea.getAttribute("y")) + Number(titleHitArea.getAttribute("height")),
+    ).toBeLessThanOrEqual(Number(copyrightHitArea.getAttribute("y")));
+
+    fireEvent.pointerEnter(titleHitArea);
+    expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.title);
+
+    fireEvent.pointerLeave(titleHitArea);
+    fireEvent.pointerEnter(copyrightHitArea);
+    expect(screen.getByTestId("hovered-target")).toHaveTextContent(EDITOR_TARGET_IDS.copyright);
+
+    const copyrightHover = container.querySelector(
+      `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.copyright}"]`,
+    ) as SVGRectElement;
+    expect(copyrightHover).not.toBeNull();
+    expect(copyrightHover).toHaveAttribute("data-hqcc-hover-visible", "true");
+  });
+
   it("rerenders across different card shapes without hook-order crashes", () => {
     const { rerender, container } = renderWithTargets(
       <BlueprintRenderer

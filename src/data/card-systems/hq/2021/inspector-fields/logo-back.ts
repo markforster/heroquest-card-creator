@@ -17,4 +17,11 @@ export const LOGO_BACK_INSPECTOR_FIELDS: InspectorField[] = [
     bind: "heroBackLogoMode",
     labelKey: "form.heroBackLogo",
   },
+  {
+    fieldType: "copyright",
+    bind: "copyright",
+    labelKey: "form.copyright",
+    placeholderKey: "placeholders.copyright",
+    showToggle: true,
+  },
 ];

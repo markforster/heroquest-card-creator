@@ -61,6 +61,7 @@ export const MONSTER_BLUEPRINT: Blueprint = {
       bounds: COPYRIGHT_BOUNDS,
       bind: { textKey: "copyright" },
       props: {
+        defaultVisible: true,
         fontSize: COPYRIGHT_FONT_SIZE,
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,

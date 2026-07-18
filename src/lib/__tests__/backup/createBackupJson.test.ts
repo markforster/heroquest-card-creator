@@ -7,6 +7,7 @@ jest.mock("@/api/client", () => ({
     listDecks: jest.fn(),
     getBorderSwatches: jest.fn(),
     getDefaultCopyright: jest.fn(),
+    getCopyrightTemplateDefaults: jest.fn(),
   },
 }));
 
@@ -55,6 +56,7 @@ describe("createBackupJson", () => {
     mockedApiClient.listDecks.mockReset();
     mockedApiClient.getBorderSwatches.mockReset();
     mockedApiClient.getDefaultCopyright.mockReset();
+    mockedApiClient.getCopyrightTemplateDefaults.mockReset();
     mockedListHeroBackLogosWithBlobs.mockReset();
 
     mockedApiClient.listAssetsWithBlobs.mockResolvedValue([]);
@@ -63,6 +65,7 @@ describe("createBackupJson", () => {
     mockedApiClient.listDecks.mockResolvedValue([]);
     mockedApiClient.getBorderSwatches.mockResolvedValue([]);
     mockedApiClient.getDefaultCopyright.mockResolvedValue("");
+    mockedApiClient.getCopyrightTemplateDefaults.mockResolvedValue({});
     mockedListHeroBackLogosWithBlobs.mockResolvedValue([]);
 
     window.localStorage.clear();

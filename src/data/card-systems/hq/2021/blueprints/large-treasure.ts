@@ -111,6 +111,7 @@ export const LARGE_TREASURE_BLUEPRINT: Blueprint = {
       bounds: COPYRIGHT_BOUNDS_ARTWORK,
       bind: { textKey: "copyright" },
       props: {
+        defaultVisible: true,
         fontSize: COPYRIGHT_FONT_SIZE,
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,

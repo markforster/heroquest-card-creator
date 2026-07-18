@@ -368,9 +368,11 @@ async function applyBackupObject(
 
   const borderSwatches = exportData.settings?.borderSwatches ?? [];
   const defaultCopyright = exportData.settings?.defaultCopyright ?? "";
+  const copyrightTemplateDefaults = exportData.settings?.copyrightTemplateDefaults ?? {};
   await Promise.all([
     apiClient.setBorderSwatches({ swatches: borderSwatches }),
     apiClient.setDefaultCopyright({ value: defaultCopyright }),
+    apiClient.setCopyrightTemplateDefaults({ value: copyrightTemplateDefaults }),
   ]);
 
   await restorePairs(exportData.cards, exportData.pairs, apiClient);
@@ -546,9 +548,11 @@ async function applyCompactBackupObject(
 
   const borderSwatches = exportData.settings?.borderSwatches ?? [];
   const defaultCopyright = exportData.settings?.defaultCopyright ?? "";
+  const copyrightTemplateDefaults = exportData.settings?.copyrightTemplateDefaults ?? {};
   await Promise.all([
     apiClient.setBorderSwatches({ swatches: borderSwatches }),
     apiClient.setDefaultCopyright({ value: defaultCopyright }),
+    apiClient.setCopyrightTemplateDefaults({ value: copyrightTemplateDefaults }),
   ]);
 
   await restorePairs(exportData.cards, exportData.pairs, apiClient);

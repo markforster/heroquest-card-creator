@@ -62,11 +62,13 @@ export type HoverAdornmentShape =
       kind: "rect";
       radius?: number;
       tone?: HoverAdornmentTone;
+      transform?: string;
     } & BlueprintBounds)
   | {
       kind: "path";
       d: string;
       tone?: HoverAdornmentTone;
+      transform?: string;
     };
 export type HoverAdornmentDescriptor =
   | HoverAdornmentShape

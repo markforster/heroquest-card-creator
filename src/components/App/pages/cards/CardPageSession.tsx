@@ -13,6 +13,7 @@ import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesG
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { cardTemplatesById } from "@/data/card-templates";
 import { resolveEffectiveFace } from "@/lib/card-face";
@@ -35,6 +36,7 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
   const navigate = useNavigate();
   const { bypassNextNavigation } = useUnsavedChangesGuardControls();
   const { track } = useAnalytics();
+  const { getTemplateDefault, isReady: areCopyrightSettingsReady } = useCopyrightSettings();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate, activeCardStatusByTemplate },
     setActiveCard,
@@ -161,7 +163,7 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
     }
     const storedDraft = loadDraft();
     const storedTemplateId = storedDraft?.templateId ?? (selectedTemplateId as TemplateId | null);
-    if (!storedTemplateId) return;
+    if (!storedTemplateId || !areCopyrightSettingsReady) return;
     const key = `draft:${storedTemplateId}`;
     if (draftInitKeyRef.current === key) return;
     draftInitKeyRef.current = key;
@@ -173,12 +175,22 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
       return;
     }
     const templateId = storedTemplateId as TemplateId;
-    const nextValues = createEditorDefaultValues(templateId);
+    const nextValues = createEditorDefaultValues(templateId, {
+      showCopyright: getTemplateDefault(templateId),
+    });
     resetWithSaved(nextValues);
     setActiveCard(templateId, null, null);
     saveDraft(templateId, nextValues, { sourceCardId: null });
     setDraftSourceCardId(null);
-  }, [isDraftRoute, resetWithSaved, selectedTemplateId, setActiveCard, setSelectedTemplateId]);
+  }, [
+    areCopyrightSettingsReady,
+    getTemplateDefault,
+    isDraftRoute,
+    resetWithSaved,
+    selectedTemplateId,
+    setActiveCard,
+    setSelectedTemplateId,
+  ]);
 
   const autosaveTimeoutRef = useRef<number | null>(null);
   useEffect(() => {

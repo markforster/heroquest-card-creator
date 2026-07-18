@@ -24,16 +24,24 @@ describe("Logo Back template", () => {
             rotation: -90,
             bounds: { x: 218, y: 70, width: 322, height: 898 },
           }),
+          expect.objectContaining({
+            type: "copyright",
+            bounds: { x: 355, y: 514, width: 630, height: 22 },
+            props: expect.objectContaining({
+              rotation: -90,
+            }),
+          }),
         ]),
       }),
     );
   });
 
-  it("exposes only name, tint, and logo inspector controls", () => {
+  it("exposes name, tint, logo, and copyright inspector controls", () => {
     expect(inspectorFieldsByTemplate["logo-back"].map((field) => field.fieldType)).toEqual([
       "name",
       "backgroundTint",
       "heroBackLogo",
+      "copyright",
     ]);
   });
 
