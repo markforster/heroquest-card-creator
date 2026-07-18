@@ -50,6 +50,16 @@ function normalizeCopyrightColor(value?: string) {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+async function waitForSvgCommit() {
+  const scheduleFrame =
+    typeof window !== "undefined" && typeof window.requestAnimationFrame === "function"
+      ? window.requestAnimationFrame.bind(window)
+      : (callback: FrameRequestCallback) => window.setTimeout(() => callback(performance.now()), 0);
+  await new Promise<void>((resolve) => {
+    scheduleFrame(() => resolve());
+  });
+}
+
 const COPYRIGHT_LUMINANCE_THRESHOLD = 0.52;
 const COPYRIGHT_SAMPLE_INSET_RATIO = 0.2;
 const COPYRIGHT_SAMPLE_VERTICAL_SHIFT_MULTIPLIER = 1.5;
@@ -484,6 +494,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 
             await this.waitForBackgroundLoaded?.();
             await this.syncCopyrightContrast?.();
+            await waitForSvgCommit();
 
             const assetIds = collectCardAssetIds(cardData);
             const heroBackLogoIds = collectCardHeroBackLogoIds(cardData);
@@ -658,6 +669,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 
           await this.waitForBackgroundLoaded?.();
           await this.syncCopyrightContrast?.();
+          await waitForSvgCommit();
 
           const width = options?.width ?? CARD_WIDTH;
           const height = options?.height ?? CARD_HEIGHT;
@@ -747,6 +759,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 
           await this.waitForBackgroundLoaded?.();
           await this.syncCopyrightContrast?.();
+          await waitForSvgCommit();
 
           const width = options?.width ?? CARD_WIDTH;
           const height = options?.height ?? CARD_HEIGHT;

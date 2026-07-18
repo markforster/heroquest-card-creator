@@ -230,6 +230,8 @@
   "form.targetCollection": "Célgyűjtemény",
   "form.selectCollectionPlaceholder": "Válasszon gyűjteményt",
   "helper.defaultCopyright": "Ez a szöveg az új előlapi kártyákon jelenik meg, ha nincs felülírva.",
+  "helper.copyrightTemplateDefaults": "These toggles set the default copyright visibility for all newly created cards.",
+  "heading.copyrightVisibility": "Copyright Visibility",
   "helper.heroBackLogo": "Choose the baked default logo or a saved custom logo for this card.",
   "helper.heroBackLogoManage": "Delete saved custom logos. The baked default logo is managed separately and is always available.",
   "helper.copyrightUsesDefault": "Ha üresen marad, a globális alapértelmezést használja.",

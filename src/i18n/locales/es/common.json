@@ -230,6 +230,8 @@
   "form.targetCollection": "Colección destino",
   "form.selectCollectionPlaceholder": "Selecciona una colección",
   "helper.defaultCopyright": "Este texto aparece en cartas frontales nuevas salvo reemplazo.",
+  "helper.copyrightTemplateDefaults": "These toggles set the default copyright visibility for all newly created cards.",
+  "heading.copyrightVisibility": "Copyright Visibility",
   "helper.heroBackLogo": "Choose the baked default logo or a saved custom logo for this card.",
   "helper.heroBackLogoManage": "Delete saved custom logos. The baked default logo is managed separately and is always available.",
   "helper.copyrightUsesDefault": "Usa el valor global si está vacío.",

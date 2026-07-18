@@ -230,6 +230,8 @@
   "form.targetCollection": "Целевая коллекция",
   "form.selectCollectionPlaceholder": "Выберите коллекцию",
   "helper.defaultCopyright": "Этот текст появляется на новых лицевых картах, если его не переопределить.",
+  "helper.copyrightTemplateDefaults": "These toggles set the default copyright visibility for all newly created cards.",
+  "heading.copyrightVisibility": "Copyright Visibility",
   "helper.heroBackLogo": "Choose the baked default logo or a saved custom logo for this card.",
   "helper.heroBackLogoManage": "Delete saved custom logos. The baked default logo is managed separately and is always available.",
   "helper.copyrightUsesDefault": "Если оставить пустым, используется глобальное значение по умолчанию.",

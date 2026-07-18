@@ -230,6 +230,8 @@
   "form.targetCollection": "Raccolta di destinazione",
   "form.selectCollectionPlaceholder": "Seleziona una raccolta",
   "helper.defaultCopyright": "Questo testo appare sulle carte fronte salvo override.",
+  "helper.copyrightTemplateDefaults": "These toggles set the default copyright visibility for all newly created cards.",
+  "heading.copyrightVisibility": "Copyright Visibility",
   "helper.heroBackLogo": "Choose the baked default logo or a saved custom logo for this card.",
   "helper.heroBackLogoManage": "Delete saved custom logos. The baked default logo is managed separately and is always available.",
   "helper.copyrightUsesDefault": "Usa il valore predefinito se vuoto.",

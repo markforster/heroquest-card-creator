@@ -230,6 +230,8 @@
   "form.targetCollection": "Målsamling",
   "form.selectCollectionPlaceholder": "Velg en samling",
   "helper.defaultCopyright": "Denne teksten vises på nye forsidekort med mindre den overstyres.",
+  "helper.copyrightTemplateDefaults": "These toggles set the default copyright visibility for all newly created cards.",
+  "heading.copyrightVisibility": "Copyright Visibility",
   "helper.heroBackLogo": "Choose the baked default logo or a saved custom logo for this card.",
   "helper.heroBackLogoManage": "Delete saved custom logos. The baked default logo is managed separately and is always available.",
   "helper.copyrightUsesDefault": "Bruker den globale standarden hvis feltet står tomt.",

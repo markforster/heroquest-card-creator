@@ -49,49 +49,45 @@ export default function CopyrightSettingsPanel() {
 
   return (
     <div className={styles.settingsPanelBody}>
-      <SettingsGroup title={t("heading.copyrightDefaults")} className="d-flex flex-column gap-2">
-        <label className="form-label" htmlFor="defaultCopyright">
-          {t("form.defaultCopyright")}
-        </label>
+      <SettingsGroup title={t("form.defaultCopyright")} className="d-flex flex-column gap-2">
         <input
           id="defaultCopyright"
           type="text"
           className={`form-control form-control-sm ${styles.settingsPanelInput}`}
+          aria-label={t("form.defaultCopyright")}
           placeholder={placeholder}
           value={draft}
           onChange={(event) => handleChange(event.target.value)}
         />
         <div className="form-text">{t("helper.defaultCopyright")}</div>
       </SettingsGroup>
-      <SettingsGroup className="d-flex flex-column gap-2">
-        {cardTemplates.map((template) => (
-          <div
-            key={template.id}
-            className="d-flex align-items-center justify-content-between gap-3"
-          >
-            <div className="d-flex align-items-center gap-2 min-w-0">
+      <SettingsGroup title={t("heading.copyrightVisibility")} className="d-flex flex-column gap-2">
+        <div className="form-text">{t("helper.copyrightTemplateDefaults")}</div>
+        <div className={styles.copyrightTemplateDefaultsGrid}>
+          {cardTemplates.map((template) => (
+            <div key={template.id} className={styles.copyrightTemplateDefaultCard}>
               <img
                 src={template.thumbnail.src}
                 alt=""
-                width={36}
-                height={50}
-                style={{ objectFit: "cover", borderRadius: 4, border: "1px solid #00000022" }}
+                width={53}
+                height={74}
+                className={styles.copyrightTemplateDefaultThumb}
               />
-              <label className="form-label mb-0" htmlFor={`copyright-default-${template.id}`}>
-                {t(`templates.${template.id}` as MessageKey)}
-              </label>
+              <div className={styles.copyrightTemplateDefaultFooter}>
+                <label className="form-check form-switch m-0">
+                  <input
+                    id={`copyright-default-${template.id}`}
+                    type="checkbox"
+                    className="form-check-input hq-toggle"
+                    aria-label={template.id}
+                    checked={getTemplateDefault(template.id)}
+                    onChange={(event) => setTemplateDefault(template.id, event.target.checked)}
+                  />
+                </label>
+              </div>
             </div>
-            <label className="form-check form-switch m-0">
-              <input
-                id={`copyright-default-${template.id}`}
-                type="checkbox"
-                className="form-check-input hq-toggle"
-                checked={getTemplateDefault(template.id)}
-                onChange={(event) => setTemplateDefault(template.id, event.target.checked)}
-              />
-            </label>
-          </div>
-        ))}
+          ))}
+        </div>
       </SettingsGroup>
     </div>
   );

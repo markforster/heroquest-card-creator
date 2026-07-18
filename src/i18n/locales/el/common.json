@@ -230,6 +230,8 @@
   "form.targetCollection": "Στόχος συλλογής",
   "form.selectCollectionPlaceholder": "Επιλέξτε μια συλλογή",
   "helper.defaultCopyright": "Αυτό το κείμενο εμφανίζεται σε νέες εμπρόσθιες κάρτες εκτός αν αντικατασταθεί.",
+  "helper.copyrightTemplateDefaults": "These toggles set the default copyright visibility for all newly created cards.",
+  "heading.copyrightVisibility": "Copyright Visibility",
   "helper.heroBackLogo": "Choose the baked default logo or a saved custom logo for this card.",
   "helper.heroBackLogoManage": "Delete saved custom logos. The baked default logo is managed separately and is always available.",
   "helper.copyrightUsesDefault": "Χρησιμοποιεί το καθολικό προεπιλεγμένο αν μείνει κενό.",
