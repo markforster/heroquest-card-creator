@@ -1,5 +1,6 @@
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
+import { normalizeStatAsteriskFlags } from "@/lib/stat-asterisks";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
 import type { CardRecord } from "@/types/cards-db";
 import type {
@@ -280,19 +281,30 @@ export function assembleNormalizedCardRecord(
         const component = heroStatsMap.get(slotLink.dataRecordId);
         if (!component) return null;
         result.heroAttackDice = component.attackDice;
+        result.heroAttackDiceAsterisks = normalizeStatAsteriskFlags(component.attackDiceAsterisks);
         result.heroDefendDice = component.defendDice;
+        result.heroDefendDiceAsterisks = normalizeStatAsteriskFlags(component.defendDiceAsterisks);
         result.heroBodyPoints = component.bodyPoints;
+        result.heroBodyPointsAsterisks = normalizeStatAsteriskFlags(component.bodyPointsAsterisks);
         result.heroMindPoints = component.mindPoints;
+        result.heroMindPointsAsterisks = normalizeStatAsteriskFlags(component.mindPointsAsterisks);
         break;
       }
       case layerTypes.stats_monster: {
         const component = monsterStatsMap.get(slotLink.dataRecordId);
         if (!component) return null;
         result.monsterMovementSquares = component.movementSquares;
+        result.monsterMovementSquaresAsterisks = normalizeStatAsteriskFlags(
+          component.movementSquaresAsterisks,
+        );
         result.monsterAttackDice = component.attackDice;
+        result.monsterAttackDiceAsterisks = normalizeStatAsteriskFlags(component.attackDiceAsterisks);
         result.monsterDefendDice = component.defendDice;
+        result.monsterDefendDiceAsterisks = normalizeStatAsteriskFlags(component.defendDiceAsterisks);
         result.monsterBodyPoints = component.bodyPoints;
+        result.monsterBodyPointsAsterisks = normalizeStatAsteriskFlags(component.bodyPointsAsterisks);
         result.monsterMindPoints = component.mindPoints;
+        result.monsterMindPointsAsterisks = normalizeStatAsteriskFlags(component.mindPointsAsterisks);
         break;
       }
       default:
@@ -469,19 +481,28 @@ export function buildNormalizedCardRecords(
         heroStats.push({
           ...shared,
           attackDice: record.heroAttackDice,
+          attackDiceAsterisks: normalizeStatAsteriskFlags(record.heroAttackDiceAsterisks),
           defendDice: record.heroDefendDice,
+          defendDiceAsterisks: normalizeStatAsteriskFlags(record.heroDefendDiceAsterisks),
           bodyPoints: record.heroBodyPoints,
+          bodyPointsAsterisks: normalizeStatAsteriskFlags(record.heroBodyPointsAsterisks),
           mindPoints: record.heroMindPoints,
+          mindPointsAsterisks: normalizeStatAsteriskFlags(record.heroMindPointsAsterisks),
         });
         return;
       case layerTypes.stats_monster:
         monsterStats.push({
           ...shared,
           movementSquares: record.monsterMovementSquares,
+          movementSquaresAsterisks: normalizeStatAsteriskFlags(record.monsterMovementSquaresAsterisks),
           attackDice: record.monsterAttackDice,
+          attackDiceAsterisks: normalizeStatAsteriskFlags(record.monsterAttackDiceAsterisks),
           defendDice: record.monsterDefendDice,
+          defendDiceAsterisks: normalizeStatAsteriskFlags(record.monsterDefendDiceAsterisks),
           bodyPoints: record.monsterBodyPoints,
+          bodyPointsAsterisks: normalizeStatAsteriskFlags(record.monsterBodyPointsAsterisks),
           mindPoints: record.monsterMindPoints,
+          mindPointsAsterisks: normalizeStatAsteriskFlags(record.monsterMindPointsAsterisks),
         });
         return;
     }

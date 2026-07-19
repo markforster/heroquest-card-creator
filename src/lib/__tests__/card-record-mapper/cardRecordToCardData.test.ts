@@ -85,6 +85,28 @@ describe("cardRecordToCardData", () => {
     expect(cardRecordToCardData(record).name).toBe("Treasure Deck");
   });
 
+  it("maps persisted stat asterisk flags into editor form data", () => {
+    const record: CardRecord & { templateId: "hero" } = {
+      id: "card-asterisks",
+      templateId: "hero",
+      status: "saved",
+      name: "Asterisk Hero",
+      nameLower: "asterisk hero",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 2,
+      heroAttackDice: [3, 4, 1],
+      heroAttackDiceAsterisks: [false, true],
+    };
+
+    expect(cardRecordToCardData(record)).toEqual(
+      expect.objectContaining({
+        attackDice: [3, 4, 1],
+        attackDiceAsterisks: [false, true],
+      }),
+    );
+  });
+
   it("maps persisted Rules fields into editor form data", () => {
     const record: CardRecord & { templateId: "rules" } = {
       id: "rules-1",

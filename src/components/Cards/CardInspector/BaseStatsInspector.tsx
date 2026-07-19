@@ -12,7 +12,7 @@ import {
 import { useI18n } from "@/i18n/I18nProvider";
 import type { MessageKey } from "@/i18n/messages";
 import { formatStatValue } from "@/lib/stat-values";
-import type { StatValue } from "@/types/stats";
+import type { StatAsteriskFlags, StatValue } from "@/types/stats";
 
 import SplitStatStepper from "./SplitStatStepper";
 import StatsAccordion from "./StatsAccordion";
@@ -22,6 +22,7 @@ import type { LucideIcon } from "lucide-react";
 
 export type BaseStatField<T extends FieldValues> = {
   name: Path<T>;
+  asterisksName: Path<T>;
   labelKey: MessageKey;
   icon: LucideIcon;
   targetId: EditorTargetId;
@@ -61,7 +62,13 @@ export default function BaseStatsInspector<T extends FieldValues>({
     control,
     name: watchedFieldNames,
   }) as Array<StatValue | undefined>;
-  const previewValues = watchedValues.map((value) => formatStatValue(value) ?? "0");
+  const watchedAsterisks = useWatch({
+    control,
+    name: fields.map((field) => field.asterisksName),
+  }) as Array<StatAsteriskFlags | undefined>;
+  const previewValues = watchedValues.map(
+    (value, index) => formatStatValue(value, watchedAsterisks[index]) ?? "0",
+  );
 
   return (
     <div
@@ -122,6 +129,7 @@ function StatInspectorRow<T extends FieldValues>({
     >
       <StatControl
         name={field.name}
+        asterisksName={field.asterisksName}
         label={label}
         icon={field.icon}
         min={0}

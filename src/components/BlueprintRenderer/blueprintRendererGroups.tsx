@@ -38,9 +38,13 @@ function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | un
   if (!cardData) return undefined;
   const data = cardData as {
     attackDice?: HeroStats["attackDice"];
+    attackDiceAsterisks?: HeroStats["attackDiceAsterisks"];
     defendDice?: HeroStats["defendDice"];
+    defendDiceAsterisks?: HeroStats["defendDiceAsterisks"];
     bodyPoints?: HeroStats["bodyPoints"];
+    bodyPointsAsterisks?: HeroStats["bodyPointsAsterisks"];
     mindPoints?: HeroStats["mindPoints"];
+    mindPointsAsterisks?: HeroStats["mindPointsAsterisks"];
   };
 
   const hasCustomStats =
@@ -53,9 +57,13 @@ function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | un
 
   return {
     attackDice: data.attackDice ?? 3,
+    attackDiceAsterisks: data.attackDiceAsterisks,
     defendDice: data.defendDice ?? 2,
+    defendDiceAsterisks: data.defendDiceAsterisks,
     bodyPoints: data.bodyPoints ?? 8,
+    bodyPointsAsterisks: data.bodyPointsAsterisks,
     mindPoints: data.mindPoints ?? 2,
+    mindPointsAsterisks: data.mindPointsAsterisks,
   };
 }
 
@@ -63,10 +71,15 @@ function getMonsterStats(cardData?: CardDataByTemplate[TemplateId]): MonsterStat
   if (!cardData) return undefined;
   const data = cardData as {
     movementSquares?: MonsterStats["movementSquares"];
+    movementSquaresAsterisks?: MonsterStats["movementSquaresAsterisks"];
     attackDice?: MonsterStats["attackDice"];
+    attackDiceAsterisks?: MonsterStats["attackDiceAsterisks"];
     defendDice?: MonsterStats["defendDice"];
+    defendDiceAsterisks?: MonsterStats["defendDiceAsterisks"];
     bodyPoints?: MonsterStats["bodyPoints"];
+    bodyPointsAsterisks?: MonsterStats["bodyPointsAsterisks"];
     mindPoints?: MonsterStats["mindPoints"];
+    mindPointsAsterisks?: MonsterStats["mindPointsAsterisks"];
   };
 
   const hasCustomStats =
@@ -80,10 +93,15 @@ function getMonsterStats(cardData?: CardDataByTemplate[TemplateId]): MonsterStat
 
   return {
     movementSquares: data.movementSquares ?? 0,
+    movementSquaresAsterisks: data.movementSquaresAsterisks,
     attackDice: data.attackDice ?? 0,
+    attackDiceAsterisks: data.attackDiceAsterisks,
     defendDice: data.defendDice ?? 0,
+    defendDiceAsterisks: data.defendDiceAsterisks,
     bodyPoints: data.bodyPoints ?? 0,
+    bodyPointsAsterisks: data.bodyPointsAsterisks,
     mindPoints: data.mindPoints ?? 0,
+    mindPointsAsterisks: data.mindPointsAsterisks,
   };
 }
 

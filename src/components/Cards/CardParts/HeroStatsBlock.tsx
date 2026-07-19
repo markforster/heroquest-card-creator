@@ -16,13 +16,17 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { getStatLabel } from "@/lib/stat-labels";
 import type { BlueprintBounds } from "@/types/blueprints";
-import type { StatValue } from "@/types/stats";
+import type { StatAsteriskFlags, StatValue } from "@/types/stats";
 
 export type HeroStats = {
   attackDice: StatValue;
+  attackDiceAsterisks?: StatAsteriskFlags;
   defendDice: StatValue;
+  defendDiceAsterisks?: StatAsteriskFlags;
   bodyPoints: StatValue;
+  bodyPointsAsterisks?: StatAsteriskFlags;
   mindPoints: StatValue;
+  mindPointsAsterisks?: StatAsteriskFlags;
 };
 
 type HeroStatsBlockProps = {
@@ -52,6 +56,7 @@ type HeroStatCell = {
   targetId: (typeof HERO_STAT_TARGET_IDS)[keyof typeof HERO_STAT_TARGET_IDS];
   header: string;
   value?: StatValue;
+  asterisks?: StatAsteriskFlags;
   bounds: BlueprintBounds;
   headerHeight?: number;
 };
@@ -85,6 +90,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
       targetId: HERO_STAT_TARGET_IDS.attackDice,
       header: getStatLabel("statsLabelAttack", t("stats.attackDice"), overrides),
       value: stats.attackDice,
+      asterisks: stats.attackDiceAsterisks,
       bounds: { x: sx(10), y: sy(12), width: sx(162), height: sy(134) },
     },
     {
@@ -92,6 +98,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
       targetId: HERO_STAT_TARGET_IDS.defendDice,
       header: getStatLabel("statsLabelDefend", t("stats.defendDice"), overrides),
       value: stats.defendDice,
+      asterisks: stats.defendDiceAsterisks,
       bounds: { x: sx(164), y: sy(12), width: sx(164), height: sy(134) },
     },
     {
@@ -99,6 +106,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
       targetId: HERO_STAT_TARGET_IDS.bodyPoints,
       header: getStatLabel("statsLabelHeroBody", t("stats.body"), overrides),
       value: stats.bodyPoints,
+      asterisks: stats.bodyPointsAsterisks,
       bounds: { x: sx(318), y: sy(44), width: sx(166), height: sy(102) },
       headerHeight: sy(35),
     },
@@ -107,6 +115,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
       targetId: HERO_STAT_TARGET_IDS.mindPoints,
       header: getStatLabel("statsLabelHeroMind", t("stats.mind"), overrides),
       value: stats.mindPoints,
+      asterisks: stats.mindPointsAsterisks,
       bounds: { x: sx(474), y: sy(44), width: sx(164), height: sy(102) },
       headerHeight: sy(35),
     },
@@ -157,6 +166,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
             key={cell.key}
             header={cell.header}
             value={cell.value}
+            asterisks={cell.asterisks}
             x={cell.bounds.x}
             y={cell.bounds.y}
             width={cell.bounds.width}
@@ -183,6 +193,7 @@ export default function HeroStatsBlock({ stats = defaultStats, y }: HeroStatsBlo
             key={cell.key}
             header={cell.header}
             value={cell.value}
+            asterisks={cell.asterisks}
             x={cell.bounds.x}
             y={cell.bounds.y}
             width={cell.bounds.width}

@@ -19,24 +19,28 @@ type HeroStatsInspectorProps = {
 const HERO_FIELDS = [
   {
     name: "attackDice",
+    asterisksName: "attackDiceAsterisks",
     labelKey: "stats.attackDice",
     icon: Swords,
     targetId: HERO_STAT_TARGET_IDS.attackDice,
   },
   {
     name: "defendDice",
+    asterisksName: "defendDiceAsterisks",
     labelKey: "stats.defendDice",
     icon: ShieldHalf,
     targetId: HERO_STAT_TARGET_IDS.defendDice,
   },
   {
     name: "bodyPoints",
+    asterisksName: "bodyPointsAsterisks",
     labelKey: "stats.bodyPoints",
     icon: UserRound,
     targetId: HERO_STAT_TARGET_IDS.bodyPoints,
   },
   {
     name: "mindPoints",
+    asterisksName: "mindPointsAsterisks",
     labelKey: "stats.mindPoints",
     icon: Brain,
     targetId: HERO_STAT_TARGET_IDS.mindPoints,

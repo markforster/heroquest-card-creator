@@ -26,6 +26,8 @@ export const templateKindSchema = z.enum([
 
 export const statSplitFormatSchema = z.enum(["slash", "paren", "paren-leading"]);
 
+export const statAsteriskFlagsSchema = z.array(z.boolean()).max(2);
+
 export const statValueSchema = z.union([
   z.number(),
   z.tuple([z.number(), z.number()]),

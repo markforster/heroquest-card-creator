@@ -3903,6 +3903,7 @@
   gap: var(--space-3);
   min-width: 5.3rem;
 }
+
 .statSplitFields,
 .imageControlRow {
   display: flex;
@@ -4036,6 +4037,16 @@
   cursor: default;
 }
 
+.statButtonIcon {
+  width: 0.8rem;
+  height: 0.8rem;
+  stroke-width: 2.4;
+}
+
+:root[data-theme="light"] .statButtonIcon {
+  color: #ffffff;
+}
+
 .statValueBox {
   padding: 0.22rem 0.62rem;
   border-radius: 0;
@@ -4101,6 +4112,62 @@
   background: var(--hq-surface-900);
   height: auto;
   box-sizing: border-box;
+}
+
+.statActionCluster {
+  display: flex;
+  align-items: center;
+}
+
+.statValueInputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.statAsteriskButton {
+  position: absolute;
+  right: -0.12rem;
+  top: 0;
+  transform: translate(45%, -38%);
+  z-index: 1;
+  background: var(--hq-surface-800);
+  border-color: var(--hq-border-mid);
+  color: var(--hq-text);
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 0 0 1px var(--hq-surface-900);
+}
+
+.statAsteriskGlyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.statAsteriskButton:hover:enabled {
+  background: var(--hq-surface-700);
+}
+
+.statAsteriskButtonActive {
+  border-color: var(--hq-accent);
+  box-shadow:
+    inset 0 0 0 1px var(--hq-accent),
+    0 0 0 1px var(--hq-surface-900);
+  color: var(--hq-text);
+}
+
+.statAsteriskButtonActive:hover:enabled {
+  background: var(--hq-surface-700);
+}
+
+.statValueInputWithAsterisk {
+  width: 5ch;
+  min-width: 5ch;
+  max-width: 5ch;
 }
 
 .statIconButtonPlus:hover:enabled {

@@ -2,7 +2,7 @@ import type { BlueprintGroupTypeValue, BlueprintLayerTypeValue, BlueprintSlotId,
 import type { BodyTextStyle, HeroBackLogoMode } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { CardStatus } from "@/types/cards-db";
-import type { StatValue } from "@/types/stats";
+import type { StatAsteriskFlags, StatValue } from "@/types/stats";
 import type { TemplateId } from "@/types/templates";
 
 export type NormalizedCardSchemaVersion = 1;
@@ -113,15 +113,24 @@ export interface CardIconComponentRecord extends NormalizedCardComponentBase {
 
 export interface CardHeroStatsComponentRecord extends NormalizedCardComponentBase {
   attackDice?: StatValue;
+  attackDiceAsterisks?: StatAsteriskFlags;
   defendDice?: StatValue;
+  defendDiceAsterisks?: StatAsteriskFlags;
   bodyPoints?: StatValue;
+  bodyPointsAsterisks?: StatAsteriskFlags;
   mindPoints?: StatValue;
+  mindPointsAsterisks?: StatAsteriskFlags;
 }
 
 export interface CardMonsterStatsComponentRecord extends NormalizedCardComponentBase {
   movementSquares?: StatValue;
+  movementSquaresAsterisks?: StatAsteriskFlags;
   attackDice?: StatValue;
+  attackDiceAsterisks?: StatAsteriskFlags;
   defendDice?: StatValue;
+  defendDiceAsterisks?: StatAsteriskFlags;
   bodyPoints?: StatValue;
+  bodyPointsAsterisks?: StatAsteriskFlags;
   mindPoints?: StatValue;
+  mindPointsAsterisks?: StatAsteriskFlags;
 }

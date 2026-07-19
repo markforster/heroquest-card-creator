@@ -1,10 +1,15 @@
-import type { StatSplitFormat, StatValue } from "@/types/stats";
+import { hasStatAsterisk } from "@/lib/stat-asterisks";
+import type { StatAsteriskFlags, StatSplitFormat, StatValue } from "@/types/stats";
 
-function formatSingleStat(value: number): string {
-  return value === -1 ? "*" : String(value);
+function formatSingleStat(value: number, hasAsterisk: boolean): string {
+  if (value === -1) return "*";
+  return hasAsterisk ? `${String(value)}*` : String(value);
 }
 
-export function formatStatValue(value?: StatValue): string | undefined {
+export function formatStatValue(
+  value?: StatValue,
+  asterisks?: StatAsteriskFlags,
+): string | undefined {
   if (value == null) return undefined;
   if (Array.isArray(value)) {
     const [primary, secondary, splitFlag, splitFormat] = value as [
@@ -14,16 +19,25 @@ export function formatStatValue(value?: StatValue): string | undefined {
       StatSplitFormat | undefined,
     ];
     if (splitFlag === 0) {
-      return formatSingleStat(primary);
+      return formatSingleStat(primary, hasStatAsterisk(asterisks, 0));
     }
     const format = splitFormat ?? "slash";
     if (format === "paren") {
-      return `${formatSingleStat(primary)}(${formatSingleStat(secondary)})`;
+      return `${formatSingleStat(primary, hasStatAsterisk(asterisks, 0))}(${formatSingleStat(
+        secondary,
+        hasStatAsterisk(asterisks, 1),
+      )})`;
     }
     if (format === "paren-leading") {
-      return `(${formatSingleStat(primary)})${formatSingleStat(secondary)}`;
+      return `(${formatSingleStat(primary, hasStatAsterisk(asterisks, 0))})${formatSingleStat(
+        secondary,
+        hasStatAsterisk(asterisks, 1),
+      )}`;
     }
-    return `${formatSingleStat(primary)}/${formatSingleStat(secondary)}`;
+    return `${formatSingleStat(primary, hasStatAsterisk(asterisks, 0))}/${formatSingleStat(
+      secondary,
+      hasStatAsterisk(asterisks, 1),
+    )}`;
   }
-  return formatSingleStat(value);
+  return formatSingleStat(value, hasStatAsterisk(asterisks, 0));
 }

@@ -206,6 +206,7 @@ describe("createCard", () => {
       title: "Goblin",
       monsterIconAssetId: "icon-1",
       monsterAttackDice: [2, 0, 0],
+      monsterAttackDiceAsterisks: [true],
     });
 
     const db = await openHqccDexieDb();
@@ -219,6 +220,7 @@ describe("createCard", () => {
     ).resolves.toEqual(
       expect.objectContaining({
         attackDice: [2, 0, 0],
+        attackDiceAsterisks: [true],
       }),
     );
   });

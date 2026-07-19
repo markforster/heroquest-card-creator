@@ -19,30 +19,35 @@ type MonsterStatsInspectorProps = {
 const MONSTER_FIELDS = [
   {
     name: "movementSquares",
+    asterisksName: "movementSquaresAsterisks",
     labelKey: "stats.movementSquares",
     icon: Footprints,
     targetId: MONSTER_STAT_TARGET_IDS.movementSquares,
   },
   {
     name: "attackDice",
+    asterisksName: "attackDiceAsterisks",
     labelKey: "stats.attackDice",
     icon: Swords,
     targetId: MONSTER_STAT_TARGET_IDS.attackDice,
   },
   {
     name: "defendDice",
+    asterisksName: "defendDiceAsterisks",
     labelKey: "stats.defendDice",
     icon: ShieldHalf,
     targetId: MONSTER_STAT_TARGET_IDS.defendDice,
   },
   {
     name: "bodyPoints",
+    asterisksName: "bodyPointsAsterisks",
     labelKey: "stats.bodyPoints",
     icon: UserRound,
     targetId: MONSTER_STAT_TARGET_IDS.bodyPoints,
   },
   {
     name: "mindPoints",
+    asterisksName: "mindPointsAsterisks",
     labelKey: "stats.mindPoints",
     icon: Brain,
     targetId: MONSTER_STAT_TARGET_IDS.mindPoints,

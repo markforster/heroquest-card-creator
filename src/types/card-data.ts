@@ -2,7 +2,7 @@
 import { DEFAULT_BODY_TEXT_COLOR } from "@/config/colors";
 
 import type { CardFace } from "./card-face";
-import type { StatValue } from "./stats";
+import type { StatAsteriskFlags, StatValue } from "./stats";
 import type { TemplateId } from "./templates";
 
 export interface BaseCardFields {
@@ -34,17 +34,26 @@ export interface BaseCardFields {
 
 export interface HeroCardData extends BaseCardFields {
   attackDice?: StatValue;
+  attackDiceAsterisks?: StatAsteriskFlags;
   defendDice?: StatValue;
+  defendDiceAsterisks?: StatAsteriskFlags;
   bodyPoints?: StatValue;
+  bodyPointsAsterisks?: StatAsteriskFlags;
   mindPoints?: StatValue;
+  mindPointsAsterisks?: StatAsteriskFlags;
 }
 
 export interface MonsterCardData extends BaseCardFields {
   movementSquares?: StatValue;
+  movementSquaresAsterisks?: StatAsteriskFlags;
   attackDice?: StatValue;
+  attackDiceAsterisks?: StatAsteriskFlags;
   defendDice?: StatValue;
+  defendDiceAsterisks?: StatAsteriskFlags;
   bodyPoints?: StatValue;
+  bodyPointsAsterisks?: StatAsteriskFlags;
   mindPoints?: StatValue;
+  mindPointsAsterisks?: StatAsteriskFlags;
   iconAssetId?: string;
   iconAssetName?: string;
   iconOffsetX?: number;

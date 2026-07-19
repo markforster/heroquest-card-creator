@@ -77,6 +77,23 @@ describe("updateCard", () => {
     expect(mapped.bodyTextFitToBounds).toBe(true);
   });
 
+  it("updates normalized stat asterisk flags", async () => {
+    await seedNormalizedCard(createCardRecord({ id: "c1", heroAttackDice: [3, 4, 1] }));
+
+    const next = await updateCard("c1", { heroAttackDiceAsterisks: [false, true] });
+    expect(next?.heroAttackDiceAsterisks).toEqual([false, true]);
+
+    const db = await openHqccDexieDb();
+    await expect(db.cardHeroStatsComponents.get("c1:hq.2021.stats.hero.primary")).resolves.toEqual(
+      expect.objectContaining({
+        attackDiceAsterisks: [false, true],
+      }),
+    );
+
+    const mapped = cardRecordToCardData((await getCard("c1")) as never);
+    expect(mapped.attackDiceAsterisks).toEqual([false, true]);
+  });
+
   it("updates normalized thumbnails without using the legacy cards row", async () => {
     await seedNormalizedCard(createCardRecord({ id: "c1" }));
     await seedNormalizedThumbnail({

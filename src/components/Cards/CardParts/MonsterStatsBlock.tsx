@@ -15,16 +15,21 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { getStatLabel } from "@/lib/stat-labels";
 import type { BlueprintBounds } from "@/types/blueprints";
-import type { StatValue } from "@/types/stats";
+import type { StatAsteriskFlags, StatValue } from "@/types/stats";
 
 import StatsPair from "./StatsPair";
 
 export type MonsterStats = {
   movementSquares: StatValue;
+  movementSquaresAsterisks?: StatAsteriskFlags;
   attackDice: StatValue;
+  attackDiceAsterisks?: StatAsteriskFlags;
   defendDice: StatValue;
+  defendDiceAsterisks?: StatAsteriskFlags;
   bodyPoints: StatValue;
+  bodyPointsAsterisks?: StatAsteriskFlags;
   mindPoints: StatValue;
+  mindPointsAsterisks?: StatAsteriskFlags;
 };
 
 type MonsterStatsBlockProps = {
@@ -54,6 +59,7 @@ type MonsterStatCell = {
   targetId: (typeof MONSTER_STAT_TARGET_IDS)[keyof typeof MONSTER_STAT_TARGET_IDS];
   header: string;
   value?: StatValue;
+  asterisks?: StatAsteriskFlags;
   bounds: BlueprintBounds;
 };
 
@@ -86,6 +92,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
       targetId: MONSTER_STAT_TARGET_IDS.movementSquares,
       header: getStatLabel("statsLabelMove", t("stats.movementSquares"), overrides),
       value: stats.movementSquares,
+      asterisks: stats.movementSquaresAsterisks,
       bounds: { x: sx(11), y: sy(14), width: sx(176), height: sy(138) },
     },
     {
@@ -93,6 +100,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
       targetId: MONSTER_STAT_TARGET_IDS.attackDice,
       header: getStatLabel("statsLabelAttack", t("stats.attackDice"), overrides),
       value: stats.attackDice,
+      asterisks: stats.attackDiceAsterisks,
       bounds: { x: sx(191), y: sy(14), width: sx(116), height: sy(138) },
     },
     {
@@ -100,6 +108,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
       targetId: MONSTER_STAT_TARGET_IDS.defendDice,
       header: getStatLabel("statsLabelDefend", t("stats.defendDice"), overrides),
       value: stats.defendDice,
+      asterisks: stats.defendDiceAsterisks,
       bounds: { x: sx(307), y: sy(14), width: sx(116), height: sy(138) },
     },
     {
@@ -107,6 +116,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
       targetId: MONSTER_STAT_TARGET_IDS.bodyPoints,
       header: getStatLabel("statsLabelMonsterBodyPoints", t("stats.bodyPoints"), overrides),
       value: stats.bodyPoints,
+      asterisks: stats.bodyPointsAsterisks,
       bounds: { x: sx(427), y: sy(14), width: sx(116), height: sy(138) },
     },
     {
@@ -114,6 +124,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
       targetId: MONSTER_STAT_TARGET_IDS.mindPoints,
       header: getStatLabel("statsLabelMonsterMindPoints", t("stats.mindPoints"), overrides),
       value: stats.mindPoints,
+      asterisks: stats.mindPointsAsterisks,
       bounds: { x: sx(542), y: sy(14), width: sx(116), height: sy(138) },
     },
   ];
@@ -163,6 +174,7 @@ export default function MonsterStatsBlock({ stats = defaultStats, y }: MonsterSt
             key={cell.key}
             header={cell.header}
             value={cell.value}
+            asterisks={cell.asterisks}
             x={cell.bounds.x}
             y={cell.bounds.y}
             width={cell.bounds.width}
