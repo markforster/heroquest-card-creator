@@ -82,12 +82,12 @@
   "formattingHelp.diceStructure.colorsOutput": "Kelvolliset värit",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
   "formattingHelp.diceStructure.hexOutput": "Hex‑värit",
-  "formattingHelp.richText.titleCode": "<title>Quest Rules</title>",
-  "formattingHelp.richText.titleOutput": "Quest Rules",
-  "formattingHelp.richText.subtitleCode": "<subtitle>Movement</subtitle>",
-  "formattingHelp.richText.subtitleOutput": "Movement",
-  "formattingHelp.richText.scaleCode": "<scale=1.25>large text</scale>",
-  "formattingHelp.richText.scaleOutput": "large text",
-  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>small text</sc>",
-  "formattingHelp.richText.scaleAliasOutput": "small text"
+  "formattingHelp.richText.titleCode": "<title>Tehtavan saannot</title>",
+  "formattingHelp.richText.titleOutput": "Tehtavan saannot",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Liike</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Liike",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>suuri teksti</scale>",
+  "formattingHelp.richText.scaleOutput": "suuri teksti",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>pieni teksti</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "pieni teksti"
 }

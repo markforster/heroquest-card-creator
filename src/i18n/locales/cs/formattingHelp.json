@@ -82,12 +82,12 @@
   "formattingHelp.diceStructure.colorsOutput": "Platné barvy",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
   "formattingHelp.diceStructure.hexOutput": "Hex barvy",
-  "formattingHelp.richText.titleCode": "<title>Quest Rules</title>",
-  "formattingHelp.richText.titleOutput": "Quest Rules",
-  "formattingHelp.richText.subtitleCode": "<subtitle>Movement</subtitle>",
-  "formattingHelp.richText.subtitleOutput": "Movement",
-  "formattingHelp.richText.scaleCode": "<scale=1.25>large text</scale>",
-  "formattingHelp.richText.scaleOutput": "large text",
-  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>small text</sc>",
-  "formattingHelp.richText.scaleAliasOutput": "small text"
+  "formattingHelp.richText.titleCode": "<title>Pravidla ukolu</title>",
+  "formattingHelp.richText.titleOutput": "Pravidla ukolu",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Pohyb</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Pohyb",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>velky text</scale>",
+  "formattingHelp.richText.scaleOutput": "velky text",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>maly text</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "maly text"
 }

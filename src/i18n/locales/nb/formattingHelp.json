@@ -82,12 +82,12 @@
   "formattingHelp.diceStructure.colorsOutput": "Gyldige farger",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
   "formattingHelp.diceStructure.hexOutput": "Hex-farger",
-  "formattingHelp.richText.titleCode": "<title>Quest Rules</title>",
-  "formattingHelp.richText.titleOutput": "Quest Rules",
-  "formattingHelp.richText.subtitleCode": "<subtitle>Movement</subtitle>",
-  "formattingHelp.richText.subtitleOutput": "Movement",
-  "formattingHelp.richText.scaleCode": "<scale=1.25>large text</scale>",
-  "formattingHelp.richText.scaleOutput": "large text",
-  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>small text</sc>",
-  "formattingHelp.richText.scaleAliasOutput": "small text"
+  "formattingHelp.richText.titleCode": "<title>Quest-regler</title>",
+  "formattingHelp.richText.titleOutput": "Quest-regler",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Bevegelse</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Bevegelse",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>stor tekst</scale>",
+  "formattingHelp.richText.scaleOutput": "stor tekst",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>liten tekst</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "liten tekst"
 }
