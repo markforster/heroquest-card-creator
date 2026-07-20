@@ -1,7 +1,8 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { RgbaColorPicker } from "react-colorful";
 
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
@@ -10,6 +11,7 @@ import { useSharedColorSwatches } from "@/hooks/useSharedColorSwatches";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatHexColor, parseHexColor } from "@/lib/color";
 import { clamp } from "@/lib/math";
+import SegmentedControl from "@/components/common/SegmentedControl";
 
 import ColorInputField from "./ColorInputField";
 import styles from "./ColorPickerField.module.css";
@@ -54,6 +56,8 @@ type ColorPickerFieldProps = {
   presetSwatches?: string[];
   swatchShape?: "circle" | "square";
   swatchIcon?: ReactNode;
+  renderInPortal?: boolean;
+  onPopoverElementChange?: (element: HTMLDivElement | null) => void;
 };
 
 const FALLBACK_PANEL_BG = "#202020";
@@ -121,6 +125,8 @@ export default function ColorPickerField({
   presetSwatches = [],
   swatchShape = "circle",
   swatchIcon,
+  renderInPortal = false,
+  onPopoverElementChange,
 }: ColorPickerFieldProps) {
   const { t } = useI18n();
   const { swatches, saveSwatch, removeSwatch, maxSwatches } = useSharedColorSwatches();
@@ -141,11 +147,21 @@ export default function ColorPickerField({
 
   useOutsideClick([popoverRef, swatchRef], onClose, isOpen);
 
+  const handlePopoverRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      popoverRef.current = node;
+      onPopoverElementChange?.(node);
+    },
+    [onPopoverElementChange],
+  );
+
   useEffect(() => {
     if (isDisabled && isOpen) {
       onClose();
     }
   }, [isDisabled, isOpen, onClose]);
+
+  useEffect(() => () => onPopoverElementChange?.(null), [onPopoverElementChange]);
 
   useLayoutEffect(() => {
     if (!isOpen) return;
@@ -321,6 +337,191 @@ export default function ColorPickerField({
   if (showSmartTab) resolvedTabs.push("smart");
   const showTabHeader = resolvedTabs.length > 1;
 
+  const popover = isOpen && !isDisabled ? (
+    <div
+      ref={handlePopoverRef}
+      className={styles.popover}
+      style={popoverStyle ? { left: popoverStyle.left, top: popoverStyle.top } : undefined}
+    >
+      {showTabHeader ? (
+        <SegmentedControl
+          ariaLabel={label}
+          value={activeTab}
+          onChange={handleSelectTab}
+          options={[
+            { value: "picker", label: t("label.picker") },
+            ...(showSavedTab ? [{ value: "saved" as const, label: t("label.saved") }] : []),
+            ...(showSmartTab ? [{ value: "smart" as const, label: t("label.smart") }] : []),
+          ]}
+        />
+      ) : null}
+      <div className={styles.tabContent}>
+        {activeTab === "picker" ? (
+          <div className={styles.picker}>
+            <RgbaColorPicker
+              color={pickerColor}
+              onChange={(value) => {
+                const next = rgbaToHex(value);
+                handleChangeNormalized(next);
+              }}
+              className={styles.colorful}
+            />
+            <ColorInputField
+              className={styles.hexInput}
+              value={hexDraft}
+              onDraftChange={handleHexChange}
+              disabled={isDisabled}
+              allowAlpha={allowAlpha}
+              onCommit={commitHexDraft}
+              onCancelOrReset={resetHexDraft}
+            />
+            {presetSwatches.length > 0 ? (
+              <div className={styles.swatchGrid} data-testid="preset-swatch-grid">
+                {presetSwatches.map((swatch) => (
+                  <SwatchButton
+                    key={swatch}
+                    color={swatch}
+                    label={`${t("actions.select")} ${swatch}`}
+                    title={swatch}
+                    isSelected={toNormalizedHex(swatch, true) === toNormalizedHex(selectedValue, true)}
+                    onClick={() => handleChangeNormalized(swatch)}
+                  />
+                ))}
+              </div>
+            ) : null}
+            {showDefaultOption || showRevertOption || showTransparentOption || showSaveOption ? (
+              <div className={styles.actionRow}>
+                {showDefaultOption ? (
+                  <SwatchButton
+                    color={defaultColor}
+                    label={`${t("actions.select")} ${defaultColor}`}
+                    title={t("form.heroquestDefaultBrown")}
+                    isSelected={toNormalizedHex(defaultColor, true) === toNormalizedHex(selectedValue, true)}
+                    onClick={onSelectDefault}
+                  />
+                ) : null}
+                {showRevertOption ? (
+                  <SwatchActionButton
+                    label={t("actions.cancel")}
+                    title={t("actions.cancel")}
+                    disabled={!canRevert}
+                    onClick={onRevert}
+                  >
+                    ↺
+                  </SwatchActionButton>
+                ) : null}
+                {showTransparentOption ? (
+                  <SwatchButton
+                    color={transparentValue}
+                    label={`${t("actions.select")} ${t("form.noBorder")}`}
+                    title={t("form.noBorder")}
+                    className={styles.noBorderSwatch}
+                    isSelected={isTransparent}
+                    onClick={onSelectTransparent}
+                  />
+                ) : null}
+                {showSaveOption ? (
+                  <SwatchActionButton
+                    label={t("form.saveSwatch")}
+                    title={t("form.saveSwatch")}
+                    disabled={!canSaveSwatch}
+                    onClick={() => {
+                      if (!normalizedSelected) return;
+                      void saveSwatch(normalizedSelected);
+                    }}
+                  >
+                    <Plus aria-hidden size={14} />
+                  </SwatchActionButton>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {activeTab === "saved" && showSavedTab ? (
+          <div className={styles.swatches}>
+            <div className={styles.specialRow}>
+              <SwatchButton
+                color={defaultColor}
+                label={`${t("actions.select")} ${defaultColor}`}
+                title={t("form.heroquestDefaultBrown")}
+                isSelected={toNormalizedHex(defaultColor, true) === toNormalizedHex(selectedValue, true)}
+                onClick={onSelectDefault}
+              />
+              <SwatchActionButton
+                label={t("actions.cancel")}
+                title={t("actions.cancel")}
+                disabled={!canRevert}
+                onClick={onRevert}
+              >
+                ↺
+              </SwatchActionButton>
+              <SwatchButton
+                color={transparentValue}
+                label={`${t("actions.select")} ${t("form.noBorder")}`}
+                title={t("form.noBorder")}
+                className={styles.noBorderSwatch}
+                isSelected={isTransparent}
+                onClick={onSelectTransparent}
+              />
+            </div>
+            <div className={styles.swatchGridScroll}>
+              <div className={styles.swatchGrid}>
+                {swatches.slice(0, maxSwatches).map((swatch) => (
+                  <SwatchWithRemove
+                    key={swatch}
+                    color={swatch}
+                    isSelected={toNormalizedHex(swatch, true) === toNormalizedHex(selectedValue, true)}
+                    onSelect={() => handleChangeNormalized(swatch)}
+                    onRemove={() => {
+                      void removeSwatch(swatch);
+                    }}
+                    ariaLabel={`${t("actions.select")} ${swatch}`}
+                    removeLabel={`${t("actions.delete")} ${swatch}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {activeTab === "smart" && showSmartTab ? (
+          <div className={styles.smartTab}>
+            <div className={styles.smartPopoverHeader}>{t("form.smartSuggestions")}</div>
+            {isSmartBusy ? (
+              <div className={styles.smartPopoverHint}>{t("form.smartSwatchLoading")}</div>
+            ) : smartGroups.length > 0 ? (
+              <div className={styles.swatchGridScroll}>
+                <div className={styles.smartPopoverGroups}>
+                  {smartGroups.map((group) => (
+                    <div key={group.id} className={styles.smartPopoverGroup}>
+                      <div className={styles.smartPopoverGroupLabel}>
+                        {t(`form.smartGroup.${group.id}` as never)}
+                      </div>
+                      <div className={styles.swatchGrid}>
+                        {group.colors.slice(0, 5).map((color) => (
+                          <button
+                            key={`${group.id}-${color}`}
+                            type="button"
+                            className={styles.smartPopoverSwatch}
+                            style={{ backgroundColor: color }}
+                            title={color}
+                            aria-label={`${t("actions.select")} ${color}`}
+                            onClick={() => handleChangeNormalized(color)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className={styles.smartPopoverHint}>{t("form.smartSwatchEmpty")}</div>
+            )}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  ) : null;
+
   return (
     <div className={styles.field}>
       {showLabel ? <label className="form-label">{label}</label> : null}
@@ -349,233 +550,27 @@ export default function ColorPickerField({
             }
             const swatchStyle = Object.keys(style).length > 0 ? style : undefined;
             return (
-          <button
-            type="button"
-            ref={swatchRef}
-            aria-label={`${t("actions.select")} ${selectedValue}`}
-            title={selectedValue}
-            className={`${styles.currentSwatch} ${isTransparent ? styles.noBorderSwatch : ""} ${
-              isDisabled ? styles.currentSwatchDisabled : ""
-            } ${swatchShape === "square" ? styles.currentSwatchSquare : ""}`}
-            style={swatchStyle}
-            onClick={isDisabled ? undefined : onToggleOpen}
-            disabled={isDisabled}
-          >
-            {swatchIcon ? <span className={styles.swatchOverlayIcon}>{swatchIcon}</span> : null}
-          </button>
+              <button
+                type="button"
+                ref={swatchRef}
+                aria-label={`${t("actions.select")} ${selectedValue}`}
+                title={selectedValue}
+                className={`${styles.currentSwatch} ${isTransparent ? styles.noBorderSwatch : ""} ${
+                  isDisabled ? styles.currentSwatchDisabled : ""
+                } ${swatchShape === "square" ? styles.currentSwatchSquare : ""}`}
+                style={swatchStyle}
+                onClick={isDisabled ? undefined : onToggleOpen}
+                disabled={isDisabled}
+              >
+                {swatchIcon ? <span className={styles.swatchOverlayIcon}>{swatchIcon}</span> : null}
+              </button>
             );
           })()}
         </div>
       </div>
-      {isOpen && !isDisabled ? (
-        <div
-          ref={popoverRef}
-          className={styles.popover}
-          style={popoverStyle ? { left: popoverStyle.left, top: popoverStyle.top } : undefined}
-        >
-          {showTabHeader ? (
-            <div className={styles.tabHeader}>
-              <button
-                type="button"
-                className={`${styles.tabButton} ${activeTab === "picker" ? styles.tabButtonActive : ""}`}
-                onClick={() => handleSelectTab("picker")}
-              >
-                {t("label.picker")}
-              </button>
-              {showSavedTab ? (
-                <button
-                  type="button"
-                  className={`${styles.tabButton} ${activeTab === "saved" ? styles.tabButtonActive : ""}`}
-                  onClick={() => handleSelectTab("saved")}
-                >
-                  {t("label.saved")}
-                </button>
-              ) : null}
-              {showSmartTab ? (
-                <button
-                  type="button"
-                  className={`${styles.tabButton} ${activeTab === "smart" ? styles.tabButtonActive : ""}`}
-                  onClick={() => handleSelectTab("smart")}
-                >
-                  {t("label.smart")}
-                </button>
-              ) : null}
-            </div>
-          ) : null}
-          <div className={styles.tabContent}>
-            {activeTab === "picker" ? (
-              <div className={styles.picker}>
-                <RgbaColorPicker
-                  color={pickerColor}
-                  onChange={(value) => {
-                    const next = rgbaToHex(value);
-                    handleChangeNormalized(next);
-                  }}
-                  className={styles.colorful}
-                />
-                <ColorInputField
-                  className={styles.hexInput}
-                  value={hexDraft}
-                  onDraftChange={handleHexChange}
-                  disabled={isDisabled}
-                  allowAlpha={allowAlpha}
-                  onCommit={commitHexDraft}
-                  onCancelOrReset={resetHexDraft}
-                />
-                {presetSwatches.length > 0 ? (
-                  <div className={styles.presetSwatches}>
-                    {presetSwatches.map((swatch) => (
-                      <SwatchButton
-                        key={swatch}
-                        color={swatch}
-                        label={`${t("actions.select")} ${swatch}`}
-                        title={swatch}
-                        isSelected={
-                          toNormalizedHex(swatch, true) === toNormalizedHex(selectedValue, true)
-                        }
-                        onClick={() => handleChangeNormalized(swatch)}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-                {showDefaultOption || showRevertOption || showTransparentOption || showSaveOption ? (
-                  <div className={styles.actionRow}>
-                    {showDefaultOption ? (
-                      <SwatchButton
-                        color={defaultColor}
-                        label={`${t("actions.select")} ${defaultColor}`}
-                        title={t("form.heroquestDefaultBrown")}
-                        isSelected={
-                          toNormalizedHex(defaultColor, true) === toNormalizedHex(selectedValue, true)
-                        }
-                        onClick={onSelectDefault}
-                      />
-                    ) : null}
-                    {showRevertOption ? (
-                      <SwatchActionButton
-                        label={t("actions.cancel")}
-                        title={t("actions.cancel")}
-                        disabled={!canRevert}
-                        onClick={onRevert}
-                      >
-                        ↺
-                      </SwatchActionButton>
-                    ) : null}
-                    {showTransparentOption ? (
-                      <SwatchButton
-                        color={transparentValue}
-                        label={`${t("actions.select")} ${t("form.noBorder")}`}
-                        title={t("form.noBorder")}
-                        className={styles.noBorderSwatch}
-                        isSelected={isTransparent}
-                        onClick={onSelectTransparent}
-                      />
-                    ) : null}
-                    {showSaveOption ? (
-                      <SwatchActionButton
-                        label={t("form.saveSwatch")}
-                        title={t("form.saveSwatch")}
-                        disabled={!canSaveSwatch}
-                        onClick={() => {
-                          if (!normalizedSelected) return;
-                          void saveSwatch(normalizedSelected);
-                        }}
-                      >
-                        <Plus aria-hidden size={14} />
-                      </SwatchActionButton>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-            {activeTab === "saved" && showSavedTab ? (
-              <div className={styles.swatches}>
-                <div className={styles.specialRow}>
-                  <SwatchButton
-                    color={defaultColor}
-                    label={`${t("actions.select")} ${defaultColor}`}
-                    title={t("form.heroquestDefaultBrown")}
-                    isSelected={
-                      toNormalizedHex(defaultColor, true) === toNormalizedHex(selectedValue, true)
-                    }
-                    onClick={onSelectDefault}
-                  />
-                  <SwatchActionButton
-                    label={t("actions.cancel")}
-                    title={t("actions.cancel")}
-                    disabled={!canRevert}
-                    onClick={onRevert}
-                  >
-                    ↺
-                  </SwatchActionButton>
-                  <SwatchButton
-                    color={transparentValue}
-                    label={`${t("actions.select")} ${t("form.noBorder")}`}
-                    title={t("form.noBorder")}
-                    className={styles.noBorderSwatch}
-                    isSelected={isTransparent}
-                    onClick={onSelectTransparent}
-                  />
-                </div>
-                <div className={styles.swatchGridScroll}>
-                  <div className={styles.swatchGrid}>
-                    {swatches.slice(0, maxSwatches).map((swatch) => (
-                      <SwatchWithRemove
-                        key={swatch}
-                        color={swatch}
-                        isSelected={
-                          toNormalizedHex(swatch, true) === toNormalizedHex(selectedValue, true)
-                        }
-                        onSelect={() => handleChangeNormalized(swatch)}
-                        onRemove={() => {
-                          void removeSwatch(swatch);
-                        }}
-                        ariaLabel={`${t("actions.select")} ${swatch}`}
-                        removeLabel={`${t("actions.delete")} ${swatch}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-            {activeTab === "smart" && showSmartTab ? (
-              <div className={styles.smartTab}>
-                <div className={styles.smartPopoverHeader}>{t("form.smartSuggestions")}</div>
-                {isSmartBusy ? (
-                  <div className={styles.smartPopoverHint}>{t("form.smartSwatchLoading")}</div>
-                ) : smartGroups.length > 0 ? (
-                  <div className={styles.swatchGridScroll}>
-                    <div className={styles.smartPopoverGroups}>
-                      {smartGroups.map((group) => (
-                        <div key={group.id} className={styles.smartPopoverGroup}>
-                          <div className={styles.smartPopoverGroupLabel}>
-                            {t(`form.smartGroup.${group.id}` as never)}
-                          </div>
-                          <div className={styles.swatchGrid}>
-                            {group.colors.slice(0, 5).map((color) => (
-                              <button
-                                key={`${group.id}-${color}`}
-                                type="button"
-                                className={styles.smartPopoverSwatch}
-                                style={{ backgroundColor: color }}
-                                title={color}
-                                aria-label={`${t("actions.select")} ${color}`}
-                                onClick={() => handleChangeNormalized(color)}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className={styles.smartPopoverHint}>{t("form.smartSwatchEmpty")}</div>
-                )}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+      {renderInPortal && popover && typeof document !== "undefined"
+        ? createPortal(popover, document.body)
+        : popover}
     </div>
   );
 }

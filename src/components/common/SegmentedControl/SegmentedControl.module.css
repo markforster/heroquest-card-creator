@@ -1,0 +1,45 @@
+.control {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--hq-tab-bg);
+  border: 1px solid var(--hq-tab-border);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: var(--hq-tab-text);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.buttonPrefix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.buttonLabel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.buttonActive {
+  background: var(--hq-tab-active-bg);
+  color: var(--hq-tab-active-text);
+}

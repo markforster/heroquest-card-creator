@@ -71,7 +71,7 @@
 
 .popover {
   position: fixed;
-  z-index: 20;
+  z-index: 1400;
   width: 220px;
   max-width: calc(100vw - 2rem);
   border-radius: 12px;
@@ -79,35 +79,6 @@
   background: var(--hq-popover-bg);
   box-shadow: var(--hq-popover-shadow);
   padding: 12px;
-}
-
-.tabHeader {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--hq-tab-bg);
-  border: 1px solid var(--hq-tab-border);
-  margin-bottom: 12px;
-}
-
-.tabButton {
-  border: none;
-  background: transparent;
-  color: var(--hq-tab-text);
-  font-size: var(--hq-control-text-primary);
-  line-height: var(--hq-control-line-height);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 6px 10px;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.tabButtonActive {
-  background: var(--hq-tab-active-bg);
-  color: var(--hq-tab-active-text);
 }
 
 .tabContent {
@@ -138,13 +109,6 @@
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 8px;
-}
-
-.presetSwatches {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(22px, 1fr));
-  gap: 6px;
-  width: 100%;
 }
 
 .swatches {
