@@ -200,6 +200,71 @@ export function resolveImageLayerHoverBounds({
   });
 }
 
+function resolveImageRenderedGeometry({
+  blueprint,
+  layer,
+  cardData,
+}: {
+  blueprint: Blueprint;
+  layer: BlueprintLayer;
+  cardData?: CardDataByTemplate[TemplateId];
+}) {
+  if (layer.type !== "image") return null;
+
+  const bounds = getLayerBounds(blueprint, layer);
+  const hasImageBinding = !!layer.bind?.imageKey;
+  const hasRenderInputs = hasImageBinding && !!cardData;
+
+  if (!hasRenderInputs) {
+    return {
+      bounds,
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+      centerX: bounds.x + bounds.width / 2,
+      centerY: bounds.y + bounds.height / 2,
+      rotation: 0,
+    };
+  }
+
+  const data = cardData as {
+    imageScale?: number;
+    imageScaleMode?: "absolute" | "relative";
+    imageOffsetX?: number;
+    imageOffsetY?: number;
+    imageRotation?: number;
+    imageOriginalWidth?: number;
+    imageOriginalHeight?: number;
+  };
+  const scale = data.imageScale ?? 1;
+  const scaleMode = data.imageScaleMode ?? "relative";
+  const offsetX = data.imageOffsetX ?? 0;
+  const offsetY = data.imageOffsetY ?? 0;
+  const rotation = data.imageRotation ?? 0;
+  const layerOffsetX = typeof layer.props?.offsetX === "number" ? layer.props.offsetX : 0;
+  const layerOffsetY = typeof layer.props?.offsetY === "number" ? layer.props.offsetY : 0;
+  const baseWidth = data.imageOriginalWidth ?? bounds.width;
+  const baseHeight = data.imageOriginalHeight ?? bounds.height;
+  const fitScale = computeContainScale(bounds, baseWidth, baseHeight);
+  const effectiveScale = scaleMode === "relative" ? fitScale * scale : scale;
+  const scaledWidth = baseWidth * effectiveScale;
+  const scaledHeight = baseHeight * effectiveScale;
+  const x = bounds.x + (bounds.width - scaledWidth) / 2 + offsetX + layerOffsetX;
+  const y = bounds.y + (bounds.height - scaledHeight) / 2 + offsetY + layerOffsetY;
+
+  return {
+    bounds,
+    x,
+    y,
+    width: scaledWidth,
+    height: scaledHeight,
+    centerX: x + scaledWidth / 2,
+    centerY: y + scaledHeight / 2,
+    rotation,
+  };
+}
+
 export function resolveImageLayerOverlayGeometry({
   blueprint,
   layer,
@@ -211,16 +276,21 @@ export function resolveImageLayerOverlayGeometry({
 }) {
   const frameBounds = resolveImageLayerHoverBounds({ blueprint, layer, cardData });
   if (!frameBounds) return null;
-
-  const centerX = frameBounds.x + frameBounds.width / 2;
-  const centerY = frameBounds.y + frameBounds.height / 2;
-  const rotation =
-    (cardData as { imageRotation?: number } | undefined)?.imageRotation ?? 0;
+  const renderedGeometry = resolveImageRenderedGeometry({ blueprint, layer, cardData });
+  if (!renderedGeometry) return null;
 
   return {
     frameBounds,
-    centerX,
-    centerY,
-    rotation,
+    centerX: frameBounds.x + frameBounds.width / 2,
+    centerY: frameBounds.y + frameBounds.height / 2,
+    pivotX: renderedGeometry.centerX,
+    pivotY: renderedGeometry.centerY,
+    renderedBounds: {
+      x: renderedGeometry.x,
+      y: renderedGeometry.y,
+      width: renderedGeometry.width,
+      height: renderedGeometry.height,
+    },
+    rotation: renderedGeometry.rotation,
   };
 }

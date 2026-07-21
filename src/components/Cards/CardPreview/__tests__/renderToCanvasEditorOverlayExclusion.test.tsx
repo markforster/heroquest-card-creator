@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { createRef } from "react";
+import { createRef, useMemo } from "react";
 import { useEffect } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 
@@ -11,14 +11,17 @@ import {
   useEditorTargets,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import {
+  GIZMO_CENTER_HANDLE_RADIUS,
+  GIZMO_MOVE_SNAP_INCREMENT,
   getArmEndpoint,
   getArmLengthForScale,
 } from "@/components/Cards/CardPreview/cardPreviewGizmoMath";
-import { getCardPreviewStageLayout } from "@/components/Cards/CardPreview/cardPreviewStage";
+import { CARD_HEIGHT, CARD_WIDTH, getCardPreviewStageLayout } from "@/components/Cards/CardPreview/cardPreviewStage";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
 import { computeImageZoomModel } from "@/lib/image-scale";
+import type { CardDataByTemplate } from "@/types/card-data";
 
 const capturedOverlayPresence: boolean[] = [];
 const mockGetStagePointFromClientCoordinates = jest.fn();
@@ -137,6 +140,28 @@ describe("CardPreview renderToCanvas", () => {
     );
   }
 
+  function WatchedCardPreview({
+    previewRef,
+    templateId,
+    templateName,
+  }: {
+    previewRef: React.RefObject<CardPreviewHandle | null>;
+    templateId: "hero";
+    templateName: string;
+  }) {
+    const values = useWatch() as CardDataByTemplate["hero"];
+    const cardData = useMemo(() => values, [values]);
+
+    return (
+      <CardPreview
+        ref={previewRef}
+        templateId={templateId}
+        templateName={templateName}
+        cardData={cardData}
+      />
+    );
+  }
+
   beforeEach(() => {
     capturedOverlayPresence.length = 0;
     mockGetStagePointFromClientCoordinates.mockReset();
@@ -212,8 +237,8 @@ describe("CardPreview renderToCanvas", () => {
     }
 
     const layout = getCardPreviewStageLayout();
-    const centerX = layout.cardOriginX + overlayGeometry.centerX;
-    const centerY = layout.cardOriginY + overlayGeometry.centerY;
+    const centerX = layout.cardOriginX + overlayGeometry.pivotX;
+    const centerY = layout.cardOriginY + overlayGeometry.pivotY;
     const zoomModel = computeImageZoomModel(
       imageLayer.bounds,
       selectedPreviewData.imageOriginalWidth,
@@ -235,6 +260,8 @@ describe("CardPreview renderToCanvas", () => {
     return {
       centerX,
       centerY,
+      frameCenterX: layout.cardOriginX + overlayGeometry.centerX,
+      frameCenterY: layout.cardOriginY + overlayGeometry.centerY,
       armEndX: armEnd.x,
       armEndY: armEnd.y,
     };
@@ -250,12 +277,7 @@ describe("CardPreview renderToCanvas", () => {
           <PreviewFormHarness
             defaultValues={selectedPreviewData}
           >
-            <CardPreview
-              ref={ref}
-              templateId="hero"
-              templateName="Hero"
-              cardData={selectedPreviewData}
-            />
+            <WatchedCardPreview previewRef={ref} templateId="hero" templateName="Hero" />
           </PreviewFormHarness>
         </EditorTargetsProvider>,
       );
@@ -289,6 +311,22 @@ describe("CardPreview renderToCanvas", () => {
       snapGuides: () => document.querySelector('[data-editor-image-snap-guides="true"]'),
       activeSnapGuide: () =>
         document.querySelector('[data-editor-image-snap-angle-active="true"]'),
+      moveGrid: () => document.querySelector('[data-editor-image-move-grid="true"]'),
+      moveGridMask: () => document.querySelector('[data-editor-image-move-grid-mask="true"]'),
+      moveGridGradient: () =>
+        document.querySelector('[data-editor-image-move-grid-gradient="true"]'),
+      moveGridLines: () => document.querySelectorAll('[data-editor-image-move-grid-line]'),
+      moveGridAxes: () => document.querySelectorAll('[data-editor-image-move-grid-axis="true"]'),
+      moveGridAccentLines: () =>
+        document.querySelectorAll('[data-editor-image-move-grid-accent-line]'),
+      pivotMarker: () => document.querySelector('[data-editor-image-pivot-marker="true"]'),
+      pivotMarkerAxes: () =>
+        document.querySelectorAll('[data-editor-image-pivot-marker-axis]'),
+      arm: () => document.querySelector('[data-editor-image-arm="true"]'),
+      moveHandleInnerDot: () =>
+        document.querySelector('[data-editor-image-move-handle-inner-dot="true"]'),
+      transformHandleVisual: () =>
+        document.querySelector('[data-editor-image-transform-handle-visual="true"]'),
       scaleSnapRings: () => document.querySelectorAll('[data-editor-image-snap-scale-ring]'),
       activeScaleSnapRing: () =>
         document.querySelector('[data-editor-image-snap-scale-ring-active="true"]'),
@@ -341,6 +379,88 @@ describe("CardPreview renderToCanvas", () => {
     expect(values()).toHaveAttribute("data-offset-y", "-18");
     expect(values()).toHaveAttribute("data-rotation", "0");
     expect(values()).toHaveAttribute("data-scale", "1");
+  });
+
+  it("uses the true rendered image pivot instead of the clipped frame center", () => {
+    const blueprint = blueprintsByTemplateId.hero;
+    const imageLayer = blueprint.layers.find((layer) => {
+      return layer.type === layerTypes.image && layer.bind?.imageKey === "imageAssetId";
+    });
+    if (!imageLayer) {
+      throw new Error("Expected hero image layer");
+    }
+
+    const overlayGeometry = resolveImageLayerOverlayGeometry({
+      blueprint,
+      layer: imageLayer,
+      cardData: {
+        ...selectedPreviewData,
+        imageScale: 2.2,
+        imageOffsetX: -180,
+        imageOffsetY: 36,
+        imageRotation: 18,
+      },
+    });
+    if (!overlayGeometry) {
+      throw new Error("Expected overlay geometry");
+    }
+
+    expect(overlayGeometry.centerX).not.toBeCloseTo(overlayGeometry.pivotX, 4);
+    expect(overlayGeometry.centerY).not.toBeCloseTo(overlayGeometry.pivotY, 4);
+  });
+
+  it("keeps free move offsets when the snap modifier is not held", async () => {
+    const { moveHandle, values, moveGrid } = await renderSelectedPreview();
+    const { centerX, centerY } = getSelectedPreviewStageGeometry();
+    const handle = moveHandle();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: centerX, y: centerY })
+      .mockReturnValueOnce({ x: centerX + 25, y: centerY - 17 });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 14, altKey: false });
+      fireEvent.pointerMove(handle, { pointerId: 14, altKey: false });
+    });
+
+    expect(values()).toHaveAttribute("data-offset-x", "25");
+    expect(values()).toHaveAttribute("data-offset-y", "-17");
+    expect(moveGrid()).toBeNull();
+  });
+
+  it("snaps move offsets to the nearest 12 units when the modifier is held", async () => {
+    const {
+      moveHandle,
+      values,
+      moveGrid,
+      moveGridMask,
+      moveGridGradient,
+      pivotMarker,
+      pivotMarkerAxes,
+      moveGridAccentLines,
+      moveHandleInnerDot,
+    } = await renderSelectedPreview();
+    const { centerX, centerY } = getSelectedPreviewStageGeometry();
+    const handle = moveHandle();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: centerX, y: centerY })
+      .mockReturnValueOnce({ x: centerX + 25, y: centerY - 17 });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 15, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 15, altKey: true });
+    });
+
+    expect(values()).toHaveAttribute("data-offset-x", "24");
+    expect(values()).toHaveAttribute("data-offset-y", "-12");
+    expect(moveGrid()).not.toBeNull();
+    expect(moveGrid()).toHaveAttribute("mask");
+    expect(moveGridMask()).not.toBeNull();
+    expect(moveGridGradient()).not.toBeNull();
+    expect(moveGridAccentLines().length).toBeGreaterThan(0);
+    expect(pivotMarker()).not.toBeNull();
+    expect(pivotMarkerAxes()).toHaveLength(2);
+    expect(moveHandleInnerDot()).toBeNull();
   });
 
   it("updates image rotation and scale while dragging the transform handle", async () => {
@@ -498,6 +618,312 @@ describe("CardPreview renderToCanvas", () => {
     });
 
     expect(snapGuides()).toBeNull();
+  });
+
+  it("shows the move grid only during move drags with the modifier held", async () => {
+    const { moveHandle, moveGrid, moveGridMask, moveGridGradient } = await renderSelectedPreview();
+    const { centerX, centerY } = getSelectedPreviewStageGeometry();
+    const handle = moveHandle();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: centerX, y: centerY })
+      .mockReturnValueOnce({ x: centerX + 12, y: centerY + 8 });
+
+    expect(moveGrid()).toBeNull();
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 16, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 16, altKey: true });
+    });
+
+    expect(moveGrid()).not.toBeNull();
+    expect(moveGridMask()).not.toBeNull();
+    expect(moveGridGradient()).not.toBeNull();
+  });
+
+  it("enables move snap when the modifier is pressed during an active move drag", async () => {
+    const { moveHandle, values, moveGrid } = await renderSelectedPreview();
+    const { centerX, centerY } = getSelectedPreviewStageGeometry();
+    const handle = moveHandle();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: centerX, y: centerY })
+      .mockReturnValueOnce({ x: centerX + 25, y: centerY - 17 })
+      .mockReturnValueOnce({ x: centerX + 25, y: centerY - 17 });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 17, altKey: false });
+      fireEvent.pointerMove(handle, { pointerId: 17, altKey: false });
+    });
+
+    expect(values()).toHaveAttribute("data-offset-x", "25");
+    expect(values()).toHaveAttribute("data-offset-y", "-17");
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 17, altKey: true });
+    });
+
+    expect(values()).toHaveAttribute("data-offset-x", "24");
+    expect(values()).toHaveAttribute("data-offset-y", "-12");
+    expect(moveGrid()).not.toBeNull();
+  });
+
+  it("returns to free move offsets when the modifier is released during an active move drag", async () => {
+    const { moveHandle, values, moveGrid } = await renderSelectedPreview();
+    const { centerX, centerY } = getSelectedPreviewStageGeometry();
+    const handle = moveHandle();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: centerX, y: centerY })
+      .mockReturnValueOnce({ x: centerX + 25, y: centerY - 17 })
+      .mockReturnValueOnce({ x: centerX + 25, y: centerY - 17 });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 18, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 18, altKey: true });
+    });
+
+    expect(values()).toHaveAttribute("data-offset-x", "24");
+    expect(values()).toHaveAttribute("data-offset-y", "-12");
+    expect(moveGrid()).not.toBeNull();
+
+    await act(async () => {
+      fireEvent.keyUp(window, { key: "Alt", altKey: false });
+      fireEvent.pointerMove(handle, { pointerId: 18, altKey: false });
+    });
+
+    expect(values()).toHaveAttribute("data-offset-x", "25");
+    expect(values()).toHaveAttribute("data-offset-y", "-17");
+    expect(moveGrid()).toBeNull();
+  });
+
+  it("keeps move grid lines anchored while the image offset changes", async () => {
+    const {
+      moveHandle,
+      moveGridLines,
+      moveGridAxes,
+      moveGridGradient,
+      moveGridAccentLines,
+    } =
+      await renderSelectedPreview();
+    const { centerX, centerY } = getSelectedPreviewStageGeometry();
+    const handle = moveHandle();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: centerX, y: centerY })
+      .mockReturnValueOnce({ x: centerX + 24, y: centerY - 12 })
+      .mockReturnValueOnce({ x: centerX + 48, y: centerY - 24 });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 19, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 19, altKey: true });
+    });
+
+    const firstPositions = Array.from(moveGridLines()).map((line) =>
+      line.getAttribute("data-editor-image-move-grid-position"),
+    );
+
+    await act(async () => {
+      fireEvent.pointerMove(handle, { pointerId: 19, altKey: true });
+    });
+
+    const secondPositions = Array.from(moveGridLines()).map((line) =>
+      line.getAttribute("data-editor-image-move-grid-position"),
+    );
+    const accentLines = Array.from(moveGridAccentLines());
+    const accentPositions = accentLines.map((line) =>
+      line.getAttribute("data-editor-image-move-grid-accent-position"),
+    );
+
+    expect(secondPositions).toEqual(firstPositions);
+    expect(moveGridGradient()).toHaveAttribute("cx", String(centerX + 48));
+    expect(moveGridGradient()).toHaveAttribute("cy", String(centerY - 21.5));
+
+    const axisPositions = Array.from(moveGridAxes()).map((line) => ({
+      orientation: line.getAttribute("data-editor-image-move-grid-line"),
+      position: line.getAttribute("data-editor-image-move-grid-position"),
+    }));
+    const layout = getCardPreviewStageLayout();
+
+    expect(axisPositions).toEqual([
+      {
+        orientation: "vertical",
+        position: String(layout.cardOriginX + CARD_WIDTH / 2),
+      },
+      {
+        orientation: "horizontal",
+        position: String(layout.cardOriginY + CARD_HEIGHT / 2),
+      },
+    ]);
+    const axisPositionValues = axisPositions.map((entry) => entry.position);
+    const expectedAccentPositions = secondPositions.filter((position) => {
+      if (!position || axisPositionValues.includes(position)) {
+        return false;
+      }
+      const numericPosition = Number(position);
+      const axisPosition =
+        numericPosition === Number(axisPositionValues[0]) ||
+        numericPosition === Number(axisPositionValues[1])
+          ? numericPosition
+          : null;
+      const anchor =
+        Math.abs(numericPosition - Number(axisPositionValues[0])) %
+          GIZMO_MOVE_SNAP_INCREMENT ===
+        0
+          ? Number(axisPositionValues[0])
+          : Number(axisPositionValues[1]);
+      const offsetIndex = Math.round(
+        (numericPosition - anchor) / GIZMO_MOVE_SNAP_INCREMENT,
+      );
+      return offsetIndex !== 0 && Math.abs(offsetIndex) % 10 === 0;
+    });
+    expect(accentPositions).toEqual(expectedAccentPositions);
+  });
+
+  it("keeps the move handle aligned to the snapped grid intersection", async () => {
+    const { moveHandle, values, pivotMarker, arm } = await renderSelectedPreview();
+    const { centerX, centerY } = getSelectedPreviewStageGeometry();
+    const handle = moveHandle();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: centerX, y: centerY })
+      .mockReturnValueOnce({ x: centerX + 25, y: centerY - 17 });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 21, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 21, altKey: true });
+    });
+
+    expect(values()).toHaveAttribute("data-offset-x", "24");
+    expect(values()).toHaveAttribute("data-offset-y", "-12");
+    expect(handle).toHaveAttribute("cx", String(centerX + 24));
+    expect(handle).toHaveAttribute("cy", String(centerY - 12));
+
+    const marker = pivotMarker();
+    if (!(marker instanceof SVGElement)) {
+      throw new Error("Expected pivot marker");
+    }
+
+    const markerCircle = marker.querySelector("circle");
+    if (!(markerCircle instanceof Element)) {
+      throw new Error("Expected pivot marker circle");
+    }
+
+    expect(markerCircle).toHaveAttribute("cx", String(centerX + 24));
+    expect(markerCircle).toHaveAttribute("cy", String(centerY - 9.5));
+
+    const armLine = arm();
+    if (!(armLine instanceof SVGElement)) {
+      throw new Error("Expected move arm");
+    }
+
+    expect(Number(armLine.getAttribute("x1"))).toBeCloseTo(centerX + 24 + GIZMO_CENTER_HANDLE_RADIUS, 4);
+    expect(Number(armLine.getAttribute("y1"))).toBeCloseTo(centerY - 9.5, 4);
+    expect(Number(armLine.getAttribute("y2"))).toBeCloseTo(centerY - 9.5, 4);
+  });
+
+  it("nudges the move-snap visual center slightly below the snapped y coordinate", async () => {
+    const { moveHandle, pivotMarker, transformHandleVisual, arm } = await renderSelectedPreview();
+    const { centerX, centerY } = getSelectedPreviewStageGeometry();
+    const handle = moveHandle();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: centerX, y: centerY })
+      .mockReturnValueOnce({ x: centerX + 25, y: centerY - 17 });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 23, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 23, altKey: true });
+    });
+
+    expect(handle).toHaveAttribute("cx", String(centerX + 24));
+    expect(handle).toHaveAttribute("cy", String(centerY - 12));
+
+    const marker = pivotMarker();
+    if (!(marker instanceof SVGElement)) {
+      throw new Error("Expected pivot marker");
+    }
+
+    const markerCircle = marker.querySelector("circle");
+    if (!(markerCircle instanceof Element)) {
+      throw new Error("Expected pivot marker circle");
+    }
+
+    expect(markerCircle).toHaveAttribute("cx", String(centerX + 24));
+    expect(markerCircle).toHaveAttribute("cy", String(centerY - 9.5));
+    expect(Number(markerCircle.getAttribute("cy"))).toBeCloseTo(
+      Number(handle.getAttribute("cy")) + 2.5,
+      4,
+    );
+
+    const transformVisual = transformHandleVisual();
+    if (!(transformVisual instanceof SVGElement)) {
+      throw new Error("Expected transform handle visual");
+    }
+
+    expect(Number(transformVisual.getAttribute("cy"))).toBeCloseTo(centerY - 9.5, 4);
+
+    const armLine = arm();
+    if (!(armLine instanceof SVGElement)) {
+      throw new Error("Expected move arm");
+    }
+
+    expect(Number(armLine.getAttribute("y1"))).toBeCloseTo(centerY - 9.5, 4);
+    expect(Number(armLine.getAttribute("y2"))).toBeCloseTo(centerY - 9.5, 4);
+  });
+
+  it("keeps the transform arm centered and inner dot visible outside move-snap mode", async () => {
+    const { transformHandle, arm, moveHandleInnerDot } = await renderSelectedPreview();
+    const { centerX, centerY, armEndX, armEndY } = getSelectedPreviewStageGeometry();
+    const handle = transformHandle();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: armEndX, y: armEndY })
+      .mockReturnValueOnce({ x: armEndX, y: armEndY });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 22, altKey: false });
+      fireEvent.pointerMove(handle, { pointerId: 22, altKey: false });
+    });
+
+    const armLine = arm();
+    if (!(armLine instanceof SVGElement)) {
+      throw new Error("Expected transform arm");
+    }
+
+    expect(armLine).toHaveAttribute("x1", String(centerX));
+    expect(armLine).toHaveAttribute("y1", String(centerY));
+    expect(moveHandleInnerDot()).not.toBeNull();
+  });
+
+  it("emphasizes exactly one vertical and one horizontal center axis in the move grid", async () => {
+    const { moveHandle, moveGridAxes, moveGridAccentLines } = await renderSelectedPreview();
+    const { centerX, centerY } = getSelectedPreviewStageGeometry();
+    const handle = moveHandle();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: centerX, y: centerY })
+      .mockReturnValueOnce({ x: centerX + 24, y: centerY - 12 });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 20, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 20, altKey: true });
+    });
+
+    const axes = Array.from(moveGridAxes());
+    const verticalAxes = axes.filter(
+      (line) => line.getAttribute("data-editor-image-move-grid-line") === "vertical",
+    );
+    const horizontalAxes = axes.filter(
+      (line) => line.getAttribute("data-editor-image-move-grid-line") === "horizontal",
+    );
+
+    expect(verticalAxes).toHaveLength(1);
+    expect(horizontalAxes).toHaveLength(1);
+    expect(verticalAxes[0]).toHaveAttribute("stroke-width", "3");
+    expect(horizontalAxes[0]).toHaveAttribute("stroke-width", "3");
+    const accents = Array.from(moveGridAccentLines());
+    expect(accents.length).toBeGreaterThan(0);
+    expect(accents[0]).toHaveAttribute("stroke-width", "2");
   });
 
   it("snaps scale to the nearest relative ring when the modifier is held within tolerance", async () => {

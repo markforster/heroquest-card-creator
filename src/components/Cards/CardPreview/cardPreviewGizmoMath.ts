@@ -16,6 +16,7 @@ export const GIZMO_ROTATION_SNAP_ANGLES = [0, 90, 180, 270] as const;
 export const GIZMO_SCALE_SNAP_STEP_RATIO = 0.25;
 export const GIZMO_SCALE_SNAP_RING_OFFSETS = [-2, -1, 0, 1, 2] as const;
 export const GIZMO_SCALE_SNAP_RADIUS_TOLERANCE = 8;
+export const GIZMO_MOVE_SNAP_INCREMENT = 12;
 
 export function getArmBaseLengthForFrame(width: number, height: number) {
   return clamp(Math.max(width, height) * 0.14, GIZMO_ARM_LENGTH_MIN, 96);
@@ -178,4 +179,44 @@ export function getSnappedScale({
   }
 
   return nearestRing;
+}
+
+export function getSnappedOffset(
+  offset: number,
+  increment: number = GIZMO_MOVE_SNAP_INCREMENT,
+) {
+  if (!Number.isFinite(offset) || !Number.isFinite(increment) || increment <= 0) {
+    return roundStageValue(offset);
+  }
+
+  return roundStageValue(Math.round(offset / increment) * increment);
+}
+
+export function getAnchoredGridLinePositions({
+  stageStart,
+  stageEnd,
+  anchor,
+  increment = GIZMO_MOVE_SNAP_INCREMENT,
+}: {
+  stageStart: number;
+  stageEnd: number;
+  anchor: number;
+  increment?: number;
+}) {
+  if (!Number.isFinite(stageStart) || !Number.isFinite(stageEnd) || !Number.isFinite(anchor)) {
+    return [];
+  }
+  if (!Number.isFinite(increment) || increment <= 0) {
+    return [];
+  }
+
+  const positions: number[] = [];
+  const firstIndex = Math.ceil((stageStart - anchor) / increment);
+  const lastIndex = Math.floor((stageEnd - anchor) / increment);
+
+  for (let index = firstIndex; index <= lastIndex; index += 1) {
+    positions.push(roundStageValue(anchor + index * increment));
+  }
+
+  return positions;
 }

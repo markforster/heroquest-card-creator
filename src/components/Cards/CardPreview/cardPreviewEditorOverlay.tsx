@@ -16,26 +16,29 @@ import {
 import { clamp } from "@/lib/math";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 
-import { getCardPreviewStageLayout } from "./cardPreviewStage";
+import { CARD_HEIGHT, CARD_WIDTH, getCardPreviewStageLayout } from "./cardPreviewStage";
 import {
   GIZMO_ARM_LENGTH_MAX,
   GIZMO_CENTER_HANDLE_HIT_RADIUS,
   GIZMO_CENTER_HANDLE_INNER_RADIUS,
   GIZMO_CENTER_HANDLE_RADIUS,
   GIZMO_FRAME_RADIUS,
+  GIZMO_MOVE_SNAP_INCREMENT,
   GIZMO_MOVE_HANDLE_HIT_RADIUS,
   GIZMO_ROTATION_SNAP_ANGLES,
   GIZMO_SCALE_EPSILON,
   GIZMO_TRANSFORM_HANDLE_HIT_RADIUS,
   GIZMO_TRANSFORM_HANDLE_RADIUS,
+  getAnchoredGridLinePositions,
   getAngleDegrees,
   getArmEndpoint,
   getArmLengthForScale,
   getDistance,
   getScaleSnapRings,
+  getSnappedOffset,
   getSnappedRotation,
   getSnappedScale,
   normalizeShortestAngleDegrees,
@@ -63,6 +66,18 @@ const GIZMO_MOVE_HANDLE_STROKE_WIDTH = 4;
 const GIZMO_TRANSFORM_HANDLE_STROKE_WIDTH = 3;
 const GIZMO_SNAP_RING_STROKE_WIDTH = 2;
 const GIZMO_SNAP_RING_ACTIVE_STROKE_WIDTH = 4;
+const GIZMO_MOVE_GRID_STROKE_WIDTH = 2;
+const GIZMO_MOVE_GRID_ACCENT_STROKE_WIDTH = 2;
+const GIZMO_MOVE_GRID_AXIS_STROKE_WIDTH = 3;
+const GIZMO_MOVE_GRID_AXIS_STROKE = "rgba(236, 72, 153, 0.72)";
+const GIZMO_MOVE_GRID_ACCENT_STROKE = "rgba(236, 72, 153, 0.5)";
+const GIZMO_PIVOT_MARKER_STROKE = "rgba(236, 72, 153, 0.94)";
+const GIZMO_PIVOT_MARKER_STROKE_WIDTH = 2;
+const GIZMO_PIVOT_MARKER_RADIUS = 5;
+const GIZMO_PIVOT_MARKER_CROSSHAIR_HALF = 10;
+const GIZMO_MOVE_SNAP_HANDLE_FILL = "rgba(17, 24, 39, 0.24)";
+const GIZMO_MOVE_SNAP_VISUAL_OFFSET_Y = 2.5;
+const GIZMO_MOVE_GRID_MASK_RADIUS = 360;
 
 type DragState =
   | {
@@ -92,6 +107,7 @@ export default function CardPreviewEditorOverlay({
 }: CardPreviewEditorOverlayProps) {
   const form = useFormContext() as ReturnType<typeof useFormContext> | null;
   const editorTargets = useOptionalEditorTargets();
+  const overlayId = useId().replace(/:/g, "");
   const svgRef = useRef<SVGSVGElement | null>(null);
   const dragStateRef = useRef<DragState | null>(null);
   const snapModifierActiveRef = useRef(false);
@@ -160,9 +176,9 @@ export default function CardPreviewEditorOverlay({
   const layout = getCardPreviewStageLayout();
   const frameBounds = overlayGeometry?.frameBounds ?? null;
   const stageCenterX =
-    overlayGeometry ? layout.cardOriginX + overlayGeometry.centerX : 0;
+    overlayGeometry ? layout.cardOriginX + overlayGeometry.pivotX : 0;
   const stageCenterY =
-    overlayGeometry ? layout.cardOriginY + overlayGeometry.centerY : 0;
+    overlayGeometry ? layout.cardOriginY + overlayGeometry.pivotY : 0;
   const armLength = frameBounds
     ? getArmLengthForScale({
         frameWidth: frameBounds.width,
@@ -226,6 +242,36 @@ export default function CardPreviewEditorOverlay({
           maxScale: transformDragState.maxScale,
         })
       : [];
+  const moveGridVerticalLines =
+    activeDragMode === "move" && snapModifierActive
+      ? getAnchoredGridLinePositions({
+          stageStart: 0,
+          stageEnd: layout.stageWidth,
+          anchor: layout.cardOriginX + CARD_WIDTH / 2,
+          increment: GIZMO_MOVE_SNAP_INCREMENT,
+        })
+      : [];
+  const moveGridHorizontalLines =
+    activeDragMode === "move" && snapModifierActive
+      ? getAnchoredGridLinePositions({
+          stageStart: 0,
+          stageEnd: layout.stageHeight,
+          anchor: layout.cardOriginY + CARD_HEIGHT / 2,
+          increment: GIZMO_MOVE_SNAP_INCREMENT,
+        })
+      : [];
+  const moveGridCenterX = layout.cardOriginX + CARD_WIDTH / 2;
+  const moveGridCenterY = layout.cardOriginY + CARD_HEIGHT / 2;
+  const isMoveSnapActive = activeDragMode === "move" && snapModifierActive;
+  const moveSnapVisualCenterY = stageCenterY + GIZMO_MOVE_SNAP_VISUAL_OFFSET_Y;
+  const moveGridAccentVerticalLines = moveGridVerticalLines.filter((lineX) => {
+    const offsetIndex = Math.round((lineX - moveGridCenterX) / GIZMO_MOVE_SNAP_INCREMENT);
+    return offsetIndex !== 0 && Math.abs(offsetIndex) % 10 === 0;
+  });
+  const moveGridAccentHorizontalLines = moveGridHorizontalLines.filter((lineY) => {
+    const offsetIndex = Math.round((lineY - moveGridCenterY) / GIZMO_MOVE_SNAP_INCREMENT);
+    return offsetIndex !== 0 && Math.abs(offsetIndex) % 10 === 0;
+  });
   const snapGuideRadius = clamp(
     Math.max(
       Math.max(frameBounds.width, frameBounds.height) * 0.36,
@@ -262,6 +308,7 @@ export default function CardPreviewEditorOverlay({
       startOffsetY: data.imageOffsetY ?? 0,
     };
     setActiveDragMode("move");
+    setSnapModifierState(event.altKey || snapModifierActiveRef.current);
     setActiveSnapAngle(null);
     setActiveSnapScaleRatio(null);
   };
@@ -293,12 +340,21 @@ export default function CardPreviewEditorOverlay({
     setActiveSnapScaleRatio(null);
   };
 
-  const updateMoveDrag = (state: Extract<DragState, { mode: "move" }>, point: { x: number; y: number }) => {
-    setValue("imageOffsetX", roundStageValue(state.startOffsetX + (point.x - state.startPointerX)), {
+  const updateMoveDrag = (
+    state: Extract<DragState, { mode: "move" }>,
+    point: { x: number; y: number },
+    snapActive: boolean,
+  ) => {
+    const freeOffsetX = roundStageValue(state.startOffsetX + (point.x - state.startPointerX));
+    const freeOffsetY = roundStageValue(state.startOffsetY + (point.y - state.startPointerY));
+    const nextOffsetX = snapActive ? getSnappedOffset(freeOffsetX) : freeOffsetX;
+    const nextOffsetY = snapActive ? getSnappedOffset(freeOffsetY) : freeOffsetY;
+
+    setValue("imageOffsetX", nextOffsetX, {
       shouldDirty: true,
       shouldTouch: true,
     });
-    setValue("imageOffsetY", roundStageValue(state.startOffsetY + (point.y - state.startPointerY)), {
+    setValue("imageOffsetY", nextOffsetY, {
       shouldDirty: true,
       shouldTouch: true,
     });
@@ -348,9 +404,8 @@ export default function CardPreviewEditorOverlay({
   const handlePointerMove = (event: React.PointerEvent<SVGCircleElement>) => {
     const state = dragStateRef.current;
     if (!state || state.pointerId !== event.pointerId) return;
-    const snapActive =
-      state.mode === "transform" ? event.altKey || snapModifierActiveRef.current : false;
-    if (state.mode === "transform" && snapModifierActiveRef.current !== snapActive) {
+    const snapActive = event.altKey || snapModifierActiveRef.current;
+    if (snapModifierActiveRef.current !== snapActive) {
       setSnapModifierState(snapActive);
     }
     const point = getStagePoint(event);
@@ -359,7 +414,7 @@ export default function CardPreviewEditorOverlay({
     event.preventDefault();
 
     if (state.mode === "move") {
-      updateMoveDrag(state, point);
+      updateMoveDrag(state, point, snapActive);
       return;
     }
 
@@ -383,8 +438,152 @@ export default function CardPreviewEditorOverlay({
   const armStroke = activeDragMode === "transform" ? GIZMO_CYAN_ACTIVE : GIZMO_CYAN_FRAME;
   const moveCursor = activeDragMode === "move" ? "grabbing" : "grab";
   const transformCursor = activeDragMode === "transform" ? "grabbing" : "grab";
+  const armStart = isMoveSnapActive
+    ? getArmEndpoint({
+        centerX: stageCenterX,
+        centerY: stageCenterY,
+        rotationDeg: overlayGeometry.rotation,
+        armLength: GIZMO_CENTER_HANDLE_RADIUS,
+      })
+    : { x: stageCenterX, y: stageCenterY };
+  const visualArmStartY = isMoveSnapActive ? armStart.y + GIZMO_MOVE_SNAP_VISUAL_OFFSET_Y : armStart.y;
+  const visualArmEndY = isMoveSnapActive ? armEnd.y + GIZMO_MOVE_SNAP_VISUAL_OFFSET_Y : armEnd.y;
+  const visualTransformHandleY = isMoveSnapActive
+    ? armEnd.y + GIZMO_MOVE_SNAP_VISUAL_OFFSET_Y
+    : armEnd.y;
+  const moveGridGradientId = `editor-image-move-grid-gradient-${overlayId}`;
+  const moveGridMaskId = `editor-image-move-grid-mask-${overlayId}`;
   return (
     <g data-preview-only="editor-overlay" data-editor-overlay="true">
+      {isMoveSnapActive ? (
+        <>
+          <defs data-editor-image-move-grid-defs="true">
+            <radialGradient
+              id={moveGridGradientId}
+              gradientUnits="userSpaceOnUse"
+              cx={stageCenterX}
+              cy={moveSnapVisualCenterY}
+              r={GIZMO_MOVE_GRID_MASK_RADIUS}
+              data-editor-image-move-grid-gradient="true"
+            >
+              <stop offset="0%" stopColor="white" stopOpacity="0.94" />
+              <stop offset="72%" stopColor="white" stopOpacity="0.82" />
+              <stop offset="90%" stopColor="white" stopOpacity="0.28" />
+              <stop offset="100%" stopColor="white" stopOpacity="0" />
+            </radialGradient>
+            <mask
+              id={moveGridMaskId}
+              maskUnits="userSpaceOnUse"
+              maskContentUnits="userSpaceOnUse"
+              x={0}
+              y={0}
+              width={layout.stageWidth}
+              height={layout.stageHeight}
+              data-editor-image-move-grid-mask="true"
+            >
+              <rect
+                x={0}
+                y={0}
+                width={layout.stageWidth}
+                height={layout.stageHeight}
+                fill={`url(#${moveGridGradientId})`}
+              />
+            </mask>
+          </defs>
+          <g data-editor-image-move-grid="true" mask={`url(#${moveGridMaskId})`}>
+            {moveGridVerticalLines.map((lineX) => (
+              <line
+                key={`move-grid-v-${lineX}`}
+                x1={lineX}
+                y1={0}
+                x2={lineX}
+                y2={layout.stageHeight}
+                stroke={lineX === moveGridCenterX ? GIZMO_MOVE_GRID_AXIS_STROKE : GIZMO_SNAP_GUIDE}
+                strokeWidth={lineX === moveGridCenterX ? GIZMO_MOVE_GRID_AXIS_STROKE_WIDTH : GIZMO_MOVE_GRID_STROKE_WIDTH}
+                pointerEvents="none"
+                data-editor-image-move-grid-line="vertical"
+                data-editor-image-move-grid-position={String(lineX)}
+                data-editor-image-move-grid-axis={lineX === moveGridCenterX ? "true" : "false"}
+              />
+            ))}
+            {moveGridHorizontalLines.map((lineY) => (
+              <line
+                key={`move-grid-h-${lineY}`}
+                x1={0}
+                y1={lineY}
+                x2={layout.stageWidth}
+                y2={lineY}
+                stroke={lineY === moveGridCenterY ? GIZMO_MOVE_GRID_AXIS_STROKE : GIZMO_SNAP_GUIDE}
+                strokeWidth={lineY === moveGridCenterY ? GIZMO_MOVE_GRID_AXIS_STROKE_WIDTH : GIZMO_MOVE_GRID_STROKE_WIDTH}
+                pointerEvents="none"
+                data-editor-image-move-grid-line="horizontal"
+                data-editor-image-move-grid-position={String(lineY)}
+                data-editor-image-move-grid-axis={lineY === moveGridCenterY ? "true" : "false"}
+              />
+            ))}
+            {moveGridAccentVerticalLines.map((lineX) => (
+                <line
+                  key={`move-grid-accent-v-${lineX}`}
+                  x1={lineX}
+                  y1={0}
+                  x2={lineX}
+                  y2={layout.stageHeight}
+                  stroke={GIZMO_MOVE_GRID_ACCENT_STROKE}
+                  strokeWidth={GIZMO_MOVE_GRID_ACCENT_STROKE_WIDTH}
+                  pointerEvents="none"
+                  data-editor-image-move-grid-accent-line="vertical"
+                  data-editor-image-move-grid-accent-position={String(lineX)}
+                />
+              ))}
+            {moveGridAccentHorizontalLines.map((lineY) => (
+                <line
+                  key={`move-grid-accent-h-${lineY}`}
+                  x1={0}
+                  y1={lineY}
+                  x2={layout.stageWidth}
+                  y2={lineY}
+                  stroke={GIZMO_MOVE_GRID_ACCENT_STROKE}
+                  strokeWidth={GIZMO_MOVE_GRID_ACCENT_STROKE_WIDTH}
+                  pointerEvents="none"
+                  data-editor-image-move-grid-accent-line="horizontal"
+                  data-editor-image-move-grid-accent-position={String(lineY)}
+                />
+              ))}
+          </g>
+        </>
+      ) : null}
+      {isMoveSnapActive ? (
+        <g data-editor-image-pivot-marker="true" pointerEvents="none">
+          <line
+            x1={stageCenterX - GIZMO_PIVOT_MARKER_CROSSHAIR_HALF}
+            y1={moveSnapVisualCenterY}
+            x2={stageCenterX + GIZMO_PIVOT_MARKER_CROSSHAIR_HALF}
+            y2={moveSnapVisualCenterY}
+            stroke={GIZMO_PIVOT_MARKER_STROKE}
+            strokeWidth={GIZMO_PIVOT_MARKER_STROKE_WIDTH}
+            strokeLinecap="round"
+            data-editor-image-pivot-marker-axis="horizontal"
+          />
+          <line
+            x1={stageCenterX}
+            y1={moveSnapVisualCenterY - GIZMO_PIVOT_MARKER_CROSSHAIR_HALF}
+            x2={stageCenterX}
+            y2={moveSnapVisualCenterY + GIZMO_PIVOT_MARKER_CROSSHAIR_HALF}
+            stroke={GIZMO_PIVOT_MARKER_STROKE}
+            strokeWidth={GIZMO_PIVOT_MARKER_STROKE_WIDTH}
+            strokeLinecap="round"
+            data-editor-image-pivot-marker-axis="vertical"
+          />
+          <circle
+            cx={stageCenterX}
+            cy={moveSnapVisualCenterY}
+            r={GIZMO_PIVOT_MARKER_RADIUS}
+            fill="none"
+            stroke={GIZMO_PIVOT_MARKER_STROKE}
+            strokeWidth={GIZMO_PIVOT_MARKER_STROKE_WIDTH}
+          />
+        </g>
+      ) : null}
       {activeDragMode === "transform" && snapModifierActive ? (
         <g data-editor-image-snap-guides="true">
           {scaleSnapRings.map((ring) => {
@@ -445,10 +644,10 @@ export default function CardPreviewEditorOverlay({
         data-editor-image-frame="true"
       />
       <line
-        x1={stageCenterX}
-        y1={stageCenterY}
+        x1={armStart.x}
+        y1={visualArmStartY}
         x2={armEnd.x}
-        y2={armEnd.y}
+        y2={visualArmEndY}
         stroke={armStroke}
         strokeWidth={GIZMO_ARM_STROKE_WIDTH}
         strokeLinecap="round"
@@ -457,24 +656,27 @@ export default function CardPreviewEditorOverlay({
       />
       <circle
         cx={stageCenterX}
-        cy={stageCenterY}
+        cy={isMoveSnapActive ? moveSnapVisualCenterY : stageCenterY}
         r={GIZMO_CENTER_HANDLE_RADIUS}
-        fill={GIZMO_DARK_RING}
+        fill={isMoveSnapActive ? GIZMO_MOVE_SNAP_HANDLE_FILL : GIZMO_DARK_RING}
         stroke={GIZMO_CYAN_STROKE}
         strokeWidth={GIZMO_MOVE_HANDLE_STROKE_WIDTH}
         pointerEvents="none"
         data-editor-image-move-handle-visual="true"
       />
-      <circle
-        cx={stageCenterX}
-        cy={stageCenterY}
-        r={GIZMO_CENTER_HANDLE_INNER_RADIUS}
-        fill={GIZMO_CYAN_FILL}
-        pointerEvents="none"
-      />
+      {isMoveSnapActive ? null : (
+        <circle
+          cx={stageCenterX}
+          cy={stageCenterY}
+          r={GIZMO_CENTER_HANDLE_INNER_RADIUS}
+          fill={GIZMO_CYAN_FILL}
+          pointerEvents="none"
+          data-editor-image-move-handle-inner-dot="true"
+        />
+      )}
       <circle
         cx={armEnd.x}
-        cy={armEnd.y}
+        cy={visualTransformHandleY}
         r={GIZMO_TRANSFORM_HANDLE_RADIUS}
         fill={GIZMO_CYAN_FILL}
         stroke={GIZMO_DARK_RING}
