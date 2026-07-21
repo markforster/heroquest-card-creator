@@ -19,6 +19,7 @@ import { usePublishUnsavedChangesGuard } from "@/components/App/UnsavedChangesGu
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { EditorSaveProvider } from "@/components/Providers/EditorSaveContext";
+import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { invalidateCardThumbnail } from "@/lib/card-thumbnail-cache";
 
@@ -28,6 +29,8 @@ export default function CardPage() {
   const navigate = useNavigate();
   const previewRef = useRef<CardPreviewHandle>(null!);
   const thumbnailRefreshHostRef = useRef<HiddenCardThumbnailRefreshHostHandle>(null);
+  const { previewRenderer, rotationMode, setRotationMode, togglePreviewRenderer } =
+    usePreviewRenderer();
   const session = useCardPageSession({ previewRef });
   const exportController = useCardExportController({
     activeCardId: session.activeCardId,
@@ -42,8 +45,27 @@ export default function CardPage() {
     () => ({
       ...noopRouteShellCapabilities,
       repairCurrentCardThumbnail: session.editorSaveValue.repairCurrentCardThumbnail,
+      routeShortcutHandlers: {
+        v: () => {
+          togglePreviewRenderer();
+          return true;
+        },
+        m: () => {
+          if (previewRenderer !== "webgl") {
+            return false;
+          }
+          setRotationMode(rotationMode === "pan" ? "spin" : "pan");
+          return true;
+        },
+      },
     }),
-    [session.editorSaveValue.repairCurrentCardThumbnail],
+    [
+      previewRenderer,
+      rotationMode,
+      session.editorSaveValue.repairCurrentCardThumbnail,
+      setRotationMode,
+      togglePreviewRenderer,
+    ],
   );
 
   usePublishRouteShellCapabilities(shellCapabilities);

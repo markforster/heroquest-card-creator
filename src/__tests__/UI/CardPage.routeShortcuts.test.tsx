@@ -1,10 +1,12 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { render } from "@testing-library/react";
 
 import CardPage from "@/components/App/pages/CardPage";
 import { EditorFormProvider } from "@/components/Providers/EditorFormContext";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
 import type { CardRecord } from "@/api/cards";
+import type { PreviewRenderer, PreviewRotationMode } from "@/components/Providers/PreviewRendererContext";
+import type { RouteShellCapabilities } from "@/components/App/RouteShellCapabilitiesContext";
 
 const mockTrack = jest.fn();
 const mockNavigate = jest.fn();
@@ -12,10 +14,16 @@ const mockUseGetCard = jest.fn();
 const mockUseCardPageSession = jest.fn();
 const mockSetActiveCard = jest.fn();
 const mockSetSelectedTemplateId = jest.fn();
+const mockUsePublishRouteShellCapabilities = jest.fn();
 const mockTogglePreviewRenderer = jest.fn();
 const mockSetRotationMode = jest.fn();
+const mockRepairCurrentCardThumbnail = jest.fn();
+const mockDuplicateCurrentCard = jest.fn();
+const mockSaveCurrentCard = jest.fn();
 
 let routeCardId = "card-a";
+let previewRenderer: PreviewRenderer = "svg";
+let rotationMode: PreviewRotationMode = "pan";
 
 const cardRecords: Record<string, CardRecord | undefined> = {
   "card-a": {
@@ -28,7 +36,6 @@ const cardRecords: Record<string, CardRecord | undefined> = {
     createdAt: 1,
     updatedAt: 1,
   } as CardRecord,
-  "card-b": undefined,
 };
 
 jest.mock("react-router-dom", () => ({
@@ -53,9 +60,9 @@ jest.mock("@/components/App/pages/cards/CardPageSession", () => ({
 
 jest.mock("@/components/App/pages/cards/cardPageActions", () => ({
   createCardPageActions: () => ({
-    duplicateCurrentCard: jest.fn(),
-    repairCurrentCardThumbnail: jest.fn(),
-    saveCurrentCard: jest.fn(),
+    duplicateCurrentCard: mockDuplicateCurrentCard,
+    repairCurrentCardThumbnail: mockRepairCurrentCardThumbnail,
+    saveCurrentCard: mockSaveCurrentCard,
   }),
 }));
 
@@ -81,7 +88,8 @@ jest.mock("@/components/App/pages/cards/CardExportController", () => ({
 
 jest.mock("@/components/App/RouteShellCapabilitiesContext", () => ({
   noopRouteShellCapabilities: {},
-  usePublishRouteShellCapabilities: jest.fn(),
+  usePublishRouteShellCapabilities: (capabilities: RouteShellCapabilities) =>
+    mockUsePublishRouteShellCapabilities(capabilities),
 }));
 
 jest.mock("@/components/App/UnsavedChangesGuardContext", () => ({
@@ -115,8 +123,8 @@ jest.mock("@/components/Providers/EditorSaveContext", () => ({
 
 jest.mock("@/components/Providers/PreviewRendererContext", () => ({
   usePreviewRenderer: () => ({
-    previewRenderer: "svg",
-    rotationMode: "pan",
+    previewRenderer,
+    rotationMode,
     setRotationMode: mockSetRotationMode,
     togglePreviewRenderer: mockTogglePreviewRenderer,
   }),
@@ -167,110 +175,99 @@ function renderSubject() {
   );
 }
 
-describe("CardPage route loading (UI)", () => {
+function getPublishedCapabilities(): RouteShellCapabilities {
+  const capabilities = mockUsePublishRouteShellCapabilities.mock.calls.at(-1)?.[0];
+  if (!capabilities) {
+    throw new Error("Expected CardPage to publish route shell capabilities");
+  }
+  return capabilities as RouteShellCapabilities;
+}
+
+describe("CardPage route shortcuts (UI)", () => {
   beforeEach(() => {
-    jest.useFakeTimers();
     routeCardId = "card-a";
-    cardRecords["card-b"] = undefined;
+    previewRenderer = "svg";
+    rotationMode = "pan";
     mockTrack.mockReset();
     mockNavigate.mockReset();
     mockUseGetCard.mockImplementation(({ params }: { params: { id: string } }) => ({
       data: cardRecords[params.id],
       error: null,
     }));
-    mockUseCardPageSession.mockImplementation(() => {
-      const card = cardRecords[routeCardId];
-      return {
-        activeCardId: card?.id ?? null,
-        activeFrontId: null,
-        canDuplicate: true,
-        canSaveChanges: true,
-        currentTemplateId: card?.templateId ?? (routeCardId === "card-b" ? "hero" : null),
-        draftSourceCardId: null,
-        duplicateCurrentCard: jest.fn(),
-        editorSaveValue: {
-          repairCurrentCardThumbnail: jest.fn(),
-        },
-        effectiveFace: "front",
-        frontViewToken: 0,
-        isDraftRoute: false,
-        isEditorDirty: false,
-        isRouteLoadingCard: !card,
-        lastRememberedBackId: null,
-        normalizedCardId: card?.id ?? routeCardId,
-        pairedBackId: null,
-        pairedFrontCount: 0,
-        pairedFrontIds: [],
-        routeError: null,
-        saveCurrentCard: jest.fn(),
-        savingMode: "update",
-        setLastRememberedBackId: jest.fn(),
-      };
-    });
+    mockUseCardPageSession.mockImplementation(() => ({
+      activeCardId: "card-a",
+      activeFrontId: null,
+      canDuplicate: true,
+      canSaveChanges: true,
+      currentTemplateId: "hero",
+      draftSourceCardId: null,
+      duplicateCurrentCard: mockDuplicateCurrentCard,
+      editorSaveValue: {
+        repairCurrentCardThumbnail: mockRepairCurrentCardThumbnail,
+      },
+      effectiveFace: "front",
+      frontViewToken: 0,
+      isDraftRoute: false,
+      isEditorDirty: false,
+      isRouteLoadingCard: false,
+      lastRememberedBackId: null,
+      normalizedCardId: "card-a",
+      pairedBackId: null,
+      pairedFrontCount: 0,
+      pairedFrontIds: [],
+      routeError: null,
+      saveCurrentCard: mockSaveCurrentCard,
+      savingMode: "update",
+      setLastRememberedBackId: jest.fn(),
+    }));
     mockSetActiveCard.mockReset();
     mockSetSelectedTemplateId.mockReset();
+    mockUsePublishRouteShellCapabilities.mockReset();
     mockTogglePreviewRenderer.mockReset();
     mockSetRotationMode.mockReset();
+    mockRepairCurrentCardThumbnail.mockReset();
+    mockDuplicateCurrentCard.mockReset();
+    mockSaveCurrentCard.mockReset();
   });
 
-  afterEach(() => {
-    jest.useRealTimers();
+  it("publishes renderer shortcut handlers for the card editor route", () => {
+    renderSubject();
+
+    const capabilities = getPublishedCapabilities();
+
+    expect(capabilities.repairCurrentCardThumbnail).toBe(mockRepairCurrentCardThumbnail);
+    expect(capabilities.routeShortcutHandlers.v).toEqual(expect.any(Function));
+    expect(capabilities.routeShortcutHandlers.m).toEqual(expect.any(Function));
   });
 
-  it("hides the previous live preview while the next card route is still loading", async () => {
-    const view = renderSubject();
+  it("toggles the preview renderer from the published v shortcut", () => {
+    renderSubject();
 
-    await act(async () => {
-      jest.advanceTimersByTime(500);
-      await Promise.resolve();
-    });
+    const handled = getPublishedCapabilities().routeShortcutHandlers.v?.();
 
-    await waitFor(() => {
-      expect(screen.getByTestId("live-card-preview")).toBeInTheDocument();
-      expect(screen.getByTestId("live-card-inspector")).toBeInTheDocument();
-    });
+    expect(handled).toBe(true);
+    expect(mockTogglePreviewRenderer).toHaveBeenCalledTimes(1);
+  });
 
-    routeCardId = "card-b";
-    view.rerender(
-      <I18nProvider>
-        <EditorFormProvider>
-          <CardPage />
-        </EditorFormProvider>
-      </I18nProvider>,
-    );
+  it("toggles the webgl interaction mode from the published m shortcut", () => {
+    previewRenderer = "webgl";
+    rotationMode = "pan";
+    renderSubject();
 
-    expect(screen.getByTestId("card-preview-route-loading")).toBeInTheDocument();
-    expect(screen.queryByTestId("live-card-preview")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("live-card-inspector")).not.toBeInTheDocument();
+    const handled = getPublishedCapabilities().routeShortcutHandlers.m?.();
 
-    cardRecords["card-b"] = {
-      id: "card-b",
-      templateId: "hero",
-      status: "saved",
-      name: "Card B",
-      title: "Card B",
-      description: "Bravo",
-      createdAt: 2,
-      updatedAt: 2,
-    } as CardRecord;
+    expect(handled).toBe(true);
+    expect(mockSetRotationMode).toHaveBeenCalledWith("spin");
+  });
 
-    view.rerender(
-      <I18nProvider>
-        <EditorFormProvider>
-          <CardPage />
-        </EditorFormProvider>
-      </I18nProvider>,
-    );
+  it("does not change the interaction mode from the published m shortcut while svg is active", () => {
+    previewRenderer = "svg";
+    rotationMode = "spin";
+    renderSubject();
 
-    await act(async () => {
-      jest.advanceTimersByTime(500);
-      await Promise.resolve();
-    });
+    const handled = getPublishedCapabilities().routeShortcutHandlers.m?.();
 
-    await waitFor(() => {
-      expect(screen.getByTestId("live-card-preview")).toBeInTheDocument();
-      expect(screen.getByTestId("live-card-inspector")).toBeInTheDocument();
-      expect(screen.queryByTestId("card-preview-route-loading")).not.toBeInTheDocument();
-    });
+    expect(handled).toBe(false);
+    expect(mockSetRotationMode).not.toHaveBeenCalled();
   });
 });

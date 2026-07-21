@@ -8,6 +8,13 @@ const openSettings = jest.fn();
 const openTemplatePicker = jest.fn();
 const focusPrimarySearch = jest.fn();
 const routeShortcutE = jest.fn();
+const routeShortcutV = jest.fn();
+const routeShortcutM = jest.fn();
+const routeShortcutHandlers: Record<string, jest.Mock> = {
+  e: routeShortcutE,
+  v: routeShortcutV,
+  m: routeShortcutM,
+};
 
 const appActionsState = {
   openRecent,
@@ -30,9 +37,7 @@ jest.mock("@/components/App/RouteShellCapabilitiesContext", () => ({
   useRouteShellCapabilities: () => ({
     repairCurrentCardThumbnail: jest.fn(),
     focusPrimarySearch,
-    routeShortcutHandlers: {
-      e: routeShortcutE,
-    },
+    routeShortcutHandlers,
   }),
 }));
 
@@ -70,6 +75,11 @@ describe("GlobalAppShortcuts (UI)", () => {
     openTemplatePicker.mockReset();
     focusPrimarySearch.mockReset().mockReturnValue(true);
     routeShortcutE.mockReset().mockReturnValue(true);
+    routeShortcutV.mockReset().mockReturnValue(true);
+    routeShortcutM.mockReset().mockReturnValue(true);
+    routeShortcutHandlers.e = routeShortcutE;
+    routeShortcutHandlers.v = routeShortcutV;
+    routeShortcutHandlers.m = routeShortcutM;
     appActionsState.isAssetsOpen = false;
     appActionsState.isRecentOpen = false;
     appActionsState.isSettingsOpen = false;
@@ -92,6 +102,8 @@ describe("GlobalAppShortcuts (UI)", () => {
     fireEvent.keyDown(window, { key: "c" });
     fireEvent.keyDown(window, { key: "s" });
     fireEvent.keyDown(window, { key: "e" });
+    fireEvent.keyDown(window, { key: "v" });
+    fireEvent.keyDown(window, { key: "m" });
 
     expect(openRecent).toHaveBeenCalledTimes(1);
     expect(openSettings).toHaveBeenCalledTimes(1);
@@ -99,6 +111,8 @@ describe("GlobalAppShortcuts (UI)", () => {
     expect(screen.getByTestId("location")).toHaveTextContent("/cards");
     expect(focusPrimarySearch).toHaveBeenCalledTimes(1);
     expect(routeShortcutE).toHaveBeenCalledTimes(1);
+    expect(routeShortcutV).toHaveBeenCalledTimes(1);
+    expect(routeShortcutM).toHaveBeenCalledTimes(1);
   });
 
   it("ignores shortcuts from editable targets and when modifiers or repeats are present", () => {
@@ -116,12 +130,16 @@ describe("GlobalAppShortcuts (UI)", () => {
     fireEvent.keyDown(window, { key: "a", ctrlKey: true });
     fireEvent.keyDown(window, { key: "s", repeat: true });
     fireEvent.keyDown(window, { key: "e", shiftKey: true });
+    fireEvent.keyDown(window, { key: "v", altKey: true });
+    fireEvent.keyDown(window, { key: "m", repeat: true });
 
     expect(openRecent).not.toHaveBeenCalled();
     expect(openSettings).not.toHaveBeenCalled();
     expect(openTemplatePicker).not.toHaveBeenCalled();
     expect(focusPrimarySearch).not.toHaveBeenCalled();
     expect(routeShortcutE).not.toHaveBeenCalled();
+    expect(routeShortcutV).not.toHaveBeenCalled();
+    expect(routeShortcutM).not.toHaveBeenCalled();
     expect(screen.getByTestId("location")).toHaveTextContent("/cards");
   });
 
@@ -150,11 +168,28 @@ describe("GlobalAppShortcuts (UI)", () => {
     fireEvent.keyDown(window, { key: "d" });
     fireEvent.keyDown(window, { key: "s" });
     fireEvent.keyDown(window, { key: "e" });
+    fireEvent.keyDown(window, { key: "v" });
+    fireEvent.keyDown(window, { key: "m" });
 
     expect(openRecent).not.toHaveBeenCalled();
     expect(openTemplatePicker).not.toHaveBeenCalled();
     expect(focusPrimarySearch).not.toHaveBeenCalled();
     expect(routeShortcutE).not.toHaveBeenCalled();
+    expect(routeShortcutV).not.toHaveBeenCalled();
+    expect(routeShortcutM).not.toHaveBeenCalled();
+    expect(screen.getByTestId("location")).toHaveTextContent("/cards");
+  });
+
+  it("does not respond to route-owned keys when the current route does not register them", () => {
+    delete routeShortcutHandlers.v;
+    delete routeShortcutHandlers.m;
+    renderSubject();
+
+    fireEvent.keyDown(window, { key: "v" });
+    fireEvent.keyDown(window, { key: "m" });
+
+    expect(routeShortcutV).not.toHaveBeenCalled();
+    expect(routeShortcutM).not.toHaveBeenCalled();
     expect(screen.getByTestId("location")).toHaveTextContent("/cards");
   });
 });
