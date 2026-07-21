@@ -35,6 +35,7 @@ import {
   getLayerBounds,
   normalizeClipId,
 } from "./blueprintRendererShared";
+import { resolveImageLayerHoverBounds } from "./blueprintRendererImageGeometry";
 
 import type { StaticImageData } from "next/image";
 
@@ -396,28 +397,13 @@ export function ImageLayer({
       : 0;
   const cx = x + scaledWidth / 2;
   const cy = y + scaledHeight / 2;
-  const effectiveRenderedBounds =
-    hasRenderInputs && imageUrl
-      ? getRotatedRectBounds({
-          bounds: {
-            x,
-            y,
-            width: scaledWidth,
-            height: scaledHeight,
-          },
-          rotation,
-          cx,
-          cy,
-        })
-      : null;
   const hoverBounds =
     bounds == null
       ? null
-      : buildImageHoverBounds({
-          clipMode,
-          layerBounds: bounds,
-          renderedBounds: effectiveRenderedBounds,
-          canvasBounds,
+      : resolveImageLayerHoverBounds({
+          blueprint,
+          layer,
+          cardData,
         });
 
   useRegisterHoverAdornment(
@@ -426,6 +412,7 @@ export function ImageLayer({
       ? {
           kind: "rect",
           ...hoverBounds,
+          radius: IMAGE_HOVER_RADIUS,
         }
       : null,
   );
@@ -464,18 +451,19 @@ export function ImageLayer({
           </clipPath>
         </defs>
       ) : null}
-      <image
-        href={imageUrl}
-        data-user-asset-id={assetId}
-        data-user-asset-name={assetName}
-        x={x}
-        y={y}
-        width={scaledWidth}
-        height={scaledHeight}
-        transform={transform}
-        preserveAspectRatio="xMidYMid meet"
-        clipPath={shouldClip ? `url(#${clipId})` : undefined}
-      />
+      <g clipPath={shouldClip ? `url(#${clipId})` : undefined}>
+        <image
+          href={imageUrl}
+          data-user-asset-id={assetId}
+          data-user-asset-name={assetName}
+          x={x}
+          y={y}
+          width={scaledWidth}
+          height={scaledHeight}
+          transform={transform}
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </g>
     </Layer>
   );
 }

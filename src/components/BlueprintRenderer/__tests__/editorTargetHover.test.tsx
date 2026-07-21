@@ -1004,6 +1004,37 @@ describe("BlueprintRenderer SVG hover targets", () => {
     expect(Number(imageHover.getAttribute("height"))).toBeLessThan(1008);
   });
 
+  it("keeps canvas clipping on an outer group for rotated centered artwork", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={{
+          title: "Sir Ragnar",
+          description: "Body text",
+          imageAssetId: "art-1",
+          imageOriginalWidth: 750,
+          imageOriginalHeight: 1050,
+          imageScaleMode: "absolute",
+          imageScale: 0.6,
+          imageRotation: 15,
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const image = container.querySelector("[data-user-asset-id='art-1']") as SVGImageElement;
+
+    expect(image).not.toBeNull();
+    expect(image.getAttribute("transform")).toContain("rotate(15 ");
+    expect(image.hasAttribute("clip-path")).toBe(false);
+    expect(image.hasAttribute("clipPath")).toBe(false);
+
+    const clipGroup = image.parentElement as SVGGElement | null;
+    expect(clipGroup?.tagName).toBe("g");
+    expect(clipGroup?.getAttribute("clip-path")).toMatch(/^url\(#/);
+  });
+
   it("encloses rotated near-edge canvas-clipped artwork while still clamping only affected edges", () => {
     const { container } = renderWithTargets(
       <BlueprintRenderer
@@ -1042,6 +1073,38 @@ describe("BlueprintRenderer SVG hover targets", () => {
       750 - inset,
     );
     expect(Number(imageHover.getAttribute("height"))).toBeGreaterThan(662);
+  });
+
+  it("keeps canvas clipping on an outer group for rotated offset artwork", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={{
+          title: "Sir Ragnar",
+          description: "Body text",
+          imageAssetId: "art-1",
+          imageOriginalWidth: 750,
+          imageOriginalHeight: 1050,
+          imageScaleMode: "absolute",
+          imageScale: 0.6,
+          imageOffsetX: 140,
+          imageRotation: 15,
+          showCopyright: false,
+        } as never}
+      />,
+    );
+
+    const image = container.querySelector("[data-user-asset-id='art-1']") as SVGImageElement;
+
+    expect(image).not.toBeNull();
+    expect(image.getAttribute("transform")).toContain("rotate(15 ");
+    expect(image.hasAttribute("clip-path")).toBe(false);
+    expect(image.hasAttribute("clipPath")).toBe(false);
+
+    const clipGroup = image.parentElement as SVGGElement | null;
+    expect(clipGroup?.tagName).toBe("g");
+    expect(clipGroup?.getAttribute("clip-path")).toMatch(/^url\(#/);
   });
 
   it("insets canvas-clipped full-card artwork hover adornment while keeping the hit area full-card", () => {

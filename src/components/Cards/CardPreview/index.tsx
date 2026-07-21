@@ -38,6 +38,7 @@ import { APP_VERSION } from "@/version";
 
 import styles from "./CardPreview.module.css";
 import { renderBleedCanvas } from "./cardPreviewBleedCanvas";
+import CardPreviewEditorOverlay from "./cardPreviewEditorOverlay";
 import { drawDeveloperCredit } from "./cardPreviewDeveloperCredit";
 import { mutateSvgForExport } from "./cardPreviewExportSvg";
 import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
@@ -960,7 +961,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                 data-card-outline="true"
               />
             </g>
-            <g data-preview-only="editor-overlay" data-editor-overlay="true" />
+            <CardPreviewEditorOverlay templateId={templateId} cardData={cardData} />
           </svg>
           {!backgroundLoaded ? (
             <div className={styles.spinnerOverlay}>
