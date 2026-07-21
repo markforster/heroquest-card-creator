@@ -44,6 +44,12 @@ type CardPreviewEditorOverlayProps = {
   cardData?: CardDataByTemplate[TemplateId];
 };
 
+const GIZMO_DARK_RING = "rgba(17, 24, 39, 0.82)";
+const GIZMO_CYAN_FRAME = "rgba(34, 211, 238, 0.88)";
+const GIZMO_CYAN_ACTIVE = "rgba(34, 211, 238, 1)";
+const GIZMO_CYAN_STROKE = "rgba(34, 211, 238, 0.98)";
+const GIZMO_CYAN_FILL = "rgba(34, 211, 238, 0.95)";
+
 type DragState =
   | {
       mode: "move";
@@ -281,7 +287,7 @@ export default function CardPreviewEditorOverlay({
     setActiveDragMode(null);
   };
 
-  const armStroke = activeDragMode === "transform" ? "rgba(245, 158, 11, 1)" : "rgba(245, 158, 11, 0.88)";
+  const armStroke = activeDragMode === "transform" ? GIZMO_CYAN_ACTIVE : GIZMO_CYAN_FRAME;
   const moveCursor = activeDragMode === "move" ? "grabbing" : "grab";
   const transformCursor = activeDragMode === "transform" ? "grabbing" : "grab";
 
@@ -295,7 +301,7 @@ export default function CardPreviewEditorOverlay({
         rx={GIZMO_FRAME_RADIUS}
         ry={GIZMO_FRAME_RADIUS}
         fill="none"
-        stroke="rgba(245, 158, 11, 0.88)"
+        stroke={GIZMO_CYAN_FRAME}
         strokeWidth={3}
         strokeDasharray="10 8"
         pointerEvents="none"
@@ -316,8 +322,8 @@ export default function CardPreviewEditorOverlay({
         cx={stageCenterX}
         cy={stageCenterY}
         r={GIZMO_CENTER_HANDLE_RADIUS}
-        fill="rgba(17, 24, 39, 0.82)"
-        stroke="rgba(245, 158, 11, 0.98)"
+        fill={GIZMO_DARK_RING}
+        stroke={GIZMO_CYAN_STROKE}
         strokeWidth={3}
         pointerEvents="none"
         data-editor-image-move-handle-visual="true"
@@ -326,15 +332,15 @@ export default function CardPreviewEditorOverlay({
         cx={stageCenterX}
         cy={stageCenterY}
         r={GIZMO_CENTER_HANDLE_INNER_RADIUS}
-        fill="rgba(245, 158, 11, 0.95)"
+        fill={GIZMO_CYAN_FILL}
         pointerEvents="none"
       />
       <circle
         cx={armEnd.x}
         cy={armEnd.y}
         r={GIZMO_TRANSFORM_HANDLE_RADIUS}
-        fill="rgba(245, 158, 11, 0.95)"
-        stroke="rgba(17, 24, 39, 0.82)"
+        fill={GIZMO_CYAN_FILL}
+        stroke={GIZMO_DARK_RING}
         strokeWidth={2}
         pointerEvents="none"
         data-editor-image-transform-handle-visual="true"

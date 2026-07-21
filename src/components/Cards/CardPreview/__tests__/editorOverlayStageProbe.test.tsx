@@ -131,6 +131,14 @@ describe("CardPreview editor overlay stage probe", () => {
     expect(container.querySelector('[data-preview-only="editor-overlay"]')).not.toBeNull();
     expect(container.querySelector('[data-editor-image-move-handle="true"]')).not.toBeNull();
     expect(container.querySelector('[data-editor-image-transform-handle="true"]')).not.toBeNull();
+    expect(container.querySelector('[data-editor-image-frame="true"]')).toHaveAttribute(
+      "stroke",
+      "rgba(34, 211, 238, 0.88)",
+    );
+    expect(container.querySelector('[data-editor-image-arm="true"]')).toHaveAttribute(
+      "stroke",
+      "rgba(34, 211, 238, 0.88)",
+    );
   });
 
   it("extends the transform arm as image scale increases", async () => {
