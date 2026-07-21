@@ -5,6 +5,7 @@ import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import { resolveImageLayerOverlayGeometry } from "@/components/BlueprintRenderer/blueprintRendererImageGeometry";
 import CardPreview from "@/components/Cards/CardPreview";
+import { resolveMonsterIconOverlayGeometry } from "@/components/Cards/CardPreview/cardPreviewIconGeometry";
 import {
   EDITOR_TARGET_IDS,
   EditorTargetsProvider,
@@ -15,6 +16,7 @@ import {
   GIZMO_MOVE_SNAP_INCREMENT,
   getArmEndpoint,
   getArmLengthForScale,
+  roundStageValue,
 } from "@/components/Cards/CardPreview/cardPreviewGizmoMath";
 import { CARD_HEIGHT, CARD_WIDTH, getCardPreviewStageLayout } from "@/components/Cards/CardPreview/cardPreviewStage";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
@@ -35,6 +37,16 @@ const selectedPreviewData = {
   imageOffsetX: 0,
   imageOffsetY: 0,
   imageRotation: 0,
+};
+const selectedMonsterIconData = {
+  title: "Monster",
+  description: "A monster with an icon.",
+  iconAssetId: "icon-1",
+  iconAssetName: "Monster icon",
+  iconOffsetX: 0,
+  iconOffsetY: 0,
+  iconScale: 1,
+  iconRotation: 0,
 };
 
 jest.mock("@/components/BlueprintRenderer", () => ({
@@ -70,6 +82,27 @@ jest.mock("@/components/Cards/CardPreview/cardPreviewPointer", () => ({
   }) => mockGetStagePointFromClientCoordinates(args),
 }));
 
+jest.mock("@/hooks/useAssetImageUrl", () => ({
+  __esModule: true,
+  useAssetImageUrl: (assetId?: string) => {
+    if (assetId === "icon-1") {
+      return {
+        url: "blob:icon-1",
+        status: "ready",
+        width: 160,
+        height: 120,
+      };
+    }
+
+    return {
+      url: null,
+      status: assetId ? "missing" : "idle",
+      width: null,
+      height: null,
+    };
+  },
+}));
+
 jest.mock("@/lib/render-svg-to-canvas", () => ({
   __esModule: true,
   renderSvgToCanvas: jest.fn(
@@ -94,24 +127,47 @@ jest.mock("@/lib/render-svg-to-canvas", () => ({
 
 describe("CardPreview renderToCanvas", () => {
   const originalImage = global.Image;
+  const originalGetContext = HTMLCanvasElement.prototype.getContext;
   const originalSetPointerCapture = SVGElement.prototype.setPointerCapture;
   const originalReleasePointerCapture = SVGElement.prototype.releasePointerCapture;
   const originalHasPointerCapture = SVGElement.prototype.hasPointerCapture;
 
-  function SelectImageMainTarget() {
+  function SelectTarget({
+    targetId,
+  }: {
+    targetId: (typeof EDITOR_TARGET_IDS)[keyof typeof EDITOR_TARGET_IDS];
+  }) {
     const { setSelectedTargetId } = useEditorTargets();
 
     useEffect(() => {
-      setSelectedTargetId(EDITOR_TARGET_IDS.imageMain);
-    }, [setSelectedTargetId]);
+      setSelectedTargetId(targetId);
+    }, [setSelectedTargetId, targetId]);
 
     return null;
   }
 
   function FormValueProbe() {
     const values = useWatch({
-      name: ["imageOffsetX", "imageOffsetY", "imageRotation", "imageScale"],
-    }) as [number | undefined, number | undefined, number | undefined, number | undefined];
+      name: [
+        "imageOffsetX",
+        "imageOffsetY",
+        "imageRotation",
+        "imageScale",
+        "iconOffsetX",
+        "iconOffsetY",
+        "iconRotation",
+        "iconScale",
+      ],
+    }) as [
+      number | undefined,
+      number | undefined,
+      number | undefined,
+      number | undefined,
+      number | undefined,
+      number | undefined,
+      number | undefined,
+      number | undefined,
+    ];
 
     return (
       <output
@@ -120,6 +176,10 @@ describe("CardPreview renderToCanvas", () => {
         data-offset-y={values[1] ?? ""}
         data-rotation={values[2] ?? ""}
         data-scale={values[3] ?? ""}
+        data-icon-offset-x={values[4] ?? ""}
+        data-icon-offset-y={values[5] ?? ""}
+        data-icon-rotation={values[6] ?? ""}
+        data-icon-scale={values[7] ?? ""}
       />
     );
   }
@@ -146,10 +206,10 @@ describe("CardPreview renderToCanvas", () => {
     templateName,
   }: {
     previewRef: React.RefObject<CardPreviewHandle | null>;
-    templateId: "hero";
+    templateId: "hero" | "monster";
     templateName: string;
   }) {
-    const values = useWatch() as CardDataByTemplate["hero"];
+    const values = useWatch() as CardDataByTemplate["hero"] | CardDataByTemplate["monster"];
     const cardData = useMemo(() => values, [values]);
 
     return (
@@ -166,6 +226,7 @@ describe("CardPreview renderToCanvas", () => {
     capturedOverlayPresence.length = 0;
     mockGetStagePointFromClientCoordinates.mockReset();
 
+    HTMLCanvasElement.prototype.getContext = jest.fn(() => null);
     SVGElement.prototype.setPointerCapture = jest.fn();
     SVGElement.prototype.releasePointerCapture = jest.fn();
     SVGElement.prototype.hasPointerCapture = jest.fn(() => true);
@@ -196,6 +257,7 @@ describe("CardPreview renderToCanvas", () => {
 
   afterEach(() => {
     global.Image = originalImage;
+    HTMLCanvasElement.prototype.getContext = originalGetContext;
     SVGElement.prototype.setPointerCapture = originalSetPointerCapture;
     SVGElement.prototype.releasePointerCapture = originalReleasePointerCapture;
     SVGElement.prototype.hasPointerCapture = originalHasPointerCapture;
@@ -267,17 +329,68 @@ describe("CardPreview renderToCanvas", () => {
     };
   }
 
-  async function renderSelectedPreview() {
+  function getSelectedMonsterIconStageGeometry(
+    overrides?: Partial<typeof selectedMonsterIconData>,
+  ) {
+    const blueprint = blueprintsByTemplateId.monster;
+    const overlayGeometry = resolveMonsterIconOverlayGeometry({
+      blueprint,
+      cardData: {
+        ...selectedMonsterIconData,
+        ...overrides,
+      },
+      imageWidth: 160,
+      imageHeight: 120,
+    });
+    if (!overlayGeometry) {
+      throw new Error("Expected monster icon overlay geometry");
+    }
+
+    const layout = getCardPreviewStageLayout();
+    const centerX = layout.cardOriginX + overlayGeometry.pivotX;
+    const centerY = layout.cardOriginY + overlayGeometry.pivotY;
+    const armEnd = getArmEndpoint({
+      centerX,
+      centerY,
+      rotationDeg: overlayGeometry.rotation,
+      armLength: getArmLengthForScale({
+        frameWidth: overlayGeometry.frameBounds.width,
+        frameHeight: overlayGeometry.frameBounds.height,
+        scale: overrides?.iconScale ?? selectedMonsterIconData.iconScale,
+        minScale: 0.2,
+        maxScale: 3,
+      }),
+    });
+
+    return {
+      centerX,
+      centerY,
+      armEndX: armEnd.x,
+      armEndY: armEnd.y,
+      moveBounds: overlayGeometry.moveBounds,
+      layout,
+    };
+  }
+
+  async function renderSelectedPreview({
+    targetId = EDITOR_TARGET_IDS.imageMain,
+    templateId = "hero",
+    templateName = "Hero",
+    defaultValues = selectedPreviewData,
+  }: {
+    targetId?: (typeof EDITOR_TARGET_IDS)[keyof typeof EDITOR_TARGET_IDS];
+    templateId?: "hero" | "monster";
+    templateName?: string;
+    defaultValues?: Record<string, unknown>;
+  } = {}) {
     const ref = createRef<CardPreviewHandle>();
 
     await act(async () => {
       render(
         <EditorTargetsProvider>
-          <SelectImageMainTarget />
-          <PreviewFormHarness
-            defaultValues={selectedPreviewData}
-          >
-            <WatchedCardPreview previewRef={ref} templateId="hero" templateName="Hero" />
+          <SelectTarget targetId={targetId} />
+          <PreviewFormHarness defaultValues={defaultValues}>
+            <WatchedCardPreview previewRef={ref} templateId={templateId} templateName={templateName} />
           </PreviewFormHarness>
         </EditorTargetsProvider>,
       );
@@ -335,6 +448,18 @@ describe("CardPreview renderToCanvas", () => {
 
   function getTransformDragPoints(angleDeg: number, radiusMultiplier: number = 1) {
     const { centerX, centerY, armEndX, armEndY } = getSelectedPreviewStageGeometry();
+    const startRadius = Math.hypot(armEndX - centerX, armEndY - centerY);
+    const radians = (angleDeg * Math.PI) / 180;
+    return {
+      startX: armEndX,
+      startY: armEndY,
+      endX: centerX + Math.cos(radians) * startRadius * radiusMultiplier,
+      endY: centerY + Math.sin(radians) * startRadius * radiusMultiplier,
+    };
+  }
+
+  function getMonsterIconTransformDragPoints(angleDeg: number, radiusMultiplier: number = 1) {
+    const { centerX, centerY, armEndX, armEndY } = getSelectedMonsterIconStageGeometry();
     const startRadius = Math.hypot(armEndX - centerX, armEndY - centerY);
     const radians = (angleDeg * Math.PI) / 180;
     return {
@@ -1036,5 +1161,124 @@ describe("CardPreview renderToCanvas", () => {
     expect(Number(values().getAttribute("data-scale"))).toBeCloseTo(1.25, 4);
     expect(activeSnapGuide()).toHaveAttribute("data-editor-image-snap-angle", "90");
     expect(activeScaleSnapRing()).toHaveAttribute("data-editor-image-snap-scale-ring", "1.25");
+  });
+
+  it("renders the gizmo for the monster icon target", async () => {
+    const { moveHandle, transformHandle, values } = await renderSelectedPreview({
+      targetId: EDITOR_TARGET_IDS.imageIcon,
+      templateId: "monster",
+      templateName: "Monster",
+      defaultValues: selectedMonsterIconData,
+    });
+
+    expect(moveHandle()).toBeInTheDocument();
+    expect(transformHandle()).toBeInTheDocument();
+    expect(values()).toHaveAttribute("data-icon-offset-x", "0");
+    expect(values()).toHaveAttribute("data-icon-offset-y", "0");
+  });
+
+  it("updates icon offsets while dragging the move handle", async () => {
+    const { moveHandle, values } = await renderSelectedPreview({
+      targetId: EDITOR_TARGET_IDS.imageIcon,
+      templateId: "monster",
+      templateName: "Monster",
+      defaultValues: selectedMonsterIconData,
+    });
+    const { centerX, centerY, moveBounds, layout } = getSelectedMonsterIconStageGeometry();
+    const handle = moveHandle();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: centerX, y: centerY })
+      .mockReturnValueOnce({ x: centerX + 24, y: centerY - 18 });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 30 });
+      fireEvent.pointerMove(handle, { pointerId: 30 });
+      fireEvent.pointerUp(handle, { pointerId: 30 });
+    });
+
+    const baseCenterX = layout.cardOriginX + moveBounds.baseCenterX;
+    const baseCenterY = layout.cardOriginY + moveBounds.baseCenterY;
+    const expectedOffsetX = roundStageValue((centerX + 24 - baseCenterX) / moveBounds.horizontalTravel);
+    const expectedOffsetY = roundStageValue((baseCenterY - (centerY - 18)) / moveBounds.verticalTravel);
+
+    expect(Number(values().getAttribute("data-icon-offset-x"))).toBeCloseTo(expectedOffsetX, 4);
+    expect(Number(values().getAttribute("data-icon-offset-y"))).toBeCloseTo(expectedOffsetY, 4);
+    expect(values()).toHaveAttribute("data-icon-rotation", "0");
+    expect(values()).toHaveAttribute("data-icon-scale", "1");
+  });
+
+  it("updates icon rotation and scale while dragging the transform handle", async () => {
+    const { transformHandle, values } = await renderSelectedPreview({
+      targetId: EDITOR_TARGET_IDS.imageIcon,
+      templateId: "monster",
+      templateName: "Monster",
+      defaultValues: selectedMonsterIconData,
+    });
+    const handle = transformHandle();
+    const { centerX, centerY, armEndX, armEndY } = getSelectedMonsterIconStageGeometry();
+    const deltaX = armEndX - centerX;
+    const deltaY = armEndY - centerY;
+    const endStageX = centerX - deltaY * 1.3;
+    const endStageY = centerY + deltaX * 1.3;
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: armEndX, y: armEndY })
+      .mockReturnValueOnce({ x: endStageX, y: endStageY });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 31 });
+      fireEvent.pointerMove(handle, { pointerId: 31 });
+      fireEvent.pointerUp(handle, { pointerId: 31 });
+    });
+
+    expect(Number(values().getAttribute("data-icon-rotation"))).toBeCloseTo(90, 4);
+    expect(Number(values().getAttribute("data-icon-scale"))).toBeCloseTo(1.3, 4);
+  });
+
+  it("shows the move grid while modifier-held move snapping the monster icon target", async () => {
+    const preview = await renderSelectedPreview({
+      targetId: EDITOR_TARGET_IDS.imageIcon,
+      templateId: "monster",
+      templateName: "Monster",
+      defaultValues: selectedMonsterIconData,
+    });
+    const { centerX, centerY } = getSelectedMonsterIconStageGeometry();
+    const moveHandle = preview.moveHandle();
+
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: centerX, y: centerY })
+      .mockReturnValueOnce({ x: centerX + 25, y: centerY - 17 });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(moveHandle, { pointerId: 32, altKey: true });
+      fireEvent.pointerMove(moveHandle, { pointerId: 32, altKey: true });
+    });
+
+    expect(preview.moveGrid()).not.toBeNull();
+  });
+
+  it("applies modifier-gated transform snap guides to the monster icon target", async () => {
+    const preview = await renderSelectedPreview({
+      targetId: EDITOR_TARGET_IDS.imageIcon,
+      templateId: "monster",
+      templateName: "Monster",
+      defaultValues: selectedMonsterIconData,
+    });
+    const transformHandle = preview.transformHandle();
+
+    const { startX, startY, endX, endY } = getMonsterIconTransformDragPoints(84, 1.24);
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: startX, y: startY })
+      .mockReturnValueOnce({ x: endX, y: endY });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(transformHandle, { pointerId: 33, altKey: true });
+      fireEvent.pointerMove(transformHandle, { pointerId: 33, altKey: true });
+    });
+
+    expect(preview.snapGuides()).not.toBeNull();
+    expect(Number(preview.values().getAttribute("data-icon-rotation"))).toBeCloseTo(90, 4);
+    expect(Number(preview.values().getAttribute("data-icon-scale"))).toBeCloseTo(1.25, 4);
   });
 });

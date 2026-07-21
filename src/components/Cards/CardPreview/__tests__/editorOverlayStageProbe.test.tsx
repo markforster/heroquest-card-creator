@@ -34,17 +34,47 @@ jest.mock("@/i18n/I18nProvider", () => ({
   }),
 }));
 
+jest.mock("@/hooks/useAssetImageUrl", () => ({
+  __esModule: true,
+  useAssetImageUrl: (assetId?: string) => {
+    if (assetId === "icon-1") {
+      return {
+        url: "blob:icon-1",
+        status: "ready",
+        width: 160,
+        height: 120,
+      };
+    }
+
+    return {
+      url: null,
+      status: assetId ? "missing" : "idle",
+      width: null,
+      height: null,
+    };
+  },
+}));
+
 describe("CardPreview editor overlay stage probe", () => {
   const originalImage = global.Image;
+  const originalGetContext = HTMLCanvasElement.prototype.getContext;
 
-  function SelectImageMainTarget() {
+  function SelectTarget({
+    targetId,
+  }: {
+    targetId: (typeof EDITOR_TARGET_IDS)[keyof typeof EDITOR_TARGET_IDS];
+  }) {
     const { setSelectedTargetId } = useEditorTargets();
 
     useEffect(() => {
-      setSelectedTargetId(EDITOR_TARGET_IDS.imageMain);
-    }, [setSelectedTargetId]);
+      setSelectedTargetId(targetId);
+    }, [setSelectedTargetId, targetId]);
 
     return null;
+  }
+
+  function SelectImageMainTarget() {
+    return <SelectTarget targetId={EDITOR_TARGET_IDS.imageMain} />;
   }
 
   function PreviewFormHarness({
@@ -80,6 +110,7 @@ describe("CardPreview editor overlay stage probe", () => {
   }
 
   beforeEach(() => {
+    HTMLCanvasElement.prototype.getContext = jest.fn(() => null);
     class InstantImage {
       private listeners = new Map<string, EventListener[]>();
 
@@ -106,6 +137,7 @@ describe("CardPreview editor overlay stage probe", () => {
 
   afterEach(() => {
     global.Image = originalImage;
+    HTMLCanvasElement.prototype.getContext = originalGetContext;
   });
 
   it("does not render an image frame when no target is selected", async () => {
@@ -120,8 +152,8 @@ describe("CardPreview editor overlay stage probe", () => {
 
   it("renders a preview-only image frame when image.main is selected", async () => {
     const { container } = render(
-      <EditorTargetsProvider>
-        <SelectImageMainTarget />
+        <EditorTargetsProvider>
+        <SelectTarget targetId={EDITOR_TARGET_IDS.imageMain} />
         <SelectedTargetProbe />
         <PreviewFormHarness
           defaultValues={{
@@ -166,8 +198,8 @@ describe("CardPreview editor overlay stage probe", () => {
 
   it("extends the transform arm as image scale increases", async () => {
     const { container: smallContainer } = render(
-      <EditorTargetsProvider>
-        <SelectImageMainTarget />
+        <EditorTargetsProvider>
+        <SelectTarget targetId={EDITOR_TARGET_IDS.imageMain} />
         <PreviewFormHarness
           defaultValues={{
             title: "Hero",
@@ -195,8 +227,8 @@ describe("CardPreview editor overlay stage probe", () => {
     );
 
     const { container: largeContainer } = render(
-      <EditorTargetsProvider>
-        <SelectImageMainTarget />
+        <EditorTargetsProvider>
+        <SelectTarget targetId={EDITOR_TARGET_IDS.imageMain} />
         <PreviewFormHarness
           defaultValues={{
             title: "Hero",
@@ -296,6 +328,51 @@ describe("CardPreview editor overlay stage probe", () => {
 
     expect(screen.getByTestId("selected-target")).toHaveTextContent("");
     expect(container.querySelector('[data-editor-image-frame="true"]')).toBeNull();
+  });
+
+  it("renders a preview-only image frame when image.icon is selected", async () => {
+    const { container } = render(
+      <EditorTargetsProvider>
+        <SelectTarget targetId={EDITOR_TARGET_IDS.imageIcon} />
+        <PreviewFormHarness
+          defaultValues={{
+            title: "Monster",
+            description: "A monster with an icon.",
+            iconAssetId: "icon-1",
+            iconAssetName: "Monster icon",
+            iconScale: 1,
+            iconRotation: 0,
+            iconOffsetX: 0,
+            iconOffsetY: 0,
+          }}
+        >
+          <CardPreview
+            templateId="monster"
+            templateName="Monster"
+            cardData={{
+              title: "Monster",
+              description: "A monster with an icon.",
+              iconAssetId: "icon-1",
+              iconAssetName: "Monster icon",
+              iconScale: 1,
+              iconRotation: 0,
+              iconOffsetX: 0,
+              iconOffsetY: 0,
+            }}
+          />
+        </PreviewFormHarness>
+      </EditorTargetsProvider>,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector('[data-editor-image-frame="true"]')).not.toBeNull();
+    expect(container.querySelector('[data-editor-overlay="true"]')).toHaveAttribute(
+      "data-editor-image-target",
+      EDITOR_TARGET_IDS.imageIcon,
+    );
   });
 
   it("preserves selection when the transform handle is clicked", async () => {

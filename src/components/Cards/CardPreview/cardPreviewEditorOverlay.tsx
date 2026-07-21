@@ -8,6 +8,7 @@ import { resolveImageLayerOverlayGeometry } from "@/components/BlueprintRenderer
 import { ENABLE_EDITOR_TARGET_INTERACTIONS } from "@/config/flags";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
+import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import {
   computeImageZoomModel,
   LEGACY_ABSOLUTE_IMAGE_SCALE_MAX,
@@ -19,6 +20,7 @@ import type { TemplateId } from "@/types/templates";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 
+import { resolveMonsterIconOverlayGeometry } from "./cardPreviewIconGeometry";
 import { CARD_HEIGHT, CARD_WIDTH, getCardPreviewStageLayout } from "./cardPreviewStage";
 import {
   GIZMO_ARM_LENGTH_MAX,
@@ -78,18 +80,73 @@ const GIZMO_PIVOT_MARKER_CROSSHAIR_HALF = 10;
 const GIZMO_MOVE_SNAP_HANDLE_FILL = "rgba(17, 24, 39, 0.24)";
 const GIZMO_MOVE_SNAP_VISUAL_OFFSET_Y = 2.5;
 const GIZMO_MOVE_GRID_MASK_RADIUS = 360;
+const ICON_SCALE_MIN = 0.2;
+const ICON_SCALE_MAX = 3;
+
+type MainImageOverlayData = {
+  imageAssetId?: string;
+  imageScale?: number;
+  imageScaleMode?: "absolute" | "relative";
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+  imageRotation?: number;
+  imageOriginalWidth?: number;
+  imageOriginalHeight?: number;
+};
+
+type MonsterIconOverlayData = {
+  iconAssetId?: string;
+  iconScale?: number;
+  iconOffsetX?: number;
+  iconOffsetY?: number;
+  iconRotation?: number;
+};
+
+type ActiveTarget =
+  | {
+      kind: "main-image";
+      targetId: typeof EDITOR_TARGET_IDS.imageMain;
+      geometry: NonNullable<ReturnType<typeof resolveImageLayerOverlayGeometry>>;
+      scale: number;
+      rotation: number;
+      scaleBounds: { min: number; max: number };
+      offsetX: number;
+      offsetY: number;
+    }
+  | {
+      kind: "monster-icon";
+      targetId: typeof EDITOR_TARGET_IDS.imageIcon;
+      geometry: NonNullable<ReturnType<typeof resolveMonsterIconOverlayGeometry>>;
+      scale: number;
+      rotation: number;
+      scaleBounds: { min: number; max: number };
+      offsetX: number;
+      offsetY: number;
+    };
 
 type DragState =
   | {
       mode: "move";
+      targetKind: ActiveTarget["kind"];
       pointerId: number;
       startPointerX: number;
       startPointerY: number;
       startOffsetX: number;
       startOffsetY: number;
+      startCenterX?: number;
+      startCenterY?: number;
+      baseCenterX?: number;
+      baseCenterY?: number;
+      minCenterX?: number;
+      maxCenterX?: number;
+      minCenterY?: number;
+      maxCenterY?: number;
+      horizontalTravel?: number;
+      verticalTravel?: number;
     }
   | {
       mode: "transform";
+      targetKind: ActiveTarget["kind"];
       pointerId: number;
       centerX: number;
       centerY: number;
@@ -116,39 +173,41 @@ export default function CardPreviewEditorOverlay({
   const [activeSnapAngle, setActiveSnapAngle] = useState<number | null>(null);
   const [activeSnapScaleRatio, setActiveSnapScaleRatio] = useState<number | null>(null);
 
+  const selectedTargetId = editorTargets?.selectedTargetId;
+  const iconAssetId = (cardData as MonsterIconOverlayData | undefined)?.iconAssetId;
+  const { width: iconImageWidth, height: iconImageHeight } = useAssetImageUrl(
+    selectedTargetId === EDITOR_TARGET_IDS.imageIcon ? iconAssetId : undefined,
+  );
+
   if (!ENABLE_EDITOR_TARGET_INTERACTIONS) {
     return null;
   }
 
-  const isImageSelected = editorTargets?.selectedTargetId === EDITOR_TARGET_IDS.imageMain;
   const blueprint = templateId ? blueprintsByTemplateId[templateId] : undefined;
   const imageLayer = blueprint?.layers.find((layer) => {
     return layer.type === layerTypes.image && layer.bind?.imageKey === "imageAssetId";
   });
-  const imageAssetId = (cardData as { imageAssetId?: string } | undefined)?.imageAssetId;
-  const data = (cardData as {
-    imageScale?: number;
-    imageScaleMode?: "absolute" | "relative";
-    imageOffsetX?: number;
-    imageOffsetY?: number;
-    imageRotation?: number;
-    imageOriginalWidth?: number;
-    imageOriginalHeight?: number;
-  }) ?? {
+  const imageData = (cardData as MainImageOverlayData | undefined) ?? {
     imageScale: 1,
     imageScaleMode: "relative",
     imageOffsetX: 0,
     imageOffsetY: 0,
     imageRotation: 0,
   };
+  const monsterIconData = (cardData as MonsterIconOverlayData | undefined) ?? {
+    iconScale: 1,
+    iconOffsetX: 0,
+    iconOffsetY: 0,
+    iconRotation: 0,
+  };
 
-  const scaleBounds = useMemo(() => {
+  const mainImageScaleBounds = useMemo(() => {
     const imageBounds = imageLayer?.bounds;
-    if (data.imageScaleMode === "relative" && imageBounds) {
+    if (imageData.imageScaleMode === "relative" && imageBounds) {
       const zoomModel = computeImageZoomModel(
         imageBounds,
-        data.imageOriginalWidth,
-        data.imageOriginalHeight,
+        imageData.imageOriginalWidth,
+        imageData.imageOriginalHeight,
       );
       return {
         min: zoomModel.relativeMin,
@@ -160,45 +219,109 @@ export default function CardPreviewEditorOverlay({
       max: LEGACY_ABSOLUTE_IMAGE_SCALE_MAX,
     };
   }, [
-    data.imageOriginalHeight,
-    data.imageOriginalWidth,
-    data.imageScaleMode,
+    imageData.imageOriginalHeight,
+    imageData.imageOriginalWidth,
+    imageData.imageScaleMode,
     imageLayer?.bounds,
   ]);
-  const overlayGeometry =
-    blueprint && imageLayer
-      ? resolveImageLayerOverlayGeometry({
-          blueprint,
-          layer: imageLayer,
-          cardData,
-        })
-      : null;
+
+  const activeTarget: ActiveTarget | null = useMemo(() => {
+    if (!blueprint || !form?.setValue) {
+      return null;
+    }
+
+    if (selectedTargetId === EDITOR_TARGET_IDS.imageMain && imageLayer && imageData.imageAssetId) {
+      const geometry = resolveImageLayerOverlayGeometry({
+        blueprint,
+        layer: imageLayer,
+        cardData,
+      });
+      if (!geometry) {
+        return null;
+      }
+
+      return {
+        kind: "main-image",
+        targetId: EDITOR_TARGET_IDS.imageMain,
+        geometry,
+        scale: imageData.imageScale ?? 1,
+        rotation: imageData.imageRotation ?? 0,
+        scaleBounds: mainImageScaleBounds,
+        offsetX: imageData.imageOffsetX ?? 0,
+        offsetY: imageData.imageOffsetY ?? 0,
+      };
+    }
+
+    if (selectedTargetId === EDITOR_TARGET_IDS.imageIcon && monsterIconData.iconAssetId) {
+      const geometry = resolveMonsterIconOverlayGeometry({
+        blueprint,
+        cardData,
+        imageWidth: iconImageWidth,
+        imageHeight: iconImageHeight,
+      });
+      if (!geometry) {
+        return null;
+      }
+
+      return {
+        kind: "monster-icon",
+        targetId: EDITOR_TARGET_IDS.imageIcon,
+        geometry,
+        scale: monsterIconData.iconScale ?? 1,
+        rotation: monsterIconData.iconRotation ?? 0,
+        scaleBounds: {
+          min: ICON_SCALE_MIN,
+          max: ICON_SCALE_MAX,
+        },
+        offsetX: monsterIconData.iconOffsetX ?? 0,
+        offsetY: monsterIconData.iconOffsetY ?? 0,
+      };
+    }
+
+    return null;
+  }, [
+    blueprint,
+    cardData,
+    form?.setValue,
+    iconImageHeight,
+    iconImageWidth,
+    imageData.imageAssetId,
+    imageData.imageOffsetX,
+    imageData.imageOffsetY,
+    imageData.imageRotation,
+    imageData.imageScale,
+    imageLayer,
+    mainImageScaleBounds,
+    monsterIconData.iconAssetId,
+    monsterIconData.iconOffsetX,
+    monsterIconData.iconOffsetY,
+    monsterIconData.iconRotation,
+    monsterIconData.iconScale,
+    selectedTargetId,
+  ]);
+
   const layout = getCardPreviewStageLayout();
-  const frameBounds = overlayGeometry?.frameBounds ?? null;
-  const stageCenterX =
-    overlayGeometry ? layout.cardOriginX + overlayGeometry.pivotX : 0;
-  const stageCenterY =
-    overlayGeometry ? layout.cardOriginY + overlayGeometry.pivotY : 0;
+  const frameBounds = activeTarget?.geometry.frameBounds ?? null;
+  const stageCenterX = activeTarget ? layout.cardOriginX + activeTarget.geometry.pivotX : 0;
+  const stageCenterY = activeTarget ? layout.cardOriginY + activeTarget.geometry.pivotY : 0;
   const armLength = frameBounds
     ? getArmLengthForScale({
         frameWidth: frameBounds.width,
         frameHeight: frameBounds.height,
-        scale: data.imageScale ?? 1,
-        minScale: scaleBounds.min,
-        maxScale: scaleBounds.max,
+        scale: activeTarget?.scale ?? 1,
+        minScale: activeTarget?.scaleBounds.min ?? 0,
+        maxScale: activeTarget?.scaleBounds.max ?? GIZMO_ARM_LENGTH_MAX,
       })
     : GIZMO_ARM_LENGTH_MAX;
   const armEnd = getArmEndpoint({
     centerX: stageCenterX,
     centerY: stageCenterY,
-    rotationDeg: overlayGeometry?.rotation ?? 0,
+    rotationDeg: activeTarget?.rotation ?? 0,
     armLength,
   });
   const x = frameBounds ? layout.cardOriginX + frameBounds.x : 0;
   const y = frameBounds ? layout.cardOriginY + frameBounds.y : 0;
-  const canRenderGizmo =
-    isImageSelected &&
-    Boolean(templateId && blueprint && imageLayer && imageAssetId && overlayGeometry && form?.setValue);
+  const canRenderGizmo = Boolean(activeTarget && frameBounds && form?.setValue);
 
   const setSnapModifierState = (active: boolean) => {
     snapModifierActiveRef.current = active;
@@ -227,7 +350,7 @@ export default function CardPreviewEditorOverlay({
     };
   }, []);
 
-  if (!canRenderGizmo || !frameBounds || !overlayGeometry || !form?.setValue) {
+  if (!canRenderGizmo || !activeTarget || !frameBounds || !form?.setValue) {
     return null;
   }
 
@@ -299,14 +422,39 @@ export default function CardPreviewEditorOverlay({
     event.stopPropagation();
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
-    dragStateRef.current = {
-      mode: "move",
-      pointerId: event.pointerId,
-      startPointerX: point.x,
-      startPointerY: point.y,
-      startOffsetX: data.imageOffsetX ?? 0,
-      startOffsetY: data.imageOffsetY ?? 0,
-    };
+
+    if (activeTarget.kind === "monster-icon") {
+      dragStateRef.current = {
+        mode: "move",
+        targetKind: "monster-icon",
+        pointerId: event.pointerId,
+        startPointerX: point.x,
+        startPointerY: point.y,
+        startOffsetX: activeTarget.offsetX,
+        startOffsetY: activeTarget.offsetY,
+        startCenterX: stageCenterX,
+        startCenterY: stageCenterY,
+        baseCenterX: layout.cardOriginX + activeTarget.geometry.moveBounds.baseCenterX,
+        baseCenterY: layout.cardOriginY + activeTarget.geometry.moveBounds.baseCenterY,
+        minCenterX: layout.cardOriginX + activeTarget.geometry.moveBounds.minCenterX,
+        maxCenterX: layout.cardOriginX + activeTarget.geometry.moveBounds.maxCenterX,
+        minCenterY: layout.cardOriginY + activeTarget.geometry.moveBounds.minCenterY,
+        maxCenterY: layout.cardOriginY + activeTarget.geometry.moveBounds.maxCenterY,
+        horizontalTravel: activeTarget.geometry.moveBounds.horizontalTravel,
+        verticalTravel: activeTarget.geometry.moveBounds.verticalTravel,
+      };
+    } else {
+      dragStateRef.current = {
+        mode: "move",
+        targetKind: "main-image",
+        pointerId: event.pointerId,
+        startPointerX: point.x,
+        startPointerY: point.y,
+        startOffsetX: activeTarget.offsetX,
+        startOffsetY: activeTarget.offsetY,
+      };
+    }
+
     setActiveDragMode("move");
     setSnapModifierState(event.altKey || snapModifierActiveRef.current);
     setActiveSnapAngle(null);
@@ -321,6 +469,7 @@ export default function CardPreviewEditorOverlay({
     event.currentTarget.setPointerCapture(event.pointerId);
     dragStateRef.current = {
       mode: "transform",
+      targetKind: activeTarget.kind,
       pointerId: event.pointerId,
       centerX: stageCenterX,
       centerY: stageCenterY,
@@ -329,10 +478,10 @@ export default function CardPreviewEditorOverlay({
         getDistance(stageCenterX, stageCenterY, point.x, point.y),
         GIZMO_SCALE_EPSILON,
       ),
-      startRotation: data.imageRotation ?? 0,
-      startScale: data.imageScale ?? 1,
-      minScale: scaleBounds.min,
-      maxScale: scaleBounds.max,
+      startRotation: activeTarget.rotation,
+      startScale: activeTarget.scale,
+      minScale: activeTarget.scaleBounds.min,
+      maxScale: activeTarget.scaleBounds.max,
     };
     setActiveDragMode("transform");
     setSnapModifierState(event.altKey || snapModifierActiveRef.current);
@@ -345,16 +494,69 @@ export default function CardPreviewEditorOverlay({
     point: { x: number; y: number },
     snapActive: boolean,
   ) => {
-    const freeOffsetX = roundStageValue(state.startOffsetX + (point.x - state.startPointerX));
-    const freeOffsetY = roundStageValue(state.startOffsetY + (point.y - state.startPointerY));
-    const nextOffsetX = snapActive ? getSnappedOffset(freeOffsetX) : freeOffsetX;
-    const nextOffsetY = snapActive ? getSnappedOffset(freeOffsetY) : freeOffsetY;
+    if (state.targetKind === "main-image") {
+      const freeOffsetX = roundStageValue(state.startOffsetX + (point.x - state.startPointerX));
+      const freeOffsetY = roundStageValue(state.startOffsetY + (point.y - state.startPointerY));
+      const nextOffsetX = snapActive ? getSnappedOffset(freeOffsetX) : freeOffsetX;
+      const nextOffsetY = snapActive ? getSnappedOffset(freeOffsetY) : freeOffsetY;
 
-    setValue("imageOffsetX", nextOffsetX, {
+      setValue("imageOffsetX", nextOffsetX, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      setValue("imageOffsetY", nextOffsetY, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      return;
+    }
+
+    const startCenterX = state.startCenterX ?? stageCenterX;
+    const startCenterY = state.startCenterY ?? stageCenterY;
+    const desiredCenterX = roundStageValue(startCenterX + (point.x - state.startPointerX));
+    const desiredCenterY = roundStageValue(startCenterY + (point.y - state.startPointerY));
+    const snappedCenterX = snapActive
+      ? moveGridCenterX + getSnappedOffset(desiredCenterX - moveGridCenterX)
+      : desiredCenterX;
+    const snappedCenterY = snapActive
+      ? moveGridCenterY + getSnappedOffset(desiredCenterY - moveGridCenterY)
+      : desiredCenterY;
+    const clampedCenterX = clamp(
+      snappedCenterX,
+      state.minCenterX ?? snappedCenterX,
+      state.maxCenterX ?? snappedCenterX,
+    );
+    const clampedCenterY = clamp(
+      snappedCenterY,
+      state.minCenterY ?? snappedCenterY,
+      state.maxCenterY ?? snappedCenterY,
+    );
+    const nextOffsetX =
+      (state.horizontalTravel ?? 0) > 0
+        ? roundStageValue(
+            clamp(
+              (clampedCenterX - (state.baseCenterX ?? clampedCenterX)) / (state.horizontalTravel ?? 1),
+              0,
+              1,
+            ),
+          )
+        : 0;
+    const nextOffsetY =
+      (state.verticalTravel ?? 0) > 0
+        ? roundStageValue(
+            clamp(
+              ((state.baseCenterY ?? clampedCenterY) - clampedCenterY) / (state.verticalTravel ?? 1),
+              0,
+              1,
+            ),
+          )
+        : 0;
+
+    setValue("iconOffsetX", nextOffsetX, {
       shouldDirty: true,
       shouldTouch: true,
     });
-    setValue("imageOffsetY", nextOffsetY, {
+    setValue("iconOffsetY", nextOffsetY, {
       shouldDirty: true,
       shouldTouch: true,
     });
@@ -391,11 +593,23 @@ export default function CardPreviewEditorOverlay({
     setActiveSnapAngle(snappedRotation?.angle ?? null);
     setActiveSnapScaleRatio(snappedScale?.ratio ?? null);
 
-    setValue("imageRotation", nextRotation, {
+    if (state.targetKind === "main-image") {
+      setValue("imageRotation", nextRotation, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      setValue("imageScale", nextScale, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      return;
+    }
+
+    setValue("iconRotation", nextRotation, {
       shouldDirty: true,
       shouldTouch: true,
     });
-    setValue("imageScale", nextScale, {
+    setValue("iconScale", nextScale, {
       shouldDirty: true,
       shouldTouch: true,
     });
@@ -442,7 +656,7 @@ export default function CardPreviewEditorOverlay({
     ? getArmEndpoint({
         centerX: stageCenterX,
         centerY: stageCenterY,
-        rotationDeg: overlayGeometry.rotation,
+        rotationDeg: activeTarget.rotation,
         armLength: GIZMO_CENTER_HANDLE_RADIUS,
       })
     : { x: stageCenterX, y: stageCenterY };
@@ -453,8 +667,13 @@ export default function CardPreviewEditorOverlay({
     : armEnd.y;
   const moveGridGradientId = `editor-image-move-grid-gradient-${overlayId}`;
   const moveGridMaskId = `editor-image-move-grid-mask-${overlayId}`;
+
   return (
-    <g data-preview-only="editor-overlay" data-editor-overlay="true">
+    <g
+      data-preview-only="editor-overlay"
+      data-editor-overlay="true"
+      data-editor-image-target={activeTarget.targetId}
+    >
       {isMoveSnapActive ? (
         <>
           <defs data-editor-image-move-grid-defs="true">
@@ -522,33 +741,33 @@ export default function CardPreviewEditorOverlay({
               />
             ))}
             {moveGridAccentVerticalLines.map((lineX) => (
-                <line
-                  key={`move-grid-accent-v-${lineX}`}
-                  x1={lineX}
-                  y1={0}
-                  x2={lineX}
-                  y2={layout.stageHeight}
-                  stroke={GIZMO_MOVE_GRID_ACCENT_STROKE}
-                  strokeWidth={GIZMO_MOVE_GRID_ACCENT_STROKE_WIDTH}
-                  pointerEvents="none"
-                  data-editor-image-move-grid-accent-line="vertical"
-                  data-editor-image-move-grid-accent-position={String(lineX)}
-                />
-              ))}
+              <line
+                key={`move-grid-accent-v-${lineX}`}
+                x1={lineX}
+                y1={0}
+                x2={lineX}
+                y2={layout.stageHeight}
+                stroke={GIZMO_MOVE_GRID_ACCENT_STROKE}
+                strokeWidth={GIZMO_MOVE_GRID_ACCENT_STROKE_WIDTH}
+                pointerEvents="none"
+                data-editor-image-move-grid-accent-line="vertical"
+                data-editor-image-move-grid-accent-position={String(lineX)}
+              />
+            ))}
             {moveGridAccentHorizontalLines.map((lineY) => (
-                <line
-                  key={`move-grid-accent-h-${lineY}`}
-                  x1={0}
-                  y1={lineY}
-                  x2={layout.stageWidth}
-                  y2={lineY}
-                  stroke={GIZMO_MOVE_GRID_ACCENT_STROKE}
-                  strokeWidth={GIZMO_MOVE_GRID_ACCENT_STROKE_WIDTH}
-                  pointerEvents="none"
-                  data-editor-image-move-grid-accent-line="horizontal"
-                  data-editor-image-move-grid-accent-position={String(lineY)}
-                />
-              ))}
+              <line
+                key={`move-grid-accent-h-${lineY}`}
+                x1={0}
+                y1={lineY}
+                x2={layout.stageWidth}
+                y2={lineY}
+                stroke={GIZMO_MOVE_GRID_ACCENT_STROKE}
+                strokeWidth={GIZMO_MOVE_GRID_ACCENT_STROKE_WIDTH}
+                pointerEvents="none"
+                data-editor-image-move-grid-accent-line="horizontal"
+                data-editor-image-move-grid-accent-position={String(lineY)}
+              />
+            ))}
           </g>
         </>
       ) : null}
