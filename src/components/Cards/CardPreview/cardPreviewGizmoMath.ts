@@ -11,6 +11,8 @@ export const GIZMO_CENTER_HANDLE_INNER_RADIUS = 5;
 export const GIZMO_TRANSFORM_HANDLE_RADIUS = 10;
 export const GIZMO_TRANSFORM_HANDLE_HIT_RADIUS = 16;
 export const GIZMO_MOVE_HANDLE_HIT_RADIUS = 20;
+export const GIZMO_ROTATION_SNAP_TOLERANCE_DEG = 6;
+export const GIZMO_ROTATION_SNAP_ANGLES = [0, 90, 180, 270] as const;
 
 export function getArmBaseLengthForFrame(width: number, height: number) {
   return clamp(Math.max(width, height) * 0.14, GIZMO_ARM_LENGTH_MIN, 96);
@@ -82,4 +84,23 @@ export function getArmEndpoint({
 
 export function roundStageValue(value: number) {
   return Math.round(value * 100) / 100;
+}
+
+export function getSnappedRotation(
+  rotation: number,
+  tolerance: number = GIZMO_ROTATION_SNAP_TOLERANCE_DEG,
+) {
+  const snappedRotation = Math.round(rotation / 90) * 90;
+  const delta = normalizeShortestAngleDegrees(rotation - snappedRotation);
+  if (Math.abs(delta) > tolerance) {
+    return null;
+  }
+
+  const snappedAngle =
+    ((((snappedRotation % 360) + 360) % 360) as (typeof GIZMO_ROTATION_SNAP_ANGLES)[number]) || 0;
+
+  return {
+    rotation: snappedRotation,
+    angle: snappedAngle,
+  };
 }

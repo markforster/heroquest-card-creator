@@ -286,6 +286,21 @@ describe("CardPreview renderToCanvas", () => {
         }
         return handle;
       },
+      snapGuides: () => document.querySelector('[data-editor-image-snap-guides="true"]'),
+      activeSnapGuide: () =>
+        document.querySelector('[data-editor-image-snap-angle-active="true"]'),
+    };
+  }
+
+  function getTransformDragPoints(angleDeg: number, radiusMultiplier: number = 1) {
+    const { centerX, centerY, armEndX, armEndY } = getSelectedPreviewStageGeometry();
+    const startRadius = Math.hypot(armEndX - centerX, armEndY - centerY);
+    const radians = (angleDeg * Math.PI) / 180;
+    return {
+      startX: armEndX,
+      startY: armEndY,
+      endX: centerX + Math.cos(radians) * startRadius * radiusMultiplier,
+      endY: centerY + Math.sin(radians) * startRadius * radiusMultiplier,
     };
   }
 
@@ -356,5 +371,129 @@ describe("CardPreview renderToCanvas", () => {
     expect(Number(values().getAttribute("data-scale"))).toBeCloseTo(1.4, 4);
     expect(values()).toHaveAttribute("data-offset-x", "0");
     expect(values()).toHaveAttribute("data-offset-y", "0");
+  });
+
+  it("keeps free rotation when the snap modifier is not held", async () => {
+    const { transformHandle, values, snapGuides } = await renderSelectedPreview();
+    const handle = transformHandle();
+    const { startX, startY, endX, endY } = getTransformDragPoints(84);
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: startX, y: startY })
+      .mockReturnValueOnce({ x: endX, y: endY });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 3 });
+      fireEvent.pointerMove(handle, { pointerId: 3, altKey: false });
+      fireEvent.pointerUp(handle, { pointerId: 3, altKey: false });
+    });
+
+    expect(Number(values().getAttribute("data-rotation"))).toBeCloseTo(84, 4);
+    expect(snapGuides()).toBeNull();
+  });
+
+  it("snaps rotation to a cardinal angle when the snap modifier is held within tolerance", async () => {
+    const { transformHandle, values, snapGuides, activeSnapGuide } = await renderSelectedPreview();
+    const handle = transformHandle();
+    const { startX, startY, endX, endY } = getTransformDragPoints(84);
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: startX, y: startY })
+      .mockReturnValueOnce({ x: endX, y: endY });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 4, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 4, altKey: true });
+    });
+
+    expect(Number(values().getAttribute("data-rotation"))).toBeCloseTo(90, 4);
+    expect(snapGuides()).not.toBeNull();
+    expect(activeSnapGuide()).toHaveAttribute("data-editor-image-snap-angle", "90");
+  });
+
+  it("does not snap rotation when outside the snap tolerance", async () => {
+    const { transformHandle, values, snapGuides, activeSnapGuide } = await renderSelectedPreview();
+    const handle = transformHandle();
+    const { startX, startY, endX, endY } = getTransformDragPoints(80);
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: startX, y: startY })
+      .mockReturnValueOnce({ x: endX, y: endY });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 5, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 5, altKey: true });
+    });
+
+    expect(Number(values().getAttribute("data-rotation"))).toBeCloseTo(80, 4);
+    expect(snapGuides()).not.toBeNull();
+    expect(activeSnapGuide()).toBeNull();
+  });
+
+  it("enables snap when the modifier is pressed during an active transform drag", async () => {
+    const { transformHandle, values, activeSnapGuide } = await renderSelectedPreview();
+    const handle = transformHandle();
+    const { startX, startY, endX, endY } = getTransformDragPoints(84);
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: startX, y: startY })
+      .mockReturnValueOnce({ x: endX, y: endY })
+      .mockReturnValueOnce({ x: endX, y: endY });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 6, altKey: false });
+      fireEvent.pointerMove(handle, { pointerId: 6, altKey: false });
+    });
+
+    expect(Number(values().getAttribute("data-rotation"))).toBeCloseTo(84, 4);
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 6, altKey: true });
+    });
+
+    expect(Number(values().getAttribute("data-rotation"))).toBeCloseTo(90, 4);
+    expect(activeSnapGuide()).toHaveAttribute("data-editor-image-snap-angle", "90");
+  });
+
+  it("returns to free rotation when the modifier is released during an active transform drag", async () => {
+    const { transformHandle, values, activeSnapGuide } = await renderSelectedPreview();
+    const handle = transformHandle();
+    const { startX, startY, endX, endY } = getTransformDragPoints(84);
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: startX, y: startY })
+      .mockReturnValueOnce({ x: endX, y: endY })
+      .mockReturnValueOnce({ x: endX, y: endY });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 7, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 7, altKey: true });
+    });
+
+    expect(Number(values().getAttribute("data-rotation"))).toBeCloseTo(90, 4);
+    expect(activeSnapGuide()).toHaveAttribute("data-editor-image-snap-angle", "90");
+
+    await act(async () => {
+      fireEvent.keyUp(window, { key: "Alt", altKey: false });
+      fireEvent.pointerMove(handle, { pointerId: 7, altKey: false });
+    });
+
+    expect(Number(values().getAttribute("data-rotation"))).toBeCloseTo(84, 4);
+    expect(activeSnapGuide()).toBeNull();
+  });
+
+  it("does not show polar snap guides during move drags even when the modifier is held", async () => {
+    const { moveHandle, snapGuides } = await renderSelectedPreview();
+    const handle = moveHandle();
+    const { centerX, centerY } = getSelectedPreviewStageGeometry();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: centerX, y: centerY })
+      .mockReturnValueOnce({ x: centerX + 12, y: centerY + 8 });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 8, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 8, altKey: true });
+    });
+
+    expect(snapGuides()).toBeNull();
   });
 });

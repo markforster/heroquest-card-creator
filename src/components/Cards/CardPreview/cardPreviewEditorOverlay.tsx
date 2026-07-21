@@ -16,7 +16,7 @@ import {
 import { clamp } from "@/lib/math";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 
 import { getCardPreviewStageLayout } from "./cardPreviewStage";
@@ -27,6 +27,7 @@ import {
   GIZMO_CENTER_HANDLE_RADIUS,
   GIZMO_FRAME_RADIUS,
   GIZMO_MOVE_HANDLE_HIT_RADIUS,
+  GIZMO_ROTATION_SNAP_ANGLES,
   GIZMO_SCALE_EPSILON,
   GIZMO_TRANSFORM_HANDLE_HIT_RADIUS,
   GIZMO_TRANSFORM_HANDLE_RADIUS,
@@ -34,6 +35,7 @@ import {
   getArmEndpoint,
   getArmLengthForScale,
   getDistance,
+  getSnappedRotation,
   normalizeShortestAngleDegrees,
   roundStageValue,
 } from "./cardPreviewGizmoMath";
@@ -49,6 +51,13 @@ const GIZMO_CYAN_FRAME = "rgba(34, 211, 238, 0.88)";
 const GIZMO_CYAN_ACTIVE = "rgba(34, 211, 238, 1)";
 const GIZMO_CYAN_STROKE = "rgba(34, 211, 238, 0.98)";
 const GIZMO_CYAN_FILL = "rgba(34, 211, 238, 0.95)";
+const GIZMO_SNAP_GUIDE = "rgba(34, 211, 238, 0.34)";
+const GIZMO_FRAME_STROKE_WIDTH = 4;
+const GIZMO_ARM_STROKE_WIDTH = 4;
+const GIZMO_SNAP_GUIDE_STROKE_WIDTH = 3;
+const GIZMO_SNAP_GUIDE_ACTIVE_STROKE_WIDTH = 4;
+const GIZMO_MOVE_HANDLE_STROKE_WIDTH = 4;
+const GIZMO_TRANSFORM_HANDLE_STROKE_WIDTH = 3;
 
 type DragState =
   | {
@@ -80,7 +89,10 @@ export default function CardPreviewEditorOverlay({
   const editorTargets = useOptionalEditorTargets();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const dragStateRef = useRef<DragState | null>(null);
+  const snapModifierActiveRef = useRef(false);
   const [activeDragMode, setActiveDragMode] = useState<DragState["mode"] | null>(null);
+  const [snapModifierActive, setSnapModifierActive] = useState(false);
+  const [activeSnapAngle, setActiveSnapAngle] = useState<number | null>(null);
 
   if (!ENABLE_EDITOR_TARGET_INTERACTIONS) {
     return null;
@@ -166,11 +178,39 @@ export default function CardPreviewEditorOverlay({
     isImageSelected &&
     Boolean(templateId && blueprint && imageLayer && imageAssetId && overlayGeometry && form?.setValue);
 
+  const setSnapModifierState = (active: boolean) => {
+    snapModifierActiveRef.current = active;
+    setSnapModifierActive((previous) => (previous === active ? previous : active));
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      setSnapModifierState(event.altKey);
+    };
+    const handleKeyUp = (event: KeyboardEvent) => {
+      setSnapModifierState(event.altKey);
+    };
+    const handleBlur = () => {
+      setSnapModifierState(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", handleBlur);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", handleBlur);
+    };
+  }, []);
+
   if (!canRenderGizmo || !frameBounds || !overlayGeometry || !form?.setValue) {
     return null;
   }
 
   const { setValue } = form;
+  const snapGuideRadius = clamp(Math.max(frameBounds.width, frameBounds.height) * 0.36, armLength + 24, 320);
 
   const getStagePoint = (event: React.PointerEvent<SVGCircleElement>) => {
     const svg = svgRef.current ?? event.currentTarget.ownerSVGElement;
@@ -198,6 +238,7 @@ export default function CardPreviewEditorOverlay({
       startOffsetY: data.imageOffsetY ?? 0,
     };
     setActiveDragMode("move");
+    setActiveSnapAngle(null);
   };
 
   const beginTransformDrag = (event: React.PointerEvent<SVGCircleElement>) => {
@@ -222,6 +263,8 @@ export default function CardPreviewEditorOverlay({
       maxScale: scaleBounds.max,
     };
     setActiveDragMode("transform");
+    setSnapModifierState(event.altKey || snapModifierActiveRef.current);
+    setActiveSnapAngle(null);
   };
 
   const updateMoveDrag = (state: Extract<DragState, { mode: "move" }>, point: { x: number; y: number }) => {
@@ -238,6 +281,7 @@ export default function CardPreviewEditorOverlay({
   const updateTransformDrag = (
     state: Extract<DragState, { mode: "transform" }>,
     point: { x: number; y: number },
+    snapActive: boolean,
   ) => {
     const currentAngle = getAngleDegrees(state.centerX, state.centerY, point.x, point.y);
     const currentDistance = Math.max(
@@ -245,9 +289,12 @@ export default function CardPreviewEditorOverlay({
       GIZMO_SCALE_EPSILON,
     );
     const rotationDelta = normalizeShortestAngleDegrees(currentAngle - state.startPointerAngle);
-    const nextRotation = roundStageValue(state.startRotation + rotationDelta);
+    const freeRotation = roundStageValue(state.startRotation + rotationDelta);
+    const snappedRotation = snapActive ? getSnappedRotation(freeRotation) : null;
+    const nextRotation = snappedRotation?.rotation ?? freeRotation;
     const scaleRatio = currentDistance / Math.max(state.startPointerDistance, GIZMO_SCALE_EPSILON);
     const nextScale = clamp(state.startScale * scaleRatio, state.minScale, state.maxScale);
+    setActiveSnapAngle(snappedRotation?.angle ?? null);
 
     setValue("imageRotation", nextRotation, {
       shouldDirty: true,
@@ -262,6 +309,11 @@ export default function CardPreviewEditorOverlay({
   const handlePointerMove = (event: React.PointerEvent<SVGCircleElement>) => {
     const state = dragStateRef.current;
     if (!state || state.pointerId !== event.pointerId) return;
+    const snapActive =
+      state.mode === "transform" ? event.altKey || snapModifierActiveRef.current : false;
+    if (state.mode === "transform" && snapModifierActiveRef.current !== snapActive) {
+      setSnapModifierState(snapActive);
+    }
     const point = getStagePoint(event);
     if (!point) return;
     event.stopPropagation();
@@ -272,7 +324,7 @@ export default function CardPreviewEditorOverlay({
       return;
     }
 
-    updateTransformDrag(state, point);
+    updateTransformDrag(state, point, snapActive);
   };
 
   const endDrag = (event: React.PointerEvent<SVGCircleElement>) => {
@@ -285,14 +337,42 @@ export default function CardPreviewEditorOverlay({
     }
     dragStateRef.current = null;
     setActiveDragMode(null);
+    setActiveSnapAngle(null);
   };
 
   const armStroke = activeDragMode === "transform" ? GIZMO_CYAN_ACTIVE : GIZMO_CYAN_FRAME;
   const moveCursor = activeDragMode === "move" ? "grabbing" : "grab";
   const transformCursor = activeDragMode === "transform" ? "grabbing" : "grab";
-
   return (
     <g data-preview-only="editor-overlay" data-editor-overlay="true">
+      {activeDragMode === "transform" && snapModifierActive ? (
+        <g data-editor-image-snap-guides="true">
+          {GIZMO_ROTATION_SNAP_ANGLES.map((angle) => {
+            const endpoint = getArmEndpoint({
+              centerX: stageCenterX,
+              centerY: stageCenterY,
+              rotationDeg: angle,
+              armLength: snapGuideRadius,
+            });
+            const isActive = activeSnapAngle === angle;
+            return (
+              <line
+                key={angle}
+                x1={stageCenterX}
+                y1={stageCenterY}
+                x2={endpoint.x}
+                y2={endpoint.y}
+                stroke={isActive ? GIZMO_CYAN_ACTIVE : GIZMO_SNAP_GUIDE}
+                strokeWidth={isActive ? GIZMO_SNAP_GUIDE_ACTIVE_STROKE_WIDTH : GIZMO_SNAP_GUIDE_STROKE_WIDTH}
+                strokeLinecap="round"
+                pointerEvents="none"
+                data-editor-image-snap-angle={String(angle)}
+                data-editor-image-snap-angle-active={isActive ? "true" : "false"}
+              />
+            );
+          })}
+        </g>
+      ) : null}
       <rect
         x={x}
         y={y}
@@ -302,7 +382,7 @@ export default function CardPreviewEditorOverlay({
         ry={GIZMO_FRAME_RADIUS}
         fill="none"
         stroke={GIZMO_CYAN_FRAME}
-        strokeWidth={3}
+        strokeWidth={GIZMO_FRAME_STROKE_WIDTH}
         strokeDasharray="10 8"
         pointerEvents="none"
         data-editor-image-frame="true"
@@ -313,7 +393,7 @@ export default function CardPreviewEditorOverlay({
         x2={armEnd.x}
         y2={armEnd.y}
         stroke={armStroke}
-        strokeWidth={3}
+        strokeWidth={GIZMO_ARM_STROKE_WIDTH}
         strokeLinecap="round"
         pointerEvents="none"
         data-editor-image-arm="true"
@@ -324,7 +404,7 @@ export default function CardPreviewEditorOverlay({
         r={GIZMO_CENTER_HANDLE_RADIUS}
         fill={GIZMO_DARK_RING}
         stroke={GIZMO_CYAN_STROKE}
-        strokeWidth={3}
+        strokeWidth={GIZMO_MOVE_HANDLE_STROKE_WIDTH}
         pointerEvents="none"
         data-editor-image-move-handle-visual="true"
       />
@@ -341,7 +421,7 @@ export default function CardPreviewEditorOverlay({
         r={GIZMO_TRANSFORM_HANDLE_RADIUS}
         fill={GIZMO_CYAN_FILL}
         stroke={GIZMO_DARK_RING}
-        strokeWidth={2}
+        strokeWidth={GIZMO_TRANSFORM_HANDLE_STROKE_WIDTH}
         pointerEvents="none"
         data-editor-image-transform-handle-visual="true"
       />
