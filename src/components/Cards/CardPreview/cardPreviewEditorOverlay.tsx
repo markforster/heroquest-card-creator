@@ -35,9 +35,12 @@ import {
   getArmEndpoint,
   getArmLengthForScale,
   getDistance,
+  getScaleSnapRings,
   getSnappedRotation,
+  getSnappedScale,
   normalizeShortestAngleDegrees,
   roundStageValue,
+  type ScaleSnapRing,
 } from "./cardPreviewGizmoMath";
 import { getStagePointFromClientCoordinates } from "./cardPreviewPointer";
 
@@ -58,6 +61,8 @@ const GIZMO_SNAP_GUIDE_STROKE_WIDTH = 3;
 const GIZMO_SNAP_GUIDE_ACTIVE_STROKE_WIDTH = 4;
 const GIZMO_MOVE_HANDLE_STROKE_WIDTH = 4;
 const GIZMO_TRANSFORM_HANDLE_STROKE_WIDTH = 3;
+const GIZMO_SNAP_RING_STROKE_WIDTH = 2;
+const GIZMO_SNAP_RING_ACTIVE_STROKE_WIDTH = 4;
 
 type DragState =
   | {
@@ -93,6 +98,7 @@ export default function CardPreviewEditorOverlay({
   const [activeDragMode, setActiveDragMode] = useState<DragState["mode"] | null>(null);
   const [snapModifierActive, setSnapModifierActive] = useState(false);
   const [activeSnapAngle, setActiveSnapAngle] = useState<number | null>(null);
+  const [activeSnapScaleRatio, setActiveSnapScaleRatio] = useState<number | null>(null);
 
   if (!ENABLE_EDITOR_TARGET_INTERACTIONS) {
     return null;
@@ -210,7 +216,25 @@ export default function CardPreviewEditorOverlay({
   }
 
   const { setValue } = form;
-  const snapGuideRadius = clamp(Math.max(frameBounds.width, frameBounds.height) * 0.36, armLength + 24, 320);
+  const transformDragState = activeDragMode === "transform" ? dragStateRef.current : null;
+  const scaleSnapRings: ScaleSnapRing[] =
+    transformDragState?.mode === "transform"
+      ? getScaleSnapRings({
+          startScale: transformDragState.startScale,
+          startRadius: transformDragState.startPointerDistance,
+          minScale: transformDragState.minScale,
+          maxScale: transformDragState.maxScale,
+        })
+      : [];
+  const snapGuideRadius = clamp(
+    Math.max(
+      Math.max(frameBounds.width, frameBounds.height) * 0.36,
+      armLength + 24,
+      scaleSnapRings.at(-1)?.radius ?? 0,
+    ),
+    armLength + 24,
+    320,
+  );
 
   const getStagePoint = (event: React.PointerEvent<SVGCircleElement>) => {
     const svg = svgRef.current ?? event.currentTarget.ownerSVGElement;
@@ -239,6 +263,7 @@ export default function CardPreviewEditorOverlay({
     };
     setActiveDragMode("move");
     setActiveSnapAngle(null);
+    setActiveSnapScaleRatio(null);
   };
 
   const beginTransformDrag = (event: React.PointerEvent<SVGCircleElement>) => {
@@ -265,6 +290,7 @@ export default function CardPreviewEditorOverlay({
     setActiveDragMode("transform");
     setSnapModifierState(event.altKey || snapModifierActiveRef.current);
     setActiveSnapAngle(null);
+    setActiveSnapScaleRatio(null);
   };
 
   const updateMoveDrag = (state: Extract<DragState, { mode: "move" }>, point: { x: number; y: number }) => {
@@ -293,8 +319,21 @@ export default function CardPreviewEditorOverlay({
     const snappedRotation = snapActive ? getSnappedRotation(freeRotation) : null;
     const nextRotation = snappedRotation?.rotation ?? freeRotation;
     const scaleRatio = currentDistance / Math.max(state.startPointerDistance, GIZMO_SCALE_EPSILON);
-    const nextScale = clamp(state.startScale * scaleRatio, state.minScale, state.maxScale);
+    const freeScale = clamp(state.startScale * scaleRatio, state.minScale, state.maxScale);
+    const snappedScale = snapActive
+      ? getSnappedScale({
+          currentDistance,
+          rings: getScaleSnapRings({
+            startScale: state.startScale,
+            startRadius: state.startPointerDistance,
+            minScale: state.minScale,
+            maxScale: state.maxScale,
+          }),
+        })
+      : null;
+    const nextScale = snappedScale?.scale ?? freeScale;
     setActiveSnapAngle(snappedRotation?.angle ?? null);
+    setActiveSnapScaleRatio(snappedScale?.ratio ?? null);
 
     setValue("imageRotation", nextRotation, {
       shouldDirty: true,
@@ -338,6 +377,7 @@ export default function CardPreviewEditorOverlay({
     dragStateRef.current = null;
     setActiveDragMode(null);
     setActiveSnapAngle(null);
+    setActiveSnapScaleRatio(null);
   };
 
   const armStroke = activeDragMode === "transform" ? GIZMO_CYAN_ACTIVE : GIZMO_CYAN_FRAME;
@@ -347,6 +387,23 @@ export default function CardPreviewEditorOverlay({
     <g data-preview-only="editor-overlay" data-editor-overlay="true">
       {activeDragMode === "transform" && snapModifierActive ? (
         <g data-editor-image-snap-guides="true">
+          {scaleSnapRings.map((ring) => {
+            const isActive = activeSnapScaleRatio === ring.ratio;
+            return (
+              <circle
+                key={`scale-ring-${ring.offset}`}
+                cx={stageCenterX}
+                cy={stageCenterY}
+                r={ring.radius}
+                fill="none"
+                stroke={isActive ? GIZMO_CYAN_ACTIVE : GIZMO_SNAP_GUIDE}
+                strokeWidth={isActive ? GIZMO_SNAP_RING_ACTIVE_STROKE_WIDTH : GIZMO_SNAP_RING_STROKE_WIDTH}
+                pointerEvents="none"
+                data-editor-image-snap-scale-ring={String(ring.ratio)}
+                data-editor-image-snap-scale-ring-active={isActive ? "true" : "false"}
+              />
+            );
+          })}
           {GIZMO_ROTATION_SNAP_ANGLES.map((angle) => {
             const endpoint = getArmEndpoint({
               centerX: stageCenterX,

@@ -1,6 +1,6 @@
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useEffect } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import CardPreview from "@/components/Cards/CardPreview";
 import {
@@ -58,6 +58,27 @@ describe("CardPreview editor overlay stage probe", () => {
     return <FormProvider {...form}>{children}</FormProvider>;
   }
 
+  function SelectedTargetProbe() {
+    const { selectedTargetId } = useEditorTargets();
+
+    return <output data-testid="selected-target">{selectedTargetId ?? ""}</output>;
+  }
+
+  function FormValueProbe() {
+    const values = useWatch({
+      name: ["imageAssetId", "imageOriginalWidth", "imageOriginalHeight"],
+    }) as [string | undefined, number | undefined, number | undefined];
+
+    return (
+      <output
+        data-testid="form-values"
+        data-image-asset-id={values[0] ?? ""}
+        data-image-original-width={values[1] ?? ""}
+        data-image-original-height={values[2] ?? ""}
+      />
+    );
+  }
+
   beforeEach(() => {
     class InstantImage {
       private listeners = new Map<string, EventListener[]>();
@@ -101,6 +122,7 @@ describe("CardPreview editor overlay stage probe", () => {
     const { container } = render(
       <EditorTargetsProvider>
         <SelectImageMainTarget />
+        <SelectedTargetProbe />
         <PreviewFormHarness
           defaultValues={{
             title: "Hero",
@@ -109,6 +131,7 @@ describe("CardPreview editor overlay stage probe", () => {
             imageOriginalHeight: 1800,
           }}
         >
+          <FormValueProbe />
           <CardPreview
             templateId="hero"
             templateName="Hero"
@@ -226,5 +249,97 @@ describe("CardPreview editor overlay stage probe", () => {
       Number(largeHandle.getAttribute("cx")) - Number(largeCenter.getAttribute("cx"));
 
     expect(largeDistance).toBeGreaterThan(smallDistance);
+  });
+
+  it("clears the selected target when the preview background is clicked", async () => {
+    const { container } = render(
+      <EditorTargetsProvider>
+        <SelectImageMainTarget />
+        <SelectedTargetProbe />
+        <PreviewFormHarness
+          defaultValues={{
+            title: "Hero",
+            imageAssetId: "asset-1",
+            imageOriginalWidth: 1400,
+            imageOriginalHeight: 1800,
+          }}
+        >
+          <FormValueProbe />
+          <CardPreview
+            templateId="hero"
+            templateName="Hero"
+            cardData={{
+              title: "Hero",
+              imageAssetId: "asset-1",
+              imageOriginalWidth: 1400,
+              imageOriginalHeight: 1800,
+            }}
+          />
+        </PreviewFormHarness>
+      </EditorTargetsProvider>,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId("selected-target")).toHaveTextContent(EDITOR_TARGET_IDS.imageMain);
+
+    const svg = container.querySelector("svg");
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error("Expected preview svg");
+    }
+
+    await act(async () => {
+      fireEvent.click(svg);
+    });
+
+    expect(screen.getByTestId("selected-target")).toHaveTextContent("");
+    expect(container.querySelector('[data-editor-image-frame="true"]')).toBeNull();
+  });
+
+  it("preserves selection when the transform handle is clicked", async () => {
+    const { container } = render(
+      <EditorTargetsProvider>
+        <SelectImageMainTarget />
+        <SelectedTargetProbe />
+        <PreviewFormHarness
+          defaultValues={{
+            title: "Hero",
+            imageAssetId: "asset-1",
+            imageOriginalWidth: 1400,
+            imageOriginalHeight: 1800,
+          }}
+        >
+          <FormValueProbe />
+          <CardPreview
+            templateId="hero"
+            templateName="Hero"
+            cardData={{
+              title: "Hero",
+              imageAssetId: "asset-1",
+              imageOriginalWidth: 1400,
+              imageOriginalHeight: 1800,
+            }}
+          />
+        </PreviewFormHarness>
+      </EditorTargetsProvider>,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const transformHandle = container.querySelector('[data-editor-image-transform-handle="true"]');
+    if (!(transformHandle instanceof SVGElement)) {
+      throw new Error("Expected transform handle");
+    }
+
+    await act(async () => {
+      fireEvent.click(transformHandle);
+    });
+
+    expect(screen.getByTestId("selected-target")).toHaveTextContent(EDITOR_TARGET_IDS.imageMain);
+    expect(container.querySelector('[data-editor-image-frame="true"]')).not.toBeNull();
   });
 });

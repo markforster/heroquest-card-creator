@@ -13,6 +13,9 @@ export const GIZMO_TRANSFORM_HANDLE_HIT_RADIUS = 16;
 export const GIZMO_MOVE_HANDLE_HIT_RADIUS = 20;
 export const GIZMO_ROTATION_SNAP_TOLERANCE_DEG = 6;
 export const GIZMO_ROTATION_SNAP_ANGLES = [0, 90, 180, 270] as const;
+export const GIZMO_SCALE_SNAP_STEP_RATIO = 0.25;
+export const GIZMO_SCALE_SNAP_RING_OFFSETS = [-2, -1, 0, 1, 2] as const;
+export const GIZMO_SCALE_SNAP_RADIUS_TOLERANCE = 8;
 
 export function getArmBaseLengthForFrame(width: number, height: number) {
   return clamp(Math.max(width, height) * 0.14, GIZMO_ARM_LENGTH_MIN, 96);
@@ -103,4 +106,76 @@ export function getSnappedRotation(
     rotation: snappedRotation,
     angle: snappedAngle,
   };
+}
+
+export type ScaleSnapRing = {
+  offset: number;
+  ratio: number;
+  scale: number;
+  radius: number;
+};
+
+export function getScaleSnapRings({
+  startScale,
+  startRadius,
+  minScale,
+  maxScale,
+  offsets = GIZMO_SCALE_SNAP_RING_OFFSETS,
+}: {
+  startScale: number;
+  startRadius: number;
+  minScale: number;
+  maxScale: number;
+  offsets?: readonly number[];
+}) {
+  const rings: ScaleSnapRing[] = [];
+  const seenScales = new Set<number>();
+
+  for (let index = 0; index < offsets.length; index += 1) {
+    const offset = offsets[index];
+    const ratio = roundStageValue(1 + offset * GIZMO_SCALE_SNAP_STEP_RATIO);
+    if (!Number.isFinite(ratio) || ratio <= 0) continue;
+
+    const scale = clamp(startScale * ratio, minScale, maxScale);
+    const roundedScale = roundStageValue(scale);
+    if (seenScales.has(roundedScale)) continue;
+    seenScales.add(roundedScale);
+
+    rings.push({
+      offset,
+      ratio,
+      scale: roundedScale,
+      radius: roundStageValue(startRadius * ratio),
+    });
+  }
+
+  return rings.sort((left, right) => left.radius - right.radius);
+}
+
+export function getSnappedScale({
+  currentDistance,
+  rings,
+  tolerance = GIZMO_SCALE_SNAP_RADIUS_TOLERANCE,
+}: {
+  currentDistance: number;
+  rings: ScaleSnapRing[];
+  tolerance?: number;
+}) {
+  let nearestRing: ScaleSnapRing | null = null;
+  let nearestDelta = Number.POSITIVE_INFINITY;
+
+  for (let index = 0; index < rings.length; index += 1) {
+    const ring = rings[index];
+    const delta = Math.abs(currentDistance - ring.radius);
+    if (delta < nearestDelta) {
+      nearestRing = ring;
+      nearestDelta = delta;
+    }
+  }
+
+  if (!nearestRing || nearestDelta > tolerance) {
+    return null;
+  }
+
+  return nearestRing;
 }

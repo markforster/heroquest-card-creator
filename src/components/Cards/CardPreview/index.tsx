@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import BlueprintRenderer from "@/components/BlueprintRenderer";
@@ -41,6 +41,7 @@ import { renderBleedCanvas } from "./cardPreviewBleedCanvas";
 import CardPreviewEditorOverlay from "./cardPreviewEditorOverlay";
 import { drawDeveloperCredit } from "./cardPreviewDeveloperCredit";
 import { mutateSvgForExport } from "./cardPreviewExportSvg";
+import { shouldClearPreviewSelection } from "./cardPreviewSelection";
 import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
 import {
   CARD_CLIP_INSET,
@@ -50,6 +51,7 @@ import {
 
 import type { CSSProperties } from "react";
 import type { CardPreviewHandle, CardPreviewProps } from "./types";
+import { useOptionalEditorTargets } from "../CardEditor/EditorTargetsContext";
 
 function normalizeCopyrightColor(value?: string) {
   if (typeof value !== "string") return undefined;
@@ -89,6 +91,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
     ref,
   ) => {
     const { t } = useI18n();
+    const editorTargets = useOptionalEditorTargets();
     const { defaultCopyright } = useCopyrightSettings();
     const [developerCreditDisabled] = useLocalStorageBoolean("hqcc.developerCreditDisabled", false);
     const developerCreditEnabled = !developerCreditDisabled;
@@ -902,6 +905,15 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
       [cardData, templateId, templateName, syncCopyrightContrast, developerCreditEnabled],
     );
 
+    const handlePreviewClick = useCallback(
+      (event: React.MouseEvent<SVGSVGElement>) => {
+        if (!editorTargets?.selectedTargetId) return;
+        if (!shouldClearPreviewSelection(event.target)) return;
+        editorTargets.setSelectedTargetId(null);
+      },
+      [editorTargets],
+    );
+
     return (
       <div className={styles.root}>
         <div className={styles.frame}>
@@ -914,6 +926,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             onContextMenu={(event) => {
               event.preventDefault();
             }}
+            onClick={handlePreviewClick}
             aria-label={
               templateName
                 ? `${t("aria.previewOf")} ${templateName} ${t("aria.card")}`

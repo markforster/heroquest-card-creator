@@ -289,6 +289,9 @@ describe("CardPreview renderToCanvas", () => {
       snapGuides: () => document.querySelector('[data-editor-image-snap-guides="true"]'),
       activeSnapGuide: () =>
         document.querySelector('[data-editor-image-snap-angle-active="true"]'),
+      scaleSnapRings: () => document.querySelectorAll('[data-editor-image-snap-scale-ring]'),
+      activeScaleSnapRing: () =>
+        document.querySelector('[data-editor-image-snap-scale-ring-active="true"]'),
     };
   }
 
@@ -495,5 +498,117 @@ describe("CardPreview renderToCanvas", () => {
     });
 
     expect(snapGuides()).toBeNull();
+  });
+
+  it("snaps scale to the nearest relative ring when the modifier is held within tolerance", async () => {
+    const { transformHandle, values, scaleSnapRings, activeScaleSnapRing } = await renderSelectedPreview();
+    const handle = transformHandle();
+    const { startX, startY, endX, endY } = getTransformDragPoints(0, 1.24);
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: startX, y: startY })
+      .mockReturnValueOnce({ x: endX, y: endY });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 9, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 9, altKey: true });
+    });
+
+    expect(Number(values().getAttribute("data-scale"))).toBeCloseTo(1.25, 4);
+    expect(scaleSnapRings().length).toBeGreaterThan(0);
+    expect(activeScaleSnapRing()).toHaveAttribute("data-editor-image-snap-scale-ring", "1.25");
+  });
+
+  it("does not snap scale when outside the ring tolerance", async () => {
+    const { transformHandle, values, scaleSnapRings, activeScaleSnapRing } = await renderSelectedPreview();
+    const handle = transformHandle();
+    const { startX, startY, endX, endY } = getTransformDragPoints(0, 1.12);
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: startX, y: startY })
+      .mockReturnValueOnce({ x: endX, y: endY });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 10, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 10, altKey: true });
+    });
+
+    expect(Number(values().getAttribute("data-scale"))).toBeCloseTo(1.12, 4);
+    expect(scaleSnapRings().length).toBeGreaterThan(0);
+    expect(activeScaleSnapRing()).toBeNull();
+  });
+
+  it("enables scale snap when the modifier is pressed during an active transform drag", async () => {
+    const { transformHandle, values, activeScaleSnapRing } = await renderSelectedPreview();
+    const handle = transformHandle();
+    const { startX, startY, endX, endY } = getTransformDragPoints(0, 1.12);
+    const snappedPoints = getTransformDragPoints(0, 1.24);
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: startX, y: startY })
+      .mockReturnValueOnce({ x: endX, y: endY })
+      .mockReturnValueOnce({ x: snappedPoints.endX, y: snappedPoints.endY });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 11, altKey: false });
+      fireEvent.pointerMove(handle, { pointerId: 11, altKey: false });
+    });
+
+    expect(Number(values().getAttribute("data-scale"))).toBeCloseTo(1.12, 4);
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 11, altKey: true });
+    });
+
+    expect(Number(values().getAttribute("data-scale"))).toBeCloseTo(1.25, 4);
+    expect(activeScaleSnapRing()).toHaveAttribute("data-editor-image-snap-scale-ring", "1.25");
+  });
+
+  it("returns to free scale when the modifier is released during an active transform drag", async () => {
+    const { transformHandle, values, activeScaleSnapRing } = await renderSelectedPreview();
+    const handle = transformHandle();
+    const snappedPoints = getTransformDragPoints(0, 1.24);
+    const freePoints = getTransformDragPoints(0, 1.12);
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: snappedPoints.startX, y: snappedPoints.startY })
+      .mockReturnValueOnce({ x: snappedPoints.endX, y: snappedPoints.endY })
+      .mockReturnValueOnce({ x: freePoints.endX, y: freePoints.endY });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 12, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 12, altKey: true });
+    });
+
+    expect(Number(values().getAttribute("data-scale"))).toBeCloseTo(1.25, 4);
+    expect(activeScaleSnapRing()).toHaveAttribute("data-editor-image-snap-scale-ring", "1.25");
+
+    await act(async () => {
+      fireEvent.keyUp(window, { key: "Alt", altKey: false });
+      fireEvent.pointerMove(handle, { pointerId: 12, altKey: false });
+    });
+
+    expect(Number(values().getAttribute("data-scale"))).toBeCloseTo(1.12, 4);
+    expect(activeScaleSnapRing()).toBeNull();
+  });
+
+  it("snaps rotation and scale together when both guides are engaged", async () => {
+    const { transformHandle, values, activeSnapGuide, activeScaleSnapRing } = await renderSelectedPreview();
+    const handle = transformHandle();
+    const { startX, startY, endX, endY } = getTransformDragPoints(84, 1.24);
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: startX, y: startY })
+      .mockReturnValueOnce({ x: endX, y: endY });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Alt", altKey: true });
+      fireEvent.pointerDown(handle, { pointerId: 13, altKey: true });
+      fireEvent.pointerMove(handle, { pointerId: 13, altKey: true });
+    });
+
+    expect(Number(values().getAttribute("data-rotation"))).toBeCloseTo(90, 4);
+    expect(Number(values().getAttribute("data-scale"))).toBeCloseTo(1.25, 4);
+    expect(activeSnapGuide()).toHaveAttribute("data-editor-image-snap-angle", "90");
+    expect(activeScaleSnapRing()).toHaveAttribute("data-editor-image-snap-scale-ring", "1.25");
   });
 });
