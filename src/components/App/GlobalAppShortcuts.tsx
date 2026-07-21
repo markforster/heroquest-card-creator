@@ -9,7 +9,7 @@ import { useAppActions } from "@/components/Providers/AppActionsContext";
 
 export default function GlobalAppShortcuts() {
   const navigate = useNavigate();
-  const { focusPrimarySearch } = useRouteShellCapabilities();
+  const { focusPrimarySearch, routeShortcutHandlers } = useRouteShellCapabilities();
   const {
     openRecent,
     openSettings,
@@ -41,7 +41,7 @@ export default function GlobalAppShortcuts() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isSuppressed || event.defaultPrevented) return;
       const key = event.key.toLowerCase();
-      const handler = handlers[key as keyof typeof handlers];
+      const handler = handlers[key as keyof typeof handlers] ?? routeShortcutHandlers[key];
       if (!handler) return;
       if (!matchesKeyBinding(event, { key })) return;
       event.preventDefault();
@@ -52,7 +52,7 @@ export default function GlobalAppShortcuts() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [handlers, isSuppressed]);
+  }, [handlers, isSuppressed, routeShortcutHandlers]);
 
   return null;
 }

@@ -7,6 +7,7 @@ const openRecent = jest.fn();
 const openSettings = jest.fn();
 const openTemplatePicker = jest.fn();
 const focusPrimarySearch = jest.fn();
+const routeShortcutE = jest.fn();
 
 const appActionsState = {
   openRecent,
@@ -29,6 +30,9 @@ jest.mock("@/components/App/RouteShellCapabilitiesContext", () => ({
   useRouteShellCapabilities: () => ({
     repairCurrentCardThumbnail: jest.fn(),
     focusPrimarySearch,
+    routeShortcutHandlers: {
+      e: routeShortcutE,
+    },
   }),
 }));
 
@@ -65,6 +69,7 @@ describe("GlobalAppShortcuts (UI)", () => {
     openSettings.mockReset();
     openTemplatePicker.mockReset();
     focusPrimarySearch.mockReset().mockReturnValue(true);
+    routeShortcutE.mockReset().mockReturnValue(true);
     appActionsState.isAssetsOpen = false;
     appActionsState.isRecentOpen = false;
     appActionsState.isSettingsOpen = false;
@@ -86,12 +91,14 @@ describe("GlobalAppShortcuts (UI)", () => {
 
     fireEvent.keyDown(window, { key: "c" });
     fireEvent.keyDown(window, { key: "s" });
+    fireEvent.keyDown(window, { key: "e" });
 
     expect(openRecent).toHaveBeenCalledTimes(1);
     expect(openSettings).toHaveBeenCalledTimes(1);
     expect(openTemplatePicker).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("location")).toHaveTextContent("/cards");
     expect(focusPrimarySearch).toHaveBeenCalledTimes(1);
+    expect(routeShortcutE).toHaveBeenCalledTimes(1);
   });
 
   it("ignores shortcuts from editable targets and when modifiers or repeats are present", () => {
@@ -108,11 +115,13 @@ describe("GlobalAppShortcuts (UI)", () => {
     fireEvent.keyDown(window, { key: "d", metaKey: true });
     fireEvent.keyDown(window, { key: "a", ctrlKey: true });
     fireEvent.keyDown(window, { key: "s", repeat: true });
+    fireEvent.keyDown(window, { key: "e", shiftKey: true });
 
     expect(openRecent).not.toHaveBeenCalled();
     expect(openSettings).not.toHaveBeenCalled();
     expect(openTemplatePicker).not.toHaveBeenCalled();
     expect(focusPrimarySearch).not.toHaveBeenCalled();
+    expect(routeShortcutE).not.toHaveBeenCalled();
     expect(screen.getByTestId("location")).toHaveTextContent("/cards");
   });
 
@@ -140,10 +149,12 @@ describe("GlobalAppShortcuts (UI)", () => {
     fireEvent.keyDown(window, { key: "n" });
     fireEvent.keyDown(window, { key: "d" });
     fireEvent.keyDown(window, { key: "s" });
+    fireEvent.keyDown(window, { key: "e" });
 
     expect(openRecent).not.toHaveBeenCalled();
     expect(openTemplatePicker).not.toHaveBeenCalled();
     expect(focusPrimarySearch).not.toHaveBeenCalled();
+    expect(routeShortcutE).not.toHaveBeenCalled();
     expect(screen.getByTestId("location")).toHaveTextContent("/cards");
   });
 });

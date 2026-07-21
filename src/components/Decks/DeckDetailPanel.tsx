@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 
 import styles from "@/app/page.module.css";
+import type { RouteShortcutHandlers } from "@/components/App/RouteShellCapabilitiesContext";
 import { DeckDetailSelectionProvider } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import {
   DeckRightPanelProvider,
@@ -43,6 +44,7 @@ export type DeckDetailPanelProps = {
   selectionModel: DeckDetailSelectionModel;
   entriesModel: DeckSetEntriesModel;
   onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
+  onRouteShortcutHandlersReady?: (handlers: RouteShortcutHandlers | null) => void;
 };
 
 export default function DeckDetailPanel({
@@ -57,6 +59,7 @@ export default function DeckDetailPanel({
   selectionModel,
   entriesModel,
   onPrimarySearchReady,
+  onRouteShortcutHandlersReady,
 }: DeckDetailPanelProps) {
   const { deckTitle, keySetId } = useDeckHeaderModel(deckId);
 
@@ -76,6 +79,7 @@ export default function DeckDetailPanel({
         selectionModel={selectionModel}
         entriesModel={entriesModel}
         onPrimarySearchReady={onPrimarySearchReady}
+        onRouteShortcutHandlersReady={onRouteShortcutHandlersReady}
       />
     </DeckRightPanelProvider>
   );
@@ -93,6 +97,7 @@ function DeckDetailPanelContent({
   selectionModel,
   entriesModel,
   onPrimarySearchReady,
+  onRouteShortcutHandlersReady,
 }: {
   deckId: string | null;
   deckTitle: string;
@@ -107,6 +112,7 @@ function DeckDetailPanelContent({
   selectionModel: DeckDetailSelectionModel;
   entriesModel: DeckSetEntriesModel;
   onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
+  onRouteShortcutHandlersReady?: (handlers: RouteShortcutHandlers | null) => void;
 }) {
   const { isRightPanelVisible } = useDeckRightPanel();
   const usedBackFaceIds = useMemo(
@@ -170,6 +176,7 @@ function DeckDetailPanelContent({
                     deckId={deckId}
                     deckTitle={deckTitle}
                     deckPreviewCardIds={deckPreviewCardIds}
+                    onRouteShortcutHandlersReady={onRouteShortcutHandlersReady}
                   />
 
                   <div className={styles.deckRouteMiddle}>
