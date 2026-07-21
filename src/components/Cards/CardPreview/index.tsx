@@ -40,8 +40,14 @@ import styles from "./CardPreview.module.css";
 import { renderBleedCanvas } from "./cardPreviewBleedCanvas";
 import { drawDeveloperCredit } from "./cardPreviewDeveloperCredit";
 import { mutateSvgForExport } from "./cardPreviewExportSvg";
-import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "./consts";
+import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
+import {
+  CARD_CLIP_INSET,
+  CARD_CORNER_RADIUS,
+  getCardPreviewStageLayout,
+} from "./cardPreviewStage";
 
+import type { CSSProperties } from "react";
 import type { CardPreviewHandle, CardPreviewProps } from "./types";
 
 function normalizeCopyrightColor(value?: string) {
@@ -63,6 +69,11 @@ async function waitForSvgCommit() {
 const COPYRIGHT_LUMINANCE_THRESHOLD = 0.52;
 const COPYRIGHT_SAMPLE_INSET_RATIO = 0.2;
 const COPYRIGHT_SAMPLE_VERTICAL_SHIFT_MULTIPLIER = 1.5;
+const CARD_PREVIEW_STAGE_LAYOUT = getCardPreviewStageLayout();
+const CARD_PREVIEW_STAGE_STYLE = {
+  "--card-preview-stage-width": `${CARD_PREVIEW_STAGE_LAYOUT.svgWidthPercent}%`,
+  "--card-preview-stage-height": `${CARD_PREVIEW_STAGE_LAYOUT.svgHeightPercent}%`,
+} as CSSProperties;
 
 const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
   (
@@ -853,6 +864,13 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             height,
             existingCanvas: canvasRef.current,
             removeDebugBounds,
+            mutateSvg: (svg) =>
+              mutateSvgForExport(svg, {
+                mode: "standard",
+                roundedCorners: true,
+                developerCreditEnabled: false,
+                templateId,
+              }),
           });
           if (canvas) {
             canvasRef.current = canvas;
@@ -889,7 +907,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
           <svg
             ref={svgRef}
             className={styles.svg}
-            viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`}
+            style={CARD_PREVIEW_STAGE_STYLE}
+            viewBox={`0 0 ${CARD_PREVIEW_STAGE_LAYOUT.stageWidth} ${CARD_PREVIEW_STAGE_LAYOUT.stageHeight}`}
             role="img"
             onContextMenu={(event) => {
               event.preventDefault();
@@ -912,30 +931,36 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                 />
               </clipPath>
             </defs>
-            <g clipPath="url(#cardClip)">
-              <BlueprintRenderer
-                templateId={templateId}
-                templateName={templateName}
-                background={background}
-                backgroundLoaded={backgroundLoaded}
-                cardData={cardData}
-                copyrightTextColor={copyrightTextColor}
-                developerCreditEnabled={developerCreditEnabled}
-                suppressPreviewOnlyWarnings={suppressPreviewOnlyWarnings}
+            <g
+              transform={`translate(${CARD_PREVIEW_STAGE_LAYOUT.cardOriginX} ${CARD_PREVIEW_STAGE_LAYOUT.cardOriginY})`}
+              data-card-root="true"
+            >
+              <g clipPath="url(#cardClip)" data-card-content="true">
+                <BlueprintRenderer
+                  templateId={templateId}
+                  templateName={templateName}
+                  background={background}
+                  backgroundLoaded={backgroundLoaded}
+                  cardData={cardData}
+                  copyrightTextColor={copyrightTextColor}
+                  developerCreditEnabled={developerCreditEnabled}
+                  suppressPreviewOnlyWarnings={suppressPreviewOnlyWarnings}
+                />
+              </g>
+              <rect
+                x={CARD_CLIP_INSET}
+                y={CARD_CLIP_INSET}
+                width={CARD_WIDTH - CARD_CLIP_INSET * 2}
+                height={CARD_HEIGHT - CARD_CLIP_INSET * 2}
+                rx={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
+                ry={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
+                fill="none"
+                stroke="#fff0"
+                strokeWidth={3}
+                data-card-outline="true"
               />
             </g>
-            <rect
-              x={CARD_CLIP_INSET}
-              y={CARD_CLIP_INSET}
-              width={CARD_WIDTH - CARD_CLIP_INSET * 2}
-              height={CARD_HEIGHT - CARD_CLIP_INSET * 2}
-              rx={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
-              ry={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
-              fill="none"
-              stroke="#fff0"
-              strokeWidth={3}
-              data-card-outline="true"
-            />
+            <g data-preview-only="editor-overlay" data-editor-overlay="true" />
           </svg>
           {!backgroundLoaded ? (
             <div className={styles.spinnerOverlay}>

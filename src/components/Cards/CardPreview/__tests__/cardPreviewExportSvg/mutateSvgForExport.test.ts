@@ -1,5 +1,6 @@
 import { CARD_HEIGHT, CARD_WIDTH } from "@/components/Cards/CardPreview/consts";
 import { mutateSvgForExport } from "@/components/Cards/CardPreview/cardPreviewExportSvg";
+import { getCardPreviewStageLayout } from "@/components/Cards/CardPreview/cardPreviewStage";
 
 function createSvg() {
   return document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -109,5 +110,20 @@ describe("mutateSvgForExport", () => {
 
     expect(svg.querySelector('[data-preview-only="overflow-warning"]')).toBeNull();
     expect(svg.querySelector('[data-preview-only="other"]')).toBe(otherNode);
+  });
+
+  it("removes preview-only editor overlay nodes and crops the root viewBox to the card", () => {
+    const svg = createSvg();
+    const overlay = document.createElementNS(svg.namespaceURI, "g");
+    overlay.setAttribute("data-preview-only", "editor-overlay");
+    svg.appendChild(overlay);
+
+    mutateSvgForExport(svg, { mode: "standard" });
+
+    const { cardOriginX, cardOriginY } = getCardPreviewStageLayout();
+    expect(svg.querySelector('[data-preview-only="editor-overlay"]')).toBeNull();
+    expect(svg.getAttribute("viewBox")).toBe(
+      `${cardOriginX} ${cardOriginY} ${CARD_WIDTH} ${CARD_HEIGHT}`,
+    );
   });
 });
