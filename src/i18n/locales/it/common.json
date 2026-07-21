@@ -478,6 +478,7 @@
   "hint.stockpileOpen": "Fai doppio clic su una carta per aprirla.",
   "hint.stockpileDragCollection": "Trascina le tue carte su una raccolta aperta per aggiungerle.",
   "hint.stockpileExportSelected": "Fai clic su Esporta per esportare le carte selezionate in un’unica azione.",
+  "hint.cardEditorImageTransformPrecision": "Hold Option / Alt for precision move, rotate, and scale.",
   "label.systemInfo": "Informazioni di sistema",
   "label.storage": "Archiviazione",
   "label.storageAssetsVsOther": "Risorse rispetto a tutto il resto",

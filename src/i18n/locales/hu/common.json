@@ -478,6 +478,7 @@
   "hint.stockpileOpen": "Dupla kattintással megnyithatsz egy kártyát.",
   "hint.stockpileDragCollection": "Húzd a kártyáidat egy nyitott gyűjteményre, hogy hozzáadd őket.",
   "hint.stockpileExportSelected": "Kattints az Exportálásra, hogy a kijelölt kártyákat egy lépésben exportáld.",
+  "hint.cardEditorImageTransformPrecision": "Hold Option / Alt for precision move, rotate, and scale.",
   "label.systemInfo": "Rendszerinformációk",
   "label.storage": "Tárhely",
   "label.storageAssetsVsOther": "Eszközök szemben minden mással",

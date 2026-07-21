@@ -478,6 +478,7 @@
   "hint.stockpileOpen": "Dubbelklicka på ett kort för att öppna det.",
   "hint.stockpileDragCollection": "Dra dina kort till en öppen samling för att lägga till dem.",
   "hint.stockpileExportSelected": "Klicka på Exportera för att exportera de markerade korten i ett steg.",
+  "hint.cardEditorImageTransformPrecision": "Hold Option / Alt for precision move, rotate, and scale.",
   "label.systemInfo": "Systeminfo",
   "label.storage": "Lagring",
   "label.storageAssetsVsOther": "Tillgångar jämfört med allt annat",

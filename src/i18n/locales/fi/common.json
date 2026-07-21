@@ -478,6 +478,7 @@
   "hint.stockpileOpen": "Kaksoisnapsauta korttia avataksesi sen.",
   "hint.stockpileDragCollection": "Vedä korttisi avoimeen kokoelmaan lisätäksesi ne.",
   "hint.stockpileExportSelected": "Napsauta Vie, jotta valitut kortit viedään yhdellä kertaa.",
+  "hint.cardEditorImageTransformPrecision": "Hold Option / Alt for precision move, rotate, and scale.",
   "label.systemInfo": "Järjestelmätiedot",
   "label.storage": "Tallennustila",
   "label.storageAssetsVsOther": "Resurssit verrattuna kaikkeen muuhun",

@@ -478,6 +478,7 @@
   "hint.stockpileOpen": "Κάντε διπλό κλικ σε μια κάρτα για να την ανοίξετε.",
   "hint.stockpileDragCollection": "Σύρετε τις κάρτες σας σε μια ανοιχτή συλλογή για να τις προσθέσετε.",
   "hint.stockpileExportSelected": "Κάντε κλικ στην Εξαγωγή για να εξαγάγετε τις επιλεγμένες κάρτες με μία ενέργεια.",
+  "hint.cardEditorImageTransformPrecision": "Hold Option / Alt for precision move, rotate, and scale.",
   "label.systemInfo": "Πληροφορίες συστήματος",
   "label.storage": "Αποθήκευση",
   "label.storageAssetsVsOther": "Πόροι έναντι όλων των άλλων",

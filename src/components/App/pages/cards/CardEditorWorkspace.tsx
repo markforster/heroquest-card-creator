@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { blueprintDataUrl } from "@/assets/blueprint-data";
 import styles from "@/app/page.module.css";
+import CardEditorFooterTipController from "@/components/Cards/CardEditor/CardEditorFooterTipController";
 import CardPreviewContainer from "@/components/Cards/CardEditor/CardPreviewContainer";
 import { EditorTargetsProvider } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CardInspector from "@/components/Cards/CardInspector/CardInspector";
@@ -104,6 +105,7 @@ export default function CardEditorWorkspace({
 
   return (
     <EditorTargetsProvider>
+      <CardEditorFooterTipController />
       <section className={`${styles.leftPanel} d-flex align-items-stretch gap-3 p-3`}>
         <div
           className={`${styles.previewContainer} d-flex align-items-center justify-content-center`}

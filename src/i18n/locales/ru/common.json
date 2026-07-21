@@ -478,6 +478,7 @@
   "hint.stockpileOpen": "Дважды щёлкните по карте, чтобы открыть её.",
   "hint.stockpileDragCollection": "Перетащите карты в открытую коллекцию, чтобы добавить их туда.",
   "hint.stockpileExportSelected": "Нажмите экспорт, чтобы экспортировать выбранные карты одним действием.",
+  "hint.cardEditorImageTransformPrecision": "Hold Option / Alt for precision move, rotate, and scale.",
   "label.systemInfo": "Системная информация",
   "label.storage": "Хранилище",
   "label.storageAssetsVsOther": "Ресурсы и всё остальное",

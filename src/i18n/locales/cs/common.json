@@ -478,6 +478,7 @@
   "hint.stockpileOpen": "Dvojklikem na kartu ji otevřete.",
   "hint.stockpileDragCollection": "Přetáhněte své karty do otevřené kolekce a přidejte je.",
   "hint.stockpileExportSelected": "Klikněte na Exportovat a vyexportujte vybrané karty jedním krokem.",
+  "hint.cardEditorImageTransformPrecision": "Hold Option / Alt for precision move, rotate, and scale.",
   "label.systemInfo": "Systémové informace",
   "label.storage": "Úložiště",
   "label.storageAssetsVsOther": "Zdroje vs. vše ostatní",
