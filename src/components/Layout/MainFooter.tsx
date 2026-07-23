@@ -7,7 +7,6 @@ import { isMobile, isTablet } from "react-device-detect";
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
 import { useMediaQuery } from "@/components/Layout/LeftNav/useMediaQuery";
-import HelpModal from "@/components/Modals/HelpModal";
 import ReleaseNotesModal from "@/components/Modals/ReleaseNotesModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useFooterTip } from "@/components/Providers/FooterTipContext";
@@ -39,7 +38,6 @@ function FooterTipIcon({ icon }: { icon?: "lightbulb" }) {
 export default function MainFooter() {
   const { t } = useI18n();
   const { track } = useAnalytics();
-  const helpModal = usePopupState(false);
   const releaseNotesModal = usePopupState(false);
   const desktopNoticeModal = usePopupState(false);
   const isTauriApp = useIsTauriApp();
@@ -100,17 +98,17 @@ export default function MainFooter() {
       <footer className={`${styles.footer} d-flex align-items-center gap-2`}>
         <div className="d-flex align-items-center w-100">
           <div className={`${styles.footerLeft} d-flex align-items-center gap-1`}>
-            <button
-              type="button"
+            <a
+              href="https://markforster.github.io/heroquest-card-creator/help/"
+              target="_blank"
+              rel="noreferrer noopener"
               className={styles.footerLink}
               onClick={() => {
                 track("page_view", { page_path: "/help", page_title: "Help" });
-                helpModal.open();
               }}
-              style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
             >
               {t("actions.help")}
-            </button>
+            </a>
             <span>·</span>
             <button
               type="button"
@@ -228,7 +226,6 @@ export default function MainFooter() {
           </div>
         </div>
       </footer>
-      <HelpModal isOpen={helpModal.isOpen} onClose={helpModal.close} />
       <ReleaseNotesModal isOpen={releaseNotesModal.isOpen} onClose={releaseNotesModal.close} />
       <ModalShell
         isOpen={desktopNoticeModal.isOpen}

@@ -7,6 +7,7 @@ use_directory_urls: true
 
 theme:
   name: material
+  custom_dir: overrides
   logo: brand/apple-touch-icon.png
   favicon: brand/favicon-96x96.png
   features:
@@ -16,20 +17,9 @@ theme:
     - search.highlight
     - content.code.copy
   palette:
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: black
-      accent: amber
-      toggle:
-        icon: material/weather-sunny
-        name: Switch to light mode
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: brown
-      accent: deep orange
-      toggle:
-        icon: material/weather-night
-        name: Switch to dark mode
+    scheme: slate
+    primary: black
+    accent: amber
 
 extra:
   brand_subtitle: Help

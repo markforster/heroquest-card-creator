@@ -20,11 +20,6 @@ jest.mock("react-device-detect", () => ({
   },
 }));
 
-jest.mock("@/components/Modals/HelpModal", () => ({
-  __esModule: true,
-  default: () => null,
-}));
-
 jest.mock("@/components/Modals/ReleaseNotesModal", () => ({
   __esModule: true,
   default: () => null,
@@ -38,6 +33,14 @@ jest.mock("@/hooks/useIsTauriApp", () => ({
 jest.mock("@/components/Providers/AnalyticsProvider", () => ({
   useAnalytics: () => ({
     track: jest.fn(),
+  }),
+}));
+
+jest.mock("@/components/Providers/FooterTipContext", () => ({
+  useFooterTip: () => ({
+    currentTip: null,
+    setTip: jest.fn(),
+    clearTip: jest.fn(),
   }),
 }));
 
@@ -69,9 +72,16 @@ describe("MainFooter (UI)", () => {
     expect(screen.getByRole("link", { name: "v 0.0.0-test" })).toBeInTheDocument();
   });
 
-  it("renders help and about links", () => {
+  it("opens the public help site in a new tab", () => {
     renderMainFooter();
-    expect(screen.getByRole("button", { name: "Help" })).toBeInTheDocument();
+
+    const helpLink = screen.getByRole("link", { name: "Help" });
+    expect(helpLink).toHaveAttribute(
+      "href",
+      "https://markforster.github.io/heroquest-card-creator/help/",
+    );
+    expect(helpLink).toHaveAttribute("target", "_blank");
+    expect(helpLink).toHaveAttribute("rel", "noreferrer noopener");
     expect(screen.getByRole("button", { name: "About" })).toBeInTheDocument();
   });
 

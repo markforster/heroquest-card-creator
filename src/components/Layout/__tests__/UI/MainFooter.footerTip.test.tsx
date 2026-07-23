@@ -16,11 +16,6 @@ jest.mock("@/components/Layout/LeftNav/useMediaQuery", () => ({
   useMediaQuery: () => false,
 }));
 
-jest.mock("@/components/Modals/HelpModal", () => ({
-  __esModule: true,
-  default: () => null,
-}));
-
 jest.mock("@/components/Modals/ReleaseNotesModal", () => ({
   __esModule: true,
   default: () => null,
