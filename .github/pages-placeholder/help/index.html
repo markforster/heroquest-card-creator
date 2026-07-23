@@ -4,72 +4,767 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
-    <title>Help is coming soon | HeroQuest Card Creator</title>
+    <title>Quick Help | HeroQuest Card Creator</title>
     <style>
       :root {
         color-scheme: dark;
         font-family: Georgia, "Times New Roman", serif;
         background: #11100e;
         color: #f4ead7;
+        --accent: #d9a957;
+        --accent-bright: #f3d9a8;
+        --panel: rgba(25, 22, 18, 0.9);
+        --panel-soft: rgba(255, 255, 255, 0.035);
+        --border: rgba(225, 170, 91, 0.36);
+        --muted: #c9bdab;
+        --sans: Arial, Helvetica, sans-serif;
       }
 
       * {
         box-sizing: border-box;
       }
 
+      html {
+        scroll-behavior: smooth;
+      }
+
       body {
         min-height: 100vh;
         margin: 0;
-        display: grid;
-        place-items: center;
-        padding: 2rem;
         background:
           radial-gradient(circle at 50% 0, rgba(190, 128, 50, 0.22), transparent 42rem),
           repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 8px),
           #11100e;
       }
 
-      main {
-        width: min(42rem, 100%);
-        padding: clamp(2.5rem, 8vw, 5rem);
-        text-align: center;
-        border: 1px solid rgba(225, 170, 91, 0.45);
-        background: rgba(25, 22, 18, 0.86);
-        box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.42);
+      a {
+        color: var(--accent-bright);
       }
 
-      .eyebrow {
-        margin: 0 0 1.25rem;
-        color: #d9a957;
-        font-family: Arial, sans-serif;
+      a:hover {
+        color: #fff4dc;
+      }
+
+      .skip-link {
+        position: fixed;
+        top: 0.75rem;
+        left: 0.75rem;
+        z-index: 10;
+        padding: 0.65rem 0.9rem;
+        background: var(--accent-bright);
+        color: #211a10;
+        font-family: var(--sans);
+        font-weight: 700;
+        transform: translateY(-200%);
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      .hero {
+        padding: clamp(3.25rem, 8vw, 7rem) 1.5rem clamp(2.5rem, 6vw, 4.5rem);
+        text-align: center;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(25, 22, 18, 0.72));
+      }
+
+      .eyebrow,
+      .status {
+        font-family: var(--sans);
         font-size: 0.72rem;
         font-weight: 700;
         letter-spacing: 0.18em;
         text-transform: uppercase;
       }
 
-      h1 {
-        margin: 0;
-        color: #f3d9a8;
-        font-size: clamp(2.4rem, 8vw, 4.6rem);
-        font-weight: 400;
-        line-height: 0.98;
+      .eyebrow {
+        margin: 0 0 1.15rem;
+        color: var(--accent);
       }
 
-      p:last-child {
-        max-width: 29rem;
-        margin: 1.75rem auto 0;
-        color: #c9bdab;
-        font-size: clamp(1rem, 3vw, 1.2rem);
+      h1 {
+        margin: 0;
+        color: var(--accent-bright);
+        font-size: clamp(3rem, 9vw, 6.5rem);
+        font-weight: 400;
+        line-height: 0.94;
+      }
+
+      .hero-copy {
+        width: 100%;
+        max-width: 42rem;
+        margin: 1.6rem auto 0;
+        color: var(--muted);
+        font-size: clamp(1.05rem, 2.5vw, 1.3rem);
         line-height: 1.65;
+        overflow-wrap: break-word;
+      }
+
+      .status {
+        display: inline-block;
+        max-width: 100%;
+        margin-top: 1.8rem;
+        padding: 0.55rem 0.75rem;
+        border: 1px solid var(--border);
+        color: var(--accent);
+        background: rgba(217, 169, 87, 0.08);
+        line-height: 1.5;
+        white-space: normal;
+      }
+
+      .page {
+        display: grid;
+        grid-template-columns: minmax(13rem, 17rem) minmax(0, 48rem);
+        gap: clamp(2rem, 6vw, 5rem);
+        width: min(72rem, calc(100% - 3rem));
+        margin: 0 auto;
+        padding: clamp(2.5rem, 7vw, 5rem) 0 6rem;
+      }
+
+      .contents {
+        align-self: start;
+        position: sticky;
+        top: 1.5rem;
+        padding: 1.25rem;
+        border: 1px solid var(--border);
+        background: var(--panel);
+      }
+
+      .contents h2 {
+        margin: 0 0 0.9rem;
+        color: var(--accent);
+        font-family: var(--sans);
+        font-size: 0.75rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .contents ol {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .contents li + li {
+        border-top: 1px solid rgba(225, 170, 91, 0.14);
+      }
+
+      .contents a {
+        display: block;
+        padding: 0.48rem 0;
+        color: var(--muted);
+        font-family: var(--sans);
+        font-size: 0.78rem;
+        line-height: 1.35;
+        text-decoration: none;
+      }
+
+      .contents a:hover {
+        color: var(--accent-bright);
+      }
+
+      article {
+        min-width: 0;
+      }
+
+      article > header {
+        margin-bottom: 2rem;
+      }
+
+      article > header h2 {
+        margin: 0;
+        color: var(--accent-bright);
+        font-size: clamp(2rem, 5vw, 3.2rem);
+        font-weight: 400;
+      }
+
+      article > header p {
+        margin: 0.8rem 0 0;
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.65;
+      }
+
+      section {
+        scroll-margin-top: 1.5rem;
+        margin-bottom: 1.2rem;
+        padding: clamp(1.35rem, 4vw, 2rem);
+        border: 1px solid rgba(225, 170, 91, 0.24);
+        background: var(--panel-soft);
+      }
+
+      section h3 {
+        margin: 0 0 1rem;
+        color: var(--accent);
+        font-size: clamp(1.35rem, 3vw, 1.75rem);
+        font-weight: 400;
+      }
+
+      section p,
+      section li {
+        color: #ddd2c1;
+        font-size: 1rem;
+        line-height: 1.7;
+      }
+
+      section p {
+        margin: 0;
+      }
+
+      section p + p {
+        margin-top: 0.9rem;
+      }
+
+      section ul {
+        margin: 0;
+        padding-left: 1.25rem;
+      }
+
+      section li {
+        padding-left: 0.3rem;
+      }
+
+      section li + li {
+        margin-top: 0.65rem;
+      }
+
+      section li::marker {
+        color: var(--accent);
+      }
+
+      strong {
+        color: #f7e4c3;
+      }
+
+      code {
+        padding: 0.16rem 0.35rem;
+        border: 1px solid rgba(225, 170, 91, 0.22);
+        border-radius: 0.2rem;
+        background: rgba(0, 0, 0, 0.3);
+        color: #f0c87e;
+        font-size: 0.9em;
+        overflow-wrap: anywhere;
+      }
+
+      footer {
+        padding: 2rem 1.5rem 3rem;
+        color: #978b7a;
+        font-family: var(--sans);
+        font-size: 0.78rem;
+        text-align: center;
+        border-top: 1px solid rgba(225, 170, 91, 0.18);
+      }
+
+      @media (max-width: 52rem) {
+        .page {
+          display: block;
+          width: min(48rem, calc(100% - 2rem));
+        }
+
+        .contents {
+          position: static;
+          margin-bottom: 2.5rem;
+        }
+
+        .contents ol {
+          columns: 2;
+          column-gap: 1.5rem;
+        }
+
+        .contents li {
+          break-inside: avoid;
+          border-top: 0;
+        }
+      }
+
+      @media (max-width: 32rem) {
+        .hero {
+          padding-right: 1rem;
+          padding-left: 1rem;
+        }
+
+        .contents ol {
+          columns: 1;
+        }
+
+        .status {
+          display: block;
+          width: 100%;
+          margin-right: auto;
+          margin-left: auto;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
       }
     </style>
   </head>
   <body>
-    <main>
+    <a class="skip-link" href="#quick-help">Skip to quick help</a>
+
+    <header class="hero">
       <p class="eyebrow">HeroQuest Card Creator</p>
-      <h1>Help is coming soon</h1>
-      <p>A complete guide to creating, organising, exporting, and printing your cards is being prepared.</p>
+      <h1>Quick Help</h1>
+      <p class="hero-copy">
+        Essential guidance for creating, organising, exporting, and protecting your card library.
+      </p>
+      <p class="status">A complete help centre is coming soon</p>
+    </header>
+
+    <main class="page">
+      <nav class="contents" aria-label="Quick help contents">
+        <h2>On this page</h2>
+        <ol>
+          <li><a href="#getting-around">Getting around</a></li>
+          <li><a href="#creating-and-editing">Creating and editing cards</a></li>
+          <li><a href="#preview-modes">Preview modes</a></li>
+          <li><a href="#text-formatting">Text and formatting</a></li>
+          <li><a href="#text-fitting">Text fitting</a></li>
+          <li><a href="#images">Working with images</a></li>
+          <li><a href="#saved-cards">Saved cards</a></li>
+          <li><a href="#collections">Collections</a></li>
+          <li><a href="#decks">Decks</a></li>
+          <li><a href="#pdf-export">PDF export</a></li>
+          <li><a href="#pairing">Card faces and pairing</a></li>
+          <li><a href="#titles-and-borders">Titles and borders</a></li>
+          <li><a href="#exports-and-backups">Exports and backups</a></li>
+          <li><a href="#bulk-export">Bulk export</a></li>
+          <li><a href="#tips">Tips</a></li>
+        </ol>
+      </nav>
+
+      <article id="quick-help">
+        <header>
+          <h2>Using the card creator</h2>
+          <p>
+            This quick guide contains the help previously available inside the app while the new
+            searchable help centre is prepared.
+          </p>
+        </header>
+
+        <section id="getting-around">
+          <h3>Getting around</h3>
+          <p>
+            The editor is split into three main areas: actions and navigation, the live preview,
+            and the inspector. The left navigation contains quick actions for Cards, Decks, Assets,
+            Settings, and Help. The preview shows your card as you edit it, and the inspector on the
+            right is where you change titles, rules text, stats, images, and template-specific
+            options. Most changes update the preview instantly, so you can trust what you see.
+          </p>
+          <p>
+            Cards, Decks, and Assets open in the main area, and your editor preview is still there
+            when you return.
+          </p>
+          <p>
+            You can switch appearance mode between Light, Dark, or System from Settings or the left
+            navigation theme control.
+          </p>
+        </section>
+
+        <section id="creating-and-editing">
+          <h3>Creating and editing cards</h3>
+          <ul>
+            <li>
+              Choose a template, such as a hero, monster, treasure, or card back, from the template
+              picker or inspector. Each template matches the proportions and feel of the original
+              cards.
+            </li>
+            <li>
+              Use the inspector to edit the title, rules text, stats, and any template-specific
+              settings.
+            </li>
+            <li>
+              Drafts are saved automatically per template in your browser, so you can switch
+              templates without losing in-progress work.
+            </li>
+            <li>
+              Start a new card in draft mode or open an existing card, make changes, and save when
+              you are ready.
+            </li>
+            <li>
+              Title toolbar controls are template-dependent. Labelled backs can switch between
+              ribbon and plain styles and use top or bottom placement.
+            </li>
+          </ul>
+        </section>
+
+        <section id="preview-modes">
+          <h3>Preview modes</h3>
+          <ul>
+            <li>The preview toolbar lets you switch between the standard view and a 3D view.</li>
+            <li>Use the standard view when you want to see the card exactly as it will print.</li>
+            <li>
+              Use the 3D view to see how the card would look if you held it in your hand and could
+              turn or flip it.
+            </li>
+            <li>
+              In 3D spin mode, double-click to recenter the card. If it is already front-facing,
+              double-click to flip it.
+            </li>
+          </ul>
+        </section>
+
+        <section id="text-formatting">
+          <h3>Text, formatting, leader lines, and alignment</h3>
+          <ul>
+            <li>
+              Rules text supports a simple markdown-style syntax. Bold uses
+              <code>**double asterisks**</code>, italic uses <code>*single asterisks*</code>, and
+              bold plus italic uses <code>***triple asterisks***</code>.
+            </li>
+            <li>Text wraps automatically inside the available area on the card.</li>
+            <li>
+              For dotted leader lines, such as cost lines, wrap a line like
+              <code>[cost [...] 1gp]</code>. The dots are drawn between the label and value.
+            </li>
+            <li>
+              To group leader lines and control their layout, wrap them in <code>[[</code> and
+              <code>]]</code>. Add an optional settings line such as
+              <code>[{pivot:50%, wrap:value}]</code> to set a fixed pivot or wrap values inside the
+              value column.
+            </li>
+            <li>
+              Inline dice tokens are supported in body text, including combat faces, D6 pips,
+              CD/AD/DD/MD, and colour or face overrides.
+            </li>
+            <li>
+              Alignment directives let you switch alignment mid-text. Use <code>:::ac</code>,
+              <code>:::al</code>, or <code>:::ar</code> on their own line, and use
+              <code>:::</code> to reset.
+            </li>
+            <li>
+              For a single aligned block, wrap text like
+              <code>:::ar your text here:::</code>. The block can span multiple lines.
+            </li>
+            <li>
+              On hero and monster cards, the body text grows upward from the bottom while the stats
+              strip moves up to make space, mirroring how printed cards behave.
+            </li>
+          </ul>
+        </section>
+
+        <section id="text-fitting">
+          <h3>Text fitting and readability</h3>
+          <ul>
+            <li>
+              Use the Text Fitting button in the preview toolbar to adjust minimum font size and
+              ellipsis rules.
+            </li>
+            <li>
+              These settings affect titles and stat headings and are useful for long names or
+              narrow stat labels.
+            </li>
+            <li>
+              If text feels cramped, lower the minimum font size or enable ellipsis for cleaner
+              truncation.
+            </li>
+          </ul>
+        </section>
+
+        <section id="images">
+          <h3>Working with images</h3>
+          <ul>
+            <li>Open Assets to upload artwork into the shared image library in your browser.</li>
+            <li>
+              In the inspector, choose an image for the current card. The app scales it to fit
+              within the artwork window by default.
+            </li>
+            <li>
+              Use Image Adjustments to fine-tune scale, offset, and rotation. The step buttons let
+              you nudge left, right, up, or down with precision.
+            </li>
+            <li>Scale starts at fit-to-frame (1.0), and you can scale from 0.5 to 2.0.</li>
+            <li>
+              Zoom multipliers are literal (1x, 2x, and 3x), and full-card coverage remains
+              reachable when needed.
+            </li>
+            <li>Once you find good framing, it is easy to repeat it across similar cards.</li>
+            <li>
+              Image and Icon fields support autocomplete search, and the current asset stays pinned
+              in the results.
+            </li>
+            <li>
+              In Assets, the Resources menu provides quick links to artwork downloads and external
+              helper tools, including custom GPT art and icon generators.
+            </li>
+            <li>
+              For compatible opaque PNG assets, use Convert to JPEG to reduce the file size.
+            </li>
+          </ul>
+        </section>
+
+        <section id="saved-cards">
+          <h3>Saved cards and the stockpile</h3>
+          <ul>
+            <li>Use New in the left navigation to start a new card with a template.</li>
+            <li>
+              Save creates a card from the current editor state. Save changes updates the active
+              saved card.
+            </li>
+            <li>Open Cards to browse, search, and load saved cards.</li>
+            <li>Use collections to organise cards without deleting them.</li>
+            <li>
+              Delete moves cards into Recently Deleted. Restore is available there, and permanent
+              delete is only available in Recently Deleted.
+            </li>
+            <li>
+              In manage mode, switch between grid and table view. Table headers remain visible
+              while scrolling.
+            </li>
+            <li>
+              When starting with an empty library, Cards onboarding can guide setup and provide
+              direct Import library actions.
+            </li>
+          </ul>
+        </section>
+
+        <section id="collections">
+          <h3>Collections (organising saved cards)</h3>
+          <ul>
+            <li>
+              In Cards, the Collections panel lets you switch between All cards, Unfiled, and named
+              collections. On narrow screens, the panel appears as a drawer.
+            </li>
+            <li>
+              Create a collection with New collection, then add cards using Add to collection.
+              Multi-selection is supported.
+            </li>
+            <li>Removing a card from a collection does not delete it.</li>
+            <li>
+              Delete is safe: cards move to Recently Deleted so you can restore them if needed.
+            </li>
+            <li>
+              Enable the optional Collections tree view to group folders, collapse or expand them,
+              and use the Collapse all or Expand all controls.
+            </li>
+            <li>Drag cards onto collection leaves to add them. Multi-selection is supported.</li>
+          </ul>
+        </section>
+
+        <section id="decks">
+          <h3>Decks (organising playable card systems)</h3>
+          <p>
+            Open Decks from the left navigation to build and organise structured card decks. Decks
+            are designed for larger HeroQuest projects where cards belong to playable systems
+            rather than loose collections.
+          </p>
+          <ul>
+            <li>
+              The Decks workspace includes a deck grid for browsing and managing decks, a deck
+              detail area for groups and sets, a source panel for adding cards, and details panels
+              for metadata and deck actions.
+            </li>
+            <li>
+              Decks can contain groups, sets, and front-face entries. Use them to organise treasure
+              pools, encounter groups, spell schools, hero systems, and expansion content.
+            </li>
+            <li>Create, rename, duplicate, delete, search, and multi-select decks from the grid.</li>
+            <li>
+              Most deck editing uses drag and drop. Reorder groups, move sets between groups,
+              reorder entries, create groups from insertion boundaries, and drag cards into sets.
+            </li>
+            <li>
+              Entries support quantities for repeated encounters, weighted treasure distributions,
+              rarity, and balanced card pools.
+            </li>
+            <li>
+              Removing an entry from a set does not delete the underlying card. Recovery workflows
+              help return paired cards to sets when needed.
+            </li>
+            <li>
+              The inspector can show deck membership context so you can see where cards are used
+              across larger projects.
+            </li>
+          </ul>
+        </section>
+
+        <section id="pdf-export">
+          <h3>PDF export</h3>
+          <p>
+            Deck PDF export creates a print-ready PDF using real paper sizes, deck order, and an
+            optional front-and-back layout. Open Decks, choose a deck, and use PDF export to review
+            the run before exporting.
+          </p>
+          <ul>
+            <li>
+              The export flow begins with a summary so you can see what is included before changing
+              layout or bleed settings.
+            </li>
+            <li>
+              <strong>Complete sets</strong> exports sets with entries,
+              <strong>All sets</strong> includes every set, and
+              <strong>Selected sets</strong> lets you choose exactly which sets to print.
+            </li>
+            <li>
+              In scopes that include them, empty sets can export with placeholder fronts so the set
+              still prints with its back face.
+            </li>
+            <li>
+              <strong>Fronts only</strong> exports front pages.
+              <strong>Front + back</strong> exports paired front and back pages.
+            </li>
+            <li>
+              Duplex presets change how back pages are positioned for double-sided printing. Use
+              the alignment test PDF before a larger print run to check scale, placement, and the
+              best preset for your printer.
+            </li>
+            <li>
+              Layout settings control paper size, orientation, run mode, duplex preset, and bleed
+              source. Bleed settings control bleed, rounded corners, crop marks, and cut marks.
+            </li>
+            <li>
+              <strong>Export Profiles</strong> save reusable combinations of PDF layout, bleed, and
+              mark defaults so you can keep different print setups ready.
+            </li>
+            <li>
+              Manage Export Profiles from Export Settings, where you can create profiles and mark
+              one as the default.
+            </li>
+            <li>
+              In Deck PDF export, choose a profile for the current run before deciding whether to
+              keep its defaults or customise the run.
+            </li>
+            <li>
+              <strong>Customise layout</strong> and
+              <strong>Customise bleed settings</strong> are per-run overrides. They do not replace
+              the saved profile.
+            </li>
+            <li>
+              Large exports can take time. The app shows progress and lets you cancel the run.
+            </li>
+          </ul>
+        </section>
+
+        <section id="pairing">
+          <h3>Card faces and pairing</h3>
+          <ul>
+            <li>
+              Some templates support front and back faces. Use the face picker to switch sides
+              while editing.
+            </li>
+            <li>Pairing keeps connected faces together for browsing and export workflows.</li>
+            <li>
+              The inspector has Properties and Pairing views. Fronts can be paired with multiple
+              backs, and backs can manage multiple fronts in one place. Deck set workflows can
+              reuse these relationships.
+            </li>
+            <li>
+              The pairing window supports multi-selection. Actions that remove several pairings
+              show a confirmation prompt.
+            </li>
+          </ul>
+        </section>
+
+        <section id="titles-and-borders">
+          <h3>Title visibility and borders</h3>
+          <ul>
+            <li>Labelled backs can optionally hide or show the title.</li>
+            <li>
+              Labelled backs can switch between ribbon and plain title styles, adjust placement,
+              and set a custom title colour with reset.
+            </li>
+            <li>
+              Some templates allow custom border colours, smart swatch suggestions, and saved
+              swatches for quick reuse.
+            </li>
+            <li>Small and Large Artwork templates support textured border colour controls.</li>
+          </ul>
+        </section>
+
+        <section id="exports-and-backups">
+          <h3>Exporting cards and backups</h3>
+          <ul>
+            <li>
+              Export the current card as a 750&times;1050 PNG from the inspector. It is generated
+              from the same card render used in the preview.
+            </li>
+            <li>
+              If a card has paired faces, the export menu can include both faces or an active front
+              with a back.
+            </li>
+            <li>In Cards, use Export to export several cards together as a ZIP.</li>
+            <li>
+              Export options support print-oriented settings such as bleed, crop marks, and cut
+              marks.
+            </li>
+            <li>
+              Rounded-corner export behaviour can change with the selected print and export
+              options.
+            </li>
+            <li>
+              In Decks, export actions prepare structured deck content from the same workspace.
+            </li>
+            <li>
+              When exporting a collection or selection, you may be prompted to include paired
+              faces.
+            </li>
+            <li>
+              If missing artwork is detected, you are prompted before export. Bulk export skips
+              affected cards and includes them in a report.
+            </li>
+            <li>
+              Missing-artwork warnings can appear in the preview, and a startup banner may appear
+              if your library has missing assets.
+            </li>
+            <li>
+              Deck export supports structured deck organisation and export preparation alongside
+              print and PDF workflows.
+            </li>
+            <li>
+              Use Export data and Import data to back up or restore your entire library as an
+              <code>.hqcc</code> file. Import replaces existing data in the current browser
+              profile, so export first if you want a safety copy.
+            </li>
+            <li>
+              Library backup defaults to the compact <code>.hqcc</code> format, while older backup
+              imports remain supported.
+            </li>
+          </ul>
+        </section>
+
+        <section id="bulk-export">
+          <h3>Bulk export (downloading lots of cards)</h3>
+          <ul>
+            <li>
+              Export exactly what you can see: a complete collection, a filtered view, or a
+              multi-selection.
+            </li>
+            <li>Bulk export creates a single ZIP containing the selected card images.</li>
+            <li>
+              Finalizing shows progress. If detailed progress is unavailable, you see a
+              Finalizing status.
+            </li>
+          </ul>
+        </section>
+
+        <section id="tips">
+          <h3>Tips</h3>
+          <ul>
+            <li>
+              If the interactive preview feels slow, use the standard preview until you need the 3D
+              view again.
+            </li>
+            <li>
+              Use text fitting controls to keep long titles and stat headings readable without
+              shrinking everything.
+            </li>
+            <li>
+              Keep an occasional <code>.hqcc</code> backup if you do a lot of card work in one
+              browser profile.
+            </li>
+            <li>Recently Deleted is a safety net. Restore cards removed by mistake.</li>
+            <li>Fix missing-artwork warnings before export to avoid skipped cards.</li>
+          </ul>
+        </section>
+      </article>
     </main>
+
+    <footer>
+      HeroQuest Card Creator Quick Help. The complete searchable help centre will replace this page.
+    </footer>
   </body>
 </html>
