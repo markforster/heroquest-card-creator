@@ -1,4 +1,20 @@
-import { checkHelpSiteAvailability } from "../../help-site-availability";
+import {
+  checkHelpSiteAvailability,
+  DEFAULT_HELP_SITE_URL,
+  resolveHelpSiteUrl,
+} from "../../help-site-availability";
+
+describe("resolveHelpSiteUrl", () => {
+  it("uses the deployed help centre by default", () => {
+    expect(resolveHelpSiteUrl(undefined)).toBe(DEFAULT_HELP_SITE_URL);
+  });
+
+  it("uses and trims a configured help centre URL", () => {
+    expect(resolveHelpSiteUrl("  http://127.0.0.1:8001/help/  ")).toBe(
+      "http://127.0.0.1:8001/help/",
+    );
+  });
+});
 
 describe("checkHelpSiteAvailability", () => {
   afterEach(() => {
@@ -10,7 +26,7 @@ describe("checkHelpSiteAvailability", () => {
 
     await expect(checkHelpSiteAvailability({ fetchImpl })).resolves.toBe(true);
     expect(fetchImpl).toHaveBeenCalledWith(
-      "https://markforster.github.io/heroquest-card-creator/help/",
+      DEFAULT_HELP_SITE_URL,
       expect.objectContaining({
         cache: "no-store",
         method: "HEAD",
@@ -23,6 +39,24 @@ describe("checkHelpSiteAvailability", () => {
     const fetchImpl = jest.fn().mockResolvedValue({ ok: false }) as unknown as typeof fetch;
 
     await expect(checkHelpSiteAvailability({ fetchImpl })).resolves.toBe(false);
+  });
+
+  it("accepts an opaque response from a loopback help server", async () => {
+    const fetchImpl = jest
+      .fn()
+      .mockResolvedValue({ ok: false, type: "opaque" }) as unknown as typeof fetch;
+    const url = "http://127.0.0.1:8001/heroquest-card-creator/help/";
+
+    await expect(checkHelpSiteAvailability({ fetchImpl, url })).resolves.toBe(true);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      url,
+      expect.objectContaining({
+        cache: "no-store",
+        method: "HEAD",
+        mode: "no-cors",
+        signal: expect.any(AbortSignal),
+      }),
+    );
   });
 
   it("returns false when the request rejects", async () => {
