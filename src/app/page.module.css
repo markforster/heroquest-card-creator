@@ -4389,6 +4389,20 @@
   color: #f3d9a8;
 }
 
+.bundledHelpContentsCompact {
+  padding: 0.85rem 1rem;
+}
+
+.bundledHelpContentsCompact h2 {
+  margin-bottom: 0.5rem;
+}
+
+.bundledHelpContentsCompact button {
+  padding: 0.18rem 0;
+  font-size: 0.7rem;
+  line-height: 1.15;
+}
+
 .bundledHelpPage .bundledHelpArticle {
   min-width: 0;
   max-height: none;

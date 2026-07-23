@@ -1,34 +1,55 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import ReleaseNotesModal from "@/components/Modals/ReleaseNotesModal";
 import { I18nProvider } from "@/i18n/I18nProvider";
+import { APP_VERSION } from "@/version";
 
-type MockObserver = {
-  callback: IntersectionObserverCallback;
-  observe: jest.Mock;
-  unobserve: jest.Mock;
-  disconnect: jest.Mock;
-};
+const expectedSections = [
+  ["about-what-this-is", "What this is"],
+  ["about-why-it-exists", "Why it exists"],
+  ["about-what-you-can-do-today", "What you can do today"],
+  ["about-notes-future-work", "Notes & future work"],
+  ["about-credits-attribution", "Credits & Attribution"],
+  ["about-update-v0-7-1", "Update 12/07/2026 (v0.7.1)"],
+  ["about-update-v0-7-0", "Update 05/07/2026 (v0.7.0)"],
+  ["about-update-v0-6-2", "Update 22/06/2026 (v0.6.2)"],
+  ["about-update-v0-6-1", "Update 13/06/2026 (v0.6.1)"],
+  ["about-update-v0-6-0", "Update 31/05/2026 (v0.6.0)"],
+  ["about-update-v0-5-7", "Update 30/03/2026 (v0.5.7)"],
+  ["about-update-v0-5-6", "Update 15/03/2026 (v0.5.6)"],
+  ["about-update-v0-5-5", "Update 07/03/2026 (v0.5.5)"],
+  ["about-update-v0-5-4", "Update 28/02/2026 (v0.5.4)"],
+  ["about-update-v0-5-3-1", "Update 28/02/2026 (v0.5.3.1)"],
+  ["about-update-v0-5-3", "Update 26/02/2026 (v0.5.3)"],
+  ["about-update-v0-5-2", "Update 12/02/2026 (v0.5.2)"],
+  ["about-update-v0-5-1", "Update 07/02/2026 (v0.5.1)"],
+  ["about-update-v0-5-0", "Update 10/01/2026 (v0.5.0)"],
+  ["about-update-v0-4-0", "Update 18/12/2025 (v0.4.0)"],
+] as const;
 
-const observers: MockObserver[] = [];
+const expectedLinks = [
+  "https://actionfence.itch.io/hqcc",
+  "https://public.markforster.info/Heroquest/cards/",
+  "https://public.markforster.info/Heroquest/Tools/card-maker-sample-screenshots/",
+  "https://www.onlinewebfonts.com/package/Carter_Sans",
+  "https://www.onlinewebfonts.com/icon",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.7.1",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.7.0",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.6.2",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.6.1",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.6.0",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.7",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.6",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.5",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.4",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.3.1",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.3",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.2",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.1",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.5.0",
+] as const;
 
 beforeEach(() => {
-  observers.length = 0;
-
-  Object.defineProperty(window, "IntersectionObserver", {
-    writable: true,
-    value: jest.fn((callback: IntersectionObserverCallback) => {
-      const instance: MockObserver = {
-        callback,
-        observe: jest.fn(),
-        unobserve: jest.fn(),
-        disconnect: jest.fn(),
-      };
-      observers.push(instance);
-      return instance;
-    }),
-  });
-
   Object.defineProperty(Element.prototype, "scrollIntoView", {
     writable: true,
     value: jest.fn(),
@@ -44,39 +65,57 @@ function renderModal() {
 }
 
 describe("ReleaseNotesModal TOC", () => {
-  it("renders TOC entries", () => {
+  it("renders the shared About document layout", () => {
     renderModal();
 
+    expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument();
+    expect(
+      screen.getByText(`Version ${APP_VERSION}. Project background, credits, and release history.`),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "About the card creator" })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Learn what the app is, why it exists, what it can do, and how it has developed over time.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /On this page/i })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "What this is" }).length).toBeGreaterThan(0);
-    expect(
-      screen.getAllByRole("button", { name: "Credits & Attribution" }).length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getAllByRole("button", { name: "Update 12/07/2026 (v0.7.1)" }).length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getAllByRole("button", { name: "Update 05/07/2026 (v0.7.0)" }).length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getAllByRole("button", { name: "Update 22/06/2026 (v0.6.2)" }).length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getAllByRole("button", { name: "Update 13/06/2026 (v0.6.1)" }).length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getAllByRole("button", { name: "Update 31/05/2026 (v0.6.0)" }).length,
-    ).toBeGreaterThan(0);
+    const navigation = screen.getByRole("navigation", {
+      name: "About and release notes contents",
+    });
+    expect(within(navigation).getAllByRole("button")).toHaveLength(expectedSections.length);
   });
 
-  it("jumps to section on TOC click without URL hash changes", () => {
+  it("jumps every TOC entry to its section without URL hash changes", () => {
     renderModal();
     const beforeHash = window.location.hash;
 
-    fireEvent.click(screen.getByRole("button", { name: "Update 31/05/2026 (v0.6.0)" }));
+    expectedSections.forEach(([, title]) => {
+      fireEvent.click(screen.getByRole("button", { name: title }));
+    });
 
-    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledTimes(expectedSections.length);
+    expect(Element.prototype.scrollIntoView).toHaveBeenLastCalledWith({
+      behavior: "smooth",
+      block: "start",
+    });
     expect(window.location.hash).toBe(beforeHash);
+  });
+
+  it("preserves every section, content element, and external destination", () => {
+    renderModal();
+
+    const sections = Array.from(document.querySelectorAll("article section"));
+    expect(
+      sections.map((section) => [section.id, section.querySelector("h3")?.textContent ?? ""]),
+    ).toEqual(expectedSections);
+    expect(document.querySelectorAll("article section p")).toHaveLength(50);
+    expect(document.querySelectorAll("article section ul")).toHaveLength(14);
+    expect(document.querySelectorAll("article section li")).toHaveLength(91);
+    expect(
+      Array.from(document.querySelectorAll<HTMLAnchorElement>("article section a[href]")).map(
+        (link) => link.href,
+      ),
+    ).toEqual(expectedLinks);
   });
 
   it("renders the credits section with the font source link", () => {
@@ -127,29 +166,5 @@ describe("ReleaseNotesModal TOC", () => {
       "href",
       "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.6.1",
     );
-  });
-
-  it("updates active TOC item from intersection observer", () => {
-    renderModal();
-
-    const updateSection = document.getElementById("about-update-v0-5-7");
-    expect(updateSection).not.toBeNull();
-    expect(observers.length).toBeGreaterThan(0);
-
-    act(() => {
-      observers[0].callback(
-        [
-          {
-            target: updateSection as Element,
-            isIntersecting: true,
-            intersectionRatio: 0.8,
-          } as IntersectionObserverEntry,
-        ],
-        {} as IntersectionObserver,
-      );
-    });
-
-    const activeButton = screen.getByRole("button", { name: "Update 30/03/2026 (v0.5.7)" });
-    expect(activeButton.className).toContain("aboutTocButtonActive");
   });
 });
