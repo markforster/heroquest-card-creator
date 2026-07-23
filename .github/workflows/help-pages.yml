@@ -1,0 +1,77 @@
+name: Deploy Help Site
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/pages-placeholder/**"
+      - ".github/workflows/help-pages.yml"
+      - "help-site/**"
+      - "scripts/help-site.cjs"
+      - "scripts/help-site/**"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Set up Node
+        if: ${{ hashFiles('help-site/mkdocs.yml') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up and build help site
+        if: ${{ hashFiles('help-site/mkdocs.yml') != '' }}
+        run: |
+          npm run help:setup
+          npm run help:build
+
+      - name: Prepare Pages artifact
+        shell: bash
+        run: |
+          mkdir -p _site/help
+          cp .github/pages-placeholder/index.html _site/index.html
+
+          if [[ -f help-site/site/index.html ]]; then
+            cp -R help-site/site/. _site/help/
+          else
+            cp -R .github/pages-placeholder/help/. _site/help/
+          fi
+
+          touch _site/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}help/
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
