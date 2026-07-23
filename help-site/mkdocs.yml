@@ -1,0 +1,151 @@
+site_name: HeroQuest Card Creator
+site_description: Help and guidance for creating, organising, exporting, and printing HeroQuest cards
+site_url: https://markforster.github.io/heroquest-card-creator/help/
+docs_dir: docs
+site_dir: site
+use_directory_urls: true
+
+theme:
+  name: material
+  logo: brand/apple-touch-icon.png
+  favicon: brand/favicon-96x96.png
+  features:
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: brown
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+
+extra:
+  brand_subtitle: Help
+
+extra_css:
+  - brand/hqcc-docs.css
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - getting-started/index.md
+      - Create Your First Card: getting-started/create-your-first-card.md
+      - Understand App Navigation: getting-started/understand-app-navigation.md
+      - Get and Update the App: getting-started/get-and-update-the-app.md
+      - Use a Downloaded Copy: getting-started/use-a-downloaded-copy.md
+  - Making Cards:
+      - making-cards/index.md
+      - Choose a Card Template: making-cards/choose-a-card-template.md
+      - Understand the Card Editing View: making-cards/understand-the-card-editing-view.md
+      - Add and Position Artwork: making-cards/add-and-position-artwork.md
+      - Customize Titles, Colours, and Copyright: making-cards/customize-titles-colours-and-copyright.md
+      - Customize Card Back Logos and Text: making-cards/customize-card-back-logos-and-text.md
+      - Template-Specific Card Controls: making-cards/understand-template-specific-card-controls.md
+      - Advanced Hero and Monster Controls: making-cards/use-advanced-hero-and-monster-controls.md
+      - Body Text Tools: making-cards/understand-body-text-tools.md
+      - Format Card Text: making-cards/format-card-text.md
+      - Insert Emoji and Dice: making-cards/insert-emoji-and-dice.md
+      - Fit Body Text on a Card: making-cards/fit-body-text-on-a-card.md
+      - Card States and Saving: making-cards/understand-card-states-and-saving.md
+      - Save or Discard Card Changes: making-cards/save-or-discard-card-changes.md
+      - Duplicate a Card: making-cards/duplicate-a-card.md
+      - Understand the Pairing Tab: making-cards/understand-the-pairing-tab.md
+      - Pair and Unpair Card Faces: making-cards/pair-and-unpair-card-faces.md
+  - Managing Your Library:
+      - managing-your-library/index.md
+      - Understand the Cards Workspace: managing-your-library/understand-the-cards-workspace.md
+      - View Your Recent Cards: managing-your-library/view-your-recent-cards.md
+      - Organize and Recover Cards: managing-your-library/organize-and-recover-cards.md
+      - Assets:
+          - managing-your-library/assets/index.md
+          - Understand the Assets Workspace: managing-your-library/assets/understand-the-assets-workspace.md
+          - Upload and Organize Assets: managing-your-library/assets/upload-and-organize-assets.md
+          - Replace, Convert, and Delete Assets: managing-your-library/assets/replace-convert-and-delete-assets.md
+      - Collections:
+          - managing-your-library/collections/index.md
+          - Create and Organize Collections: managing-your-library/collections/create-and-organize-collections.md
+          - Add and Remove Cards: managing-your-library/collections/add-and-remove-cards-from-collections.md
+          - Filter and Export a Collection: managing-your-library/collections/filter-and-export-a-collection.md
+  - Building Decks:
+      - building-decks/index.md
+      - Understand the Decks Workspace: building-decks/understand-the-decks-workspace.md
+      - Collections, Pairing, and Decks: building-decks/collections-pairing-and-decks.md
+      - Create and Build a Deck: building-decks/create-and-build-a-deck.md
+      - Use Collections While Building a Deck: building-decks/use-collections-while-building-a-deck.md
+      - Manage Decks and Deck Details: building-decks/manage-decks-and-deck-details.md
+      - Organize Deck Groups and Sets: building-decks/organize-deck-groups-and-sets.md
+      - Manage and Recover Deck Entries: building-decks/manage-and-recover-deck-entries.md
+  - Exporting and Printing:
+      - exporting-and-printing/index.md
+      - Export Cards as PNG Images: exporting-and-printing/export-cards-as-png-images.md
+      - Export a Deck as PDF: exporting-and-printing/export-a-deck-as-pdf.md
+  - Settings and Data:
+      - settings-and-data/index.md
+      - Understand the Settings Window: settings-and-data/understand-the-settings-window.md
+      - Settings Reference: settings-and-data/settings-reference.md
+      - Change Language and Appearance: settings-and-data/change-language-and-appearance.md
+      - Configure Export Defaults and Profiles: settings-and-data/configure-export-defaults-and-profiles.md
+      - Understand Backups and Local Data: settings-and-data/understand-backups-and-local-data.md
+      - Back Up and Restore Your Library: settings-and-data/back-up-and-restore-your-library.md
+  - Concepts:
+      - concepts/index.md
+      - What Is a Card?: concepts/what-is-a-card.md
+      - What Is a Template?: concepts/what-is-a-template.md
+      - What Is a Draft?: concepts/what-is-a-draft.md
+      - What Is the Card Editor?: concepts/what-is-the-card-editor.md
+      - What Is an Asset?: concepts/what-is-an-asset.md
+      - What Is a Collection?: concepts/what-is-a-collection.md
+      - What Is Pairing?: concepts/what-is-pairing.md
+      - What Is a Deck?: concepts/what-is-a-deck.md
+      - What Are Deck Groups, Sets, and Entries?: concepts/what-are-deck-groups-sets-and-entries.md
+      - What Is a Library Backup?: concepts/what-is-a-library-backup.md
+  - Reference:
+      - reference/index.md
+      - Keyboard Shortcuts: reference/keyboard-shortcuts.md
+  - Frequently Asked Questions:
+      - faq/index.md
+      - Getting Started and Navigation: faq/getting-started.md
+      - Cards, Templates, and Text: faq/cards.md
+      - Library, Assets, and Collections: faq/library.md
+      - Decks and Pairing: faq/decks.md
+      - Exporting and Printing: faq/exporting-and-printing.md
+      - Settings, Backups, and Data: faq/settings-and-data.md
+      - General Troubleshooting: faq/troubleshooting.md
+  - Troubleshooting:
+      - troubleshooting/index.md
+      - Asset Upload Problems: troubleshooting/fix-asset-upload-problems.md
+      - Backup and Restore Problems: troubleshooting/fix-backup-and-restore-problems.md
+      - Card Saving and Duplication Problems: troubleshooting/fix-card-saving-and-duplication-problems.md
+      - Cards Workspace Problems: troubleshooting/fix-cards-workspace-problems.md
+      - Clipped or Overflowing Card Text: troubleshooting/fix-clipped-or-overflowing-card-text.md
+      - Deck Editing Problems: troubleshooting/fix-deck-editing-problems.md
+      - Export and Print Problems: troubleshooting/fix-export-and-print-problems.md
+      - Keyboard Shortcut Problems: troubleshooting/fix-keyboard-shortcut-problems.md
+      - Missing Artwork: troubleshooting/fix-missing-artwork.md
+      - Navigation, Download, and Screen Problems: troubleshooting/fix-navigation-download-and-screen-problems.md
+      - Pairing Problems: troubleshooting/fix-pairing-problems.md
+      - Settings Problems: troubleshooting/fix-settings-problems.md
+      - Template Control Problems: troubleshooting/fix-template-control-problems.md

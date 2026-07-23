@@ -17,6 +17,9 @@
 
 # production
 /build
+/help-site/.generated/
+/help-site/.venv/
+/help-site/site/
 
 # misc
 .DS_Store
@@ -39,9 +42,7 @@ yarn-error.log*
 next-env.d.ts
 
 
-docs/**/*
-docs/issues/
-docs/issues/**
+/docs/
 
 # generated (build-time)
 /src/generated/
@@ -53,4 +54,3 @@ docs/issues/**
 commit.msg
 .npmrc
 heroquest.card-maker.code-workspace
-
