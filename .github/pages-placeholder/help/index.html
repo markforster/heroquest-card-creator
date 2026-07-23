@@ -4,11 +4,30 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
+    <meta name="theme-color" content="#11100e">
     <title>Quick Help | HeroQuest Card Creator</title>
+    <link rel="icon" href="./assets/app-icon.png">
+    <link rel="apple-touch-icon" href="./assets/app-icon.png">
     <style>
+      @font-face {
+        font-family: "Carter Sans W04";
+        src: url("./fonts/Carter Sans W04 Regular.ttf") format("truetype");
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Carter Sans W04";
+        src: url("./fonts/Carter Sans W04 Bold.ttf") format("truetype");
+        font-style: normal;
+        font-weight: 700;
+        font-display: swap;
+      }
+
       :root {
         color-scheme: dark;
-        font-family: Georgia, "Times New Roman", serif;
+        font-family: "Carter Sans W04", Arial, Helvetica, sans-serif;
         background: #11100e;
         color: #f4ead7;
         --accent: #d9a957;
@@ -17,7 +36,8 @@
         --panel-soft: rgba(255, 255, 255, 0.035);
         --border: rgba(225, 170, 91, 0.36);
         --muted: #c9bdab;
-        --sans: Arial, Helvetica, sans-serif;
+        --display: Georgia, "Times New Roman", serif;
+        --sans: "Carter Sans W04", Arial, Helvetica, sans-serif;
       }
 
       * {
@@ -79,13 +99,22 @@
       }
 
       .eyebrow {
-        margin: 0 0 1.15rem;
+        margin: 1rem 0 1.15rem;
         color: var(--accent);
+      }
+
+      .app-icon {
+        display: block;
+        width: clamp(4.25rem, 10vw, 5.75rem);
+        height: auto;
+        margin: 0 auto;
+        filter: drop-shadow(0 0.8rem 1.6rem rgba(0, 0, 0, 0.4));
       }
 
       h1 {
         margin: 0;
         color: var(--accent-bright);
+        font-family: var(--display);
         font-size: clamp(3rem, 9vw, 6.5rem);
         font-weight: 400;
         line-height: 0.94;
@@ -111,6 +140,28 @@
         background: rgba(217, 169, 87, 0.08);
         line-height: 1.5;
         white-space: normal;
+      }
+
+      .showcase {
+        width: min(72rem, calc(100% - 3rem));
+        margin: -1.5rem auto 0;
+        border: 1px solid var(--border);
+        background: var(--panel);
+        box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.38);
+      }
+
+      .showcase img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .showcase figcaption {
+        padding: 0.7rem 1rem 0.75rem;
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.45;
+        text-align: center;
       }
 
       .page {
@@ -175,6 +226,7 @@
       article > header h2 {
         margin: 0;
         color: var(--accent-bright);
+        font-family: var(--display);
         font-size: clamp(2rem, 5vw, 3.2rem);
         font-weight: 400;
       }
@@ -197,6 +249,7 @@
       section h3 {
         margin: 0 0 1rem;
         color: var(--accent);
+        font-family: var(--display);
         font-size: clamp(1.35rem, 3vw, 1.75rem);
         font-weight: 400;
       }
@@ -256,6 +309,33 @@
         border-top: 1px solid rgba(225, 170, 91, 0.18);
       }
 
+      .back-to-top {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        z-index: 5;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+        padding: 0.55rem 0.75rem;
+        border: 1px solid var(--border);
+        background: rgba(25, 22, 18, 0.94);
+        box-shadow: 0 0.6rem 1.4rem rgba(0, 0, 0, 0.35);
+        color: var(--accent-bright);
+        font-family: var(--sans);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-decoration: none;
+        text-transform: uppercase;
+      }
+
+      .back-to-top:hover {
+        background: #2b241b;
+      }
+
       @media (max-width: 52rem) {
         .page {
           display: block;
@@ -294,6 +374,11 @@
           margin-right: auto;
           margin-left: auto;
         }
+
+        .showcase {
+          width: calc(100% - 2rem);
+          margin-top: -1rem;
+        }
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -303,10 +388,17 @@
       }
     </style>
   </head>
-  <body>
+  <body id="top">
     <a class="skip-link" href="#quick-help">Skip to quick help</a>
 
     <header class="hero">
+      <img
+        class="app-icon"
+        src="./assets/app-icon.png"
+        width="180"
+        height="180"
+        alt=""
+      >
       <p class="eyebrow">HeroQuest Card Creator</p>
       <h1>Quick Help</h1>
       <p class="hero-copy">
@@ -314,6 +406,16 @@
       </p>
       <p class="status">A complete help centre is coming soon</p>
     </header>
+
+    <figure class="showcase">
+      <img
+        src="./assets/card-showcase.png"
+        width="1311"
+        height="417"
+        alt="A selection of custom HeroQuest cards created with HeroQuest Card Creator."
+      >
+      <figcaption>Bring custom heroes, creatures, treasures, and card backs together in one library.</figcaption>
+    </figure>
 
     <main class="page">
       <nav class="contents" aria-label="Quick help contents">
@@ -762,6 +864,8 @@
         </section>
       </article>
     </main>
+
+    <a class="back-to-top" href="#top" aria-label="Back to top">Top</a>
 
     <footer>
       HeroQuest Card Creator Quick Help. The complete searchable help centre will replace this page.
