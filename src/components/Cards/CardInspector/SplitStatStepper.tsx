@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext, useWatch } from "react-hook-form";
 
-
 import layoutStyles from "@/app/page.module.css";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -14,8 +13,8 @@ import type { StatAsteriskFlags, StatSplitFormat, StatValue } from "@/types/stat
 
 import { formatStatInputValue, parseStatInputValue } from "./stat-stepper-input";
 
-import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
+import type { CSSProperties } from "react";
 import type { FieldValues, Path } from "react-hook-form";
 
 type SplitStatStepperProps<TFormValues extends FieldValues> = {
@@ -58,10 +57,13 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
   const { t } = useI18n();
   const { control, setValue } = useFormContext<TFormValues>();
   const valueWatch = useWatch({ control, name }) as StatValue | undefined;
-  const asterisksWatch = useWatch({
+  const asterisksWatchValue = useWatch({
     control,
-    name: asterisksName as Path<TFormValues> | undefined,
-  }) as StatAsteriskFlags | undefined;
+    name: asterisksName ?? name,
+  });
+  const asterisksWatch = asterisksName
+    ? (asterisksWatchValue as StatAsteriskFlags | undefined)
+    : undefined;
 
   const isArrayValue = Array.isArray(valueWatch);
   const splitFlag = isArrayValue ? valueWatch[2] : undefined;
@@ -81,7 +83,9 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
   const [formatHover, setFormatHover] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [formatPopoverStyle, setFormatPopoverStyle] = useState<CSSProperties | null>(null);
-  const [formatHoverPopoverStyle, setFormatHoverPopoverStyle] = useState<CSSProperties | null>(null);
+  const [formatHoverPopoverStyle, setFormatHoverPopoverStyle] = useState<CSSProperties | null>(
+    null,
+  );
   const primaryLastValidRef = useRef(primaryValue);
   const secondaryLastValidRef = useRef(secondaryValue);
   const formatButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -292,11 +296,12 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
     const aboveTop = anchorRect.top - popoverRect.height - offset;
     const belowTop = anchorRect.bottom + offset;
     const canRenderBelow = belowTop + popoverRect.height + padding <= viewportHeight;
-    const top = aboveTop >= padding
-      ? aboveTop
-      : canRenderBelow
-        ? belowTop
-        : Math.max(padding, viewportHeight - popoverRect.height - padding);
+    const top =
+      aboveTop >= padding
+        ? aboveTop
+        : canRenderBelow
+          ? belowTop
+          : Math.max(padding, viewportHeight - popoverRect.height - padding);
 
     return { left, top };
   }, []);
@@ -351,11 +356,7 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
     if (!asterisksName) return;
     const currentValue = index === 0 ? primaryValue : secondaryValue;
     if (currentValue === -1) return;
-    const nextAsterisks = setStatAsterisk(
-      asterisks,
-      index,
-      !hasStatAsterisk(asterisks, index),
-    );
+    const nextAsterisks = setStatAsterisk(asterisks, index, !hasStatAsterisk(asterisks, index));
     setValue(asterisksName, nextAsterisks as unknown as TFormValues[keyof TFormValues], {
       shouldDirty: true,
       shouldTouch: true,
@@ -427,7 +428,9 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
     <div className={layoutStyles.statCell}>
       <div className={`${layoutStyles.statControlRow} ${layoutStyles.uRowSm}`}>
         <div className={layoutStyles.statSubLabel}>
-          {Icon ? <Icon className={layoutStyles.statSubLabelIcon} aria-hidden="true" size={14} /> : null}
+          {Icon ? (
+            <Icon className={layoutStyles.statSubLabelIcon} aria-hidden="true" size={14} />
+          ) : null}
           <span>{label}</span>
         </div>
         <div className={layoutStyles.statSplitFields}>

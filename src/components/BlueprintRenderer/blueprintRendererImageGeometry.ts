@@ -136,7 +136,7 @@ export function resolveImageLayerHoverBounds({
   if (layer.type !== "image") return null;
 
   const bounds = getLayerBounds(blueprint, layer);
-  const clipMode = layer.clip ?? "bounds";
+  const clipMode = "clip" in layer ? (layer.clip ?? "bounds") : "bounds";
   const canvasBounds = {
     x: 0,
     y: 0,

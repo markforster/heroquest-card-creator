@@ -35,13 +35,6 @@ export function insertTextAtSelection({
   }
 
   const nextValue = `${currentValue.slice(0, resolvedSelectionStart)}${insertedText}${currentValue.slice(resolvedSelectionEnd)}`;
-  const nextCursor = resolvedSelectionStart + insertedText.length;
 
   onChange(nextValue);
-
-  window.requestAnimationFrame(() => {
-    if (!textarea) return;
-    textarea.focus();
-    textarea.setSelectionRange(nextCursor, nextCursor);
-  });
 }

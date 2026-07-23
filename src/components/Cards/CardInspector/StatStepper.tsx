@@ -1,8 +1,8 @@
 "use client";
 
+import { Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-
 
 import layoutStyles from "@/app/page.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -11,7 +11,6 @@ import type { StatAsteriskFlags } from "@/types/stats";
 
 import { formatStatInputValue, parseStatInputValue } from "./stat-stepper-input";
 
-import { Minus, Plus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { FieldValues, Path } from "react-hook-form";
 
@@ -37,10 +36,13 @@ export default function StatStepper<TFormValues extends FieldValues>({
   const { t } = useI18n();
   const { control, setValue } = useFormContext<TFormValues>();
   const valueWatch = useWatch({ control, name }) as number | undefined;
-  const asterisksWatch = useWatch({
+  const asterisksWatchValue = useWatch({
     control,
-    name: asterisksName as Path<TFormValues> | undefined,
-  }) as StatAsteriskFlags | undefined;
+    name: asterisksName ?? name,
+  });
+  const asterisksWatch = asterisksName
+    ? (asterisksWatchValue as StatAsteriskFlags | undefined)
+    : undefined;
   const value = typeof valueWatch === "number" && !Number.isNaN(valueWatch) ? valueWatch : 0;
   const asterisks = normalizeStatAsteriskFlags(asterisksWatch);
   const resolvedMin = allowWildcard ? Math.min(min, -1) : min;
@@ -134,7 +136,9 @@ export default function StatStepper<TFormValues extends FieldValues>({
     <div className={layoutStyles.statCell}>
       <div className={`${layoutStyles.statControlRow} ${layoutStyles.uRowSm}`}>
         <div className={layoutStyles.statSubLabel}>
-          {Icon ? <Icon className={layoutStyles.statSubLabelIcon} aria-hidden="true" size={14} /> : null}
+          {Icon ? (
+            <Icon className={layoutStyles.statSubLabelIcon} aria-hidden="true" size={14} />
+          ) : null}
           <span>{label}</span>
         </div>
         <div className={layoutStyles.statField}>

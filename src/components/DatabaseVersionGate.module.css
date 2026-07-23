@@ -41,7 +41,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: url("/assets/help-card-showcase.jpg") center / cover no-repeat;
+  background: var(--database-loading-background-image) center / cover no-repeat;
   opacity: 0.22;
 }
 

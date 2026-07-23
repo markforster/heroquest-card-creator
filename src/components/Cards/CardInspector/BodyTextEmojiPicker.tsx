@@ -1,5 +1,21 @@
 "use client";
 
+import { EmojiStyle, Theme } from "emoji-picker-react";
+import daData from "emoji-picker-react/dist/data/emojis-da";
+import deData from "emoji-picker-react/dist/data/emojis-de";
+import fallbackEnData from "emoji-picker-react/dist/data/emojis-en";
+import enData from "emoji-picker-react/dist/data/emojis-en-gb";
+import esData from "emoji-picker-react/dist/data/emojis-es";
+import fiData from "emoji-picker-react/dist/data/emojis-fi";
+import frData from "emoji-picker-react/dist/data/emojis-fr";
+import huData from "emoji-picker-react/dist/data/emojis-hu";
+import itData from "emoji-picker-react/dist/data/emojis-it";
+import nbData from "emoji-picker-react/dist/data/emojis-nb";
+import nlData from "emoji-picker-react/dist/data/emojis-nl";
+import plData from "emoji-picker-react/dist/data/emojis-pl";
+import ptData from "emoji-picker-react/dist/data/emojis-pt";
+import ruData from "emoji-picker-react/dist/data/emojis-ru";
+import svData from "emoji-picker-react/dist/data/emojis-sv";
 import { SmilePlus } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -11,35 +27,15 @@ import { useTheme } from "@/components/Providers/ThemeProvider";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
 
-import csData from "emoji-picker-react/dist/data/emojis-en";
-import daData from "emoji-picker-react/dist/data/emojis-da";
-import deData from "emoji-picker-react/dist/data/emojis-de";
-import elData from "emoji-picker-react/dist/data/emojis-en";
-import enData from "emoji-picker-react/dist/data/emojis-en-gb";
-import esData from "emoji-picker-react/dist/data/emojis-es";
-import fiData from "emoji-picker-react/dist/data/emojis-fi";
-import frData from "emoji-picker-react/dist/data/emojis-fr";
-import huData from "emoji-picker-react/dist/data/emojis-hu";
-import itData from "emoji-picker-react/dist/data/emojis-it";
-import nbData from "emoji-picker-react/dist/data/emojis-nb";
-import nlData from "emoji-picker-react/dist/data/emojis-nl";
-import plData from "emoji-picker-react/dist/data/emojis-pl";
-import ptBrData from "emoji-picker-react/dist/data/emojis-pt";
-import ptData from "emoji-picker-react/dist/data/emojis-pt";
-import ruData from "emoji-picker-react/dist/data/emojis-ru";
-import svData from "emoji-picker-react/dist/data/emojis-sv";
-
-import { EmojiStyle, Theme } from "emoji-picker-react";
-
-import type { EmojiClickData, EmojiData } from "emoji-picker-react";
+import type { EmojiClickData } from "emoji-picker-react";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
-const EMOJI_DATA_BY_LANGUAGE: Record<string, EmojiData> = {
-  cs: csData,
+const EMOJI_DATA_BY_LANGUAGE: Record<string, typeof enData> = {
+  cs: fallbackEnData,
   da: daData,
   de: deData,
-  el: elData,
+  el: fallbackEnData,
   en: enData,
   es: esData,
   fi: fiData,
@@ -50,7 +46,7 @@ const EMOJI_DATA_BY_LANGUAGE: Record<string, EmojiData> = {
   nl: nlData,
   pl: plData,
   pt: ptData,
-  "pt-BR": ptBrData,
+  "pt-BR": ptData,
   ru: ruData,
   sv: svData,
 };
@@ -88,10 +84,14 @@ export default function BodyTextEmojiPicker({
     }
 
     const position = () => {
-      const nextPosition = computeCardInspectorPopoverPosition(buttonRef.current, popoverRef.current, {
-        minWidth: 320,
-        maxWidth: 360,
-      });
+      const nextPosition = computeCardInspectorPopoverPosition(
+        buttonRef.current,
+        popoverRef.current,
+        {
+          minWidth: 320,
+          maxWidth: 360,
+        },
+      );
       if (!nextPosition) return;
       setPopoverStyle({ left: nextPosition.left, top: nextPosition.top });
     };

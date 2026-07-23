@@ -1,9 +1,10 @@
 "use client";
 
 import styles from "@/app/page.module.css";
+import { appIconSrc, helpCardShowcaseCssBackground } from "@/assets/app-shell-assets";
 import { docStyles } from "@/components/common/DocContent";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 export type InAppDocumentSection = readonly [id: string, label: string];
 
@@ -18,6 +19,10 @@ type InAppDocumentLayoutProps = {
   sections: readonly InAppDocumentSection[];
 };
 
+const BUNDLED_HELP_HERO_STYLE = {
+  "--bundled-help-background-image": helpCardShowcaseCssBackground,
+} as CSSProperties;
+
 export default function InAppDocumentLayout({
   articleIntroduction,
   articleTitle,
@@ -30,11 +35,11 @@ export default function InAppDocumentLayout({
 }: InAppDocumentLayoutProps) {
   return (
     <div className={styles.bundledHelpPage}>
-      <header className={styles.bundledHelpHero}>
+      <header className={styles.bundledHelpHero} style={BUNDLED_HELP_HERO_STYLE}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className={styles.bundledHelpAppIcon}
-          src="/assets/apple-touch-icon.png"
+          src={appIconSrc}
           width="180"
           height="180"
           alt=""

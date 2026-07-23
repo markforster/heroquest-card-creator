@@ -24,7 +24,6 @@ import { resolveMonsterIconOverlayGeometry } from "./cardPreviewIconGeometry";
 import { CARD_HEIGHT, CARD_WIDTH, getCardPreviewStageLayout } from "./cardPreviewStage";
 import {
   GIZMO_ARM_LENGTH_MAX,
-  GIZMO_CENTER_HANDLE_HIT_RADIUS,
   GIZMO_CENTER_HANDLE_INNER_RADIUS,
   GIZMO_CENTER_HANDLE_RADIUS,
   GIZMO_FRAME_RADIUS,
@@ -535,7 +534,8 @@ export default function CardPreviewEditorOverlay({
       (state.horizontalTravel ?? 0) > 0
         ? roundStageValue(
             clamp(
-              (clampedCenterX - (state.baseCenterX ?? clampedCenterX)) / (state.horizontalTravel ?? 1),
+              (clampedCenterX - (state.baseCenterX ?? clampedCenterX)) /
+                (state.horizontalTravel ?? 1),
               0,
               1,
             ),
@@ -545,7 +545,8 @@ export default function CardPreviewEditorOverlay({
       (state.verticalTravel ?? 0) > 0
         ? roundStageValue(
             clamp(
-              ((state.baseCenterY ?? clampedCenterY) - clampedCenterY) / (state.verticalTravel ?? 1),
+              ((state.baseCenterY ?? clampedCenterY) - clampedCenterY) /
+                (state.verticalTravel ?? 1),
               0,
               1,
             ),
@@ -660,7 +661,9 @@ export default function CardPreviewEditorOverlay({
         armLength: GIZMO_CENTER_HANDLE_RADIUS,
       })
     : { x: stageCenterX, y: stageCenterY };
-  const visualArmStartY = isMoveSnapActive ? armStart.y + GIZMO_MOVE_SNAP_VISUAL_OFFSET_Y : armStart.y;
+  const visualArmStartY = isMoveSnapActive
+    ? armStart.y + GIZMO_MOVE_SNAP_VISUAL_OFFSET_Y
+    : armStart.y;
   const visualArmEndY = isMoveSnapActive ? armEnd.y + GIZMO_MOVE_SNAP_VISUAL_OFFSET_Y : armEnd.y;
   const visualTransformHandleY = isMoveSnapActive
     ? armEnd.y + GIZMO_MOVE_SNAP_VISUAL_OFFSET_Y
@@ -718,7 +721,11 @@ export default function CardPreviewEditorOverlay({
                 x2={lineX}
                 y2={layout.stageHeight}
                 stroke={lineX === moveGridCenterX ? GIZMO_MOVE_GRID_AXIS_STROKE : GIZMO_SNAP_GUIDE}
-                strokeWidth={lineX === moveGridCenterX ? GIZMO_MOVE_GRID_AXIS_STROKE_WIDTH : GIZMO_MOVE_GRID_STROKE_WIDTH}
+                strokeWidth={
+                  lineX === moveGridCenterX
+                    ? GIZMO_MOVE_GRID_AXIS_STROKE_WIDTH
+                    : GIZMO_MOVE_GRID_STROKE_WIDTH
+                }
                 pointerEvents="none"
                 data-editor-image-move-grid-line="vertical"
                 data-editor-image-move-grid-position={String(lineX)}
@@ -733,7 +740,11 @@ export default function CardPreviewEditorOverlay({
                 x2={layout.stageWidth}
                 y2={lineY}
                 stroke={lineY === moveGridCenterY ? GIZMO_MOVE_GRID_AXIS_STROKE : GIZMO_SNAP_GUIDE}
-                strokeWidth={lineY === moveGridCenterY ? GIZMO_MOVE_GRID_AXIS_STROKE_WIDTH : GIZMO_MOVE_GRID_STROKE_WIDTH}
+                strokeWidth={
+                  lineY === moveGridCenterY
+                    ? GIZMO_MOVE_GRID_AXIS_STROKE_WIDTH
+                    : GIZMO_MOVE_GRID_STROKE_WIDTH
+                }
                 pointerEvents="none"
                 data-editor-image-move-grid-line="horizontal"
                 data-editor-image-move-grid-position={String(lineY)}
@@ -815,7 +826,9 @@ export default function CardPreviewEditorOverlay({
                 r={ring.radius}
                 fill="none"
                 stroke={isActive ? GIZMO_CYAN_ACTIVE : GIZMO_SNAP_GUIDE}
-                strokeWidth={isActive ? GIZMO_SNAP_RING_ACTIVE_STROKE_WIDTH : GIZMO_SNAP_RING_STROKE_WIDTH}
+                strokeWidth={
+                  isActive ? GIZMO_SNAP_RING_ACTIVE_STROKE_WIDTH : GIZMO_SNAP_RING_STROKE_WIDTH
+                }
                 pointerEvents="none"
                 data-editor-image-snap-scale-ring={String(ring.ratio)}
                 data-editor-image-snap-scale-ring-active={isActive ? "true" : "false"}
@@ -838,7 +851,9 @@ export default function CardPreviewEditorOverlay({
                 x2={endpoint.x}
                 y2={endpoint.y}
                 stroke={isActive ? GIZMO_CYAN_ACTIVE : GIZMO_SNAP_GUIDE}
-                strokeWidth={isActive ? GIZMO_SNAP_GUIDE_ACTIVE_STROKE_WIDTH : GIZMO_SNAP_GUIDE_STROKE_WIDTH}
+                strokeWidth={
+                  isActive ? GIZMO_SNAP_GUIDE_ACTIVE_STROKE_WIDTH : GIZMO_SNAP_GUIDE_STROKE_WIDTH
+                }
                 strokeLinecap="round"
                 pointerEvents="none"
                 data-editor-image-snap-angle={String(angle)}

@@ -27,12 +27,6 @@ describe("insertTextAtSelection", () => {
   });
 
   it("falls back to controlled state updates when no textarea is available", () => {
-    const requestAnimationFrameSpy = jest
-      .spyOn(window, "requestAnimationFrame")
-      .mockImplementation((callback: FrameRequestCallback) => {
-        callback(0);
-        return 0;
-      });
     const onChange = jest.fn();
 
     insertTextAtSelection({
@@ -45,7 +39,5 @@ describe("insertTextAtSelection", () => {
     });
 
     expect(onChange).toHaveBeenCalledWith("Hello \u{1F600}");
-
-    requestAnimationFrameSpy.mockRestore();
   });
 });
