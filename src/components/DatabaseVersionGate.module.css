@@ -23,9 +23,36 @@
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
+  z-index: 2;
   height: 4px;
   background: linear-gradient(90deg, transparent, var(--hq-accent), transparent);
   opacity: 0.8;
+}
+
+.loadingPanel {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+.loadingPanel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url("/assets/help-card-showcase.jpg") center / cover no-repeat;
+  opacity: 0.22;
+}
+
+.loadingPanel .message {
+  margin: 0;
+  position: relative;
+  color: var(--hq-text);
+  font-family: var(--hq-font-display);
+  font-size: 1.35rem;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 8px var(--hq-black-60);
 }
 
 .title {

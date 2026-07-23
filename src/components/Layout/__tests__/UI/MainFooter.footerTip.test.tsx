@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
 
 import MainFooter from "@/components/Layout/MainFooter";
+
+import type { ReactNode } from "react";
 
 const mockCurrentTip = { source: "stockpile", message: "Stockpile tip message", icon: "lightbulb" };
 let currentTip: typeof mockCurrentTip | null = null;
@@ -14,6 +15,11 @@ jest.mock("react-device-detect", () => ({
 jest.mock("@/components/Layout/LeftNav/useMediaQuery", () => ({
   __esModule: true,
   useMediaQuery: () => false,
+}));
+
+jest.mock("@/components/Modals/HelpModal", () => ({
+  __esModule: true,
+  default: () => null,
 }));
 
 jest.mock("@/components/Modals/ReleaseNotesModal", () => ({

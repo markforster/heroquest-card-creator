@@ -7,24 +7,22 @@ import { isMobile, isTablet } from "react-device-detect";
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
 import { useMediaQuery } from "@/components/Layout/LeftNav/useMediaQuery";
+import HelpModal from "@/components/Modals/HelpModal";
 import ReleaseNotesModal from "@/components/Modals/ReleaseNotesModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useFooterTip } from "@/components/Providers/FooterTipContext";
+import type { FooterTip } from "@/components/Providers/FooterTipContext";
 import useIsTauriApp from "@/hooks/useIsTauriApp";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
 import { attachItchBuyButton } from "@/lib/itch";
 import { APP_VERSION } from "@/version";
 
-import type { FooterTip } from "@/components/Providers/FooterTipContext";
-
 const FOOTER_TIP_FADE_MS = 180;
 
 function isSameFooterTip(left: FooterTip | null, right: FooterTip | null) {
   return (
-    left?.source === right?.source &&
-    left?.message === right?.message &&
-    left?.icon === right?.icon
+    left?.source === right?.source && left?.message === right?.message && left?.icon === right?.icon
   );
 }
 
@@ -38,6 +36,7 @@ function FooterTipIcon({ icon }: { icon?: "lightbulb" }) {
 export default function MainFooter() {
   const { t } = useI18n();
   const { track } = useAnalytics();
+  const helpModal = usePopupState(false);
   const releaseNotesModal = usePopupState(false);
   const desktopNoticeModal = usePopupState(false);
   const isTauriApp = useIsTauriApp();
@@ -98,17 +97,17 @@ export default function MainFooter() {
       <footer className={`${styles.footer} d-flex align-items-center gap-2`}>
         <div className="d-flex align-items-center w-100">
           <div className={`${styles.footerLeft} d-flex align-items-center gap-1`}>
-            <a
-              href="https://markforster.github.io/heroquest-card-creator/help/"
-              target="_blank"
-              rel="noreferrer noopener"
+            <button
+              type="button"
               className={styles.footerLink}
               onClick={() => {
                 track("page_view", { page_path: "/help", page_title: "Help" });
+                helpModal.open();
               }}
+              style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
             >
               {t("actions.help")}
-            </a>
+            </button>
             <span>·</span>
             <button
               type="button"
@@ -226,6 +225,7 @@ export default function MainFooter() {
           </div>
         </div>
       </footer>
+      <HelpModal isOpen={helpModal.isOpen} onClose={helpModal.close} />
       <ReleaseNotesModal isOpen={releaseNotesModal.isOpen} onClose={releaseNotesModal.close} />
       <ModalShell
         isOpen={desktopNoticeModal.isOpen}

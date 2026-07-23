@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
+import { useI18n } from "@/i18n/I18nProvider";
 import { DB_VERSION } from "@/lib/hqcc-db";
 import { APP_VERSION } from "@/version";
 
@@ -100,7 +100,7 @@ export default function DatabaseVersionGate({ children }: Props) {
 
   return (
     <div className={styles.gate}>
-      <div className={styles.panel}>
+      <div className={`${styles.panel} ${styles.loadingPanel}`}>
         <p className={styles.message}>{t("ui.loading")}</p>
       </div>
     </div>
