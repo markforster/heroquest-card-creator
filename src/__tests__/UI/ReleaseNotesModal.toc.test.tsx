@@ -10,6 +10,7 @@ const expectedSections = [
   ["about-what-you-can-do-today", "What you can do today"],
   ["about-notes-future-work", "Notes & future work"],
   ["about-credits-attribution", "Credits & Attribution"],
+  ["about-update-v0-8-0", "Update 25/07/2026 (v0.8.0)"],
   ["about-update-v0-7-1", "Update 12/07/2026 (v0.7.1)"],
   ["about-update-v0-7-0", "Update 05/07/2026 (v0.7.0)"],
   ["about-update-v0-6-2", "Update 22/06/2026 (v0.6.2)"],
@@ -33,6 +34,7 @@ const expectedLinks = [
   "https://public.markforster.info/Heroquest/Tools/card-maker-sample-screenshots/",
   "https://www.onlinewebfonts.com/package/Carter_Sans",
   "https://www.onlinewebfonts.com/icon",
+  "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.8.0",
   "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.7.1",
   "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.7.0",
   "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.6.2",
@@ -108,9 +110,9 @@ describe("ReleaseNotesModal TOC", () => {
     expect(
       sections.map((section) => [section.id, section.querySelector("h3")?.textContent ?? ""]),
     ).toEqual(expectedSections);
-    expect(document.querySelectorAll("article section p")).toHaveLength(50);
-    expect(document.querySelectorAll("article section ul")).toHaveLength(14);
-    expect(document.querySelectorAll("article section li")).toHaveLength(91);
+    expect(document.querySelectorAll("article section p")).toHaveLength(55);
+    expect(document.querySelectorAll("article section ul")).toHaveLength(15);
+    expect(document.querySelectorAll("article section li")).toHaveLength(99);
     expect(
       Array.from(document.querySelectorAll<HTMLAnchorElement>("article section a[href]")).map(
         (link) => link.href,
@@ -128,8 +130,17 @@ describe("ReleaseNotesModal TOC", () => {
     );
   });
 
-  it("renders the new 0.7.1, 0.6.1 and 0.6.2 release summaries", () => {
+  it("renders the new 0.8.0, 0.7.1, 0.6.1 and 0.6.2 release summaries", () => {
     renderModal();
+
+    expect(screen.getByRole("heading", { name: "Update 25/07/2026 (v0.8.0)" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/New Rules and Logo Back templates, plus more authentic Rules parchment and layout tuning\./i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "v0.8.0" })).toHaveAttribute(
+      "href",
+      "https://github.com/markforster/heroquest-card-creator/releases/tag/v0.8.0",
+    );
 
     expect(screen.getByRole("heading", { name: "Update 12/07/2026 (v0.7.1)" })).toBeInTheDocument();
     expect(

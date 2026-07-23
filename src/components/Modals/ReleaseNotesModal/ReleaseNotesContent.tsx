@@ -8,6 +8,7 @@ export const releaseNotesSections = [
   ["about-what-you-can-do-today", "What you can do today"],
   ["about-notes-future-work", "Notes & future work"],
   ["about-credits-attribution", "Credits & Attribution"],
+  ["about-update-v0-8-0", "Update 25/07/2026 (v0.8.0)"],
   ["about-update-v0-7-1", "Update 12/07/2026 (v0.7.1)"],
   ["about-update-v0-7-0", "Update 05/07/2026 (v0.7.0)"],
   ["about-update-v0-6-2", "Update 22/06/2026 (v0.6.2)"],
@@ -224,6 +225,86 @@ export default function ReleaseNotesContent() {
             svg icons
           </a>
           &nbsp;is licensed by CC BY 4.0
+        </DocParagraph>
+      </DocSection>
+
+      <DocSection
+        id="about-update-v0-8-0"
+        title="Update 25/07/2026 (v0.8.0)"
+        className={docStyles.docSectionSpaced}
+      >
+        <DocParagraph>
+          This release is a big step forward for the day-to-day card-making workflow. Rather than
+          introducing one single giant subsystem, v0.8.0 improves the parts of the app you spend
+          the most time in: the card editor is more interactive, the stockpile is calmer and easier
+          to browse, card content is more expressive, and Help is now a real built-in part of the
+          product instead of something scattered across notes and videos.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          The biggest editor change is that the preview now behaves much more like a proper working
+          surface. You can select editable areas directly from the card preview, move more naturally
+          between the preview and the inspector, keep your place in the right-hand tabs while moving
+          from card to card, and work with more confidence because the app does a better job of
+          showing what is selected, what is interactive, and when a preview is still loading.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          v0.8.0 also broadens what kinds of cards and text the app can handle. Rules cards and
+          Logo Back cards are now first-class templates, body text has richer scaling and structure
+          options, hero and monster defaults are closer to the printed cards, and smaller but very
+          practical improvements such as stat asterisk markers, copyright defaults, and emoji or
+          inline-dice insertion make authoring more flexible without turning the editor into a
+          generic document tool.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          Around all of that, this release adds a full public help centre with resilient in-app
+          Help, so the app now does a much better job of explaining itself whether you are online or
+          offline. Taken together, v0.8.0 feels less like a loose collection of useful features and
+          more like a deliberate, mature card-creation workspace.
+        </DocParagraph>
+        <DocList className={docStyles.docListSpaced}>
+          <li>
+            Direct preview-to-inspector editing links, stronger hover/focus feedback, and more
+            stable card-to-card preview transitions.
+          </li>
+          <li>
+            A calmer stockpile workflow with clearer toolbar structure, explicit sorting, richer
+            grouping, simplified card tiles, and better contextual footer tips.
+          </li>
+          <li>
+            New Rules and Logo Back templates, plus more authentic Rules parchment and layout
+            tuning.
+          </li>
+          <li>
+            Richer text authoring with inline scale tags, title and subtitle macros, overflow
+            warnings, and compact emoji and inline-dice insertion tools.
+          </li>
+          <li>
+            Hero Back logo overrides, direct artwork manipulation in the preview, monster-icon
+            support, and precision guidance for image transforms.
+          </li>
+          <li>
+            Better continuity and quality-of-life work across inspector tabs, deck previews,
+            route-specific shortcuts, i18n coverage, and smaller rendering/export fixes.
+          </li>
+          <li>
+            Universal copyright support across templates and per-stat asterisk markers for more
+            official-looking custom cards.
+          </li>
+          <li>
+            A full public help centre with in-app Help that can use the live site when available
+            and fall back to built-in guidance when it is not.
+          </li>
+        </DocList>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          Full release notes:{" "}
+          <a
+            href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.8.0"
+            target="_blank"
+            rel="noreferrer noopener"
+            className={docStyles.docLink}
+          >
+            v0.8.0
+          </a>
         </DocParagraph>
       </DocSection>
 
