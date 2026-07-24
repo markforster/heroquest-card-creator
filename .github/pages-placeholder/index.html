@@ -1,13 +1,213 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="refresh" content="0; url=./help/">
-    <title>HeroQuest Card Creator Help</title>
-    <link rel="canonical" href="./help/">
+    <title>HeroQuest Card Creator | Create Custom HeroQuest Cards</title>
+    <meta
+      name="description"
+      content="Create custom HeroQuest-style cards, organise your card library, export printable assets, and open the app on itch.io. Browse the full help site or start with the main features here."
+    >
+    <meta
+      name="keywords"
+      content="HeroQuest Card Creator, HeroQuest card creator, HeroQuest cards, HeroQuest card maker, custom HeroQuest cards, HeroQuest homebrew"
+    >
+    <meta name="robots" content="index,follow,max-image-preview:large">
+    <meta name="theme-color" content="#11100e">
+    <link rel="canonical" href="https://markforster.github.io/heroquest-card-creator/">
+    <link rel="icon" href="./help/brand/favicon-96x96.png">
+    <link rel="apple-touch-icon" href="./help/brand/apple-touch-icon.png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="HeroQuest Card Creator">
+    <meta property="og:title" content="HeroQuest Card Creator">
+    <meta
+      property="og:description"
+      content="Create custom HeroQuest-style cards in your browser, then use the full help site for workflows, concepts, and troubleshooting."
+    >
+    <meta property="og:url" content="https://markforster.github.io/heroquest-card-creator/">
+    <meta property="og:image" content="https://markforster.github.io/heroquest-card-creator/help/brand/card-showcase.jpg">
+    <meta property="og:image:alt" content="Custom HeroQuest-style cards created with HeroQuest Card Creator">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HeroQuest Card Creator">
+    <meta
+      name="twitter:description"
+      content="Create custom HeroQuest-style cards in your browser, then use the full help site for workflows, concepts, and troubleshooting."
+    >
+    <meta name="twitter:image" content="https://markforster.github.io/heroquest-card-creator/help/brand/card-showcase.jpg">
+    <link rel="stylesheet" href="./landing.css">
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "HeroQuest Card Creator",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Web",
+        "url": "https://markforster.github.io/heroquest-card-creator/",
+        "downloadUrl": "https://mark-forster.itch.io/heroquest-card-creator",
+        "image": "https://markforster.github.io/heroquest-card-creator/help/brand/card-showcase.jpg",
+        "description": "HeroQuest Card Creator is a browser-based tool for designing custom HeroQuest-style cards for quests, treasure decks, homebrew expansions, and printable card collections.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "publisher": {
+          "@type": "Person",
+          "name": "Mark Forster"
+        }
+      }
+    </script>
   </head>
   <body>
-    <p><a href="./help/">Open HeroQuest Card Creator Help</a></p>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="site-header" aria-label="Header">
+      <div class="site-header__inner">
+        <a class="site-header__brand" href="./" aria-label="HeroQuest Card Creator home">
+          <img src="./help/brand/apple-touch-icon.png" alt="" width="180" height="180">
+          <span>HeroQuest Card Creator</span>
+        </a>
+        <nav class="site-header__nav" aria-label="Primary">
+          <a href="#features">Features</a>
+          <a href="#workflows">Workflows</a>
+          <a href="#faq">FAQ</a>
+          <a href="./help/">Help</a>
+        </nav>
+      </div>
+    </header>
+
+    <header class="hqcc-hero hqcc-hero--home">
+      <div class="hqcc-hero__inner">
+        <img
+          class="hqcc-hero__icon"
+          src="./help/brand/apple-touch-icon.png"
+          width="180"
+          height="180"
+          alt=""
+        >
+        <p class="hqcc-hero__eyebrow">HeroQuest Card Creator</p>
+        <h1 class="hqcc-hero__title">Create custom HeroQuest-style cards in your browser</h1>
+        <p class="hqcc-hero__copy">
+          Build cards, organise collections, prepare decks, and export printable files with a tool made specifically
+          for HeroQuest homebrew work rather than general-purpose design software.
+        </p>
+        <div class="hero-actions">
+          <a class="cta cta--primary" href="https://mark-forster.itch.io/heroquest-card-creator">Open on itch.io</a>
+          <a class="cta cta--secondary" href="./help/">Browse Help</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content" class="page">
+      <aside class="page-nav" aria-label="Page sections">
+        <div class="page-nav__panel">
+          <h2>On this page</h2>
+          <ol>
+            <li><a href="#features">What it does</a></li>
+            <li><a href="#audience">Who it is for</a></li>
+            <li><a href="#workflows">Start here</a></li>
+            <li><a href="#faq">Quick answers</a></li>
+          </ol>
+        </div>
+      </aside>
+
+      <article class="page-content">
+        <header class="page-content__intro">
+          <h2>HeroQuest Card Creator gives you a purpose-built workflow for HeroQuest homebrew.</h2>
+          <p>
+            Use it to make hero cards, monster cards, treasure cards, card backs, printable decks, and reusable
+            collections without rebuilding the same layout system every time.
+          </p>
+        </header>
+
+        <section id="features">
+          <h3>Make HeroQuest cards with the right structure from the start</h3>
+          <div class="feature-grid">
+            <article class="feature-card">
+              <h4>Use dedicated HeroQuest-style templates</h4>
+              <p>
+                Create front-facing and back-facing cards with layouts tuned for the classic HeroQuest look, including
+                title handling, artwork placement, icon controls, and template-specific fields.
+              </p>
+            </article>
+            <article class="feature-card">
+              <h4>Organise cards and assets as a working library</h4>
+              <p>
+                Save cards, group them into collections, manage reusable assets, and keep larger homebrew projects
+                coherent instead of treating every card as a one-off image.
+              </p>
+            </article>
+            <article class="feature-card">
+              <h4>Export for digital sharing and physical play</h4>
+              <p>
+                Export PNG card images, prepare paired fronts and backs, and generate deck PDFs with print-oriented
+                options for paper size, margins, crop marks, and cut marks.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section id="audience">
+          <h3>Built for HeroQuest fans creating real tabletop material</h3>
+          <p>
+            If you are writing new quests, treasure decks, equipment packs, monster abilities, spell systems, or larger
+            fan expansions, HeroQuest Card Creator is designed to help you make cards that feel at home beside the
+            original game components while still being fast to revise and scale up.
+          </p>
+          <p>
+            It is not a generic card graphic template. It is a browser-based card tool built around the needs of
+            HeroQuest homebrew work.
+          </p>
+        </section>
+
+        <section id="workflows">
+          <h3>Choose the surface you need</h3>
+          <div class="workflow-grid">
+            <article class="workflow-card">
+              <h4>Open the app</h4>
+              <p>Go to itch.io for the current release, downloads, screenshots, and the main app entry point.</p>
+              <p><a href="https://mark-forster.itch.io/heroquest-card-creator">Open HeroQuest Card Creator on itch.io</a></p>
+            </article>
+            <article class="workflow-card">
+              <h4>Read the help</h4>
+              <p>Use the searchable help site for getting started guides, workflow articles, concepts, and troubleshooting.</p>
+              <p><a href="./help/">Open the Help site</a></p>
+            </article>
+            <article class="workflow-card">
+              <h4>Browse the project</h4>
+              <p>See the repository, releases, and ongoing development work on GitHub.</p>
+              <p><a href="https://github.com/mark-forster/heroquest-card-creator">View the GitHub repository</a></p>
+            </article>
+          </div>
+        </section>
+
+        <section id="faq">
+          <h3>Quick answers</h3>
+          <div class="faq-list">
+            <article class="faq-item">
+              <h4>Can I use HeroQuest Card Creator online?</h4>
+              <p>
+                The app is distributed through itch.io and runs in your browser. The downloadable version can also be
+                used locally.
+              </p>
+            </article>
+            <article class="faq-item">
+              <h4>Can I use it for custom HeroQuest quests and expansions?</h4>
+              <p>
+                Yes. It is designed for fan-made cards covering heroes, monsters, treasure, equipment, card backs, and
+                larger deck systems.
+              </p>
+            </article>
+            <article class="faq-item">
+              <h4>Where do I learn the workflow?</h4>
+              <p>
+                Start with the <a href="./help/getting-started/">Getting Started guides</a> or jump into the
+                <a href="./help/faq/">FAQ</a> and troubleshooting pages.
+              </p>
+            </article>
+          </div>
+        </section>
+      </article>
+    </main>
   </body>
 </html>
