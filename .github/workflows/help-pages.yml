@@ -59,6 +59,8 @@ jobs:
             cp -R .github/pages-placeholder/help/. _site/help/
           fi
 
+          node scripts/rewrite-pages-host.cjs _site
+
           touch _site/.nojekyll
 
       - name: Upload Pages artifact
