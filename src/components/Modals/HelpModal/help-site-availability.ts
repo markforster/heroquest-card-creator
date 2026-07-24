@@ -1,4 +1,4 @@
-export const DEFAULT_HELP_SITE_URL = "https://markforster.github.io/heroquest-card-creator/help/";
+export const DEFAULT_HELP_SITE_URL = "https://heroquestcards.done-well.co.uk/help/";
 
 export function resolveHelpSiteUrl(configuredUrl = process.env.NEXT_PUBLIC_HELP_SITE_URL): string {
   return configuredUrl?.trim() || DEFAULT_HELP_SITE_URL;
