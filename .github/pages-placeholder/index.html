@@ -6,7 +6,7 @@
     <title>HeroQuest Card Creator | Create Custom HeroQuest Cards</title>
     <meta
       name="description"
-      content="Create custom HeroQuest-style cards, organise your card library, export printable assets, and open the app on itch.io. Browse the full help site or start with the main features here."
+      content="HeroQuest Card Creator is a browser-based tool for creating custom HeroQuest-style cards, printable decks, and reusable homebrew card libraries with pairing, export, and backup workflows."
     >
     <meta
       name="keywords"
@@ -22,7 +22,7 @@
     <meta property="og:title" content="HeroQuest Card Creator">
     <meta
       property="og:description"
-      content="Create custom HeroQuest-style cards in your browser, then use the full help site for workflows, concepts, and troubleshooting."
+      content="Create custom HeroQuest-style cards, printable decks, and reusable homebrew libraries with a browser-based tool built for real HeroQuest workflows."
     >
     <meta property="og:url" content="https://markforster.github.io/heroquest-card-creator/">
     <meta property="og:image" content="https://markforster.github.io/heroquest-card-creator/help/brand/card-showcase.jpg">
@@ -31,10 +31,55 @@
     <meta name="twitter:title" content="HeroQuest Card Creator">
     <meta
       name="twitter:description"
-      content="Create custom HeroQuest-style cards in your browser, then use the full help site for workflows, concepts, and troubleshooting."
+      content="Create custom HeroQuest-style cards, printable decks, and reusable homebrew libraries with a browser-based tool built for real HeroQuest workflows."
     >
     <meta name="twitter:image" content="https://markforster.github.io/heroquest-card-creator/help/brand/card-showcase.jpg">
     <link rel="stylesheet" href="./landing.css">
+    <script src="https://static.itch.io/api.js" defer></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const downloadLink = document.querySelector("[data-itch-download]");
+        const container = document.querySelector("[data-demo-video]");
+        const trigger = document.querySelector("[data-demo-video-trigger]");
+
+        if (downloadLink && window.Itch && typeof window.Itch.attachBuyButton === "function") {
+          window.Itch.attachBuyButton(downloadLink, {
+            user: "mark-forster",
+            game: "heroquest-card-creator",
+            width: 650,
+            height: 400,
+          });
+        }
+
+        if (!container || !trigger) {
+          return;
+        }
+
+        const videoId = container.getAttribute("data-video-id");
+        if (!videoId) {
+          return;
+        }
+
+        trigger.addEventListener("click", () => {
+          if (container.dataset.videoLoaded === "true") {
+            return;
+          }
+
+          const iframe = document.createElement("iframe");
+          iframe.className = "demo-video__iframe";
+          iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+          iframe.title = "HeroQuest Card Creator demo video";
+          iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+          iframe.allowFullscreen = true;
+          iframe.loading = "lazy";
+          iframe.referrerPolicy = "strict-origin-when-cross-origin";
+
+          container.replaceChildren(iframe);
+          container.dataset.videoLoaded = "true";
+          container.classList.add("demo-video__frame--playing");
+        });
+      });
+    </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -57,6 +102,46 @@
         }
       }
     </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can I use HeroQuest Card Creator online?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The app is distributed through itch.io and runs in your browser. The downloadable version can also be used locally."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it save my cards and support larger projects?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. You can save cards into a reusable library, organise them into collections, and back up your cards and images so you can restore the whole working set later."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use it for custom HeroQuest quests and expansions?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. It is designed for fan-made cards covering heroes, monsters, treasure, equipment, card backs, and larger deck systems."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Where do I learn the workflow?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Start with the Getting Started guides or jump into the FAQ and troubleshooting pages on the help site."
+            }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -71,7 +156,6 @@
           <a href="#features">Features</a>
           <a href="#workflows">Workflows</a>
           <a href="#faq">FAQ</a>
-          <a href="./help/">Help</a>
         </nav>
       </div>
     </header>
@@ -88,61 +172,190 @@
         <p class="hqcc-hero__eyebrow">HeroQuest Card Creator</p>
         <h1 class="hqcc-hero__title">Create custom HeroQuest-style cards in your browser</h1>
         <p class="hqcc-hero__copy">
-          Build cards, organise collections, prepare decks, and export printable files with a tool made specifically
-          for HeroQuest homebrew work rather than general-purpose design software.
+          Stop fighting generic design tools. Build HeroQuest-style cards with layouts, typography, and workflows
+          tuned for real homebrew projects, then save, organise, and export them for play.
         </p>
         <div class="hero-actions">
-          <a class="cta cta--primary" href="https://mark-forster.itch.io/heroquest-card-creator">Open on itch.io</a>
-          <a class="cta cta--secondary" href="./help/">Browse Help</a>
+          <a
+            class="cta cta--primary"
+            href="https://mark-forster.itch.io/heroquest-card-creator"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Open on itch.io</a>
+          <a
+            class="cta cta--secondary"
+            href="https://mark-forster.itch.io/heroquest-card-creator?source=in-app-download"
+            data-itch-download
+          >Download on itch.io</a>
+          <a class="cta cta--secondary" href="#demo-video-title">Watch demo</a>
         </div>
       </div>
     </header>
 
     <main id="main-content" class="page">
-      <aside class="page-nav" aria-label="Page sections">
-        <div class="page-nav__panel">
-          <h2>On this page</h2>
-          <ol>
-            <li><a href="#features">What it does</a></li>
-            <li><a href="#audience">Who it is for</a></li>
-            <li><a href="#workflows">Start here</a></li>
-            <li><a href="#faq">Quick answers</a></li>
-          </ol>
-        </div>
-      </aside>
-
       <article class="page-content">
+        <section class="demo-video" aria-labelledby="demo-video-title">
+          <div class="demo-video__header">
+            <h2 id="demo-video-title">Watch HeroQuest Card Creator in action</h2>
+            <p>
+              See the card editor, library workflow, and export flow in a short walkthrough before you open the app.
+            </p>
+          </div>
+          <div
+            class="demo-video__frame"
+            data-demo-video
+            data-video-id="AIy9yRAF718"
+          >
+            <button
+              type="button"
+              class="demo-video__poster"
+              data-demo-video-trigger
+              aria-label="Play the HeroQuest Card Creator demo video"
+            >
+              <span class="demo-video__poster-copy">
+                <span class="demo-video__eyebrow">Product walkthrough</span>
+                <span class="demo-video__poster-title">Watch the workflow in a real project context</span>
+                <span class="demo-video__poster-text">
+                  A guided demo covering the editor, collections, and deck-building experience.
+                </span>
+              </span>
+              <span class="demo-video__play" aria-hidden="true">
+                <span class="demo-video__play-icon"></span>
+                <span class="demo-video__play-label">Play video</span>
+              </span>
+            </button>
+          </div>
+        </section>
+
         <header class="page-content__intro">
-          <h2>HeroQuest Card Creator gives you a purpose-built workflow for HeroQuest homebrew.</h2>
+          <h2>A card tool built for HeroQuest homebrew, not a general graphics editor.</h2>
           <p>
-            Use it to make hero cards, monster cards, treasure cards, card backs, printable decks, and reusable
-            collections without rebuilding the same layout system every time.
+            HeroQuest Card Creator helps you make hero cards, monster cards, treasure cards, card backs, and printable
+            decks without rebuilding the same template from scratch every time. It runs locally in your browser, keeps
+            your work close at hand, and gives you a repeatable workflow for building consistent tabletop material.
+          </p>
+          <p>
+            If you want the practical walkthroughs, start with
+            <a href="./help/getting-started/" target="_blank" rel="noopener noreferrer">Getting Started</a>,
+            learn how
+            <a href="./help/building-decks/" target="_blank" rel="noopener noreferrer">decks</a>
+            work, review
+            <a href="./help/exporting-and-printing/export-a-deck-as-pdf/" target="_blank" rel="noopener noreferrer">PDF export</a>,
+            or see how to
+            <a href="./help/settings-and-data/back-up-and-restore-your-library/" target="_blank" rel="noopener noreferrer">back up and restore your library</a>.
           </p>
         </header>
 
         <section id="features">
-          <h3>Make HeroQuest cards with the right structure from the start</h3>
-          <div class="feature-grid">
-            <article class="feature-card">
-              <h4>Use dedicated HeroQuest-style templates</h4>
-              <p>
-                Create front-facing and back-facing cards with layouts tuned for the classic HeroQuest look, including
-                title handling, artwork placement, icon controls, and template-specific fields.
-              </p>
+          <h3>Built for real HeroQuest homebrew workflows</h3>
+          <div class="feature-list" role="list">
+            <article class="feature-row" role="listitem">
+              <div class="feature-row__copy">
+                <h4>Start with HeroQuest-fit templates</h4>
+                <p>
+                  Create front-facing and back-facing cards with layouts designed for HeroQuest-style cards, so you
+                  begin with the right structure instead of building every design from scratch.
+                </p>
+              </div>
+              <figure class="feature-row__media">
+                <img
+                  src="./help/assets/placements/p008--making-cards--making-cards.jpg"
+                  alt="HeroQuest Card Creator showing a card preview beside template-specific editing controls."
+                  width="2600"
+                  height="1560"
+                  loading="lazy"
+                >
+              </figure>
             </article>
-            <article class="feature-card">
-              <h4>Organise cards and assets as a working library</h4>
-              <p>
-                Save cards, group them into collections, manage reusable assets, and keep larger homebrew projects
-                coherent instead of treating every card as a one-off image.
-              </p>
+            <article class="feature-row feature-row--reverse" role="listitem">
+              <div class="feature-row__copy">
+                <h4>Use rich card editing tools</h4>
+                <p>
+                  Fine-tune artwork, adjust titles and colours, format rules text, insert inline dice, and handle
+                  template-specific details without fighting a general-purpose graphics package.
+                </p>
+              </div>
+              <figure class="feature-row__media">
+                <img
+                  src="./help/assets/placements/p023--making-cards-understand-body-text-tools--what-tools-can-i-use.jpg"
+                  alt="Body-text tools beside a card preview, including formatting controls and insert actions."
+                  width="1376"
+                  height="920"
+                  loading="lazy"
+                >
+              </figure>
             </article>
-            <article class="feature-card">
-              <h4>Export for digital sharing and physical play</h4>
-              <p>
-                Export PNG card images, prepare paired fronts and backs, and generate deck PDFs with print-oriented
-                options for paper size, margins, crop marks, and cut marks.
-              </p>
+            <article class="feature-row" role="listitem">
+              <div class="feature-row__copy">
+                <h4>Build a reusable project library</h4>
+                <p>
+                  Save named cards, manage reusable assets, organize collections, and filter larger projects so your
+                  homebrew work stays structured instead of turning into a folder of disconnected files.
+                </p>
+              </div>
+              <figure class="feature-row__media">
+                <img
+                  src="./help/assets/placements/p041--managing-your-library-understand-the-cards-workspace--what-you-see-on-the-screen.jpg"
+                  alt="Cards workspace showing saved card thumbnails, controls, and collection tools."
+                  width="1440"
+                  height="900"
+                  loading="lazy"
+                >
+              </figure>
+            </article>
+            <article class="feature-row feature-row--reverse" role="listitem">
+              <div class="feature-row__copy">
+                <h4>Pair fronts and backs on purpose</h4>
+                <p>
+                  Link separate front and back cards so the same back can be reused across export, browsing, and deck
+                  workflows instead of rebuilding two-sided card layouts by hand.
+                </p>
+              </div>
+              <figure class="feature-row__media">
+                <img
+                  src="./help/assets/placements/p036--making-cards-pair-and-unpair-card-faces--pair-a-back-with-one-or-more-fronts.jpg"
+                  alt="Pairing interface showing front and back card selection for reusable card relationships."
+                  width="1056"
+                  height="840"
+                  loading="lazy"
+                >
+              </figure>
+            </article>
+            <article class="feature-row" role="listitem">
+              <div class="feature-row__copy">
+                <h4>Build structured playable decks</h4>
+                <p>
+                  Go beyond single-card design by building decks from groups, sets, quantities, and paired faces, so
+                  your finished content is organized for real tabletop use.
+                </p>
+              </div>
+              <figure class="feature-row__media">
+                <img
+                  src="./help/assets/placements/p063--building-decks--building-decks.jpg"
+                  alt="Deck-building workspace showing grouped sets and available card faces."
+                  width="1440"
+                  height="890"
+                  loading="lazy"
+                >
+              </figure>
+            </article>
+            <article class="feature-row feature-row--reverse" role="listitem">
+              <div class="feature-row__copy">
+                <h4>Export and protect the whole project</h4>
+                <p>
+                  Generate PNGs, create duplex-aware deck PDFs for printing, and export a portable library backup so
+                  your cards, assets, collections, and decks can be restored later.
+                </p>
+              </div>
+              <figure class="feature-row__media">
+                <img
+                  src="./help/assets/placements/p098--settings-and-data-back-up-and-restore-your-library--create-a-backup.jpg"
+                  alt="Library export dialog showing creation of a portable HeroQuest Card Creator backup file."
+                  width="601"
+                  height="314"
+                  loading="lazy"
+                >
+              </figure>
             </article>
           </div>
         </section>
@@ -152,11 +365,11 @@
           <p>
             If you are writing new quests, treasure decks, equipment packs, monster abilities, spell systems, or larger
             fan expansions, HeroQuest Card Creator is designed to help you make cards that feel at home beside the
-            original game components while still being fast to revise and scale up.
+            original game components while still being quick to revise and scale up.
           </p>
           <p>
-            It is not a generic card graphic template. It is a browser-based card tool built around the needs of
-            HeroQuest homebrew work.
+            It is not a generic card template with a HeroQuest skin on top. It is a browser-based card tool built
+            around the practical needs of HeroQuest homebrew work.
           </p>
         </section>
 
@@ -165,20 +378,72 @@
           <div class="workflow-grid">
             <article class="workflow-card">
               <h4>Open the app</h4>
-              <p>Go to itch.io for the current release, downloads, screenshots, and the main app entry point.</p>
-              <p><a href="https://mark-forster.itch.io/heroquest-card-creator">Open HeroQuest Card Creator on itch.io</a></p>
+              <p>Go to itch.io for the current release, downloads, screenshots, and the main browser entry point.</p>
+              <p>
+                <a
+                  href="https://mark-forster.itch.io/heroquest-card-creator"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >Open HeroQuest Card Creator on itch.io</a>
+              </p>
             </article>
             <article class="workflow-card">
               <h4>Read the help</h4>
               <p>Use the searchable help site for getting started guides, workflow articles, concepts, and troubleshooting.</p>
-              <p><a href="./help/">Open the Help site</a></p>
+              <p><a href="./help/" target="_blank" rel="noopener noreferrer">Open the Help site</a></p>
             </article>
             <article class="workflow-card">
               <h4>Browse the project</h4>
               <p>See the repository, releases, and ongoing development work on GitHub.</p>
-              <p><a href="https://github.com/mark-forster/heroquest-card-creator">View the GitHub repository</a></p>
+              <p>
+                <a
+                  href="https://github.com/markforster/heroquest-card-creator"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >View the GitHub repository</a>
+              </p>
             </article>
           </div>
+        </section>
+
+        <section class="community-section" aria-labelledby="community-title">
+          <h3 id="community-title">Join the community</h3>
+          <div class="community-grid">
+            <article class="community-card">
+              <h4>Discord</h4>
+              <p>Share creations, ask questions, and talk with other HeroQuest homebrew fans.</p>
+              <p>
+                <a
+                  href="https://discord.gg/gkVPyRjJ95"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >Join the Discord</a>
+              </p>
+            </article>
+            <article class="community-card">
+              <h4>itch.io Community</h4>
+              <p>Follow release posts, community topics, shared libraries, and ongoing development updates.</p>
+              <p>
+                <a
+                  href="https://mark-forster.itch.io/heroquest-card-creator/community"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >Open the itch.io Community</a>
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section aria-labelledby="fan-project-title">
+          <h3 id="fan-project-title">Fan-made project notice</h3>
+          <p>
+            HeroQuest Card Creator is an independent, fan-made project. It is not affiliated with, endorsed by, or
+            sponsored by Hasbro, Avalon Hill, or Milton Bradley.
+          </p>
+          <p>
+            HeroQuest trademarks, logos, card designs, and original artwork remain the property of their respective
+            owners. This tool exists to help fans create non-commercial HeroQuest homebrew content for personal use.
+          </p>
         </section>
 
         <section id="faq">
@@ -187,8 +452,15 @@
             <article class="faq-item">
               <h4>Can I use HeroQuest Card Creator online?</h4>
               <p>
-                The app is distributed through itch.io and runs in your browser. The downloadable version can also be
-                used locally.
+                Yes. The app is distributed through itch.io and runs in your browser. The downloadable version can also
+                be used locally.
+              </p>
+            </article>
+            <article class="faq-item">
+              <h4>Does it save my cards and support larger projects?</h4>
+              <p>
+                Yes. You can save cards into a reusable library, organise them into collections, and back up your cards
+                and images so you can restore the whole working set later.
               </p>
             </article>
             <article class="faq-item">
@@ -201,13 +473,25 @@
             <article class="faq-item">
               <h4>Where do I learn the workflow?</h4>
               <p>
-                Start with the <a href="./help/getting-started/">Getting Started guides</a> or jump into the
-                <a href="./help/faq/">FAQ</a> and troubleshooting pages.
+                Start with the <a href="./help/getting-started/" target="_blank" rel="noopener noreferrer">Getting Started guides</a> or jump into the
+                <a href="./help/faq/" target="_blank" rel="noopener noreferrer">FAQ</a> and troubleshooting pages.
               </p>
             </article>
           </div>
         </section>
       </article>
     </main>
+
+    <footer class="site-footer" aria-label="Footer">
+      <div class="site-footer__inner">
+        <a href="./help/" target="_blank" rel="noopener noreferrer">Help</a>
+        <a href="https://github.com/markforster/heroquest-card-creator" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://discord.gg/gkVPyRjJ95" target="_blank" rel="noopener noreferrer">Discord</a>
+        <a href="https://x.com/hqcardcreator" target="_blank" rel="noopener noreferrer">X/Twitter</a>
+        <a href="https://www.instagram.com/hqcardcreator/" target="_blank" rel="noopener noreferrer">Instagram</a>
+        <a href="https://www.tiktok.com/@hqcardcreator" target="_blank" rel="noopener noreferrer">TikTok</a>
+        <a href="https://www.youtube.com/@HeroQuestCardCreator" target="_blank" rel="noopener noreferrer">YouTube</a>
+      </div>
+    </footer>
   </body>
 </html>
