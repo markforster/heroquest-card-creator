@@ -1,6 +1,6 @@
 @font-face {
   font-family: "Carter Sans W04";
-  src: url("./help/brand/fonts/Carter Sans W04 Regular.ttf") format("truetype");
+  src: url("./assets/brand/fonts/Carter Sans W04 Regular.ttf") format("truetype");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
@@ -8,7 +8,7 @@
 
 @font-face {
   font-family: "Carter Sans W04";
-  src: url("./help/brand/fonts/Carter Sans W04 Medium.ttf") format("truetype");
+  src: url("./assets/brand/fonts/Carter Sans W04 Medium.ttf") format("truetype");
   font-style: normal;
   font-weight: 550;
   font-display: swap;
@@ -16,7 +16,7 @@
 
 @font-face {
   font-family: "Carter Sans W04";
-  src: url("./help/brand/fonts/Carter Sans W04 Bold.ttf") format("truetype");
+  src: url("./assets/brand/fonts/Carter Sans W04 Bold.ttf") format("truetype");
   font-style: normal;
   font-weight: 700;
   font-display: swap;
@@ -24,7 +24,7 @@
 
 @font-face {
   font-family: "HeroQuest";
-  src: url("./help/brand/fonts/HeroQuest.ttf") format("truetype");
+  src: url("./assets/brand/fonts/HeroQuest.ttf") format("truetype");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
@@ -156,7 +156,7 @@ a:hover {
   background:
     linear-gradient(180deg, rgba(7, 6, 5, 0.48), rgba(17, 16, 14, 0.9)),
     radial-gradient(circle at 50% 35%, rgba(24, 17, 10, 0.08), rgba(5, 5, 4, 0.55)),
-    url("./help/brand/card-showcase.jpg") center 42% / cover no-repeat;
+    url("./assets/brand/card-showcase.jpg") center 42% / cover no-repeat;
   box-shadow: inset 0 -4rem 6rem rgba(0, 0, 0, 0.3);
   text-align: center;
 }
