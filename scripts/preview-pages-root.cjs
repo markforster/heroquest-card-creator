@@ -89,7 +89,18 @@ function serveStaticRoot(rootDir, port) {
     console.log(`Previewing GitHub Pages root at http://127.0.0.1:${port}/`);
     console.log(`Help site remains available at http://127.0.0.1:${port}/help/`);
     console.log(`Serving files from ${rootDir}`);
+    console.log("Press Ctrl+C to stop the local preview server.");
   });
+
+  const shutdown = () => {
+    server.close(() => {
+      console.log("Local preview server stopped.");
+      process.exit(0);
+    });
+  };
+
+  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
 }
 
 async function main() {
