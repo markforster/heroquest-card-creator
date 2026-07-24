@@ -3,6 +3,7 @@ const http = require("http");
 const os = require("os");
 const path = require("path");
 const mime = require("mime");
+const { execFileSync } = require("child_process");
 
 const repoRoot = path.resolve(__dirname, "..");
 const pagesPlaceholderRoot = path.join(repoRoot, ".github", "pages-placeholder");
@@ -20,6 +21,9 @@ function makePreviewSiteRoot() {
   cpSync(pagesPlaceholderRoot, siteRoot, { recursive: true });
   rmSync(path.join(siteRoot, "help"), { recursive: true, force: true });
   cpSync(builtHelpRoot, path.join(siteRoot, "help"), { recursive: true });
+  execFileSync("node", [path.join(repoRoot, "scripts", "rewrite-pages-host.cjs"), siteRoot], {
+    stdio: "inherit",
+  });
 
   return siteRoot;
 }

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://markforster.github.io/heroquest-card-creator/sitemap.xml
+Sitemap: https://heroquestcards.done-well.co.uk/sitemap.xml
