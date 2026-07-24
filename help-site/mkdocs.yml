@@ -1,6 +1,6 @@
 site_name: HeroQuest Card Creator
 site_description: Help and guidance for creating, organising, exporting, and printing HeroQuest cards
-site_url: https://markforster.github.io/heroquest-card-creator/help/
+site_url: https://heroquestcards.done-well.co.uk/help/
 docs_dir: docs
 site_dir: site
 use_directory_urls: true
