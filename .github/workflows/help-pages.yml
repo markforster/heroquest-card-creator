@@ -48,10 +48,12 @@ jobs:
       - name: Prepare Pages artifact
         shell: bash
         run: |
-          mkdir -p _site/help
-          cp .github/pages-placeholder/index.html _site/index.html
+          mkdir -p _site
+          cp -R .github/pages-placeholder/. _site/
 
           if [[ -f help-site/site/index.html ]]; then
+            rm -rf _site/help
+            mkdir -p _site/help
             cp -R help-site/site/. _site/help/
           else
             cp -R .github/pages-placeholder/help/. _site/help/
@@ -67,7 +69,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}help/
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
 

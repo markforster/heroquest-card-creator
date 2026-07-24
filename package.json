@@ -60,6 +60,7 @@
     "help:validate": "node scripts/help-site.cjs validate",
     "help:build": "node scripts/help-site.cjs build",
     "help:preview": "node scripts/help-site.cjs serve",
+    "pages:preview-root": "node scripts/preview-pages-root.cjs",
     "download:miniserve": "node bin/download-miniserve.js",
     "start": "next start",
     "lint": "next lint",
