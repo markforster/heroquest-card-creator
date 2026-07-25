@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  normalizeCopyrightTemplateDefaults,
+  type CopyrightTemplateDefaults,
+} from "@/lib/copyright-defaults";
 import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import { openHqccDexieDb } from "./hqcc-dexie";
 
@@ -13,6 +17,7 @@ export type SettingsRecord = {
 const SETTINGS_STORE = "settings";
 const BORDER_SWATCHES_KEY = "borderSwatches";
 const DEFAULT_COPYRIGHT_KEY = "defaultCopyright";
+export const COPYRIGHT_TEMPLATE_DEFAULTS_KEY = "copyrightTemplateDefaults";
 
 export async function getBorderSwatches(): Promise<string[]> {
   const db = await openHqccDexieDb();
@@ -56,6 +61,31 @@ export async function setDefaultCopyright(value: string): Promise<void> {
   const record: SettingsRecord = {
     id: DEFAULT_COPYRIGHT_KEY,
     value,
+    updatedAt: Date.now(),
+    schemaVersion: 1,
+  };
+
+  await db.settings.put(record);
+  enqueueDbEstimateChange(SETTINGS_STORE, record.id);
+}
+
+export async function getCopyrightTemplateDefaults(): Promise<CopyrightTemplateDefaults> {
+  const db = await openHqccDexieDb();
+  const record = (await db.settings.get(COPYRIGHT_TEMPLATE_DEFAULTS_KEY)) as
+    | SettingsRecord
+    | undefined;
+
+  return normalizeCopyrightTemplateDefaults(record?.value);
+}
+
+export async function setCopyrightTemplateDefaults(
+  defaults: CopyrightTemplateDefaults,
+): Promise<void> {
+  const db = await openHqccDexieDb();
+  const normalized = normalizeCopyrightTemplateDefaults(defaults);
+  const record: SettingsRecord = {
+    id: COPYRIGHT_TEMPLATE_DEFAULTS_KEY,
+    value: normalized,
     updatedAt: Date.now(),
     schemaVersion: 1,
   };

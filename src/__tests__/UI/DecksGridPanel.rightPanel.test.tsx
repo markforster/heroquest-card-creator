@@ -108,6 +108,17 @@ describe("DecksGridPanel grid refresh", () => {
     expect(model.setSearchDraft).toHaveBeenCalledWith("wizard");
   });
 
+  it("registers a primary search handler that focuses the decks search field", () => {
+    const onPrimarySearchReady = jest.fn();
+
+    render(<DecksGridPanel onPrimarySearchReady={onPrimarySearchReady} />);
+
+    const handler = onPrimarySearchReady.mock.calls.at(-1)?.[0] as (() => boolean) | undefined;
+    expect(handler).toBeDefined();
+    expect(handler?.()).toBe(true);
+    expect(screen.getByRole("searchbox", { name: "Search decks" })).toHaveFocus();
+  });
+
   it("renders icon action buttons on each deck card", () => {
     const { container } = render(<DecksGridPanel />);
 

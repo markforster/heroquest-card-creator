@@ -1,6 +1,6 @@
-import type { BodyTextStyle } from "./card-data";
+import type { BodyTextStyle, HeroBackLogoMode } from "./card-data";
 import type { CardFace } from "./card-face";
-import type { StatValue } from "./stats";
+import type { StatAsteriskFlags, StatValue } from "./stats";
 import type { TemplateId } from "./templates";
 
 export type CardStatus = "draft" | "saved" | "archived";
@@ -44,17 +44,31 @@ export interface CardRecord {
   imageOriginalHeight?: number;
   borderColor?: string;
   backgroundTint?: string;
+  heroBackLogoMode?: HeroBackLogoMode;
+  heroBackLogoId?: string;
+  heroBackLogoName?: string;
+  heroBackLogoOriginalWidth?: number;
+  heroBackLogoOriginalHeight?: number;
 
   heroAttackDice?: StatValue;
+  heroAttackDiceAsterisks?: StatAsteriskFlags;
   heroDefendDice?: StatValue;
+  heroDefendDiceAsterisks?: StatAsteriskFlags;
   heroBodyPoints?: StatValue;
+  heroBodyPointsAsterisks?: StatAsteriskFlags;
   heroMindPoints?: StatValue;
+  heroMindPointsAsterisks?: StatAsteriskFlags;
 
   monsterMovementSquares?: StatValue;
+  monsterMovementSquaresAsterisks?: StatAsteriskFlags;
   monsterAttackDice?: StatValue;
+  monsterAttackDiceAsterisks?: StatAsteriskFlags;
   monsterDefendDice?: StatValue;
+  monsterDefendDiceAsterisks?: StatAsteriskFlags;
   monsterBodyPoints?: StatValue;
+  monsterBodyPointsAsterisks?: StatAsteriskFlags;
   monsterMindPoints?: StatValue;
+  monsterMindPointsAsterisks?: StatAsteriskFlags;
   monsterIconAssetId?: string;
   monsterIconAssetName?: string;
   monsterIconOffsetX?: number;

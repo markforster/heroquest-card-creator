@@ -103,6 +103,12 @@ If you need a fixed `basePath`/`assetPrefix` for a specific deployment target, s
 
 Prerequisites: Node 18+ and npm.
 
+Recommended for heavy build and typecheck tasks:
+
+- Prefer Node `20.x` or `18.x`.
+- The repo scripts now add a larger V8 heap automatically for production builds and TypeScript checks.
+- If you still hit memory pressure under a newer Node release such as `22.x`, switch back to Node `20.x` or `18.x` before investigating app-level causes.
+
 - Install dependencies:
   - `npm install`
 - Start dev server:

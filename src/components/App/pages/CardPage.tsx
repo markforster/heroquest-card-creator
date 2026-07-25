@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { apiClient } from "@/api/client";
 import CardEditorWorkspace from "@/components/App/pages/cards/CardEditorWorkspace";
 import { useCardExportController } from "@/components/App/pages/cards/CardExportController";
 import { useCardPageSession } from "@/components/App/pages/cards/CardPageSession";
+import { refreshCardThumbnailsBatch } from "@/components/App/pages/cards/cardThumbnailRefresh";
+import HiddenCardThumbnailRefreshHost, {
+  type HiddenCardThumbnailRefreshHostHandle,
+} from "@/components/App/pages/cards/HiddenCardThumbnailRefreshHost";
 import {
   noopRouteShellCapabilities,
   usePublishRouteShellCapabilities,
@@ -14,13 +19,18 @@ import { usePublishUnsavedChangesGuard } from "@/components/App/UnsavedChangesGu
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { EditorSaveProvider } from "@/components/Providers/EditorSaveContext";
+import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { useI18n } from "@/i18n/I18nProvider";
+import { invalidateCardThumbnail } from "@/lib/card-thumbnail-cache";
 
 export default function CardPage() {
   const { t } = useI18n();
   const { track } = useAnalytics();
   const navigate = useNavigate();
   const previewRef = useRef<CardPreviewHandle>(null!);
+  const thumbnailRefreshHostRef = useRef<HiddenCardThumbnailRefreshHostHandle>(null);
+  const { previewRenderer, rotationMode, setRotationMode, togglePreviewRenderer } =
+    usePreviewRenderer();
   const session = useCardPageSession({ previewRef });
   const exportController = useCardExportController({
     activeCardId: session.activeCardId,
@@ -35,8 +45,27 @@ export default function CardPage() {
     () => ({
       ...noopRouteShellCapabilities,
       repairCurrentCardThumbnail: session.editorSaveValue.repairCurrentCardThumbnail,
+      routeShortcutHandlers: {
+        v: () => {
+          togglePreviewRenderer();
+          return true;
+        },
+        m: () => {
+          if (previewRenderer !== "webgl") {
+            return false;
+          }
+          setRotationMode(rotationMode === "pan" ? "spin" : "pan");
+          return true;
+        },
+      },
     }),
-    [session.editorSaveValue.repairCurrentCardThumbnail],
+    [
+      previewRenderer,
+      rotationMode,
+      session.editorSaveValue.repairCurrentCardThumbnail,
+      setRotationMode,
+      togglePreviewRenderer,
+    ],
   );
 
   usePublishRouteShellCapabilities(shellCapabilities);
@@ -61,8 +90,48 @@ export default function CardPage() {
     track("page_view", { page_path: "/cards/:id", page_title: "Card Detail" });
   }, [session.isDraftRoute, session.normalizedCardId, track]);
 
+  const refreshCardThumbnails = useCallback(async (cardIds: string[]) => {
+    const prioritizedCardIds =
+      session.normalizedCardId && cardIds.includes(session.normalizedCardId)
+        ? [
+            ...cardIds.filter((cardId) => cardId !== session.normalizedCardId),
+            session.normalizedCardId,
+          ]
+        : cardIds;
+
+    await refreshCardThumbnailsBatch({
+      cardIds: prioritizedCardIds,
+      getCard: async (cardId) => {
+        return await apiClient.getCard({ params: { id: cardId } });
+      },
+      renderThumbnail: async (card) => {
+        return (await thumbnailRefreshHostRef.current?.renderThumbnail(card)) ?? null;
+      },
+      updateCardThumbnail: async (cardId, thumbnailBlob) => {
+        return await apiClient.updateCardThumbnail({ thumbnailBlob }, { params: { id: cardId } });
+      },
+      readBackThumbnail: async (cardId) => {
+        return await apiClient.getCardThumbnail({ params: { id: cardId } });
+      },
+      invalidateCardThumbnail,
+      dispatchCardsUpdated: () => {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+        }
+      },
+    });
+  }, [session.normalizedCardId]);
+
+  const editorSaveValue = useMemo(
+    () => ({
+      ...session.editorSaveValue,
+      refreshCardThumbnails,
+    }),
+    [refreshCardThumbnails, session.editorSaveValue],
+  );
+
   return (
-    <EditorSaveProvider value={session.editorSaveValue}>
+    <EditorSaveProvider value={editorSaveValue}>
       <CardEditorWorkspace
         activeFrontId={session.activeFrontId}
         canDuplicate={session.canDuplicate}
@@ -70,6 +139,7 @@ export default function CardPage() {
         draftSourceCardId={session.draftSourceCardId}
         exportMenuItems={exportController.exportMenuItems}
         frontViewToken={session.frontViewToken}
+        isRouteLoadingCard={session.isRouteLoadingCard}
         onBackToCards={() => navigate("/cards", { replace: true })}
         onDuplicate={() => {
           void session.duplicateCurrentCard(false);
@@ -88,6 +158,7 @@ export default function CardPage() {
         savingMode={session.savingMode}
         selectedTemplateId={session.currentTemplateId ?? undefined}
       />
+      <HiddenCardThumbnailRefreshHost ref={thumbnailRefreshHostRef} />
       {exportController.exportUi}
     </EditorSaveProvider>
   );

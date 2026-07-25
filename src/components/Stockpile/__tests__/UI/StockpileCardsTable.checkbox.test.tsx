@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import StockpileCardsTable from "@/components/Stockpile/StockpileCardsTable";
-import type { StockpileCardView } from "@/components/Stockpile/types";
+import type { StockpileCardGroupView, StockpileCardView } from "@/components/Stockpile/types";
 
 jest.mock("@/components/common/CardThumbnail", () => ({
   __esModule: true,
@@ -72,5 +72,54 @@ describe("StockpileCardsTable (UI)", () => {
     fireEvent.click(checkbox);
     fireEvent.change(checkbox, { target: { checked: true } });
     expect(onCardSetSelected).toHaveBeenCalledWith("card-1", true, false);
+  });
+
+  it("renders grouped sections when grouped cards are provided", () => {
+    const item: StockpileCardView = {
+      id: "card-1",
+      name: "Card 1",
+      templateId: "hero",
+      templateLabel: "Hero",
+      effectiveFace: "front",
+      faceLabel: "Front",
+      facePillLabel: "Front",
+      updatedLabel: "Today",
+      timeLabel: "Now",
+      thumbnailBlob: null,
+      templateThumbSrc: null,
+      paired: { back: null, fronts: [], frontsVisible: [], frontsOverflow: 0 },
+      isSelected: false,
+    };
+    const groups: StockpileCardGroupView[] = [{ id: "hero", label: "Hero", cards: [item] }];
+
+    render(
+      <StockpileCardsTable
+        items={[item]}
+        groups={groups}
+        dragEnabled={false}
+        onClearSelection={jest.fn()}
+        headers={{
+          card: "Card",
+          name: "Name",
+          type: "Type",
+          face: "Face",
+          modified: "Modified",
+          pairing: "Pairing",
+        }}
+        actions={{
+          onCardClick: jest.fn(),
+          onCardSetSelected: jest.fn(),
+          onCardSelectSingle: jest.fn(),
+          onCardDoubleClick: jest.fn(),
+          onPairHoverEnter: jest.fn(),
+          onPairHoverLeave: jest.fn(),
+          onTableThumbEnter: jest.fn(),
+          onTableThumbLeave: jest.fn(),
+        }}
+      />,
+    );
+
+    expect(screen.getAllByText("Hero").length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Card 1")).toBeInTheDocument();
   });
 });

@@ -163,6 +163,28 @@ export default function FormattingHelpContent() {
                 </strong>
               ),
             },
+            {
+              code: t("formattingHelp.richText.scaleCode"),
+              output: (
+                <span style={{ fontSize: "1.25em" }}>{t("formattingHelp.richText.scaleOutput")}</span>
+              ),
+            },
+            {
+              code: t("formattingHelp.richText.scaleAliasCode"),
+              output: (
+                <span style={{ fontSize: "0.75em" }}>
+                  {t("formattingHelp.richText.scaleAliasOutput")}
+                </span>
+              ),
+            },
+            {
+              code: t("formattingHelp.richText.titleCode"),
+              output: <strong>{t("formattingHelp.richText.titleOutput")}</strong>,
+            },
+            {
+              code: t("formattingHelp.richText.subtitleCode"),
+              output: <em>{t("formattingHelp.richText.subtitleOutput")}</em>,
+            },
           ]}
         />
         <CheatCard

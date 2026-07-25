@@ -2,6 +2,7 @@ import { render } from "@testing-library/react";
 
 type MockCardTextBlockProps = {
   fitToBounds?: boolean;
+  showOverflowWarning?: boolean;
 };
 
 const mockCardTextBlock = jest.fn<null, [MockCardTextBlockProps]>(() => null);
@@ -76,6 +77,37 @@ describe("body text fit mode blueprint gating", () => {
 
     const lastCall = (mockCardTextBlock.mock.calls as Array<[MockCardTextBlockProps]>).at(-1)?.[0];
     expect(lastCall?.fitToBounds).toBe(true);
+    expect(lastCall?.showOverflowWarning).toBe(true);
+  });
+
+  it("renders Rules text with fit-to-bounds and overflow protection", () => {
+    const blueprint = blueprintsByTemplateId.rules;
+    const layer = blueprint?.layers.find((entry) => isPrimaryBodyTextLayer(blueprint, entry));
+    if (!blueprint || !layer) {
+      throw new Error("rules description layer missing");
+    }
+
+    render(
+      <svg>
+        <TextLayer
+          blueprint={blueprint}
+          layer={layer}
+          cardData={{
+            description: "**Movement**\nMove around the board.",
+            bodyTextColor: "#22170f",
+            bodyTextFitToBounds: true,
+          }}
+        />
+      </svg>,
+    );
+
+    const lastCall = (mockCardTextBlock.mock.calls as Array<[MockCardTextBlockProps]>).at(-1)?.[0];
+    expect(lastCall).toEqual(
+      expect.objectContaining({
+        fitToBounds: true,
+        showOverflowWarning: true,
+      }),
+    );
   });
 
   it("ignores fit-to-bounds for auto-height stacked description blocks", () => {
@@ -96,5 +128,6 @@ describe("body text fit mode blueprint gating", () => {
 
     const lastCall = (mockCardTextBlock.mock.calls as Array<[MockCardTextBlockProps]>).at(-1)?.[0];
     expect(lastCall?.fitToBounds).toBe(false);
+    expect(lastCall?.showOverflowWarning).toBeUndefined();
   });
 });

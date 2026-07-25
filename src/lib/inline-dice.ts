@@ -15,6 +15,17 @@ import { formatCssColor, formatHexColor, parseHexColor } from "@/lib/color";
 
 export type CombatFace = "skull" | "hero" | "monster" | "cd" | "ad" | "dd" | "md";
 export type D6Face = 1 | 2 | 3 | 4 | 5 | 6;
+export type IconDiceFace = "skull" | "hero" | "monster";
+export type DetailDiceFace = "cd" | "ad" | "dd" | "md";
+export type InlineDiceConfiguratorType = "d6" | "icon" | "detail";
+export type InlineDiceConfiguratorValue = D6Face | IconDiceFace | DetailDiceFace;
+
+export type InlineDiceConfiguratorState = {
+  type: InlineDiceConfiguratorType;
+  faceOrValue: InlineDiceConfiguratorValue;
+  backgroundColor: string;
+  symbolColor: string;
+};
 
 export type InlineDiceToken = {
   kind: "dice";
@@ -40,6 +51,13 @@ export const DICE_COLORS: Record<string, string> = {
   purple: "#6b3fa0",
   grey: "#6b6b6b",
 };
+
+export const INLINE_DICE_PRESET_COLORS = Object.values(DICE_COLORS).map((value) =>
+  value.toUpperCase(),
+);
+export const ICON_DICE_FACES: readonly IconDiceFace[] = ["skull", "hero", "monster"];
+export const DETAIL_DICE_FACES: readonly DetailDiceFace[] = ["cd", "ad", "dd", "md"];
+export const D6_FACES: readonly D6Face[] = [1, 2, 3, 4, 5, 6];
 
 const DICE_FACE_COLORS: Record<string, string> = {
   white: "#111111",
@@ -105,6 +123,165 @@ const D6_SVG_MAP: Record<D6Face, string> = {
   6: d6Pips6Url,
 };
 
+const ICON_FACE_CODE_MAP: Record<IconDiceFace, string> = {
+  skull: "s",
+  hero: "h",
+  monster: "m",
+};
+
+const DETAIL_FACE_CODE_MAP: Record<DetailDiceFace, string> = {
+  cd: "cd",
+  ad: "ad",
+  dd: "dd",
+  md: "md",
+};
+
+const COLOR_CANONICAL_SHORT_MAP: Record<string, string> = Object.entries(COLOR_SHORT_MAP).reduce<
+  Record<string, string>
+>((acc, [short, long]) => {
+  if (!acc[long]) {
+    acc[long] = short;
+  }
+  return acc;
+}, {});
+
+export function getInlineDiceSvgUrl(
+  type: InlineDiceConfiguratorType,
+  faceOrValue: InlineDiceConfiguratorValue,
+): string {
+  if (type === "d6") {
+    return D6_SVG_MAP[faceOrValue as D6Face];
+  }
+  return COMBAT_SVG_MAP[faceOrValue as CombatFace];
+}
+
+export function normalizeInlineDiceColorInput(raw?: string): string | null {
+  if (!raw) return null;
+
+  const parsed = parseHexColor(raw);
+  if (parsed) {
+    return formatHexColor(parsed, {
+      alphaMode: parsed.inputHasAlpha ? "preserve" : "strip",
+      case: "upper",
+    });
+  }
+
+  const resolvedKey = resolveColorKey(raw.trim().toLowerCase());
+  const color = DICE_COLORS[resolvedKey];
+  return color ? color.toUpperCase() : null;
+}
+
+export function getInlineDiceDefaultSymbolColor(backgroundColor: string): string {
+  const normalized = normalizeInlineDiceColorInput(backgroundColor) ?? DICE_COLORS.white.toUpperCase();
+  const colorKey = resolveInlineDicePaletteKey(normalized) ?? "white";
+
+  return (DICE_FACE_COLORS[colorKey] ?? DICE_FACE_COLORS.white).toUpperCase();
+}
+
+function formatInlineDiceColorToken(raw: string): string | null {
+  const normalized = normalizeInlineDiceColorInput(raw);
+  if (!normalized) return null;
+
+  const paletteKey = resolveInlineDicePaletteKey(normalized);
+  if (paletteKey) {
+    return COLOR_CANONICAL_SHORT_MAP[paletteKey] ?? paletteKey;
+  }
+
+  const parsed = parseHexColor(normalized);
+  if (!parsed) return null;
+  return formatHexColor(parsed, {
+    alphaMode: parsed.inputHasAlpha ? "preserve" : "strip",
+    case: "lower",
+  });
+}
+
+export function buildInlineDiceToken(config: InlineDiceConfiguratorState): string {
+  const backgroundToken = formatInlineDiceColorToken(config.backgroundColor) ?? "w";
+  const defaultSymbolColor = getInlineDiceDefaultSymbolColor(config.backgroundColor);
+  const symbolToken = formatInlineDiceColorToken(config.symbolColor);
+  const symbolIsDefault =
+    normalizeInlineDiceColorInput(config.symbolColor) ===
+    normalizeInlineDiceColorInput(defaultSymbolColor);
+
+  if (config.type === "d6") {
+    const value = String(config.faceOrValue as D6Face);
+    return symbolToken && !symbolIsDefault
+      ? `&d6-${value}-${backgroundToken}-${symbolToken};`
+      : `&d6-${value}-${backgroundToken};`;
+  }
+
+  const face =
+    config.type === "icon"
+      ? ICON_FACE_CODE_MAP[config.faceOrValue as IconDiceFace]
+      : DETAIL_FACE_CODE_MAP[config.faceOrValue as DetailDiceFace];
+
+  return symbolToken && !symbolIsDefault
+    ? `&cd-${face}-${backgroundToken}-${symbolToken};`
+    : `&cd-${face}-${backgroundToken};`;
+}
+
+export function parseInlineDiceTokenToConfig(
+  token: string,
+): InlineDiceConfiguratorState | null {
+  const trimmed = token.trim().toLowerCase();
+
+  if (trimmed.startsWith("&d6-") && trimmed.endsWith(";")) {
+    const [first, second, third] = trimmed.slice(4, -1).split("-");
+    const isFirstValue = Number.isInteger(Number(first)) && Number(first) >= 1 && Number(first) <= 6;
+    const isSecondValue =
+      Number.isInteger(Number(second)) && Number(second) >= 1 && Number(second) <= 6;
+    const faceRaw = isFirstValue ? first : isSecondValue ? second : null;
+    const colorRaw = isFirstValue ? second : isSecondValue ? first : null;
+    if (!faceRaw || !colorRaw) return null;
+
+    const backgroundColor = normalizeInlineDiceColorInput(colorRaw);
+    if (!backgroundColor) return null;
+    const symbolColor = third
+      ? normalizeInlineDiceColorInput(third)
+      : getInlineDiceDefaultSymbolColor(backgroundColor);
+    if (!symbolColor) return null;
+
+    return {
+      type: "d6",
+      faceOrValue: Number(faceRaw) as D6Face,
+      backgroundColor,
+      symbolColor,
+    };
+  }
+
+  if (trimmed.startsWith("&cd-") && trimmed.endsWith(";")) {
+    const [first, second, third] = trimmed.slice(4, -1).split("-");
+    const faceCandidate = COMBAT_FACE_SHORT_MAP[first]
+      ? first
+      : COMBAT_FACE_SHORT_MAP[second]
+        ? second
+        : null;
+    const colorCandidate = faceCandidate === first ? second : faceCandidate === second ? first : null;
+    if (!faceCandidate || !colorCandidate) return null;
+
+    const combatFace = COMBAT_FACE_SHORT_MAP[faceCandidate];
+    const backgroundColor = normalizeInlineDiceColorInput(colorCandidate);
+    if (!combatFace || !backgroundColor) return null;
+
+    const symbolColor = third
+      ? normalizeInlineDiceColorInput(third)
+      : getInlineDiceDefaultSymbolColor(backgroundColor);
+    if (!symbolColor) return null;
+
+    return {
+      type:
+        combatFace === "skull" || combatFace === "hero" || combatFace === "monster"
+          ? "icon"
+          : "detail",
+      faceOrValue: combatFace,
+      backgroundColor,
+      symbolColor,
+    };
+  }
+
+  return null;
+}
+
 export function parseDiceToken(raw: string): InlineDiceToken | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
@@ -150,6 +327,13 @@ export function parseDiceToken(raw: string): InlineDiceToken | null {
 }
 
 const HEX_COLOR_PATTERN = /^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+function resolveInlineDicePaletteKey(normalizedColor: string): string | null {
+  return (
+    Object.entries(DICE_COLORS).find(([, value]) => value.toUpperCase() === normalizedColor)?.[0] ??
+    null
+  );
+}
 
 function resolveColorKey(raw?: string): string {
   if (!raw) return "white";

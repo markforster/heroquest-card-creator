@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { apiClient } from "@/api/client";
+import type { RouteShortcutHandlers } from "@/components/App/RouteShellCapabilitiesContext";
 import { DeckExportProvider } from "@/components/Decks/context/DeckExportContext";
 import {
   resolveDeckExportFaceIds,
@@ -33,7 +34,13 @@ import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissing
 import { useI18n } from "@/i18n/I18nProvider";
 import formatMessageWith from "@/lib/format-message-with";
 
-export default function DecksRoutePanels() {
+export default function DecksRoutePanels({
+  onPrimarySearchReady,
+  onRouteShortcutHandlersReady,
+}: {
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
+  onRouteShortcutHandlersReady?: (handlers: RouteShortcutHandlers | null) => void;
+}) {
   const { t } = useI18n();
   const { track } = useAnalytics();
   const formatMessage = useMemo(
@@ -346,7 +353,7 @@ export default function DecksRoutePanels() {
   return (
     <DeckExportProvider value={exportProviderValue}>
       {isDecksIndex ? (
-        <DecksGridPanel />
+        <DecksGridPanel onPrimarySearchReady={onPrimarySearchReady} />
       ) : (
         <DeckDetailPanel
           deckId={deckId ?? null}
@@ -391,6 +398,8 @@ export default function DecksRoutePanels() {
           entriesRowRef={entriesRowRef}
           selectionModel={selectionModel}
           entriesModel={entriesModel}
+          onPrimarySearchReady={onPrimarySearchReady}
+          onRouteShortcutHandlersReady={onRouteShortcutHandlersReady}
         />
       )}
       {exportFlow.exportUi}

@@ -2,14 +2,14 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
+import type { CardRecord } from "@/api/cards";
+import { apiClient } from "@/api/client";
 import {
   ENABLE_MISSING_ASSET_CHECKS,
   ENABLE_MISSING_ASSET_INITIAL_SCAN,
   ENABLE_MISSING_ASSET_PERIODIC_SCAN,
 } from "@/config/flags";
-import { apiClient } from "@/api/client";
-import type { CardRecord } from "@/api/cards";
-import { buildAssetCache } from "@/lib/export-assets-cache";
+import { buildAssetCache, buildHeroBackLogoCache } from "@/lib/export-assets-cache";
 import type { MissingAssetReport } from "@/lib/export-assets-cache";
 
 import type { ReactNode } from "react";
@@ -91,9 +91,13 @@ export function MissingAssetsProvider({ children }: { children: ReactNode }) {
           if (card.monsterIconAssetId) ids.push(card.monsterIconAssetId);
           return ids;
         });
+        const heroBackLogoIds = chunk.flatMap((card) =>
+          card.heroBackLogoMode === "custom" && card.heroBackLogoId ? [card.heroBackLogoId] : [],
+        );
 
         try {
           const { missing } = await buildAssetCache(assetIds);
+          const { missing: missingLogos } = await buildHeroBackLogoCache(heroBackLogoIds);
 
           chunk.forEach((card) => {
             const missingAssets: MissingAssetReport["missing"] = [];
@@ -109,6 +113,13 @@ export function MissingAssetsProvider({ children }: { children: ReactNode }) {
                 label: "icon",
                 id: card.monsterIconAssetId,
                 name: card.monsterIconAssetName ?? "unknown",
+              });
+            }
+            if (card.heroBackLogoMode === "custom" && card.heroBackLogoId && missingLogos.has(card.heroBackLogoId)) {
+              missingAssets.push({
+                label: "logo",
+                id: card.heroBackLogoId,
+                name: card.heroBackLogoName ?? "unknown",
               });
             }
             if (missingAssets.length > 0) {

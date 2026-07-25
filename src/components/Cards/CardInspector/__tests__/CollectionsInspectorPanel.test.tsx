@@ -41,13 +41,24 @@ jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) => {
       const lookup: Record<string, string> = {
-        "heading.collectionsForCard": "Collections for this card",
         "heading.addToCollections": "Add to collection",
         "empty.saveCardToManageCollections": "Save this card to manage collections.",
+        "empty.saveCardToManageCollectionsTitle": "Save this card to manage collections",
+        "empty.saveCardToManageCollectionsBody":
+          "Collections are managed from saved cards so membership changes can be stored reliably.",
+        "empty.saveCardToManageCollectionsHint":
+          "After saving, you can use the add button to place this card into one or more collections.",
         "status.loadingCollections": "Loading collections...",
+        "status.loadingCollectionsBody": "Checking which collections currently include this card.",
         "error.failedToLoadCollections": "Unable to load collections right now.",
+        "error.failedToLoadCollectionsBody":
+          "Something went wrong while loading collections for this card. Please try again in a moment.",
         "empty.noCollections": "No collections yet.",
         "empty.cardNotInCollections": "This card is not in any collections.",
+        "empty.cardNotInCollectionsTitle": "Not in any collections yet",
+        "empty.cardNotInCollectionsBody": "This card is not part of a collection yet.",
+        "empty.cardNotInCollectionsHint":
+          "Use the add button above to place it into one or more collections.",
         "actions.remove": "Remove",
         "actions.add": "Add",
         "actions.removeFromCollection": "Remove from collection",
@@ -101,7 +112,12 @@ describe("CollectionsInspectorPanel", () => {
 
     render(<CollectionsInspectorPanel />);
 
-    expect(screen.getByText("Save this card to manage collections.")).toBeInTheDocument();
+    expect(screen.getByText("Save this card to manage collections")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Collections are managed from saved cards so membership changes can be stored reliably.",
+      ),
+    ).toBeInTheDocument();
     expect(mockListCollections).not.toHaveBeenCalled();
   });
 
@@ -118,6 +134,9 @@ describe("CollectionsInspectorPanel", () => {
     render(<CollectionsInspectorPanel />);
 
     expect(await screen.findByText("Loading collections...")).toBeInTheDocument();
+    expect(
+      screen.getByText("Checking which collections currently include this card."),
+    ).toBeInTheDocument();
   });
 
   it("shows error state when collections fail to load", async () => {
@@ -133,6 +152,11 @@ describe("CollectionsInspectorPanel", () => {
     render(<CollectionsInspectorPanel />);
 
     expect(await screen.findByText("Unable to load collections right now.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Something went wrong while loading collections for this card. Please try again in a moment.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("shows empty state when there are no collections", async () => {
@@ -147,7 +171,8 @@ describe("CollectionsInspectorPanel", () => {
 
     render(<CollectionsInspectorPanel />);
 
-    expect(await screen.findByText("This card is not in any collections.")).toBeInTheDocument();
+    expect(await screen.findByText("Not in any collections yet")).toBeInTheDocument();
+    expect(screen.getByText("This card is not part of a collection yet.")).toBeInTheDocument();
     const addButton = screen.getByRole("button", { name: "Add to collection" });
     expect(addButton).toBeInTheDocument();
     expect(addButton).toHaveTextContent("");
@@ -184,7 +209,6 @@ describe("CollectionsInspectorPanel", () => {
 
     const membershipRow = await screen.findByTitle("Bosses");
 
-    expect(screen.getByText("Collections for this card")).toBeInTheDocument();
     expect(await screen.findByText("Bosses")).toBeInTheDocument();
     expect(screen.queryByText("Quest Set")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove from collection: Bosses" })).toBeInTheDocument();
@@ -483,7 +507,7 @@ describe("CollectionsInspectorPanel", () => {
     expect(mockRefetchQueries).toHaveBeenCalledWith(
       expect.objectContaining({ predicate: expect.any(Function), type: "active" }),
     );
-    expect(await screen.findByText("This card is not in any collections.")).toBeInTheDocument();
+    expect(await screen.findByText("Not in any collections yet")).toBeInTheDocument();
   });
 
   it("does not persist modal draft changes until confirm", async () => {
@@ -548,7 +572,7 @@ describe("CollectionsInspectorPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(screen.queryByTestId("collections-membership-modal")).not.toBeInTheDocument();
-    expect(screen.getByText("This card is not in any collections.")).toBeInTheDocument();
+    expect(screen.getByText("Not in any collections yet")).toBeInTheDocument();
     expect(mockUpdateCollection).not.toHaveBeenCalled();
   });
 

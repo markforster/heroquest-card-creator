@@ -4,7 +4,12 @@ import { useId } from "react";
 
 import { layoutCardTextToBounds } from "@/components/Cards/CardParts/bodyText/fit";
 import parseInlineRichText from "@/components/Cards/CardParts/bodyText/parseInlineRichText";
-import type { BodyTextToken, TextAlignment } from "@/components/Cards/CardParts/bodyText/types";
+import type {
+  BodyTextToken,
+  InlineTextStyle,
+  TextAlignment,
+  TextRun,
+} from "@/components/Cards/CardParts/bodyText/types";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { tokenizeInlineDice, type InlineDiceSegment } from "@/lib/inline-dice";
 import { createTextMeasurer } from "@/lib/text-fitting/measure";
@@ -31,9 +36,31 @@ type CardTextBlockProps = {
   align?: TextAlignment;
   debug?: boolean;
   fitToBounds?: boolean;
+  showOverflowWarning?: boolean;
+};
+
+type TextMeasureToken = Extract<WrapToken, { kind: "text" }>;
+type RowMetrics = {
+  height: number;
+  maxFontSize: number;
+  baselineOffset: number;
 };
 
 const CARD_BODY_LINE_HEIGHT = 1.05;
+const OVERFLOW_WARNING_COLOR = "#d62839";
+const OVERFLOW_WARNING_FILL_OPACITY = 0.2;
+const OVERFLOW_WARNING_HATCH_OPACITY = 0.5;
+const OVERFLOW_WARNING_LABEL_COLOR = "#ffffff";
+const OVERFLOW_WARNING_STROKE_WIDTH = 1.75;
+const OVERFLOW_WARNING_LABEL = "Text clipped";
+const OVERFLOW_WARNING_LABEL_FONT_SIZE = 16;
+const OVERFLOW_WARNING_LABEL_FONT_WEIGHT = 700;
+const OVERFLOW_WARNING_LABEL_LETTER_SPACING_EM = 0.02;
+const OVERFLOW_WARNING_STRIP_HEIGHT = 36;
+const OVERFLOW_WARNING_BORDER_RISE = 6;
+const OVERFLOW_WARNING_HATCH_SPACING = 6;
+const OVERFLOW_WARNING_HATCH_WIDTH = 6;
+const OVERFLOW_WARNING_HATCH_RISE = 6;
 const DICE_SIZE_RATIO = 1.18;
 const DICE_TEXT_GAP_RATIO = 0.14;
 const DICE_TEXT_GAP_PX = 2;
@@ -47,25 +74,32 @@ const DICE_BORDER_COLOR = "#111111";
 const DICE_BORDER_WIDTH = 1;
 
 type TextLine =
-  | { kind: "text"; tokens: BodyTextToken[]; align?: TextAlignment }
-  | {
+  | ({ kind: "text"; tokens: BodyTextToken[]; align?: TextAlignment } & RowMetrics)
+  | ({
       kind: "leader";
       labelTokens: BodyTextToken[];
       valueTokens: BodyTextToken[];
       separator: string;
       leaderLayout?: LeaderLayout;
       align?: TextAlignment;
-    }
-  | {
+    } & RowMetrics)
+  | ({
       kind: "leader-continuation";
       valueTokens: BodyTextToken[];
       leaderLayout: LeaderLayout;
       align?: TextAlignment;
+    } & RowMetrics)
+  | {
+      kind: "paragraph-gap";
+      height: number;
     };
 
 export type CardTextLayout = {
+  rows: TextLine[];
   lines: TextLine[];
   lineHeight: number;
+  paragraphGap: number;
+  totalHeight: number;
 };
 
 type TextToken = BodyTextToken;
@@ -81,6 +115,23 @@ type LeaderGroupSettings = {
   pivotValue?: number;
   wrap: "value" | "none";
   explicit: boolean;
+};
+
+type BlockMacroKind = "title" | "subtitle";
+
+type BlockMacroPreset = {
+  style: InlineTextStyle;
+};
+
+const MIN_INLINE_SCALE = 0.5;
+const MAX_INLINE_SCALE = 1.5;
+const BLOCK_MACRO_PRESETS: Record<BlockMacroKind, BlockMacroPreset> = {
+  title: {
+    style: { bold: true, scale: 1.2 },
+  },
+  subtitle: {
+    style: { italic: true, scale: 1.2 },
+  },
 };
 
 export function layoutCardText({
@@ -103,13 +154,21 @@ export function layoutCardText({
   defaultAlign?: TextAlignment;
 }): CardTextLayout {
   const effectiveLineHeight = lineHeight ?? fontSize * CARD_BODY_LINE_HEIGHT;
+  const paragraphGap = effectiveLineHeight;
+  const lineHeightRatio = fontSize > 0 ? effectiveLineHeight / fontSize : CARD_BODY_LINE_HEIGHT;
 
   if (!text || !text.trim()) {
-    return { lines: [], lineHeight: effectiveLineHeight };
+    return {
+      rows: [],
+      lines: [],
+      lineHeight: effectiveLineHeight,
+      paragraphGap,
+      totalHeight: 0,
+    };
   }
 
   const logicalLines = text.split(/\r?\n/);
-  const visualLines: TextLine[] = [];
+  const rows: TextLine[] = [];
   let currentAlign: TextAlignment = defaultAlign;
   const measure = createStyledTextMeasure({
     fontSize,
@@ -184,10 +243,10 @@ export function layoutCardText({
     const valueRaw = leaderMatch[3];
     const separator = sepRaw || ".";
     const labelTokens = injectDiceAdjacentSpaces(
-      segmentsToTokens(tokenizeInlineDice(labelRaw), fontSize),
+      segmentsToTokens(tokenizeInlineDice(labelRaw), fontSize, { allowScale: false }),
     );
     const valueTokens = injectDiceAdjacentSpaces(
-      segmentsToTokens(tokenizeInlineDice(valueRaw), fontSize),
+      segmentsToTokens(tokenizeInlineDice(valueRaw), fontSize, { allowScale: false }),
     );
     return { labelTokens, valueTokens, separator };
   };
@@ -245,6 +304,19 @@ export function layoutCardText({
     return { settings, leaders };
   };
 
+  const parseBlockMacroLine = (
+    lineText: string,
+  ): { preset: BlockMacroPreset; content: string } | null => {
+    const match = lineText.match(/^\s*<(title|subtitle)>([\s\S]*?)<\/\1>\s*$/i);
+    if (!match) return null;
+
+    const kind = match[1].toLowerCase() as BlockMacroKind;
+    return {
+      preset: BLOCK_MACRO_PRESETS[kind],
+      content: match[2],
+    };
+  };
+
   const hasMatchingGroupEnd = (() => {
     const flags = new Array(logicalLines.length).fill(false);
     let i = 0;
@@ -265,25 +337,48 @@ export function layoutCardText({
     return flags;
   })();
 
-    const pushWrappedTextLine = (lineText: string, align: TextAlignment) => {
+  const pushParagraphGap = () => {
+    rows.push({ kind: "paragraph-gap", height: paragraphGap });
+  };
+
+  const pushWrappedTextLine = (
+    lineText: string,
+    align: TextAlignment,
+    options?: { presetStyle?: InlineTextStyle },
+  ) => {
     // Preserve intentional blank lines (including lines with only whitespace) as visual gaps.
     if (lineText.trim() === "") {
-      visualLines.push({ kind: "text", tokens: [{ kind: "text", text: "" }], align });
+      pushParagraphGap();
       return;
     }
 
     const inlineSegments = tokenizeInlineDice(lineText);
-    const tokens = injectDiceAdjacentSpaces(segmentsToTokens(inlineSegments, fontSize));
+    const tokens = injectDiceAdjacentSpaces(
+      segmentsToTokens(inlineSegments, fontSize, { presetStyle: options?.presetStyle }),
+    );
     const wrapped = wrapTokens(tokens, safeWidth, measure);
     wrapped.forEach((lineTokens) => {
-      visualLines.push({ kind: "text", tokens: lineTokens, align });
+      rows.push({
+        kind: "text",
+        tokens: lineTokens,
+        align,
+        ...computeRowMetrics(lineTokens, fontSize, lineHeightRatio),
+      });
     });
+  };
+
+  const pushBlockMacroLine = (
+    lineText: string,
+    align: TextAlignment,
+    preset: BlockMacroPreset,
+  ) => {
+    pushWrappedTextLine(lineText, align, { presetStyle: preset.style });
   };
 
   const pushAlignedLine = (lineText: string, align: TextAlignment) => {
     // Preserve intentional blank lines (including lines with only whitespace) as visual gaps.
     if (lineText.trim() === "") {
-      visualLines.push({ kind: "text", tokens: [{ kind: "text", text: "" }], align });
+      pushParagraphGap();
       return;
     }
 
@@ -299,18 +394,19 @@ export function layoutCardText({
 
       const separator = sepRaw || ".";
       const labelTokens = injectDiceAdjacentSpaces(
-        segmentsToTokens(tokenizeInlineDice(labelRaw), fontSize),
+        segmentsToTokens(tokenizeInlineDice(labelRaw), fontSize, { allowScale: false }),
       );
       const valueTokens = injectDiceAdjacentSpaces(
-        segmentsToTokens(tokenizeInlineDice(valueRaw), fontSize),
+        segmentsToTokens(tokenizeInlineDice(valueRaw), fontSize, { allowScale: false }),
       );
 
-      visualLines.push({
+      rows.push({
         kind: "leader",
         labelTokens,
         valueTokens,
         separator,
         align,
+        ...createFixedRowMetrics(fontSize, lineHeightRatio),
       });
       return;
     }
@@ -381,12 +477,13 @@ export function layoutCardText({
 
     if (!groupSettings.explicit) {
       groupLines.forEach((line) => {
-        visualLines.push({
+        rows.push({
           kind: "leader",
           labelTokens: line.labelTokens,
           valueTokens: line.valueTokens,
           separator: line.separator,
           align: line.align,
+          ...createFixedRowMetrics(fontSize, lineHeightRatio),
         });
       });
     } else {
@@ -397,20 +494,22 @@ export function layoutCardText({
             ? wrapTokens(line.valueTokens, layout.valueColumnWidth, measure)
             : [line.valueTokens];
         const [firstLine, ...restLines] = wrappedValue;
-        visualLines.push({
+        rows.push({
           kind: "leader",
           labelTokens: line.labelTokens,
           valueTokens: firstLine ?? [],
           separator: line.separator,
           leaderLayout: layout,
           align: line.align,
+          ...createFixedRowMetrics(fontSize, lineHeightRatio),
         });
         restLines.forEach((valueTokens) => {
-          visualLines.push({
+          rows.push({
             kind: "leader-continuation",
             valueTokens,
             leaderLayout: layout,
             align: line.align,
+            ...createFixedRowMetrics(fontSize, lineHeightRatio),
           });
         });
       });
@@ -496,6 +595,12 @@ export function layoutCardText({
       continue;
     }
 
+    const blockMacro = parseBlockMacroLine(logicalLine);
+    if (blockMacro) {
+      pushBlockMacroLine(blockMacro.content, currentAlign, blockMacro.preset);
+      continue;
+    }
+
     if (isGroupStartLine(logicalLine) && hasMatchingGroupEnd[index]) {
       groupActive = true;
       groupSettings = { pivotMode: "auto", wrap: "none", explicit: false };
@@ -514,7 +619,10 @@ export function layoutCardText({
     flushLeaderGroup();
   }
 
-  return { lines: visualLines, lineHeight: effectiveLineHeight };
+  const lines = rows.filter((row) => row.kind !== "paragraph-gap");
+  const totalHeight = rows.reduce((sum, row) => sum + row.height, 0);
+
+  return { rows, lines, lineHeight: effectiveLineHeight, paragraphGap, totalHeight };
 }
 
 export default function CardTextBlock({
@@ -529,11 +637,12 @@ export default function CardTextBlock({
   align = "left",
   debug = false,
   fitToBounds = false,
+  showOverflowWarning = false,
 }: CardTextBlockProps) {
   const maskPrefix = useId().replace(/:/g, "");
   const {
+    rows,
     lines,
-    lineHeight: effectiveLineHeight,
     fittedFontSize,
     overflowed,
   } = layoutCardTextToBounds({
@@ -554,8 +663,7 @@ export default function CardTextBlock({
     return null;
   }
 
-  const maxLines = Math.max(1, Math.floor(bounds.height / effectiveLineHeight));
-  const clippedLines = overflowed ? lines.slice(0, maxLines) : lines;
+  const clippedRows = overflowed ? clipRowsToHeight(rows, bounds.height) : rows;
 
   const textStyle: CSSProperties = {
     fontFamily,
@@ -574,6 +682,9 @@ export default function CardTextBlock({
 
   return (
     <g>
+      {showOverflowWarning && overflowed ? (
+        <OverflowWarningStrip bounds={bounds} idPrefix={maskPrefix} />
+      ) : null}
       {debug && (
         <rect
           x={bounds.x}
@@ -586,111 +697,270 @@ export default function CardTextBlock({
           data-debug-bounds="true"
         />
       )}
-      {clippedLines.flatMap((line, lineIndex) => {
-        const lineY = bounds.y + fittedFontSize + effectiveLineHeight * lineIndex;
-
-        if (line.kind === "text") {
-          return renderTokenLine({
-            lineTokens: line.tokens,
-            lineY,
-            lineHeight: effectiveLineHeight,
-            bounds,
-            lineAlign: line.align ?? align,
-            measure: measureWithSpacing,
-            fill,
-            textStyle,
-            maskPrefix,
-            lineIndex,
-            fontSize: fittedFontSize,
-          });
-        }
-
-        if (line.kind === "leader-continuation") {
-          const valueStartX = bounds.x + line.leaderLayout.valueStartOffset;
-          return renderTokenSequence({
-            tokens: line.valueTokens,
-            startX: valueStartX,
-            y: lineY,
-            lineHeight: effectiveLineHeight,
-            measure: measureWithSpacing,
-            fill,
-            textStyle,
-            maskPrefix,
-            lineIndex,
-            tokenGroup: "value",
-            fontSize: fittedFontSize,
-          });
-        }
-
-        // Leader line rendering
-        const effectiveLeaderPadding = line.leaderLayout?.leaderPadding ?? fittedFontSize * 0.25;
-        const leftX = bounds.x;
-        const rightX = bounds.x + bounds.width;
-
-        const labelWidth = measureTokensWidth(line.labelTokens, measureWithSpacing);
-        const valueWidth = measureTokensWidth(line.valueTokens, measureWithSpacing);
-
-        const labelStartX = leftX;
-        const valueStartX =
-          line.leaderLayout?.valueStartOffset != null
-            ? bounds.x + line.leaderLayout.valueStartOffset
-            : rightX - valueWidth;
-
-        const gapStartX = labelStartX + labelWidth + effectiveLeaderPadding;
-        const gapEndX = valueStartX - effectiveLeaderPadding;
-        const availableGapWidth = Math.max(0, gapEndX - gapStartX);
-
-        const sepChar = line.separator || ".";
-        const sepWidth = measureWithSpacing(sepChar);
-        const sepCount = sepWidth > 0 ? Math.max(0, Math.floor(availableGapWidth / sepWidth)) : 0;
-        const sepText = sepCount > 0 ? sepChar.repeat(sepCount) : "";
-
+      {(() => {
+        let verticalOffset = 0;
+        let renderedLineIndex = 0;
         const elements: JSX.Element[] = [];
 
-        elements.push(
-          ...renderTokenSequence({
-            tokens: line.labelTokens,
-            startX: labelStartX,
-            y: lineY,
-            lineHeight: effectiveLineHeight,
-            measure: measureWithSpacing,
-            fill,
-            textStyle,
-            maskPrefix,
-            lineIndex,
-            tokenGroup: "label",
-            fontSize: fittedFontSize,
-          }),
-        );
+        clippedRows.forEach((line) => {
+          if (line.kind === "paragraph-gap") {
+            verticalOffset += line.height;
+            return;
+          }
 
-        if (sepText) {
+          const lineY = bounds.y + verticalOffset + line.baselineOffset;
+
+          if (line.kind === "text") {
+            elements.push(
+              ...renderTokenLine({
+                lineTokens: line.tokens,
+                lineY,
+                lineHeight: line.height,
+                bounds,
+                lineAlign: line.align ?? align,
+                measure: measureWithSpacing,
+                fill,
+                textStyle,
+                maskPrefix,
+                lineIndex: renderedLineIndex,
+                baseFontSize: fittedFontSize,
+                baselineOffset: line.baselineOffset,
+              }),
+            );
+            verticalOffset += line.height;
+            renderedLineIndex += 1;
+            return;
+          }
+
+          if (line.kind === "leader-continuation") {
+            const valueStartX = bounds.x + line.leaderLayout.valueStartOffset;
+            elements.push(
+              ...renderTokenSequence({
+                  tokens: line.valueTokens,
+                  startX: valueStartX,
+                  y: lineY,
+                  lineHeight: line.height,
+                  measure: measureWithSpacing,
+                  fill,
+                  textStyle,
+                  maskPrefix,
+                  lineIndex: renderedLineIndex,
+                  tokenGroup: "value",
+                  baseFontSize: fittedFontSize,
+                  baselineOffset: line.baselineOffset,
+                }),
+              );
+            verticalOffset += line.height;
+            renderedLineIndex += 1;
+            return;
+          }
+
+          // Leader line rendering
+          const effectiveLeaderPadding = line.leaderLayout?.leaderPadding ?? fittedFontSize * 0.25;
+          const leftX = bounds.x;
+          const rightX = bounds.x + bounds.width;
+
+          const labelWidth = measureTokensWidth(line.labelTokens, measureWithSpacing);
+          const valueWidth = measureTokensWidth(line.valueTokens, measureWithSpacing);
+
+          const labelStartX = leftX;
+          const valueStartX =
+            line.leaderLayout?.valueStartOffset != null
+              ? bounds.x + line.leaderLayout.valueStartOffset
+              : rightX - valueWidth;
+
+          const gapStartX = labelStartX + labelWidth + effectiveLeaderPadding;
+          const gapEndX = valueStartX - effectiveLeaderPadding;
+          const availableGapWidth = Math.max(0, gapEndX - gapStartX);
+
+          const sepChar = line.separator || ".";
+          const sepWidth = measureWithSpacing(sepChar);
+          const sepCount =
+            sepWidth > 0 ? Math.max(0, Math.floor(availableGapWidth / sepWidth)) : 0;
+          const sepText = sepCount > 0 ? sepChar.repeat(sepCount) : "";
+
           elements.push(
-            <text key={`${lineIndex}-sep`} x={gapStartX} y={lineY} fill={fill} style={textStyle}>
-              {sepText}
-            </text>,
-          );
-        }
+            ...renderTokenSequence({
+                tokens: line.labelTokens,
+                startX: labelStartX,
+                y: lineY,
+                lineHeight: line.height,
+                measure: measureWithSpacing,
+                fill,
+                textStyle,
+                maskPrefix,
+                lineIndex: renderedLineIndex,
+                tokenGroup: "label",
+                baseFontSize: fittedFontSize,
+                baselineOffset: line.baselineOffset,
+              }),
+            );
 
-        elements.push(
-          ...renderTokenSequence({
-            tokens: line.valueTokens,
-            startX: valueStartX,
-            y: lineY,
-            lineHeight: effectiveLineHeight,
-            measure: measureWithSpacing,
-            fill,
-            textStyle,
-            maskPrefix,
-            lineIndex,
-            tokenGroup: "value",
-            fontSize: fittedFontSize,
-          }),
-        );
+          if (sepText) {
+            elements.push(
+              <text
+                key={`${renderedLineIndex}-sep`}
+                x={gapStartX}
+                y={lineY}
+                fill={fill}
+                style={textStyle}
+              >
+                {sepText}
+              </text>,
+            );
+          }
+
+          elements.push(
+            ...renderTokenSequence({
+                tokens: line.valueTokens,
+                startX: valueStartX,
+                y: lineY,
+                lineHeight: line.height,
+                measure: measureWithSpacing,
+                fill,
+                textStyle,
+                maskPrefix,
+                lineIndex: renderedLineIndex,
+                tokenGroup: "value",
+                baseFontSize: fittedFontSize,
+                baselineOffset: line.baselineOffset,
+              }),
+            );
+
+          verticalOffset += line.height;
+          renderedLineIndex += 1;
+        });
 
         return elements;
-      })}
+      })()}
     </g>
   );
+}
+
+function OverflowWarningStrip({
+  bounds,
+  idPrefix,
+}: {
+  bounds: Bounds;
+  idPrefix: string;
+}) {
+  const stripHeight = Math.min(OVERFLOW_WARNING_STRIP_HEIGHT, Math.max(bounds.height, 0));
+  if (stripHeight <= 0 || bounds.width <= 0) return null;
+
+  const stripY = bounds.y + bounds.height - stripHeight;
+  const clipPathId = `${idPrefix}-overflow-warning-strip`;
+  const gradientId = `${idPrefix}-overflow-warning-gradient`;
+  const hatchCount = Math.max(
+    1,
+    Math.ceil((bounds.width + OVERFLOW_WARNING_HATCH_WIDTH) / OVERFLOW_WARNING_HATCH_SPACING),
+  );
+  const borderTopY = Math.max(bounds.y, stripY - OVERFLOW_WARNING_BORDER_RISE);
+
+  return (
+    <g data-preview-only="overflow-warning" data-overflow-warning="true">
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={OVERFLOW_WARNING_COLOR} stopOpacity={0} />
+          <stop
+            offset="100%"
+            stopColor={OVERFLOW_WARNING_COLOR}
+            stopOpacity={OVERFLOW_WARNING_FILL_OPACITY}
+          />
+        </linearGradient>
+        <clipPath id={clipPathId}>
+          <rect x={bounds.x} y={stripY} width={bounds.width} height={stripHeight} />
+        </clipPath>
+      </defs>
+      <rect
+        x={bounds.x}
+        y={stripY}
+        width={bounds.width}
+        height={stripHeight}
+        fill={`url(#${gradientId})`}
+      />
+      <g clipPath={`url(#${clipPathId})`}>
+        {Array.from({ length: hatchCount }, (_, index) => {
+          const startX = bounds.x + index * OVERFLOW_WARNING_HATCH_SPACING;
+          const startY = bounds.y + bounds.height;
+          const endX = startX + OVERFLOW_WARNING_HATCH_WIDTH;
+          const endY = startY - Math.min(stripHeight, OVERFLOW_WARNING_HATCH_RISE);
+
+          return (
+            <line
+              key={`${idPrefix}-overflow-hatch-${index}`}
+              x1={startX}
+              y1={startY}
+              x2={endX}
+              y2={endY}
+              stroke={OVERFLOW_WARNING_COLOR}
+              strokeOpacity={OVERFLOW_WARNING_HATCH_OPACITY}
+              strokeWidth={OVERFLOW_WARNING_STROKE_WIDTH}
+              strokeLinecap="round"
+            />
+          );
+        })}
+      </g>
+      <text
+        x={bounds.x + bounds.width / 2}
+        y={stripY + stripHeight / 2}
+        fill={OVERFLOW_WARNING_LABEL_COLOR}
+        fontFamily={CARD_TEXT_FONT_FAMILY}
+        fontSize={Math.min(
+          OVERFLOW_WARNING_LABEL_FONT_SIZE,
+          Math.max(10, stripHeight * 0.45),
+        )}
+        fontWeight={OVERFLOW_WARNING_LABEL_FONT_WEIGHT}
+        letterSpacing={`${OVERFLOW_WARNING_LABEL_LETTER_SPACING_EM}em`}
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
+        {OVERFLOW_WARNING_LABEL}
+      </text>
+      <line
+        x1={bounds.x}
+        y1={borderTopY}
+        x2={bounds.x}
+        y2={bounds.y + bounds.height}
+        stroke={OVERFLOW_WARNING_COLOR}
+        strokeWidth={OVERFLOW_WARNING_STROKE_WIDTH}
+      />
+      <line
+        x1={bounds.x + bounds.width}
+        y1={borderTopY}
+        x2={bounds.x + bounds.width}
+        y2={bounds.y + bounds.height}
+        stroke={OVERFLOW_WARNING_COLOR}
+        strokeWidth={OVERFLOW_WARNING_STROKE_WIDTH}
+      />
+      <line
+        x1={bounds.x}
+        y1={bounds.y + bounds.height}
+        x2={bounds.x + bounds.width}
+        y2={bounds.y + bounds.height}
+        stroke={OVERFLOW_WARNING_COLOR}
+        strokeWidth={OVERFLOW_WARNING_STROKE_WIDTH}
+      />
+    </g>
+  );
+}
+
+export function clipRowsToHeight(rows: TextLine[], maxHeight: number): TextLine[] {
+  if (!Number.isFinite(maxHeight) || maxHeight <= 0) return [];
+
+  const clipped: TextLine[] = [];
+  let consumedHeight = 0;
+
+  rows.forEach((row) => {
+    if (consumedHeight + row.height > maxHeight) return;
+    clipped.push(row);
+    consumedHeight += row.height;
+  });
+
+  while (clipped.length > 0 && clipped[clipped.length - 1]?.kind === "paragraph-gap") {
+    clipped.pop();
+  }
+
+  return clipped;
 }
 
 function parseAlignmentDirective(line: string): TextAlignment | "reset" | null {
@@ -740,31 +1010,6 @@ function getAlignmentToken(token: string): TextAlignment | null {
   return lookup[token] ?? null;
 }
 
-function segmentsToTokens(segments: InlineDiceSegment[], fontSize: number): TextToken[] {
-  const tokens: TextToken[] = [];
-  const diceSize = fontSize * DICE_SIZE_RATIO;
-  const diceGap = fontSize * DICE_TEXT_GAP_RATIO + DICE_TEXT_GAP_PX;
-  const diceAdvance = diceSize + diceGap * 2;
-
-  segments.forEach((segment) => {
-    if (segment.kind === "dice") {
-      tokens.push({
-        kind: "dice",
-        dice: segment.token,
-        width: diceAdvance,
-        renderSize: diceSize,
-      });
-      return;
-    }
-
-    const runs = parseInlineRichText(segment.text);
-    const textTokens = runsToTokens(runs);
-    tokens.push(...textTokens);
-  });
-
-  return tokens;
-}
-
 function injectDiceAdjacentSpaces(tokens: TextToken[]): TextToken[] {
   const output: TextToken[] = [];
 
@@ -791,6 +1036,7 @@ function injectDiceAdjacentSpaces(tokens: TextToken[]): TextToken[] {
         italic: prevToken.italic,
         underline: prevToken.underline,
         color: prevToken.color,
+        scale: prevToken.scale,
       });
     }
 
@@ -804,6 +1050,7 @@ function injectDiceAdjacentSpaces(tokens: TextToken[]): TextToken[] {
         italic: nextToken.italic,
         underline: nextToken.underline,
         color: nextToken.color,
+        scale: nextToken.scale,
       });
     }
   });
@@ -833,21 +1080,24 @@ function createStyledTextMeasure({
   letterSpacingEm?: number;
 }) {
   const baseWeight = fontWeight ?? "400";
-  const measureNormal = createTextMeasurer(fontSize, fontFamily, baseWeight, "normal");
-  const measureItalic = createTextMeasurer(fontSize, fontFamily, baseWeight, "italic");
-  const measureBold = createTextMeasurer(fontSize, fontFamily, "700", "normal");
-  const measureBoldItalic = createTextMeasurer(fontSize, fontFamily, "700", "italic");
-  const letterSpacingPx = (letterSpacingEm ?? 0) * fontSize;
+  const measureCache = new Map<string, (text: string) => number>();
 
-  return (text: string, token?: Extract<WrapToken, { kind: "text" }>) => {
-    const baseWidth =
-      token?.bold && token?.italic
-        ? measureBoldItalic(text)
-        : token?.bold
-          ? measureBold(text)
-          : token?.italic
-            ? measureItalic(text)
-            : measureNormal(text);
+  return (text: string, token?: TextMeasureToken) => {
+    const resolvedFontSize = getResolvedTextTokenFontSize(token, fontSize);
+    const styleKey = token?.bold && token?.italic ? "boldItalic" : token?.bold ? "bold" : token?.italic ? "italic" : "normal";
+    const cacheKey = `${resolvedFontSize}:${styleKey}`;
+    let measure = measureCache.get(cacheKey);
+    if (!measure) {
+      measure = createTextMeasurer(
+        resolvedFontSize,
+        fontFamily,
+        token?.bold ? "700" : baseWeight,
+        token?.italic ? "italic" : "normal",
+      );
+      measureCache.set(cacheKey, measure);
+    }
+    const baseWidth = measure(text);
+    const letterSpacingPx = (letterSpacingEm ?? 0) * resolvedFontSize;
     if (letterSpacingPx <= 0 || text.length <= 1) return baseWidth;
     return baseWidth + (text.length - 1) * letterSpacingPx;
   };
@@ -908,6 +1158,9 @@ export function measureCardTextMaxLineWidth({
       maxLineWidth = Math.max(maxLineWidth, widthValue);
       return;
     }
+    if (line.kind === "paragraph-gap") {
+      return;
+    }
     const labelWidth = measureTokensWidth(line.labelTokens, measure);
     const valueWidth = measureTokensWidth(line.valueTokens, measure);
     const leaderPadding = line.leaderLayout?.leaderPadding ?? fontSize * 0.25;
@@ -938,19 +1191,21 @@ function renderTokenSequence({
   maskPrefix,
   lineIndex,
   tokenGroup,
-  fontSize,
+  baseFontSize,
+  baselineOffset,
 }: {
   tokens: TextToken[];
   startX: number;
   y: number;
   lineHeight: number;
-  measure: (text: string, token?: Extract<WrapToken, { kind: "text" }>) => number;
+  measure: (text: string, token?: TextMeasureToken) => number;
   fill: string;
   textStyle: CSSProperties;
   maskPrefix: string;
   lineIndex: number;
   tokenGroup: string;
-  fontSize: number;
+  baseFontSize: number;
+  baselineOffset: number;
 }): JSX.Element[] {
   let cursorX = startX;
   const elements: JSX.Element[] = [];
@@ -983,9 +1238,9 @@ function renderTokenSequence({
 
       const maskId = getMaskId(maskPrefix, lineIndex, tokenGroup, tokenIndex);
       const size = token.renderSize;
-      const baseGap = fontSize * DICE_TEXT_GAP_RATIO + DICE_TEXT_GAP_PX;
+      const baseGap = baseFontSize * DICE_TEXT_GAP_RATIO + DICE_TEXT_GAP_PX;
       const maskX = cursorX + baseGap;
-      const textCenterY = y - fontSize + lineHeight * DICE_TEXT_CENTER_RATIO + DICE_Y_OFFSET_PX;
+      const textCenterY = y - baselineOffset + lineHeight * DICE_TEXT_CENTER_RATIO + DICE_Y_OFFSET_PX;
       const maskY = textCenterY - size / 2;
       const padding = size * DICE_ICON_PADDING_RATIO;
       const innerSize = Math.max(0, size - padding * 2);
@@ -1047,6 +1302,7 @@ function renderTokenSequence({
     if (token.italic) spanStyle.fontStyle = "italic";
     if (token.underline) spanStyle.textDecoration = "underline";
     if (token.color) spanStyle.fill = token.color;
+    spanStyle.fontSize = `${getResolvedTextTokenFontSize(token, baseFontSize)}px`;
 
     runSpans.push(
       <tspan key={`${tokenGroup}-${lineIndex}-${tokenIndex}`} style={spanStyle}>
@@ -1072,19 +1328,21 @@ function renderTokenLine({
   textStyle,
   maskPrefix,
   lineIndex,
-  fontSize,
+  baseFontSize,
+  baselineOffset,
 }: {
   lineTokens: TextToken[];
   lineY: number;
   lineHeight: number;
   bounds: Bounds;
   lineAlign: TextAlignment;
-  measure: (text: string, token?: Extract<WrapToken, { kind: "text" }>) => number;
+  measure: (text: string, token?: TextMeasureToken) => number;
   fill: string;
   textStyle: CSSProperties;
   maskPrefix: string;
   lineIndex: number;
-  fontSize: number;
+  baseFontSize: number;
+  baselineOffset: number;
 }): JSX.Element[] {
   const lineWidth = measureTokensWidth(lineTokens, measure);
   const originX =
@@ -1105,8 +1363,96 @@ function renderTokenLine({
     maskPrefix,
     lineIndex,
     tokenGroup: "text",
-    fontSize,
+    baseFontSize,
+    baselineOffset,
   });
+}
+
+function stripScaleMarkup(text: string): string {
+  return text.replace(/<\/?\s*scale(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?\s*>/gi, "");
+}
+
+function clampInlineScale(value: number): number {
+  return Math.min(MAX_INLINE_SCALE, Math.max(MIN_INLINE_SCALE, value));
+}
+
+function applyPresetToRuns(runs: TextRun[], presetStyle: InlineTextStyle): TextRun[] {
+  return runs.map((run) => {
+    const resolvedScale =
+      typeof presetStyle.scale === "number" || typeof run.scale === "number"
+        ? clampInlineScale((presetStyle.scale ?? 1) * (run.scale ?? 1))
+        : undefined;
+
+    return {
+      text: run.text,
+      bold: presetStyle.bold || run.bold || undefined,
+      italic: presetStyle.italic || run.italic || undefined,
+      underline: presetStyle.underline || run.underline || undefined,
+      color: run.color ?? presetStyle.color,
+      scale: typeof resolvedScale === "number" && resolvedScale !== 1 ? resolvedScale : undefined,
+    };
+  });
+}
+
+function segmentsToTokens(
+  segments: InlineDiceSegment[],
+  fontSize: number,
+  options?: { allowScale?: boolean; presetStyle?: InlineTextStyle },
+): TextToken[] {
+  const tokens: TextToken[] = [];
+  const diceSize = fontSize * DICE_SIZE_RATIO;
+  const diceGap = fontSize * DICE_TEXT_GAP_RATIO + DICE_TEXT_GAP_PX;
+  const diceAdvance = diceSize + diceGap * 2;
+  const allowScale = options?.allowScale ?? true;
+  const presetStyle = options?.presetStyle;
+
+  segments.forEach((segment) => {
+    if (segment.kind === "dice") {
+      tokens.push({
+        kind: "dice",
+        dice: segment.token,
+        width: diceAdvance,
+        renderSize: diceSize,
+      });
+      return;
+    }
+
+    const runs = parseInlineRichText(allowScale ? segment.text : stripScaleMarkup(segment.text));
+    const styledRuns = presetStyle ? applyPresetToRuns(runs, presetStyle) : runs;
+    const textTokens = runsToTokens(styledRuns);
+    tokens.push(...textTokens);
+  });
+
+  return tokens;
+}
+
+function getResolvedTextTokenFontSize(token: TextMeasureToken | undefined, baseFontSize: number): number {
+  return baseFontSize * (token?.scale ?? 1);
+}
+
+function createFixedRowMetrics(baseFontSize: number, lineHeightRatio: number): RowMetrics {
+  return {
+    height: baseFontSize * lineHeightRatio,
+    maxFontSize: baseFontSize,
+    baselineOffset: baseFontSize,
+  };
+}
+
+function computeRowMetrics(
+  tokens: BodyTextToken[],
+  baseFontSize: number,
+  lineHeightRatio: number,
+): RowMetrics {
+  const maxFontSize = tokens.reduce((maxSize, token) => {
+    if (token.kind !== "text") return maxSize;
+    return Math.max(maxSize, getResolvedTextTokenFontSize(token, baseFontSize));
+  }, baseFontSize);
+
+  return {
+    height: maxFontSize * lineHeightRatio,
+    maxFontSize,
+    baselineOffset: maxFontSize,
+  };
 }
 
 // createTextMeasurer moved to shared lib for reuse.

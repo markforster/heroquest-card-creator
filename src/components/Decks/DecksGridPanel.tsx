@@ -1,6 +1,7 @@
 "use client";
 
 import { Eye, LayersPlus, Pencil, Search, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
@@ -11,12 +12,15 @@ import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useNavigate } from "react-router-dom";
 
-import { useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
 const PREVIEW_VARIANT = "smMd";
 
-export default function DecksGridPanel() {
+export default function DecksGridPanel({
+  onPrimarySearchReady,
+}: {
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
+}) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const model = useDecksGridModel({
@@ -44,6 +48,18 @@ export default function DecksGridPanel() {
   };
   const decksGridRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!onPrimarySearchReady) return;
+    onPrimarySearchReady(() => {
+      const input = searchInputRef.current;
+      if (!input || input.disabled) return false;
+      input.focus();
+      input.select();
+      return true;
+    });
+    return () => onPrimarySearchReady(null);
+  }, [onPrimarySearchReady]);
 
   return (
     <>
@@ -114,15 +130,6 @@ export default function DecksGridPanel() {
               event.preventDefault();
               model.setIsDeleteDeckOpen(true);
               return;
-            }
-            if (
-              (event.metaKey || event.ctrlKey) &&
-              event.key.toLowerCase() === "d" &&
-              model.selectedDeckId
-            ) {
-              event.preventDefault();
-              const duplicatedId = await model.duplicateDeck(model.selectedDeckId);
-              if (duplicatedId) navigate(`/decks/${duplicatedId}`);
             }
             }}
           >

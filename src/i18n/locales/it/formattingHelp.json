@@ -81,5 +81,13 @@
   "formattingHelp.diceStructure.colorsCode": "Colori: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Colori validi",
   "formattingHelp.diceStructure.hexCode": "Esadecimale: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Colori esadecimali"
+  "formattingHelp.diceStructure.hexOutput": "Colori esadecimali",
+  "formattingHelp.richText.titleCode": "<title>Regole della quest</title>",
+  "formattingHelp.richText.titleOutput": "Regole della quest",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Movimento</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Movimento",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>testo grande</scale>",
+  "formattingHelp.richText.scaleOutput": "testo grande",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>testo piccolo</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "testo piccolo"
 }

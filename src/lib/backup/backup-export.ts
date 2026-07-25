@@ -2,8 +2,9 @@
 
 import { encode as encodeMsgpack } from "@msgpack/msgpack";
 
-import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import type { AssetRecord } from "@/api/assets";
+import { USE_ZIP_COMPRESSION } from "@/config/flags";
+import { listHeroBackLogosWithBlobs, type HeroBackLogoRecordWithBlob } from "@/lib/hero-back-logos-db";
 import type { CardRecord } from "@/types/cards-db";
 import type {
   DeckEntryRecord,
@@ -14,8 +15,18 @@ import type {
 import type { PairRecord } from "@/types/pairs-db";
 
 import { DEFAULT_BACKUP_FORMAT, type BackupContainerFormat } from "../backup-formats";
-import { createZipBlobWithProgress } from "../zip-utils";
 import { listCards } from "../cards-db";
+import { createZipBlobWithProgress } from "../zip-utils";
+
+import { blobToDataUrl } from "./backup-blob-codec";
+import {
+  BACKUP_LEGACY_FILENAME,
+  BACKUP_MANIFEST_FILENAME,
+  BACKUP_METADATA_FILENAME_V2,
+  COMPACT_CONTAINER_VERSION,
+  COMPACT_PAYLOAD_ID_V2,
+  buildObfuscatedBlobRef,
+} from "./backup-compact-container";
 import {
   BACKUP_CONTAINER_EXTENSION,
   BACKUP_FILE_EXTENSION,
@@ -31,19 +42,12 @@ import {
   type ExportResult,
   type HqccExportCompactFileV1,
   type HqccExportFileV1,
+  type HeroBackLogoRecordExportCompactV1,
+  type HeroBackLogoRecordExportV1,
   type HqccExportLocalStorageV1,
   type HqccExportProfilesV1,
   type HqccExportSettingsV1,
 } from "./backup-types";
-import {
-  BACKUP_LEGACY_FILENAME,
-  BACKUP_MANIFEST_FILENAME,
-  BACKUP_METADATA_FILENAME_V2,
-  COMPACT_CONTAINER_VERSION,
-  COMPACT_PAYLOAD_ID_V2,
-  buildObfuscatedBlobRef,
-} from "./backup-compact-container";
-import { blobToDataUrl } from "./backup-blob-codec";
 import { validateDeckReferences } from "./backup-validation";
 
 function buildTimestamp(): string {
@@ -59,6 +63,7 @@ function buildTimestamp(): string {
 function buildExportMeta(input: {
   cards: { length: number };
   assets: { length: number };
+  heroBackLogos?: { length: number } | null;
   collections?: { length: number } | null;
   decks?: { length: number } | null;
   deckGroups?: { length: number } | null;
@@ -68,6 +73,7 @@ function buildExportMeta(input: {
   return {
     cardsCount: input.cards.length,
     assetsCount: input.assets.length,
+    heroBackLogosCount: input.heroBackLogos?.length ?? 0,
     collectionsCount: input.collections?.length ?? 0,
     decksCount: input.decks?.length ?? 0,
     deckGroupsCount: input.deckGroups?.length ?? 0,
@@ -79,6 +85,7 @@ function buildExportMeta(input: {
 async function loadExportInputs(): Promise<{
   rawCards: CardRecord[];
   rawAssets: (AssetRecord & { blob?: Blob | null })[];
+  rawHeroBackLogos: HeroBackLogoRecordWithBlob[];
   collections: CollectionRecordExportV1[];
   pairs: PairRecord[];
   decks: DeckRecord[];
@@ -97,6 +104,7 @@ async function loadExportInputs(): Promise<{
   const [
     cardSummaries,
     rawAssets,
+    rawHeroBackLogos,
     collections,
     pairs,
     decks,
@@ -105,9 +113,11 @@ async function loadExportInputs(): Promise<{
     deckEntriesBySet,
     borderSwatches,
     defaultCopyright,
+    copyrightTemplateDefaults,
   ] = await Promise.all([
     listCards({ deleted: "include" }),
     apiClient.listAssetsWithBlobs(),
+    listHeroBackLogosWithBlobs(),
     apiClient.listCollections(),
     apiClient.listPairs(),
     apiClient.listDecks({ queries: {} }),
@@ -116,6 +126,7 @@ async function loadExportInputs(): Promise<{
     Promise.resolve(new Map<string, DeckEntryRecord[]>()),
     apiClient.getBorderSwatches(),
     apiClient.getDefaultCopyright(),
+    apiClient.getCopyrightTemplateDefaults(),
   ]);
 
   const rawCards = await hydrateCardsForBackup(cardSummaries, apiClient);
@@ -143,10 +154,13 @@ async function loadExportInputs(): Promise<{
   const hasBorderSwatches = Array.isArray(borderSwatches) && borderSwatches.length > 0;
   const hasDefaultCopyright =
     typeof defaultCopyright === "string" && defaultCopyright.trim().length > 0;
-  if (hasBorderSwatches || hasDefaultCopyright) {
+  const hasCopyrightTemplateDefaults =
+    Object.keys(copyrightTemplateDefaults ?? {}).length > 0;
+  if (hasBorderSwatches || hasDefaultCopyright || hasCopyrightTemplateDefaults) {
     settings = {
       ...(hasBorderSwatches ? { borderSwatches } : {}),
       ...(hasDefaultCopyright ? { defaultCopyright } : {}),
+      ...(hasCopyrightTemplateDefaults ? { copyrightTemplateDefaults } : {}),
     };
   }
 
@@ -188,6 +202,7 @@ async function loadExportInputs(): Promise<{
   return {
     rawCards,
     rawAssets,
+    rawHeroBackLogos,
     collections: collections as CollectionRecordExportV1[],
     pairs: pairs as PairRecord[],
     decks: decks as DeckRecord[],
@@ -248,6 +263,7 @@ async function buildLegacyExportObject(
   const {
     rawCards,
     rawAssets,
+    rawHeroBackLogos,
     collections,
     pairs,
     decks,
@@ -271,7 +287,7 @@ async function buildLegacyExportObject(
   }
 
   const cards: CardRecordExportV1[] = [];
-  const totalProgressCount = rawCards.length + rawAssets.length;
+  const totalProgressCount = rawCards.length + rawAssets.length + rawHeroBackLogos.length;
   let processedCount = 0;
   for (const value of rawCards) {
     const { thumbnailBlob, ...rest } = value;
@@ -311,6 +327,23 @@ async function buildLegacyExportObject(
     onProgress?.(processedCount, totalProgressCount, "export");
   }
 
+  const heroBackLogos: HeroBackLogoRecordExportV1[] = [];
+  for (const value of rawHeroBackLogos) {
+    const { blob, ...rest } = value;
+
+    try {
+      const dataUrl = await blobToDataUrl(blob);
+      heroBackLogos.push({
+        ...rest,
+        dataUrl,
+      });
+    } catch {
+      // Ignore individual logo encoding errors; continue with others
+    }
+    processedCount += 1;
+    onProgress?.(processedCount, totalProgressCount, "export");
+  }
+
   if (totalProgressCount > 0) {
     onProgress?.(totalProgressCount, totalProgressCount, "export");
   }
@@ -320,6 +353,7 @@ async function buildLegacyExportObject(
     createdAt: new Date().toISOString(),
     cards,
     assets,
+    heroBackLogos,
     ...(pairs ? { pairs: pairs as PairRecord[] } : {}),
     collections,
     decks,
@@ -341,6 +375,7 @@ async function buildCompactExportBundle(
   const {
     rawCards,
     rawAssets,
+    rawHeroBackLogos,
     collections,
     pairs,
     decks,
@@ -367,7 +402,7 @@ async function buildCompactExportBundle(
   const assets: AssetRecordExportCompactV1[] = [];
   const files: { name: string; data: Blob | string }[] = [];
 
-  const totalProgressCount = rawCards.length + rawAssets.length;
+  const totalProgressCount = rawCards.length + rawAssets.length + rawHeroBackLogos.length;
   let processedCount = 0;
 
   for (const value of rawCards) {
@@ -402,6 +437,19 @@ async function buildCompactExportBundle(
     onProgress?.(processedCount, totalProgressCount, "export");
   }
 
+  const heroBackLogos: HeroBackLogoRecordExportCompactV1[] = [];
+  for (const value of rawHeroBackLogos) {
+    const { blob, ...rest } = value;
+    const ref = buildObfuscatedBlobRef("asset", `hero-back-logo-${rest.id}`);
+    heroBackLogos.push({
+      ...rest,
+      blobRef: ref,
+    });
+    files.push({ name: ref, data: blob });
+    processedCount += 1;
+    onProgress?.(processedCount, totalProgressCount, "export");
+  }
+
   if (totalProgressCount > 0) {
     onProgress?.(totalProgressCount, totalProgressCount, "export");
   }
@@ -411,6 +459,7 @@ async function buildCompactExportBundle(
     createdAt: new Date().toISOString(),
     cards,
     assets,
+    heroBackLogos,
     ...(pairs ? { pairs: pairs as PairRecord[] } : {}),
     collections,
     decks,
@@ -461,6 +510,7 @@ export async function createBackupJson(options?: {
     meta: buildExportMeta({
       cards: exportObject.cards,
       assets: exportObject.assets,
+      heroBackLogos: exportObject.heroBackLogos,
       collections: exportObject.collections,
       decks: exportObject.decks,
       deckGroups: exportObject.deckGroups,
@@ -508,6 +558,7 @@ export async function createBackupHqcc(options?: {
     meta: buildExportMeta({
       cards: exportMetaSource?.cards ?? [],
       assets: exportMetaSource?.assets ?? [],
+      heroBackLogos: exportMetaSource?.heroBackLogos,
       collections: exportMetaSource?.collections,
       decks: exportMetaSource?.decks,
       deckGroups: exportMetaSource?.deckGroups,

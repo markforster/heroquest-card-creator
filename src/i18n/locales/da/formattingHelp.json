@@ -81,5 +81,13 @@
   "formattingHelp.diceStructure.colorsCode": "Farver: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Gyldige farver",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Hex-farver"
+  "formattingHelp.diceStructure.hexOutput": "Hex-farver",
+  "formattingHelp.richText.titleCode": "<title>Quest-regler</title>",
+  "formattingHelp.richText.titleOutput": "Quest-regler",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Bevaegelse</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Bevaegelse",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>stor tekst</scale>",
+  "formattingHelp.richText.scaleOutput": "stor tekst",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>lille tekst</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "lille tekst"
 }

@@ -7,6 +7,7 @@ jest.mock("@/api/client", () => ({
     listDecks: jest.fn(),
     getBorderSwatches: jest.fn(),
     getDefaultCopyright: jest.fn(),
+    getCopyrightTemplateDefaults: jest.fn(),
   },
 }));
 
@@ -14,10 +15,15 @@ jest.mock("@/lib/cards-db", () => ({
   listCards: jest.fn(),
 }));
 
+jest.mock("@/lib/hero-back-logos-db", () => ({
+  listHeroBackLogosWithBlobs: jest.fn(),
+}));
+
 import { apiClient } from "@/api/client";
 import { createBackupJson } from "@/lib/backup/backup-export";
 import { listCards } from "@/lib/cards-db";
 import { getHqccDexieDb } from "@/lib/hqcc-dexie";
+import { listHeroBackLogosWithBlobs } from "@/lib/hero-back-logos-db";
 import { createCardRecord } from "@/lib/test-support/cards-db-test-helpers";
 import {
   deleteDb,
@@ -27,6 +33,8 @@ import {
 
 const mockedApiClient = apiClient as unknown as Record<string, jest.Mock>;
 const mockedListCards = listCards as jest.MockedFunction<typeof listCards>;
+const mockedListHeroBackLogosWithBlobs =
+  listHeroBackLogosWithBlobs as jest.MockedFunction<typeof listHeroBackLogosWithBlobs>;
 
 function readBlobAsText(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -48,6 +56,8 @@ describe("createBackupJson", () => {
     mockedApiClient.listDecks.mockReset();
     mockedApiClient.getBorderSwatches.mockReset();
     mockedApiClient.getDefaultCopyright.mockReset();
+    mockedApiClient.getCopyrightTemplateDefaults.mockReset();
+    mockedListHeroBackLogosWithBlobs.mockReset();
 
     mockedApiClient.listAssetsWithBlobs.mockResolvedValue([]);
     mockedApiClient.listCollections.mockResolvedValue([]);
@@ -55,6 +65,8 @@ describe("createBackupJson", () => {
     mockedApiClient.listDecks.mockResolvedValue([]);
     mockedApiClient.getBorderSwatches.mockResolvedValue([]);
     mockedApiClient.getDefaultCopyright.mockResolvedValue("");
+    mockedApiClient.getCopyrightTemplateDefaults.mockResolvedValue({});
+    mockedListHeroBackLogosWithBlobs.mockResolvedValue([]);
 
     window.localStorage.clear();
   });
@@ -139,5 +151,36 @@ describe("createBackupJson", () => {
     await expect(createBackupJson()).rejects.toThrow(
       "Backup export failed because 1 card(s) could not be fully loaded: broken-1",
     );
+  });
+
+  it("includes Hero Back logos in the backup payload", async () => {
+    mockedListCards.mockResolvedValue([]);
+    mockedListHeroBackLogosWithBlobs.mockResolvedValue([
+      {
+        id: "logo-1",
+        name: "Clan Crest",
+        mimeType: "image/png",
+        width: 200,
+        height: 80,
+        createdAt: 1,
+        updatedAt: 2,
+        blob: new Blob(["logo"], { type: "image/png" }),
+      },
+    ]);
+
+    const result = await createBackupJson();
+    const text = await readBlobAsText(result.blob);
+    const parsed = JSON.parse(text) as {
+      heroBackLogos?: Array<Record<string, unknown>>;
+    };
+
+    expect(parsed.heroBackLogos).toEqual([
+      expect.objectContaining({
+        id: "logo-1",
+        name: "Clan Crest",
+        dataUrl: expect.stringMatching(/^data:image\/png;base64,/),
+      }),
+    ]);
+    expect(result.meta.heroBackLogosCount).toBe(1);
   });
 });

@@ -24,6 +24,10 @@
   "formattingHelp.richText.underlineOutput": "underlined text",
   "formattingHelp.richText.comboCode": "<color=#3366ff><b>bold blue</b></color>",
   "formattingHelp.richText.comboOutput": "bold blue",
+  "formattingHelp.richText.titleCode": "<title>Quest Rules</title>",
+  "formattingHelp.richText.titleOutput": "Quest Rules",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Movement</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Movement",
   "formattingHelp.alignment.leftCode": ":::al This line is left aligned.:::",
   "formattingHelp.alignment.leftOutput": "This line is left aligned.",
   "formattingHelp.alignment.centerCode": ":::ac This line is centered.:::",
@@ -81,5 +85,9 @@
   "formattingHelp.diceStructure.colorsCode": "Colors: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Valid colors",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Hex colors"
+  "formattingHelp.diceStructure.hexOutput": "Hex colors",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>large text</scale>",
+  "formattingHelp.richText.scaleOutput": "large text",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>small text</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "small text"
 }

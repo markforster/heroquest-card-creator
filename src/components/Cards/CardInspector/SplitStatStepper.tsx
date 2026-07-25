@@ -1,24 +1,25 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext, useWatch } from "react-hook-form";
 
-
 import layoutStyles from "@/app/page.module.css";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { StatSplitFormat, StatValue } from "@/types/stats";
+import { hasStatAsterisk, normalizeStatAsteriskFlags, setStatAsterisk } from "@/lib/stat-asterisks";
+import type { StatAsteriskFlags, StatSplitFormat, StatValue } from "@/types/stats";
 
 import { formatStatInputValue, parseStatInputValue } from "./stat-stepper-input";
 
-import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
+import type { CSSProperties } from "react";
 import type { FieldValues, Path } from "react-hook-form";
 
 type SplitStatStepperProps<TFormValues extends FieldValues> = {
   name: Path<TFormValues>;
+  asterisksName?: Path<TFormValues>;
   label: string;
   icon?: LucideIcon;
   min?: number;
@@ -45,6 +46,7 @@ function readSplitFormat(value: StatValue | undefined): StatSplitFormat {
 
 export default function SplitStatStepper<TFormValues extends FieldValues>({
   name,
+  asterisksName,
   label,
   icon: Icon,
   min = 0,
@@ -55,6 +57,13 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
   const { t } = useI18n();
   const { control, setValue } = useFormContext<TFormValues>();
   const valueWatch = useWatch({ control, name }) as StatValue | undefined;
+  const asterisksWatchValue = useWatch({
+    control,
+    name: asterisksName ?? name,
+  });
+  const asterisksWatch = asterisksName
+    ? (asterisksWatchValue as StatAsteriskFlags | undefined)
+    : undefined;
 
   const isArrayValue = Array.isArray(valueWatch);
   const splitFlag = isArrayValue ? valueWatch[2] : undefined;
@@ -64,6 +73,7 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
     ? readNumber(valueWatch[1], splitSecondaryDefault)
     : splitSecondaryDefault;
   const splitFormat = readSplitFormat(valueWatch);
+  const asterisks = normalizeStatAsteriskFlags(asterisksWatch);
 
   const resolvedMin = allowWildcard ? Math.min(min, -1) : min;
   const [primaryInput, setPrimaryInput] = useState(formatStatInputValue(primaryValue));
@@ -73,7 +83,9 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
   const [formatHover, setFormatHover] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [formatPopoverStyle, setFormatPopoverStyle] = useState<CSSProperties | null>(null);
-  const [formatHoverPopoverStyle, setFormatHoverPopoverStyle] = useState<CSSProperties | null>(null);
+  const [formatHoverPopoverStyle, setFormatHoverPopoverStyle] = useState<CSSProperties | null>(
+    null,
+  );
   const primaryLastValidRef = useRef(primaryValue);
   const secondaryLastValidRef = useRef(secondaryValue);
   const formatButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -284,11 +296,12 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
     const aboveTop = anchorRect.top - popoverRect.height - offset;
     const belowTop = anchorRect.bottom + offset;
     const canRenderBelow = belowTop + popoverRect.height + padding <= viewportHeight;
-    const top = aboveTop >= padding
-      ? aboveTop
-      : canRenderBelow
-        ? belowTop
-        : Math.max(padding, viewportHeight - popoverRect.height - padding);
+    const top =
+      aboveTop >= padding
+        ? aboveTop
+        : canRenderBelow
+          ? belowTop
+          : Math.max(padding, viewportHeight - popoverRect.height - padding);
 
     return { left, top };
   }, []);
@@ -339,40 +352,74 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
         ? optionParenLabel
         : optionSlashLabel;
 
+  const toggleAsterisk = (index: 0 | 1) => {
+    if (!asterisksName) return;
+    const currentValue = index === 0 ? primaryValue : secondaryValue;
+    if (currentValue === -1) return;
+    const nextAsterisks = setStatAsterisk(asterisks, index, !hasStatAsterisk(asterisks, index));
+    setValue(asterisksName, nextAsterisks as unknown as TFormValues[keyof TFormValues], {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+  };
+
   const renderStatField = (value: number, which: "primary" | "secondary") => (
     <div className={layoutStyles.statField}>
-      <input
-        className={layoutStyles.statValueInput}
-        title={`${t("tooltip.valueFor")} ${label}`}
-        aria-label={t("tooltip.valueFor")}
-        value={which === "primary" ? primaryInput : secondaryInput}
-        onChange={handleInputChange(which)}
-        onPaste={handlePaste(which, value)}
-        onFocus={() => setFocusedField(which)}
-        onBlur={() => handleBlur(which)}
-        inputMode="text"
-        autoComplete="off"
-        spellCheck={false}
-      />
-      <div className={layoutStyles.statButtons}>
-        <button
-          type="button"
-          className={`${layoutStyles.statIconButton} ${layoutStyles.statIconButtonMinus}`}
-          title={`${t("tooltip.decrease")} ${label}`}
-          onClick={() => handleChange(-1, which)}
-          disabled={!canDecrement(value)}
-        >
-          -
-        </button>
-        <button
-          type="button"
-          className={`${layoutStyles.statIconButton} ${layoutStyles.statIconButtonPlus}`}
-          title={`${t("tooltip.increase")} ${label}`}
-          onClick={() => handleChange(1, which)}
-          disabled={!canIncrement(value)}
-        >
-          +
-        </button>
+      <div className={layoutStyles.statValueInputWrap}>
+        <input
+          className={`${layoutStyles.statValueInput} ${
+            asterisksName ? layoutStyles.statValueInputWithAsterisk : ""
+          }`}
+          title={`${t("tooltip.valueFor")} ${label}`}
+          aria-label={t("tooltip.valueFor")}
+          value={which === "primary" ? primaryInput : secondaryInput}
+          onChange={handleInputChange(which)}
+          onPaste={handlePaste(which, value)}
+          onFocus={() => setFocusedField(which)}
+          onBlur={() => handleBlur(which)}
+          inputMode="text"
+          autoComplete="off"
+          spellCheck={false}
+        />
+        {asterisksName ? (
+          <button
+            type="button"
+            className={`${layoutStyles.statIconButton} ${layoutStyles.statAsteriskButton} ${
+              hasStatAsterisk(asterisks, which === "primary" ? 0 : 1)
+                ? layoutStyles.statAsteriskButtonActive
+                : ""
+            }`}
+            title={`${label} *`}
+            aria-label={`${label} *`}
+            aria-pressed={hasStatAsterisk(asterisks, which === "primary" ? 0 : 1)}
+            onClick={() => toggleAsterisk(which === "primary" ? 0 : 1)}
+            disabled={value === -1}
+          >
+            <span className={layoutStyles.statAsteriskGlyph}>∗</span>
+          </button>
+        ) : null}
+      </div>
+      <div className={layoutStyles.statActionCluster}>
+        <div className={layoutStyles.statButtons}>
+          <button
+            type="button"
+            className={`${layoutStyles.statIconButton} ${layoutStyles.statIconButtonMinus}`}
+            title={`${t("tooltip.decrease")} ${label}`}
+            onClick={() => handleChange(-1, which)}
+            disabled={!canDecrement(value)}
+          >
+            <Minus className={layoutStyles.statButtonIcon} aria-hidden="true" size={12} />
+          </button>
+          <button
+            type="button"
+            className={`${layoutStyles.statIconButton} ${layoutStyles.statIconButtonPlus}`}
+            title={`${t("tooltip.increase")} ${label}`}
+            onClick={() => handleChange(1, which)}
+            disabled={!canIncrement(value)}
+          >
+            <Plus className={layoutStyles.statButtonIcon} aria-hidden="true" size={12} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -381,7 +428,9 @@ export default function SplitStatStepper<TFormValues extends FieldValues>({
     <div className={layoutStyles.statCell}>
       <div className={`${layoutStyles.statControlRow} ${layoutStyles.uRowSm}`}>
         <div className={layoutStyles.statSubLabel}>
-          {Icon ? <Icon className={layoutStyles.statSubLabelIcon} aria-hidden="true" size={14} /> : null}
+          {Icon ? (
+            <Icon className={layoutStyles.statSubLabelIcon} aria-hidden="true" size={14} />
+          ) : null}
           <span>{label}</span>
         </div>
         <div className={layoutStyles.statSplitFields}>

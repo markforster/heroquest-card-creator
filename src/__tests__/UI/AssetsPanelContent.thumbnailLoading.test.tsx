@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 
+import styles from "@/app/page.module.css";
 import AssetsPanelContent from "@/components/Assets/AssetsPanelContent";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
@@ -87,6 +88,7 @@ function renderPanel() {
 describe("AssetsPanelContent thumbnail loading (UI)", () => {
   beforeEach(() => {
     jest.useFakeTimers();
+    document.documentElement.dataset.theme = "dark";
     const asset = buildAsset();
     mockUseListAssets.mockReturnValue({
       data: [asset],
@@ -99,6 +101,18 @@ describe("AssetsPanelContent thumbnail loading (UI)", () => {
   afterEach(() => {
     jest.clearAllMocks();
     jest.useRealTimers();
+    document.documentElement.dataset.theme = "dark";
+  });
+
+  it("renders the unknown asset-kind badge on the tile in light theme", async () => {
+    document.documentElement.dataset.theme = "light";
+
+    renderPanel();
+
+    const badge = await screen.findByText("Unknown");
+    expect(badge.tagName).toBe("SPAN");
+    expect(badge).toHaveClass(styles.assetsKindBadgeUnknown);
+    expect(badge).toHaveClass(styles.assetsKindBadgeTile);
   });
 
   it("does not flash a spinner for a thumbnail that finishes before the delay", async () => {

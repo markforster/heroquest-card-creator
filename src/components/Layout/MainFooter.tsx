@@ -1,7 +1,7 @@
 "use client";
 
-import { Gamepad2, TriangleAlert, Twitter } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Gamepad2, Lightbulb, TriangleAlert, Twitter } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { isMobile, isTablet } from "react-device-detect";
 
 import styles from "@/app/page.module.css";
@@ -10,11 +10,28 @@ import { useMediaQuery } from "@/components/Layout/LeftNav/useMediaQuery";
 import HelpModal from "@/components/Modals/HelpModal";
 import ReleaseNotesModal from "@/components/Modals/ReleaseNotesModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
+import { useFooterTip } from "@/components/Providers/FooterTipContext";
+import type { FooterTip } from "@/components/Providers/FooterTipContext";
 import useIsTauriApp from "@/hooks/useIsTauriApp";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
 import { attachItchBuyButton } from "@/lib/itch";
 import { APP_VERSION } from "@/version";
+
+const FOOTER_TIP_FADE_MS = 180;
+
+function isSameFooterTip(left: FooterTip | null, right: FooterTip | null) {
+  return (
+    left?.source === right?.source && left?.message === right?.message && left?.icon === right?.icon
+  );
+}
+
+function FooterTipIcon({ icon }: { icon?: "lightbulb" }) {
+  if (icon === "lightbulb") {
+    return <Lightbulb className={styles.footerTipIcon} aria-hidden="true" />;
+  }
+  return null;
+}
 
 export default function MainFooter() {
   const { t } = useI18n();
@@ -24,13 +41,56 @@ export default function MainFooter() {
   const desktopNoticeModal = usePopupState(false);
   const isTauriApp = useIsTauriApp();
   const isNarrowViewport = useMediaQuery("(max-width: 1024px)");
+  const { currentTip } = useFooterTip();
   const downloadLinkRef = useRef<HTMLAnchorElement | null>(null);
+  const footerTipTimeoutRef = useRef<number | null>(null);
   const showDownloadLink = false;
   const showDesktopOptimizedNotice = isMobile || isTablet || isNarrowViewport;
+  const [renderedTip, setRenderedTip] = useState<FooterTip | null>(currentTip);
+  const [isRenderedTipVisible, setIsRenderedTipVisible] = useState(Boolean(currentTip));
 
   useEffect(() => {
     attachItchBuyButton(downloadLinkRef.current);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (footerTipTimeoutRef.current !== null) {
+        window.clearTimeout(footerTipTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isSameFooterTip(renderedTip, currentTip)) {
+      setIsRenderedTipVisible(Boolean(currentTip));
+      return;
+    }
+
+    if (footerTipTimeoutRef.current !== null) {
+      window.clearTimeout(footerTipTimeoutRef.current);
+      footerTipTimeoutRef.current = null;
+    }
+
+    if (!renderedTip) {
+      setRenderedTip(currentTip);
+      setIsRenderedTipVisible(false);
+      footerTipTimeoutRef.current = window.setTimeout(() => {
+        setIsRenderedTipVisible(Boolean(currentTip));
+        footerTipTimeoutRef.current = null;
+      }, 0);
+      return;
+    }
+
+    setIsRenderedTipVisible(false);
+    footerTipTimeoutRef.current = window.setTimeout(() => {
+      setRenderedTip(currentTip);
+      footerTipTimeoutRef.current = window.setTimeout(() => {
+        setIsRenderedTipVisible(Boolean(currentTip));
+        footerTipTimeoutRef.current = null;
+      }, 0);
+    }, FOOTER_TIP_FADE_MS);
+  }, [currentTip, renderedTip]);
 
   return (
     <>
@@ -81,7 +141,16 @@ export default function MainFooter() {
           <div
             className={`${styles.footerCenter} d-flex align-items-center justify-content-center`}
           >
-            {showDesktopOptimizedNotice ? (
+            {renderedTip ? (
+              <span
+                className={`${styles.footerTipText} ${
+                  isRenderedTipVisible ? styles.footerTipTextVisible : styles.footerTipTextHidden
+                }`}
+              >
+                <FooterTipIcon icon={renderedTip.icon} />
+                <span>{renderedTip.message}</span>
+              </span>
+            ) : showDesktopOptimizedNotice ? (
               <button
                 type="button"
                 className={styles.footerCompatibilityNotice}

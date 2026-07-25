@@ -1,5 +1,6 @@
 "use client";
 
+import { apiClient } from "@/api/client";
 import { getLocationOriginInfo } from "@/lib/browser";
 import {
   extractFileName,
@@ -9,9 +10,9 @@ import {
 } from "@/lib/card-preview";
 import { getSvgImageHref, insertSvgStyle, setSvgImageHref } from "@/lib/dom";
 import { logAssetInlineById } from "@/lib/export-logging";
+import { getHeroBackLogoBlob } from "@/lib/hero-back-logos-db";
 import type { RenderSvgToCanvasOptions } from "@/lib/render-svg-to-canvas.types";
 import { now } from "@/lib/time";
-import { apiClient } from "@/api/client";
 
 export async function renderSvgToCanvas({
   svgElement,
@@ -21,6 +22,7 @@ export async function renderSvgToCanvas({
   removeDebugBounds = true,
   loggingId,
   assetBlobsById,
+  heroBackLogoBlobsById,
   mutateSvg,
 }: RenderSvgToCanvasOptions): Promise<HTMLCanvasElement | null> {
   const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
@@ -62,7 +64,9 @@ export async function renderSvgToCanvas({
       if (!hrefAttr || hrefAttr.startsWith("data:")) return;
 
       const userAssetId = imgEl.getAttribute("data-user-asset-id");
+      const heroBackLogoId = imgEl.getAttribute("data-user-hero-back-logo-id");
       const assetName = imgEl.getAttribute("data-user-asset-name");
+      const heroBackLogoName = imgEl.getAttribute("data-user-hero-back-logo-name");
       const assetLabel = userAssetId ?? extractFileName(hrefAttr) ?? hrefAttr ?? "unknown";
       if (userAssetId) {
         const cachedBlob = assetBlobsById?.get(userAssetId);
@@ -105,6 +109,56 @@ export async function renderSvgToCanvas({
         logAssetInlineById(loggingId, {
           assetId: userAssetId,
           assetName,
+          source: "userAssetId",
+          durationMs: now() - inlineStart,
+          outcome: didInline ? "success" : "fail",
+        });
+        if (didInline) {
+          return;
+        }
+      }
+
+      if (heroBackLogoId) {
+        const cachedBlob = heroBackLogoBlobsById?.get(heroBackLogoId);
+        if (cachedBlob) {
+          const cacheStart = now();
+          try {
+            const dataUrl = await readBlobAsDataUrl(cachedBlob);
+            setSvgImageHref(imgEl, dataUrl);
+            logAssetInlineById(loggingId, {
+              assetId: heroBackLogoId,
+              assetName: heroBackLogoName,
+              source: "userAssetCache",
+              durationMs: now() - cacheStart,
+              outcome: "success",
+            });
+            return;
+          } catch {
+            logAssetInlineById(loggingId, {
+              assetId: heroBackLogoId,
+              assetName: heroBackLogoName,
+              source: "userAssetCache",
+              durationMs: now() - cacheStart,
+              outcome: "fail",
+            });
+          }
+        }
+
+        const inlineStart = now();
+        let didInline = false;
+        try {
+          const blob = await getHeroBackLogoBlob(heroBackLogoId);
+          if (blob) {
+            const dataUrl = await readBlobAsDataUrl(blob);
+            setSvgImageHref(imgEl, dataUrl);
+            didInline = true;
+          }
+        } catch {
+          // Fall through to the normal handling.
+        }
+        logAssetInlineById(loggingId, {
+          assetId: heroBackLogoId,
+          assetName: heroBackLogoName,
           source: "userAssetId",
           durationMs: now() - inlineStart,
           outcome: didInline ? "success" : "fail",

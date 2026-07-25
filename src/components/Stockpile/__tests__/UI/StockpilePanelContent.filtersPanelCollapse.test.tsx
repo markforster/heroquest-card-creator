@@ -189,6 +189,7 @@ describe("StockpilePanelContent filters panel collapse (UI)", () => {
       visibleCollectionIds: new Set(),
       eligibleIdSet: new Set(),
       overallCount: 0,
+      groupedCards: [],
     });
   });
 

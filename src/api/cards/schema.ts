@@ -4,6 +4,7 @@ import {
   blobSchema,
   bodyTextStyleSchema,
   cardFaceSchema,
+  statAsteriskFlagsSchema,
   statValueSchema,
   templateIdSchema,
 } from "@/api/shared/schema";
@@ -51,17 +52,31 @@ export const cardRecordSchema = z.object({
   imageOriginalHeight: z.number().optional(),
   borderColor: z.string().optional(),
   backgroundTint: z.string().optional(),
+  heroBackLogoMode: z.enum(["default", "none", "custom"]).optional(),
+  heroBackLogoId: z.string().optional(),
+  heroBackLogoName: z.string().optional(),
+  heroBackLogoOriginalWidth: z.number().optional(),
+  heroBackLogoOriginalHeight: z.number().optional(),
 
   heroAttackDice: statValueSchema.optional(),
+  heroAttackDiceAsterisks: statAsteriskFlagsSchema.optional(),
   heroDefendDice: statValueSchema.optional(),
+  heroDefendDiceAsterisks: statAsteriskFlagsSchema.optional(),
   heroBodyPoints: statValueSchema.optional(),
+  heroBodyPointsAsterisks: statAsteriskFlagsSchema.optional(),
   heroMindPoints: statValueSchema.optional(),
+  heroMindPointsAsterisks: statAsteriskFlagsSchema.optional(),
 
   monsterMovementSquares: statValueSchema.optional(),
+  monsterMovementSquaresAsterisks: statAsteriskFlagsSchema.optional(),
   monsterAttackDice: statValueSchema.optional(),
+  monsterAttackDiceAsterisks: statAsteriskFlagsSchema.optional(),
   monsterDefendDice: statValueSchema.optional(),
+  monsterDefendDiceAsterisks: statAsteriskFlagsSchema.optional(),
   monsterBodyPoints: statValueSchema.optional(),
+  monsterBodyPointsAsterisks: statAsteriskFlagsSchema.optional(),
   monsterMindPoints: statValueSchema.optional(),
+  monsterMindPointsAsterisks: statAsteriskFlagsSchema.optional(),
   monsterIconAssetId: z.string().optional(),
   monsterIconAssetName: z.string().optional(),
   monsterIconOffsetX: z.number().optional(),
@@ -86,6 +101,7 @@ export const cardCreateInputSchema = cardRecordSchema
     updatedAt: z.number().optional(),
     nameLower: z.string().optional(),
     schemaVersion: cardSchemaVersionSchema.optional(),
+    duplicateFromCardId: z.string().nullable().optional(),
   });
 
 export const cardUpdateInputSchema = cardRecordSchema

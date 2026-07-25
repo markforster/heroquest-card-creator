@@ -10,6 +10,7 @@ describe("descriptionSupportsBodyTextFitToBounds", () => {
     expect(descriptionSupportsBodyTextFitToBounds("large-treasure")).toBe(true);
     expect(descriptionSupportsBodyTextFitToBounds("hero-back")).toBe(true);
     expect(descriptionSupportsBodyTextFitToBounds("labelled-back")).toBe(true);
+    expect(descriptionSupportsBodyTextFitToBounds("rules")).toBe(true);
   });
 
   it("disables fit-to-bounds for auto-height description templates", () => {

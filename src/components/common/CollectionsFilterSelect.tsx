@@ -54,6 +54,8 @@ const selectStyles: StylesConfig<FilterOption, false> = {
     backgroundColor: "var(--hq-surface-900)",
     borderColor: state.isFocused ? "var(--hq-accent)" : "var(--hq-border-mid)",
     boxShadow: state.isFocused ? "0 0 0 1px rgba(230, 179, 90, 0.35)" : "none",
+    fontSize: "var(--hq-control-text-primary)",
+    lineHeight: "var(--hq-control-line-height)",
     "&:hover": { borderColor: "var(--hq-accent)" },
   }),
   valueContainer: (base) => ({
@@ -63,7 +65,8 @@ const selectStyles: StylesConfig<FilterOption, false> = {
   singleValue: (base) => ({
     ...base,
     color: "var(--hq-text)",
-    fontSize: "var(--text-md)",
+    fontSize: "var(--hq-control-text-primary)",
+    lineHeight: "var(--hq-control-line-height)",
   }),
   menu: (base) => ({
     ...base,
@@ -85,6 +88,8 @@ const selectStyles: StylesConfig<FilterOption, false> = {
         : "transparent",
     color: "var(--hq-text)",
     padding: "0",
+    fontSize: "var(--hq-control-text-primary)",
+    lineHeight: "var(--hq-control-line-height)",
   }),
   indicatorSeparator: () => ({ display: "none" }),
   dropdownIndicator: (base) => ({
@@ -95,6 +100,8 @@ const selectStyles: StylesConfig<FilterOption, false> = {
   input: (base) => ({
     ...base,
     color: "var(--hq-text)",
+    fontSize: "var(--hq-control-text-primary)",
+    lineHeight: "var(--hq-control-line-height)",
   }),
 };
 

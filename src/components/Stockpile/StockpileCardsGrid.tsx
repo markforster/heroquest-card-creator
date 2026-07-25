@@ -4,16 +4,27 @@ import { useDraggable } from "@dnd-kit/core";
 
 import styles from "@/app/page.module.css";
 import RemoteCardThumbnail from "@/components/common/CardThumbnail/RemoteCardThumbnail";
+import SavedCardTile from "@/components/common/SavedCardTile";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import StockpilePairIndicator from "@/components/Stockpile/StockpilePairIndicator";
 import StockpileSelectCheckbox from "@/components/Stockpile/StockpileSelectCheckbox";
-import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
+import type {
+  StockpileCardActions,
+  StockpileCardGroupView,
+  StockpileCardView,
+} from "@/components/Stockpile/types";
 import { useI18n } from "@/i18n/I18nProvider";
 
-const ENABLE_GRID_VARIANT = false;
+const ENABLE_LEGACY_GRID_CARD_LAYOUT = false;
+const DEBUG_DISABLE_STOCKPILE_GRID_ITEMS = false;
+const DEBUG_DISABLE_STOCKPILE_GRID_ITEM_CONTENT = false;
+const DEBUG_DISABLE_STOCKPILE_GRID_THUMBNAIL = false;
+const DEBUG_DISABLE_STOCKPILE_GRID_META = false;
+const DEBUG_DISABLE_STOCKPILE_GRID_PAIR_INDICATOR = false;
 
 type StockpileCardsGridProps = {
   items: StockpileCardView[];
+  groups?: StockpileCardGroupView[];
   actions: StockpileCardActions;
   isPairMode: boolean;
   dragEnabled: boolean;
@@ -43,7 +54,9 @@ function StockpileCardsGridItem({
   return (
     <div
       ref={setNodeRef}
-      className={`${styles.assetsItem} ${card.isSelected ? styles.assetsItemSelected : ""} ${
+      className={`${styles.stockpileCardTile} ${
+        card.isSelected ? styles.stockpileCardTileSelected : ""
+      } ${
         isDragging ? styles.stockpileCardDragging : ""
       }`}
       aria-label={card.name}
@@ -66,7 +79,7 @@ function StockpileCardsGridItem({
       {...attributes}
       {...listeners}
     >
-      {ENABLE_GRID_VARIANT ? (
+      {DEBUG_DISABLE_STOCKPILE_GRID_ITEM_CONTENT ? null : ENABLE_LEGACY_GRID_CARD_LAYOUT ? (
         <div className={styles.stockpileGridVariant}>
           {isPairMode ? null : (
             <div className={styles.stockpileGridRowHeader}>
@@ -83,14 +96,16 @@ function StockpileCardsGridItem({
           )}
           <div className={styles.stockpileGridRowBody}>
             <div className={styles.stockpileGridColumnThumb}>
-              <RemoteCardThumbnail
-                cardId={card.id}
-                thumbnailBlob={card.thumbnailBlob}
-                templateThumbSrc={card.templateThumbSrc ?? null}
-                alt={card.name}
-                variant="md"
-                fit="contain"
-              />
+              {DEBUG_DISABLE_STOCKPILE_GRID_THUMBNAIL ? null : (
+                <RemoteCardThumbnail
+                  cardId={card.id}
+                  thumbnailBlob={card.thumbnailBlob}
+                  templateThumbSrc={card.templateThumbSrc ?? null}
+                  alt={card.name}
+                  variant="md"
+                  fit="contain"
+                />
+              )}
             </div>
             {isPairMode ? null : (
               <div className={styles.stockpileGridColumnMeta}>
@@ -120,46 +135,38 @@ function StockpileCardsGridItem({
         </div>
       ) : (
         <>
-          {isPairMode ? null : (
-            <div className={styles.cardsItemHeader}>
-              <div className={styles.stockpileCardTitleRow}>
-                <StockpileSelectCheckbox
-                  card={card}
-                  actions={actions}
-                  isPairMode={isPairMode}
-                  label={selectLabel}
-                />
-                <div className={styles.cardsItemName} title={card.name}>
-                  {card.name}
-                </div>
-              </div>
-              <StockpilePairIndicator
-                card={card}
-                actions={actions}
-                isPairMode={isPairMode}
-                variant="grid"
+          {isPairMode ? (
+            DEBUG_DISABLE_STOCKPILE_GRID_THUMBNAIL ? null : (
+              <RemoteCardThumbnail
+                cardId={card.id}
+                thumbnailBlob={card.thumbnailBlob}
+                templateThumbSrc={card.templateThumbSrc ?? null}
+                alt={card.name}
+                variant="md"
+                fit="contain"
               />
-            </div>
-          )}
-          <RemoteCardThumbnail
-            cardId={card.id}
-            thumbnailBlob={card.thumbnailBlob}
-            templateThumbSrc={card.templateThumbSrc ?? null}
-            alt={card.name}
-            variant="md"
-            fit="contain"
-          />
-          {isPairMode ? null : (
-            <div className={styles.cardsItemMeta}>
-              <div
-                className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}
-              >
-                {card.templateLabel}
-              </div>
-              <div className={styles.cardsItemDetails}>
-                {card.updatedLabel} {card.timeLabel}
-              </div>
-            </div>
+            )
+          ) : (
+            <SavedCardTile
+              title={card.name}
+              templateLabel={card.templateLabel}
+              variant="stockpile"
+              topToolbarTestId="stockpile-card-top-toolbar"
+              bottomToolbarTestId="stockpile-card-bottom-toolbar"
+              typePillClassName={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]}`}
+              thumbnail={
+                DEBUG_DISABLE_STOCKPILE_GRID_THUMBNAIL ? null : (
+                  <RemoteCardThumbnail
+                    cardId={card.id}
+                    thumbnailBlob={card.thumbnailBlob}
+                    templateThumbSrc={card.templateThumbSrc ?? null}
+                    alt={card.name}
+                    variant="md"
+                    fit="contain"
+                  />
+                )
+              }
+            />
           )}
         </>
       )}
@@ -169,6 +176,7 @@ function StockpileCardsGridItem({
 
 export default function StockpileCardsGrid({
   items,
+  groups = [],
   actions,
   isPairMode,
   dragEnabled,
@@ -176,21 +184,46 @@ export default function StockpileCardsGrid({
 }: StockpileCardsGridProps) {
   return (
     <div
-      className={styles.assetsGrid}
+      className={groups.length > 0 ? styles.stockpileCardsGridSurface : styles.stockpileCardsGrid}
       onClick={(event) => {
         if (event.target !== event.currentTarget) return;
         onClearSelection();
       }}
     >
-      {items.map((card) => (
-        <StockpileCardsGridItem
-          key={card.id}
-          card={card}
-          actions={actions}
-          isPairMode={isPairMode}
-          dragEnabled={dragEnabled}
-        />
-      ))}
+      {DEBUG_DISABLE_STOCKPILE_GRID_ITEMS ? null : groups.length > 0 ? (
+        <div className={styles.stockpileCardGroups}>
+          {groups.map((group) => (
+            <section
+              key={group.id}
+              className={styles.stockpileCardGroup}
+              aria-label={group.label}
+            >
+              <h3 className={styles.stockpileCardGroupTitle}>{group.label}</h3>
+              <div className={styles.stockpileCardsGrid}>
+                {group.cards.map((card) => (
+                  <StockpileCardsGridItem
+                    key={card.id}
+                    card={card}
+                    actions={actions}
+                    isPairMode={isPairMode}
+                    dragEnabled={dragEnabled}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        items.map((card) => (
+          <StockpileCardsGridItem
+            key={card.id}
+            card={card}
+            actions={actions}
+            isPairMode={isPairMode}
+            dragEnabled={dragEnabled}
+          />
+        ))
+      )}
     </div>
   );
 }

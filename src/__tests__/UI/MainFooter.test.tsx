@@ -22,7 +22,8 @@ jest.mock("react-device-detect", () => ({
 
 jest.mock("@/components/Modals/HelpModal", () => ({
   __esModule: true,
-  default: () => null,
+  default: ({ isOpen }: { isOpen: boolean }) =>
+    isOpen ? <div role="dialog" aria-label="Help modal" /> : null,
 }));
 
 jest.mock("@/components/Modals/ReleaseNotesModal", () => ({
@@ -38,6 +39,14 @@ jest.mock("@/hooks/useIsTauriApp", () => ({
 jest.mock("@/components/Providers/AnalyticsProvider", () => ({
   useAnalytics: () => ({
     track: jest.fn(),
+  }),
+}));
+
+jest.mock("@/components/Providers/FooterTipContext", () => ({
+  useFooterTip: () => ({
+    currentTip: null,
+    setTip: jest.fn(),
+    clearTip: jest.fn(),
   }),
 }));
 
@@ -69,9 +78,12 @@ describe("MainFooter (UI)", () => {
     expect(screen.getByRole("link", { name: "v 0.0.0-test" })).toBeInTheDocument();
   });
 
-  it("renders help and about links", () => {
+  it("opens the help modal", () => {
     renderMainFooter();
-    expect(screen.getByRole("button", { name: "Help" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Help" }));
+
+    expect(screen.getByRole("dialog", { name: "Help modal" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "About" })).toBeInTheDocument();
   });
 
@@ -108,11 +120,11 @@ describe("MainFooter (UI)", () => {
     renderMainFooter();
 
     fireEvent.click(screen.getByRole("button", { name: "Desktop optimized" }));
-    expect(screen.getByRole("heading", { name: "Desktop browser recommended" })).toBeInTheDocument();
     expect(
-      screen.getByText(
-        "HeroQuest Card Creator is currently optimized for desktop browsers.",
-      ),
+      screen.getByRole("heading", { name: "Desktop browser recommended" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("HeroQuest Card Creator is currently optimized for desktop browsers."),
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "OK" }));
@@ -120,5 +132,4 @@ describe("MainFooter (UI)", () => {
       screen.queryByRole("heading", { name: "Desktop browser recommended" }),
     ).not.toBeInTheDocument();
   });
-
 });

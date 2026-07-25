@@ -1,7 +1,8 @@
 import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
+import { normalizeStatAsteriskFlags } from "@/lib/stat-asterisks";
 import type { BodyTextStyle, CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
-import type { StatValue } from "@/types/stats";
+import type { StatAsteriskFlags, StatValue } from "@/types/stats";
 import type { TemplateId } from "@/types/templates";
 
 function normalizeImageScale(
@@ -54,9 +55,13 @@ export function cardRecordToCardData<T extends TemplateId>(
       const data: CardDataByTemplate["hero"] = {
         ...base,
         attackDice: record.heroAttackDice,
+        attackDiceAsterisks: normalizeStatAsteriskFlags(record.heroAttackDiceAsterisks),
         defendDice: record.heroDefendDice,
+        defendDiceAsterisks: normalizeStatAsteriskFlags(record.heroDefendDiceAsterisks),
         bodyPoints: record.heroBodyPoints,
+        bodyPointsAsterisks: normalizeStatAsteriskFlags(record.heroBodyPointsAsterisks),
         mindPoints: record.heroMindPoints,
+        mindPointsAsterisks: normalizeStatAsteriskFlags(record.heroMindPointsAsterisks),
       };
       return data as CardDataByTemplate[T];
     }
@@ -64,10 +69,15 @@ export function cardRecordToCardData<T extends TemplateId>(
       const data: CardDataByTemplate["monster"] = {
         ...base,
         movementSquares: record.monsterMovementSquares,
+        movementSquaresAsterisks: normalizeStatAsteriskFlags(record.monsterMovementSquaresAsterisks),
         attackDice: record.monsterAttackDice,
+        attackDiceAsterisks: normalizeStatAsteriskFlags(record.monsterAttackDiceAsterisks),
         defendDice: record.monsterDefendDice,
+        defendDiceAsterisks: normalizeStatAsteriskFlags(record.monsterDefendDiceAsterisks),
         bodyPoints: record.monsterBodyPoints,
+        bodyPointsAsterisks: normalizeStatAsteriskFlags(record.monsterBodyPointsAsterisks),
         mindPoints: record.monsterMindPoints,
+        mindPointsAsterisks: normalizeStatAsteriskFlags(record.monsterMindPointsAsterisks),
         iconAssetId: record.monsterIconAssetId,
         iconAssetName: record.monsterIconAssetName,
         iconOffsetX: record.monsterIconOffsetX,
@@ -89,9 +99,21 @@ export function cardRecordToCardData<T extends TemplateId>(
       };
       return data as CardDataByTemplate[T];
     }
-    case "hero-back": {
-      const data: CardDataByTemplate["hero-back"] = {
+    case "rules": {
+      const data: CardDataByTemplate["rules"] = {
         ...base,
+      };
+      return data as CardDataByTemplate[T];
+    }
+    case "hero-back":
+    case "logo-back": {
+      const data: CardDataByTemplate["logo-back"] = {
+        ...base,
+        heroBackLogoMode: record.heroBackLogoMode ?? "default",
+        heroBackLogoId: record.heroBackLogoId,
+        heroBackLogoName: record.heroBackLogoName,
+        heroBackLogoOriginalWidth: record.heroBackLogoOriginalWidth,
+        heroBackLogoOriginalHeight: record.heroBackLogoOriginalHeight,
       };
       return data as CardDataByTemplate[T];
     }
@@ -149,9 +171,13 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
       return {
         ...basePatch,
         heroAttackDice: normalizeStatValueForSave(hero.attackDice),
+        heroAttackDiceAsterisks: normalizeStatAsteriskFlagsForSave(hero.attackDiceAsterisks),
         heroDefendDice: normalizeStatValueForSave(hero.defendDice),
+        heroDefendDiceAsterisks: normalizeStatAsteriskFlagsForSave(hero.defendDiceAsterisks),
         heroBodyPoints: normalizeStatValueForSave(hero.bodyPoints),
+        heroBodyPointsAsterisks: normalizeStatAsteriskFlagsForSave(hero.bodyPointsAsterisks),
         heroMindPoints: normalizeStatValueForSave(hero.mindPoints),
+        heroMindPointsAsterisks: normalizeStatAsteriskFlagsForSave(hero.mindPointsAsterisks),
       };
     }
     case "monster": {
@@ -159,10 +185,17 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
       return {
         ...basePatch,
         monsterMovementSquares: normalizeStatValueForSave(monster.movementSquares),
+        monsterMovementSquaresAsterisks: normalizeStatAsteriskFlagsForSave(
+          monster.movementSquaresAsterisks,
+        ),
         monsterAttackDice: normalizeStatValueForSave(monster.attackDice),
+        monsterAttackDiceAsterisks: normalizeStatAsteriskFlagsForSave(monster.attackDiceAsterisks),
         monsterDefendDice: normalizeStatValueForSave(monster.defendDice),
+        monsterDefendDiceAsterisks: normalizeStatAsteriskFlagsForSave(monster.defendDiceAsterisks),
         monsterBodyPoints: normalizeStatValueForSave(monster.bodyPoints),
+        monsterBodyPointsAsterisks: normalizeStatAsteriskFlagsForSave(monster.bodyPointsAsterisks),
         monsterMindPoints: normalizeStatValueForSave(monster.mindPoints),
+        monsterMindPointsAsterisks: normalizeStatAsteriskFlagsForSave(monster.mindPointsAsterisks),
         monsterIconAssetId: monster.iconAssetId,
         monsterIconAssetName: monster.iconAssetName,
         monsterIconOffsetX: monster.iconOffsetX,
@@ -173,10 +206,22 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     }
     case "large-treasure":
     case "small-treasure":
-    case "hero-back":
+    case "rules":
     case "labelled-back":
     default:
       return basePatch;
+    case "hero-back":
+    case "logo-back": {
+      const heroBack = data as CardDataByTemplate["logo-back"];
+      return {
+        ...basePatch,
+        heroBackLogoMode: heroBack.heroBackLogoMode,
+        heroBackLogoId: heroBack.heroBackLogoId,
+        heroBackLogoName: heroBack.heroBackLogoName,
+        heroBackLogoOriginalWidth: heroBack.heroBackLogoOriginalWidth,
+        heroBackLogoOriginalHeight: heroBack.heroBackLogoOriginalHeight,
+      };
+    }
   }
 }
 
@@ -206,4 +251,10 @@ function normalizeStatValueForSave(value?: StatValue): StatValue | undefined {
     }
   }
   return [value as number, 0, 0];
+}
+
+function normalizeStatAsteriskFlagsForSave(
+  flags?: StatAsteriskFlags,
+): StatAsteriskFlags | undefined {
+  return normalizeStatAsteriskFlags(flags);
 }

@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 
 import ColorPickerField from "@/components/common/ColorPickerField";
+import styles from "@/components/common/ColorPickerField/ColorPickerField.module.css";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
 jest.mock("react-colorful", () => ({
@@ -169,6 +170,18 @@ describe("ColorPickerField", () => {
     expect(screen.getByRole("textbox")).toHaveValue("#445566FF");
   });
 
+  it("renders preset swatches through the shared swatch grid layout", () => {
+    renderField({
+      showInput: false,
+      presetSwatches: ["#445566", "#778899"],
+    });
+
+    const presetGrid = screen.getByTestId("preset-swatch-grid");
+    expect(presetGrid).toHaveClass(styles.swatchGrid);
+    expect(screen.getByRole("button", { name: "Select #445566" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Select #778899" })).toBeInTheDocument();
+  });
+
   it("strips alpha when allowAlpha is false", () => {
     const { onChangeSpy } = renderControlledField({
       showInput: false,
@@ -195,5 +208,75 @@ describe("ColorPickerField", () => {
     renderField({ showInput: false, isOpen: true });
 
     expect(screen.getByRole("textbox")).toBeInTheDocument();
+  });
+
+  it("can render the popover in a portal", () => {
+    renderField({ showInput: false, isOpen: true, renderInPortal: true });
+
+    const input = screen.getByRole("textbox");
+    const portalPopover = document.body.querySelector(`.${styles.popover}`);
+    expect(input).toBeInTheDocument();
+    expect(portalPopover).not.toBeNull();
+    expect(portalPopover).toContainElement(input);
+  });
+
+  it("reports the portal popover element lifecycle to the parent", () => {
+    const onPopoverElementChange = jest.fn();
+    const { rerender, unmount } = render(
+      <I18nProvider>
+        <ColorPickerField
+          label="Color"
+          inputValue="#ABCDEF12"
+          selectedValue="#ABCDEF12"
+          defaultColor="#310101"
+          smartGroups={[]}
+          isSmartBusy={false}
+          onRequestSmart={jest.fn()}
+          onChange={jest.fn()}
+          onSelectDefault={jest.fn()}
+          onSelectTransparent={jest.fn()}
+          canRevert={false}
+          onRevert={jest.fn()}
+          isOpen
+          onToggleOpen={jest.fn()}
+          onClose={jest.fn()}
+          showInput={false}
+          renderInPortal
+          onPopoverElementChange={onPopoverElementChange}
+        />
+      </I18nProvider>,
+    );
+
+    expect(onPopoverElementChange).toHaveBeenCalledWith(expect.any(HTMLDivElement));
+
+    rerender(
+      <I18nProvider>
+        <ColorPickerField
+          label="Color"
+          inputValue="#ABCDEF12"
+          selectedValue="#ABCDEF12"
+          defaultColor="#310101"
+          smartGroups={[]}
+          isSmartBusy={false}
+          onRequestSmart={jest.fn()}
+          onChange={jest.fn()}
+          onSelectDefault={jest.fn()}
+          onSelectTransparent={jest.fn()}
+          canRevert={false}
+          onRevert={jest.fn()}
+          isOpen={false}
+          onToggleOpen={jest.fn()}
+          onClose={jest.fn()}
+          showInput={false}
+          renderInPortal
+          onPopoverElementChange={onPopoverElementChange}
+        />
+      </I18nProvider>,
+    );
+
+    expect(onPopoverElementChange).toHaveBeenLastCalledWith(null);
+
+    unmount();
+    expect(onPopoverElementChange).toHaveBeenLastCalledWith(null);
   });
 });

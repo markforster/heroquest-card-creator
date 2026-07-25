@@ -2,20 +2,25 @@
 
 import { useEffect, useState } from "react";
 
-import { useI18n } from "@/i18n/I18nProvider";
 import { apiClient } from "@/api/client";
+import { helpCardShowcaseCssBackground } from "@/assets/app-shell-assets";
+import { useI18n } from "@/i18n/I18nProvider";
 import { DB_VERSION } from "@/lib/hqcc-db";
 import { APP_VERSION } from "@/version";
 
 import styles from "./DatabaseVersionGate.module.css";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 type GateStatus = "checking" | "ready" | "blocked";
 
 type Props = {
   children: ReactNode;
 };
+
+const LOADING_PANEL_STYLE = {
+  "--database-loading-background-image": helpCardShowcaseCssBackground,
+} as CSSProperties;
 
 export default function DatabaseVersionGate({ children }: Props) {
   const { t } = useI18n();
@@ -100,7 +105,7 @@ export default function DatabaseVersionGate({ children }: Props) {
 
   return (
     <div className={styles.gate}>
-      <div className={styles.panel}>
+      <div className={`${styles.panel} ${styles.loadingPanel}`} style={LOADING_PANEL_STYLE}>
         <p className={styles.message}>{t("ui.loading")}</p>
       </div>
     </div>

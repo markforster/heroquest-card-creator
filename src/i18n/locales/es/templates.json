@@ -3,6 +3,8 @@
   "templates.monster": "Carta de monstruo",
   "templates.small-treasure": "Carta con arte pequeño",
   "templates.large-treasure": "Carta con arte grande",
+  "templates.rules": "Reglas",
   "templates.hero-back": "Reverso de héroe",
+  "templates.logo-back": "Reverso con logotipo",
   "templates.labelled-back": "Reverso con etiqueta"
 }

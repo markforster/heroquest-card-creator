@@ -4,12 +4,19 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import type { ReactNode } from "react";
 
+export type RouteShortcutHandler = () => boolean | Promise<boolean>;
+export type RouteShortcutHandlers = Partial<Record<string, RouteShortcutHandler>>;
+
 export type RouteShellCapabilities = {
   repairCurrentCardThumbnail: () => Promise<boolean>;
+  focusPrimarySearch: RouteShortcutHandler;
+  routeShortcutHandlers: RouteShortcutHandlers;
 };
 
 export const noopRouteShellCapabilities: RouteShellCapabilities = {
   repairCurrentCardThumbnail: async () => false,
+  focusPrimarySearch: () => false,
+  routeShortcutHandlers: {},
 };
 
 type RouteShellCapabilitiesProviderValue = {

@@ -4,6 +4,10 @@ import { cardTemplatesById } from "@/data/card-templates";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import type { CardRecord } from "@/api/cards";
 import type { CollectionRecord } from "@/types/collections-db";
+import type {
+  StockpilePrimaryToolbarGroupValue,
+  StockpilePrimaryToolbarSortValue,
+} from "@/components/Stockpile/types";
 
 type ActiveFilter =
   | { type: "all" }
@@ -15,30 +19,80 @@ type ActiveFilter =
 type UseStockpileFiltersOptions = {
   cards: CardRecord[];
   collections: CollectionRecord[];
+  templateLabelMap?: Record<string, string>;
+  faceLabelMap?: { front: string; back: string };
   search: string;
   templateFilter: string;
   activeFilter: ActiveFilter;
   isPairMode: boolean;
   isPairBacks: boolean;
+  sortMode?: StockpilePrimaryToolbarSortValue;
+  groupMode?: StockpilePrimaryToolbarGroupValue;
   showUnpairedOnly?: boolean;
   pairedIdSet?: Set<string>;
   showMissingArtworkOnly?: boolean;
   missingArtworkIdSet?: Set<string>;
 };
 
+type StockpileCardGroup = {
+  id: string;
+  label: string;
+  cards: CardRecord[];
+};
+
 export const useStockpileFilters = ({
   cards,
   collections,
+  templateLabelMap,
+  faceLabelMap,
   search,
   templateFilter,
   activeFilter,
   isPairMode,
   isPairBacks,
+  sortMode = "modified",
+  groupMode = "none",
   showUnpairedOnly = false,
   pairedIdSet,
   showMissingArtworkOnly = false,
   missingArtworkIdSet,
 }: UseStockpileFiltersOptions) => {
+  const compareCardsByNameAsc = (a: CardRecord, b: CardRecord) => {
+    const aName = a.nameLower ?? a.name.toLocaleLowerCase();
+    const bName = b.nameLower ?? b.name.toLocaleLowerCase();
+    return aName.localeCompare(bName);
+  };
+  const compareCardsByTypeAsc = (a: CardRecord, b: CardRecord) => {
+    const aType = templateLabelMap?.[a.templateId] ?? a.templateId;
+    const bType = templateLabelMap?.[b.templateId] ?? b.templateId;
+    return aType.localeCompare(bType);
+  };
+  const compareCardsBySortMode = (
+    sort: StockpilePrimaryToolbarSortValue,
+    a: CardRecord,
+    b: CardRecord,
+  ) => {
+    if (sort === "name") {
+      const byName = compareCardsByNameAsc(a, b);
+      if (byName !== 0) return byName;
+      if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
+      return b.createdAt - a.createdAt;
+    }
+
+    if (sort === "type") {
+      const byType = compareCardsByTypeAsc(a, b);
+      if (byType !== 0) return byType;
+      const byName = compareCardsByNameAsc(a, b);
+      if (byName !== 0) return byName;
+      return b.updatedAt - a.updatedAt;
+    }
+
+    if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
+    const byName = compareCardsByNameAsc(a, b);
+    if (byName !== 0) return byName;
+    return b.createdAt - a.createdAt;
+  };
+
   const recentCards = useMemo(() => {
     const withViewed = cards
       .filter((card) => card.deletedAt == null)
@@ -73,6 +127,7 @@ export const useStockpileFilters = ({
     overallCount,
     recentlyDeletedCount,
     recentlyDeletedTotalCount,
+    groupedCards,
   } = useMemo(() => {
     const isFrontCard = (card: CardRecord) => {
       const template = cardTemplatesById[card.templateId];
@@ -188,6 +243,7 @@ export const useStockpileFilters = ({
           overallCount: countsBase.length,
           recentlyDeletedCount,
           recentlyDeletedTotalCount,
+          groupedCards: [] as StockpileCardGroup[],
         };
       }
       const allowed = new Set(collection.cardIds);
@@ -246,7 +302,64 @@ export const useStockpileFilters = ({
         const bName = b.nameLower ?? b.name.toLocaleLowerCase();
         return aName.localeCompare(bName);
       });
+    } else if (activeFilter.type !== "recent" && activeFilter.type !== "recentlyDeleted") {
+      filtered = [...filtered].sort((a, b) => compareCardsBySortMode(sortMode, a, b));
     }
+
+    const supportsGrouping =
+      (groupMode === "type" || groupMode === "face") &&
+      !isPairMode &&
+      activeFilter.type !== "recent" &&
+      activeFilter.type !== "recentlyDeleted";
+
+    const groupedCards = supportsGrouping
+      ? (() => {
+          const groups = new Map<string, StockpileCardGroup>();
+
+          if (groupMode === "face") {
+            filtered.forEach((card) => {
+              const template = cardTemplatesById[card.templateId];
+              if (!template) return;
+              const effectiveFace = resolveEffectiveFace(card.face, template.defaultFace);
+              const id = effectiveFace;
+              const label =
+                effectiveFace === "back"
+                  ? (faceLabelMap?.back ?? "Back")
+                  : (faceLabelMap?.front ?? "Front");
+              const existing = groups.get(id);
+              if (existing) {
+                existing.cards.push(card);
+                return;
+              }
+              groups.set(id, {
+                id,
+                label,
+                cards: [card],
+              });
+            });
+
+            return ["front", "back"]
+              .map((id) => groups.get(id))
+              .filter((group): group is StockpileCardGroup => Boolean(group));
+          }
+
+          filtered.forEach((card) => {
+            const label = templateLabelMap?.[card.templateId] ?? card.templateId;
+            const existing = groups.get(card.templateId);
+            if (existing) {
+              existing.cards.push(card);
+              return;
+            }
+            groups.set(card.templateId, {
+              id: card.templateId,
+              label,
+              cards: [card],
+            });
+          });
+
+          return Array.from(groups.values()).sort((a, b) => a.label.localeCompare(b.label));
+        })()
+      : [];
 
     return {
       filteredCards: filtered,
@@ -260,16 +373,21 @@ export const useStockpileFilters = ({
       overallCount: countsBase.length,
       recentlyDeletedCount,
       recentlyDeletedTotalCount,
+      groupedCards,
     };
   }, [
     cards,
     recentCards,
+    templateLabelMap,
+    faceLabelMap,
     search,
     templateFilter,
     activeFilter,
     collections,
     isPairMode,
     isPairBacks,
+    sortMode,
+    groupMode,
     showUnpairedOnly,
     pairedIdSet,
     showMissingArtworkOnly,
@@ -289,5 +407,6 @@ export const useStockpileFilters = ({
     overallCount,
     recentlyDeletedCount,
     recentlyDeletedTotalCount,
+    groupedCards,
   };
 };

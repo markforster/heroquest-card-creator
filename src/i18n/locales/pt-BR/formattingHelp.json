@@ -81,5 +81,13 @@
   "formattingHelp.diceStructure.colorsCode": "Cores: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Cores válidas",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Cores hexadecimais"
+  "formattingHelp.diceStructure.hexOutput": "Cores hexadecimais",
+  "formattingHelp.richText.titleCode": "<title>Regras da missao</title>",
+  "formattingHelp.richText.titleOutput": "Regras da missao",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Movimento</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Movimento",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>texto grande</scale>",
+  "formattingHelp.richText.scaleOutput": "texto grande",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>texto pequeno</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "texto pequeno"
 }

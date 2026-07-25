@@ -2,7 +2,8 @@
 
 import { useEffect, type RefObject } from "react";
 
-type OutsideClickRefs = Array<RefObject<HTMLElement>>;
+type OutsideClickRef = RefObject<HTMLElement | null> | { current: HTMLElement | null };
+type OutsideClickRefs = OutsideClickRef[];
 
 export function useOutsideClick(
   refs: OutsideClickRefs,

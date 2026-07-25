@@ -5,7 +5,9 @@ import { waitForAssetElements, waitForFrame } from "@/components/Stockpile/stock
 import { USE_ZIP_COMPRESSION } from "@/config/flags";
 import {
   buildAssetCache,
+  buildHeroBackLogoCache,
   collectAssetIdsFromCard,
+  collectHeroBackLogoIdsFromCard,
   EXPORT_CHUNK_SIZE,
 } from "@/lib/export-assets-cache";
 import {
@@ -103,11 +105,16 @@ export const runBulkExport = async ({
 
       const exportableChunk = chunk.filter((card) => !skipIds.has(card.id));
       const chunkAssetIds = exportableChunk.flatMap((card) => collectAssetIdsFromCard(card));
+      const chunkHeroBackLogoIds = exportableChunk.flatMap((card) =>
+        collectHeroBackLogoIdsFromCard(card),
+      );
       const { cache, missing } = await buildAssetCache(chunkAssetIds);
+      const { cache: heroBackLogoCache, missing: missingLogos } =
+        await buildHeroBackLogoCache(chunkHeroBackLogoIds);
       logAssetPrefetch(session, {
-        total: chunkAssetIds.length,
-        cached: cache.size,
-        missing: missing.size,
+        total: chunkAssetIds.length + chunkHeroBackLogoIds.length,
+        cached: cache.size + heroBackLogoCache.size,
+        missing: missing.size + missingLogos.size,
       });
 
       for (const card of chunk) {
@@ -153,6 +160,13 @@ export const runBulkExport = async ({
             name: card.monsterIconAssetName ?? null,
           });
         }
+        if (card.heroBackLogoMode === "custom" && card.heroBackLogoId && missingLogos.has(card.heroBackLogoId)) {
+          missingAssets.push({
+            label: "logo",
+            id: card.heroBackLogoId,
+            name: card.heroBackLogoName ?? null,
+          });
+        }
         if (missingAssets.length > 0) {
           failures += 1;
           const titleLabel = card.title ?? card.name ?? "Untitled";
@@ -177,8 +191,14 @@ export const runBulkExport = async ({
         const assetIds = [card.imageAssetId, card.monsterIconAssetId].filter(
           (id): id is string => Boolean(id),
         );
+        const heroBackLogoIds =
+          card.heroBackLogoMode === "custom" && card.heroBackLogoId ? [card.heroBackLogoId] : [];
         const waitStart = now();
-        await waitForAssetElements(() => previewRef.current?.getSvgElement(), assetIds);
+        await waitForAssetElements(
+          () => previewRef.current?.getSvgElement(),
+          assetIds,
+          heroBackLogoIds,
+        );
         logCardWait(session, { durationMs: now() - waitStart });
 
         await previewRef.current?.waitForBackgroundLoaded?.();
@@ -186,6 +206,7 @@ export const runBulkExport = async ({
         const pngBlob = await previewRef.current?.renderToPngBlob({
           loggingId: session.sessionId,
           assetBlobsById: cache,
+          heroBackLogoBlobsById: heroBackLogoCache,
           bleedPx,
           cropMarks,
           cutMarks,

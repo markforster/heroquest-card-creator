@@ -1,10 +1,10 @@
-import type { TemplateId } from "@/types/templates";
 import type {
   BlueprintGroupTypeValue,
   BlueprintLayerTypeValue,
   BlueprintSlotId,
   SystemFamily,
 } from "@/data/card-systems/types";
+import type { TemplateId } from "@/types/templates";
 
 import type { StaticImageData } from "next/image";
 
@@ -28,6 +28,7 @@ export type BlueprintLayerCondition = {
 export type BlueprintLayerBind = {
   textKey?: string;
   imageKey?: string;
+  logoKey?: string;
   iconKey?: string;
   titleKey?: string;
 };
@@ -76,11 +77,18 @@ export type BlueprintLayerImage = BlueprintLayerBase & {
   clip?: BlueprintImageClip;
 };
 
+export type BlueprintLayerLogo = BlueprintLayerBase & {
+  type: "logo";
+  asset: StaticImageData;
+  rotation?: -90 | 0 | 90;
+};
+
 export type BlueprintLayer =
   | BlueprintLayerBackground
   | BlueprintLayerBorder
   | BlueprintLayerOverlay
   | BlueprintLayerImage
+  | BlueprintLayerLogo
   | BlueprintLayerBase;
 
 export type BlueprintLayerType = BlueprintLayerTypeValue;

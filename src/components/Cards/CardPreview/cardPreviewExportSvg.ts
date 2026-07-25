@@ -3,6 +3,7 @@
 import { setExportBackgroundFit, setExportClip } from "@/lib/bleed-export";
 
 import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
+import { getCardPreviewStageLayout } from "./cardPreviewStage";
 
 import type { CardPreviewProps } from "./types";
 
@@ -17,6 +18,19 @@ export type ExportSvgMutationOptions = {
 
 function removeDeveloperCreditLayer(svg: SVGSVGElement) {
   svg.querySelectorAll('[data-layer-type="developer-credit"]').forEach((node) => node.remove());
+}
+
+function removePreviewOnlyOverflowWarnings(svg: SVGSVGElement) {
+  svg.querySelectorAll('[data-preview-only="overflow-warning"]').forEach((node) => node.remove());
+}
+
+function removePreviewOnlyEditorOverlay(svg: SVGSVGElement) {
+  svg.querySelectorAll('[data-preview-only="editor-overlay"]').forEach((node) => node.remove());
+}
+
+function cropSvgRootToCardBounds(svg: SVGSVGElement) {
+  const { cardOriginX, cardOriginY } = getCardPreviewStageLayout();
+  svg.setAttribute("viewBox", `${cardOriginX} ${cardOriginY} ${CARD_WIDTH} ${CARD_HEIGHT}`);
 }
 
 function applyExportImageClip(svg: SVGSVGElement) {
@@ -96,6 +110,10 @@ export function mutateSvgForExport(
   if (developerCreditEnabled) {
     removeDeveloperCreditLayer(svg);
   }
+
+  removePreviewOnlyOverflowWarnings(svg);
+  removePreviewOnlyEditorOverlay(svg);
+  cropSvgRootToCardBounds(svg);
 
   applyExportImageClip(svg);
 

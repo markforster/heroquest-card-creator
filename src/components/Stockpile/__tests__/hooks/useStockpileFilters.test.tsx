@@ -10,6 +10,7 @@ jest.mock("@/data/card-templates", () => ({
     monster: { defaultFace: "front" },
     "large-treasure": { defaultFace: "front" },
     "small-treasure": { defaultFace: "front" },
+    rules: { defaultFace: "front" },
     "hero-back": { defaultFace: "back" },
     "labelled-back": { defaultFace: "back" },
   },
@@ -38,6 +39,181 @@ const baseCollection = (overrides: Partial<CollectionRecord>): CollectionRecord 
 });
 
 describe("useStockpileFilters", () => {
+  it("classifies Rules as front-facing and supports its template filter", () => {
+    const cards = [
+      baseCard({ id: "rules", templateId: "rules", name: "Rules", nameLower: "rules" }),
+      baseCard({ id: "back", templateId: "hero-back", name: "Back", nameLower: "back" }),
+    ];
+
+    const frontResult = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "front",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+      }),
+    );
+    expect(frontResult.result.current.filteredCards.map((card) => card.id)).toEqual(["rules"]);
+
+    const templateResult = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "rules",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+      }),
+    );
+    expect(templateResult.result.current.filteredCards.map((card) => card.id)).toEqual(["rules"]);
+  });
+
+  it("defaults normal stockpile results to modified desc, then name asc, then created desc", () => {
+    const cards = [
+      baseCard({ id: "c", name: "Beta", nameLower: "beta", updatedAt: 10, createdAt: 10 }),
+      baseCard({ id: "a", name: "Alpha", nameLower: "alpha", updatedAt: 20, createdAt: 5 }),
+      baseCard({ id: "b", name: "Zulu", nameLower: "zulu", updatedAt: 20, createdAt: 9 }),
+      baseCard({ id: "d", name: "Alpha", nameLower: "alpha", updatedAt: 20, createdAt: 7 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+      }),
+    );
+
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["d", "a", "b", "c"]);
+  });
+
+  it("supports sorting normal stockpile results by name", () => {
+    const cards = [
+      baseCard({ id: "a", name: "Gamma", nameLower: "gamma", updatedAt: 1, createdAt: 1 }),
+      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", updatedAt: 2, createdAt: 2 }),
+      baseCard({ id: "c", name: "Alpha", nameLower: "alpha", updatedAt: 5, createdAt: 3 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+        sortMode: "name",
+      }),
+    );
+
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["c", "b", "a"]);
+  });
+
+  it("supports sorting normal stockpile results by localized card type", () => {
+    const cards = [
+      baseCard({ id: "a", templateId: "monster", name: "Zulu", nameLower: "zulu", updatedAt: 1, createdAt: 1 }),
+      baseCard({ id: "b", templateId: "hero", name: "Beta", nameLower: "beta", updatedAt: 2, createdAt: 9 }),
+      baseCard({ id: "c", templateId: "hero", name: "Alpha", nameLower: "alpha", updatedAt: 5, createdAt: 9 }),
+      baseCard({ id: "d", templateId: "hero-back", name: "Alpha", nameLower: "alpha", updatedAt: 3, createdAt: 4 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        templateLabelMap: {
+          hero: "Hero Card",
+          monster: "Monster Card",
+          "hero-back": "Hero Back",
+        },
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+        sortMode: "type",
+      }),
+    );
+
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["d", "c", "b", "a"]);
+  });
+
+  it("groups normal stockpile results by localized card type while preserving in-group sort order", () => {
+    const cards = [
+      baseCard({ id: "a", templateId: "monster", name: "Zulu", nameLower: "zulu", updatedAt: 1 }),
+      baseCard({ id: "b", templateId: "hero", name: "Beta", nameLower: "beta", updatedAt: 2 }),
+      baseCard({ id: "c", templateId: "hero", name: "Alpha", nameLower: "alpha", updatedAt: 5 }),
+      baseCard({ id: "d", templateId: "labelled-back", name: "Back", nameLower: "back", updatedAt: 3 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        templateLabelMap: {
+          hero: "Hero Card",
+          monster: "Monster Card",
+          "labelled-back": "Labelled Back",
+        },
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+        sortMode: "modified",
+        groupMode: "type",
+      }),
+    );
+
+    expect(result.current.groupedCards.map((group) => group.label)).toEqual([
+      "Hero Card",
+      "Labelled Back",
+      "Monster Card",
+    ]);
+    expect(result.current.groupedCards[0]?.cards.map((card) => card.id)).toEqual(["c", "b"]);
+  });
+
+  it("groups normal stockpile results by face with front first and keeps in-group sort order", () => {
+    const cards = [
+      baseCard({ id: "front-a", templateId: "hero", name: "Alpha", nameLower: "alpha", updatedAt: 4 }),
+      baseCard({ id: "back-b", templateId: "hero-back", name: "Beta Back", nameLower: "beta back", updatedAt: 2 }),
+      baseCard({ id: "front-c", templateId: "monster", name: "Gamma", nameLower: "gamma", updatedAt: 1 }),
+      baseCard({ id: "back-a", templateId: "labelled-back", name: "Alpha Back", nameLower: "alpha back", updatedAt: 5 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        faceLabelMap: {
+          front: "Front",
+          back: "Back",
+        },
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+        sortMode: "name",
+        groupMode: "face",
+      }),
+    );
+
+    expect(result.current.groupedCards.map((group) => group.id)).toEqual(["front", "back"]);
+    expect(result.current.groupedCards.map((group) => group.label)).toEqual(["Front", "Back"]);
+    expect(result.current.groupedCards[0]?.cards.map((card) => card.id)).toEqual(["front-a", "front-c"]);
+    expect(result.current.groupedCards[1]?.cards.map((card) => card.id)).toEqual(["back-a", "back-b"]);
+  });
+
   it("returns recentCards sorted by lastViewedAt then updatedAt", () => {
     const cards = [
       baseCard({ id: "a", lastViewedAt: 100, updatedAt: 5, nameLower: "a" }),
@@ -79,6 +255,31 @@ describe("useStockpileFilters", () => {
     );
 
     expect(result.current.filteredCards.map((card) => card.id)).toEqual(["back-1"]);
+  });
+
+  it("keeps recent results ordered by last viewed semantics even when sort mode changes", () => {
+    const cards = [
+      baseCard({ id: "a", name: "Zulu", nameLower: "zulu", lastViewedAt: 100, updatedAt: 5, createdAt: 1 }),
+      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", lastViewedAt: 200, updatedAt: 1, createdAt: 2 }),
+      baseCard({ id: "c", name: "Beta", nameLower: "beta", lastViewedAt: 100, updatedAt: 10, createdAt: 3 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "recent" },
+        isPairMode: false,
+        isPairBacks: false,
+        sortMode: "name",
+        groupMode: "face",
+      }),
+    );
+
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["b", "c", "a"]);
+    expect(result.current.groupedCards).toEqual([]);
   });
 
   it("computes collection counts and unfiled count", () => {
@@ -265,5 +466,55 @@ describe("useStockpileFilters", () => {
 
     expect(filteredTypeDeletedView.current.recentlyDeletedTotalCount).toBe(1);
     expect(filteredTypeDeletedView.current.recentlyDeletedCount).toBe(0);
+  });
+
+  it("keeps recently deleted results ordered by deletedAt semantics even when sort mode changes", () => {
+    const cards = [
+      baseCard({ id: "a", name: "Zulu", nameLower: "zulu", deletedAt: 100, updatedAt: 5, createdAt: 1 }),
+      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", deletedAt: 200, updatedAt: 1, createdAt: 2 }),
+      baseCard({ id: "c", name: "Beta", nameLower: "beta", deletedAt: 100, updatedAt: 10, createdAt: 3 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "recentlyDeleted" },
+        isPairMode: false,
+        isPairBacks: false,
+        sortMode: "name",
+        groupMode: "face",
+      }),
+    );
+
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["b", "c", "a"]);
+    expect(result.current.groupedCards).toEqual([]);
+  });
+
+  it("keeps pair mode ordering unchanged even when sort mode changes", () => {
+    const cards = [
+      baseCard({ id: "a", name: "Zulu", nameLower: "zulu", updatedAt: 5, createdAt: 1, lastViewedAt: 100 }),
+      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", updatedAt: 1, createdAt: 2, lastViewedAt: 200 }),
+      baseCard({ id: "c", name: "Beta", nameLower: "beta", updatedAt: 10, createdAt: 3, lastViewedAt: 100 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: true,
+        isPairBacks: false,
+        sortMode: "name",
+        groupMode: "face",
+      }),
+    );
+
+    expect(result.current.filteredCards.map((card) => card.id)).toEqual(["b", "c", "a"]);
+    expect(result.current.groupedCards).toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { apiClient } from "@/api/client";
@@ -13,6 +13,7 @@ import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import WelcomeTemplateModal from "@/components/Modals/WelcomeTemplateModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { StockpileMainPanel } from "@/components/Stockpile";
 import { saveDraft } from "@/lib/draft-storage";
@@ -22,6 +23,7 @@ import type { TemplateId } from "@/types/templates";
 
 export default function CardsPage() {
   const { track } = useAnalytics();
+  const { getTemplateDefault } = useCopyrightSettings();
   const navigate = useNavigate();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
@@ -30,12 +32,27 @@ export default function CardsPage() {
   } = useCardEditor();
   const { resetWithSaved } = useEditorForm();
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
+  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<(() => boolean) | null>(
+    null,
+  );
 
   const currentTemplateId = selectedTemplateId ?? null;
   const activeCardId =
     currentTemplateId != null ? activeCardIdByTemplate[currentTemplateId] : undefined;
 
-  usePublishRouteShellCapabilities(noopRouteShellCapabilities);
+  const shellCapabilities = useMemo(
+    () => ({
+      ...noopRouteShellCapabilities,
+      focusPrimarySearch: () => focusPrimarySearchHandler?.() ?? false,
+    }),
+    [focusPrimarySearchHandler],
+  );
+
+  usePublishRouteShellCapabilities(shellCapabilities);
+
+  const handlePrimarySearchReady = useCallback((focusSearch: (() => boolean) | null) => {
+    setFocusPrimarySearchHandler(() => focusSearch);
+  }, []);
 
   useEffect(() => {
     track("page_view", { page_path: "/cards", page_title: "Cards" });
@@ -105,6 +122,7 @@ export default function CardsPage() {
           isOpen
           onClose={() => {}}
           onLoadCard={(card) => navigate(`/cards/${card.id}`)}
+          onPrimarySearchReady={handlePrimarySearchReady}
         />
       </section>
       <WelcomeTemplateModal
@@ -115,7 +133,9 @@ export default function CardsPage() {
             template_id: templateId,
             source: "welcome_modal",
           });
-          const nextDraft = createEditorDefaultValues(templateId);
+          const nextDraft = createEditorDefaultValues(templateId, {
+            showCopyright: getTemplateDefault(templateId),
+          });
           setSelectedTemplateId(templateId);
           saveDraft(templateId, nextDraft, { sourceCardId: null });
           resetWithSaved(nextDraft as CardDataByTemplate[TemplateId]);

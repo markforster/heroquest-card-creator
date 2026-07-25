@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CircleStar, Pencil, Trash2 } from "lucide-react";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
+import { useDeckRightPanel } from "@/components/Decks/detail/context/DeckRightPanelContext";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useI18n } from "@/i18n/I18nProvider";
 import styles from "../DeckGroupsSection2.module.css";
@@ -48,6 +49,12 @@ export default function DeckGroupsBoardController({
     selection = useDeckDetailSelection();
   } catch {
     selection = null;
+  }
+  let rightPanel: ReturnType<typeof useDeckRightPanel> | null = null;
+  try {
+    rightPanel = useDeckRightPanel();
+  } catch {
+    rightPanel = null;
   }
   const { registerDropHandler } = useDeckMockDnd();
   const selectedSetGroupId =
@@ -427,6 +434,7 @@ export default function DeckGroupsBoardController({
       const setRecord = selection.setById.get(setId);
       if (!setRecord) return;
       setPersistedOpenGroupId(groupId);
+      rightPanel?.setPreviewSelectionSource("set");
       selection.selectGroup(groupId);
       selection.selectSet(setRecord);
     },

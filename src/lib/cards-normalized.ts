@@ -1,5 +1,6 @@
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
+import { normalizeStatAsteriskFlags } from "@/lib/stat-asterisks";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
 import type { CardRecord } from "@/types/cards-db";
 import type {
@@ -7,6 +8,7 @@ import type {
   CardBaseRecord,
   CardBorderComponentRecord,
   CardCopyrightComponentRecord,
+  CardHeroBackLogoComponentRecord,
   CardHeroStatsComponentRecord,
   CardIconComponentRecord,
   CardImageComponentRecord,
@@ -17,6 +19,7 @@ import type {
   CardTitleComponentRecord,
 } from "@/types/cards-normalized";
 import type { TemplateId } from "@/types/templates";
+
 import type { Transaction } from "dexie";
 
 type EditableBlueprintNode = BlueprintLayer & {
@@ -24,6 +27,7 @@ type EditableBlueprintNode = BlueprintLayer & {
     | typeof layerTypes.background
     | typeof layerTypes.border
     | typeof layerTypes.image
+    | typeof layerTypes.logo
     | typeof layerTypes.text
     | typeof layerTypes.title
     | typeof layerTypes.copyright
@@ -41,6 +45,7 @@ export type NormalizedCardMigrationBundle = {
   texts: CardTextComponentRecord[];
   copyrights: CardCopyrightComponentRecord[];
   images: CardImageComponentRecord[];
+  heroBackLogos: CardHeroBackLogoComponentRecord[];
   icons: CardIconComponentRecord[];
   heroStats: CardHeroStatsComponentRecord[];
   monsterStats: CardMonsterStatsComponentRecord[];
@@ -55,6 +60,7 @@ export type NormalizedCardAssemblySource = {
   texts: CardTextComponentRecord[];
   copyrights: CardCopyrightComponentRecord[];
   images: CardImageComponentRecord[];
+  heroBackLogos: CardHeroBackLogoComponentRecord[];
   icons: CardIconComponentRecord[];
   heroStats: CardHeroStatsComponentRecord[];
   monsterStats: CardMonsterStatsComponentRecord[];
@@ -70,6 +76,7 @@ const EDITABLE_LAYER_TYPES = new Set<EditableBlueprintNode["type"]>([
   layerTypes.background,
   layerTypes.border,
   layerTypes.image,
+  layerTypes.logo,
   layerTypes.text,
   layerTypes.title,
   layerTypes.copyright,
@@ -118,6 +125,10 @@ function buildComponentMap<T extends { id: string }>(records: T[]): Map<string, 
   return map;
 }
 
+function supportsHeroBackLogo(templateId: TemplateId): boolean {
+  return templateId === "hero-back" || templateId === "logo-back";
+}
+
 function hasAllExpectedEditableSlots(
   templateId: TemplateId,
   slotLinks: CardSlotLinkRecord[],
@@ -132,6 +143,13 @@ function hasAllExpectedEditableSlots(
     const node = editableNodes[index];
     const slotLink = slotLinkMap.get(node.id);
     if (!slotLink) {
+      if (
+        templateId === "hero-back" &&
+        node.type === layerTypes.logo &&
+        node.id === "hq.2021.logo.hero-back"
+      ) {
+        continue;
+      }
       return false;
     }
     if (slotLink.slotType !== node.type) {
@@ -157,6 +175,7 @@ export function assembleNormalizedCardRecord(
   const textMap = buildComponentMap(source.texts);
   const copyrightMap = buildComponentMap(source.copyrights);
   const imageMap = buildComponentMap(source.images);
+  const heroBackLogoMap = buildComponentMap(source.heroBackLogos);
   const iconMap = buildComponentMap(source.icons);
   const heroStatsMap = buildComponentMap(source.heroStats);
   const monsterStatsMap = buildComponentMap(source.monsterStats);
@@ -175,6 +194,10 @@ export function assembleNormalizedCardRecord(
     schemaVersion: 2,
     thumbnailBlob: source.thumbnailBlob,
   };
+
+  if (supportsHeroBackLogo(baseRecord.templateId)) {
+    result.heroBackLogoMode = "default";
+  }
 
   for (let index = 0; index < slotLinks.length; index += 1) {
     const slotLink = slotLinks[index];
@@ -233,6 +256,16 @@ export function assembleNormalizedCardRecord(
         result.imageOriginalHeight = component.originalHeight;
         break;
       }
+      case layerTypes.logo: {
+        const component = heroBackLogoMap.get(slotLink.dataRecordId);
+        if (!component) return null;
+        result.heroBackLogoMode = component.mode;
+        result.heroBackLogoId = component.logoId;
+        result.heroBackLogoName = component.logoName;
+        result.heroBackLogoOriginalWidth = component.originalWidth;
+        result.heroBackLogoOriginalHeight = component.originalHeight;
+        break;
+      }
       case layerTypes.icon: {
         const component = iconMap.get(slotLink.dataRecordId);
         if (!component) return null;
@@ -248,19 +281,30 @@ export function assembleNormalizedCardRecord(
         const component = heroStatsMap.get(slotLink.dataRecordId);
         if (!component) return null;
         result.heroAttackDice = component.attackDice;
+        result.heroAttackDiceAsterisks = normalizeStatAsteriskFlags(component.attackDiceAsterisks);
         result.heroDefendDice = component.defendDice;
+        result.heroDefendDiceAsterisks = normalizeStatAsteriskFlags(component.defendDiceAsterisks);
         result.heroBodyPoints = component.bodyPoints;
+        result.heroBodyPointsAsterisks = normalizeStatAsteriskFlags(component.bodyPointsAsterisks);
         result.heroMindPoints = component.mindPoints;
+        result.heroMindPointsAsterisks = normalizeStatAsteriskFlags(component.mindPointsAsterisks);
         break;
       }
       case layerTypes.stats_monster: {
         const component = monsterStatsMap.get(slotLink.dataRecordId);
         if (!component) return null;
         result.monsterMovementSquares = component.movementSquares;
+        result.monsterMovementSquaresAsterisks = normalizeStatAsteriskFlags(
+          component.movementSquaresAsterisks,
+        );
         result.monsterAttackDice = component.attackDice;
+        result.monsterAttackDiceAsterisks = normalizeStatAsteriskFlags(component.attackDiceAsterisks);
         result.monsterDefendDice = component.defendDice;
+        result.monsterDefendDiceAsterisks = normalizeStatAsteriskFlags(component.defendDiceAsterisks);
         result.monsterBodyPoints = component.bodyPoints;
+        result.monsterBodyPointsAsterisks = normalizeStatAsteriskFlags(component.bodyPointsAsterisks);
         result.monsterMindPoints = component.mindPoints;
+        result.monsterMindPointsAsterisks = normalizeStatAsteriskFlags(component.mindPointsAsterisks);
         break;
       }
       default:
@@ -327,6 +371,7 @@ export function buildNormalizedCardRecords(
   const texts: CardTextComponentRecord[] = [];
   const copyrights: CardCopyrightComponentRecord[] = [];
   const images: CardImageComponentRecord[] = [];
+  const heroBackLogos: CardHeroBackLogoComponentRecord[] = [];
   const icons: CardIconComponentRecord[] = [];
   const heroStats: CardHeroStatsComponentRecord[] = [];
   const monsterStats: CardMonsterStatsComponentRecord[] = [];
@@ -409,6 +454,18 @@ export function buildNormalizedCardRecords(
           originalHeight: record.imageOriginalHeight,
         });
         return;
+      case layerTypes.logo:
+        heroBackLogos.push({
+          ...shared,
+          mode: supportsHeroBackLogo(record.templateId)
+            ? (record.heroBackLogoMode ?? "default")
+            : "default",
+          logoId: record.heroBackLogoId,
+          logoName: record.heroBackLogoName,
+          originalWidth: record.heroBackLogoOriginalWidth,
+          originalHeight: record.heroBackLogoOriginalHeight,
+        });
+        return;
       case layerTypes.icon:
         icons.push({
           ...shared,
@@ -424,19 +481,28 @@ export function buildNormalizedCardRecords(
         heroStats.push({
           ...shared,
           attackDice: record.heroAttackDice,
+          attackDiceAsterisks: normalizeStatAsteriskFlags(record.heroAttackDiceAsterisks),
           defendDice: record.heroDefendDice,
+          defendDiceAsterisks: normalizeStatAsteriskFlags(record.heroDefendDiceAsterisks),
           bodyPoints: record.heroBodyPoints,
+          bodyPointsAsterisks: normalizeStatAsteriskFlags(record.heroBodyPointsAsterisks),
           mindPoints: record.heroMindPoints,
+          mindPointsAsterisks: normalizeStatAsteriskFlags(record.heroMindPointsAsterisks),
         });
         return;
       case layerTypes.stats_monster:
         monsterStats.push({
           ...shared,
           movementSquares: record.monsterMovementSquares,
+          movementSquaresAsterisks: normalizeStatAsteriskFlags(record.monsterMovementSquaresAsterisks),
           attackDice: record.monsterAttackDice,
+          attackDiceAsterisks: normalizeStatAsteriskFlags(record.monsterAttackDiceAsterisks),
           defendDice: record.monsterDefendDice,
+          defendDiceAsterisks: normalizeStatAsteriskFlags(record.monsterDefendDiceAsterisks),
           bodyPoints: record.monsterBodyPoints,
+          bodyPointsAsterisks: normalizeStatAsteriskFlags(record.monsterBodyPointsAsterisks),
           mindPoints: record.monsterMindPoints,
+          mindPointsAsterisks: normalizeStatAsteriskFlags(record.monsterMindPointsAsterisks),
         });
         return;
     }
@@ -451,6 +517,7 @@ export function buildNormalizedCardRecords(
     texts,
     copyrights,
     images,
+    heroBackLogos,
     icons,
     heroStats,
     monsterStats,
@@ -465,6 +532,7 @@ const NORMALIZED_COMPONENT_STORE_NAMES = [
   "cardTextComponents",
   "cardCopyrightComponents",
   "cardImageComponents",
+  "cardHeroBackLogoComponents",
   "cardIconComponents",
   "cardHeroStatsComponents",
   "cardMonsterStatsComponents",
@@ -506,6 +574,9 @@ export async function replaceNormalizedCardRecords(
   }
   if (bundle.images.length > 0) {
     await tx.table("cardImageComponents").bulkPut(bundle.images);
+  }
+  if (bundle.heroBackLogos.length > 0) {
+    await tx.table("cardHeroBackLogoComponents").bulkPut(bundle.heroBackLogos);
   }
   if (bundle.icons.length > 0) {
     await tx.table("cardIconComponents").bulkPut(bundle.icons);

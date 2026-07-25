@@ -72,4 +72,16 @@ describe("StatsPair numeric features", () => {
       expect(container.querySelector('text[style*="font-variant-numeric"]')).toBeNull();
     }
   });
+
+  it("renders stat suffix asterisks inline with the value", () => {
+    render(
+      <LocalStorageProvider>
+        <svg>
+          <StatsPair header="Attack" value={[3, 4, 1]} asterisks={[true, false]} x={0} y={0} width={160} height={120} />
+        </svg>
+      </LocalStorageProvider>,
+    );
+
+    expect(screen.getByText("3*/4")).toBeInTheDocument();
+  });
 });

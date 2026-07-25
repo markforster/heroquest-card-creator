@@ -6,6 +6,7 @@ const mockUseStockpileFilters = jest.fn();
 const mockResolveDeckExportFaceIds = jest.fn();
 const mockListPairsMap = jest.fn();
 const mockCardFan = jest.fn();
+const mockUseGetCard = jest.fn();
 
 if (!(globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream) {
   (globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream =
@@ -14,6 +15,10 @@ if (!(globalThis as unknown as { TransformStream?: typeof TransformStream }).Tra
 
 jest.mock("@/components/Decks/detail/context/DeckRightPanelContext", () => ({
   useDeckRightPanel: () => mockUseDeckRightPanel(),
+}));
+
+jest.mock("@/api/hooks", () => ({
+  useGetCard: (...args: unknown[]) => mockUseGetCard(...args),
 }));
 
 jest.mock("@/i18n/I18nProvider", () => ({
@@ -65,6 +70,7 @@ const DeckBacksPanel =
 describe("DeckBacksPanel metadata tab", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseGetCard.mockReturnValue({ data: null });
     mockUseDeckRightPanel.mockReturnValue({
       isRightPanelVisible: true,
       setIsRightPanelVisible: jest.fn(),
@@ -78,6 +84,10 @@ describe("DeckBacksPanel metadata tab", () => {
       setRightPanelFaceMode: jest.fn(),
       sourceSearch: "",
       setSourceSearch: jest.fn(),
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
     });
     mockUseStockpileFilters.mockReturnValue({
       filteredCards: [],
@@ -167,5 +177,48 @@ describe("DeckBacksPanel metadata tab", () => {
         variant: "lg",
       }),
     );
+  });
+
+  it("registers a primary search handler that focuses the source search when available", async () => {
+    const setIsRightPanelVisible = jest.fn();
+    const onPrimarySearchReady = jest.fn();
+
+    mockUseDeckRightPanel.mockReturnValue({
+      isRightPanelVisible: true,
+      setIsRightPanelVisible,
+      toggleRightPanel: jest.fn(),
+      backCollections: [],
+      backCards: [],
+      rightPanelEmptyLabel: "No cards",
+      backFilter: { type: "all" },
+      setBackFilter: jest.fn(),
+      rightPanelFaceMode: "back",
+      setRightPanelFaceMode: jest.fn(),
+      sourceSearch: "",
+      setSourceSearch: jest.fn(),
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
+    });
+
+    render(
+      <DeckBacksPanel
+        deckId="deck-1"
+        usedBackFaceIds={new Set()}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+        onPrimarySearchReady={onPrimarySearchReady}
+      />,
+    );
+
+    const handler = onPrimarySearchReady.mock.calls.at(-1)?.[0] as (() => boolean) | undefined;
+    expect(handler).toBeDefined();
+    expect(handler?.()).toBe(true);
+    expect(setIsRightPanelVisible).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByRole("searchbox", { name: "tooltip.searchCards" })).toHaveFocus();
+    });
   });
 });

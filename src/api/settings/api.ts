@@ -3,8 +3,10 @@ import { z } from "zod";
 
 import {
   borderSwatchesSchema,
+  copyrightTemplateDefaultsSchema,
   defaultCopyrightSchema,
   setBorderSwatchesInputSchema,
+  setCopyrightTemplateDefaultsInputSchema,
   setDefaultCopyrightInputSchema,
 } from "@/api/settings/schema";
 
@@ -43,6 +45,25 @@ export const settingsApi = makeApi([
         name: "body",
         type: "Body",
         schema: setDefaultCopyrightInputSchema,
+      },
+    ],
+    response: z.void(),
+  },
+  {
+    method: "get",
+    path: "/settings/copyright-template-defaults",
+    alias: "getCopyrightTemplateDefaults",
+    response: copyrightTemplateDefaultsSchema,
+  },
+  {
+    method: "put",
+    path: "/settings/copyright-template-defaults",
+    alias: "setCopyrightTemplateDefaults",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: setCopyrightTemplateDefaultsInputSchema,
       },
     ],
     response: z.void(),

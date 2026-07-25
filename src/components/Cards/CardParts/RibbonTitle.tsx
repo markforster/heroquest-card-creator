@@ -1,4 +1,9 @@
 import ribbon from "@/assets/card-parts/ribbon.png";
+import {
+  EDITOR_TARGET_IDS,
+  useRegisterHoverAdornment,
+  useSvgFocusTarget,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useTextFittingPreferences } from "@/components/Providers/TextFittingPreferencesContext";
@@ -37,6 +42,8 @@ const RIBBON_IMAGE_INSET_X = sx(10);
 const RIBBON_IMAGE_INSET_Y = sy(1);
 
 const TITLE_LETTER_SPACING = savg(-0.5);
+const PLAIN_TITLE_VERTICAL_HOVER_OUTSET = sy(12);
+const RIBBON_TITLE_TOP_HOVER_OUTSET = sy(12);
 
 export default function RibbonTitle({
   title,
@@ -68,6 +75,7 @@ export default function RibbonTitle({
   const centerX = resolvedTextBounds.x + resolvedTextBounds.width / 2;
   const centerY = resolvedTextBounds.y + resolvedTextBounds.height / 2;
   const { preferences } = useTextFittingPreferences();
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.title);
   const titleLayout = fitText(
     "title",
     title,
@@ -106,9 +114,30 @@ export default function RibbonTitle({
     fontKerning: "normal",
     ...numericStyle,
   };
+  const hoverBounds = showRibbon
+    ? {
+        x: ribbonImageBounds.x,
+        y: ribbonImageBounds.y - RIBBON_TITLE_TOP_HOVER_OUTSET,
+        width: ribbonImageBounds.width,
+        height: ribbonImageBounds.height + RIBBON_TITLE_TOP_HOVER_OUTSET,
+      }
+    : {
+        x: resolvedTextBounds.x,
+        y: resolvedTextBounds.y - PLAIN_TITLE_VERTICAL_HOVER_OUTSET,
+        width: resolvedTextBounds.width,
+        height: resolvedTextBounds.height + PLAIN_TITLE_VERTICAL_HOVER_OUTSET * 2,
+      };
+  useRegisterHoverAdornment(EDITOR_TARGET_IDS.title, {
+    kind: "rect",
+    x: hoverBounds.x,
+    y: hoverBounds.y,
+    width: hoverBounds.width,
+    height: hoverBounds.height,
+    radius: showRibbon ? 20 : 14,
+  });
 
   return (
-    <Layer>
+    <Layer {...svgFocusProps}>
       {showRibbon ? (
         <>
           <image

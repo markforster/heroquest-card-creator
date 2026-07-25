@@ -7,6 +7,7 @@ const openAssets = jest.fn();
 const openRecent = jest.fn();
 const openSettings = jest.fn();
 const openTemplatePicker = jest.fn();
+let isCollapsed = false;
 
 jest.mock("@/components/Providers/AppActionsContext", () => ({
   __esModule: true,
@@ -73,7 +74,7 @@ jest.mock("@/components/Providers/ThemeProvider", () => ({
 jest.mock("@/components/Layout/LeftNav/useLeftNavCollapse", () => ({
   __esModule: true,
   useLeftNavCollapse: () => ({
-    isCollapsed: false,
+    isCollapsed,
     isCollapsedReady: true,
     setManualCollapsed: jest.fn(),
   }),
@@ -93,6 +94,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
       const lookup: Record<string, string> = {
         "actions.cards": "Cards",
         "actions.assets": "Assets",
+        "actions.decks": "Decks",
         "actions.settings": "Settings",
         "actions.recentCards": "Recent cards",
         "tooltip.openCards": "Browse and load saved cards",
@@ -109,6 +111,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
 
 describe("LeftNav (UI)", () => {
   beforeEach(() => {
+    isCollapsed = false;
     openAssets.mockClear();
     openRecent.mockClear();
     openSettings.mockClear();
@@ -124,6 +127,7 @@ describe("LeftNav (UI)", () => {
 
     expect(screen.getByRole("link", { name: "Browse and load saved cards" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open the assets manager" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Decks" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Recent cards" }));
     expect(openRecent).toHaveBeenCalledTimes(1);

@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  EDITOR_TARGET_IDS,
+  useRegisterHoverAdornment,
+  useSvgFocusTarget,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
+import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import CardTextBlock, { layoutCardText } from "@/components/Cards/CardParts/CardTextBlock";
 import HeroStatsBlock, {
   HERO_STATS_HEIGHT,
@@ -14,6 +20,7 @@ import { DEFAULT_BODY_TEXT_COLOR } from "@/config/colors";
 import { layerTypes } from "@/data/card-systems/types";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { supportsBlueprintTextFitToBounds } from "@/lib/blueprint-text";
+import { computeContainScale } from "@/lib/image-scale";
 import type { Blueprint, BlueprintGroup } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
@@ -24,13 +31,20 @@ import {
   findPrimaryTitleLayer,
 } from "./blueprintRendererShared";
 
+const TEXT_HOVER_OUTSET = 16;
+const GROUP_TEXT_BOTTOM_BASELINE_PADDING_RATIO = 0.2;
+
 function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | undefined {
   if (!cardData) return undefined;
   const data = cardData as {
     attackDice?: HeroStats["attackDice"];
+    attackDiceAsterisks?: HeroStats["attackDiceAsterisks"];
     defendDice?: HeroStats["defendDice"];
+    defendDiceAsterisks?: HeroStats["defendDiceAsterisks"];
     bodyPoints?: HeroStats["bodyPoints"];
+    bodyPointsAsterisks?: HeroStats["bodyPointsAsterisks"];
     mindPoints?: HeroStats["mindPoints"];
+    mindPointsAsterisks?: HeroStats["mindPointsAsterisks"];
   };
 
   const hasCustomStats =
@@ -43,9 +57,13 @@ function getHeroStats(cardData?: CardDataByTemplate[TemplateId]): HeroStats | un
 
   return {
     attackDice: data.attackDice ?? 3,
+    attackDiceAsterisks: data.attackDiceAsterisks,
     defendDice: data.defendDice ?? 2,
+    defendDiceAsterisks: data.defendDiceAsterisks,
     bodyPoints: data.bodyPoints ?? 8,
+    bodyPointsAsterisks: data.bodyPointsAsterisks,
     mindPoints: data.mindPoints ?? 2,
+    mindPointsAsterisks: data.mindPointsAsterisks,
   };
 }
 
@@ -53,10 +71,15 @@ function getMonsterStats(cardData?: CardDataByTemplate[TemplateId]): MonsterStat
   if (!cardData) return undefined;
   const data = cardData as {
     movementSquares?: MonsterStats["movementSquares"];
+    movementSquaresAsterisks?: MonsterStats["movementSquaresAsterisks"];
     attackDice?: MonsterStats["attackDice"];
+    attackDiceAsterisks?: MonsterStats["attackDiceAsterisks"];
     defendDice?: MonsterStats["defendDice"];
+    defendDiceAsterisks?: MonsterStats["defendDiceAsterisks"];
     bodyPoints?: MonsterStats["bodyPoints"];
+    bodyPointsAsterisks?: MonsterStats["bodyPointsAsterisks"];
     mindPoints?: MonsterStats["mindPoints"];
+    mindPointsAsterisks?: MonsterStats["mindPointsAsterisks"];
   };
 
   const hasCustomStats =
@@ -70,10 +93,15 @@ function getMonsterStats(cardData?: CardDataByTemplate[TemplateId]): MonsterStat
 
   return {
     movementSquares: data.movementSquares ?? 0,
+    movementSquaresAsterisks: data.movementSquaresAsterisks,
     attackDice: data.attackDice ?? 0,
+    attackDiceAsterisks: data.attackDiceAsterisks,
     defendDice: data.defendDice ?? 0,
+    defendDiceAsterisks: data.defendDiceAsterisks,
     bodyPoints: data.bodyPoints ?? 0,
+    bodyPointsAsterisks: data.bodyPointsAsterisks,
     mindPoints: data.mindPoints ?? 0,
+    mindPointsAsterisks: data.mindPointsAsterisks,
   };
 }
 
@@ -82,6 +110,80 @@ type GroupItem = {
   height: number;
   render: (topY: number) => JSX.Element | null;
 };
+
+function GroupTextLayer({
+  text,
+  bounds,
+  fontSize,
+  lineHeight,
+  fontWeight,
+  fontFamily,
+  fill,
+  letterSpacingEm,
+  align,
+  debug,
+  fitToBounds,
+  interactive = false,
+  suppressPreviewOnlyWarnings = false,
+}: {
+  text: string;
+  bounds: { x: number; y: number; width: number; height: number };
+  fontSize?: number;
+  lineHeight?: number;
+  fontWeight?: number | string;
+  fontFamily?: string;
+  fill?: string;
+  letterSpacingEm?: number;
+  align?: "left" | "center" | "right";
+  debug?: boolean;
+  fitToBounds?: boolean;
+  interactive?: boolean;
+  suppressPreviewOnlyWarnings?: boolean;
+}) {
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.textMain);
+  useRegisterHoverAdornment(
+    EDITOR_TARGET_IDS.textMain,
+    interactive
+      ? {
+          kind: "rect",
+          ...padBounds(bounds, TEXT_HOVER_OUTSET),
+          radius: 18,
+        }
+      : null,
+  );
+
+  return (
+    <Layer {...(interactive ? svgFocusProps : {})}>
+      {interactive ? (
+        <>
+          <rect
+            x={bounds.x}
+            y={bounds.y}
+            width={bounds.width}
+            height={bounds.height}
+            fill="transparent"
+            pointerEvents="all"
+            data-hqcc-hit-area={EDITOR_TARGET_IDS.textMain}
+          />
+        </>
+      ) : null}
+      <CardTextBlock
+        text={text}
+        bounds={bounds}
+        fontSize={fontSize}
+        lineHeight={lineHeight}
+        fontWeight={fontWeight}
+        fontFamily={fontFamily}
+        fill={fill}
+        letterSpacingEm={letterSpacingEm}
+        align={align}
+        debug={debug}
+        fitToBounds={fitToBounds}
+        showOverflowWarning={!suppressPreviewOnlyWarnings}
+      />
+    </Layer>
+  );
+}
 
 function GroupIconLayer({
   assetId,
@@ -100,15 +202,56 @@ function GroupIconLayer({
   scale: number;
   rotation: number;
 }) {
-  const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
+  const {
+    url: imageUrl,
+    status: imageStatus,
+    width: imageWidth,
+    height: imageHeight,
+  } = useAssetImageUrl(assetId);
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.imageIcon);
+  const slotBounds = { x, y, width: size, height: size };
+  const fitScale = computeContainScale(slotBounds, imageWidth ?? undefined, imageHeight ?? undefined);
+  const baseRenderedWidth = (imageWidth ?? size) * fitScale;
+  const baseRenderedHeight = (imageHeight ?? size) * fitScale;
+  const renderedWidth = baseRenderedWidth * scale;
+  const renderedHeight = baseRenderedHeight * scale;
+  const renderedBounds =
+    imageUrl && imageWidth && imageHeight
+      ? {
+          x: x + size / 2 - renderedWidth / 2,
+          y: y + size / 2 - renderedHeight / 2,
+          width: renderedWidth,
+          height: renderedHeight,
+        }
+      : slotBounds;
+
+  useRegisterHoverAdornment(EDITOR_TARGET_IDS.imageIcon, {
+    kind: "rect",
+    x: renderedBounds.x,
+    y: renderedBounds.y,
+    width: renderedBounds.width,
+    height: renderedBounds.height,
+    radius: 14,
+  });
   if (!imageUrl) {
     if (imageStatus === "missing") {
       return (
-        <MissingArtworkPlaceholder
-          bounds={{ x, y, width: size, height: size }}
-          assetName={assetName}
-          scale={1}
-        />
+        <Layer {...svgFocusProps}>
+          <rect
+            x={x}
+            y={y}
+            width={size}
+            height={size}
+            fill="transparent"
+            pointerEvents="all"
+            data-hqcc-hit-area={EDITOR_TARGET_IDS.imageIcon}
+          />
+          <MissingArtworkPlaceholder
+            bounds={{ x, y, width: size, height: size }}
+            assetName={assetName}
+            scale={1}
+          />
+        </Layer>
       );
     }
     return null;
@@ -122,7 +265,16 @@ function GroupIconLayer({
       : undefined;
 
   return (
-    <Layer>
+    <Layer {...svgFocusProps}>
+      <rect
+        x={x}
+        y={y}
+        width={size}
+        height={size}
+        fill="transparent"
+        pointerEvents="all"
+        data-hqcc-hit-area={EDITOR_TARGET_IDS.imageIcon}
+      />
       <image
         href={imageUrl}
         data-user-asset-id={assetId}
@@ -133,6 +285,7 @@ function GroupIconLayer({
         height={size}
         preserveAspectRatio="xMidYMid meet"
         transform={transform}
+        pointerEvents="none"
       />
     </Layer>
   );
@@ -143,11 +296,13 @@ function buildGroupItems({
   cardData,
   blueprint,
   showTextBounds = false,
+  suppressPreviewOnlyWarnings = false,
 }: {
   group: BlueprintGroup;
   cardData?: CardDataByTemplate[TemplateId];
   blueprint: Blueprint;
   showTextBounds?: boolean;
+  suppressPreviewOnlyWarnings?: boolean;
 }): GroupItem[] {
   const items: GroupItem[] = [];
 
@@ -172,7 +327,7 @@ function buildGroupItems({
       const fontFamily =
         typeof child.props?.fontFamily === "string" ? child.props.fontFamily : undefined;
 
-      const { lines, lineHeight: measuredLineHeight } = layoutCardText({
+      const { lines, lineHeight: measuredLineHeight, totalHeight } = layoutCardText({
         text,
         width: group.width,
         fontSize,
@@ -182,7 +337,7 @@ function buildGroupItems({
 
       if (!lines.length) return;
 
-      const height = lines.length * measuredLineHeight;
+      const height = totalHeight;
       const fontWeight =
         typeof child.props?.fontWeight === "number" || typeof child.props?.fontWeight === "string"
           ? child.props.fontWeight
@@ -205,11 +360,23 @@ function buildGroupItems({
       items.push({
         id: child.id,
         height,
-        render: (topY) => (
-          <Layer key={child.id}>
-            <CardTextBlock
+        render: (topY) => {
+          const bottomBaselinePadding = Math.max(
+            measuredLineHeight - fontSize,
+            fontSize * GROUP_TEXT_BOTTOM_BASELINE_PADDING_RATIO,
+          );
+          const renderBounds = {
+            x: group.origin.x,
+            y: topY - bottomBaselinePadding,
+            width: group.width,
+            height: height + bottomBaselinePadding,
+          };
+
+          return (
+            <GroupTextLayer
+              key={child.id}
               text={text}
-              bounds={{ x: group.origin.x, y: topY, width: group.width, height }}
+              bounds={renderBounds}
               fontSize={fontSize}
               lineHeight={measuredLineHeight}
               fontWeight={fontWeight}
@@ -219,9 +386,11 @@ function buildGroupItems({
               align={align}
               debug={showTextBounds}
               fitToBounds={fitToBounds}
+              interactive={textKey === "description"}
+              suppressPreviewOnlyWarnings={suppressPreviewOnlyWarnings}
             />
-          </Layer>
-        ),
+          );
+        },
       });
       return;
     }
@@ -335,15 +504,16 @@ function buildGroupItems({
 
   return items;
 }
-
 export function renderGroups({
   blueprint,
   cardData,
   showTextBounds = false,
+  suppressPreviewOnlyWarnings = false,
 }: {
   blueprint: Blueprint;
   cardData?: CardDataByTemplate[TemplateId];
   showTextBounds?: boolean;
+  suppressPreviewOnlyWarnings?: boolean;
 }) {
   if (!blueprint.groups?.length) return null;
 
@@ -352,9 +522,14 @@ export function renderGroups({
       return null;
     }
 
-    const items = buildGroupItems({ group, cardData, blueprint, showTextBounds });
+    const items = buildGroupItems({
+      group,
+      cardData,
+      blueprint,
+      showTextBounds,
+      suppressPreviewOnlyWarnings,
+    });
     let cursor = group.origin.y;
-
     return items.map((item) => {
       const topY = cursor - item.height;
       cursor = topY - group.gap;

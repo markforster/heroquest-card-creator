@@ -26,7 +26,14 @@ describe("createCardRequestPlugin", () => {
 
     const resolved = await createCardRequestPlugin.request?.(
       [],
-      { data: { templateId: "hero", status: "saved", name: "Hero" } } as never,
+      {
+        data: {
+          templateId: "hero",
+          status: "saved",
+          name: "Hero",
+          duplicateFromCardId: "source-card",
+        },
+      } as never,
     );
     const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
     const response = await adapter?.();
@@ -37,6 +44,11 @@ describe("createCardRequestPlugin", () => {
         id: "card-1",
         templateId: "hero",
         title: "Hero",
+      }),
+    );
+    expect(createCard).toHaveBeenCalledWith(
+      expect.objectContaining({
+        duplicateFromCardId: "source-card",
       }),
     );
   });

@@ -81,5 +81,13 @@
   "formattingHelp.diceStructure.colorsCode": "Kleuren: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Geldige kleuren",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Hex-kleuren"
+  "formattingHelp.diceStructure.hexOutput": "Hex-kleuren",
+  "formattingHelp.richText.titleCode": "<title>Queesteregels</title>",
+  "formattingHelp.richText.titleOutput": "Queesteregels",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Beweging</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Beweging",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>grote tekst</scale>",
+  "formattingHelp.richText.scaleOutput": "grote tekst",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>kleine tekst</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "kleine tekst"
 }

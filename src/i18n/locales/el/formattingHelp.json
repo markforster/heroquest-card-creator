@@ -81,5 +81,13 @@
   "formattingHelp.diceStructure.colorsCode": "Χρώματα: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Έγκυρα χρώματα",
   "formattingHelp.diceStructure.hexCode": "Δεκαεξαδικό: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Hex χρώματα"
+  "formattingHelp.diceStructure.hexOutput": "Hex χρώματα",
+  "formattingHelp.richText.titleCode": "<title>Kanones apostolis</title>",
+  "formattingHelp.richText.titleOutput": "Kanones apostolis",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Kinisi</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Kinisi",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>megalo keimeno</scale>",
+  "formattingHelp.richText.scaleOutput": "megalo keimeno",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>mikro keimeno</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "mikro keimeno"
 }

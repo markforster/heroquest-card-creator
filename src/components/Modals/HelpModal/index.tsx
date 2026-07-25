@@ -1,425 +1,98 @@
 "use client";
 
-import { DocList, DocParagraph, DocSection, docStyles } from "@/components/common/DocContent";
+import { BookOpen, ExternalLink, RefreshCw, WifiOff } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { OpenCloseProps } from "@/types/ui";
+
+import BundledHelpContent from "./BundledHelpContent";
+import { HELP_SITE_URL } from "./help-site-availability";
+import OnlineHelpFrame from "./OnlineHelpFrame";
+import useHelpSiteAvailability from "./useHelpSiteAvailability";
 
 type HelpModalProps = OpenCloseProps;
 
 export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
   const { t } = useI18n();
+  const { availability, retry } = useHelpSiteAvailability(isOpen);
+  const [useBundledHelp, setUseBundledHelp] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setUseBundledHelp(false);
+    }
+  }, [isOpen]);
+
+  const showOnlineHelp = availability === "available" && !useBundledHelp;
+  const showChecking = availability === "checking" && !useBundledHelp;
+  const showBundledHelp = !showOnlineHelp && !showChecking;
+
+  const headerActions =
+    availability === "available" ? (
+      <>
+        <button
+          type="button"
+          className={styles.helpHeaderAction}
+          onClick={() => setUseBundledHelp((current) => !current)}
+        >
+          {useBundledHelp ? "View online help" : "Use built-in help"}
+        </button>
+        <a
+          className={styles.helpHeaderAction}
+          href={HELP_SITE_URL}
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          <ExternalLink aria-hidden="true" />
+          <span>Open in new tab</span>
+        </a>
+      </>
+    ) : availability === "unavailable" ? (
+      <button type="button" className={styles.helpHeaderAction} onClick={() => void retry()}>
+        <RefreshCw aria-hidden="true" />
+        <span>Retry online help</span>
+      </button>
+    ) : null;
+
   return (
-    <ModalShell isOpen={isOpen} onClose={onClose} title={t("heading.help")}>
-      <div className={docStyles.docBody}>
-        <DocSection title="Getting around">
-          <DocParagraph>
-            The editor is split into three main areas: actions and navigation, the live preview, and
-            the inspector. The LeftNav contains quick actions (Cards, Decks, Assets, Settings/Help),
-            the preview shows your card as you edit it, and the inspector on the right is where you
-            change titles, rules text, stats, images, and template-specific options. Most changes
-            update the preview instantly, so you can trust what you see.
-          </DocParagraph>
-          <DocParagraph>
-            Cards, Decks, and Assets open in the main area, and your editor preview is still there
-            when you return.
-          </DocParagraph>
-          <DocParagraph>
-            You can switch appearance mode (Light, Dark, or System) from Settings or the LeftNav
-            theme control.
-          </DocParagraph>
-        </DocSection>
-
-        <DocSection title="Creating and editing cards">
-          <DocList>
-            <li>
-              Choose a template (hero, monster, treasure, card backs) from the template picker or
-              inspector. Each template matches the proportions and feel of the original cards.
-            </li>
-            <li>
-              Use the inspector to edit the title, rules text, stats, and any template-specific
-              settings.
-            </li>
-            <li>
-              Drafts are saved automatically per template in your browser, so you can switch
-              templates without losing in-progress work.
-            </li>
-            <li>
-              Start a new card in draft mode or open an existing card, make changes, and save when
-              you&apos;re ready.
-            </li>
-            <li>
-              Title toolbar controls are template-dependent. Labelled backs can switch ribbon/plain
-              styles and top/bottom placement.
-            </li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="Preview modes">
-          <DocList>
-            <li>The preview toolbar lets you switch between the flat view and a 3D view.</li>
-            <li>Use the flat view when you want to see the card exactly as it will print.</li>
-            <li>
-              Use the 3D view to see how the card would look if you held it in your hand and could
-              turn or flip it.
-            </li>
-            <li>
-              In 3D spin mode, double-click recenters the card; if it&apos;s already front-facing,
-              double-click flips it.
-            </li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="Text, formatting, leader lines, and alignment">
-          <DocList>
-            <li>
-              Rules text supports a simple markdown-style syntax for bold and italic. Bold uses
-              <code>**double asterisks**</code>, italic uses <code>*single asterisks*</code>, and
-              bold+italic uses <code>***triple asterisks***</code>.
-            </li>
-            <li>Text wraps automatically inside the available area on the card.</li>
-            <li>
-              For dotted “leader lines” (e.g. cost lines), wrap a line like
-              <code> [cost [...] 1gp]</code> and the dots will be drawn between the label and value.
-            </li>
-            <li>
-              To group leader lines and control layout, wrap them in
-              <code> [[</code> and <code>]]</code>. You can add an optional settings line like
-              <code>
-                {" "}
-                [{"{"}pivot:50%, wrap:value{"}"}]
-              </code>{" "}
-              to set a fixed pivot or wrap values inside the value column.
-            </li>
-            <li>
-              Inline dice tokens are supported in body text (combat faces, D6 pips, and
-              CD/AD/DD/MD), including color and face overrides.
-            </li>
-            <li>
-              Alignment directives let you switch alignment mid-text: use <code>:::ac</code>,
-              <code>:::al</code>, or <code>:::ar</code> on their own line, and <code>:::</code> to
-              reset.
-            </li>
-            <li>
-              For a single aligned block, you can wrap text like
-              <code> :::ar your text here:::</code> (can span multiple lines).
-            </li>
-            <li>
-              On hero and monster cards, the body text grows upward from the bottom while the stats
-              strip moves up to make space, mirroring how printed cards behave.
-            </li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="Text fitting and readability">
-          <DocList>
-            <li>
-              Use the Text Fitting button in the preview toolbar to adjust minimum font size and
-              ellipsis rules.
-            </li>
-            <li>
-              These settings affect titles and stat headings and are useful for long names or narrow
-              stat labels.
-            </li>
-            <li>
-              If text feels cramped, lower the minimum font size or enable ellipsis for cleaner
-              truncation.
-            </li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="Working with images">
-          <DocList>
-            <li>
-              Open Assets to upload artwork into a shared image library (stored in your browser).
-            </li>
-            <li>
-              In the inspector, choose an image for the current card. The tool scales it to fit
-              within the artwork window by default.
-            </li>
-            <li>
-              Use the Image Adjustments popover (adjustments icon) to fine-tune scale, offset, and
-              rotation; step buttons let you nudge left/right/up/down with precision.
-            </li>
-            <li>Scale starts at fit-to-frame (1.0), and you can scale from 0.5–2.0.</li>
-            <li>
-              Zoom multipliers are literal (1x, 2x, 3x), and full-card coverage remains reachable
-              when needed.
-            </li>
-            <li>Once you find a good framing, it’s easy to repeat it across similar cards.</li>
-            <li>
-              Image and Icon fields support autocomplete search; the current asset stays pinned in
-              the results.
-            </li>
-            <li>
-              In Assets, the Resources menu (book icon) provides quick links to artwork downloads
-              and external helper tools, including custom GPT art/icon generators.
-            </li>
-            <li>
-              For compatible opaque PNG assets, you can use Convert to JPEG to reduce file size.
-            </li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="Saved cards and the stockpile">
-          <DocList>
-            <li>Use New in the left navigation to start a new card with a template.</li>
-            <li>
-              Save creates a new card from the current editor state. Save changes updates the active
-              saved card.
-            </li>
-            <li>Open Cards to browse, search, and load saved cards.</li>
-            <li>Use collections to organise cards without deleting them.</li>
-            <li>
-              Delete moves cards into Recently Deleted; restore is available there, and permanent
-              delete is only available in Recently Deleted.
-            </li>
-            <li>
-              In manage mode, you can toggle grid/table view; table headers stay visible while
-              scrolling.
-            </li>
-            <li>
-              When starting from an empty library, Stockpile onboarding can guide setup and provide
-              direct Import library actions.
-            </li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="Collections (organising saved cards)">
-          <DocList>
-            <li>
-              In the Cards browser, the right Collections panel lets you switch between All cards,
-              Unfiled, and named collections. On narrow screens, this panel appears as a drawer.
-            </li>
-            <li>
-              Create a collection with + New collection, then add cards using Add to collection…
-              (multi-select supported).
-            </li>
-            <li>Removing a card from a collection does not delete it.</li>
-            <li>
-              Delete is safe: cards move to Recently Deleted so you can restore them if needed.
-            </li>
-            <li>
-              Enable the optional Collections tree view to group folders, collapse/expand, and use
-              Collapse all / Expand all controls.
-            </li>
-            <li>Drag cards onto collection leaves to add them (multi-select supported).</li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="Decks (organising playable card systems)">
-          <DocParagraph>
-            Open Decks from the LeftNav to build and organise structured card decks. Decks are
-            designed for larger HeroQuest projects where cards belong to playable systems rather
-            than loose collections.
-          </DocParagraph>
-          <DocList>
-            <li>
-              The Decks workspace includes a deck grid for browsing/managing decks, a deck detail
-              area for groups and sets, a source panel for adding cards, and details panels for
-              metadata and deck actions.
-            </li>
-            <li>
-              Decks can contain groups, sets, and front-face entries, so you can organise things
-              like treasure pools, encounter groups, spell schools, hero systems, and expansion
-              content in a deliberate structure.
-            </li>
-            <li>
-              Create, rename, duplicate, delete, search, and multi-select decks from the Decks grid.
-            </li>
-            <li>
-              Most deck editing is drag-and-drop: reorder groups, move sets between groups, reorder
-              entries, create groups from insertion boundaries, and drag cards directly into sets.
-            </li>
-            <li>
-              Entries support quantities so you can model repeated encounters, weighted treasure
-              distributions, rarity, and balanced card pools.
-            </li>
-            <li>
-              Remove workflows are deck-safe: removing an entry from a set does not delete the
-              underlying card, and recovery workflows help bring paired cards back into sets when
-              needed.
-            </li>
-            <li>
-              The inspector can show deck membership context so it is easier to see where cards are
-              used across larger projects.
-            </li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="PDF export">
-          <DocParagraph>
-            Deck PDF export creates a print-ready PDF from a deck using real paper sizes, deck
-            order, and optional front+back layout. Open Decks, choose a deck, and use the PDF
-            export action to review the run before exporting.
-          </DocParagraph>
-          <DocList>
-            <li>
-              The export flow is summary-first, so you can see what will be included before
-              changing layout or bleed settings.
-            </li>
-            <li>
-              <strong>Complete sets</strong> exports sets with entries, <strong>All sets</strong>{" "}
-              includes every set, and <strong>Selected sets</strong> lets you choose exactly which
-              sets to print.
-            </li>
-            <li>
-              In scopes that include them, empty sets can export with placeholder fronts so the set
-              still prints with its back face.
-            </li>
-            <li>
-              <strong>Fronts only</strong> exports front pages only. <strong>Front + back</strong>{" "}
-              exports paired front and back pages.
-            </li>
-            <li>
-              Duplex presets change how back pages are positioned for double-sided printing. Use
-              the alignment test PDF before a larger print run to check scale, placement, and which
-              preset works best on your printer.
-            </li>
-            <li>
-              Layout settings control paper size, orientation, run mode, duplex preset, and bleed
-              source. Bleed settings control bleed, rounded corners, crop marks, and cut marks.
-            </li>
-            <li>
-              <strong>Export Profiles</strong> save a reusable combination of PDF layout defaults
-              and bleed/mark defaults together, so you can keep different print setups ready for
-              later runs.
-            </li>
-            <li>
-              Manage Export Profiles from Export Settings, where you can create additional profiles
-              and mark one as the default.
-            </li>
-            <li>
-              In Deck PDF export, choose an Export Profile for the current run before deciding
-              whether to keep its saved defaults or customise the run further.
-            </li>
-            <li>
-              <strong>Customise layout</strong> and <strong>Customise bleed settings</strong> act
-              as per-run overrides on top of the selected profile rather than replacing the saved
-              profile itself.
-            </li>
-            <li>
-              Large deck exports can take a little time. The app shows progress while rendering and
-              lets you cancel the run if needed.
-            </li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="Card faces and pairing">
-          <DocList>
-            <li>
-              Some templates support front/back faces. Use the face picker to switch between sides
-              while editing.
-            </li>
-            <li>Pairing keeps the two faces together for browsing and export workflows.</li>
-            <li>
-              The inspector has Properties and Pairing views. Fronts can be paired to multiple
-              backs, and backs can manage multiple fronts in one place. These relationships can also
-              be reused in Decks set workflows.
-            </li>
-            <li>
-              The pairing modal supports multi-select, and actions that remove multiple pairings
-              show a confirmation prompt.
-            </li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="Title visibility and borders">
-          <DocList>
-            <li>Labelled backs can optionally hide/show the title.</li>
-            <li>
-              Labelled backs can switch ribbon/plain title styles, adjust placement, and set a
-              custom title color with reset.
-            </li>
-            <li>
-              Some templates allow custom border colours, smart swatch suggestions, and saved
-              swatches for quick reuse.
-            </li>
-            <li>Small/Large Artwork templates support textured border color controls.</li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="Exporting cards and backups">
-          <DocList>
-            <li>
-              Export the current card to a 750×1050 PNG from the inspector. The PNG is generated
-              from the same SVG used in the preview.
-            </li>
-            <li>
-              If a card has paired faces, the export menu can include options to export both faces
-              or an active front with a back.
-            </li>
-            <li>In the Cards browser, use Export to bulk export multiple cards as a ZIP.</li>
-            <li>
-              Export options support print-oriented settings like bleed, crop marks, and cut marks.
-            </li>
-            <li>
-              Rounded-corner export behavior can change depending on selected print/export options.
-            </li>
-            <li>
-              In Decks, export actions are available from deck workflows so structured deck content
-              can be prepared and exported from the same workspace.
-            </li>
-            <li>
-              When exporting a collection or selection, you may be prompted to include paired faces.
-            </li>
-            <li>
-              If missing artwork is detected, you’ll be prompted before export. In bulk export,
-              missing cards are skipped and included in a report.
-            </li>
-            <li>
-              Missing artwork warnings can appear in preview, and a startup banner may appear if
-              your library has missing assets.
-            </li>
-            <li>
-              Deck export in this release focuses on structured deck organization and export
-              preparation, and lays groundwork for future print/PDF workflows.
-            </li>
-            <li>
-              Use Export data and Import data in the header to back up or restore your entire
-              library (.hqcc file). Import replaces existing data in this browser profile, so export
-              first if you want a safety copy.
-            </li>
-            <li>
-              Library backup now defaults to a compact .hqcc format, while older backup imports are
-              still supported.
-            </li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="Bulk export (downloading lots of cards)">
-          <DocList>
-            <li>
-              Export exactly what you can see: a full collection, a filtered view, or a
-              multi-selection.
-            </li>
-            <li>Bulk export creates a single ZIP with all selected card images.</li>
-            <li>
-              Finalizing shows progress; if progress isn’t available, you’ll see a “Finalizing…”
-              status.
-            </li>
-          </DocList>
-        </DocSection>
-
-        <DocSection title="Tips">
-          <DocList>
-            <li>
-              If a preview feels slow, switch to SVG and re-enable WebGL only when you need it.
-            </li>
-            <li>
-              Use text fitting controls to keep long titles and stat headings readable without
-              shrinking everything.
-            </li>
-            <li>
-              Keep an occasional .hqcc backup if you do a lot of card work in one browser profile.
-            </li>
-            <li>Recently Deleted is a safety net—restore if you remove something by mistake.</li>
-            <li>
-              If you see missing-artwork warnings, fix them before export to avoid skipped cards.
-            </li>
-          </DocList>
-        </DocSection>
-      </div>
+    <ModalShell
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t("heading.help")}
+      contentClassName={styles.helpPopover}
+      headerActions={headerActions}
+    >
+      {showChecking ? (
+        <div className={styles.helpStatus} role="status">
+          <span className={styles.helpLoadingIndicator} aria-hidden="true" />
+          <span>Loading online help...</span>
+        </div>
+      ) : null}
+      {showOnlineHelp ? <OnlineHelpFrame /> : null}
+      {showBundledHelp ? (
+        <div className={styles.helpBundledContent}>
+          <div className={styles.helpOfflineNotice}>
+            {availability === "available" ? (
+              <>
+                <BookOpen aria-hidden="true" />
+                <span>Using the built-in guide. Online help remains available.</span>
+              </>
+            ) : (
+              <>
+                <WifiOff aria-hidden="true" />
+                <span>
+                  Online help is unavailable. You can still use the built-in guide included with the
+                  app.
+                </span>
+              </>
+            )}
+          </div>
+          <BundledHelpContent />
+        </div>
+      ) : null}
     </ModalShell>
   );
 }

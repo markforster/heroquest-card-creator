@@ -1,4 +1,5 @@
 import { getCardRequestPlugin } from "@/api/local/getCardRequest";
+import { blueprintIds } from "@/data/card-systems/types";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { getCard } from "@/lib/cards-db";
 import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
@@ -173,6 +174,39 @@ describe("getCard", () => {
     );
   });
 
+  it("round-trips Rules fields through its two normalized component slots", async () => {
+    const record = createCardRecord({
+      id: "rules-1",
+      templateId: "rules",
+      name: "Turn Summary",
+      face: "front",
+      description: "**Movement**\nMove around the board.",
+      bodyTextColor: "#22170f",
+      bodyTextFitToBounds: true,
+    });
+
+    await seedNormalizedCard(record);
+
+    const db = await openHqccDexieDb();
+    const slots = await db.cardSlotLinks.where("cardId").equals("rules-1").toArray();
+    expect(slots.map((slot) => slot.slotId).sort()).toEqual([
+      blueprintIds.hq_2021_background_base,
+      blueprintIds.hq_2021_text_body,
+    ]);
+
+    await expect(getCard("rules-1")).resolves.toEqual(
+      expect.objectContaining({
+        templateId: "rules",
+        name: "Turn Summary",
+        face: "front",
+        description: "**Movement**\nMove around the board.",
+        bodyTextColor: "#22170f",
+        bodyTextFitToBounds: true,
+        schemaVersion: 2,
+      }),
+    );
+  });
+
   it("returns null when normalized rows are absent", async () => {
     await expect(getCard("legacy-only")).resolves.toBeNull();
   });
@@ -216,5 +250,59 @@ describe("getCard", () => {
       }),
     );
     expect(response?.data).not.toHaveProperty("thumbnailBlob");
+  });
+
+  it("defaults Hero Back cards to the baked logo when the normalized logo row is absent", async () => {
+    const record = createCardRecord({
+      id: "hero-back-1",
+      templateId: "hero-back",
+      title: "Hero Back",
+      heroBackLogoMode: "default",
+    });
+    await seedNormalizedCard(record);
+
+    const db = await openHqccDexieDb();
+    await db.cardSlotLinks
+      .where("slotId")
+      .equals(blueprintIds.hq_2021_logo_hero_back)
+      .delete();
+    await db.cardHeroBackLogoComponents
+      .where("slotId")
+      .equals(blueprintIds.hq_2021_logo_hero_back)
+      .delete();
+
+    await expect(getCard("hero-back-1")).resolves.toEqual(
+      expect.objectContaining({
+        id: "hero-back-1",
+        templateId: "hero-back",
+        heroBackLogoMode: "default",
+      }),
+    );
+  });
+
+  it("round-trips Logo Back custom-logo data through normalized storage", async () => {
+    const record = createCardRecord({
+      id: "logo-back-1",
+      templateId: "logo-back",
+      name: "Logo Back",
+      nameLower: "logo back",
+      heroBackLogoMode: "custom",
+      heroBackLogoId: "logo-1",
+      heroBackLogoName: "Custom Logo",
+      heroBackLogoOriginalWidth: 600,
+      heroBackLogoOriginalHeight: 200,
+    });
+    await seedNormalizedCard(record);
+
+    await expect(getCard("logo-back-1")).resolves.toEqual(
+      expect.objectContaining({
+        templateId: "logo-back",
+        heroBackLogoMode: "custom",
+        heroBackLogoId: "logo-1",
+        heroBackLogoName: "Custom Logo",
+        heroBackLogoOriginalWidth: 600,
+        heroBackLogoOriginalHeight: 200,
+      }),
+    );
   });
 });

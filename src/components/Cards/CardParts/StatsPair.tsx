@@ -11,12 +11,13 @@ import { formatStatValue } from "@/lib/stat-values";
 import fitText from "@/lib/text-fitting/fitText";
 import { shrinkToFitSingleLine } from "@/lib/text-fitting/shrink";
 import { useTypographyNumericSettings } from "@/lib/typography-settings";
-import type { StatValue } from "@/types/stats";
+import type { StatAsteriskFlags, StatValue } from "@/types/stats";
 
 
 type StatsPairProps = {
   header: string;
   value?: StatValue;
+  asterisks?: StatAsteriskFlags;
   x: number;
   y: number;
   width: number;
@@ -37,6 +38,7 @@ const VALUE_NUMERIC_OPTICAL_Y_OFFSET = 3;
 export default function StatsPair({
   header,
   value,
+  asterisks,
   x,
   y,
   width,
@@ -75,7 +77,7 @@ export default function StatsPair({
   const lineCount = headerLines.length || 1;
   const totalHeaderTextHeight = headerLineHeight * lineCount;
   const firstLineY = headerCenterY - (totalHeaderTextHeight - headerLineHeight) / 2;
-  const formattedValue = formatStatValue(value);
+  const formattedValue = formatStatValue(value, asterisks);
   const headerLetterSpacing = USE_TIGHTER_STATS_TRACKING ? HEADER_LETTER_SPACING : undefined;
   const statsScaleY = USE_STATS_VERTICAL_COMPRESSION ? STATS_VERTICAL_SCALE_Y : 1;
   const statsTransform =

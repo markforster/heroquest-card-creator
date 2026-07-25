@@ -1,5 +1,6 @@
 import { createCard, getCard, getCardThumbnail } from "@/lib/cards-db";
 import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import type { CollectionRecord } from "@/types/collections-db";
 
 import {
   deleteDb,
@@ -48,6 +49,7 @@ describe("createCard", () => {
       status: "saved",
       name: "My HERO",
       title: "Title",
+      showCopyright: true,
       id: "card-1",
       createdAt: 100,
       updatedAt: 100,
@@ -104,6 +106,98 @@ describe("createCard", () => {
     expect(created.bodyTextFitToBounds).toBe(true);
   });
 
+  it("copies source collection memberships when creating a duplicate-derived saved card", async () => {
+    jest.spyOn(Date, "now").mockReturnValue(250);
+    const db = await openHqccDexieDb();
+    await db.collections.bulkPut([
+      {
+        id: "c1",
+        name: "One",
+        cardIds: ["source-card"],
+        createdAt: 100,
+        updatedAt: 100,
+        schemaVersion: 1,
+      },
+      {
+        id: "c2",
+        name: "Two",
+        cardIds: ["other-card", "source-card"],
+        createdAt: 100,
+        updatedAt: 100,
+        schemaVersion: 1,
+      },
+      {
+        id: "c3",
+        name: "Three",
+        cardIds: ["other-card"],
+        createdAt: 100,
+        updatedAt: 100,
+        schemaVersion: 1,
+      },
+    ] satisfies CollectionRecord[]);
+
+    const created = await createCard({
+      id: "duplicate-card",
+      templateId: "hero",
+      status: "saved",
+      name: "Duplicate",
+      duplicateFromCardId: "source-card",
+    });
+
+    expect(created.id).toBe("duplicate-card");
+    await expect(db.collections.get("c1")).resolves.toEqual(
+      expect.objectContaining({
+        cardIds: ["source-card", "duplicate-card"],
+        updatedAt: 250,
+      }),
+    );
+    await expect(db.collections.get("c2")).resolves.toEqual(
+      expect.objectContaining({
+        cardIds: ["other-card", "source-card", "duplicate-card"],
+        updatedAt: 250,
+      }),
+    );
+    await expect(db.collections.get("c3")).resolves.toEqual(
+      expect.objectContaining({
+        cardIds: ["other-card"],
+        updatedAt: 100,
+      }),
+    );
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("cards", "duplicate-card");
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("collections", "c1");
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("collections", "c2");
+  });
+
+  it("creates the card normally when the duplicate source is missing from collections", async () => {
+    const db = await openHqccDexieDb();
+    await db.collections.put({
+      id: "c1",
+      name: "One",
+      cardIds: ["other-card"],
+      createdAt: 100,
+      updatedAt: 100,
+      schemaVersion: 1,
+    } satisfies CollectionRecord);
+
+    const created = await createCard({
+      id: "duplicate-card",
+      templateId: "hero",
+      status: "saved",
+      name: "Duplicate",
+      duplicateFromCardId: "missing-source",
+    });
+
+    expect(created.id).toBe("duplicate-card");
+    await expect(db.collections.get("c1")).resolves.toEqual(
+      expect.objectContaining({
+        cardIds: ["other-card"],
+        updatedAt: 100,
+      }),
+    );
+    expect(enqueueDbEstimateChange).toHaveBeenCalledTimes(1);
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("cards", "duplicate-card");
+  });
+
   it("creates normalized rows for monster-specific icon and stats data", async () => {
     const created = await createCard({
       templateId: "monster",
@@ -112,6 +206,7 @@ describe("createCard", () => {
       title: "Goblin",
       monsterIconAssetId: "icon-1",
       monsterAttackDice: [2, 0, 0],
+      monsterAttackDiceAsterisks: [true],
     });
 
     const db = await openHqccDexieDb();
@@ -125,6 +220,7 @@ describe("createCard", () => {
     ).resolves.toEqual(
       expect.objectContaining({
         attackDice: [2, 0, 0],
+        attackDiceAsterisks: [true],
       }),
     );
   });
@@ -150,5 +246,37 @@ describe("createCard", () => {
     await expect(db.cardsBase.count()).resolves.toBe(baseCountBefore);
     await expect(db.cardThumbnails.count()).resolves.toBe(thumbCountBefore);
     db.cardTitleComponents.hook("creating").unsubscribe(hook);
+  });
+
+  it("rolls back card creation when inheriting collection memberships fails", async () => {
+    const db = await openHqccDexieDb();
+    await db.collections.put({
+      id: "c1",
+      name: "One",
+      cardIds: ["source-card"],
+      createdAt: 100,
+      updatedAt: 100,
+      schemaVersion: 1,
+    } satisfies CollectionRecord);
+    const baseCountBefore = await db.cardsBase.count();
+    const collectionsBefore = await db.collections.toArray();
+    const hook = () => {
+      throw new Error("collection copy failed");
+    };
+    db.collections.hook("updating", hook);
+
+    await expect(
+      createCard({
+        id: "duplicate-card",
+        templateId: "hero",
+        status: "saved",
+        name: "Duplicate",
+        duplicateFromCardId: "source-card",
+      }),
+    ).rejects.toThrow("collection copy failed");
+
+    await expect(db.cardsBase.count()).resolves.toBe(baseCountBefore);
+    await expect(db.collections.toArray()).resolves.toEqual(collectionsBefore);
+    db.collections.hook("updating").unsubscribe(hook);
   });
 });

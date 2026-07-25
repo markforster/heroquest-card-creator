@@ -34,10 +34,26 @@ describe("createDefaultCardData", () => {
     });
   });
 
-  it("returns empty object for hero-back by default", () => {
+  it("returns standard body text defaults for rules", () => {
+    expect(createDefaultCardData("rules")).toEqual({
+      bodyTextColor: DEFAULT_BODY_TEXT_COLOR,
+      bodyTextFitToBounds: false,
+    });
+  });
+
+  it("returns the baked logo default for hero-back", () => {
     expect(createDefaultCardData("hero-back")).toEqual({
       bodyTextColor: DEFAULT_BODY_TEXT_COLOR,
       bodyTextFitToBounds: false,
+      heroBackLogoMode: "default",
+    });
+  });
+
+  it("returns the baked logo default for logo-back", () => {
+    expect(createDefaultCardData("logo-back")).toEqual({
+      bodyTextColor: DEFAULT_BODY_TEXT_COLOR,
+      bodyTextFitToBounds: false,
+      heroBackLogoMode: "default",
     });
   });
 

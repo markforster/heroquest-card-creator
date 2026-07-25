@@ -1,0 +1,25 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.trigger {
+  position: relative;
+  width: 52px;
+  height: 44px;
+}
+
+.backSwatch {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+.frontSwatch {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+}

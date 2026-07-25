@@ -1,6 +1,58 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 
 import StockpileToolbar from "@/components/Stockpile/StockpileToolbar";
+
+type MockOption = {
+  value: string;
+  label: string;
+};
+
+type MockGroup = {
+  label: string;
+  options: MockOption[];
+};
+
+function flattenOptions(options: Array<MockOption | MockGroup>) {
+  return options.flatMap((option) => ("options" in option ? option.options : [option]));
+}
+
+jest.mock("react-select", () => {
+  return function MockReactSelect(props: {
+    options: Array<MockOption | MockGroup>;
+    value: MockOption | null;
+    onChange: (option: MockOption | null) => void;
+    formatOptionLabel?: (option: MockOption, meta: { context: "menu" | "value" }) => ReactNode;
+    isDisabled?: boolean;
+  }) {
+    const flatOptions = flattenOptions(props.options);
+
+    return (
+      <div>
+        <div data-testid="mock-react-select-selected">
+          {props.value && props.formatOptionLabel
+            ? props.formatOptionLabel(props.value, { context: "value" })
+            : props.value?.label ?? ""}
+        </div>
+        <select
+          data-testid="mock-react-select"
+          value={props.value?.value ?? ""}
+          disabled={props.isDisabled}
+          onChange={(event) => {
+            const next = flatOptions.find((option) => option.value === event.target.value) ?? null;
+            props.onChange(next);
+          }}
+        >
+          {flatOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  };
+});
 
 jest.mock("@/components/Providers/MissingAssetsContext", () => ({
   __esModule: true,
@@ -35,17 +87,29 @@ jest.mock("@/i18n/I18nProvider", () => ({
 }));
 
 describe("StockpileToolbar (UI)", () => {
-  it("renders a clear button when search is non-empty and clears search on click", () => {
-    const onSearchChange = jest.fn();
+  const filterOptions = [
+    {
+      label: "Face",
+      options: [
+        { value: "all", label: "All cards" },
+        { value: "face:front", label: "Front" },
+        { value: "face:back", label: "Back" },
+      ],
+    },
+  ];
 
+  it("does not render the old outer clear button when search is non-empty", () => {
     render(
       <StockpileToolbar
         onOpenCollections={() => {}}
         collectionsToggleLabel="All cards"
         search="hello"
-        onSearchChange={onSearchChange}
+        onSearchChange={() => {}}
         templateFilter="all"
         onTemplateFilterChange={() => {}}
+        filterValue="all"
+        onFilterValueChange={() => {}}
+        filterOptions={filterOptions}
         filterLabel="All types"
         totalCount={0}
         faceCounts={{ front: 0, back: 0 }}
@@ -60,9 +124,42 @@ describe("StockpileToolbar (UI)", () => {
         selectedCount={0}
       />,
     );
+    expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
-    expect(onSearchChange).toHaveBeenCalledWith("");
+  it("renders the shared react-select filter field and propagates changes", () => {
+    const onFilterValueChange = jest.fn();
+
+    render(
+      <StockpileToolbar
+        onOpenCollections={() => {}}
+        collectionsToggleLabel="All cards"
+        search=""
+        onSearchChange={() => {}}
+        templateFilter="all"
+        onTemplateFilterChange={() => {}}
+        filterValue="all"
+        onFilterValueChange={onFilterValueChange}
+        filterOptions={filterOptions}
+        filterLabel="All types"
+        totalCount={0}
+        faceCounts={{ front: 0, back: 0 }}
+        typeCounts={new Map()}
+        isPairMode
+        isPairBacks={false}
+        isPairFronts={false}
+        showUnpairedOnly={false}
+        onShowUnpairedOnlyChange={() => {}}
+        showMissingArtworkOnly={false}
+        onShowMissingArtworkOnlyChange={() => {}}
+        selectedCount={0}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId("mock-react-select"), {
+      target: { value: "face:back" },
+    });
+
+    expect(onFilterValueChange).toHaveBeenCalledWith("face:back");
   });
 });
-

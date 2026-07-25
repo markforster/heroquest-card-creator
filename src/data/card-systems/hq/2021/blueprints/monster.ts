@@ -1,5 +1,4 @@
 import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
-import { EMPHASIZED_LABEL_WEIGHT } from "@/config/typography";
 import { blueprintIds, groupTypes, layerTypes, systemFamilies } from "@/data/card-systems/types";
 import type { Blueprint } from "@/types/blueprints";
 
@@ -62,6 +61,7 @@ export const MONSTER_BLUEPRINT: Blueprint = {
       bounds: COPYRIGHT_BOUNDS,
       bind: { textKey: "copyright" },
       props: {
+        defaultVisible: true,
         fontSize: COPYRIGHT_FONT_SIZE,
         lineHeight: COPYRIGHT_LINE_HEIGHT,
         fontWeight: 500,
@@ -90,7 +90,6 @@ export const MONSTER_BLUEPRINT: Blueprint = {
             fontSize: HERO_MONSTER_BODY_FONT_SIZE,
             lineHeight: HERO_MONSTER_BODY_LINE_HEIGHT,
             letterSpacingEm: HERO_MONSTER_BODY_LETTER_SPACING,
-            fontWeight: EMPHASIZED_LABEL_WEIGHT,
             textLayoutMode: "auto-height",
           },
         },

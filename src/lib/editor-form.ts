@@ -1,4 +1,5 @@
 import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
+import { getBlueprintCopyrightDefaultVisible } from "@/lib/copyright-defaults";
 import { createDefaultCardData, type CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
@@ -45,6 +46,15 @@ export function applyInspectorDefaults<T extends TemplateId>(
 
 export function createEditorDefaultValues<T extends TemplateId>(
   templateId: T,
+  options?: { showCopyright?: boolean },
 ): CardDataByTemplate[T] {
-  return applyInspectorDefaults(templateId, createDefaultCardData(templateId));
+  const resolvedShowCopyright =
+    typeof options?.showCopyright === "boolean"
+      ? options.showCopyright
+      : getBlueprintCopyrightDefaultVisible(templateId);
+
+  return applyInspectorDefaults(templateId, {
+    ...createDefaultCardData(templateId),
+    showCopyright: resolvedShowCopyright,
+  });
 }

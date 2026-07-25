@@ -2,10 +2,14 @@
 
 
 import layoutStyles from "@/app/page.module.css";
+import {
+  type EditorTargetId,
+  useIsEditorTargetHovered,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
 
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode, InputHTMLAttributes } from "react";
+import type { FocusEventHandler, InputHTMLAttributes, ReactNode, Ref } from "react";
 
 export type BaseInspectorFieldToggleProps = {
   id: string;
@@ -20,9 +24,12 @@ export type BaseInspectorFieldProps = {
   id: string;
   label: string;
   icon: LucideIcon;
+  fieldRef?: Ref<HTMLDivElement>;
   error?: string | null;
   disabled?: boolean;
   showToggle?: boolean;
+  onFocusCapture?: FocusEventHandler<HTMLDivElement>;
+  targetId?: EditorTargetId;
   toggleProps?: BaseInspectorFieldToggleProps;
   toolbar?: ReactNode;
   headerExtras?: ReactNode;
@@ -34,16 +41,27 @@ export default function BaseInspectorField({
   id,
   label,
   icon,
+  fieldRef,
   error,
   showToggle = false,
+  onFocusCapture,
+  targetId,
   toggleProps,
   toolbar,
   headerExtras,
   input,
   footer,
 }: BaseInspectorFieldProps) {
+  const isHovered = targetId ? useIsEditorTargetHovered(targetId) : false;
+
   return (
-    <div className="mb-2">
+    <div
+      ref={fieldRef}
+      className={layoutStyles.editorTargetInspectorSurface}
+      data-hqcc-edit={targetId}
+      data-hqcc-hovered={isHovered ? "true" : "false"}
+      onFocusCapture={onFocusCapture}
+    >
       <div className={`d-flex align-items-center gap-2 ${layoutStyles.inspectorFieldHeader}`}>
         <div className="flex-grow-1 flex-shrink-0">
           <FormLabelWithIcon htmlFor={id} label={label} icon={icon} className="form-label mb-0" />

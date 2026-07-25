@@ -3,6 +3,8 @@
   "templates.monster": "Карта монстра",
   "templates.small-treasure": "Малая иллюстрация",
   "templates.large-treasure": "Большая иллюстрация",
+  "templates.rules": "Правила",
   "templates.hero-back": "Рубашка героя",
+  "templates.logo-back": "Рубашка с логотипом",
   "templates.labelled-back": "Подписанная рубашка"
 }

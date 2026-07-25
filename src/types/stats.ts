@@ -1,5 +1,7 @@
 export type StatSplitFormat = "slash" | "paren" | "paren-leading";
 
+export type StatAsteriskFlags = [] | [boolean] | [boolean, boolean];
+
 export type StatValue =
   | number
   | [number, number]

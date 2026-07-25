@@ -81,5 +81,13 @@
   "formattingHelp.diceStructure.colorsCode": "Kolory: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Prawidłowe kolory",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Kolory hex"
+  "formattingHelp.diceStructure.hexOutput": "Kolory hex",
+  "formattingHelp.richText.titleCode": "<title>Zasady zadania</title>",
+  "formattingHelp.richText.titleOutput": "Zasady zadania",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Ruch</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Ruch",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>duzy tekst</scale>",
+  "formattingHelp.richText.scaleOutput": "duzy tekst",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>maly tekst</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "maly tekst"
 }

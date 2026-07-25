@@ -9,6 +9,7 @@ import SettingsModal from "@/components/Modals/SettingsModal/SettingsModal";
 import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesGuardContext";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { StockpileModal } from "@/components/Stockpile";
 import TemplatePicker from "@/components/TemplatePicker";
@@ -62,6 +63,7 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
   const navigate = useNavigate();
   const { bypassNextNavigation, runWithUnsavedChangesGuard } = useUnsavedChangesGuardControls();
   const { track } = useAnalytics();
+  const { getTemplateDefault } = useCopyrightSettings();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
     setSelectedTemplateId,
@@ -163,7 +165,9 @@ export function AppActionsProvider({ children }: AppActionsProviderProps) {
             source: "template_picker",
           });
           templatePicker.close();
-          const nextDraft = createEditorDefaultValues(nextTemplateId);
+          const nextDraft = createEditorDefaultValues(nextTemplateId, {
+            showCopyright: getTemplateDefault(nextTemplateId),
+          });
           setSelectedTemplateId(nextTemplateId);
           saveDraft(nextTemplateId, nextDraft, { sourceCardId: null });
           resetWithSaved(nextDraft);

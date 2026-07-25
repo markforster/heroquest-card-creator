@@ -69,7 +69,10 @@ export default function DeckEntriesBoardController({
   const [isRecoverBusy, setIsRecoverBusy] = useState(false);
   const [selectedRecoverFrontIds, setSelectedRecoverFrontIds] = useState<Set<string>>(new Set());
   const recoverSelectAllRef = useRef<HTMLInputElement | null>(null);
-  const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set());
+  const selectedEntryIds = rightPanel?.selectedEntryIds ?? new Set<string>();
+  const setSelectedEntryIds = rightPanel?.setSelectedEntryIds ?? (() => undefined);
+  const setActivePreviewEntryId = rightPanel?.setActivePreviewEntryId ?? (() => undefined);
+  const setPreviewSelectionSource = rightPanel?.setPreviewSelectionSource ?? (() => undefined);
   const countByEntryId = useMemo(
     () => new Map((entries?.entriesSorted ?? []).map((entry) => [entry.id, entry.count])),
     [entries?.entriesSorted],
@@ -220,15 +223,22 @@ export default function DeckEntriesBoardController({
     setSelectedEntryIds((prev) => {
       const next = new Set(prev);
       if (additive) {
-        if (next.has(entryId)) next.delete(entryId);
-        else next.add(entryId);
+        if (next.has(entryId)) {
+          next.delete(entryId);
+        } else {
+          next.add(entryId);
+          setActivePreviewEntryId(entryId);
+          setPreviewSelectionSource("entry");
+        }
       } else {
         next.clear();
         next.add(entryId);
+        setActivePreviewEntryId(entryId);
+        setPreviewSelectionSource("entry");
       }
       return next;
     });
-  }, []);
+  }, [setActivePreviewEntryId, setPreviewSelectionSource, setSelectedEntryIds]);
   const model = useDeckSortableBoardViewModel("entries", BOARD_ROUTING_META_BY_ID.entries, {
     title: entriesBoardTitle,
     renderBoardHeaderActions: () => (
@@ -491,7 +501,7 @@ export default function DeckEntriesBoardController({
       const next = new Set(Array.from(prev).filter((id) => liveEntryIds.has(id)));
       return next.size === prev.size ? prev : next;
     });
-  }, [entries?.entriesSorted]);
+  }, [entries?.entriesSorted, setSelectedEntryIds]);
 
   return (
     <>

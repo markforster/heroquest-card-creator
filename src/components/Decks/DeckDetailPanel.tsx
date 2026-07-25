@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 
 import styles from "@/app/page.module.css";
+import type { RouteShortcutHandlers } from "@/components/App/RouteShellCapabilitiesContext";
 import { DeckDetailSelectionProvider } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import {
   DeckRightPanelProvider,
@@ -42,6 +43,8 @@ export type DeckDetailPanelProps = {
   entriesRowRef: (node: HTMLDivElement | null) => void;
   selectionModel: DeckDetailSelectionModel;
   entriesModel: DeckSetEntriesModel;
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
+  onRouteShortcutHandlersReady?: (handlers: RouteShortcutHandlers | null) => void;
 };
 
 export default function DeckDetailPanel({
@@ -55,6 +58,8 @@ export default function DeckDetailPanel({
   entriesRowRef,
   selectionModel,
   entriesModel,
+  onPrimarySearchReady,
+  onRouteShortcutHandlersReady,
 }: DeckDetailPanelProps) {
   const { deckTitle, keySetId } = useDeckHeaderModel(deckId);
 
@@ -73,6 +78,8 @@ export default function DeckDetailPanel({
         entriesRowRef={entriesRowRef}
         selectionModel={selectionModel}
         entriesModel={entriesModel}
+        onPrimarySearchReady={onPrimarySearchReady}
+        onRouteShortcutHandlersReady={onRouteShortcutHandlersReady}
       />
     </DeckRightPanelProvider>
   );
@@ -89,6 +96,8 @@ function DeckDetailPanelContent({
   modalActions,
   selectionModel,
   entriesModel,
+  onPrimarySearchReady,
+  onRouteShortcutHandlersReady,
 }: {
   deckId: string | null;
   deckTitle: string;
@@ -102,6 +111,8 @@ function DeckDetailPanelContent({
   entriesRowRef: (node: HTMLDivElement | null) => void;
   selectionModel: DeckDetailSelectionModel;
   entriesModel: DeckSetEntriesModel;
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
+  onRouteShortcutHandlersReady?: (handlers: RouteShortcutHandlers | null) => void;
 }) {
   const { isRightPanelVisible } = useDeckRightPanel();
   const usedBackFaceIds = useMemo(
@@ -156,44 +167,48 @@ function DeckDetailPanelContent({
   return (
     <>
       <DeckMockDndProvider boardModels={boardModels}>
-        <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
-          <div className={styles.deckRoutePanel}>
-            <DeckDetailHeader
-              deckId={deckId}
-              deckTitle={deckTitle}
-              deckPreviewCardIds={deckPreviewCardIds}
-            />
-
-            <DeckDetailSelectionProvider model={selectionModel}>
-              <DeckSetEntriesProvider model={entriesModel}>
-                <div className={styles.deckRouteMiddle}>
-                  <DeckGroupsBoardController
+        <DeckDetailSelectionProvider model={selectionModel}>
+          <DeckSetEntriesProvider model={entriesModel}>
+            <>
+              <section className={`${styles.leftPanel} ${styles.decksPanel}`}>
+                <div className={styles.deckRoutePanel}>
+                  <DeckDetailHeader
                     deckId={deckId}
-                    keySetId={keySetId}
-                    enableFanLayout
-                    onRequestDeleteSet={actions.deleteSetFromGroupCard}
-                    onOpenCardEditor={actions.onOpenCardEditor}
+                    deckTitle={deckTitle}
+                    deckPreviewCardIds={deckPreviewCardIds}
+                    onRouteShortcutHandlersReady={onRouteShortcutHandlersReady}
                   />
-                  <DeckEntriesBoardController onOpenCardEditor={actions.onOpenCardEditor} />
+
+                  <div className={styles.deckRouteMiddle}>
+                    <DeckGroupsBoardController
+                      deckId={deckId}
+                      keySetId={keySetId}
+                      enableFanLayout
+                      onRequestDeleteSet={actions.deleteSetFromGroupCard}
+                      onOpenCardEditor={actions.onOpenCardEditor}
+                    />
+                    <DeckEntriesBoardController onOpenCardEditor={actions.onOpenCardEditor} />
+                  </div>
                 </div>
-              </DeckSetEntriesProvider>
-            </DeckDetailSelectionProvider>
-          </div>
-        </section>
-        <aside
-          className={`${styles.rightPanel} ${styles.decksRightPanel} ${
-            isRightPanelVisible ? styles.decksRightPanelExpanded : styles.decksRightPanelCollapsed
-          }`}
-        >
-          <DeckBacksPanel
-            deckId={deckId}
-            usedBackFaceIds={usedBackFaceIds}
-            usedFrontFaceIds={usedFrontFaceIds}
-            finalizingBackFaceId={drag.finalizingBackFaceId}
-            finalizingFrontFaceId={drag.finalizingFrontFaceId}
-            gridOverride={<DeckSourceBoardController />}
-          />
-        </aside>
+              </section>
+              <aside
+                className={`${styles.rightPanel} ${styles.decksRightPanel} ${
+                  isRightPanelVisible ? styles.decksRightPanelExpanded : styles.decksRightPanelCollapsed
+                }`}
+              >
+                <DeckBacksPanel
+                  deckId={deckId}
+                  usedBackFaceIds={usedBackFaceIds}
+                  usedFrontFaceIds={usedFrontFaceIds}
+                  finalizingBackFaceId={drag.finalizingBackFaceId}
+                  finalizingFrontFaceId={drag.finalizingFrontFaceId}
+                  gridOverride={<DeckSourceBoardController />}
+                  onPrimarySearchReady={onPrimarySearchReady}
+                />
+              </aside>
+            </>
+          </DeckSetEntriesProvider>
+        </DeckDetailSelectionProvider>
       </DeckMockDndProvider>
 
       <DeckDetailModals

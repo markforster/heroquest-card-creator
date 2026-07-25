@@ -1,7 +1,8 @@
 "use client";
 
-import { apiClient } from "@/api/client";
 import { useEffect, useMemo, useRef, useState } from "react";
+
+import { apiClient } from "@/api/client";
 
 type CacheEntry = {
   url: string;
@@ -11,9 +12,15 @@ type CacheEntry = {
 
 export const MAX_ENTRIES = 750;
 const RETRY_DELAYS_MS = [100, 250, 500];
+const THUMBNAIL_INVALIDATED_EVENT = "hqcc-card-thumbnail-invalidated";
 
 const cache = new Map<string, CacheEntry>();
 const inflight = new Map<string, Promise<string | null>>();
+
+type ThumbnailInvalidatedDetail = {
+  all: boolean;
+  cardId?: string;
+};
 
 function cloneBlob(blob: Blob): Blob {
   try {
@@ -133,8 +140,32 @@ export function useCardThumbnailUrl(
   const enabled = options?.enabled ?? true;
   const useCache = options?.useCache ?? true;
   const [url, setUrl] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
   const legacyUrlRef = useRef<string | null>(null);
   const retainedCardIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleInvalidation = (event: Event) => {
+      const detail = (event as CustomEvent<ThumbnailInvalidatedDetail>).detail;
+      if (!detail) return;
+      if (!detail.all && detail.cardId !== cardId) return;
+
+      if (legacyUrlRef.current) {
+        releaseLegacyCardThumbnailUrl(legacyUrlRef.current);
+        legacyUrlRef.current = null;
+      }
+      retainedCardIdRef.current = null;
+      setUrl(null);
+      setRefreshToken((prev) => prev + 1);
+    };
+
+    window.addEventListener(THUMBNAIL_INVALIDATED_EVENT, handleInvalidation as EventListener);
+    return () => {
+      window.removeEventListener(THUMBNAIL_INVALIDATED_EVENT, handleInvalidation as EventListener);
+    };
+  }, [cardId]);
 
   useEffect(() => {
     let active = true;
@@ -239,7 +270,7 @@ export function useCardThumbnailUrl(
       }
       active = false;
     };
-  }, [blob, cardId, enabled, useCache]);
+  }, [blob, cardId, enabled, refreshToken, useCache]);
 
   return useMemo(() => url, [url]);
 }
@@ -254,6 +285,13 @@ export function invalidateCardThumbnail(cardId?: string): void {
       }
     });
     cache.clear();
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent<ThumbnailInvalidatedDetail>(THUMBNAIL_INVALIDATED_EVENT, {
+          detail: { all: true },
+        }),
+      );
+    }
     return;
   }
   const entry = cache.get(cardId);
@@ -264,6 +302,13 @@ export function invalidateCardThumbnail(cardId?: string): void {
       // Ignore revoke failures.
     }
     cache.delete(cardId);
+  }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent<ThumbnailInvalidatedDetail>(THUMBNAIL_INVALIDATED_EVENT, {
+        detail: { all: false, cardId },
+      }),
+    );
   }
 }
 

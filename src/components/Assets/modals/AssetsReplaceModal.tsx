@@ -2,8 +2,11 @@
 
 import styles from "@/app/page.module.css";
 import type { PendingReplaceState } from "@/components/Assets/AssetsInspector.types";
+import { WarningNotice } from "@/components/common/Notice";
 import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
+
+import { useId } from "react";
 
 type AssetsReplaceModalProps = {
   isOpen: boolean;
@@ -43,6 +46,7 @@ export default function AssetsReplaceModal({
   onKeepBackupChange,
 }: AssetsReplaceModalProps) {
   const { t } = useI18n();
+  const keepBackupId = useId();
 
   return (
     <ModalShell
@@ -78,7 +82,7 @@ export default function AssetsReplaceModal({
             <div className={styles.assetsReplaceFrame}>
               {previewUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={previewUrl} alt={assetName} />
+                <img src={previewUrl} alt={assetName} className={styles.assetsReplaceImage} />
               ) : (
                 <div className={styles.assetsReplacePlaceholder}>{t("empty.noPreview")}</div>
               )}
@@ -89,7 +93,11 @@ export default function AssetsReplaceModal({
             <div className={styles.assetsReplaceFrame}>
               {pendingReplace?.previewUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={pendingReplace.previewUrl} alt={assetName} />
+                <img
+                  src={pendingReplace.previewUrl}
+                  alt={assetName}
+                  className={styles.assetsReplaceImage}
+                />
               ) : (
                 <div className={styles.assetsReplacePlaceholder}>{t("empty.noPreview")}</div>
               )}
@@ -97,11 +105,11 @@ export default function AssetsReplaceModal({
           </div>
           <aside className={styles.assetsReplaceSidebar}>
             {pendingMismatch ? (
-              <div className={styles.assetsReplaceWarning}>
+              <WarningNotice className="mb-0" role="status">
                 {t("confirm.replaceDifferentDimensionsBody")
                   .replace("{old}", originalResolution)
                   .replace("{next}", replacementResolution)}
-              </div>
+              </WarningNotice>
             ) : (
               <div className={styles.assetsInspectorReplaceInfo}>
                 {t("confirm.replaceBody")}
@@ -127,16 +135,22 @@ export default function AssetsReplaceModal({
                 {t("label.replacementType")}: {replacementType}
               </div>
             </div>
-            <label className={styles.assetsInspectorReplaceToggle}>
+            <div className={styles.assetsInspectorReplaceToggle}>
               <input
+                id={keepBackupId}
                 type="checkbox"
                 className="form-check-input hq-checkbox"
                 checked={keepBackup}
                 onChange={(event) => onKeepBackupChange(event.target.checked)}
                 disabled={isReplacing}
               />
-              <span>{t("label.keepBackup")}</span>
-            </label>
+              <label
+                htmlFor={keepBackupId}
+                className={styles.assetsInspectorReplaceToggleLabel}
+              >
+                {t("label.keepBackup")}
+              </label>
+            </div>
           </aside>
         </div>
       </div>

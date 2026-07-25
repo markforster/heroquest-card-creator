@@ -1,0 +1,29 @@
+.tile {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: 6px;
+  padding: 0.3rem 0.4rem;
+  background: transparent;
+  line-height: 0;
+}
+
+.withBorder {
+  border: 1px solid rgba(70, 48, 19, 0.18);
+}
+
+.image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+}

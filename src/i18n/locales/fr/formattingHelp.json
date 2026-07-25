@@ -81,5 +81,13 @@
   "formattingHelp.diceStructure.colorsCode": "Couleurs : w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Couleurs valides",
   "formattingHelp.diceStructure.hexCode": "Hexadécimal : #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Couleurs hexadécimales"
+  "formattingHelp.diceStructure.hexOutput": "Couleurs hexadécimales",
+  "formattingHelp.richText.titleCode": "<title>Regles de quete</title>",
+  "formattingHelp.richText.titleOutput": "Regles de quete",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Mouvement</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Mouvement",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>grand texte</scale>",
+  "formattingHelp.richText.scaleOutput": "grand texte",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>petit texte</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "petit texte"
 }

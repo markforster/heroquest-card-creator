@@ -81,5 +81,13 @@
   "formattingHelp.diceStructure.colorsCode": "Színek: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Érvényes színek",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Hex színek"
+  "formattingHelp.diceStructure.hexOutput": "Hex színek",
+  "formattingHelp.richText.titleCode": "<title>Kuldetesszabalyok</title>",
+  "formattingHelp.richText.titleOutput": "Kuldetesszabalyok",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Mozgas</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Mozgas",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>nagy szoveg</scale>",
+  "formattingHelp.richText.scaleOutput": "nagy szoveg",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>kis szoveg</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "kis szoveg"
 }

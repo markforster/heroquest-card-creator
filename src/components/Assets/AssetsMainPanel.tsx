@@ -13,6 +13,7 @@ type AssetsMainPanelProps = {
   onSelectionChange?: (assets: AssetRecord[]) => void;
   refreshKey?: number;
   preferredKindOrder?: AssetKindGroupId[];
+  onPrimarySearchReady?: (focusSearch: (() => boolean) | null) => void;
 };
 
 export default function AssetsMainPanel({
@@ -22,6 +23,7 @@ export default function AssetsMainPanel({
   onSelectionChange,
   refreshKey,
   preferredKindOrder,
+  onPrimarySearchReady,
 }: AssetsMainPanelProps) {
   return (
     <AssetsPanelContent
@@ -32,6 +34,7 @@ export default function AssetsMainPanel({
       onSelectionChange={onSelectionChange}
       refreshKey={refreshKey}
       preferredKindOrder={preferredKindOrder}
+      onPrimarySearchReady={onPrimarySearchReady}
     />
   );
 }

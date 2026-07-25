@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-import type { CardFace } from "./card-face";
-import type { StatValue } from "./stats";
-import type { TemplateId } from "./templates";
 import { DEFAULT_BODY_TEXT_COLOR } from "@/config/colors";
+
+import type { CardFace } from "./card-face";
+import type { StatAsteriskFlags, StatValue } from "./stats";
+import type { TemplateId } from "./templates";
 
 export interface BaseCardFields {
   name?: string;
@@ -33,17 +34,26 @@ export interface BaseCardFields {
 
 export interface HeroCardData extends BaseCardFields {
   attackDice?: StatValue;
+  attackDiceAsterisks?: StatAsteriskFlags;
   defendDice?: StatValue;
+  defendDiceAsterisks?: StatAsteriskFlags;
   bodyPoints?: StatValue;
+  bodyPointsAsterisks?: StatAsteriskFlags;
   mindPoints?: StatValue;
+  mindPointsAsterisks?: StatAsteriskFlags;
 }
 
 export interface MonsterCardData extends BaseCardFields {
   movementSquares?: StatValue;
+  movementSquaresAsterisks?: StatAsteriskFlags;
   attackDice?: StatValue;
+  attackDiceAsterisks?: StatAsteriskFlags;
   defendDice?: StatValue;
+  defendDiceAsterisks?: StatAsteriskFlags;
   bodyPoints?: StatValue;
+  bodyPointsAsterisks?: StatAsteriskFlags;
   mindPoints?: StatValue;
+  mindPointsAsterisks?: StatAsteriskFlags;
   iconAssetId?: string;
   iconAssetName?: string;
   iconOffsetX?: number;
@@ -56,7 +66,19 @@ export interface SmallTreasureCardData extends BaseCardFields {}
 
 export interface LargeTreasureCardData extends BaseCardFields {}
 
-export interface HeroBackCardData extends BaseCardFields {}
+export interface RulesCardData extends BaseCardFields {}
+
+export type HeroBackLogoMode = "default" | "none" | "custom";
+
+export interface HeroBackCardData extends BaseCardFields {
+  heroBackLogoMode?: HeroBackLogoMode;
+  heroBackLogoId?: string;
+  heroBackLogoName?: string;
+  heroBackLogoOriginalWidth?: number;
+  heroBackLogoOriginalHeight?: number;
+}
+
+export type LogoBackCardData = HeroBackCardData;
 
 export type BodyTextStyle = {
   enabled?: boolean;
@@ -80,7 +102,9 @@ export type CardDataByTemplate = {
   monster: MonsterCardData;
   "large-treasure": LargeTreasureCardData;
   "small-treasure": SmallTreasureCardData;
+  rules: RulesCardData;
   "hero-back": HeroBackCardData;
+  "logo-back": LogoBackCardData;
   "labelled-back": LabelledBackCardData;
 };
 
@@ -109,9 +133,11 @@ export function createDefaultCardData<T extends TemplateId>(templateId: T): Card
     case "large-treasure":
       return { ...base } as CardDataByTemplate[T];
     case "small-treasure":
+    case "rules":
       return { ...base } as CardDataByTemplate[T];
     case "hero-back":
-      return { ...base } as CardDataByTemplate[T];
+    case "logo-back":
+      return { ...base, heroBackLogoMode: "default" } as CardDataByTemplate[T];
     case "labelled-back":
       return {
         ...base,

@@ -17,6 +17,12 @@ export type FormSelectOption = {
   label: string;
 };
 
+export type FormSelectRenderMeta = {
+  context: "menu" | "value";
+};
+
+export type FormSelectLayoutVariant = "default" | "preview";
+
 type FormSelectProps = {
   options: FormSelectOption[];
   value: string;
@@ -25,7 +31,8 @@ type FormSelectProps = {
   inputId?: string;
   ariaLabel?: string;
   className?: string;
-  renderOptionLabel?: (option: FormSelectOption) => ReactNode;
+  layoutVariant?: FormSelectLayoutVariant;
+  renderOptionLabel?: (option: FormSelectOption, meta: FormSelectRenderMeta) => ReactNode;
 };
 
 export function FormSelectDropdownIndicator<Option extends FormSelectOption>(
@@ -49,10 +56,12 @@ export function FormSelectDropdownIndicator<Option extends FormSelectOption>(
 
 export function getFormSelectStyles<Option extends FormSelectOption>(
   disabled: boolean,
+  layoutVariant: FormSelectLayoutVariant = "default",
 ): StylesConfig<Option, false, GroupBase<Option>> {
   const backgroundColor = disabled
     ? "color-mix(in srgb, var(--hq-input-bg) 82%, var(--hq-surface) 18%)"
     : "var(--hq-input-bg)";
+  const isPreviewLayout = layoutVariant === "preview";
 
   return {
     container: (base) => ({
@@ -63,13 +72,14 @@ export function getFormSelectStyles<Option extends FormSelectOption>(
     control: (base, state) => ({
       ...base,
       minHeight: 0,
+      alignItems: isPreviewLayout ? "stretch" : "center",
       backgroundColor,
       borderColor: state.isFocused ? "var(--hq-focus-ring)" : "var(--hq-border-mid)",
       borderRadius: 4,
       boxShadow: "none",
-      fontSize: "var(--text-lg)",
+      fontSize: "var(--hq-control-text-primary)",
       fontFamily: "var(--hq-font-form)",
-      lineHeight: 1.5,
+      lineHeight: "var(--hq-control-line-height)",
       opacity: disabled ? 0.7 : 1,
       cursor: disabled ? "not-allowed" : "default",
       "&:hover": {
@@ -78,17 +88,28 @@ export function getFormSelectStyles<Option extends FormSelectOption>(
     }),
     valueContainer: (base) => ({
       ...base,
+      display: isPreviewLayout ? base.display : "flex",
+      alignItems: "center",
       backgroundColor,
-      padding: "0.25rem 0.5rem",
+      padding: isPreviewLayout ? "0 0.5rem" : "0.25rem 0.5rem",
     }),
     singleValue: (base) => ({
       ...base,
-      margin: 0,
+      position: "static",
+      transform: "none",
+      top: "auto",
+      margin: isPreviewLayout ? undefined : 0,
+      marginLeft: isPreviewLayout ? 0 : undefined,
+      marginRight: isPreviewLayout ? 0 : undefined,
+      width: isPreviewLayout ? "100%" : undefined,
       maxWidth: "100%",
       color: "var(--hq-text)",
-      fontSize: "var(--text-lg)",
+      fontSize: "var(--hq-control-text-primary)",
       fontFamily: "var(--hq-font-form)",
-      lineHeight: 1.5,
+      lineHeight: "var(--hq-control-line-height)",
+      display: isPreviewLayout ? undefined : "flex",
+      alignItems: isPreviewLayout ? undefined : "center",
+      overflow: isPreviewLayout ? "hidden" : undefined,
     }),
     menu: (base) => ({
       ...base,
@@ -111,29 +132,31 @@ export function getFormSelectStyles<Option extends FormSelectOption>(
       color: "var(--hq-text)",
       padding: "0.2rem 0.5rem",
       cursor: state.isDisabled ? "not-allowed" : "pointer",
-      fontSize: "var(--text-lg)",
+      fontSize: "var(--hq-control-text-primary)",
       fontFamily: "var(--hq-font-form)",
-      lineHeight: 1.5,
+      lineHeight: "var(--hq-control-line-height)",
     }),
     placeholder: (base) => ({
       ...base,
       color: "var(--hq-input-placeholder)",
-      lineHeight: 1.5,
+      fontSize: "var(--hq-control-text-primary)",
+      lineHeight: "var(--hq-control-line-height)",
     }),
     indicatorSeparator: () => ({ display: "none" }),
     dropdownIndicator: (base) => ({
       ...base,
-      alignSelf: "stretch",
+      alignSelf: isPreviewLayout ? "center" : "stretch",
       display: "flex",
       alignItems: "center",
       backgroundColor,
-      padding: "0.25rem 0.5rem 0.25rem 0",
+      padding: isPreviewLayout ? "0 0.5rem 0 0" : "0.25rem 0.5rem 0.25rem 0",
       color: "var(--hq-text)",
       "&:hover": { color: "var(--hq-text)" },
     }),
     indicatorsContainer: (base) => ({
       ...base,
-      alignSelf: "stretch",
+      alignSelf: isPreviewLayout ? "center" : "stretch",
+      alignItems: "center",
       backgroundColor,
     }),
     input: (base) => ({
@@ -141,7 +164,8 @@ export function getFormSelectStyles<Option extends FormSelectOption>(
       color: "var(--hq-text)",
       margin: 0,
       padding: 0,
-      lineHeight: 1.5,
+      fontSize: "var(--hq-control-text-primary)",
+      lineHeight: isPreviewLayout ? 0 : "var(--hq-control-line-height)",
     }),
   };
 }
@@ -164,12 +188,16 @@ export default function FormSelect<Option extends FormSelectOption>({
   inputId,
   ariaLabel,
   className,
+  layoutVariant = "default",
   renderOptionLabel,
 }: Omit<FormSelectProps, "options" | "renderOptionLabel"> & {
   options: Option[];
-  renderOptionLabel?: (option: Option) => ReactNode;
+  renderOptionLabel?: (option: Option, meta: FormSelectRenderMeta) => ReactNode;
 }) {
-  const selectStyles = useMemo(() => getFormSelectStyles<Option>(disabled), [disabled]);
+  const selectStyles = useMemo(
+    () => getFormSelectStyles<Option>(disabled, layoutVariant),
+    [disabled, layoutVariant],
+  );
   const menuPortalTarget = typeof document === "undefined" ? undefined : document.body;
   const selected = options.find((option) => option.value === value) ?? options[0] ?? null;
 
@@ -178,8 +206,10 @@ export default function FormSelect<Option extends FormSelectOption>({
     onChange(next.value);
   };
 
-  const formatOptionLabel = (option: Option, _meta: FormatOptionLabelMeta<Option>) =>
-    renderOptionLabel ? renderOptionLabel(option) : renderPlainFormSelectOption(option);
+  const formatOptionLabel = (option: Option, meta: FormatOptionLabelMeta<Option>) =>
+    renderOptionLabel
+      ? renderOptionLabel(option, { context: meta.context })
+      : renderPlainFormSelectOption(option);
 
   return (
     <div className={`${styles.selectRoot}${className ? ` ${className}` : ""}`}>

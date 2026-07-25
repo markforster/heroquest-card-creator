@@ -81,5 +81,13 @@
   "formattingHelp.diceStructure.colorsCode": "Värit: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Kelvolliset värit",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Hex‑värit"
+  "formattingHelp.diceStructure.hexOutput": "Hex‑värit",
+  "formattingHelp.richText.titleCode": "<title>Tehtavan saannot</title>",
+  "formattingHelp.richText.titleOutput": "Tehtavan saannot",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Liike</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Liike",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>suuri teksti</scale>",
+  "formattingHelp.richText.scaleOutput": "suuri teksti",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>pieni teksti</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "pieni teksti"
 }

@@ -3,6 +3,8 @@
   "templates.monster": "Κάρτα τέρατος",
   "templates.small-treasure": "Μικρή εικονογράφηση",
   "templates.large-treasure": "Μεγάλη εικονογράφηση",
+  "templates.rules": "Κανόνες",
   "templates.hero-back": "Πίσω όψη ήρωα",
+  "templates.logo-back": "Πίσω όψη με λογότυπο",
   "templates.labelled-back": "Πίσω όψη με ετικέτα"
 }

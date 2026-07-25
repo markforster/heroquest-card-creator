@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import DeckGroupsBoardController from "@/components/Decks/detail/boards/DeckGroupsBoardController";
@@ -6,6 +6,7 @@ import styles from "@/components/Decks/detail/DeckGroupsSection2.module.css";
 
 const mockDeleteSet = jest.fn(async () => {});
 const mockReloadStructure = jest.fn(async () => {});
+const mockSetPreviewSelectionSource = jest.fn();
 type MockSelectionState = {
   selectedSetId: string | null;
   selectedGroupId: string | null;
@@ -32,6 +33,9 @@ let mockSelectionState: MockSelectionState = {
 
 let capturedRenderTopToolbar: ((args: { setId: string; isDragging: boolean; isGhost: boolean }) => ReactNode) | null =
   null;
+let capturedOnSetClick:
+  | ((setUiId: string, groupUiId: string, options?: { additive?: boolean }) => void)
+  | null = null;
 let capturedResolveGroupClassName:
   | ((args: {
       boardId: "groups" | "entries" | "source";
@@ -63,6 +67,12 @@ jest.mock("@/components/Decks/detail/context/DeckDetailSelectionContext", () => 
   }),
 }));
 
+jest.mock("@/components/Decks/detail/context/DeckRightPanelContext", () => ({
+  useDeckRightPanel: () => ({
+    setPreviewSelectionSource: mockSetPreviewSelectionSource,
+  }),
+}));
+
 jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
   BOARD_ROUTING_META_BY_ID: { groups: {} },
   BoardInfoPill: () => null,
@@ -75,10 +85,12 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
   useDeckSortableBoardViewModel: (_boardId: string, _meta: unknown, options: unknown) => {
     const typedOptions = options as {
       renderTopToolbar: typeof capturedRenderTopToolbar;
+      onSetClick?: typeof capturedOnSetClick;
       resolveGroupClassName: typeof capturedResolveGroupClassName;
       emptyMessage?: string | null;
     };
     capturedRenderTopToolbar = typedOptions.renderTopToolbar;
+    capturedOnSetClick = typedOptions.onSetClick ?? null;
     capturedResolveGroupClassName = typedOptions.resolveGroupClassName;
     capturedEmptyMessage = typedOptions.emptyMessage ?? null;
     return {};
@@ -106,12 +118,14 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
       ]),
     };
     capturedRenderTopToolbar = null;
+    capturedOnSetClick = null;
     capturedResolveGroupClassName = null;
     capturedEmptyMessage = null;
     mockDeleteSet.mockClear();
     mockReloadStructure.mockClear();
     mockRequestDeleteSet.mockClear();
     mockOpenCardEditor.mockClear();
+    mockSetPreviewSelectionSource.mockClear();
   });
 
   it("routes selected-set delete through request callback instead of immediate mutation", async () => {
@@ -243,6 +257,23 @@ describe("DeckGroupsBoardController delete selected set behavior", () => {
     render(<>{toolbar}</>);
     fireEvent.click(screen.getByRole("button", { name: "decks.entries.actions.editCard" }));
     expect(mockOpenCardEditor).toHaveBeenCalledWith("back-2");
+  });
+
+  it("switches preview focus back to the set when a set is clicked", () => {
+    render(
+      <DeckGroupsBoardController
+        deckId="deck-1"
+        keySetId={null}
+        enableFanLayout
+        onOpenCardEditor={mockOpenCardEditor}
+      />,
+    );
+
+    act(() => {
+      capturedOnSetClick?.("set:set-2", "group:group-1");
+    });
+
+    expect(mockSetPreviewSelectionSource).toHaveBeenCalledWith("set");
   });
 
   it("does not open card editor when set has no back-face id", () => {

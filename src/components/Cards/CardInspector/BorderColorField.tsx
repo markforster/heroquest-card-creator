@@ -71,7 +71,7 @@ export default function BorderColorField({ label, templateId }: BorderColorField
   };
 
   return (
-    <div className="mb-2">
+    <div>
       <div className={layoutStyles.inspectorFieldHeader}>
         <FormLabelWithIcon label={label} icon={Palette} className="form-label" />
       </div>

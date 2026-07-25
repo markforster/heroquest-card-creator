@@ -4,7 +4,11 @@ import styles from "@/app/page.module.css";
 import StockpileCardsGrid from "@/components/Stockpile/StockpileCardsGrid";
 import StockpileCardsTable from "@/components/Stockpile/StockpileCardsTable";
 import StockpileEmptyState from "@/components/Stockpile/StockpileEmptyState";
-import type { StockpileCardActions, StockpileCardView } from "@/components/Stockpile/types";
+import type {
+  StockpileCardActions,
+  StockpileCardGroupView,
+  StockpileCardView,
+} from "@/components/Stockpile/types";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardRecord } from "@/api/cards";
 
@@ -26,6 +30,7 @@ type StockpileContentPaneProps = {
   hasActiveNarrowing: boolean;
   isTableView: boolean;
   cardViews: StockpileCardView[];
+  groupedCardViews: StockpileCardGroupView[];
   cardActions: StockpileCardActions;
   isPairMode: boolean;
   dragEnabled: boolean;
@@ -53,6 +58,7 @@ export default function StockpileContentPane({
   hasActiveNarrowing,
   isTableView,
   cardViews,
+  groupedCardViews,
   cardActions,
   isPairMode,
   dragEnabled,
@@ -65,7 +71,7 @@ export default function StockpileContentPane({
 
   return (
     <div
-      className={styles.assetsGridContainer}
+      className={styles.stockpileResultsContainer}
       onClick={(event) => {
         if (event.target !== event.currentTarget) return;
         onClearSelection();
@@ -100,6 +106,7 @@ export default function StockpileContentPane({
           {isTableView ? (
             <StockpileCardsTable
               items={cardViews}
+              groups={groupedCardViews}
               actions={cardActions}
               headers={tableHeaders}
               dragEnabled={dragEnabled}
@@ -108,6 +115,7 @@ export default function StockpileContentPane({
           ) : (
             <StockpileCardsGrid
               items={cardViews}
+              groups={groupedCardViews}
               actions={cardActions}
               isPairMode={isPairMode}
               dragEnabled={dragEnabled}

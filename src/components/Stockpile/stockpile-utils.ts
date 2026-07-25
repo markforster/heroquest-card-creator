@@ -40,17 +40,25 @@ export const waitForFrame = () =>
 export const waitForAssetElements = async (
   getSvgElement: () => SVGSVGElement | null | undefined,
   assetIds: string[],
+  heroBackLogoIdsOrTimeoutMs: string[] | number = [],
   timeoutMs = 4000,
 ) => {
-  if (!assetIds.length) return;
-  const deadline = Date.now() + timeoutMs;
+  const heroBackLogoIds =
+    typeof heroBackLogoIdsOrTimeoutMs === "number" ? [] : heroBackLogoIdsOrTimeoutMs;
+  const resolvedTimeoutMs =
+    typeof heroBackLogoIdsOrTimeoutMs === "number" ? heroBackLogoIdsOrTimeoutMs : timeoutMs;
+  if (!assetIds.length && !heroBackLogoIds.length) return;
+  const deadline = Date.now() + resolvedTimeoutMs;
   while (Date.now() < deadline) {
     const svg = getSvgElement();
     if (svg) {
       const hasAllAssets = assetIds.every((id) =>
         svg.querySelector(`image[data-user-asset-id="${id}"]`),
       );
-      if (hasAllAssets) {
+      const hasAllLogos = heroBackLogoIds.every((id) =>
+        svg.querySelector(`image[data-user-hero-back-logo-id="${id}"]`),
+      );
+      if (hasAllAssets && hasAllLogos) {
         return;
       }
     }

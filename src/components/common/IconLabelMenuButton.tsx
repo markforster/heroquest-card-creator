@@ -4,7 +4,7 @@ import styles from "@/app/page.module.css";
 import { useClickOutside } from "@/components/common/useClickOutside";
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
 import type { LucideIcon } from "lucide-react";
-import { useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 
 type IconLabelMenuItem = {
   id: string;
@@ -23,14 +23,22 @@ type IconLabelMenuButtonProps = {
   items: IconLabelMenuItem[];
 };
 
-export default function IconLabelMenuButton({
+export type IconLabelMenuButtonHandle = {
+  openMenu: () => boolean;
+  closeMenu: () => boolean;
+  toggleMenu: () => boolean;
+  isMenuOpen: () => boolean;
+  selectItem: (itemId: string) => Promise<boolean>;
+};
+
+const IconLabelMenuButton = forwardRef<IconLabelMenuButtonHandle, IconLabelMenuButtonProps>(function IconLabelMenuButton({
   label,
   icon: TriggerIcon,
   ariaLabel,
   disabled,
   className,
   items,
-}: IconLabelMenuButtonProps) {
+}, ref) {
   const [isOpen, setIsOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -42,6 +50,35 @@ export default function IconLabelMenuButton({
   useClickOutside(anchorRef, () => setIsOpen(false));
 
   const isDisabled = Boolean(disabled || !items.length);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      openMenu: () => {
+        if (isDisabled) return false;
+        setIsOpen(true);
+        return true;
+      },
+      closeMenu: () => {
+        setIsOpen(false);
+        return true;
+      },
+      toggleMenu: () => {
+        if (isDisabled) return false;
+        setIsOpen((prev) => !prev);
+        return true;
+      },
+      isMenuOpen: () => isOpen,
+      selectItem: async (itemId: string) => {
+        const item = items.find((entry) => entry.id === itemId);
+        if (!item || item.disabled || isDisabled) return false;
+        setIsOpen(false);
+        await item.onSelect();
+        return true;
+      },
+    }),
+    [isDisabled, isOpen, items],
+  );
 
   return (
     <div className={styles.inspectorFaceMenu} ref={anchorRef}>
@@ -88,4 +125,6 @@ export default function IconLabelMenuButton({
       ) : null}
     </div>
   );
-}
+});
+
+export default IconLabelMenuButton;

@@ -3,6 +3,8 @@
   "templates.monster": "Hirviökortti",
   "templates.small-treasure": "Pieni kuvitus",
   "templates.large-treasure": "Suuri kuvitus",
+  "templates.rules": "Säännöt",
   "templates.hero-back": "Sankarin kääntöpuoli",
+  "templates.logo-back": "Logollinen kääntöpuoli",
   "templates.labelled-back": "Merkitty kääntöpuoli"
 }

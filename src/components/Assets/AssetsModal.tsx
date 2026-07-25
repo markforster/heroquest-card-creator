@@ -14,6 +14,7 @@ type AssetsModalProps = OpenCloseProps & {
   mode?: AssetsModalMode;
   onSelect?: (asset: AssetRecord) => void;
   preferredKindOrder?: AssetKindGroupId[];
+  initialSelectedAssetId?: string;
 };
 
 export default function AssetsModal({
@@ -22,6 +23,7 @@ export default function AssetsModal({
   mode = "manage",
   onSelect,
   preferredKindOrder,
+  initialSelectedAssetId,
 }: AssetsModalProps) {
   const { t } = useI18n();
   return (
@@ -37,6 +39,7 @@ export default function AssetsModal({
         mode={mode}
         onSelect={onSelect}
         preferredKindOrder={preferredKindOrder}
+        initialSelectedAssetId={initialSelectedAssetId}
       />
     </ModalShell>
   );

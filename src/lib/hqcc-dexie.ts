@@ -2,8 +2,9 @@
 
 import Dexie, { type EntityTable, type Transaction } from "dexie";
 
-import { buildNormalizedCardRecords } from "@/lib/cards-normalized";
 import type { AssetRecord } from "@/lib/assets-db";
+import { buildNormalizedCardRecords } from "@/lib/cards-normalized";
+import type { HeroBackLogoRecord } from "@/lib/hero-back-logos-db";
 import type { SettingsRecord } from "@/lib/settings-db";
 import type { CardRecord } from "@/types/cards-db";
 import type {
@@ -12,6 +13,7 @@ import type {
   CardBorderComponentRecord,
   CardCopyrightComponentRecord,
   CardHeroStatsComponentRecord,
+  CardHeroBackLogoComponentRecord,
   CardIconComponentRecord,
   CardImageComponentRecord,
   CardMonsterStatsComponentRecord,
@@ -24,17 +26,19 @@ import type { CollectionRecord } from "@/types/collections-db";
 import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
 import { APP_VERSION } from "@/version";
+
 import { generateId } from ".";
 
 export const DB_NAME = "hqcc";
-export const DB_VERSION = 10;
-export const DEXIE_DB_VERSION = 1.0;
+export const DB_VERSION = 11;
+export const DEXIE_DB_VERSION = 1.1;
 export const META_STORE = "meta";
 export const META_APP_VERSION_KEY = "appVersion";
 export const META_PAIRS_MIGRATED_KEY = "pairsMigrated";
 export const META_PAIRS_DEDUPED_KEY = "pairsDeduped";
 export const META_CARD_CANVAS_MIGRATED_KEY = "cardCanvasMigrated";
 export const META_CARD_CANVAS_ROLLBACK_MIGRATED_KEY = "cardCanvasRollbackMigrated";
+export const META_COPYRIGHT_COMPONENTS_BACKFILLED_KEY = "copyrightComponentsBackfilled";
 export const META_CARDS_NORMALIZED_TARGET_VERSION_KEY = "cardsNormalizedTargetVersion";
 export const META_CARDS_NORMALIZED_STARTED_AT_KEY = "cardsNormalizedStartedAt";
 export const META_CARDS_NORMALIZED_COMPLETE_KEY = "cardsNormalizedComplete";
@@ -56,11 +60,13 @@ type HqccDexieTables = {
   cardTextComponents: EntityTable<CardTextComponentRecord, "id">;
   cardCopyrightComponents: EntityTable<CardCopyrightComponentRecord, "id">;
   cardImageComponents: EntityTable<CardImageComponentRecord, "id">;
+  cardHeroBackLogoComponents: EntityTable<CardHeroBackLogoComponentRecord, "id">;
   cardIconComponents: EntityTable<CardIconComponentRecord, "id">;
   cardHeroStatsComponents: EntityTable<CardHeroStatsComponentRecord, "id">;
   cardMonsterStatsComponents: EntityTable<CardMonsterStatsComponentRecord, "id">;
   pairs: EntityTable<PairRecord, "id">;
   assets: EntityTable<AssetRecord, "id">;
+  heroBackLogos: EntityTable<HeroBackLogoRecord, "id">;
   collections: EntityTable<CollectionRecord, "id">;
   settings: EntityTable<SettingsRecord, "id">;
   decks: EntityTable<DeckRecord, "id">;
@@ -130,6 +136,12 @@ const HQCC_STORES_V10 = {
   cardIconComponents: "id, cardId, slotId, order",
   cardHeroStatsComponents: "id, cardId, slotId, order",
   cardMonsterStatsComponents: "id, cardId, slotId, order",
+} as const;
+
+const HQCC_STORES_V11 = {
+  ...HQCC_STORES_V10,
+  heroBackLogos: "id, createdAt, updatedAt",
+  cardHeroBackLogoComponents: "id, cardId, slotId, order, logoId",
 } as const;
 
 async function writeMetaRecord(
@@ -250,11 +262,13 @@ class HqccDexieDb extends Dexie implements HqccDexieTables {
   cardTextComponents!: EntityTable<CardTextComponentRecord, "id">;
   cardCopyrightComponents!: EntityTable<CardCopyrightComponentRecord, "id">;
   cardImageComponents!: EntityTable<CardImageComponentRecord, "id">;
+  cardHeroBackLogoComponents!: EntityTable<CardHeroBackLogoComponentRecord, "id">;
   cardIconComponents!: EntityTable<CardIconComponentRecord, "id">;
   cardHeroStatsComponents!: EntityTable<CardHeroStatsComponentRecord, "id">;
   cardMonsterStatsComponents!: EntityTable<CardMonsterStatsComponentRecord, "id">;
   pairs!: EntityTable<PairRecord, "id">;
   assets!: EntityTable<AssetRecord, "id">;
+  heroBackLogos!: EntityTable<HeroBackLogoRecord, "id">;
   collections!: EntityTable<CollectionRecord, "id">;
   settings!: EntityTable<SettingsRecord, "id">;
   decks!: EntityTable<DeckRecord, "id">;
@@ -390,7 +404,17 @@ class HqccDexieDb extends Dexie implements HqccDexieTables {
           updatedAt: Date.now(),
         });
       });
-    this.version(DEXIE_DB_VERSION).stores(HQCC_STORES_V10);
+    this.version(1.0)
+      .stores(HQCC_STORES_V11)
+      .upgrade(async (tx) => {
+        await writeMetaRecord(tx, {
+          id: META_APP_VERSION_KEY,
+          value: APP_VERSION,
+          dbVersion: DB_VERSION,
+          updatedAt: Date.now(),
+        });
+      });
+    this.version(DEXIE_DB_VERSION).stores(HQCC_STORES_V11);
   }
 }
 

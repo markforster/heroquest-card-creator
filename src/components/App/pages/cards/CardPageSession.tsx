@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormState, useWatch } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 import type { CardRecord } from "@/api/cards";
 import { useGetCard } from "@/api/hooks";
@@ -12,8 +13,8 @@ import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesG
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useEditorForm } from "@/components/Providers/EditorFormContext";
-import type { EditorSaveContextValue } from "@/components/Providers/EditorSaveContext";
 import { cardTemplatesById } from "@/data/card-templates";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
@@ -27,11 +28,15 @@ type UseCardPageSessionArgs = {
   previewRef: React.RefObject<CardPreviewHandle>;
 };
 
+const MIN_ROUTE_LOADING_MS = 500;
+
 export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
+  const queryClient = useQueryClient();
   const { cardId } = useParams();
   const navigate = useNavigate();
   const { bypassNextNavigation } = useUnsavedChangesGuardControls();
   const { track } = useAnalytics();
+  const { getTemplateDefault, isReady: areCopyrightSettingsReady } = useCopyrightSettings();
   const {
     state: { selectedTemplateId, activeCardIdByTemplate, activeCardStatusByTemplate },
     setActiveCard,
@@ -65,6 +70,7 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
   const [saveToken, setSaveToken] = useState(0);
   const [routeError, setRouteError] = useState<"not-found" | "load-failed" | null>(null);
   const [draftSourceCardId, setDraftSourceCardId] = useState<string | null>(null);
+  const [appliedRouteCardId, setAppliedRouteCardId] = useState<string | null>(null);
 
   const effectiveFace = useMemo<CardFace | null>(() => {
     if (!selectedTemplate) return null;
@@ -72,6 +78,8 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
   }, [draftValue?.face, selectedTemplate]);
 
   const shouldLoadCard = Boolean(isSavedCardDetailRoute && normalizedCardId);
+  const isRouteLoadingCard =
+    shouldLoadCard && routeError == null && normalizedCardId !== appliedRouteCardId;
   const getCardParams = useMemo(
     () => ({ params: { id: normalizedCardId ?? "" } }),
     [normalizedCardId],
@@ -79,11 +87,19 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
   const getCardOptions = useMemo(() => ({ enabled: shouldLoadCard }), [shouldLoadCard]);
   const { data: loadedCard, error: loadError } = useGetCard(getCardParams, getCardOptions);
   const lastLoadedRef = useRef<{ id: string; updatedAt?: number | null } | null>(null);
+  const routeLoadingStartedAtRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!shouldLoadCard) return;
+    setRouteError(null);
+    routeLoadingStartedAtRef.current = Date.now();
+  }, [shouldLoadCard, normalizedCardId]);
 
   useEffect(() => {
     if (!shouldLoadCard) {
       if (isDraftRoute) {
         setRouteError(null);
+        setAppliedRouteCardId(null);
       }
       return;
     }
@@ -103,12 +119,32 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
     if (lastLoaded && lastLoaded.id === loadedCard.id && lastLoaded.updatedAt === updatedAt) {
       return;
     }
-    lastLoadedRef.current = { id: loadedCard.id, updatedAt };
-    const mapped = cardRecordToCardData(loadedCard as CardRecord & { templateId: TemplateId });
-    const nextValues = applyInspectorDefaults(templateId, mapped);
-    resetWithSaved(nextValues);
-    setSelectedTemplateId(templateId);
-    setActiveCard(templateId, loadedCard.id, loadedCard.status);
+    let cancelled = false;
+
+    void (async () => {
+      const typedRecord = loadedCard as CardRecord & { templateId: TemplateId };
+      const elapsedMs = Date.now() - routeLoadingStartedAtRef.current;
+      if (elapsedMs < MIN_ROUTE_LOADING_MS) {
+        await new Promise<void>((resolve) => {
+          window.setTimeout(resolve, MIN_ROUTE_LOADING_MS - elapsedMs);
+        });
+      }
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => resolve());
+      });
+      if (cancelled) return;
+      lastLoadedRef.current = { id: loadedCard.id, updatedAt };
+      const mapped = cardRecordToCardData(typedRecord);
+      const nextValues = applyInspectorDefaults(templateId, mapped);
+      resetWithSaved(nextValues);
+      setSelectedTemplateId(templateId);
+      setActiveCard(templateId, loadedCard.id, loadedCard.status);
+      setAppliedRouteCardId(loadedCard.id);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     shouldLoadCard,
     loadedCard,
@@ -127,7 +163,7 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
     }
     const storedDraft = loadDraft();
     const storedTemplateId = storedDraft?.templateId ?? (selectedTemplateId as TemplateId | null);
-    if (!storedTemplateId) return;
+    if (!storedTemplateId || !areCopyrightSettingsReady) return;
     const key = `draft:${storedTemplateId}`;
     if (draftInitKeyRef.current === key) return;
     draftInitKeyRef.current = key;
@@ -139,12 +175,22 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
       return;
     }
     const templateId = storedTemplateId as TemplateId;
-    const nextValues = createEditorDefaultValues(templateId);
+    const nextValues = createEditorDefaultValues(templateId, {
+      showCopyright: getTemplateDefault(templateId),
+    });
     resetWithSaved(nextValues);
     setActiveCard(templateId, null, null);
     saveDraft(templateId, nextValues, { sourceCardId: null });
     setDraftSourceCardId(null);
-  }, [isDraftRoute, resetWithSaved, selectedTemplateId, setActiveCard, setSelectedTemplateId]);
+  }, [
+    areCopyrightSettingsReady,
+    getTemplateDefault,
+    isDraftRoute,
+    resetWithSaved,
+    selectedTemplateId,
+    setActiveCard,
+    setSelectedTemplateId,
+  ]);
 
   const autosaveTimeoutRef = useRef<number | null>(null);
   useEffect(() => {
@@ -189,9 +235,11 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
       activeStatus,
       bypassNextNavigation,
       currentTemplateId,
+      draftSourceCardId,
       methods,
       navigate,
       previewRef,
+      queryClient,
       resetWithSaved,
       setActiveCard,
       setDraftSourceCardId,
@@ -201,7 +249,7 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
       track,
     });
 
-  const editorSaveValue: EditorSaveContextValue = {
+  const editorSaveValue = {
     saveCurrentCard,
     repairCurrentCardThumbnail,
     saveToken,
@@ -210,6 +258,7 @@ export function useCardPageSession({ previewRef }: UseCardPageSessionArgs) {
   return {
     isDraftRoute,
     isEditorDirty: isDirty,
+    isRouteLoadingCard,
     normalizedCardId,
     selectedTemplate,
     activeFrontId,

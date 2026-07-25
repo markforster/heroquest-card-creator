@@ -116,10 +116,12 @@ function renderPanel({
   mode = "manage",
   onSelect,
   onClose,
+  initialSelectedAssetId,
 }: {
   mode?: "manage" | "select";
   onSelect?: (asset: AssetRecord) => void;
   onClose?: () => void;
+  initialSelectedAssetId?: string;
 } = {}) {
   function Wrapper() {
     const methods = useForm();
@@ -131,6 +133,7 @@ function renderPanel({
             onClose={onClose ?? (() => undefined)}
             mode={mode}
             onSelect={onSelect}
+            initialSelectedAssetId={initialSelectedAssetId}
           />
         </FormProvider>
       </I18nProvider>
@@ -165,6 +168,26 @@ function getSelectedAssetTitles(container: HTMLElement) {
     .map((element) => element.getAttribute("title"))
     .filter((title): title is string => Boolean(title))
     .sort();
+}
+
+function SelectPanelHarness({ initialSelectedAssetId }: { initialSelectedAssetId: string }) {
+  const methods = useForm();
+  return (
+    <I18nProvider>
+      <FormProvider {...methods}>
+        <AssetsPanelContent
+          isOpen
+          onClose={() => undefined}
+          mode="select"
+          initialSelectedAssetId={initialSelectedAssetId}
+        />
+      </FormProvider>
+    </I18nProvider>
+  );
+}
+
+function renderWithSelectPanel(initialSelectedAssetId: string) {
+  return render(<SelectPanelHarness initialSelectedAssetId={initialSelectedAssetId} />);
 }
 
 describe("AssetsPanelContent recent uploads (UI)", () => {
@@ -347,6 +370,167 @@ describe("AssetsPanelContent recent uploads (UI)", () => {
     expect(await screen.findByRole("heading", { name: "Recently uploaded" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Select" })).toBeDisabled();
     expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("preselects the current asset on open and scrolls to it immediately in select mode", async () => {
+    assetStore = buildAssetSeries(["alpha", "bravo", "charlie"]);
+    renderPanel({ mode: "select", initialSelectedAssetId: "asset-2" });
+
+    const selectButton = await screen.findByRole("button", { name: "Select" });
+    expect(selectButton).toBeEnabled();
+    expect(getSelectedAssetTitles(document.body)).toEqual(["bravo"]);
+    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
+      behavior: "auto",
+      block: "nearest",
+    });
+  });
+
+  it("keeps the selected asset visible under search and kind filters in select mode", async () => {
+    assetStore = [
+      buildAsset({
+        id: "asset-1",
+        name: "alpha-art.png",
+        assetKind: "artwork",
+        assetKindStatus: "classified",
+      }),
+      buildAsset({
+        id: "asset-2",
+        name: "hidden-icon.png",
+        assetKind: "icon",
+        assetKindStatus: "classified",
+      }),
+      buildAsset({
+        id: "asset-3",
+        name: "beta-art.png",
+        assetKind: "artwork",
+        assetKindStatus: "classified",
+      }),
+    ];
+
+    const { container } = renderPanel({ mode: "select", initialSelectedAssetId: "asset-2" });
+
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "beta" } });
+    fireEvent.click(screen.getByTitle("Filter assets"));
+    fireEvent.click(screen.getByRole("menuitem", { name: /Artwork/i }));
+
+    expect(getSelectedAssetTitles(container)).toEqual(["hidden-icon"]);
+    expect(screen.getByText("hidden-icon")).toBeInTheDocument();
+    expect(screen.getAllByText("hidden-icon")).toHaveLength(1);
+    expect(screen.getByText("beta-art")).toBeInTheDocument();
+  });
+
+  it("stops pinning the previous asset after selecting a different asset in select mode", async () => {
+    assetStore = [
+      buildAsset({
+        id: "asset-1",
+        name: "alpha-art.png",
+        assetKind: "artwork",
+        assetKindStatus: "classified",
+      }),
+      buildAsset({
+        id: "asset-2",
+        name: "hidden-icon.png",
+        assetKind: "icon",
+        assetKindStatus: "classified",
+      }),
+      buildAsset({
+        id: "asset-3",
+        name: "beta-art.png",
+        assetKind: "artwork",
+        assetKindStatus: "classified",
+      }),
+    ];
+
+    const { container } = renderPanel({ mode: "select", initialSelectedAssetId: "asset-2" });
+
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "beta" } });
+    fireEvent.click(screen.getByTitle("Filter assets"));
+    fireEvent.click(screen.getByRole("menuitem", { name: /Artwork/i }));
+    fireEvent.click(getAssetTile(container, "beta-art"));
+
+    expect(getSelectedAssetTitles(container)).toEqual(["beta-art"]);
+    expect(screen.queryByText("hidden-icon")).not.toBeInTheDocument();
+  });
+
+  it("does not seed selection when the initial asset id is missing", async () => {
+    assetStore = buildAssetSeries(["alpha", "bravo"]);
+    renderPanel({ mode: "select", initialSelectedAssetId: "missing-asset" });
+
+    const selectButton = await screen.findByRole("button", { name: "Select" });
+    expect(selectButton).toBeDisabled();
+    expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalledWith({
+      behavior: "auto",
+      block: "nearest",
+    });
+  });
+
+  it("waits for the first asset load to settle before applying the initial seed", async () => {
+    assetStore = buildAssetSeries(["alpha", "bravo"]);
+    const queryRefetch = jest.fn().mockResolvedValue({ data: assetStore });
+    let queryState: { data: AssetRecord[] | undefined; isLoading: boolean } = {
+      data: undefined,
+      isLoading: true,
+    };
+
+    mockUseListAssets.mockImplementation(() => ({
+      ...queryState,
+      refetch: queryRefetch,
+    }));
+
+    const { rerender } = renderWithSelectPanel("asset-2");
+
+    expect(screen.getByRole("button", { name: "Select" })).toBeDisabled();
+    expect(getSelectedAssetTitles(document.body)).toEqual([]);
+
+    queryState = {
+      data: assetStore,
+      isLoading: false,
+    };
+
+    rerender(<SelectPanelHarness initialSelectedAssetId="asset-2" />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Select" })).toBeEnabled();
+    });
+    expect(getSelectedAssetTitles(document.body)).toEqual(["bravo"]);
+    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
+      behavior: "auto",
+      block: "nearest",
+    });
+  });
+
+  it("keeps a single-upload auto-select authoritative when initial seeding resolves later", async () => {
+    assetStore = [buildAsset({ id: "asset-1", name: "existing-art.png" })];
+    const queryRefetch = jest.fn().mockResolvedValue({ data: assetStore });
+    let queryState: { data: AssetRecord[] | undefined; isLoading: boolean } = {
+      data: undefined,
+      isLoading: true,
+    };
+
+    mockUseListAssets.mockImplementation(() => ({
+      ...queryState,
+      refetch: queryRefetch,
+    }));
+
+    const { container, rerender } = renderWithSelectPanel("asset-1");
+
+    await uploadFiles(container, [new File(["goblin"], "goblin-new.png", { type: "image/png" })]);
+
+    expect(await screen.findByRole("heading", { name: "Recently uploaded" })).toBeInTheDocument();
+    expect(getSelectedAssetTitles(container)).toEqual(["goblin-new"]);
+
+    queryState = {
+      data: assetStore,
+      isLoading: false,
+    };
+
+    rerender(<SelectPanelHarness initialSelectedAssetId="asset-1" />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Select" })).toBeEnabled();
+    });
+    expect(getSelectedAssetTitles(container)).toEqual(["goblin-new"]);
+    expect(getSelectedAssetTitles(container)).not.toContain("existing-art");
   });
 
   it("omits duplicate-skipped and failed uploads from the recent group", async () => {

@@ -3,6 +3,8 @@
   "templates.monster": "Monsterkaart",
   "templates.small-treasure": "Kaart met kleine illustratie",
   "templates.large-treasure": "Kaart met grote illustratie",
+  "templates.rules": "Regels",
   "templates.hero-back": "Held achterkant",
+  "templates.logo-back": "Achterkant met logo",
   "templates.labelled-back": "Gelabelde achterkant"
 }

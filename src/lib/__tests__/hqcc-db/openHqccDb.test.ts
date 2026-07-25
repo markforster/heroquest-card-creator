@@ -173,12 +173,13 @@ describe("openHqccDb", () => {
     const db = await openHqccDb();
 
     expect(db).toBeInstanceOf(IDBDatabase);
-    expect(db.version).toBe(10);
+    expect(db.version).toBe(11);
     expect(Array.from(db.objectStoreNames)).toEqual(
       expect.arrayContaining([
         "assets",
         "cardBackgroundComponents",
         "cardBorderComponents",
+        "cardHeroBackLogoComponents",
         "cardCopyrightComponents",
         "cardHeroStatsComponents",
         "cardIconComponents",
@@ -194,6 +195,7 @@ describe("openHqccDb", () => {
         "deckGroups",
         "decks",
         "deckSets",
+        "heroBackLogos",
         "meta",
         "pairs",
         "settings",
@@ -218,6 +220,7 @@ describe("openHqccDb", () => {
     expect(Array.from(db.objectStoreNames)).toEqual(
       expect.arrayContaining([
         "assets",
+        "cardHeroBackLogoComponents",
         "cardsBase",
         "cardSlotLinks",
         "cardThumbnails",
@@ -226,6 +229,7 @@ describe("openHqccDb", () => {
         "deckGroups",
         "decks",
         "deckSets",
+        "heroBackLogos",
         "meta",
         "pairs",
         "settings",
@@ -257,8 +261,8 @@ describe("openHqccDb", () => {
     const { openHqccDb, probeHqccDbVersion } = await import("@/lib/hqcc-db");
     const db = await openHqccDb();
 
-    expect(db.version).toBe(10);
-    expect(await probeHqccDbVersion()).toBe(10);
+    expect(db.version).toBe(11);
+    expect(await probeHqccDbVersion()).toBe(11);
 
     const pairs = (await readAllFromDb(db, "pairs")) as Array<{
       frontFaceId: string;

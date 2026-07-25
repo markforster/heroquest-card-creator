@@ -3,11 +3,13 @@
 import { useEffect } from "react";
 
 import { repairOrphanDeckEntries } from "@/lib/decks-service";
+import { runHqccDbStartupJobs } from "@/lib/hqcc-db-startup-jobs";
 import { clearDbEstimateCache, runFullDbEstimate } from "@/lib/indexeddb-size-tracker";
 import { startThumbnailJpegMigration } from "@/lib/thumbnail-jpeg-migration";
 
 export default function AppStartup() {
   useEffect(() => {
+    runHqccDbStartupJobs();
     void startThumbnailJpegMigration();
     void repairOrphanDeckEntries().catch(() => {
       // Ignore startup repair failures.

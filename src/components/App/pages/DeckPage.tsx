@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   noopRouteShellCapabilities,
+  type RouteShortcutHandlers,
   usePublishRouteShellCapabilities,
 } from "@/components/App/RouteShellCapabilitiesContext";
 import DecksRoutePanels from "@/components/Decks/DecksRoutePanels";
@@ -11,12 +12,37 @@ import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 
 export default function DeckPage() {
   const { track } = useAnalytics();
+  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<(() => boolean) | null>(
+    null,
+  );
+  const [routeShortcutHandlers, setRouteShortcutHandlers] = useState<RouteShortcutHandlers>({});
 
-  usePublishRouteShellCapabilities(noopRouteShellCapabilities);
+  const shellCapabilities = useMemo(
+    () => ({
+      ...noopRouteShellCapabilities,
+      focusPrimarySearch: () => focusPrimarySearchHandler?.() ?? false,
+      routeShortcutHandlers,
+    }),
+    [focusPrimarySearchHandler, routeShortcutHandlers],
+  );
+
+  usePublishRouteShellCapabilities(shellCapabilities);
+
+  const handlePrimarySearchReady = useCallback((focusSearch: (() => boolean) | null) => {
+    setFocusPrimarySearchHandler(() => focusSearch);
+  }, []);
+  const handleRouteShortcutsReady = useCallback((handlers: RouteShortcutHandlers | null) => {
+    setRouteShortcutHandlers(handlers ?? {});
+  }, []);
 
   useEffect(() => {
     track("page_view", { page_path: "/decks/:id", page_title: "Deck Detail" });
   }, [track]);
 
-  return <DecksRoutePanels />;
+  return (
+    <DecksRoutePanels
+      onPrimarySearchReady={handlePrimarySearchReady}
+      onRouteShortcutHandlersReady={handleRouteShortcutsReady}
+    />
+  );
 }

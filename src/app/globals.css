@@ -42,7 +42,7 @@ body {
 .btn {
   border-radius: var(--hq-button-radius);
   font-family: var(--hq-font-inline);
-  font-size: 0.9rem;
+  font-size: var(--hq-control-text-primary);
   font-weight: 600;
   letter-spacing: 0.06em;
   min-height: 32px;
@@ -52,6 +52,11 @@ body {
     color 160ms ease,
     border-color 160ms ease,
     box-shadow 160ms ease;
+}
+
+.btn-sm,
+.btn-group-sm > .btn {
+  --bs-btn-font-size: var(--hq-control-text-primary);
 }
 
 button {

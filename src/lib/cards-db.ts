@@ -8,25 +8,34 @@ import {
   replaceNormalizedCardThumbnail,
   touchNormalizedCardBaseLastViewed,
 } from "@/lib/cards-normalized";
-import type { CollectionRecord } from "@/types/collections-db";
-import type { CardRecord, CardStatus } from "@/types/cards-db";
-import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
-import type { PairRecord } from "@/types/pairs-db";
-import type { CardThumbnailRecord } from "@/types/cards-normalized";
-import type { TemplateId } from "@/types/templates";
-import type { Table, Transaction } from "dexie";
-
-import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
+import {
+  normalizeCopyrightTemplateDefaults,
+  resolveTemplateCopyrightDefault,
+} from "@/lib/copyright-defaults";
+import { backfillCardCopyrightComponents } from "@/lib/hqcc-db-copyright-backfill-job";
 import {
   createCardDeleteConfirmRequiredError,
-  type DeckUsageLocation,
   type CardDeleteMode,
   type CardDeleteUsageReport,
+  type DeckUsageLocation,
 } from "@/lib/decks-errors";
+import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import { previewDeletePairsForFaces } from "@/lib/pairs-service";
+import type { CardRecord, CardStatus } from "@/types/cards-db";
+import type {
+  CardThumbnailRecord,
+} from "@/types/cards-normalized";
+import type { CollectionRecord } from "@/types/collections-db";
+import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
+import type { PairRecord } from "@/types/pairs-db";
+import type { TemplateId } from "@/types/templates";
+
 import { openHqccDexieDb } from "./hqcc-dexie";
+import { COPYRIGHT_TEMPLATE_DEFAULTS_KEY } from "./settings-db";
 
 import { generateId } from ".";
+
+import type { Table, Transaction } from "dexie";
 
 const DECKS_STORE = "decks";
 const DECK_GROUPS_STORE = "deckGroups";
@@ -123,6 +132,8 @@ async function getNormalizedCardRecord(
     return null;
   }
 
+  await backfillCardCopyrightComponents(db, { cardId: id });
+
   const [slotLinks, thumbnailBlob] = await Promise.all([
     db.cardSlotLinks.where("cardId").equals(id).sortBy("order"),
     getNormalizedThumbnailBlob(id, db),
@@ -150,6 +161,9 @@ async function getNormalizedCardRecord(
   const imageIds = slotLinks
     .filter((slotLink) => slotLink.slotType === "image")
     .map((slotLink) => slotLink.dataRecordId);
+  const heroBackLogoIds = slotLinks
+    .filter((slotLink) => slotLink.slotType === "logo")
+    .map((slotLink) => slotLink.dataRecordId);
   const iconIds = slotLinks
     .filter((slotLink) => slotLink.slotType === "icon")
     .map((slotLink) => slotLink.dataRecordId);
@@ -167,6 +181,7 @@ async function getNormalizedCardRecord(
     texts,
     copyrights,
     images,
+    heroBackLogos,
     icons,
     heroStats,
     monsterStats,
@@ -177,6 +192,7 @@ async function getNormalizedCardRecord(
     loadComponentRecords(db.cardTextComponents, textIds),
     loadComponentRecords(db.cardCopyrightComponents, copyrightIds),
     loadComponentRecords(db.cardImageComponents, imageIds),
+    loadComponentRecords(db.cardHeroBackLogoComponents, heroBackLogoIds),
     loadComponentRecords(db.cardIconComponents, iconIds),
     loadComponentRecords(db.cardHeroStatsComponents, heroStatsIds),
     loadComponentRecords(db.cardMonsterStatsComponents, monsterStatsIds),
@@ -191,6 +207,7 @@ async function getNormalizedCardRecord(
     texts,
     copyrights,
     images,
+    heroBackLogos,
     icons,
     heroStats,
     monsterStats,
@@ -239,21 +256,52 @@ async function writeCardAndNormalizedState(
     db.cardTextComponents,
     db.cardCopyrightComponents,
     db.cardImageComponents,
+    db.cardHeroBackLogoComponents,
     db.cardIconComponents,
     db.cardHeroStatsComponents,
     db.cardMonsterStatsComponents,
   ];
-  await db.transaction(
-    "rw",
-    writeTables,
-    async (tx: Transaction) => {
-      const normalized = await replaceNormalizedCardRecords(tx, record);
-      if (!normalized) {
-        throw new Error(`Unable to derive normalized card rows for ${record.id}`);
-      }
-      await replaceNormalizedCardThumbnail(tx, record);
-    },
-  );
+  await db.transaction("rw", writeTables, async (tx: Transaction) => {
+    await writeCardAndNormalizedStateInTransaction(tx, record);
+  });
+}
+
+async function writeCardAndNormalizedStateInTransaction(
+  tx: Transaction,
+  record: CardRecord,
+): Promise<void> {
+  const normalized = await replaceNormalizedCardRecords(tx, record);
+  if (!normalized) {
+    throw new Error(`Unable to derive normalized card rows for ${record.id}`);
+  }
+  await replaceNormalizedCardThumbnail(tx, record);
+}
+
+async function copyDuplicateSourceCollectionMemberships(
+  tx: Transaction,
+  sourceCardId: string,
+  duplicatedCardId: string,
+  now: number,
+): Promise<string[]> {
+  const collections = (await tx.table("collections").toArray()) as CollectionRecord[];
+  const collectionsToUpdate = collections
+    .filter(
+      (collection) =>
+        collection.cardIds.includes(sourceCardId) &&
+        !collection.cardIds.includes(duplicatedCardId),
+    )
+    .map((collection) => ({
+      ...collection,
+      cardIds: [...collection.cardIds, duplicatedCardId],
+      updatedAt: now,
+    }));
+
+  if (!collectionsToUpdate.length) {
+    return [];
+  }
+
+  await tx.table("collections").bulkPut(collectionsToUpdate);
+  return collectionsToUpdate.map((collection) => collection.id);
 }
 
 export async function createCard(
@@ -263,15 +311,17 @@ export async function createCard(
     updatedAt?: number;
     nameLower?: string;
     schemaVersion?: 1 | 2;
+    duplicateFromCardId?: string | null;
   },
 ): Promise<CardRecord> {
+  const { duplicateFromCardId, ...persistedInput } = input;
   const now = Date.now();
   const createdAt = input.createdAt ?? now;
   const updatedAt = input.updatedAt ?? createdAt;
   const id = input.id ?? generateId();
   const normalizedThumbnail = normalizeThumbnailBlob(input.thumbnailBlob);
-  const base: CardRecord = {
-    ...input,
+  let base: CardRecord = {
+    ...persistedInput,
     ...(normalizedThumbnail !== input.thumbnailBlob
       ? { thumbnailBlob: normalizedThumbnail }
       : {}),
@@ -283,8 +333,46 @@ export async function createCard(
   };
 
   const db = await openHqccDexieDb();
-  await writeCardAndNormalizedState(db, base);
+  if (typeof base.showCopyright !== "boolean") {
+    const settingsRecord = await db.settings.get(COPYRIGHT_TEMPLATE_DEFAULTS_KEY);
+    const templateDefaults = normalizeCopyrightTemplateDefaults(settingsRecord?.value);
+    base = {
+      ...base,
+      showCopyright: resolveTemplateCopyrightDefault(base.templateId, templateDefaults),
+    };
+  }
+  const writeTables = [
+    db.cardsBase,
+    db.cardThumbnails,
+    db.cardSlotLinks,
+    db.cardBackgroundComponents,
+    db.cardBorderComponents,
+    db.cardTitleComponents,
+    db.cardTextComponents,
+    db.cardCopyrightComponents,
+    db.cardImageComponents,
+    db.cardHeroBackLogoComponents,
+    db.cardIconComponents,
+    db.cardHeroStatsComponents,
+    db.cardMonsterStatsComponents,
+    db.collections,
+  ];
+  let touchedCollectionIds: string[] = [];
+  await db.transaction("rw", writeTables, async (tx: Transaction) => {
+    await writeCardAndNormalizedStateInTransaction(tx, base);
+    if (duplicateFromCardId) {
+      touchedCollectionIds = await copyDuplicateSourceCollectionMemberships(
+        tx,
+        duplicateFromCardId,
+        base.id,
+        now,
+      );
+    }
+  });
   enqueueDbEstimateChange("cards", base.id);
+  touchedCollectionIds.forEach((collectionId) => {
+    enqueueDbEstimateChange(COLLECTIONS_STORE, collectionId);
+  });
   dispatchCardsUpdated();
 
   return base;
@@ -408,7 +496,6 @@ export async function updateCardThumbnail(
   thumbnailBlob: Blob | null,
 ): Promise<boolean> {
   const db = await openHqccDexieDb();
-
   const existing = await db.cardsBase.get(id);
 
   if (!existing) {
@@ -779,7 +866,11 @@ export async function previewDeleteCardsImpact(
       cardIds: uniqueIds,
       deckSetIds,
       deckEntryIds: pairReport.cascadePlan.entryIds,
-      deletedDeckUsage: deletedDeckUsage.map(({ backFaceId: _backFaceId, ...usage }) => usage),
+      deletedDeckUsage: deletedDeckUsage.map((usage) => {
+        const { backFaceId, ...rest } = usage;
+        void backFaceId;
+        return rest;
+      }),
       pairUsage,
     },
   };
@@ -822,6 +913,7 @@ export async function deleteCardsWithCascade(
       db.cardTextComponents,
       db.cardCopyrightComponents,
       db.cardImageComponents,
+      db.cardHeroBackLogoComponents,
       db.cardIconComponents,
       db.cardHeroStatsComponents,
       db.cardMonsterStatsComponents,

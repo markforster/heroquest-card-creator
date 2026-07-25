@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block hero %}
+  {% set is_homepage = page and page.is_homepage %}
+  <header class="hqcc-hero{% if is_homepage %} hqcc-hero--home{% endif %}">
+    <div class="hqcc-hero__inner">
+      {% if is_homepage %}
+        <img
+          class="hqcc-hero__icon"
+          src="{{ 'brand/apple-touch-icon.png' | url }}"
+          width="180"
+          height="180"
+          alt=""
+        >
+        <p class="hqcc-hero__eyebrow">HeroQuest Card Creator</p>
+      {% endif %}
+      <h1 class="hqcc-hero__title">
+        {% if page %}{{ page.meta.title or page.title }}{% else %}Help Centre{% endif %}
+      </h1>
+      {% if is_homepage %}
+        <p class="hqcc-hero__copy">
+          Guidance for creating, organising, exporting, and protecting your card library.
+        </p>
+      {% endif %}
+    </div>
+  </header>
+{% endblock %}

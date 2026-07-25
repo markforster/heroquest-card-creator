@@ -1,21 +1,20 @@
 "use client";
 
-import type { Dispatch, RefObject, SetStateAction } from "react";
-
 import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import { waitForAssetElements, waitForFrame } from "@/components/Stockpile/stockpile-utils";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 import { composeBleedCanvas } from "@/lib/bleed-export";
-import { collectCardAssetIds } from "@/lib/card-assets";
+import { collectCardAssetIds, collectCardHeroBackLogoIds } from "@/lib/card-assets";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { buildAssetCache } from "@/lib/export-assets-cache";
+import { buildAssetCache, buildHeroBackLogoCache } from "@/lib/export-assets-cache";
 import type { PrintConfig } from "@/lib/pdf-export";
 
 import type {
   PdfExportPlaceholderSpec,
   PdfExportShellState,
 } from "./PdfExportShellModal";
+import type { Dispatch, RefObject, SetStateAction } from "react";
 
 type CardRecord = Awaited<ReturnType<typeof import("@/api/client").apiClient.getCard>>;
 
@@ -114,10 +113,13 @@ export async function renderPdfCardFacePngBytes({
   await previewRef.current?.waitForBackgroundLoaded?.();
   await previewRef.current?.syncCopyrightContrast?.();
 
-  const assetIds = collectCardAssetIds(cardRecordToCardData(card as never));
+  const cardData = cardRecordToCardData(card as never);
+  const assetIds = collectCardAssetIds(cardData);
+  const heroBackLogoIds = collectCardHeroBackLogoIds(cardData);
   const { cache } = await buildAssetCache(assetIds);
-  if (assetIds.length > 0) {
-    await waitForAssetElements(() => previewRef.current?.getSvgElement(), assetIds);
+  const { cache: heroBackLogoCache } = await buildHeroBackLogoCache(heroBackLogoIds);
+  if (assetIds.length > 0 || heroBackLogoIds.length > 0) {
+    await waitForAssetElements(() => previewRef.current?.getSvgElement(), assetIds, heroBackLogoIds);
   }
 
   const blob = await previewRef.current?.renderToPngBlob({
@@ -140,8 +142,10 @@ export async function renderPdfCardFacePngBytes({
           },
     roundedCorners: shellState.resolvedBleedOptions.roundedCorners,
     assetBlobsById: cache,
+    heroBackLogoBlobsById: heroBackLogoCache,
   });
   cache.clear();
+  heroBackLogoCache.clear();
   if (!blob) {
     return null;
   }

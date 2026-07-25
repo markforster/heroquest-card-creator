@@ -23,11 +23,21 @@ jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) => {
       const map: Record<string, string> = {
-        "heading.decksForCard": "Decks for this card",
         "empty.saveCardToViewDecks": "Save this card to view deck membership.",
+        "empty.saveCardToViewDecksTitle": "Save this card to view decks",
+        "empty.saveCardToViewDecksBody": "Deck membership appears here after this card has been saved.",
+        "empty.saveCardToViewDecksHint":
+          "Once the card has a saved record, any decks that include it will be listed here.",
         "status.loadingDecks": "Loading decks...",
+        "status.loadingDecksBody": "Checking which decks currently include this card.",
         "error.failedToLoadDecks": "Unable to load decks right now.",
+        "error.failedToLoadDecksBody":
+          "Something went wrong while loading deck membership for this card. Please try again in a moment.",
         "empty.cardNotInDecks": "This card is not in any deck.",
+        "empty.cardNotInDecksTitle": "Not in any decks yet",
+        "empty.cardNotInDecksBody": "This card has not been added to a deck yet.",
+        "empty.cardNotInDecksHint":
+          "When a deck includes this card, it will appear here with its deck entry count.",
       };
       return map[key] ?? key;
     },
@@ -63,7 +73,10 @@ describe("DecksInspectorPanel", () => {
 
     render(<DecksInspectorPanel />);
 
-    expect(screen.getByText("Save this card to view deck membership.")).toBeInTheDocument();
+    expect(screen.getByText("Save this card to view decks")).toBeInTheDocument();
+    expect(
+      screen.getByText("Deck membership appears here after this card has been saved."),
+    ).toBeInTheDocument();
     expect(mockListCardDecks).not.toHaveBeenCalled();
   });
 
@@ -82,7 +95,8 @@ describe("DecksInspectorPanel", () => {
     await waitFor(() => {
       expect(mockListCardDecks).toHaveBeenCalledWith({ params: { id: "card-1" } });
     });
-    expect(screen.getByText("This card is not in any deck.")).toBeInTheDocument();
+    expect(screen.getByText("Not in any decks yet")).toBeInTheDocument();
+    expect(screen.getByText("This card has not been added to a deck yet.")).toBeInTheDocument();
   });
 
   it("lists decks and navigates when clicked", async () => {

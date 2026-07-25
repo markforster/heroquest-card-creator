@@ -14,11 +14,17 @@ import {
   Shrink,
   Type,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import layoutStyles from "@/app/page.module.css";
+import {
+  EDITOR_TARGET_IDS,
+  useInspectorTargetRegistration,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import FormattingHelpContent from "@/components/Cards/CardInspector/FormattingHelpContent";
+import BodyTextEmojiPicker from "@/components/Cards/CardInspector/BodyTextEmojiPicker";
+import InlineDicePicker from "@/components/Cards/CardInspector/InlineDicePicker";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import ModalShell from "@/components/common/ModalShell";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
@@ -29,6 +35,7 @@ import { parseHexColor } from "@/lib/color";
 import type { BodyTextStyle } from "@/types/card-data";
 
 import BaseInspectorField from "./BaseInspectorField";
+import { insertTextAtSelection } from "./body-text-insert";
 
 type ContentFieldProps = {
   label: string;
@@ -67,9 +74,17 @@ export default function ContentField({
     formState: { errors },
     setValue,
   } = useFormContext();
+  const descriptionRegistration = register("description", {
+    maxLength: {
+      value: 2000,
+      message: t("errors.contentMaxLength"),
+    },
+  });
+  const { ref: descriptionRegistrationRef, ...descriptionInputProps } = descriptionRegistration;
   const bodyTextStyle = useWatch({ name: "bodyTextStyle" }) as BodyTextStyle | undefined;
   const bodyTextColorValue = useWatch({ name: "bodyTextColor" }) as string | undefined;
   const bodyTextFitToBounds = useWatch({ name: "bodyTextFitToBounds" }) as boolean | undefined;
+  const descriptionValue = (useWatch({ name: "description" }) as string | undefined) ?? "";
   const fieldError = (errors as Record<string, { message?: string }>).description;
   const [isBodyColorOpen, setIsBodyColorOpen] = useState(false);
   const [isBodyTextColorOpen, setIsBodyTextColorOpen] = useState(false);
@@ -80,6 +95,14 @@ export default function ContentField({
     height: 420,
   });
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const fieldRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const selectionRef = useRef({ start: 0, end: 0 });
+  const handleFieldFocusCapture = useInspectorTargetRegistration({
+    targetId: EDITOR_TARGET_IDS.textMain,
+    containerRef: fieldRef,
+    focusRef: inputRef,
+  });
 
   const defaultBackdrop = DEFAULT_BODY_TEXT_STYLE.backdrop ?? {};
   const effectiveBackdrop = {
@@ -110,8 +133,34 @@ export default function ContentField({
     updateBackdrop({ color: value, opacity: undefined });
   };
 
+  const updateSelection = () => {
+    const textarea = inputRef.current;
+    if (!textarea) return;
+    selectionRef.current = {
+      start: textarea.selectionStart ?? textarea.value.length,
+      end: textarea.selectionEnd ?? textarea.value.length,
+    };
+  };
+
+  const insertDescriptionText = (insertedText: string) => {
+    insertTextAtSelection({
+      textarea: inputRef.current,
+      currentValue: descriptionValue,
+      insertedText,
+      selectionStart: selectionRef.current.start,
+      selectionEnd: selectionRef.current.end,
+      onChange: (nextValue) =>
+        setValue("description", nextValue, {
+          shouldDirty: true,
+          shouldTouch: true,
+        }),
+    });
+  };
+
   const toolbar = (
     <div className="d-inline-flex align-items-center gap-2 ms-auto">
+      <BodyTextEmojiPicker disabled={!textEnabled} onInsert={insertDescriptionText} />
+      <InlineDicePicker disabled={!textEnabled} onInsert={insertDescriptionText} />
       {showFormattingHelp ? (
         <button
           type="button"
@@ -261,16 +310,19 @@ export default function ContentField({
           <div style={{ flex: "1 0 auto", minWidth: 0 }}>
             <textarea
               id="description"
+              ref={(node) => {
+                inputRef.current = node;
+                descriptionRegistrationRef(node);
+              }}
               className={`form-control form-control-sm ${layoutStyles.cardTextArea}`}
-            rows={6}
-            title={t("tooltip.rulesAndFlavour")}
-            {...register("description", {
-              maxLength: {
-                value: 2000,
-                message: t("errors.contentMaxLength"),
-              },
-            })}
-          />
+              rows={6}
+              title={t("tooltip.rulesAndFlavour")}
+              {...descriptionInputProps}
+              onClick={updateSelection}
+              onFocus={updateSelection}
+              onKeyUp={updateSelection}
+              onSelect={updateSelection}
+            />
           </div>
           <div style={{ flex: "0 1 auto" }}>
             <div className="d-flex flex-column align-items-end gap-2">
@@ -363,8 +415,11 @@ export default function ContentField({
       id="description"
       label={label}
       icon={TextCursorInput}
+      fieldRef={fieldRef}
       error={fieldError?.message ?? (fieldError ? t("errors.invalidValue") : null)}
+      onFocusCapture={handleFieldFocusCapture}
       toolbar={toolbar}
+      targetId={EDITOR_TARGET_IDS.textMain}
       input={input ?? null}
       footer={footer}
     />

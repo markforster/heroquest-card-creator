@@ -3,6 +3,8 @@
   "templates.monster": "Monsterkort",
   "templates.small-treasure": "Lille illustration",
   "templates.large-treasure": "Stor illustration",
+  "templates.rules": "Regler",
   "templates.hero-back": "Heltebagside",
+  "templates.logo-back": "Bagside med logo",
   "templates.labelled-back": "Mærket bagside"
 }

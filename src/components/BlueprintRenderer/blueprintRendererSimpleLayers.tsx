@@ -3,14 +3,28 @@
 import { useId } from "react";
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
+import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
+import {
+  EDITOR_TARGET_IDS,
+  useRegisterHoverAdornment,
+  useSvgFocusTarget,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
 import CardTexturedBorder from "@/components/Cards/CardParts/CardTexturedBorder";
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import Layer from "@/components/Cards/CardPreview/Layer";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+import { getCopyrightBounds } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
+import { useHeroBackLogoImageUrl } from "@/hooks/useHeroBackLogoImageUrl";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
+import {
+  getCardShowCopyrightValue,
+  resolveCardCopyrightText,
+} from "@/lib/copyright-defaults";
+import { getHeroBackLogoPlacement } from "@/lib/hero-back-logo-layout";
 import { computeContainScale } from "@/lib/image-scale";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -21,8 +35,136 @@ import {
   getLayerBounds,
   normalizeClipId,
 } from "./blueprintRendererShared";
+import { resolveImageLayerHoverBounds } from "./blueprintRendererImageGeometry";
 
 import type { StaticImageData } from "next/image";
+
+const IMAGE_HOVER_EDGE_INSET = 18;
+const IMAGE_HOVER_RADIUS = 16;
+const TREASURE_HOVER_OUTSET = 16;
+const CANVAS_IMAGE_HOVER_OUTSET = 16;
+
+export function getImageHoverEdgeInset() {
+  return IMAGE_HOVER_EDGE_INSET;
+}
+
+function intersectRect(
+  first: { x: number; y: number; width: number; height: number },
+  second: { x: number; y: number; width: number; height: number },
+) {
+  const left = Math.max(first.x, second.x);
+  const top = Math.max(first.y, second.y);
+  const right = Math.min(first.x + first.width, second.x + second.width);
+  const bottom = Math.min(first.y + first.height, second.y + second.height);
+
+  if (right <= left || bottom <= top) return null;
+
+  return {
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+  };
+}
+
+function getRotatedRectBounds({
+  bounds,
+  rotation,
+  cx,
+  cy,
+}: {
+  bounds: { x: number; y: number; width: number; height: number };
+  rotation: number;
+  cx: number;
+  cy: number;
+}) {
+  if (rotation === 0) return bounds;
+
+  const radians = (rotation * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const corners = [
+    { x: bounds.x, y: bounds.y },
+    { x: bounds.x + bounds.width, y: bounds.y },
+    { x: bounds.x + bounds.width, y: bounds.y + bounds.height },
+    { x: bounds.x, y: bounds.y + bounds.height },
+  ].map((corner) => {
+    const translatedX = corner.x - cx;
+    const translatedY = corner.y - cy;
+    return {
+      x: cx + translatedX * cos - translatedY * sin,
+      y: cy + translatedX * sin + translatedY * cos,
+    };
+  });
+
+  const xs = corners.map((corner) => corner.x);
+  const ys = corners.map((corner) => corner.y);
+  const left = Math.min(...xs);
+  const right = Math.max(...xs);
+  const top = Math.min(...ys);
+  const bottom = Math.max(...ys);
+
+  return {
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+  };
+}
+
+function buildImageHoverBounds({
+  clipMode,
+  layerBounds,
+  renderedBounds,
+  canvasBounds,
+}: {
+  clipMode: "bounds" | "canvas" | "none";
+  layerBounds: { x: number; y: number; width: number; height: number };
+  renderedBounds: { x: number; y: number; width: number; height: number } | null;
+  canvasBounds: { x: number; y: number; width: number; height: number };
+}) {
+  if (clipMode !== "canvas" || !renderedBounds) {
+    const baseBounds = {
+      x: layerBounds.x,
+      y: layerBounds.y,
+      width: layerBounds.width,
+      height: layerBounds.height,
+      radius: IMAGE_HOVER_RADIUS,
+    };
+    return clipMode === "bounds"
+      ? {
+          ...padBounds(baseBounds, TREASURE_HOVER_OUTSET),
+          radius: IMAGE_HOVER_RADIUS,
+        }
+      : baseBounds;
+  }
+
+  const visibleBounds = intersectRect(renderedBounds, canvasBounds);
+  if (!visibleBounds) return null;
+
+  const minLeft = canvasBounds.x + IMAGE_HOVER_EDGE_INSET;
+  const minTop = canvasBounds.y + IMAGE_HOVER_EDGE_INSET;
+  const maxRight = canvasBounds.x + canvasBounds.width - IMAGE_HOVER_EDGE_INSET;
+  const maxBottom = canvasBounds.y + canvasBounds.height - IMAGE_HOVER_EDGE_INSET;
+  const left = Math.max(visibleBounds.x - CANVAS_IMAGE_HOVER_OUTSET, minLeft);
+  const top = Math.max(visibleBounds.y - CANVAS_IMAGE_HOVER_OUTSET, minTop);
+  const right = Math.min(
+    visibleBounds.x + visibleBounds.width + CANVAS_IMAGE_HOVER_OUTSET,
+    maxRight,
+  );
+  const bottom = Math.min(
+    visibleBounds.y + visibleBounds.height + CANVAS_IMAGE_HOVER_OUTSET,
+    maxBottom,
+  );
+
+  return {
+    x: left,
+    y: top,
+    width: Math.max(0, right - left),
+    height: Math.max(0, bottom - top),
+    radius: IMAGE_HOVER_RADIUS,
+  };
+}
 
 export function renderBackgroundLayer({
   blueprint,
@@ -201,66 +343,102 @@ export function ImageLayer({
   cardData?: CardDataByTemplate[TemplateId];
 }) {
   const clipId = normalizeClipId(useId());
+  const isImageLayer = layer.type === layerTypes.image;
   const assetId =
-    layer.type === layerTypes.image && layer.bind?.imageKey && cardData
+    isImageLayer && layer.bind?.imageKey && cardData
       ? ((cardData as Record<string, unknown>)[layer.bind.imageKey] as string | undefined)
       : undefined;
   const assetName =
-    layer.type === layerTypes.image && cardData
+    isImageLayer && cardData
       ? ((cardData as { imageAssetName?: string }).imageAssetName as string | undefined)
       : undefined;
   const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.imageMain);
+  const bounds = isImageLayer ? getLayerBounds(blueprint, layer) : null;
+  const imageLayer = isImageLayer ? (layer as Extract<BlueprintLayer, { type: "image" }>) : null;
+  const clipMode = imageLayer?.clip ?? "bounds";
+  const canvasBounds = {
+    x: 0,
+    y: 0,
+    width: blueprint.canvas?.width ?? CARD_WIDTH,
+    height: blueprint.canvas?.height ?? CARD_HEIGHT,
+  };
+  const hasImageBinding = !!layer.bind?.imageKey;
+  const hasRenderInputs = hasImageBinding && !!cardData && !!bounds;
+  const scale = hasRenderInputs ? ((cardData as { imageScale?: number }).imageScale ?? 1) : 1;
+  const scaleMode = hasRenderInputs
+    ? ((cardData as { imageScaleMode?: "absolute" | "relative" }).imageScaleMode ?? "relative")
+    : "relative";
+  const offsetX = hasRenderInputs ? ((cardData as { imageOffsetX?: number }).imageOffsetX ?? 0) : 0;
+  const offsetY = hasRenderInputs ? ((cardData as { imageOffsetY?: number }).imageOffsetY ?? 0) : 0;
+  const rotation = hasRenderInputs ? ((cardData as { imageRotation?: number }).imageRotation ?? 0) : 0;
+  const layerOffsetX = typeof layer.props?.offsetX === "number" ? layer.props.offsetX : 0;
+  const layerOffsetY = typeof layer.props?.offsetY === "number" ? layer.props.offsetY : 0;
+  const baseWidth =
+    hasRenderInputs && bounds
+      ? ((cardData as { imageOriginalWidth?: number }).imageOriginalWidth ?? bounds.width)
+      : 0;
+  const baseHeight =
+    hasRenderInputs && bounds
+      ? ((cardData as { imageOriginalHeight?: number }).imageOriginalHeight ?? bounds.height)
+      : 0;
+  const fitScale =
+    hasRenderInputs && bounds ? computeContainScale(bounds, baseWidth, baseHeight) : 1;
+  const effectiveScale = scaleMode === "relative" ? fitScale * scale : scale;
+  const scaledWidth = baseWidth * effectiveScale;
+  const scaledHeight = baseHeight * effectiveScale;
+  const x =
+    hasRenderInputs && bounds
+      ? bounds.x + (bounds.width - scaledWidth) / 2 + offsetX + layerOffsetX
+      : 0;
+  const y =
+    hasRenderInputs && bounds
+      ? bounds.y + (bounds.height - scaledHeight) / 2 + offsetY + layerOffsetY
+      : 0;
+  const cx = x + scaledWidth / 2;
+  const cy = y + scaledHeight / 2;
+  const hoverBounds =
+    bounds == null
+      ? null
+      : resolveImageLayerHoverBounds({
+          blueprint,
+          layer,
+          cardData,
+        });
 
-  if (layer.type !== layerTypes.image) return null;
-  const imageLayer = layer as Extract<BlueprintLayer, { type: "image" }>;
+  useRegisterHoverAdornment(
+    EDITOR_TARGET_IDS.imageMain,
+    isImageLayer && hoverBounds
+      ? {
+          kind: "rect",
+          ...hoverBounds,
+          radius: IMAGE_HOVER_RADIUS,
+        }
+      : null,
+  );
+
+  if (!isImageLayer) return null;
+
   if (!layer.bind?.imageKey) return null;
   if (!cardData) return null;
-  const bounds = getLayerBounds(blueprint, layer);
+  if (!bounds) return null;
   if (!imageUrl) {
     if (imageStatus === "missing") {
-      return <MissingArtworkPlaceholder bounds={bounds} assetName={assetName} scale={2} />;
+      return (
+        <Layer key={layer.id} {...svgFocusProps}>
+          <MissingArtworkPlaceholder bounds={bounds} assetName={assetName} scale={2} />
+        </Layer>
+      );
     }
     return null;
   }
 
-  const scale = (cardData as { imageScale?: number }).imageScale ?? 1;
-  const scaleMode =
-    (cardData as { imageScaleMode?: "absolute" | "relative" }).imageScaleMode ?? "relative";
-  const offsetX = (cardData as { imageOffsetX?: number }).imageOffsetX ?? 0;
-  const offsetY = (cardData as { imageOffsetY?: number }).imageOffsetY ?? 0;
-  const rotation = (cardData as { imageRotation?: number }).imageRotation ?? 0;
-  const layerOffsetX = typeof layer.props?.offsetX === "number" ? layer.props.offsetX : 0;
-  const layerOffsetY = typeof layer.props?.offsetY === "number" ? layer.props.offsetY : 0;
-
-  const baseWidth =
-    (cardData as { imageOriginalWidth?: number }).imageOriginalWidth ?? bounds.width;
-  const baseHeight =
-    (cardData as { imageOriginalHeight?: number }).imageOriginalHeight ?? bounds.height;
-
-  const fitScale = computeContainScale(bounds, baseWidth, baseHeight);
-  const effectiveScale = scaleMode === "relative" ? fitScale * scale : scale;
-  const scaledWidth = baseWidth * effectiveScale;
-  const scaledHeight = baseHeight * effectiveScale;
-
-  const x = bounds.x + (bounds.width - scaledWidth) / 2 + offsetX + layerOffsetX;
-  const y = bounds.y + (bounds.height - scaledHeight) / 2 + offsetY + layerOffsetY;
-  const cx = x + scaledWidth / 2;
-  const cy = y + scaledHeight / 2;
   const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
-  const clipMode = imageLayer.clip ?? "bounds";
   const shouldClip = clipMode !== "none";
-  const clipBounds =
-    clipMode === "canvas"
-      ? {
-          x: 0,
-          y: 0,
-          width: blueprint.canvas?.width ?? CARD_WIDTH,
-          height: blueprint.canvas?.height ?? CARD_HEIGHT,
-        }
-      : bounds;
+  const clipBounds = clipMode === "canvas" ? canvasBounds : bounds;
 
   return (
-    <Layer key={layer.id}>
+    <Layer key={layer.id} {...svgFocusProps}>
       {shouldClip ? (
         <defs>
           <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
@@ -273,17 +451,270 @@ export function ImageLayer({
           </clipPath>
         </defs>
       ) : null}
+      <g clipPath={shouldClip ? `url(#${clipId})` : undefined}>
+        <image
+          href={imageUrl}
+          data-user-asset-id={assetId}
+          data-user-asset-name={assetName}
+          x={x}
+          y={y}
+          width={scaledWidth}
+          height={scaledHeight}
+          transform={transform}
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </g>
+    </Layer>
+  );
+}
+
+export function HeroBackLogoLayer({
+  blueprint,
+  layer,
+  cardData,
+}: {
+  blueprint: Blueprint;
+  layer: BlueprintLayer;
+  cardData?: CardDataByTemplate[TemplateId];
+}) {
+  const isLogoLayer = layer.type === layerTypes.logo;
+  const bounds = isLogoLayer ? getLayerBounds(blueprint, layer) : null;
+  const logoLayer = isLogoLayer ? (layer as Extract<BlueprintLayer, { type: "logo" }>) : null;
+  const logoMode = (cardData as { heroBackLogoMode?: "default" | "none" | "custom" } | undefined)
+    ?.heroBackLogoMode ?? "default";
+  const logoId = (cardData as { heroBackLogoId?: string } | undefined)?.heroBackLogoId;
+  const logoName = (cardData as { heroBackLogoName?: string } | undefined)?.heroBackLogoName;
+  const { url: customUrl, status, width, height } = useHeroBackLogoImageUrl(logoId);
+
+  if (!isLogoLayer || !bounds || !logoLayer) return null;
+
+  if (logoMode === "none") {
+    return null;
+  }
+
+  if (logoMode !== "custom" || !logoId || !customUrl || status !== "ready" || !width || !height) {
+    const placement = getHeroBackLogoPlacement({
+      bounds,
+      imageWidth: logoLayer.asset.width,
+      imageHeight: logoLayer.asset.height,
+      rotation: logoLayer.rotation,
+    });
+
+    return (
+      <Layer key={layer.id}>
+        <image
+          href={normalizeFileProtocolAssetUrl(logoLayer.asset.src)}
+          data-template-asset="hero-back-logo"
+          x={placement.imageBox.x}
+          y={placement.imageBox.y}
+          width={placement.imageBox.width}
+          height={placement.imageBox.height}
+          transform={placement.imageBox.transform}
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </Layer>
+    );
+  }
+
+  const placement = getHeroBackLogoPlacement({
+    bounds,
+    imageWidth: width,
+    imageHeight: height,
+    rotation: logoLayer.rotation,
+  });
+
+  return (
+    <Layer key={layer.id}>
       <image
-        href={imageUrl}
-        data-user-asset-id={assetId}
-        data-user-asset-name={assetName}
-        x={x}
-        y={y}
-        width={scaledWidth}
-        height={scaledHeight}
-        transform={transform}
+        href={customUrl}
+        data-user-hero-back-logo-id={logoId}
+        data-user-hero-back-logo-name={logoName}
+        x={placement.imageBox.x}
+        y={placement.imageBox.y}
+        width={placement.imageBox.width}
+        height={placement.imageBox.height}
+        transform={placement.imageBox.transform}
         preserveAspectRatio="xMidYMid meet"
-        clipPath={shouldClip ? `url(#${clipId})` : undefined}
+      />
+    </Layer>
+  );
+}
+
+export function HeroBackLogoLayerHitArea({
+  blueprint,
+  layer,
+}: {
+  blueprint: Blueprint;
+  layer: BlueprintLayer;
+}) {
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.heroBackLogo);
+
+  if (layer.type !== layerTypes.logo) return null;
+
+  const bounds = getLayerBounds(blueprint, layer);
+
+  useRegisterHoverAdornment(EDITOR_TARGET_IDS.heroBackLogo, {
+    kind: "rect",
+    ...bounds,
+    radius: IMAGE_HOVER_RADIUS,
+  });
+
+  return (
+    <Layer {...svgFocusProps}>
+      <rect
+        x={bounds.x}
+        y={bounds.y}
+        width={bounds.width}
+        height={bounds.height}
+        fill="transparent"
+        pointerEvents="all"
+        data-hqcc-hit-area={EDITOR_TARGET_IDS.heroBackLogo}
+      />
+    </Layer>
+  );
+}
+
+export function ImageLayerHitArea({
+  blueprint,
+  layer,
+  targetId = EDITOR_TARGET_IDS.imageMain,
+}: {
+  blueprint: Blueprint;
+  layer: BlueprintLayer;
+  targetId?: typeof EDITOR_TARGET_IDS.imageMain | typeof EDITOR_TARGET_IDS.title;
+}) {
+  const svgFocusProps = useSvgFocusTarget(targetId);
+
+  if (layer.type !== layerTypes.image) return null;
+
+  const bounds = getLayerBounds(blueprint, layer);
+
+  return (
+    <Layer {...svgFocusProps}>
+      <rect
+        x={bounds.x}
+        y={bounds.y}
+        width={bounds.width}
+        height={bounds.height}
+        fill="transparent"
+        pointerEvents="all"
+        data-hqcc-hit-area={targetId}
+      />
+    </Layer>
+  );
+}
+
+export function TitleLayerHitArea({
+  layer,
+  cardData,
+  templateName,
+  templateId,
+}: {
+  layer: BlueprintLayer;
+  cardData?: CardDataByTemplate[TemplateId];
+  templateName?: string;
+  templateId?: TemplateId;
+}) {
+  const { defaultCopyright } = useCopyrightSettings();
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.title);
+
+  const showTitle =
+    cardData && typeof (cardData as { showTitle?: boolean }).showTitle === "boolean"
+      ? (cardData as { showTitle?: boolean }).showTitle
+      : true;
+
+  const titleKey = layer.bind?.titleKey;
+  const titleValue =
+    titleKey && cardData
+      ? ((cardData as Record<string, unknown>)[titleKey] as string | null | undefined)
+      : undefined;
+  const title = titleValue ?? templateName;
+  const hasVisibleTitle = hasVisibleTitleText(title);
+
+  const showRibbonDefault =
+    typeof layer.props?.showRibbon === "boolean" ? layer.props.showRibbon : true;
+  const titleStyle = cardData
+    ? (cardData as { titleStyle?: "ribbon" | "plain" }).titleStyle
+    : undefined;
+  const showRibbon =
+    titleStyle === "ribbon" ? true : titleStyle === "plain" ? false : showRibbonDefault;
+  const getBound = (prefix: string) => {
+    const x = layer.props?.[`${prefix}X`];
+    const y = layer.props?.[`${prefix}Y`];
+    const width = layer.props?.[`${prefix}Width`];
+    const height = layer.props?.[`${prefix}Height`];
+    if (
+      typeof x === "number" &&
+      typeof y === "number" &&
+      typeof width === "number" &&
+      typeof height === "number"
+    ) {
+      return { x, y, width, height };
+    }
+    return undefined;
+  };
+  const placement =
+    templateId === "labelled-back"
+      ? (cardData as { titlePlacement?: "top" | "bottom" } | undefined)?.titlePlacement
+      : undefined;
+  const ribbonBounds = getBound(placement === "top" ? "ribbonTop" : "ribbon");
+  const textBounds = getBound(placement === "top" ? "textTop" : "text");
+  const textBoundsNoRibbon = getBound(placement === "top" ? "textNoRibbonTop" : "textNoRibbon");
+  const baseBounds = showRibbon
+    ? ribbonBounds ?? textBounds
+    : textBoundsNoRibbon ?? textBounds ?? ribbonBounds;
+  const copyrightBounds =
+    templateId === "labelled-back" ? getCopyrightBounds(templateId) : null;
+  const resolvedCopyrightText =
+    templateId === "labelled-back" && cardData
+      ? resolveCardCopyrightText(cardData as Record<string, unknown>, defaultCopyright, "copyright")
+      : "";
+  const isCopyrightVisible =
+    templateId === "labelled-back" &&
+    getCardShowCopyrightValue(cardData) !== false &&
+    resolvedCopyrightText.length > 0;
+  const effectiveBaseBounds =
+    templateId === "labelled-back" &&
+    placement === "bottom" &&
+    baseBounds &&
+    copyrightBounds &&
+    isCopyrightVisible
+      ? {
+          ...baseBounds,
+          height: Math.max(0, Math.min(baseBounds.height, copyrightBounds.y - baseBounds.y)),
+        }
+      : baseBounds;
+  const shouldRenderHitArea =
+    layer.type === "title" &&
+    showTitle &&
+    (templateId === "labelled-back" || !hasVisibleTitle);
+
+  useRegisterHoverAdornment(
+    EDITOR_TARGET_IDS.title,
+    shouldRenderHitArea && !hasVisibleTitle && effectiveBaseBounds
+      ? {
+          kind: "rect",
+          x: effectiveBaseBounds.x,
+          y: effectiveBaseBounds.y,
+          width: effectiveBaseBounds.width,
+          height: effectiveBaseBounds.height,
+          radius: showRibbon ? 20 : 14,
+        }
+      : null,
+  );
+
+  if (!shouldRenderHitArea || !effectiveBaseBounds) return null;
+
+  return (
+    <Layer {...svgFocusProps}>
+      <rect
+        x={effectiveBaseBounds.x}
+        y={effectiveBaseBounds.y}
+        width={effectiveBaseBounds.width}
+        height={effectiveBaseBounds.height}
+        fill="transparent"
+        pointerEvents="all"
+        data-hqcc-hit-area={EDITOR_TARGET_IDS.title}
       />
     </Layer>
   );
@@ -315,7 +746,7 @@ export function TitleLayer({
       ? ((cardData as Record<string, unknown>)[titleKey] as string | null | undefined)
       : undefined;
   const title = titleValue ?? templateName;
-  if (!title) return null;
+  if (!hasVisibleTitleText(title)) return null;
 
   const showRibbonDefault =
     typeof layer.props?.showRibbon === "boolean" ? layer.props.showRibbon : true;
@@ -360,4 +791,8 @@ export function TitleLayer({
       textBoundsNoRibbon={textBoundsNoRibbon}
     />
   );
+}
+
+function hasVisibleTitleText(title: string | null | undefined): title is string {
+  return typeof title === "string" && title.trim().length > 0;
 }

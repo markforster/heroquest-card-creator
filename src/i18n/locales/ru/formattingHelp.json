@@ -81,5 +81,13 @@
   "formattingHelp.diceStructure.colorsCode": "Цвета: w, bk, r, bl, g, y, o, p, gy",
   "formattingHelp.diceStructure.colorsOutput": "Допустимые цвета",
   "formattingHelp.diceStructure.hexCode": "Hex: #RGB, #RGBA, #RRGGBB, #RRGGBBAA",
-  "formattingHelp.diceStructure.hexOutput": "Hex-цвета"
+  "formattingHelp.diceStructure.hexOutput": "Hex-цвета",
+  "formattingHelp.richText.titleCode": "<title>Pravila zadaniya</title>",
+  "formattingHelp.richText.titleOutput": "Pravila zadaniya",
+  "formattingHelp.richText.subtitleCode": "<subtitle>Dvizhenie</subtitle>",
+  "formattingHelp.richText.subtitleOutput": "Dvizhenie",
+  "formattingHelp.richText.scaleCode": "<scale=1.25>krupnyi tekst</scale>",
+  "formattingHelp.richText.scaleOutput": "krupnyi tekst",
+  "formattingHelp.richText.scaleAliasCode": "<sc=0.75>malyi tekst</sc>",
+  "formattingHelp.richText.scaleAliasOutput": "malyi tekst"
 }

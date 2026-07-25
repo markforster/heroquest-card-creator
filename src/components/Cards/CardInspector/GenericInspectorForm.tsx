@@ -1,15 +1,12 @@
 "use client";
 
-import { useFormContext, useWatch } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 
 import styles from "@/app/page.module.css";
-import { cardTemplatesById } from "@/data/card-templates";
 import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 import { useI18n } from "@/i18n/I18nProvider";
 import { descriptionSupportsBodyTextFitToBounds } from "@/lib/blueprint-text";
-import { resolveEffectiveFace } from "@/lib/card-face";
 import { getImageLayerBounds } from "@/lib/image-scale";
-import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
 import BackgroundTintField from "./BackgroundTintField";
@@ -17,6 +14,7 @@ import BorderColorField from "./BorderColorField";
 import ContentField from "./ContentField";
 import CopyrightField from "./CopyrightField";
 import HeroStatsInspector from "./HeroStatsInspector";
+import HeroBackLogoField from "./HeroBackLogoField";
 import ImageField from "./ImageField";
 import MonsterIconField from "./MonsterIconField";
 import MonsterStatsInspector from "./MonsterStatsInspector";
@@ -29,11 +27,8 @@ type GenericInspectorFormProps = {
 
 export default function GenericInspectorForm({ templateId }: GenericInspectorFormProps) {
   const { t } = useI18n();
-  const { control } = useFormContext();
-  const face = useWatch({ control, name: "face" }) as CardFace | undefined;
+  useFormContext();
   const fields = inspectorFieldsByTemplate[templateId];
-  const template = cardTemplatesById[templateId];
-  const effectiveFace = template ? resolveEffectiveFace(face, template.defaultFace) : undefined;
   const showDescriptionFitToggle = descriptionSupportsBodyTextFitToBounds(templateId);
 
   if (!fields || fields.length === 0) {
@@ -41,7 +36,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
   }
 
   return (
-    <form className={styles.uStackLg}>
+    <form className={styles.inspectorFieldStack}>
       {fields.map((field, index) => {
         if (field.fieldType === "name") {
           return (
@@ -141,7 +136,6 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
           return <MonsterIconField key={`${field.bind}-${index}`} label={t(field.labelKey)} />;
         }
         if (field.fieldType === "copyright") {
-          if (effectiveFace !== "front") return null;
           return (
             <CopyrightField
               key={`${field.bind}-${index}`}
@@ -150,6 +144,9 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
               showToggle={field.showToggle}
             />
           );
+        }
+        if (field.fieldType === "heroBackLogo") {
+          return <HeroBackLogoField key={`${field.bind}-${index}`} label={t(field.labelKey)} />;
         }
         return null;
       })}

@@ -1,5 +1,6 @@
 "use client";
 
+import { EditorTargetAdornmentLayer } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { blueprintsByTemplateId } from "@/data/blueprints";
@@ -7,11 +8,14 @@ import { layerTypes } from "@/data/card-systems/types";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
-import type { StaticImageData } from "next/image";
-
 import { renderGroups } from "./blueprintRendererGroups";
+import { DEFAULT_CANVAS } from "./blueprintRendererShared";
 import {
   ImageLayer,
+  ImageLayerHitArea,
+  HeroBackLogoLayer,
+  HeroBackLogoLayerHitArea,
+  TitleLayerHitArea,
   TitleLayer,
   renderBackgroundLayer,
   renderBorderLayer,
@@ -19,10 +23,12 @@ import {
 } from "./blueprintRendererSimpleLayers";
 import {
   CopyrightLayer,
+  CopyrightLayerHitArea,
   DeveloperCreditLayer,
   TextLayer,
 } from "./blueprintRendererText";
-import { DEFAULT_CANVAS } from "./blueprintRendererShared";
+
+import type { StaticImageData } from "next/image";
 
 type BlueprintRendererProps = {
   templateId?: TemplateId;
@@ -32,6 +38,7 @@ type BlueprintRendererProps = {
   cardData?: CardDataByTemplate[TemplateId];
   copyrightTextColor?: string;
   developerCreditEnabled?: boolean;
+  suppressPreviewOnlyWarnings?: boolean;
 };
 
 export default function BlueprintRenderer(props: BlueprintRendererProps) {
@@ -77,6 +84,26 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
     );
   }
 
+  const renderTreasureArtworkHitArea =
+    blueprint.templateId === "small-treasure" || blueprint.templateId === "large-treasure";
+  const treasureArtworkLayer = renderTreasureArtworkHitArea
+    ? blueprint.layers.find(
+        (layer) => layer.type === layerTypes.image && layer.bind?.imageKey === "imageAssetId",
+      )
+    : undefined;
+  const labelledBackImageLayer =
+    blueprint.templateId === "labelled-back"
+      ? blueprint.layers.find(
+          (layer) => layer.type === layerTypes.image && layer.bind?.imageKey === "imageAssetId",
+        )
+      : undefined;
+  const titleLayer = blueprint.layers.find((layer) => layer.type === layerTypes.title);
+  const heroBackLogoLayer =
+    blueprint.templateId === "hero-back" || blueprint.templateId === "logo-back"
+      ? blueprint.layers.find((layer) => layer.type === layerTypes.logo)
+      : undefined;
+  const copyrightLayer = blueprint.layers.find((layer) => layer.type === layerTypes.copyright);
+
   return (
     <>
       {blueprint.layers.map((layer) => {
@@ -110,6 +137,16 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
             />
           );
         }
+        if (layer.type === layerTypes.logo) {
+          return (
+            <HeroBackLogoLayer
+              key={layer.id}
+              blueprint={blueprint}
+              layer={layer}
+              cardData={props.cardData}
+            />
+          );
+        }
         if (layer.type === layerTypes.text) {
           return (
             <TextLayer
@@ -118,6 +155,7 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
               layer={layer}
               cardData={props.cardData}
               showTextBounds={showTextBounds}
+              suppressPreviewOnlyWarnings={props.suppressPreviewOnlyWarnings}
             />
           );
         }
@@ -145,12 +183,42 @@ export default function BlueprintRenderer(props: BlueprintRendererProps) {
         }
         return null;
       })}
+      {treasureArtworkLayer ? (
+        <ImageLayerHitArea blueprint={blueprint} layer={treasureArtworkLayer} />
+      ) : null}
+      {labelledBackImageLayer ? (
+        <ImageLayerHitArea blueprint={blueprint} layer={labelledBackImageLayer} />
+      ) : null}
+      {titleLayer ? (
+        <TitleLayerHitArea
+          layer={titleLayer}
+          cardData={props.cardData}
+          templateName={templateName}
+          templateId={blueprint.templateId}
+        />
+      ) : null}
+      {heroBackLogoLayer ? (
+        <HeroBackLogoLayerHitArea blueprint={blueprint} layer={heroBackLogoLayer} />
+      ) : null}
+      {copyrightLayer ? (
+        <CopyrightLayerHitArea
+          blueprint={blueprint}
+          layer={copyrightLayer}
+          cardData={props.cardData}
+        />
+      ) : null}
       <DeveloperCreditLayer
         blueprint={blueprint}
         cardData={props.cardData}
         developerCreditEnabled={props.developerCreditEnabled}
       />
-      {renderGroups({ blueprint, cardData: props.cardData, showTextBounds })}
+      {renderGroups({
+        blueprint,
+        cardData: props.cardData,
+        showTextBounds,
+        suppressPreviewOnlyWarnings: props.suppressPreviewOnlyWarnings,
+      })}
+      <EditorTargetAdornmentLayer />
     </>
   );
 }

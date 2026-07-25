@@ -1,6 +1,9 @@
 "use client";
 
 import type { AssetRecord } from "@/api/assets";
+import type { CopyrightTemplateDefaults } from "@/lib/copyright-defaults";
+import type { ExportSettings } from "@/lib/export-settings";
+import type { HeroBackLogoRecord } from "@/lib/hero-back-logos-db";
 import type { CardRecord } from "@/types/cards-db";
 import type {
   DeckEntryRecord,
@@ -9,7 +12,6 @@ import type {
   DeckSetRecord,
 } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
-import type { ExportSettings } from "@/lib/export-settings";
 
 export const BACKUP_SCHEMA_VERSION = 2 as const;
 export const BACKUP_FILE_EXTENSION = ".hqcc.json" as const;
@@ -26,6 +28,10 @@ export type AssetRecordExportV1 = AssetRecord & {
   dataUrl: string;
 };
 
+export type HeroBackLogoRecordExportV1 = HeroBackLogoRecord & {
+  dataUrl: string;
+};
+
 export type CardRecordExportCompactV1 = Omit<CardRecord, "thumbnailBlob"> & {
   thumbnailRef?: string | null;
   thumbnailMimeType?: string | null;
@@ -33,6 +39,10 @@ export type CardRecordExportCompactV1 = Omit<CardRecord, "thumbnailBlob"> & {
 };
 
 export type AssetRecordExportCompactV1 = AssetRecord & {
+  blobRef: string;
+};
+
+export type HeroBackLogoRecordExportCompactV1 = HeroBackLogoRecord & {
   blobRef: string;
 };
 
@@ -68,6 +78,7 @@ export interface HqccExportLocalStorageV1 {
 export interface HqccExportSettingsV1 {
   borderSwatches?: string[];
   defaultCopyright?: string;
+  copyrightTemplateDefaults?: CopyrightTemplateDefaults;
 }
 
 export interface HqccExportProfileV1 {
@@ -91,6 +102,7 @@ export interface HqccExportFileV1 {
   notes?: string;
   cards: CardRecordExportV1[];
   assets: AssetRecordExportV1[];
+  heroBackLogos?: HeroBackLogoRecordExportV1[];
   pairs?: PairRecord[];
   collections?: CollectionRecordExportV1[];
   decks?: DeckRecord[];
@@ -109,6 +121,7 @@ export interface HqccExportCompactFileV1 {
   notes?: string;
   cards: CardRecordExportCompactV1[];
   assets: AssetRecordExportCompactV1[];
+  heroBackLogos?: HeroBackLogoRecordExportCompactV1[];
   pairs?: PairRecord[];
   collections?: CollectionRecordExportV1[];
   decks?: DeckRecord[];
@@ -126,6 +139,7 @@ export type ExportResult = {
   meta: {
     cardsCount: number;
     assetsCount: number;
+    heroBackLogosCount: number;
     collectionsCount: number;
     decksCount: number;
     deckGroupsCount: number;
@@ -137,6 +151,7 @@ export type ExportResult = {
 export type ImportResult = {
   cardsCount: number;
   assetsCount: number;
+  heroBackLogosCount: number;
   collectionsCount: number;
   decksCount: number;
   deckGroupsCount: number;

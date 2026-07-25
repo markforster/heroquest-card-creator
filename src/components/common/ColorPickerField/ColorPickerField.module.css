@@ -26,8 +26,9 @@
   border: 1px solid var(--hq-input-border);
   background: var(--hq-input-bg);
   color: var(--hq-input-text);
-  font-size: 13px;
+  font-size: var(--hq-control-text-primary);
   font-family: var(--hq-font-form);
+  line-height: var(--hq-control-line-height);
   text-transform: uppercase;
 }
 
@@ -70,7 +71,7 @@
 
 .popover {
   position: fixed;
-  z-index: 20;
+  z-index: 1400;
   width: 220px;
   max-width: calc(100vw - 2rem);
   border-radius: 12px;
@@ -78,34 +79,6 @@
   background: var(--hq-popover-bg);
   box-shadow: var(--hq-popover-shadow);
   padding: 12px;
-}
-
-.tabHeader {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--hq-tab-bg);
-  border: 1px solid var(--hq-tab-border);
-  margin-bottom: 12px;
-}
-
-.tabButton {
-  border: none;
-  background: transparent;
-  color: var(--hq-tab-text);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 6px 10px;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.tabButtonActive {
-  background: var(--hq-tab-active-bg);
-  color: var(--hq-tab-active-text);
 }
 
 .tabContent {
@@ -136,13 +109,6 @@
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 8px;
-}
-
-.presetSwatches {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(22px, 1fr));
-  gap: 6px;
-  width: 100%;
 }
 
 .swatches {
@@ -320,7 +286,8 @@
 }
 
 .smartPopoverHeader {
-  font-size: 12px;
+  font-size: var(--hq-control-text-secondary);
+  line-height: var(--hq-control-line-height);
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--hq-text-muted);
@@ -347,7 +314,8 @@
 }
 
 .smartPopoverGroupLabel {
-  font-size: 11px;
+  font-size: var(--hq-control-text-helper);
+  line-height: var(--hq-control-line-height);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--hq-text-muted);
@@ -364,6 +332,7 @@
 }
 
 .smartPopoverHint {
-  font-size: 12px;
+  font-size: var(--hq-control-text-helper);
+  line-height: var(--hq-control-line-height);
   color: var(--hq-text-muted);
 }

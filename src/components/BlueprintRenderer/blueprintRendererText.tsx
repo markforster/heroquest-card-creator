@@ -1,9 +1,18 @@
 "use client";
 
 import CardTextBlock, {
+  clipRowsToHeight,
   layoutCardText,
   measureCardTextMaxLineWidth,
 } from "@/components/Cards/CardParts/CardTextBlock";
+import {
+  EDITOR_TARGET_IDS,
+  useRegisterHoverAdornment,
+  useSvgFocusTarget,
+} from "@/components/Cards/CardEditor/EditorTargetsContext";
+import {
+  padBounds,
+} from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
@@ -19,17 +28,21 @@ import {
   DEVELOPER_CREDIT_TEXT,
   DEVELOPER_CREDIT_TOP_INSET,
 } from "@/config/developer-credit";
-import { cardTemplatesById } from "@/data/card-templates";
 import { layerTypes } from "@/data/card-systems/types";
 import { supportsBlueprintTextFitToBounds } from "@/lib/blueprint-text";
-import { resolveEffectiveFace } from "@/lib/card-face";
+import {
+  getCardShowCopyrightValue,
+  getCopyrightLayerRotation,
+  resolveCardCopyrightText,
+} from "@/lib/copyright-defaults";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import type { Blueprint, BlueprintBounds, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
-import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
 import { getLayerBounds, isPrimaryBodyTextLayer } from "./blueprintRendererShared";
+
+const TEXT_HOVER_OUTSET = 16;
 
 function resolveVisibleCopyrightBounds({
   blueprint,
@@ -41,33 +54,18 @@ function resolveVisibleCopyrightBounds({
   defaultCopyright: string;
 }) {
   if (!cardData) return null;
-  const template = cardTemplatesById[blueprint.templateId];
-  const effectiveFace = template
-    ? resolveEffectiveFace((cardData as { face?: CardFace }).face, template.defaultFace)
-    : (cardData as { face?: CardFace }).face;
-  if (effectiveFace !== "front") return null;
-  const showCopyright =
-    typeof (cardData as { showCopyright?: boolean }).showCopyright === "boolean"
-      ? (cardData as { showCopyright?: boolean }).showCopyright
-      : undefined;
+  const showCopyright = getCardShowCopyrightValue(cardData);
   if (showCopyright === false) return null;
 
   const copyrightLayer = blueprint.layers.find((entry) => entry.type === layerTypes.copyright);
   if (!copyrightLayer) return null;
 
   const textKey = copyrightLayer.bind?.textKey;
-  const overrideValue =
-    textKey && cardData
-      ? ((cardData as Record<string, unknown>)[textKey] as string | null | undefined)
-      : undefined;
-  const normalizedOverride = typeof overrideValue === "string" ? overrideValue.trim() : "";
-  const normalizedDefault = defaultCopyright.trim();
-  const resolvedText =
-    normalizedOverride.length > 0
-      ? normalizedOverride
-      : normalizedDefault.length > 0
-        ? normalizedDefault
-        : "";
+  const resolvedText = resolveCardCopyrightText(
+    cardData as Record<string, unknown> | undefined,
+    defaultCopyright,
+    textKey,
+  );
   if (!resolvedText) return null;
 
   return getLayerBounds(blueprint, copyrightLayer);
@@ -180,13 +178,29 @@ export function TextLayer({
   layer,
   cardData,
   showTextBounds = false,
+  suppressPreviewOnlyWarnings = false,
 }: {
   blueprint: Blueprint;
   layer: BlueprintLayer;
   cardData?: CardDataByTemplate[TemplateId];
   showTextBounds?: boolean;
+  suppressPreviewOnlyWarnings?: boolean;
 }) {
   const { defaultCopyright } = useCopyrightSettings();
+  const bodyTextFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.textMain);
+  const showBodyTextHover = layer.type === layerTypes.text && isPrimaryBodyTextLayer(blueprint, layer);
+  const initialTextBounds = layer.type === layerTypes.text ? getLayerBounds(blueprint, layer) : null;
+
+  useRegisterHoverAdornment(
+    EDITOR_TARGET_IDS.textMain,
+    showBodyTextHover && initialTextBounds
+      ? {
+          kind: "rect",
+          ...padBounds(initialTextBounds, TEXT_HOVER_OUTSET),
+          radius: 14,
+        }
+      : null,
+  );
 
   if (layer.type !== layerTypes.text) return null;
   if (!layer.bind?.textKey) return null;
@@ -273,6 +287,8 @@ export function TextLayer({
       : false;
   const allowBodyTextFitToBounds =
     textKey === "description" ? supportsBlueprintTextFitToBounds(layer) : false;
+  const showOverflowWarning =
+    !suppressPreviewOnlyWarnings && layer.props?.textLayoutMode === "fixed-bounds";
   const fill = bodyTextColor ?? layerFill;
   const letterSpacingEm =
     typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;
@@ -442,7 +458,7 @@ export function TextLayer({
   if (effectiveBackdrop.fitMode === "fit-to-text" && shouldShowBackdrop) {
     const fontSizeResolved = fontSize ?? 22;
     const safeWidth = Math.max(0, textBoundsBase.width - textPadding * 2);
-    const { lines, lineHeight: effectiveLineHeight } = layoutCardText({
+    const { totalHeight } = layoutCardText({
       text: text as string,
       width: safeWidth,
       fontSize: fontSizeResolved,
@@ -455,9 +471,7 @@ export function TextLayer({
         ? fontSizeResolved
         : 0;
     const maxTextHeight = Math.max(0, backdropBounds.height - textPadding * 2 - minBottomPadding);
-    const maxLinesByHeight = Math.floor(maxTextHeight / effectiveLineHeight);
-    const effectiveLines = Math.min(lines.length, Math.max(0, maxLinesByHeight));
-    const textHeight = effectiveLines * effectiveLineHeight;
+    const textHeight = Math.min(totalHeight, maxTextHeight);
     const desiredHeight = Math.min(
       backdropBounds.height,
       textHeight + textPadding * 2 + minBottomPadding,
@@ -497,6 +511,7 @@ export function TextLayer({
 
   const flushBackdrop = effectiveBackdrop.insetMode === "flush";
   const effectiveCornerRadius = flushBackdrop ? { top: 0, bottom: 0 } : cornerRadius;
+  const hoverBounds = shouldShowBackdrop ? backdropBounds : textBoundsBase;
 
   if (useSegmentedBackdrop) {
     const fontSizeResolved = fontSize ?? 22;
@@ -517,7 +532,7 @@ export function TextLayer({
       const remainingBubbleHeight = backdropBounds.y + backdropBounds.height - cursorBubbleY;
       if (remainingBubbleHeight <= 0) return;
 
-      const { lines, lineHeight: resolvedLineHeight } = layoutCardText({
+      const { rows, lines, lineHeight: resolvedLineHeight } = layoutCardText({
         text: segment,
         width: textAreaWidth,
         fontSize: fontSizeResolved,
@@ -546,11 +561,11 @@ export function TextLayer({
         0,
         availableForThisSegment - bubbleTopPadding - textPadding - minBottomPadding,
       );
-      const maxLines = Math.floor(maxTextHeight / resolvedLineHeight);
-      if (maxLines <= 0) return;
+      const visibleRows = clipRowsToHeight(rows, maxTextHeight);
+      const visibleTextRows = visibleRows.filter((row) => row.kind !== "paragraph-gap");
+      if (visibleTextRows.length === 0) return;
 
-      const visibleLines = Math.min(lines.length, maxLines);
-      const textHeight = visibleLines * resolvedLineHeight;
+      const textHeight = visibleRows.reduce((sum, row) => sum + row.height, 0);
       const bubbleHeight =
         isLastSegment && isFullHeight
           ? availableForThisSegment
@@ -584,7 +599,20 @@ export function TextLayer({
     const segmentCount = segmentItems.length;
 
     return (
-      <Layer key={layer.id}>
+      <Layer key={layer.id} {...(showBodyTextHover ? bodyTextFocusProps : {})}>
+        {showBodyTextHover ? (
+          <>
+            <rect
+              x={hoverBounds.x}
+              y={hoverBounds.y}
+              width={hoverBounds.width}
+              height={hoverBounds.height}
+              fill="transparent"
+              pointerEvents="all"
+              data-hqcc-hit-area={EDITOR_TARGET_IDS.textMain}
+            />
+          </>
+        ) : null}
         {segmentItems.map((segment, index) => {
           const segmentCornerRadius = flushBackdrop
             ? { top: 0, bottom: 0 }
@@ -615,6 +643,7 @@ export function TextLayer({
                 align={align}
                 debug={showTextBounds}
                 fitToBounds={allowBodyTextFitToBounds && bodyTextFitToBounds}
+                showOverflowWarning={showOverflowWarning}
               />
             </g>
           );
@@ -626,7 +655,34 @@ export function TextLayer({
   const backdropPath = buildBackdropPath(backdropBounds, effectiveCornerRadius);
 
   return (
-    <Layer key={layer.id}>
+    <Layer key={layer.id} {...(showBodyTextHover ? bodyTextFocusProps : {})}>
+      {showBodyTextHover ? (
+        shouldShowBackdrop ? (
+          <>
+            <rect
+              x={hoverBounds.x}
+              y={hoverBounds.y}
+              width={hoverBounds.width}
+              height={hoverBounds.height}
+              fill="transparent"
+              pointerEvents="all"
+              data-hqcc-hit-area={EDITOR_TARGET_IDS.textMain}
+            />
+          </>
+        ) : (
+          <>
+            <rect
+              x={hoverBounds.x}
+              y={hoverBounds.y}
+              width={hoverBounds.width}
+              height={hoverBounds.height}
+              fill="transparent"
+              pointerEvents="all"
+              data-hqcc-hit-area={EDITOR_TARGET_IDS.textMain}
+            />
+          </>
+        )
+      ) : null}
       {shouldShowBackdrop ? (
         <path d={backdropPath} fill={effectiveBackdrop.color} opacity={effectiveBackdrop.opacity} />
       ) : null}
@@ -642,6 +698,7 @@ export function TextLayer({
         align={align}
         debug={showTextBounds}
         fitToBounds={allowBodyTextFitToBounds && bodyTextFitToBounds}
+        showOverflowWarning={showOverflowWarning}
       />
     </Layer>
   );
@@ -660,37 +717,45 @@ export function CopyrightLayer({
 }) {
   const { defaultCopyright } = useCopyrightSettings();
   const { showTextBounds } = useDebugVisuals();
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.copyright);
+  const bounds = layer.type === "copyright" ? getLayerBounds(blueprint, layer) : null;
+  const hoverBounds = bounds ? padBounds(bounds, 6) : null;
+  const rotation = getCopyrightLayerRotation(layer);
+  const centerX = bounds ? bounds.x + bounds.width / 2 : 0;
+  const centerY = bounds ? bounds.y + bounds.height / 2 : 0;
+  const rotationTransform =
+    rotation === 0 ? undefined : `rotate(${rotation} ${centerX} ${centerY})`;
+
+  useRegisterHoverAdornment(
+    EDITOR_TARGET_IDS.copyright,
+    hoverBounds
+      ? {
+          kind: "rect",
+          x: hoverBounds.x,
+          y: hoverBounds.y,
+          width: hoverBounds.width,
+          height: hoverBounds.height,
+          radius: 10,
+          transform: rotationTransform,
+        }
+      : null,
+  );
 
   if (layer.type !== "copyright") return null;
   if (!cardData) return null;
 
-  const template = cardTemplatesById[blueprint.templateId];
-  const effectiveFace = template
-    ? resolveEffectiveFace((cardData as { face?: CardFace }).face, template.defaultFace)
-    : (cardData as { face?: CardFace }).face;
-  if (effectiveFace !== "front") return null;
-  const showCopyright =
-    typeof (cardData as { showCopyright?: boolean }).showCopyright === "boolean"
-      ? (cardData as { showCopyright?: boolean }).showCopyright
-      : undefined;
+  const showCopyright = getCardShowCopyrightValue(cardData);
   if (showCopyright === false) return null;
 
   const textKey = layer.bind?.textKey;
-  const overrideValue =
-    textKey && cardData
-      ? ((cardData as Record<string, unknown>)[textKey] as string | null | undefined)
-      : undefined;
-  const normalizedOverride = typeof overrideValue === "string" ? overrideValue.trim() : "";
-  const normalizedDefault = defaultCopyright.trim();
-  const resolvedText =
-    normalizedOverride.length > 0
-      ? normalizedOverride
-      : normalizedDefault.length > 0
-        ? normalizedDefault
-        : "";
+  const resolvedText = resolveCardCopyrightText(
+    cardData as Record<string, unknown> | undefined,
+    defaultCopyright,
+    textKey,
+  );
   if (!resolvedText) return null;
+  if (!bounds) return null;
 
-  const bounds = getLayerBounds(blueprint, layer);
   const fontSize = typeof layer.props?.fontSize === "number" ? layer.props.fontSize : undefined;
   const lineHeight =
     typeof layer.props?.lineHeight === "number" ? layer.props.lineHeight : undefined;
@@ -712,7 +777,7 @@ export function CopyrightLayer({
       : undefined;
 
   return (
-    <Layer key={layer.id} data-layer-type="copyright">
+    <Layer key={layer.id} data-layer-type="copyright" {...svgFocusProps}>
       {showTextBounds ? (
         <rect
           x={bounds.x}
@@ -723,18 +788,71 @@ export function CopyrightLayer({
           stroke="#00e5ff"
           strokeWidth={2}
           data-debug-bounds="true"
+          transform={rotationTransform}
         />
       ) : null}
-      <CardTextBlock
-        text={resolvedText}
-        bounds={bounds}
-        fontSize={fontSize}
-        lineHeight={lineHeight}
-        fontWeight={fontWeight}
-        fontFamily={fontFamily}
-        fill={fill}
-        letterSpacingEm={letterSpacingEm}
-        align={align}
+      <g transform={rotationTransform}>
+        <CardTextBlock
+          text={resolvedText}
+          bounds={bounds}
+          fontSize={fontSize}
+          lineHeight={lineHeight}
+          fontWeight={fontWeight}
+          fontFamily={fontFamily}
+          fill={fill}
+          letterSpacingEm={letterSpacingEm}
+          align={align}
+        />
+      </g>
+    </Layer>
+  );
+}
+
+export function CopyrightLayerHitArea({
+  blueprint,
+  layer,
+  cardData,
+}: {
+  blueprint: Blueprint;
+  layer: BlueprintLayer;
+  cardData?: CardDataByTemplate[TemplateId];
+}) {
+  const { defaultCopyright } = useCopyrightSettings();
+  const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.copyright);
+  const bounds = layer.type === "copyright" ? getLayerBounds(blueprint, layer) : null;
+
+  if (layer.type !== "copyright") return null;
+  if (!cardData) return null;
+
+  const showCopyright = getCardShowCopyrightValue(cardData);
+  if (showCopyright === false) return null;
+
+  const textKey = layer.bind?.textKey;
+  const resolvedText = resolveCardCopyrightText(
+    cardData as Record<string, unknown> | undefined,
+    defaultCopyright,
+    textKey,
+  );
+  if (!resolvedText) return null;
+  if (!bounds) return null;
+
+  const rotation = getCopyrightLayerRotation(layer);
+  const centerX = bounds.x + bounds.width / 2;
+  const centerY = bounds.y + bounds.height / 2;
+  const rotationTransform =
+    rotation === 0 ? undefined : `rotate(${rotation} ${centerX} ${centerY})`;
+
+  return (
+    <Layer {...svgFocusProps}>
+      <rect
+        x={bounds.x}
+        y={bounds.y}
+        width={bounds.width}
+        height={bounds.height}
+        fill="transparent"
+        pointerEvents="all"
+        data-hqcc-hit-area={EDITOR_TARGET_IDS.copyright}
+        transform={rotationTransform}
       />
     </Layer>
   );

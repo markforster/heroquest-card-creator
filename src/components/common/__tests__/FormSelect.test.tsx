@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
 
-import FormSelect from "@/components/common/FormSelect";
+import FormSelect, { getFormSelectStyles } from "@/components/common/FormSelect";
+
+import type { ReactNode } from "react";
 
 type MockOption = {
   value: string;
@@ -114,5 +115,42 @@ describe("FormSelect", () => {
 
     expect(screen.getByTestId("mock-react-select-selected")).toHaveTextContent("Alpha default");
     expect(screen.getByTestId("mock-react-select-options")).toHaveTextContent("Alpha default");
+  });
+
+  it("uses the restored standard layout styles by default", () => {
+    const styles = getFormSelectStyles<MockOption>(false);
+
+    expect(styles.control?.({}, {} as never)).toMatchObject({
+      alignItems: "center",
+    });
+    expect(styles.valueContainer?.({}, {} as never)).toMatchObject({
+      display: "flex",
+      padding: "0.25rem 0.5rem",
+    });
+    expect(styles.dropdownIndicator?.({}, {} as never)).toMatchObject({
+      alignSelf: "stretch",
+      padding: "0.25rem 0.5rem 0.25rem 0",
+    });
+    expect(styles.input?.({}, {} as never)).toMatchObject({
+      lineHeight: "var(--hq-control-line-height)",
+    });
+  });
+
+  it("supports the preview layout variant for image-heavy select values", () => {
+    const styles = getFormSelectStyles<MockOption>(false, "preview");
+
+    expect(styles.control?.({}, {} as never)).toMatchObject({
+      alignItems: "stretch",
+    });
+    expect(styles.valueContainer?.({}, {} as never)).toMatchObject({
+      padding: "0 0.5rem",
+    });
+    expect(styles.dropdownIndicator?.({}, {} as never)).toMatchObject({
+      alignSelf: "center",
+      padding: "0 0.5rem 0 0",
+    });
+    expect(styles.input?.({}, {} as never)).toMatchObject({
+      lineHeight: 0,
+    });
   });
 });

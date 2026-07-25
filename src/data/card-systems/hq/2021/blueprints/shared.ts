@@ -4,7 +4,7 @@ import type { BlueprintBounds } from "@/types/blueprints";
 export const DESCRIPTION_FONT_SIZE = savg(32);
 export const DESCRIPTION_LINE_HEIGHT = DESCRIPTION_FONT_SIZE * 1.25;
 export const DESCRIPTION_LETTER_SPACING = 0.000015;
-export const HERO_MONSTER_BODY_FONT_SIZE = savg(26);
+export const HERO_MONSTER_BODY_FONT_SIZE = savg(23.4);
 export const HERO_MONSTER_BODY_LINE_HEIGHT = HERO_MONSTER_BODY_FONT_SIZE * 1.05;
 export const HERO_MONSTER_BODY_LETTER_SPACING = 0.000015;
 export const COPYRIGHT_FONT_SIZE = savg(20);
@@ -35,6 +35,13 @@ export const scaleBounds = (bounds: BlueprintBounds): BlueprintBounds => ({
   y: sy(bounds.y),
   width: sx(bounds.width),
   height: sy(bounds.height),
+});
+
+export const COPYRIGHT_BOUNDS_ROTATED_RIGHT = scaleBounds({
+  x: 355,
+  y: 514,
+  width: 630,
+  height: 22,
 });
 
 export const makeRibbonBounds = (overrides?: Partial<typeof RIBBON_BOUNDS>) =>

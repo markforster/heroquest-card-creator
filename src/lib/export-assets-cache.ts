@@ -1,6 +1,7 @@
 "use client";
 
 import { apiClient } from "@/api/client";
+import { getHeroBackLogoBlob } from "@/lib/hero-back-logos-db";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";
@@ -16,6 +17,9 @@ type AssetSource = {
   templateId?: string;
   title?: string;
   name?: string;
+  heroBackLogoMode?: string;
+  heroBackLogoId?: string;
+  heroBackLogoName?: string;
 };
 
 export const EXPORT_CHUNK_SIZE = 12;
@@ -26,7 +30,7 @@ export type MissingAssetReport = {
   templateId: string;
   face: string;
   thumbnailBlob?: Blob | null;
-  missing: { label: "image" | "icon"; id: string; name: string }[];
+  missing: { label: "image" | "icon" | "logo"; id: string; name: string }[];
 };
 
 export function collectAssetIdsFromCard(
@@ -44,6 +48,16 @@ export function collectAssetIdsFromCard(
     ids.push(source.iconAssetId);
   }
   return ids;
+}
+
+export function collectHeroBackLogoIdsFromCard(
+  card: CardRecord | CardDataByTemplate[TemplateId],
+): string[] {
+  const source = card as AssetSource;
+  if (source.heroBackLogoMode !== "custom" || !source.heroBackLogoId) {
+    return [];
+  }
+  return [source.heroBackLogoId];
 }
 
 export async function buildAssetCache(assetIds: string[]): Promise<{
@@ -72,6 +86,32 @@ export async function buildAssetCache(assetIds: string[]): Promise<{
   return { cache, missing };
 }
 
+export async function buildHeroBackLogoCache(logoIds: string[]): Promise<{
+  cache: Map<string, Blob>;
+  missing: Set<string>;
+}> {
+  const cache = new Map<string, Blob>();
+  const missing = new Set<string>();
+  const uniqueIds = Array.from(new Set(logoIds));
+
+  await Promise.all(
+    uniqueIds.map(async (id) => {
+      try {
+        const blob = await getHeroBackLogoBlob(id);
+        if (blob) {
+          cache.set(id, blob);
+        } else {
+          missing.add(id);
+        }
+      } catch {
+        missing.add(id);
+      }
+    }),
+  );
+
+  return { cache, missing };
+}
+
 export async function buildMissingAssetsReport(
   cards: CardRecord[],
 ): Promise<MissingAssetReport[]> {
@@ -82,7 +122,9 @@ export async function buildMissingAssetsReport(
     if (!chunk.length) break;
 
     const assetIds = chunk.flatMap((card) => collectAssetIdsFromCard(card));
+    const logoIds = chunk.flatMap((card) => collectHeroBackLogoIdsFromCard(card));
     const { missing } = await buildAssetCache(assetIds);
+    const { missing: missingLogos } = await buildHeroBackLogoCache(logoIds);
 
     chunk.forEach((card) => {
       const missingAssets: MissingAssetReport["missing"] = [];
@@ -98,6 +140,13 @@ export async function buildMissingAssetsReport(
           label: "icon",
           id: card.monsterIconAssetId,
           name: card.monsterIconAssetName ?? "unknown",
+        });
+      }
+      if (card.heroBackLogoMode === "custom" && card.heroBackLogoId && missingLogos.has(card.heroBackLogoId)) {
+        missingAssets.push({
+          label: "logo",
+          id: card.heroBackLogoId,
+          name: card.heroBackLogoName ?? "unknown",
         });
       }
       if (missingAssets.length > 0) {

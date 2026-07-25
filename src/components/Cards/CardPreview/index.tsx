@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import BlueprintRenderer from "@/components/BlueprintRenderer";
@@ -12,11 +12,12 @@ import { waitForAssetElements } from "@/components/Stockpile/stockpile-utils";
 import { ENABLE_WATERMARK, USE_ROUNDED_CARD_CLIP } from "@/config/flags";
 import { blueprintsByTemplateId, getCopyrightBounds } from "@/data/blueprints";
 import { useI18n } from "@/i18n/I18nProvider";
-import { collectCardAssetIds } from "@/lib/card-assets";
+import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
+import { collectCardAssetIds, collectCardHeroBackLogoIds } from "@/lib/card-assets";
 import { resolveCardPreviewFileName } from "@/lib/card-preview";
 import { computeAverageLuminance } from "@/lib/color-contrast";
 import { getSvgImageHref } from "@/lib/dom";
-import { buildAssetCache } from "@/lib/export-assets-cache";
+import { buildAssetCache, buildHeroBackLogoCache } from "@/lib/export-assets-cache";
 import {
   endExportLogging,
   logCardInfo,
@@ -28,7 +29,6 @@ import {
   logSummary,
   startExportLogging,
 } from "@/lib/export-logging";
-import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { addPngTextChunk } from "@/lib/png-metadata";
 import { renderSvgToCanvas } from "@/lib/render-svg-to-canvas";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
@@ -37,13 +37,21 @@ import { applyWatermarkToCanvas, shouldApplyWatermark } from "@/lib/watermark";
 import { APP_VERSION } from "@/version";
 
 import styles from "./CardPreview.module.css";
-import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "./consts";
 import { renderBleedCanvas } from "./cardPreviewBleedCanvas";
-import { resolveCopyrightTextStyle } from "./cardPreviewCopyright";
+import CardPreviewEditorOverlay from "./cardPreviewEditorOverlay";
 import { drawDeveloperCredit } from "./cardPreviewDeveloperCredit";
 import { mutateSvgForExport } from "./cardPreviewExportSvg";
+import { shouldClearPreviewSelection } from "./cardPreviewSelection";
+import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
+import {
+  CARD_CLIP_INSET,
+  CARD_CORNER_RADIUS,
+  getCardPreviewStageLayout,
+} from "./cardPreviewStage";
 
+import type { CSSProperties } from "react";
 import type { CardPreviewHandle, CardPreviewProps } from "./types";
+import { useOptionalEditorTargets } from "../CardEditor/EditorTargetsContext";
 
 function normalizeCopyrightColor(value?: string) {
   if (typeof value !== "string") return undefined;
@@ -51,9 +59,24 @@ function normalizeCopyrightColor(value?: string) {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+async function waitForSvgCommit() {
+  const scheduleFrame =
+    typeof window !== "undefined" && typeof window.requestAnimationFrame === "function"
+      ? window.requestAnimationFrame.bind(window)
+      : (callback: FrameRequestCallback) => window.setTimeout(() => callback(performance.now()), 0);
+  await new Promise<void>((resolve) => {
+    scheduleFrame(() => resolve());
+  });
+}
+
 const COPYRIGHT_LUMINANCE_THRESHOLD = 0.52;
 const COPYRIGHT_SAMPLE_INSET_RATIO = 0.2;
 const COPYRIGHT_SAMPLE_VERTICAL_SHIFT_MULTIPLIER = 1.5;
+const CARD_PREVIEW_STAGE_LAYOUT = getCardPreviewStageLayout();
+const CARD_PREVIEW_STAGE_STYLE = {
+  "--card-preview-stage-width": `${CARD_PREVIEW_STAGE_LAYOUT.svgWidthPercent}%`,
+  "--card-preview-stage-height": `${CARD_PREVIEW_STAGE_LAYOUT.svgHeightPercent}%`,
+} as CSSProperties;
 
 const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
   (
@@ -63,10 +86,12 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
       backgroundSrc,
       cardData,
       copyrightTextColor: copyrightTextColorProp,
+      suppressPreviewOnlyWarnings = false,
     },
     ref,
   ) => {
     const { t } = useI18n();
+    const editorTargets = useOptionalEditorTargets();
     const { defaultCopyright } = useCopyrightSettings();
     const [developerCreditDisabled] = useLocalStorageBoolean("hqcc.developerCreditDisabled", false);
     const developerCreditEnabled = !developerCreditDisabled;
@@ -484,13 +509,17 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 
             await this.waitForBackgroundLoaded?.();
             await this.syncCopyrightContrast?.();
+            await waitForSvgCommit();
 
             const assetIds = collectCardAssetIds(cardData);
+            const heroBackLogoIds = collectCardHeroBackLogoIds(cardData);
             const { cache, missing } = await buildAssetCache(assetIds);
+            const { cache: heroBackLogoCache, missing: missingLogos } =
+              await buildHeroBackLogoCache(heroBackLogoIds);
             logAssetPrefetch(session, {
-              total: assetIds.length,
-              cached: cache.size,
-              missing: missing.size,
+              total: assetIds.length + heroBackLogoIds.length,
+              cached: cache.size + heroBackLogoCache.size,
+              missing: missing.size + missingLogos.size,
             });
             const missingAssets: { label: string; id: string; name?: string | null }[] = [];
             if (imageAssetId && missing.has(imageAssetId)) {
@@ -507,6 +536,16 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                 name: iconAssetName ?? null,
               });
             }
+            const heroBackLogoMode = (cardData as { heroBackLogoMode?: string })?.heroBackLogoMode;
+            const heroBackLogoId = (cardData as { heroBackLogoId?: string })?.heroBackLogoId;
+            const heroBackLogoName = (cardData as { heroBackLogoName?: string })?.heroBackLogoName;
+            if (heroBackLogoMode === "custom" && heroBackLogoId && missingLogos.has(heroBackLogoId)) {
+              missingAssets.push({
+                label: "logo",
+                id: heroBackLogoId,
+                name: heroBackLogoName ?? null,
+              });
+            }
             if (missingAssets.length > 0) {
               failures += 1;
               const missingSummary = missingAssets
@@ -519,8 +558,8 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             }
 
             const waitStart = now();
-            if (assetIds.length) {
-              await waitForAssetElements(() => svgRef.current, assetIds);
+            if (assetIds.length || heroBackLogoIds.length) {
+              await waitForAssetElements(() => svgRef.current, assetIds, heroBackLogoIds);
             }
             logCardWait(session, { durationMs: now() - waitStart });
 
@@ -551,6 +590,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                     roundedCorners: effectiveRounded,
                     loggingId: session.sessionId,
                     assetBlobsById: cache,
+                    heroBackLogoBlobsById: heroBackLogoCache,
                     templateId,
                     developerCreditEnabled,
                   })
@@ -562,6 +602,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                     removeDebugBounds: true,
                     loggingId: session.sessionId,
                     assetBlobsById: cache,
+                    heroBackLogoBlobsById: heroBackLogoCache,
                     mutateSvg: (svg) =>
                       mutateSvgForExport(svg, {
                         mode: "standard",
@@ -643,6 +684,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 
           await this.waitForBackgroundLoaded?.();
           await this.syncCopyrightContrast?.();
+          await waitForSvgCommit();
 
           const width = options?.width ?? CARD_WIDTH;
           const height = options?.height ?? CARD_HEIGHT;
@@ -673,6 +715,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   roundedCorners: effectiveRounded,
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
+                  heroBackLogoBlobsById: options?.heroBackLogoBlobsById,
                   templateId,
                   developerCreditEnabled,
                 })
@@ -684,6 +727,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   removeDebugBounds: true,
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
+                  heroBackLogoBlobsById: options?.heroBackLogoBlobsById,
                   mutateSvg: (svg) =>
                     mutateSvgForExport(svg, {
                       mode: "standard",
@@ -730,6 +774,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
 
           await this.waitForBackgroundLoaded?.();
           await this.syncCopyrightContrast?.();
+          await waitForSvgCommit();
 
           const width = options?.width ?? CARD_WIDTH;
           const height = options?.height ?? CARD_HEIGHT;
@@ -760,6 +805,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   roundedCorners: effectiveRounded,
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
+                  heroBackLogoBlobsById: options?.heroBackLogoBlobsById,
                   templateId,
                   developerCreditEnabled,
                 })
@@ -771,6 +817,7 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                   removeDebugBounds: true,
                   loggingId: options?.loggingId,
                   assetBlobsById: options?.assetBlobsById,
+                  heroBackLogoBlobsById: options?.heroBackLogoBlobsById,
                   mutateSvg: (svg) =>
                     mutateSvgForExport(svg, {
                       mode: "standard",
@@ -821,6 +868,13 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             height,
             existingCanvas: canvasRef.current,
             removeDebugBounds,
+            mutateSvg: (svg) =>
+              mutateSvgForExport(svg, {
+                mode: "standard",
+                roundedCorners: true,
+                developerCreditEnabled: false,
+                templateId,
+              }),
           });
           if (canvas) {
             canvasRef.current = canvas;
@@ -851,17 +905,28 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
       [cardData, templateId, templateName, syncCopyrightContrast, developerCreditEnabled],
     );
 
+    const handlePreviewClick = useCallback(
+      (event: React.MouseEvent<SVGSVGElement>) => {
+        if (!editorTargets?.selectedTargetId) return;
+        if (!shouldClearPreviewSelection(event.target)) return;
+        editorTargets.setSelectedTargetId(null);
+      },
+      [editorTargets],
+    );
+
     return (
       <div className={styles.root}>
         <div className={styles.frame}>
           <svg
             ref={svgRef}
             className={styles.svg}
-            viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`}
+            style={CARD_PREVIEW_STAGE_STYLE}
+            viewBox={`0 0 ${CARD_PREVIEW_STAGE_LAYOUT.stageWidth} ${CARD_PREVIEW_STAGE_LAYOUT.stageHeight}`}
             role="img"
             onContextMenu={(event) => {
               event.preventDefault();
             }}
+            onClick={handlePreviewClick}
             aria-label={
               templateName
                 ? `${t("aria.previewOf")} ${templateName} ${t("aria.card")}`
@@ -880,29 +945,36 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
                 />
               </clipPath>
             </defs>
-            <g clipPath="url(#cardClip)">
-              <BlueprintRenderer
-                templateId={templateId}
-                templateName={templateName}
-                background={background}
-                backgroundLoaded={backgroundLoaded}
-                cardData={cardData}
-                copyrightTextColor={copyrightTextColor}
-                developerCreditEnabled={developerCreditEnabled}
+            <g
+              transform={`translate(${CARD_PREVIEW_STAGE_LAYOUT.cardOriginX} ${CARD_PREVIEW_STAGE_LAYOUT.cardOriginY})`}
+              data-card-root="true"
+            >
+              <g clipPath="url(#cardClip)" data-card-content="true">
+                <BlueprintRenderer
+                  templateId={templateId}
+                  templateName={templateName}
+                  background={background}
+                  backgroundLoaded={backgroundLoaded}
+                  cardData={cardData}
+                  copyrightTextColor={copyrightTextColor}
+                  developerCreditEnabled={developerCreditEnabled}
+                  suppressPreviewOnlyWarnings={suppressPreviewOnlyWarnings}
+                />
+              </g>
+              <rect
+                x={CARD_CLIP_INSET}
+                y={CARD_CLIP_INSET}
+                width={CARD_WIDTH - CARD_CLIP_INSET * 2}
+                height={CARD_HEIGHT - CARD_CLIP_INSET * 2}
+                rx={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
+                ry={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
+                fill="none"
+                stroke="#fff0"
+                strokeWidth={3}
+                data-card-outline="true"
               />
             </g>
-            <rect
-              x={CARD_CLIP_INSET}
-              y={CARD_CLIP_INSET}
-              width={CARD_WIDTH - CARD_CLIP_INSET * 2}
-              height={CARD_HEIGHT - CARD_CLIP_INSET * 2}
-              rx={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
-              ry={USE_ROUNDED_CARD_CLIP ? CARD_CORNER_RADIUS : 0}
-              fill="none"
-              stroke="#fff0"
-              strokeWidth={3}
-              data-card-outline="true"
-            />
+            <CardPreviewEditorOverlay templateId={templateId} cardData={cardData} />
           </svg>
           {!backgroundLoaded ? (
             <div className={styles.spinnerOverlay}>

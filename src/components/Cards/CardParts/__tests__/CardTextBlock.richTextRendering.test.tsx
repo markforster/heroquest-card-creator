@@ -33,4 +33,229 @@ describe("CardTextBlock rich text rendering", () => {
     expect((underlineSpan as unknown as SVGElement).style.textDecoration).toBe("underline");
     expect((colorSpan as unknown as SVGElement).style.fill).toBe("#ff0000");
   });
+
+  it("renders scaled inline spans with token-specific font sizes", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"Alpha <scale=1.5>Beta</scale>"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    const scaledSpan = screen.getByText("Beta");
+    expect((scaledSpan as unknown as SVGElement).style.fontSize).toBe("30px");
+  });
+
+  it("renders sc alias spans with token-specific font sizes", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"Alpha <sc=1.5>Beta</sc>"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    const scaledSpan = screen.getByText("Beta");
+    expect((scaledSpan as unknown as SVGElement).style.fontSize).toBe("30px");
+  });
+
+  it("renders title and subtitle blocks with their default macro styles", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"<title>Alpha</title>\n<subtitle>Beta</subtitle>"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    const titleSpan = screen.getByText("Alpha");
+    const subtitleSpan = screen.getByText("Beta");
+
+    expect((titleSpan as unknown as SVGElement).style.fontSize).toBe("24px");
+    expect((titleSpan as unknown as SVGElement).style.fontWeight).toBe("700");
+    expect((subtitleSpan as unknown as SVGElement).style.fontSize).toBe("24px");
+    expect((subtitleSpan as unknown as SVGElement).style.fontStyle).toBe("italic");
+  });
+
+  it("preserves nested inline formatting inside title and subtitle blocks", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"<title><color=#ff0000>Alpha</color></title>\n<subtitle><u>Beta</u></subtitle>"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    const titleSpan = screen.getByText("Alpha");
+    const subtitleSpan = screen.getByText("Beta");
+
+    expect((titleSpan as unknown as SVGElement).style.fill).toBe("#ff0000");
+    expect((titleSpan as unknown as SVGElement).style.fontWeight).toBe("700");
+    expect((subtitleSpan as unknown as SVGElement).style.textDecoration).toBe("underline");
+    expect((subtitleSpan as unknown as SVGElement).style.fontStyle).toBe("italic");
+  });
+
+  it("preserves block macro scale differences when fit-to-bounds shrinks the block", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"<title>Alpha</title>\nBeta"}
+          bounds={{ x: 0, y: 0, width: 300, height: 40 }}
+          fontSize={20}
+          lineHeight={20}
+          fitToBounds
+        />
+      </svg>,
+    );
+
+    const titleSpan = screen.getByText("Alpha");
+    const bodySpan = screen.getByText("Beta");
+    const titleFontSize = Number.parseFloat((titleSpan as unknown as SVGElement).style.fontSize);
+    const bodyFontSize = Number.parseFloat((bodySpan as unknown as SVGElement).style.fontSize);
+
+    expect(titleFontSize).toBeGreaterThan(bodyFontSize);
+    expect(titleFontSize / bodyFontSize).toBeCloseTo(1.2, 1);
+  });
+
+  it("ignores scale markup inside leader lines", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"[Loot[.]<scale=1.5>Gold</scale>]"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    const leaderValue = screen.getByText("Gold");
+    expect((leaderValue as unknown as SVGElement).style.fontSize).toBe("20px");
+  });
+
+  it("reduces paragraph spacing when fit-to-bounds shrinks multi-paragraph text", () => {
+    const { container: unfittedContainer } = render(
+      <svg>
+        <CardTextBlock
+          text={"Alpha\n\nBeta"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    const { container: fittedContainer } = render(
+      <svg>
+        <CardTextBlock
+          text={"Alpha\n\nBeta"}
+          bounds={{ x: 0, y: 0, width: 300, height: 40 }}
+          fontSize={20}
+          lineHeight={20}
+          fitToBounds
+        />
+      </svg>,
+    );
+
+    const unfittedTextNodes = Array.from(unfittedContainer.querySelectorAll("text"));
+    const fittedTextNodes = Array.from(fittedContainer.querySelectorAll("text"));
+    const unfittedGap =
+      Number(unfittedTextNodes[1]?.getAttribute("y")) - Number(unfittedTextNodes[0]?.getAttribute("y"));
+    const fittedGap =
+      Number(fittedTextNodes[1]?.getAttribute("y")) - Number(fittedTextNodes[0]?.getAttribute("y"));
+
+    expect(unfittedTextNodes).toHaveLength(2);
+    expect(fittedTextNodes).toHaveLength(2);
+    expect(fittedGap).toBeLessThan(unfittedGap);
+  });
+
+  it("clips by accumulated row height and drops overflowing paragraph gaps", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"Alpha\n\nBeta"}
+          bounds={{ x: 0, y: 0, width: 300, height: 30 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    expect(screen.getByText("Alpha")).toBeInTheDocument();
+    expect(screen.queryByText("Beta")).toBeNull();
+  });
+
+  it("renders a preview-only overflow warning strip for fixed-bounds overflow", () => {
+    const { container } = render(
+      <svg>
+        <CardTextBlock
+          text={"Alpha\nBeta"}
+          bounds={{ x: 0, y: 0, width: 300, height: 30 }}
+          fontSize={20}
+          lineHeight={20}
+          showOverflowWarning
+        />
+      </svg>,
+    );
+
+    const warningGroup = container.querySelector('[data-preview-only="overflow-warning"]');
+    const warningLines = warningGroup?.querySelectorAll("line") ?? [];
+    const warningFill = warningGroup?.querySelector('rect[fill^="url("]');
+    const warningLabel = screen.getByText("Text clipped");
+    const warningGradient = warningGroup?.querySelector("linearGradient");
+
+    expect(warningGroup).toBeInTheDocument();
+    expect(warningGroup).toHaveAttribute("data-overflow-warning", "true");
+    expect(warningFill).toBeInTheDocument();
+    expect(warningFill?.getAttribute("fill")).toMatch(/^url\(#.+\)$/);
+    expect(warningGradient).toBeInTheDocument();
+    expect(warningLabel).toBeInTheDocument();
+    expect(warningLabel).toHaveAttribute("fill", "#ffffff");
+    expect(warningLabel).toHaveAttribute("text-anchor", "middle");
+    expect(warningLines.length).toBeGreaterThan(3);
+  });
+
+  it("does not render the overflow warning strip when text fits", () => {
+    const { container } = render(
+      <svg>
+        <CardTextBlock
+          text="Alpha"
+          bounds={{ x: 0, y: 0, width: 300, height: 60 }}
+          fontSize={20}
+          lineHeight={20}
+          showOverflowWarning
+        />
+      </svg>,
+    );
+
+    expect(container.querySelector('[data-preview-only="overflow-warning"]')).toBeNull();
+  });
+
+  it("does not render the overflow warning strip unless enabled by the caller", () => {
+    const { container } = render(
+      <svg>
+        <CardTextBlock
+          text={"Alpha\nBeta"}
+          bounds={{ x: 0, y: 0, width: 300, height: 30 }}
+          fontSize={20}
+          lineHeight={20}
+        />
+      </svg>,
+    );
+
+    expect(container.querySelector('[data-preview-only="overflow-warning"]')).toBeNull();
+  });
 });

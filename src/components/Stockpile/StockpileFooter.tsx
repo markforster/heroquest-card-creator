@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-
-import { Lightbulb } from "lucide-react";
+import { useState } from "react";
 
 import styles from "@/app/page.module.css";
 import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
@@ -38,6 +36,8 @@ type StockpileFooterProps = {
   selectedCard?: CardRecord;
   hasMultiSelection: boolean;
   onLoadSelectedCard: () => void;
+  showBulkExportAction?: boolean;
+  showLoadAction?: boolean;
 };
 
 export default function StockpileFooter({
@@ -59,14 +59,14 @@ export default function StockpileFooter({
   selectedCard,
   hasMultiSelection,
   onLoadSelectedCard,
+  showBulkExportAction = true,
+  showLoadAction = true,
 }: StockpileFooterProps) {
   const { t } = useI18n();
   const formatMessage = (
     key: string,
     vars: Record<string, string | number>,
   ) => formatMessageWith(t as never, key as never, vars);
-  const [hintIndex, setHintIndex] = useState(0);
-  const [isHintVisible, setIsHintVisible] = useState(true);
   const [isApplyingPairSelection, setIsApplyingPairSelection] = useState(false);
   const [pendingPairFrontsUnpair, setPendingPairFrontsUnpair] = useState<{
     selectedIds: string[];
@@ -77,59 +77,6 @@ export default function StockpileFooter({
       locations: Array<{ groupId: string; groupTitle: string; setId: string; setTitle: string }>;
     }>;
   } | null>(null);
-
-  const hasSelection = selectedIds.length > 0;
-  const hints = useMemo(() => {
-    if (hasSelection) {
-      return [t("hint.stockpileDragCollection"), t("hint.stockpileExportSelected")];
-    }
-    return [
-      t("hint.stockpileSelect"),
-      t("hint.stockpileMultiSelect"),
-      t("hint.stockpileOpen"),
-    ];
-  }, [hasSelection, t]);
-
-  useEffect(() => {
-    setHintIndex(0);
-    setIsHintVisible(true);
-  }, [hints.length, hasSelection]);
-
-  useEffect(() => {
-    if (hints.length <= 1) return;
-    let cancelled = false;
-    let timeoutId: number | null = null;
-
-    const showHint = (index: number) => {
-      if (cancelled) return;
-      setHintIndex(index);
-      setIsHintVisible(true);
-      timeoutId = window.setTimeout(() => {
-        if (cancelled) return;
-        setIsHintVisible(false);
-        timeoutId = window.setTimeout(() => {
-          if (cancelled) return;
-          const nextIndex = index + 1;
-          if (nextIndex < hints.length) {
-            showHint(nextIndex);
-          } else {
-            timeoutId = window.setTimeout(() => {
-              showHint(0);
-            }, 10_000);
-          }
-        }, 400);
-      }, 8_000);
-    };
-
-    showHint(0);
-
-    return () => {
-      cancelled = true;
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-      }
-    };
-  }, [hints.length]);
 
   const buildPairFrontsImpact = async (
     removedFrontIds: string[],
@@ -240,48 +187,41 @@ export default function StockpileFooter({
           </div>
         ) : (
           <div className={`d-flex w-100 align-items-center ${styles.stockpileFooter} ${styles.uRowLg}`}>
-            <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">
-              {collectionControls ?? null}
-            </div>
-            <div className={styles.stockpileFooterHints}>
-              <div
-                className={`${styles.stockpileFooterHint} ${
-                  isHintVisible ? styles.stockpileFooterHintVisible : styles.stockpileFooterHintHidden
-                }`}
-              >
-                <Lightbulb className={styles.stockpileFooterHintIcon} aria-hidden="true" />
-                <span className={styles.stockpileFooterHintText}>{hints[hintIndex]}</span>
+            {collectionControls ?? null}
+            {showBulkExportAction || showLoadAction || onPdfExport ? (
+              <div className="d-flex flex-shrink-1 flex-grow-0 gap-2 ms-auto">
+                {onPdfExport && pdfExportLabel ? (
+                  <button
+                    type="button"
+                    className="btn btn-outline-light btn-sm"
+                    onClick={onPdfExport}
+                    disabled={!canPdfExport}
+                  >
+                    {pdfExportLabel}
+                  </button>
+                ) : null}
+                {showBulkExportAction ? (
+                  <button
+                    type="button"
+                    className="btn btn-outline-light btn-sm"
+                    onClick={onBulkExport}
+                    disabled={!canExport}
+                  >
+                    {exportLabel}
+                  </button>
+                ) : null}
+                {showLoadAction ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    disabled={!selectedCard || hasMultiSelection}
+                    onClick={onLoadSelectedCard}
+                  >
+                    {t("actions.load")}
+                  </button>
+                ) : null}
               </div>
-            </div>
-            <div className="flex-grow-1 flex-shrink-0" />
-            <div className="d-flex flex-shrink-1 flex-grow-0 gap-2">
-              {onPdfExport && pdfExportLabel ? (
-                <button
-                  type="button"
-                  className="btn btn-outline-light btn-sm"
-                  onClick={onPdfExport}
-                  disabled={!canPdfExport}
-                >
-                  {pdfExportLabel}
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className="btn btn-outline-light btn-sm"
-                onClick={onBulkExport}
-                disabled={!canExport}
-              >
-                {exportLabel}
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                disabled={!selectedCard || hasMultiSelection}
-                onClick={onLoadSelectedCard}
-              >
-                {t("actions.load")}
-              </button>
-            </div>
+            ) : null}
           </div>
         )}
       </div>

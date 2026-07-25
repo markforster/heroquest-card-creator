@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
+import { apiClient } from "@/api/client";
+import { resolvePairedOppositeFace } from "@/components/App/pages/cards/pairedFaceResolver";
+import { useEditorTargets } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CardPreview, { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import WebglPreview from "@/components/Cards/CardPreview/WebglPreview";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
@@ -14,8 +17,7 @@ import { KEEP_WEBGL_MOUNTED } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiClient } from "@/api/client";
-import { collectCardAssetIds } from "@/lib/card-assets";
+import { collectCardAssetIds, collectCardHeroBackLogoIds } from "@/lib/card-assets";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -36,6 +38,7 @@ export default function CardPreviewContainer({
 }: CardPreviewContainerProps) {
   const { language, t } = useI18n();
   const { previewRenderer, rotationResetToken, recenterToken } = usePreviewRenderer();
+  const { setHoveredTargetId } = useEditorTargets();
   const { preferences, isDragging } = useTextFittingPreferences();
   const { showTextBounds } = useDebugVisuals();
   const preferencesKey = JSON.stringify(preferences);
@@ -74,6 +77,11 @@ export default function CardPreviewContainer({
     template?.defaultFace ?? "front",
   );
   const assetIds = useMemo(() => collectCardAssetIds(cardData), [cardData]);
+  const heroBackLogoIds = useMemo(() => collectCardHeroBackLogoIds(cardData), [cardData]);
+
+  useEffect(() => {
+    setHoveredTargetId(null);
+  }, [previewRenderer, setHoveredTargetId]);
 
   useEffect(() => {
     if (!showWebgl || isDragging) return;
@@ -98,8 +106,8 @@ export default function CardPreviewContainer({
             window.requestAnimationFrame(() => resolve());
           });
           await handle.waitForBackgroundLoaded?.();
-          if (assetIds.length) {
-            await waitForAssetElements(() => handle.getSvgElement(), assetIds);
+          if (assetIds.length || heroBackLogoIds.length) {
+            await waitForAssetElements(() => handle.getSvgElement(), assetIds, heroBackLogoIds);
           }
           const canvas = await handle.renderToCanvas({
             width,
@@ -153,6 +161,7 @@ export default function CardPreviewContainer({
     showTextBounds,
     activeCardId,
     assetIds,
+    heroBackLogoIds,
   ]);
 
   useEffect(() => {
@@ -177,15 +186,18 @@ export default function CardPreviewContainer({
         try {
           let backId: string | null = null;
           if (activeCardId) {
+            const cards = await apiClient.listCards({ queries: { status: "saved" } });
+            if (!active) return;
             const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
-            const preferredMatch = preferredBackId
-              ? pairs.find((pair) => pair.backFaceId === preferredBackId)
-              : undefined;
-            const match =
-              preferredMatch ??
-              pairs.find((pair) => pair.frontFaceId === activeCardId && pair.backFaceId) ??
-              pairs.find((pair) => pair.backFaceId);
-            backId = match?.backFaceId ?? null;
+            if (!active) return;
+            const result = resolvePairedOppositeFace({
+              activeFaceId: activeCardId,
+              effectiveFace: "front",
+              preferredOppositeFaceId: preferredBackId,
+              pairs,
+              cards,
+            });
+            backId = result.resolvedCardId;
           }
           if (!backId) {
             setReverseCard(null);
@@ -225,32 +237,29 @@ export default function CardPreviewContainer({
           if (!active) return;
           const pairs = await apiClient.listPairs({ queries: { faceId: activeCardId } });
           if (!active) return;
-          const frontIds = new Set(
-            pairs.map((pair) => pair.frontFaceId).filter((id): id is string => Boolean(id)),
-          );
-          const matches = cards.filter((card) => frontIds.has(card.id));
-          matches.sort((a, b) => {
-            const aViewed = a.lastViewedAt ?? 0;
-            const bViewed = b.lastViewedAt ?? 0;
-            if (bViewed !== aViewed) return bViewed - aViewed;
-            if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
-            const aName = a.nameLower ?? a.name.toLocaleLowerCase();
-            const bName = b.nameLower ?? b.name.toLocaleLowerCase();
-            return aName.localeCompare(bName);
+          const { resolvedCardId } = resolvePairedOppositeFace({
+            activeFaceId: activeCardId,
+            effectiveFace: "back",
+            pairs,
+            cards,
           });
-          const preferred = matches[0];
-          if (!preferred) {
+          if (!resolvedCardId) {
             setReverseCard(null);
             return;
           }
-          const pairedTemplate = cardTemplatesById[preferred.templateId];
+          const record = await apiClient.getCard({ params: { id: resolvedCardId } });
+          if (!active || !record) {
+            setReverseCard(null);
+            return;
+          }
+          const pairedTemplate = cardTemplatesById[record.templateId];
           if (!pairedTemplate) {
             setReverseCard(null);
             return;
           }
-          const pairedData = cardRecordToCardData(preferred);
+          const pairedData = cardRecordToCardData(record);
           setReverseCard({
-            templateId: preferred.templateId,
+            templateId: record.templateId,
             templateName: getTemplateNameLabel(language, pairedTemplate),
             cardData: pairedData,
           });
@@ -281,6 +290,10 @@ export default function CardPreviewContainer({
     () => collectCardAssetIds(reverseCard?.cardData),
     [reverseCard?.cardData],
   );
+  const reverseHeroBackLogoIds = useMemo(
+    () => collectCardHeroBackLogoIds(reverseCard?.cardData),
+    [reverseCard?.cardData],
+  );
 
   useEffect(() => {
     if (!showWebgl || !reverseCard || isDragging) {
@@ -305,8 +318,12 @@ export default function CardPreviewContainer({
             window.requestAnimationFrame(() => resolve());
           });
           await handle.waitForBackgroundLoaded?.();
-          if (reverseAssetIds.length) {
-            await waitForAssetElements(() => handle.getSvgElement(), reverseAssetIds);
+          if (reverseAssetIds.length || reverseHeroBackLogoIds.length) {
+            await waitForAssetElements(
+              () => handle.getSvgElement(),
+              reverseAssetIds,
+              reverseHeroBackLogoIds,
+            );
           }
           const canvas = await handle.renderToCanvas({
             width,
@@ -349,6 +366,7 @@ export default function CardPreviewContainer({
     isDragging,
     showTextBounds,
     reverseAssetIds,
+    reverseHeroBackLogoIds,
   ]);
 
   useEffect(() => {

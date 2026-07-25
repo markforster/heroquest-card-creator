@@ -20,7 +20,8 @@ jest.mock("@/i18n/I18nProvider", () => ({
       if (key === "actions.clear") return "Clear";
       if (key === "decks.faces.back") return "Back faces";
       if (key === "decks.faces.front") return "Front faces";
-      if (key === "decks.meta.tab") return "Deck metadata";
+      if (key === "label.preview") return "Preview";
+      if (key === "decks.meta.tab") return "Deck Info";
       return key;
     },
   }),
@@ -91,6 +92,10 @@ describe("DeckBacksPanel used back-face availability", () => {
       setRightPanelFaceMode: jest.fn(),
       sourceSearch: "",
       setSourceSearch: jest.fn(),
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
     });
     mockUseStockpileFilters.mockImplementation(({ cards: inputCards }) => ({
       filteredCards: inputCards,
@@ -161,6 +166,10 @@ describe("DeckBacksPanel used back-face availability", () => {
       setRightPanelFaceMode: jest.fn(),
       sourceSearch: "",
       setSourceSearch: jest.fn(),
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
     });
 
     render(
@@ -193,6 +202,10 @@ describe("DeckBacksPanel used back-face availability", () => {
       setRightPanelFaceMode: jest.fn(),
       sourceSearch: "",
       setSourceSearch: jest.fn(),
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
     });
 
     render(
@@ -223,6 +236,10 @@ describe("DeckBacksPanel used back-face availability", () => {
       setRightPanelFaceMode: jest.fn(),
       sourceSearch: "",
       setSourceSearch,
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
     });
 
     render(
@@ -258,6 +275,10 @@ describe("DeckBacksPanel used back-face availability", () => {
       setRightPanelFaceMode: jest.fn(),
       sourceSearch: "goblin",
       setSourceSearch,
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
     });
 
     render(
@@ -290,7 +311,8 @@ describe("DeckBacksPanel used back-face availability", () => {
 
     expect(screen.getByRole("tab", { name: "Back faces" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Front faces" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Deck metadata" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Preview" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Deck Info" })).toBeInTheDocument();
   });
 
   it("switches face mode when icon tabs are clicked", () => {
@@ -309,6 +331,10 @@ describe("DeckBacksPanel used back-face availability", () => {
       setRightPanelFaceMode,
       sourceSearch: "",
       setSourceSearch: jest.fn(),
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
     });
 
     render(
@@ -342,6 +368,10 @@ describe("DeckBacksPanel used back-face availability", () => {
       setRightPanelFaceMode,
       sourceSearch: "",
       setSourceSearch: jest.fn(),
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
     });
 
     render(
@@ -374,6 +404,10 @@ describe("DeckBacksPanel used back-face availability", () => {
       setRightPanelFaceMode: jest.fn(),
       sourceSearch: "",
       setSourceSearch: jest.fn(),
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
     });
 
     render(
@@ -406,6 +440,10 @@ describe("DeckBacksPanel used back-face availability", () => {
       setRightPanelFaceMode,
       sourceSearch: "",
       setSourceSearch: jest.fn(),
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
     });
     render(
       <DeckBacksPanel
@@ -416,7 +454,42 @@ describe("DeckBacksPanel used back-face availability", () => {
         finalizingFrontFaceId={null}
       />,
     );
-    fireEvent.click(screen.getByRole("tab", { name: "Deck metadata" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Deck Info" }));
     expect(setRightPanelFaceMode).toHaveBeenCalledWith("meta");
+  });
+
+  it("switches to preview mode when preview tab is clicked", () => {
+    const setRightPanelFaceMode = jest.fn();
+    mockUseDeckRightPanel.mockReturnValue({
+      isRightPanelVisible: true,
+      setIsRightPanelVisible: jest.fn(),
+      toggleRightPanel: jest.fn(),
+      backCollections: [],
+      backCards: cards,
+      rightPanelEmptyLabel: "No backs",
+      backFilter: { type: "all" },
+      setBackFilter: jest.fn(),
+      rightPanelFaceMode: "back",
+      setRightPanelFaceMode,
+      sourceSearch: "",
+      setSourceSearch: jest.fn(),
+      selectedEntryIds: new Set(),
+      setSelectedEntryIds: jest.fn(),
+      activePreviewEntryId: null,
+      setActivePreviewEntryId: jest.fn(),
+    });
+
+    render(
+      <DeckBacksPanel
+        deckId="deck-1"
+        usedBackFaceIds={new Set()}
+        usedFrontFaceIds={new Set()}
+        finalizingBackFaceId={null}
+        finalizingFrontFaceId={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Preview" }));
+    expect(setRightPanelFaceMode).toHaveBeenCalledWith("preview");
   });
 });
