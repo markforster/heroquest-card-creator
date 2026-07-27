@@ -3,7 +3,7 @@
 import styles from "@/app/page.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
 
-const APP_LOGO_SRC = "./assets/apple-touch-icon.png";
+const APP_LOGO_SRC = "./assets/app-logo.png";
 
 export default function HeaderBrand() {
   const { t } = useI18n();

@@ -118,6 +118,7 @@ function main() {
   const extraImageFiles = [
     path.join(rootDir, "src", "assets", "avatar.jpeg"),
     path.join(rootDir, "src", "assets", "thqcc-qr.jpg"),
+    path.join(rootDir, "public", "assets", "app-logo.png"),
     path.join(rootDir, "public", "assets", "apple-touch-icon.png"),
     path.join(rootDir, "public", "assets", "help-card-showcase.jpg"),
   ];

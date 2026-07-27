@@ -1,7 +1,7 @@
 import { embeddedImagesByFileName } from "@/generated/embeddedAssets";
 
 export const appIconSrc =
-  embeddedImagesByFileName["apple-touch-icon.png"] ?? "./assets/apple-touch-icon.png";
+  embeddedImagesByFileName["app-logo.png"] ?? "./assets/app-logo.png";
 
 const helpCardShowcaseSrc =
   embeddedImagesByFileName["help-card-showcase.jpg"] ?? "./assets/help-card-showcase.jpg";
