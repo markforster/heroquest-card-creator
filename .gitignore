@@ -54,3 +54,4 @@ next-env.d.ts
 commit.msg
 .npmrc
 heroquest.card-maker.code-workspace
+help-site/docs/.obsidian/**
