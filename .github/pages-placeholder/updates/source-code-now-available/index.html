@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Source code now available | HeroQuest Card Creator Updates</title>
+    <meta name="description" content="Putting the source on GitHub opens the project up in a different way, making it easier to follow, inspect, and understand the thinking behind HeroQuest Card Creator.">
+    <meta name="robots" content="index,follow,max-image-preview:large">
+    <link rel="canonical" href="https://heroquestcards.done-well.co.uk/updates/source-code-now-available/">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="HeroQuest Card Creator">
+    <meta property="og:title" content="Source code now available | HeroQuest Card Creator Updates">
+    <meta property="og:description" content="Putting the source on GitHub opens the project up in a different way, making it easier to follow, inspect, and understand the thinking behind HeroQuest Card Creator.">
+    <meta property="og:url" content="https://heroquestcards.done-well.co.uk/updates/source-code-now-available/">
+    <meta property="og:image" content="https://heroquestcards.done-well.co.uk/assets/brand/card-showcase.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Source code now available | HeroQuest Card Creator Updates">
+    <meta name="twitter:description" content="Putting the source on GitHub opens the project up in a different way, making it easier to follow, inspect, and understand the thinking behind HeroQuest Card Creator.">
+    <meta name="twitter:image" content="https://heroquestcards.done-well.co.uk/assets/brand/card-showcase.jpg">
+    <link rel="stylesheet" href="/landing.css">
+    <style>
+      .updates-intro h2 {
+        margin-top: 0;
+      }
+
+      .updates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+        gap: 1rem;
+      }
+
+      .updates-card,
+      .updates-article {
+        padding: 1.35rem;
+        border: 1px solid var(--hq-border-soft);
+        background: var(--hq-panel-soft);
+      }
+
+      .updates-card__meta,
+      .updates-meta-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        align-items: center;
+        color: var(--hq-text-muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .updates-card__type {
+        color: var(--hq-accent);
+        font-weight: 700;
+      }
+
+      .updates-card__title {
+        margin: 0.65rem 0 0.55rem;
+        font-family: var(--hq-font-display);
+        font-size: 1.55rem;
+        font-weight: 400;
+        line-height: 1.1;
+      }
+
+      .updates-card__title a {
+        text-decoration: none;
+      }
+
+      .updates-card__summary {
+        margin: 0;
+        color: var(--hq-text-muted);
+        line-height: 1.55;
+      }
+
+      .updates-card__actions,
+      .updates-hero-actions {
+        margin-top: 1rem;
+      }
+
+      .updates-breadcrumbs {
+        margin: 0 0 0.75rem;
+        color: var(--hq-text-muted);
+      }
+
+      .updates-breadcrumbs a {
+        text-decoration: none;
+      }
+
+      .updates-standfirst {
+        margin: 1rem 0 0;
+        color: var(--hq-text-strong);
+        font-size: 1.05rem;
+        line-height: 1.6;
+      }
+
+      .updates-article {
+        display: grid;
+        gap: 1.4rem;
+      }
+
+      .updates-article__lead {
+        margin-top: 0;
+        color: var(--hq-text-strong);
+        font-size: 1.08rem;
+      }
+
+      .updates-article__body p {
+        margin-bottom: 0;
+      }
+
+      .updates-article__body p + p,
+      .updates-article__section p + p {
+        margin-top: 1rem;
+      }
+
+      .updates-article__closing {
+        color: var(--hq-text-muted);
+      }
+
+      .updates-article__section {
+        padding-top: 0.35rem;
+        border-top: 1px solid var(--hq-border-soft);
+      }
+
+      .updates-article h2,
+      .updates-more h2 {
+        margin-top: 0;
+        color: var(--hq-accent-bright);
+        font-family: var(--hq-font-display);
+        font-size: 1.5rem;
+        font-weight: 400;
+      }
+
+      .updates-article p,
+      .updates-article li,
+      .updates-more li {
+        color: var(--hq-text-muted);
+        line-height: 1.65;
+      }
+
+      .updates-related {
+        margin: 0;
+        padding-left: 1.1rem;
+      }
+
+      .updates-more {
+        margin-top: 1.4rem;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="site-header" aria-label="Header">
+      <div class="site-header__inner">
+        <a class="site-header__brand" href="/" aria-label="HeroQuest Card Creator home">
+          <img src="/assets/brand/apple-touch-icon.png" alt="" width="180" height="180">
+          <span>HeroQuest Card Creator</span>
+        </a>
+        <nav class="site-header__nav" aria-label="Primary">
+          <a href="/#features">Features</a>
+          <a href="/#workflows">Workflows</a>
+          <a href="/updates/">Updates</a>
+          <a href="/#faq">FAQ</a>
+        </nav>
+      </div>
+    </header>
+    <header class="hqcc-hero">
+      <div class="hqcc-hero__inner">
+        <p class="hqcc-hero__eyebrow">Devlog</p>
+        <h1 class="hqcc-hero__title">Source code now available</h1>
+        <p class="hqcc-hero__copy">Putting the source on GitHub opens the project up in a different way, making it easier to follow, inspect, and understand the thinking behind HeroQuest Card Creator.</p>
+      </div>
+    </header>
+    
+      <main id="main-content" class="page updates-page">
+        <article class="page-content">
+          <header class="page-content__intro updates-intro">
+            <p class="updates-breadcrumbs"><a href="/updates/">Updates</a> / Source code now available</p>
+            <p class="updates-meta-line">
+              <span>Devlog</span>
+              <span aria-hidden="true">•</span>
+              <time datetime="2025-12-21">21 December 2025</time>
+            </p>
+            <div class="hero-actions updates-hero-actions">
+              <a class="cta cta--primary" href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1167122/source-code-now-available" target="_blank" rel="noopener noreferrer">Read the full update on Itch</a>
+              <a class="cta cta--secondary" href="https://mark-forster.itch.io/heroquest-card-creator" target="_blank" rel="noopener noreferrer">Open the app on Itch</a>
+            </div>
+            <p class="updates-standfirst">Putting the source on GitHub opens the project up in a different way, making it easier to follow, inspect, and understand the thinking behind HeroQuest Card Creator.</p>
+          </header>
+
+          <section class="updates-article">
+            <div class="updates-article__body">
+              <p class="updates-article__lead">Publishing the code is more than a technical footnote. It gives curious creators and future contributors a clearer view of how the app was shaped, why it exists, and how its development can now be followed in the open instead of only through release posts.</p>
+              <p class="updates-article__closing">
+                For the full release notes, screenshots, discussion, and download context, continue to the original Itch post linked below.
+              </p>
+            </div>
+
+            <div class="updates-article__section updates-article__section--cta">
+              <h2>Read the full update on Itch</h2>
+              <p>
+                The original post includes the full context, discussion, and any attached files. Continue to Itch for the complete update and then use the app or download from the main Itch page.
+              </p>
+              <p>
+                <a href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1167122/source-code-now-available" target="_blank" rel="noopener noreferrer">Read the original update on Itch</a>
+                ·
+                <a href="https://mark-forster.itch.io/heroquest-card-creator" target="_blank" rel="noopener noreferrer">Open HeroQuest Card Creator on Itch</a>
+              </p>
+            </div>
+          </section>
+
+          <section class="updates-more">
+            <h2>More updates</h2>
+            <ul class="updates-related">
+              
+        <li><a href="/updates/-heroquest-card-creator-version-080/">🎴 HeroQuest Card Creator - Version 0.8.0</a></li>
+      
+        <li><a href="/updates/-heroquest-card-creator-v080-is-live/">🚀 HeroQuest Card Creator - v0.8.0 Is Live</a></li>
+      
+        <li><a href="/updates/-heroquest-card-creator-version-071/">🎴 HeroQuest Card Creator - Version 0.7.1</a></li>
+      
+            </ul>
+          </section>
+        </article>
+      </main>
+    
+    <footer class="site-footer" aria-label="Footer">
+      <div class="site-footer__inner">
+        <a href="/updates/">Updates</a>
+        <a href="/help/" target="_blank" rel="noopener noreferrer">Help</a>
+        <a href="https://mark-forster.itch.io/heroquest-card-creator" target="_blank" rel="noopener noreferrer">Itch.io</a>
+        <a href="https://github.com/markforster/heroquest-card-creator" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>

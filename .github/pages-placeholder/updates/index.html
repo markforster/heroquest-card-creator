@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HeroQuest Card Creator Updates</title>
+    <meta name="description" content="Follow HeroQuest Card Creator updates, release notes, and devlogs covering HeroQuest card creation, decks, export workflows, PDF export, printing, and app improvements.">
+    <meta name="robots" content="index,follow,max-image-preview:large">
+    <link rel="canonical" href="https://heroquestcards.done-well.co.uk/updates/">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="HeroQuest Card Creator">
+    <meta property="og:title" content="HeroQuest Card Creator Updates">
+    <meta property="og:description" content="Follow HeroQuest Card Creator updates, release notes, and devlogs covering HeroQuest card creation, decks, export workflows, PDF export, printing, and app improvements.">
+    <meta property="og:url" content="https://heroquestcards.done-well.co.uk/updates/">
+    <meta property="og:image" content="https://heroquestcards.done-well.co.uk/assets/brand/card-showcase.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HeroQuest Card Creator Updates">
+    <meta name="twitter:description" content="Follow HeroQuest Card Creator updates, release notes, and devlogs covering HeroQuest card creation, decks, export workflows, PDF export, printing, and app improvements.">
+    <meta name="twitter:image" content="https://heroquestcards.done-well.co.uk/assets/brand/card-showcase.jpg">
+    <link rel="stylesheet" href="/landing.css">
+    <style>
+      .updates-intro h2 {
+        margin-top: 0;
+      }
+
+      .updates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+        gap: 1rem;
+      }
+
+      .updates-card,
+      .updates-article {
+        padding: 1.35rem;
+        border: 1px solid var(--hq-border-soft);
+        background: var(--hq-panel-soft);
+      }
+
+      .updates-card__meta,
+      .updates-meta-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        align-items: center;
+        color: var(--hq-text-muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .updates-card__type {
+        color: var(--hq-accent);
+        font-weight: 700;
+      }
+
+      .updates-card__title {
+        margin: 0.65rem 0 0.55rem;
+        font-family: var(--hq-font-display);
+        font-size: 1.55rem;
+        font-weight: 400;
+        line-height: 1.1;
+      }
+
+      .updates-card__title a {
+        text-decoration: none;
+      }
+
+      .updates-card__summary {
+        margin: 0;
+        color: var(--hq-text-muted);
+        line-height: 1.55;
+      }
+
+      .updates-card__actions,
+      .updates-hero-actions {
+        margin-top: 1rem;
+      }
+
+      .updates-breadcrumbs {
+        margin: 0 0 0.75rem;
+        color: var(--hq-text-muted);
+      }
+
+      .updates-breadcrumbs a {
+        text-decoration: none;
+      }
+
+      .updates-standfirst {
+        margin: 1rem 0 0;
+        color: var(--hq-text-strong);
+        font-size: 1.05rem;
+        line-height: 1.6;
+      }
+
+      .updates-article {
+        display: grid;
+        gap: 1.4rem;
+      }
+
+      .updates-article__lead {
+        margin-top: 0;
+        color: var(--hq-text-strong);
+        font-size: 1.08rem;
+      }
+
+      .updates-article__body p {
+        margin-bottom: 0;
+      }
+
+      .updates-article__body p + p,
+      .updates-article__section p + p {
+        margin-top: 1rem;
+      }
+
+      .updates-article__closing {
+        color: var(--hq-text-muted);
+      }
+
+      .updates-article__section {
+        padding-top: 0.35rem;
+        border-top: 1px solid var(--hq-border-soft);
+      }
+
+      .updates-article h2,
+      .updates-more h2 {
+        margin-top: 0;
+        color: var(--hq-accent-bright);
+        font-family: var(--hq-font-display);
+        font-size: 1.5rem;
+        font-weight: 400;
+      }
+
+      .updates-article p,
+      .updates-article li,
+      .updates-more li {
+        color: var(--hq-text-muted);
+        line-height: 1.65;
+      }
+
+      .updates-related {
+        margin: 0;
+        padding-left: 1.1rem;
+      }
+
+      .updates-more {
+        margin-top: 1.4rem;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="site-header" aria-label="Header">
+      <div class="site-header__inner">
+        <a class="site-header__brand" href="/" aria-label="HeroQuest Card Creator home">
+          <img src="/assets/brand/apple-touch-icon.png" alt="" width="180" height="180">
+          <span>HeroQuest Card Creator</span>
+        </a>
+        <nav class="site-header__nav" aria-label="Primary">
+          <a href="/#features">Features</a>
+          <a href="/#workflows">Workflows</a>
+          <a href="/updates/">Updates</a>
+          <a href="/#faq">FAQ</a>
+        </nav>
+      </div>
+    </header>
+    <header class="hqcc-hero">
+      <div class="hqcc-hero__inner">
+        <p class="hqcc-hero__eyebrow">Updates</p>
+        <h1 class="hqcc-hero__title">Release notes, devlogs, and HeroQuest Card Creator updates</h1>
+        <p class="hqcc-hero__copy">Browse the ongoing development of HeroQuest Card Creator, from release notes and export workflow updates to deck-building progress, printable PDF work, and practical homebrew card-creation improvements.</p>
+      </div>
+    </header>
+    
+      <main id="main-content" class="page updates-page">
+        <article class="page-content">
+          <header class="page-content__intro updates-intro">
+            <h2>Track what is changing in the card creator</h2>
+            <p>
+              This archive brings together HeroQuest Card Creator devlogs, release notes, and product updates in one place so you can scan recent work quickly and then continue to the original Itch posts for the full detail.
+            </p>
+            <p>
+              If you want to try the app immediately, the primary destination remains
+              <a href="https://mark-forster.itch.io/heroquest-card-creator" target="_blank" rel="noopener noreferrer">HeroQuest Card Creator on Itch</a>.
+            </p>
+          </header>
+          <section class="updates-grid" aria-label="Updates archive">
+            
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Release</span>
+            <time datetime="2026-07-25">25 July 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-version-080/">🎴 HeroQuest Card Creator - Version 0.8.0</a></h2>
+          <p class="updates-card__summary">Version 0.8.0 pours energy into almost every part of the app, making HeroQuest Card Creator feel more visual, more fluid, and far more enjoyable once projects start getting serious.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-version-080/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6679300/-heroquest-card-creator-version-080" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Announcement</span>
+            <time datetime="2026-07-25">25 July 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-v080-is-live/">🚀 HeroQuest Card Creator - v0.8.0 Is Live</a></h2>
+          <p class="updates-card__summary">Version 0.8.0 pushes the project into a more polished phase, where the foundations are already in place and the day-to-day experience suddenly feels much more satisfying.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-v080-is-live/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6679298/-heroquest-card-creator-v080-is-live" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Release</span>
+            <time datetime="2026-07-11">11 July 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-version-071/">🎴 HeroQuest Card Creator - Version 0.7.1</a></h2>
+          <p class="updates-card__summary">Version 0.7.1 takes the fresh PDF workflow and makes it easier to live with, especially when you print often, switch layouts regularly, or want your best settings ready to go.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-version-071/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6604079/-heroquest-card-creator-version-071" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Announcement</span>
+            <time datetime="2026-07-11">11 July 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-v071-is-live/">🚀 HeroQuest Card Creator - v0.7.1 Is Live</a></h2>
+          <p class="updates-card__summary">A quick follow-up release arrives at exactly the right time, turning early PDF export feedback into a sharper and more convenient print workflow almost immediately.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-v071-is-live/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6604077/-heroquest-card-creator-v071-is-live" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Devlog</span>
+            <time datetime="2026-07-05">05 July 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/the-long-road-to-pdf-export/">The Long Road to PDF Export</a></h2>
+          <p class="updates-card__summary">PDF export arrives here as something hard-earned, shaped by delays, redesigns, print testing, and the slow build-up of everything the feature needed before it could finally feel right.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/the-long-road-to-pdf-export/">Read summary</a>
+            <a class="cta cta--secondary" href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1575538/the-long-road-to-pdf-export" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Release</span>
+            <time datetime="2026-07-05">05 July 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-version-070/">🎴 HeroQuest Card Creator - Version 0.7.0</a></h2>
+          <p class="updates-card__summary">Version 0.7.0 is one of the big milestone releases, finally bringing print-ready PDF export into the workflow and turning finished decks into something you can genuinely prepare for the table.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-version-070/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6578105/-heroquest-card-creator-version-070" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Announcement</span>
+            <time datetime="2026-07-05">05 July 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-v070-is-live/">🚀 HeroQuest Card Creator - v0.7.0 Is Live</a></h2>
+          <p class="updates-card__summary">Version 0.7.0 lands like a major promise being kept, pushing HeroQuest Card Creator beyond card editing and much closer to a full creation-to-print workflow.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-v070-is-live/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6578099/-heroquest-card-creator-v070-is-live" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Announcement</span>
+            <time datetime="2026-06-22">22 June 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-v062-is-live/">🚀 HeroQuest Card Creator - v0.6.2 Is Live</a></h2>
+          <p class="updates-card__summary">Version 0.6.2 keeps the project moving quickly after Decks, bringing a stronger card-authoring experience and making the app feel more expressive without losing momentum.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-v062-is-live/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6515992/-heroquest-card-creator-v062-is-live" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Devlog</span>
+            <time datetime="2026-06-14">14 June 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/the-devil-makes-work-for-idle-thumbs-good-job-i-had-a-backlog/">The Devil Makes Work for Idle Thumbs - Good Job I Had a Backlog</a></h2>
+          <p class="updates-card__summary">A stretch that could have felt like waiting time instead turns into a thoughtful round of polish, smoothing out all the little bits of friction that quietly build up in real use.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/the-devil-makes-work-for-idle-thumbs-good-job-i-had-a-backlog/">Read summary</a>
+            <a class="cta cta--secondary" href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1553116/the-devil-makes-work-for-idle-thumbs-good-job-i-had-a-backlog" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Announcement</span>
+            <time datetime="2026-06-13">13 June 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-v061-is-live/">🚀 HeroQuest Card Creator — v0.6.1 Is Live</a></h2>
+          <p class="updates-card__summary">Version 0.6.1 is smaller in scale than Decks, but it makes the app feel noticeably better, turning backlog ideas and everyday friction into a more polished HeroQuest Card Creator.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-v061-is-live/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6478254/-heroquest-card-creator-v061-is-live" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Release</span>
+            <time datetime="2026-05-31">31 May 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-version-060/">🎴 HeroQuest Card Creator - Version 0.6.0</a></h2>
+          <p class="updates-card__summary">Version 0.6.0 is the point where the app stops feeling built around single cards and starts feeling ready for much larger creations, thanks to the arrival of Decks.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-version-060/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6422703/-heroquest-card-creator-version-060" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Devlog</span>
+            <time datetime="2026-05-12">12 May 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/decks-progress-update/">Decks Progress Update</a></h2>
+          <p class="updates-card__summary">Decks starts to pull the project beyond isolated cards and toward something much bigger, where organised sets and larger workflows begin to feel genuinely within reach.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/decks-progress-update/">Read summary</a>
+            <a class="cta cta--secondary" href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1521438/decks-progress-update" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Release</span>
+            <time datetime="2026-03-15">15 March 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-version-056/">🎴 HeroQuest Card Creator - Version 0.5.6</a></h2>
+          <p class="updates-card__summary">Version 0.5.6 stretches the app&#39;s creative range while making it sturdier underneath, giving creators more freedom without sacrificing the feeling that the workflow is becoming increasingly dependable.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-version-056/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6104593/-heroquest-card-creator-version-056" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Announcement</span>
+            <time datetime="2026-03-07">07 March 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-v055-is-live/">🚀 HeroQuest Card Creator v0.5.5 Is Live Sticky</a></h2>
+          <p class="updates-card__summary">Version 0.5.5 brings one of the most requested improvements into the app at last: proper print-ready exports that make physical card output feel much closer to the real thing.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-v055-is-live/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6071812/-heroquest-card-creator-v055-is-live" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Release</span>
+            <time datetime="2026-03-07">07 March 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-version-055/">🎴 HeroQuest Card Creator — Version 0.5.5 Sticky</a></h2>
+          <p class="updates-card__summary">Version 0.5.5 puts accurate, print-ready card output front and centre, while quietly improving the editor in ways that make cards translate from screen to paper much more convincingly.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-version-055/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6071808/-heroquest-card-creator-version-055" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Announcement</span>
+            <time datetime="2026-02-28">28 February 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-053-patch-now-054-please-re-download/">⚠️ 0.5.3 Patch (now 0.5.4) — Please Re-Download Sticky</a></h2>
+          <p class="updates-card__summary">A quick patch release steps in to fix a frustrating creation bug before it can linger, keeping the card-making flow from breaking at one of the worst possible moments.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-053-patch-now-054-please-re-download/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6029466/-053-patch-now-054-please-re-download" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Update</span>
+            <time datetime="2026-02-28">28 February 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-important-upgrade-notes-recovery-browser-reset-guide/">📌 Important Upgrade Notes, Recovery &amp; Browser Reset Guide</a></h2>
+          <p class="updates-card__summary">Safe upgrades, recovery steps, and rollback guidance are all pulled together here, making bigger version jumps feel less risky and much easier to navigate.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-important-upgrade-notes-recovery-browser-reset-guide/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6028864/-important-upgrade-notes-recovery-browser-reset-guide" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Announcement</span>
+            <time datetime="2026-02-28">28 February 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-v053-is-live/">🚀 HeroQuest Card Creator v0.5.3 Is Live Sticky</a></h2>
+          <p class="updates-card__summary">Version 0.5.3 arrives with the feeling of a release that had to be solid before it shipped, tightening the foundations and making the whole app feel more reliable in real use.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-v053-is-live/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6028848/-heroquest-card-creator-v053-is-live" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Release</span>
+            <time datetime="2026-02-28">28 February 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-maker-053-full-release-notes/">📦 HeroQuest Card Maker 0.5.3 - Full Release notes</a></h2>
+          <p class="updates-card__summary">Version 0.5.3 strengthens the structure of the app in all the places that matter once projects grow: organisation, pairing, export safety, assets, and the feeling that the workflow can be trusted.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-maker-053-full-release-notes/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/6028837/-heroquest-card-maker-053-full-release-notes" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Update</span>
+            <time datetime="2026-02-14">14 February 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-v052-is-out/">🎉 HeroQuest Card Creator — v0.5.2 is Out!</a></h2>
+          <p class="updates-card__summary">Version 0.5.2 feels quieter on the surface, but it carries the kind of changes that make the app feel more deliberate, more capable, and much more ready for bigger creative systems.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-v052-is-out/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/5939397/-heroquest-card-creator-v052-is-out" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Release</span>
+            <time datetime="2026-02-14">14 February 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/heroquest-card-maker-052-full-release-notes/">HeroQuest Card Maker 0.5.2 - Full Release notes</a></h2>
+          <p class="updates-card__summary">Version 0.5.2 strengthens how cards are created, connected, styled, adjusted, and exported, making the overall workflow feel more stable and much more deliberate.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/heroquest-card-maker-052-full-release-notes/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/5939343/heroquest-card-maker-052-full-release-notes" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Release</span>
+            <time datetime="2026-02-07">07 February 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/heroquest-card-maker-051-full-release-notes/">HeroQuest Card Maker 0.5.1 - Full Release notes</a></h2>
+          <p class="updates-card__summary">Version 0.5.1 starts pushing the workflow beyond its first shape, adding flexibility and comfort while preparing the app for the much bigger systems that are still ahead.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/heroquest-card-maker-051-full-release-notes/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/5895025/heroquest-card-maker-051-full-release-notes" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Update</span>
+            <time datetime="2026-02-07">07 February 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-v051-is-now-live/">🎉 HeroQuest Card Creator — v0.5.1 Is Now Live</a></h2>
+          <p class="updates-card__summary">Version 0.5.1 builds on the calm, more organised workflow of 0.5.0 and starts adding the extra flexibility that people were already asking for.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-v051-is-now-live/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/5894861/-heroquest-card-creator-v051-is-now-live" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Update</span>
+            <time datetime="2026-01-12">12 January 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/sharing-my-personal-card-creator-library/">Sharing My Personal Card Creator Library</a></h2>
+          <p class="updates-card__summary">A personal working library of cards, artwork, and assets opens the door to real examples, real material, and a much easier first step than starting from an empty project.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/sharing-my-personal-card-creator-library/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/5776376/sharing-my-personal-card-creator-library" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Devlog</span>
+            <time datetime="2026-01-10">10 January 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/bringing-it-all-together-a-faster-calmer-way-to-create-cards/">Bringing It All Together — A Faster, Calmer Way to Create Cards</a></h2>
+          <p class="updates-card__summary">Version 0.5.0 is where the app starts feeling calmer and more cohesive, with separate improvements finally clicking together into a workflow that feels ready for bigger projects.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/bringing-it-all-together-a-faster-calmer-way-to-create-cards/">Read summary</a>
+            <a class="cta cta--secondary" href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1312028/bringing-it-all-together-a-faster-calmer-way-to-create-cards" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Update</span>
+            <time datetime="2026-01-10">10 January 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-heroquest-card-creator-v050-is-out/">🎉 HeroQuest Card Creator — v0.5.0 is Out!</a></h2>
+          <p class="updates-card__summary">Version 0.5.0 tackles the real problem that appears once people start making more than a few cards: not creation itself, but managing everything comfortably once the project grows.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-heroquest-card-creator-v050-is-out/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/5767871/-heroquest-card-creator-v050-is-out" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Devlog</span>
+            <time datetime="2026-01-08">08 January 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/one-more-before-release-language-support-flexibility/">One More Before Release - Language Support &amp; Flexibility</a></h2>
+          <p class="updates-card__summary">Language support and steadier behaviour make the app feel far more welcoming here, especially for people working beyond a simple English-only setup.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/one-more-before-release-language-support-flexibility/">Read summary</a>
+            <a class="cta cta--secondary" href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1310058/one-more-before-release-language-support-flexibility" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Devlog</span>
+            <time datetime="2026-01-06">06 January 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/from-creation-to-the-table-finishing-the-workflow/">From Creation to the Table: Finishing the Workflow</a></h2>
+          <p class="updates-card__summary">Bulk export finally gives the last part of the workflow the same attention as the first, making it much easier to turn finished cards into something you can share, archive, or actually play with.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/from-creation-to-the-table-finishing-the-workflow/">Read summary</a>
+            <a class="cta cta--secondary" href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1308005/from-creation-to-the-table-finishing-the-workflow" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Devlog</span>
+            <time datetime="2026-01-04">04 January 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/working-with-batch-assets-keeping-creative-flow-without-the-fear/">Working with Batch Assets - Keeping Creative Flow Without the Fear</a></h2>
+          <p class="updates-card__summary">Safe bulk asset handling makes a surprisingly big difference once projects grow, because it lets people throw lots of art into the app without feeling like one mistake could create a mess.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/working-with-batch-assets-keeping-creative-flow-without-the-fear/">Read summary</a>
+            <a class="cta cta--secondary" href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1285646/working-with-batch-assets-keeping-creative-flow-without-the-fear" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Devlog</span>
+            <time datetime="2026-01-01">01 January 2026</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/collections-giving-card-libraries-room-to-grow/">Collections: Giving Card Libraries Room to Grow</a></h2>
+          <p class="updates-card__summary">Collections gives growing card libraries room to breathe, turning an increasingly heavy flat list into something much more flexible for bigger quest packs, themed sets, and longer-running ideas.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/collections-giving-card-libraries-room-to-grow/">Read summary</a>
+            <a class="cta cta--secondary" href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1284775/collections-giving-card-libraries-room-to-grow" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Update</span>
+            <time datetime="2025-12-31">31 December 2025</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/more-free-heroquest-style-artwork-for-anyone-who-wants-it/">More Free HeroQuest-style artwork for anyone who wants it</a></h2>
+          <p class="updates-card__summary">A better organised set of free HeroQuest-style artwork gives creators more to work with straight away, making new cards, new decks, and new ideas feel much easier to kick off.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/more-free-heroquest-style-artwork-for-anyone-who-wants-it/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/5729783/more-free-heroquest-style-artwork-for-anyone-who-wants-it" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Devlog</span>
+            <time datetime="2025-12-29">29 December 2025</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/laying-the-groundwork-and-pushing-toward-something-bigger/">Laying the Groundwork… and Pushing Toward Something Bigger</a></h2>
+          <p class="updates-card__summary">Organisation, bulk actions, and calmer large-project workflows start to come into view here, pointing toward an app that wants to support more than just casual one-off card making.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/laying-the-groundwork-and-pushing-toward-something-bigger/">Read summary</a>
+            <a class="cta cta--secondary" href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1276678/laying-the-groundwork-and-pushing-toward-something-bigger" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Devlog</span>
+            <time datetime="2025-12-22">22 December 2025</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-important-update-export-issue-fixed-offline-download-only/">🚨 Important Update: Export Issue Fixed (Offline Download Only)</a></h2>
+          <p class="updates-card__summary">A real offline export problem gets fixed quickly here, protecting the downloaded version of the app at exactly the point where trust could have taken a hit.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-important-update-export-issue-fixed-offline-download-only/">Read summary</a>
+            <a class="cta cta--secondary" href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1184527/-important-update-export-issue-fixed-offline-download-only" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Release</span>
+            <time datetime="2025-12-22">22 December 2025</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/-version-042-available-important-for-offline-users/">🔔 Version 0.4.2 Available – Important for Offline Users</a></h2>
+          <p class="updates-card__summary">Offline users get a very direct warning here: update now, because without this fix exported cards will be missing key visual pieces that make the workflow usable.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/-version-042-available-important-for-offline-users/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/5687044/-version-042-available-important-for-offline-users" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Devlog</span>
+            <time datetime="2025-12-21">21 December 2025</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/source-code-now-available/">Source code now available</a></h2>
+          <p class="updates-card__summary">Putting the source on GitHub opens the project up in a different way, making it easier to follow, inspect, and understand the thinking behind HeroQuest Card Creator.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/source-code-now-available/">Read summary</a>
+            <a class="cta cta--secondary" href="https://mark-forster.itch.io/heroquest-card-creator/devlog/1167122/source-code-now-available" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Update</span>
+            <time datetime="2025-12-19">19 December 2025</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/bug-reports-issue-tracking/">Bug Reports &amp; Issue Tracking</a></h2>
+          <p class="updates-card__summary">A clear bug-reporting route matters more than it sounds, because it gives people one obvious place to raise problems and feel confident they are not disappearing into the void.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/bug-reports-issue-tracking/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/5671014/bug-reports-issue-tracking" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Update</span>
+            <time datetime="2025-12-19">19 December 2025</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/heroquest-card-creator-roadmap-high-level/">HeroQuest Card Creator — Roadmap (High-Level)</a></h2>
+          <p class="updates-card__summary">Future direction comes into focus here without pretending to be fixed or guaranteed, giving the project room to stay honest while still showing where its momentum is pulling it.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/heroquest-card-creator-roadmap-high-level/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/5670986/heroquest-card-creator-roadmap-high-level" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+
+        <article class="updates-card">
+          <div class="updates-card__meta">
+            <span class="updates-card__type">Release</span>
+            <time datetime="2025-12-19">19 December 2025</time>
+          </div>
+          <h2 class="updates-card__title"><a href="/updates/version-030/">Version 0.3.0</a></h2>
+          <p class="updates-card__summary">Version 0.3.0 lays down the first full browser-based card-creation workflow, pulling creation, reuse, management, and export together into something people could actually work with seriously.</p>
+          <div class="updates-card__actions">
+            <a class="cta cta--primary" href="/updates/version-030/">Read summary</a>
+            <a class="cta cta--secondary" href="https://itch.io/t/5670980/version-030" target="_blank" rel="noopener noreferrer">Read on Itch</a>
+          </div>
+        </article>
+      
+          </section>
+        </article>
+      </main>
+    
+    <footer class="site-footer" aria-label="Footer">
+      <div class="site-footer__inner">
+        <a href="/updates/">Updates</a>
+        <a href="/help/" target="_blank" rel="noopener noreferrer">Help</a>
+        <a href="https://mark-forster.itch.io/heroquest-card-creator" target="_blank" rel="noopener noreferrer">Itch.io</a>
+        <a href="https://github.com/markforster/heroquest-card-creator" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>
