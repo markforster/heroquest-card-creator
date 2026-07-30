@@ -1,5 +1,18 @@
 {% extends "base.html" %}
 
+{% block extrahead %}
+  {{ super() }}
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-T9PVHBSQPV"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+
+    gtag("config", "G-T9PVHBSQPV");
+  </script>
+{% endblock %}
+
 {% block hero %}
   {% set is_homepage = page and page.is_homepage %}
   <header class="hqcc-hero{% if is_homepage %} hqcc-hero--home{% endif %}">
