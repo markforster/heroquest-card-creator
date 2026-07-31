@@ -254,7 +254,6 @@ export default function DeckBacksPanel({
                 faceMode === "back" ? styles.leftNavItemActive : ""
               }`}
               aria-selected={faceMode === "back"}
-              aria-pressed={faceMode === "back"}
               aria-label={t("decks.faces.back")}
               title={t("decks.faces.back")}
               onClick={() => handleFaceModeChange("back")}
@@ -270,7 +269,6 @@ export default function DeckBacksPanel({
                 faceMode === "front" ? styles.leftNavItemActive : ""
               }`}
               aria-selected={faceMode === "front"}
-              aria-pressed={faceMode === "front"}
               aria-label={t("decks.faces.front")}
               title={t("decks.faces.front")}
               onClick={() => handleFaceModeChange("front")}
@@ -289,7 +287,6 @@ export default function DeckBacksPanel({
                 faceMode === "preview" ? styles.leftNavItemActive : ""
               }`}
               aria-selected={faceMode === "preview"}
-              aria-pressed={faceMode === "preview"}
               aria-label={t("label.preview")}
               title={t("label.preview")}
               onClick={() => handleFaceModeChange("preview")}
@@ -305,7 +302,6 @@ export default function DeckBacksPanel({
                 faceMode === "meta" ? styles.leftNavItemActive : ""
               }`}
               aria-selected={faceMode === "meta"}
-              aria-pressed={faceMode === "meta"}
               aria-label={t("decks.meta.tab")}
               title={t("decks.meta.tab")}
               onClick={() => handleFaceModeChange("meta")}
