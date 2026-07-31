@@ -2,11 +2,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const {
+import {
   collectDuplicateIdentifiers,
   renderMarkdown,
   shouldIgnoreFile,
-} = require("../find-dup-identifiers.cjs");
+} from "../find-dup-identifiers.cjs";
 
 describe("find-dup-identifiers script", () => {
   it("groups duplicate names separately from exact duplicate bodies", () => {

@@ -186,7 +186,7 @@ function saveInfo(port, existing) {
 
   try {
     fs.writeFileSync(infoPath, yaml.stringify(payload), "utf8");
-  } catch (error) {
+  } catch {
     console.warn(
       "[heroquest-card-creator] Warning: Failed to write ~/.hqcc/info.yml; port history will not be saved.",
     );
@@ -218,7 +218,7 @@ function openBrowser(url) {
     const child = spawn(command, args, { stdio: "ignore", detached: true });
     child.unref();
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
