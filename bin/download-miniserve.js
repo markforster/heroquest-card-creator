@@ -121,7 +121,7 @@ function loadCache() {
   try {
     const raw = fs.readFileSync(cacheFile, "utf8");
     return JSON.parse(raw);
-  } catch (err) {
+  } catch {
     return null;
   }
 }

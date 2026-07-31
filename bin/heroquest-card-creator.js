@@ -137,6 +137,7 @@ function createServer(rootDir) {
       res.setHeader("Content-Type", contentType);
       fs.createReadStream(filePath).pipe(res);
     } catch (error) {
+      console.error("[heroquest-card-creator] Request failed:", error);
       res.statusCode = 500;
       res.end("Internal Server Error");
     }
@@ -160,7 +161,7 @@ function loadInfo() {
       return null;
     }
     return parsed;
-  } catch (error) {
+  } catch {
     console.warn("[heroquest-card-creator] Failed to read info file. It will be recreated.");
     return null;
   }
