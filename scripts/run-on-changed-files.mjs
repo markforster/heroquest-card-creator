@@ -21,14 +21,20 @@ const changedPaths = new Set([
 ]);
 
 const eslintExtension = /\.(?:[cm]?[jt]sx?)$/i;
-const prettierExtension = /\.(?:[cm]?[jt]sx?|json|css|scss|md|ya?ml|html)$/i;
+const prettierExtension = /\.(?:[cm]?[jt]sx?|json|css|scss)$/i;
 const rootConfig = /^[^/]+\.(?:[cm]?[jt]sx?)$/i;
+const rootFormatConfig = /^[^/]+\.json$/i;
 const maintainedCode = /^(?:src|scripts|bin)\//;
 
 const files = [...changedPaths]
   .filter((file) => existsSync(file))
   .filter((file) => {
-    if (tool === "prettier") return prettierExtension.test(file);
+    if (tool === "prettier") {
+      return (
+        prettierExtension.test(file) &&
+        (maintainedCode.test(file) || rootConfig.test(file) || rootFormatConfig.test(file))
+      );
+    }
     return eslintExtension.test(file) && (maintainedCode.test(file) || rootConfig.test(file));
   });
 
