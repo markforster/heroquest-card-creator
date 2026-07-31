@@ -39,24 +39,9 @@ export default function DeckEntriesBoardController({
   const { t } = useI18n();
   const formatMessage = (key: string, vars: Record<string, string | number>) =>
     formatMessageWith(t as never, key as never, vars);
-  let selection: ReturnType<typeof useDeckDetailSelection> | null = null;
-  try {
-    selection = useDeckDetailSelection();
-  } catch {
-    selection = null;
-  }
-  let entries: ReturnType<typeof useDeckSetEntries> | null = null;
-  try {
-    entries = useDeckSetEntries();
-  } catch {
-    entries = null;
-  }
-  let rightPanel: ReturnType<typeof useDeckRightPanel> | null = null;
-  try {
-    rightPanel = useDeckRightPanel();
-  } catch {
-    rightPanel = null;
-  }
+  const selection = useDeckDetailSelection();
+  const entries = useDeckSetEntries();
+  const rightPanel = useDeckRightPanel();
   const { registerDropHandler } = useDeckMockDnd();
   const lastHandledDragIdRef = useRef<string | null>(null);
   const [pendingFrontRemoval, setPendingFrontRemoval] = useState<{
