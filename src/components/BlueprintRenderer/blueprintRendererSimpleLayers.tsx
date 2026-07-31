@@ -64,51 +64,6 @@ function intersectRect(
   };
 }
 
-function getRotatedRectBounds({
-  bounds,
-  rotation,
-  cx,
-  cy,
-}: {
-  bounds: { x: number; y: number; width: number; height: number };
-  rotation: number;
-  cx: number;
-  cy: number;
-}) {
-  if (rotation === 0) return bounds;
-
-  const radians = (rotation * Math.PI) / 180;
-  const cos = Math.cos(radians);
-  const sin = Math.sin(radians);
-  const corners = [
-    { x: bounds.x, y: bounds.y },
-    { x: bounds.x + bounds.width, y: bounds.y },
-    { x: bounds.x + bounds.width, y: bounds.y + bounds.height },
-    { x: bounds.x, y: bounds.y + bounds.height },
-  ].map((corner) => {
-    const translatedX = corner.x - cx;
-    const translatedY = corner.y - cy;
-    return {
-      x: cx + translatedX * cos - translatedY * sin,
-      y: cy + translatedX * sin + translatedY * cos,
-    };
-  });
-
-  const xs = corners.map((corner) => corner.x);
-  const ys = corners.map((corner) => corner.y);
-  const left = Math.min(...xs);
-  const right = Math.max(...xs);
-  const top = Math.min(...ys);
-  const bottom = Math.max(...ys);
-
-  return {
-    x: left,
-    y: top,
-    width: right - left,
-    height: bottom - top,
-  };
-}
-
 function buildImageHoverBounds({
   clipMode,
   layerBounds,
