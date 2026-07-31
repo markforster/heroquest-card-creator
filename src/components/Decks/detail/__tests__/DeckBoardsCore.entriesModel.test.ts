@@ -1,13 +1,15 @@
 import { TransformStream } from "node:stream/web";
 
+import type { ReactNode } from "react";
+
 if (!(globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream) {
   (globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream =
     TransformStream;
 }
 
 jest.mock("@dnd-kit/react", () => ({
-  DragDropProvider: ({ children }: any) => children,
-  DragOverlay: ({ children }: any) => children,
+  DragDropProvider: ({ children }: { children: ReactNode }) => children,
+  DragOverlay: ({ children }: { children: ReactNode }) => children,
   useDroppable: () => ({ ref: jest.fn(), isDropTarget: false }),
   useDraggable: () => ({ ref: jest.fn(), handleRef: jest.fn(), isDragging: false }),
 }));
