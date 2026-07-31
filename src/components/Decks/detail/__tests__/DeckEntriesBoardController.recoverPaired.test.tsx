@@ -3,6 +3,11 @@ import path from "node:path";
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
+import type {
+  DeckDropHandler,
+  DeckSortableBoardViewModel,
+} from "@/components/Decks/detail/boards/DeckBoardsCore";
+
 const mockRegisterDropHandler = jest.fn();
 const mockAddFront = jest.fn();
 const mockRefreshEntries = jest.fn();
@@ -35,7 +40,7 @@ let pairsByIdMock = new Map<
     schemaVersion: number;
   }
 >();
-let registeredDropHandler: ((event: any) => Promise<any>) | null = null;
+let registeredDropHandler: DeckDropHandler | null = null;
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
@@ -91,11 +96,9 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
     entries: { emitToken: "entry", acceptTokens: ["source-front"] },
   },
   useDeckMockDnd: () => ({
-    registerDropHandler: (...args: unknown[]) => {
-      mockRegisterDropHandler(...args);
-      const maybeHandler = args[1];
-      registeredDropHandler =
-        typeof maybeHandler === "function" ? (maybeHandler as (event: any) => Promise<any>) : null;
+    registerDropHandler: (controllerId: string, handler: DeckDropHandler) => {
+      mockRegisterDropHandler(controllerId, handler);
+      registeredDropHandler = handler;
       return () => undefined;
     },
   }),
@@ -133,7 +136,7 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
     isSetSelected: options.isSetSelected,
     emptyMessage: options.emptyMessage ?? null,
   }),
-  DeckSortableBoardView: ({ model }: { model: any }) => (
+  DeckSortableBoardView: ({ model }: { model: DeckSortableBoardViewModel }) => (
     <div>
       <div>{model.config?.title}</div>
       {model.renderBoardHeaderActions ? model.renderBoardHeaderActions() : null}
@@ -234,6 +237,9 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     await registeredDropHandler?.({
       kind: "ENTRIES_REORDER",
       dragId: "drag-test-1",
+      timestamp: 1,
+      sourceBoardId: "entries",
+      targetBoardId: "entries",
       orderedEntryIds: ["entry-2", "entry-1"],
     });
 
