@@ -60,6 +60,8 @@
     "help:validate": "node scripts/help-site.cjs validate",
     "help:build": "node scripts/help-site.cjs build",
     "help:preview": "node scripts/help-site.cjs serve",
+    "api:openapi": "tsx scripts/generate-zodios-openapi.ts",
+    "api:reference": "npm run api:openapi",
     "pages:preview-root": "node scripts/preview-pages-root.cjs",
     "download:miniserve": "node bin/download-miniserve.js",
     "start": "next start",
@@ -133,6 +135,7 @@
   "devDependencies": {
     "@next/third-parties": "^16.1.0",
     "@react-three/fiber": "^8.16.8",
+    "@scalar/api-reference": "^1.64.0",
     "@svgr/webpack": "^8.1.0",
     "@tauri-apps/api": "^2.9.1",
     "@tauri-apps/cli": "^2",
@@ -145,6 +148,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/three": "^0.182.0",
+    "@zodios/openapi": "^10.5.0",
     "bootstrap": "^5.3.8",
     "eslint": "^8",
     "eslint-config-next": "14.2.15",
@@ -168,6 +172,7 @@
     "react-router-dom": "^7.13.0",
     "three": "^0.167.1",
     "ts-morph": "^28.0.0",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   },
   "jest-html-reporter": {
