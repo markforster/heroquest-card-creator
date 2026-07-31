@@ -4,6 +4,9 @@ import { getSet, reorderSets } from "@/lib/decks-service";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local reorder-deck-sets endpoint through the IndexedDB-backed service layer.
+ */
 export const reorderDeckSetsRequestPlugin: ZodiosPlugin = {
   name: "local-reorder-deck-sets",
   request: async (apiDefinitions, config) => {

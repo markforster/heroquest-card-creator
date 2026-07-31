@@ -4,6 +4,9 @@ import type { CardRecord } from "@/types/cards-db";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local get-card endpoint through the IndexedDB-backed service layer.
+ */
 export const getCardRequestPlugin: ZodiosPlugin = {
   name: "local-get-card",
   request: async (apiDefinitions, config) => {

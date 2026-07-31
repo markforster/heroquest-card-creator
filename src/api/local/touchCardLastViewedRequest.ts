@@ -4,6 +4,9 @@ import type { ZodiosPlugin } from "@zodios/core";
 import { touchCardLastViewedInputSchema } from "@/api/cards";
 import { touchCardLastViewed } from "@/lib/cards-db";
 
+/**
+ * Serves the local touch-card-last-viewed endpoint through the IndexedDB-backed service layer.
+ */
 export const touchCardLastViewedRequestPlugin: ZodiosPlugin = {
   name: "local-touch-card-last-viewed",
   request: async (apiDefinitions, config) => {

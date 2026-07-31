@@ -15,6 +15,9 @@ function stripCardThumbnail(card: CardRecord): Omit<CardRecord, "thumbnailBlob">
   return rest;
 }
 
+/**
+ * Serves the local list-cards endpoint, including query normalization and thumbnail stripping.
+ */
 export const listCardsRequestPlugin: ZodiosPlugin = {
   name: "local-list-cards",
   request: async (apiDefinitions, config) => {

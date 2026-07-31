@@ -3,6 +3,9 @@ import type { ZodiosPlugin } from "@zodios/core";
 
 import { normalizeSelfPairings } from "@/lib/cards-db";
 
+/**
+ * Serves the local normalize-self-pairings endpoint through the IndexedDB-backed service layer.
+ */
 export const normalizeSelfPairingsRequestPlugin: ZodiosPlugin = {
   name: "local-normalize-self-pairings",
   request: async (apiDefinitions, config) => {

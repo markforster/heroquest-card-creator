@@ -304,6 +304,9 @@ async function copyDuplicateSourceCollectionMemberships(
   return collectionsToUpdate.map((collection) => collection.id);
 }
 
+/**
+ * Creates and normalizes a card record, including split component state and duplicate-source links.
+ */
 export async function createCard(
   input: Omit<CardRecord, "id" | "createdAt" | "updatedAt" | "nameLower" | "schemaVersion"> & {
     id?: string;
@@ -378,6 +381,9 @@ export async function createCard(
   return base;
 }
 
+/**
+ * Updates a single normalized card record and rewrites any split component state derived from it.
+ */
 export async function updateCard(
   id: string,
   patch: Partial<Omit<CardRecord, "id" | "createdAt" | "schemaVersion">>,
@@ -415,6 +421,9 @@ export async function updateCard(
   return next;
 }
 
+/**
+ * Applies the same patch to multiple cards, skipping any ids that no longer exist.
+ */
 export async function updateCards(
   ids: string[],
   patch: Partial<Omit<CardRecord, "id" | "createdAt" | "schemaVersion">>,
@@ -458,15 +467,24 @@ export async function updateCards(
   dispatchCardsUpdated();
 }
 
+/**
+ * Loads a normalized card record by id.
+ */
 export async function getCard(id: string): Promise<CardRecord | null> {
   return getNormalizedCardRecord(id);
 }
 
+/**
+ * Loads only the stored card thumbnail blob.
+ */
 export async function getCardThumbnail(id: string): Promise<Blob | null> {
   const db = await openHqccDexieDb();
   return getNormalizedThumbnailBlob(id, db);
 }
 
+/**
+ * Updates the last-viewed timestamp used by recent-card and navigation flows.
+ */
 export async function touchCardLastViewed(
   id: string,
   viewedAt: number = Date.now(),
@@ -491,6 +509,9 @@ export async function touchCardLastViewed(
   return next;
 }
 
+/**
+ * Replaces the thumbnail blob stored for an existing card.
+ */
 export async function updateCardThumbnail(
   id: string,
   thumbnailBlob: Blob | null,
@@ -525,6 +546,9 @@ export async function updateCardThumbnail(
   return true;
 }
 
+/**
+ * Query options supported by card listing flows in the local API and UI.
+ */
 export type ListCardsFilter = {
   templateId?: TemplateId;
   status?: CardStatus;
@@ -532,6 +556,9 @@ export type ListCardsFilter = {
   deleted?: "exclude" | "include" | "only";
 };
 
+/**
+ * Lists normalized cards with optional template, status, text-search, and deleted-state filters.
+ */
 export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecord[]> {
   const { templateId, status, search, deleted = "exclude" } = filter;
   let filtered = await listNormalizedCardRecords();
@@ -558,6 +585,11 @@ export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecor
   return filtered;
 }
 
+/**
+ * Legacy compatibility hook retained for older pairing migrations.
+ *
+ * Current pairings live in the dedicated pairs store, so the operation is now a no-op.
+ */
 export async function normalizeSelfPairings(): Promise<number> {
   // Pairings are managed in a separate store in current versions.
   return 0;
@@ -800,6 +832,9 @@ function enqueueCardDeleteCascadeChanges(
   ids.forEach((id) => enqueueDbEstimateChange("cards", id));
 }
 
+/**
+ * Marks cards as deleted without removing their stored records.
+ */
 export async function softDeleteCards(
   ids: string[],
   deletedAt: number = Date.now(),
@@ -808,19 +843,31 @@ export async function softDeleteCards(
   await updateCards(ids, { deletedAt });
 }
 
+/**
+ * Clears soft-delete markers so cards return to normal listing results.
+ */
 export async function restoreCards(ids: string[]): Promise<void> {
   if (!ids.length) return;
   await updateCards(ids, { deletedAt: null });
 }
 
+/**
+ * Deletes a single card using the default cascade-confirming behavior.
+ */
 export async function deleteCard(id: string): Promise<void> {
   await deleteCardsWithCascade([id], { mode: "confirmable-cascade", confirmCascade: true });
 }
 
+/**
+ * Deletes multiple cards using the default cascade-confirming behavior.
+ */
 export async function deleteCards(ids: string[]): Promise<void> {
   await deleteCardsWithCascade(ids, { mode: "confirmable-cascade", confirmCascade: true });
 }
 
+/**
+ * Previews deck, pair, and collection fallout for a card deletion request without mutating storage.
+ */
 export async function previewDeleteCardsImpact(
   ids: string[],
   mode: CardDeleteMode = "confirmable-cascade",
@@ -876,6 +923,9 @@ export async function previewDeleteCardsImpact(
   };
 }
 
+/**
+ * Permanently deletes cards and any dependent deck, pair, and collection state implied by them.
+ */
 export async function deleteCardsWithCascade(
   ids: string[],
   options?: {

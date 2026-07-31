@@ -3,6 +3,9 @@ import type { ZodiosPlugin } from "@zodios/core";
 
 import { deleteCollection } from "@/lib/collections-db";
 
+/**
+ * Serves the local delete-collection endpoint through the IndexedDB-backed service layer.
+ */
 export const deleteCollectionRequestPlugin: ZodiosPlugin = {
   name: "local-delete-collection",
   request: async (apiDefinitions, config) => {

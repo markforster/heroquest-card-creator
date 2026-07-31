@@ -4,6 +4,9 @@ import { createGroup } from "@/lib/decks-service";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local create-deck-group endpoint through the IndexedDB-backed service layer.
+ */
 export const createDeckGroupRequestPlugin: ZodiosPlugin = {
   name: "local-create-deck-group",
   request: async (apiDefinitions, config) => {

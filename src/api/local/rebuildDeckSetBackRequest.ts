@@ -4,6 +4,9 @@ import { rebuildSetBack } from "@/lib/decks-service";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local rebuild-deck-set-back endpoint through the IndexedDB-backed service layer.
+ */
 export const rebuildDeckSetBackRequestPlugin: ZodiosPlugin = {
   name: "local-rebuild-deck-set-back",
   request: async (apiDefinitions, config) => {

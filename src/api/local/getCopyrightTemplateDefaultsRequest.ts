@@ -3,6 +3,9 @@ import { getCopyrightTemplateDefaults } from "@/lib/settings-db";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local get-copyright-template-defaults endpoint through the IndexedDB-backed service layer.
+ */
 export const getCopyrightTemplateDefaultsRequestPlugin: ZodiosPlugin = {
   name: "local-get-copyright-template-defaults",
   request: async (apiDefinitions, config) => {

@@ -4,6 +4,9 @@ import { addAsset } from "@/lib/assets-db";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local add-asset endpoint through the IndexedDB-backed service layer.
+ */
 export const addAssetRequestPlugin: ZodiosPlugin = {
   name: "local-add-asset",
   request: async (apiDefinitions, config) => {

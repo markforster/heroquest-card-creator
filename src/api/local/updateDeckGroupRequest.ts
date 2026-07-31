@@ -4,6 +4,9 @@ import { updateGroup } from "@/lib/decks-service";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local update-deck-group endpoint through the IndexedDB-backed service layer.
+ */
 export const updateDeckGroupRequestPlugin: ZodiosPlugin = {
   name: "local-update-deck-group",
   request: async (apiDefinitions, config) => {

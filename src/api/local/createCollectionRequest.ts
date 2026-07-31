@@ -4,6 +4,9 @@ import type { ZodiosPlugin } from "@zodios/core";
 import { collectionCreateInputSchema } from "@/api/collections";
 import { createCollection } from "@/lib/collections-db";
 
+/**
+ * Serves the local create-collection endpoint through the IndexedDB-backed service layer.
+ */
 export const createCollectionRequestPlugin: ZodiosPlugin = {
   name: "local-create-collection",
   request: async (apiDefinitions, config) => {

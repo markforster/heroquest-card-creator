@@ -3,6 +3,9 @@ import { softDeleteCards } from "@/lib/cards-db";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local soft-delete-cards endpoint through the IndexedDB-backed service layer.
+ */
 export const softDeleteCardsRequestPlugin: ZodiosPlugin = {
   name: "local-soft-delete-cards",
   request: async (apiDefinitions, config) => {

@@ -7,6 +7,9 @@ import { openHqccDexieDb } from "./hqcc-dexie";
 
 import { generateId } from ".";
 
+/**
+ * Creates a collection record used by stockpile and card-organization flows.
+ */
 export async function createCollection(input: {
   name: string;
   description?: string;
@@ -36,6 +39,9 @@ export async function createCollection(input: {
   return record;
 }
 
+/**
+ * Updates a collection and refreshes its `updatedAt` timestamp.
+ */
 export async function updateCollection(
   id: string,
   patch: Partial<Omit<CollectionRecord, "id" | "createdAt" | "schemaVersion">>,
@@ -60,11 +66,17 @@ export async function updateCollection(
   return next;
 }
 
+/**
+ * Loads a single collection by id.
+ */
 export async function getCollection(id: string): Promise<CollectionRecord | null> {
   const db = await openHqccDexieDb();
   return (await db.collections.get(id)) ?? null;
 }
 
+/**
+ * Lists collections ordered by name for picker and stockpile views.
+ */
 export async function listCollections(): Promise<CollectionRecord[]> {
   const db = await openHqccDexieDb();
   const collections = await db.collections.toArray();
@@ -74,6 +86,9 @@ export async function listCollections(): Promise<CollectionRecord[]> {
   );
 }
 
+/**
+ * Deletes a collection record without modifying the cards it referenced.
+ */
 export async function deleteCollection(id: string): Promise<void> {
   const db = await openHqccDexieDb();
   await db.collections.delete(id);

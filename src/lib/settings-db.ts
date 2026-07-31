@@ -7,6 +7,9 @@ import {
 import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
 import { openHqccDexieDb } from "./hqcc-dexie";
 
+/**
+ * Generic persisted settings row stored in the shared settings table.
+ */
 export type SettingsRecord = {
   id: string;
   value: unknown;
@@ -17,8 +20,14 @@ export type SettingsRecord = {
 const SETTINGS_STORE = "settings";
 const BORDER_SWATCHES_KEY = "borderSwatches";
 const DEFAULT_COPYRIGHT_KEY = "defaultCopyright";
+/**
+ * Settings-table key for per-template copyright visibility defaults.
+ */
 export const COPYRIGHT_TEMPLATE_DEFAULTS_KEY = "copyrightTemplateDefaults";
 
+/**
+ * Returns the shared border swatch palette used by color-picking UI.
+ */
 export async function getBorderSwatches(): Promise<string[]> {
   const db = await openHqccDexieDb();
   const record = (await db.settings.get(BORDER_SWATCHES_KEY)) as SettingsRecord | undefined;
@@ -31,6 +40,9 @@ export async function getBorderSwatches(): Promise<string[]> {
   return [];
 }
 
+/**
+ * Persists the shared border swatch palette used across card editors.
+ */
 export async function setBorderSwatches(swatches: string[]): Promise<void> {
   const db = await openHqccDexieDb();
   const record: SettingsRecord = {
@@ -44,6 +56,9 @@ export async function setBorderSwatches(swatches: string[]): Promise<void> {
   enqueueDbEstimateChange(SETTINGS_STORE, record.id);
 }
 
+/**
+ * Returns the fallback copyright text applied when a card has no override.
+ */
 export async function getDefaultCopyright(): Promise<string> {
   const db = await openHqccDexieDb();
   const record = (await db.settings.get(DEFAULT_COPYRIGHT_KEY)) as SettingsRecord | undefined;
@@ -56,6 +71,9 @@ export async function getDefaultCopyright(): Promise<string> {
   return "";
 }
 
+/**
+ * Persists the global fallback copyright text.
+ */
 export async function setDefaultCopyright(value: string): Promise<void> {
   const db = await openHqccDexieDb();
   const record: SettingsRecord = {
@@ -69,6 +87,9 @@ export async function setDefaultCopyright(value: string): Promise<void> {
   enqueueDbEstimateChange(SETTINGS_STORE, record.id);
 }
 
+/**
+ * Loads explicit per-template copyright visibility overrides.
+ */
 export async function getCopyrightTemplateDefaults(): Promise<CopyrightTemplateDefaults> {
   const db = await openHqccDexieDb();
   const record = (await db.settings.get(COPYRIGHT_TEMPLATE_DEFAULTS_KEY)) as
@@ -78,6 +99,9 @@ export async function getCopyrightTemplateDefaults(): Promise<CopyrightTemplateD
   return normalizeCopyrightTemplateDefaults(record?.value);
 }
 
+/**
+ * Persists per-template copyright visibility overrides after normalizing the payload.
+ */
 export async function setCopyrightTemplateDefaults(
   defaults: CopyrightTemplateDefaults,
 ): Promise<void> {

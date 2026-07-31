@@ -3,6 +3,9 @@ import { updateCardThumbnail } from "@/lib/cards-db";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local update-card-thumbnail endpoint through the IndexedDB-backed service layer.
+ */
 export const updateCardThumbnailRequestPlugin: ZodiosPlugin = {
   name: "local-update-card-thumbnail",
   request: async (apiDefinitions, config) => {

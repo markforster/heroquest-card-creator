@@ -24,6 +24,9 @@ import {
   sortByIndex,
 } from "@/lib/decks-db";
 
+/**
+ * Lists decks, optionally filtering by a case-insensitive title search.
+ */
 export async function listDecks({ search }: { search?: string } = {}): Promise<DeckRecord[]> {
   const db = await openHqccDexieDb();
   const decks = (await db.decks.toArray()).map((deck) => ({
@@ -35,6 +38,9 @@ export async function listDecks({ search }: { search?: string } = {}): Promise<D
   return decks.filter((deck) => deck.title.toLocaleLowerCase().includes(q));
 }
 
+/**
+ * Lists every deck location where a card currently participates.
+ */
 export async function listCardDeckMembership(cardId: string): Promise<CardDeckMembership[]> {
   const card = await getCard(cardId);
   if (!card || card.status !== "saved" || card.deletedAt != null) {
@@ -172,6 +178,9 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
   return memberships;
 }
 
+/**
+ * Loads a deck by id.
+ */
 export async function getDeck(deckId: string): Promise<DeckRecord | null> {
   const db = await openHqccDexieDb();
   const deck = (await db.decks.get(deckId)) ?? null;
@@ -181,28 +190,43 @@ export async function getDeck(deckId: string): Promise<DeckRecord | null> {
   return { ...deck, keySetId: deck.keySetId ?? null };
 }
 
+/**
+ * Lists groups for a deck in sorted order.
+ */
 export async function listGroups(deckId: string): Promise<DeckGroupRecord[]> {
   const db = await openHqccDexieDb();
   const groups = await db.deckGroups.where("deckId").equals(deckId).toArray();
   return sortByIndex(groups);
 }
 
+/**
+ * Loads a deck group by id.
+ */
 export async function getGroup(groupId: string): Promise<DeckGroupRecord | null> {
   const db = await openHqccDexieDb();
   return (await db.deckGroups.get(groupId)) ?? null;
 }
 
+/**
+ * Lists sets for a deck in sorted order.
+ */
 export async function listSets(deckId: string): Promise<DeckSetRecord[]> {
   const db = await openHqccDexieDb();
   const sets = await db.deckSets.where("deckId").equals(deckId).toArray();
   return sortByIndex(sets);
 }
 
+/**
+ * Loads a deck set by id.
+ */
 export async function getSet(setId: string): Promise<DeckSetRecord | null> {
   const db = await openHqccDexieDb();
   return (await db.deckSets.get(setId)) ?? null;
 }
 
+/**
+ * Lists entries for a set in sorted order.
+ */
 export async function listEntriesForSet(setId: string): Promise<DeckEntryRecord[]> {
   const db = await openHqccDexieDb();
   const entries = await db.deckEntries.where("setId").equals(setId).toArray();
@@ -214,6 +238,9 @@ async function getPairById(pairId: string): Promise<PairRecord | null> {
   return (await db.pairs.get(pairId)) ?? null;
 }
 
+/**
+ * Returns the deck locations currently using a pair.
+ */
 export async function getDeckUsageForPair(pairId: string): Promise<DeckUsageLocation[]> {
   const db = await openHqccDexieDb();
   const entries = (await db.deckEntries.where("pairId").equals(pairId).toArray()).map(
@@ -249,6 +276,9 @@ export async function getDeckUsageForPair(pairId: string): Promise<DeckUsageLoca
   return usage;
 }
 
+/**
+ * Returns the deck locations currently using any supplied back-face ids.
+ */
 export async function getDeckUsageForBackFaceIds(
   backFaceIds: string[],
 ): Promise<Array<DeckUsageLocation & { backFaceId: string }>> {
@@ -283,6 +313,9 @@ export async function getDeckUsageForBackFaceIds(
   return usage;
 }
 
+/**
+ * Validates that a pair can be added to a set without violating deck constraints.
+ */
 export async function validatePairEntry(setId: string, pairId: string): Promise<void> {
   const db = await openHqccDexieDb();
   const set = (await db.deckSets.get(setId)) ?? null;
@@ -296,6 +329,9 @@ export async function validatePairEntry(setId: string, pairId: string): Promise<
   }
 }
 
+/**
+ * Removes deck entries whose pair records are no longer present and returns the number removed.
+ */
 export async function repairOrphanDeckEntries(): Promise<number> {
   const db = await openHqccDexieDb();
   const [entries, pairs] = await Promise.all([db.deckEntries.toArray(), db.pairs.toArray()]);

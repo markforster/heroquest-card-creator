@@ -16,6 +16,9 @@ function isVersionError(error: unknown): boolean {
   );
 }
 
+/**
+ * Resolves the local database readiness check through the IndexedDB-backed service layer.
+ */
 export const checkDbVersionRequestPlugin: ZodiosPlugin = {
   name: "local-check-db-version",
   request: async (apiDefinitions, config) => {

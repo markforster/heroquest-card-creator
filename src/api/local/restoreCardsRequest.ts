@@ -3,6 +3,9 @@ import { restoreCards } from "@/lib/cards-db";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local restore-cards endpoint through the IndexedDB-backed service layer.
+ */
 export const restoreCardsRequestPlugin: ZodiosPlugin = {
   name: "local-restore-cards",
   request: async (apiDefinitions, config) => {

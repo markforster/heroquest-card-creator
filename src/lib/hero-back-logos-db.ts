@@ -6,6 +6,9 @@ import type { HeroBackLogoMode } from "@/types/card-data";
 
 import type { Table } from "dexie";
 
+/**
+ * Persisted metadata for a custom hero-back logo asset.
+ */
 export type HeroBackLogoRecord = {
   id: string;
   name: string;
@@ -16,6 +19,9 @@ export type HeroBackLogoRecord = {
   updatedAt: number;
 };
 
+/**
+ * Hero-back logo record including the stored binary payload.
+ */
 export type HeroBackLogoRecordWithBlob = HeroBackLogoRecord & {
   blob: Blob;
 };
@@ -24,11 +30,17 @@ type StoredHeroBackLogoRecord = HeroBackLogoRecord & {
   blob?: Blob;
 };
 
+/**
+ * Strategy used to rewrite dependent cards before removing a custom hero-back logo.
+ */
 export type DeleteHeroBackLogoRemediation =
   | { mode: "default" }
   | { mode: "none" }
   | { mode: "custom"; logoId: string; logoName?: string; width?: number; height?: number };
 
+/**
+ * Describes a card currently using a specific custom hero-back logo.
+ */
 export type HeroBackLogoUsageRecord = {
   cardId: string;
   name: string;
@@ -56,6 +68,9 @@ function throwLogoError(error: unknown, fallback: string): never {
   throw new Error(fallback);
 }
 
+/**
+ * Lists custom hero-back logo metadata without loading the stored blobs.
+ */
 export async function listHeroBackLogos(): Promise<HeroBackLogoRecord[]> {
   const db = await openHqccDexieDb();
   const table = getLogosTable(db);
@@ -68,6 +83,9 @@ export async function listHeroBackLogos(): Promise<HeroBackLogoRecord[]> {
   }
 }
 
+/**
+ * Lists custom hero-back logos with their blobs for backup and migration flows.
+ */
 export async function listHeroBackLogosWithBlobs(): Promise<HeroBackLogoRecordWithBlob[]> {
   const db = await openHqccDexieDb();
   const table = getLogosTable(db);
@@ -82,6 +100,9 @@ export async function listHeroBackLogosWithBlobs(): Promise<HeroBackLogoRecordWi
   }
 }
 
+/**
+ * Returns the stored blob for a custom hero-back logo.
+ */
 export async function getHeroBackLogoBlob(id: string): Promise<Blob | null> {
   const db = await openHqccDexieDb();
   const table = getLogosTable(db);
@@ -94,11 +115,17 @@ export async function getHeroBackLogoBlob(id: string): Promise<Blob | null> {
   }
 }
 
+/**
+ * Creates a temporary object URL for previewing a stored custom hero-back logo.
+ */
 export async function getHeroBackLogoObjectUrl(id: string): Promise<string | null> {
   const blob = await getHeroBackLogoBlob(id);
   return blob ? URL.createObjectURL(blob) : null;
 }
 
+/**
+ * Adds or replaces a custom hero-back logo asset.
+ */
 export async function addHeroBackLogo(
   id: string,
   blob: Blob,
@@ -128,6 +155,11 @@ export async function addHeroBackLogo(
   enqueueDbEstimateChange(STORE_NAME, id);
 }
 
+/**
+ * Deletes a custom hero-back logo and rewrites dependent card logo settings using the chosen remediation.
+ *
+ * Returns the ids of cards that were updated during remediation.
+ */
 export async function deleteHeroBackLogo(
   logoId: string,
   remediation: DeleteHeroBackLogoRemediation,
@@ -180,6 +212,9 @@ export async function deleteHeroBackLogo(
   return affectedCardIds;
 }
 
+/**
+ * Lists cards currently referencing a custom hero-back logo.
+ */
 export async function getHeroBackLogoUsage(
   logoId: string,
 ): Promise<HeroBackLogoUsageRecord[]> {

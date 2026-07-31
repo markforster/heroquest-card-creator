@@ -21,7 +21,13 @@ import { openHqccDexieDb } from "./hqcc-dexie";
 
 import { generateId } from ".";
 
+/**
+ * Public pair record returned by the local API and deck tooling.
+ */
 export type PairSummary = PairRecord;
+/**
+ * Controls whether delete operations should fail on usage or require explicit cascade approval.
+ */
 export type PairDeleteMode = "block" | "confirmable-cascade";
 
 type PairDeleteOptions = {
@@ -68,6 +74,9 @@ async function listLegacyPairsForFace(faceId: string): Promise<PairSummary[]> {
   return [];
 }
 
+/**
+ * Lists every pair that references the supplied face id on either the front or back side.
+ */
 export async function listPairsForFace(faceId: string): Promise<PairSummary[]> {
   const db = await openHqccDexieDb();
   const combined = await listPairsForFaceFromDb(db, faceId);
@@ -75,6 +84,9 @@ export async function listPairsForFace(faceId: string): Promise<PairSummary[]> {
   return listLegacyPairsForFace(faceId);
 }
 
+/**
+ * Lists every stored face pairing, falling back to legacy card-derived pairings if needed.
+ */
 export async function listAllPairs(): Promise<PairSummary[]> {
   const db = await openHqccDexieDb();
   const pairs = await listAllPairsFromDb(db);
@@ -253,6 +265,9 @@ async function executePairDeletionPlan(report: PairUsageReport): Promise<{
   return { deletedPairs: pairIds.length, deletedEntries: entryIds.length };
 }
 
+/**
+ * Previews the cascade work required to delete a specific front/back pairing.
+ */
 export async function previewDeletePair(
   frontFaceId: string,
   backFaceId: string,
@@ -294,6 +309,9 @@ function mergeUsageReports(
   };
 }
 
+/**
+ * Produces a combined cascade report for every pair that touches the supplied face ids.
+ */
 export async function previewDeletePairsForFaces(
   faceIds: string[],
   options?: Pick<PairDeleteOptions, "mode">,
@@ -319,6 +337,9 @@ export async function previewDeletePairsForFaces(
   return mergeUsageReports(reports, mode);
 }
 
+/**
+ * Creates a front/back pairing unless the same pairing already exists.
+ */
 export async function createPair(
   frontFaceId: string,
   backFaceId: string,
@@ -326,6 +347,9 @@ export async function createPair(
   return createPairWithOverrides({ frontFaceId, backFaceId });
 }
 
+/**
+ * Creates a pairing with caller-supplied identifiers and timestamps for import and recovery flows.
+ */
 export async function createPairWithOverrides(input: {
   frontFaceId: string;
   backFaceId: string;
@@ -375,6 +399,9 @@ export async function createPairWithOverrides(input: {
   return record;
 }
 
+/**
+ * Deletes all pairs whose front face matches the supplied card id.
+ */
 export async function deletePairsForFront(frontFaceId: string): Promise<void> {
   const pairs = await listPairsForFace(frontFaceId);
   const deletions = pairs.filter((pair) => pair.frontFaceId === frontFaceId);
@@ -390,6 +417,9 @@ export async function deletePairsForFront(frontFaceId: string): Promise<void> {
   deletions.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
 }
 
+/**
+ * Deletes all pairs whose back face matches the supplied card id.
+ */
 export async function deletePairsForBack(backFaceId: string): Promise<void> {
   const pairs = await listPairsForFace(backFaceId);
   const deletions = pairs.filter((pair) => pair.backFaceId === backFaceId);
@@ -405,6 +435,9 @@ export async function deletePairsForBack(backFaceId: string): Promise<void> {
   deletions.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
 }
 
+/**
+ * Deletes every pair that references the supplied face id on either side.
+ */
 export async function deletePairsForFace(faceId: string): Promise<void> {
   const pairs = await listPairsForFace(faceId);
   if (!pairs.length) return;
@@ -419,6 +452,9 @@ export async function deletePairsForFace(faceId: string): Promise<void> {
   pairs.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
 }
 
+/**
+ * Deletes a single front/back pair and optionally cascades deck-entry cleanup.
+ */
 export async function deletePair(
   frontFaceId: string,
   backFaceId: string,
@@ -448,6 +484,9 @@ export async function deletePair(
   };
 }
 
+/**
+ * Deletes every pair that references any supplied face id and optionally cascades deck cleanup.
+ */
 export async function deletePairsForFaces(
   faceIds: string[],
   options?: PairDeleteOptions,
@@ -473,6 +512,9 @@ export async function deletePairsForFaces(
   };
 }
 
+/**
+ * Makes the supplied back face authoritative by removing stale pairings and creating missing ones.
+ */
 export async function replacePairsForBack(
   backFaceId: string,
   frontFaceIds: string[],
@@ -531,6 +573,9 @@ export async function replacePairsForBack(
   additions.forEach((pair) => enqueueDbEstimateChange("pairs", pair.id));
 }
 
+/**
+ * Returns the other face ids paired with the supplied card.
+ */
 export async function getPairedFaceIds(faceId: string): Promise<string[]> {
   const pairs = await listPairsForFace(faceId);
   const ids = new Set<string>();

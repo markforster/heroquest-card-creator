@@ -3,6 +3,9 @@ import { deleteGroup } from "@/lib/decks-service";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local delete-deck-group endpoint through the IndexedDB-backed service layer.
+ */
 export const deleteDeckGroupRequestPlugin: ZodiosPlugin = {
   name: "local-delete-deck-group",
   request: async (apiDefinitions, config) => {

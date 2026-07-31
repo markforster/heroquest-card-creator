@@ -3,6 +3,9 @@ import { listCardDeckMembership } from "@/lib/decks-service";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local list-card-decks endpoint through the IndexedDB-backed service layer.
+ */
 export const listCardDecksRequestPlugin: ZodiosPlugin = {
   name: "local-list-card-decks",
   request: async (apiDefinitions, config) => {

@@ -3,6 +3,9 @@ import { getDefaultCopyright } from "@/lib/settings-db";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local get-default-copyright endpoint through the IndexedDB-backed service layer.
+ */
 export const getDefaultCopyrightRequestPlugin: ZodiosPlugin = {
   name: "local-get-default-copyright",
   request: async (apiDefinitions, config) => {

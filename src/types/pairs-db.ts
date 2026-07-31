@@ -1,3 +1,6 @@
+/**
+ * Persisted front/back card pairing record.
+ */
 export interface PairRecord {
   id: string;
   name: string;

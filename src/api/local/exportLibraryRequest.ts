@@ -18,6 +18,9 @@ type LibraryRequestConfig = {
   hqcc?: LibraryProgressHandlers;
 };
 
+/**
+ * Runs the local library export flow and forwards progress handlers to the backup service.
+ */
 export const exportLibraryRequestPlugin: ZodiosPlugin = {
   name: "local-export-library",
   request: async (apiDefinitions, config) => {

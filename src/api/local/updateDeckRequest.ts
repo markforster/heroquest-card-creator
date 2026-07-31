@@ -4,6 +4,9 @@ import { updateDeck } from "@/lib/decks-service";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local update-deck endpoint through the IndexedDB-backed service layer.
+ */
 export const updateDeckRequestPlugin: ZodiosPlugin = {
   name: "local-update-deck",
   request: async (apiDefinitions, config) => {

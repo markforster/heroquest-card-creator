@@ -3,6 +3,9 @@ import type { ZodiosPlugin } from "@zodios/core";
 
 import { getCollection } from "@/lib/collections-db";
 
+/**
+ * Serves the local get-collection endpoint through the IndexedDB-backed service layer.
+ */
 export const getCollectionRequestPlugin: ZodiosPlugin = {
   name: "local-get-collection",
   request: async (apiDefinitions, config) => {

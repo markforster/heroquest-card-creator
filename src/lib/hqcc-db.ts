@@ -14,9 +14,15 @@ import {
 } from "@/lib/hqcc-db-native";
 import { runHqccDbStartupJobs } from "@/lib/hqcc-db-startup-jobs";
 
+/**
+ * Native IndexedDB handle returned after the Dexie-backed database has been opened successfully.
+ */
 export type HqccDb = IDBDatabase;
 export { DB_NAME, DB_VERSION };
 
+/**
+ * Opens the HeroQuest Card Creator database, ensures metadata records exist, and schedules startup jobs.
+ */
 export async function openHqccDb(): Promise<HqccDb> {
   try {
     ensureIndexedDbAvailable();

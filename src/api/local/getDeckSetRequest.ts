@@ -3,6 +3,9 @@ import { getSet } from "@/lib/decks-service";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local get-deck-set endpoint through the IndexedDB-backed service layer.
+ */
 export const getDeckSetRequestPlugin: ZodiosPlugin = {
   name: "local-get-deck-set",
   request: async (apiDefinitions, config) => {

@@ -3,6 +3,9 @@ import { listDecks } from "@/lib/decks-service";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local list-decks endpoint through the IndexedDB-backed service layer.
+ */
 export const listDecksRequestPlugin: ZodiosPlugin = {
   name: "local-list-decks",
   request: async (apiDefinitions, config) => {

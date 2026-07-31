@@ -31,6 +31,9 @@ import {
   listSets,
 } from "@/lib/decks-queries";
 
+/**
+ * Creates a deck together with its default first group.
+ */
 export async function createDeck(input: {
   title: string;
   description?: string | null;
@@ -69,6 +72,9 @@ export async function createDeck(input: {
   return record;
 }
 
+/**
+ * Updates deck metadata and refreshes its timestamp.
+ */
 export async function updateDeck(
   deckId: string,
   patch: Partial<Pick<DeckRecord, "title" | "description" | "keySetId">>,
@@ -113,6 +119,9 @@ async function touchDeckUpdatedAtInTransaction(
   });
 }
 
+/**
+ * Deletes a deck and all of its groups, sets, and entries.
+ */
 export async function deleteDeck(deckId: string): Promise<void> {
   const db = await openHqccDexieDb();
   const groups = await db.deckGroups.where("deckId").equals(deckId).toArray();
@@ -134,6 +143,9 @@ export async function deleteDeck(deckId: string): Promise<void> {
   entries.forEach((entry) => enqueueDbEstimateChange(ENTRIES_STORE, entry.id));
 }
 
+/**
+ * Clones an existing deck together with its groups, sets, and entries.
+ */
 export async function duplicateDeck(deckId: string): Promise<DeckRecord | null> {
   const existingDeck = await getDeck(deckId);
   if (!existingDeck) return null;
@@ -216,6 +228,9 @@ export async function duplicateDeck(deckId: string): Promise<DeckRecord | null> 
   return deckCopy;
 }
 
+/**
+ * Creates a new group inside a deck.
+ */
 export async function createGroup(
   deckId: string,
   input: { title?: string },
@@ -240,6 +255,9 @@ export async function createGroup(
   return record;
 }
 
+/**
+ * Updates deck-group metadata and refreshes the owning deck timestamp.
+ */
 export async function updateGroup(
   groupId: string,
   patch: Partial<Pick<DeckGroupRecord, "title">>,
@@ -258,6 +276,9 @@ export async function updateGroup(
   return next;
 }
 
+/**
+ * Deletes a deck group and any sets and entries that belong to it.
+ */
 export async function deleteGroup(groupId: string): Promise<void> {
   const db = await openHqccDexieDb();
   const group = (await db.deckGroups.get(groupId)) ?? null;
@@ -284,6 +305,9 @@ export async function deleteGroup(groupId: string): Promise<void> {
   entryIds.forEach((id) => enqueueDbEstimateChange(ENTRIES_STORE, id));
 }
 
+/**
+ * Reorders the groups within a deck.
+ */
 export async function reorderGroups(deckId: string, orderedGroupIds: string[]): Promise<void> {
   const groups = await listGroups(deckId);
   const groupMap = new Map(groups.map((group) => [group.id, group]));
@@ -313,6 +337,9 @@ async function ensureBackFace(backFaceId: string): Promise<void> {
   }
 }
 
+/**
+ * Creates a set under a deck group for a specific back-face card.
+ */
 export async function createSet(
   deckId: string,
   groupId: string,
@@ -356,6 +383,9 @@ export async function createSet(
   return record;
 }
 
+/**
+ * Updates deck-set metadata and refreshes the owning deck timestamp.
+ */
 export async function updateSet(
   setId: string,
   patch: Partial<Pick<DeckSetRecord, "title" | "description" | "groupId">>,
@@ -374,6 +404,9 @@ export async function updateSet(
   return next;
 }
 
+/**
+ * Deletes a set and its deck entries.
+ */
 export async function deleteSet(setId: string): Promise<void> {
   const db = await openHqccDexieDb();
   const set = (await db.deckSets.get(setId)) ?? null;
@@ -412,6 +445,9 @@ export async function deleteSet(setId: string): Promise<void> {
   }
 }
 
+/**
+ * Reorders the sets within a deck group.
+ */
 export async function reorderSets(
   deckId: string,
   groupId: string,
@@ -437,6 +473,9 @@ export async function reorderSets(
   orderedSetIds.forEach((id) => enqueueDbEstimateChange(SETS_STORE, id));
 }
 
+/**
+ * Rebuilds a set's back-face linkage after the chosen back card changes.
+ */
 export async function rebuildSetBack(
   setId: string,
   newBackFaceId: string,
@@ -506,6 +545,9 @@ export async function rebuildSetBack(
   nextEntries.forEach((entry) => enqueueDbEstimateChange(ENTRIES_STORE, entry.id));
 }
 
+/**
+ * Adds front-face cards to a set by creating any missing pairs and entries.
+ */
 export async function addFrontsToSet(
   setId: string,
   frontFaceIds: string[],
@@ -556,6 +598,9 @@ export async function addFrontsToSet(
   return created;
 }
 
+/**
+ * Removes specific entries from a set.
+ */
 export async function removeEntries(setId: string, entryIds: string[]): Promise<void> {
   if (!entryIds.length) return;
   const db = await openHqccDexieDb();
@@ -568,6 +613,9 @@ export async function removeEntries(setId: string, entryIds: string[]): Promise<
   await reorderEntries(setId, remaining.map((entry) => entry.id));
 }
 
+/**
+ * Reorders entries within a set.
+ */
 export async function reorderEntries(setId: string, orderedEntryIds: string[]): Promise<void> {
   const entries = await listEntriesForSet(setId);
   const set = await getSet(setId);
@@ -591,6 +639,9 @@ export async function reorderEntries(setId: string, orderedEntryIds: string[]): 
   orderedEntryIds.forEach((id) => enqueueDbEstimateChange(ENTRIES_STORE, id));
 }
 
+/**
+ * Updates the copy count stored on a deck entry.
+ */
 export async function updateEntryCount(
   setId: string,
   entryId: string,
@@ -611,6 +662,9 @@ export async function updateEntryCount(
   return next;
 }
 
+/**
+ * Deletes deck structures that depend on the supplied back-face ids.
+ */
 export async function cascadeDeleteDeckDataForBackFaceIds(backFaceIds: string[]): Promise<{
   deletedEntries: number;
   deletedSets: number;
