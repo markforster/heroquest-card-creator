@@ -158,10 +158,13 @@ type DragState =
       maxScale: number;
     };
 
-export default function CardPreviewEditorOverlay({
-  templateId,
-  cardData,
-}: CardPreviewEditorOverlayProps) {
+export default function CardPreviewEditorOverlay(props: CardPreviewEditorOverlayProps) {
+  if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return null;
+
+  return <EnabledCardPreviewEditorOverlay {...props} />;
+}
+
+function EnabledCardPreviewEditorOverlay({ templateId, cardData }: CardPreviewEditorOverlayProps) {
   const form = useFormContext() as ReturnType<typeof useFormContext> | null;
   const editorTargets = useOptionalEditorTargets();
   const overlayId = useId().replace(/:/g, "");
@@ -178,10 +181,6 @@ export default function CardPreviewEditorOverlay({
   const { width: iconImageWidth, height: iconImageHeight } = useAssetImageUrl(
     selectedTargetId === EDITOR_TARGET_IDS.imageIcon ? iconAssetId : undefined,
   );
-
-  if (!ENABLE_EDITOR_TARGET_INTERACTIONS) {
-    return null;
-  }
 
   const blueprint = templateId ? blueprintsByTemplateId[templateId] : undefined;
   const imageLayer = blueprint?.layers.find((layer) => {
