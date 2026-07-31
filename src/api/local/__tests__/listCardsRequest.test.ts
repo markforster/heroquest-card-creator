@@ -6,6 +6,20 @@ jest.mock("@/lib/data/cards-db", () => ({
 
 import { listCardsRequestPlugin } from "@/api/local/listCardsRequest";
 
+async function runAdapter() {
+  const request = listCardsRequestPlugin.request;
+  if (!request) {
+    throw new Error("Expected listCardsRequestPlugin.request");
+  }
+
+  const resolved = await request([], {} as never);
+  if (typeof resolved.adapter !== "function") {
+    throw new Error("Expected listCardsRequestPlugin to provide an adapter");
+  }
+
+  return resolved.adapter({} as never);
+}
+
 describe("listCardsRequestPlugin", () => {
   beforeEach(() => {
     listCards.mockReset();
@@ -27,9 +41,7 @@ describe("listCardsRequestPlugin", () => {
       },
     ]);
 
-    const resolved = await listCardsRequestPlugin.request?.([], {} as never);
-    const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
-    const response = await adapter?.();
+    const response = await runAdapter();
 
     expect(response?.status).toBe(200);
     expect(response?.data).toEqual([
