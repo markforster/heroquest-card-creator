@@ -52,9 +52,7 @@ export default function AppearanceSettingsPanel() {
           />
           {t("label.useSystemTheme")}
         </label>
-        <div className={styles.settingsPanelRow}>
-          {t("label.useSystemThemeHint")}
-        </div>
+        <div className={styles.settingsPanelRow}>{t("label.useSystemThemeHint")}</div>
         <div className={`${styles.settingsPanelRow} d-flex flex-column gap-2`}>
           <div className={styles.settingsGroupTitle}>{t("label.theme")}</div>
           <label className={`${styles.settingsPanelOption} d-inline-flex align-items-center gap-2`}>

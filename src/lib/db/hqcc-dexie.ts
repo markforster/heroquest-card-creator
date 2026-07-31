@@ -28,7 +28,6 @@ import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from
 import type { PairRecord } from "@/types/pairs-db";
 import { APP_VERSION } from "@/version";
 
-
 export const DB_NAME = "hqcc";
 export const DB_VERSION = 11;
 export const DEXIE_DB_VERSION = 1.1;

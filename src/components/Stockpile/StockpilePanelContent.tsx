@@ -60,10 +60,7 @@ import type {
   StockpilePrimaryToolbarGroupValue,
   StockpilePrimaryToolbarSortValue,
 } from "@/components/Stockpile/types";
-import {
-  ENABLE_CARD_THUMB_CACHE,
-  ENABLE_STOCKPILE_COLLECTION_PDF_EXPORT,
-} from "@/config/flags";
+import { ENABLE_CARD_THUMB_CACHE, ENABLE_STOCKPILE_COLLECTION_PDF_EXPORT } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -461,8 +458,10 @@ export default function StockpilePanelContent({
     const visibleIds = new Set(filteredCards.map((card) => card.id));
     return selectedIds.filter((id) => visibleIds.has(id));
   }, [filteredCards, selectedIds]);
-  const allVisibleSelected = filteredCards.length > 0 && visibleSelectedIds.length === filteredCards.length;
-  const someVisibleSelected = visibleSelectedIds.length > 0 && visibleSelectedIds.length < filteredCards.length;
+  const allVisibleSelected =
+    filteredCards.length > 0 && visibleSelectedIds.length === filteredCards.length;
+  const someVisibleSelected =
+    visibleSelectedIds.length > 0 && visibleSelectedIds.length < filteredCards.length;
   const hasMultiSelection = selectedIds.length > 1;
   const hasSavedCards = cards.some((card) => card.deletedAt == null);
   const hasRecentlyDeletedCards = cards.some((card) => typeof card.deletedAt === "number");
@@ -881,7 +880,7 @@ export default function StockpilePanelContent({
             showCopyright: getTemplateDefault(templateId),
           }),
         );
-        }
+      }
     });
 
     const refreshedCards = await apiClient.listCards({
@@ -1075,10 +1074,7 @@ export default function StockpilePanelContent({
     if (!target) return;
     try {
       const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
-      await apiClient.updateCollection(
-        { cardIds: remaining },
-        { params: { id: target.id } },
-      );
+      await apiClient.updateCollection({ cardIds: remaining }, { params: { id: target.id } });
       const refreshed = await apiClient.listCollections();
       setCollections(refreshed);
       await invalidateCollectionsQueries(queryClient);
@@ -1139,10 +1135,7 @@ export default function StockpilePanelContent({
       try {
         await finalizeHardDelete(ids, confirmCascade);
       } catch (error) {
-        if (
-          isCardDeleteConfirmRequiredError(error) ||
-          isPairDeleteConfirmRequiredError(error)
-        ) {
+        if (isCardDeleteConfirmRequiredError(error) || isPairDeleteConfirmRequiredError(error)) {
           if (isCardDeleteConfirmRequiredError(error)) {
             setCardDeletePendingIds(ids);
             setCardDeleteUsagePrompt(error.report);
@@ -1226,11 +1219,7 @@ export default function StockpilePanelContent({
     if (selectedIds.length > 0) {
       return [t("hint.stockpileDragCollection"), t("hint.stockpileExportSelected")];
     }
-    return [
-      t("hint.stockpileSelect"),
-      t("hint.stockpileMultiSelect"),
-      t("hint.stockpileOpen"),
-    ];
+    return [t("hint.stockpileSelect"), t("hint.stockpileMultiSelect"), t("hint.stockpileOpen")];
   }, [selectedIds.length, t]);
   const [stockpileFooterHintIndex, setStockpileFooterHintIndex] = useState(0);
 
@@ -1280,15 +1269,7 @@ export default function StockpilePanelContent({
         "lightbulb",
       );
     }
-  }, [
-    clearTip,
-    isOpen,
-    isPairMode,
-    setTip,
-    stockpileFooterHintIndex,
-    stockpileFooterHints,
-    t,
-  ]);
+  }, [clearTip, isOpen, isPairMode, setTip, stockpileFooterHintIndex, stockpileFooterHints, t]);
 
   useEffect(() => {
     return () => {
@@ -1303,7 +1284,8 @@ export default function StockpilePanelContent({
     viewMode,
     onViewModeChange: handleViewModeChange,
     filterValue: mapTemplateFilterToPrimaryToolbarValue(templateFilter),
-    onFilterChange: (next: string) => setTemplateFilter(mapPrimaryToolbarValueToTemplateFilter(next)),
+    onFilterChange: (next: string) =>
+      setTemplateFilter(mapPrimaryToolbarValueToTemplateFilter(next)),
     filterOptions: primaryToolbarFilterOptions,
     sortValue: sortMode,
     onSortChange: setSortMode,
@@ -1345,7 +1327,9 @@ export default function StockpilePanelContent({
     },
     onSelectNone: () => setSelectedIds([]),
     isAddToCollectionDisabled:
-      activeFilter.type === "recentlyDeleted" || visibleSelectedIds.length === 0 || !hasOtherCollections,
+      activeFilter.type === "recentlyDeleted" ||
+      visibleSelectedIds.length === 0 ||
+      !hasOtherCollections,
     isDeleteDisabled: selectedIds.length === 0,
     isExportDisabled: !canExport,
     isLoadDisabled: !selectedCard || hasMultiSelection || !onLoadCard,
@@ -1355,8 +1339,7 @@ export default function StockpilePanelContent({
     onLoad: handlePrimaryToolbarLoad,
   } as const;
   const showSecondaryActionsBar =
-    !isPairMode &&
-    (activeFilter.type === "collection" || activeFilter.type === "recentlyDeleted");
+    !isPairMode && (activeFilter.type === "collection" || activeFilter.type === "recentlyDeleted");
 
   if (!isOpen) {
     return null;
@@ -1385,9 +1368,7 @@ export default function StockpilePanelContent({
               <section className={styles.stockpileCenterPanel}>
                 <div className={styles.stockpileCenterTop}>
                   <div className={styles.stockpileCenterStack}>
-                    {!isPairMode ? (
-                      <StockpilePrimaryToolbar {...primaryToolbarProps} />
-                    ) : null}
+                    {!isPairMode ? <StockpilePrimaryToolbar {...primaryToolbarProps} /> : null}
                     <StockpileToolbar
                       onOpenCollections={() => setIsCollectionsDrawerOpen(true)}
                       collectionsToggleLabel={collectionsToggleLabel}

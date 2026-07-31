@@ -162,7 +162,10 @@ describe("resolveDeckPreviewIds visual prioritization", () => {
       pairMap: new Map(),
     });
 
-    expect(mockUpdateDeck).toHaveBeenCalledWith({ keySetId: null }, { params: { deckId: "deck-1" } });
+    expect(mockUpdateDeck).toHaveBeenCalledWith(
+      { keySetId: null },
+      { params: { deckId: "deck-1" } },
+    );
     expect(ids).toEqual(["b2", "b1"]);
   });
 });

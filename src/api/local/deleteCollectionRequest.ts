@@ -3,7 +3,6 @@ import { deleteCollection } from "@/lib/data/collections-db";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
-
 /**
  * Serves the local delete-collection endpoint through the IndexedDB-backed service layer.
  */

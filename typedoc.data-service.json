@@ -17,9 +17,7 @@
     "src/types/pairs-db.ts",
     "src/types/templates.ts"
   ],
-  "exclude": [
-    "**/__tests__/**"
-  ],
+  "exclude": ["**/__tests__/**"],
   "readme": "none",
   "alwaysCreateEntryPointModule": true,
   "excludePrivate": true,
@@ -29,8 +27,6 @@
   "html": "artefacts/reports/data-service-typedoc/html",
   "json": "artefacts/reports/data-service-typedoc/data-service.json",
   "pretty": true,
-  "sort": [
-    "source-order"
-  ],
+  "sort": ["source-order"],
   "skipErrorChecking": true
 }

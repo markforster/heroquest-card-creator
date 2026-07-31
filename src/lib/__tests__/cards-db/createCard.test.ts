@@ -7,7 +7,6 @@ import {
 } from "@/lib/test-support/cards-db-test-helpers";
 import type { CollectionRecord } from "@/types/collections-db";
 
-
 const enqueueDbEstimateChange = jest.fn();
 
 jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
@@ -210,7 +209,9 @@ describe("createCard", () => {
     });
 
     const db = await openHqccDexieDb();
-    await expect(db.cardIconComponents.get(`${created.id}:hq.2021.icon.monster.primary`)).resolves.toEqual(
+    await expect(
+      db.cardIconComponents.get(`${created.id}:hq.2021.icon.monster.primary`),
+    ).resolves.toEqual(
       expect.objectContaining({
         assetId: "icon-1",
       }),

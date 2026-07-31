@@ -1,4 +1,3 @@
-
 import { collectionUpdateInputSchema } from "@/api/collections";
 import { updateCollection } from "@/lib/data/collections-db";
 

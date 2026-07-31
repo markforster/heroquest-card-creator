@@ -47,7 +47,9 @@ export default function SavedCardTile({
     <div
       className={[
         styles.savedCardTileShell,
-        variant === "stockpile" ? styles.savedCardTileShellStockpile : styles.savedCardTileShellRecent,
+        variant === "stockpile"
+          ? styles.savedCardTileShellStockpile
+          : styles.savedCardTileShellRecent,
         className,
       ]
         .filter(Boolean)

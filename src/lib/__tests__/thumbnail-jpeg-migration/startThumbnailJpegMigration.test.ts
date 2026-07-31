@@ -158,7 +158,9 @@ describe("startThumbnailJpegMigration", () => {
       }),
     );
     expect(window.localStorage.getItem("hqcc.migrations.thumbnailJpeg.v1")).toBe("done");
-    expect(dispatchEventSpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: "hqcc-cards-updated" }));
+    expect(dispatchEventSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hqcc-cards-updated" }),
+    );
   });
 
   it("exits early when already marked done and no PNG thumbnails remain", async () => {
@@ -181,7 +183,9 @@ describe("startThumbnailJpegMigration", () => {
       }),
     );
     expect(createImageBitmapMock).not.toHaveBeenCalled();
-    expect(dispatchEventSpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: "hqcc-cards-updated" }));
+    expect(dispatchEventSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hqcc-cards-updated" }),
+    );
   });
 
   it("reruns when the done flag exists but PNG thumbnails still remain", async () => {
@@ -211,7 +215,9 @@ describe("startThumbnailJpegMigration", () => {
         skipped: 0,
       }),
     );
-    expect(dispatchEventSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "hqcc-cards-updated" }));
+    expect(dispatchEventSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hqcc-cards-updated" }),
+    );
   });
 
   it("skips cards when the converted blob is not smaller", async () => {

@@ -22,9 +22,7 @@ type StatLabelOverridesProviderProps = {
   children: React.ReactNode;
 };
 
-export default function StatLabelOverridesProvider({
-  children,
-}: StatLabelOverridesProviderProps) {
+export default function StatLabelOverridesProvider({ children }: StatLabelOverridesProviderProps) {
   const [overrides, setOverridesState] = useState<StatLabelOverrides>(DEFAULT_STAT_LABELS);
 
   useEffect(() => {

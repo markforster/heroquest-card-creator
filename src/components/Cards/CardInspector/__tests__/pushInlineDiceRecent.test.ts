@@ -7,11 +7,41 @@ describe("pushInlineDiceRecent", () => {
 
   it("adds items, dedupes by token, and caps the list at five", () => {
     const entries = [
-      { token: "&d6-1-w;", type: "d6", faceOrValue: 1, backgroundColor: "#FFFFFF", symbolColor: "#111111" },
-      { token: "&d6-2-w;", type: "d6", faceOrValue: 2, backgroundColor: "#FFFFFF", symbolColor: "#111111" },
-      { token: "&d6-3-w;", type: "d6", faceOrValue: 3, backgroundColor: "#FFFFFF", symbolColor: "#111111" },
-      { token: "&d6-4-w;", type: "d6", faceOrValue: 4, backgroundColor: "#FFFFFF", symbolColor: "#111111" },
-      { token: "&d6-5-w;", type: "d6", faceOrValue: 5, backgroundColor: "#FFFFFF", symbolColor: "#111111" },
+      {
+        token: "&d6-1-w;",
+        type: "d6",
+        faceOrValue: 1,
+        backgroundColor: "#FFFFFF",
+        symbolColor: "#111111",
+      },
+      {
+        token: "&d6-2-w;",
+        type: "d6",
+        faceOrValue: 2,
+        backgroundColor: "#FFFFFF",
+        symbolColor: "#111111",
+      },
+      {
+        token: "&d6-3-w;",
+        type: "d6",
+        faceOrValue: 3,
+        backgroundColor: "#FFFFFF",
+        symbolColor: "#111111",
+      },
+      {
+        token: "&d6-4-w;",
+        type: "d6",
+        faceOrValue: 4,
+        backgroundColor: "#FFFFFF",
+        symbolColor: "#111111",
+      },
+      {
+        token: "&d6-5-w;",
+        type: "d6",
+        faceOrValue: 5,
+        backgroundColor: "#FFFFFF",
+        symbolColor: "#111111",
+      },
     ] as const;
 
     const deduped = pushInlineDiceRecent([...entries], {

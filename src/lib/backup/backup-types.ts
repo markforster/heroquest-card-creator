@@ -5,12 +5,7 @@ import type { CopyrightTemplateDefaults } from "@/lib/copyright-defaults";
 import type { HeroBackLogoRecord } from "@/lib/data/hero-back-logos-db";
 import type { ExportSettings } from "@/lib/export-settings";
 import type { CardRecord } from "@/types/cards-db";
-import type {
-  DeckEntryRecord,
-  DeckGroupRecord,
-  DeckRecord,
-  DeckSetRecord,
-} from "@/types/decks-db";
+import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
 
 /**

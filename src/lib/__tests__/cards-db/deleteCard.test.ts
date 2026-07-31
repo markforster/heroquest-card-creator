@@ -11,7 +11,6 @@ import {
   seedNormalizedThumbnail,
 } from "@/lib/test-support/normalized-card-test-helpers";
 
-
 const enqueueDbEstimateChange = jest.fn();
 
 jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({

@@ -58,7 +58,14 @@ describe("decks-service entry count", () => {
   it("addFrontsToSet creates entries with count 1", async () => {
     const db = await openHqccDexieDb();
     await db.decks.put(createDeckRecord({ id: "deck-1" }));
-    await db.deckSets.put(createDeckSetRecord({ id: "set-1", deckId: "deck-1", groupId: "group-1", backFaceId: "back-1" }));
+    await db.deckSets.put(
+      createDeckSetRecord({
+        id: "set-1",
+        deckId: "deck-1",
+        groupId: "group-1",
+        backFaceId: "back-1",
+      }),
+    );
 
     const created = await addFrontsToSet("set-1", ["front-1"]);
 

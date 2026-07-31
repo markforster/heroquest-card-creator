@@ -13,7 +13,6 @@ import { shrinkToFitSingleLine } from "@/lib/text-fitting/shrink";
 import { useTypographyNumericSettings } from "@/lib/typography-settings";
 import type { StatAsteriskFlags, StatValue } from "@/types/stats";
 
-
 type StatsPairProps = {
   header: string;
   value?: StatValue;

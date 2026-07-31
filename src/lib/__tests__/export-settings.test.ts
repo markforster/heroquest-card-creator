@@ -86,9 +86,7 @@ describe("export-settings pdf defaults", () => {
 
     setExportSettings(next);
 
-    expect(window.localStorage.getItem(EXPORT_SETTINGS_STORAGE_KEYS.cutMarksStyle)).toBe(
-      "dotted",
-    );
+    expect(window.localStorage.getItem(EXPORT_SETTINGS_STORAGE_KEYS.cutMarksStyle)).toBe("dotted");
     expect(getExportSettings().cutMarks.style).toBe("dotted");
   });
 

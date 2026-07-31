@@ -119,7 +119,9 @@ export default function TitleField({
           className={`${layoutStyles.bodyTextToolbarButton} ${
             titleDisabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""
           }`}
-          title={titleStyle === "ribbon" ? t("tooltip.titleStyleRibbon") : t("tooltip.titleStylePlain")}
+          title={
+            titleStyle === "ribbon" ? t("tooltip.titleStyleRibbon") : t("tooltip.titleStylePlain")
+          }
           disabled={titleDisabled}
           onClick={() =>
             setValue("titleStyle", titleStyle === "ribbon" ? "plain" : "ribbon", {
@@ -138,42 +140,43 @@ export default function TitleField({
     </div>
   ) : null;
 
-  const headerExtras = showPlacement && !showToolbar ? (
-    <div className="btn-group btn-group-sm" role="group" aria-label={t("form.titlePlacement")}>
-      <input
-        type="radio"
-        className="btn-check"
-        id="title-placement-top"
-        value="top"
-        checked={(placementValue ?? "bottom") === "top"}
-        disabled={titleDisabled}
-        {...register("titlePlacement")}
-      />
-      <label
-        className={`btn btn-outline-secondary ${titleDisabled ? "disabled" : ""}`}
-        htmlFor="title-placement-top"
-        aria-disabled={titleDisabled}
-      >
-        <PanelTop size={16} aria-hidden="true" />
-      </label>
-      <input
-        type="radio"
-        className="btn-check"
-        id="title-placement-bottom"
-        value="bottom"
-        checked={(placementValue ?? "bottom") === "bottom"}
-        disabled={titleDisabled}
-        {...register("titlePlacement")}
-      />
-      <label
-        className={`btn btn-outline-secondary ${titleDisabled ? "disabled" : ""}`}
-        htmlFor="title-placement-bottom"
-        aria-disabled={titleDisabled}
-      >
-        <PanelBottom size={16} aria-hidden="true" />
-      </label>
-    </div>
-  ) : null;
+  const headerExtras =
+    showPlacement && !showToolbar ? (
+      <div className="btn-group btn-group-sm" role="group" aria-label={t("form.titlePlacement")}>
+        <input
+          type="radio"
+          className="btn-check"
+          id="title-placement-top"
+          value="top"
+          checked={(placementValue ?? "bottom") === "top"}
+          disabled={titleDisabled}
+          {...register("titlePlacement")}
+        />
+        <label
+          className={`btn btn-outline-secondary ${titleDisabled ? "disabled" : ""}`}
+          htmlFor="title-placement-top"
+          aria-disabled={titleDisabled}
+        >
+          <PanelTop size={16} aria-hidden="true" />
+        </label>
+        <input
+          type="radio"
+          className="btn-check"
+          id="title-placement-bottom"
+          value="bottom"
+          checked={(placementValue ?? "bottom") === "bottom"}
+          disabled={titleDisabled}
+          {...register("titlePlacement")}
+        />
+        <label
+          className={`btn btn-outline-secondary ${titleDisabled ? "disabled" : ""}`}
+          htmlFor="title-placement-bottom"
+          aria-disabled={titleDisabled}
+        >
+          <PanelBottom size={16} aria-hidden="true" />
+        </label>
+      </div>
+    ) : null;
 
   const input = (
     <div className="d-flex align-items-center gap-2">
@@ -235,46 +238,47 @@ export default function TitleField({
     </div>
   );
 
-  const footer = showStyleToggle && !showToolbar ? (
-    <div className="d-flex align-items-center gap-2 mt-2">
-      <div className="btn-group btn-group-sm" role="group" aria-label={t("form.titleStyle")}>
-        <input
-          type="radio"
-          className="btn-check"
-          id="title-style-ribbon"
-          value="ribbon"
-          checked={(titleStyleValue ?? "ribbon") === "ribbon"}
-          disabled={titleDisabled}
-          {...register("titleStyle")}
-        />
-        <label
-          className={`btn btn-outline-secondary ${titleDisabled ? "disabled" : ""}`}
-          htmlFor="title-style-ribbon"
-          aria-disabled={titleDisabled}
-          title={t("tooltip.titleStyleRibbon")}
-        >
-          {t("label.titleStyleRibbon")}
-        </label>
-        <input
-          type="radio"
-          className="btn-check"
-          id="title-style-plain"
-          value="plain"
-          checked={(titleStyleValue ?? "ribbon") === "plain"}
-          disabled={titleDisabled}
-          {...register("titleStyle")}
-        />
-        <label
-          className={`btn btn-outline-secondary ${titleDisabled ? "disabled" : ""}`}
-          htmlFor="title-style-plain"
-          aria-disabled={titleDisabled}
-          title={t("tooltip.titleStylePlain")}
-        >
-          {t("label.titleStylePlain")}
-        </label>
+  const footer =
+    showStyleToggle && !showToolbar ? (
+      <div className="d-flex align-items-center gap-2 mt-2">
+        <div className="btn-group btn-group-sm" role="group" aria-label={t("form.titleStyle")}>
+          <input
+            type="radio"
+            className="btn-check"
+            id="title-style-ribbon"
+            value="ribbon"
+            checked={(titleStyleValue ?? "ribbon") === "ribbon"}
+            disabled={titleDisabled}
+            {...register("titleStyle")}
+          />
+          <label
+            className={`btn btn-outline-secondary ${titleDisabled ? "disabled" : ""}`}
+            htmlFor="title-style-ribbon"
+            aria-disabled={titleDisabled}
+            title={t("tooltip.titleStyleRibbon")}
+          >
+            {t("label.titleStyleRibbon")}
+          </label>
+          <input
+            type="radio"
+            className="btn-check"
+            id="title-style-plain"
+            value="plain"
+            checked={(titleStyleValue ?? "ribbon") === "plain"}
+            disabled={titleDisabled}
+            {...register("titleStyle")}
+          />
+          <label
+            className={`btn btn-outline-secondary ${titleDisabled ? "disabled" : ""}`}
+            htmlFor="title-style-plain"
+            aria-disabled={titleDisabled}
+            title={t("tooltip.titleStylePlain")}
+          >
+            {t("label.titleStylePlain")}
+          </label>
+        </div>
       </div>
-    </div>
-  ) : null;
+    ) : null;
 
   return (
     <BaseInspectorField

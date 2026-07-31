@@ -4,10 +4,7 @@ export function getSvgImageHref(imgEl: SVGImageElement | SVGFEImageElement): str
   return imgEl.getAttribute("href") ?? imgEl.getAttributeNS("http://www.w3.org/1999/xlink", "href");
 }
 
-export function setSvgImageHref(
-  imgEl: SVGImageElement | SVGFEImageElement,
-  href: string,
-): void {
+export function setSvgImageHref(imgEl: SVGImageElement | SVGFEImageElement, href: string): void {
   imgEl.setAttribute("href", href);
   imgEl.setAttributeNS("http://www.w3.org/1999/xlink", "href", href);
 }

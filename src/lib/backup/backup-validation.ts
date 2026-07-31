@@ -3,14 +3,8 @@
 import type { DeckUsageLocation } from "@/lib/data/decks-errors";
 import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import type { CardRecord } from "@/types/cards-db";
-import type {
-  DeckEntryRecord,
-  DeckGroupRecord,
-  DeckRecord,
-  DeckSetRecord,
-} from "@/types/decks-db";
+import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
-
 
 import type { HqccExportCompactFileV1, HqccExportFileV1 } from "./backup-types";
 

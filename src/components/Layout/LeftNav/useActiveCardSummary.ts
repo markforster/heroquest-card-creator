@@ -27,58 +27,62 @@ export function useActiveCardSummary(
   const retainedCardRef = useRef<string | null>(null);
   const retryGuardRef = useRef<Set<string>>(new Set());
 
-  const loadCardSummary = useCallback(async (cardId: string) => {
-    try {
-      const record = await apiClient.getCard({ params: { id: cardId } });
-      if (!record) {
+  const loadCardSummary = useCallback(
+    async (cardId: string) => {
+      try {
+        const record = await apiClient.getCard({ params: { id: cardId } });
+        if (!record) {
+          setCurrentCardName(null);
+          currentCardThumbRef.current = null;
+          setCurrentCardThumbUrl(null);
+          return;
+        }
+        setCurrentCardName(record.name || record.title || t("label.untitledCard"));
+        currentCardThumbRef.current = null;
+        if (ENABLE_CARD_THUMB_CACHE) {
+          if (retainedCardRef.current && retainedCardRef.current !== record.id) {
+            releaseCardThumbnail(retainedCardRef.current);
+            retainedCardRef.current = null;
+          }
+          if (record.thumbnailBlob instanceof Blob) {
+            const nextUrl = getCachedCardThumbnailUrl(record.id, record.thumbnailBlob);
+            currentCardThumbRef.current = nextUrl;
+            setCurrentCardThumbUrl(nextUrl);
+            if (nextUrl && retainedCardRef.current !== record.id) {
+              retainCardThumbnail(record.id);
+              retainedCardRef.current = record.id;
+            }
+          } else {
+            const nextUrl = await getCardThumbnailUrl(record.id);
+            currentCardThumbRef.current = nextUrl;
+            setCurrentCardThumbUrl(nextUrl);
+            if (nextUrl && retainedCardRef.current !== record.id) {
+              retainCardThumbnail(record.id);
+              retainedCardRef.current = record.id;
+            }
+          }
+        } else {
+          const thumbBlob =
+            record.thumbnailBlob instanceof Blob
+              ? record.thumbnailBlob
+              : await getCardThumbnailBlob(record.id);
+          if (thumbBlob) {
+            const nextUrl = getLegacyCardThumbnailUrl(record.id, thumbBlob);
+            currentCardThumbRef.current = nextUrl;
+            setCurrentCardThumbUrl(nextUrl);
+          } else {
+            currentCardThumbRef.current = null;
+            setCurrentCardThumbUrl(null);
+          }
+        }
+      } catch {
         setCurrentCardName(null);
         currentCardThumbRef.current = null;
         setCurrentCardThumbUrl(null);
-        return;
       }
-      setCurrentCardName(record.name || record.title || t("label.untitledCard"));
-      currentCardThumbRef.current = null;
-      if (ENABLE_CARD_THUMB_CACHE) {
-        if (retainedCardRef.current && retainedCardRef.current !== record.id) {
-          releaseCardThumbnail(retainedCardRef.current);
-          retainedCardRef.current = null;
-        }
-        if (record.thumbnailBlob instanceof Blob) {
-          const nextUrl = getCachedCardThumbnailUrl(record.id, record.thumbnailBlob);
-          currentCardThumbRef.current = nextUrl;
-          setCurrentCardThumbUrl(nextUrl);
-          if (nextUrl && retainedCardRef.current !== record.id) {
-            retainCardThumbnail(record.id);
-            retainedCardRef.current = record.id;
-          }
-        } else {
-          const nextUrl = await getCardThumbnailUrl(record.id);
-          currentCardThumbRef.current = nextUrl;
-          setCurrentCardThumbUrl(nextUrl);
-          if (nextUrl && retainedCardRef.current !== record.id) {
-            retainCardThumbnail(record.id);
-            retainedCardRef.current = record.id;
-          }
-        }
-      } else {
-        const thumbBlob = record.thumbnailBlob instanceof Blob
-          ? record.thumbnailBlob
-          : await getCardThumbnailBlob(record.id);
-        if (thumbBlob) {
-          const nextUrl = getLegacyCardThumbnailUrl(record.id, thumbBlob);
-          currentCardThumbRef.current = nextUrl;
-          setCurrentCardThumbUrl(nextUrl);
-        } else {
-          currentCardThumbRef.current = null;
-          setCurrentCardThumbUrl(null);
-        }
-      }
-    } catch {
-      setCurrentCardName(null);
-      currentCardThumbRef.current = null;
-      setCurrentCardThumbUrl(null);
-    }
-  }, [t]);
+    },
+    [t],
+  );
 
   useEffect(() => {
     if (!activeCardId) {

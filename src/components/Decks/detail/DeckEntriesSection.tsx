@@ -53,12 +53,7 @@ function DeckEntryCard({
     opacity: isDragging ? 0 : 1,
   };
   return (
-    <div
-      ref={setNodeRef}
-      data-entry-id={entryId}
-      className={styles.deckEntryCard}
-      style={style}
-    >
+    <div ref={setNodeRef} data-entry-id={entryId} className={styles.deckEntryCard} style={style}>
       <div className={styles.deckEntryCardOverlayAnchor}>
         <button
           type="button"
@@ -176,8 +171,7 @@ export default function DeckEntriesSection({
     removeEntry,
     updateEntryCount,
     refreshEntries,
-  } =
-    useDeckSetEntries();
+  } = useDeckSetEntries();
   const { setNodeRef: setEntriesDropRef } = useDroppable({ id: "entries-area" });
   const { setNodeRef: setTailDropRef } = useDroppable({ id: "entries-tail" });
   const setEntriesPanelRef = useCallback(
@@ -332,9 +326,7 @@ export default function DeckEntriesSection({
           }
           return changed ? next : prev;
         });
-        if (
-          pending.items.some((item) => item.entryId === selectedEntryId)
-        ) {
+        if (pending.items.some((item) => item.entryId === selectedEntryId)) {
           setSelectedEntryId(null);
         }
         setPendingFrontRemoval(null);
@@ -402,7 +394,9 @@ export default function DeckEntriesSection({
       <div
         data-entry-placeholder="true"
         className={`${styles.deckEntriesDropPlaceholder} ${
-          drag.isFrontDropOver || drag.isEntriesDropOver ? styles.deckEntriesDropPlaceholderOver : ""
+          drag.isFrontDropOver || drag.isEntriesDropOver
+            ? styles.deckEntriesDropPlaceholderOver
+            : ""
         }`}
       />
     </div>
@@ -413,12 +407,18 @@ export default function DeckEntriesSection({
   }
 
   return (
-    <div className={`${styles.deckRouteRow} ${styles.deckRouteRowFill} ${styles.deckEntriesRouteRow}`}>
+    <div
+      className={`${styles.deckRouteRow} ${styles.deckRouteRowFill} ${styles.deckEntriesRouteRow}`}
+    >
       {selectedSetId ? (
         <div
           className={`${styles.deckRouteRowToolbar} ${styles.assetsToolbar} d-flex align-items-center justify-content-between gap-2 px-2 py-2`}
         >
-          <div className={styles.deckFacesSegment} role="tablist" aria-label={t("decks.entries.mode.label")}>
+          <div
+            className={styles.deckFacesSegment}
+            role="tablist"
+            aria-label={t("decks.entries.mode.label")}
+          >
             <button
               type="button"
               className={`${styles.deckFacesSegmentBtn} ${
@@ -467,105 +467,59 @@ export default function DeckEntriesSection({
               ref={setEntriesPanelRef}
               data-deck-entries-dropzone="true"
               className={`${styles.deckEntriesPanel} ${
-                drag.isFrontFaceDragActive || drag.isEntryDragActive ? styles.deckEntriesPanelDropActive : ""
+                drag.isFrontFaceDragActive || drag.isEntryDragActive
+                  ? styles.deckEntriesPanelDropActive
+                  : ""
               } ${drag.isFrontDropOver || drag.isEntriesDropOver ? styles.deckEntriesPanelDropOver : ""}`}
             >
-            {entriesViewMode === "paired-not-in-set" ? (
-              pairedNotInSetFrontIds.length === 0 ? (
-                <div className={styles.deckEntriesEmptyFill}>
-                  <div className={styles.decksEmpty}>{t("decks.entries.empty.noPairedPending")}</div>
-                </div>
-              ) : (
-                <div className={styles.deckEntriesGrid}>
-                  {pairedNotInSetFrontIds.map((frontId) => (
-                    <div key={frontId} className={styles.deckEntryCard}>
-                      <button
-                        type="button"
-                        className={styles.deckEntrySelect}
-                        onClick={async () => {
-                          await addFront(frontId, selectedSetId);
-                        }}
-                      >
-                        {deckEntryThumb(frontId, false)}
-                      </button>
+              {entriesViewMode === "paired-not-in-set" ? (
+                pairedNotInSetFrontIds.length === 0 ? (
+                  <div className={styles.deckEntriesEmptyFill}>
+                    <div className={styles.decksEmpty}>
+                      {t("decks.entries.empty.noPairedPending")}
                     </div>
-                  ))}
-                </div>
-              )
-            ) : entriesSorted.length === 0 ? (
-              drag.isFrontFaceDragActive && drag.entryDropIndex === 0 ? (
-                <div className={styles.deckEntriesGrid}>
-                  {renderEntryPlaceholder("entry-placeholder-empty")}
-                </div>
-              ) : (
-                <div className={styles.deckEntriesEmptyFill}>
-                  <div className={`${styles.decksEmpty} ${styles.deckEntriesEmptyMessageFull}`}>
-                    {t("decks.emptyEntries")}
                   </div>
-                </div>
-              )
-            ) : drag.isFrontFaceDragActive ? (
-              <div className={styles.deckEntriesGrid}>
-                {visibleEntries.flatMap((entry, index) => {
-                  const rendered: ReactNode[] = [];
-                  if (drag.entryDropIndex != null && drag.entryDropIndex === index) {
-                    rendered.push(renderEntryPlaceholder(`entry-placeholder-${index}`));
-                  }
-                  const pair = pairsById.get(entry.pairId);
-                  const frontId = pair?.frontFaceId ?? null;
-                  const isSelected = selectedEntryIds.has(entry.id);
-                  if (!frontId) {
-                    rendered.push(
-                      <div key={entry.id} className={styles.deckEntryMissing}>
-                        <div>{t("decks.missingEntry")}</div>
+                ) : (
+                  <div className={styles.deckEntriesGrid}>
+                    {pairedNotInSetFrontIds.map((frontId) => (
+                      <div key={frontId} className={styles.deckEntryCard}>
                         <button
                           type="button"
-                          className="btn btn-outline-danger btn-sm"
+                          className={styles.deckEntrySelect}
                           onClick={async () => {
-                            await removeEntry(entry.id, entry.setId);
-                            setSelectedEntryIds(() => new Set());
-                            if (selectedEntryId === entry.id) setSelectedEntryId(null);
+                            await addFront(frontId, selectedSetId);
                           }}
                         >
-                          {t("actions.remove")}
+                          {deckEntryThumb(frontId, false)}
                         </button>
-                      </div>,
-                    );
-                    return rendered;
-                  }
-                  rendered.push(
-                    <DeckEntryDropTargetCard
-                      key={entry.id}
-                      entryId={entry.id}
-                      frontId={frontId}
-                      isSelected={isSelected}
-                      onSelectEntry={selectEntry}
-                      onOpenCardEditor={onOpenCardEditor}
-                      deckEntryThumb={deckEntryThumb}
-                    />,
-                  );
-                  return rendered;
-                })}
-                {drag.entryDropIndex != null && drag.entryDropIndex >= visibleEntries.length
-                  ? renderEntryPlaceholder("entry-placeholder-tail")
-                  : null}
-                <div
-                  ref={setTailDropRef}
-                  data-entry-tail-dropzone="true"
-                  className={styles.deckEntryCard}
-                  aria-hidden="true"
-                  style={{ width: 1, height: 1, opacity: 0 }}
-                />
-              </div>
-            ) : (
-              <SortableContext items={entryIds} strategy={rectSortingStrategy}>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : entriesSorted.length === 0 ? (
+                drag.isFrontFaceDragActive && drag.entryDropIndex === 0 ? (
+                  <div className={styles.deckEntriesGrid}>
+                    {renderEntryPlaceholder("entry-placeholder-empty")}
+                  </div>
+                ) : (
+                  <div className={styles.deckEntriesEmptyFill}>
+                    <div className={`${styles.decksEmpty} ${styles.deckEntriesEmptyMessageFull}`}>
+                      {t("decks.emptyEntries")}
+                    </div>
+                  </div>
+                )
+              ) : drag.isFrontFaceDragActive ? (
                 <div className={styles.deckEntriesGrid}>
-                  {visibleEntries.map((entry) => {
+                  {visibleEntries.flatMap((entry, index) => {
+                    const rendered: ReactNode[] = [];
+                    if (drag.entryDropIndex != null && drag.entryDropIndex === index) {
+                      rendered.push(renderEntryPlaceholder(`entry-placeholder-${index}`));
+                    }
                     const pair = pairsById.get(entry.pairId);
                     const frontId = pair?.frontFaceId ?? null;
                     const isSelected = selectedEntryIds.has(entry.id);
                     if (!frontId) {
-                      return (
+                      rendered.push(
                         <div key={entry.id} className={styles.deckEntryMissing}>
                           <div>{t("decks.missingEntry")}</div>
                           <button
@@ -579,24 +533,26 @@ export default function DeckEntriesSection({
                           >
                             {t("actions.remove")}
                           </button>
-                        </div>
+                        </div>,
                       );
+                      return rendered;
                     }
-                    return (
-                      <DeckEntryCard
+                    rendered.push(
+                      <DeckEntryDropTargetCard
                         key={entry.id}
                         entryId={entry.id}
                         frontId={frontId}
                         isSelected={isSelected}
-                        count={entry.count}
-                        onUpdateCount={updateEntryCount}
-                        onRequestRemove={(entryId) => requestRemoveForEntry(entryId)}
                         onSelectEntry={selectEntry}
                         onOpenCardEditor={onOpenCardEditor}
                         deckEntryThumb={deckEntryThumb}
-                      />
+                      />,
                     );
+                    return rendered;
                   })}
+                  {drag.entryDropIndex != null && drag.entryDropIndex >= visibleEntries.length
+                    ? renderEntryPlaceholder("entry-placeholder-tail")
+                    : null}
                   <div
                     ref={setTailDropRef}
                     data-entry-tail-dropzone="true"
@@ -605,8 +561,56 @@ export default function DeckEntriesSection({
                     style={{ width: 1, height: 1, opacity: 0 }}
                   />
                 </div>
-              </SortableContext>
-            )}
+              ) : (
+                <SortableContext items={entryIds} strategy={rectSortingStrategy}>
+                  <div className={styles.deckEntriesGrid}>
+                    {visibleEntries.map((entry) => {
+                      const pair = pairsById.get(entry.pairId);
+                      const frontId = pair?.frontFaceId ?? null;
+                      const isSelected = selectedEntryIds.has(entry.id);
+                      if (!frontId) {
+                        return (
+                          <div key={entry.id} className={styles.deckEntryMissing}>
+                            <div>{t("decks.missingEntry")}</div>
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger btn-sm"
+                              onClick={async () => {
+                                await removeEntry(entry.id, entry.setId);
+                                setSelectedEntryIds(() => new Set());
+                                if (selectedEntryId === entry.id) setSelectedEntryId(null);
+                              }}
+                            >
+                              {t("actions.remove")}
+                            </button>
+                          </div>
+                        );
+                      }
+                      return (
+                        <DeckEntryCard
+                          key={entry.id}
+                          entryId={entry.id}
+                          frontId={frontId}
+                          isSelected={isSelected}
+                          count={entry.count}
+                          onUpdateCount={updateEntryCount}
+                          onRequestRemove={(entryId) => requestRemoveForEntry(entryId)}
+                          onSelectEntry={selectEntry}
+                          onOpenCardEditor={onOpenCardEditor}
+                          deckEntryThumb={deckEntryThumb}
+                        />
+                      );
+                    })}
+                    <div
+                      ref={setTailDropRef}
+                      data-entry-tail-dropzone="true"
+                      className={styles.deckEntryCard}
+                      aria-hidden="true"
+                      style={{ width: 1, height: 1, opacity: 0 }}
+                    />
+                  </div>
+                </SortableContext>
+              )}
             </div>
           </div>
         )}
@@ -663,9 +667,7 @@ export default function DeckEntriesSection({
         onCancel={() => setPairUsagePrompt(null)}
       >
         <div className={styles.pairingUsageList}>
-          <div>
-            {t("decks.pairUsage.body")}
-          </div>
+          <div>{t("decks.pairUsage.body")}</div>
           <ul className={styles.pairingUsageItems}>
             {(pairUsagePromptExternal?.cascadePlan.usage ?? []).map((usage) => (
               <li key={`${usage.deckId}-${usage.groupId}-${usage.setId}`}>

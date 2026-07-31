@@ -37,18 +37,12 @@ function humanizeStoreName(store: string): string {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
-export function getSystemSettingsStoreLabel(
-  store: string,
-  t: (key: MessageKey) => string,
-): string {
+export function getSystemSettingsStoreLabel(store: string, t: (key: MessageKey) => string): string {
   const key = STORE_LABEL_KEYS[store];
   return key ? t(key) : humanizeStoreName(store);
 }
 
-export function formatSystemSettingsTimestamp(
-  date: Date,
-  language: SupportedLanguage,
-): string {
+export function formatSystemSettingsTimestamp(date: Date, language: SupportedLanguage): string {
   return new Intl.DateTimeFormat(SYSTEM_SETTINGS_LOCALES[language], {
     day: "2-digit",
     month: "2-digit",

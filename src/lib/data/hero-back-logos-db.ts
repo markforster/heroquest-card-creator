@@ -215,9 +215,7 @@ export async function deleteHeroBackLogo(
 /**
  * Lists cards currently referencing a custom hero-back logo.
  */
-export async function getHeroBackLogoUsage(
-  logoId: string,
-): Promise<HeroBackLogoUsageRecord[]> {
+export async function getHeroBackLogoUsage(logoId: string): Promise<HeroBackLogoUsageRecord[]> {
   const db = await openHqccDexieDb();
 
   try {

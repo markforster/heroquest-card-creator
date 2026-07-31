@@ -5,7 +5,6 @@ import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
 import type { CollectionRecord } from "@/types/collections-db";
 
-
 /**
  * Creates a collection record used by stockpile and card-organization flows.
  */

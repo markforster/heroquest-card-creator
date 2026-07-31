@@ -80,9 +80,12 @@ describe("useStockpileData", () => {
       expect(result.current.collections).toHaveLength(1);
     });
 
-    expect(mockUseListCards).toHaveBeenCalledWith({
-      queries: { status: "saved", deleted: "include" },
-    }, expect.any(Object));
+    expect(mockUseListCards).toHaveBeenCalledWith(
+      {
+        queries: { status: "saved", deleted: "include" },
+      },
+      expect.any(Object),
+    );
     expect(mockUseListCollections).toHaveBeenCalledWith(
       undefined,
       expect.objectContaining({ enabled: true }),
@@ -149,14 +152,14 @@ describe("useStockpileData", () => {
     window.localStorage.setItem("hqcc.selectedCollectionId", "col-1");
     mockUseListCollections.mockReturnValue({
       data: [
-      {
-        id: "col-1",
-        name: "Collection",
-        cardIds: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        schemaVersion: 1,
-      },
+        {
+          id: "col-1",
+          name: "Collection",
+          cardIds: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          schemaVersion: 1,
+        },
       ],
       isLoading: false,
     });

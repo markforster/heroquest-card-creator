@@ -36,7 +36,9 @@ type StoredAssetRecord = AssetRecord & {
 const STORE_NAME = "assets";
 const ASSETS_UPDATED_EVENT = "hqcc-assets-updated";
 
-function getAssetsTable(db: Awaited<ReturnType<typeof openHqccDexieDb>>): Table<StoredAssetRecord, string> {
+function getAssetsTable(
+  db: Awaited<ReturnType<typeof openHqccDexieDb>>,
+): Table<StoredAssetRecord, string> {
   return db.table<StoredAssetRecord, string>(STORE_NAME);
 }
 
@@ -219,10 +221,7 @@ export async function deleteAssets(ids: string[]): Promise<void> {
 /**
  * Applies a metadata-only patch to an existing asset record and emits the asset update event.
  */
-export async function updateAssetMeta(
-  id: string,
-  patch: Partial<AssetRecord>,
-): Promise<void> {
+export async function updateAssetMeta(id: string, patch: Partial<AssetRecord>): Promise<void> {
   const db = await openHqccDexieDb();
   const assets = getAssetsTable(db);
   let updated = false;

@@ -119,7 +119,12 @@ async function clearExistingLibrary() {
 }
 
 async function restorePairs(
-  exportCards: Array<{ id: string; pairedWith?: string | null; name?: string | null; title?: string | null }>,
+  exportCards: Array<{
+    id: string;
+    pairedWith?: string | null;
+    name?: string | null;
+    title?: string | null;
+  }>,
   exportPairs: PairRecord[] | undefined,
   apiClient: (typeof import("@/api/client"))["apiClient"],
 ) {
@@ -189,7 +194,9 @@ function restoreLocalStorage(localStorage: HqccExportFileV1["localStorage"]) {
   }
 }
 
-function parseLegacyExportSettings(localStorage: HqccExportFileV1["localStorage"]): ExportSettings | null {
+function parseLegacyExportSettings(
+  localStorage: HqccExportFileV1["localStorage"],
+): ExportSettings | null {
   const hasLegacyValues =
     typeof localStorage.exportBleedEnabled === "string" ||
     typeof localStorage.exportBleedPx === "string" ||
@@ -326,7 +333,11 @@ async function applyBackupObject(
         const blob = dataUrlToBlob(dataUrl);
         await addHeroBackLogo(id, blob, rest);
         heroBackLogosCount += 1;
-        onProgress?.(assetsCount + heroBackLogosCount + cardsCount + collectionsCount, total, "import");
+        onProgress?.(
+          assetsCount + heroBackLogosCount + cardsCount + collectionsCount,
+          total,
+          "import",
+        );
       } catch {
         // Skip invalid logo entries
       }
@@ -344,8 +355,11 @@ async function applyBackupObject(
         }
       }
 
-      const { thumbnailDataUrl: _thumbnailDataUrl, pairedWith, ...rest } =
-        cardExport as CardRecordExportV1;
+      const {
+        thumbnailDataUrl: _thumbnailDataUrl,
+        pairedWith,
+        ...rest
+      } = cardExport as CardRecordExportV1;
       void _thumbnailDataUrl;
       void pairedWith;
       const record: CardRecord = {
@@ -354,7 +368,11 @@ async function applyBackupObject(
       };
       await apiClient.createCard(record);
       cardsCount += 1;
-      onProgress?.(assetsCount + heroBackLogosCount + cardsCount + collectionsCount, total, "import");
+      onProgress?.(
+        assetsCount + heroBackLogosCount + cardsCount + collectionsCount,
+        total,
+        "import",
+      );
     }
   }
 
@@ -362,7 +380,11 @@ async function applyBackupObject(
     for (const collection of exportData.collections) {
       await apiClient.createCollection(collection);
       collectionsCount += 1;
-      onProgress?.(assetsCount + heroBackLogosCount + cardsCount + collectionsCount, total, "import");
+      onProgress?.(
+        assetsCount + heroBackLogosCount + cardsCount + collectionsCount,
+        total,
+        "import",
+      );
     }
   }
 
@@ -464,7 +486,9 @@ async function applyCompactBackupObject(
         if (!entry || entry.directory || !entry.getData) {
           continue;
         }
-        const blob = await entry.getData(new BlobWriter(rest.mimeType ?? "application/octet-stream"));
+        const blob = await entry.getData(
+          new BlobWriter(rest.mimeType ?? "application/octet-stream"),
+        );
         await apiClient.replaceAsset(
           {
             ...rest,
@@ -491,10 +515,16 @@ async function applyCompactBackupObject(
         if (!entry || entry.directory || !entry.getData) {
           continue;
         }
-        const blob = await entry.getData(new BlobWriter(rest.mimeType ?? "application/octet-stream"));
+        const blob = await entry.getData(
+          new BlobWriter(rest.mimeType ?? "application/octet-stream"),
+        );
         await addHeroBackLogo(id, blob, rest);
         heroBackLogosCount += 1;
-        onProgress?.(assetsCount + heroBackLogosCount + cardsCount + collectionsCount, total, "import");
+        onProgress?.(
+          assetsCount + heroBackLogosCount + cardsCount + collectionsCount,
+          total,
+          "import",
+        );
       } catch {
         // Skip invalid logo entries
       }
@@ -534,7 +564,11 @@ async function applyCompactBackupObject(
       };
       await apiClient.createCard(record);
       cardsCount += 1;
-      onProgress?.(assetsCount + heroBackLogosCount + cardsCount + collectionsCount, total, "import");
+      onProgress?.(
+        assetsCount + heroBackLogosCount + cardsCount + collectionsCount,
+        total,
+        "import",
+      );
     }
   }
 
@@ -542,7 +576,11 @@ async function applyCompactBackupObject(
     for (const collection of exportData.collections) {
       await apiClient.createCollection(collection);
       collectionsCount += 1;
-      onProgress?.(assetsCount + heroBackLogosCount + cardsCount + collectionsCount, total, "import");
+      onProgress?.(
+        assetsCount + heroBackLogosCount + cardsCount + collectionsCount,
+        total,
+        "import",
+      );
     }
   }
 

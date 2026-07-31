@@ -78,7 +78,9 @@ export default function StockpilePairPopover({
     >
       {isHoveredBack ? (
         hoveredPairedFronts.length ? (
-          <div className={isGridPopover ? styles.cardsPairStackGrid : styles.cardsPairStackGridSingle}>
+          <div
+            className={isGridPopover ? styles.cardsPairStackGrid : styles.cardsPairStackGridSingle}
+          >
             {hoveredPairedFronts
               .slice(0, isGridPopover ? hoveredPairedFronts.length : 1)
               .map((paired) => {

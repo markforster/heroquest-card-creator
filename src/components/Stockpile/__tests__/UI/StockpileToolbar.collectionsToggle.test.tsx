@@ -4,12 +4,17 @@ import StockpileToolbar from "@/components/Stockpile/StockpileToolbar";
 
 jest.mock("react-select", () => {
   return function MockReactSelect(props: {
-    options: Array<{ value: string; label: string } | { label: string; options: Array<{ value: string; label: string }> }>;
+    options: Array<
+      | { value: string; label: string }
+      | { label: string; options: Array<{ value: string; label: string }> }
+    >;
     value: { value: string; label: string } | null;
     onChange: (option: { value: string; label: string } | null) => void;
     isDisabled?: boolean;
   }) {
-    const flatOptions = props.options.flatMap((option) => ("options" in option ? option.options : [option]));
+    const flatOptions = props.options.flatMap((option) =>
+      "options" in option ? option.options : [option],
+    );
 
     return (
       <select

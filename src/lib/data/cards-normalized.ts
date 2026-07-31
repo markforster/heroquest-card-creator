@@ -100,7 +100,9 @@ function createComponentId(cardId: string, slotId: string): string {
   return `${cardId}:${slotId}`;
 }
 
-function getEditableBlueprintNodesForTemplate(templateId: TemplateId): EditableBlueprintNode[] | null {
+function getEditableBlueprintNodesForTemplate(
+  templateId: TemplateId,
+): EditableBlueprintNode[] | null {
   const blueprint = blueprintsByTemplateId[templateId];
   if (!blueprint) {
     return null;
@@ -298,13 +300,21 @@ export function assembleNormalizedCardRecord(
           component.movementSquaresAsterisks,
         );
         result.monsterAttackDice = component.attackDice;
-        result.monsterAttackDiceAsterisks = normalizeStatAsteriskFlags(component.attackDiceAsterisks);
+        result.monsterAttackDiceAsterisks = normalizeStatAsteriskFlags(
+          component.attackDiceAsterisks,
+        );
         result.monsterDefendDice = component.defendDice;
-        result.monsterDefendDiceAsterisks = normalizeStatAsteriskFlags(component.defendDiceAsterisks);
+        result.monsterDefendDiceAsterisks = normalizeStatAsteriskFlags(
+          component.defendDiceAsterisks,
+        );
         result.monsterBodyPoints = component.bodyPoints;
-        result.monsterBodyPointsAsterisks = normalizeStatAsteriskFlags(component.bodyPointsAsterisks);
+        result.monsterBodyPointsAsterisks = normalizeStatAsteriskFlags(
+          component.bodyPointsAsterisks,
+        );
         result.monsterMindPoints = component.mindPoints;
-        result.monsterMindPointsAsterisks = normalizeStatAsteriskFlags(component.mindPointsAsterisks);
+        result.monsterMindPointsAsterisks = normalizeStatAsteriskFlags(
+          component.mindPointsAsterisks,
+        );
         break;
       }
       default:
@@ -494,7 +504,9 @@ export function buildNormalizedCardRecords(
         monsterStats.push({
           ...shared,
           movementSquares: record.monsterMovementSquares,
-          movementSquaresAsterisks: normalizeStatAsteriskFlags(record.monsterMovementSquaresAsterisks),
+          movementSquaresAsterisks: normalizeStatAsteriskFlags(
+            record.monsterMovementSquaresAsterisks,
+          ),
           attackDice: record.monsterAttackDice,
           attackDiceAsterisks: normalizeStatAsteriskFlags(record.monsterAttackDiceAsterisks),
           defendDice: record.monsterDefendDice,
@@ -602,7 +614,9 @@ export async function replaceNormalizedCardThumbnail(
     return;
   }
 
-  const existing = (await tx.table("cardThumbnails").get(record.id)) as CardThumbnailRecord | undefined;
+  const existing = (await tx.table("cardThumbnails").get(record.id)) as
+    | CardThumbnailRecord
+    | undefined;
   await tx.table("cardThumbnails").put({
     id: record.id,
     cardId: record.id,

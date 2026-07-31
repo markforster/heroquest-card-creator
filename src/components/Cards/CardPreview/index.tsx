@@ -1,7 +1,15 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 "use client";
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import parchmentBackground from "@/assets/card-backgrounds/parchment.png";
 import BlueprintRenderer from "@/components/BlueprintRenderer";
@@ -44,11 +52,7 @@ import { drawDeveloperCredit } from "./cardPreviewDeveloperCredit";
 import CardPreviewEditorOverlay from "./cardPreviewEditorOverlay";
 import { mutateSvgForExport } from "./cardPreviewExportSvg";
 import { shouldClearPreviewSelection } from "./cardPreviewSelection";
-import {
-  CARD_CLIP_INSET,
-  CARD_CORNER_RADIUS,
-  getCardPreviewStageLayout,
-} from "./cardPreviewStage";
+import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, getCardPreviewStageLayout } from "./cardPreviewStage";
 import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
 
 import type { CardPreviewHandle, CardPreviewProps } from "./types";
@@ -540,7 +544,11 @@ const CardPreview = forwardRef<CardPreviewHandle, CardPreviewProps>(
             const heroBackLogoMode = (cardData as { heroBackLogoMode?: string })?.heroBackLogoMode;
             const heroBackLogoId = (cardData as { heroBackLogoId?: string })?.heroBackLogoId;
             const heroBackLogoName = (cardData as { heroBackLogoName?: string })?.heroBackLogoName;
-            if (heroBackLogoMode === "custom" && heroBackLogoId && missingLogos.has(heroBackLogoId)) {
+            if (
+              heroBackLogoMode === "custom" &&
+              heroBackLogoId &&
+              missingLogos.has(heroBackLogoId)
+            ) {
               missingAssets.push({
                 label: "logo",
                 id: heroBackLogoId,

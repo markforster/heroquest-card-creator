@@ -6,7 +6,6 @@ import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent"
 
 import type { ReactNode } from "react";
 
-
 const mockUseStockpileData = jest.fn();
 const mockUseStockpileFilters = jest.fn();
 const mockListPairs = jest.fn();
@@ -171,7 +170,11 @@ jest.mock("@/components/Stockpile/StockpileSidebar", () => ({
   }: {
     onFilterChange: (next: { type: "collection"; id: string }) => void;
   }) => (
-    <button type="button" data-testid="stockpile-sidebar" onClick={() => onFilterChange({ type: "collection", id: "collection-1" })}>
+    <button
+      type="button"
+      data-testid="stockpile-sidebar"
+      onClick={() => onFilterChange({ type: "collection", id: "collection-1" })}
+    >
       Open collection
     </button>
   ),

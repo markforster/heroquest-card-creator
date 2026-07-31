@@ -101,7 +101,9 @@ const selectedProfile = profiles[requestedProfile];
 
 if (!selectedProfile) {
   const knownProfiles = Object.keys(profiles).join(", ");
-  throw new Error(`Unknown SKOTT_PROFILE '${requestedProfile}'. Available profiles: ${knownProfiles}`);
+  throw new Error(
+    `Unknown SKOTT_PROFILE '${requestedProfile}'. Available profiles: ${knownProfiles}`,
+  );
 }
 
 const port = Number.parseInt(process.env.PORT ?? "4177", 10);
@@ -115,9 +117,7 @@ await Web.renderWebApplication(selectedProfile.apiConfig, {
   watch: false,
   open: false,
   onListen: (listeningPort) => {
-    console.log(
-      `[skott] profile=${requestedProfile} url=http://127.0.0.1:${listeningPort}`,
-    );
+    console.log(`[skott] profile=${requestedProfile} url=http://127.0.0.1:${listeningPort}`);
   },
   onOpenError: (error) => {
     console.error(`[skott] failed to open browser: ${error.message}`);

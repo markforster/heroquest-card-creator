@@ -20,7 +20,9 @@ const COMPACT_ALIASES = new Set(["compact", "compact-zip", "compact-zip-v1"]);
 /**
  * Normalizes legacy aliases and persisted values into a supported backup format identifier.
  */
-export function normalizeBackupFormat(raw: string | null | undefined): BackupContainerFormat | null {
+export function normalizeBackupFormat(
+  raw: string | null | undefined,
+): BackupContainerFormat | null {
   if (!raw) return null;
   if (LEGACY_ALIASES.has(raw)) return "legacy-zip-json";
   if (COMPACT_ALIASES.has(raw)) return "compact-zip-v1";

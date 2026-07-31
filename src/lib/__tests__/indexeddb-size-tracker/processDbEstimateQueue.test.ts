@@ -34,7 +34,9 @@ const QUEUE_KEY = "hqcc.dbEstimate.queue.v1";
 const TOTALS_KEY = "hqcc.dbEstimate.totals.v1";
 const RECORD_SIZES_KEY = "hqcc.dbEstimate.recordSizes.v1";
 
-function createFakeDb(recordsByStore: Partial<Record<keyof DexieTableMap, StoreRecord[]>> = {}): DexieTableMap {
+function createFakeDb(
+  recordsByStore: Partial<Record<keyof DexieTableMap, StoreRecord[]>> = {},
+): DexieTableMap {
   const createTable = (records: StoreRecord[] = []): StoreTable => {
     const state = new Map(records.map((record) => [record.id, { ...record }]));
     return {
@@ -87,7 +89,10 @@ describe("processDbEstimateQueue", () => {
   });
 
   it("processes queued records through the mapped Dexie table and updates totals", async () => {
-    window.localStorage.setItem(QUEUE_KEY, JSON.stringify([{ store: "settings", id: "defaultCopyright" }]));
+    window.localStorage.setItem(
+      QUEUE_KEY,
+      JSON.stringify([{ store: "settings", id: "defaultCopyright" }]),
+    );
 
     const db = createFakeDb({
       settings: [{ id: "defaultCopyright", value: "Copyright", updatedAt: 1, schemaVersion: 1 }],
@@ -215,7 +220,10 @@ describe("processDbEstimateQueue", () => {
   });
 
   it("does not start duplicate processing while a run is already in flight", async () => {
-    window.localStorage.setItem(QUEUE_KEY, JSON.stringify([{ store: "collections", id: "collection-1" }]));
+    window.localStorage.setItem(
+      QUEUE_KEY,
+      JSON.stringify([{ store: "collections", id: "collection-1" }]),
+    );
 
     const control: { releaseGet?: () => void } = {};
     const db = createFakeDb();

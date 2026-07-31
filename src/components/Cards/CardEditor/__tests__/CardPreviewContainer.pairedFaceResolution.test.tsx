@@ -15,10 +15,7 @@ let mockFace: "front" | "back" = "front";
 
 jest.mock("@/components/Cards/CardPreview", () => ({
   __esModule: true,
-  default: forwardRef(function MockCardPreview(
-    props: { cardData?: { title?: string } },
-    _ref,
-  ) {
+  default: forwardRef(function MockCardPreview(props: { cardData?: { title?: string } }, _ref) {
     void _ref;
     return <div>{props.cardData?.title ?? "NO_TITLE"}</div>;
   }),

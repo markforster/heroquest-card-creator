@@ -4,14 +4,8 @@ import {
   validateBlueprintNodeIds,
   validateBlueprintNodeIdsForSource,
 } from "@/data/blueprints";
-import {
-  blueprintIds,
-  groupTypes,
-  layerTypes,
-  systemFamilies,
-} from "@/data/card-systems/types";
+import { blueprintIds, groupTypes, layerTypes, systemFamilies } from "@/data/card-systems/types";
 import type { Blueprint } from "@/types/blueprints";
-
 
 describe("validateBlueprintNodeIds", () => {
   it("accepts the current built-in blueprints", () => {

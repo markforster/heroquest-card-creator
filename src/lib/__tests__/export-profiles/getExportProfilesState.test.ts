@@ -4,15 +4,9 @@ jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-import {
-  getExportProfilesState,
-  restoreExportProfilesState,
-} from "@/lib/data/export-profiles";
+import { getExportProfilesState, restoreExportProfilesState } from "@/lib/data/export-profiles";
 import { getHqccDexieDb } from "@/lib/db/hqcc-dexie";
-import {
-  EXPORT_SETTINGS_STORAGE_KEYS,
-  clearExportSettingKeys,
-} from "@/lib/export-settings";
+import { EXPORT_SETTINGS_STORAGE_KEYS, clearExportSettingKeys } from "@/lib/export-settings";
 import {
   deleteDb,
   installFakeIndexedDb,

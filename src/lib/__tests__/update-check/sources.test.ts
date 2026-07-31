@@ -1,7 +1,4 @@
-import {
-  fetchGithubLatestRelease,
-  fetchNpmLatestVersion,
-} from "@/lib/update-check/sources";
+import { fetchGithubLatestRelease, fetchNpmLatestVersion } from "@/lib/update-check/sources";
 
 describe("update-check sources", () => {
   it("parses tag_name from the GitHub latest release endpoint", async () => {

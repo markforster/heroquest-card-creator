@@ -68,7 +68,11 @@ function getTextHeight(
   return totalHeight;
 }
 
-function getGroupItemHeight(child: BlueprintLayer, group: BlueprintGroup, cardData?: CardDataByTemplate[TemplateId]) {
+function getGroupItemHeight(
+  child: BlueprintLayer,
+  group: BlueprintGroup,
+  cardData?: CardDataByTemplate[TemplateId],
+) {
   if (child.type === layerTypes.text) {
     return getTextHeight(child, group, cardData);
   }
@@ -170,7 +174,11 @@ export function resolveMonsterIconOverlayGeometry({
       const y = baseTop - normalizedOffsetY * verticalTravel;
 
       const slotBounds = { x, y, width: size, height: size };
-      const fitScale = computeContainScale(slotBounds, imageWidth ?? undefined, imageHeight ?? undefined);
+      const fitScale = computeContainScale(
+        slotBounds,
+        imageWidth ?? undefined,
+        imageHeight ?? undefined,
+      );
       const baseRenderedWidth = (imageWidth ?? size) * fitScale;
       const baseRenderedHeight = (imageHeight ?? size) * fitScale;
       const renderedWidth = baseRenderedWidth * iconScale;

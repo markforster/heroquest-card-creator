@@ -116,7 +116,9 @@ function scheduleIdle(fn: () => void) {
   setTimeout(fn, 0);
 }
 
-export function subscribeDbEstimateStatus(listener: (status: DbEstimateStatus) => void): () => void {
+export function subscribeDbEstimateStatus(
+  listener: (status: DbEstimateStatus) => void,
+): () => void {
   listeners.add(listener);
   listener({ ...loadTotals(), processing, queueLength: loadQueue().length });
   return () => listeners.delete(listener);
@@ -191,10 +193,7 @@ export function enqueueDbEstimateChange(store: string, id: string) {
   });
 }
 
-async function readStoreRecord(
-  store: string,
-  id: string,
-): Promise<unknown | undefined> {
+async function readStoreRecord(store: string, id: string): Promise<unknown | undefined> {
   const db = await openHqccDexieDb();
 
   switch (store) {

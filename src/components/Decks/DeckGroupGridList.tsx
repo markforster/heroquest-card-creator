@@ -143,7 +143,7 @@ export default function DeckGroupGridList({
             const backIds = groupSets.map((set) => set.backFaceId);
             const maxCount = Math.max(backIds.length, 1);
             const keySetInGroup = keySetId
-              ? groupSets.find((set) => set.id === keySetId) ?? null
+              ? (groupSets.find((set) => set.id === keySetId) ?? null)
               : null;
             const keyBackFaceId = keySetInGroup?.backFaceId ?? null;
             const isExpanded = selectedGroupId === group.id && groupSets.length > 1;
@@ -151,19 +151,20 @@ export default function DeckGroupGridList({
               (isBackFaceDragActive || isSetDragActive) &&
               dragTargetGroupId === group.id &&
               groupSets.length > 1;
-            const isDragHovering = dragTargetGroupId === group.id && !isExpanded && groupSets.length > 1;
+            const isDragHovering =
+              dragTargetGroupId === group.id && !isExpanded && groupSets.length > 1;
             const isHovering =
               (hoveredGroupId === group.id || isDragHovering) &&
               !isExpanded &&
               groupSets.length > 1;
             const dropPlaceholderIndex =
               isBackFaceDragActive && backFaceDropGroupId === group.id
-                ? backFaceDropIndex ?? groupSets.length
+                ? (backFaceDropIndex ?? groupSets.length)
                 : isSetDragActive &&
                     !isRemoveZone &&
                     setDropGroupId === group.id &&
                     groupSets.length > 0
-                  ? setDropIndex ?? groupSets.length
+                  ? (setDropIndex ?? groupSets.length)
                   : null;
             const preview: ReactNode = (
               <CardFan

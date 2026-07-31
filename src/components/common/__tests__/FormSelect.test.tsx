@@ -26,7 +26,7 @@ jest.mock("react-select", () => {
         <div data-testid="mock-react-select-selected">
           {props.value && props.formatOptionLabel
             ? props.formatOptionLabel(props.value, { context: "value" })
-            : props.value?.label ?? ""}
+            : (props.value?.label ?? "")}
         </div>
         <select
           data-testid="mock-react-select"
@@ -34,7 +34,8 @@ jest.mock("react-select", () => {
           value={props.value?.value ?? ""}
           disabled={props.isDisabled}
           onChange={(event) => {
-            const next = props.options.find((option) => option.value === event.target.value) ?? null;
+            const next =
+              props.options.find((option) => option.value === event.target.value) ?? null;
             props.onChange(next);
           }}
         >
@@ -47,7 +48,9 @@ jest.mock("react-select", () => {
         <div data-testid="mock-react-select-options">
           {props.options.map((option) => (
             <div key={option.value}>
-              {props.formatOptionLabel ? props.formatOptionLabel(option, { context: "menu" }) : option.label}
+              {props.formatOptionLabel
+                ? props.formatOptionLabel(option, { context: "menu" })
+                : option.label}
             </div>
           ))}
         </div>
@@ -72,11 +75,11 @@ describe("FormSelect", () => {
   it("exposes all options", () => {
     render(<FormSelect options={options} value="alpha" onChange={jest.fn()} />);
 
-    expect(Array.from(screen.getByTestId("mock-react-select").querySelectorAll("option")).map((option) => option.value)).toEqual([
-      "alpha",
-      "beta",
-      "gamma",
-    ]);
+    expect(
+      Array.from(screen.getByTestId("mock-react-select").querySelectorAll("option")).map(
+        (option) => option.value,
+      ),
+    ).toEqual(["alpha", "beta", "gamma"]);
   });
 
   it("calls onChange with the selected string value", () => {

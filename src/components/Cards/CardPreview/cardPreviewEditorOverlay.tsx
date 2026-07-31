@@ -21,7 +21,6 @@ import { clamp } from "@/lib/math";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
-
 import {
   GIZMO_ARM_LENGTH_MAX,
   GIZMO_CENTER_HANDLE_INNER_RADIUS,

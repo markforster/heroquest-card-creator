@@ -9,12 +9,7 @@ const ONE_BY_ONE_PNG_BASE64 =
 const decodePng = () => new Uint8Array(Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
 
 const readChunkType = (buffer: Uint8Array, offset: number) =>
-  String.fromCharCode(
-    buffer[offset],
-    buffer[offset + 1],
-    buffer[offset + 2],
-    buffer[offset + 3],
-  );
+  String.fromCharCode(buffer[offset], buffer[offset + 1], buffer[offset + 2], buffer[offset + 3]);
 
 describe("addPngTextChunk", () => {
   const OriginalBlob = globalThis.Blob;

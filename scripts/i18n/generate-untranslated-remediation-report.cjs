@@ -121,7 +121,8 @@ function loadNormalizedMessages() {
 
 function getNamespaces() {
   const enDir = path.join(rawLocalesDir, "en");
-  return fs.readdirSync(enDir)
+  return fs
+    .readdirSync(enDir)
     .filter((name) => name.endsWith(".json"))
     .map((name) => name.replace(/\.json$/, ""))
     .sort((a, b) => a.localeCompare(b));
@@ -282,7 +283,9 @@ function renderMarkdown({ generatedOn, rows, summary, scannedFilesCount, visible
   lines.push(
     `Visible language menu locales: ${visibleLanguages.filter((locale) => locale !== "en").join(", ")}`,
   );
-  lines.push("Source scan: Production files under `src/` only (`__tests__`, `*.test.*`, `*.spec.*`, and locale bundle sources excluded)");
+  lines.push(
+    "Source scan: Production files under `src/` only (`__tests__`, `*.test.*`, `*.spec.*`, and locale bundle sources excluded)",
+  );
   lines.push(
     "Purpose: Canonical worklist for translating every currently untranslated string in implemented non-English locales.",
   );
@@ -301,7 +304,9 @@ function renderMarkdown({ generatedOn, rows, summary, scannedFilesCount, visible
   lines.push("");
   lines.push("## Worklist");
   lines.push("");
-  lines.push("| Locale | Key | English source | Current locale value | Status | Used in file(s) | Notes |");
+  lines.push(
+    "| Locale | Key | English source | Current locale value | Status | Used in file(s) | Notes |",
+  );
   lines.push("| --- | --- | --- | --- | --- | --- | --- |");
   for (const row of rows) {
     lines.push(
@@ -312,14 +317,27 @@ function renderMarkdown({ generatedOn, rows, summary, scannedFilesCount, visible
   lines.push("## Limitations");
   lines.push("");
   lines.push("- Usage mapping is static and string-literal based.");
-  lines.push("- The scanner intentionally supports direct key literals such as `t(\"key\")`, `t('key')`, `formatMessageWith(..., \"key\", ...)`, and other statically declared `MessageKey`-style string literals.");
-  lines.push("- Dynamically constructed keys are not resolved in v1 and may appear as `Not found` even when used indirectly.");
-  lines.push("- `missing` means the raw locale file lacks the key; `untranslated` means the raw locale file contains a value exactly equal to English.");
+  lines.push(
+    '- The scanner intentionally supports direct key literals such as `t("key")`, `t(\'key\')`, `formatMessageWith(..., "key", ...)`, and other statically declared `MessageKey`-style string literals.',
+  );
+  lines.push(
+    "- Dynamically constructed keys are not resolved in v1 and may appear as `Not found` even when used indirectly.",
+  );
+  lines.push(
+    "- `missing` means the raw locale file lacks the key; `untranslated` means the raw locale file contains a value exactly equal to English.",
+  );
   lines.push("");
   lines.push("## Audit Cross-Check");
   lines.push("");
-  lines.push("- The untranslated-key universe in this report should match the non-English untranslated universe reported by `npm run i18n:audit`.");
-  lines.push(`- Sample keys: ${rows.slice(0, SAMPLE_LIMIT).map((row) => `\`${row.locale}:${row.key}\``).join(", ")}`);
+  lines.push(
+    "- The untranslated-key universe in this report should match the non-English untranslated universe reported by `npm run i18n:audit`.",
+  );
+  lines.push(
+    `- Sample keys: ${rows
+      .slice(0, SAMPLE_LIMIT)
+      .map((row) => `\`${row.locale}:${row.key}\``)
+      .join(", ")}`,
+  );
   lines.push("");
 
   return `${lines.join("\n")}\n`;
@@ -330,10 +348,9 @@ function generateReport() {
   const rawBundles = loadRawLocaleBundles(supportedLanguages);
   const filePaths = walkProductionFiles(srcRoot);
   const usageByKey = collectUsageByKey(filePaths, Object.keys(messages.en));
-  const rows = buildRows({ messages, rawBundles, supportedLanguages, usageByKey })
-    .sort((a, b) =>
-      a.locale.localeCompare(b.locale) || a.key.localeCompare(b.key),
-    );
+  const rows = buildRows({ messages, rawBundles, supportedLanguages, usageByKey }).sort(
+    (a, b) => a.locale.localeCompare(b.locale) || a.key.localeCompare(b.key),
+  );
   const summary = summarizeRows(rows);
   const generatedOn = new Date().toISOString().slice(0, 10);
   const markdown = renderMarkdown({

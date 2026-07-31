@@ -38,10 +38,12 @@ describe("drawCutMarks", () => {
 
     const strokeInset = DEFAULT_CROP_MARK_THICKNESS / 2;
     const effectiveOffset = DEFAULT_CUT_MARK_OFFSET + strokeInset;
-    const expectedRadius =
-      CARD_CORNER_RADIUS + effectiveOffset + DEFAULT_CUT_MARK_RADIUS_ADJUST;
+    const expectedRadius = CARD_CORNER_RADIUS + effectiveOffset + DEFAULT_CUT_MARK_RADIUS_ADJUST;
 
-    expect(ctx.moveTo).toHaveBeenCalledWith(12 - effectiveOffset + expectedRadius, 12 - effectiveOffset);
+    expect(ctx.moveTo).toHaveBeenCalledWith(
+      12 - effectiveOffset + expectedRadius,
+      12 - effectiveOffset,
+    );
     expect(ctx.quadraticCurveTo).toHaveBeenNthCalledWith(
       1,
       12 - effectiveOffset + 750 + effectiveOffset * 2,

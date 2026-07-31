@@ -29,7 +29,8 @@ import {
 const FAN_SHELL_TOOLBAR_TOP_PX = 16;
 const EMPTY_GROUP_MIN_WIDTH_PX = 112 + 24;
 const EMPTY_GROUP_MIN_HEIGHT_PX = Math.ceil(FAN_CARD_HEIGHT) + 24;
-const normalizeGroupId = (groupId: string) => (groupId.startsWith("group:") ? groupId.slice(6) : groupId);
+const normalizeGroupId = (groupId: string) =>
+  groupId.startsWith("group:") ? groupId.slice(6) : groupId;
 const isTransientEphemeralGroupId = (groupId: string) => /^groups:N\d+$/.test(groupId);
 
 export default function DeckGroupsBoardController({
@@ -60,12 +61,18 @@ export default function DeckGroupsBoardController({
     rightPanel = null;
   }
   const { registerDropHandler } = useDeckMockDnd();
-  const selectedSetGroupId =
-    selection?.selectedSetId ? selection.setById.get(selection.selectedSetId)?.groupId ?? null : null;
+  const selectedSetGroupId = selection?.selectedSetId
+    ? (selection.setById.get(selection.selectedSetId)?.groupId ?? null)
+    : null;
   const selectedGroupId = selection?.selectedGroupId ?? null;
   const [persistedOpenGroupId, setPersistedOpenGroupId] = useState<string | null>(null);
   const resolveGroupMode = useCallback(
-    (groupUiId: string, isHovered: boolean, hasSelectedSet: boolean, setCount: number): GroupFanMode => {
+    (
+      groupUiId: string,
+      isHovered: boolean,
+      hasSelectedSet: boolean,
+      setCount: number,
+    ): GroupFanMode => {
       const groupId = normalizeGroupId(groupUiId);
       if (setCount <= 1) return "expanded";
       if (hasSelectedSet || selectedSetGroupId === groupId) return "expanded";
@@ -226,7 +233,9 @@ export default function DeckGroupsBoardController({
       const frameHeightPx = Math.ceil(frame.requiredHeightPx);
       const effectiveBodyHeight = Math.max(frameHeightPx, sharedFanMinHeightPx ?? 0);
       const expandedVerticalCenterOffset =
-        mode === "expanded" ? Math.max(0, Math.round((effectiveBodyHeight - frameHeightPx) / 2)) : 0;
+        mode === "expanded"
+          ? Math.max(0, Math.round((effectiveBodyHeight - frameHeightPx) / 2))
+          : 0;
       return {
         left: `${fan.pivotX - FAN_CARD_WIDTH / 2}px`,
         top: `${fan.pivotY - FAN_CARD_HEIGHT - FAN_SHELL_TOOLBAR_TOP_PX + expandedVerticalCenterOffset}px`,
@@ -259,7 +268,9 @@ export default function DeckGroupsBoardController({
     const selectedSetUiId = `set:${selectedSetId}`;
     if (lastRevealSetIdRef.current === selectedSetUiId) return;
     const selectedGroupId = selection?.setById.get(selectedSetId)?.groupId ?? null;
-    const selectedGroupTransition = selectedGroupId ? transitionByGroup[selectedGroupId] : undefined;
+    const selectedGroupTransition = selectedGroupId
+      ? transitionByGroup[selectedGroupId]
+      : undefined;
     const waitingForExpanded =
       enableFanLayout &&
       Boolean(selectedGroupTransition) &&
@@ -272,7 +283,9 @@ export default function DeckGroupsBoardController({
     const requestId = ++revealRequestIdRef.current;
     const reveal = () => {
       if (requestId !== revealRequestIdRef.current) return;
-      const groupsRow = document.querySelector(`[data-testid="groups-row-groups"]`) as HTMLElement | null;
+      const groupsRow = document.querySelector(
+        `[data-testid="groups-row-groups"]`,
+      ) as HTMLElement | null;
       const selectedSetNode = document.querySelector(
         `[data-testid="set-${selectedSetUiId}"]`,
       ) as HTMLElement | null;
@@ -416,12 +429,12 @@ export default function DeckGroupsBoardController({
       if (!isKeySet) return null;
       if (enableFanLayout && boardId === "groups") return null;
       return (
-          <BoardInfoPill
-            icon={<CircleStar size={11} aria-hidden="true" />}
-            label={t("decks.sets.badge.keyCard")}
-            bgColor="color-mix(in srgb, #2a73ff 35%, var(--hq-surface-900) 65%)"
-            borderColor="color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%)"
-          />
+        <BoardInfoPill
+          icon={<CircleStar size={11} aria-hidden="true" />}
+          label={t("decks.sets.badge.keyCard")}
+          bgColor="color-mix(in srgb, #2a73ff 35%, var(--hq-surface-900) 65%)"
+          borderColor="color-mix(in srgb, #2a73ff 55%, var(--hq-border-strong) 45%)"
+        />
       );
     },
     isSetSelected: (setUiId) => {
@@ -489,7 +502,10 @@ export default function DeckGroupsBoardController({
       const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
       noteDesiredMode(groupId, mode);
       const frame = resolveAnimatedFrame(groupId, mode, setCount);
-      const effectiveBodyHeight = Math.max(Math.ceil(frame.requiredHeightPx), sharedFanMinHeightPx ?? 0);
+      const effectiveBodyHeight = Math.max(
+        Math.ceil(frame.requiredHeightPx),
+        sharedFanMinHeightPx ?? 0,
+      );
       const effectiveBodyWidth = Math.max(
         Math.ceil(frame.requiredWidthPx),
         setCount === 0 ? EMPTY_GROUP_MIN_WIDTH_PX : 0,
@@ -499,18 +515,40 @@ export default function DeckGroupsBoardController({
         height: `${Math.max(effectiveBodyHeight, setCount === 0 ? EMPTY_GROUP_MIN_HEIGHT_PX : 0)}px`,
       };
     },
-    resolveSetShellClassName: ({ boardId, groupId, isHovered, hasSelectedSet, setCount, setId }) => {
+    resolveSetShellClassName: ({
+      boardId,
+      groupId,
+      isHovered,
+      hasSelectedSet,
+      setCount,
+      setId,
+    }) => {
       if (!enableFanLayout || boardId !== "groups") return null;
       if (setId.startsWith("ephemeral:empty-slot:group:")) {
         return `${styles.setShellFanExpanded} ${styles.setShellEmptySlot}`;
       }
       const mode = resolveGroupMode(groupId, isHovered, hasSelectedSet, setCount);
       const shellModeClassName =
-        mode === "expanded" ? styles.setShellFanExpanded : mode === "partial" ? styles.setShellFanPartial : styles.setShellFanCollapsed;
-      const isCollapsedKeySet = mode === "collapsed" && keySetId != null && setId === `set:${keySetId}`;
-      return [shellModeClassName, isCollapsedKeySet ? styles.keyCardSetShellCollapsed : ""].filter(Boolean).join(" ");
+        mode === "expanded"
+          ? styles.setShellFanExpanded
+          : mode === "partial"
+            ? styles.setShellFanPartial
+            : styles.setShellFanCollapsed;
+      const isCollapsedKeySet =
+        mode === "collapsed" && keySetId != null && setId === `set:${keySetId}`;
+      return [shellModeClassName, isCollapsedKeySet ? styles.keyCardSetShellCollapsed : ""]
+        .filter(Boolean)
+        .join(" ");
     },
-    resolveSetShellStyle: ({ boardId, groupId, isHovered, hasSelectedSet, setCount, setIndex, setId }) => {
+    resolveSetShellStyle: ({
+      boardId,
+      groupId,
+      isHovered,
+      hasSelectedSet,
+      setCount,
+      setIndex,
+      setId,
+    }) => {
       if (!enableFanLayout || boardId !== "groups") return undefined;
       if (setId.startsWith("ephemeral:empty-slot:group:")) {
         return {
@@ -605,10 +643,14 @@ export default function DeckGroupsBoardController({
       }
 
       if (event.kind === "GROUPS_DROP_SET_TO_NEW_GROUP") {
-        if (!deckId) return { handled: true, success: false, fatal: true, reason: "missing deckId" };
+        if (!deckId)
+          return { handled: true, success: false, fatal: true, reason: "missing deckId" };
         const createdGroup = await mutations.createGroup(deckId);
         const orderedGroupIds = selection.orderedGroups.map((group) => group.id);
-        const insertionIndex = Math.max(0, Math.min(event.targetGroupIndex, orderedGroupIds.length));
+        const insertionIndex = Math.max(
+          0,
+          Math.min(event.targetGroupIndex, orderedGroupIds.length),
+        );
         const nextGroupOrder = orderedGroupIds.slice();
         nextGroupOrder.splice(insertionIndex, 0, createdGroup.id);
         await mutations.reorderGroups(deckId, nextGroupOrder);
@@ -623,8 +665,13 @@ export default function DeckGroupsBoardController({
       }
 
       if (event.kind === "GROUPS_DROP_SOURCE_CARD_TO_GROUP") {
-        if (!deckId) return { handled: true, success: false, fatal: true, reason: "missing deckId" };
-        const created = await mutations.createSetFromBackFace(deckId, event.targetGroupId, event.backFaceId);
+        if (!deckId)
+          return { handled: true, success: false, fatal: true, reason: "missing deckId" };
+        const created = await mutations.createSetFromBackFace(
+          deckId,
+          event.targetGroupId,
+          event.backFaceId,
+        );
         const orderedTargetSetIds = selection.sets
           .filter((set) => set.groupId === event.targetGroupId)
           .sort((a, b) => a.sortIndex - b.sortIndex)
@@ -638,10 +685,14 @@ export default function DeckGroupsBoardController({
       }
 
       if (event.kind === "GROUPS_DROP_SOURCE_CARD_TO_NEW_GROUP") {
-        if (!deckId) return { handled: true, success: false, fatal: true, reason: "missing deckId" };
+        if (!deckId)
+          return { handled: true, success: false, fatal: true, reason: "missing deckId" };
         const createdGroup = await mutations.createGroup(deckId);
         const orderedGroupIds = selection.orderedGroups.map((group) => group.id);
-        const insertionIndex = Math.max(0, Math.min(event.targetGroupIndex, orderedGroupIds.length));
+        const insertionIndex = Math.max(
+          0,
+          Math.min(event.targetGroupIndex, orderedGroupIds.length),
+        );
         const nextGroupOrder = orderedGroupIds.slice();
         nextGroupOrder.splice(insertionIndex, 0, createdGroup.id);
         await mutations.reorderGroups(deckId, nextGroupOrder);

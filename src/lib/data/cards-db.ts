@@ -25,9 +25,7 @@ import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { backfillCardCopyrightComponents } from "@/lib/db/jobs/hqcc-db-copyright-backfill-job";
 import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
 import type { CardRecord, CardStatus } from "@/types/cards-db";
-import type {
-  CardThumbnailRecord,
-} from "@/types/cards-normalized";
+import type { CardThumbnailRecord } from "@/types/cards-normalized";
 import type { CollectionRecord } from "@/types/collections-db";
 import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
@@ -285,8 +283,7 @@ async function copyDuplicateSourceCollectionMemberships(
   const collectionsToUpdate = collections
     .filter(
       (collection) =>
-        collection.cardIds.includes(sourceCardId) &&
-        !collection.cardIds.includes(duplicatedCardId),
+        collection.cardIds.includes(sourceCardId) && !collection.cardIds.includes(duplicatedCardId),
     )
     .map((collection) => ({
       ...collection,
@@ -323,9 +320,7 @@ export async function createCard(
   const normalizedThumbnail = normalizeThumbnailBlob(input.thumbnailBlob);
   let base: CardRecord = {
     ...persistedInput,
-    ...(normalizedThumbnail !== input.thumbnailBlob
-      ? { thumbnailBlob: normalizedThumbnail }
-      : {}),
+    ...(normalizedThumbnail !== input.thumbnailBlob ? { thumbnailBlob: normalizedThumbnail } : {}),
     id,
     createdAt,
     updatedAt,
@@ -686,10 +681,7 @@ async function buildDeckCascadePlan(
   };
 }
 
-async function buildPairCascadePlan(
-  tx: Transaction,
-  faceIds: string[],
-): Promise<PairCascadePlan> {
+async function buildPairCascadePlan(tx: Transaction, faceIds: string[]): Promise<PairCascadePlan> {
   if (!faceIds.length) {
     return { pairIds: [], deckEntryIds: [], touchedDeckIds: [] };
   }
@@ -768,9 +760,7 @@ async function executeCardDeleteCascade(
   plan: CardDeleteCascadePlan,
   now: number,
 ): Promise<void> {
-  const deckEntryIds = Array.from(
-    new Set([...plan.deck.deckEntryIds, ...plan.pairs.deckEntryIds]),
-  );
+  const deckEntryIds = Array.from(new Set([...plan.deck.deckEntryIds, ...plan.pairs.deckEntryIds]));
 
   if (deckEntryIds.length) {
     await tx.table("deckEntries").bulkDelete(deckEntryIds);
@@ -792,9 +782,9 @@ async function executeCardDeleteCascade(
     new Set([...plan.deck.touchedDeckIds, ...plan.pairs.touchedDeckIds]),
   );
   if (touchedDeckIds.length) {
-    const decks = ((await tx.table("decks").bulkGet(touchedDeckIds)) as Array<
-      DeckRecord | undefined
-    >).filter(isDefined);
+    const decks = (
+      (await tx.table("decks").bulkGet(touchedDeckIds)) as Array<DeckRecord | undefined>
+    ).filter(isDefined);
     if (decks.length) {
       await tx.table("decks").bulkPut(
         decks.map((deck) => ({
@@ -810,13 +800,8 @@ async function executeCardDeleteCascade(
   }
 }
 
-function enqueueCardDeleteCascadeChanges(
-  ids: string[],
-  plan: CardDeleteCascadePlan,
-): void {
-  const deckEntryIds = Array.from(
-    new Set([...plan.deck.deckEntryIds, ...plan.pairs.deckEntryIds]),
-  );
+function enqueueCardDeleteCascadeChanges(ids: string[], plan: CardDeleteCascadePlan): void {
+  const deckEntryIds = Array.from(new Set([...plan.deck.deckEntryIds, ...plan.pairs.deckEntryIds]));
   deckEntryIds.forEach((entryId) => enqueueDbEstimateChange(DECK_ENTRIES_STORE, entryId));
   plan.deck.deckSetIds.forEach((setId) => enqueueDbEstimateChange(DECK_SETS_STORE, setId));
   plan.deck.deckGroupIds.forEach((groupId) => enqueueDbEstimateChange(DECK_GROUPS_STORE, groupId));

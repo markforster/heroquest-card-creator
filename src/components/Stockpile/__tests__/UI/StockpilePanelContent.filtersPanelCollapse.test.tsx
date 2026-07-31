@@ -242,9 +242,9 @@ describe("StockpilePanelContent filters panel collapse (UI)", () => {
     });
 
     expect(window.localStorage.getItem("hqcc.stockpile.filtersPanelOpen")).toBe("0");
-    expect(
-      container.querySelector(`.${styles.stockpileRightPanel}`)?.className,
-    ).toContain(styles.stockpileRightPanelCollapsed);
+    expect(container.querySelector(`.${styles.stockpileRightPanel}`)?.className).toContain(
+      styles.stockpileRightPanelCollapsed,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Expand collections panel" }));
 
@@ -255,8 +255,8 @@ describe("StockpilePanelContent filters panel collapse (UI)", () => {
     });
 
     expect(window.localStorage.getItem("hqcc.stockpile.filtersPanelOpen")).toBe("1");
-    expect(
-      container.querySelector(`.${styles.stockpileRightPanel}`)?.className,
-    ).not.toContain(styles.stockpileRightPanelCollapsed);
+    expect(container.querySelector(`.${styles.stockpileRightPanel}`)?.className).not.toContain(
+      styles.stockpileRightPanelCollapsed,
+    );
   });
 });

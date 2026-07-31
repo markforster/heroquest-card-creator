@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Download,
-  Monitor,
-  Moon,
-  Settings,
-  Sun,
-  Upload,
-} from "lucide-react";
+import { Download, Monitor, Moon, Settings, Sun, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
@@ -26,7 +19,6 @@ import {
   SupportedLanguage,
   visibleLanguages,
 } from "@/i18n/messages";
-
 
 import type { ComponentType } from "react";
 

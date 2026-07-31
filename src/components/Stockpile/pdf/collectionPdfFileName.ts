@@ -27,10 +27,7 @@ function sanitizeCollectionNameSegment(name: string): string {
   return collapsed || "collection";
 }
 
-export function buildCollectionPdfFileName(input: {
-  collectionName: string;
-  date?: Date;
-}): string {
+export function buildCollectionPdfFileName(input: { collectionName: string; date?: Date }): string {
   const collectionNameSegment = sanitizeCollectionNameSegment(input.collectionName);
   const timestampSegment = buildTimestampSegment(input.date ?? new Date());
   return `HQCC--${collectionNameSegment}-${timestampSegment}.pdf`;

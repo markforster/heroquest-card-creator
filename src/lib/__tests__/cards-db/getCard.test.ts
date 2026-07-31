@@ -36,7 +36,9 @@ describe("getCard", () => {
   it("returns the card when present", async () => {
     await seedNormalizedCard(createCardRecord({ id: "c1" }));
 
-    await expect(getCard("c1")).resolves.toEqual(expect.objectContaining(createCardRecord({ id: "c1" })));
+    await expect(getCard("c1")).resolves.toEqual(
+      expect.objectContaining(createCardRecord({ id: "c1" })),
+    );
   });
 
   it("normalizes a thumbnail blob with no type and schedules repair", async () => {
@@ -236,7 +238,9 @@ describe("getCard", () => {
       thumbnailBlob: new Blob(["x"], { type: "image/png" }),
     });
 
-    const resolved = await getCardRequestPlugin.request?.([], { params: { id: "api-card-1" } } as never);
+    const resolved = await getCardRequestPlugin.request?.([], {
+      params: { id: "api-card-1" },
+    } as never);
     const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
     const response = await adapter?.();
 
@@ -261,10 +265,7 @@ describe("getCard", () => {
     await seedNormalizedCard(record);
 
     const db = await openHqccDexieDb();
-    await db.cardSlotLinks
-      .where("slotId")
-      .equals(blueprintIds.hq_2021_logo_hero_back)
-      .delete();
+    await db.cardSlotLinks.where("slotId").equals(blueprintIds.hq_2021_logo_hero_back).delete();
     await db.cardHeroBackLogoComponents
       .where("slotId")
       .equals(blueprintIds.hq_2021_logo_hero_back)

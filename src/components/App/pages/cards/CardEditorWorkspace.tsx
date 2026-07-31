@@ -19,7 +19,6 @@ import ToolsToolbar from "@/components/ToolsToolbar";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { TemplateId } from "@/types/templates";
 
-
 type CardEditorWorkspaceProps = {
   activeFrontId: string | null;
   canDuplicate: boolean;
@@ -91,11 +90,7 @@ export default function CardEditorWorkspace({
               ? t("routeError.cardNotFoundBody")
               : t("routeError.cardLoadFailedBody")}
           </div>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={onBackToCards}
-          >
+          <button type="button" className="btn btn-primary btn-sm" onClick={onBackToCards}>
             {t("actions.backToCards")}
           </button>
         </div>

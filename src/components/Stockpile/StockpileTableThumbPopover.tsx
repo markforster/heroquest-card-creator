@@ -25,11 +25,15 @@ export default function StockpileTableThumbPopover({
   onMouseLeave,
   cardById,
 }: StockpileTableThumbPopoverProps) {
-  const hoveredCard = tableThumbAnchor ? cardById.get(tableThumbAnchor.id) ?? null : null;
-  const previewUrl = useCardThumbnailUrl(hoveredCard?.id ?? null, hoveredCard?.thumbnailBlob ?? null, {
-    enabled: Boolean(hoveredCard),
-    useCache: ENABLE_CARD_THUMB_CACHE,
-  });
+  const hoveredCard = tableThumbAnchor ? (cardById.get(tableThumbAnchor.id) ?? null) : null;
+  const previewUrl = useCardThumbnailUrl(
+    hoveredCard?.id ?? null,
+    hoveredCard?.thumbnailBlob ?? null,
+    {
+      enabled: Boolean(hoveredCard),
+      useCache: ENABLE_CARD_THUMB_CACHE,
+    },
+  );
   if (!tableThumbAnchor || typeof document === "undefined") return null;
   if (!hoveredCard) return null;
   const templateThumb = cardTemplatesById[hoveredCard.templateId]?.thumbnail ?? null;

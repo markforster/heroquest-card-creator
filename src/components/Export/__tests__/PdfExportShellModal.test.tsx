@@ -1,6 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-
 import type { ExportOptionsFormState } from "@/components/Export/ExportOptionsForm";
 import PdfExportShellModal from "@/components/Export/PdfExportShellModal";
 import type { PdfExportAlignmentRun, PdfExportRun } from "@/components/Export/PdfExportShellModal";
@@ -64,7 +63,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) =>
       (
-        {
+        ({
           "status.exportingImages": "Exporting images",
           "status.finalizing": "Finalizing",
           "alert.exportImagesFailed": "Export failed",
@@ -99,7 +98,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "label.cutMarkStyleTicks": "Ticks",
           "decks.pdf.errors.layoutCapacity": "Layout capacity error",
           "decks.pdf.errors.noSheets": "No sheets",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));
@@ -190,7 +189,9 @@ jest.mock("@/components/Export/PdfExportConfigForm", () => ({
   }) => (
     <div data-testid="pdf-config-form">
       <div data-testid="pdf-config-hidden-mode">{String(Boolean(hiddenFields?.mode))}</div>
-      <div data-testid="pdf-config-hidden-duplex">{String(Boolean(hiddenFields?.duplexPreset))}</div>
+      <div data-testid="pdf-config-hidden-duplex">
+        {String(Boolean(hiddenFields?.duplexPreset))}
+      </div>
       <button
         type="button"
         onClick={() =>
@@ -210,11 +211,7 @@ jest.mock("@/components/Export/PdfExportConfigForm", () => ({
 
 jest.mock("@/components/Export/ExportOptionsForm", () => ({
   __esModule: true,
-  default: ({
-    onChange,
-  }: {
-    onChange: (next: Partial<ExportOptionsFormState>) => void;
-  }) => (
+  default: ({ onChange }: { onChange: (next: Partial<ExportOptionsFormState>) => void }) => (
     <div data-testid="bleed-options-form">
       <button
         type="button"
@@ -499,10 +496,7 @@ describe("PdfExportShellModal", () => {
         buildExportRun={jest.fn()}
         buildAlignmentExportRun={jest.fn()}
         summaryContent={{
-          columns: [
-            [{ text: "Primary line" }],
-            [{ text: "Secondary line", tone: "muted" }],
-          ],
+          columns: [[{ text: "Primary line" }], [{ text: "Secondary line", tone: "muted" }]],
           notice: { text: "Nothing available", tone: "blocked" },
         }}
         topContent={(state) => <div>Mode: {state.effectiveConfig.mode}</div>}
@@ -664,7 +658,11 @@ describe("PdfExportShellModal", () => {
 
   it("renders normal export faces inside the shell for real cards and placeholders", async () => {
     mockRenderPdf.mockImplementation(
-      async ({ renderFacePngBytes }: { renderFacePngBytes: (faceId: string) => Promise<Uint8Array | null> }) => {
+      async ({
+        renderFacePngBytes,
+      }: {
+        renderFacePngBytes: (faceId: string) => Promise<Uint8Array | null>;
+      }) => {
         await renderFacePngBytes("front-1");
         await renderFacePngBytes("placeholder-1");
         await renderFacePngBytes("missing-placeholder");
@@ -880,7 +878,13 @@ describe("PdfExportShellModal", () => {
   it("shows progress and supports cancel during export", async () => {
     let resolveRender: ((value: { status: "cancelled" }) => void) | null = null;
     mockRenderPdf.mockImplementation(
-      ({ shouldCancel, onProgress }: { shouldCancel: () => boolean; onProgress?: (progress: { completedFaces: number; totalFaces: number }) => void }) =>
+      ({
+        shouldCancel,
+        onProgress,
+      }: {
+        shouldCancel: () => boolean;
+        onProgress?: (progress: { completedFaces: number; totalFaces: number }) => void;
+      }) =>
         new Promise((resolve) => {
           onProgress?.({ completedFaces: 1, totalFaces: 1 });
           resolveRender = () => resolve({ status: shouldCancel() ? "cancelled" : "cancelled" });

@@ -112,9 +112,7 @@ export async function buildHeroBackLogoCache(logoIds: string[]): Promise<{
   return { cache, missing };
 }
 
-export async function buildMissingAssetsReport(
-  cards: CardRecord[],
-): Promise<MissingAssetReport[]> {
+export async function buildMissingAssetsReport(cards: CardRecord[]): Promise<MissingAssetReport[]> {
   const reports: MissingAssetReport[] = [];
 
   for (let start = 0; start < cards.length; start += EXPORT_CHUNK_SIZE) {
@@ -142,7 +140,11 @@ export async function buildMissingAssetsReport(
           name: card.monsterIconAssetName ?? "unknown",
         });
       }
-      if (card.heroBackLogoMode === "custom" && card.heroBackLogoId && missingLogos.has(card.heroBackLogoId)) {
+      if (
+        card.heroBackLogoMode === "custom" &&
+        card.heroBackLogoId &&
+        missingLogos.has(card.heroBackLogoId)
+      ) {
         missingAssets.push({
           label: "logo",
           id: card.heroBackLogoId,

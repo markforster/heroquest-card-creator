@@ -6,9 +6,7 @@ type ApplyPdfViewerPreferencesOptions = {
   pdf: PDFDocument;
 };
 
-export function applyPdfViewerPreferences({
-  pdf,
-}: ApplyPdfViewerPreferencesOptions): void {
+export function applyPdfViewerPreferences({ pdf }: ApplyPdfViewerPreferencesOptions): void {
   const viewerPreferences = pdf.catalog.getOrCreateViewerPreferences();
   viewerPreferences.setPrintScaling(PrintScaling.None);
   viewerPreferences.setDisplayDocTitle(true);

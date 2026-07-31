@@ -9,14 +9,18 @@ describe("loadStatLabelOverrides", () => {
     expect(window.localStorage.getItem("hqcc.statLabels")).toBeNull();
     const value = loadStatLabelOverrides();
     expect(value).toEqual(DEFAULT_STAT_LABELS);
-    expect(window.localStorage.getItem("hqcc.statLabels")).toBe(JSON.stringify(DEFAULT_STAT_LABELS));
+    expect(window.localStorage.getItem("hqcc.statLabels")).toBe(
+      JSON.stringify(DEFAULT_STAT_LABELS),
+    );
   });
 
   it("returns defaults and persists them when stored JSON is invalid", () => {
     window.localStorage.setItem("hqcc.statLabels", "{not-json");
     const value = loadStatLabelOverrides();
     expect(value).toEqual(DEFAULT_STAT_LABELS);
-    expect(window.localStorage.getItem("hqcc.statLabels")).toBe(JSON.stringify(DEFAULT_STAT_LABELS));
+    expect(window.localStorage.getItem("hqcc.statLabels")).toBe(
+      JSON.stringify(DEFAULT_STAT_LABELS),
+    );
   });
 
   it("returns defaults when localStorage.getItem throws", () => {
@@ -40,6 +44,6 @@ describe("loadStatLabelOverrides", () => {
     const value = loadStatLabelOverrides();
     expect(value.statLabelsEnabled).toBe(true);
     expect(value.statsLabelAttack).toBe("ATK");
-    expect(window.localStorage.getItem("hqcc.statLabels")).toContain("\"statsLabelAttack\":\"ATK\"");
+    expect(window.localStorage.getItem("hqcc.statLabels")).toContain('"statsLabelAttack":"ATK"');
   });
 });

@@ -12,7 +12,6 @@ import {
 import type { CardRecord } from "@/types/cards-db";
 import type { CollectionRecord } from "@/types/collections-db";
 
-
 export {
   TEST_NOW,
   createDeckEntryRecord,

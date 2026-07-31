@@ -195,10 +195,7 @@ export function createCardPageActions({
   };
 }
 
-async function renderThumbnailBlob(
-  previewRef: RefObject<CardPreviewHandle>,
-  errorMessage: string,
-) {
+async function renderThumbnailBlob(previewRef: RefObject<CardPreviewHandle>, errorMessage: string) {
   let thumbnailBlob: Blob | null = null;
   try {
     const blob = await previewRef.current?.renderToJpegBlob({

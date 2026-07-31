@@ -4,7 +4,6 @@ import { useState } from "react";
 import type { DeckPdfExportSummary } from "@/components/Decks/deck-export";
 import DeckPdfExportPanel from "@/components/Decks/pdf/DeckPdfExportPanel";
 
-
 jest.mock("@/components/common/FormSelect", () => ({
   __esModule: true,
   default: ({
@@ -34,7 +33,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string, vars?: Record<string, unknown>) =>
       (
-        {
+        ({
           "decks.pdf.summary.scope.label": "Sets to include",
           "decks.pdf.summary.scope.complete": "Complete deck",
           "decks.pdf.summary.scope.all": "All sets",
@@ -54,7 +53,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "decks.pdf.summary.includedSets.all": `All sets: ${vars?.count ?? ""}`,
           "decks.pdf.summary.includedSets.selected": `Selected sets: ${vars?.count ?? ""}`,
           "ui.loading": "Loading",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));
@@ -139,7 +138,10 @@ describe("DeckPdfExportPanel", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Hide empty sets")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /set two/i })).toHaveAttribute("data-included", "true");
+    expect(screen.getByRole("button", { name: /set two/i })).toHaveAttribute(
+      "data-included",
+      "true",
+    );
   });
 
   it("hides unselected sets in selected mode after toggling the filter", () => {

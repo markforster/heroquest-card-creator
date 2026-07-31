@@ -166,7 +166,9 @@ export default function FormattingHelpContent() {
             {
               code: t("formattingHelp.richText.scaleCode"),
               output: (
-                <span style={{ fontSize: "1.25em" }}>{t("formattingHelp.richText.scaleOutput")}</span>
+                <span style={{ fontSize: "1.25em" }}>
+                  {t("formattingHelp.richText.scaleOutput")}
+                </span>
               ),
             },
             {
@@ -293,17 +295,17 @@ export default function FormattingHelpContent() {
           rows={[
             {
               code: t("formattingHelp.inlineDice.skullCode"),
-            output: (
-              <div className={styles.formattingHelpDiceRow}>
-                <DiceIcon
-                  alt={t("formattingHelp.dice.skull")}
-                  src={combatSkullWhiteUrl}
-                  bg="#ffffff"
-                  faceColor="#111111"
-                  border="#111111"
-                />
-              </div>
-            ),
+              output: (
+                <div className={styles.formattingHelpDiceRow}>
+                  <DiceIcon
+                    alt={t("formattingHelp.dice.skull")}
+                    src={combatSkullWhiteUrl}
+                    bg="#ffffff"
+                    faceColor="#111111"
+                    border="#111111"
+                  />
+                </div>
+              ),
             },
             {
               code: t("formattingHelp.inlineDice.heroShieldCode"),
@@ -457,60 +459,60 @@ export default function FormattingHelpContent() {
           rows={[
             {
               code: t("formattingHelp.diceAdvanced.whiteSkullCode"),
-            output: (
-              <div className={styles.formattingHelpDiceRow}>
-                <DiceIcon
-                  alt={t("formattingHelp.dice.skull")}
-                  src={combatSkullWhiteUrl}
-                  bg="#ffffff"
-                  faceColor="#111111"
-                  border="#111111"
-                />
-              </div>
-            ),
-          },
-          {
-            code: t("formattingHelp.diceAdvanced.blackSkullCode"),
-            output: (
-              <div className={styles.formattingHelpDiceRow}>
-                <DiceIcon
-                  alt={t("formattingHelp.dice.skull")}
-                  src={combatSkullWhiteUrl}
-                  bg="#ffffff"
-                  faceColor="#111111"
-                  border="#111111"
-                />
-              </div>
-            ),
+              output: (
+                <div className={styles.formattingHelpDiceRow}>
+                  <DiceIcon
+                    alt={t("formattingHelp.dice.skull")}
+                    src={combatSkullWhiteUrl}
+                    bg="#ffffff"
+                    faceColor="#111111"
+                    border="#111111"
+                  />
+                </div>
+              ),
+            },
+            {
+              code: t("formattingHelp.diceAdvanced.blackSkullCode"),
+              output: (
+                <div className={styles.formattingHelpDiceRow}>
+                  <DiceIcon
+                    alt={t("formattingHelp.dice.skull")}
+                    src={combatSkullWhiteUrl}
+                    bg="#ffffff"
+                    faceColor="#111111"
+                    border="#111111"
+                  />
+                </div>
+              ),
             },
             {
               code: t("formattingHelp.diceAdvanced.yellowSkullCode"),
-            output: (
-              <div className={styles.formattingHelpDiceRow}>
-                <DiceIcon
-                  alt={t("formattingHelp.dice.skull")}
-                  src={combatSkullWhiteUrl}
-                  bg="#d6a600"
-                  faceColor="#111111"
-                  border="#111111"
-                />
-              </div>
-            ),
-          },
-          {
-            code: t("formattingHelp.diceAdvanced.customSkullCode"),
-            output: (
-              <div className={styles.formattingHelpDiceRow}>
-                <DiceIcon
-                  alt={t("formattingHelp.dice.skull")}
-                  src={combatSkullWhiteUrl}
-                  bg="#1c4aa8"
-                  faceColor="#ffd200"
-                  border="#ffd200"
-                />
-              </div>
-            ),
-          },
+              output: (
+                <div className={styles.formattingHelpDiceRow}>
+                  <DiceIcon
+                    alt={t("formattingHelp.dice.skull")}
+                    src={combatSkullWhiteUrl}
+                    bg="#d6a600"
+                    faceColor="#111111"
+                    border="#111111"
+                  />
+                </div>
+              ),
+            },
+            {
+              code: t("formattingHelp.diceAdvanced.customSkullCode"),
+              output: (
+                <div className={styles.formattingHelpDiceRow}>
+                  <DiceIcon
+                    alt={t("formattingHelp.dice.skull")}
+                    src={combatSkullWhiteUrl}
+                    bg="#1c4aa8"
+                    faceColor="#ffd200"
+                    border="#ffd200"
+                  />
+                </div>
+              ),
+            },
           ]}
         />
         <CheatCard

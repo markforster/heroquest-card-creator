@@ -26,7 +26,8 @@ jest.mock("react-select", () => {
           id={props.inputId}
           value={selectedValue}
           onChange={(event) => {
-            const next = props.options.find((option) => option.value === event.target.value) ?? null;
+            const next =
+              props.options.find((option) => option.value === event.target.value) ?? null;
             props.onChange(next);
           }}
         >
@@ -65,7 +66,11 @@ describe("DeckFaceCardsFilterSelect", () => {
         onFilterChange={jest.fn()}
         visibleCollections={[
           { id: "c1", name: "Decks/DungeonBeasts.v1/monsters", cardIds: ["1", "2", "3"] },
-          { id: "c2", name: "Decks/DungeonBeasts.v1/Encounters", cardIds: ["1", "2", "3", "4", "5"] },
+          {
+            id: "c2",
+            name: "Decks/DungeonBeasts.v1/Encounters",
+            cardIds: ["1", "2", "3", "4", "5"],
+          },
           { id: "c3", name: "Backs/Backs", cardIds: ["1", "2", "3", "4", "5", "6", "7"] },
         ]}
         recentCardsCount={2}

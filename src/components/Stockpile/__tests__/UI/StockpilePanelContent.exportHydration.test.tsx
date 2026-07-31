@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-
 import type { CardRecord } from "@/api/cards";
 import type { CollectionRecord } from "@/api/collections";
 import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
@@ -184,7 +183,10 @@ jest.mock("@/components/Stockpile/StockpileSidebar", () => ({
   }: {
     onFilterChange: (next: { type: "collection"; id: string }) => void;
   }) => (
-    <button type="button" onClick={() => onFilterChange({ type: "collection", id: "collection-1" })}>
+    <button
+      type="button"
+      onClick={() => onFilterChange({ type: "collection", id: "collection-1" })}
+    >
       Open collection
     </button>
   ),
@@ -274,7 +276,10 @@ describe("StockpilePanelContent export hydration", () => {
     jest.clearAllMocks();
 
     mockListPairs.mockResolvedValue([]);
-    mockStartBulkCardExport.mockResolvedValue({ status: "completed", result: { status: "success" } });
+    mockStartBulkCardExport.mockResolvedValue({
+      status: "completed",
+      result: { status: "success" },
+    });
 
     mockUseStockpileData.mockImplementation(
       ({
@@ -327,7 +332,7 @@ describe("StockpilePanelContent export hydration", () => {
       }) => {
         const activeCollection =
           activeFilter.type === "collection"
-            ? collections.find((collection) => collection.id === activeFilter.id) ?? null
+            ? (collections.find((collection) => collection.id === activeFilter.id) ?? null)
             : null;
         const filteredCards = activeCollection
           ? cards.filter((card) => activeCollection.cardIds.includes(card.id))
@@ -342,7 +347,10 @@ describe("StockpilePanelContent export hydration", () => {
           unfiledCount: 0,
           typeCounts: new Map(),
           totalCount: filteredCards.length,
-          faceCounts: { front: filteredCards.filter((card) => card.face !== "back").length, back: filteredCards.filter((card) => card.face === "back").length },
+          faceCounts: {
+            front: filteredCards.filter((card) => card.face !== "back").length,
+            back: filteredCards.filter((card) => card.face === "back").length,
+          },
           visibleCollectionIds: new Set(["collection-1"]),
           eligibleIdSet: new Set(cards.map((card) => card.id)),
           overallCount: cards.length,
@@ -383,13 +391,15 @@ describe("StockpilePanelContent export hydration", () => {
 
     const firstCall = mockStartBulkCardExport.mock.calls[0][0];
     expect(firstCall.cards).toEqual([hydratedFront]);
-    expect(firstCall.cards[0]).toEqual(expect.objectContaining({
-      id: "front-1",
-      title: "Hydrated Front",
-      description: "Hydrated body",
-      imageAssetId: "asset-1",
-      heroAttackDice: [3, 0, 0],
-    }));
+    expect(firstCall.cards[0]).toEqual(
+      expect.objectContaining({
+        id: "front-1",
+        title: "Hydrated Front",
+        description: "Hydrated body",
+        imageAssetId: "asset-1",
+        heroAttackDice: [3, 0, 0],
+      }),
+    );
   });
 
   it("hydrates both selected collection cards and paired cards before paired export", async () => {

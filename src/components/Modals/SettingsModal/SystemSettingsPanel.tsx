@@ -172,11 +172,13 @@ function StorageDetailRows({ title, data, fallbackLabel, recordsLabel }: Storage
                 aria-hidden="true"
               />
               <span className={styles.storageDetailRowLabel}>
-                {getSystemSettingsStoreLabel(entry.name, t)}: {formatBytes(entry.bytes, fallbackLabel)} (
-                {entry.records} {recordsLabel})
+                {getSystemSettingsStoreLabel(entry.name, t)}:{" "}
+                {formatBytes(entry.bytes, fallbackLabel)} ({entry.records} {recordsLabel})
               </span>
             </div>
-            <span className={styles.storageUsageLegendShare}>{(entry.share * 100).toFixed(1)}%</span>
+            <span className={styles.storageUsageLegendShare}>
+              {(entry.share * 100).toFixed(1)}%
+            </span>
           </div>
         ))}
       </div>
@@ -213,10 +215,13 @@ function StorageUsageBar({
               aria-hidden="true"
             />
             <span className={styles.settingsPanelOption}>
-              {getSystemSettingsStoreLabel(entry.name, t)}: {formatBytes(entry.bytes, fallbackLabel)}
+              {getSystemSettingsStoreLabel(entry.name, t)}:{" "}
+              {formatBytes(entry.bytes, fallbackLabel)}
               {entry.records > 0 ? ` (${entry.records} ${recordsLabel})` : ""}
             </span>
-            <span className={styles.storageUsageLegendShare}>{(entry.share * 100).toFixed(1)}%</span>
+            <span className={styles.storageUsageLegendShare}>
+              {(entry.share * 100).toFixed(1)}%
+            </span>
           </div>
         ))}
       </div>

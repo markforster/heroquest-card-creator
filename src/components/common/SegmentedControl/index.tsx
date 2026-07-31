@@ -4,7 +4,6 @@ import styles from "./SegmentedControl.module.css";
 
 import type { ReactNode } from "react";
 
-
 type SegmentedControlOption<T extends string> = {
   value: T;
   label: string;

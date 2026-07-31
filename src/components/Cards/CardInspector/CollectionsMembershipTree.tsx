@@ -222,7 +222,9 @@ export default function CollectionsMembershipTree({
               aria-hidden="true"
             />
           ) : null}
-          <span className={`${styles.stockpileSidebarItemLabel} ${styles.inspectorCollectionsLabel}`}>
+          <span
+            className={`${styles.stockpileSidebarItemLabel} ${styles.inspectorCollectionsLabel}`}
+          >
             {label}
           </span>
         </span>
@@ -255,7 +257,9 @@ export default function CollectionsMembershipTree({
               aria-hidden="true"
             />
             <Folder className={`${styles.stockpileTreeIcon} ${styles.stockpileTreeIconFolder}`} />
-            <span className={`${styles.stockpileSidebarItemLabel} ${styles.inspectorCollectionsLabel}`}>
+            <span
+              className={`${styles.stockpileSidebarItemLabel} ${styles.inspectorCollectionsLabel}`}
+            >
               {node.label}
             </span>
           </>
@@ -302,10 +306,6 @@ export default function CollectionsMembershipTree({
   }
 
   return (
-    <>
-      {orderedCollections.map((collection) =>
-        renderLeaf(collection, collection.name, 1, false),
-      )}
-    </>
+    <>{orderedCollections.map((collection) => renderLeaf(collection, collection.name, 1, false))}</>
   );
 }

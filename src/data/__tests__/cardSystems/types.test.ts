@@ -1,10 +1,5 @@
 import { blueprintsByTemplateId } from "@/data/blueprints";
-import {
-  blueprintIds,
-  groupTypes,
-  layerTypes,
-  systemFamilies,
-} from "@/data/card-systems/types";
+import { blueprintIds, groupTypes, layerTypes, systemFamilies } from "@/data/card-systems/types";
 
 const FULLY_QUALIFIED_BLUEPRINT_ID_PATTERN = /^hq\.\d{4}\.[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
 

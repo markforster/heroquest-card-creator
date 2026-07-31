@@ -13,7 +13,13 @@ const mockDeletePair = jest.fn();
 const mockUseCardThumbnailUrl = jest.fn();
 
 let pairedNotInSetFrontIds: string[] = [];
-let entriesSortedMock: Array<{ id: string; setId: string; pairId: string; sortIndex: number; count: number }> = [];
+let entriesSortedMock: Array<{
+  id: string;
+  setId: string;
+  pairId: string;
+  sortIndex: number;
+  count: number;
+}> = [];
 let selectedSetIdMock: string | null = "set-1";
 let selectionSetByIdMock = new Map<string, { id: string; title: string; backFaceId: string }>();
 let pairsByIdMock = new Map<
@@ -88,11 +94,16 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
     registerDropHandler: (...args: unknown[]) => {
       mockRegisterDropHandler(...args);
       const maybeHandler = args[1];
-      registeredDropHandler = typeof maybeHandler === "function" ? (maybeHandler as (event: any) => Promise<any>) : null;
+      registeredDropHandler =
+        typeof maybeHandler === "function" ? (maybeHandler as (event: any) => Promise<any>) : null;
       return () => undefined;
     },
   }),
-  useDeckSortableBoardViewModel: (_boardId: string, _routing: unknown, options: Record<string, unknown>) => ({
+  useDeckSortableBoardViewModel: (
+    _boardId: string,
+    _routing: unknown,
+    options: Record<string, unknown>,
+  ) => ({
     config: {
       boardId: "entries",
       title: options.title ?? "Entries",
@@ -143,7 +154,9 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
       </div>
     </div>
   ),
-  DefaultSetThumbnailContent: ({ cardId }: { cardId?: string }) => <div>{cardId ?? "unknown-card"}</div>,
+  DefaultSetThumbnailContent: ({ cardId }: { cardId?: string }) => (
+    <div>{cardId ?? "unknown-card"}</div>
+  ),
 }));
 
 describe("DeckEntriesBoardController recover paired modal", () => {
@@ -159,7 +172,9 @@ describe("DeckEntriesBoardController recover paired modal", () => {
 
   beforeEach(() => {
     selectedSetIdMock = "set-1";
-    selectionSetByIdMock = new Map([["set-1", { id: "set-1", title: "Selected Set", backFaceId: "back-1" }]]);
+    selectionSetByIdMock = new Map([
+      ["set-1", { id: "set-1", title: "Selected Set", backFaceId: "back-1" }],
+    ]);
     pairedNotInSetFrontIds = [];
     entriesSortedMock = [
       { id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 },
@@ -231,7 +246,9 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     const removeSelectedButton = screen.getByRole("button", { name: REMOVE_SELECTED_COUNT_LABEL });
     expect(removeSelectedButton).toBeDisabled();
     expect(removeSelectedButton.className).toContain("removeSelectedButton");
-    expect(screen.getByRole("img", { name: "decks.entries.selectedSetBackAlt" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "decks.entries.selectedSetBackAlt" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Back Card Alpha")).toBeInTheDocument();
   });
 
@@ -250,12 +267,16 @@ describe("DeckEntriesBoardController recover paired modal", () => {
 
   it("renders Entries text fallback while keeping thumbnail when back card title is unavailable", () => {
     selectedSetIdMock = "set-1";
-    selectionSetByIdMock = new Map([["set-1", { id: "set-1", title: "Set Without Back", backFaceId: "back-missing" }]]);
+    selectionSetByIdMock = new Map([
+      ["set-1", { id: "set-1", title: "Set Without Back", backFaceId: "back-missing" }],
+    ]);
 
     render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
 
     expect(screen.getByText("Entries")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "decks.entries.selectedSetBackAlt" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "decks.entries.selectedSetBackAlt" }),
+    ).toBeInTheDocument();
   });
 
   it("supports single and ctrl/cmd additive entry selection and updates delete count", () => {
@@ -371,13 +392,11 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     );
     const css = readFileSync(cssPath, "utf8");
 
-    expect(css).toContain(':has(.removeSelectedButton:hover) .setCardSelected .setThumb');
+    expect(css).toContain(":has(.removeSelectedButton:hover) .setCardSelected .setThumb");
+    expect(css).toContain(":has(.removeSelectedButton:focus-visible) .setCardSelected .setThumb");
+    expect(css).toContain(":has(.removeSelectedButton:hover) .setCard:not(.setCardSelected)");
     expect(css).toContain(
-      ':has(.removeSelectedButton:focus-visible) .setCardSelected .setThumb',
-    );
-    expect(css).toContain(':has(.removeSelectedButton:hover) .setCard:not(.setCardSelected)');
-    expect(css).toContain(
-      ':has(.removeSelectedButton:focus-visible) .setCard:not(.setCardSelected)',
+      ":has(.removeSelectedButton:focus-visible) .setCard:not(.setCardSelected)",
     );
     expect(css).toContain(".setCardBottomToolbar");
     expect(css).toContain("transform: translate(-50%, -4px);");

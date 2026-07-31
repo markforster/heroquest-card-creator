@@ -214,7 +214,9 @@ describe("cards normalized migration", () => {
         scaleMode: "relative",
       }),
     );
-    expect(await db.cardMonsterStatsComponents.get("monster-1:hq.2021.stats.monster.primary")).toEqual(
+    expect(
+      await db.cardMonsterStatsComponents.get("monster-1:hq.2021.stats.monster.primary"),
+    ).toEqual(
       expect.objectContaining({
         movementSquares: 8,
         attackDice: 2,

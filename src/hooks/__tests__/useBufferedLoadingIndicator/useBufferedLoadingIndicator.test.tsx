@@ -12,10 +12,9 @@ describe("useBufferedLoadingIndicator", () => {
   });
 
   it("does not show the indicator if loading ends before the show delay", () => {
-    const { result, rerender } = renderHook(
-      ({ loading }) => useBufferedLoadingIndicator(loading),
-      { initialProps: { loading: true } },
-    );
+    const { result, rerender } = renderHook(({ loading }) => useBufferedLoadingIndicator(loading), {
+      initialProps: { loading: true },
+    });
 
     act(() => {
       jest.advanceTimersByTime(149);
@@ -41,10 +40,9 @@ describe("useBufferedLoadingIndicator", () => {
   });
 
   it("keeps the indicator visible for the minimum duration once shown", () => {
-    const { result, rerender } = renderHook(
-      ({ loading }) => useBufferedLoadingIndicator(loading),
-      { initialProps: { loading: true } },
-    );
+    const { result, rerender } = renderHook(({ loading }) => useBufferedLoadingIndicator(loading), {
+      initialProps: { loading: true },
+    });
 
     act(() => {
       jest.advanceTimersByTime(150);
@@ -65,10 +63,9 @@ describe("useBufferedLoadingIndicator", () => {
   });
 
   it("stays visible until loading actually ends if loading outlasts the minimum duration", () => {
-    const { result, rerender } = renderHook(
-      ({ loading }) => useBufferedLoadingIndicator(loading),
-      { initialProps: { loading: true } },
-    );
+    const { result, rerender } = renderHook(({ loading }) => useBufferedLoadingIndicator(loading), {
+      initialProps: { loading: true },
+    });
 
     act(() => {
       jest.advanceTimersByTime(550);

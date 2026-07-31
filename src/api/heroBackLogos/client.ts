@@ -24,11 +24,7 @@ export async function getHeroBackLogoUsage(id: string): Promise<HeroBackLogoUsag
   return apiClient.getHeroBackLogoUsage({ params: { id } });
 }
 
-export async function addHeroBackLogo(
-  id: string,
-  blob: Blob,
-  meta: AddHeroBackLogoMeta,
-) {
+export async function addHeroBackLogo(id: string, blob: Blob, meta: AddHeroBackLogoMeta) {
   return apiClient.addHeroBackLogo({
     id,
     blob,
@@ -36,12 +32,6 @@ export async function addHeroBackLogo(
   });
 }
 
-export async function deleteHeroBackLogo(
-  id: string,
-  remediation: DeleteHeroBackLogoRemediation,
-) {
-  return apiClient.deleteHeroBackLogo(
-    remediation as never,
-    { params: { id } } as never,
-  );
+export async function deleteHeroBackLogo(id: string, remediation: DeleteHeroBackLogoRemediation) {
+  return apiClient.deleteHeroBackLogo(remediation as never, { params: { id } } as never);
 }

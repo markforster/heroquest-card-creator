@@ -11,10 +11,7 @@ import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
-import {
-  invalidateCardThumbnail,
-  useCardThumbnailUrl,
-} from "@/lib/card-thumbnail-cache";
+import { invalidateCardThumbnail, useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 
 import type { RecentCardGroup } from "./useRecentCards";
 
@@ -80,11 +77,7 @@ function RecentCardItem({
   );
 }
 
-export default function RecentCardsList({
-  cards,
-  onSelectCard,
-  onClose,
-}: RecentCardsListProps) {
+export default function RecentCardsList({ cards, onSelectCard, onClose }: RecentCardsListProps) {
   const { language, t } = useI18n();
   const [retryToken, setRetryToken] = useState(0);
   const retriedRef = useRef<Set<string>>(new Set());

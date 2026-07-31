@@ -28,7 +28,8 @@ export const useAddAsset = apiHooks.useAddAsset.bind(apiHooks);
 export const useReplaceAsset = apiHooks.useReplaceAsset.bind(apiHooks);
 export const useUpdateAssetMetadata = apiHooks.useUpdateAssetMetadata.bind(apiHooks);
 export const useResetAssetClassification = apiHooks.useResetAssetClassification.bind(apiHooks);
-export const useResetAssetClassificationAll = apiHooks.useResetAssetClassificationAll.bind(apiHooks);
+export const useResetAssetClassificationAll =
+  apiHooks.useResetAssetClassificationAll.bind(apiHooks);
 export const useDeleteAssets = apiHooks.useDeleteAssets.bind(apiHooks);
 export const useTouchCardLastViewed = apiHooks.useTouchCardLastViewed.bind(apiHooks);
 export const useUpdateCards = apiHooks.useUpdateCards.bind(apiHooks);

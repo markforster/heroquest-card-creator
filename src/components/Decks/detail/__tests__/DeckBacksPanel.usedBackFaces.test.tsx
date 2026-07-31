@@ -40,16 +40,15 @@ jest.mock(
       onFilterChange,
     }: {
       onFilterChange: (next: { type: "all" } | { type: "collection"; id: string }) => void;
-    }) =>
-      (
-        <button
-          type="button"
-          data-testid="deck-face-cards-filter-select"
-          onClick={() => onFilterChange({ type: "collection", id: "collection-1" })}
-        >
-          select filter
-        </button>
-      ),
+    }) => (
+      <button
+        type="button"
+        data-testid="deck-face-cards-filter-select"
+        onClick={() => onFilterChange({ type: "collection", id: "collection-1" })}
+      >
+        select filter
+      </button>
+    ),
 );
 
 jest.mock("@dnd-kit/core", () => ({
@@ -69,8 +68,8 @@ jest.mock("@/components/common/CardThumbnail", () => (props: { alt: string }) =>
   <div aria-label={props.alt || "thumb"} data-testid="card-thumb" />
 ));
 
-const DeckBacksPanel =
-  require("@/components/Decks/detail/DeckBacksPanel").default as typeof import("@/components/Decks/detail/DeckBacksPanel").default;
+const DeckBacksPanel = require("@/components/Decks/detail/DeckBacksPanel")
+  .default as typeof import("@/components/Decks/detail/DeckBacksPanel").default;
 
 describe("DeckBacksPanel used back-face availability", () => {
   const cards = [

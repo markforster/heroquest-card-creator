@@ -100,10 +100,7 @@ export default function CollectionsInspectorPanel() {
     const nextCardIds = collection.cardIds.filter((cardId) => cardId !== savedCardId);
 
     try {
-      await apiClient.updateCollection(
-        { cardIds: nextCardIds },
-        { params: { id: collection.id } },
-      );
+      await apiClient.updateCollection({ cardIds: nextCardIds }, { params: { id: collection.id } });
       await Promise.all([refreshCollections(), invalidateCollectionsQueries(queryClient)]);
     } catch {
       // Keep the current list visible if an update fails.

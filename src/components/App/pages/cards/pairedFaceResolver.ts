@@ -70,11 +70,7 @@ export function resolvePairedOppositeFace({
   };
 }
 
-function getOppositeFaceId(
-  pair: PairRecord,
-  activeFaceId: string,
-  effectiveFace: CardFace,
-) {
+function getOppositeFaceId(pair: PairRecord, activeFaceId: string, effectiveFace: CardFace) {
   if (effectiveFace === "front") {
     return pair.frontFaceId === activeFaceId ? pair.backFaceId : null;
   }

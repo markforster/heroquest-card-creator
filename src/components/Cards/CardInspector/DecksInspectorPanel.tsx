@@ -117,7 +117,9 @@ export default function DecksInspectorPanel() {
               className={styles.inspectorDeckMembershipRow}
               title={membership.deckTitle}
               subtitle={undefined}
-              right={<span className={styles.inspectorDeckMembershipCount}>{membership.count}</span>}
+              right={
+                <span className={styles.inspectorDeckMembershipCount}>{membership.count}</span>
+              }
               onClick={() =>
                 navigate(
                   buildDeckDeepLink({

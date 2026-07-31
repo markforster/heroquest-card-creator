@@ -22,9 +22,9 @@ describe("useDecksDragController front/entry drop index targeting", () => {
     jest.useRealTimers();
   });
 
-  function renderController(
-    options?: { entries?: Array<{ id: string; sortIndex: number; setId: string; pairId: string }> },
-  ) {
+  function renderController(options?: {
+    entries?: Array<{ id: string; sortIndex: number; setId: string; pairId: string }>;
+  }) {
     const reorderSetEntries = jest.fn().mockResolvedValue(undefined);
     const refreshSetEntries = jest.fn().mockResolvedValue(undefined);
     const addFrontFaceToSet = jest
@@ -40,11 +40,10 @@ describe("useDecksDragController front/entry drop index targeting", () => {
         selectedGroupId: "group-1",
         selectedSetId: "set-1",
         activeSetId: "set-1",
-        entries:
-          (options?.entries ?? [
-            { id: "entry-1", sortIndex: 0, setId: "set-1", pairId: "pair-1" },
-            { id: "entry-2", sortIndex: 1, setId: "set-1", pairId: "pair-2" },
-          ]) as never,
+        entries: (options?.entries ?? [
+          { id: "entry-1", sortIndex: 0, setId: "set-1", pairId: "pair-1" },
+          { id: "entry-2", sortIndex: 1, setId: "set-1", pairId: "pair-2" },
+        ]) as never,
         entryFrontIdByEntryId: new Map([
           ["entry-1", "front-1"],
           ["entry-2", "front-2"],
@@ -189,7 +188,8 @@ describe("useDecksDragController front/entry drop index targeting", () => {
 
   it("clears front-face drag state immediately on valid drop before async mutations resolve", async () => {
     const { result, addFrontFaceToSet } = renderController();
-    const pendingAdd = deferred<Array<{ id: string; sortIndex: number; setId: string; pairId: string }>>();
+    const pendingAdd =
+      deferred<Array<{ id: string; sortIndex: number; setId: string; pairId: string }>>();
     addFrontFaceToSet.mockImplementationOnce(() => pendingAdd.promise);
 
     act(() => {
@@ -433,10 +433,13 @@ describe("useDecksDragController front/entry drop index targeting", () => {
       } as never);
     });
 
-    expect(reorderSetEntries).toHaveBeenCalledWith(
-      "set-1",
-      ["entry-1", "entry-3", "entry-4", "entry-2", "entry-5"],
-    );
+    expect(reorderSetEntries).toHaveBeenCalledWith("set-1", [
+      "entry-1",
+      "entry-3",
+      "entry-4",
+      "entry-2",
+      "entry-5",
+    ]);
     expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
   });
 
@@ -473,10 +476,15 @@ describe("useDecksDragController front/entry drop index targeting", () => {
       } as never);
     });
 
-    expect(reorderSetEntries).toHaveBeenCalledWith(
-      "set-1",
-      ["entry-1", "entry-2", "entry-4", "entry-5", "entry-6", "entry-7", "entry-3"],
-    );
+    expect(reorderSetEntries).toHaveBeenCalledWith("set-1", [
+      "entry-1",
+      "entry-2",
+      "entry-4",
+      "entry-5",
+      "entry-6",
+      "entry-7",
+      "entry-3",
+    ]);
     expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
   });
 
@@ -519,10 +527,12 @@ describe("useDecksDragController front/entry drop index targeting", () => {
       } as never);
     });
 
-    expect(reorderSetEntries).toHaveBeenCalledWith(
-      "set-1",
-      ["entry-2", "entry-3", "entry-1", "entry-4"],
-    );
+    expect(reorderSetEntries).toHaveBeenCalledWith("set-1", [
+      "entry-2",
+      "entry-3",
+      "entry-1",
+      "entry-4",
+    ]);
     expect(refreshSetEntries).toHaveBeenCalledWith("set-1");
   });
 

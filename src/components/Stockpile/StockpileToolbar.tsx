@@ -63,8 +63,7 @@ export default function StockpileToolbar({
   const { t } = useI18n();
   const { missingArtworkIds } = useMissingAssets();
   const showMissingArtworkToggle = ENABLE_MISSING_ASSET_CHECKS && missingArtworkIds.size > 0;
-  const hasLeftControls =
-    showSearchAndFilterControls || (!isPairMode && showUnpairedToggle);
+  const hasLeftControls = showSearchAndFilterControls || (!isPairMode && showUnpairedToggle);
   const hasRightControls = (!isPairMode && showMissingArtworkToggle) || isPairMode;
 
   if (!hasLeftControls && !hasRightControls) {

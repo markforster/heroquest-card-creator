@@ -114,14 +114,7 @@ function CardFanThumbSvg({
       />
       <defs>
         <clipPath id={clipId}>
-          <rect
-            x={x}
-            y={y}
-            width={width}
-            height={height}
-            rx={cornerRadius}
-            ry={cornerRadius}
-          />
+          <rect x={x} y={y} width={width} height={height} rx={cornerRadius} ry={cornerRadius} />
         </clipPath>
       </defs>
       <image
@@ -270,12 +263,7 @@ function CardFanItem({
     id: dragMeta?.id ?? `cardfan-static-drop:${itemKey}`,
     disabled: !isSetCard,
   });
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    isDragging,
-  } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: dragMeta?.id ?? `cardfan-static:${itemKey}`,
     data: dragMeta?.data,
     disabled: !dragMeta,
@@ -546,9 +534,7 @@ export default function CardFan({
           const visualOrder = baseCenters
             .map((center, index) => ({ center, index }))
             .sort((a, b) => a.center - b.center || a.index - b.index);
-          const hoveredVisualIndex = visualOrder.findIndex(
-            (entry) => entry.index === hoveredIndex,
-          );
+          const hoveredVisualIndex = visualOrder.findIndex((entry) => entry.index === hoveredIndex);
           if (hoveredVisualIndex < 0) return baseCenters;
           const visualIndexByCard = new Map(
             visualOrder.map((entry, visualIndex) => [entry.index, visualIndex]),
@@ -566,8 +552,7 @@ export default function CardFan({
   const hoverCenterAvg = hoverCenters.length
     ? hoverCenters.reduce((sum, value) => sum + value, 0) / hoverCenters.length
     : 0;
-  const centerDelta =
-    hoveredIndex >= 0 && isHoverSpread ? hoverCenterAvg - baseCenterAvg : 0;
+  const centerDelta = hoveredIndex >= 0 && isHoverSpread ? hoverCenterAvg - baseCenterAvg : 0;
 
   const layout = offsets.map((offset, index) => {
     const angle = offset * rotateDeg;
@@ -576,8 +561,7 @@ export default function CardFan({
     const baseZIndex = expanded
       ? getZIndex(offset, maxDepth, effectiveFanType)
       : getIndexZIndex(renderItems.length, index);
-    const zIndex =
-      HOVER_TOPMOST && hoveredIndex === index ? baseZIndex + 1000 : baseZIndex;
+    const zIndex = HOVER_TOPMOST && hoveredIndex === index ? baseZIndex + 1000 : baseZIndex;
     return {
       cardId: itemCardIds[index],
       item: renderItems[index],
@@ -617,7 +601,12 @@ export default function CardFan({
       }
       return acc;
     },
-    { minX: Number.POSITIVE_INFINITY, maxX: Number.NEGATIVE_INFINITY, minY: Number.POSITIVE_INFINITY, maxY: Number.NEGATIVE_INFINITY },
+    {
+      minX: Number.POSITIVE_INFINITY,
+      maxX: Number.NEGATIVE_INFINITY,
+      minY: Number.POSITIVE_INFINITY,
+      maxY: Number.NEGATIVE_INFINITY,
+    },
   );
 
   const safeBounds =

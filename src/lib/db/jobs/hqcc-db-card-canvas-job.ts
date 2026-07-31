@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  META_CARD_CANVAS_ROLLBACK_MIGRATED_KEY,
-  openHqccDexieDb,
-} from "@/lib/db/hqcc-dexie";
+import { META_CARD_CANVAS_ROLLBACK_MIGRATED_KEY, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 type HqccDexieDb = Awaited<ReturnType<typeof openHqccDexieDb>>;
 

@@ -63,10 +63,8 @@ export default function StockpileFooter({
   showLoadAction = true,
 }: StockpileFooterProps) {
   const { t } = useI18n();
-  const formatMessage = (
-    key: string,
-    vars: Record<string, string | number>,
-  ) => formatMessageWith(t as never, key as never, vars);
+  const formatMessage = (key: string, vars: Record<string, string | number>) =>
+    formatMessageWith(t as never, key as never, vars);
   const [isApplyingPairSelection, setIsApplyingPairSelection] = useState(false);
   const [pendingPairFrontsUnpair, setPendingPairFrontsUnpair] = useState<{
     selectedIds: string[];
@@ -106,7 +104,11 @@ export default function StockpileFooter({
     });
     const deckMap = new Map<
       string,
-      { deckId: string; deckTitle: string; locations: Array<{ groupId: string; groupTitle: string; setId: string; setTitle: string }> }
+      {
+        deckId: string;
+        deckTitle: string;
+        locations: Array<{ groupId: string; groupTitle: string; setId: string; setTitle: string }>;
+      }
     >();
     usageByKey.forEach((usage) => {
       const deck = deckMap.get(usage.deckId) ?? {
@@ -114,7 +116,11 @@ export default function StockpileFooter({
         deckTitle: usage.deckTitle,
         locations: [],
       };
-      if (!deck.locations.some((location) => location.groupId === usage.groupId && location.setId === usage.setId)) {
+      if (
+        !deck.locations.some(
+          (location) => location.groupId === usage.groupId && location.setId === usage.setId,
+        )
+      ) {
         deck.locations.push({
           groupId: usage.groupId,
           groupTitle: usage.groupTitle,
@@ -190,7 +196,9 @@ export default function StockpileFooter({
             </button>
           </div>
         ) : (
-          <div className={`d-flex w-100 align-items-center ${styles.stockpileFooter} ${styles.uRowLg}`}>
+          <div
+            className={`d-flex w-100 align-items-center ${styles.stockpileFooter} ${styles.uRowLg}`}
+          >
             {collectionControls ?? null}
             {showBulkExportAction || showLoadAction || onPdfExport ? (
               <div className="d-flex flex-shrink-1 flex-grow-0 gap-2 ms-auto">
@@ -261,7 +269,8 @@ export default function StockpileFooter({
               </div>
               <div className={styles.pairingPanelGrid}>
                 {pendingPairFrontsUnpair.removedCards.map((card) => {
-                  const templateThumbSrc = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+                  const templateThumbSrc =
+                    cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
                   return (
                     <div key={card.id} className={styles.pairFrontsModalThumbItem}>
                       <StockpileThumbImage

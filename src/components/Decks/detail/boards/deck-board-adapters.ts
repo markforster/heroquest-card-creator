@@ -66,7 +66,8 @@ export function createDnDStateFromModels(
           uiItemId: setId,
           kind: "source-template",
           face: model.sourceItemFaceBySetId?.[setId] ?? null,
-          sourceCardId: model.setCardIdById[setId] ?? (setId.startsWith("source:") ? setId.slice(7) : null),
+          sourceCardId:
+            model.setCardIdById[setId] ?? (setId.startsWith("source:") ? setId.slice(7) : null),
           persistedId: null,
           isEphemeral: false,
         };
@@ -78,7 +79,10 @@ export function createDnDStateFromModels(
     groupOrderByBoard: containerOrderByBoard,
     itemsByGroup: itemsByContainer,
     groupToBoard: Object.fromEntries(
-      Object.keys(containersById).map((containerId) => [containerId, containersById[containerId].boardId]),
+      Object.keys(containersById).map((containerId) => [
+        containerId,
+        containersById[containerId].boardId,
+      ]),
     ) as Record<GroupId, BoardId>,
     containerOrderByBoard,
     itemsByContainer,
@@ -136,8 +140,10 @@ export function canRouteDrag({
   if (!targetAcceptTokens) return false;
   if (!targetAcceptTokens.includes(sourceEmitToken)) return false;
   if (sourceItem?.kind === "source-template" && targetContainer) {
-    if (sourceItem.face === "back" && !targetContainer.accepts.includes("source-back")) return false;
-    if (sourceItem.face === "front" && !targetContainer.accepts.includes("source-front")) return false;
+    if (sourceItem.face === "back" && !targetContainer.accepts.includes("source-back"))
+      return false;
+    if (sourceItem.face === "front" && !targetContainer.accepts.includes("source-front"))
+      return false;
   }
   return true;
 }

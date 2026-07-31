@@ -1,4 +1,3 @@
-
 import { touchCardLastViewedInputSchema } from "@/api/cards";
 import { touchCardLastViewed } from "@/lib/data/cards-db";
 

@@ -24,17 +24,14 @@ describe("createCardRequestPlugin", () => {
       title: "Hero",
     });
 
-    const resolved = await createCardRequestPlugin.request?.(
-      [],
-      {
-        data: {
-          templateId: "hero",
-          status: "saved",
-          name: "Hero",
-          duplicateFromCardId: "source-card",
-        },
-      } as never,
-    );
+    const resolved = await createCardRequestPlugin.request?.([], {
+      data: {
+        templateId: "hero",
+        status: "saved",
+        name: "Hero",
+        duplicateFromCardId: "source-card",
+      },
+    } as never);
     const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
     const response = await adapter?.();
 

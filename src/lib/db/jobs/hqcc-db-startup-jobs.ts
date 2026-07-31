@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  META_COPYRIGHT_COMPONENTS_BACKFILLED_KEY,
-  openHqccDexieDb,
-} from "@/lib/db/hqcc-dexie";
+import { META_COPYRIGHT_COMPONENTS_BACKFILLED_KEY, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { migrateCardCanvas } from "@/lib/db/jobs/hqcc-db-card-canvas-job";
 import { backfillCardCopyrightComponents } from "@/lib/db/jobs/hqcc-db-copyright-backfill-job";
 import { dedupePairsFromStore } from "@/lib/db/jobs/hqcc-db-pair-jobs";

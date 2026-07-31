@@ -105,12 +105,12 @@ export function getExportSettings(): ExportSettings {
   const cutMarksStyle = readCutMarksStyle(
     readString(STORAGE_KEYS.cutMarksStyle, DEFAULT_CUT_MARK_STYLE),
   );
-  const roundedCorners = readBool(
-    STORAGE_KEYS.roundedCorners,
-    DEFAULT_EXPORT_ROUNDED_CORNERS,
-  );
+  const roundedCorners = readBool(STORAGE_KEYS.roundedCorners, DEFAULT_EXPORT_ROUNDED_CORNERS);
   const pdf = normalizePdfPrintConfig({
-    paper: readString(STORAGE_KEYS.pdfPaper, DEFAULT_PDF_PRINT_CONFIG.paper) as PrintConfig["paper"],
+    paper: readString(
+      STORAGE_KEYS.pdfPaper,
+      DEFAULT_PDF_PRINT_CONFIG.paper,
+    ) as PrintConfig["paper"],
     orientation: readString(
       STORAGE_KEYS.pdfOrientation,
       DEFAULT_PDF_PRINT_CONFIG.orientation,
@@ -156,40 +156,37 @@ export function setExportSettings(next: ExportSettings): void {
       STORAGE_KEYS.askBeforeExport,
       next.bleed.askBeforeExport ? "1" : "0",
     );
-    window.localStorage.setItem(
-      STORAGE_KEYS.cropMarksEnabled,
-      next.cropMarks.enabled ? "1" : "0",
-    );
-    window.localStorage.setItem(
-      STORAGE_KEYS.cropMarksColor,
-      normalizeColor(next.cropMarks.color),
-    );
+    window.localStorage.setItem(STORAGE_KEYS.cropMarksEnabled, next.cropMarks.enabled ? "1" : "0");
+    window.localStorage.setItem(STORAGE_KEYS.cropMarksColor, normalizeColor(next.cropMarks.color));
     window.localStorage.setItem(
       STORAGE_KEYS.cropMarksStyle,
       next.cropMarks.style ?? DEFAULT_CROP_MARK_STYLE,
     );
-    window.localStorage.setItem(
-      STORAGE_KEYS.cutMarksEnabled,
-      next.cutMarks.enabled ? "1" : "0",
-    );
-    window.localStorage.setItem(
-      STORAGE_KEYS.cutMarksColor,
-      normalizeColor(next.cutMarks.color),
-    );
+    window.localStorage.setItem(STORAGE_KEYS.cutMarksEnabled, next.cutMarks.enabled ? "1" : "0");
+    window.localStorage.setItem(STORAGE_KEYS.cutMarksColor, normalizeColor(next.cutMarks.color));
     window.localStorage.setItem(
       STORAGE_KEYS.cutMarksStyle,
       next.cutMarks.style ?? DEFAULT_CUT_MARK_STYLE,
     );
-    window.localStorage.setItem(
-      STORAGE_KEYS.roundedCorners,
-      next.roundedCorners ? "1" : "0",
-    );
+    window.localStorage.setItem(STORAGE_KEYS.roundedCorners, next.roundedCorners ? "1" : "0");
     window.localStorage.setItem(STORAGE_KEYS.pdfPaper, next.pdf.paper);
     window.localStorage.setItem(STORAGE_KEYS.pdfOrientation, next.pdf.orientation);
-    window.localStorage.setItem(STORAGE_KEYS.pdfMarginTop, String(Math.max(0, next.pdf.marginsMm.top)));
-    window.localStorage.setItem(STORAGE_KEYS.pdfMarginRight, String(Math.max(0, next.pdf.marginsMm.right)));
-    window.localStorage.setItem(STORAGE_KEYS.pdfMarginBottom, String(Math.max(0, next.pdf.marginsMm.bottom)));
-    window.localStorage.setItem(STORAGE_KEYS.pdfMarginLeft, String(Math.max(0, next.pdf.marginsMm.left)));
+    window.localStorage.setItem(
+      STORAGE_KEYS.pdfMarginTop,
+      String(Math.max(0, next.pdf.marginsMm.top)),
+    );
+    window.localStorage.setItem(
+      STORAGE_KEYS.pdfMarginRight,
+      String(Math.max(0, next.pdf.marginsMm.right)),
+    );
+    window.localStorage.setItem(
+      STORAGE_KEYS.pdfMarginBottom,
+      String(Math.max(0, next.pdf.marginsMm.bottom)),
+    );
+    window.localStorage.setItem(
+      STORAGE_KEYS.pdfMarginLeft,
+      String(Math.max(0, next.pdf.marginsMm.left)),
+    );
     window.localStorage.setItem(STORAGE_KEYS.pdfGapX, String(Math.max(0, next.pdf.gapMm.x)));
     window.localStorage.setItem(STORAGE_KEYS.pdfGapY, String(Math.max(0, next.pdf.gapMm.y)));
     window.localStorage.setItem(STORAGE_KEYS.pdfMode, next.pdf.mode);

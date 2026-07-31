@@ -82,7 +82,7 @@ import { blobTransportPlugin } from "@/api/remote/blobTransport";
 const apiConfig = readApiConfig();
 
 const axiosInstance = axios.create({
-  baseURL: apiConfig.mode === "remote" ? apiConfig.baseUrl ?? "/" : "/",
+  baseURL: apiConfig.mode === "remote" ? (apiConfig.baseUrl ?? "/") : "/",
 });
 
 if (shouldLogFakeApi()) {
@@ -92,9 +92,7 @@ if (shouldLogFakeApi()) {
 if (apiConfig.mode === "remote" && apiConfig.authToken) {
   axiosInstance.interceptors.request.use((config) => {
     const headers =
-      config.headers instanceof AxiosHeaders
-        ? config.headers
-        : new AxiosHeaders(config.headers);
+      config.headers instanceof AxiosHeaders ? config.headers : new AxiosHeaders(config.headers);
     headers.set("Authorization", `Bearer ${apiConfig.authToken}`);
     config.headers = headers;
     return config;

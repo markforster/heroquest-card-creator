@@ -75,12 +75,14 @@ export default function ExportBleedPrompt({
   const [bleedPx, setBleedPx] = useState(normalizeBleedPx(initialBleedPx));
   const [cropMarksEnabled, setCropMarksEnabled] = useState(initialCropMarksEnabled);
   const [cropMarkColor, setCropMarkColor] = useState(normalizeColor(initialCropMarkColor));
-  const [cropMarkStyle, setCropMarkStyle] =
-    useState<"lines" | "squares" | "triangles">(initialCropMarkStyle);
+  const [cropMarkStyle, setCropMarkStyle] = useState<"lines" | "squares" | "triangles">(
+    initialCropMarkStyle,
+  );
   const [cutMarksEnabled, setCutMarksEnabled] = useState(initialCutMarksEnabled);
   const [cutMarkColor, setCutMarkColor] = useState(normalizeColor(initialCutMarkColor));
-  const [cutMarkStyle, setCutMarkStyle] =
-    useState<"solid" | "dashed" | "long-dashed" | "dotted" | "ticks">(initialCutMarkStyle);
+  const [cutMarkStyle, setCutMarkStyle] = useState<
+    "solid" | "dashed" | "long-dashed" | "dotted" | "ticks"
+  >(initialCutMarkStyle);
   const [roundedCorners, setRoundedCorners] = useState(initialRoundedCorners);
 
   useEffect(() => {
@@ -187,7 +189,8 @@ export default function ExportBleedPrompt({
           if (next.bleedPx !== undefined) setBleedPx(next.bleedPx);
           if (next.roundedCorners !== undefined) setRoundedCorners(next.roundedCorners);
           if (next.cropMarksEnabled !== undefined) setCropMarksEnabled(next.cropMarksEnabled);
-          if (next.cropMarkColor !== undefined) setCropMarkColor(normalizeColor(next.cropMarkColor));
+          if (next.cropMarkColor !== undefined)
+            setCropMarkColor(normalizeColor(next.cropMarkColor));
           if (next.cropMarkStyle !== undefined) setCropMarkStyle(next.cropMarkStyle);
           if (next.cutMarksEnabled !== undefined) setCutMarksEnabled(next.cutMarksEnabled);
           if (next.cutMarkColor !== undefined) setCutMarkColor(normalizeColor(next.cutMarkColor));

@@ -11,13 +11,8 @@ import type { MessageKey } from "@/i18n/messages";
 
 export default function CopyrightSettingsPanel() {
   const { t } = useI18n();
-  const {
-    defaultCopyright,
-    getTemplateDefault,
-    setDefaultCopyright,
-    setTemplateDefault,
-    isReady,
-  } = useCopyrightSettings();
+  const { defaultCopyright, getTemplateDefault, setDefaultCopyright, setTemplateDefault, isReady } =
+    useCopyrightSettings();
   const [draft, setDraft] = useState(defaultCopyright);
   const saveTimeoutRef = useRef<number | null>(null);
   const currentYear = new Date().getFullYear();

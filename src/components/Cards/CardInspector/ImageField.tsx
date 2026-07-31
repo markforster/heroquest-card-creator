@@ -177,14 +177,14 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
       : undefined;
   const minScale =
     imageScaleMode === "relative"
-      ? zoomModel?.relativeMin ?? LEGACY_ABSOLUTE_IMAGE_SCALE_MIN
+      ? (zoomModel?.relativeMin ?? LEGACY_ABSOLUTE_IMAGE_SCALE_MIN)
       : LEGACY_ABSOLUTE_IMAGE_SCALE_MIN;
   const maxScale =
     imageScaleMode === "relative"
-      ? zoomModel?.relativeMax ?? LEGACY_ABSOLUTE_IMAGE_SCALE_MAX
+      ? (zoomModel?.relativeMax ?? LEGACY_ABSOLUTE_IMAGE_SCALE_MAX)
       : LEGACY_ABSOLUTE_IMAGE_SCALE_MAX;
-  const sliderMin = imageScaleMode === "relative" ? zoomModel?.uiMin ?? 1 : minScale;
-  const sliderMax = imageScaleMode === "relative" ? zoomModel?.uiMax ?? 3 : maxScale;
+  const sliderMin = imageScaleMode === "relative" ? (zoomModel?.uiMin ?? 1) : minScale;
+  const sliderMax = imageScaleMode === "relative" ? (zoomModel?.uiMax ?? 3) : maxScale;
   const sliderStep = imageScaleMode === "relative" ? UI_ZOOM_SLIDER_STEP : SCALE_STEP;
   const sliderValue =
     imageScaleMode === "relative" && zoomModel
@@ -193,7 +193,10 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const zoomTicksId =
     imageScaleMode === "relative" ? `image-scale-ticks-${imageAssetId ?? "none"}` : undefined;
   const coverScaleTick =
-    imageScaleMode === "relative" && zoomModel && zoomModel.relativeCover >= sliderMin && zoomModel.relativeCover <= sliderMax
+    imageScaleMode === "relative" &&
+    zoomModel &&
+    zoomModel.relativeCover >= sliderMin &&
+    zoomModel.relativeCover <= sliderMax
       ? { value: zoomModel.relativeCover, label: "Cover", id: "cover", emphasize: true }
       : null;
   const customScaleTicks =
@@ -343,7 +346,8 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
 
     let cancelled = false;
 
-    apiClient.listAssets()
+    apiClient
+      .listAssets()
       .then((records) => {
         if (!cancelled) {
           setAssets(records);
@@ -426,9 +430,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
           const isPrefix = words.some((word) => word.startsWith(normalizedQuery));
           return { asset, score: isPrefix ? 0 : 1 };
         })
-        .filter(
-          (entry): entry is { asset: AssetRecord; score: number } => entry !== null,
-        )
+        .filter((entry): entry is { asset: AssetRecord; score: number } => entry !== null)
         .sort((a, b) => {
           if (a.score !== b.score) return a.score - b.score;
           const rankDiff = getAssetRank(a.asset) - getAssetRank(b.asset);
@@ -438,8 +440,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
         .map((entry) => entry.asset)
     : [];
 
-  const cappedAssets =
-    normalizedQuery.length < 4 ? rankedAssets.slice(0, 8) : rankedAssets;
+  const cappedAssets = normalizedQuery.length < 4 ? rankedAssets.slice(0, 8) : rankedAssets;
   const previousImageId = previousImageRef.current?.imageAssetId;
   const canRestorePrevious = previousImageRef.current
     ? (imageAssetId ?? "") !== (previousImageId ?? "")
@@ -477,7 +478,8 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
 
     const measure = () => {
       const rect = sliderEl.getBoundingClientRect();
-      const width = Number.isFinite(rect.width) && rect.width > 0 ? rect.width : sliderEl.clientWidth;
+      const width =
+        Number.isFinite(rect.width) && rect.width > 0 ? rect.width : sliderEl.clientWidth;
       setScaleSliderWidthPx(width > 0 ? width : 0);
     };
 
@@ -601,7 +603,10 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                 setValue("imageScale", undefined, { shouldDirty: true, shouldTouch: true });
                 setValue("imageScaleMode", undefined, { shouldDirty: true, shouldTouch: true });
                 setValue("imageOriginalWidth", undefined, { shouldDirty: true, shouldTouch: true });
-                setValue("imageOriginalHeight", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("imageOriginalHeight", undefined, {
+                  shouldDirty: true,
+                  shouldTouch: true,
+                });
                 setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
                 setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
                 setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
@@ -637,7 +642,10 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                             inputRef.current?.blur();
                           }}
                         >
-                          <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true" />
+                          <div
+                            className={layoutStyles.imageAutocompleteMarker}
+                            aria-hidden="true"
+                          />
                           <div className={layoutStyles.imageAutocompleteThumb}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
@@ -672,14 +680,14 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                       resetSearchState();
                       inputRef.current?.blur();
                     }}
-                    >
-                      <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true">
-                        <Pin className={layoutStyles.icon} aria-hidden="true" />
-                      </div>
-                      <div className={layoutStyles.imageAutocompleteThumb}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
-                      </div>
+                  >
+                    <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true">
+                      <Pin className={layoutStyles.icon} aria-hidden="true" />
+                    </div>
+                    <div className={layoutStyles.imageAutocompleteThumb}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
+                    </div>
                     <div
                       className={layoutStyles.imageAutocompleteName}
                       title={getDisplayAssetName(asset.name)}
@@ -929,7 +937,9 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                                 data-testid={`image-scale-tick-${tick.id}`}
                               >
                                 <span className={layoutStyles.imageScaleTickLine} />
-                                <span className={layoutStyles.imageScaleTickLabel}>{tick.label}</span>
+                                <span className={layoutStyles.imageScaleTickLabel}>
+                                  {tick.label}
+                                </span>
                               </div>
                             );
                           })}
@@ -1023,7 +1033,11 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                       className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
                       title={t("tooltip.rotateLeft")}
                       onClick={() => {
-                        const next = clamp(imageRotation - ROTATION_STEP, MIN_ROTATION, MAX_ROTATION);
+                        const next = clamp(
+                          imageRotation - ROTATION_STEP,
+                          MIN_ROTATION,
+                          MAX_ROTATION,
+                        );
                         setValue("imageRotation", next, {
                           shouldDirty: true,
                           shouldTouch: true,
@@ -1037,7 +1051,11 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                       className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
                       title={t("tooltip.rotateRight")}
                       onClick={() => {
-                        const next = clamp(imageRotation + ROTATION_STEP, MIN_ROTATION, MAX_ROTATION);
+                        const next = clamp(
+                          imageRotation + ROTATION_STEP,
+                          MIN_ROTATION,
+                          MAX_ROTATION,
+                        );
                         setValue("imageRotation", next, {
                           shouldDirty: true,
                           shouldTouch: true,

@@ -3,7 +3,6 @@ import { getCollection } from "@/lib/data/collections-db";
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
-
 /**
  * Serves the local get-collection endpoint through the IndexedDB-backed service layer.
  */

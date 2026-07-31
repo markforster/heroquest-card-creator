@@ -54,10 +54,7 @@ export default function StockpileBottomToolbar({
   return (
     <div className={styles.stockpileBottomToolbar}>
       <div className={styles.stockpileBottomToolbarSelection}>
-        <label
-          className="form-check form-check-inline mb-0"
-          title={t("tooltip.selectAllCards")}
-        >
+        <label className="form-check form-check-inline mb-0" title={t("tooltip.selectAllCards")}>
           <input
             ref={selectAllRef}
             className="form-check-input hq-checkbox"
@@ -97,7 +94,9 @@ export default function StockpileBottomToolbar({
           <span className={styles.stockpileBottomToolbarActionIcon}>
             <FolderBookmarkIcon />
           </span>
-          <span className={styles.stockpileBottomToolbarActionLabel}>{t("actions.addToCollection")}</span>
+          <span className={styles.stockpileBottomToolbarActionLabel}>
+            {t("actions.addToCollection")}
+          </span>
         </button>
         <button
           type="button"

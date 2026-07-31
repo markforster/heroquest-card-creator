@@ -58,7 +58,11 @@ function normalizeProfileName(name: string): string {
   return name.trim();
 }
 
-function ensureUniqueProfileName(name: string, profiles: ExportProfile[], ignoreProfileId?: string) {
+function ensureUniqueProfileName(
+  name: string,
+  profiles: ExportProfile[],
+  ignoreProfileId?: string,
+) {
   const normalized = normalizeProfileName(name);
   if (!normalized) {
     throw new Error("Profile name is required");
@@ -144,7 +148,9 @@ function createInitialState(settings: ExportSettings): ExportProfilesState {
 
 async function readStoredState(): Promise<ExportProfilesState | null> {
   const db = await openHqccDexieDb();
-  const record = (await db.settings.get(EXPORT_PROFILES_SETTINGS_KEY)) as SettingsRecord | undefined;
+  const record = (await db.settings.get(EXPORT_PROFILES_SETTINGS_KEY)) as
+    | SettingsRecord
+    | undefined;
   if (!record?.value || typeof record.value !== "object") {
     return null;
   }
@@ -352,7 +358,9 @@ export async function restoreExportProfilesState(
   return writeState(state);
 }
 
-export function synthesizeExportProfilesFromLegacySettings(settings?: ExportSettings): ExportProfilesState {
+export function synthesizeExportProfilesFromLegacySettings(
+  settings?: ExportSettings,
+): ExportProfilesState {
   return createInitialState(settings ?? getExportSettings());
 }
 

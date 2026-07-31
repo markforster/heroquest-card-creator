@@ -62,9 +62,9 @@ function applyExportImageClip(svg: SVGSVGElement) {
 
 function zeroTreasureBorderOffsetsForExport(svg: SVGSVGElement) {
   svg
-    .querySelectorAll<SVGImageElement | SVGFEImageElement>(
-      '[data-template-asset="border-mask"], [data-template-asset="border-texture"]',
-    )
+    .querySelectorAll<
+      SVGImageElement | SVGFEImageElement
+    >('[data-template-asset="border-mask"], [data-template-asset="border-texture"]')
     .forEach((node) => {
       node.setAttribute("x", "0");
       node.setAttribute("y", "0");

@@ -208,8 +208,12 @@ describe("openHqccDb", () => {
   });
 
   it("does not create an empty DB when probing a fresh install", async () => {
-    const { openHqccDb, probeHqccDbVersion, readExistingHqccDbVersion, readExistingHqccDbAppVersion } =
-      await import("@/lib/db/hqcc-db");
+    const {
+      openHqccDb,
+      probeHqccDbVersion,
+      readExistingHqccDbVersion,
+      readExistingHqccDbAppVersion,
+    } = await import("@/lib/db/hqcc-db");
 
     await expect(probeHqccDbVersion()).resolves.toBeNull();
     await expect(readExistingHqccDbVersion()).resolves.toBeNull();
@@ -341,7 +345,11 @@ describe("openHqccDb", () => {
 
     expect(pairs).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: "pair-existing", frontFaceId: "front-1", backFaceId: "back-1" }),
+        expect.objectContaining({
+          id: "pair-existing",
+          frontFaceId: "front-1",
+          backFaceId: "back-1",
+        }),
         expect.objectContaining({ frontFaceId: "front-2", backFaceId: "back-1" }),
       ]),
     );

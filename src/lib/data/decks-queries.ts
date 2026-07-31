@@ -13,12 +13,7 @@ import {
 } from "@/lib/data/decks-db";
 import type { DeckUsageLocation } from "@/lib/data/decks-errors";
 import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
-import type {
-  DeckEntryRecord,
-  DeckGroupRecord,
-  DeckRecord,
-  DeckSetRecord,
-} from "@/types/decks-db";
+import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
 
 /**
@@ -50,9 +45,7 @@ export async function listCardDeckMembership(cardId: string): Promise<CardDeckMe
   const db = await openHqccDexieDb();
   const groups = await db.deckGroups.toArray();
   const sets = await db.deckSets.toArray();
-  const entries = (await db.deckEntries.toArray()).map(
-    normalizeDeckEntryRecord,
-  );
+  const entries = (await db.deckEntries.toArray()).map(normalizeDeckEntryRecord);
   const groupById = new Map(groups.map((group) => [group.id, group]));
   const setById = new Map(sets.map((set) => [set.id, set]));
   const getGroupSort = (setId: string) => {

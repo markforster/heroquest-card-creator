@@ -4,7 +4,6 @@ import type { AssetRecord } from "@/api/assets";
 import AssetsRoutePanels from "@/components/Assets/AssetsRoutePanels";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
-
 const mockUseFormState = jest.fn();
 const mockGetAssetObjectUrl = jest.fn();
 const mockListCards = jest.fn();
@@ -201,11 +200,15 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
     );
     const { container } = renderSubject();
 
-    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(0);
+    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(
+      0,
+    );
     act(() => {
       jest.advanceTimersByTime(150);
     });
-    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(1);
+    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(
+      1,
+    );
 
     resolvePreviewUrl("blob:asset-preview");
     await act(async () => {
@@ -218,13 +221,17 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
     act(() => {
       jest.advanceTimersByTime(399);
     });
-    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(1);
+    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(
+      1,
+    );
 
     await waitFor(() => {
       act(() => {
         jest.advanceTimersByTime(1);
       });
-      expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(0);
+      expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(
+        0,
+      );
     });
   });
 
@@ -241,7 +248,9 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
       act(() => {
         jest.advanceTimersByTime(400);
       });
-      expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(0);
+      expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(
+        0,
+      );
     });
   });
 
@@ -258,7 +267,9 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
     act(() => {
       jest.advanceTimersByTime(100);
     });
-    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(0);
+    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(
+      0,
+    );
 
     resolvePreviewUrl("blob:asset-preview");
     const image = await screen.findByAltText("goblin.png");
@@ -267,20 +278,20 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
       jest.advanceTimersByTime(49);
     });
     await waitFor(() => {
-      expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(0);
+      expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(
+        0,
+      );
     });
   });
 
   it("clears the old preview immediately when the selected asset changes", async () => {
     let resolveSecondPreview!: (value: string | null) => void;
-    mockGetAssetObjectUrl
-      .mockResolvedValueOnce("blob:goblin-preview")
-      .mockImplementationOnce(
-        () =>
-          new Promise<string | null>((resolve) => {
-            resolveSecondPreview = resolve;
-          }),
-      );
+    mockGetAssetObjectUrl.mockResolvedValueOnce("blob:goblin-preview").mockImplementationOnce(
+      () =>
+        new Promise<string | null>((resolve) => {
+          resolveSecondPreview = resolve;
+        }),
+    );
     const { container } = renderSubject();
 
     const firstImage = await screen.findByAltText("goblin.png");
@@ -296,11 +307,15 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
       expect(screen.queryByAltText("goblin.png")).not.toBeInTheDocument();
     });
     expect(screen.getByText("orc")).toBeInTheDocument();
-    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(0);
+    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(
+      0,
+    );
     act(() => {
       jest.advanceTimersByTime(150);
     });
-    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(1);
+    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(
+      1,
+    );
 
     resolveSecondPreview("blob:orc-preview");
 
@@ -313,14 +328,12 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
 
   it("shows a spinner instead of the empty state while the next preview is still being fetched", async () => {
     let resolveSecondPreview!: (value: string | null) => void;
-    mockGetAssetObjectUrl
-      .mockResolvedValueOnce("blob:goblin-preview")
-      .mockImplementationOnce(
-        () =>
-          new Promise<string | null>((resolve) => {
-            resolveSecondPreview = resolve;
-          }),
-      );
+    mockGetAssetObjectUrl.mockResolvedValueOnce("blob:goblin-preview").mockImplementationOnce(
+      () =>
+        new Promise<string | null>((resolve) => {
+          resolveSecondPreview = resolve;
+        }),
+    );
     const { container } = renderSubject();
 
     const firstImage = await screen.findByAltText("goblin.png");
@@ -335,11 +348,15 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
     await waitFor(() => {
       expect(screen.queryByAltText("goblin.png")).not.toBeInTheDocument();
     });
-    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(0);
+    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(
+      0,
+    );
     act(() => {
       jest.advanceTimersByTime(150);
     });
-    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(1);
+    expect(container.getElementsByClassName("assetsInspectorPreviewSpinnerOverlay")).toHaveLength(
+      1,
+    );
     expect(screen.queryByText("No preview available")).not.toBeInTheDocument();
 
     resolveSecondPreview(null);

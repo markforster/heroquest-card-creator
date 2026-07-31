@@ -1,6 +1,5 @@
 "use client";
 
-
 import { generateId } from "@/lib";
 import { getCard } from "@/lib/data/cards-db";
 import {
@@ -14,22 +13,11 @@ import {
   SETS_STORE,
   sortByIndex,
 } from "@/lib/data/decks-db";
-import {
-  getDeck,
-  getSet,
-  listEntriesForSet,
-  listGroups,
-  listSets,
-} from "@/lib/data/decks-queries";
+import { getDeck, getSet, listEntriesForSet, listGroups, listSets } from "@/lib/data/decks-queries";
 import { createPair } from "@/lib/data/pairs-service";
 import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
-import type {
-  DeckEntryRecord,
-  DeckGroupRecord,
-  DeckRecord,
-  DeckSetRecord,
-} from "@/types/decks-db";
+import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
 
 /**
  * Creates a deck together with its default first group.
@@ -85,7 +73,7 @@ export async function updateDeck(
   const next: DeckRecord = {
     ...existing,
     ...patch,
-    keySetId: patch.keySetId === undefined ? existing.keySetId ?? null : patch.keySetId,
+    keySetId: patch.keySetId === undefined ? (existing.keySetId ?? null) : patch.keySetId,
     updatedAt: Date.now(),
   };
   await db.decks.put(next);
@@ -93,10 +81,7 @@ export async function updateDeck(
   return next;
 }
 
-async function touchDeckUpdatedAt(
-  deckId: string,
-  updatedAt: number = Date.now(),
-): Promise<void> {
+async function touchDeckUpdatedAt(deckId: string, updatedAt: number = Date.now()): Promise<void> {
   const db = await openHqccDexieDb();
   const existing = (await db.decks.get(deckId)) ?? null;
   if (!existing) return;
@@ -431,7 +416,7 @@ export async function deleteSet(setId: string): Promise<void> {
         db,
         {
           ...deck,
-          keySetId: isDeletingKeySet ? null : deck.keySetId ?? null,
+          keySetId: isDeletingKeySet ? null : (deck.keySetId ?? null),
         },
         now,
       );
@@ -610,7 +595,10 @@ export async function removeEntries(setId: string, entryIds: string[]): Promise<
   entryIds.forEach((id) => enqueueDbEstimateChange(ENTRIES_STORE, id));
 
   const remaining = await listEntriesForSet(setId);
-  await reorderEntries(setId, remaining.map((entry) => entry.id));
+  await reorderEntries(
+    setId,
+    remaining.map((entry) => entry.id),
+  );
 }
 
 /**
@@ -679,9 +667,7 @@ export async function cascadeDeleteDeckDataForBackFaceIds(backFaceIds: string[])
   const sets = await db.deckSets.toArray();
   const groups = await db.deckGroups.toArray();
   const decks = await db.decks.toArray();
-  const entries = (await db.deckEntries.toArray()).map(
-    normalizeDeckEntryRecord,
-  );
+  const entries = (await db.deckEntries.toArray()).map(normalizeDeckEntryRecord);
 
   const setsToDelete = sets.filter((set) => backIdSet.has(set.backFaceId));
   if (!setsToDelete.length) {

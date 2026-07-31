@@ -35,9 +35,7 @@ export default function AppShell() {
               <GlobalAppShortcuts />
               <HeaderWithTemplatePicker
                 missingAssetsCount={missingAssetsReport.length}
-                showMissingAssetsReminder={
-                  missingAssetsDismissed && missingAssetsReport.length > 0
-                }
+                showMissingAssetsReminder={missingAssetsDismissed && missingAssetsReport.length > 0}
               />
               {ENABLE_MISSING_ASSET_CHECKS &&
               missingAssetsReport.length > 0 &&

@@ -122,15 +122,18 @@ export default function DecksGridPanel({
             className={styles.decksGrid}
             tabIndex={0}
             onKeyDown={async (event) => {
-            if (event.key === "Enter") {
-              if (model.selectedDeckId) navigate(`/decks/${model.selectedDeckId}`);
-              return;
-            }
-            if ((event.key === "Delete" || event.key === "Backspace") && model.selectedDeckIds.size > 0) {
-              event.preventDefault();
-              model.setIsDeleteDeckOpen(true);
-              return;
-            }
+              if (event.key === "Enter") {
+                if (model.selectedDeckId) navigate(`/decks/${model.selectedDeckId}`);
+                return;
+              }
+              if (
+                (event.key === "Delete" || event.key === "Backspace") &&
+                model.selectedDeckIds.size > 0
+              ) {
+                event.preventDefault();
+                model.setIsDeleteDeckOpen(true);
+                return;
+              }
             }}
           >
             {!model.hasAnyDecks ? (

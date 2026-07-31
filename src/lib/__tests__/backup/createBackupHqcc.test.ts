@@ -37,8 +37,9 @@ import {
 
 const mockedApiClient = apiClient as unknown as Record<string, jest.Mock>;
 const mockedListCards = listCards as jest.MockedFunction<typeof listCards>;
-const mockedListHeroBackLogosWithBlobs =
-  listHeroBackLogosWithBlobs as jest.MockedFunction<typeof listHeroBackLogosWithBlobs>;
+const mockedListHeroBackLogosWithBlobs = listHeroBackLogosWithBlobs as jest.MockedFunction<
+  typeof listHeroBackLogosWithBlobs
+>;
 
 describe("createBackupHqcc", () => {
   beforeEach(() => {

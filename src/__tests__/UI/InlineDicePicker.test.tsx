@@ -126,7 +126,9 @@ describe("InlineDicePicker", () => {
     fireEvent.click(screen.getByLabelText("Background color"));
     fireEvent.click(await screen.findByRole("button", { name: "Background color portal action" }));
     fireEvent.click(screen.getByLabelText("Symbol / pips color"));
-    fireEvent.click(await screen.findByRole("button", { name: "Symbol / pips color portal action" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Symbol / pips color portal action" }),
+    );
 
     expect(screen.getByLabelText("Token")).toHaveValue("&d6-1-bl-y;");
 
@@ -240,7 +242,9 @@ describe("InlineDicePicker", () => {
     fireEvent.click(screen.getByLabelText("Background color"));
     fireEvent.click(await screen.findByRole("button", { name: "Background color portal action" }));
     fireEvent.click(screen.getByLabelText("Symbol / pips color"));
-    fireEvent.click(await screen.findByRole("button", { name: "Symbol / pips color portal action" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Symbol / pips color portal action" }),
+    );
 
     expect(screen.getByLabelText("Token")).toHaveValue("&d6-1-bl-y;");
     expectDieColors(valueOneButton, { fill: "#B21D1D", stroke: "#FFFFFF" });

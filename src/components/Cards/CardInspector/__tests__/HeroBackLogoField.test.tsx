@@ -34,7 +34,7 @@ jest.mock("react-select", () => {
         <div data-testid="mock-react-select-selected">
           {props.value && props.formatOptionLabel
             ? props.formatOptionLabel(props.value, { context: "value" })
-            : props.value?.label ?? ""}
+            : (props.value?.label ?? "")}
         </div>
         <select
           data-testid="mock-react-select"
@@ -42,7 +42,8 @@ jest.mock("react-select", () => {
           value={props.value?.value ?? ""}
           disabled={props.isDisabled}
           onChange={(event) => {
-            const next = props.options.find((option) => option.value === event.target.value) ?? null;
+            const next =
+              props.options.find((option) => option.value === event.target.value) ?? null;
             props.onChange(next);
           }}
         >
@@ -55,7 +56,9 @@ jest.mock("react-select", () => {
         <div data-testid="mock-react-select-options">
           {props.options.map((option) => (
             <div key={option.value}>
-              {props.formatOptionLabel ? props.formatOptionLabel(option, { context: "menu" }) : option.label}
+              {props.formatOptionLabel
+                ? props.formatOptionLabel(option, { context: "menu" })
+                : option.label}
             </div>
           ))}
         </div>
@@ -68,13 +71,14 @@ jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) =>
       (
-        {
+        ({
           "status.default": "Default",
           "actions.addAnother": "Add another...",
           "actions.manageLogos": "Manage logos",
-          "helper.heroBackLogo": "Choose the baked default logo or a saved custom logo for this Hero Back card.",
+          "helper.heroBackLogo":
+            "Choose the baked default logo or a saved custom logo for this Hero Back card.",
           "status.noLogoSelected": "No logo selected",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));
@@ -115,7 +119,13 @@ jest.mock("@/components/Cards/CardInspector/HeroBackLogoModal", () => ({
     isOpen: boolean;
     onDeleted?: (
       deletedLogoId: string,
-      remediation: { mode: "default" | "custom"; logoId?: string; logoName?: string; width?: number; height?: number },
+      remediation: {
+        mode: "default" | "custom";
+        logoId?: string;
+        logoName?: string;
+        width?: number;
+        height?: number;
+      },
       replacement?: { id: string; name: string; width: number; height: number } | null,
       affectedCardIds?: string[],
     ) => void | Promise<void>;
@@ -125,7 +135,9 @@ jest.mock("@/components/Cards/CardInspector/HeroBackLogoModal", () => ({
         MODAL_OPEN
         <button
           type="button"
-          onClick={() => void onDeleted?.("logo-1", { mode: "default" }, null, ["card-1", "card-2"])}
+          onClick={() =>
+            void onDeleted?.("logo-1", { mode: "default" }, null, ["card-1", "card-2"])
+          }
         >
           Trigger delete
         </button>
@@ -138,11 +150,7 @@ function StateProbe() {
   const logoId = useWatch({ name: "heroBackLogoId" });
   const logoName = useWatch({ name: "heroBackLogoName" });
 
-  return (
-    <div data-testid="hero-back-logo-state">
-      {JSON.stringify({ mode, logoId, logoName })}
-    </div>
-  );
+  return <div data-testid="hero-back-logo-state">{JSON.stringify({ mode, logoId, logoName })}</div>;
 }
 
 function FocusRequestButton() {
@@ -226,7 +234,9 @@ describe("HeroBackLogoField", () => {
 
     render(<TestHarness />);
 
-    fireEvent.change(await screen.findByTestId("mock-react-select"), { target: { value: "logo-1" } });
+    fireEvent.change(await screen.findByTestId("mock-react-select"), {
+      target: { value: "logo-1" },
+    });
 
     await waitFor(() => {
       expect(screen.getByTestId("hero-back-logo-state")).toHaveTextContent(

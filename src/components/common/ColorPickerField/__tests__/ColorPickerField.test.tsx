@@ -72,10 +72,7 @@ function renderControlledField(override: Partial<Props> = {}) {
     ...restOverride
   } = override;
   const onChangeSpy = jest.fn();
-  const initialValue =
-    override.selectedValue ??
-    override.inputValue ??
-    "#ABCDEF12";
+  const initialValue = override.selectedValue ?? override.inputValue ?? "#ABCDEF12";
 
   function ControlledField() {
     const [value, setValue] = useState(initialValue);
@@ -136,7 +133,12 @@ describe("ColorPickerField", () => {
 
   it("reverts invalid draft to current normalized selected value on blur", () => {
     const onChange = jest.fn();
-    renderField({ showInput: false, onChange, inputValue: "#ABCDEF12", selectedValue: "#ABCDEF12" });
+    renderField({
+      showInput: false,
+      onChange,
+      inputValue: "#ABCDEF12",
+      selectedValue: "#ABCDEF12",
+    });
 
     const input = screen.getByRole("textbox");
     fireEvent.change(input, { target: { value: "#12" } });

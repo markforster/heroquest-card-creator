@@ -226,7 +226,9 @@ export function EditorTargetAdornmentLayer() {
   const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rafRef = useRef<number | null>(null);
   const [renderedTargetId, setRenderedTargetId] = useState<EditorTargetId | null>(null);
-  const [renderedDescriptor, setRenderedDescriptor] = useState<HoverAdornmentDescriptor | null>(null);
+  const [renderedDescriptor, setRenderedDescriptor] = useState<HoverAdornmentDescriptor | null>(
+    null,
+  );
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -248,8 +250,7 @@ export function EditorTargetAdornmentLayer() {
 
     if (hoveredTargetId && hoverAdornmentDescriptor) {
       const isSameTarget =
-        renderedTargetId === hoveredTargetId &&
-        renderedDescriptor === hoverAdornmentDescriptor;
+        renderedTargetId === hoveredTargetId && renderedDescriptor === hoverAdornmentDescriptor;
 
       setRenderedTargetId(hoveredTargetId);
       setRenderedDescriptor(hoverAdornmentDescriptor);

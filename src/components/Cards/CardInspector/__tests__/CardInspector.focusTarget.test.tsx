@@ -88,11 +88,7 @@ jest.mock("@/components/Cards/CardInspector/GenericInspectorForm", () => ({
     }, []);
 
     return (
-      <div
-        ref={fieldRef}
-        data-testid="registered-target"
-        onFocusCapture={handleFieldFocusCapture}
-      >
+      <div ref={fieldRef} data-testid="registered-target" onFocusCapture={handleFieldFocusCapture}>
         FORM_PANEL
         <input ref={inputRef} aria-label="Title input" />
       </div>
@@ -106,16 +102,10 @@ function FocusTrigger() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => requestFocusTarget(EDITOR_TARGET_IDS.title)}
-      >
+      <button type="button" onClick={() => requestFocusTarget(EDITOR_TARGET_IDS.title)}>
         Trigger focus
       </button>
-      <button
-        type="button"
-        onClick={() => requestRevealTarget(EDITOR_TARGET_IDS.title)}
-      >
+      <button type="button" onClick={() => requestRevealTarget(EDITOR_TARGET_IDS.title)}>
         Trigger reveal
       </button>
       <button

@@ -8,7 +8,6 @@ import type {
 } from "@/lib/backup";
 import type { BackupContainerFormat } from "@/lib/backup-formats";
 
-
 type LibraryProgressHandlers = {
   onProgress?: BackupProgressCallback;
   onStatus?: BackupStatusCallback;

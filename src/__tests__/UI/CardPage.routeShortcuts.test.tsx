@@ -4,9 +4,11 @@ import type { CardRecord } from "@/api/cards";
 import CardPage from "@/components/App/pages/CardPage";
 import type { RouteShellCapabilities } from "@/components/App/RouteShellCapabilitiesContext";
 import { EditorFormProvider } from "@/components/Providers/EditorFormContext";
-import type { PreviewRenderer, PreviewRotationMode } from "@/components/Providers/PreviewRendererContext";
+import type {
+  PreviewRenderer,
+  PreviewRotationMode,
+} from "@/components/Providers/PreviewRendererContext";
 import { I18nProvider } from "@/i18n/I18nProvider";
-
 
 const mockTrack = jest.fn();
 const mockNavigate = jest.fn();

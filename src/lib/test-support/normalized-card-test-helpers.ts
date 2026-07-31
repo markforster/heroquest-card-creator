@@ -28,14 +28,12 @@ export async function seedNormalizedCard(record: CardRecord): Promise<void> {
   }
 }
 
-export async function seedNormalizedThumbnail(
-  input: {
-    cardId: string;
-    thumbnailBlob: Blob;
-    createdAt?: number;
-    updatedAt?: number;
-  },
-): Promise<void> {
+export async function seedNormalizedThumbnail(input: {
+  cardId: string;
+  thumbnailBlob: Blob;
+  createdAt?: number;
+  updatedAt?: number;
+}): Promise<void> {
   const db = await openHqccDexieDb();
   await db.cardThumbnails.put({
     id: input.cardId,

@@ -2,7 +2,11 @@
 
 import { Rows3 } from "lucide-react";
 import { useMemo } from "react";
-import Select, { type FormatOptionLabelMeta, type SingleValue, type StylesConfig } from "react-select";
+import Select, {
+  type FormatOptionLabelMeta,
+  type SingleValue,
+  type StylesConfig,
+} from "react-select";
 
 import styles from "@/app/page.module.css";
 import { FormSelectDropdownIndicator, getFormSelectStyles } from "@/components/common/FormSelect";

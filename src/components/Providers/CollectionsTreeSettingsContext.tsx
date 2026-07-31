@@ -117,7 +117,15 @@ export function CollectionsTreeSettingsProvider({ children }: { children: React.
       hasStoredExpandedPaths,
       isReady,
     }),
-    [enabled, expandedPaths, hasStoredExpandedPaths, isReady, setEnabled, setExpandedPaths, togglePath],
+    [
+      enabled,
+      expandedPaths,
+      hasStoredExpandedPaths,
+      isReady,
+      setEnabled,
+      setExpandedPaths,
+      togglePath,
+    ],
   );
 
   return (
@@ -130,7 +138,9 @@ export function CollectionsTreeSettingsProvider({ children }: { children: React.
 export function useCollectionsTreeSettings(): CollectionsTreeSettingsValue {
   const ctx = useContext(CollectionsTreeSettingsContext);
   if (!ctx) {
-    throw new Error("useCollectionsTreeSettings must be used within CollectionsTreeSettingsProvider");
+    throw new Error(
+      "useCollectionsTreeSettings must be used within CollectionsTreeSettingsProvider",
+    );
   }
   return ctx;
 }

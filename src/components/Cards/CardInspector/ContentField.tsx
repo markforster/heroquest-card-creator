@@ -202,8 +202,7 @@ export default function ContentField({
             disabled={!textEnabled}
             onClick={() =>
               updateBackdrop({
-                insetMode:
-                  effectiveBackdrop.insetMode === "matchBorder" ? "flush" : "matchBorder",
+                insetMode: effectiveBackdrop.insetMode === "matchBorder" ? "flush" : "matchBorder",
               })
             }
           >
@@ -216,9 +215,7 @@ export default function ContentField({
           <button
             type="button"
             className={`${layoutStyles.bodyTextToolbarButton} ${
-              effectiveBackdrop.cornerMode === "all"
-                ? layoutStyles.bodyTextToolbarButtonActive
-                : ""
+              effectiveBackdrop.cornerMode === "all" ? layoutStyles.bodyTextToolbarButtonActive : ""
             } ${!textEnabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
             title={t("tooltip.bodyTextCorners")}
             aria-pressed={effectiveBackdrop.cornerMode === "all"}
@@ -306,97 +303,97 @@ export default function ContentField({
 
   const input = textEnabled ? (
     <>
-        <div className="d-flex align-items-start gap-2">
-          <div style={{ flex: "1 0 auto", minWidth: 0 }}>
-            <textarea
-              id="description"
-              ref={(node) => {
-                inputRef.current = node;
-                descriptionRegistrationRef(node);
-              }}
-              className={`form-control form-control-sm ${layoutStyles.cardTextArea}`}
-              rows={6}
-              title={t("tooltip.rulesAndFlavour")}
-              {...descriptionInputProps}
-              onClick={updateSelection}
-              onFocus={updateSelection}
-              onKeyUp={updateSelection}
-              onSelect={updateSelection}
-            />
-          </div>
-          <div style={{ flex: "0 1 auto" }}>
-            <div className="d-flex flex-column align-items-end gap-2">
-              {showTextColor ? (
-                <div title={t("tooltip.bodyTextTextColor")}>
-                  <ColorPickerField
-                    label={t("label.textColor")}
-                    showLabel={false}
-                    showInput={false}
-                    inputValue={bodyTextColor}
-                    selectedValue={bodyTextColor}
-                    defaultColor={DEFAULT_BODY_TEXT_COLOR}
-                    smartGroups={smartGroups}
-                    isSmartBusy={isSmartBusy}
-                    onRequestSmart={requestSmart}
-                    onChange={(value) =>
-                      setValue("bodyTextColor", value, { shouldDirty: true, shouldTouch: true })
-                    }
-                    onSelectDefault={() =>
-                      setValue("bodyTextColor", DEFAULT_BODY_TEXT_COLOR, {
-                        shouldDirty: true,
-                        shouldTouch: true,
-                      })
-                    }
-                    onSelectTransparent={() => undefined}
-                    canRevert={bodyTextColor.toLowerCase() !== DEFAULT_BODY_TEXT_COLOR.toLowerCase()}
-                    onRevert={() =>
-                      setValue("bodyTextColor", DEFAULT_BODY_TEXT_COLOR, {
-                        shouldDirty: true,
-                        shouldTouch: true,
-                      })
-                    }
-                    isOpen={isBodyTextColorOpen}
-                    onToggleOpen={() => setIsBodyTextColorOpen((prev) => !prev)}
-                    onClose={() => setIsBodyTextColorOpen(false)}
-                    popoverAlign="auto"
-                    popoverVAlign="center"
-                    isDisabled={!textEnabled}
-                    swatchShape="circle"
-                    swatchIcon={<Type size={12} aria-hidden="true" />}
-                  />
-                </div>
-              ) : null}
-              {showBackdropColor ? (
-                <div title={t("tooltip.bodyTextColor")}>
-                  <ColorPickerField
-                    label={t("label.backgroundColor")}
-                    showLabel={false}
-                    showInput={false}
-                    inputValue={currentBackdropHex}
-                    selectedValue={currentBackdropHex}
-                    defaultColor={defaultBackdropHex}
-                    smartGroups={smartGroups}
-                    isSmartBusy={isSmartBusy}
-                    onRequestSmart={requestSmart}
-                    onChange={updateBackdropColor}
-                    onSelectDefault={() => updateBackdropColor(defaultBackdropHex)}
-                    onSelectTransparent={() => updateBackdropColor("#00000000")}
-                    canRevert={currentBackdropHex.toLowerCase() !== defaultBackdropHex.toLowerCase()}
-                    onRevert={() => updateBackdropColor(defaultBackdropHex)}
-                    isOpen={isBodyColorOpen}
-                    onToggleOpen={() => setIsBodyColorOpen((prev) => !prev)}
-                    onClose={() => setIsBodyColorOpen(false)}
-                    popoverAlign="auto"
-                    popoverVAlign="center"
-                    isDisabled={!textEnabled}
-                    swatchShape="square"
-                    swatchIcon={<Square size={12} aria-hidden="true" />}
-                  />
-                </div>
-              ) : null}
-            </div>
+      <div className="d-flex align-items-start gap-2">
+        <div style={{ flex: "1 0 auto", minWidth: 0 }}>
+          <textarea
+            id="description"
+            ref={(node) => {
+              inputRef.current = node;
+              descriptionRegistrationRef(node);
+            }}
+            className={`form-control form-control-sm ${layoutStyles.cardTextArea}`}
+            rows={6}
+            title={t("tooltip.rulesAndFlavour")}
+            {...descriptionInputProps}
+            onClick={updateSelection}
+            onFocus={updateSelection}
+            onKeyUp={updateSelection}
+            onSelect={updateSelection}
+          />
+        </div>
+        <div style={{ flex: "0 1 auto" }}>
+          <div className="d-flex flex-column align-items-end gap-2">
+            {showTextColor ? (
+              <div title={t("tooltip.bodyTextTextColor")}>
+                <ColorPickerField
+                  label={t("label.textColor")}
+                  showLabel={false}
+                  showInput={false}
+                  inputValue={bodyTextColor}
+                  selectedValue={bodyTextColor}
+                  defaultColor={DEFAULT_BODY_TEXT_COLOR}
+                  smartGroups={smartGroups}
+                  isSmartBusy={isSmartBusy}
+                  onRequestSmart={requestSmart}
+                  onChange={(value) =>
+                    setValue("bodyTextColor", value, { shouldDirty: true, shouldTouch: true })
+                  }
+                  onSelectDefault={() =>
+                    setValue("bodyTextColor", DEFAULT_BODY_TEXT_COLOR, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    })
+                  }
+                  onSelectTransparent={() => undefined}
+                  canRevert={bodyTextColor.toLowerCase() !== DEFAULT_BODY_TEXT_COLOR.toLowerCase()}
+                  onRevert={() =>
+                    setValue("bodyTextColor", DEFAULT_BODY_TEXT_COLOR, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    })
+                  }
+                  isOpen={isBodyTextColorOpen}
+                  onToggleOpen={() => setIsBodyTextColorOpen((prev) => !prev)}
+                  onClose={() => setIsBodyTextColorOpen(false)}
+                  popoverAlign="auto"
+                  popoverVAlign="center"
+                  isDisabled={!textEnabled}
+                  swatchShape="circle"
+                  swatchIcon={<Type size={12} aria-hidden="true" />}
+                />
+              </div>
+            ) : null}
+            {showBackdropColor ? (
+              <div title={t("tooltip.bodyTextColor")}>
+                <ColorPickerField
+                  label={t("label.backgroundColor")}
+                  showLabel={false}
+                  showInput={false}
+                  inputValue={currentBackdropHex}
+                  selectedValue={currentBackdropHex}
+                  defaultColor={defaultBackdropHex}
+                  smartGroups={smartGroups}
+                  isSmartBusy={isSmartBusy}
+                  onRequestSmart={requestSmart}
+                  onChange={updateBackdropColor}
+                  onSelectDefault={() => updateBackdropColor(defaultBackdropHex)}
+                  onSelectTransparent={() => updateBackdropColor("#00000000")}
+                  canRevert={currentBackdropHex.toLowerCase() !== defaultBackdropHex.toLowerCase()}
+                  onRevert={() => updateBackdropColor(defaultBackdropHex)}
+                  isOpen={isBodyColorOpen}
+                  onToggleOpen={() => setIsBodyColorOpen((prev) => !prev)}
+                  onClose={() => setIsBodyColorOpen(false)}
+                  popoverAlign="auto"
+                  popoverVAlign="center"
+                  isDisabled={!textEnabled}
+                  swatchShape="square"
+                  swatchIcon={<Square size={12} aria-hidden="true" />}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
+      </div>
     </>
   ) : null;
 

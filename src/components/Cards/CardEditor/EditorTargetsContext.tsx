@@ -115,9 +115,7 @@ type HoverAdornmentRegistration = {
 export function EditorTargetsProvider({ children }: { children: ReactNode }) {
   const handlersRef = useRef(new Map<EditorTargetId, FocusTargetHandler>());
   const secondaryHandlersRef = useRef(new Map<EditorTargetId, SecondaryTargetHandler>());
-  const hoverAdornmentsRef = useRef(
-    new Map<EditorTargetId, HoverAdornmentRegistration[]>(),
-  );
+  const hoverAdornmentsRef = useRef(new Map<EditorTargetId, HoverAdornmentRegistration[]>());
   const actionRequestRef = useRef<TargetActionRequest | null>(null);
   const handledRequestIdRef = useRef<number | null>(null);
   const hoveredTargetIdRef = useRef<EditorTargetId | null>(null);
@@ -150,9 +148,7 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
       }
       handler(request.intent);
     }
-    setActionRequest((current) =>
-      current?.requestId === request.requestId ? null : current,
-    );
+    setActionRequest((current) => (current?.requestId === request.requestId ? null : current));
   }, []);
 
   const registerFocusTarget = useCallback(
@@ -208,17 +204,26 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const requestFocusTarget = useCallback((targetId: EditorTargetId) => {
-    requestTargetAction(targetId, "focus");
-  }, [requestTargetAction]);
+  const requestFocusTarget = useCallback(
+    (targetId: EditorTargetId) => {
+      requestTargetAction(targetId, "focus");
+    },
+    [requestTargetAction],
+  );
 
-  const requestRevealTarget = useCallback((targetId: EditorTargetId) => {
-    requestTargetAction(targetId, "reveal");
-  }, [requestTargetAction]);
+  const requestRevealTarget = useCallback(
+    (targetId: EditorTargetId) => {
+      requestTargetAction(targetId, "reveal");
+    },
+    [requestTargetAction],
+  );
 
-  const requestSecondaryTarget = useCallback((targetId: EditorTargetId) => {
-    requestTargetAction(targetId, "secondary");
-  }, [requestTargetAction]);
+  const requestSecondaryTarget = useCallback(
+    (targetId: EditorTargetId) => {
+      requestTargetAction(targetId, "secondary");
+    },
+    [requestTargetAction],
+  );
 
   const clearPendingHoverRevealTimeout = useCallback(() => {
     if (!hoverRevealTimeoutRef.current) return;
@@ -227,17 +232,20 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
     hoverRevealTargetIdRef.current = null;
   }, []);
 
-  const scheduleHoverReveal = useCallback((targetId: EditorTargetId) => {
-    if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
-    clearPendingHoverRevealTimeout();
-    hoverRevealTargetIdRef.current = targetId;
-    hoverRevealTimeoutRef.current = setTimeout(() => {
-      hoverRevealTimeoutRef.current = null;
-      hoverRevealTargetIdRef.current = null;
-      if (hoveredTargetIdRef.current !== targetId) return;
-      requestTargetAction(targetId, "reveal");
-    }, HOVER_REVEAL_DELAY_MS);
-  }, [clearPendingHoverRevealTimeout, requestTargetAction]);
+  const scheduleHoverReveal = useCallback(
+    (targetId: EditorTargetId) => {
+      if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return;
+      clearPendingHoverRevealTimeout();
+      hoverRevealTargetIdRef.current = targetId;
+      hoverRevealTimeoutRef.current = setTimeout(() => {
+        hoverRevealTimeoutRef.current = null;
+        hoverRevealTargetIdRef.current = null;
+        if (hoveredTargetIdRef.current !== targetId) return;
+        requestTargetAction(targetId, "reveal");
+      }, HOVER_REVEAL_DELAY_MS);
+    },
+    [clearPendingHoverRevealTimeout, requestTargetAction],
+  );
 
   const clearPendingHoverTimeout = useCallback(() => {
     if (!hoverClearTimeoutRef.current) return;
@@ -245,13 +253,10 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
     hoverClearTimeoutRef.current = null;
   }, []);
 
-  const commitHoveredTarget = useCallback(
-    (targetId: EditorTargetId | null) => {
-      hoveredTargetIdRef.current = targetId;
-      setHoveredTargetId(targetId);
-    },
-    [],
-  );
+  const commitHoveredTarget = useCallback((targetId: EditorTargetId | null) => {
+    hoveredTargetIdRef.current = targetId;
+    setHoveredTargetId(targetId);
+  }, []);
 
   const beginHoverTarget = useCallback(
     (targetId: EditorTargetId) => {
@@ -365,9 +370,7 @@ export function EditorTargetsProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return (
-    <EditorTargetsContext.Provider value={value}>{children}</EditorTargetsContext.Provider>
-  );
+  return <EditorTargetsContext.Provider value={value}>{children}</EditorTargetsContext.Provider>;
 }
 
 export function useEditorTargets() {
@@ -574,9 +577,7 @@ export function useRegisterHoverAdornments(
 
     const cleanups = stableEntries
       .filter(
-        (
-          entry,
-        ): entry is { targetId: EditorTargetId; descriptor: HoverAdornmentDescriptor } =>
+        (entry): entry is { targetId: EditorTargetId; descriptor: HoverAdornmentDescriptor } =>
           entry.descriptor != null,
       )
       .map((entry) => registerHoverAdornment(entry.targetId, entry.descriptor));

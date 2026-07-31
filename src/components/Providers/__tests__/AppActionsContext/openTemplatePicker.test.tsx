@@ -50,13 +50,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
 
 jest.mock("@/components/TemplatePicker", () => ({
   __esModule: true,
-  default: ({
-    isOpen,
-    onApply,
-  }: {
-    isOpen: boolean;
-    onApply: (templateId: string) => void;
-  }) =>
+  default: ({ isOpen, onApply }: { isOpen: boolean; onApply: (templateId: string) => void }) =>
     isOpen ? (
       <button type="button" onClick={() => onApply("monster")}>
         Apply template
@@ -70,7 +64,10 @@ jest.mock("@/components/Modals/SettingsModal/SettingsModal", () => ({
   default: () => null,
 }));
 jest.mock("@/components/Stockpile", () => ({ __esModule: true, StockpileModal: () => null }));
-jest.mock("@/components/Modals/RecentCardsModal", () => ({ __esModule: true, default: () => null }));
+jest.mock("@/components/Modals/RecentCardsModal", () => ({
+  __esModule: true,
+  default: () => null,
+}));
 jest.mock("@/components/Modals/ConfirmModal", () => ({ __esModule: true, default: () => null }));
 
 function Harness() {

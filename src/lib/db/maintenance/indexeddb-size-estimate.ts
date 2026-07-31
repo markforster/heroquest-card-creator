@@ -71,8 +71,7 @@ export async function estimateIndexedDbSize({
 
       if (recordSizes) {
         const storeMap = (recordSizes[storeName] ??= {});
-        const key =
-          typeof record === "object" && record && "id" in record ? String(record.id) : "";
+        const key = typeof record === "object" && record && "id" in record ? String(record.id) : "";
         if (key) {
           storeMap[key] = bytes;
         }

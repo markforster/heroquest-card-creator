@@ -84,10 +84,7 @@ function HoverProbe() {
   return (
     <>
       <output data-testid="hovered-target">{hoveredTargetId ?? "none"}</output>
-      <button
-        type="button"
-        onClick={() => setHoveredTargetId(EDITOR_TARGET_IDS.imageMain)}
-      >
+      <button type="button" onClick={() => setHoveredTargetId(EDITOR_TARGET_IDS.imageMain)}>
         hover-image
       </button>
     </>

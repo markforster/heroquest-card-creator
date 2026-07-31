@@ -15,7 +15,8 @@ const subscribeDbEstimateStatus = jest.fn();
 jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   getDbEstimateStatus: () => getDbEstimateStatus(),
   runFullDbEstimate: () => runFullDbEstimate(),
-  subscribeDbEstimateStatus: (listener: (status: unknown) => void) => subscribeDbEstimateStatus(listener),
+  subscribeDbEstimateStatus: (listener: (status: unknown) => void) =>
+    subscribeDbEstimateStatus(listener),
 }));
 
 type StorageEstimate = {
@@ -70,7 +71,9 @@ describe("SystemSettingsPanel (UI)", () => {
     expect(screen.getByLabelText("Estimated total browser app usage")).toBeInTheDocument();
     expect(screen.getByText("Other browser/app storage: 1.0 KB")).toBeInTheDocument();
     expect(screen.queryByText("Assets: 0 B")).not.toBeInTheDocument();
-    expect(screen.queryByText(/Estimated library size: Not yet calculated/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Estimated library size: Not yet calculated/i),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/Records scanned:/i)).not.toBeInTheDocument();
   });
 

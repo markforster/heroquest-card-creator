@@ -5,7 +5,6 @@ import type { AssetRecord } from "@/api/assets";
 import AssetsPanelContent from "@/components/Assets/AssetsPanelContent";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
-
 const mockUseListAssets = jest.fn();
 
 jest.mock("@/api/hooks", () => ({
@@ -79,9 +78,7 @@ function renderPanel({ mode, onClose, onSelect }: RenderPanelOptions = {}) {
     );
   }
 
-  return render(
-    <Wrapper />,
-  );
+  return render(<Wrapper />);
 }
 
 function buildAsset(overrides: Partial<AssetRecord> = {}): AssetRecord {
@@ -112,7 +109,9 @@ describe("AssetsPanelContent empty state (UI)", () => {
   it("renders onboarding content and external links when the asset library is empty", () => {
     renderPanel();
 
-    expect(screen.getByRole("heading", { name: "Your asset library is empty" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Your asset library is empty" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(
         "HeroQuest Card Creator does not ship with preloaded artwork. You can upload your own images, or start with Mark's free artwork pack.",
@@ -128,7 +127,9 @@ describe("AssetsPanelContent empty state (UI)", () => {
     expect(artworkLink).toHaveAttribute("rel", expect.stringContaining("noopener"));
 
     expect(
-      screen.getByText("After downloading the zip, add the artwork to your library in four quick steps:"),
+      screen.getByText(
+        "After downloading the zip, add the artwork to your library in four quick steps:",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("Download the Artwork.zip file to your computer.")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Need more art?" })).toBeInTheDocument();
@@ -156,7 +157,9 @@ describe("AssetsPanelContent empty state (UI)", () => {
 
     renderPanel();
 
-    expect(screen.queryByRole("heading", { name: "Your asset library is empty" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Your asset library is empty" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("No assets")).not.toBeInTheDocument();
     expect(screen.getAllByText("Loading…")).toHaveLength(12);
   });
@@ -171,7 +174,9 @@ describe("AssetsPanelContent empty state (UI)", () => {
 
     renderPanel();
 
-    expect(screen.queryByRole("heading", { name: "Your asset library is empty" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Your asset library is empty" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("goblin")).toBeInTheDocument();
   });
 
@@ -185,7 +190,9 @@ describe("AssetsPanelContent empty state (UI)", () => {
 
     renderPanel();
 
-    expect(screen.queryByRole("heading", { name: "Your asset library is empty" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Your asset library is empty" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Loading…")).not.toBeInTheDocument();
     expect(screen.getByText("goblin")).toBeInTheDocument();
   });
@@ -205,7 +212,9 @@ describe("AssetsPanelContent empty state (UI)", () => {
     });
 
     expect(screen.getByText("No assets")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Your asset library is empty" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Your asset library is empty" }),
+    ).not.toBeInTheDocument();
   });
 
   it("registers a primary search handler that focuses the assets search field", () => {
@@ -336,8 +345,9 @@ describe("AssetsPanelContent empty state (UI)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(
       (
-        await screen.findAllByText((_, element) =>
-          element?.textContent === "Deleting 1 asset will clear images on 0 Cards. Continue?",
+        await screen.findAllByText(
+          (_, element) =>
+            element?.textContent === "Deleting 1 asset will clear images on 0 Cards. Continue?",
         )
       ).length,
     ).toBeGreaterThan(0);
@@ -345,7 +355,9 @@ describe("AssetsPanelContent empty state (UI)", () => {
 
     fireEvent.click(resourcesButton);
     expect(screen.getByRole("menu", { name: "Asset resources" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Download free artwork pack" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: "Download free artwork pack" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Open Art Generator" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Open Card Art" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Open Icon Generator" })).toBeInTheDocument();

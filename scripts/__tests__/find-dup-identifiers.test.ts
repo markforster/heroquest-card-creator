@@ -70,8 +70,12 @@ describe("find-dup-identifiers script", () => {
       tsConfigFilePath: tsConfigPath,
     });
 
-    const exactSameBody = report.exactDuplicates.find((group: { name: string }) => group.name === "sameBody");
-    const exactSameArrow = report.exactDuplicates.find((group: { name: string }) => group.name === "sameArrow");
+    const exactSameBody = report.exactDuplicates.find(
+      (group: { name: string }) => group.name === "sameBody",
+    );
+    const exactSameArrow = report.exactDuplicates.find(
+      (group: { name: string }) => group.name === "sameArrow",
+    );
     const differentBody = report.nameDuplicates.find(
       (group: { name: string }) => group.name === "differentBody",
     );
@@ -141,16 +145,14 @@ describe("find-dup-identifiers script", () => {
       tsConfigFilePath: tsConfigPath,
     });
 
-    expect(report.exactDuplicates.find((group: { name: string }) => group.name === "keepMe")?.entries).toHaveLength(2);
-    expect(report.nameDuplicates.find((group: { name: string }) => group.name === "ignoredDuplicate")).toBeUndefined();
     expect(
-      shouldIgnoreFile(repoRoot, path.join(testsDir, "ignored.test.ts")),
-    ).toBe(true);
+      report.exactDuplicates.find((group: { name: string }) => group.name === "keepMe")?.entries,
+    ).toHaveLength(2);
     expect(
-      shouldIgnoreFile(repoRoot, path.join(testUtilsDir, "helper.ts")),
-    ).toBe(true);
-    expect(
-      shouldIgnoreFile(repoRoot, path.join(srcDir, "prod-one.ts")),
-    ).toBe(false);
+      report.nameDuplicates.find((group: { name: string }) => group.name === "ignoredDuplicate"),
+    ).toBeUndefined();
+    expect(shouldIgnoreFile(repoRoot, path.join(testsDir, "ignored.test.ts"))).toBe(true);
+    expect(shouldIgnoreFile(repoRoot, path.join(testUtilsDir, "helper.ts"))).toBe(true);
+    expect(shouldIgnoreFile(repoRoot, path.join(srcDir, "prod-one.ts"))).toBe(false);
   });
 });

@@ -109,10 +109,7 @@ function computeColorStats(
       grayscaleCount += 1;
     }
     saturationSum += toSaturation(r, g, b);
-    const quantized =
-      ((r & 0xf0) << 8) |
-      ((g & 0xf0) << 4) |
-      (b & 0xf0);
+    const quantized = ((r & 0xf0) << 8) | ((g & 0xf0) << 4) | (b & 0xf0);
     uniqueColors.add(quantized);
     opaqueCount += 1;
   }

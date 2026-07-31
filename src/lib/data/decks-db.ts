@@ -1,6 +1,5 @@
 "use client";
 
-
 import { cardTemplatesById } from "@/data/card-templates";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import type { CardFace } from "@/types/card-face";

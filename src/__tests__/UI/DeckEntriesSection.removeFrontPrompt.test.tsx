@@ -10,7 +10,13 @@ const refreshEntries = jest.fn();
 const updateEntryCount = jest.fn();
 const onOpenCardEditor = jest.fn();
 let sortableIsDragging = false;
-let entriesSortedMock: Array<{ id: string; setId: string; pairId: string; sortIndex: number; count: number }> = [];
+let entriesSortedMock: Array<{
+  id: string;
+  setId: string;
+  pairId: string;
+  sortIndex: number;
+  count: number;
+}> = [];
 let pairsByIdMock = new Map<
   string,
   {
@@ -35,13 +41,13 @@ jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) =>
       (
-        {
+        ({
           "decks.removeFromSet": "Remove from set",
           "decks.removeAndUnpair": "Remove and unpair",
           "decks.removeFrontPromptTitle": "Remove front from set?",
           "decks.removeFrontPromptBody": "Remove body",
           "actions.cancel": "Cancel",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));
@@ -82,9 +88,15 @@ jest.mock("@/components/Modals/ConfirmModal", () => ({
     if (!isOpen) return null;
     return (
       <div data-testid="confirm-modal">
-        <button type="button" onClick={onConfirm}>{confirmLabel ?? "confirm"}</button>
-        <button type="button" onClick={onExtra}>{extraLabel ?? "extra"}</button>
-        <button type="button" onClick={onCancel}>cancel</button>
+        <button type="button" onClick={onConfirm}>
+          {confirmLabel ?? "confirm"}
+        </button>
+        <button type="button" onClick={onExtra}>
+          {extraLabel ?? "extra"}
+        </button>
+        <button type="button" onClick={onCancel}>
+          cancel
+        </button>
       </div>
     );
   },
@@ -124,7 +136,9 @@ describe("DeckEntriesSection front remove prompt", () => {
   const QUANTITY_INCREASE_LABEL = "decks.entries.quantity.increase";
 
   beforeEach(() => {
-    entriesSortedMock = [{ id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 }];
+    entriesSortedMock = [
+      { id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 },
+    ];
     pairsByIdMock = new Map([
       [
         "pair-1",
@@ -158,13 +172,15 @@ describe("DeckEntriesSection front remove prompt", () => {
   it("applies grab cursor class by default and grabbing class while dragging", () => {
     const { rerender } = render(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -178,13 +194,15 @@ describe("DeckEntriesSection front remove prompt", () => {
     sortableIsDragging = true;
     rerender(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -199,13 +217,15 @@ describe("DeckEntriesSection front remove prompt", () => {
   it("keeps Delete Selected disabled until one or more entries are selected", () => {
     render(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -222,13 +242,15 @@ describe("DeckEntriesSection front remove prompt", () => {
   it("navigates to the card editor when per-card Edit is clicked", () => {
     render(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -243,13 +265,15 @@ describe("DeckEntriesSection front remove prompt", () => {
   it("renders top centered actions and bottom quantity control scaffold", () => {
     const { container } = render(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -264,16 +288,20 @@ describe("DeckEntriesSection front remove prompt", () => {
   });
 
   it("updates entry count via +/- and respects min/max disabled states", async () => {
-    entriesSortedMock = [{ id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 }];
+    entriesSortedMock = [
+      { id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 },
+    ];
     const { rerender } = render(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -284,16 +312,20 @@ describe("DeckEntriesSection front remove prompt", () => {
     fireEvent.click(screen.getByLabelText(QUANTITY_INCREASE_LABEL));
     await waitFor(() => expect(updateEntryCount).toHaveBeenCalledWith("entry-1", 2));
 
-    entriesSortedMock = [{ id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 12 }];
+    entriesSortedMock = [
+      { id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 12 },
+    ];
     rerender(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -305,13 +337,15 @@ describe("DeckEntriesSection front remove prompt", () => {
   it("removes from set only when confirm is clicked", async () => {
     render(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -328,13 +362,15 @@ describe("DeckEntriesSection front remove prompt", () => {
   it("removes and unpairs when extra action is clicked", async () => {
     render(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -391,13 +427,15 @@ describe("DeckEntriesSection front remove prompt", () => {
 
     render(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -454,13 +492,15 @@ describe("DeckEntriesSection front remove prompt", () => {
 
     render(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -517,13 +557,15 @@ describe("DeckEntriesSection front remove prompt", () => {
 
     render(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -584,13 +626,15 @@ describe("DeckEntriesSection front remove prompt", () => {
 
     render(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -646,13 +690,15 @@ describe("DeckEntriesSection front remove prompt", () => {
 
     render(
       <DeckEntriesSection
-        drag={{
-          isFrontFaceDragActive: false,
-          isEntryDragActive: false,
-          isFrontDropOver: false,
-          isEntriesDropOver: false,
-          entryDropIndex: null,
-        } as never}
+        drag={
+          {
+            isFrontFaceDragActive: false,
+            isEntryDragActive: false,
+            isFrontDropOver: false,
+            isEntriesDropOver: false,
+            entryDropIndex: null,
+          } as never
+        }
         entriesRowRef={jest.fn()}
         onOpenCardEditor={onOpenCardEditor}
         deckEntryThumb={() => <div>thumb</div>}
@@ -664,8 +710,6 @@ describe("DeckEntriesSection front remove prompt", () => {
     await waitFor(() => expect(screen.getByText("decks.openDeck")).toBeInTheDocument());
     fireEvent.click(screen.getByText("decks.openDeck"));
 
-    await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith("/decks/deck-2/set/set-2"),
-    );
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/decks/deck-2/set/set-2"));
   });
 });

@@ -90,37 +90,40 @@ export default function CardPage() {
     track("page_view", { page_path: "/cards/:id", page_title: "Card Detail" });
   }, [session.isDraftRoute, session.normalizedCardId, track]);
 
-  const refreshCardThumbnails = useCallback(async (cardIds: string[]) => {
-    const prioritizedCardIds =
-      session.normalizedCardId && cardIds.includes(session.normalizedCardId)
-        ? [
-            ...cardIds.filter((cardId) => cardId !== session.normalizedCardId),
-            session.normalizedCardId,
-          ]
-        : cardIds;
+  const refreshCardThumbnails = useCallback(
+    async (cardIds: string[]) => {
+      const prioritizedCardIds =
+        session.normalizedCardId && cardIds.includes(session.normalizedCardId)
+          ? [
+              ...cardIds.filter((cardId) => cardId !== session.normalizedCardId),
+              session.normalizedCardId,
+            ]
+          : cardIds;
 
-    await refreshCardThumbnailsBatch({
-      cardIds: prioritizedCardIds,
-      getCard: async (cardId) => {
-        return await apiClient.getCard({ params: { id: cardId } });
-      },
-      renderThumbnail: async (card) => {
-        return (await thumbnailRefreshHostRef.current?.renderThumbnail(card)) ?? null;
-      },
-      updateCardThumbnail: async (cardId, thumbnailBlob) => {
-        return await apiClient.updateCardThumbnail({ thumbnailBlob }, { params: { id: cardId } });
-      },
-      readBackThumbnail: async (cardId) => {
-        return await apiClient.getCardThumbnail({ params: { id: cardId } });
-      },
-      invalidateCardThumbnail,
-      dispatchCardsUpdated: () => {
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
-        }
-      },
-    });
-  }, [session.normalizedCardId]);
+      await refreshCardThumbnailsBatch({
+        cardIds: prioritizedCardIds,
+        getCard: async (cardId) => {
+          return await apiClient.getCard({ params: { id: cardId } });
+        },
+        renderThumbnail: async (card) => {
+          return (await thumbnailRefreshHostRef.current?.renderThumbnail(card)) ?? null;
+        },
+        updateCardThumbnail: async (cardId, thumbnailBlob) => {
+          return await apiClient.updateCardThumbnail({ thumbnailBlob }, { params: { id: cardId } });
+        },
+        readBackThumbnail: async (cardId) => {
+          return await apiClient.getCardThumbnail({ params: { id: cardId } });
+        },
+        invalidateCardThumbnail,
+        dispatchCardsUpdated: () => {
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
+          }
+        },
+      });
+    },
+    [session.normalizedCardId],
+  );
 
   const editorSaveValue = useMemo(
     () => ({

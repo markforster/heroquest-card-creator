@@ -11,10 +11,7 @@ import { AssetsRoutePanels } from "@/components/Assets";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
-import {
-  EditorSaveProvider,
-  noopEditorSaveValue,
-} from "@/components/Providers/EditorSaveContext";
+import { EditorSaveProvider, noopEditorSaveValue } from "@/components/Providers/EditorSaveContext";
 
 export default function AssetsPage() {
   const { track } = useAnalytics();
@@ -22,9 +19,9 @@ export default function AssetsPage() {
   const {
     state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
-  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<(() => boolean) | null>(
-    null,
-  );
+  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<
+    (() => boolean) | null
+  >(null);
 
   const currentTemplateId = selectedTemplateId ?? null;
   const activeCardId =

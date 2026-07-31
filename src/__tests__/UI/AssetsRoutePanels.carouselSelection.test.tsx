@@ -4,7 +4,6 @@ import type { AssetRecord } from "@/api/assets";
 import AssetsRoutePanels from "@/components/Assets/AssetsRoutePanels";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
-
 const mockUseFormState = jest.fn();
 const mockListCards = jest.fn();
 

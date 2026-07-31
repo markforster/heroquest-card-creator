@@ -87,7 +87,12 @@ describe("useAssetImageUrl", () => {
 
     await flushMicrotasks();
     await flushMicrotasks();
-    expect(result.current).toEqual({ url: "blob:asset-1", status: "ready", width: 320, height: 160 });
+    expect(result.current).toEqual({
+      url: "blob:asset-1",
+      status: "ready",
+      width: 320,
+      height: 160,
+    });
     expect(apiClient.getAssetObjectUrl).toHaveBeenCalledWith({
       params: { id: "asset-1" },
     });
@@ -100,7 +105,10 @@ describe("useAssetImageUrl", () => {
     const deferred = createDeferred<string | null>();
     (apiClient.getAssetObjectUrl as jest.Mock).mockReturnValueOnce(deferred.promise);
 
-    const { result, rerender } = renderHook<ReturnType<typeof useAssetImageUrl>, { assetId?: string }>(
+    const { result, rerender } = renderHook<
+      ReturnType<typeof useAssetImageUrl>,
+      { assetId?: string }
+    >(
       ({ assetId }: { assetId?: string }) => {
         return useAssetImageUrl(assetId);
       },

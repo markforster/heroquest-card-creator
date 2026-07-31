@@ -79,7 +79,9 @@ export default function StockpileCollectionController({
       <StockpileCollectionModal
         isOpen={isOpen}
         mode={mode}
-        collectionId={mode === "edit" && activeFilter.type === "collection" ? activeFilter.id : null}
+        collectionId={
+          mode === "edit" && activeFilter.type === "collection" ? activeFilter.id : null
+        }
         collections={collections}
         onCreate={async (name, description) => {
           try {

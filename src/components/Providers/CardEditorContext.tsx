@@ -135,17 +135,10 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
     const activeStatus = activeCardStatusByTemplate[selectedTemplateId];
     if (!activeId || activeStatus !== "saved") return;
 
-    apiClient
-      .touchCardLastViewed({}, { params: { id: activeId } })
-      .catch(() => {
-        // Ignore view updates; editor should not fail.
-      });
-  }, [
-    activeCardIdByTemplate,
-    activeCardStatusByTemplate,
-    isHydrated,
-    selectedTemplateId,
-  ]);
+    apiClient.touchCardLastViewed({}, { params: { id: activeId } }).catch(() => {
+      // Ignore view updates; editor should not fail.
+    });
+  }, [activeCardIdByTemplate, activeCardStatusByTemplate, isHydrated, selectedTemplateId]);
 
   const value = useMemo<CardEditorContextValue>(
     () => ({

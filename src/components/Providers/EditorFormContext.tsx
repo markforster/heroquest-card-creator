@@ -20,13 +20,16 @@ const EditorFormContext = createContext<EditorFormContextValue | null>(null);
 
 export function EditorFormProvider({ children }: { children: ReactNode }) {
   const initialTemplateId = (cardTemplates[0]?.id ?? "hero") as TemplateId;
-  const initialValues = createEditorDefaultValues(initialTemplateId) as CardDataByTemplate[TemplateId];
+  const initialValues = createEditorDefaultValues(
+    initialTemplateId,
+  ) as CardDataByTemplate[TemplateId];
   const methods = useForm<CardDataByTemplate[TemplateId]>({
     defaultValues: initialValues,
     mode: "onBlur",
   });
-  const [savedValues, setSavedValues] =
-    useState<CardDataByTemplate[TemplateId] | null>(initialValues);
+  const [savedValues, setSavedValues] = useState<CardDataByTemplate[TemplateId] | null>(
+    initialValues,
+  );
 
   const resetWithSaved = useCallback(
     (values: CardDataByTemplate[TemplateId]) => {

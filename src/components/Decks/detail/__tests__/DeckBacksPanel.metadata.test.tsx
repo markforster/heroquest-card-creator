@@ -65,8 +65,8 @@ const { apiClient: mockApiClient } = jest.requireMock("@/api/client") as {
   };
 };
 
-const DeckBacksPanel =
-  require("@/components/Decks/detail/DeckBacksPanel").default as typeof import("@/components/Decks/detail/DeckBacksPanel").default;
+const DeckBacksPanel = require("@/components/Decks/detail/DeckBacksPanel")
+  .default as typeof import("@/components/Decks/detail/DeckBacksPanel").default;
 
 describe("DeckBacksPanel metadata tab", () => {
   beforeEach(() => {
@@ -119,15 +119,17 @@ describe("DeckBacksPanel metadata tab", () => {
       { id: "set-3", groupId: "group-1", backFaceId: "back-3", sortIndex: 0 },
       { id: "set-4", groupId: "group-2", backFaceId: "back-2", sortIndex: 0 },
     ]);
-    mockApiClient.listDeckEntries.mockImplementation(async ({ params }: { params: { setId: string } }) => {
-      if (params.setId === "set-1") {
-        return [
-          { id: "entry-1", pairId: "pair-1", count: 2 },
-          { id: "entry-2", pairId: "pair-2", count: 1 },
-        ];
-      }
-      return [{ id: "entry-3", pairId: "pair-3", count: 3 }];
-    });
+    mockApiClient.listDeckEntries.mockImplementation(
+      async ({ params }: { params: { setId: string } }) => {
+        if (params.setId === "set-1") {
+          return [
+            { id: "entry-1", pairId: "pair-1", count: 2 },
+            { id: "entry-2", pairId: "pair-2", count: 1 },
+          ];
+        }
+        return [{ id: "entry-3", pairId: "pair-3", count: 3 }];
+      },
+    );
     mockListPairsMap.mockResolvedValue(
       new Map([
         ["pair-1", { id: "pair-1", backFaceId: "back-1", frontFaceId: "front-1" }],

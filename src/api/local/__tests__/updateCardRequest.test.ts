@@ -30,10 +30,10 @@ describe("updateCardRequestPlugin", () => {
       title: "Updated Hero",
     });
 
-    const resolved = await updateCardRequestPlugin.request?.(
-      [],
-      { params: { id: "card-1" }, data: { title: "Updated Hero" } } as never,
-    );
+    const resolved = await updateCardRequestPlugin.request?.([], {
+      params: { id: "card-1" },
+      data: { title: "Updated Hero" },
+    } as never);
     const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
     const response = await adapter?.();
 

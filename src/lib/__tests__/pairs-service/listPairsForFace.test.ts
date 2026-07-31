@@ -46,7 +46,9 @@ describe("listPairsForFace", () => {
 
   it("returns an empty array when no stored pairs match", async () => {
     const db = await openHqccDexieDb();
-    await db.pairs.put(createPairRecord({ id: "pair-1", frontFaceId: "front-1", backFaceId: "back-1" }));
+    await db.pairs.put(
+      createPairRecord({ id: "pair-1", frontFaceId: "front-1", backFaceId: "back-1" }),
+    );
 
     await expect(listPairsForFace("missing-face")).resolves.toEqual([]);
   });

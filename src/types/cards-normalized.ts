@@ -1,4 +1,9 @@
-import type { BlueprintGroupTypeValue, BlueprintLayerTypeValue, BlueprintSlotId, SystemFamily } from "@/data/card-systems/types";
+import type {
+  BlueprintGroupTypeValue,
+  BlueprintLayerTypeValue,
+  BlueprintSlotId,
+  SystemFamily,
+} from "@/data/card-systems/types";
 import type { BodyTextStyle, HeroBackLogoMode } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { CardStatus } from "@/types/cards-db";

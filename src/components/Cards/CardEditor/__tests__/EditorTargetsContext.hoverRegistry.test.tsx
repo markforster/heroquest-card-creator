@@ -33,11 +33,7 @@ function HoverDescriptorProbe() {
   );
 }
 
-function HoverAdornmentRegistration({
-  x,
-}: {
-  x: number;
-}) {
+function HoverAdornmentRegistration({ x }: { x: number }) {
   useRegisterHoverAdornment(EDITOR_TARGET_IDS.title, {
     kind: "rect",
     x,

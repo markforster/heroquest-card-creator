@@ -26,10 +26,7 @@ import PdfExportShellModal, {
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 import { useI18n } from "@/i18n/I18nProvider";
 import { composeBleedCanvas } from "@/lib/bleed-export";
-import {
-  buildSingleSheetAlignmentComposition,
-  parseAlignmentFaceId,
-} from "@/lib/pdf-export";
+import { buildSingleSheetAlignmentComposition, parseAlignmentFaceId } from "@/lib/pdf-export";
 
 type DeckPdfRunData = Awaited<ReturnType<typeof resolveDeckPdfRunData>>;
 
@@ -72,12 +69,9 @@ export default function DeckPdfExportSummaryModal({
       nextSetScopeMode: DeckPdfSetScopeMode,
       nextSelectedSetIds: Set<string>,
     ) => {
-      const nextRunData = await resolveDeckPdfRunData(
-        deckIdValue,
-        mode,
-        nextSetScopeMode,
-        [...nextSelectedSetIds],
-      );
+      const nextRunData = await resolveDeckPdfRunData(deckIdValue, mode, nextSetScopeMode, [
+        ...nextSelectedSetIds,
+      ]);
       const nextSummary = summarizeDeckPdfRunData(
         nextRunData,
         mode,
@@ -99,12 +93,7 @@ export default function DeckPdfExportSummaryModal({
 
     void (async () => {
       const initialMode = shellState.effectiveConfig.mode;
-      const initialRunData = await resolveDeckPdfRunData(
-        deckId,
-        initialMode,
-        "complete",
-        [],
-      );
+      const initialRunData = await resolveDeckPdfRunData(deckId, initialMode, "complete", []);
       if (!active) return;
       const autoSelectedIds = new Set(
         initialRunData.sets.filter((set) => set.hasEntries).map((set) => set.setId),
@@ -148,23 +137,20 @@ export default function DeckPdfExportSummaryModal({
     };
   }, [activeMode, deckId, isOpen, refreshDeckPdfRun, selectedSetIds, setScopeMode]);
 
-  const buildExportRun = useCallback(
-    async (): Promise<PdfExportRun | null> => {
-      if (!deckId || !runData) {
-        window.alert(t("alert.selectCardToExport"));
-        return null;
-      }
+  const buildExportRun = useCallback(async (): Promise<PdfExportRun | null> => {
+    if (!deckId || !runData) {
+      window.alert(t("alert.selectCardToExport"));
+      return null;
+    }
 
-      const deck = await apiClient.getDeck({ params: { deckId } }).catch(() => null);
-      const deckName = deck?.title?.trim() || t("decks.untitledDeck");
+    const deck = await apiClient.getDeck({ params: { deckId } }).catch(() => null);
+    const deckName = deck?.title?.trim() || t("decks.untitledDeck");
 
-      return {
-        fileName: buildDeckPdfFileName({ deckName, date: new Date() }),
-        includeCalibrationPage: true,
-      };
-    },
-    [deckId, runData, t],
-  );
+    return {
+      fileName: buildDeckPdfFileName({ deckName, date: new Date() }),
+      includeCalibrationPage: true,
+    };
+  }, [deckId, runData, t]);
 
   const buildAlignmentExportRun = useCallback(
     async ({

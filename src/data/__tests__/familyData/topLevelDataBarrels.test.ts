@@ -1,7 +1,4 @@
-import {
-  blueprintsByTemplateId,
-  getCopyrightBounds,
-} from "@/data/blueprints";
+import { blueprintsByTemplateId, getCopyrightBounds } from "@/data/blueprints";
 import {
   blueprintsByTemplateId as familyBlueprintsByTemplateId,
   getCopyrightBounds as getFamilyCopyrightBounds,

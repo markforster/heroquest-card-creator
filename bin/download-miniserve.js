@@ -65,7 +65,12 @@ function downloadFile(url, destination) {
 
     https
       .get(url, { headers }, (res) => {
-        if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        if (
+          res.statusCode &&
+          res.statusCode >= 300 &&
+          res.statusCode < 400 &&
+          res.headers.location
+        ) {
           downloadFile(res.headers.location, destination).then(resolve).catch(reject);
           return;
         }

@@ -1,8 +1,6 @@
 "use client";
 
-import {
-  padBounds,
-} from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
+import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import {
   EDITOR_TARGET_IDS,
   useRegisterHoverAdornment,
@@ -188,8 +186,10 @@ export function TextLayer({
 }) {
   const { defaultCopyright } = useCopyrightSettings();
   const bodyTextFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.textMain);
-  const showBodyTextHover = layer.type === layerTypes.text && isPrimaryBodyTextLayer(blueprint, layer);
-  const initialTextBounds = layer.type === layerTypes.text ? getLayerBounds(blueprint, layer) : null;
+  const showBodyTextHover =
+    layer.type === layerTypes.text && isPrimaryBodyTextLayer(blueprint, layer);
+  const initialTextBounds =
+    layer.type === layerTypes.text ? getLayerBounds(blueprint, layer) : null;
 
   useRegisterHoverAdornment(
     EDITOR_TARGET_IDS.textMain,
@@ -532,7 +532,11 @@ export function TextLayer({
       const remainingBubbleHeight = backdropBounds.y + backdropBounds.height - cursorBubbleY;
       if (remainingBubbleHeight <= 0) return;
 
-      const { rows, lines, lineHeight: resolvedLineHeight } = layoutCardText({
+      const {
+        rows,
+        lines,
+        lineHeight: resolvedLineHeight,
+      } = layoutCardText({
         text: segment,
         width: textAreaWidth,
         fontSize: fontSizeResolved,

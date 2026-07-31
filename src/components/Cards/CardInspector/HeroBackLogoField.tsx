@@ -4,10 +4,7 @@ import { Badge, Plus, Settings2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
-import type {
-  DeleteHeroBackLogoRemediation,
-  HeroBackLogoRecord,
-} from "@/api/heroBackLogos";
+import type { DeleteHeroBackLogoRemediation, HeroBackLogoRecord } from "@/api/heroBackLogos";
 import { addHeroBackLogo, listHeroBackLogos } from "@/api/heroBackLogos/client";
 import layoutStyles from "@/app/page.module.css";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
@@ -16,14 +13,16 @@ import {
   useInspectorTargetRegistration,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import BaseInspectorField from "@/components/Cards/CardInspector/BaseInspectorField";
-import FormSelect, { type FormSelectOption, type FormSelectRenderMeta } from "@/components/common/FormSelect";
+import FormSelect, {
+  type FormSelectOption,
+  type FormSelectRenderMeta,
+} from "@/components/common/FormSelect";
 import { useEditorSave } from "@/components/Providers/EditorSaveContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
 
 import HeroBackLogoModal from "./HeroBackLogoModal";
 import HeroBackLogoPreviewTile from "./HeroBackLogoPreviewTile";
-
 
 type HeroBackLogoFieldProps = {
   label: string;
@@ -72,11 +71,9 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [logos, setLogos] = useState<HeroBackLogoRecord[]>([]);
-  const logoMode = (useWatch({ name: "heroBackLogoMode" }) as
-    | "default"
-    | "none"
-    | "custom"
-    | undefined) ?? "default";
+  const logoMode =
+    (useWatch({ name: "heroBackLogoMode" }) as "default" | "none" | "custom" | undefined) ??
+    "default";
   const logoId = useWatch({ name: "heroBackLogoId" }) as string | undefined;
   const logoName = useWatch({ name: "heroBackLogoName" }) as string | undefined;
   const handleFieldFocusCapture = useInspectorTargetRegistration({
@@ -119,9 +116,7 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
     }));
 
     const missingCurrentOption =
-      logoMode === "custom" &&
-      logoId &&
-      !logos.some((logo) => logo.id === logoId)
+      logoMode === "custom" && logoId && !logos.some((logo) => logo.id === logoId)
         ? [
             {
               value: logoId,
@@ -208,8 +203,10 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
         fieldRef={fieldRef}
         onFocusCapture={handleFieldFocusCapture}
         targetId={EDITOR_TARGET_IDS.heroBackLogo}
-        toolbar={(
-          <div className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1 ms-auto`}>
+        toolbar={
+          <div
+            className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1 ms-auto`}
+          >
             <button
               type="button"
               className={`${layoutStyles.bodyTextToolbarButton} ${isBusy ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
@@ -231,8 +228,8 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
               <Settings2 size={14} aria-hidden="true" />
             </button>
           </div>
-        )}
-        input={(
+        }
+        input={
           <div className="d-flex flex-column gap-2">
             <input
               ref={uploadInputRef}
@@ -265,7 +262,7 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
             />
             <div className="form-text m-0">{t("helper.heroBackLogo")}</div>
           </div>
-        )}
+        }
       />
       <HeroBackLogoModal
         isOpen={isModalOpen}
@@ -278,9 +275,18 @@ export default function HeroBackLogoField({ label }: HeroBackLogoFieldProps) {
             return;
           }
           const patch = buildRemediationPatch(remediation, replacement);
-          setValue("heroBackLogoMode", patch.heroBackLogoMode, { shouldDirty: true, shouldTouch: true });
-          setValue("heroBackLogoId", patch.heroBackLogoId, { shouldDirty: true, shouldTouch: true });
-          setValue("heroBackLogoName", patch.heroBackLogoName, { shouldDirty: true, shouldTouch: true });
+          setValue("heroBackLogoMode", patch.heroBackLogoMode, {
+            shouldDirty: true,
+            shouldTouch: true,
+          });
+          setValue("heroBackLogoId", patch.heroBackLogoId, {
+            shouldDirty: true,
+            shouldTouch: true,
+          });
+          setValue("heroBackLogoName", patch.heroBackLogoName, {
+            shouldDirty: true,
+            shouldTouch: true,
+          });
           setValue("heroBackLogoOriginalWidth", patch.heroBackLogoOriginalWidth, {
             shouldDirty: true,
             shouldTouch: true,

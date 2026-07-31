@@ -4,7 +4,6 @@ import styles from "@/app/page.module.css";
 import { GPT_LINKS, OFFICIAL_ARTWORK_PACK_URL } from "@/components/Assets/assetsResources";
 import { useI18n } from "@/i18n/I18nProvider";
 
-
 export default function AssetsEmptyState() {
   const { t } = useI18n();
 
@@ -30,7 +29,10 @@ export default function AssetsEmptyState() {
           <li>{t("empty.assetsManualStep3")}</li>
           <li>{t("empty.assetsManualStep4")}</li>
         </ol>
-        <section className={styles.assetsEmptyStateSecondary} aria-labelledby="assets-empty-gpt-title">
+        <section
+          className={styles.assetsEmptyStateSecondary}
+          aria-labelledby="assets-empty-gpt-title"
+        >
           <h3 id="assets-empty-gpt-title" className={styles.assetsEmptyStateSecondaryTitle}>
             {t("empty.assetsGptHeading")}
           </h3>

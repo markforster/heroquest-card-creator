@@ -29,7 +29,6 @@ import {
 import type { ExportSettings } from "@/lib/export-settings";
 import { normalizePdfPrintConfig, type PrintConfig } from "@/lib/pdf-export";
 
-
 type NameModalMode = "create" | "rename" | null;
 
 function cloneExportSettings(settings: ExportSettings): ExportSettings {
@@ -291,10 +290,8 @@ export default function ExportSettingsPanel() {
             ? t("heading.renameExportProfile")
             : t("heading.createExportProfile")
         }
-        confirmLabel={
-          nameModalMode === "rename" ? t("actions.rename") : t("actions.saveAs")
-        }
-        initialValue={nameModalMode === "rename" ? activeProfile?.name ?? "" : ""}
+        confirmLabel={nameModalMode === "rename" ? t("actions.rename") : t("actions.saveAs")}
+        initialValue={nameModalMode === "rename" ? (activeProfile?.name ?? "") : ""}
         validateName={resolveNameError}
         onConfirm={handleNameModalConfirm}
         onCancel={() => setNameModalMode(null)}

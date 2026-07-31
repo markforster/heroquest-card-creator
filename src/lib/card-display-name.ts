@@ -3,7 +3,10 @@ type CardNameLike = {
   name?: string | null;
 };
 
-export function getCardDisplayName(card: CardNameLike | null | undefined, fallback: string): string {
+export function getCardDisplayName(
+  card: CardNameLike | null | undefined,
+  fallback: string,
+): string {
   const title = card?.title?.trim();
   if (title) return title;
 

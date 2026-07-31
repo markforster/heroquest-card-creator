@@ -34,6 +34,8 @@ describe("restoreCards", () => {
 
     await expect(listCards()).resolves.toEqual([]);
     await restoreCards(["c1"]);
-    await expect(listCards()).resolves.toEqual([expect.objectContaining({ id: "c1", deletedAt: null })]);
+    await expect(listCards()).resolves.toEqual([
+      expect.objectContaining({ id: "c1", deletedAt: null }),
+    ]);
   });
 });

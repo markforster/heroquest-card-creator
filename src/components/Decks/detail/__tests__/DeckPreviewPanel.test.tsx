@@ -57,8 +57,8 @@ jest.mock("@/data/card-templates", () => ({
   },
 }));
 
-const DeckPreviewPanel =
-  require("@/components/Decks/detail/DeckPreviewPanel").default as typeof import("@/components/Decks/detail/DeckPreviewPanel").default;
+const DeckPreviewPanel = require("@/components/Decks/detail/DeckPreviewPanel")
+  .default as typeof import("@/components/Decks/detail/DeckPreviewPanel").default;
 
 describe("DeckPreviewPanel", () => {
   beforeEach(() => {

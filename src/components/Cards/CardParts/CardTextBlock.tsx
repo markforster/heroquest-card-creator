@@ -367,11 +367,7 @@ export function layoutCardText({
     });
   };
 
-  const pushBlockMacroLine = (
-    lineText: string,
-    align: TextAlignment,
-    preset: BlockMacroPreset,
-  ) => {
+  const pushBlockMacroLine = (lineText: string, align: TextAlignment, preset: BlockMacroPreset) => {
     pushWrappedTextLine(lineText, align, { presetStyle: preset.style });
   };
 
@@ -640,12 +636,7 @@ export default function CardTextBlock({
   showOverflowWarning = false,
 }: CardTextBlockProps) {
   const maskPrefix = useId().replace(/:/g, "");
-  const {
-    rows,
-    lines,
-    fittedFontSize,
-    overflowed,
-  } = layoutCardTextToBounds({
+  const { rows, lines, fittedFontSize, overflowed } = layoutCardTextToBounds({
     layout: layoutCardText,
     text,
     width: bounds.width,
@@ -736,20 +727,20 @@ export default function CardTextBlock({
             const valueStartX = bounds.x + line.leaderLayout.valueStartOffset;
             elements.push(
               ...renderTokenSequence({
-                  tokens: line.valueTokens,
-                  startX: valueStartX,
-                  y: lineY,
-                  lineHeight: line.height,
-                  measure: measureWithSpacing,
-                  fill,
-                  textStyle,
-                  maskPrefix,
-                  lineIndex: renderedLineIndex,
-                  tokenGroup: "value",
-                  baseFontSize: fittedFontSize,
-                  baselineOffset: line.baselineOffset,
-                }),
-              );
+                tokens: line.valueTokens,
+                startX: valueStartX,
+                y: lineY,
+                lineHeight: line.height,
+                measure: measureWithSpacing,
+                fill,
+                textStyle,
+                maskPrefix,
+                lineIndex: renderedLineIndex,
+                tokenGroup: "value",
+                baseFontSize: fittedFontSize,
+                baselineOffset: line.baselineOffset,
+              }),
+            );
             verticalOffset += line.height;
             renderedLineIndex += 1;
             return;
@@ -775,26 +766,25 @@ export default function CardTextBlock({
 
           const sepChar = line.separator || ".";
           const sepWidth = measureWithSpacing(sepChar);
-          const sepCount =
-            sepWidth > 0 ? Math.max(0, Math.floor(availableGapWidth / sepWidth)) : 0;
+          const sepCount = sepWidth > 0 ? Math.max(0, Math.floor(availableGapWidth / sepWidth)) : 0;
           const sepText = sepCount > 0 ? sepChar.repeat(sepCount) : "";
 
           elements.push(
             ...renderTokenSequence({
-                tokens: line.labelTokens,
-                startX: labelStartX,
-                y: lineY,
-                lineHeight: line.height,
-                measure: measureWithSpacing,
-                fill,
-                textStyle,
-                maskPrefix,
-                lineIndex: renderedLineIndex,
-                tokenGroup: "label",
-                baseFontSize: fittedFontSize,
-                baselineOffset: line.baselineOffset,
-              }),
-            );
+              tokens: line.labelTokens,
+              startX: labelStartX,
+              y: lineY,
+              lineHeight: line.height,
+              measure: measureWithSpacing,
+              fill,
+              textStyle,
+              maskPrefix,
+              lineIndex: renderedLineIndex,
+              tokenGroup: "label",
+              baseFontSize: fittedFontSize,
+              baselineOffset: line.baselineOffset,
+            }),
+          );
 
           if (sepText) {
             elements.push(
@@ -812,20 +802,20 @@ export default function CardTextBlock({
 
           elements.push(
             ...renderTokenSequence({
-                tokens: line.valueTokens,
-                startX: valueStartX,
-                y: lineY,
-                lineHeight: line.height,
-                measure: measureWithSpacing,
-                fill,
-                textStyle,
-                maskPrefix,
-                lineIndex: renderedLineIndex,
-                tokenGroup: "value",
-                baseFontSize: fittedFontSize,
-                baselineOffset: line.baselineOffset,
-              }),
-            );
+              tokens: line.valueTokens,
+              startX: valueStartX,
+              y: lineY,
+              lineHeight: line.height,
+              measure: measureWithSpacing,
+              fill,
+              textStyle,
+              maskPrefix,
+              lineIndex: renderedLineIndex,
+              tokenGroup: "value",
+              baseFontSize: fittedFontSize,
+              baselineOffset: line.baselineOffset,
+            }),
+          );
 
           verticalOffset += line.height;
           renderedLineIndex += 1;
@@ -837,13 +827,7 @@ export default function CardTextBlock({
   );
 }
 
-function OverflowWarningStrip({
-  bounds,
-  idPrefix,
-}: {
-  bounds: Bounds;
-  idPrefix: string;
-}) {
+function OverflowWarningStrip({ bounds, idPrefix }: { bounds: Bounds; idPrefix: string }) {
   const stripHeight = Math.min(OVERFLOW_WARNING_STRIP_HEIGHT, Math.max(bounds.height, 0));
   if (stripHeight <= 0 || bounds.width <= 0) return null;
 
@@ -905,10 +889,7 @@ function OverflowWarningStrip({
         y={stripY + stripHeight / 2}
         fill={OVERFLOW_WARNING_LABEL_COLOR}
         fontFamily={CARD_TEXT_FONT_FAMILY}
-        fontSize={Math.min(
-          OVERFLOW_WARNING_LABEL_FONT_SIZE,
-          Math.max(10, stripHeight * 0.45),
-        )}
+        fontSize={Math.min(OVERFLOW_WARNING_LABEL_FONT_SIZE, Math.max(10, stripHeight * 0.45))}
         fontWeight={OVERFLOW_WARNING_LABEL_FONT_WEIGHT}
         letterSpacing={`${OVERFLOW_WARNING_LABEL_LETTER_SPACING_EM}em`}
         textAnchor="middle"
@@ -1084,7 +1065,14 @@ function createStyledTextMeasure({
 
   return (text: string, token?: TextMeasureToken) => {
     const resolvedFontSize = getResolvedTextTokenFontSize(token, fontSize);
-    const styleKey = token?.bold && token?.italic ? "boldItalic" : token?.bold ? "bold" : token?.italic ? "italic" : "normal";
+    const styleKey =
+      token?.bold && token?.italic
+        ? "boldItalic"
+        : token?.bold
+          ? "bold"
+          : token?.italic
+            ? "italic"
+            : "normal";
     const cacheKey = `${resolvedFontSize}:${styleKey}`;
     let measure = measureCache.get(cacheKey);
     if (!measure) {
@@ -1240,7 +1228,8 @@ function renderTokenSequence({
       const size = token.renderSize;
       const baseGap = baseFontSize * DICE_TEXT_GAP_RATIO + DICE_TEXT_GAP_PX;
       const maskX = cursorX + baseGap;
-      const textCenterY = y - baselineOffset + lineHeight * DICE_TEXT_CENTER_RATIO + DICE_Y_OFFSET_PX;
+      const textCenterY =
+        y - baselineOffset + lineHeight * DICE_TEXT_CENTER_RATIO + DICE_Y_OFFSET_PX;
       const maskY = textCenterY - size / 2;
       const padding = size * DICE_ICON_PADDING_RATIO;
       const innerSize = Math.max(0, size - padding * 2);
@@ -1426,7 +1415,10 @@ function segmentsToTokens(
   return tokens;
 }
 
-function getResolvedTextTokenFontSize(token: TextMeasureToken | undefined, baseFontSize: number): number {
+function getResolvedTextTokenFontSize(
+  token: TextMeasureToken | undefined,
+  baseFontSize: number,
+): number {
   return baseFontSize * (token?.scale ?? 1);
 }
 

@@ -94,7 +94,8 @@ export default function DeckEntriesBoardController({
   }, [selection]);
   const selectedSetCardTitle = useMemo(() => {
     if (!selectedSetBackFaceId) return null;
-    const raw = rightPanel?.backCards?.find((card) => card.id === selectedSetBackFaceId)?.name ?? null;
+    const raw =
+      rightPanel?.backCards?.find((card) => card.id === selectedSetBackFaceId)?.name ?? null;
     const normalized = raw?.trim() ?? "";
     return normalized.length ? normalized : null;
   }, [rightPanel?.backCards, selectedSetBackFaceId]);
@@ -178,7 +179,8 @@ export default function DeckEntriesBoardController({
   const recoverSelectedCount = selectedRecoverFrontsOrdered.length;
   const recoverTotalCount = recoverableFrontIds.length;
   const recoverAllSelected = recoverTotalCount > 0 && recoverSelectedCount === recoverTotalCount;
-  const recoverPartiallySelected = recoverSelectedCount > 0 && recoverSelectedCount < recoverTotalCount;
+  const recoverPartiallySelected =
+    recoverSelectedCount > 0 && recoverSelectedCount < recoverTotalCount;
   const toggleRecoverSelectAll = useCallback(() => {
     setSelectedRecoverFrontIds((prev) => {
       if (recoverableFrontIds.length === 0) return prev;
@@ -222,26 +224,29 @@ export default function DeckEntriesBoardController({
     if (!items.length) return;
     setPendingFrontRemoval({ items });
   }, [buildRemovalItems, selectedEntryIds]);
-  const selectEntry = useCallback((entryId: string, additive: boolean) => {
-    setSelectedEntryIds((prev) => {
-      const next = new Set(prev);
-      if (additive) {
-        if (next.has(entryId)) {
-          next.delete(entryId);
+  const selectEntry = useCallback(
+    (entryId: string, additive: boolean) => {
+      setSelectedEntryIds((prev) => {
+        const next = new Set(prev);
+        if (additive) {
+          if (next.has(entryId)) {
+            next.delete(entryId);
+          } else {
+            next.add(entryId);
+            setActivePreviewEntryId(entryId);
+            setPreviewSelectionSource("entry");
+          }
         } else {
+          next.clear();
           next.add(entryId);
           setActivePreviewEntryId(entryId);
           setPreviewSelectionSource("entry");
         }
-      } else {
-        next.clear();
-        next.add(entryId);
-        setActivePreviewEntryId(entryId);
-        setPreviewSelectionSource("entry");
-      }
-      return next;
-    });
-  }, [setActivePreviewEntryId, setPreviewSelectionSource, setSelectedEntryIds]);
+        return next;
+      });
+    },
+    [setActivePreviewEntryId, setPreviewSelectionSource, setSelectedEntryIds],
+  );
   const model = useDeckSortableBoardViewModel("entries", BOARD_ROUTING_META_BY_ID.entries, {
     title: entriesBoardTitle,
     renderBoardHeaderActions: () => (
@@ -317,7 +322,11 @@ export default function DeckEntriesBoardController({
         <div className={styles.boardQuantityWrap}>
           <button
             type="button"
-            className={[styles.toolbarIconButton, styles.boardQtyAdjustButton, styles.boardQtyMinus].join(" ")}
+            className={[
+              styles.toolbarIconButton,
+              styles.boardQtyAdjustButton,
+              styles.boardQtyMinus,
+            ].join(" ")}
             aria-label={t("decks.entries.quantity.decrease")}
             title={t("decks.entries.quantity.decrease")}
             disabled={count <= 1}
@@ -329,14 +338,14 @@ export default function DeckEntriesBoardController({
           >
             <Minus size={12} aria-hidden="true" />
           </button>
-          <BoardInfoPill
-            label={count}
-            bgColor="var(--hq-black)"
-            borderColor="var(--hq-black)"
-          />
+          <BoardInfoPill label={count} bgColor="var(--hq-black)" borderColor="var(--hq-black)" />
           <button
             type="button"
-            className={[styles.toolbarIconButton, styles.boardQtyAdjustButton, styles.boardQtyPlus].join(" ")}
+            className={[
+              styles.toolbarIconButton,
+              styles.boardQtyAdjustButton,
+              styles.boardQtyPlus,
+            ].join(" ")}
             aria-label={t("decks.entries.quantity.increase")}
             title={t("decks.entries.quantity.increase")}
             disabled={count >= 12}
@@ -449,7 +458,9 @@ export default function DeckEntriesBoardController({
           const frontFaceId = event.frontFaceId;
           if (!frontFaceId) return { handled: true, success: true };
 
-          const prevEntries = entries.entriesSorted.slice().sort((a, b) => a.sortIndex - b.sortIndex);
+          const prevEntries = entries.entriesSorted
+            .slice()
+            .sort((a, b) => a.sortIndex - b.sortIndex);
           const createdEntries = await entries.addFront(frontFaceId);
           if (!createdEntries.length) {
             lastHandledDragIdRef.current = event.dragId;
@@ -462,7 +473,9 @@ export default function DeckEntriesBoardController({
             return { handled: true, success: true };
           }
 
-          const ordered = prevEntries.map((entryItem) => entryItem.id).filter((id) => id !== newEntryId);
+          const ordered = prevEntries
+            .map((entryItem) => entryItem.id)
+            .filter((id) => id !== newEntryId);
           const dropIndex = Math.max(0, Math.min(event.targetIndex, ordered.length));
           ordered.splice(dropIndex, 0, newEntryId);
 
@@ -516,7 +529,9 @@ export default function DeckEntriesBoardController({
           data-testid="entries-empty-state-board"
         >
           <div className={styles.entriesEmptyStatePanel}>
-            <div className={styles.entriesEmptyStateMessage}>{t("decks.entries.empty.selectSet")}</div>
+            <div className={styles.entriesEmptyStateMessage}>
+              {t("decks.entries.empty.selectSet")}
+            </div>
           </div>
         </section>
       ) : (
@@ -572,44 +587,44 @@ export default function DeckEntriesBoardController({
           ) : (
             <div className={styles.recoverModalScrollArea}>
               <div className={styles.recoverModalGrid}>
-              {recoverableFrontIds.map((frontFaceId) => {
-                const isSelected = selectedRecoverFrontIds.has(frontFaceId);
-                return (
-                  <div key={frontFaceId} className={styles.recoverCardShell}>
-                    <input
-                      type="checkbox"
-                      className={styles.recoverCardCheckbox}
-                      aria-label={t("decks.entries.recover.selectCardAria").replace(
-                        "{cardId}",
-                        frontFaceId,
-                      )}
-                      checked={isSelected}
-                      onChange={() => {
-                        toggleRecoverSelection(frontFaceId, true);
-                      }}
-                      onClick={(event) => event.stopPropagation()}
-                    />
-                    <button
-                      type="button"
-                      className={[
-                        styles.recoverCardButton,
-                        isSelected ? styles.recoverCardButtonSelected : "",
-                      ].join(" ")}
-                      onClick={(event) => {
-                        const additive = event.metaKey || event.ctrlKey;
-                        toggleRecoverSelection(frontFaceId, additive);
-                      }}
-                    >
-                      <DefaultSetThumbnailContent
-                        setId={`recover:${frontFaceId}`}
-                        cardId={frontFaceId}
-                        label={frontFaceId}
-                        state="idle"
+                {recoverableFrontIds.map((frontFaceId) => {
+                  const isSelected = selectedRecoverFrontIds.has(frontFaceId);
+                  return (
+                    <div key={frontFaceId} className={styles.recoverCardShell}>
+                      <input
+                        type="checkbox"
+                        className={styles.recoverCardCheckbox}
+                        aria-label={t("decks.entries.recover.selectCardAria").replace(
+                          "{cardId}",
+                          frontFaceId,
+                        )}
+                        checked={isSelected}
+                        onChange={() => {
+                          toggleRecoverSelection(frontFaceId, true);
+                        }}
+                        onClick={(event) => event.stopPropagation()}
                       />
-                    </button>
-                  </div>
-                );
-              })}
+                      <button
+                        type="button"
+                        className={[
+                          styles.recoverCardButton,
+                          isSelected ? styles.recoverCardButtonSelected : "",
+                        ].join(" ")}
+                        onClick={(event) => {
+                          const additive = event.metaKey || event.ctrlKey;
+                          toggleRecoverSelection(frontFaceId, additive);
+                        }}
+                      >
+                        <DefaultSetThumbnailContent
+                          setId={`recover:${frontFaceId}`}
+                          cardId={frontFaceId}
+                          label={frontFaceId}
+                          state="idle"
+                        />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

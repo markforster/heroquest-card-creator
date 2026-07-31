@@ -41,10 +41,7 @@ function parseSemver(value: string): ParsedSemver {
     throw new Error("Version is required");
   }
 
-  const match =
-    /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(
-      normalized,
-    );
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(normalized);
 
   if (!match) {
     throw new Error(`Invalid semver version: ${value}`);

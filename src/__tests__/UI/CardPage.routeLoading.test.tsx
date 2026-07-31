@@ -5,7 +5,6 @@ import CardPage from "@/components/App/pages/CardPage";
 import { EditorFormProvider } from "@/components/Providers/EditorFormContext";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
-
 const mockTrack = jest.fn();
 const mockNavigate = jest.fn();
 const mockUseGetCard = jest.fn();

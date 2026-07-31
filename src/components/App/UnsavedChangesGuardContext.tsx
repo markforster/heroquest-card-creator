@@ -55,9 +55,8 @@ function isSameLocation(currentLocation: Location, nextLocation: Location): bool
 
 export function UnsavedChangesGuardProvider({ children }: { children: ReactNode }) {
   const { t } = useI18n();
-  const [registration, setRegistration] = useState<UnsavedChangesRegistration>(
-    DEFAULT_REGISTRATION,
-  );
+  const [registration, setRegistration] =
+    useState<UnsavedChangesRegistration>(DEFAULT_REGISTRATION);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const registrationRef = useRef<UnsavedChangesRegistration>(registration);
@@ -167,9 +166,9 @@ export function UnsavedChangesGuardProvider({ children }: { children: ReactNode 
   };
 
   return (
-      <UnsavedChangesGuardContext.Provider value={contextValue}>
-        {children}
-        <ConfirmModal
+    <UnsavedChangesGuardContext.Provider value={contextValue}>
+      {children}
+      <ConfirmModal
         isOpen={pendingAction !== null}
         title={registration.title}
         confirmLabel={t("actions.discard")}

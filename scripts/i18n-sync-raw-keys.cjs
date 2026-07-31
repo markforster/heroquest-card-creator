@@ -102,7 +102,8 @@ function loadSupportedLanguages() {
 
 function getNamespaces() {
   const enDir = path.join(rawLocalesDir, "en");
-  return fs.readdirSync(enDir)
+  return fs
+    .readdirSync(enDir)
     .filter((name) => name.endsWith(".json"))
     .map((name) => name.replace(/\.json$/, ""))
     .sort((a, b) => a.localeCompare(b));

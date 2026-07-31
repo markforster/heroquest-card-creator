@@ -110,8 +110,12 @@ describe("useDeckMutations", () => {
     await result.current.deleteDecks(["d1", "d2"]);
 
     expect(mockApiClient.deleteDeck).toHaveBeenCalledTimes(2);
-    expect(mockApiClient.deleteDeck).toHaveBeenNthCalledWith(1, undefined, { params: { deckId: "d1" } });
-    expect(mockApiClient.deleteDeck).toHaveBeenNthCalledWith(2, undefined, { params: { deckId: "d2" } });
+    expect(mockApiClient.deleteDeck).toHaveBeenNthCalledWith(1, undefined, {
+      params: { deckId: "d1" },
+    });
+    expect(mockApiClient.deleteDeck).toHaveBeenNthCalledWith(2, undefined, {
+      params: { deckId: "d2" },
+    });
   });
 
   it("updateDeckTitle preserves empty string titles", async () => {

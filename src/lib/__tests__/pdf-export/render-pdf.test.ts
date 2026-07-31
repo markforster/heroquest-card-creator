@@ -4,7 +4,6 @@ import { renderPdf } from "@/lib/pdf-export/render-pdf";
 import type { PrintConfig } from "@/lib/pdf-export/types";
 import { APP_VERSION } from "@/version";
 
-
 jest.mock("@/generated/embeddedAssets", () => ({
   embeddedImagesByFileName: {
     "thqcc-qr.jpg":

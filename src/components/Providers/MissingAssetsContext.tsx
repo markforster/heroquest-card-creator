@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import type { CardRecord } from "@/api/cards";
 import { apiClient } from "@/api/client";
@@ -115,7 +123,11 @@ export function MissingAssetsProvider({ children }: { children: ReactNode }) {
                 name: card.monsterIconAssetName ?? "unknown",
               });
             }
-            if (card.heroBackLogoMode === "custom" && card.heroBackLogoId && missingLogos.has(card.heroBackLogoId)) {
+            if (
+              card.heroBackLogoMode === "custom" &&
+              card.heroBackLogoId &&
+              missingLogos.has(card.heroBackLogoId)
+            ) {
               missingAssets.push({
                 label: "logo",
                 id: card.heroBackLogoId,

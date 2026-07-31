@@ -67,9 +67,7 @@ export default function DeckGroupGridItem({
       {...attributes}
       {...listeners}
     >
-      <div className={styles.deckGroupPreview}>
-        {preview}
-      </div>
+      <div className={styles.deckGroupPreview}>{preview}</div>
       <div className={styles.deckNavItemTitle}>{group.title}</div>
     </div>
   );

@@ -43,7 +43,6 @@ import {
   type SlotPair,
 } from "@/lib/pdf-export";
 
-
 type ResolvedBleedOptions = ReturnType<typeof resolvePdfExportBleedOptions>;
 
 export type PdfExportShellState = {
@@ -117,8 +116,12 @@ type PdfExportShellModalProps = {
   summaryContent?: PdfExportSummaryContent;
   onCancel: () => void;
   onStateChange?: (state: PdfExportShellState) => void;
-  buildExportRun: (context: PdfExportRunBuildContext) => Promise<PdfExportRun | null> | PdfExportRun | null;
-  buildAlignmentExportRun?: (context: PdfExportRunBuildContext) => Promise<PdfExportAlignmentRun | null> | PdfExportAlignmentRun | null;
+  buildExportRun: (
+    context: PdfExportRunBuildContext,
+  ) => Promise<PdfExportRun | null> | PdfExportRun | null;
+  buildAlignmentExportRun?: (
+    context: PdfExportRunBuildContext,
+  ) => Promise<PdfExportAlignmentRun | null> | PdfExportAlignmentRun | null;
   topContent?: ReactNode | ((state: PdfExportShellState) => ReactNode);
   children?: ReactNode;
 };
@@ -133,7 +136,10 @@ function countFaces(composition: PrintComposition, mode: PrintConfig["mode"]) {
   }, 0);
 }
 
-function applyShellPolicyToConfig(config: PrintConfig, shellPolicy?: PdfExportShellPolicy): PrintConfig {
+function applyShellPolicyToConfig(
+  config: PrintConfig,
+  shellPolicy?: PdfExportShellPolicy,
+): PrintConfig {
   const nextConfig = { ...config };
 
   if (shellPolicy?.mode?.forcedValue) {
@@ -157,7 +163,9 @@ function createProfileDefaultConfig(
   return applyShellPolicyToConfig(normalizePdfPrintConfig(pdfSettings), shellPolicy);
 }
 
-function createProfileDefaultBleedOptions(settings: ExportSettings | undefined): ExportOptionsFormState {
+function createProfileDefaultBleedOptions(
+  settings: ExportSettings | undefined,
+): ExportOptionsFormState {
   return {
     bleedEnabled: settings?.bleed.enabled ?? false,
     bleedPx: settings?.bleed.bleedPx ?? 0,
@@ -193,7 +201,9 @@ export default function PdfExportShellModal({
 }: PdfExportShellModalProps) {
   const { t, language } = useI18n();
   const { profiles, defaultProfile } = useExportProfilesState();
-  const [selectedProfileId, setSelectedProfileId] = useState<string | undefined>(defaultProfile?.id);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | undefined>(
+    defaultProfile?.id,
+  );
   const selectedProfile =
     profiles.find((profile) => profile.id === selectedProfileId) ?? defaultProfile ?? null;
   const defaultConfig = useMemo(
@@ -341,7 +351,9 @@ export default function PdfExportShellModal({
   );
 
   const buildExecutableNormalRun = useCallback(
-    async (buildRun: PdfExportShellModalProps["buildExportRun"]): Promise<ExecutablePdfExportRun | null> => {
+    async (
+      buildRun: PdfExportShellModalProps["buildExportRun"],
+    ): Promise<ExecutablePdfExportRun | null> => {
       const configForRun = {
         ...shellState.effectiveConfig,
         bleedMm: shellState.resolvedBleedOptions.bleedMm,
@@ -505,8 +517,7 @@ export default function PdfExportShellModal({
     [closeProgress, t],
   );
 
-  const resolvedTopContent =
-    typeof topContent === "function" ? topContent(shellState) : topContent;
+  const resolvedTopContent = typeof topContent === "function" ? topContent(shellState) : topContent;
   const hasSummaryContent = Boolean(
     summaryContent &&
       (summaryContent.columns.some((column) => column.length > 0) || summaryContent.notice),
@@ -650,7 +661,9 @@ export default function PdfExportShellModal({
                 <div className={styles.deckPdfSummaryControlGroup}>
                   <div className={styles.deckPdfSummaryInlineControl}>
                     <div className={styles.deckPdfSummaryInlineHeader}>
-                      <span className={styles.deckPdfSummaryInlineLabel}>{bleedSettingsLabel}:</span>
+                      <span className={styles.deckPdfSummaryInlineLabel}>
+                        {bleedSettingsLabel}:
+                      </span>
                       <span className={styles.deckPdfSummaryInlineSummary}>{bleedSummary}</span>
                     </div>
                     <div className={`form-check form-switch m-0 ${styles.deckPdfSummaryToggle}`}>

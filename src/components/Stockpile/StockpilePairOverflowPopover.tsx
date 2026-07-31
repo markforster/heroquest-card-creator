@@ -9,7 +9,10 @@ import { cardTemplatesById } from "@/data/card-templates";
 
 type StockpilePairOverflowPopoverProps = {
   isOpen: boolean;
-  anchor: { rect: { top: number; left: number; bottom: number; right: number }; cards: CardRecord[] } | null;
+  anchor: {
+    rect: { top: number; left: number; bottom: number; right: number };
+    cards: CardRecord[];
+  } | null;
   onClose: () => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;

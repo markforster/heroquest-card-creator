@@ -4,7 +4,10 @@ import { SlidersHorizontal } from "lucide-react";
 import { useRef } from "react";
 
 import styles from "@/app/page.module.css";
-import { previewRendererFlags, usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
+import {
+  previewRendererFlags,
+  usePreviewRenderer,
+} from "@/components/Providers/PreviewRendererContext";
 import TextFittingSettingsPopover from "@/components/TextFittingSettings/TextFittingSettingsPopover";
 import RendererToggleGroup from "@/components/ToolsToolbar/RendererToggleGroup";
 import ToolbarButton from "@/components/ToolsToolbar/ToolbarButton";
@@ -32,7 +35,10 @@ export default function ToolsToolbar() {
   }
 
   return (
-    <div className={`${styles.toolsToolbar} d-flex flex-column`} aria-label={t("label.previewRenderer")}>
+    <div
+      className={`${styles.toolsToolbar} d-flex flex-column`}
+      aria-label={t("label.previewRenderer")}
+    >
       <ToolbarButtonGroup>
         <ToolbarButton
           buttonRef={buttonRef}
@@ -45,9 +51,7 @@ export default function ToolsToolbar() {
         </ToolbarButton>
       </ToolbarButtonGroup>
       <RendererToggleGroup />
-      {showWebglControls ? (
-        <WebglInteractionGroup />
-      ) : null}
+      {showWebglControls ? <WebglInteractionGroup /> : null}
       {textPrefsPopup.isOpen ? <TextFittingSettingsPopover popoverRef={popoverRef} /> : null}
     </div>
   );

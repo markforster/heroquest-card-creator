@@ -1,7 +1,4 @@
-import {
-  buildInlineDiceToken,
-  parseInlineDiceTokenToConfig,
-} from "@/lib/inline-dice";
+import { buildInlineDiceToken, parseInlineDiceTokenToConfig } from "@/lib/inline-dice";
 import type { InlineDiceConfiguratorState } from "@/lib/inline-dice";
 
 export const INLINE_DICE_RECENTS_STORAGE_KEY = "hqcc.inlineDiceRecents";

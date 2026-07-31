@@ -35,7 +35,10 @@ const compareDeckOrder = (
   return a.id.localeCompare(b.id);
 };
 
-export function useDecksGridModel({ untitledDeckLabel, saveTitleErrorLabel }: UseDecksGridModelArgs) {
+export function useDecksGridModel({
+  untitledDeckLabel,
+  saveTitleErrorLabel,
+}: UseDecksGridModelArgs) {
   const mutations = useDeckMutations();
   const decksQuery = useListDecks(
     { queries: {} },
@@ -45,8 +48,12 @@ export function useDecksGridModel({ untitledDeckLabel, saveTitleErrorLabel }: Us
   const [selectedDeckIds, setSelectedDeckIds] = useState<Set<string>>(new Set());
   const [searchDraft, setSearchDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [deckSearchTextsByDeckId, setDeckSearchTextsByDeckId] = useState<Record<string, string[]>>({});
-  const [deckBackgroundUrlByDeckId, setDeckBackgroundUrlByDeckId] = useState<Record<string, string | null>>({});
+  const [deckSearchTextsByDeckId, setDeckSearchTextsByDeckId] = useState<Record<string, string[]>>(
+    {},
+  );
+  const [deckBackgroundUrlByDeckId, setDeckBackgroundUrlByDeckId] = useState<
+    Record<string, string | null>
+  >({});
   const [deckDraftTargetId, setDeckDraftTargetId] = useState<string | null>(null);
   const [isDeleteDeckOpen, setIsDeleteDeckOpen] = useState(false);
   const [deckTitleDraft, setDeckTitleDraft] = useState("");
@@ -77,7 +84,7 @@ export function useDecksGridModel({ untitledDeckLabel, saveTitleErrorLabel }: Us
   );
   const selectedDeckId = useMemo(() => getSelectedDeckId(selectedDeckIds), [selectedDeckIds]);
   const selectedDeck = useMemo(
-    () => (selectedDeckId ? decks.find((deck) => deck.id === selectedDeckId) ?? null : null),
+    () => (selectedDeckId ? (decks.find((deck) => deck.id === selectedDeckId) ?? null) : null),
     [decks, selectedDeckId],
   );
   const hasSelection = selectedDeckIds.size > 0;
@@ -191,13 +198,16 @@ export function useDecksGridModel({ untitledDeckLabel, saveTitleErrorLabel }: Us
     });
   }, []);
 
-
   const clearSelectedDecks = useCallback(() => {
     setSelectedDeckIds(new Set());
   }, []);
 
   const createDeck = useCallback(async () => {
-    const createdId = await mutations.createDeck(deckTitleDraft, deckDescriptionDraft, untitledDeckLabel);
+    const createdId = await mutations.createDeck(
+      deckTitleDraft,
+      deckDescriptionDraft,
+      untitledDeckLabel,
+    );
     await refresh();
     if (createdId) setSelectedDeckIds(new Set([createdId]));
     setDeckTitleDraft("");
@@ -285,12 +295,7 @@ export function useDecksGridModel({ untitledDeckLabel, saveTitleErrorLabel }: Us
     latestSaveDeckIdRef.current = selectedDeckId;
     latestSaveTitleRef.current = selectedDeckTitleDraft;
     return flushPendingDeckTitleSave();
-  }, [
-    flushPendingDeckTitleSave,
-    isSingleSelection,
-    selectedDeckId,
-    selectedDeckTitleDraft,
-  ]);
+  }, [flushPendingDeckTitleSave, isSingleSelection, selectedDeckId, selectedDeckTitleDraft]);
 
   const onDeckTitleDraftChangeLive = useCallback(
     (nextValue: string) => {
@@ -351,7 +356,9 @@ export function useDecksGridModel({ untitledDeckLabel, saveTitleErrorLabel }: Us
         const sets = await apiClient.listDeckSets({ params: { deckId: deck.id } });
         const frontIds = new Set<string>();
         const searchable = new Set<string>();
-        const keySet = deck.keySetId ? sets.find((set) => set.id === deck.keySetId) ?? null : null;
+        const keySet = deck.keySetId
+          ? (sets.find((set) => set.id === deck.keySetId) ?? null)
+          : null;
         await Promise.all(
           sets.map(async (set) => {
             const backFaceTitle = cardTitleById.get(set.backFaceId) ?? "";

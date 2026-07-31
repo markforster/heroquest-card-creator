@@ -51,15 +51,13 @@ export function useDeckMutations(): DeckMutationCommands {
       },
       updateDeckTitle: async (deckId, title, fallbackTitle) => {
         void fallbackTitle;
-        await apiClient.updateDeck(
-          { title },
-          { params: { deckId } },
-        );
+        await apiClient.updateDeck({ title }, { params: { deckId } });
       },
       setDeckKeySet: async (deckId, keySetId) => {
         queryClient.setQueriesData(
           {
-            predicate: (query: { queryKey: ReadonlyArray<unknown> }) => isDeckScopedQuery(query, deckId),
+            predicate: (query: { queryKey: ReadonlyArray<unknown> }) =>
+              isDeckScopedQuery(query, deckId),
           },
           (current: unknown) => {
             if (!current || typeof current !== "object") return current;
@@ -68,15 +66,19 @@ export function useDeckMutations(): DeckMutationCommands {
         );
         await apiClient.updateDeck({ keySetId }, { params: { deckId } });
         await queryClient.invalidateQueries({
-          predicate: (query: { queryKey: ReadonlyArray<unknown> }) => isDeckScopedQuery(query, deckId),
+          predicate: (query: { queryKey: ReadonlyArray<unknown> }) =>
+            isDeckScopedQuery(query, deckId),
         });
         await queryClient.refetchQueries({
-          predicate: (query: { queryKey: ReadonlyArray<unknown> }) => isDeckScopedQuery(query, deckId),
+          predicate: (query: { queryKey: ReadonlyArray<unknown> }) =>
+            isDeckScopedQuery(query, deckId),
           type: "active",
         });
       },
       deleteDecks: async (ids) => {
-        await Promise.all(ids.map((id) => apiClient.deleteDeck(undefined, { params: { deckId: id } })));
+        await Promise.all(
+          ids.map((id) => apiClient.deleteDeck(undefined, { params: { deckId: id } })),
+        );
       },
       duplicateDeck: async (deckId) => {
         const result = await apiClient.duplicateDeck(undefined, { params: { deckId } });
@@ -93,7 +95,10 @@ export function useDeckMutations(): DeckMutationCommands {
           .filter((pair) => pair.backFaceId === backFaceId && pair.frontFaceId)
           .map((pair) => pair.frontFaceId as string);
         if (pairedFrontIds.length > 0) {
-          await apiClient.addDeckEntries({ frontFaceIds: pairedFrontIds }, { params: { setId: createdSet.id } });
+          await apiClient.addDeckEntries(
+            { frontFaceIds: pairedFrontIds },
+            { params: { setId: createdSet.id } },
+          );
         }
         return createdSet;
       },
@@ -128,8 +133,7 @@ export function useDeckMutations(): DeckMutationCommands {
       reorderEntries: async (setId, orderedEntryIds) => {
         await apiClient.reorderDeckEntries({ orderedEntryIds }, { params: { setId } });
       },
-      createGroup: async (deckId) =>
-        apiClient.createDeckGroup({}, { params: { deckId } }),
+      createGroup: async (deckId) => apiClient.createDeckGroup({}, { params: { deckId } }),
       reorderGroups: async (deckId, orderedGroupIds) => {
         await apiClient.reorderDeckGroups({ orderedGroupIds }, { params: { deckId } });
       },

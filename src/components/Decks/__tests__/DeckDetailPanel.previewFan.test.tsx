@@ -93,8 +93,8 @@ describe("DeckDetailPanel deck title fan preview ids", () => {
   });
 
   it("passes key-set-prioritized back-face ids to DeckDetailHeader", () => {
-    const DeckDetailPanel =
-      require("@/components/Decks/DeckDetailPanel").default as typeof import("@/components/Decks/DeckDetailPanel").default;
+    const DeckDetailPanel = require("@/components/Decks/DeckDetailPanel")
+      .default as typeof import("@/components/Decks/DeckDetailPanel").default;
 
     const props = {
       deckId: "deck-1",

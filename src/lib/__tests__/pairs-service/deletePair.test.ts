@@ -44,7 +44,9 @@ describe("deletePair", () => {
 
   async function seedCascadeScenario() {
     const db = await openHqccDexieDb();
-    await db.pairs.put(createPairRecord({ id: "pair-1", frontFaceId: "front-1", backFaceId: "back-1" }));
+    await db.pairs.put(
+      createPairRecord({ id: "pair-1", frontFaceId: "front-1", backFaceId: "back-1" }),
+    );
     await db.decks.put(createDeckRecord());
     await db.deckGroups.put(createDeckGroupRecord());
     await db.deckSets.put(createDeckSetRecord());

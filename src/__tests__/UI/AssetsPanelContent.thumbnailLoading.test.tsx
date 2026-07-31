@@ -6,7 +6,6 @@ import styles from "@/app/page.module.css";
 import AssetsPanelContent from "@/components/Assets/AssetsPanelContent";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
-
 const mockUseListAssets = jest.fn();
 const mockGetAssetObjectUrl = jest.fn();
 

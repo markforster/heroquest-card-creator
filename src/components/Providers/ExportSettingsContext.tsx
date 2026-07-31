@@ -11,10 +11,7 @@ import {
   type ExportProfile,
   type ExportProfilesState,
 } from "@/lib/data/export-profiles";
-import {
-  createDefaultExportSettings,
-  type ExportSettings,
-} from "@/lib/export-settings";
+import { createDefaultExportSettings, type ExportSettings } from "@/lib/export-settings";
 
 import type { ReactNode } from "react";
 
@@ -105,23 +102,17 @@ export function ExportSettingsProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const setSelectedProfileId = useCallback(
-    async (profileId: string) => {
-      const nextState = await setSelectedExportProfile(profileId);
-      setState(nextState);
-      setIsReady(true);
-    },
-    [],
-  );
+  const setSelectedProfileId = useCallback(async (profileId: string) => {
+    const nextState = await setSelectedExportProfile(profileId);
+    setState(nextState);
+    setIsReady(true);
+  }, []);
 
-  const setDefaultProfileId = useCallback(
-    async (profileId: string) => {
-      const nextState = await setDefaultExportProfile(profileId);
-      setState(nextState);
-      setIsReady(true);
-    },
-    [],
-  );
+  const setDefaultProfileId = useCallback(async (profileId: string) => {
+    const nextState = await setDefaultExportProfile(profileId);
+    setState(nextState);
+    setIsReady(true);
+  }, []);
 
   const resolved = useMemo(() => resolveStateDefaults(state), [state]);
 

@@ -92,13 +92,13 @@ export default function StockpileContentPane({
                 ? t("empty.noRecentCards")
                 : activeFilter.type === "recentlyDeleted"
                   ? t("empty.noRecentlyDeletedCards")
-                : activeFilter.type === "collection"
-                  ? templateFilter !== "all" && totalCount > 0
-                    ? `${t("empty.collectionFilteredByType")} ${filterLabel}.`
-                    : t("empty.collectionEmpty")
-                  : activeFilter.type === "unfiled"
-                    ? t("empty.nothingUnfiled")
-                    : t("empty.noSavedCards")}
+                  : activeFilter.type === "collection"
+                    ? templateFilter !== "all" && totalCount > 0
+                      ? `${t("empty.collectionFilteredByType")} ${filterLabel}.`
+                      : t("empty.collectionEmpty")
+                    : activeFilter.type === "unfiled"
+                      ? t("empty.nothingUnfiled")
+                      : t("empty.noSavedCards")}
           </div>
         )
       ) : (

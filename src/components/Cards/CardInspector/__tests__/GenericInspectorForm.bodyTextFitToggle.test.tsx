@@ -6,7 +6,9 @@ type MockContentFieldProps = {
   showBodyTextFitToggle?: boolean;
 };
 
-const mockContentField = jest.fn<JSX.Element, [MockContentFieldProps]>(() => <div>CONTENT_FIELD</div>);
+const mockContentField = jest.fn<JSX.Element, [MockContentFieldProps]>(() => (
+  <div>CONTENT_FIELD</div>
+));
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({

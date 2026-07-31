@@ -205,7 +205,10 @@ export function useBulkCardExport() {
     () => (
       <>
         {exportTemplate && exportTarget ? (
-          <div style={{ position: "fixed", left: -99999, top: -99999, pointerEvents: "none" }} aria-hidden="true">
+          <div
+            style={{ position: "fixed", left: -99999, top: -99999, pointerEvents: "none" }}
+            aria-hidden="true"
+          >
             <CardPreview
               ref={previewRef}
               templateId={exportTemplate.id}

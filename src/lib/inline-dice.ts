@@ -172,7 +172,8 @@ export function normalizeInlineDiceColorInput(raw?: string): string | null {
 }
 
 export function getInlineDiceDefaultSymbolColor(backgroundColor: string): string {
-  const normalized = normalizeInlineDiceColorInput(backgroundColor) ?? DICE_COLORS.white.toUpperCase();
+  const normalized =
+    normalizeInlineDiceColorInput(backgroundColor) ?? DICE_COLORS.white.toUpperCase();
   const colorKey = resolveInlineDicePaletteKey(normalized) ?? "white";
 
   return (DICE_FACE_COLORS[colorKey] ?? DICE_FACE_COLORS.white).toUpperCase();
@@ -220,14 +221,13 @@ export function buildInlineDiceToken(config: InlineDiceConfiguratorState): strin
     : `&cd-${face}-${backgroundToken};`;
 }
 
-export function parseInlineDiceTokenToConfig(
-  token: string,
-): InlineDiceConfiguratorState | null {
+export function parseInlineDiceTokenToConfig(token: string): InlineDiceConfiguratorState | null {
   const trimmed = token.trim().toLowerCase();
 
   if (trimmed.startsWith("&d6-") && trimmed.endsWith(";")) {
     const [first, second, third] = trimmed.slice(4, -1).split("-");
-    const isFirstValue = Number.isInteger(Number(first)) && Number(first) >= 1 && Number(first) <= 6;
+    const isFirstValue =
+      Number.isInteger(Number(first)) && Number(first) >= 1 && Number(first) <= 6;
     const isSecondValue =
       Number.isInteger(Number(second)) && Number(second) >= 1 && Number(second) <= 6;
     const faceRaw = isFirstValue ? first : isSecondValue ? second : null;
@@ -256,7 +256,8 @@ export function parseInlineDiceTokenToConfig(
       : COMBAT_FACE_SHORT_MAP[second]
         ? second
         : null;
-    const colorCandidate = faceCandidate === first ? second : faceCandidate === second ? first : null;
+    const colorCandidate =
+      faceCandidate === first ? second : faceCandidate === second ? first : null;
     if (!faceCandidate || !colorCandidate) return null;
 
     const combatFace = COMBAT_FACE_SHORT_MAP[faceCandidate];
@@ -360,7 +361,8 @@ function resolveColors(colorRaw?: string, faceColorRaw?: string) {
     return { color, faceColor };
   }
 
-  const normalizedKey = Object.entries(DICE_COLORS).find(([, value]) => value === color)?.[0] ?? "white";
+  const normalizedKey =
+    Object.entries(DICE_COLORS).find(([, value]) => value === color)?.[0] ?? "white";
   const faceColor = DICE_FACE_COLORS[normalizedKey] ?? DICE_FACE_COLORS.white;
 
   return { color, faceColor };
@@ -439,8 +441,10 @@ export function tokenizeInlineDice(line: string): InlineDiceSegment[] {
     } else if (rawToken.startsWith("&d6-") && rawToken.endsWith(";")) {
       const parts = rawToken.slice(4, -1).split("-");
       const [first, second, third] = parts;
-      const isFaceFirst = Number.isInteger(Number(first)) && Number(first) >= 1 && Number(first) <= 6;
-      const isFaceSecond = Number.isInteger(Number(second)) && Number(second) >= 1 && Number(second) <= 6;
+      const isFaceFirst =
+        Number.isInteger(Number(first)) && Number(first) >= 1 && Number(first) <= 6;
+      const isFaceSecond =
+        Number.isInteger(Number(second)) && Number(second) >= 1 && Number(second) <= 6;
       if (isFaceFirst && !isFaceSecond) {
         token = parseShortD6Token(first, second, third);
       } else if (!isFaceFirst && isFaceSecond) {

@@ -73,7 +73,10 @@ export default function CollectionsMembershipModal({
             <span className="visually-hidden">{t("actions.close")}</span>✕
           </button>
         </div>
-        <div className={styles.inspectorCollectionsModalBody} data-testid="collections-membership-modal">
+        <div
+          className={styles.inspectorCollectionsModalBody}
+          data-testid="collections-membership-modal"
+        >
           <CollectionsMembershipTree
             collections={collections}
             membershipSet={draftMembershipIds}

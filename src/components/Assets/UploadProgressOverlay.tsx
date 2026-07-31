@@ -47,10 +47,8 @@ export default function UploadProgressOverlay({
   const { t } = useI18n();
   if (!isOpen) return null;
 
-  const percent =
-    isIndeterminate || total === 0 ? 100 : Math.round((completed / total) * 100);
-  const hasReview =
-    Boolean(review && (review.duplicates.length > 0 || review.renames.length > 0));
+  const percent = isIndeterminate || total === 0 ? 100 : Math.round((completed / total) * 100);
+  const hasReview = Boolean(review && (review.duplicates.length > 0 || review.renames.length > 0));
   const summaryParts = [
     renamedCount > 0 ? `${t("status.renamed")}: ${renamedCount}` : null,
     skippedCount > 0 ? `${t("status.skipped")}: ${skippedCount}` : null,
@@ -139,10 +137,7 @@ export default function UploadProgressOverlay({
           {!hasReview && !isComplete ? (
             <>
               <div className={styles.exportProgressTrack} aria-hidden="true">
-                <div
-                  className={styles.exportProgressFill}
-                  style={{ width: `${percent}%` }}
-                />
+                <div className={styles.exportProgressFill} style={{ width: `${percent}%` }} />
               </div>
               <div className={styles.exportProgressLabel}>
                 {isIndeterminate ? t("status.working") : `${completed} / ${total}`}
@@ -153,11 +148,7 @@ export default function UploadProgressOverlay({
         </div>
         {isComplete && onClose ? (
           <div className={styles.stockpileOverlayActions}>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={onClose}
-            >
+            <button type="button" className="btn btn-primary btn-sm" onClick={onClose}>
               {t("actions.close")}
             </button>
           </div>
@@ -170,11 +161,7 @@ export default function UploadProgressOverlay({
             >
               {t("actions.cancel")}
             </button>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={onReviewContinue}
-            >
+            <button type="button" className="btn btn-primary btn-sm" onClick={onReviewContinue}>
               {t("actions.continue")}
             </button>
           </div>

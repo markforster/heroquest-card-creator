@@ -26,11 +26,7 @@ import type {
   InlineDiceConfiguratorValue,
 } from "@/lib/inline-dice";
 
-import {
-  loadInlineDiceRecents,
-  pushInlineDiceRecent,
-} from "./inline-dice-recents";
-
+import { loadInlineDiceRecents, pushInlineDiceRecent } from "./inline-dice-recents";
 
 type InlineDicePickerProps = {
   disabled?: boolean;
@@ -130,10 +126,7 @@ function getDefaultPresetConfigs(type: InlineDiceConfiguratorType): InlineDiceCo
   return DETAIL_DICE_FACES.map((faceOrValue) => getFacePreviewConfig("detail", faceOrValue));
 }
 
-export default function InlineDicePicker({
-  disabled = false,
-  onInsert,
-}: InlineDicePickerProps) {
+export default function InlineDicePicker({ disabled = false, onInsert }: InlineDicePickerProps) {
   const { t } = useI18n();
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
@@ -176,10 +169,14 @@ export default function InlineDicePicker({
     }
 
     const position = () => {
-      const nextPosition = computeCardInspectorPopoverPosition(buttonRef.current, popoverRef.current, {
-        minWidth: 336,
-        maxWidth: 420,
-      });
+      const nextPosition = computeCardInspectorPopoverPosition(
+        buttonRef.current,
+        popoverRef.current,
+        {
+          minWidth: 336,
+          maxWidth: 420,
+        },
+      );
       if (!nextPosition) return;
       setPopoverStyle({ left: nextPosition.left, top: nextPosition.top });
     };
@@ -346,20 +343,22 @@ export default function InlineDicePicker({
               role="dialog"
               aria-label={t("heading.inlineDiceConfigurator")}
             >
-                <div className={styles.bodyTextPickerBody}>
-                  <div className={`${styles.bodyTextPickerSection} ${styles.bodyTextPickerSectionNavDivider}`}>
-                    <div
-                      className={styles.bodyTextPickerCenteredControl}
-                      onMouseDown={(event) => event.preventDefault()}
-                    >
-                      <SegmentedControl
-                        ariaLabel={t("label.diceType")}
-                        options={typeOptions}
-                        value={config.type}
-                        onChange={handleTypeChange}
-                      />
-                    </div>
+              <div className={styles.bodyTextPickerBody}>
+                <div
+                  className={`${styles.bodyTextPickerSection} ${styles.bodyTextPickerSectionNavDivider}`}
+                >
+                  <div
+                    className={styles.bodyTextPickerCenteredControl}
+                    onMouseDown={(event) => event.preventDefault()}
+                  >
+                    <SegmentedControl
+                      ariaLabel={t("label.diceType")}
+                      options={typeOptions}
+                      value={config.type}
+                      onChange={handleTypeChange}
+                    />
                   </div>
+                </div>
 
                 <div className={styles.bodyTextPickerSection}>
                   <div className={styles.bodyTextDiceControlsRow}>
@@ -377,14 +376,18 @@ export default function InlineDicePicker({
                             key={String(option.value)}
                             type="button"
                             className={`${styles.bodyTextDiceOption} ${
-                              config.faceOrValue === option.value ? styles.bodyTextDiceOptionActive : ""
+                              config.faceOrValue === option.value
+                                ? styles.bodyTextDiceOptionActive
+                                : ""
                             }`}
                             aria-label={option.ariaLabel}
                             aria-pressed={config.faceOrValue === option.value}
                             onMouseDown={(event) => event.preventDefault()}
                             onClick={() => updateConfig({ faceOrValue: option.value })}
                           >
-                            <BodyTextDicePreview config={getFacePreviewConfig(config.type, option.value)} />
+                            <BodyTextDicePreview
+                              config={getFacePreviewConfig(config.type, option.value)}
+                            />
                           </button>
                         ))}
                       </div>
@@ -434,12 +437,16 @@ export default function InlineDicePicker({
                         </button>
                       ))
                     ) : (
-                      <div className={styles.bodyTextDiceRecentEmpty}>{t("empty.noRecentDiceTokens")}</div>
+                      <div className={styles.bodyTextDiceRecentEmpty}>
+                        {t("empty.noRecentDiceTokens")}
+                      </div>
                     )}
                   </div>
                 </div>
 
-                <div className={`${styles.bodyTextPickerSection} ${styles.bodyTextPickerSectionDivider}`}>
+                <div
+                  className={`${styles.bodyTextPickerSection} ${styles.bodyTextPickerSectionDivider}`}
+                >
                   <div className={styles.bodyTextDiceTokenRow}>
                     <div className={styles.bodyTextDiceControlsColorField}>
                       <div className={styles.bodyTextPickerFieldLabel}>{t("label.color")}</div>

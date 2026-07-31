@@ -19,9 +19,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { getCardDisplayName } from "@/lib/card-display-name";
 import { resolveEffectiveFace } from "@/lib/card-face";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
-import {
-  type PairUsageReport,
-} from "@/lib/data/decks-errors";
+import { type PairUsageReport } from "@/lib/data/decks-errors";
 import type { CardFace } from "@/types/card-face";
 import type { TemplateId } from "@/types/templates";
 
@@ -46,7 +44,8 @@ export default function TemplateChooser() {
   const { t, language } = useI18n();
   const fallbackTitle = t("label.untitledCard");
   const formatMessageWith = useMemo(
-    () => (key: string, vars: Record<string, string | number>) => formatMessage(t(key as never), vars),
+    () => (key: string, vars: Record<string, string | number>) =>
+      formatMessage(t(key as never), vars),
     [t],
   );
   const { requestRecenter } = usePreviewRenderer();
@@ -61,10 +60,14 @@ export default function TemplateChooser() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isFaceMenuOpen, setIsFaceMenuOpen] = useState(false);
   const [currentCard, setCurrentCard] = useState<CardRecord | null>(null);
-  const currentThumbnailUrl = useCardThumbnailUrl(currentCard?.id ?? null, currentCard?.thumbnailBlob ?? null, {
-    enabled: true,
-    useCache: ENABLE_CARD_THUMB_CACHE,
-  });
+  const currentThumbnailUrl = useCardThumbnailUrl(
+    currentCard?.id ?? null,
+    currentCard?.thumbnailBlob ?? null,
+    {
+      enabled: true,
+      useCache: ENABLE_CARD_THUMB_CACHE,
+    },
+  );
   const [pendingFaceChange, setPendingFaceChange] = useState<CardFace | null>(null);
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
   const [pairUsagePrompt, setPairUsagePrompt] = useState<{
@@ -238,9 +241,7 @@ export default function TemplateChooser() {
           <div
             className={`${styles.inspectorHeaderRow} d-flex align-items-center justify-content-between gap-2`}
           >
-            <div
-              className={`${styles.inspectorSectionTitle} ${styles.inspectorHeaderTitle}`}
-            >
+            <div className={`${styles.inspectorSectionTitle} ${styles.inspectorHeaderTitle}`}>
               {t("actions.template")} -{" "}
               {template ? getTemplateNameLabel(language, template) : t("ui.loading")}
             </div>
@@ -395,9 +396,7 @@ export default function TemplateChooser() {
           setPairUsagePrompt(null);
         }}
       >
-        <div>
-          {t("decks.pairUsage.body")}
-        </div>
+        <div>{t("decks.pairUsage.body")}</div>
         <ul>
           {(pairUsagePrompt?.report.cascadePlan.usage ?? []).map((usage) => (
             <li key={`${usage.deckId}-${usage.groupId}-${usage.setId}`}>

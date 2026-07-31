@@ -26,8 +26,7 @@ describe("hashArrayBufferSha256", () => {
   });
 
   it("uses crypto.subtle when available", async () => {
-    const expected =
-      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"; // sha256("abc")
+    const expected = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"; // sha256("abc")
     const digest = hexToArrayBuffer(expected);
 
     const digestMock = jest.fn(async () => digest);

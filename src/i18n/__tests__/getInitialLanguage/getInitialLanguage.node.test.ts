@@ -9,4 +9,3 @@ describe("getInitialLanguage (node)", () => {
     expect(getInitialLanguage()).toBe("en");
   });
 });
-

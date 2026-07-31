@@ -31,7 +31,9 @@
   padding: var(--space-4);
   background: var(--hq-surface-900);
   box-shadow: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .boardFillParent {
@@ -270,7 +272,9 @@
   display: inline-flex;
   flex-direction: column;
   position: relative;
-  transition: width 100ms ease-out, min-width 100ms ease-out;
+  transition:
+    width 100ms ease-out,
+    min-width 100ms ease-out;
 }
 
 .groupDragGhost {
@@ -326,24 +330,52 @@
 }
 
 .groupActiveBorder {
-  border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 58%, var(--hq-border-strong) 42%);
-  background: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 7%, var(--hq-surface-900) 93%);
+  border-color: color-mix(
+    in srgb,
+    var(--deck-board-selected-ring, #5f86ff) 58%,
+    var(--hq-border-strong) 42%
+  );
+  background: color-mix(
+    in srgb,
+    var(--deck-board-selected-ring, #5f86ff) 7%,
+    var(--hq-surface-900) 93%
+  );
 }
 
 :root[data-theme="light"] .groupActiveBorder {
-  border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 44%, var(--hq-border-strong) 56%);
-  background: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 5%, var(--hq-panel-bg) 95%);
+  border-color: color-mix(
+    in srgb,
+    var(--deck-board-selected-ring, #5f86ff) 44%,
+    var(--hq-border-strong) 56%
+  );
+  background: color-mix(
+    in srgb,
+    var(--deck-board-selected-ring, #5f86ff) 5%,
+    var(--hq-panel-bg) 95%
+  );
 }
 
 @keyframes groupEphemeralBorderPulseDark {
   0% {
-    border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 74%, var(--hq-border-strong) 26%);
+    border-color: color-mix(
+      in srgb,
+      var(--deck-board-selected-ring, #5f86ff) 74%,
+      var(--hq-border-strong) 26%
+    );
   }
   50% {
-    border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 36%, var(--hq-border-strong) 64%);
+    border-color: color-mix(
+      in srgb,
+      var(--deck-board-selected-ring, #5f86ff) 36%,
+      var(--hq-border-strong) 64%
+    );
   }
   100% {
-    border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 74%, var(--hq-border-strong) 26%);
+    border-color: color-mix(
+      in srgb,
+      var(--deck-board-selected-ring, #5f86ff) 74%,
+      var(--hq-border-strong) 26%
+    );
   }
 }
 
@@ -370,7 +402,11 @@
 @media (prefers-reduced-motion: reduce) {
   .groupEphemeralPulse {
     animation: none;
-    border-color: color-mix(in srgb, var(--deck-board-selected-ring, #5f86ff) 70%, var(--hq-border-strong) 30%);
+    border-color: color-mix(
+      in srgb,
+      var(--deck-board-selected-ring, #5f86ff) 70%,
+      var(--hq-border-strong) 30%
+    );
   }
 }
 
@@ -498,7 +534,9 @@
   flex: 0 0 auto;
   padding-top: var(--set-shell-toolbar-top);
   padding-bottom: var(--set-shell-toolbar-bottom);
-  transition: transform 100ms ease-out, margin-right 100ms ease-out;
+  transition:
+    transform 100ms ease-out,
+    margin-right 100ms ease-out;
 }
 
 .setShellEmptySlot {
@@ -531,21 +569,27 @@
 .setShellFanCollapsed {
   position: absolute;
   width: 112px;
-  height: calc((112px * 1050 / 750) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom));
+  height: calc(
+    (112px * 1050 / 750) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom)
+  );
   z-index: 1;
 }
 
 .setShellFanPartial {
   position: absolute;
   width: 112px;
-  height: calc((112px * 1050 / 750) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom));
+  height: calc(
+    (112px * 1050 / 750) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom)
+  );
   z-index: 2;
 }
 
 .setShellFanExpanded {
   position: absolute;
   width: 112px;
-  height: calc((112px * 1050 / 750) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom));
+  height: calc(
+    (112px * 1050 / 750) + var(--set-shell-toolbar-top) + var(--set-shell-toolbar-bottom)
+  );
   z-index: 3;
 }
 
@@ -555,7 +599,9 @@
   pointer-events: none;
   opacity: 1;
   will-change: transform, opacity;
-  transition: transform 100ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 100ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition:
+    transform 100ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 100ms cubic-bezier(0.22, 0.61, 0.36, 1);
   filter: drop-shadow(0 5px 12px rgba(0, 0, 0, 0.18));
 }
 
@@ -661,7 +707,11 @@
   --toolbar-action-icon: var(--hq-text-primary);
   --toolbar-action-border: var(--hq-border-strong);
   --toolbar-action-bg: var(--hq-surface-900);
-  --toolbar-action-hover-bg: color-mix(in srgb, var(--toolbar-action-hue) 24%, var(--toolbar-action-bg) 76%);
+  --toolbar-action-hover-bg: color-mix(
+    in srgb,
+    var(--toolbar-action-hue) 24%,
+    var(--toolbar-action-bg) 76%
+  );
   --toolbar-action-hover-icon: color-mix(in srgb, var(--toolbar-action-hue) 82%, white 18%);
   --toolbar-action-hover-border: color-mix(in srgb, var(--toolbar-action-hue) 70%, white 30%);
   width: 26px;
@@ -678,7 +728,10 @@
   background: var(--toolbar-action-bg);
   color: var(--toolbar-action-icon);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
-  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
 }
 
 .toolbarIconButtonEdit {
@@ -710,7 +763,6 @@
   --toolbar-action-hover-icon: color-mix(in srgb, var(--toolbar-action-hue) 88%, white 12%);
   --toolbar-action-hover-border: color-mix(in srgb, var(--toolbar-action-hue) 84%, white 16%);
 }
-
 
 .boardInfoPill {
   height: 24px;
@@ -751,7 +803,9 @@
 .boardQtyAdjustButton {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 100ms ease-out, transform 100ms ease-out;
+  transition:
+    opacity 100ms ease-out,
+    transform 100ms ease-out;
 }
 
 .boardQuantityWrap .boardInfoPill {
@@ -956,7 +1010,9 @@
   border-radius: 6px;
   background: transparent;
   box-shadow: var(--shadow-soft);
-  transition: box-shadow 120ms ease, filter 120ms ease;
+  transition:
+    box-shadow 120ms ease,
+    filter 120ms ease;
 }
 
 .setThumbFallback {
@@ -1025,19 +1081,24 @@
 }
 
 .board[data-testid="board-entries"]:has(.removeSelectedButton:hover) .setCardSelected .setThumb,
-.board[data-testid="board-entries"]:has(.removeSelectedButton:focus-visible) .setCardSelected .setThumb {
+.board[data-testid="board-entries"]:has(.removeSelectedButton:focus-visible)
+  .setCardSelected
+  .setThumb {
   animation: entriesRemoveSelectedWarningPulse 900ms ease-in-out infinite;
 }
 
 .board[data-testid="board-entries"]:has(.removeSelectedButton:hover) .setCard:not(.setCardSelected),
-.board[data-testid="board-entries"]:has(.removeSelectedButton:focus-visible) .setCard:not(.setCardSelected) {
+.board[data-testid="board-entries"]:has(.removeSelectedButton:focus-visible)
+  .setCard:not(.setCardSelected) {
   opacity: 0.48;
   filter: saturate(0.72) brightness(0.84);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .board[data-testid="board-entries"]:has(.removeSelectedButton:hover) .setCardSelected .setThumb,
-  .board[data-testid="board-entries"]:has(.removeSelectedButton:focus-visible) .setCardSelected .setThumb {
+  .board[data-testid="board-entries"]:has(.removeSelectedButton:focus-visible)
+    .setCardSelected
+    .setThumb {
     animation: none;
     box-shadow:
       0 0 0 3px var(--hq-danger-bright, #ff3040),
@@ -1046,7 +1107,11 @@
 }
 
 .boardDropActive {
-  border-color: color-mix(in srgb, var(--hq-accent, #e6b35a) 80%, var(--hq-border-strong, #c8cbe3) 20%);
+  border-color: color-mix(
+    in srgb,
+    var(--hq-accent, #e6b35a) 80%,
+    var(--hq-border-strong, #c8cbe3) 20%
+  );
   box-shadow: 0 0 0 1px var(--deck-board-drop-ring);
 }
 

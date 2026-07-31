@@ -41,8 +41,12 @@ describe("deleteSet", () => {
   it("deletes a set and its entries while keeping the only group", async () => {
     const db = await openHqccDexieDb();
     await db.deckGroups.put(createDeckGroupRecord({ id: "group-1", deckId: "deck-1" }));
-    await db.deckSets.put(createDeckSetRecord({ id: "set-1", deckId: "deck-1", groupId: "group-1" }));
-    await db.deckEntries.put(createDeckEntryRecord({ id: "entry-1", deckId: "deck-1", setId: "set-1" }));
+    await db.deckSets.put(
+      createDeckSetRecord({ id: "set-1", deckId: "deck-1", groupId: "group-1" }),
+    );
+    await db.deckEntries.put(
+      createDeckEntryRecord({ id: "entry-1", deckId: "deck-1", setId: "set-1" }),
+    );
 
     await deleteSet("set-1");
 
@@ -55,18 +59,23 @@ describe("deleteSet", () => {
 
   it("clears deck keySetId when deleting the key set and touches deck updatedAt", async () => {
     const db = await openHqccDexieDb();
-    await db.decks.put(
-      createDeckRecord({ id: "deck-1", keySetId: "set-1", updatedAt: TEST_NOW }),
-    );
+    await db.decks.put(createDeckRecord({ id: "deck-1", keySetId: "set-1", updatedAt: TEST_NOW }));
     await db.deckGroups.bulkPut([
       createDeckGroupRecord({ id: "group-1", deckId: "deck-1" }),
       createDeckGroupRecord({ id: "group-2", deckId: "deck-1", sortIndex: 1 }),
     ]);
     await db.deckSets.bulkPut([
       createDeckSetRecord({ id: "set-1", deckId: "deck-1", groupId: "group-1" }),
-      createDeckSetRecord({ id: "set-2", deckId: "deck-1", groupId: "group-2", backFaceId: "back-2" }),
+      createDeckSetRecord({
+        id: "set-2",
+        deckId: "deck-1",
+        groupId: "group-2",
+        backFaceId: "back-2",
+      }),
     ]);
-    await db.deckEntries.put(createDeckEntryRecord({ id: "entry-1", deckId: "deck-1", setId: "set-1" }));
+    await db.deckEntries.put(
+      createDeckEntryRecord({ id: "entry-1", deckId: "deck-1", setId: "set-1" }),
+    );
 
     await deleteSet("set-1");
 

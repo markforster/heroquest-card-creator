@@ -122,7 +122,9 @@ export function resolveFanFrame({
   let maxRight = Number.NEGATIVE_INFINITY;
   let minTop = Number.POSITIVE_INFINITY;
   let maxBottom = Number.NEGATIVE_INFINITY;
-  const cardsPreComp: Array<Omit<FanCardFrame, "x" | "y"> & { basePivotX: number; basePivotY: number }> = [];
+  const cardsPreComp: Array<
+    Omit<FanCardFrame, "x" | "y"> & { basePivotX: number; basePivotY: number }
+  > = [];
   const fanCenterX = 0;
   const fanCenterY = cardHeight + radiusPx + centerYOffsetPx;
   const expandedStep = cardWidth + 14;
@@ -184,8 +186,14 @@ export function resolveFanFrame({
 
   const originOffsetXPx = halfPad - minLeft;
   const originOffsetYPx = halfPad - minTop;
-  const requiredWidthPx = Math.max(cardWidth + horizontalPadding, maxRight + originOffsetXPx + halfPad);
-  const requiredHeightPx = Math.max(cardHeight + horizontalPadding, maxBottom + originOffsetYPx + halfPad);
+  const requiredWidthPx = Math.max(
+    cardWidth + horizontalPadding,
+    maxRight + originOffsetXPx + halfPad,
+  );
+  const requiredHeightPx = Math.max(
+    cardHeight + horizontalPadding,
+    maxBottom + originOffsetYPx + halfPad,
+  );
 
   return {
     cards: cardsPreComp.map((card) => ({

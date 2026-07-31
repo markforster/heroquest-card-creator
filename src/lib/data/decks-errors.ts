@@ -100,8 +100,18 @@ export type DecksError =
   | PairInUseError
   | PairDeleteConfirmRequiredError
   | CardDeleteConfirmRequiredError
-  | { code: "DECK_SET_BACK_ALREADY_USED"; deckId: string; backFaceId: string; existingSetId: string }
-  | { code: "DECK_ENTRY_PAIR_ALREADY_USED"; deckId: string; pairId: string; existingEntryId: string };
+  | {
+      code: "DECK_SET_BACK_ALREADY_USED";
+      deckId: string;
+      backFaceId: string;
+      existingSetId: string;
+    }
+  | {
+      code: "DECK_ENTRY_PAIR_ALREADY_USED";
+      deckId: string;
+      pairId: string;
+      existingEntryId: string;
+    };
 
 /**
  * Type guard for deck-service pair-in-use errors.
@@ -125,10 +135,7 @@ export function isPairDeleteConfirmRequiredError(
   error: unknown,
 ): error is PairDeleteConfirmRequiredError {
   if (!error || typeof error !== "object") return false;
-  return (
-    "code" in error &&
-    (error as { code?: string }).code === "PAIR_DELETE_CONFIRM_REQUIRED"
-  );
+  return "code" in error && (error as { code?: string }).code === "PAIR_DELETE_CONFIRM_REQUIRED";
 }
 
 /**
@@ -147,10 +154,7 @@ export function isCardDeleteConfirmRequiredError(
   error: unknown,
 ): error is CardDeleteConfirmRequiredError {
   if (!error || typeof error !== "object") return false;
-  return (
-    "code" in error &&
-    (error as { code?: string }).code === "CARD_DELETE_CONFIRM_REQUIRED"
-  );
+  return "code" in error && (error as { code?: string }).code === "CARD_DELETE_CONFIRM_REQUIRED";
 }
 
 /**

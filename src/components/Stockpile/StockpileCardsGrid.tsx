@@ -56,9 +56,7 @@ function StockpileCardsGridItem({
       ref={setNodeRef}
       className={`${styles.stockpileCardTile} ${
         card.isSelected ? styles.stockpileCardTileSelected : ""
-      } ${
-        isDragging ? styles.stockpileCardDragging : ""
-      }`}
+      } ${isDragging ? styles.stockpileCardDragging : ""}`}
       aria-label={card.name}
       onClick={(event) => actions.onCardClick(card.id, event, isPairMode)}
       onDoubleClick={() => {
@@ -109,13 +107,13 @@ function StockpileCardsGridItem({
             </div>
             {isPairMode ? null : (
               <div className={styles.stockpileGridColumnMeta}>
-              <div
-                className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]} ${
-                  styles.stockpileGridTypeVertical
-                }`}
-              >
-                {card.templateLabel}
-              </div>
+                <div
+                  className={`${styles.cardsItemTemplate} ${styles[`cardsType_${card.templateId}`]} ${
+                    styles.stockpileGridTypeVertical
+                  }`}
+                >
+                  {card.templateLabel}
+                </div>
                 <StockpilePairIndicator
                   card={card}
                   actions={actions}
@@ -193,11 +191,7 @@ export default function StockpileCardsGrid({
       {DEBUG_DISABLE_STOCKPILE_GRID_ITEMS ? null : groups.length > 0 ? (
         <div className={styles.stockpileCardGroups}>
           {groups.map((group) => (
-            <section
-              key={group.id}
-              className={styles.stockpileCardGroup}
-              aria-label={group.label}
-            >
+            <section key={group.id} className={styles.stockpileCardGroup} aria-label={group.label}>
               <h3 className={styles.stockpileCardGroupTitle}>{group.label}</h3>
               <div className={styles.stockpileCardsGrid}>
                 {group.cards.map((card) => (

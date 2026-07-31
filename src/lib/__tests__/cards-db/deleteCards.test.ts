@@ -11,7 +11,6 @@ import {
   seedNormalizedThumbnail,
 } from "@/lib/test-support/normalized-card-test-helpers";
 
-
 const enqueueDbEstimateChange = jest.fn();
 
 jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
@@ -41,8 +40,14 @@ describe("deleteCards", () => {
     const db = await openHqccDexieDb();
     await seedNormalizedCard(createCardRecord({ id: "a" }));
     await seedNormalizedCard(createCardRecord({ id: "b" }));
-    await seedNormalizedThumbnail({ cardId: "a", thumbnailBlob: new Blob(["a"], { type: "image/png" }) });
-    await seedNormalizedThumbnail({ cardId: "b", thumbnailBlob: new Blob(["b"], { type: "image/png" }) });
+    await seedNormalizedThumbnail({
+      cardId: "a",
+      thumbnailBlob: new Blob(["a"], { type: "image/png" }),
+    });
+    await seedNormalizedThumbnail({
+      cardId: "b",
+      thumbnailBlob: new Blob(["b"], { type: "image/png" }),
+    });
 
     await deleteCards(["a", "b"]);
     await expect(getCard("a")).resolves.toBeNull();

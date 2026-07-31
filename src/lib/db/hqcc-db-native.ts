@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  DB_NAME,
-  DB_VERSION,
-  META_APP_VERSION_KEY,
-  META_STORE,
-} from "@/lib/db/hqcc-dexie";
+import { DB_NAME, DB_VERSION, META_APP_VERSION_KEY, META_STORE } from "@/lib/db/hqcc-dexie";
 
 export { META_STORE };
 

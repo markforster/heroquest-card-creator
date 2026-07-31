@@ -7,9 +7,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { apiClient } from "@/api/client";
 import type { RouteShortcutHandlers } from "@/components/App/RouteShellCapabilitiesContext";
 import { DeckExportProvider } from "@/components/Decks/context/DeckExportContext";
-import {
-  resolveDeckExportFaceIds,
-} from "@/components/Decks/deck-export";
+import { resolveDeckExportFaceIds } from "@/components/Decks/deck-export";
 import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import DeckDetailPanel from "@/components/Decks/DeckDetailPanel";
 import DecksGridPanel from "@/components/Decks/DecksGridPanel";
@@ -26,10 +24,7 @@ import {
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
-import {
-  resolveExportFileName,
-  resolveZipFileName,
-} from "@/components/Stockpile/stockpile-utils";
+import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
 import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import formatMessageWith from "@/lib/format-message-with";

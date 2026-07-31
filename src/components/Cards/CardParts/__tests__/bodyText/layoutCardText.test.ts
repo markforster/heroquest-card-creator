@@ -89,7 +89,10 @@ describe("layoutCardText", () => {
     });
 
     const gapHeights = result.rows
-      .filter((row): row is Extract<(typeof result.rows)[number], { kind: "paragraph-gap" }> => row.kind === "paragraph-gap")
+      .filter(
+        (row): row is Extract<(typeof result.rows)[number], { kind: "paragraph-gap" }> =>
+          row.kind === "paragraph-gap",
+      )
       .map((row) => row.height);
 
     expect(gapHeights).toEqual([]);
@@ -112,8 +115,12 @@ describe("layoutCardText", () => {
       throw new Error("Expected text rows for block macros");
     }
 
-    expect(titleRow.tokens).toEqual([{ kind: "text", text: "Alpha", bold: true, color: "#ff0000", scale: 1.2 }]);
-    expect(subtitleRow.tokens).toEqual([{ kind: "text", text: "Beta", italic: true, underline: true, scale: 1.2 }]);
+    expect(titleRow.tokens).toEqual([
+      { kind: "text", text: "Alpha", bold: true, color: "#ff0000", scale: 1.2 },
+    ]);
+    expect(subtitleRow.tokens).toEqual([
+      { kind: "text", text: "Beta", italic: true, underline: true, scale: 1.2 },
+    ]);
   });
 
   it("does not treat inline title markup inside prose as a macro block", () => {

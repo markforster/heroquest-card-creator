@@ -5,4 +5,3 @@ describe("sanitizeStatLabelValue", () => {
     expect(sanitizeStatLabelValue("  hello  ")).toBe("hello");
   });
 });
-

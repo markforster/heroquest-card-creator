@@ -4,7 +4,6 @@ import StockpileToolbar from "@/components/Stockpile/StockpileToolbar";
 
 import type { ReactNode } from "react";
 
-
 type MockOption = {
   value: string;
   label: string;
@@ -34,7 +33,7 @@ jest.mock("react-select", () => {
         <div data-testid="mock-react-select-selected">
           {props.value && props.formatOptionLabel
             ? props.formatOptionLabel(props.value, { context: "value" })
-            : props.value?.label ?? ""}
+            : (props.value?.label ?? "")}
         </div>
         <select
           data-testid="mock-react-select"

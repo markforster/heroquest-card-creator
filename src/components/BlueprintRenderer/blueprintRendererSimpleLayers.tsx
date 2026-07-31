@@ -20,10 +20,7 @@ import { layerTypes } from "@/data/card-systems/types";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { useHeroBackLogoImageUrl } from "@/hooks/useHeroBackLogoImageUrl";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
-import {
-  getCardShowCopyrightValue,
-  resolveCardCopyrightText,
-} from "@/lib/copyright-defaults";
+import { getCardShowCopyrightValue, resolveCardCopyrightText } from "@/lib/copyright-defaults";
 import { getHeroBackLogoPlacement } from "@/lib/hero-back-logo-layout";
 import { computeContainScale } from "@/lib/image-scale";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
@@ -371,7 +368,9 @@ export function ImageLayer({
     : "relative";
   const offsetX = hasRenderInputs ? ((cardData as { imageOffsetX?: number }).imageOffsetX ?? 0) : 0;
   const offsetY = hasRenderInputs ? ((cardData as { imageOffsetY?: number }).imageOffsetY ?? 0) : 0;
-  const rotation = hasRenderInputs ? ((cardData as { imageRotation?: number }).imageRotation ?? 0) : 0;
+  const rotation = hasRenderInputs
+    ? ((cardData as { imageRotation?: number }).imageRotation ?? 0)
+    : 0;
   const layerOffsetX = typeof layer.props?.offsetX === "number" ? layer.props.offsetX : 0;
   const layerOffsetY = typeof layer.props?.offsetY === "number" ? layer.props.offsetY : 0;
   const baseWidth =
@@ -480,8 +479,9 @@ export function HeroBackLogoLayer({
   const isLogoLayer = layer.type === layerTypes.logo;
   const bounds = isLogoLayer ? getLayerBounds(blueprint, layer) : null;
   const logoLayer = isLogoLayer ? (layer as Extract<BlueprintLayer, { type: "logo" }>) : null;
-  const logoMode = (cardData as { heroBackLogoMode?: "default" | "none" | "custom" } | undefined)
-    ?.heroBackLogoMode ?? "default";
+  const logoMode =
+    (cardData as { heroBackLogoMode?: "default" | "none" | "custom" } | undefined)
+      ?.heroBackLogoMode ?? "default";
   const logoId = (cardData as { heroBackLogoId?: string } | undefined)?.heroBackLogoId;
   const logoName = (cardData as { heroBackLogoName?: string } | undefined)?.heroBackLogoName;
   const { url: customUrl, status, width, height } = useHeroBackLogoImageUrl(logoId);
@@ -661,10 +661,9 @@ export function TitleLayerHitArea({
   const textBounds = getBound(placement === "top" ? "textTop" : "text");
   const textBoundsNoRibbon = getBound(placement === "top" ? "textNoRibbonTop" : "textNoRibbon");
   const baseBounds = showRibbon
-    ? ribbonBounds ?? textBounds
-    : textBoundsNoRibbon ?? textBounds ?? ribbonBounds;
-  const copyrightBounds =
-    templateId === "labelled-back" ? getCopyrightBounds(templateId) : null;
+    ? (ribbonBounds ?? textBounds)
+    : (textBoundsNoRibbon ?? textBounds ?? ribbonBounds);
+  const copyrightBounds = templateId === "labelled-back" ? getCopyrightBounds(templateId) : null;
   const resolvedCopyrightText =
     templateId === "labelled-back" && cardData
       ? resolveCardCopyrightText(cardData as Record<string, unknown>, defaultCopyright, "copyright")
@@ -685,9 +684,7 @@ export function TitleLayerHitArea({
         }
       : baseBounds;
   const shouldRenderHitArea =
-    layer.type === "title" &&
-    showTitle &&
-    (templateId === "labelled-back" || !hasVisibleTitle);
+    layer.type === "title" && showTitle && (templateId === "labelled-back" || !hasVisibleTitle);
 
   useRegisterHoverAdornment(
     EDITOR_TARGET_IDS.title,

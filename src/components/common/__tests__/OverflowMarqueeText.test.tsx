@@ -164,7 +164,9 @@ describe("OverflowMarqueeText", () => {
   });
 
   it("supports controlled activation so text stays truncated until the parent activates it", () => {
-    const { rerender } = render(<OverflowMarqueeText text="Controlled marquee label" active={false} />);
+    const { rerender } = render(
+      <OverflowMarqueeText text="Controlled marquee label" active={false} />,
+    );
     let measurements = configureMeasurements("Controlled marquee label", 90, 190);
 
     act(() => {

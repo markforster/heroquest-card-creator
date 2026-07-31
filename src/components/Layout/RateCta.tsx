@@ -2,7 +2,6 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-
 import styles from "@/app/page.module.css";
 import avatarFile from "@/assets/avatar.jpeg";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";

@@ -22,9 +22,7 @@ async function loadObjectUrlImageDimensions(
   return { width: img.naturalWidth, height: img.naturalHeight };
 }
 
-export function useHeroBackLogoImageUrl(
-  logoId?: string,
-): {
+export function useHeroBackLogoImageUrl(logoId?: string): {
   url: string | null;
   status: HeroBackLogoImageStatus;
   width: number | null;

@@ -66,9 +66,6 @@ describe("replacePairsForBack", () => {
     expect(stored).toHaveLength(2);
     expect(stored.find((pair) => pair.id === "pair-1")).toBeUndefined();
     expect(enqueueDbEstimateChange).toHaveBeenCalledWith("pairs", "pair-1");
-    expect(enqueueDbEstimateChange).toHaveBeenCalledWith(
-      "pairs",
-      expect.any(String),
-    );
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("pairs", expect.any(String));
   });
 });

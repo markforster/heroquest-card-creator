@@ -5,11 +5,7 @@ import type { AssetRecord } from "@/lib/data/assets-db";
 
 export type AssetKindGroupId = "artwork" | "icon" | "unclassified";
 
-export const DEFAULT_ASSET_GROUP_ORDER: AssetKindGroupId[] = [
-  "artwork",
-  "icon",
-  "unclassified",
-];
+export const DEFAULT_ASSET_GROUP_ORDER: AssetKindGroupId[] = ["artwork", "icon", "unclassified"];
 
 const GROUP_LABELS: Record<AssetKindGroupId, MessageKey> = {
   artwork: "label.assetKindFilterArtwork",
@@ -25,9 +21,7 @@ export function getAssetKindGroup(asset: AssetRecord): AssetKindGroupId {
   return "unclassified";
 }
 
-function normalizePreferredOrder(
-  preferredKindOrder?: AssetKindGroupId[],
-): AssetKindGroupId[] {
+function normalizePreferredOrder(preferredKindOrder?: AssetKindGroupId[]): AssetKindGroupId[] {
   if (!preferredKindOrder || preferredKindOrder.length === 0) return [];
   const seen = new Set<AssetKindGroupId>();
   const normalized: AssetKindGroupId[] = [];
@@ -80,9 +74,7 @@ export function groupAssetsByKind(
   preferredKindOrder?: AssetKindGroupId[],
 ): Array<{ id: AssetKindGroupId; labelKey: MessageKey; assets: AssetRecord[] }> {
   const order = getGroupOrder(preferredKindOrder);
-  const grouped = new Map<AssetKindGroupId, AssetRecord[]>(
-    order.map((id) => [id, []]),
-  );
+  const grouped = new Map<AssetKindGroupId, AssetRecord[]>(order.map((id) => [id, []]));
 
   assets.forEach((asset) => {
     const groupId = getAssetKindGroup(asset);

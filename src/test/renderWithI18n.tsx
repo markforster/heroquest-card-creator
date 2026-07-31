@@ -9,10 +9,7 @@ function Wrapper({ children }: { children: ReactNode }) {
   return <I18nProvider>{children}</I18nProvider>;
 }
 
-export function renderWithI18n(
-  ui: ReactElement,
-  options?: Omit<RenderOptions, "wrapper">,
-) {
+export function renderWithI18n(ui: ReactElement, options?: Omit<RenderOptions, "wrapper">) {
   return render(ui, {
     wrapper: Wrapper,
     ...options,

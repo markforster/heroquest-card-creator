@@ -1,4 +1,3 @@
-
 import { collectionCreateInputSchema } from "@/api/collections";
 import { createCollection } from "@/lib/data/collections-db";
 

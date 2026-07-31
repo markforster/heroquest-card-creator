@@ -41,9 +41,7 @@ describe("toEntriesBoardModel", () => {
 
     expect(model.groupIds).toEqual(["entries:lane"]);
     expect(model.itemsByGroup["entries:lane"]).toHaveLength(1);
-    expect(model.itemsByGroup["entries:lane"][0]).toBe(
-      "ephemeral:empty-slot:group:entries:lane",
-    );
+    expect(model.itemsByGroup["entries:lane"][0]).toBe("ephemeral:empty-slot:group:entries:lane");
   });
 
   it("emits normal entry ids when entries exist", () => {

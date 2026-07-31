@@ -121,7 +121,9 @@ function toMarkdown(result: ComparisonResult) {
     lines.push("## Extra Operations");
     lines.push("");
     for (const operation of result.extraOperations) {
-      const operationIdSuffix = operation.operationId ? `, operationId \`${operation.operationId}\`` : "";
+      const operationIdSuffix = operation.operationId
+        ? `, operationId \`${operation.operationId}\``
+        : "";
       lines.push(
         `- \`${operation.method.toUpperCase()} ${operation.openApiPath}\`${operationIdSuffix}`,
       );
@@ -132,7 +134,9 @@ function toMarkdown(result: ComparisonResult) {
   lines.push("## Matched Operations");
   lines.push("");
   for (const operation of result.matchedOperations) {
-    const operationIdSuffix = operation.operationId ? `, operationId \`${operation.operationId}\`` : "";
+    const operationIdSuffix = operation.operationId
+      ? `, operationId \`${operation.operationId}\``
+      : "";
     lines.push(
       `- \`${operation.method.toUpperCase()} ${operation.openApiPath}\` from alias \`${operation.alias}\`${operationIdSuffix}`,
     );
@@ -185,9 +189,7 @@ const comparisonJsonPath = resolve(outputDir, "zodios-openapi-comparison.json");
 const comparisonMarkdownPath = resolve(outputDir, "zodios-openapi-comparison.md");
 const scalarAssetsOutputDir = resolve(outputDir, "scalar-browser");
 const scalarHtmlOutputPath = resolve(outputDir, "scalar-api-reference.html");
-const scalarBundleSourceDir = resolve(
-  "node_modules/@scalar/api-reference/dist/browser",
-);
+const scalarBundleSourceDir = resolve("node_modules/@scalar/api-reference/dist/browser");
 
 for (const filePath of [
   openApiOutputPath,

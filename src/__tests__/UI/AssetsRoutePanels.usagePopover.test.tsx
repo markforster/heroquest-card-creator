@@ -5,7 +5,6 @@ import type { CardRecord } from "@/api/cards";
 import AssetsRoutePanels from "@/components/Assets/AssetsRoutePanels";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
-
 const mockNavigate = jest.fn();
 const mockSaveCurrentCard = jest.fn();
 const mockRequestRecenter = jest.fn();
@@ -71,7 +70,13 @@ jest.mock("@/components/common/ModalShell", () => ({
     isOpen: boolean;
     children: React.ReactNode;
     footer?: React.ReactNode;
-  }) => (isOpen ? <div>{children}{footer}</div> : null),
+  }) =>
+    isOpen ? (
+      <div>
+        {children}
+        {footer}
+      </div>
+    ) : null,
 }));
 
 jest.mock("@/components/Modals/ConfirmModal", () => ({
@@ -202,7 +207,9 @@ describe("AssetsRoutePanels usage popover (UI)", () => {
 
     await screen.findByText("Used on cards");
     await waitFor(() => {
-      expect(screen.getByText((content) => content.replace(/\s+/g, " ").trim() === "0 Cards")).toBeInTheDocument();
+      expect(
+        screen.getByText((content) => content.replace(/\s+/g, " ").trim() === "0 Cards"),
+      ).toBeInTheDocument();
     });
 
     expect(screen.queryByRole("button", { name: "0 Cards" })).not.toBeInTheDocument();

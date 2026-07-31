@@ -146,9 +146,15 @@ describe("importBackupJson", () => {
     );
 
     const db = await openHqccDexieDb();
-    await expect(db.decks.get("deck-1")).resolves.toEqual(expect.objectContaining({ id: "deck-1" }));
-    await expect(db.deckGroups.get("group-1")).resolves.toEqual(expect.objectContaining({ id: "group-1" }));
-    await expect(db.deckSets.get("set-1")).resolves.toEqual(expect.objectContaining({ id: "set-1" }));
+    await expect(db.decks.get("deck-1")).resolves.toEqual(
+      expect.objectContaining({ id: "deck-1" }),
+    );
+    await expect(db.deckGroups.get("group-1")).resolves.toEqual(
+      expect.objectContaining({ id: "group-1" }),
+    );
+    await expect(db.deckSets.get("set-1")).resolves.toEqual(
+      expect.objectContaining({ id: "set-1" }),
+    );
     await expect(db.deckEntries.get("entry-1")).resolves.toEqual(
       expect.objectContaining({ id: "entry-1" }),
     );

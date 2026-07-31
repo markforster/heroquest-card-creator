@@ -2,7 +2,10 @@ import type { PrintComposition } from "@/lib/pdf-export/types";
 
 export type AlignmentSide = "front" | "back";
 
-export function buildAlignmentTestComposition(base: PrintComposition, includeBacks: boolean): PrintComposition {
+export function buildAlignmentTestComposition(
+  base: PrintComposition,
+  includeBacks: boolean,
+): PrintComposition {
   return {
     totalSlots: base.totalSlots,
     sheets: base.sheets.map((sheet) => ({

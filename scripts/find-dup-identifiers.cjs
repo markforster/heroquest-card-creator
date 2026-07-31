@@ -9,12 +9,7 @@ const { Project, ts } = require("ts-morph");
 
 const DEFAULT_REPO_ROOT = "/Users/markforster/Workspace/heroquest-card-creator";
 const DEFAULT_SCOPE = "src";
-const DEFAULT_OUT_DIR = path.join(
-  DEFAULT_REPO_ROOT,
-  "artefacts",
-  "reports",
-  "dup-identifiers",
-);
+const DEFAULT_OUT_DIR = path.join(DEFAULT_REPO_ROOT, "artefacts", "reports", "dup-identifiers");
 const DEFAULT_IGNORE_PATTERNS = [
   /(?:^|\/)__tests__(?:\/|$)/,
   /(?:^|\/)__testutils__(?:\/|$)/,

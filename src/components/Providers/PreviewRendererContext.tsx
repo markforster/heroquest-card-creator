@@ -115,9 +115,7 @@ export function PreviewRendererProvider({ children }: { children: React.ReactNod
   );
 
   return (
-    <PreviewRendererContext.Provider value={value}>
-      {children}
-    </PreviewRendererContext.Provider>
+    <PreviewRendererContext.Provider value={value}>{children}</PreviewRendererContext.Provider>
   );
 }
 

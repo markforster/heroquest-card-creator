@@ -78,16 +78,20 @@ describe("DeckGroupGridList drag selection boundary", () => {
   it("keeps selected styling on committed group while back-face drag hover reveals another multi-set group", () => {
     const { container } = render(
       <DeckGroupGridList
-        groups={[
-          { id: "group-1", title: "Group 1", sortIndex: 0 },
-          { id: "group-2", title: "Group 2", sortIndex: 1 },
-        ] as never}
-        sets={[
-          { id: "set-1", groupId: "group-1", sortIndex: 0, backFaceId: "back-1" },
-          { id: "set-4", groupId: "group-1", sortIndex: 1, backFaceId: "back-4" },
-          { id: "set-2", groupId: "group-2", sortIndex: 0, backFaceId: "back-2" },
-          { id: "set-3", groupId: "group-2", sortIndex: 1, backFaceId: "back-3" },
-        ] as never}
+        groups={
+          [
+            { id: "group-1", title: "Group 1", sortIndex: 0 },
+            { id: "group-2", title: "Group 2", sortIndex: 1 },
+          ] as never
+        }
+        sets={
+          [
+            { id: "set-1", groupId: "group-1", sortIndex: 0, backFaceId: "back-1" },
+            { id: "set-4", groupId: "group-1", sortIndex: 1, backFaceId: "back-4" },
+            { id: "set-2", groupId: "group-2", sortIndex: 0, backFaceId: "back-2" },
+            { id: "set-3", groupId: "group-2", sortIndex: 1, backFaceId: "back-3" },
+          ] as never
+        }
         selectedGroupId="group-1"
         selectedSetId="set-1"
         isDropOver={false}
@@ -141,15 +145,19 @@ describe("DeckGroupGridList drag selection boundary", () => {
   it("fully expands a collapsed multi-set destination group during set drag hover", () => {
     const { container } = render(
       <DeckGroupGridList
-        groups={[
-          { id: "group-1", title: "Group 1", sortIndex: 0 },
-          { id: "group-2", title: "Group 2", sortIndex: 1 },
-        ] as never}
-        sets={[
-          { id: "set-1", groupId: "group-1", sortIndex: 0, backFaceId: "back-1" },
-          { id: "set-2", groupId: "group-2", sortIndex: 0, backFaceId: "back-2" },
-          { id: "set-3", groupId: "group-2", sortIndex: 1, backFaceId: "back-3" },
-        ] as never}
+        groups={
+          [
+            { id: "group-1", title: "Group 1", sortIndex: 0 },
+            { id: "group-2", title: "Group 2", sortIndex: 1 },
+          ] as never
+        }
+        sets={
+          [
+            { id: "set-1", groupId: "group-1", sortIndex: 0, backFaceId: "back-1" },
+            { id: "set-2", groupId: "group-2", sortIndex: 0, backFaceId: "back-2" },
+            { id: "set-3", groupId: "group-2", sortIndex: 1, backFaceId: "back-3" },
+          ] as never
+        }
         selectedGroupId="group-1"
         selectedSetId="set-1"
         isDropOver={false}
@@ -197,15 +205,15 @@ describe("DeckGroupGridList drag selection boundary", () => {
     const { container, rerender } = render(
       <DeckGroupGridList {...props} dragTargetGroupId="group-2" />,
     );
-    const revealedFan = Array.from(container.querySelectorAll('[data-testid="mock-card-fan"]')).find(
-      (node) => node.getAttribute("data-card-ids") === "back-2,back-3",
-    );
+    const revealedFan = Array.from(
+      container.querySelectorAll('[data-testid="mock-card-fan"]'),
+    ).find((node) => node.getAttribute("data-card-ids") === "back-2,back-3");
     expect(revealedFan?.getAttribute("data-expanded")).toBe("true");
 
     rerender(<DeckGroupGridList {...props} dragTargetGroupId={null} />);
-    const collapsedFan = Array.from(container.querySelectorAll('[data-testid="mock-card-fan"]')).find(
-      (node) => node.getAttribute("data-card-ids") === "back-2,back-3",
-    );
+    const collapsedFan = Array.from(
+      container.querySelectorAll('[data-testid="mock-card-fan"]'),
+    ).find((node) => node.getAttribute("data-card-ids") === "back-2,back-3");
     expect(collapsedFan?.getAttribute("data-expanded")).toBe("false");
   });
 

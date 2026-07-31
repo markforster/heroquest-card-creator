@@ -4,7 +4,6 @@ import CutMarkStyleSelect from "@/components/Export/CutMarkStyleSelect";
 
 import type { ReactNode } from "react";
 
-
 type MockOption = {
   value: string;
   label: string;
@@ -26,16 +25,14 @@ jest.mock("react-select", () => {
         <div data-testid="mock-react-select-selected">
           {props.value && props.formatOptionLabel
             ? props.formatOptionLabel(props.value, { context: "value" })
-            : props.value?.label ?? ""}
+            : (props.value?.label ?? "")}
         </div>
         <div data-testid="mock-react-select-options">
           {props.options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => props.onChange(option)}
-            >
-              {props.formatOptionLabel ? props.formatOptionLabel(option, { context: "menu" }) : option.label}
+            <button key={option.value} type="button" onClick={() => props.onChange(option)}>
+              {props.formatOptionLabel
+                ? props.formatOptionLabel(option, { context: "menu" })
+                : option.label}
             </button>
           ))}
         </div>
@@ -48,13 +45,13 @@ jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) =>
       (
-        {
+        ({
           "label.cutMarkStyleSolid": "Solid",
           "label.cutMarkStyleDashed": "Dashed",
           "label.cutMarkStyleLongDashed": "Long dashed",
           "label.cutMarkStyleDotted": "Dotted",
           "label.cutMarkStyleTicks": "Ticks",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));
@@ -64,9 +61,11 @@ describe("CutMarkStyleSelect", () => {
     render(<CutMarkStyleSelect value="dashed" onChange={jest.fn()} />);
 
     expect(screen.getByTestId("mock-react-select-selected")).toHaveTextContent("Dashed");
-    expect(screen.getByTestId("mock-react-select-selected").querySelector(
-      '[data-cut-mark-style-preview="dashed"]',
-    )).not.toBeNull();
+    expect(
+      screen
+        .getByTestId("mock-react-select-selected")
+        .querySelector('[data-cut-mark-style-preview="dashed"]'),
+    ).not.toBeNull();
     expect(screen.getByTestId("mock-react-select-searchable")).toHaveTextContent("false");
   });
 
@@ -98,9 +97,11 @@ describe("CutMarkStyleSelect", () => {
   it("renders preview markup for selected value and menu options", () => {
     render(<CutMarkStyleSelect value="ticks" onChange={jest.fn()} />);
 
-    const previews = document.querySelectorAll('[data-cut-mark-style-preview]');
+    const previews = document.querySelectorAll("[data-cut-mark-style-preview]");
     expect(previews.length).toBe(6);
-    expect(document.querySelectorAll('[data-cut-mark-style-preview="ticks"]').length).toBeGreaterThan(1);
+    expect(
+      document.querySelectorAll('[data-cut-mark-style-preview="ticks"]').length,
+    ).toBeGreaterThan(1);
     expect(document.querySelectorAll('[data-cut-mark-style-preview="solid"]').length).toBe(1);
   });
 });

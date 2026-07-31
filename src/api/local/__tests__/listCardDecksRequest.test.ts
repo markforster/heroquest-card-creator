@@ -20,7 +20,9 @@ describe("listCardDecksRequestPlugin", () => {
   it("returns deck membership from service", async () => {
     listCardDeckMembership.mockResolvedValue([{ deckId: "d1", deckTitle: "Deck One", count: 3 }]);
 
-    const resolved = await listCardDecksRequestPlugin.request?.([], { params: { id: "card-1" } } as never);
+    const resolved = await listCardDecksRequestPlugin.request?.([], {
+      params: { id: "card-1" },
+    } as never);
     const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
     const response = await adapter?.();
 

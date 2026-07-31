@@ -125,8 +125,12 @@ describe("i18n remediation report generator", () => {
     });
 
     expect(markdown).toContain("# i18n Untranslated Remediation Report");
-    expect(markdown).toContain("| de | actions.apply | Apply | Apply | untranslated | `src/components/Example.tsx` |  |");
-    expect(markdown).toContain("| de | decks.addCards | Add cards… | Add cards… | missing | `src/components/Decks/DecksGridPanel.tsx` |  |");
+    expect(markdown).toContain(
+      "| de | actions.apply | Apply | Apply | untranslated | `src/components/Example.tsx` |  |",
+    );
+    expect(markdown).toContain(
+      "| de | decks.addCards | Add cards… | Add cards… | missing | `src/components/Decks/DecksGridPanel.tsx` |  |",
+    );
     expect(markdown).toContain("Source scan: Production files under `src/` only");
   });
 });

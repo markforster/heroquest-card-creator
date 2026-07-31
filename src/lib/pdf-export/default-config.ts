@@ -12,7 +12,9 @@ export const DEFAULT_PDF_PRINT_CONFIG: PrintConfig = {
   duplexPreset: "mirrorX",
 };
 
-export function normalizePdfPrintConfig(value: Partial<PrintConfig> | null | undefined): PrintConfig {
+export function normalizePdfPrintConfig(
+  value: Partial<PrintConfig> | null | undefined,
+): PrintConfig {
   const next = value ?? {};
   return {
     paper: next.paper === "Letter" ? "Letter" : "A4",
@@ -29,7 +31,9 @@ export function normalizePdfPrintConfig(value: Partial<PrintConfig> | null | und
     },
     cardMm: {
       width: Number.isFinite(next.cardMm?.width) ? Math.max(1, Number(next.cardMm?.width)) : 63.5,
-      height: Number.isFinite(next.cardMm?.height) ? Math.max(1, Number(next.cardMm?.height)) : 88.9,
+      height: Number.isFinite(next.cardMm?.height)
+        ? Math.max(1, Number(next.cardMm?.height))
+        : 88.9,
     },
     mode: next.mode === "frontsOnly" ? "frontsOnly" : "frontAndBack",
     bleedMode: next.bleedMode === "layoutBleed" ? "layoutBleed" : "bakedInImage",

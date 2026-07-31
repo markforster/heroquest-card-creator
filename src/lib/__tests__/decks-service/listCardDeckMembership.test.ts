@@ -47,7 +47,11 @@ describe("listCardDeckMembership", () => {
 
   it("resolves deck counts for front cards via pair to entry to set to deck", async () => {
     getCard.mockResolvedValue(
-      createSavedCardRecord({ id: "front-1", templateId: "hero", face: "front" } satisfies Partial<CardRecord>),
+      createSavedCardRecord({
+        id: "front-1",
+        templateId: "hero",
+        face: "front",
+      } satisfies Partial<CardRecord>),
     );
     const db = await openHqccDexieDb();
     await db.decks.bulkPut([
@@ -55,13 +59,46 @@ describe("listCardDeckMembership", () => {
       createDeckRecord({ id: "deck-a", title: "Alpha" }),
     ]);
     await db.deckSets.bulkPut([
-      createDeckSetRecord({ id: "set-1", deckId: "deck-a", groupId: "group-1", sortIndex: 0, backFaceId: "back-1" }),
-      createDeckSetRecord({ id: "set-2", deckId: "deck-b", groupId: "group-2", sortIndex: 1, backFaceId: "back-2" }),
+      createDeckSetRecord({
+        id: "set-1",
+        deckId: "deck-a",
+        groupId: "group-1",
+        sortIndex: 0,
+        backFaceId: "back-1",
+      }),
+      createDeckSetRecord({
+        id: "set-2",
+        deckId: "deck-b",
+        groupId: "group-2",
+        sortIndex: 1,
+        backFaceId: "back-2",
+      }),
     ]);
     await db.deckEntries.bulkPut([
-      createDeckEntryRecord({ id: "entry-1", deckId: "deck-a", setId: "set-1", pairId: "pair-1", count: 2, sortIndex: 0 }),
-      createDeckEntryRecord({ id: "entry-2", deckId: "deck-a", setId: "set-1", pairId: "pair-1", count: 1, sortIndex: 1 }),
-      createDeckEntryRecord({ id: "entry-3", deckId: "deck-b", setId: "set-2", pairId: "pair-2", count: 4, sortIndex: 0 }),
+      createDeckEntryRecord({
+        id: "entry-1",
+        deckId: "deck-a",
+        setId: "set-1",
+        pairId: "pair-1",
+        count: 2,
+        sortIndex: 0,
+      }),
+      createDeckEntryRecord({
+        id: "entry-2",
+        deckId: "deck-a",
+        setId: "set-1",
+        pairId: "pair-1",
+        count: 1,
+        sortIndex: 1,
+      }),
+      createDeckEntryRecord({
+        id: "entry-3",
+        deckId: "deck-b",
+        setId: "set-2",
+        pairId: "pair-2",
+        count: 4,
+        sortIndex: 0,
+      }),
     ]);
     await db.pairs.bulkPut([
       createPairRecord({ id: "pair-1", frontFaceId: "front-1", backFaceId: "back-1" }),
@@ -76,7 +113,11 @@ describe("listCardDeckMembership", () => {
 
   it("resolves deck counts for back cards via sets and entries", async () => {
     getCard.mockResolvedValue(
-      createSavedCardRecord({ id: "back-9", templateId: "labelled-back", face: "back" } satisfies Partial<CardRecord>),
+      createSavedCardRecord({
+        id: "back-9",
+        templateId: "labelled-back",
+        face: "back",
+      } satisfies Partial<CardRecord>),
     );
     const db = await openHqccDexieDb();
     await db.decks.bulkPut([
@@ -84,14 +125,50 @@ describe("listCardDeckMembership", () => {
       createDeckRecord({ id: "deck-2", title: "Arena Deck" }),
     ]);
     await db.deckSets.bulkPut([
-      createDeckSetRecord({ id: "set-1", deckId: "deck-1", groupId: "group-1", sortIndex: 0, backFaceId: "back-9" }),
-      createDeckSetRecord({ id: "set-2", deckId: "deck-1", groupId: "group-1", sortIndex: 1, backFaceId: "back-9" }),
-      createDeckSetRecord({ id: "set-3", deckId: "deck-2", groupId: "group-2", sortIndex: 0, backFaceId: "back-9" }),
+      createDeckSetRecord({
+        id: "set-1",
+        deckId: "deck-1",
+        groupId: "group-1",
+        sortIndex: 0,
+        backFaceId: "back-9",
+      }),
+      createDeckSetRecord({
+        id: "set-2",
+        deckId: "deck-1",
+        groupId: "group-1",
+        sortIndex: 1,
+        backFaceId: "back-9",
+      }),
+      createDeckSetRecord({
+        id: "set-3",
+        deckId: "deck-2",
+        groupId: "group-2",
+        sortIndex: 0,
+        backFaceId: "back-9",
+      }),
     ]);
     await db.deckEntries.bulkPut([
-      createDeckEntryRecord({ id: "entry-1", deckId: "deck-1", setId: "set-1", pairId: "pair-1", count: 2 }),
-      createDeckEntryRecord({ id: "entry-2", deckId: "deck-1", setId: "set-2", pairId: "pair-2", count: 1 }),
-      createDeckEntryRecord({ id: "entry-3", deckId: "deck-2", setId: "set-3", pairId: "pair-3", count: 3 }),
+      createDeckEntryRecord({
+        id: "entry-1",
+        deckId: "deck-1",
+        setId: "set-1",
+        pairId: "pair-1",
+        count: 2,
+      }),
+      createDeckEntryRecord({
+        id: "entry-2",
+        deckId: "deck-1",
+        setId: "set-2",
+        pairId: "pair-2",
+        count: 1,
+      }),
+      createDeckEntryRecord({
+        id: "entry-3",
+        deckId: "deck-2",
+        setId: "set-3",
+        pairId: "pair-3",
+        count: 3,
+      }),
     ]);
 
     await expect(listCardDeckMembership("back-9")).resolves.toEqual([

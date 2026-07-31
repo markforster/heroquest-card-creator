@@ -70,7 +70,8 @@ function runStrategyPipeline(
       ) {
         return { layout: result.layout, attempts };
       }
-      if (result.success && context.role !== "statHeading") return { layout: result.layout, attempts };
+      if (result.success && context.role !== "statHeading")
+        return { layout: result.layout, attempts };
     }
 
     if (strategy === "shrink") {
@@ -82,7 +83,8 @@ function runStrategyPipeline(
         lineHeight: result.layout.lineHeight ?? context.lineHeight,
         lines: result.layout.lines,
       };
-      if (result.success && context.role !== "statHeading") return { layout: result.layout, attempts };
+      if (result.success && context.role !== "statHeading")
+        return { layout: result.layout, attempts };
     }
 
     if (strategy === "ellipsis") {

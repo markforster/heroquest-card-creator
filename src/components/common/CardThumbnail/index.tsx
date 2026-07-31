@@ -41,7 +41,7 @@ export default function CardThumbnail({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={alt} className={imgClassName} onLoad={onLoad} onError={onError} />
       ) : (
-        fallback ?? <div className={styles.fallback} />
+        (fallback ?? <div className={styles.fallback} />)
       )}
     </div>
   );

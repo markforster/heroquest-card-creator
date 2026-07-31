@@ -5,13 +5,7 @@ import type { CSSProperties, ReactNode } from "react";
 export type BoardId = "groups" | "entries" | "source";
 export type GroupId = string;
 export type SetId = string;
-export type SetRenderState =
-  | "idle"
-  | "dragging"
-  | "ghost"
-  | "dropTarget"
-  | "pending"
-  | "overlay";
+export type SetRenderState = "idle" | "dragging" | "ghost" | "dropTarget" | "pending" | "overlay";
 
 export type SetToolbarContext = {
   boardId: BoardId;

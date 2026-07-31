@@ -29,4 +29,3 @@ describe("usePopupState", () => {
     expect(result.current.isClosed).toBe(true);
   });
 });
-

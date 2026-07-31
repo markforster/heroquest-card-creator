@@ -49,12 +49,32 @@ describe("deleteDeck", () => {
       createDeckGroupRecord({ id: "group-b-1", deckId: "deck-b", title: "B1" }),
     ]);
     await db.deckSets.bulkPut([
-      createDeckSetRecord({ id: "set-a-1", deckId: "deck-a", groupId: "group-a-1", backFaceId: "back-a" }),
-      createDeckSetRecord({ id: "set-b-1", deckId: "deck-b", groupId: "group-b-1", backFaceId: "back-b" }),
+      createDeckSetRecord({
+        id: "set-a-1",
+        deckId: "deck-a",
+        groupId: "group-a-1",
+        backFaceId: "back-a",
+      }),
+      createDeckSetRecord({
+        id: "set-b-1",
+        deckId: "deck-b",
+        groupId: "group-b-1",
+        backFaceId: "back-b",
+      }),
     ]);
     await db.deckEntries.bulkPut([
-      createDeckEntryRecord({ id: "entry-a-1", deckId: "deck-a", setId: "set-a-1", pairId: "pair-a" }),
-      createDeckEntryRecord({ id: "entry-b-1", deckId: "deck-b", setId: "set-b-1", pairId: "pair-b" }),
+      createDeckEntryRecord({
+        id: "entry-a-1",
+        deckId: "deck-a",
+        setId: "set-a-1",
+        pairId: "pair-a",
+      }),
+      createDeckEntryRecord({
+        id: "entry-b-1",
+        deckId: "deck-b",
+        setId: "set-b-1",
+        pairId: "pair-b",
+      }),
     ]);
     await db.pairs.bulkPut([
       createPairRecord({ id: "pair-a", frontFaceId: "front-a", backFaceId: "back-a" }),

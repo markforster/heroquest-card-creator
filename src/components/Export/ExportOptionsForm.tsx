@@ -89,7 +89,11 @@ export default function ExportOptionsForm({
         />
         <div className={styles.settingsPanelRow}>
           <span>{bleedPx}px</span>
-          {finalSizeLabel ? <span>{t("label.finalSize")}: {finalSizeLabel}</span> : null}
+          {finalSizeLabel ? (
+            <span>
+              {t("label.finalSize")}: {finalSizeLabel}
+            </span>
+          ) : null}
         </div>
       </label>
       {showAskBeforeExport ? (
@@ -241,7 +245,9 @@ export default function ExportOptionsForm({
     </SettingsGroup>
   ) : (
     <div className={`${styles.settingsPanelSection} d-flex flex-column gap-3`}>
-      {headingLabelKey ? <div className={styles.settingsPanelSectionTitle}>{t(headingLabelKey)}</div> : null}
+      {headingLabelKey ? (
+        <div className={styles.settingsPanelSectionTitle}>{t(headingLabelKey)}</div>
+      ) : null}
       {exportSettingsContent}
     </div>
   );

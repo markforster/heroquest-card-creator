@@ -22,4 +22,3 @@ describe("saveStatLabelOverrides", () => {
     window.localStorage.setItem = original;
   });
 });
-

@@ -9,7 +9,13 @@ describe("pdf-export alignment-test", () => {
     const base = {
       totalSlots: 3,
       sheets: [
-        { sheetIndex: 0, slots: [{ slotId: "a", frontId: "f1", backId: "b1" }, { slotId: "b", frontId: "f2", backId: "b2" }] },
+        {
+          sheetIndex: 0,
+          slots: [
+            { slotId: "a", frontId: "f1", backId: "b1" },
+            { slotId: "b", frontId: "f2", backId: "b2" },
+          ],
+        },
         { sheetIndex: 1, slots: [{ slotId: "c", frontId: "f3", backId: "b3" }] },
       ],
     };

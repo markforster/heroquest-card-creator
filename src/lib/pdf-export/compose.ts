@@ -12,7 +12,9 @@ export async function composeDeckSlotPairs(
     listPairsMap(),
   ]);
 
-  const groupOrder = new Map(groups.sort((a, b) => a.sortIndex - b.sortIndex).map((g, index) => [g.id, index]));
+  const groupOrder = new Map(
+    groups.sort((a, b) => a.sortIndex - b.sortIndex).map((g, index) => [g.id, index]),
+  );
 
   const orderedSets = [...sets].sort((a, b) => {
     const groupA = groupOrder.get(a.groupId) ?? Number.MAX_SAFE_INTEGER;
@@ -34,7 +36,7 @@ export async function composeDeckSlotPairs(
         slotPairs.push({
           slotId: `${set.id}:${entry.id}:${copyIndex}`,
           frontId,
-          backId: mode === "frontAndBack" ? set.backFaceId ?? null : null,
+          backId: mode === "frontAndBack" ? (set.backFaceId ?? null) : null,
         });
       }
     }

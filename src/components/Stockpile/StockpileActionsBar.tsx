@@ -68,11 +68,7 @@ export default function StockpileActionsBar({
   return (
     <div className={styles.stockpileActionsBar}>
       {showViewToggle ? (
-        <div
-          className={styles.stockpileViewToggle}
-          role="group"
-          aria-label={t("aria.viewMode")}
-        >
+        <div className={styles.stockpileViewToggle} role="group" aria-label={t("aria.viewMode")}>
           <button
             type="button"
             className={`${styles.stockpileViewButton} ${
@@ -96,10 +92,7 @@ export default function StockpileActionsBar({
         </div>
       ) : null}
       {isPairBacks || !showSelectAll ? null : (
-        <label
-          className="form-check form-check-inline mb-0"
-          title={t("tooltip.selectAllCards")}
-        >
+        <label className="form-check form-check-inline mb-0" title={t("tooltip.selectAllCards")}>
           <input
             ref={selectAllRef}
             className="form-check-input hq-checkbox"
@@ -115,7 +108,7 @@ export default function StockpileActionsBar({
         </label>
       )}
       <div className={`${styles.assetsActions} d-flex align-items-center gap-2 ms-auto`}>
-        {showAddToCollectionAction ? addToCollectionControl ?? null : null}
+        {showAddToCollectionAction ? (addToCollectionControl ?? null) : null}
         {activeFilter.type === "collection" ? (
           <button
             type="button"

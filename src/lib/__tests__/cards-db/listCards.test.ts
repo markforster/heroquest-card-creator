@@ -12,7 +12,6 @@ import {
   seedNormalizedThumbnail,
 } from "@/lib/test-support/normalized-card-test-helpers";
 
-
 describe("listCards", () => {
   beforeEach(async () => {
     installFakeIndexedDb();
@@ -33,7 +32,9 @@ describe("listCards", () => {
 
   it("excludes soft-deleted cards by default", async () => {
     await seedNormalizedCard(createCardRecord({ id: "1", name: "A", nameLower: "a" }));
-    await seedNormalizedCard(createCardRecord({ id: "2", name: "B", nameLower: "b", deletedAt: 123 }));
+    await seedNormalizedCard(
+      createCardRecord({ id: "2", name: "B", nameLower: "b", deletedAt: 123 }),
+    );
 
     const result = await listCards();
     expect(result.map((r) => r.id)).toEqual(["1"]);
@@ -41,7 +42,9 @@ describe("listCards", () => {
 
   it("can include or isolate soft-deleted cards", async () => {
     await seedNormalizedCard(createCardRecord({ id: "1", name: "A", nameLower: "a" }));
-    await seedNormalizedCard(createCardRecord({ id: "2", name: "B", nameLower: "b", deletedAt: 123 }));
+    await seedNormalizedCard(
+      createCardRecord({ id: "2", name: "B", nameLower: "b", deletedAt: 123 }),
+    );
 
     await expect(listCards({ deleted: "include" })).resolves.toHaveLength(2);
     await expect(listCards({ deleted: "only" })).resolves.toEqual([
@@ -51,13 +54,31 @@ describe("listCards", () => {
 
   it("filters by templateId, status, and search via scan and filter", async () => {
     await seedNormalizedCard(
-      createCardRecord({ id: "1", templateId: "hero", status: "saved", name: "Hello", nameLower: "hello" }),
+      createCardRecord({
+        id: "1",
+        templateId: "hero",
+        status: "saved",
+        name: "Hello",
+        nameLower: "hello",
+      }),
     );
     await seedNormalizedCard(
-      createCardRecord({ id: "2", templateId: "hero", status: "draft", name: "World", nameLower: "world" }),
+      createCardRecord({
+        id: "2",
+        templateId: "hero",
+        status: "draft",
+        name: "World",
+        nameLower: "world",
+      }),
     );
     await seedNormalizedCard(
-      createCardRecord({ id: "3", templateId: "monster", status: "saved", name: "Other", nameLower: "other" }),
+      createCardRecord({
+        id: "3",
+        templateId: "monster",
+        status: "saved",
+        name: "Other",
+        nameLower: "other",
+      }),
     );
 
     await expect(listCards({ templateId: "hero", status: "saved" })).resolves.toEqual([
@@ -115,7 +136,9 @@ describe("listCards", () => {
 
   it("carries normalized thumbnails onto list results", async () => {
     const thumbnailBlob = new Blob(["x"]);
-    await seedNormalizedCard(createCardRecord({ id: "thumb-hero-1", name: "Thumb Hero", nameLower: "thumb hero" }));
+    await seedNormalizedCard(
+      createCardRecord({ id: "thumb-hero-1", name: "Thumb Hero", nameLower: "thumb hero" }),
+    );
     await seedNormalizedThumbnail({ cardId: "thumb-hero-1", thumbnailBlob });
 
     const [card] = await listCards({ search: "thumb hero" });
@@ -143,10 +166,17 @@ describe("listCards", () => {
 
   it("keeps the local API listCards response shape unchanged", async () => {
     await seedNormalizedCard(
-      createCardRecord({ id: "api-hero-1", templateId: "hero", name: "Api Hero", nameLower: "api hero" }),
+      createCardRecord({
+        id: "api-hero-1",
+        templateId: "hero",
+        name: "Api Hero",
+        nameLower: "api hero",
+      }),
     );
 
-    const resolved = await listCardsRequestPlugin.request?.([], { queries: { search: "api hero" } } as never);
+    const resolved = await listCardsRequestPlugin.request?.([], {
+      queries: { search: "api hero" },
+    } as never);
     const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
     const response = await adapter?.();
 

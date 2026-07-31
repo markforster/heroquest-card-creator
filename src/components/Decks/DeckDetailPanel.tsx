@@ -134,7 +134,9 @@ function DeckDetailPanelContent({
     entries: entriesModel,
   });
   const deckPreviewCardIds = useMemo(() => {
-    const orderedGroups = [...selectionModel.orderedGroups].sort((a, b) => a.sortIndex - b.sortIndex);
+    const orderedGroups = [...selectionModel.orderedGroups].sort(
+      (a, b) => a.sortIndex - b.sortIndex,
+    );
     const setsByGroup = new Map<string, typeof selectionModel.sets>();
     selectionModel.sets.forEach((set) => {
       const list = setsByGroup.get(set.groupId) ?? [];
@@ -142,7 +144,10 @@ function DeckDetailPanelContent({
       setsByGroup.set(set.groupId, list);
     });
     setsByGroup.forEach((list, groupId) => {
-      setsByGroup.set(groupId, [...list].sort((a, b) => a.sortIndex - b.sortIndex));
+      setsByGroup.set(
+        groupId,
+        [...list].sort((a, b) => a.sortIndex - b.sortIndex),
+      );
     });
     const orderedSets = orderedGroups.flatMap((group) => setsByGroup.get(group.id) ?? []);
 
@@ -194,7 +199,9 @@ function DeckDetailPanelContent({
               </section>
               <aside
                 className={`${styles.rightPanel} ${styles.decksRightPanel} ${
-                  isRightPanelVisible ? styles.decksRightPanelExpanded : styles.decksRightPanelCollapsed
+                  isRightPanelVisible
+                    ? styles.decksRightPanelExpanded
+                    : styles.decksRightPanelCollapsed
                 }`}
               >
                 <DeckBacksPanel

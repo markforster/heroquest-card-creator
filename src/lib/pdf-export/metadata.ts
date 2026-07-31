@@ -3,8 +3,6 @@ import { APP_VERSION } from "@/version";
 
 import type { PDFDocument } from "pdf-lib";
 
-
-
 type ApplyPdfMetadataOptions = {
   pdf: PDFDocument;
   fileName: string;

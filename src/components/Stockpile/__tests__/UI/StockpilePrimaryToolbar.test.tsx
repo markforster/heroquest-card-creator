@@ -4,7 +4,6 @@ import StockpilePrimaryToolbar from "@/components/Stockpile/StockpilePrimaryTool
 
 import type { ReactNode } from "react";
 
-
 type MockOption = {
   value: string;
   label: string;
@@ -39,7 +38,7 @@ jest.mock("react-select", () => {
         <div data-testid="mock-react-select-selected">
           {props.value && props.formatOptionLabel
             ? props.formatOptionLabel(props.value, { context: "value" })
-            : props.value?.label ?? ""}
+            : (props.value?.label ?? "")}
         </div>
         <select
           data-testid="mock-react-select"
@@ -107,9 +106,7 @@ describe("StockpilePrimaryToolbar", () => {
     },
     {
       label: "Type",
-      options: [
-        { value: "type:monster", label: "Monster card" },
-      ],
+      options: [{ value: "type:monster", label: "Monster card" }],
     },
   ];
 
@@ -221,7 +218,9 @@ describe("StockpilePrimaryToolbar", () => {
       />,
     );
 
-    fireEvent.change(screen.getAllByTestId("mock-react-select")[0], { target: { value: "face:back" } });
+    fireEvent.change(screen.getAllByTestId("mock-react-select")[0], {
+      target: { value: "face:back" },
+    });
     expect(onFilterChange).toHaveBeenCalledWith("face:back");
   });
 

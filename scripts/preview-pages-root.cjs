@@ -12,7 +12,9 @@ const builtHelpRoot = path.join(repoRoot, "help-site", "site");
 
 function makePreviewSiteRoot() {
   if (!existsSync(builtHelpRoot)) {
-    console.error("Missing help-site/site. This branch previews the checked-in help output, so that folder must exist.");
+    console.error(
+      "Missing help-site/site. This branch previews the checked-in help output, so that folder must exist.",
+    );
     process.exit(1);
   }
 

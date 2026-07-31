@@ -52,7 +52,9 @@ describe("restoreDeckHierarchyAtomic", () => {
     ).resolves.toBeUndefined();
 
     const db = await openHqccDexieDb();
-    await expect(db.decks.get("deck-1")).resolves.toEqual(expect.objectContaining({ id: "deck-1" }));
+    await expect(db.decks.get("deck-1")).resolves.toEqual(
+      expect.objectContaining({ id: "deck-1" }),
+    );
     await expect(db.deckGroups.get("group-1")).resolves.toEqual(
       expect.objectContaining({ id: "group-1", deckId: "deck-1" }),
     );
@@ -80,7 +82,9 @@ describe("restoreDeckHierarchyAtomic", () => {
 
   it("preserves atomicity when one store write fails", async () => {
     const db = await openHqccDexieDb();
-    await db.deckGroups.add(createDeckGroupRecord({ id: "group-existing", deckId: "deck-existing" }));
+    await db.deckGroups.add(
+      createDeckGroupRecord({ id: "group-existing", deckId: "deck-existing" }),
+    );
 
     await expect(
       restoreDeckHierarchyAtomic({

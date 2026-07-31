@@ -35,11 +35,11 @@ function migrateLegacyDrafts(): StoredDraft | null {
   const legacy = safeParse<Record<string, unknown>>(legacyRaw);
   if (!legacy || typeof legacy !== "object") return null;
 
-  const preferredTemplate = window.localStorage.getItem("hqcc.selectedTemplateId") as
-    | TemplateId
-    | null;
-  const candidates = Object.keys(legacy).filter(
-    (key): key is TemplateId => Boolean(cardTemplatesById[key as TemplateId]),
+  const preferredTemplate = window.localStorage.getItem(
+    "hqcc.selectedTemplateId",
+  ) as TemplateId | null;
+  const candidates = Object.keys(legacy).filter((key): key is TemplateId =>
+    Boolean(cardTemplatesById[key as TemplateId]),
   );
   if (candidates.length === 0) return null;
 

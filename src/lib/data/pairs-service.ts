@@ -11,14 +11,8 @@ import {
 import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
 import type { CardRecord } from "@/types/cards-db";
-import type {
-  DeckEntryRecord,
-  DeckGroupRecord,
-  DeckRecord,
-  DeckSetRecord,
-} from "@/types/decks-db";
+import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
-
 
 /**
  * Public pair record returned by the local API and deck tooling.
@@ -134,9 +128,9 @@ async function buildDeckUsageForEntries(
   const groups = (
     await db.deckGroups.bulkGet(Array.from(new Set(sets.map((set) => set.groupId))))
   ).filter((group): group is DeckGroupRecord => Boolean(group));
-  const decks = (
-    await db.decks.bulkGet(Array.from(new Set(sets.map((set) => set.deckId))))
-  ).filter((deck): deck is DeckRecord => Boolean(deck));
+  const decks = (await db.decks.bulkGet(Array.from(new Set(sets.map((set) => set.deckId))))).filter(
+    (deck): deck is DeckRecord => Boolean(deck),
+  );
 
   const setById = new Map(sets.map((set) => [set.id, set]));
   const groupById = new Map(groups.map((group) => [group.id, group]));
@@ -243,8 +237,8 @@ async function executePairDeletionPlan(report: PairUsageReport): Promise<{
 
     try {
       await db.transaction("rw", db.decks, async () => {
-        const decks = (await db.decks.bulkGet(deckIds)).filter(
-          (deck): deck is DeckRecord => Boolean(deck),
+        const decks = (await db.decks.bulkGet(deckIds)).filter((deck): deck is DeckRecord =>
+          Boolean(deck),
         );
         if (!decks.length) {
           return;
@@ -281,10 +275,7 @@ export async function previewDeletePair(
   );
 }
 
-function mergeUsageReports(
-  reports: PairUsageReport[],
-  mode: PairDeleteMode,
-): PairUsageReport {
+function mergeUsageReports(reports: PairUsageReport[], mode: PairDeleteMode): PairUsageReport {
   const pairIds = new Set<string>();
   const entryIds = new Set<string>();
   const usageByKey = new Map<string, PairUsageReport["cascadePlan"]["usage"][number]>();
@@ -339,10 +330,7 @@ export async function previewDeletePairsForFaces(
 /**
  * Creates a front/back pairing unless the same pairing already exists.
  */
-export async function createPair(
-  frontFaceId: string,
-  backFaceId: string,
-): Promise<PairSummary> {
+export async function createPair(frontFaceId: string, backFaceId: string): Promise<PairSummary> {
   return createPairWithOverrides({ frontFaceId, backFaceId });
 }
 
@@ -361,15 +349,11 @@ export async function createPairWithOverrides(input: {
 }): Promise<PairSummary> {
   const existing = await listPairsForFace(input.frontFaceId);
   const match = existing.find(
-    (pair) =>
-      pair.frontFaceId === input.frontFaceId && pair.backFaceId === input.backFaceId,
+    (pair) => pair.frontFaceId === input.frontFaceId && pair.backFaceId === input.backFaceId,
   );
   if (match) return match;
 
-  const [front, back] = await Promise.all([
-    getCard(input.frontFaceId),
-    getCard(input.backFaceId),
-  ]);
+  const [front, back] = await Promise.all([getCard(input.frontFaceId), getCard(input.backFaceId)]);
   const name = input.name ?? buildPairName(front, back);
   const now = Date.now();
   const createdAt = input.createdAt ?? now;

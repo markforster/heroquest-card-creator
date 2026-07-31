@@ -78,13 +78,15 @@ describe("BlueprintRenderer outside EditorTargetsProvider", () => {
         <BlueprintRenderer
           templateId="hero"
           templateName="Hero"
-          cardData={{
-            title: "Sir Ragnar",
-            description: "Body text",
-            imageAssetId: "art-1",
-            copyright: "Hero Copyright",
-            showCopyright: true,
-          } as never}
+          cardData={
+            {
+              title: "Sir Ragnar",
+              description: "Body text",
+              imageAssetId: "art-1",
+              copyright: "Hero Copyright",
+              showCopyright: true,
+            } as never
+          }
         />
       </svg>,
     );
@@ -98,13 +100,15 @@ describe("BlueprintRenderer outside EditorTargetsProvider", () => {
         <BlueprintRenderer
           templateId="labelled-back"
           templateName="Labelled Back"
-          cardData={{
-            title: "Lore Card",
-            description: "Back text",
-            imageAssetId: "art-5",
-            titlePlacement: "bottom",
-            showTitle: true,
-          } as never}
+          cardData={
+            {
+              title: "Lore Card",
+              description: "Back text",
+              imageAssetId: "art-5",
+              titlePlacement: "bottom",
+              showTitle: true,
+            } as never
+          }
         />
       </svg>,
     );
