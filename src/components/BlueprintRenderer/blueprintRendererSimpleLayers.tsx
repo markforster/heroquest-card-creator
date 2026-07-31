@@ -3,7 +3,6 @@
 import { useId } from "react";
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
-import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import {
   EDITOR_TARGET_IDS,
   useRegisterHoverAdornment,
@@ -38,84 +37,9 @@ import type { StaticImageData } from "next/image";
 
 const IMAGE_HOVER_EDGE_INSET = 18;
 const IMAGE_HOVER_RADIUS = 16;
-const TREASURE_HOVER_OUTSET = 16;
-const CANVAS_IMAGE_HOVER_OUTSET = 16;
 
 export function getImageHoverEdgeInset() {
   return IMAGE_HOVER_EDGE_INSET;
-}
-
-function intersectRect(
-  first: { x: number; y: number; width: number; height: number },
-  second: { x: number; y: number; width: number; height: number },
-) {
-  const left = Math.max(first.x, second.x);
-  const top = Math.max(first.y, second.y);
-  const right = Math.min(first.x + first.width, second.x + second.width);
-  const bottom = Math.min(first.y + first.height, second.y + second.height);
-
-  if (right <= left || bottom <= top) return null;
-
-  return {
-    x: left,
-    y: top,
-    width: right - left,
-    height: bottom - top,
-  };
-}
-
-function buildImageHoverBounds({
-  clipMode,
-  layerBounds,
-  renderedBounds,
-  canvasBounds,
-}: {
-  clipMode: "bounds" | "canvas" | "none";
-  layerBounds: { x: number; y: number; width: number; height: number };
-  renderedBounds: { x: number; y: number; width: number; height: number } | null;
-  canvasBounds: { x: number; y: number; width: number; height: number };
-}) {
-  if (clipMode !== "canvas" || !renderedBounds) {
-    const baseBounds = {
-      x: layerBounds.x,
-      y: layerBounds.y,
-      width: layerBounds.width,
-      height: layerBounds.height,
-      radius: IMAGE_HOVER_RADIUS,
-    };
-    return clipMode === "bounds"
-      ? {
-          ...padBounds(baseBounds, TREASURE_HOVER_OUTSET),
-          radius: IMAGE_HOVER_RADIUS,
-        }
-      : baseBounds;
-  }
-
-  const visibleBounds = intersectRect(renderedBounds, canvasBounds);
-  if (!visibleBounds) return null;
-
-  const minLeft = canvasBounds.x + IMAGE_HOVER_EDGE_INSET;
-  const minTop = canvasBounds.y + IMAGE_HOVER_EDGE_INSET;
-  const maxRight = canvasBounds.x + canvasBounds.width - IMAGE_HOVER_EDGE_INSET;
-  const maxBottom = canvasBounds.y + canvasBounds.height - IMAGE_HOVER_EDGE_INSET;
-  const left = Math.max(visibleBounds.x - CANVAS_IMAGE_HOVER_OUTSET, minLeft);
-  const top = Math.max(visibleBounds.y - CANVAS_IMAGE_HOVER_OUTSET, minTop);
-  const right = Math.min(
-    visibleBounds.x + visibleBounds.width + CANVAS_IMAGE_HOVER_OUTSET,
-    maxRight,
-  );
-  const bottom = Math.min(
-    visibleBounds.y + visibleBounds.height + CANVAS_IMAGE_HOVER_OUTSET,
-    maxBottom,
-  );
-
-  return {
-    x: left,
-    y: top,
-    width: Math.max(0, right - left),
-    height: Math.max(0, bottom - top),
-    radius: IMAGE_HOVER_RADIUS,
-  };
 }
 
 export function renderBackgroundLayer({
