@@ -12,8 +12,6 @@ export type IndexedDbSizeEstimate = {
   recordSizes?: IndexedDbRecordSizes;
 };
 
-const DEFAULT_BATCH = 200;
-
 export function estimateRecordBytes(value: unknown): { bytes: number; blobBytes: number } {
   if (!value || typeof value !== "object") {
     const json = JSON.stringify(value);
@@ -44,7 +42,6 @@ export function estimateRecordBytes(value: unknown): { bytes: number; blobBytes:
 }
 
 export async function estimateIndexedDbSize({
-  batchSize: _batchSize = DEFAULT_BATCH,
   includeRecordSizes = false,
 }: {
   batchSize?: number;

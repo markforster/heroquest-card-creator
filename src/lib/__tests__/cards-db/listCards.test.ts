@@ -12,6 +12,20 @@ import {
   seedNormalizedThumbnail,
 } from "@/lib/test-support/normalized-card-test-helpers";
 
+async function runListCardsAdapter(queries: Record<string, unknown>) {
+  const request = listCardsRequestPlugin.request;
+  if (!request) {
+    throw new Error("Expected listCardsRequestPlugin.request");
+  }
+
+  const resolved = await request([], { queries } as never);
+  if (typeof resolved.adapter !== "function") {
+    throw new Error("Expected listCardsRequestPlugin to provide an adapter");
+  }
+
+  return resolved.adapter({} as never);
+}
+
 describe("listCards", () => {
   beforeEach(async () => {
     installFakeIndexedDb();
@@ -174,11 +188,7 @@ describe("listCards", () => {
       }),
     );
 
-    const resolved = await listCardsRequestPlugin.request?.([], {
-      queries: { search: "api hero" },
-    } as never);
-    const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
-    const response = await adapter?.();
+    const response = await runListCardsAdapter({ search: "api hero" });
 
     expect(response?.status).toBe(200);
     expect(response?.data).toEqual([

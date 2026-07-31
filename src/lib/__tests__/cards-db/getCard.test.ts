@@ -15,6 +15,20 @@ import {
 } from "@/lib/test-support/normalized-card-test-helpers";
 import type { CardRecord } from "@/types/cards-db";
 
+async function runGetCardAdapter(id: string) {
+  const request = getCardRequestPlugin.request;
+  if (!request) {
+    throw new Error("Expected getCardRequestPlugin.request");
+  }
+
+  const resolved = await request([], { params: { id } } as never);
+  if (typeof resolved.adapter !== "function") {
+    throw new Error("Expected getCardRequestPlugin to provide an adapter");
+  }
+
+  return resolved.adapter({} as never);
+}
+
 describe("getCard", () => {
   beforeEach(() => {
     installFakeIndexedDb();
@@ -238,11 +252,7 @@ describe("getCard", () => {
       thumbnailBlob: new Blob(["x"], { type: "image/png" }),
     });
 
-    const resolved = await getCardRequestPlugin.request?.([], {
-      params: { id: "api-card-1" },
-    } as never);
-    const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
-    const response = await adapter?.();
+    const response = await runGetCardAdapter("api-card-1");
 
     expect(response?.status).toBe(200);
     expect(response?.data).toEqual(

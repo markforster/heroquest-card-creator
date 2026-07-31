@@ -92,7 +92,6 @@ function DeckDetailPanelContent({
   keySetId,
   actions,
   drag,
-  dndProps,
   modalState,
   modalActions,
   selectionModel,

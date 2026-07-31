@@ -214,7 +214,6 @@ const CALIBRATION_PANEL_PADDING_MM = 3;
 const CALIBRATION_PANEL_TITLE_HEIGHT_MM = 7;
 const CALIBRATION_PANEL_TOP_RULER_HEIGHT_MM = 10;
 const CALIBRATION_PANEL_LEFT_RULER_WIDTH_MM = 12;
-const CALIBRATION_PANEL_LEGEND_HEIGHT_MM = 14;
 const CALIBRATION_CM_MINOR_STEP_MM = 1;
 const CALIBRATION_CM_MAJOR_STEP_MM = 10;
 const CALIBRATION_INCH_MINOR_STEP_MM = 25.4 / 8;
@@ -413,7 +412,6 @@ function drawDualUnitRulers(
   ) {
     const clampedOffsetMm = Math.min(offsetMm, contentRectMm.wMm);
     const isMajor = isMajorStep(clampedOffsetMm, CALIBRATION_CM_MAJOR_STEP_MM);
-    const tickLengthMm = isMajor ? 3.2 : 1.6;
     const xPt = mmToPt(originXmm + clampedOffsetMm);
     const y1Pt = mmToPt(pageMm.height - topMetricBaselineMm);
     const y2Pt = mmToPt(pageMm.height - originYmm);
@@ -441,9 +439,6 @@ function drawDualUnitRulers(
   ) {
     const clampedOffsetMm = Math.min(offsetMm, contentRectMm.wMm);
     const isMajor = isMajorStep(clampedOffsetMm, CALIBRATION_INCH_MAJOR_STEP_MM);
-    const isHalfMajor =
-      !isMajor && isMajorStep(clampedOffsetMm, CALIBRATION_INCH_MAJOR_STEP_MM / 2);
-    const tickLengthMm = isMajor ? 3.2 : isHalfMajor ? 2.3 : 1.3;
     const xPt = mmToPt(originXmm + clampedOffsetMm);
     const y1Pt = mmToPt(pageMm.height - topImperialBaselineMm);
     const y2Pt = mmToPt(pageMm.height - originYmm);
@@ -471,7 +466,6 @@ function drawDualUnitRulers(
   ) {
     const clampedOffsetMm = Math.min(offsetMm, contentRectMm.hMm);
     const isMajor = isMajorStep(clampedOffsetMm, CALIBRATION_CM_MAJOR_STEP_MM);
-    const tickLengthMm = isMajor ? 3.2 : 1.6;
     const yPt = mmToPt(pageMm.height - (originYmm + clampedOffsetMm));
     const x1Pt = mmToPt(leftMetricBaselineMm);
     const x2Pt = mmToPt(originXmm);
@@ -499,9 +493,6 @@ function drawDualUnitRulers(
   ) {
     const clampedOffsetMm = Math.min(offsetMm, contentRectMm.hMm);
     const isMajor = isMajorStep(clampedOffsetMm, CALIBRATION_INCH_MAJOR_STEP_MM);
-    const isHalfMajor =
-      !isMajor && isMajorStep(clampedOffsetMm, CALIBRATION_INCH_MAJOR_STEP_MM / 2);
-    const tickLengthMm = isMajor ? 3.2 : isHalfMajor ? 2.3 : 1.3;
     const yPt = mmToPt(pageMm.height - (originYmm + clampedOffsetMm));
     const x1Pt = mmToPt(leftImperialBaselineMm);
     const x2Pt = mmToPt(originXmm);
