@@ -549,15 +549,20 @@ export function HeroBackLogoLayerHitArea({
 }) {
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.heroBackLogo);
 
-  if (layer.type !== layerTypes.logo) return null;
+  const bounds = layer.type === layerTypes.logo ? getLayerBounds(blueprint, layer) : null;
 
-  const bounds = getLayerBounds(blueprint, layer);
+  useRegisterHoverAdornment(
+    EDITOR_TARGET_IDS.heroBackLogo,
+    bounds
+      ? {
+          kind: "rect",
+          ...bounds,
+          radius: IMAGE_HOVER_RADIUS,
+        }
+      : null,
+  );
 
-  useRegisterHoverAdornment(EDITOR_TARGET_IDS.heroBackLogo, {
-    kind: "rect",
-    ...bounds,
-    radius: IMAGE_HOVER_RADIUS,
-  });
+  if (!bounds) return null;
 
   return (
     <Layer {...svgFocusProps}>
