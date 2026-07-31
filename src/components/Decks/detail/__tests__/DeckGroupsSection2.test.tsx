@@ -30,6 +30,14 @@ type DragEventLike = {
   };
 };
 
+type MockDragDropProviderProps = {
+  children: React.ReactNode;
+  onDragStart?: (event: DragEventLike) => void;
+  onDragOver?: (event: DragEventLike) => void;
+  onDragEnd?: (event: DragEventLike) => void;
+  onDragCancel?: () => void;
+};
+
 const callbacks: {
   onDragStart?: (event: DragEventLike) => void;
   onDragOver?: (event: DragEventLike) => void;
@@ -130,14 +138,20 @@ function getSetTestIdsWithinGroup(groupTestId: string): string[] {
 }
 
 jest.mock("@dnd-kit/react", () => ({
-  DragDropProvider: ({ children, onDragStart, onDragOver, onDragEnd, onDragCancel }: any) => {
+  DragDropProvider: ({
+    children,
+    onDragStart,
+    onDragOver,
+    onDragEnd,
+    onDragCancel,
+  }: MockDragDropProviderProps) => {
     callbacks.onDragStart = onDragStart;
     callbacks.onDragOver = onDragOver;
     callbacks.onDragEnd = onDragEnd;
     callbacks.onDragCancel = onDragCancel;
     return <div>{children}</div>;
   },
-  DragOverlay: ({ children }: any) => <div>{children}</div>,
+  DragOverlay: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   useDroppable: () => ({ ref: jest.fn(), isDropTarget: false }),
   useDraggable: () => ({ ref: jest.fn(), handleRef: jest.fn(), isDragging: false }),
 }));
