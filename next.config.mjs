@@ -7,9 +7,6 @@ const nextConfig = {
   // so the bundle can live under any subpath.
   assetPrefix: "./",
   trailingSlash: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: {
     // Required for `output: "export"` so images in `public/`
     // (like the app logo) are served as static files instead
