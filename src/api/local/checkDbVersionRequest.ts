@@ -2,7 +2,7 @@ import {
   probeHqccDbVersion,
   readExistingHqccDbAppVersion,
   readExistingHqccDbVersion,
-} from "@/lib/hqcc-db";
+} from "@/lib/db/hqcc-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

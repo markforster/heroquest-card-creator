@@ -2,7 +2,7 @@ const probeHqccDbVersion = jest.fn();
 const readExistingHqccDbVersion = jest.fn();
 const readExistingHqccDbAppVersion = jest.fn();
 
-jest.mock("@/lib/hqcc-db", () => ({
+jest.mock("@/lib/db/hqcc-db", () => ({
   probeHqccDbVersion: () => probeHqccDbVersion(),
   readExistingHqccDbVersion: () => readExistingHqccDbVersion(),
   readExistingHqccDbAppVersion: () => readExistingHqccDbAppVersion(),

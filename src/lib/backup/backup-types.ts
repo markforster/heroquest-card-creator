@@ -3,7 +3,7 @@
 import type { AssetRecord } from "@/api/assets";
 import type { CopyrightTemplateDefaults } from "@/lib/copyright-defaults";
 import type { ExportSettings } from "@/lib/export-settings";
-import type { HeroBackLogoRecord } from "@/lib/hero-back-logos-db";
+import type { HeroBackLogoRecord } from "@/lib/data/hero-back-logos-db";
 import type { CardRecord } from "@/types/cards-db";
 import type {
   DeckEntryRecord,

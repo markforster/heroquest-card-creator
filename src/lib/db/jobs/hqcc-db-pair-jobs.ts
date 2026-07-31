@@ -1,6 +1,6 @@
 "use client";
 
-import { META_PAIRS_DEDUPED_KEY, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { META_PAIRS_DEDUPED_KEY, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 type HqccDexieDb = Awaited<ReturnType<typeof openHqccDexieDb>>;
 

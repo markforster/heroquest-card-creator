@@ -1,7 +1,7 @@
 "use client";
 
 import { apiClient } from "@/api/client";
-import { getHeroBackLogoBlob } from "@/lib/hero-back-logos-db";
+import { getHeroBackLogoBlob } from "@/lib/data/hero-back-logos-db";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { TemplateId } from "@/types/templates";

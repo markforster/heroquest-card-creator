@@ -1,6 +1,6 @@
 const createCard = jest.fn();
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   createCard: (...args: unknown[]) => createCard(...args),
 }));
 

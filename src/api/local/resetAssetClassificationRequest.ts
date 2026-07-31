@@ -1,4 +1,4 @@
-import { resetAssetClassificationForId } from "@/lib/assets-db";
+import { resetAssetClassificationForId } from "@/lib/data/assets-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

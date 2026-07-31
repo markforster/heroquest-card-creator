@@ -4,7 +4,7 @@ import { encode as encodeMsgpack } from "@msgpack/msgpack";
 
 import type { AssetRecord } from "@/api/assets";
 import { USE_ZIP_COMPRESSION } from "@/config/flags";
-import { listHeroBackLogosWithBlobs, type HeroBackLogoRecordWithBlob } from "@/lib/hero-back-logos-db";
+import { listHeroBackLogosWithBlobs, type HeroBackLogoRecordWithBlob } from "@/lib/data/hero-back-logos-db";
 import type { CardRecord } from "@/types/cards-db";
 import type {
   DeckEntryRecord,
@@ -15,7 +15,7 @@ import type {
 import type { PairRecord } from "@/types/pairs-db";
 
 import { DEFAULT_BACKUP_FORMAT, type BackupContainerFormat } from "../backup-formats";
-import { listCards } from "../cards-db";
+import { listCards } from "@/lib/data/cards-db";
 import { createZipBlobWithProgress } from "../zip-utils";
 
 import { blobToDataUrl } from "./backup-blob-codec";
@@ -100,7 +100,7 @@ async function loadExportInputs(): Promise<{
     throw new Error("Backup export is only available in the browser");
   }
   const { apiClient } = await import("@/api/client");
-  const { getExportProfilesState } = await import("@/lib/export-profiles");
+  const { getExportProfilesState } = await import("@/lib/data/export-profiles");
   const [
     cardSummaries,
     rawAssets,

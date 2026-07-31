@@ -1,5 +1,5 @@
-import { buildNormalizedCardRecords } from "@/lib/cards-normalized";
-import { openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { buildNormalizedCardRecords } from "@/lib/data/cards-normalized";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import type { CardRecord } from "@/types/cards-db";
 
 export async function seedNormalizedCard(record: CardRecord): Promise<void> {

@@ -1,6 +1,6 @@
 const updateCard = jest.fn();
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   updateCard: (...args: unknown[]) => updateCard(...args),
 }));
 

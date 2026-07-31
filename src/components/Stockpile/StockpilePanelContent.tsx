@@ -79,11 +79,10 @@ import {
   isPairDeleteConfirmRequiredError,
   type CardDeleteUsageReport,
   type PairUsageReport,
-} from "@/lib/decks-errors";
+} from "@/lib/data/decks-errors";
 import { createEditorDefaultValues } from "@/lib/editor-form";
 import type { MissingAssetReport } from "@/lib/export-assets-cache";
 import formatMessageWith from "@/lib/format-message-with";
-import { deletePairsForFaces } from "@/lib/pairs-service";
 import type { TemplateId } from "@/types/templates";
 import type { OpenCloseProps } from "@/types/ui";
 
@@ -1845,7 +1844,8 @@ export default function StockpilePanelContent({
           setPairUsagePrompt(null);
           const allFaceIds = pairUsagePendingDeleteIds;
           if (!allFaceIds.length) return;
-          await deletePairsForFaces(allFaceIds, {
+          await apiClient.deletePairsForFaces({
+            faceIds: allFaceIds,
             mode: "confirmable-cascade",
             confirmCascade: true,
           });

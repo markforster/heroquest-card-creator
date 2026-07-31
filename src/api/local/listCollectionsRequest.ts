@@ -1,7 +1,7 @@
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import type { ZodiosPlugin } from "@zodios/core";
 
-import { listCollections } from "@/lib/collections-db";
+import { listCollections } from "@/lib/data/collections-db";
 
 /**
  * Serves the local list-collections endpoint through the IndexedDB-backed service layer.

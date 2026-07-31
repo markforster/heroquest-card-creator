@@ -1,6 +1,6 @@
 "use client";
 
-import { openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 export type IndexedDbRecordSizes = Record<string, Record<string, number>>;
 

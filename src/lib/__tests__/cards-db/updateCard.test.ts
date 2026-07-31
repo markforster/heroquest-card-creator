@@ -1,6 +1,6 @@
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { getCard, updateCard } from "@/lib/cards-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { getCard, updateCard } from "@/lib/data/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 import {
   createCardRecord,
@@ -12,7 +12,7 @@ import { seedNormalizedCard, seedNormalizedThumbnail } from "@/lib/test-support/
 
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 

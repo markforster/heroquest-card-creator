@@ -12,7 +12,7 @@ import ConfirmModal from "@/components/Modals/ConfirmModal";
 import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
-import { isPairDeleteConfirmRequiredError } from "@/lib/decks-errors";
+import { isPairDeleteConfirmRequiredError } from "@/lib/data/decks-errors";
 import formatMessageWith from "@/lib/format-message-with";
 import styles from "../DeckGroupsSection2.module.css";
 import {

@@ -1,4 +1,4 @@
-import { getCard } from "@/lib/cards-db";
+import { getCard } from "@/lib/data/cards-db";
 import type { CardRecord } from "@/types/cards-db";
 
 import type { ZodiosPlugin } from "@zodios/core";

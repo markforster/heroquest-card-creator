@@ -10,8 +10,8 @@ import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { CardRecord } from "@/api/cards";
-import { previewDeletePair } from "@/lib/pairs-service";
-import type { PairUsageReport } from "@/lib/decks-errors";
+import { apiClient } from "@/api/client";
+import type { PairUsageReport } from "@/lib/data/decks-errors";
 import formatMessageWith from "@/lib/format-message-with";
 
 import type { ReactNode } from "react";
@@ -90,7 +90,11 @@ export default function StockpileFooter({
   }> => {
     const reports = await Promise.all(
       removedFrontIds.map((frontFaceId) =>
-        previewDeletePair(frontFaceId, backFaceId, { mode: "confirmable-cascade" }),
+        apiClient.previewDeletePair({
+          frontFaceId,
+          backFaceId,
+          mode: "confirmable-cascade",
+        }),
       ),
     );
     const usageByKey = new Map<string, PairUsageReport["cascadePlan"]["usage"][number]>();

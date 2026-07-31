@@ -1,17 +1,17 @@
 "use client";
 
-import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
+import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
 
-import { generateId } from ".";
+import { generateId } from "@/lib";
 import {
   clearExportSettingKeys,
   createDefaultExportSettings,
   getExportSettings,
   hasLegacyExportSettings,
   type ExportSettings,
-} from "./export-settings";
-import { openHqccDexieDb } from "./hqcc-dexie";
-import type { SettingsRecord } from "./settings-db";
+} from "@/lib/export-settings";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import type { SettingsRecord } from "@/lib/data/settings-db";
 
 export type ExportProfile = {
   id: string;

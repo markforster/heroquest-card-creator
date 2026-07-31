@@ -1,5 +1,5 @@
 import { deckSetReorderInputSchema } from "@/api/decks";
-import { getSet, reorderSets } from "@/lib/decks-service";
+import { getSet, reorderSets } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

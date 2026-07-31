@@ -1,4 +1,4 @@
-import { clearAssetClassification } from "@/lib/assets-db";
+import { clearAssetClassification } from "@/lib/data/assets-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

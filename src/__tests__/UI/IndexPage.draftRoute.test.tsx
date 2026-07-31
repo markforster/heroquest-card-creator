@@ -228,15 +228,15 @@ jest.mock("@/lib/export-assets-cache", () => ({
   __esModule: true,
   buildMissingAssetsReport: jest.fn().mockResolvedValue([]),
 }));
-jest.mock("@/lib/thumbnail-jpeg-migration", () => ({
+jest.mock("@/lib/db/migrations/thumbnail-jpeg-migration", () => ({
   __esModule: true,
   startThumbnailJpegMigration: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("@/lib/decks-service", () => ({
+jest.mock("@/lib/db/maintenance/repair-orphan-deck-entries", () => ({
   __esModule: true,
   repairOrphanDeckEntries: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   __esModule: true,
   clearDbEstimateCache: jest.fn(),
   runFullDbEstimate: jest.fn().mockResolvedValue(undefined),

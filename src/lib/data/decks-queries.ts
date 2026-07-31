@@ -9,20 +9,18 @@ import type {
 import type { PairRecord } from "@/types/pairs-db";
 import type { CardDeckMembership } from "@/api/cards";
 
-import { getCard } from "@/lib/cards-db";
-import type { DeckUsageLocation } from "@/lib/decks-errors";
-import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
-import { openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { getCard } from "@/lib/data/cards-db";
+import type { DeckUsageLocation } from "@/lib/data/decks-errors";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   DECKS_STORE,
-  ENTRIES_STORE,
   GROUPS_STORE,
   normalizeDeckEntryRecord,
   PAIRS_STORE,
   resolveCardFace,
   SETS_STORE,
   sortByIndex,
-} from "@/lib/decks-db";
+} from "@/lib/data/decks-db";
 
 /**
  * Lists decks, optionally filtering by a case-insensitive title search.
@@ -327,24 +325,4 @@ export async function validatePairEntry(setId: string, pairId: string): Promise<
   if (pair.backFaceId !== set.backFaceId) {
     throw new Error("Pair back does not match set back");
   }
-}
-
-/**
- * Removes deck entries whose pair records are no longer present and returns the number removed.
- */
-export async function repairOrphanDeckEntries(): Promise<number> {
-  const db = await openHqccDexieDb();
-  const [entries, pairs] = await Promise.all([db.deckEntries.toArray(), db.pairs.toArray()]);
-
-  const pairIds = new Set(pairs.map((pair) => pair.id));
-  const orphans = entries.filter((entry) => !pairIds.has(entry.pairId));
-  if (!orphans.length) return 0;
-
-  await db.transaction("rw", db.deckEntries, async () => {
-    await db.deckEntries.bulkDelete(orphans.map((entry) => entry.id));
-  });
-  orphans.forEach((entry) => enqueueDbEstimateChange(ENTRIES_STORE, entry.id));
-  // eslint-disable-next-line no-console
-  console.info(`[decks] Repaired orphan deck entries: ${orphans.length}`);
-  return orphans.length;
 }

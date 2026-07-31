@@ -1,5 +1,5 @@
-import { deleteCardsWithCascade, previewDeleteCardsImpact } from "@/lib/cards-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { deleteCardsWithCascade, previewDeleteCardsImpact } from "@/lib/data/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 import {
   TEST_NOW,
@@ -19,11 +19,11 @@ import { seedNormalizedCard } from "@/lib/test-support/normalized-card-test-help
 const previewDeletePairsForFaces = jest.fn();
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/pairs-service", () => ({
+jest.mock("@/lib/data/pairs-service", () => ({
   previewDeletePairsForFaces: (...args: unknown[]) => previewDeletePairsForFaces(...args),
 }));
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 

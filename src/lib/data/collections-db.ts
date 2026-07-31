@@ -2,10 +2,10 @@
 
 import type { CollectionRecord } from "@/types/collections-db";
 
-import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
-import { openHqccDexieDb } from "./hqcc-dexie";
+import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
-import { generateId } from ".";
+import { generateId } from "@/lib";
 
 /**
  * Creates a collection record used by stockpile and card-organization flows.

@@ -3,11 +3,11 @@
 import { createContext, useContext, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
+import { exportLibrary, importLibrary } from "@/api/library/client";
 import BackupProgressOverlay from "@/components/BackupProgressOverlay";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
 import { readApiConfig } from "@/api/config";
-import { createBackupHqcc, importBackupHqcc, importBackupJson } from "@/lib/backup";
 import {
   BACKUP_FORMAT_STORAGE_KEY,
   DEFAULT_BACKUP_FORMAT,
@@ -16,7 +16,7 @@ import {
 } from "@/lib/backup-formats";
 import { invalidateCardThumbnail } from "@/lib/card-thumbnail-cache";
 import { EXPORT_SETTINGS_STORAGE_KEYS } from "@/lib/export-settings";
-import { clearDbEstimateCache, setDbEstimatePaused } from "@/lib/indexeddb-size-tracker";
+import { clearDbEstimateCache, setDbEstimatePaused } from "@/lib/db/maintenance/indexeddb-size-tracker";
 import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 import {
   useLocalStorageRehydrate,
@@ -312,7 +312,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
     setBackupSecondaryPercent(null);
     backupSecondaryModeRef.current = null;
     try {
-      const { blob, fileName } = await createBackupHqcc({
+      const { blob, fileName } = await exportLibrary({
         format: backupFormat,
         onProgress: (current, total) => {
           setBackupProgressCurrent(current);
@@ -432,53 +432,30 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
         }
         result = await runRemoteImport(file);
       } else {
-        result = useZip
-          ? await importBackupHqcc(file, {
-              onProgress: (current, total) => {
-                setBackupProgressCurrent(current);
-                setBackupProgressTotal(total);
-                setBackupProgressStatus(t("status.importingData"));
-                setBackupSecondaryLabel(null);
-                setBackupSecondaryPercent(null);
-              },
-              onStatus: (phase) => {
-                setBackupProgressStatus(
-                  phase === "processing" ? t("status.importingData") : t("status.preparing"),
-                );
-                if (phase === "processing") {
-                  setBackupSecondaryLabel(null);
-                  setBackupSecondaryPercent(null);
-                } else {
-                  setBackupSecondaryLabel(t("status.preparing"));
-                  setBackupSecondaryPercent(null);
-                }
-              },
-            })
-          : useJson
-            ? await importBackupJson(file, {
-                onProgress: (current, total) => {
-                  setBackupProgressCurrent(current);
-                  setBackupProgressTotal(total);
-                  setBackupProgressStatus(t("status.importingData"));
-                  setBackupSecondaryLabel(null);
-                  setBackupSecondaryPercent(null);
-                },
-                onStatus: (phase) => {
-                  setBackupProgressStatus(
-                    phase === "processing" ? t("status.importingData") : t("status.preparing"),
-                  );
-                  if (phase === "processing") {
-                    setBackupSecondaryLabel(null);
-                    setBackupSecondaryPercent(null);
-                  } else {
-                    setBackupSecondaryLabel(t("status.preparing"));
-                    setBackupSecondaryPercent(null);
-                  }
-                },
-              })
-            : await (async () => {
-                throw new Error(t("alert.unsupportedBackupFile"));
-              })();
+        if (!useZip && !useJson) {
+          throw new Error(t("alert.unsupportedBackupFile"));
+        }
+        result = await importLibrary(file, {
+          onProgress: (current, total) => {
+            setBackupProgressCurrent(current);
+            setBackupProgressTotal(total);
+            setBackupProgressStatus(t("status.importingData"));
+            setBackupSecondaryLabel(null);
+            setBackupSecondaryPercent(null);
+          },
+          onStatus: (phase) => {
+            setBackupProgressStatus(
+              phase === "processing" ? t("status.importingData") : t("status.preparing"),
+            );
+            if (phase === "processing") {
+              setBackupSecondaryLabel(null);
+              setBackupSecondaryPercent(null);
+            } else {
+              setBackupSecondaryLabel(t("status.preparing"));
+              setBackupSecondaryPercent(null);
+            }
+          },
+        });
       }
       await new Promise((resolve) => setTimeout(resolve, 250));
       const exportSettingKeys = Object.values(EXPORT_SETTINGS_STORAGE_KEYS);

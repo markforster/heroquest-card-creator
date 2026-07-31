@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import DeckEntriesSection from "@/components/Decks/detail/DeckEntriesSection";
-import { createPairDeleteConfirmRequiredError } from "@/lib/decks-errors";
+import { createPairDeleteConfirmRequiredError } from "@/lib/data/decks-errors";
 
 const removeEntry = jest.fn();
 const addFront = jest.fn();

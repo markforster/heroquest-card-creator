@@ -1,4 +1,4 @@
-import { replaceAsset } from "@/lib/assets-db";
+import { replaceAsset } from "@/lib/data/assets-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

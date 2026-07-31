@@ -1,4 +1,4 @@
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { restoreDeckHierarchyAtomic } from "@/lib/backup/backup-validation";
 import {
   createDeckEntryRecord,

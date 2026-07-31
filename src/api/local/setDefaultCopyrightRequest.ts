@@ -1,4 +1,4 @@
-import { setDefaultCopyright } from "@/lib/settings-db";
+import { setDefaultCopyright } from "@/lib/data/settings-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

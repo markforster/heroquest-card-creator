@@ -1,6 +1,6 @@
 const listCards = jest.fn();
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   listCards: (...args: unknown[]) => listCards(...args),
 }));
 

@@ -4,19 +4,22 @@ import { Layers, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import ModalShell from "@/components/common/ModalShell";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
-import { useI18n } from "@/i18n/I18nProvider";
 import {
   deleteHeroBackLogo,
   getHeroBackLogoUsage,
   listHeroBackLogos,
-  type DeleteHeroBackLogoRemediation,
-  type HeroBackLogoRecord,
-} from "@/lib/hero-back-logos-db";
+} from "@/api/heroBackLogos/client";
+import ModalShell from "@/components/common/ModalShell";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
+import { useI18n } from "@/i18n/I18nProvider";
 
 import HeroBackLogoPreviewTile from "./HeroBackLogoPreviewTile";
 import InspectorStateNotice from "./InspectorStateNotice";
+
+import type {
+  DeleteHeroBackLogoRemediation,
+  HeroBackLogoRecord,
+} from "@/api/heroBackLogos";
 
 type HeroBackLogoModalProps = {
   isOpen: boolean;

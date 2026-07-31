@@ -1,5 +1,5 @@
 import { addAssetInputSchema } from "@/api/assets";
-import { addAsset } from "@/lib/assets-db";
+import { addAsset } from "@/lib/data/assets-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

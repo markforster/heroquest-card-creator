@@ -1,5 +1,5 @@
 import { deckGroupUpdateInputSchema } from "@/api/decks";
-import { updateGroup } from "@/lib/decks-service";
+import { updateGroup } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

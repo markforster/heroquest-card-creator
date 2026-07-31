@@ -1,4 +1,4 @@
-import { deletePair } from "@/lib/pairs-service";
+import { deletePair } from "@/lib/data/pairs-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

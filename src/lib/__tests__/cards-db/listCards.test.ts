@@ -1,6 +1,6 @@
 import { listCardsRequestPlugin } from "@/api/local/listCardsRequest";
-import { listCards } from "@/lib/cards-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { listCards } from "@/lib/data/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   seedNormalizedCard,
   seedNormalizedThumbnail,

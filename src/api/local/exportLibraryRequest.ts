@@ -1,4 +1,5 @@
 import { createBackupHqcc } from "@/lib/backup";
+import { normalizeBackupFormat } from "@/lib/backup-formats";
 
 import type {
   BackupProgressCallback,
@@ -26,7 +27,11 @@ export const exportLibraryRequestPlugin: ZodiosPlugin = {
   request: async (apiDefinitions, config) => {
     const adapter = async (): Promise<AxiosResponse> => {
       const handlers = (config as LibraryRequestConfig).hqcc;
+      const queries = (config.queries ?? {}) as Record<string, unknown>;
+      const format =
+        typeof queries.format === "string" ? normalizeBackupFormat(queries.format) : null;
       const data = await createBackupHqcc({
+        format: format ?? undefined,
         onProgress: handlers?.onProgress,
         onStatus: handlers?.onStatus,
         onSecondaryProgress: handlers?.onSecondaryProgress,

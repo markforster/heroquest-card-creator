@@ -12,7 +12,7 @@ import {
   getDbEstimateStatus,
   runFullDbEstimate,
   subscribeDbEstimateStatus,
-} from "@/lib/indexeddb-size-tracker";
+} from "@/lib/db/maintenance/indexeddb-size-tracker";
 import { useI18n } from "@/i18n/I18nProvider";
 import { APP_VERSION } from "@/version";
 

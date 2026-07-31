@@ -1,5 +1,5 @@
 import { deckEntryAddFrontsInputSchema } from "@/api/decks";
-import { addFrontsToSet } from "@/lib/decks-service";
+import { addFrontsToSet } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

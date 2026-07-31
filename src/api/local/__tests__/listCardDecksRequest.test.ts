@@ -1,6 +1,6 @@
 const listCardDeckMembership = jest.fn();
 
-jest.mock("@/lib/decks-service", () => ({
+jest.mock("@/lib/data/decks-service", () => ({
   listCardDeckMembership: (...args: unknown[]) => listCardDeckMembership(...args),
 }));
 

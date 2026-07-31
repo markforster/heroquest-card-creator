@@ -1,5 +1,5 @@
 import { cardUpdateInputSchema } from "@/api/cards";
-import { updateCard } from "@/lib/cards-db";
+import { updateCard } from "@/lib/data/cards-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

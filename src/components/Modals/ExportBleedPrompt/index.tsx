@@ -8,7 +8,7 @@ import ExportProfileSelect from "@/components/Export/ExportProfileSelect";
 import ExportOptionsForm from "@/components/Export/ExportOptionsForm";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { ExportProfile } from "@/lib/export-profiles";
+import type { ExportProfile } from "@/lib/data/export-profiles";
 import {
   DEFAULT_CROP_MARK_LENGTH,
   DEFAULT_CROP_MARK_THICKNESS,

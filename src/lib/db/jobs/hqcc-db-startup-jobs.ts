@@ -1,12 +1,12 @@
 "use client";
 
-import { migrateCardCanvas } from "@/lib/hqcc-db-card-canvas-job";
-import { backfillCardCopyrightComponents } from "@/lib/hqcc-db-copyright-backfill-job";
+import { migrateCardCanvas } from "@/lib/db/jobs/hqcc-db-card-canvas-job";
+import { backfillCardCopyrightComponents } from "@/lib/db/jobs/hqcc-db-copyright-backfill-job";
 import {
   META_COPYRIGHT_COMPONENTS_BACKFILLED_KEY,
   openHqccDexieDb,
-} from "@/lib/hqcc-dexie";
-import { dedupePairsFromStore } from "@/lib/hqcc-db-pair-jobs";
+} from "@/lib/db/hqcc-dexie";
+import { dedupePairsFromStore } from "@/lib/db/jobs/hqcc-db-pair-jobs";
 
 let pairMaintenanceInFlight: Promise<void> | null = null;
 let cardCanvasMigrationInFlight: Promise<void> | null = null;

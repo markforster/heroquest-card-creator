@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { getHeroBackLogoObjectUrl } from "@/lib/hero-back-logos-db";
+import { getHeroBackLogoObjectUrl } from "@/api/heroBackLogos/client";
 
 export type HeroBackLogoImageStatus = "idle" | "loading" | "ready" | "missing";
 

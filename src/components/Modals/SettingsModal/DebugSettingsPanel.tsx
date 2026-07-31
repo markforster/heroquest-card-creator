@@ -19,7 +19,7 @@ import {
 import {
   getThumbnailJpegMigrationStatus,
   subscribeThumbnailJpegMigration,
-} from "@/lib/thumbnail-jpeg-migration";
+} from "@/lib/db/migrations/thumbnail-jpeg-migration";
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes)) return "0 B";

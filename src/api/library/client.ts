@@ -1,6 +1,7 @@
 "use client";
 
 import { apiClient } from "@/api/client";
+import type { BackupContainerFormat } from "@/lib/backup-formats";
 
 import type {
   BackupProgressCallback,
@@ -27,8 +28,18 @@ function toRequestOptions(options?: LibraryProgressHandlers): LibraryRequestOpti
   return { hqcc: options };
 }
 
-export async function exportLibrary(options?: LibraryProgressHandlers) {
+export async function exportLibrary(
+  options?: LibraryProgressHandlers & { format?: BackupContainerFormat },
+) {
   const requestOptions = toRequestOptions(options);
+  const request = options?.format ? { queries: { format: options.format } } : undefined;
+
+  if (request && requestOptions) {
+    return apiClient.exportLibrary(request as any, requestOptions as any);
+  }
+  if (request) {
+    return apiClient.exportLibrary(request as any);
+  }
   return requestOptions
     ? apiClient.exportLibrary(requestOptions as any)
     : apiClient.exportLibrary();

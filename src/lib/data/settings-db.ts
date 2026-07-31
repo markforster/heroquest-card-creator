@@ -4,8 +4,8 @@ import {
   normalizeCopyrightTemplateDefaults,
   type CopyrightTemplateDefaults,
 } from "@/lib/copyright-defaults";
-import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
-import { openHqccDexieDb } from "./hqcc-dexie";
+import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 /**
  * Generic persisted settings row stored in the shared settings table.

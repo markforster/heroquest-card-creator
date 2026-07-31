@@ -1,8 +1,8 @@
 import { getCardRequestPlugin } from "@/api/local/getCardRequest";
 import { blueprintIds } from "@/data/card-systems/types";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { getCard } from "@/lib/cards-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { getCard } from "@/lib/data/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   seedNormalizedCard,
   seedNormalizedThumbnail,

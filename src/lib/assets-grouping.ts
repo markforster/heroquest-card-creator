@@ -1,7 +1,7 @@
 "use client";
 
 import type { MessageKey } from "@/i18n/messages";
-import type { AssetRecord } from "@/lib/assets-db";
+import type { AssetRecord } from "@/lib/data/assets-db";
 
 export type AssetKindGroupId = "artwork" | "icon" | "unclassified";
 

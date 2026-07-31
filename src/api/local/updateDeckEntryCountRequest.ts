@@ -1,5 +1,5 @@
 import { deckEntryCountUpdateInputSchema } from "@/api/decks";
-import { updateEntryCount } from "@/lib/decks-service";
+import { updateEntryCount } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

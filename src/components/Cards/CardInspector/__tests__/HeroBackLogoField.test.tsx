@@ -95,7 +95,7 @@ jest.mock("@/hooks/useHeroBackLogoImageUrl", () => ({
       : { url: null, status: "idle", width: null, height: null },
 }));
 
-jest.mock("@/lib/hero-back-logos-db", () => ({
+jest.mock("@/api/heroBackLogos/client", () => ({
   addHeroBackLogo: (...args: unknown[]) => addHeroBackLogo(...args),
   listHeroBackLogos: (...args: unknown[]) => listHeroBackLogos(...args),
 }));

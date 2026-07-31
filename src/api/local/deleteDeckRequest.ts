@@ -1,4 +1,4 @@
-import { deleteDeck } from "@/lib/decks-service";
+import { deleteDeck } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

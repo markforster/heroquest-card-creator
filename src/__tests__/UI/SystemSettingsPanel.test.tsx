@@ -12,7 +12,7 @@ const getDbEstimateStatus = jest.fn();
 const runFullDbEstimate = jest.fn();
 const subscribeDbEstimateStatus = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   getDbEstimateStatus: () => getDbEstimateStatus(),
   runFullDbEstimate: () => runFullDbEstimate(),
   subscribeDbEstimateStatus: (listener: (status: unknown) => void) => subscribeDbEstimateStatus(listener),

@@ -7,11 +7,11 @@ import type {
   DeckSetRecord,
 } from "@/types/decks-db";
 
-import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
-import { getCard } from "@/lib/cards-db";
-import { createPair } from "@/lib/pairs-service";
+import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
+import { getCard } from "@/lib/data/cards-db";
+import { createPair } from "@/lib/data/pairs-service";
 import { generateId } from "@/lib";
-import { openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   clampEntryCount,
   DECKS_STORE,
@@ -22,14 +22,14 @@ import {
   normalizeDeckEntryRecord,
   SETS_STORE,
   sortByIndex,
-} from "@/lib/decks-db";
+} from "@/lib/data/decks-db";
 import {
   getDeck,
   getSet,
   listEntriesForSet,
   listGroups,
   listSets,
-} from "@/lib/decks-queries";
+} from "@/lib/data/decks-queries";
 
 /**
  * Creates a deck together with its default first group.

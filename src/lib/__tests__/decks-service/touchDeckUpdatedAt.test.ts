@@ -2,19 +2,19 @@ const getCard = jest.fn();
 const createPair = jest.fn();
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   getCard: (...args: unknown[]) => getCard(...args),
 }));
 
-jest.mock("@/lib/pairs-service", () => ({
+jest.mock("@/lib/data/pairs-service", () => ({
   createPair: (...args: unknown[]) => createPair(...args),
 }));
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   addFrontsToSet,
   createGroup,
@@ -22,7 +22,7 @@ import {
   reorderEntries,
   reorderGroups,
   reorderSets,
-} from "@/lib/decks-service";
+} from "@/lib/data/decks-service";
 
 import {
   TEST_NOW,

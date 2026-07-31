@@ -11,19 +11,19 @@ jest.mock("@/api/client", () => ({
   },
 }));
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   listCards: jest.fn(),
 }));
 
-jest.mock("@/lib/hero-back-logos-db", () => ({
+jest.mock("@/lib/data/hero-back-logos-db", () => ({
   listHeroBackLogosWithBlobs: jest.fn(),
 }));
 
 import { apiClient } from "@/api/client";
 import { createBackupJson } from "@/lib/backup/backup-export";
-import { listCards } from "@/lib/cards-db";
-import { getHqccDexieDb } from "@/lib/hqcc-dexie";
-import { listHeroBackLogosWithBlobs } from "@/lib/hero-back-logos-db";
+import { listCards } from "@/lib/data/cards-db";
+import { getHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { listHeroBackLogosWithBlobs } from "@/lib/data/hero-back-logos-db";
 import { createCardRecord } from "@/lib/test-support/cards-db-test-helpers";
 import {
   deleteDb,

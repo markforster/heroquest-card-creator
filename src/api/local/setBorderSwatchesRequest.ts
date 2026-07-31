@@ -1,5 +1,5 @@
 import { setBorderSwatchesInputSchema } from "@/api/settings";
-import { setBorderSwatches } from "@/lib/settings-db";
+import { setBorderSwatches } from "@/lib/data/settings-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

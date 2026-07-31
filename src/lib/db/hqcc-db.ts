@@ -5,14 +5,14 @@ import {
   DB_VERSION,
   ensureDexieMetaAppVersionRecord,
   openHqccDexieDb,
-} from "@/lib/hqcc-dexie";
+} from "@/lib/db/hqcc-dexie";
 import {
   ensureIndexedDbAvailable,
   probeHqccDbVersion,
   readExistingHqccDbAppVersion,
   readExistingHqccDbVersion,
-} from "@/lib/hqcc-db-native";
-import { runHqccDbStartupJobs } from "@/lib/hqcc-db-startup-jobs";
+} from "@/lib/db/hqcc-db-native";
+import { runHqccDbStartupJobs } from "@/lib/db/jobs/hqcc-db-startup-jobs";
 
 /**
  * Native IndexedDB handle returned after the Dexie-backed database has been opened successfully.

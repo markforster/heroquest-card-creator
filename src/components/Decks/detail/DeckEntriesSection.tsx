@@ -16,7 +16,7 @@ import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntr
 import type { DeckDetailDragState } from "@/components/Decks/types/deck-detail";
 import { useI18n } from "@/i18n/I18nProvider";
 import formatMessageWith from "@/lib/format-message-with";
-import { isPairDeleteConfirmRequiredError, type PairUsageReport } from "@/lib/decks-errors";
+import { isPairDeleteConfirmRequiredError, type PairUsageReport } from "@/lib/data/decks-errors";
 
 import type { ReactNode } from "react";
 

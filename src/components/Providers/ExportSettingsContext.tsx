@@ -10,7 +10,7 @@ import {
   setSelectedExportProfile,
   type ExportProfile,
   type ExportProfilesState,
-} from "@/lib/export-profiles";
+} from "@/lib/data/export-profiles";
 import {
   createDefaultExportSettings,
   type ExportSettings,

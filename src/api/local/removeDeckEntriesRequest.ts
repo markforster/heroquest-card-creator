@@ -1,5 +1,5 @@
 import { deckEntryRemoveInputSchema } from "@/api/decks";
-import { removeEntries } from "@/lib/decks-service";
+import { removeEntries } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

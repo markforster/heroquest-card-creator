@@ -2,7 +2,7 @@ import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import type { ZodiosPlugin } from "@zodios/core";
 
 import { touchCardLastViewedInputSchema } from "@/api/cards";
-import { touchCardLastViewed } from "@/lib/cards-db";
+import { touchCardLastViewed } from "@/lib/data/cards-db";
 
 /**
  * Serves the local touch-card-last-viewed endpoint through the IndexedDB-backed service layer.

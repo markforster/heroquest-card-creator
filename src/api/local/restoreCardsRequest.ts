@@ -1,4 +1,4 @@
-import { restoreCards } from "@/lib/cards-db";
+import { restoreCards } from "@/lib/data/cards-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

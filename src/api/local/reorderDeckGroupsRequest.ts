@@ -1,5 +1,5 @@
 import { deckGroupReorderInputSchema } from "@/api/decks";
-import { reorderGroups } from "@/lib/decks-service";
+import { reorderGroups } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

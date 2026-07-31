@@ -1,6 +1,6 @@
 "use client";
 
-import { openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import type { CardThumbnailRecord } from "@/types/cards-normalized";
 
 const MIGRATION_KEY = "hqcc.migrations.thumbnailJpeg.v1";

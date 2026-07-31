@@ -21,7 +21,7 @@ jest.mock("@/api/client", () => ({
 
 import { apiClient } from "@/api/client";
 import { importBackupJson } from "@/lib/backup/backup-import";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createDeckEntryRecord,
   createDeckGroupRecord,

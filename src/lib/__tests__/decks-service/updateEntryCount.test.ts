@@ -1,16 +1,16 @@
 const enqueueDbEstimateChange = jest.fn();
 const createPair = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-jest.mock("@/lib/pairs-service", () => ({
+jest.mock("@/lib/data/pairs-service", () => ({
   createPair: (...args: unknown[]) => createPair(...args),
 }));
 
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { addFrontsToSet, listEntriesForSet, updateEntryCount } from "@/lib/decks-service";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { addFrontsToSet, listEntriesForSet, updateEntryCount } from "@/lib/data/decks-service";
 
 import {
   TEST_NOW,

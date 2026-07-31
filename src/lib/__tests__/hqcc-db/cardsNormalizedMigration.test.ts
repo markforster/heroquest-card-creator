@@ -1,8 +1,8 @@
 import Dexie from "dexie";
 import { IDBDatabase, IDBFactory, IDBKeyRange } from "fake-indexeddb";
 
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { getCard } from "@/lib/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { getCard } from "@/lib/data/cards-db";
 
 const originalIndexedDbDescriptor = Object.getOwnPropertyDescriptor(window, "indexedDB");
 const originalIdbKeyRangeDescriptor = Object.getOwnPropertyDescriptor(window, "IDBKeyRange");

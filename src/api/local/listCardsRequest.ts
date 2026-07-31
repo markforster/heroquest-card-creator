@@ -1,5 +1,5 @@
 import { listCardsFilterSchema } from "@/api/cards";
-import { listCards } from "@/lib/cards-db";
+import { listCards } from "@/lib/data/cards-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

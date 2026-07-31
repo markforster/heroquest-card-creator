@@ -16,8 +16,13 @@ function groupByPath(filePath) {
   const normalized = normalizePath(filePath);
 
   if (normalized.includes("/src/api/local/")) return "api/local plugins";
+  if (normalized.includes("/src/lib/data/")) return "lib/data";
+  if (normalized.includes("/src/lib/db/jobs/")) return "lib/db/jobs";
+  if (normalized.includes("/src/lib/db/migrations/")) return "lib/db/migrations";
+  if (normalized.includes("/src/lib/db/maintenance/")) return "lib/db/maintenance";
+  if (normalized.includes("/src/lib/db/")) return "lib/db";
   if (normalized.includes("/src/lib/backup/")) return "lib/backup";
-  if (normalized.includes("/src/lib/")) return "lib/data services";
+  if (normalized.includes("/src/lib/")) return "lib/support";
   if (normalized.includes("/src/types/")) return "types/contracts";
   if (normalized.includes("/scripts/skott/")) return "skott entry";
 

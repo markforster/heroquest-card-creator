@@ -1,4 +1,4 @@
-import { getAllAssets } from "@/lib/assets-db";
+import { getAllAssets } from "@/lib/data/assets-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

@@ -11,9 +11,8 @@ export {
   listEntriesForSet,
   listGroups,
   listSets,
-  repairOrphanDeckEntries,
   validatePairEntry,
-} from "@/lib/decks-queries";
+} from "@/lib/data/decks-queries";
 export {
   addFrontsToSet,
   cascadeDeleteDeckDataForBackFaceIds,
@@ -33,4 +32,4 @@ export {
   updateEntryCount,
   updateGroup,
   updateSet,
-} from "@/lib/decks-mutations";
+} from "@/lib/data/decks-mutations";

@@ -2,12 +2,12 @@ import type { CardRecord } from "@/types/cards-db";
 
 const getCard = jest.fn();
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   getCard: (...args: unknown[]) => getCard(...args),
 }));
 
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { listCardDeckMembership } from "@/lib/decks-service";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { listCardDeckMembership } from "@/lib/data/decks-service";
 
 import {
   createDeckEntryRecord,

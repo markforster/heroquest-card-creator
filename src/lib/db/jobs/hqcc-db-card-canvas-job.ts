@@ -3,7 +3,7 @@
 import {
   META_CARD_CANVAS_ROLLBACK_MIGRATED_KEY,
   openHqccDexieDb,
-} from "@/lib/hqcc-dexie";
+} from "@/lib/db/hqcc-dexie";
 
 type HqccDexieDb = Awaited<ReturnType<typeof openHqccDexieDb>>;
 

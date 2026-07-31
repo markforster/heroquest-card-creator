@@ -1,4 +1,4 @@
-import { listDecks } from "@/lib/decks-service";
+import { listDecks } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

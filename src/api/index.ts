@@ -4,6 +4,7 @@ import { assetsApi } from "@/api/assets";
 import { cardsApi } from "@/api/cards";
 import { collectionsApi } from "@/api/collections";
 import { decksApi } from "@/api/decks";
+import { heroBackLogosApi } from "@/api/heroBackLogos";
 import { libraryApi } from "@/api/library";
 import { pairsApi } from "@/api/pairs";
 import { settingsApi } from "@/api/settings";
@@ -14,6 +15,7 @@ export const api = makeApi([
   ...assetsApi,
   ...collectionsApi,
   ...decksApi,
+  ...heroBackLogosApi,
   ...libraryApi,
   ...pairsApi,
   ...settingsApi,
@@ -25,6 +27,7 @@ export {
   cardsApi,
   collectionsApi,
   decksApi,
+  heroBackLogosApi,
   libraryApi,
   pairsApi,
   settingsApi,

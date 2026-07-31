@@ -1,5 +1,5 @@
-import { getAssetObjectUrl } from "@/lib/assets-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { getAssetObjectUrl } from "@/lib/data/assets-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 import { createTestBlob, deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 

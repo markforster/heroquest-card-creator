@@ -1,5 +1,5 @@
 import { setCopyrightTemplateDefaultsInputSchema } from "@/api/settings";
-import { setCopyrightTemplateDefaults } from "@/lib/settings-db";
+import { setCopyrightTemplateDefaults } from "@/lib/data/settings-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

@@ -1,5 +1,5 @@
 import { deckSetCreateInputSchema } from "@/api/decks";
-import { createSet } from "@/lib/decks-service";
+import { createSet } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

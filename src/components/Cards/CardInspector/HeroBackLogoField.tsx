@@ -13,17 +13,17 @@ import {
 import BaseInspectorField from "@/components/Cards/CardInspector/BaseInspectorField";
 import FormSelect, { type FormSelectOption, type FormSelectRenderMeta } from "@/components/common/FormSelect";
 import { useEditorSave } from "@/components/Providers/EditorSaveContext";
+import { addHeroBackLogo, listHeroBackLogos } from "@/api/heroBackLogos/client";
 import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
-import {
-  addHeroBackLogo,
-  listHeroBackLogos,
-  type DeleteHeroBackLogoRemediation,
-  type HeroBackLogoRecord,
-} from "@/lib/hero-back-logos-db";
 
 import HeroBackLogoModal from "./HeroBackLogoModal";
 import HeroBackLogoPreviewTile from "./HeroBackLogoPreviewTile";
+
+import type {
+  DeleteHeroBackLogoRemediation,
+  HeroBackLogoRecord,
+} from "@/api/heroBackLogos";
 
 type HeroBackLogoFieldProps = {
   label: string;

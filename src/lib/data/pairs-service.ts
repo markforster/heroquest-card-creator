@@ -9,17 +9,17 @@ import type {
 } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
 
-import { enqueueDbEstimateChange } from "@/lib/indexeddb-size-tracker";
+import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
 import {
   createPairDeleteConfirmRequiredError,
   createPairInUseError,
   type PairDeleteResolution,
   type PairUsageReport,
-} from "@/lib/decks-errors";
-import { getCard } from "./cards-db";
-import { openHqccDexieDb } from "./hqcc-dexie";
+} from "@/lib/data/decks-errors";
+import { getCard } from "@/lib/data/cards-db";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
-import { generateId } from ".";
+import { generateId } from "@/lib";
 
 /**
  * Public pair record returned by the local API and deck tooling.

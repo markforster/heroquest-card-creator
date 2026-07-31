@@ -31,8 +31,7 @@ import {
   isPairDeleteConfirmRequiredError,
   isPairInUseError,
   type PairUsageReport,
-} from "@/lib/decks-errors";
-import { previewDeletePair } from "@/lib/pairs-service";
+} from "@/lib/data/decks-errors";
 import type { CardFace } from "@/types/card-face";
 
 import CollapsibleGroup from "./CollapsibleGroup";
@@ -399,7 +398,9 @@ export default function PairingInspectorPanel({
   const buildPendingUnpairImpact = async (targets: UnpairTarget[]): Promise<PendingUnpairImpact> => {
     const usageRows: PairUsageReport["cascadePlan"]["usage"] = [];
     for (const target of targets) {
-      const report = await previewDeletePair(target.frontFaceId, target.backFaceId, {
+      const report = await apiClient.previewDeletePair({
+        frontFaceId: target.frontFaceId,
+        backFaceId: target.backFaceId,
         mode: "confirmable-cascade",
       });
       usageRows.push(...report.cascadePlan.usage);

@@ -1,5 +1,5 @@
 import { deleteAssetsInputSchema } from "@/api/assets";
-import { deleteAssets } from "@/lib/assets-db";
+import { deleteAssets } from "@/lib/data/assets-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

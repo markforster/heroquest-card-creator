@@ -2,11 +2,11 @@ const openHqccDexieDb = jest.fn();
 const estimateIndexedDbSize = jest.fn();
 const estimateRecordBytes = jest.fn();
 
-jest.mock("@/lib/hqcc-dexie", () => ({
+jest.mock("@/lib/db/hqcc-dexie", () => ({
   openHqccDexieDb: () => openHqccDexieDb(),
 }));
 
-jest.mock("@/lib/indexeddb-size-estimate", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-estimate", () => ({
   estimateIndexedDbSize: (...args: unknown[]) => estimateIndexedDbSize(...args),
   estimateRecordBytes: (...args: unknown[]) => estimateRecordBytes(...args),
 }));
@@ -28,7 +28,7 @@ type DexieTableMap = {
   deckEntries: StoreTable;
 };
 
-type TrackerModule = typeof import("@/lib/indexeddb-size-tracker");
+type TrackerModule = typeof import("@/lib/db/maintenance/indexeddb-size-tracker");
 
 const QUEUE_KEY = "hqcc.dbEstimate.queue.v1";
 const TOTALS_KEY = "hqcc.dbEstimate.totals.v1";
@@ -60,7 +60,7 @@ function createFakeDb(recordsByStore: Partial<Record<keyof DexieTableMap, StoreR
 
 async function loadTrackerModule(): Promise<TrackerModule> {
   jest.resetModules();
-  return import("@/lib/indexeddb-size-tracker");
+  return import("@/lib/db/maintenance/indexeddb-size-tracker");
 }
 
 describe("processDbEstimateQueue", () => {

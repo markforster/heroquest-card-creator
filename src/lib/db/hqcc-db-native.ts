@@ -5,7 +5,7 @@ import {
   DB_VERSION,
   META_APP_VERSION_KEY,
   META_STORE,
-} from "@/lib/hqcc-dexie";
+} from "@/lib/db/hqcc-dexie";
 
 export { META_STORE };
 

@@ -1,4 +1,4 @@
-import { createPair, createPairWithOverrides } from "@/lib/pairs-service";
+import { createPair, createPairWithOverrides } from "@/lib/data/pairs-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

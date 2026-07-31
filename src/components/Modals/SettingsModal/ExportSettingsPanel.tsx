@@ -19,7 +19,7 @@ import {
   renameExportProfile,
   setDefaultExportProfile,
   updateExportProfile,
-} from "@/lib/export-profiles";
+} from "@/lib/data/export-profiles";
 import {
   createDefaultExportSettings,
   normalizeBleedPx,

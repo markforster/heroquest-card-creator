@@ -31,7 +31,7 @@ jest.mock("@/hooks/useHeroBackLogoImageUrl", () => ({
   useHeroBackLogoImageUrl: () => ({ url: "blob:logo" }),
 }));
 
-jest.mock("@/lib/hero-back-logos-db", () => ({
+jest.mock("@/api/heroBackLogos/client", () => ({
   deleteHeroBackLogo: (...args: unknown[]) => deleteHeroBackLogo(...args),
   getHeroBackLogoUsage: (...args: unknown[]) => getHeroBackLogoUsage(...args),
   listHeroBackLogos: (...args: unknown[]) => listHeroBackLogos(...args),

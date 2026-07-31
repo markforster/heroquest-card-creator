@@ -1,4 +1,4 @@
-import { listAllPairs, listPairsForFace } from "@/lib/pairs-service";
+import { listAllPairs, listPairsForFace } from "@/lib/data/pairs-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

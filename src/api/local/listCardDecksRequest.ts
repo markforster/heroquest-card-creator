@@ -1,4 +1,4 @@
-import { listCardDeckMembership } from "@/lib/decks-service";
+import { listCardDeckMembership } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

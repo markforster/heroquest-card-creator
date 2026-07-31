@@ -2,10 +2,10 @@
 
 import { useEffect } from "react";
 
-import { repairOrphanDeckEntries } from "@/lib/decks-service";
-import { runHqccDbStartupJobs } from "@/lib/hqcc-db-startup-jobs";
-import { clearDbEstimateCache, runFullDbEstimate } from "@/lib/indexeddb-size-tracker";
-import { startThumbnailJpegMigration } from "@/lib/thumbnail-jpeg-migration";
+import { runHqccDbStartupJobs } from "@/lib/db/jobs/hqcc-db-startup-jobs";
+import { clearDbEstimateCache, runFullDbEstimate } from "@/lib/db/maintenance/indexeddb-size-tracker";
+import { repairOrphanDeckEntries } from "@/lib/db/maintenance/repair-orphan-deck-entries";
+import { startThumbnailJpegMigration } from "@/lib/db/migrations/thumbnail-jpeg-migration";
 
 export default function AppStartup() {
   useEffect(() => {

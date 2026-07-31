@@ -10,11 +10,11 @@ jest.mock("@/api/client", () => ({
   },
 }));
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   listCards: jest.fn(),
 }));
 
-jest.mock("@/lib/hero-back-logos-db", () => ({
+jest.mock("@/lib/data/hero-back-logos-db", () => ({
   listHeroBackLogosWithBlobs: jest.fn(),
 }));
 
@@ -26,9 +26,9 @@ jest.mock("@/lib/zip-utils", () => ({
 
 import { apiClient } from "@/api/client";
 import { createBackupHqcc } from "@/lib/backup/backup-export";
-import { listCards } from "@/lib/cards-db";
-import { listHeroBackLogosWithBlobs } from "@/lib/hero-back-logos-db";
-import { getHqccDexieDb } from "@/lib/hqcc-dexie";
+import { listCards } from "@/lib/data/cards-db";
+import { listHeroBackLogosWithBlobs } from "@/lib/data/hero-back-logos-db";
+import { getHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   deleteDb,
   installFakeIndexedDb,

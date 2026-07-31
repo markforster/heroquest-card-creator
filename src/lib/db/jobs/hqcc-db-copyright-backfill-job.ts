@@ -1,6 +1,6 @@
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { getBlueprintCopyrightDefaultVisible } from "@/lib/copyright-defaults";
-import { openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import type { CardBaseRecord, CardCopyrightComponentRecord, CardSlotLinkRecord } from "@/types/cards-normalized";
 
 import type { BlueprintLayer } from "@/types/blueprints";

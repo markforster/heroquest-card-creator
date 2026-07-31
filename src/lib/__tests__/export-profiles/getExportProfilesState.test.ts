@@ -1,14 +1,14 @@
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-import { getHqccDexieDb } from "@/lib/hqcc-dexie";
+import { getHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   getExportProfilesState,
   restoreExportProfilesState,
-} from "@/lib/export-profiles";
+} from "@/lib/data/export-profiles";
 import {
   EXPORT_SETTINGS_STORAGE_KEYS,
   clearExportSettingKeys,

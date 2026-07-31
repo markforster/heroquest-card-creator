@@ -1,4 +1,4 @@
-import { getCardThumbnail } from "@/lib/cards-db";
+import { getCardThumbnail } from "@/lib/data/cards-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";

@@ -2,10 +2,10 @@
 
 import Dexie, { type EntityTable, type Transaction } from "dexie";
 
-import type { AssetRecord } from "@/lib/assets-db";
-import { buildNormalizedCardRecords } from "@/lib/cards-normalized";
-import type { HeroBackLogoRecord } from "@/lib/hero-back-logos-db";
-import type { SettingsRecord } from "@/lib/settings-db";
+import type { AssetRecord } from "@/lib/data/assets-db";
+import { buildNormalizedCardRecords } from "@/lib/data/cards-normalized";
+import type { HeroBackLogoRecord } from "@/lib/data/hero-back-logos-db";
+import type { SettingsRecord } from "@/lib/data/settings-db";
 import type { CardRecord } from "@/types/cards-db";
 import type {
   CardBackgroundComponentRecord,
@@ -27,7 +27,7 @@ import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from
 import type { PairRecord } from "@/types/pairs-db";
 import { APP_VERSION } from "@/version";
 
-import { generateId } from ".";
+import { generateId } from "@/lib";
 
 export const DB_NAME = "hqcc";
 export const DB_VERSION = 11;

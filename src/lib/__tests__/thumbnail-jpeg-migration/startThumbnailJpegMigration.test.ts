@@ -2,14 +2,14 @@ import { Blob as NodeBlob } from "buffer";
 
 const openHqccDexieDb = jest.fn();
 
-jest.mock("@/lib/hqcc-dexie", () => ({
+jest.mock("@/lib/db/hqcc-dexie", () => ({
   openHqccDexieDb: () => openHqccDexieDb(),
 }));
 
 import {
   getThumbnailJpegMigrationStatus,
   startThumbnailJpegMigration,
-} from "@/lib/thumbnail-jpeg-migration";
+} from "@/lib/db/migrations/thumbnail-jpeg-migration";
 import { createSavedCardRecord } from "@/lib/test-support/decks-service-test-helpers";
 
 const originalCreateImageBitmap = globalThis.createImageBitmap;
