@@ -215,14 +215,43 @@ export function HoverAdornmentDescriptorShape({
 export function EditorTargetAdornmentLayer() {
   if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return null;
 
-  const editorTargets =
-    typeof EditorTargetsContext.useOptionalEditorTargets === "function"
-      ? EditorTargetsContext.useOptionalEditorTargets()
-      : EditorTargetsContext.useEditorTargets();
+  return typeof EditorTargetsContext.useOptionalEditorTargets === "function" ? (
+    <OptionalEditorTargetAdornmentLayer />
+  ) : (
+    <RequiredEditorTargetAdornmentLayer />
+  );
+}
 
+function OptionalEditorTargetAdornmentLayer() {
+  const editorTargets = EditorTargetsContext.useOptionalEditorTargets();
   if (!editorTargets) return null;
 
   const { hoveredTargetId, hoverAdornmentDescriptor } = editorTargets;
+  return (
+    <EditorTargetAdornmentLayerContent
+      hoveredTargetId={hoveredTargetId}
+      hoverAdornmentDescriptor={hoverAdornmentDescriptor}
+    />
+  );
+}
+
+function RequiredEditorTargetAdornmentLayer() {
+  const { hoveredTargetId, hoverAdornmentDescriptor } = EditorTargetsContext.useEditorTargets();
+  return (
+    <EditorTargetAdornmentLayerContent
+      hoveredTargetId={hoveredTargetId}
+      hoverAdornmentDescriptor={hoverAdornmentDescriptor}
+    />
+  );
+}
+
+function EditorTargetAdornmentLayerContent({
+  hoveredTargetId,
+  hoverAdornmentDescriptor,
+}: {
+  hoveredTargetId: EditorTargetId | null;
+  hoverAdornmentDescriptor: HoverAdornmentDescriptor | null;
+}) {
   const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rafRef = useRef<number | null>(null);
   const [renderedTargetId, setRenderedTargetId] = useState<EditorTargetId | null>(null);
