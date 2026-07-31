@@ -48,18 +48,8 @@ export default function DeckGroupsBoardController({
 }) {
   const mutations = useDeckMutations();
   const { t } = useI18n();
-  let selection: ReturnType<typeof useDeckDetailSelection> | null = null;
-  try {
-    selection = useDeckDetailSelection();
-  } catch {
-    selection = null;
-  }
-  let rightPanel: ReturnType<typeof useDeckRightPanel> | null = null;
-  try {
-    rightPanel = useDeckRightPanel();
-  } catch {
-    rightPanel = null;
-  }
+  const selection = useDeckDetailSelection();
+  const rightPanel = useDeckRightPanel();
   const { registerDropHandler } = useDeckMockDnd();
   const selectedSetGroupId = selection?.selectedSetId
     ? (selection.setById.get(selection.selectedSetId)?.groupId ?? null)
