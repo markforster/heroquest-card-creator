@@ -51,7 +51,7 @@ export default function BaseInspectorField({
   input,
   footer,
 }: BaseInspectorFieldProps) {
-  const isHovered = targetId ? useIsEditorTargetHovered(targetId) : false;
+  const isHovered = useIsEditorTargetHovered(targetId);
 
   return (
     <div

@@ -385,9 +385,9 @@ export function useOptionalEditorTargets() {
   return useContext(EditorTargetsContext);
 }
 
-export function useIsEditorTargetHovered(targetId: EditorTargetId) {
+export function useIsEditorTargetHovered(targetId?: EditorTargetId) {
   const editorTargets = useOptionalEditorTargets();
-  return editorTargets?.hoveredTargetId === targetId;
+  return targetId != null && editorTargets?.hoveredTargetId === targetId;
 }
 
 function clampScrollTop(value: number, scrollContainer: HTMLElement) {
