@@ -12,6 +12,7 @@ import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 type LibraryProgressHandlers = {
   onProgress?: BackupProgressCallback;
   onStatus?: BackupStatusCallback;
+  onSecondaryStatus?: (mode: "worker" | "fallback") => void;
   onSecondaryProgress?: BackupSecondaryProgressCallback;
 };
 
@@ -34,6 +35,7 @@ export const exportLibraryRequestPlugin: ZodiosPlugin = {
         format: format ?? undefined,
         onProgress: handlers?.onProgress,
         onStatus: handlers?.onStatus,
+        onSecondaryStatus: handlers?.onSecondaryStatus,
         onSecondaryProgress: handlers?.onSecondaryProgress,
       });
 

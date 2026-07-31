@@ -12,11 +12,8 @@ import type {
 type LibraryProgressHandlers = {
   onProgress?: BackupProgressCallback;
   onStatus?: BackupStatusCallback;
+  onSecondaryStatus?: (mode: "worker" | "fallback") => void;
   onSecondaryProgress?: BackupSecondaryProgressCallback;
-};
-
-type LibraryRequestConfig = {
-  hqcc?: LibraryProgressHandlers;
 };
 
 type LibraryRequestOptions = {
@@ -32,22 +29,15 @@ export async function exportLibrary(
   options?: LibraryProgressHandlers & { format?: BackupContainerFormat },
 ) {
   const requestOptions = toRequestOptions(options);
-  const request = options?.format ? { queries: { format: options.format } } : undefined;
-
-  if (request && requestOptions) {
-    return apiClient.exportLibrary(request as any, requestOptions as any);
+  if (options?.format || requestOptions) {
+    return apiClient.exportLibrary({
+      ...(options?.format ? { queries: { format: options.format } } : {}),
+      ...requestOptions,
+    } as any);
   }
-  if (request) {
-    return apiClient.exportLibrary(request as any);
-  }
-  return requestOptions
-    ? apiClient.exportLibrary(requestOptions as any)
-    : apiClient.exportLibrary();
+  return apiClient.exportLibrary();
 }
 
 export async function importLibrary(file: File, options?: LibraryProgressHandlers) {
-  return apiClient.importLibrary(
-    { file, fileName: file.name },
-    toRequestOptions(options) as any,
-  );
+  return apiClient.importLibrary({ file, fileName: file.name }, toRequestOptions(options) as any);
 }
