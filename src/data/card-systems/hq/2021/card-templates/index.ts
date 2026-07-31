@@ -1,10 +1,10 @@
 import type { CardTemplateMeta } from "@/types/templates";
 
-import { HERO_BACK_CARD_TEMPLATE } from "./hero-back";
 import { HERO_CARD_TEMPLATE } from "./hero";
+import { HERO_BACK_CARD_TEMPLATE } from "./hero-back";
 import { LABELLED_BACK_CARD_TEMPLATE } from "./labelled-back";
-import { LOGO_BACK_CARD_TEMPLATE } from "./logo-back";
 import { LARGE_TREASURE_CARD_TEMPLATE } from "./large-treasure";
+import { LOGO_BACK_CARD_TEMPLATE } from "./logo-back";
 import { MONSTER_CARD_TEMPLATE } from "./monster";
 import { RULES_CARD_TEMPLATE } from "./rules";
 import { SMALL_TREASURE_CARD_TEMPLATE } from "./small-treasure";

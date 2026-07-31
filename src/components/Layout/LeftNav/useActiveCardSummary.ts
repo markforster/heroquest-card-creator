@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { apiClient } from "@/api/client";
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -13,7 +14,6 @@ import {
   retainCardThumbnail,
   releaseCardThumbnail,
 } from "@/lib/card-thumbnail-cache";
-import { apiClient } from "@/api/client";
 
 export function useActiveCardSummary(
   activeCardId?: string,

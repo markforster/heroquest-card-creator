@@ -36,22 +36,23 @@ import { now } from "@/lib/time";
 import { applyWatermarkToCanvas, shouldApplyWatermark } from "@/lib/watermark";
 import { APP_VERSION } from "@/version";
 
+import { useOptionalEditorTargets } from "../CardEditor/EditorTargetsContext";
+
 import styles from "./CardPreview.module.css";
 import { renderBleedCanvas } from "./cardPreviewBleedCanvas";
-import CardPreviewEditorOverlay from "./cardPreviewEditorOverlay";
 import { drawDeveloperCredit } from "./cardPreviewDeveloperCredit";
+import CardPreviewEditorOverlay from "./cardPreviewEditorOverlay";
 import { mutateSvgForExport } from "./cardPreviewExportSvg";
 import { shouldClearPreviewSelection } from "./cardPreviewSelection";
-import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
 import {
   CARD_CLIP_INSET,
   CARD_CORNER_RADIUS,
   getCardPreviewStageLayout,
 } from "./cardPreviewStage";
+import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
 
-import type { CSSProperties } from "react";
 import type { CardPreviewHandle, CardPreviewProps } from "./types";
-import { useOptionalEditorTargets } from "../CardEditor/EditorTargetsContext";
+import type { CSSProperties } from "react";
 
 function normalizeCopyrightColor(value?: string) {
   if (typeof value !== "string") return undefined;

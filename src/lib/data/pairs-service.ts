@@ -1,5 +1,15 @@
 "use client";
 
+import { generateId } from "@/lib";
+import { getCard } from "@/lib/data/cards-db";
+import {
+  createPairDeleteConfirmRequiredError,
+  createPairInUseError,
+  type PairDeleteResolution,
+  type PairUsageReport,
+} from "@/lib/data/decks-errors";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
 import type { CardRecord } from "@/types/cards-db";
 import type {
   DeckEntryRecord,
@@ -9,17 +19,6 @@ import type {
 } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
 
-import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
-import {
-  createPairDeleteConfirmRequiredError,
-  createPairInUseError,
-  type PairDeleteResolution,
-  type PairUsageReport,
-} from "@/lib/data/decks-errors";
-import { getCard } from "@/lib/data/cards-db";
-import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
-
-import { generateId } from "@/lib";
 
 /**
  * Public pair record returned by the local API and deck tooling.

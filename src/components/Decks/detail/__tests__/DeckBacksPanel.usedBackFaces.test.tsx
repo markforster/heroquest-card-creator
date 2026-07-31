@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
 import { TransformStream } from "node:stream/web";
+
+import { fireEvent, render, screen } from "@testing-library/react";
 
 if (!(globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream) {
   (globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream =

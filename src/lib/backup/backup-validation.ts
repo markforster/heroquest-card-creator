@@ -1,5 +1,7 @@
 "use client";
 
+import type { DeckUsageLocation } from "@/lib/data/decks-errors";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import type { CardRecord } from "@/types/cards-db";
 import type {
   DeckEntryRecord,
@@ -8,9 +10,8 @@ import type {
   DeckSetRecord,
 } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
-import type { DeckUsageLocation } from "@/lib/data/decks-errors";
 
-import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+
 import type { HqccExportCompactFileV1, HqccExportFileV1 } from "./backup-types";
 
 export function parseBackupJson(text: string): HqccExportFileV1 {

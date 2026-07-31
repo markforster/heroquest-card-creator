@@ -1,17 +1,17 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { createPortal } from "react-dom";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { RgbaColorPicker } from "react-colorful";
+import { createPortal } from "react-dom";
 
+import SegmentedControl from "@/components/common/SegmentedControl";
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useSharedColorSwatches } from "@/hooks/useSharedColorSwatches";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatHexColor, parseHexColor } from "@/lib/color";
 import { clamp } from "@/lib/math";
-import SegmentedControl from "@/components/common/SegmentedControl";
 
 import ColorInputField from "./ColorInputField";
 import styles from "./ColorPickerField.module.css";

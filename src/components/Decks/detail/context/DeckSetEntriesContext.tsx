@@ -2,8 +2,9 @@
 
 import { createContext, useContext } from "react";
 
-import type { PropsWithChildren } from "react";
 import type { DeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
+
+import type { PropsWithChildren } from "react";
 
 const DeckSetEntriesContext = createContext<DeckSetEntriesModel | null>(null);
 

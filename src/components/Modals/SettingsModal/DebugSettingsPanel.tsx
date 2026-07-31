@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react";
 
+import { apiClient } from "@/api/client";
+import { readApiConfig } from "@/api/config";
 import styles from "@/app/page.module.css";
 import { DangerNotice, SuccessNotice, WarningNotice } from "@/components/common/Notice";
 import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiClient } from "@/api/client";
-import { readApiConfig } from "@/api/config";
+import {
+  getThumbnailJpegMigrationStatus,
+  subscribeThumbnailJpegMigration,
+} from "@/lib/db/migrations/thumbnail-jpeg-migration";
 import {
   getRemoteAssetHashIndexEnabled,
   getRemoteAssetThumbPrefetchEnabled,
@@ -16,10 +20,6 @@ import {
   setRemoteAssetThumbPrefetchEnabled,
   subscribeRemoteAssetFlags,
 } from "@/lib/remote-asset-flags";
-import {
-  getThumbnailJpegMigrationStatus,
-  subscribeThumbnailJpegMigration,
-} from "@/lib/db/migrations/thumbnail-jpeg-migration";
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes)) return "0 B";

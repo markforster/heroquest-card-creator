@@ -1,9 +1,9 @@
 import { parseAppDistribution } from "@/lib/app-distribution";
+import type { AppDistribution } from "@/lib/app-distribution";
 import { UPDATE_STORAGE_KEYS } from "@/lib/update-check/constants";
+import type { StoredUpdateState, UpdateSource } from "@/lib/update-check/types";
 import { isRemoteVersionNewer } from "@/lib/update-check/version";
 
-import type { AppDistribution } from "@/lib/app-distribution";
-import type { StoredUpdateState, UpdateSource } from "@/lib/update-check/types";
 
 export function readStoredUpdateState(): StoredUpdateState | null {
   if (typeof window === "undefined") return null;

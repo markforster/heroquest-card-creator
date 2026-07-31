@@ -1,7 +1,6 @@
 import type { SettingsRecord } from "@/lib/data/settings-db";
-
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { getDefaultCopyright } from "@/lib/data/settings-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 import { deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 

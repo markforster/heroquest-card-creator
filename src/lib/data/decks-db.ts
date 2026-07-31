@@ -1,10 +1,10 @@
 "use client";
 
-import type { DeckEntryRecord } from "@/types/decks-db";
-import type { CardFace } from "@/types/card-face";
 
 import { cardTemplatesById } from "@/data/card-templates";
 import { resolveEffectiveFace } from "@/lib/card-face";
+import type { CardFace } from "@/types/card-face";
+import type { DeckEntryRecord } from "@/types/decks-db";
 
 export const DECKS_STORE = "decks";
 export const GROUPS_STORE = "deckGroups";

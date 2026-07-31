@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import SystemSettingsPanel from "@/components/Modals/SettingsModal/SystemSettingsPanel";
-import { I18nProvider } from "@/i18n/I18nProvider";
 import { LANGUAGE_STORAGE_KEY } from "@/i18n/getInitialLanguage";
+import { I18nProvider } from "@/i18n/I18nProvider";
 
 jest.mock("@/version", () => ({
   APP_VERSION: "0.0.0-test",

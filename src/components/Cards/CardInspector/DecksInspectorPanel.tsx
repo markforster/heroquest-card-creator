@@ -4,14 +4,15 @@ import { CircleAlert, Info, Layers, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import styles from "@/app/page.module.css";
-import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
-import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
-import { useCardEditor } from "@/components/Providers/CardEditorContext";
-import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
-import { useI18n } from "@/i18n/I18nProvider";
-import { apiClient } from "@/api/client";
 import type { CardDeckMembership } from "@/api/cards";
+import { apiClient } from "@/api/client";
+import styles from "@/app/page.module.css";
+import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
+import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
+import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
+import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useI18n } from "@/i18n/I18nProvider";
+
 import InspectorEntityRow from "./InspectorEntityRow";
 import InspectorStateNotice from "./InspectorStateNotice";
 

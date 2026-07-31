@@ -1,4 +1,5 @@
 import { PrintScaling } from "pdf-lib";
+
 import type { PDFDocument } from "pdf-lib";
 
 type ApplyPdfViewerPreferencesOptions = {

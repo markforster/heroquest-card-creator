@@ -1,8 +1,9 @@
-import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
-import type { ZodiosPlugin } from "@zodios/core";
 
 import { collectionUpdateInputSchema } from "@/api/collections";
 import { updateCollection } from "@/lib/data/collections-db";
+
+import type { ZodiosPlugin } from "@zodios/core";
+import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
 /**
  * Serves the local update-collection endpoint through the IndexedDB-backed service layer.

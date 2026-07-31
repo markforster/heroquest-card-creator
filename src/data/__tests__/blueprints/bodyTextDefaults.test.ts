@@ -1,5 +1,5 @@
-import { blueprintIds } from "@/data/card-systems/types";
 import { blueprintsByTemplateId } from "@/data/blueprints";
+import { blueprintIds } from "@/data/card-systems/types";
 
 function getGroupChildProps(templateId: "hero" | "monster", childId: string) {
   const blueprint = blueprintsByTemplateId[templateId];

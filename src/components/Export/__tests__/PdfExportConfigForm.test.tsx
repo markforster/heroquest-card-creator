@@ -2,7 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 
 import PdfExportConfigForm from "@/components/Export/PdfExportConfigForm";
-
 import type { PrintConfig } from "@/lib/pdf-export";
 
 jest.mock("@/components/common/FormSelect", () => ({

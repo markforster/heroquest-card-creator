@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 
+import type { AssetRecord } from "@/api/assets";
 import AssetsPanelContent from "@/components/Assets/AssetsPanelContent";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
-import type { AssetRecord } from "@/api/assets";
 
 const mockUseListAssets = jest.fn();
 

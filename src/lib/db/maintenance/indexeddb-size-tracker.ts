@@ -1,11 +1,11 @@
 "use client";
 
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   estimateIndexedDbSize,
   estimateRecordBytes,
   type IndexedDbRecordSizes,
 } from "@/lib/db/maintenance/indexeddb-size-estimate";
-import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 const QUEUE_KEY = "hqcc.dbEstimate.queue.v1";
 const TOTALS_KEY = "hqcc.dbEstimate.totals.v1";

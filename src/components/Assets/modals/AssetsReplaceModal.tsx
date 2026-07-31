@@ -1,12 +1,13 @@
 "use client";
 
+import { useId } from "react";
+
 import styles from "@/app/page.module.css";
 import type { PendingReplaceState } from "@/components/Assets/AssetsInspector.types";
-import { WarningNotice } from "@/components/common/Notice";
 import ModalShell from "@/components/common/ModalShell";
+import { WarningNotice } from "@/components/common/Notice";
 import { useI18n } from "@/i18n/I18nProvider";
 
-import { useId } from "react";
 
 type AssetsReplaceModalProps = {
   isOpen: boolean;

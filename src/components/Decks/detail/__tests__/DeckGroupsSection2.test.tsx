@@ -1,12 +1,15 @@
-import * as React from "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { TransformStream } from "node:stream/web";
+
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import * as React from "react";
 
 if (!(globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream) {
   (globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream =
     TransformStream;
 }
 
+import type { DeckEntryRecord, DeckGroupRecord, DeckSetRecord } from "@/api/decks/types";
+import type { PairRecord } from "@/api/pairs/types";
 import DeckGroupsBoardController, {
   DeckEntriesBoardController,
   DeckMockDndProvider,
@@ -16,8 +19,6 @@ import DeckGroupsBoardController, {
   toGroupsBoardModel,
   toSourceBoardModel,
 } from "@/components/Decks/detail/DeckGroupsSection2";
-import type { DeckEntryRecord, DeckGroupRecord, DeckSetRecord } from "@/api/decks/types";
-import type { PairRecord } from "@/api/pairs/types";
 import type { DeckDetailSelectionModel } from "@/components/Decks/hooks/useDeckDetailSelectionModel";
 import type { DeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
 

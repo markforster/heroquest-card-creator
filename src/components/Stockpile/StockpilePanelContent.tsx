@@ -9,9 +9,9 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, FolderPlus, Pencil, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import type { CardRecord } from "@/api/cards";
@@ -25,6 +25,7 @@ import { useBulkCardExport } from "@/components/Export/hooks/useBulkCardExport";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { useFooterTip } from "@/components/Providers/FooterTipContext";
 import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
@@ -32,13 +33,14 @@ import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import { getDeleteCollectionImpact } from "@/components/Stockpile/collection-delete-impact";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
-import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collections-merge";
-import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
-import { hydrateCardsForExport } from "@/components/Stockpile/stockpile-export";
-import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
 import CollectionPdfExportSummaryModal from "@/components/Stockpile/pdf/CollectionPdfExportSummaryModal";
+import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collections-merge";
+import { hydrateCardsForExport } from "@/components/Stockpile/stockpile-export";
+import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
+import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
 import StockpileActionsBar from "@/components/Stockpile/StockpileActionsBar";
 import StockpileAddToCollectionModal from "@/components/Stockpile/StockpileAddToCollectionModal";
+import StockpileBottomToolbar from "@/components/Stockpile/StockpileBottomToolbar";
 import StockpileCollectionModal from "@/components/Stockpile/StockpileCollectionModal";
 import StockpileConfirmModal from "@/components/Stockpile/StockpileConfirmModal";
 import StockpileContentPane from "@/components/Stockpile/StockpileContentPane";
@@ -46,12 +48,10 @@ import StockpileExportPairPrompt from "@/components/Stockpile/StockpileExportPai
 import StockpileFooter from "@/components/Stockpile/StockpileFooter";
 import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
 import StockpilePairPopover from "@/components/Stockpile/StockpilePairPopover";
-import StockpileBottomToolbar from "@/components/Stockpile/StockpileBottomToolbar";
 import StockpilePrimaryToolbar from "@/components/Stockpile/StockpilePrimaryToolbar";
 import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
 import StockpileTableThumbPopover from "@/components/Stockpile/StockpileTableThumbPopover";
 import StockpileToolbar from "@/components/Stockpile/StockpileToolbar";
-import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import type {
   StockpileCardActions,
   StockpileCardGroupView,

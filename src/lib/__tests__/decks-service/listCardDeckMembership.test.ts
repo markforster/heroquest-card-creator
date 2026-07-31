@@ -6,9 +6,8 @@ jest.mock("@/lib/data/cards-db", () => ({
   getCard: (...args: unknown[]) => getCard(...args),
 }));
 
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { listCardDeckMembership } from "@/lib/data/decks-service";
-
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createDeckEntryRecord,
   createDeckRecord,

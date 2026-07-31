@@ -1,9 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+
 
 import CollectionPdfExportSummaryModal from "@/components/Stockpile/pdf/CollectionPdfExportSummaryModal";
-
 import type { SlotPair } from "@/lib/pdf-export";
+
+import type { ReactNode } from "react";
 
 const mockCapturedExportRun = jest.fn();
 

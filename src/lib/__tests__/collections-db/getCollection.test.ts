@@ -1,7 +1,7 @@
-import type { CollectionRecord } from "@/types/collections-db";
 
 import { getCollection } from "@/lib/data/collections-db";
 import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import type { CollectionRecord } from "@/types/collections-db";
 
 import { deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 

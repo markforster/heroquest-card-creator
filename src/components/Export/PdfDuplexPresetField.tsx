@@ -1,13 +1,12 @@
 "use client";
 
+import { useMemo, useRef, useState } from "react";
+
 import styles from "@/app/page.module.css";
 import FormSelect from "@/components/common/FormSelect";
 import { useModalEscape } from "@/components/common/ModalShell/useModalEscape";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { useI18n } from "@/i18n/I18nProvider";
-
-import { useMemo, useRef, useState } from "react";
-
 import type { DuplexPreset } from "@/lib/pdf-export";
 
 type PdfDuplexPresetFieldProps = {

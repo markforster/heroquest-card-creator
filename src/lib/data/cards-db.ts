@@ -1,5 +1,10 @@
 "use client";
 
+import { generateId } from "@/lib";
+import {
+  normalizeCopyrightTemplateDefaults,
+  resolveTemplateCopyrightDefault,
+} from "@/lib/copyright-defaults";
 import {
   assembleNormalizedCardSummaryRecord,
   assembleNormalizedCardRecord,
@@ -9,18 +14,16 @@ import {
   touchNormalizedCardBaseLastViewed,
 } from "@/lib/data/cards-normalized";
 import {
-  normalizeCopyrightTemplateDefaults,
-  resolveTemplateCopyrightDefault,
-} from "@/lib/copyright-defaults";
-import { backfillCardCopyrightComponents } from "@/lib/db/jobs/hqcc-db-copyright-backfill-job";
-import {
   createCardDeleteConfirmRequiredError,
   type CardDeleteMode,
   type CardDeleteUsageReport,
   type DeckUsageLocation,
 } from "@/lib/data/decks-errors";
-import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
 import { previewDeletePairsForFaces } from "@/lib/data/pairs-service";
+import { COPYRIGHT_TEMPLATE_DEFAULTS_KEY } from "@/lib/data/settings-db";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { backfillCardCopyrightComponents } from "@/lib/db/jobs/hqcc-db-copyright-backfill-job";
+import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
 import type { CardRecord, CardStatus } from "@/types/cards-db";
 import type {
   CardThumbnailRecord,
@@ -29,11 +32,6 @@ import type { CollectionRecord } from "@/types/collections-db";
 import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
 import type { TemplateId } from "@/types/templates";
-
-import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
-import { COPYRIGHT_TEMPLATE_DEFAULTS_KEY } from "@/lib/data/settings-db";
-
-import { generateId } from "@/lib";
 
 import type { Table, Transaction } from "dexie";
 

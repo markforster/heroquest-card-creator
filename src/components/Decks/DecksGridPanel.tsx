@@ -2,15 +2,15 @@
 
 import { Eye, LayersPlus, Pencil, Search, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
-import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
-import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
-import { useDecksGridModel } from "@/components/Decks/hooks/useDecksGridModel";
 import ModalShell from "@/components/common/ModalShell";
+import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
+import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
+import { useDecksGridModel } from "@/components/Decks/hooks/useDecksGridModel";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useNavigate } from "react-router-dom";
 
 import type { CSSProperties } from "react";
 

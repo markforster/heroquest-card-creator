@@ -1,7 +1,8 @@
-import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
-import type { ZodiosPlugin } from "@zodios/core";
-
 import { normalizeSelfPairings } from "@/lib/data/cards-db";
+
+import type { ZodiosPlugin } from "@zodios/core";
+import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
+
 
 /**
  * Serves the local normalize-self-pairings endpoint through the IndexedDB-backed service layer.

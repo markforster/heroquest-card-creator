@@ -2,7 +2,7 @@
 
 import { Combine, Info, Layers, SquareStack } from "lucide-react";
 import { useEffect } from "react";
-import type { LucideIcon } from "lucide-react";
+
 
 import styles from "@/app/page.module.css";
 import { useEditorTargets } from "@/components/Cards/CardEditor/EditorTargetsContext";
@@ -11,9 +11,11 @@ import { useLocalStorageValue } from "@/components/Providers/LocalStorageProvide
 import { useI18n } from "@/i18n/I18nProvider";
 
 import CollectionsInspectorPanel from "./CollectionsInspectorPanel";
-import GenericInspectorForm from "./GenericInspectorForm";
 import DecksInspectorPanel from "./DecksInspectorPanel";
+import GenericInspectorForm from "./GenericInspectorForm";
 import PairingInspectorPanel from "./PairingInspectorPanel";
+
+import type { LucideIcon } from "lucide-react";
 
 type InspectorMode = "form" | "pairing" | "collections" | "decks";
 const INSPECTOR_MODE_STORAGE_KEY = "hqcc.cards.inspectorMode";

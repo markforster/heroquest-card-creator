@@ -1,9 +1,9 @@
 "use client";
 
 import styles from "@/app/page.module.css";
+import { GPT_LINKS, OFFICIAL_ARTWORK_PACK_URL } from "@/components/Assets/assetsResources";
 import { useI18n } from "@/i18n/I18nProvider";
 
-import { GPT_LINKS, OFFICIAL_ARTWORK_PACK_URL } from "@/components/Assets/assetsResources";
 
 export default function AssetsEmptyState() {
   const { t } = useI18n();

@@ -5,7 +5,6 @@ jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
 }));
 
 import type { AssetRecordWithBlob } from "@/lib/data/assets-db";
-
 import { deleteAssets, getAllAssetsWithBlobs } from "@/lib/data/assets-db";
 import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 

@@ -1,18 +1,18 @@
 "use client";
 
-import CardTextBlock, {
-  clipRowsToHeight,
-  layoutCardText,
-  measureCardTextMaxLineWidth,
-} from "@/components/Cards/CardParts/CardTextBlock";
+import {
+  padBounds,
+} from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import {
   EDITOR_TARGET_IDS,
   useRegisterHoverAdornment,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import {
-  padBounds,
-} from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
+import CardTextBlock, {
+  clipRowsToHeight,
+  layoutCardText,
+  measureCardTextMaxLineWidth,
+} from "@/components/Cards/CardParts/CardTextBlock";
 import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";

@@ -1,6 +1,5 @@
-import { computeLayoutPlan } from "@/lib/pdf-export/layout";
 import { getPdfFooterReserveMm } from "@/lib/pdf-export/footer";
-
+import { computeLayoutPlan } from "@/lib/pdf-export/layout";
 import type { PrintConfig } from "@/lib/pdf-export/types";
 
 describe("pdf-export layout", () => {

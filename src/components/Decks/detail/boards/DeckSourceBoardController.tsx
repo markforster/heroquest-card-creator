@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
+
 import {
   BOARD_ROUTING_META_BY_ID,
   DefaultSetThumbnailContent,

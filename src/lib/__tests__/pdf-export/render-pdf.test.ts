@@ -1,9 +1,9 @@
 import { PDFDocument, PDFPage, PrintScaling } from "pdf-lib";
 
 import { renderPdf } from "@/lib/pdf-export/render-pdf";
+import type { PrintConfig } from "@/lib/pdf-export/types";
 import { APP_VERSION } from "@/version";
 
-import type { PrintConfig } from "@/lib/pdf-export/types";
 
 jest.mock("@/generated/embeddedAssets", () => ({
   embeddedImagesByFileName: {

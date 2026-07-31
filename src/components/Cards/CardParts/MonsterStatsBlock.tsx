@@ -1,4 +1,5 @@
 import monsterStatsBg from "@/assets/card-parts/monster-stats.png";
+import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import {
   EDITOR_TARGET_IDS,
   MONSTER_STAT_TARGET_IDS,
@@ -6,7 +7,6 @@ import {
   useRegisterHoverAdornments,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useStatLabelOverrides } from "@/components/Providers/StatLabelOverridesProvider";

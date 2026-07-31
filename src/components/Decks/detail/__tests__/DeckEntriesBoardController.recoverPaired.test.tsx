@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const mockRegisterDropHandler = jest.fn();
 const mockAddFront = jest.fn();

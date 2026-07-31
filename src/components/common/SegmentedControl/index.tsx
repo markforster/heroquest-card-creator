@@ -1,8 +1,9 @@
 "use client";
 
+import styles from "./SegmentedControl.module.css";
+
 import type { ReactNode } from "react";
 
-import styles from "./SegmentedControl.module.css";
 
 type SegmentedControlOption<T extends string> = {
   value: T;

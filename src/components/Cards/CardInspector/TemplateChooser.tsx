@@ -4,6 +4,8 @@ import { BringToFront, SendToBack } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 
+import type { CardRecord } from "@/api/cards";
+import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
@@ -14,15 +16,13 @@ import { ENABLE_CARD_THUMB_CACHE, ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiClient } from "@/api/client";
-import { resolveEffectiveFace } from "@/lib/card-face";
 import { getCardDisplayName } from "@/lib/card-display-name";
+import { resolveEffectiveFace } from "@/lib/card-face";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 import {
   type PairUsageReport,
 } from "@/lib/data/decks-errors";
 import type { CardFace } from "@/types/card-face";
-import type { CardRecord } from "@/api/cards";
 import type { TemplateId } from "@/types/templates";
 
 type PendingFaceChange =

@@ -1,10 +1,10 @@
 "use client";
 
-import { ZodiosHooks } from "@zodios/react";
 import { useMutation } from "@tanstack/react-query";
+import { ZodiosHooks } from "@zodios/react";
 
-import { apiClient } from "@/api/client";
 import type { CardUpdateInput } from "@/api/cards";
+import { apiClient } from "@/api/client";
 
 export const apiHooks = new ZodiosHooks("hqcc", apiClient, {
   shouldAbortOnUnmount: true,

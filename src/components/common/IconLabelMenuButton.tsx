@@ -1,10 +1,12 @@
 "use client";
 
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
+
 import styles from "@/app/page.module.css";
 import { useClickOutside } from "@/components/common/useClickOutside";
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
+
 import type { LucideIcon } from "lucide-react";
-import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 
 type IconLabelMenuItem = {
   id: string;

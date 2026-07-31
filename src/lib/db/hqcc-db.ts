@@ -1,17 +1,17 @@
 "use client";
 
 import {
-  DB_NAME,
-  DB_VERSION,
-  ensureDexieMetaAppVersionRecord,
-  openHqccDexieDb,
-} from "@/lib/db/hqcc-dexie";
-import {
   ensureIndexedDbAvailable,
   probeHqccDbVersion,
   readExistingHqccDbAppVersion,
   readExistingHqccDbVersion,
 } from "@/lib/db/hqcc-db-native";
+import {
+  DB_NAME,
+  DB_VERSION,
+  ensureDexieMetaAppVersionRecord,
+  openHqccDexieDb,
+} from "@/lib/db/hqcc-dexie";
 import { runHqccDbStartupJobs } from "@/lib/db/jobs/hqcc-db-startup-jobs";
 
 /**

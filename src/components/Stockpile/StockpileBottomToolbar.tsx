@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { Bookmark, Download, Eye, Folder, Trash2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import styles from "@/app/page.module.css";
-import type { StockpileBottomToolbarProps } from "@/components/Stockpile/types";
 import StockpileToolbarSpacer from "@/components/Stockpile/StockpileToolbarSpacer";
+import type { StockpileBottomToolbarProps } from "@/components/Stockpile/types";
 import { useI18n } from "@/i18n/I18nProvider";
 
 function FolderBookmarkIcon() {

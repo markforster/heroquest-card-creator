@@ -1,8 +1,10 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
+
 
 import DeckGroupsBoardController from "@/components/Decks/detail/boards/DeckGroupsBoardController";
 import styles from "@/components/Decks/detail/DeckGroupsSection2.module.css";
+
+import type { ReactNode } from "react";
 
 const mockDeleteSet = jest.fn(async () => {});
 const mockReloadStructure = jest.fn(async () => {});

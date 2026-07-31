@@ -1,5 +1,5 @@
-import { composeBleedCanvas } from "@/lib/bleed-export";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/components/Cards/CardPreview/consts";
+import { composeBleedCanvas } from "@/lib/bleed-export";
 
 type MockCanvas = {
   width: number;

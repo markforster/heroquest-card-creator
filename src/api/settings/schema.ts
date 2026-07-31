@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { TEMPLATE_IDS } from "@/types/templates";
 
 export const borderSwatchesSchema = z.array(z.string());

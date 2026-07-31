@@ -1,12 +1,12 @@
 import { createCard, getCard, getCardThumbnail } from "@/lib/data/cards-db";
 import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
-import type { CollectionRecord } from "@/types/collections-db";
-
 import {
   deleteDb,
   installFakeIndexedDb,
   restoreIndexedDb,
 } from "@/lib/test-support/cards-db-test-helpers";
+import type { CollectionRecord } from "@/types/collections-db";
+
 
 const enqueueDbEstimateChange = jest.fn();
 

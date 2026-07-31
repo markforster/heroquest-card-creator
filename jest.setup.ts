@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom";
-import { TextDecoder, TextEncoder } from "util";
 import { TransformStream } from "node:stream/web";
+import { TextDecoder, TextEncoder } from "util";
 
 if (!global.TextEncoder) {
   global.TextEncoder = TextEncoder as unknown as typeof global.TextEncoder;

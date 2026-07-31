@@ -1,13 +1,13 @@
 import Dexie from "dexie";
 import { IDBFactory, IDBKeyRange } from "fake-indexeddb";
 
-import type { PairRecord } from "@/types/pairs-db";
 import type {
   DeckEntryRecord,
   DeckGroupRecord,
   DeckRecord,
   DeckSetRecord,
 } from "@/types/decks-db";
+import type { PairRecord } from "@/types/pairs-db";
 
 const originalIndexedDbDescriptor = Object.getOwnPropertyDescriptor(window, "indexedDB");
 const originalIdbKeyRangeDescriptor = Object.getOwnPropertyDescriptor(window, "IDBKeyRange");

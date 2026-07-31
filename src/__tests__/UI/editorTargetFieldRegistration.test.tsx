@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
-import type { AssetKind } from "@/api/assets";
 
+import type { AssetKind } from "@/api/assets";
 import {
   EDITOR_TARGET_IDS,
   EditorTargetsProvider,

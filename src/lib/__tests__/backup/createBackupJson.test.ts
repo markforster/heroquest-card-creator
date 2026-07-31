@@ -22,8 +22,8 @@ jest.mock("@/lib/data/hero-back-logos-db", () => ({
 import { apiClient } from "@/api/client";
 import { createBackupJson } from "@/lib/backup/backup-export";
 import { listCards } from "@/lib/data/cards-db";
-import { getHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { listHeroBackLogosWithBlobs } from "@/lib/data/hero-back-logos-db";
+import { getHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { createCardRecord } from "@/lib/test-support/cards-db-test-helpers";
 import {
   deleteDb,

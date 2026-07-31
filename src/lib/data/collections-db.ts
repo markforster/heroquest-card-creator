@@ -1,11 +1,10 @@
 "use client";
 
+import { generateId } from "@/lib";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
 import type { CollectionRecord } from "@/types/collections-db";
 
-import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
-import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
-
-import { generateId } from "@/lib";
 
 /**
  * Creates a collection record used by stockpile and card-organization flows.

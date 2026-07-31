@@ -12,7 +12,6 @@ import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntr
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-
 import type { TemplateId } from "@/types/templates";
 
 function resolveTemplateLabel(templateId?: string | null): string | null {

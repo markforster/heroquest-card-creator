@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useFormContext } from "react-hook-form";
+
+import { resolveImageLayerOverlayGeometry } from "@/components/BlueprintRenderer/blueprintRendererImageGeometry";
 import {
   EDITOR_TARGET_IDS,
   useOptionalEditorTargets,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import { resolveImageLayerOverlayGeometry } from "@/components/BlueprintRenderer/blueprintRendererImageGeometry";
 import { ENABLE_EDITOR_TARGET_INTERACTIONS } from "@/config/flags";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
@@ -17,11 +20,8 @@ import {
 import { clamp } from "@/lib/math";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { useFormContext } from "react-hook-form";
 
-import { resolveMonsterIconOverlayGeometry } from "./cardPreviewIconGeometry";
-import { CARD_HEIGHT, CARD_WIDTH, getCardPreviewStageLayout } from "./cardPreviewStage";
+
 import {
   GIZMO_ARM_LENGTH_MAX,
   GIZMO_CENTER_HANDLE_INNER_RADIUS,
@@ -46,7 +46,9 @@ import {
   roundStageValue,
   type ScaleSnapRing,
 } from "./cardPreviewGizmoMath";
+import { resolveMonsterIconOverlayGeometry } from "./cardPreviewIconGeometry";
 import { getStagePointFromClientCoordinates } from "./cardPreviewPointer";
+import { CARD_HEIGHT, CARD_WIDTH, getCardPreviewStageLayout } from "./cardPreviewStage";
 
 type CardPreviewEditorOverlayProps = {
   templateId?: TemplateId;

@@ -1,7 +1,6 @@
 "use client";
 
 import { Download, FileText, Image } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import {
   forwardRef,
   useCallback,
@@ -18,6 +17,8 @@ import IconLabelMenuButton, {
 import { useDeckExport } from "@/components/Decks/context/DeckExportContext";
 import { useDeckHasSets } from "@/components/Decks/hooks/useDeckHasSets";
 import { useI18n } from "@/i18n/I18nProvider";
+
+import type { LucideIcon } from "lucide-react";
 
 type DeckExportButtonProps = {
   deckId?: string | null;

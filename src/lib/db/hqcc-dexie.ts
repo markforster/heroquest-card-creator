@@ -2,6 +2,7 @@
 
 import Dexie, { type EntityTable, type Transaction } from "dexie";
 
+import { generateId } from "@/lib";
 import type { AssetRecord } from "@/lib/data/assets-db";
 import { buildNormalizedCardRecords } from "@/lib/data/cards-normalized";
 import type { HeroBackLogoRecord } from "@/lib/data/hero-back-logos-db";
@@ -27,7 +28,6 @@ import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from
 import type { PairRecord } from "@/types/pairs-db";
 import { APP_VERSION } from "@/version";
 
-import { generateId } from "@/lib";
 
 export const DB_NAME = "hqcc";
 export const DB_VERSION = 11;

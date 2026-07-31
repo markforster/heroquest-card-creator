@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import StockpileContentPane from "@/components/Stockpile/StockpileContentPane";
+import type { StockpileCardActions } from "@/components/Stockpile/types";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
-import type { StockpileCardActions } from "@/components/Stockpile/types";
 
 jest.mock("@/components/Stockpile/StockpileCardsGrid", () => ({
   __esModule: true,

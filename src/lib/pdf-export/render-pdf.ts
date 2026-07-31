@@ -1,5 +1,5 @@
 import { PDFArray, PDFDocument, PDFName, PDFString, StandardFonts, grayscale, rgb } from "pdf-lib";
-import type { PDFFont, PDFPage } from "pdf-lib";
+
 
 import { embeddedImagesByFileName } from "@/generated/embeddedAssets";
 import { applyDuplexPreset } from "@/lib/pdf-export/duplex";
@@ -10,9 +10,6 @@ import {
   PDF_ATTRIBUTION_TEXT_SIZE_PT,
 } from "@/lib/pdf-export/footer";
 import { applyPdfMetadata } from "@/lib/pdf-export/metadata";
-import { mmToPt } from "@/lib/pdf-export/units";
-import { applyPdfViewerPreferences } from "@/lib/pdf-export/viewer-preferences";
-
 import type {
   LayoutPlan,
   MmRect,
@@ -22,6 +19,10 @@ import type {
   PrintConfig,
   SlotPlacementMm,
 } from "@/lib/pdf-export/types";
+import { mmToPt } from "@/lib/pdf-export/units";
+import { applyPdfViewerPreferences } from "@/lib/pdf-export/viewer-preferences";
+
+import type { PDFFont, PDFPage } from "pdf-lib";
 
 type RenderPdfOptions = {
   config: PrintConfig;

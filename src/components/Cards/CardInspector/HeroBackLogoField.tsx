@@ -4,6 +4,11 @@ import { Badge, Plus, Settings2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
+import type {
+  DeleteHeroBackLogoRemediation,
+  HeroBackLogoRecord,
+} from "@/api/heroBackLogos";
+import { addHeroBackLogo, listHeroBackLogos } from "@/api/heroBackLogos/client";
 import layoutStyles from "@/app/page.module.css";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
 import {
@@ -13,17 +18,12 @@ import {
 import BaseInspectorField from "@/components/Cards/CardInspector/BaseInspectorField";
 import FormSelect, { type FormSelectOption, type FormSelectRenderMeta } from "@/components/common/FormSelect";
 import { useEditorSave } from "@/components/Providers/EditorSaveContext";
-import { addHeroBackLogo, listHeroBackLogos } from "@/api/heroBackLogos/client";
 import { useI18n } from "@/i18n/I18nProvider";
 import { generateId } from "@/lib";
 
 import HeroBackLogoModal from "./HeroBackLogoModal";
 import HeroBackLogoPreviewTile from "./HeroBackLogoPreviewTile";
 
-import type {
-  DeleteHeroBackLogoRemediation,
-  HeroBackLogoRecord,
-} from "@/api/heroBackLogos";
 
 type HeroBackLogoFieldProps = {
   label: string;

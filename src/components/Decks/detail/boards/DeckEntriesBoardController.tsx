@@ -1,20 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ListMinus, Minus, Pencil, Plus, ReplyAll, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import { apiClient } from "@/api/client";
 import pageStyles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
+import ModalShell from "@/components/common/ModalShell";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckRightPanel } from "@/components/Decks/detail/context/DeckRightPanelContext";
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
-import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 import { isPairDeleteConfirmRequiredError } from "@/lib/data/decks-errors";
 import formatMessageWith from "@/lib/format-message-with";
+
 import styles from "../DeckGroupsSection2.module.css";
+
 import {
   BOARD_ROUTING_META_BY_ID,
   BoardInfoPill,

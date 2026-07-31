@@ -1,12 +1,12 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 
 import { apiClient } from "@/api/client";
 import type { DeckEntryRecord } from "@/api/decks";
-import type { PairRecord } from "@/api/pairs";
 import { useGetDeckSet, useListDeckEntries, useListPairs } from "@/api/hooks";
-import { useQueryClient } from "@tanstack/react-query";
+import type { PairRecord } from "@/api/pairs";
 
 export type DeckSetEntriesModel = {
   setId: string | null;

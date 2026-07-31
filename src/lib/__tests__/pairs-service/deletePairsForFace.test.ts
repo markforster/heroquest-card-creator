@@ -1,6 +1,5 @@
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { deletePairsForFace } from "@/lib/data/pairs-service";
-
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createPairRecord,
   deleteDb,

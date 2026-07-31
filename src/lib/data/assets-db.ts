@@ -1,7 +1,7 @@
 "use client";
 
-import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
 import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
 
 import type { Table } from "dexie";
 

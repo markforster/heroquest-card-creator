@@ -1,17 +1,7 @@
 "use client";
 
-import type {
-  DeckEntryRecord,
-  DeckGroupRecord,
-  DeckRecord,
-  DeckSetRecord,
-} from "@/types/decks-db";
-import type { PairRecord } from "@/types/pairs-db";
 import type { CardDeckMembership } from "@/api/cards";
-
 import { getCard } from "@/lib/data/cards-db";
-import type { DeckUsageLocation } from "@/lib/data/decks-errors";
-import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   DECKS_STORE,
   GROUPS_STORE,
@@ -21,6 +11,15 @@ import {
   SETS_STORE,
   sortByIndex,
 } from "@/lib/data/decks-db";
+import type { DeckUsageLocation } from "@/lib/data/decks-errors";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import type {
+  DeckEntryRecord,
+  DeckGroupRecord,
+  DeckRecord,
+  DeckSetRecord,
+} from "@/types/decks-db";
+import type { PairRecord } from "@/types/pairs-db";
 
 /**
  * Lists decks, optionally filtering by a case-insensitive title search.

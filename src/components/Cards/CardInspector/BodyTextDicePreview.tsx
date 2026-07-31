@@ -4,7 +4,6 @@ import { useId } from "react";
 
 import styles from "@/app/page.module.css";
 import { getInlineDiceSvgUrl } from "@/lib/inline-dice";
-
 import type { InlineDiceConfiguratorState } from "@/lib/inline-dice";
 
 type BodyTextDicePreviewProps = {

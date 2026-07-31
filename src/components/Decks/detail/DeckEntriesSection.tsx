@@ -8,15 +8,15 @@ import { useNavigate } from "react-router-dom";
 
 import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
-import DeckEntryQuantityControl from "@/components/Decks/detail/DeckEntryQuantityControl";
 import { buildDeckDeepLink } from "@/components/Decks/deckDeepLink";
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntriesContext";
+import DeckEntryQuantityControl from "@/components/Decks/detail/DeckEntryQuantityControl";
 import type { DeckDetailDragState } from "@/components/Decks/types/deck-detail";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useI18n } from "@/i18n/I18nProvider";
-import formatMessageWith from "@/lib/format-message-with";
 import { isPairDeleteConfirmRequiredError, type PairUsageReport } from "@/lib/data/decks-errors";
+import formatMessageWith from "@/lib/format-message-with";
 
 import type { ReactNode } from "react";
 

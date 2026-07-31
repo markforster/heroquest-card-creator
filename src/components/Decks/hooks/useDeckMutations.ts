@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import { apiClient } from "@/api/client";
 import { listPairsMap } from "@/components/Decks/deck-preview";

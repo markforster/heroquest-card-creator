@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 "use strict";
 
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
-const crypto = require("node:crypto");
+
 const { Project, ts } = require("ts-morph");
 
 const DEFAULT_REPO_ROOT = "/Users/markforster/Workspace/heroquest-card-creator";

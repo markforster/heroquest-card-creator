@@ -1,6 +1,7 @@
+import { Blob as NodeBlob } from "buffer";
+
 import Dexie from "dexie";
 import { IDBFactory, IDBKeyRange } from "fake-indexeddb";
-import { Blob as NodeBlob } from "buffer";
 
 const originalIndexedDbDescriptor = Object.getOwnPropertyDescriptor(window, "indexedDB");
 const originalIdbKeyRangeDescriptor = Object.getOwnPropertyDescriptor(window, "IDBKeyRange");

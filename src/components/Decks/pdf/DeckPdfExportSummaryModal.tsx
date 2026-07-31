@@ -10,13 +10,13 @@ import {
   type DeckPdfExportSummary,
   type DeckPdfSetScopeMode,
 } from "@/components/Decks/deck-export";
+import { buildDeckPdfPlaceholderLookup } from "@/components/Decks/pdf/buildDeckPdfPlaceholderLookup";
+import { buildDeckPdfSummaryContent } from "@/components/Decks/pdf/buildDeckPdfSummaryContent";
 import DeckPdfExportPanel from "@/components/Decks/pdf/DeckPdfExportPanel";
 import {
   buildDeckPdfAlignmentFileName,
   buildDeckPdfFileName,
 } from "@/components/Decks/pdf/deckPdfFileName";
-import { buildDeckPdfPlaceholderLookup } from "@/components/Decks/pdf/buildDeckPdfPlaceholderLookup";
-import { buildDeckPdfSummaryContent } from "@/components/Decks/pdf/buildDeckPdfSummaryContent";
 import PdfExportShellModal, {
   type PdfExportAlignmentRun,
   type PdfExportRun,

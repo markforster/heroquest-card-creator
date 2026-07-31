@@ -20,6 +20,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext, useWatch } from "react-hook-form";
 
+import type { AssetRecord } from "@/api/assets";
+import { apiClient } from "@/api/client";
 import layoutStyles from "@/app/page.module.css";
 import { AssetsModal } from "@/components/Assets";
 import {
@@ -35,8 +37,6 @@ import IconButton from "@/components/common/IconButton";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiClient } from "@/api/client";
-import type { AssetRecord } from "@/api/assets";
 import { getDisplayAssetName } from "@/lib/asset-filename";
 import { clamp } from "@/lib/math";
 

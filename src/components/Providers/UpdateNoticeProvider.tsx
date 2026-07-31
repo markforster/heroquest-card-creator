@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { getConfiguredAppDistribution, supportsRemoteUpdateChecks } from "@/lib/app-distribution";
+import type { AppDistribution } from "@/lib/app-distribution";
 import { UPDATE_CHECK_INTERVAL_MS } from "@/lib/update-check/constants";
 import { fetchGithubLatestRelease, fetchNpmLatestVersion } from "@/lib/update-check/sources";
 import {
@@ -17,11 +18,10 @@ import {
   readStoredUpdateState,
   writeStoredUpdateState,
 } from "@/lib/update-check/storage";
+import type { StoredUpdateState, UpdateSource } from "@/lib/update-check/types";
 import { isRemoteVersionNewer } from "@/lib/update-check/version";
 import { APP_VERSION } from "@/version";
 
-import type { AppDistribution } from "@/lib/app-distribution";
-import type { StoredUpdateState, UpdateSource } from "@/lib/update-check/types";
 
 type UpdateNoticeState = {
   distribution: AppDistribution;

@@ -20,17 +20,17 @@ import {
   ICON_DICE_FACES,
   INLINE_DICE_PRESET_COLORS,
 } from "@/lib/inline-dice";
+import type {
+  InlineDiceConfiguratorState,
+  InlineDiceConfiguratorType,
+  InlineDiceConfiguratorValue,
+} from "@/lib/inline-dice";
 
 import {
   loadInlineDiceRecents,
   pushInlineDiceRecent,
 } from "./inline-dice-recents";
 
-import type {
-  InlineDiceConfiguratorState,
-  InlineDiceConfiguratorType,
-  InlineDiceConfiguratorValue,
-} from "@/lib/inline-dice";
 
 type InlineDicePickerProps = {
   disabled?: boolean;

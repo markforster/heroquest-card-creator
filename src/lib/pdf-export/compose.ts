@@ -1,6 +1,5 @@
 import { apiClient } from "@/api/client";
 import { listPairsMap } from "@/components/Decks/deck-preview";
-
 import type { PrintComposition, SlotPair } from "@/lib/pdf-export/types";
 
 export async function composeDeckSlotPairs(

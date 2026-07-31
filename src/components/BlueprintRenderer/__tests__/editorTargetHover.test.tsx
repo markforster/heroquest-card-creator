@@ -2,13 +2,13 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import BlueprintRenderer from "@/components/BlueprintRenderer";
 import {
+  getImageHoverEdgeInset,
+} from "@/components/BlueprintRenderer/blueprintRendererSimpleLayers";
+import {
   EDITOR_TARGET_IDS,
   EditorTargetsProvider,
   useEditorTargets,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import {
-  getImageHoverEdgeInset,
-} from "@/components/BlueprintRenderer/blueprintRendererSimpleLayers";
 import { CARD_WIDTH, sx, sy } from "@/config/card-canvas";
 
 jest.mock("@/components/Providers/DebugVisualsContext", () => ({

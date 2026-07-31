@@ -1,9 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { ComponentProps, ReactNode } from "react";
 
-import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
+
 import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
+import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
 import { I18nProvider } from "@/i18n/I18nProvider";
+
+import type { ComponentProps, ReactNode } from "react";
 
 const mockTrack = jest.fn();
 const mockSetActiveCard = jest.fn();

@@ -20,14 +20,16 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { createPortal } from "react-dom";
 import { useFormContext, useWatch } from "react-hook-form";
 
+import type { AssetRecord } from "@/api/assets";
+import { apiClient } from "@/api/client";
 import layoutStyles from "@/app/page.module.css";
+import { AssetsModal } from "@/components/Assets";
 import {
   EDITOR_TARGET_IDS,
   useInspectorTargetRegistration,
   useIsEditorTargetHovered,
   useSecondaryTargetActionRegistration,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import { AssetsModal } from "@/components/Assets";
 import { addPinnedAsset, getAssetKindLabel } from "@/components/Cards/CardInspector/asset-utils";
 import { computeCardInspectorPopoverPosition } from "@/components/Cards/CardInspector/card-inspector-popover-position";
 import FormLabelWithIcon from "@/components/Cards/CardInspector/FormLabelWithIcon";
@@ -35,8 +37,6 @@ import IconButton from "@/components/common/IconButton";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiClient } from "@/api/client";
-import type { AssetRecord } from "@/api/assets";
 import { getDisplayAssetName } from "@/lib/asset-filename";
 import {
   computeSliderTickLeftPx,

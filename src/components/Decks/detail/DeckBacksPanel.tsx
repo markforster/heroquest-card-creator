@@ -12,10 +12,10 @@ import {
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import styles from "@/app/page.module.css";
-import DeckInfoPanel from "@/components/Decks/detail/DeckInfoPanel";
-import DeckPreviewPanel from "@/components/Decks/detail/DeckPreviewPanel";
 import { useDeckRightPanel } from "@/components/Decks/detail/context/DeckRightPanelContext";
 import DeckFaceCardsFilterSelect from "@/components/Decks/detail/DeckFaceCardsFilterSelect";
+import DeckInfoPanel from "@/components/Decks/detail/DeckInfoPanel";
+import DeckPreviewPanel from "@/components/Decks/detail/DeckPreviewPanel";
 import type { RightPanelFaceMode } from "@/components/Decks/types/deck-backs";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
 import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";

@@ -10,9 +10,10 @@ import {
   useState,
 } from "react";
 
-import type { MouseEvent, PointerEvent, ReactNode, RefObject } from "react";
 import { ENABLE_EDITOR_TARGET_INTERACTIONS } from "@/config/flags";
 import type { BlueprintBounds } from "@/types/blueprints";
+
+import type { MouseEvent, PointerEvent, ReactNode, RefObject } from "react";
 
 export const EDITOR_TARGET_IDS = {
   title: "title",

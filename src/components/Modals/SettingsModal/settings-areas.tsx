@@ -17,8 +17,8 @@ import CopyrightSettingsPanel from "@/components/Modals/SettingsModal/CopyrightS
 import DebugSettingsPanel from "@/components/Modals/SettingsModal/DebugSettingsPanel";
 import ExportSettingsPanel from "@/components/Modals/SettingsModal/ExportSettingsPanel";
 import StatLabelOverridesPanel from "@/components/Modals/SettingsModal/StatLabelOverridesPanel";
-import TextFittingSettingsPanel from "@/components/Modals/SettingsModal/TextFittingSettingsPanel";
 import SystemSettingsPanel from "@/components/Modals/SettingsModal/SystemSettingsPanel";
+import TextFittingSettingsPanel from "@/components/Modals/SettingsModal/TextFittingSettingsPanel";
 import type { MessageKey } from "@/i18n/messages";
 import { isDebugToolsEnabled } from "@/lib/env";
 

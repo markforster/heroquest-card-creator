@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import styles from "@/app/page.module.css";
-import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
 import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
+import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
 const mockTrack = jest.fn();

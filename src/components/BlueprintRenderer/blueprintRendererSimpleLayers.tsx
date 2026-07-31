@@ -30,12 +30,12 @@ import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
+import { resolveImageLayerHoverBounds } from "./blueprintRendererImageGeometry";
 import {
   MissingArtworkPlaceholder,
   getLayerBounds,
   normalizeClipId,
 } from "./blueprintRendererShared";
-import { resolveImageLayerHoverBounds } from "./blueprintRendererImageGeometry";
 
 import type { StaticImageData } from "next/image";
 

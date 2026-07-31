@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { useListCards, useListDecks, useListPairs } from "@/api/hooks";
 import { apiClient } from "@/api/client";
+import { useListCards, useListDecks, useListPairs } from "@/api/hooks";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { getSelectedDeckId } from "@/components/Decks/selectors/deckDetailSelectors";
 import { getCardThumbnailUrl } from "@/lib/card-thumbnail-cache";

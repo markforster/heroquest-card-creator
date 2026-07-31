@@ -1,9 +1,10 @@
+const { execFileSync } = require("child_process");
 const { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } = require("fs");
 const http = require("http");
 const os = require("os");
 const path = require("path");
+
 const mime = require("mime");
-const { execFileSync } = require("child_process");
 
 const repoRoot = path.resolve(__dirname, "..");
 const pagesPlaceholderRoot = path.join(repoRoot, ".github", "pages-placeholder");

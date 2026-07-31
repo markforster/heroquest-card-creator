@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 
-import { useI18n } from "@/i18n/I18nProvider";
 import { LANGUAGE_STORAGE_KEY } from "@/i18n/getInitialLanguage";
+import { useI18n } from "@/i18n/I18nProvider";
 import type { MessageKey, SupportedLanguage } from "@/i18n/messages";
 import { renderWithI18n } from "@/test/renderWithI18n";
 

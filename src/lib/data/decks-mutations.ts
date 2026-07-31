@@ -1,17 +1,8 @@
 "use client";
 
-import type {
-  DeckEntryRecord,
-  DeckGroupRecord,
-  DeckRecord,
-  DeckSetRecord,
-} from "@/types/decks-db";
 
-import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
-import { getCard } from "@/lib/data/cards-db";
-import { createPair } from "@/lib/data/pairs-service";
 import { generateId } from "@/lib";
-import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { getCard } from "@/lib/data/cards-db";
 import {
   clampEntryCount,
   DECKS_STORE,
@@ -30,6 +21,15 @@ import {
   listGroups,
   listSets,
 } from "@/lib/data/decks-queries";
+import { createPair } from "@/lib/data/pairs-service";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
+import type {
+  DeckEntryRecord,
+  DeckGroupRecord,
+  DeckRecord,
+  DeckSetRecord,
+} from "@/types/decks-db";
 
 /**
  * Creates a deck together with its default first group.

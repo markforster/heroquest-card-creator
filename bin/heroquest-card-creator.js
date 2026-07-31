@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 "use strict";
 
-const http = require("http");
-const fs = require("fs");
-const os = require("os");
-const net = require("net");
-const path = require("path");
 const { spawn } = require("child_process");
+const fs = require("fs");
+const http = require("http");
+const net = require("net");
+const os = require("os");
+const path = require("path");
+
+const chalk = require("chalk");
 const mime = require("mime");
 const yaml = require("yaml");
-const chalk = require("chalk");
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 3000;

@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import styles from "@/app/page.module.css";
 import type { CollectionRecord } from "@/api/collections";
+import styles from "@/app/page.module.css";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 

@@ -1,5 +1,5 @@
-import { resolveDeckPreviewIds } from "@/components/Decks/deck-preview";
 import type { PairRecord } from "@/api/pairs/types";
+import { resolveDeckPreviewIds } from "@/components/Decks/deck-preview";
 
 function buildPair(overrides: Partial<PairRecord> = {}): PairRecord {
   return {

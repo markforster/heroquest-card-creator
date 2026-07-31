@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import type { DeckEntryRecord, DeckGroupRecord, DeckSetRecord } from "@/api/decks";
+
 import type {
   DragEndEvent,
   DragMoveEvent,
   DragOverEvent,
   DragStartEvent,
 } from "@dnd-kit/core";
-import type { DeckEntryRecord, DeckGroupRecord, DeckSetRecord } from "@/api/decks";
 
 type DragType = "set" | "group" | "back-face" | "front-face" | "entry" | null;
 

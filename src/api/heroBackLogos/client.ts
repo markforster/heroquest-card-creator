@@ -1,7 +1,6 @@
 "use client";
 
 import { apiClient } from "@/api/client";
-
 import type {
   DeleteHeroBackLogoRemediation,
   HeroBackLogoRecord,

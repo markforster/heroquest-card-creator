@@ -3,8 +3,8 @@
 import { Folder, LibrarySquare, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import styles from "@/app/page.module.css";
 import type { CollectionRecord } from "@/api/collections";
+import styles from "@/app/page.module.css";
 import { useCollectionsTreeSettings } from "@/components/Providers/CollectionsTreeSettingsContext";
 import {
   buildCollectionsTree,

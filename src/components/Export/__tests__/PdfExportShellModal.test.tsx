@@ -1,11 +1,12 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
 
-import PdfExportShellModal from "@/components/Export/PdfExportShellModal";
 
 import type { ExportOptionsFormState } from "@/components/Export/ExportOptionsForm";
+import PdfExportShellModal from "@/components/Export/PdfExportShellModal";
 import type { PdfExportAlignmentRun, PdfExportRun } from "@/components/Export/PdfExportShellModal";
 import type { PrintConfig, SlotPair } from "@/lib/pdf-export";
+
+import type { ReactNode } from "react";
 
 const mockGetCard = jest.fn();
 const mockComputeLayoutPlan = jest.fn();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
+import React, { useState } from "react";
 
 import type { DeckGroupRecord, DeckSetRecord } from "@/api/decks";
 import styles from "@/app/page.module.css";
@@ -8,7 +9,6 @@ import CardFan, { CARD_FAN_SIZES } from "@/components/Decks/CardFan";
 import type { CardFanVariant } from "@/components/Decks/CardFan";
 import DeckGroupGridItem from "@/components/Decks/DeckGroupGridItem";
 
-import React, { useState } from "react";
 import type { ReactNode } from "react";
 
 type DeckGroupGridListProps = {

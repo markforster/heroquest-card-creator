@@ -1,12 +1,15 @@
 .next
+artefacts
 node_modules
 coverage
 dist
 build
+help-site/site
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
 public
+src/generated
+src-tauri/target
 *.log
 out
-

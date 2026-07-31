@@ -1,10 +1,10 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
+import type { AssetRecord } from "@/api/assets";
+import type { CardRecord } from "@/api/cards";
 import AssetsRoutePanels from "@/components/Assets/AssetsRoutePanels";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
-import type { AssetRecord } from "@/api/assets";
-import type { CardRecord } from "@/api/cards";
 
 const mockNavigate = jest.fn();
 const mockSaveCurrentCard = jest.fn();

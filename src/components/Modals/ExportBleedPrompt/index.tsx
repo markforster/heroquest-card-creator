@@ -4,16 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import ModalShell from "@/components/common/ModalShell";
-import ExportProfileSelect from "@/components/Export/ExportProfileSelect";
 import ExportOptionsForm from "@/components/Export/ExportOptionsForm";
+import ExportProfileSelect from "@/components/Export/ExportProfileSelect";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { ExportProfile } from "@/lib/data/export-profiles";
 import {
   DEFAULT_CROP_MARK_LENGTH,
   DEFAULT_CROP_MARK_THICKNESS,
   DEFAULT_CUT_MARK_OFFSET,
 } from "@/lib/bleed-export";
+import type { ExportProfile } from "@/lib/data/export-profiles";
 import {
   DEFAULT_BLEED_PX,
   DEFAULT_CROP_MARK_STYLE,

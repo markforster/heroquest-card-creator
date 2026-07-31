@@ -2,8 +2,8 @@
 
 import { setExportBackgroundFit, setExportClip } from "@/lib/bleed-export";
 
-import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
 import { getCardPreviewStageLayout } from "./cardPreviewStage";
+import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
 
 import type { CardPreviewProps } from "./types";
 

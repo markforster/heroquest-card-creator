@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 
-import { apiClient } from "@/api/client";
 import type { AssetRecordWithBlob } from "@/api/assets";
+import { apiClient } from "@/api/client";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
 import {
   getRemoteAssetHashIndexEnabled,

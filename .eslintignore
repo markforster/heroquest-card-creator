@@ -1,0 +1,11 @@
+.next/
+artefacts/
+coverage/
+dist/
+build/
+help-site/site/
+node_modules/
+out/
+public/
+src/generated/
+src-tauri/target/

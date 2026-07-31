@@ -8,12 +8,12 @@ import {
   formatSystemSettingsTimestamp,
   getSystemSettingsStoreLabel,
 } from "@/components/Modals/SettingsModal/systemSettingsI18n";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   getDbEstimateStatus,
   runFullDbEstimate,
   subscribeDbEstimateStatus,
 } from "@/lib/db/maintenance/indexeddb-size-tracker";
-import { useI18n } from "@/i18n/I18nProvider";
 import { APP_VERSION } from "@/version";
 
 type StoreBreakdownEntry = {

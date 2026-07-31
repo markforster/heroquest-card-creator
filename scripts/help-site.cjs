@@ -1,6 +1,6 @@
+const { spawnSync } = require("child_process");
 const { existsSync, mkdirSync } = require("fs");
 const path = require("path");
-const { spawnSync } = require("child_process");
 
 const repoRoot = path.resolve(__dirname, "..");
 const helpSiteRoot = path.join(repoRoot, "help-site");

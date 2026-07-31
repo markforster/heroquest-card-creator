@@ -2,12 +2,12 @@
 
 import { createPortal } from "react-dom";
 
+import type { CardRecord } from "@/api/cards";
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
-import { cardTemplatesById } from "@/data/card-templates";
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import { cardTemplatesById } from "@/data/card-templates";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
-import type { CardRecord } from "@/api/cards";
 
 type StockpileTableThumbPopoverProps = {
   tableThumbAnchor: {

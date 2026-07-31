@@ -14,9 +14,9 @@ import { ENABLE_MISSING_ASSET_CHECKS } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
+import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { buildMissingAssetsReport, type MissingAssetReport } from "@/lib/export-assets-cache";
 import { runBulkExport, type BulkExportResult } from "@/lib/export-cards";
-import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import type { CardRecord } from "@/types/cards-db";
 
 export type MissingAssetsExportPrompt = {

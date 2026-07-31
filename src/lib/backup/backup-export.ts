@@ -4,6 +4,7 @@ import { encode as encodeMsgpack } from "@msgpack/msgpack";
 
 import type { AssetRecord } from "@/api/assets";
 import { USE_ZIP_COMPRESSION } from "@/config/flags";
+import { listCards } from "@/lib/data/cards-db";
 import { listHeroBackLogosWithBlobs, type HeroBackLogoRecordWithBlob } from "@/lib/data/hero-back-logos-db";
 import type { CardRecord } from "@/types/cards-db";
 import type {
@@ -15,7 +16,6 @@ import type {
 import type { PairRecord } from "@/types/pairs-db";
 
 import { DEFAULT_BACKUP_FORMAT, type BackupContainerFormat } from "../backup-formats";
-import { listCards } from "@/lib/data/cards-db";
 import { createZipBlobWithProgress } from "../zip-utils";
 
 import { blobToDataUrl } from "./backup-blob-codec";

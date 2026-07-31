@@ -14,18 +14,23 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext } from "react-hook-form";
 
+import type { AssetRecord } from "@/api/assets";
+import type { CardRecord } from "@/api/cards";
+import { apiClient } from "@/api/client";
+import { readApiConfig } from "@/api/config";
+import { useListAssets } from "@/api/hooks";
 import styles from "@/app/page.module.css";
 import AssetsEmptyState from "@/components/Assets/AssetsEmptyState";
+import {
+  RESOURCES_MENU_LINKS,
+  type ResourceMenuIcon,
+} from "@/components/Assets/assetsResources";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
 import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
 import IconButton from "@/components/common/IconButton";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
 import ModalShell from "@/components/common/ModalShell";
 import { WarningNotice } from "@/components/common/Notice";
-import { apiClient } from "@/api/client";
-import { readApiConfig } from "@/api/config";
-import type { AssetRecord } from "@/api/assets";
-import type { CardRecord } from "@/api/cards";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import {
@@ -34,26 +39,21 @@ import {
   ENABLE_ASSET_THUMB_THROTTLE,
 } from "@/config/flags";
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
-import { useListAssets } from "@/api/hooks";
+import useBufferedLoadingIndicator from "@/hooks/useBufferedLoadingIndicator";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { MessageKey } from "@/i18n/messages";
 import { generateId } from "@/lib";
 import { getDisplayAssetName, getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
+import type { AssetKindGroupId } from "@/lib/assets-grouping";
+import { groupAssetsByKind } from "@/lib/assets-grouping";
+import { isSafariBrowser } from "@/lib/browser";
 import {
   getRemoteAssetThumbPrefetchEnabled,
   subscribeRemoteAssetFlags,
 } from "@/lib/remote-asset-flags";
-import type { AssetKindGroupId } from "@/lib/assets-grouping";
-import { groupAssetsByKind } from "@/lib/assets-grouping";
-import { isSafariBrowser } from "@/lib/browser";
-import useBufferedLoadingIndicator from "@/hooks/useBufferedLoadingIndicator";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
 import type { OpenCloseProps } from "@/types/ui";
-import {
-  RESOURCES_MENU_LINKS,
-  type ResourceMenuIcon,
-} from "@/components/Assets/assetsResources";
 
 import type { ComponentType } from "react";
 

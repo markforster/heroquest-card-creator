@@ -1,10 +1,10 @@
+import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
 import {
   DEFAULT_CROP_MARK_THICKNESS,
   DEFAULT_CUT_MARK_OFFSET,
   DEFAULT_CUT_MARK_RADIUS_ADJUST,
   drawCutMarks,
 } from "@/lib/bleed-export";
-import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
 
 function makeMockContext() {
   return {

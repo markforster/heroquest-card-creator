@@ -2,19 +2,19 @@
 
 import { useRef, useState } from "react";
 
+import type { CardRecord } from "@/api/cards";
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
 import SavedCardTile from "@/components/common/SavedCardTile";
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
-import { useI18n } from "@/i18n/I18nProvider";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
+import { useI18n } from "@/i18n/I18nProvider";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import {
   invalidateCardThumbnail,
   useCardThumbnailUrl,
 } from "@/lib/card-thumbnail-cache";
-import type { CardRecord } from "@/api/cards";
 
 import type { RecentCardGroup } from "./useRecentCards";
 

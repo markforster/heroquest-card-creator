@@ -4,8 +4,8 @@ jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { replaceAsset } from "@/lib/data/assets-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 import { createTestBlob, deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 

@@ -1,5 +1,5 @@
-import { blueprintIds, layerTypes, systemFamilies } from "@/data/card-systems/types";
 import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
+import { blueprintIds, layerTypes, systemFamilies } from "@/data/card-systems/types";
 import type { Blueprint } from "@/types/blueprints";
 
 import {

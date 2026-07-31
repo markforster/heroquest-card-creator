@@ -3,12 +3,12 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useBeforeUnload, useBlocker } from "react-router-dom";
 
-import { ENABLE_UNSAVED_CHANGES_GUARD } from "@/config/flags";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
+import { ENABLE_UNSAVED_CHANGES_GUARD } from "@/config/flags";
 import { useI18n } from "@/i18n/I18nProvider";
 
-import type { Location } from "react-router-dom";
 import type { ReactNode } from "react";
+import type { Location } from "react-router-dom";
 
 type UnsavedChangesRegistration = {
   enabled: boolean;

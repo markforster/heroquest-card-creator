@@ -1,9 +1,11 @@
-import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen } from "@testing-library/react";
+
+import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
+import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
+
 import type { ReactNode } from "react";
 
-import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
-import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
 
 const mockUseStockpileData = jest.fn();
 const mockUseStockpileFilters = jest.fn();

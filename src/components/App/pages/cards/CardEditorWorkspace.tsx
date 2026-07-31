@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import { blueprintDataUrl } from "@/assets/blueprint-data";
 import styles from "@/app/page.module.css";
+import { blueprintDataUrl } from "@/assets/blueprint-data";
 import CardEditorFooterTipController from "@/components/Cards/CardEditor/CardEditorFooterTipController";
 import CardPreviewContainer from "@/components/Cards/CardEditor/CardPreviewContainer";
 import { EditorTargetsProvider } from "@/components/Cards/CardEditor/EditorTargetsContext";
@@ -11,6 +11,7 @@ import CardInspector from "@/components/Cards/CardInspector/CardInspector";
 import InspectorStateNotice from "@/components/Cards/CardInspector/InspectorStateNotice";
 import TemplateChooser from "@/components/Cards/CardInspector/TemplateChooser";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
+import previewStyles from "@/components/Cards/CardPreview/CardPreview.module.css";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/components/Cards/CardPreview/consts";
 import EditorActionsToolbar from "@/components/EditorActionsToolbar";
 import { PreviewCanvasProvider } from "@/components/Providers/PreviewCanvasContext";
@@ -18,7 +19,6 @@ import ToolsToolbar from "@/components/ToolsToolbar";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { TemplateId } from "@/types/templates";
 
-import previewStyles from "@/components/Cards/CardPreview/CardPreview.module.css";
 
 type CardEditorWorkspaceProps = {
   activeFrontId: string | null;

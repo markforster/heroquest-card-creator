@@ -2,12 +2,12 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useEffect } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 
-import CardPreview from "@/components/Cards/CardPreview";
 import {
   EDITOR_TARGET_IDS,
   EditorTargetsProvider,
   useEditorTargets,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import CardPreview from "@/components/Cards/CardPreview";
 
 jest.mock("@/components/BlueprintRenderer", () => ({
   __esModule: true,

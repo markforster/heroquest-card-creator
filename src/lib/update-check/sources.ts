@@ -1,7 +1,7 @@
 import { GITHUB_LATEST_RELEASE_URL, NPM_REGISTRY_PACKAGE_URL } from "@/lib/update-check/constants";
+import type { UpdateCheckResult } from "@/lib/update-check/types";
 import { normalizeVersion } from "@/lib/update-check/version";
 
-import type { UpdateCheckResult } from "@/lib/update-check/types";
 
 type FetchLike = typeof fetch;
 

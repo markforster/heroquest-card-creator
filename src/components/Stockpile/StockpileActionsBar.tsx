@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from "react";
 
+import type { CardRecord } from "@/api/cards";
 import styles from "@/app/page.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { CardRecord } from "@/api/cards";
 
 import type { ReactNode } from "react";
 

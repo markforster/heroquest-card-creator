@@ -4,16 +4,15 @@ import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { getCard } from "@/lib/data/cards-db";
 import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
-  seedNormalizedCard,
-  seedNormalizedThumbnail,
-} from "@/lib/test-support/normalized-card-test-helpers";
-
-import {
   createCardRecord,
   deleteDb,
   installFakeIndexedDb,
   restoreIndexedDb,
 } from "@/lib/test-support/cards-db-test-helpers";
+import {
+  seedNormalizedCard,
+  seedNormalizedThumbnail,
+} from "@/lib/test-support/normalized-card-test-helpers";
 import type { CardRecord } from "@/types/cards-db";
 
 describe("getCard", () => {

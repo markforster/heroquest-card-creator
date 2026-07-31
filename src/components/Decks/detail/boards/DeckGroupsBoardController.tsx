@@ -1,12 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CircleStar, Pencil, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import { useDeckRightPanel } from "@/components/Decks/detail/context/DeckRightPanelContext";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useI18n } from "@/i18n/I18nProvider";
+
 import styles from "../DeckGroupsSection2.module.css";
+
 import {
   BOARD_ROUTING_META_BY_ID,
   BoardInfoPill,

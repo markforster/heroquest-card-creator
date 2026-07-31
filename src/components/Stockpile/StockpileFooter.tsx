@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 
+import type { CardRecord } from "@/api/cards";
+import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
-import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
+import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { CardRecord } from "@/api/cards";
-import { apiClient } from "@/api/client";
 import type { PairUsageReport } from "@/lib/data/decks-errors";
 import formatMessageWith from "@/lib/format-message-with";
 

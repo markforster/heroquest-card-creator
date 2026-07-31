@@ -1,8 +1,9 @@
 "use client";
 
-import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
-
 import { generateId } from "@/lib";
+import type { SettingsRecord } from "@/lib/data/settings-db";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
 import {
   clearExportSettingKeys,
   createDefaultExportSettings,
@@ -10,8 +11,6 @@ import {
   hasLegacyExportSettings,
   type ExportSettings,
 } from "@/lib/export-settings";
-import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
-import type { SettingsRecord } from "@/lib/data/settings-db";
 
 export type ExportProfile = {
   id: string;

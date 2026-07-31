@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties, SVGProps } from "react";
+
 import { ENABLE_EDITOR_TARGET_INTERACTIONS } from "@/config/flags";
 import type { BlueprintBounds } from "@/types/blueprints";
 
 import * as EditorTargetsContext from "./EditorTargetsContext";
+
 import type {
   EditorTargetId,
   HoverAdornmentDescriptor,
   HoverAdornmentShape,
   HoverAdornmentTone,
 } from "./EditorTargetsContext";
+import type { CSSProperties, SVGProps } from "react";
 
 const HOVER_STYLE: CSSProperties = {
   pointerEvents: "none",

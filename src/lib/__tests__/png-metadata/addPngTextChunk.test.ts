@@ -1,6 +1,7 @@
+import { Blob as NodeBlob } from "buffer";
+
 import { addPngTextChunk } from "@/lib/png-metadata";
 import { APP_VERSION } from "@/version";
-import { Blob as NodeBlob } from "buffer";
 
 const ONE_BY_ONE_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9Fq6QAAAAASUVORK5CYII=";

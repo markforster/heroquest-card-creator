@@ -14,6 +14,8 @@ import {
   restoreExportProfilesState,
   synthesizeExportProfilesFromLegacySettings,
 } from "@/lib/data/export-profiles";
+import { addHeroBackLogo } from "@/lib/data/hero-back-logos-db";
+import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   DEFAULT_BLEED_PX,
   DEFAULT_CROP_MARK_COLOR,
@@ -26,8 +28,6 @@ import {
   normalizeColor,
   type ExportSettings,
 } from "@/lib/export-settings";
-import { addHeroBackLogo } from "@/lib/data/hero-back-logos-db";
-import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { normalizePdfPrintConfig } from "@/lib/pdf-export";
 import { configureZipJs } from "@/lib/zip-config";
 import type { CardRecord } from "@/types/cards-db";

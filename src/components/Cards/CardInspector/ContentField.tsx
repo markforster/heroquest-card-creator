@@ -22,8 +22,8 @@ import {
   EDITOR_TARGET_IDS,
   useInspectorTargetRegistration,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import FormattingHelpContent from "@/components/Cards/CardInspector/FormattingHelpContent";
 import BodyTextEmojiPicker from "@/components/Cards/CardInspector/BodyTextEmojiPicker";
+import FormattingHelpContent from "@/components/Cards/CardInspector/FormattingHelpContent";
 import InlineDicePicker from "@/components/Cards/CardInspector/InlineDicePicker";
 import ColorPickerField from "@/components/common/ColorPickerField";
 import ModalShell from "@/components/common/ModalShell";

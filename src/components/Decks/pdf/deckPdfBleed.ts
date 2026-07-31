@@ -1,13 +1,13 @@
 "use client";
 
+import { CARD_WIDTH } from "@/config/card-canvas";
 import type { CropMarksOptions, CutMarksOptions } from "@/lib/bleed-export";
+import { getBleedTrimOrigin } from "@/lib/bleed-export";
 import {
   DEFAULT_CROP_MARK_COLOR,
   DEFAULT_CUT_MARK_COLOR,
 } from "@/lib/export-settings";
-import { getBleedTrimOrigin } from "@/lib/bleed-export";
 import { DEFAULT_PDF_PRINT_CONFIG } from "@/lib/pdf-export/default-config";
-import { CARD_WIDTH } from "@/config/card-canvas";
 
 export type DeckPdfBleedSource = {
   bleedEnabled: boolean;
