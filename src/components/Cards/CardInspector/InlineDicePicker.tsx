@@ -33,7 +33,6 @@ type InlineDicePickerProps = {
   onInsert: (token: string) => void;
 };
 
-const DEFAULT_BACKGROUND_COLOR = "#FFFFFF";
 const D6_DEFAULT_CONFIG: InlineDiceConfiguratorState = {
   type: "d6",
   faceOrValue: D6_FACES[0],

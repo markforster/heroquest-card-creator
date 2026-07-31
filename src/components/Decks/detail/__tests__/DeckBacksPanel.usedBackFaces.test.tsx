@@ -32,23 +32,31 @@ jest.mock("@/components/Stockpile/hooks/useStockpileFilters", () => ({
   useStockpileFilters: (...args: unknown[]) => mockUseStockpileFilters(...args),
 }));
 
-jest.mock("@/components/Stockpile/StockpileSidebar", () => () => <div data-testid="sidebar" />);
+jest.mock(
+  "@/components/Stockpile/StockpileSidebar",
+  () =>
+    function MockStockpileSidebar() {
+      return <div data-testid="sidebar" />;
+    },
+);
 jest.mock(
   "@/components/Decks/detail/DeckFaceCardsFilterSelect",
   () =>
-    ({
+    function MockDeckFaceCardsFilterSelect({
       onFilterChange,
     }: {
       onFilterChange: (next: { type: "all" } | { type: "collection"; id: string }) => void;
-    }) => (
-      <button
-        type="button"
-        data-testid="deck-face-cards-filter-select"
-        onClick={() => onFilterChange({ type: "collection", id: "collection-1" })}
-      >
-        select filter
-      </button>
-    ),
+    }) {
+      return (
+        <button
+          type="button"
+          data-testid="deck-face-cards-filter-select"
+          onClick={() => onFilterChange({ type: "collection", id: "collection-1" })}
+        >
+          select filter
+        </button>
+      );
+    },
 );
 
 jest.mock("@dnd-kit/core", () => ({
@@ -64,12 +72,17 @@ jest.mock("@/lib/card-thumbnail-cache", () => ({
   useCardThumbnailUrl: () => "blob:test-thumb",
 }));
 
-jest.mock("@/components/common/CardThumbnail", () => (props: { alt: string }) => (
-  <div aria-label={props.alt || "thumb"} data-testid="card-thumb" />
-));
+jest.mock(
+  "@/components/common/CardThumbnail",
+  () =>
+    function MockCardThumbnail(props: { alt: string }) {
+      return <div aria-label={props.alt || "thumb"} data-testid="card-thumb" />;
+    },
+);
 
-const DeckBacksPanel = require("@/components/Decks/detail/DeckBacksPanel")
-  .default as typeof import("@/components/Decks/detail/DeckBacksPanel").default;
+const { default: DeckBacksPanel } = jest.requireActual<
+  typeof import("@/components/Decks/detail/DeckBacksPanel")
+>("@/components/Decks/detail/DeckBacksPanel");
 
 describe("DeckBacksPanel used back-face availability", () => {
   const cards = [

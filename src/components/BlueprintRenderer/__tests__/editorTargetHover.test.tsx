@@ -7,7 +7,6 @@ import {
   EditorTargetsProvider,
   useEditorTargets,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import { CARD_WIDTH, sx, sy } from "@/config/card-canvas";
 
 jest.mock("@/components/Providers/DebugVisualsContext", () => ({
   useDebugVisuals: () => ({

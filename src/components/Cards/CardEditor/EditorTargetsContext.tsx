@@ -13,7 +13,7 @@ import {
 import { ENABLE_EDITOR_TARGET_INTERACTIONS } from "@/config/flags";
 import type { BlueprintBounds } from "@/types/blueprints";
 
-import type { MouseEvent, PointerEvent, ReactNode, RefObject } from "react";
+import type { MouseEvent, ReactNode, RefObject } from "react";
 
 export const EDITOR_TARGET_IDS = {
   title: "title",
@@ -521,10 +521,10 @@ export function useSvgFocusTarget(targetId: EditorTargetId) {
               event.stopPropagation();
               editorTargets.requestSecondaryTarget(targetId);
             },
-            onPointerEnter: (_event: PointerEvent<SVGElement>) => {
+            onPointerEnter: () => {
               editorTargets.beginHoverTarget(targetId);
             },
-            onPointerLeave: (_event: PointerEvent<SVGElement>) => {
+            onPointerLeave: () => {
               editorTargets.endHoverTarget(targetId);
             },
             style: { cursor: "pointer" },

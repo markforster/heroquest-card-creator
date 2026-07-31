@@ -1,5 +1,5 @@
 import Dexie from "dexie";
-import { IDBDatabase, IDBFactory, IDBKeyRange } from "fake-indexeddb";
+import { IDBFactory, IDBKeyRange } from "fake-indexeddb";
 
 import { getCard } from "@/lib/data/cards-db";
 import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";

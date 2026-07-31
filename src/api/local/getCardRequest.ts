@@ -19,7 +19,8 @@ export const getCardRequestPlugin: ZodiosPlugin = {
       const record = await getCard(id);
       const data = record
         ? (() => {
-            const { thumbnailBlob: _thumbnailBlob, ...rest } = record as CardRecord;
+            const { thumbnailBlob, ...rest } = record as CardRecord;
+            void thumbnailBlob;
             return rest;
           })()
         : null;

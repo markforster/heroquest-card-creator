@@ -97,7 +97,7 @@ jest.mock("@/i18n/getTemplateNameLabel", () => ({
 }));
 
 jest.mock("@/components/Export/PdfExportShellModal", () => {
-  const React = require("react");
+  const React = jest.requireActual<typeof import("react")>("react");
   const defaultConfig = {
     paper: "Letter",
     orientation: "portrait",
@@ -124,7 +124,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
 
   return {
     __esModule: true,
-    default: (props: {
+    default: function MockPdfExportShellModal(props: {
       title: string;
       sourceType: "deck" | "collection" | "alignment";
       slotPairs: SlotPair[];
@@ -142,7 +142,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
       buildAlignmentExportRun?: (state: unknown) => Promise<unknown>;
       topContent: React.ReactNode | ((state: unknown) => React.ReactNode);
       children?: React.ReactNode;
-    }) => {
+    }) {
       const {
         title,
         sourceType,
@@ -323,7 +323,7 @@ jest.mock("@/components/Decks/pdf/DeckPdfExportPanel", () => ({
 
 jest.mock("@/components/Cards/CardPreview", () => ({
   __esModule: true,
-  default: forwardRef((_props, ref) => {
+  default: forwardRef(function MockCardPreview(_props, ref) {
     useImperativeHandle(ref, () => ({
       waitForBackgroundLoaded: jest.fn().mockResolvedValue(undefined),
       syncCopyrightContrast: jest.fn().mockResolvedValue(undefined),

@@ -232,9 +232,9 @@ function StorageUsageBar({
 export default function SystemSettingsPanel() {
   const { language, t } = useI18n();
   const [usageBytes, setUsageBytes] = useState<number | null>(null);
-  const [quotaBytes, setQuotaBytes] = useState<number | null>(null);
+  const [, setQuotaBytes] = useState<number | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
   const [dbEstimateStatus, setDbEstimateStatus] = useState(() => getDbEstimateStatus());
   const [dbEstimateLoading, setDbEstimateLoading] = useState(false);
 

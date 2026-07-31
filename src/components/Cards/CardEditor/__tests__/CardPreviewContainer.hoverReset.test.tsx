@@ -15,7 +15,7 @@ let mockPreviewRenderer: "svg" | "webgl" = "svg";
 
 jest.mock("@/components/Cards/CardPreview", () => ({
   __esModule: true,
-  default: forwardRef(function MockCardPreview(_props, _ref) {
+  default: forwardRef(function MockCardPreview() {
     return <div>SVG_PREVIEW</div>;
   }),
 }));

@@ -43,7 +43,8 @@ function getAssetsTable(
 }
 
 function toAssetRecord(record: StoredAssetRecord): AssetRecord {
-  const { blob: _blob, ...rest } = record;
+  const { blob, ...rest } = record;
+  void blob;
   return { ...rest };
 }
 

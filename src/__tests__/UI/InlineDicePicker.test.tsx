@@ -21,7 +21,7 @@ jest.mock("@/components/common/ColorPickerField", () => ({
     onChange: (value: string) => void;
     onPopoverElementChange?: (element: HTMLDivElement | null) => void;
   }) {
-    const React = require("react") as typeof import("react");
+    const React = jest.requireActual<typeof import("react")>("react");
     const [isPortalOpen, setIsPortalOpen] = React.useState(false);
 
     React.useEffect(() => {

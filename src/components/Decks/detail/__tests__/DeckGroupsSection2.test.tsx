@@ -376,16 +376,15 @@ function renderWorkspace(options?: {
   const selectedSet =
     sets.find((set) => set.id === (options?.selectedSetId ?? "g-C1")) ?? sets[0] ?? null;
   const selectedGroupId = selectedSet?.groupId ?? groups[0]?.id ?? null;
-  const entryRecords = Object.entries(boardModels.entries.itemsByGroup).flatMap(
-    ([groupId, entryIds]) =>
-      entryIds.map((entryId, index) =>
-        createEntryRecord(
-          entryId.replace(/^entry:/, ""),
-          selectedSet?.id ?? "g-A1",
-          `pair-${entryId.replace(/^entry:/, "")}`,
-          index,
-        ),
+  const entryRecords = Object.values(boardModels.entries.itemsByGroup).flatMap((entryIds) =>
+    entryIds.map((entryId, index) =>
+      createEntryRecord(
+        entryId.replace(/^entry:/, ""),
+        selectedSet?.id ?? "g-A1",
+        `pair-${entryId.replace(/^entry:/, "")}`,
+        index,
       ),
+    ),
   );
   const pairsById = new Map<string, PairRecord>(
     entryRecords.map((entry) => [

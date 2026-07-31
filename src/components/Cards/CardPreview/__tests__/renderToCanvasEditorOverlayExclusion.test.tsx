@@ -885,11 +885,6 @@ describe("CardPreview renderToCanvas", () => {
         return false;
       }
       const numericPosition = Number(position);
-      const axisPosition =
-        numericPosition === Number(axisPositionValues[0]) ||
-        numericPosition === Number(axisPositionValues[1])
-          ? numericPosition
-          : null;
       const anchor =
         Math.abs(numericPosition - Number(axisPositionValues[0])) % GIZMO_MOVE_SNAP_INCREMENT === 0
           ? Number(axisPositionValues[0])

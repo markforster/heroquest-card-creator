@@ -37,11 +37,14 @@ jest.mock("react-hook-form", () => ({
   useFormState: () => mockUseFormState(),
 }));
 
-jest.mock("@/components/Assets/AssetsMainPanel", () => ({
-  __esModule: true,
-  default: ({ onSelectionChange }: { onSelectionChange?: (assets: AssetRecord[]) => void }) => {
-    const { useEffect } = require("react");
+jest.mock("@/components/Assets/AssetsMainPanel", () => {
+  const { useEffect } = jest.requireActual<typeof import("react")>("react");
 
+  function MockAssetsMainPanel({
+    onSelectionChange,
+  }: {
+    onSelectionChange?: (assets: AssetRecord[]) => void;
+  }) {
     emitSelectionRefresh = () => {
       onSelectionChange?.(selectedAssets.map((asset) => ({ ...asset })));
     };
@@ -55,8 +58,13 @@ jest.mock("@/components/Assets/AssetsMainPanel", () => ({
         Refresh selection
       </button>
     );
-  },
-}));
+  }
+
+  return {
+    __esModule: true,
+    default: MockAssetsMainPanel,
+  };
+});
 
 jest.mock("@/components/Modals/ConfirmModal", () => ({
   __esModule: true,

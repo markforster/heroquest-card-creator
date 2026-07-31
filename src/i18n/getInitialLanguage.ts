@@ -1,5 +1,5 @@
 import isSupportedLanguage from "./isSupportedLanguage";
-import { supportedLanguages, visibleLanguages } from "./messages";
+import { visibleLanguages } from "./messages";
 
 import type { SupportedLanguage } from "./messages";
 

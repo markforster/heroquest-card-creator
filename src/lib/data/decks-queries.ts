@@ -2,15 +2,7 @@
 
 import type { CardDeckMembership } from "@/api/cards";
 import { getCard } from "@/lib/data/cards-db";
-import {
-  DECKS_STORE,
-  GROUPS_STORE,
-  normalizeDeckEntryRecord,
-  PAIRS_STORE,
-  resolveCardFace,
-  SETS_STORE,
-  sortByIndex,
-} from "@/lib/data/decks-db";
+import { normalizeDeckEntryRecord, resolveCardFace, sortByIndex } from "@/lib/data/decks-db";
 import type { DeckUsageLocation } from "@/lib/data/decks-errors";
 import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";

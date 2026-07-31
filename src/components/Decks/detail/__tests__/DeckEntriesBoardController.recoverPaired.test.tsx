@@ -167,8 +167,9 @@ describe("DeckEntriesBoardController recover paired modal", () => {
   const SELECT_ALL_ARIA = "decks.entries.recover.selectAllAria";
   const CANCEL_LABEL = "actions.cancel";
 
-  const DeckEntriesBoardController =
-    require("@/components/Decks/detail/boards/DeckEntriesBoardController").default;
+  const { default: DeckEntriesBoardController } = jest.requireActual<
+    typeof import("@/components/Decks/detail/boards/DeckEntriesBoardController")
+  >("@/components/Decks/detail/boards/DeckEntriesBoardController");
 
   beforeEach(() => {
     selectedSetIdMock = "set-1";

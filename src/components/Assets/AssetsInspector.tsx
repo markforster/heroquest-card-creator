@@ -20,7 +20,6 @@ import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvi
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
-import { useI18n } from "@/i18n/I18nProvider";
 import type { TemplateId } from "@/types/templates";
 
 type AssetsInspectorProps = {
@@ -40,7 +39,6 @@ export default function AssetsInspector({
   onOptimizeComplete,
   refreshKey,
 }: AssetsInspectorProps) {
-  const { t } = useI18n();
   const navigate = useNavigate();
   const { requestRecenter } = usePreviewRenderer();
   const { bypassNextNavigation, runWithUnsavedChangesGuard } = useUnsavedChangesGuardControls();

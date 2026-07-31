@@ -7,7 +7,6 @@ import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { cardTemplates } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { MessageKey } from "@/i18n/messages";
 
 export default function CopyrightSettingsPanel() {
   const { t } = useI18n();

@@ -159,13 +159,6 @@ describe("deckGroupFanMath", () => {
       progress: 1,
       count: 5,
     });
-    const collapsed10 = resolveFanFrame({
-      fromMode: "collapsed",
-      toMode: "collapsed",
-      progress: 1,
-      count: 10,
-    });
-
     expect(collapsed2.requiredWidthPx).toBeLessThan(collapsed3.requiredWidthPx);
     expect(collapsed3.requiredWidthPx).toBeLessThan(collapsed4.requiredWidthPx);
     expect(collapsed4.requiredWidthPx).toBeLessThan(collapsed5.requiredWidthPx);

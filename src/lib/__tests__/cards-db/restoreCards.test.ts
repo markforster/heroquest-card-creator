@@ -1,5 +1,5 @@
 import { listCards, restoreCards } from "@/lib/data/cards-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { getHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createCardRecord,
   deleteDb,

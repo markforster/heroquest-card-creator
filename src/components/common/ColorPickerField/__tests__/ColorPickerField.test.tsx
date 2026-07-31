@@ -65,12 +65,10 @@ function renderField(override: Partial<Props> = {}) {
 }
 
 function renderControlledField(override: Partial<Props> = {}) {
-  const {
-    inputValue: _ignoredInputValue,
-    selectedValue: _ignoredSelectedValue,
-    onChange: _ignoredOnChange,
-    ...restOverride
-  } = override;
+  const { inputValue, selectedValue, onChange, ...restOverride } = override;
+  void inputValue;
+  void selectedValue;
+  void onChange;
   const onChangeSpy = jest.fn();
   const initialValue = override.selectedValue ?? override.inputValue ?? "#ABCDEF12";
 

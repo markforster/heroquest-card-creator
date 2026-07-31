@@ -1,5 +1,3 @@
-import type { CardRecord } from "@/types/cards-db";
-
 const getCard = jest.fn();
 
 jest.mock("@/lib/data/cards-db", () => ({
@@ -18,6 +16,7 @@ import {
   installFakeIndexedDb,
   restoreIndexedDb,
 } from "@/lib/test-support/decks-service-test-helpers";
+import type { CardRecord } from "@/types/cards-db";
 
 describe("listCardDeckMembership", () => {
   beforeEach(() => {

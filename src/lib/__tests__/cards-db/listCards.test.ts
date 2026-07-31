@@ -1,6 +1,6 @@
 import { listCardsRequestPlugin } from "@/api/local/listCardsRequest";
 import { listCards } from "@/lib/data/cards-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
+import { getHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createCardRecord,
   deleteDb,

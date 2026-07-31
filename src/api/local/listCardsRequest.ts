@@ -11,7 +11,8 @@ function toListCardsFilter(params?: Record<string, unknown>) {
 }
 
 function stripCardThumbnail(card: CardRecord): Omit<CardRecord, "thumbnailBlob"> {
-  const { thumbnailBlob: _thumbnailBlob, ...rest } = card;
+  const { thumbnailBlob, ...rest } = card;
+  void thumbnailBlob;
   return rest;
 }
 

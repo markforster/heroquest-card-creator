@@ -21,7 +21,6 @@ import { resolveEffectiveFace } from "@/lib/card-face";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
 import { type PairUsageReport } from "@/lib/data/decks-errors";
 import type { CardFace } from "@/types/card-face";
-import type { TemplateId } from "@/types/templates";
 
 type PendingFaceChange =
   | {

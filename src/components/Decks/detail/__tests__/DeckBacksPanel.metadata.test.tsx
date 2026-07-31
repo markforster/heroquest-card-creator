@@ -65,8 +65,9 @@ const { apiClient: mockApiClient } = jest.requireMock("@/api/client") as {
   };
 };
 
-const DeckBacksPanel = require("@/components/Decks/detail/DeckBacksPanel")
-  .default as typeof import("@/components/Decks/detail/DeckBacksPanel").default;
+const { default: DeckBacksPanel } = jest.requireActual<
+  typeof import("@/components/Decks/detail/DeckBacksPanel")
+>("@/components/Decks/detail/DeckBacksPanel");
 
 describe("DeckBacksPanel metadata tab", () => {
   beforeEach(() => {

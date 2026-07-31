@@ -14,56 +14,54 @@ jest.mock("@/components/Decks/CardFan", () => ({
 }));
 
 jest.mock("@/components/Decks/DeckExportButton", () => {
-  const React = require("react") as typeof import("react");
+  const React = jest.requireActual<typeof import("react")>("react");
 
   return {
     __esModule: true,
-    default: React.forwardRef(
-      (
-        props: {
-          deckId?: string | null;
-          scope: "decks_grid" | "deck_detail";
-          disabled?: boolean;
-          label?: string;
-          className?: string;
-        },
-        ref: React.ForwardedRef<{
-          toggleMenu: () => boolean;
-          closeMenu: () => boolean;
-          isMenuOpen: () => boolean;
-          runImageExport: () => Promise<boolean>;
-          runPdfExport: () => Promise<boolean>;
-        }>,
-      ) => {
-        const isOpenRef = React.useRef(false);
-        const api = React.useMemo(
-          () => ({
-            toggleMenu: () => {
-              isOpenRef.current = !isOpenRef.current;
-              return true;
-            },
-            closeMenu: () => {
-              isOpenRef.current = false;
-              return true;
-            },
-            isMenuOpen: () => isOpenRef.current,
-            runImageExport: async () => {
-              isOpenRef.current = false;
-              return true;
-            },
-            runPdfExport: async () => {
-              isOpenRef.current = false;
-              return true;
-            },
-          }),
-          [],
-        );
-
-        React.useImperativeHandle(ref, () => api, [api]);
-        mockDeckExportButton(props);
-        return <button type="button">{props.label ?? "Export"}</button>;
+    default: React.forwardRef(function MockDeckExportButton(
+      props: {
+        deckId?: string | null;
+        scope: "decks_grid" | "deck_detail";
+        disabled?: boolean;
+        label?: string;
+        className?: string;
       },
-    ),
+      ref: React.ForwardedRef<{
+        toggleMenu: () => boolean;
+        closeMenu: () => boolean;
+        isMenuOpen: () => boolean;
+        runImageExport: () => Promise<boolean>;
+        runPdfExport: () => Promise<boolean>;
+      }>,
+    ) {
+      const isOpenRef = React.useRef(false);
+      const api = React.useMemo(
+        () => ({
+          toggleMenu: () => {
+            isOpenRef.current = !isOpenRef.current;
+            return true;
+          },
+          closeMenu: () => {
+            isOpenRef.current = false;
+            return true;
+          },
+          isMenuOpen: () => isOpenRef.current,
+          runImageExport: async () => {
+            isOpenRef.current = false;
+            return true;
+          },
+          runPdfExport: async () => {
+            isOpenRef.current = false;
+            return true;
+          },
+        }),
+        [],
+      );
+
+      React.useImperativeHandle(ref, () => api, [api]);
+      mockDeckExportButton(props);
+      return <button type="button">{props.label ?? "Export"}</button>;
+    }),
   };
 });
 

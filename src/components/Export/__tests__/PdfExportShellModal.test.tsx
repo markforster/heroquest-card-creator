@@ -257,10 +257,10 @@ jest.mock("@/components/Export/PdfExportProgressModal", () => ({
 }));
 
 jest.mock("@/components/Cards/CardPreview", () => {
-  const React = require("react");
+  const React = jest.requireActual<typeof import("react")>("react");
   return {
     __esModule: true,
-    default: React.forwardRef((_props: unknown, ref: React.Ref<unknown>) => {
+    default: React.forwardRef(function MockCardPreview(_props: unknown, ref: React.Ref<unknown>) {
       React.useImperativeHandle(ref, () => ({
         waitForBackgroundLoaded: jest.fn().mockResolvedValue(undefined),
         syncCopyrightContrast: jest.fn().mockResolvedValue(undefined),
@@ -340,18 +340,6 @@ jest.mock("@/lib/pdf-export", () => ({
   composePrintComposition: (...args: unknown[]) => mockComposePrintComposition(...args),
   renderPdf: (...args: unknown[]) => mockRenderPdf(...args),
 }));
-
-const config: PrintConfig = {
-  paper: "Letter",
-  orientation: "portrait",
-  marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
-  gapMm: { x: 0.5, y: 0.5 },
-  cardMm: { width: 63.5, height: 88.9 },
-  mode: "frontsOnly",
-  bleedMode: "bakedInImage",
-  bleedMm: 3,
-  duplexPreset: "normal",
-};
 
 const slotPairs: SlotPair[] = [{ slotId: "slot-1", frontId: "front-1", backId: null }];
 

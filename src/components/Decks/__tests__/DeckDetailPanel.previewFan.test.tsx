@@ -93,8 +93,9 @@ describe("DeckDetailPanel deck title fan preview ids", () => {
   });
 
   it("passes key-set-prioritized back-face ids to DeckDetailHeader", () => {
-    const DeckDetailPanel = require("@/components/Decks/DeckDetailPanel")
-      .default as typeof import("@/components/Decks/DeckDetailPanel").default;
+    const { default: DeckDetailPanel } = jest.requireActual<
+      typeof import("@/components/Decks/DeckDetailPanel")
+    >("@/components/Decks/DeckDetailPanel");
 
     const props = {
       deckId: "deck-1",

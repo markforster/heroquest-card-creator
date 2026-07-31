@@ -259,7 +259,7 @@ describe("processDbEstimateQueue", () => {
   it("waits while paused and resumes queued processing when unpaused", async () => {
     window.localStorage.setItem(QUEUE_KEY, JSON.stringify([{ store: "decks", id: "deck-1" }]));
 
-    const requestIdleCallbackMock = jest.fn((_callback: IdleRequestCallback) => 1);
+    const requestIdleCallbackMock = jest.fn(() => 1);
     globalThis.requestIdleCallback = requestIdleCallbackMock as typeof requestIdleCallback;
 
     const db = createFakeDb({
@@ -305,7 +305,7 @@ describe("processDbEstimateQueue", () => {
   });
 
   it("keeps queue entries deduped before processing starts", async () => {
-    const requestIdleCallbackMock = jest.fn((_callback: IdleRequestCallback) => 1);
+    const requestIdleCallbackMock = jest.fn(() => 1);
     globalThis.requestIdleCallback = requestIdleCallbackMock as typeof requestIdleCallback;
 
     const tracker = await loadTrackerModule();

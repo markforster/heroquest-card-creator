@@ -7,10 +7,6 @@ const helpSiteRoot = path.join(repoRoot, "help-site");
 const venvRoot = path.join(helpSiteRoot, ".venv");
 const venvBinDir =
   process.platform === "win32" ? path.join(venvRoot, "Scripts") : path.join(venvRoot, "bin");
-const pythonBin =
-  process.platform === "win32"
-    ? path.join(venvBinDir, "python.exe")
-    : path.join(venvBinDir, "python");
 const pipBin =
   process.platform === "win32" ? path.join(venvBinDir, "pip.exe") : path.join(venvBinDir, "pip");
 const mkdocsBin =
