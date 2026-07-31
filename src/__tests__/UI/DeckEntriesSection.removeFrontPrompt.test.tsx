@@ -1,7 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import DeckEntriesSection from "@/components/Decks/detail/DeckEntriesSection";
+import type ConfirmModal from "@/components/Modals/ConfirmModal";
 import { createPairDeleteConfirmRequiredError } from "@/lib/data/decks-errors";
+
+import type { ComponentProps } from "react";
+
+type MockConfirmModalProps = ComponentProps<typeof ConfirmModal>;
 
 const removeEntry = jest.fn();
 const addFront = jest.fn();
@@ -84,7 +89,14 @@ jest.mock("@/api/client", () => ({
 
 jest.mock("@/components/Modals/ConfirmModal", () => ({
   __esModule: true,
-  default: ({ isOpen, onConfirm, onExtra, onCancel, confirmLabel, extraLabel }: any) => {
+  default: ({
+    isOpen,
+    onConfirm,
+    onExtra,
+    onCancel,
+    confirmLabel,
+    extraLabel,
+  }: MockConfirmModalProps) => {
     if (!isOpen) return null;
     return (
       <div data-testid="confirm-modal">
