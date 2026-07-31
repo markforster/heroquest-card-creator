@@ -2,6 +2,8 @@ import { TransformStream } from "node:stream/web";
 
 import { render } from "@testing-library/react";
 
+import type { DeckDetailPanelProps } from "@/components/Decks/DeckDetailPanel";
+
 const mockDeckDetailHeader = jest.fn();
 const mockDeckGroupsBoardController = jest.fn();
 
@@ -167,14 +169,60 @@ describe("DeckDetailPanel deck title fan preview ids", () => {
         deckId: "deck-1",
         groups: [],
         sets: [
-          { id: "set-1", groupId: "group-1", backFaceId: "back-1", sortIndex: 0 },
-          { id: "set-2", groupId: "group-1", backFaceId: "back-2", sortIndex: 1 },
-          { id: "set-3", groupId: "group-2", backFaceId: "back-3", sortIndex: 0 },
-        ] as any,
+          {
+            id: "set-1",
+            deckId: "deck-1",
+            groupId: "group-1",
+            description: null,
+            backFaceId: "back-1",
+            sortIndex: 0,
+            createdAt: 1,
+            updatedAt: 1,
+            schemaVersion: 1,
+          },
+          {
+            id: "set-2",
+            deckId: "deck-1",
+            groupId: "group-1",
+            description: null,
+            backFaceId: "back-2",
+            sortIndex: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            schemaVersion: 1,
+          },
+          {
+            id: "set-3",
+            deckId: "deck-1",
+            groupId: "group-2",
+            description: null,
+            backFaceId: "back-3",
+            sortIndex: 0,
+            createdAt: 1,
+            updatedAt: 1,
+            schemaVersion: 1,
+          },
+        ],
         orderedGroups: [
-          { id: "group-1", title: "Group 1", sortIndex: 0 },
-          { id: "group-2", title: "Group 2", sortIndex: 1 },
-        ] as any,
+          {
+            id: "group-1",
+            deckId: "deck-1",
+            title: "Group 1",
+            sortIndex: 0,
+            createdAt: 1,
+            updatedAt: 1,
+            schemaVersion: 1,
+          },
+          {
+            id: "group-2",
+            deckId: "deck-1",
+            title: "Group 2",
+            sortIndex: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            schemaVersion: 1,
+          },
+        ],
         groupBySetId: new Map(),
         setById: new Map(),
         selectedGroupId: null,
@@ -187,7 +235,7 @@ describe("DeckDetailPanel deck title fan preview ids", () => {
         selectSet: jest.fn(),
         reloadStructure: jest.fn(async () => {}),
         applyOptimisticSets: jest.fn(() => () => {}),
-      } as any,
+      },
       entriesModel: {
         setId: null,
         backFaceId: null,
@@ -202,10 +250,10 @@ describe("DeckDetailPanel deck title fan preview ids", () => {
         reorderEntriesOptimistic: jest.fn(async () => {}),
         updateEntryCount: jest.fn(async () => {}),
         refreshEntries: jest.fn(async () => {}),
-      } as any,
-    };
+      },
+    } satisfies DeckDetailPanelProps;
 
-    render(<DeckDetailPanel {...(props as any)} />);
+    render(<DeckDetailPanel {...props} />);
 
     expect(mockDeckDetailHeader).toHaveBeenCalledWith(
       expect.objectContaining({
