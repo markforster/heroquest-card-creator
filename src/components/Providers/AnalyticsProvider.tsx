@@ -23,8 +23,7 @@ const PIXEL_KEY = process.env.NEXT_PUBLIC_PIXEL_KEY;
 const CID_STORAGE_KEY = "hqcc.analytics.cid";
 const IP_STORAGE_KEY = "hqcc.analytics.ip";
 const PIXEL_DEBUG =
-  process.env.NEXT_PUBLIC_PIXEL_DEBUG === "1" ||
-  process.env.NEXT_PUBLIC_PIXEL_DEBUG === "true";
+  process.env.NEXT_PUBLIC_PIXEL_DEBUG === "1" || process.env.NEXT_PUBLIC_PIXEL_DEBUG === "true";
 
 function getOrCreateCid(): string {
   try {
@@ -103,7 +102,7 @@ function sendPixel(event: string, params?: AnalyticsTrackParams) {
 
   const pagePath = params?.page_path;
   const pageTitle = params?.page_title;
-  addParam(query, "p", isFile ? "/local-install" : pagePath ?? window.location.pathname);
+  addParam(query, "p", isFile ? "/local-install" : (pagePath ?? window.location.pathname));
   addParam(query, "u", isFile ? "file://local-install" : window.location.href);
   addParam(query, "meta_page_title", pageTitle);
 

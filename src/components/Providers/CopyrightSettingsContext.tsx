@@ -27,10 +27,7 @@ export function CopyrightSettingsProvider({ children }: { children: React.ReactN
 
   useEffect(() => {
     let active = true;
-    Promise.all([
-      apiClient.getDefaultCopyright(),
-      apiClient.getCopyrightTemplateDefaults(),
-    ])
+    Promise.all([apiClient.getDefaultCopyright(), apiClient.getCopyrightTemplateDefaults()])
       .then(([defaultValue, templateValue]) => {
         if (!active) return;
         setDefaultCopyrightState(typeof defaultValue === "string" ? defaultValue : "");
@@ -53,11 +50,9 @@ export function CopyrightSettingsProvider({ children }: { children: React.ReactN
   const setDefaultCopyright = useCallback((value: string) => {
     const normalized = value.trim();
     setDefaultCopyrightState(normalized);
-    apiClient
-      .setDefaultCopyright({ value: normalized })
-      .catch(() => {
-        // Ignore persistence failures; UI still reflects latest value.
-      });
+    apiClient.setDefaultCopyright({ value: normalized }).catch(() => {
+      // Ignore persistence failures; UI still reflects latest value.
+    });
   }, []);
 
   const setTemplateDefault = useCallback((templateId: TemplateId, value: boolean) => {
@@ -98,9 +93,7 @@ export function CopyrightSettingsProvider({ children }: { children: React.ReactN
   );
 
   return (
-    <CopyrightSettingsContext.Provider value={value}>
-      {children}
-    </CopyrightSettingsContext.Provider>
+    <CopyrightSettingsContext.Provider value={value}>{children}</CopyrightSettingsContext.Provider>
   );
 }
 

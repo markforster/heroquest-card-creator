@@ -1,6 +1,7 @@
+import { Blob as NodeBlob } from "buffer";
+
 import Dexie from "dexie";
 import { IDBFactory, IDBKeyRange } from "fake-indexeddb";
-import { Blob as NodeBlob } from "buffer";
 
 const originalIndexedDbDescriptor = Object.getOwnPropertyDescriptor(window, "indexedDB");
 const originalIdbKeyRangeDescriptor = Object.getOwnPropertyDescriptor(window, "IDBKeyRange");
@@ -51,9 +52,6 @@ export async function deleteDb(name: string): Promise<void> {
   });
 }
 
-export function createTestBlob(
-  parts: string[] = ["x"],
-  type: string = "image/png",
-): Blob {
+export function createTestBlob(parts: string[] = ["x"], type: string = "image/png"): Blob {
   return new NodeBlob(parts, { type }) as unknown as Blob;
 }

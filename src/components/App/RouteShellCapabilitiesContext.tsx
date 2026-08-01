@@ -32,10 +32,7 @@ export function RouteShellCapabilitiesProvider({ children }: { children: ReactNo
     noopRouteShellCapabilities,
   );
 
-  const value = useMemo(
-    () => ({ setCapabilities }),
-    [],
-  );
+  const value = useMemo(() => ({ setCapabilities }), []);
 
   return (
     <RouteShellCapabilitiesSetterContext.Provider value={value}>
@@ -49,9 +46,7 @@ export function RouteShellCapabilitiesProvider({ children }: { children: ReactNo
 export function useRouteShellCapabilities() {
   const capabilities = useContext(RouteShellCapabilitiesValueContext);
   if (!capabilities) {
-    throw new Error(
-      "useRouteShellCapabilities must be used within RouteShellCapabilitiesProvider",
-    );
+    throw new Error("useRouteShellCapabilities must be used within RouteShellCapabilitiesProvider");
   }
   return capabilities;
 }

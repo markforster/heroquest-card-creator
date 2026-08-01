@@ -1,8 +1,8 @@
 import type { Blueprint, BlueprintBounds, BlueprintLayer } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
 
-import { HERO_BACK_BLUEPRINT } from "./hero-back";
 import { HERO_BLUEPRINT } from "./hero";
+import { HERO_BACK_BLUEPRINT } from "./hero-back";
 import { LABELLED_BACK_BLUEPRINT } from "./labelled-back";
 import { LARGE_TREASURE_BLUEPRINT } from "./large-treasure";
 import { LOGO_BACK_BLUEPRINT } from "./logo-back";

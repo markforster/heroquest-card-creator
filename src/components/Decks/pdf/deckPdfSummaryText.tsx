@@ -25,11 +25,11 @@ export function formatDeckPdfLayoutSummary(config: PrintConfig, t: SummaryT): st
   if (config.mode === "frontAndBack") {
     parts.push(
       t(
-        (`decks.pdf.duplex.${config.duplexPreset ?? "normal"}` as
+        `decks.pdf.duplex.${config.duplexPreset ?? "normal"}` as
           | "decks.pdf.duplex.normal"
           | "decks.pdf.duplex.mirrorX"
           | "decks.pdf.duplex.rotate180"
-          | "decks.pdf.duplex.mirrorXRotate180") as never,
+          | "decks.pdf.duplex.mirrorXRotate180" as never,
       ),
     );
   }
@@ -44,17 +44,17 @@ export function formatDeckPdfBleedSummary(
   const parts: ReactNode[] = [];
   let index = 0;
   const cutMarkStyle = t(
-    (`label.cutMarkStyle${
+    `label.cutMarkStyle${
       bleedOptions.cutMarkStyle === "dashed"
         ? "Dashed"
         : bleedOptions.cutMarkStyle === "long-dashed"
           ? "LongDashed"
-        : bleedOptions.cutMarkStyle === "dotted"
-          ? "Dotted"
-          : bleedOptions.cutMarkStyle === "ticks"
-            ? "Ticks"
-            : "Solid"
-    }` as never),
+          : bleedOptions.cutMarkStyle === "dotted"
+            ? "Dotted"
+            : bleedOptions.cutMarkStyle === "ticks"
+              ? "Ticks"
+              : "Solid"
+    }` as never,
   ).toLowerCase();
 
   const pushPart = (content: ReactNode) => {

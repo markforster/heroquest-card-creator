@@ -1,7 +1,4 @@
-import type {
-  DeckPdfExportSummary,
-  DeckPdfSetScopeMode,
-} from "@/components/Decks/deck-export";
+import type { DeckPdfExportSummary, DeckPdfSetScopeMode } from "@/components/Decks/deck-export";
 import type { PdfExportSummaryContent } from "@/components/Export/PdfExportShellModal";
 import type { SlotPair } from "@/lib/pdf-export";
 

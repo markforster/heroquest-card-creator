@@ -2,9 +2,9 @@ import { getCardDisplayName } from "@/lib/card-display-name";
 
 describe("getCardDisplayName", () => {
   it("prefers a trimmed title when present", () => {
-    expect(getCardDisplayName({ title: "  Monster Card  ", name: "Fallback Name" }, "Untitled")).toBe(
-      "Monster Card",
-    );
+    expect(
+      getCardDisplayName({ title: "  Monster Card  ", name: "Fallback Name" }, "Untitled"),
+    ).toBe("Monster Card");
   });
 
   it("falls back to a trimmed name when title is missing", () => {

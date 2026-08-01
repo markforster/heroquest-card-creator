@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { BringToFront, Layers3, SendToBack } from "lucide-react";
+import { useMemo } from "react";
 import Select, {
   type FormatOptionLabelMeta,
   type SingleValue,
@@ -9,10 +9,7 @@ import Select, {
 } from "react-select";
 
 import styles from "@/app/page.module.css";
-import {
-  FormSelectDropdownIndicator,
-  getFormSelectStyles,
-} from "@/components/common/FormSelect";
+import { FormSelectDropdownIndicator, getFormSelectStyles } from "@/components/common/FormSelect";
 import type {
   StockpilePrimaryToolbarFilterGroup,
   StockpilePrimaryToolbarFilterOption,
@@ -29,15 +26,31 @@ type StockpileToolbarFilterSelectProps = {
 
 function renderFilterLeadingVisual(value: string) {
   if (value === "all") {
-    return <Layers3 size={12} aria-hidden="true" className={styles.stockpilePrimaryToolbarFilterOptionIcon} />;
+    return (
+      <Layers3
+        size={12}
+        aria-hidden="true"
+        className={styles.stockpilePrimaryToolbarFilterOptionIcon}
+      />
+    );
   }
   if (value === "face:front") {
     return (
-      <BringToFront size={12} aria-hidden="true" className={styles.stockpilePrimaryToolbarFilterOptionIcon} />
+      <BringToFront
+        size={12}
+        aria-hidden="true"
+        className={styles.stockpilePrimaryToolbarFilterOptionIcon}
+      />
     );
   }
   if (value === "face:back") {
-    return <SendToBack size={12} aria-hidden="true" className={styles.stockpilePrimaryToolbarFilterOptionIcon} />;
+    return (
+      <SendToBack
+        size={12}
+        aria-hidden="true"
+        className={styles.stockpilePrimaryToolbarFilterOptionIcon}
+      />
+    );
   }
   return (
     <span
@@ -58,11 +71,7 @@ function getFilterMarkerClassName(value: string): string {
   if (templateId === "large-treasure" || templateId === "small-treasure") {
     return styles.stockpilePrimaryToolbarFilterMarkerTreasure;
   }
-  if (
-    templateId === "hero-back" ||
-    templateId === "logo-back" ||
-    templateId === "labelled-back"
-  ) {
+  if (templateId === "hero-back" || templateId === "logo-back" || templateId === "labelled-back") {
     return styles.stockpilePrimaryToolbarFilterMarkerBack;
   }
   return styles.stockpilePrimaryToolbarFilterMarkerDefault;
@@ -149,10 +158,7 @@ export default function StockpileToolbarFilterSelect({
   inputId,
   ariaLabel,
 }: StockpileToolbarFilterSelectProps) {
-  const selectStyles = useMemo(
-    () => getStockpileToolbarFilterStyles(disabled),
-    [disabled],
-  );
+  const selectStyles = useMemo(() => getStockpileToolbarFilterStyles(disabled), [disabled]);
   const menuPortalTarget = typeof document === "undefined" ? undefined : document.body;
   const flatOptions = useMemo(() => options.flatMap((group) => group.options), [options]);
   const selected = flatOptions.find((option) => option.value === value) ?? flatOptions[0] ?? null;
@@ -182,7 +188,9 @@ export default function StockpileToolbarFilterSelect({
           <span className={styles.stockpilePrimaryToolbarFilterOptionText}>{option.label}</span>
         </div>
         {typeof option.count === "number" ? (
-          <span className={styles.stockpilePrimaryToolbarFilterOptionCountBadge}>{option.count}</span>
+          <span className={styles.stockpilePrimaryToolbarFilterOptionCountBadge}>
+            {option.count}
+          </span>
         ) : null}
       </div>
     );

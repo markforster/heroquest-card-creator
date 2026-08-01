@@ -1,17 +1,11 @@
 "use client";
 
+import { Download, Monitor, Moon, Settings, Sun, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Download,
-  Monitor,
-  Moon,
-  Settings,
-  Sun,
-  Upload,
-} from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import { useClickOutside } from "@/components/common/useClickOutside";
+import LanguageMenuPopover from "@/components/LanguageMenu/LanguageMenuPopover";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useAppActions } from "@/components/Providers/AppActionsContext";
 import { useLibraryTransfer } from "@/components/Providers/LibraryTransferContext";
@@ -25,8 +19,6 @@ import {
   SupportedLanguage,
   visibleLanguages,
 } from "@/i18n/messages";
-
-import LanguageMenuPopover from "@/components/LanguageMenu/LanguageMenuPopover";
 
 import type { ComponentType } from "react";
 

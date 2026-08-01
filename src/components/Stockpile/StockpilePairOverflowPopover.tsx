@@ -2,14 +2,17 @@
 
 import { createPortal } from "react-dom";
 
-import styles from "@/app/page.module.css";
-import { cardTemplatesById } from "@/data/card-templates";
-import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import type { CardRecord } from "@/api/cards";
+import styles from "@/app/page.module.css";
+import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
+import { cardTemplatesById } from "@/data/card-templates";
 
 type StockpilePairOverflowPopoverProps = {
   isOpen: boolean;
-  anchor: { rect: { top: number; left: number; bottom: number; right: number }; cards: CardRecord[] } | null;
+  anchor: {
+    rect: { top: number; left: number; bottom: number; right: number };
+    cards: CardRecord[];
+  } | null;
   onClose: () => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;

@@ -2,8 +2,8 @@ import {
   getHqccDexieDb,
   META_CARD_CANVAS_ROLLBACK_MIGRATED_KEY,
   openHqccDexieDb,
-} from "@/lib/hqcc-dexie";
-import { migrateCardCanvas } from "@/lib/hqcc-db-card-canvas-job";
+} from "@/lib/db/hqcc-dexie";
+import { migrateCardCanvas } from "@/lib/db/jobs/hqcc-db-card-canvas-job";
 import {
   TEST_NOW,
   deleteDb,

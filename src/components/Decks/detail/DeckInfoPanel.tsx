@@ -168,12 +168,16 @@ export default function DeckInfoPanel({ deckId }: { deckId: string | null }) {
 
   const createdAtLabel = useMemo(
     () =>
-      metaState.createdAt ? new Date(metaState.createdAt).toLocaleString() : t("label.unknownVersion"),
+      metaState.createdAt
+        ? new Date(metaState.createdAt).toLocaleString()
+        : t("label.unknownVersion"),
     [metaState.createdAt, t],
   );
   const updatedAtLabel = useMemo(
     () =>
-      metaState.updatedAt ? new Date(metaState.updatedAt).toLocaleString() : t("label.unknownVersion"),
+      metaState.updatedAt
+        ? new Date(metaState.updatedAt).toLocaleString()
+        : t("label.unknownVersion"),
     [metaState.updatedAt, t],
   );
 
@@ -252,7 +256,9 @@ export default function DeckInfoPanel({ deckId }: { deckId: string | null }) {
               </dl>
             </div>
             <div className={styles.assetsInspectorUsage}>
-              <div className={styles.assetsInspectorSectionTitle}>{t("decks.meta.pdf.section")}</div>
+              <div className={styles.assetsInspectorSectionTitle}>
+                {t("decks.meta.pdf.section")}
+              </div>
               <dl className={styles.assetsInspectorDetails}>
                 <div className={styles.uRowLg}>
                   <dt>{t("decks.meta.pdf.uniquePairs")}</dt>

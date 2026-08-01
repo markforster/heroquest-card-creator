@@ -121,10 +121,7 @@ export default function AssetsConvertModal({
                       }
                       style={convertInspect ? { opacity: 0 } : undefined}
                     />
-                    <div
-                      className={styles.assetsConvertInspectViewport}
-                      ref={convertInspectRef}
-                    >
+                    <div className={styles.assetsConvertInspectViewport} ref={convertInspectRef}>
                       {convertInspect ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -142,9 +139,7 @@ export default function AssetsConvertModal({
                   </>
                 ) : (
                   <div className={styles.assetsInspectorPreviewPlaceholder}>
-                    {isConverting
-                      ? t("status.optimizing")
-                      : convertError || t("empty.noPreview")}
+                    {isConverting ? t("status.optimizing") : convertError || t("empty.noPreview")}
                   </div>
                 )}
               </div>

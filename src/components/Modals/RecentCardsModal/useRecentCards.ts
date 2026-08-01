@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 
-import type { MessageKey } from "@/i18n/messages";
 import type { CardRecord } from "@/api/cards";
+import type { MessageKey } from "@/i18n/messages";
 
 type UseRecentCardsArgs = {
   cards: CardRecord[];

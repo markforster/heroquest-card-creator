@@ -1,6 +1,5 @@
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { getPairedFaceIds } from "@/lib/pairs-service";
-
+import { getPairedFaceIds } from "@/lib/data/pairs-service";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createPairRecord,
   deleteDb,
@@ -8,7 +7,7 @@ import {
   restoreIndexedDb,
 } from "@/lib/test-support/pairs-service-test-helpers";
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   getCard: jest.fn(async () => null),
 }));
 

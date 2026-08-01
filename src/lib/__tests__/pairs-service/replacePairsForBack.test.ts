@@ -1,6 +1,5 @@
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { replacePairsForBack } from "@/lib/pairs-service";
-
+import { replacePairsForBack } from "@/lib/data/pairs-service";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createPairRecord,
   deleteDb,
@@ -11,11 +10,11 @@ import {
 const enqueueDbEstimateChange = jest.fn();
 const getCard = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   getCard: (...args: unknown[]) => getCard(...args),
 }));
 
@@ -67,9 +66,6 @@ describe("replacePairsForBack", () => {
     expect(stored).toHaveLength(2);
     expect(stored.find((pair) => pair.id === "pair-1")).toBeUndefined();
     expect(enqueueDbEstimateChange).toHaveBeenCalledWith("pairs", "pair-1");
-    expect(enqueueDbEstimateChange).toHaveBeenCalledWith(
-      "pairs",
-      expect.any(String),
-    );
+    expect(enqueueDbEstimateChange).toHaveBeenCalledWith("pairs", expect.any(String));
   });
 });

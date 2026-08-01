@@ -21,9 +21,7 @@ describe("waitForAssetElements", () => {
     img.setAttribute("data-user-asset-id", "asset-1");
     svg.appendChild(img);
 
-    await expect(
-      waitForAssetElements(() => svg, ["asset-1"]),
-    ).resolves.toBeUndefined();
+    await expect(waitForAssetElements(() => svg, ["asset-1"])).resolves.toBeUndefined();
   });
 
   it("waits until assets appear", async () => {
@@ -75,9 +73,7 @@ describe("waitForAssetElements", () => {
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
-    await expect(
-      waitForAssetElements(() => svg, ["missing"], 5),
-    ).resolves.toBeUndefined();
+    await expect(waitForAssetElements(() => svg, ["missing"], 5)).resolves.toBeUndefined();
   });
 
   it("waits for Hero Back logo elements as well", async () => {
@@ -92,8 +88,6 @@ describe("waitForAssetElements", () => {
     img.setAttribute("data-user-hero-back-logo-id", "logo-1");
     svg.appendChild(img);
 
-    await expect(
-      waitForAssetElements(() => svg, [], ["logo-1"]),
-    ).resolves.toBeUndefined();
+    await expect(waitForAssetElements(() => svg, [], ["logo-1"])).resolves.toBeUndefined();
   });
 });

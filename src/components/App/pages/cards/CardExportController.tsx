@@ -390,7 +390,9 @@ export function useCardExportController({
           <div className={styles.assetsReportStatus}>{t("label.opensInNewTab")}</div>
           <div className={styles.assetsReportList}>
             {missingAssetsPrompt.report.map((entry) => {
-              const thumbUrl = entry.thumbnailBlob ? URL.createObjectURL(entry.thumbnailBlob) : null;
+              const thumbUrl = entry.thumbnailBlob
+                ? URL.createObjectURL(entry.thumbnailBlob)
+                : null;
               const fallbackUrl = cardTemplatesById[entry.templateId]?.thumbnail?.src ?? null;
               return (
                 <div key={entry.cardId} className={styles.assetsReportItem}>

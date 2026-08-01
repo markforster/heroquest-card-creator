@@ -1,5 +1,5 @@
 import isSupportedLanguage from "./isSupportedLanguage";
-import { supportedLanguages, visibleLanguages } from "./messages";
+import { visibleLanguages } from "./messages";
 
 import type { SupportedLanguage } from "./messages";
 
@@ -8,7 +8,6 @@ export const LANGUAGE_STORAGE_KEY = "hqcc.language";
 function isVisibleLanguage(value: SupportedLanguage): boolean {
   return visibleLanguages.includes(value as (typeof visibleLanguages)[number]);
 }
-
 
 function normalizeLanguageTag(value: string): string {
   return value.trim().replace(/_/g, "-");
@@ -21,9 +20,7 @@ function matchLanguageTag(
   const normalized = normalizeLanguageTag(tag);
   if (!normalized) return null;
 
-  const exact = candidates.find(
-    (language) => language.toLowerCase() === normalized.toLowerCase(),
-  );
+  const exact = candidates.find((language) => language.toLowerCase() === normalized.toLowerCase());
   if (exact) return exact;
 
   const [primary] = normalized.split("-");
@@ -38,9 +35,10 @@ function matchLanguageTag(
 export function getDetectedLanguage(): SupportedLanguage | null {
   if (typeof navigator === "undefined") return null;
 
-  const candidates = Array.isArray(navigator.languages) && navigator.languages.length > 0
-    ? navigator.languages
-    : [navigator.language];
+  const candidates =
+    Array.isArray(navigator.languages) && navigator.languages.length > 0
+      ? navigator.languages
+      : [navigator.language];
 
   for (const candidate of candidates) {
     if (!candidate) continue;
@@ -51,9 +49,7 @@ export function getDetectedLanguage(): SupportedLanguage | null {
   return null;
 }
 
-export function getInitialLanguage(
-  storageKey: string = LANGUAGE_STORAGE_KEY,
-): SupportedLanguage {
+export function getInitialLanguage(storageKey: string = LANGUAGE_STORAGE_KEY): SupportedLanguage {
   if (typeof window === "undefined") {
     return "en";
   }

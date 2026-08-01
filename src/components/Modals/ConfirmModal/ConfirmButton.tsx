@@ -8,7 +8,11 @@ type ConfirmButtonProps = {
   isConfirming?: boolean;
 };
 
-export default function ConfirmButton({ label, onConfirm, isConfirming = false }: ConfirmButtonProps) {
+export default function ConfirmButton({
+  label,
+  onConfirm,
+  isConfirming = false,
+}: ConfirmButtonProps) {
   return (
     <button
       type="button"

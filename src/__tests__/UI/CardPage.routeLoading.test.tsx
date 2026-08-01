@@ -1,10 +1,9 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 
+import type { CardRecord } from "@/api/cards";
 import CardPage from "@/components/App/pages/CardPage";
 import { EditorFormProvider } from "@/components/Providers/EditorFormContext";
 import { I18nProvider } from "@/i18n/I18nProvider";
-
-import type { CardRecord } from "@/api/cards";
 
 const mockTrack = jest.fn();
 const mockNavigate = jest.fn();

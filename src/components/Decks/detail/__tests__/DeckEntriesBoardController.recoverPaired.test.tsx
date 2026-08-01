@@ -1,6 +1,12 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+
+import type {
+  DeckDropHandler,
+  DeckSortableBoardViewModel,
+} from "@/components/Decks/detail/boards/DeckBoardsCore";
 
 const mockRegisterDropHandler = jest.fn();
 const mockAddFront = jest.fn();
@@ -12,7 +18,13 @@ const mockDeletePair = jest.fn();
 const mockUseCardThumbnailUrl = jest.fn();
 
 let pairedNotInSetFrontIds: string[] = [];
-let entriesSortedMock: Array<{ id: string; setId: string; pairId: string; sortIndex: number; count: number }> = [];
+let entriesSortedMock: Array<{
+  id: string;
+  setId: string;
+  pairId: string;
+  sortIndex: number;
+  count: number;
+}> = [];
 let selectedSetIdMock: string | null = "set-1";
 let selectionSetByIdMock = new Map<string, { id: string; title: string; backFaceId: string }>();
 let pairsByIdMock = new Map<
@@ -28,7 +40,7 @@ let pairsByIdMock = new Map<
     schemaVersion: number;
   }
 >();
-let registeredDropHandler: ((event: any) => Promise<any>) | null = null;
+let registeredDropHandler: DeckDropHandler | null = null;
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
@@ -51,12 +63,21 @@ jest.mock("@/components/Decks/detail/context/DeckDetailSelectionContext", () => 
 }));
 
 jest.mock("@/components/Decks/detail/context/DeckRightPanelContext", () => ({
-  useDeckRightPanel: () => ({
-    backCards: [
-      { id: "back-1", name: "Back Card Alpha" },
-      { id: "back-2", name: "Back Card Beta" },
-    ],
-  }),
+  useDeckRightPanel: () => {
+    const React = jest.requireActual<typeof import("react")>("react");
+    const [selectedEntryIds, setSelectedEntryIds] = React.useState<Set<string>>(new Set());
+
+    return {
+      backCards: [
+        { id: "back-1", name: "Back Card Alpha" },
+        { id: "back-2", name: "Back Card Beta" },
+      ],
+      selectedEntryIds,
+      setSelectedEntryIds,
+      setActivePreviewEntryId: jest.fn(),
+      setPreviewSelectionSource: jest.fn(),
+    };
+  },
 }));
 
 jest.mock("@/lib/card-thumbnail-cache", () => ({
@@ -84,14 +105,17 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
     entries: { emitToken: "entry", acceptTokens: ["source-front"] },
   },
   useDeckMockDnd: () => ({
-    registerDropHandler: (...args: unknown[]) => {
-      mockRegisterDropHandler(...args);
-      const maybeHandler = args[1];
-      registeredDropHandler = typeof maybeHandler === "function" ? (maybeHandler as (event: any) => Promise<any>) : null;
+    registerDropHandler: (controllerId: string, handler: DeckDropHandler) => {
+      mockRegisterDropHandler(controllerId, handler);
+      registeredDropHandler = handler;
       return () => undefined;
     },
   }),
-  useDeckSortableBoardViewModel: (_boardId: string, _routing: unknown, options: Record<string, unknown>) => ({
+  useDeckSortableBoardViewModel: (
+    _boardId: string,
+    _routing: unknown,
+    options: Record<string, unknown>,
+  ) => ({
     config: {
       boardId: "entries",
       title: options.title ?? "Entries",
@@ -121,7 +145,7 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
     isSetSelected: options.isSetSelected,
     emptyMessage: options.emptyMessage ?? null,
   }),
-  DeckSortableBoardView: ({ model }: { model: any }) => (
+  DeckSortableBoardView: ({ model }: { model: DeckSortableBoardViewModel }) => (
     <div>
       <div>{model.config?.title}</div>
       {model.renderBoardHeaderActions ? model.renderBoardHeaderActions() : null}
@@ -142,7 +166,9 @@ jest.mock("@/components/Decks/detail/boards/DeckBoardsCore", () => ({
       </div>
     </div>
   ),
-  DefaultSetThumbnailContent: ({ cardId }: { cardId?: string }) => <div>{cardId ?? "unknown-card"}</div>,
+  DefaultSetThumbnailContent: ({ cardId }: { cardId?: string }) => (
+    <div>{cardId ?? "unknown-card"}</div>
+  ),
 }));
 
 describe("DeckEntriesBoardController recover paired modal", () => {
@@ -153,12 +179,15 @@ describe("DeckEntriesBoardController recover paired modal", () => {
   const SELECT_ALL_ARIA = "decks.entries.recover.selectAllAria";
   const CANCEL_LABEL = "actions.cancel";
 
-  const DeckEntriesBoardController =
-    require("@/components/Decks/detail/boards/DeckEntriesBoardController").default;
+  const { default: DeckEntriesBoardController } = jest.requireActual<
+    typeof import("@/components/Decks/detail/boards/DeckEntriesBoardController")
+  >("@/components/Decks/detail/boards/DeckEntriesBoardController");
 
   beforeEach(() => {
     selectedSetIdMock = "set-1";
-    selectionSetByIdMock = new Map([["set-1", { id: "set-1", title: "Selected Set", backFaceId: "back-1" }]]);
+    selectionSetByIdMock = new Map([
+      ["set-1", { id: "set-1", title: "Selected Set", backFaceId: "back-1" }],
+    ]);
     pairedNotInSetFrontIds = [];
     entriesSortedMock = [
       { id: "entry-1", setId: "set-1", pairId: "pair-1", sortIndex: 0, count: 1 },
@@ -199,6 +228,7 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     mockRemoveEntry.mockReset();
     mockReorderEntries.mockReset();
     mockDeletePair.mockReset();
+    mockDeletePair.mockReset();
     mockUseCardThumbnailUrl.mockReset();
     registeredDropHandler = null;
     mockAddFront.mockResolvedValue([]);
@@ -217,6 +247,9 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     await registeredDropHandler?.({
       kind: "ENTRIES_REORDER",
       dragId: "drag-test-1",
+      timestamp: 1,
+      sourceBoardId: "entries",
+      targetBoardId: "entries",
       orderedEntryIds: ["entry-2", "entry-1"],
     });
 
@@ -230,7 +263,9 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     const removeSelectedButton = screen.getByRole("button", { name: REMOVE_SELECTED_COUNT_LABEL });
     expect(removeSelectedButton).toBeDisabled();
     expect(removeSelectedButton.className).toContain("removeSelectedButton");
-    expect(screen.getByRole("img", { name: "decks.entries.selectedSetBackAlt" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "decks.entries.selectedSetBackAlt" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Back Card Alpha")).toBeInTheDocument();
   });
 
@@ -249,12 +284,16 @@ describe("DeckEntriesBoardController recover paired modal", () => {
 
   it("renders Entries text fallback while keeping thumbnail when back card title is unavailable", () => {
     selectedSetIdMock = "set-1";
-    selectionSetByIdMock = new Map([["set-1", { id: "set-1", title: "Set Without Back", backFaceId: "back-missing" }]]);
+    selectionSetByIdMock = new Map([
+      ["set-1", { id: "set-1", title: "Set Without Back", backFaceId: "back-missing" }],
+    ]);
 
     render(<DeckEntriesBoardController onOpenCardEditor={jest.fn()} />);
 
     expect(screen.getByText("Entries")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "decks.entries.selectedSetBackAlt" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "decks.entries.selectedSetBackAlt" }),
+    ).toBeInTheDocument();
   });
 
   it("supports single and ctrl/cmd additive entry selection and updates delete count", () => {
@@ -369,14 +408,17 @@ describe("DeckEntriesBoardController recover paired modal", () => {
       "src/components/Decks/detail/DeckGroupsSection2.module.css",
     );
     const css = readFileSync(cssPath, "utf8");
+    const normalizedCss = css.replace(/\s+/g, " ");
 
-    expect(css).toContain(':has(.removeSelectedButton:hover) .setCardSelected .setThumb');
-    expect(css).toContain(
-      ':has(.removeSelectedButton:focus-visible) .setCardSelected .setThumb',
+    expect(normalizedCss).toContain(":has(.removeSelectedButton:hover) .setCardSelected .setThumb");
+    expect(normalizedCss).toContain(
+      ":has(.removeSelectedButton:focus-visible) .setCardSelected .setThumb",
     );
-    expect(css).toContain(':has(.removeSelectedButton:hover) .setCard:not(.setCardSelected)');
-    expect(css).toContain(
-      ':has(.removeSelectedButton:focus-visible) .setCard:not(.setCardSelected)',
+    expect(normalizedCss).toContain(
+      ":has(.removeSelectedButton:hover) .setCard:not(.setCardSelected)",
+    );
+    expect(normalizedCss).toContain(
+      ":has(.removeSelectedButton:focus-visible) .setCard:not(.setCardSelected)",
     );
     expect(css).toContain(".setCardBottomToolbar");
     expect(css).toContain("transform: translate(-50%, -4px);");

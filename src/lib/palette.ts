@@ -4,11 +4,7 @@ import { extractPaletteFromCanvas } from "@/lib/color-palette";
 import { colorDistance, type Rgb } from "@/lib/color-utils";
 import { clamp } from "@/lib/math";
 
-export type PaletteSource =
-  | HTMLCanvasElement
-  | HTMLImageElement
-  | ImageBitmap
-  | Blob;
+export type PaletteSource = HTMLCanvasElement | HTMLImageElement | ImageBitmap | Blob;
 
 export type PaletteOptions = {
   maxColors?: number;
@@ -55,7 +51,10 @@ export async function getPaletteGroups(
 
   groups.push({
     id: "muted",
-    colors: pickByMood(withHsl, (hsl) => hsl.s >= 0.25 && hsl.s < 0.6 && hsl.l >= 0.3 && hsl.l <= 0.75),
+    colors: pickByMood(
+      withHsl,
+      (hsl) => hsl.s >= 0.25 && hsl.s < 0.6 && hsl.l >= 0.3 && hsl.l <= 0.75,
+    ),
   });
 
   groups.push({
@@ -144,8 +143,7 @@ function pickByMood(
 
 function buildComplementary(entries: { color: string; rgb: Rgb; hsl: Hsl }[]) {
   const sorted = [...entries].sort((a, b) => b.hsl.s - a.hsl.s);
-  const base =
-    sorted.find((entry) => entry.hsl.l >= 0.35 && entry.hsl.l <= 0.7) ?? sorted[0];
+  const base = sorted.find((entry) => entry.hsl.l >= 0.35 && entry.hsl.l <= 0.7) ?? sorted[0];
   if (!base) return [];
 
   const baseHsl = base.hsl;
@@ -170,12 +168,13 @@ type Hsl = { h: number; s: number; l: number };
 
 function hexToRgb(hex: string): Rgb {
   const normalized = hex.replace("#", "");
-  const value = normalized.length === 3
-    ? normalized
-        .split("")
-        .map((ch) => ch + ch)
-        .join("")
-    : normalized;
+  const value =
+    normalized.length === 3
+      ? normalized
+          .split("")
+          .map((ch) => ch + ch)
+          .join("")
+      : normalized;
   const int = Number.parseInt(value, 16);
   return {
     r: (int >> 16) & 255,

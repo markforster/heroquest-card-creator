@@ -14,18 +14,20 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext } from "react-hook-form";
 
+import type { AssetRecord } from "@/api/assets";
+import type { CardRecord } from "@/api/cards";
+import { apiClient } from "@/api/client";
+import { readApiConfig } from "@/api/config";
+import { useListAssets } from "@/api/hooks";
 import styles from "@/app/page.module.css";
 import AssetsEmptyState from "@/components/Assets/AssetsEmptyState";
+import { RESOURCES_MENU_LINKS, type ResourceMenuIcon } from "@/components/Assets/assetsResources";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
 import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
 import IconButton from "@/components/common/IconButton";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
 import ModalShell from "@/components/common/ModalShell";
 import { WarningNotice } from "@/components/common/Notice";
-import { apiClient } from "@/api/client";
-import { readApiConfig } from "@/api/config";
-import type { AssetRecord } from "@/api/assets";
-import type { CardRecord } from "@/api/cards";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import {
@@ -34,26 +36,21 @@ import {
   ENABLE_ASSET_THUMB_THROTTLE,
 } from "@/config/flags";
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
-import { useListAssets } from "@/api/hooks";
+import useBufferedLoadingIndicator from "@/hooks/useBufferedLoadingIndicator";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { MessageKey } from "@/i18n/messages";
 import { generateId } from "@/lib";
 import { getDisplayAssetName, getNextAvailableFilename } from "@/lib/asset-filename";
 import { hashArrayBufferSha256 } from "@/lib/asset-hash";
+import type { AssetKindGroupId } from "@/lib/assets-grouping";
+import { groupAssetsByKind } from "@/lib/assets-grouping";
+import { isSafariBrowser } from "@/lib/browser";
 import {
   getRemoteAssetThumbPrefetchEnabled,
   subscribeRemoteAssetFlags,
 } from "@/lib/remote-asset-flags";
-import type { AssetKindGroupId } from "@/lib/assets-grouping";
-import { groupAssetsByKind } from "@/lib/assets-grouping";
-import { isSafariBrowser } from "@/lib/browser";
-import useBufferedLoadingIndicator from "@/hooks/useBufferedLoadingIndicator";
 import type { UploadScanReportItem } from "@/types/asset-duplicates";
 import type { OpenCloseProps } from "@/types/ui";
-import {
-  RESOURCES_MENU_LINKS,
-  type ResourceMenuIcon,
-} from "@/components/Assets/assetsResources";
 
 import type { ComponentType } from "react";
 
@@ -466,15 +463,11 @@ export default function AssetsPanelContent({
                 setThumbUrls(thumbUrlsRef.current);
               }
             } else if (!cancelled) {
-              setThumbReadyById((prev) =>
-                prev[asset.id] ? prev : { ...prev, [asset.id]: true },
-              );
+              setThumbReadyById((prev) => (prev[asset.id] ? prev : { ...prev, [asset.id]: true }));
             }
           } catch {
             if (!cancelled) {
-              setThumbReadyById((prev) =>
-                prev[asset.id] ? prev : { ...prev, [asset.id]: true },
-              );
+              setThumbReadyById((prev) => (prev[asset.id] ? prev : { ...prev, [asset.id]: true }));
             }
           }
           await maybeYield();
@@ -502,9 +495,7 @@ export default function AssetsPanelContent({
   useEffect(() => {
     const assetIds = new Set(assets.map((asset) => asset.id));
     setThumbReadyById((prev) => {
-      const next = Object.fromEntries(
-        Object.entries(prev).filter(([id]) => assetIds.has(id)),
-      );
+      const next = Object.fromEntries(Object.entries(prev).filter(([id]) => assetIds.has(id)));
       return Object.keys(next).length === Object.keys(prev).length ? prev : next;
     });
   }, [assets]);
@@ -621,8 +612,7 @@ export default function AssetsPanelContent({
     const idSet = new Set(assets.map((asset) => asset.id));
     const nextOrder = selectedOrder.filter((id) => idSet.has(id));
     const isSameLength = nextOrder.length === selectedOrder.length;
-    const isSameOrder =
-      isSameLength && nextOrder.every((id, index) => id === selectedOrder[index]);
+    const isSameOrder = isSameLength && nextOrder.every((id, index) => id === selectedOrder[index]);
     if (isSameOrder) return;
     setSelectedOrder(nextOrder);
     setSelectedIds(new Set(nextOrder));
@@ -725,26 +715,25 @@ export default function AssetsPanelContent({
       })
     : assets;
 
-  const filteredAssets = searchFiltered.filter((asset) => {
-    if (asset.id === pinnedSelectedAssetId) return true;
-    if (assetKindFilter === "all") return true;
-    if (assetKindFilter === "artwork") {
-      return asset.assetKindStatus === "classified" && asset.assetKind === "artwork";
-    }
-    if (assetKindFilter === "icon") {
-      return asset.assetKindStatus === "classified" && asset.assetKind === "icon";
-    }
-    return asset.assetKindStatus !== "classified";
-  }).filter((asset) => {
-    if (asset.id === pinnedSelectedAssetId) return true;
-    if (mimeTypeFilter === "all") return true;
-    return asset.mimeType === mimeTypeFilter;
-  });
+  const filteredAssets = searchFiltered
+    .filter((asset) => {
+      if (asset.id === pinnedSelectedAssetId) return true;
+      if (assetKindFilter === "all") return true;
+      if (assetKindFilter === "artwork") {
+        return asset.assetKindStatus === "classified" && asset.assetKind === "artwork";
+      }
+      if (assetKindFilter === "icon") {
+        return asset.assetKindStatus === "classified" && asset.assetKind === "icon";
+      }
+      return asset.assetKindStatus !== "classified";
+    })
+    .filter((asset) => {
+      if (asset.id === pinnedSelectedAssetId) return true;
+      if (mimeTypeFilter === "all") return true;
+      return asset.mimeType === mimeTypeFilter;
+    });
 
-  const recentlyUploadedIdSet = useMemo(
-    () => new Set(recentlyUploadedIds),
-    [recentlyUploadedIds],
-  );
+  const recentlyUploadedIdSet = useMemo(() => new Set(recentlyUploadedIds), [recentlyUploadedIds]);
   const recentlyUploadedVisibleAssets = searchFiltered.filter((asset) => {
     if (!recentlyUploadedIdSet.has(asset.id)) return false;
     if (mimeTypeFilter === "all") return true;
@@ -808,8 +797,7 @@ export default function AssetsPanelContent({
         : assetKindFilter === "icon"
           ? t("label.assetKindFilterIcon")
           : t("label.assetKindFilterUnclassified");
-  const mimeTypeFilterLabel =
-    mimeTypeFilter === "all" ? t("label.mimeFilterAll") : mimeTypeFilter;
+  const mimeTypeFilterLabel = mimeTypeFilter === "all" ? t("label.mimeFilterAll") : mimeTypeFilter;
 
   useEffect(() => {
     if (!shouldScrollToRecentlyUploaded) return;
@@ -912,8 +900,14 @@ export default function AssetsPanelContent({
       setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
     }
     if (iconMatch) {
-      setValue("iconAssetId" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
-      setValue("iconAssetName" as never, undefined as never, { shouldDirty: true, shouldTouch: true });
+      setValue("iconAssetId" as never, undefined as never, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      setValue("iconAssetName" as never, undefined as never, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
     }
 
     await handleConfirmDelete(ids);
@@ -949,24 +943,21 @@ export default function AssetsPanelContent({
       > | null = null;
 
       try {
-        const scanResult = await scanFiles(
-          files,
-          async (completed, total) => {
-            if (!ENABLE_UPLOAD_PROGRESS) return;
-            setUploadProgress((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    phase: "scanning",
-                    completed,
-                    total,
-                    isIndeterminate: false,
-                  }
-                : prev,
-            );
-            await maybeDelayUploadStep();
-          },
-        );
+        const scanResult = await scanFiles(files, async (completed, total) => {
+          if (!ENABLE_UPLOAD_PROGRESS) return;
+          setUploadProgress((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  phase: "scanning",
+                  completed,
+                  total,
+                  isIndeterminate: false,
+                }
+              : prev,
+          );
+          await maybeDelayUploadStep();
+        });
         scanByIndex = new Map(scanResult.items.map((item) => [item.fileIndex, item.hash]));
         reportByIndex = new Map(scanResult.items.map((item) => [item.fileIndex, item.status]));
       } catch (scanError) {
@@ -990,9 +981,7 @@ export default function AssetsPanelContent({
       const duplicates: UploadScanReportItem[] = [];
       const renames: Array<{ original: string; renamed: string }> = [];
       const uploaded = new Set<string>();
-      const existingNamesLower = new Set(
-        Array.from(existingNames, (name) => name.toLowerCase()),
-      );
+      const existingNamesLower = new Set(Array.from(existingNames, (name) => name.toLowerCase()));
       const existingFileNames = new Set(existingNames);
       const colliding = new Set<string>();
       const batchHashes = new Set<string>();
@@ -1080,10 +1069,7 @@ export default function AssetsPanelContent({
           batchNamesLower.has(nameLower) ||
           colliding.has(nameLower)
         ) {
-          nextName = getNextAvailableFilename(
-            new Set([...existingFileNames, ...batchNames]),
-            name,
-          );
+          nextName = getNextAvailableFilename(new Set([...existingFileNames, ...batchNames]), name);
           renames.push({ original: name, renamed: nextName });
         }
 
@@ -1273,7 +1259,7 @@ export default function AssetsPanelContent({
   };
 
   const activeKindAsset = activeKindPopoverId
-    ? assets.find((asset) => asset.id === activeKindPopoverId) ?? null
+    ? (assets.find((asset) => asset.id === activeKindPopoverId) ?? null)
     : null;
   const isKindPopoverOpen = Boolean(activeKindAsset);
   const kindStatus = activeKindAsset?.assetKindStatus ?? "unclassified";
@@ -1460,18 +1446,18 @@ export default function AssetsPanelContent({
                 {RESOURCES_MENU_LINKS.map((link) => {
                   const Icon = RESOURCE_ICON_BY_KIND[link.icon];
                   return (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${styles.cardsFilterItem} ${styles.assetsResourcesMenuItem}`}
-                    role="menuitem"
-                    onClick={() => setIsResourcesMenuOpen(false)}
-                  >
-                    <Icon className={styles.icon} aria-hidden="true" />
-                    <span>{t(link.labelKey)}</span>
-                  </a>
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`${styles.cardsFilterItem} ${styles.assetsResourcesMenuItem}`}
+                      role="menuitem"
+                      onClick={() => setIsResourcesMenuOpen(false)}
+                    >
+                      <Icon className={styles.icon} aria-hidden="true" />
+                      <span>{t(link.labelKey)}</span>
+                    </a>
                   );
                 })}
               </div>
@@ -1583,9 +1569,7 @@ export default function AssetsPanelContent({
                               const next = new Set(prev);
                               if (next.has(asset.id)) {
                                 next.delete(asset.id);
-                                setSelectedOrder((order) =>
-                                  order.filter((id) => id !== asset.id),
-                                );
+                                setSelectedOrder((order) => order.filter((id) => id !== asset.id));
                               } else {
                                 next.add(asset.id);
                                 setSelectedOrder((order) => [
@@ -1757,9 +1741,7 @@ export default function AssetsPanelContent({
               }
               role="dialog"
             >
-              <div className={styles.assetsKindPopoverTitle}>
-                {t("label.assetKindOverride")}
-              </div>
+              <div className={styles.assetsKindPopoverTitle}>{t("label.assetKindOverride")}</div>
               <button
                 type="button"
                 className={styles.assetsKindPopoverOption}

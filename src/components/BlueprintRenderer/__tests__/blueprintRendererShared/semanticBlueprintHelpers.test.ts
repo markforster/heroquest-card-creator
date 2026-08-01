@@ -1,4 +1,7 @@
-import { findPrimaryTitleLayer, isPrimaryBodyTextLayer } from "@/components/BlueprintRenderer/blueprintRendererShared";
+import {
+  findPrimaryTitleLayer,
+  isPrimaryBodyTextLayer,
+} from "@/components/BlueprintRenderer/blueprintRendererShared";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 
 describe("semantic blueprint helpers", () => {
@@ -28,7 +31,9 @@ describe("semantic blueprint helpers", () => {
       throw new Error("hero grouped blueprint missing");
     }
 
-    const groupChild = blueprint.groups[0].children.find((entry) => entry.bind?.textKey === "description");
+    const groupChild = blueprint.groups[0].children.find(
+      (entry) => entry.bind?.textKey === "description",
+    );
 
     expect(groupChild).toBeDefined();
     expect(isPrimaryBodyTextLayer(blueprint, groupChild!)).toBe(false);

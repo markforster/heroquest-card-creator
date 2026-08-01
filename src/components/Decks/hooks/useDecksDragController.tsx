@@ -2,13 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type {
-  DragEndEvent,
-  DragMoveEvent,
-  DragOverEvent,
-  DragStartEvent,
-} from "@dnd-kit/core";
 import type { DeckEntryRecord, DeckGroupRecord, DeckSetRecord } from "@/api/decks";
+
+import type { DragEndEvent, DragMoveEvent, DragOverEvent, DragStartEvent } from "@dnd-kit/core";
 
 type DragType = "set" | "group" | "back-face" | "front-face" | "entry" | null;
 
@@ -286,7 +282,9 @@ export function useDecksDragController({
         const groupId = active.data?.current?.groupId as string | undefined;
         setDragType("group");
         setDragActiveGroupId(groupId ?? String(active.id));
-        const nextIndex = orderedGroups.findIndex((group) => group.id === (groupId ?? String(active.id)));
+        const nextIndex = orderedGroups.findIndex(
+          (group) => group.id === (groupId ?? String(active.id)),
+        );
         setGroupDropIndex(nextIndex >= 0 ? nextIndex : null);
         return;
       }
@@ -396,12 +394,7 @@ export function useDecksDragController({
       if (index < 0) index = centers.length;
       setGroupDropIndex(index);
     },
-    [
-      dragType,
-      dragOverId,
-      groupBySetId,
-      orderedGroups.length,
-    ],
+    [dragType, dragOverId, groupBySetId, orderedGroups.length],
   );
 
   const onDragOver = useCallback(
@@ -410,13 +403,17 @@ export function useDecksDragController({
       rawOverIdRef.current = overId;
       const activeType = active.data?.current?.type;
       const activeEntryId =
-        activeType === "entry" ? ((active.data?.current?.entryId as string | undefined) ?? null) : null;
+        activeType === "entry"
+          ? ((active.data?.current?.entryId as string | undefined) ?? null)
+          : null;
       const activeSetId =
         activeType === "set"
           ? ((active.data?.current?.setId as string | undefined) ?? String(active.id))
           : null;
       const normalizedActiveSetId =
-        activeSetId && activeSetId.startsWith("set:") ? activeSetId.replace("set:", "") : activeSetId;
+        activeSetId && activeSetId.startsWith("set:")
+          ? activeSetId.replace("set:", "")
+          : activeSetId;
       const activeRectCurrent = active.rect?.current;
       const activeInitialRect = activeRectCurrent?.initial ?? null;
       const activeTranslatedRect = activeRectCurrent?.translated ?? null;
@@ -433,10 +430,12 @@ export function useDecksDragController({
           ? overId?.startsWith("group:")
             ? overId.replace("group:", "")
             : activeType === "set" && overId?.startsWith("set:")
-              ? groupBySetId.get(overId.replace("set:", "")) ?? null
+              ? (groupBySetId.get(overId.replace("set:", "")) ?? null)
               : null
           : null;
-      setDragTargetGroupId((prev) => (prev === nextDragTargetGroupId ? prev : nextDragTargetGroupId));
+      setDragTargetGroupId((prev) =>
+        prev === nextDragTargetGroupId ? prev : nextDragTargetGroupId,
+      );
       const isOverGroupRow =
         activeType !== "front-face" &&
         Boolean(
@@ -461,7 +460,9 @@ export function useDecksDragController({
           over?.rect ? { left: over.rect.left, width: over.rect.width } : null,
         );
         setEntryDropIndexState(nextIndex);
-        const nextFront = Boolean(activeType === "front-face" && isEntriesOverTarget(nextCommittedOverId, "front-face"));
+        const nextFront = Boolean(
+          activeType === "front-face" && isEntriesOverTarget(nextCommittedOverId, "front-face"),
+        );
         const nextEntries = Boolean(
           isEntriesOverTarget(nextCommittedOverId, activeKind, activeEntryId),
         );
@@ -635,7 +636,13 @@ export function useDecksDragController({
         setIsBackFaceNewGroupEdgeTarget(false);
       }
     },
-    [groupBySetId, isEntriesOverTarget, resolveEntryDropIndexFromOverId, setEntryDropIndexState, sets],
+    [
+      groupBySetId,
+      isEntriesOverTarget,
+      resolveEntryDropIndexFromOverId,
+      setEntryDropIndexState,
+      sets,
+    ],
   );
 
   const onDragEnd = useCallback(
@@ -677,7 +684,10 @@ export function useDecksDragController({
         if (targetGroupId) {
           try {
             const createdSet = await createSetFromBackFace(deckId, targetGroupId, backFaceId);
-            if (snapshotBackFaceDropGroupId === targetGroupId && snapshotBackFaceDropIndex != null) {
+            if (
+              snapshotBackFaceDropGroupId === targetGroupId &&
+              snapshotBackFaceDropIndex != null
+            ) {
               const targetOrdered = snapshotSets
                 .filter((set) => set.groupId === targetGroupId)
                 .sort((a, b) => a.sortIndex - b.sortIndex)
@@ -702,7 +712,10 @@ export function useDecksDragController({
           try {
             if (snapshotGroupDropIndex != null) {
               const orderedGroupIds = [...snapshotOrderedGroupIds];
-              const nextIndex = Math.max(0, Math.min(snapshotGroupDropIndex, orderedGroupIds.length));
+              const nextIndex = Math.max(
+                0,
+                Math.min(snapshotGroupDropIndex, orderedGroupIds.length),
+              );
               orderedGroupIds.splice(nextIndex, 0, group.id);
               await reorderDeckGroups(deckId, orderedGroupIds);
             }
@@ -719,7 +732,9 @@ export function useDecksDragController({
         return;
       }
       if (activeType === "front-face") {
-        const overId = over ? String(over.id) : committedOverIdRef.current ?? dragOverIdRef.current;
+        const overId = over
+          ? String(over.id)
+          : (committedOverIdRef.current ?? dragOverIdRef.current);
         const resolvedDropIndex =
           entryDropIndexRef.current ?? resolveEntryDropIndexFromOverId(overId, "front-face");
         const frontFaceId = active.data?.current?.frontFaceId as string | undefined;
@@ -810,15 +825,18 @@ export function useDecksDragController({
       if (activeType === "entry") {
         const entryId = active.data?.current?.entryId as string | undefined;
         const targetSetId = selectedSetIdRef.current ?? activeSetId;
-        const overId = over ? String(over.id) : committedOverIdRef.current ?? dragOverIdRef.current;
-        const snapshotEntries = entries.slice().sort((a, b) => a.sortIndex - b.sortIndex).map((entry) => entry.id);
+        const overId = over
+          ? String(over.id)
+          : (committedOverIdRef.current ?? dragOverIdRef.current);
+        const snapshotEntries = entries
+          .slice()
+          .sort((a, b) => a.sortIndex - b.sortIndex)
+          .map((entry) => entry.id);
         if (!entryId || !targetSetId) {
           resetDragState();
           return;
         }
-        const isSuccess = Boolean(
-          isEntriesOverTarget(overId, "entry", entryId),
-        );
+        const isSuccess = Boolean(isEntriesOverTarget(overId, "entry", entryId));
         if (!isSuccess) {
           resetDragState();
           return;
@@ -896,7 +914,9 @@ export function useDecksDragController({
       const snapshotOrderedGroups = [...orderedGroups];
       const snapshotSets = [...sets];
       const activeId = snapshotDragActiveSetId ?? String(active.id);
-      const normalizedActiveId = activeId.startsWith("set:") ? activeId.replace("set:", "") : activeId;
+      const normalizedActiveId = activeId.startsWith("set:")
+        ? activeId.replace("set:", "")
+        : activeId;
       // Phase 3B: do not delete sets by dragging outside the row bounds.
       // Deletion is an explicit action (Phase 3A), not an implicit drag-outside behavior.
       if (!over) {
@@ -947,7 +967,9 @@ export function useDecksDragController({
           }
           return set;
         });
-        const rollbackOptimistic = applyOptimisticSets ? applyOptimisticSets(nextSetsAfterMove) : null;
+        const rollbackOptimistic = applyOptimisticSets
+          ? applyOptimisticSets(nextSetsAfterMove)
+          : null;
         try {
           if (snapshotGroupDropIndex != null) {
             const orderedGroupIds = [...snapshotOrderedGroups.map((entry) => entry.id)];
@@ -1013,28 +1035,32 @@ export function useDecksDragController({
       toIndex = Math.max(0, Math.min(toIndex, nextSource.length));
       const nextTarget = sourceGroupId === targetGroupId ? nextSource : [...targetOrdered];
       nextTarget.splice(toIndex, 0, normalizedActiveId);
-      const nextSetsOptimistic = snapshotSets.map((set) => {
-        if (sourceGroupId === targetGroupId) {
-          if (set.groupId !== sourceGroupId) return set;
-          const nextIndex = nextTarget.indexOf(set.id);
-          return nextIndex >= 0 ? { ...set, sortIndex: nextIndex } : set;
-        }
-        if (set.id === normalizedActiveId) {
-          return { ...set, groupId: targetGroupId };
-        }
-        return set;
-      }).map((set) => {
-        if (sourceGroupId !== targetGroupId && set.groupId === sourceGroupId) {
-          const nextIndex = nextSource.indexOf(set.id);
-          return nextIndex >= 0 ? { ...set, sortIndex: nextIndex } : set;
-        }
-        if (set.groupId === targetGroupId) {
-          const nextIndex = nextTarget.indexOf(set.id);
-          return nextIndex >= 0 ? { ...set, sortIndex: nextIndex } : set;
-        }
-        return set;
-      });
-      const rollbackOptimistic = applyOptimisticSets ? applyOptimisticSets(nextSetsOptimistic) : null;
+      const nextSetsOptimistic = snapshotSets
+        .map((set) => {
+          if (sourceGroupId === targetGroupId) {
+            if (set.groupId !== sourceGroupId) return set;
+            const nextIndex = nextTarget.indexOf(set.id);
+            return nextIndex >= 0 ? { ...set, sortIndex: nextIndex } : set;
+          }
+          if (set.id === normalizedActiveId) {
+            return { ...set, groupId: targetGroupId };
+          }
+          return set;
+        })
+        .map((set) => {
+          if (sourceGroupId !== targetGroupId && set.groupId === sourceGroupId) {
+            const nextIndex = nextSource.indexOf(set.id);
+            return nextIndex >= 0 ? { ...set, sortIndex: nextIndex } : set;
+          }
+          if (set.groupId === targetGroupId) {
+            const nextIndex = nextTarget.indexOf(set.id);
+            return nextIndex >= 0 ? { ...set, sortIndex: nextIndex } : set;
+          }
+          return set;
+        });
+      const rollbackOptimistic = applyOptimisticSets
+        ? applyOptimisticSets(nextSetsOptimistic)
+        : null;
       setFinalizingSetId(normalizedActiveId);
       resetDragState();
 

@@ -1,9 +1,12 @@
 import { deleteCardsInputSchema } from "@/api/cards";
-import { deleteCardsWithCascade } from "@/lib/cards-db";
+import { deleteCardsWithCascade } from "@/lib/data/cards-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local delete-cards endpoint through the IndexedDB-backed service layer.
+ */
 export const deleteCardsRequestPlugin: ZodiosPlugin = {
   name: "local-delete-cards",
   request: async (apiDefinitions, config) => {

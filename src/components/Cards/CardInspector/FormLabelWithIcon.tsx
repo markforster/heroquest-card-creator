@@ -4,7 +4,6 @@ import styles from "@/app/page.module.css";
 
 import type { LucideIcon } from "lucide-react";
 
-
 type FormLabelWithIconProps = {
   label: string;
   icon: LucideIcon;

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
-import type { AssetKind } from "@/api/assets";
 
+import type { AssetKind } from "@/api/assets";
 import {
   EDITOR_TARGET_IDS,
   EditorTargetsProvider,
@@ -34,7 +34,9 @@ jest.mock("@/components/Assets", () => ({
   }) =>
     isOpen ? (
       <div>
-        {preferredKindOrder?.[0] === "icon" ? "ICON_ASSETS_MODAL_OPEN" : "ARTWORK_ASSETS_MODAL_OPEN"}
+        {preferredKindOrder?.[0] === "icon"
+          ? "ICON_ASSETS_MODAL_OPEN"
+          : "ARTWORK_ASSETS_MODAL_OPEN"}
         {initialSelectedAssetId ? `:${initialSelectedAssetId}` : ""}
       </div>
     ) : null,
@@ -89,10 +91,7 @@ function SecondaryRequestButton({ targetId }: { targetId: keyof typeof EDITOR_TA
   const { requestSecondaryTarget } = useEditorTargets();
 
   return (
-    <button
-      type="button"
-      onClick={() => requestSecondaryTarget(EDITOR_TARGET_IDS[targetId])}
-    >
+    <button type="button" onClick={() => requestSecondaryTarget(EDITOR_TARGET_IDS[targetId])}>
       secondary-{targetId}
     </button>
   );

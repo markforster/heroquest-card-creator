@@ -14,10 +14,7 @@ type BestTwoLineCandidate = {
   balance: number;
 };
 
-function createToken(
-  text: string,
-  breakpointAfter: StatHeadingBreakpointType,
-): StatHeadingToken {
+function createToken(text: string, breakpointAfter: StatHeadingBreakpointType): StatHeadingToken {
   return {
     text,
     separatorAfter: breakpointAfter === "space" ? " " : "",

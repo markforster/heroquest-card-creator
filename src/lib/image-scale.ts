@@ -39,7 +39,10 @@ export function normalizeLegacyImageScale({
   bounds,
   imageWidth,
   imageHeight,
-}: NormalizeLegacyImageScaleInput): { imageScale?: number; imageScaleMode?: "absolute" | "relative" } {
+}: NormalizeLegacyImageScaleInput): {
+  imageScale?: number;
+  imageScaleMode?: "absolute" | "relative";
+} {
   if (imageScaleMode) {
     return { imageScale, imageScaleMode };
   }
@@ -122,7 +125,12 @@ export function computeRelativeScaleForCanvasCover(
   const sourceHeight = imageHeight && imageHeight > 0 ? imageHeight : bounds.height;
   const fittedWidth = sourceWidth * containScale;
   const fittedHeight = sourceHeight * containScale;
-  if (!Number.isFinite(fittedWidth) || !Number.isFinite(fittedHeight) || fittedWidth <= 0 || fittedHeight <= 0) {
+  if (
+    !Number.isFinite(fittedWidth) ||
+    !Number.isFinite(fittedHeight) ||
+    fittedWidth <= 0 ||
+    fittedHeight <= 0
+  ) {
     const fallback = Math.max(canvasWidth / bounds.width, canvasHeight / bounds.height);
     return Number.isFinite(fallback) && fallback > 0 ? fallback : 1;
   }
@@ -136,7 +144,13 @@ export function computeCoverScale(
   canvasWidth: number = CARD_CANVAS_WIDTH,
   canvasHeight: number = CARD_CANVAS_HEIGHT,
 ): number {
-  return computeRelativeScaleForCanvasCover(bounds, imageWidth, imageHeight, canvasWidth, canvasHeight);
+  return computeRelativeScaleForCanvasCover(
+    bounds,
+    imageWidth,
+    imageHeight,
+    canvasWidth,
+    canvasHeight,
+  );
 }
 
 export function computeImageZoomModel(

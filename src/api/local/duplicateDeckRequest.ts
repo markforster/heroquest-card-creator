@@ -1,8 +1,11 @@
-import { duplicateDeck } from "@/lib/decks-service";
+import { duplicateDeck } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local duplicate-deck endpoint through the IndexedDB-backed service layer.
+ */
 export const duplicateDeckRequestPlugin: ZodiosPlugin = {
   name: "local-duplicate-deck",
   request: async (apiDefinitions, config) => {

@@ -5,17 +5,17 @@ import { apiClient } from "@/api/client";
 import { invalidateCollectionsQueries } from "@/api/queryInvalidation";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import type { CardEditorContextValue } from "@/components/Providers/CardEditorContext";
+import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
 import { clearDraft, saveDraft } from "@/lib/draft-storage";
 import { applyInspectorDefaults } from "@/lib/editor-form";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
+import type { QueryClient } from "@tanstack/react-query";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import type { NavigateFunction } from "react-router-dom";
-import type { QueryClient } from "@tanstack/react-query";
-import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 
 type SavingMode = "new" | "update" | null;
 type AnalyticsTrackProperties = Record<string, string | number | boolean | null | undefined>;
@@ -195,10 +195,7 @@ export function createCardPageActions({
   };
 }
 
-async function renderThumbnailBlob(
-  previewRef: RefObject<CardPreviewHandle>,
-  errorMessage: string,
-) {
+async function renderThumbnailBlob(previewRef: RefObject<CardPreviewHandle>, errorMessage: string) {
   let thumbnailBlob: Blob | null = null;
   try {
     const blob = await previewRef.current?.renderToJpegBlob({

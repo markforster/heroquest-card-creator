@@ -1,5 +1,4 @@
 import { PDFArray, PDFDocument, PDFName, PDFString, StandardFonts, grayscale, rgb } from "pdf-lib";
-import type { PDFFont, PDFPage } from "pdf-lib";
 
 import { embeddedImagesByFileName } from "@/generated/embeddedAssets";
 import { applyDuplexPreset } from "@/lib/pdf-export/duplex";
@@ -10,9 +9,6 @@ import {
   PDF_ATTRIBUTION_TEXT_SIZE_PT,
 } from "@/lib/pdf-export/footer";
 import { applyPdfMetadata } from "@/lib/pdf-export/metadata";
-import { mmToPt } from "@/lib/pdf-export/units";
-import { applyPdfViewerPreferences } from "@/lib/pdf-export/viewer-preferences";
-
 import type {
   LayoutPlan,
   MmRect,
@@ -22,6 +18,10 @@ import type {
   PrintConfig,
   SlotPlacementMm,
 } from "@/lib/pdf-export/types";
+import { mmToPt } from "@/lib/pdf-export/units";
+import { applyPdfViewerPreferences } from "@/lib/pdf-export/viewer-preferences";
+
+import type { PDFFont, PDFPage } from "pdf-lib";
 
 type RenderPdfOptions = {
   config: PrintConfig;
@@ -56,7 +56,9 @@ function decodeBase64Payload(base64: string): Uint8Array {
     return bytes;
   }
 
-  const maybeBuffer = (globalThis as { Buffer?: { from: (input: string, encoding: string) => Uint8Array } }).Buffer;
+  const maybeBuffer = (
+    globalThis as { Buffer?: { from: (input: string, encoding: string) => Uint8Array } }
+  ).Buffer;
   if (maybeBuffer?.from) {
     return Uint8Array.from(maybeBuffer.from(base64, "base64"));
   }
@@ -95,7 +97,10 @@ function drawPdfAttributionFooter(
     const prefix = text.slice(0, linkStart);
     const suffix = text.slice(linkStart + PDF_ATTRIBUTION_LINK_TEXT.length);
     const prefixWidth = font.widthOfTextAtSize(prefix, PDF_ATTRIBUTION_TEXT_SIZE_PT);
-    const linkWidth = font.widthOfTextAtSize(PDF_ATTRIBUTION_LINK_TEXT, PDF_ATTRIBUTION_TEXT_SIZE_PT);
+    const linkWidth = font.widthOfTextAtSize(
+      PDF_ATTRIBUTION_LINK_TEXT,
+      PDF_ATTRIBUTION_TEXT_SIZE_PT,
+    );
     const suffixWidth = font.widthOfTextAtSize(suffix, PDF_ATTRIBUTION_TEXT_SIZE_PT);
     const fullWidth = prefixWidth + linkWidth + suffixWidth;
     const scale = fullWidth > 0 ? Math.min(1, textMaxWidth / fullWidth) : 1;
@@ -209,7 +214,6 @@ const CALIBRATION_PANEL_PADDING_MM = 3;
 const CALIBRATION_PANEL_TITLE_HEIGHT_MM = 7;
 const CALIBRATION_PANEL_TOP_RULER_HEIGHT_MM = 10;
 const CALIBRATION_PANEL_LEFT_RULER_WIDTH_MM = 12;
-const CALIBRATION_PANEL_LEGEND_HEIGHT_MM = 14;
 const CALIBRATION_CM_MINOR_STEP_MM = 1;
 const CALIBRATION_CM_MAJOR_STEP_MM = 10;
 const CALIBRATION_INCH_MINOR_STEP_MM = 25.4 / 8;
@@ -268,18 +272,14 @@ function drawCalibrationSectionFrame(
 
 function getCalibrationPanelContentRect(panelRectMm: MmRect): MmRect {
   const xMm =
-    panelRectMm.xMm +
-    CALIBRATION_PANEL_PADDING_MM +
-    CALIBRATION_PANEL_LEFT_RULER_WIDTH_MM;
+    panelRectMm.xMm + CALIBRATION_PANEL_PADDING_MM + CALIBRATION_PANEL_LEFT_RULER_WIDTH_MM;
   const yMm =
     panelRectMm.yMm +
     CALIBRATION_PANEL_PADDING_MM +
     CALIBRATION_PANEL_TITLE_HEIGHT_MM +
     CALIBRATION_PANEL_TOP_RULER_HEIGHT_MM;
   const wMm =
-    panelRectMm.wMm -
-    CALIBRATION_PANEL_PADDING_MM * 2 -
-    CALIBRATION_PANEL_LEFT_RULER_WIDTH_MM;
+    panelRectMm.wMm - CALIBRATION_PANEL_PADDING_MM * 2 - CALIBRATION_PANEL_LEFT_RULER_WIDTH_MM;
   const hMm =
     panelRectMm.hMm -
     CALIBRATION_PANEL_PADDING_MM * 2 -
@@ -289,7 +289,10 @@ function getCalibrationPanelContentRect(panelRectMm: MmRect): MmRect {
   return { xMm, yMm, wMm, hMm };
 }
 
-function getCalibrationSectionLayouts(pageMm: { width: number; height: number }): CalibrationSectionLayout[] {
+function getCalibrationSectionLayouts(pageMm: {
+  width: number;
+  height: number;
+}): CalibrationSectionLayout[] {
   const usableWidthMm = pageMm.width - CALIBRATION_PAGE_MARGIN_MM * 2;
   const usableHeightMm = pageMm.height - CALIBRATION_SECTIONS_TOP_MM - CALIBRATION_PAGE_MARGIN_MM;
   const isLandscape = pageMm.width >= pageMm.height;
@@ -379,7 +382,8 @@ function drawDualUnitRulers(
   panelRectMm: MmRect,
   contentRectMm: MmRect,
 ): void {
-  const topBaselineMm = panelRectMm.yMm + CALIBRATION_PANEL_PADDING_MM + CALIBRATION_PANEL_TITLE_HEIGHT_MM;
+  const topBaselineMm =
+    panelRectMm.yMm + CALIBRATION_PANEL_PADDING_MM + CALIBRATION_PANEL_TITLE_HEIGHT_MM;
   const leftBaselineMm = panelRectMm.xMm + CALIBRATION_PANEL_PADDING_MM;
   const originXmm = contentRectMm.xMm;
   const originYmm = contentRectMm.yMm;
@@ -408,7 +412,6 @@ function drawDualUnitRulers(
   ) {
     const clampedOffsetMm = Math.min(offsetMm, contentRectMm.wMm);
     const isMajor = isMajorStep(clampedOffsetMm, CALIBRATION_CM_MAJOR_STEP_MM);
-    const tickLengthMm = isMajor ? 3.2 : 1.6;
     const xPt = mmToPt(originXmm + clampedOffsetMm);
     const y1Pt = mmToPt(pageMm.height - topMetricBaselineMm);
     const y2Pt = mmToPt(pageMm.height - originYmm);
@@ -436,8 +439,6 @@ function drawDualUnitRulers(
   ) {
     const clampedOffsetMm = Math.min(offsetMm, contentRectMm.wMm);
     const isMajor = isMajorStep(clampedOffsetMm, CALIBRATION_INCH_MAJOR_STEP_MM);
-    const isHalfMajor = !isMajor && isMajorStep(clampedOffsetMm, CALIBRATION_INCH_MAJOR_STEP_MM / 2);
-    const tickLengthMm = isMajor ? 3.2 : isHalfMajor ? 2.3 : 1.3;
     const xPt = mmToPt(originXmm + clampedOffsetMm);
     const y1Pt = mmToPt(pageMm.height - topImperialBaselineMm);
     const y2Pt = mmToPt(pageMm.height - originYmm);
@@ -465,7 +466,6 @@ function drawDualUnitRulers(
   ) {
     const clampedOffsetMm = Math.min(offsetMm, contentRectMm.hMm);
     const isMajor = isMajorStep(clampedOffsetMm, CALIBRATION_CM_MAJOR_STEP_MM);
-    const tickLengthMm = isMajor ? 3.2 : 1.6;
     const yPt = mmToPt(pageMm.height - (originYmm + clampedOffsetMm));
     const x1Pt = mmToPt(leftMetricBaselineMm);
     const x2Pt = mmToPt(originXmm);
@@ -493,8 +493,6 @@ function drawDualUnitRulers(
   ) {
     const clampedOffsetMm = Math.min(offsetMm, contentRectMm.hMm);
     const isMajor = isMajorStep(clampedOffsetMm, CALIBRATION_INCH_MAJOR_STEP_MM);
-    const isHalfMajor = !isMajor && isMajorStep(clampedOffsetMm, CALIBRATION_INCH_MAJOR_STEP_MM / 2);
-    const tickLengthMm = isMajor ? 3.2 : isHalfMajor ? 2.3 : 1.3;
     const yPt = mmToPt(pageMm.height - (originYmm + clampedOffsetMm));
     const x1Pt = mmToPt(leftImperialBaselineMm);
     const x2Pt = mmToPt(originXmm);
@@ -557,11 +555,7 @@ function drawCalibrationPrintInstructions(
       x: mmToPt(xMm),
       y: mmToPt(pageMm.height - (topYmm + index * CALIBRATION_INSTRUCTION_LINE_HEIGHT_MM)),
       size: isTitle ? CALIBRATION_INSTRUCTION_TITLE_SIZE_PT : CALIBRATION_INSTRUCTION_TEXT_SIZE_PT,
-      color: isTitle
-        ? grayscale(0.12)
-        : isSectionLabel
-          ? grayscale(0.22)
-          : grayscale(0.35),
+      color: isTitle ? grayscale(0.12) : isSectionLabel ? grayscale(0.22) : grayscale(0.35),
       maxWidth: mmToPt(availableWidthMm),
     });
   });
@@ -783,9 +777,13 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
   let skippedFaces = 0;
   const qrDataUrl = embeddedImagesByFileName[PDF_ATTRIBUTION_QR_KEY];
   if (!qrDataUrl) {
-    throw new Error(`Missing embedded image asset for ${PDF_ATTRIBUTION_QR_KEY}. Run generate:embedded-assets.`);
+    throw new Error(
+      `Missing embedded image asset for ${PDF_ATTRIBUTION_QR_KEY}. Run generate:embedded-assets.`,
+    );
   }
-  let qrImage: Awaited<ReturnType<PDFDocument["embedJpg"]>> | Awaited<ReturnType<PDFDocument["embedPng"]>>;
+  let qrImage:
+    | Awaited<ReturnType<PDFDocument["embedJpg"]>>
+    | Awaited<ReturnType<PDFDocument["embedPng"]>>;
   const qrBytes = decodeImageDataUrlBytes(qrDataUrl);
   try {
     qrImage = await pdf.embedJpg(qrBytes);

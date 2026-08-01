@@ -1,13 +1,13 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { CircleAlert, FolderPlus, Info, LoaderCircle, SquareStack } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 
-import styles from "@/app/page.module.css";
-import type { CollectionRecord } from "@/api/collections";
 import { apiClient } from "@/api/client";
+import type { CollectionRecord } from "@/api/collections";
 import { invalidateCollectionsQueries } from "@/api/queryInvalidation";
+import styles from "@/app/page.module.css";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -100,10 +100,7 @@ export default function CollectionsInspectorPanel() {
     const nextCardIds = collection.cardIds.filter((cardId) => cardId !== savedCardId);
 
     try {
-      await apiClient.updateCollection(
-        { cardIds: nextCardIds },
-        { params: { id: collection.id } },
-      );
+      await apiClient.updateCollection({ cardIds: nextCardIds }, { params: { id: collection.id } });
       await Promise.all([refreshCollections(), invalidateCollectionsQueries(queryClient)]);
     } catch {
       // Keep the current list visible if an update fails.

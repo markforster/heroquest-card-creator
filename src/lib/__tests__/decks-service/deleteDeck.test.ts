@@ -1,8 +1,6 @@
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { deleteDeck } from "@/lib/decks-service";
-
+import { deleteDeck } from "@/lib/data/decks-service";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
-  TEST_NOW,
   createDeckEntryRecord,
   createDeckGroupRecord,
   createDeckRecord,
@@ -15,7 +13,7 @@ import {
 
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
@@ -50,12 +48,32 @@ describe("deleteDeck", () => {
       createDeckGroupRecord({ id: "group-b-1", deckId: "deck-b", title: "B1" }),
     ]);
     await db.deckSets.bulkPut([
-      createDeckSetRecord({ id: "set-a-1", deckId: "deck-a", groupId: "group-a-1", backFaceId: "back-a" }),
-      createDeckSetRecord({ id: "set-b-1", deckId: "deck-b", groupId: "group-b-1", backFaceId: "back-b" }),
+      createDeckSetRecord({
+        id: "set-a-1",
+        deckId: "deck-a",
+        groupId: "group-a-1",
+        backFaceId: "back-a",
+      }),
+      createDeckSetRecord({
+        id: "set-b-1",
+        deckId: "deck-b",
+        groupId: "group-b-1",
+        backFaceId: "back-b",
+      }),
     ]);
     await db.deckEntries.bulkPut([
-      createDeckEntryRecord({ id: "entry-a-1", deckId: "deck-a", setId: "set-a-1", pairId: "pair-a" }),
-      createDeckEntryRecord({ id: "entry-b-1", deckId: "deck-b", setId: "set-b-1", pairId: "pair-b" }),
+      createDeckEntryRecord({
+        id: "entry-a-1",
+        deckId: "deck-a",
+        setId: "set-a-1",
+        pairId: "pair-a",
+      }),
+      createDeckEntryRecord({
+        id: "entry-b-1",
+        deckId: "deck-b",
+        setId: "set-b-1",
+        pairId: "pair-b",
+      }),
     ]);
     await db.pairs.bulkPut([
       createPairRecord({ id: "pair-a", frontFaceId: "front-a", backFaceId: "back-a" }),

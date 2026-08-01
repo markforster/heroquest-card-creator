@@ -74,10 +74,7 @@ export function GroupColumn({
         <button
           type="button"
           ref={handleRef}
-          className={[
-            styles.groupDragHandle,
-            isDragging ? styles.groupDragHandleActive : "",
-          ]
+          className={[styles.groupDragHandle, isDragging ? styles.groupDragHandleActive : ""]
             .filter(Boolean)
             .join(" ")}
           aria-label={t("decks.groups.actions.reorder")}

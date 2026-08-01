@@ -7,7 +7,10 @@ import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import type { ReactNode, RefObject } from "react";
 
 type PreviewCanvasContextValue = {
-  renderPreviewCanvas: (options?: { width?: number; height?: number }) => Promise<HTMLCanvasElement | null>;
+  renderPreviewCanvas: (options?: {
+    width?: number;
+    height?: number;
+  }) => Promise<HTMLCanvasElement | null>;
 };
 
 const PreviewCanvasContext = createContext<PreviewCanvasContextValue | undefined>(undefined);

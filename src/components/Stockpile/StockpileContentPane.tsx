@@ -1,5 +1,6 @@
 "use client";
 
+import type { CardRecord } from "@/api/cards";
 import styles from "@/app/page.module.css";
 import StockpileCardsGrid from "@/components/Stockpile/StockpileCardsGrid";
 import StockpileCardsTable from "@/components/Stockpile/StockpileCardsTable";
@@ -10,7 +11,6 @@ import type {
   StockpileCardView,
 } from "@/components/Stockpile/types";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { CardRecord } from "@/api/cards";
 
 type StockpileContentPaneProps = {
   filteredCards: CardRecord[];
@@ -92,13 +92,13 @@ export default function StockpileContentPane({
                 ? t("empty.noRecentCards")
                 : activeFilter.type === "recentlyDeleted"
                   ? t("empty.noRecentlyDeletedCards")
-                : activeFilter.type === "collection"
-                  ? templateFilter !== "all" && totalCount > 0
-                    ? `${t("empty.collectionFilteredByType")} ${filterLabel}.`
-                    : t("empty.collectionEmpty")
-                  : activeFilter.type === "unfiled"
-                    ? t("empty.nothingUnfiled")
-                    : t("empty.noSavedCards")}
+                  : activeFilter.type === "collection"
+                    ? templateFilter !== "all" && totalCount > 0
+                      ? `${t("empty.collectionFilteredByType")} ${filterLabel}.`
+                      : t("empty.collectionEmpty")
+                    : activeFilter.type === "unfiled"
+                      ? t("empty.nothingUnfiled")
+                      : t("empty.noSavedCards")}
           </div>
         )
       ) : (

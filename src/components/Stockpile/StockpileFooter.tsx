@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 
+import type { CardRecord } from "@/api/cards";
+import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
-import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
+import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { CardRecord } from "@/api/cards";
-import { previewDeletePair } from "@/lib/pairs-service";
-import type { PairUsageReport } from "@/lib/decks-errors";
+import type { PairUsageReport } from "@/lib/data/decks-errors";
 import formatMessageWith from "@/lib/format-message-with";
 
 import type { ReactNode } from "react";
@@ -63,10 +63,8 @@ export default function StockpileFooter({
   showLoadAction = true,
 }: StockpileFooterProps) {
   const { t } = useI18n();
-  const formatMessage = (
-    key: string,
-    vars: Record<string, string | number>,
-  ) => formatMessageWith(t as never, key as never, vars);
+  const formatMessage = (key: string, vars: Record<string, string | number>) =>
+    formatMessageWith(t as never, key as never, vars);
   const [isApplyingPairSelection, setIsApplyingPairSelection] = useState(false);
   const [pendingPairFrontsUnpair, setPendingPairFrontsUnpair] = useState<{
     selectedIds: string[];
@@ -90,7 +88,11 @@ export default function StockpileFooter({
   }> => {
     const reports = await Promise.all(
       removedFrontIds.map((frontFaceId) =>
-        previewDeletePair(frontFaceId, backFaceId, { mode: "confirmable-cascade" }),
+        apiClient.previewDeletePair({
+          frontFaceId,
+          backFaceId,
+          mode: "confirmable-cascade",
+        }),
       ),
     );
     const usageByKey = new Map<string, PairUsageReport["cascadePlan"]["usage"][number]>();
@@ -102,7 +104,11 @@ export default function StockpileFooter({
     });
     const deckMap = new Map<
       string,
-      { deckId: string; deckTitle: string; locations: Array<{ groupId: string; groupTitle: string; setId: string; setTitle: string }> }
+      {
+        deckId: string;
+        deckTitle: string;
+        locations: Array<{ groupId: string; groupTitle: string; setId: string; setTitle: string }>;
+      }
     >();
     usageByKey.forEach((usage) => {
       const deck = deckMap.get(usage.deckId) ?? {
@@ -110,7 +116,11 @@ export default function StockpileFooter({
         deckTitle: usage.deckTitle,
         locations: [],
       };
-      if (!deck.locations.some((location) => location.groupId === usage.groupId && location.setId === usage.setId)) {
+      if (
+        !deck.locations.some(
+          (location) => location.groupId === usage.groupId && location.setId === usage.setId,
+        )
+      ) {
         deck.locations.push({
           groupId: usage.groupId,
           groupTitle: usage.groupTitle,
@@ -186,7 +196,9 @@ export default function StockpileFooter({
             </button>
           </div>
         ) : (
-          <div className={`d-flex w-100 align-items-center ${styles.stockpileFooter} ${styles.uRowLg}`}>
+          <div
+            className={`d-flex w-100 align-items-center ${styles.stockpileFooter} ${styles.uRowLg}`}
+          >
             {collectionControls ?? null}
             {showBulkExportAction || showLoadAction || onPdfExport ? (
               <div className="d-flex flex-shrink-1 flex-grow-0 gap-2 ms-auto">
@@ -257,7 +269,8 @@ export default function StockpileFooter({
               </div>
               <div className={styles.pairingPanelGrid}>
                 {pendingPairFrontsUnpair.removedCards.map((card) => {
-                  const templateThumbSrc = cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
+                  const templateThumbSrc =
+                    cardTemplatesById[card.templateId]?.thumbnail?.src ?? null;
                   return (
                     <div key={card.id} className={styles.pairFrontsModalThumbItem}>
                       <StockpileThumbImage

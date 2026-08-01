@@ -3,9 +3,9 @@
 import { Link, Outlet } from "react-router-dom";
 
 import styles from "@/app/page.module.css";
+import GlobalAppShortcuts from "@/components/App/GlobalAppShortcuts";
 import { EscapeStackProvider } from "@/components/common/EscapeStackProvider";
 import { WarningNotice } from "@/components/common/Notice";
-import GlobalAppShortcuts from "@/components/App/GlobalAppShortcuts";
 import HeaderWithTemplatePicker from "@/components/Layout/HeaderWithTemplatePicker";
 import LeftNav from "@/components/Layout/LeftNav";
 import MainFooter from "@/components/Layout/MainFooter";
@@ -35,9 +35,7 @@ export default function AppShell() {
               <GlobalAppShortcuts />
               <HeaderWithTemplatePicker
                 missingAssetsCount={missingAssetsReport.length}
-                showMissingAssetsReminder={
-                  missingAssetsDismissed && missingAssetsReport.length > 0
-                }
+                showMissingAssetsReminder={missingAssetsDismissed && missingAssetsReport.length > 0}
               />
               {ENABLE_MISSING_ASSET_CHECKS &&
               missingAssetsReport.length > 0 &&

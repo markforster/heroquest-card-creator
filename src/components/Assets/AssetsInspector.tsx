@@ -8,19 +8,18 @@ import type { AssetRecord } from "@/api/assets";
 import type { CardRecord } from "@/api/cards";
 import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
+import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesGuardContext";
 import { sortCardsByUpdated } from "@/components/Assets/asset-formatters";
 import { getUsageBoundsForTemplate } from "@/components/Assets/asset-inspector-usage";
 import AssetsInspectorActions from "@/components/Assets/AssetsInspectorActions";
 import AssetsInspectorDetails from "@/components/Assets/AssetsInspectorDetails";
 import AssetsInspectorHero from "@/components/Assets/AssetsInspectorHero";
 import type { AssetUsage, AssetUsageBounds } from "@/components/Assets/AssetsRoutePanels.types";
-import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesGuardContext";
 import { AssetsPreviewModal } from "@/components/Assets/modals";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { usePreviewRenderer } from "@/components/Providers/PreviewRendererContext";
 import { ENABLE_WEBGL_RECENTER_ON_FACE_SELECT } from "@/config/flags";
-import { useI18n } from "@/i18n/I18nProvider";
 import type { TemplateId } from "@/types/templates";
 
 type AssetsInspectorProps = {
@@ -40,7 +39,6 @@ export default function AssetsInspector({
   onOptimizeComplete,
   refreshKey,
 }: AssetsInspectorProps) {
-  const { t } = useI18n();
   const navigate = useNavigate();
   const { requestRecenter } = usePreviewRenderer();
   const { bypassNextNavigation, runWithUnsavedChangesGuard } = useUnsavedChangesGuardControls();

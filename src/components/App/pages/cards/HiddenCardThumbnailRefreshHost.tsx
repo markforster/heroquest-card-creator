@@ -1,6 +1,14 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import styles from "@/app/page.module.css";
 import CardPreview, { type CardPreviewHandle } from "@/components/Cards/CardPreview";
@@ -120,64 +128,69 @@ function HiddenCardThumbnailRefreshJob({ job, onComplete }: HiddenCardThumbnailR
   );
 }
 
-export default forwardRef<HiddenCardThumbnailRefreshHostHandle>(function HiddenCardThumbnailRefreshHost(
-  _props,
-  ref,
-) {
-  const queueRef = useRef<Job[]>([]);
-  const nextJobIdRef = useRef(1);
-  const currentJobRef = useRef<Job | null>(null);
-  const [currentJob, setCurrentJob] = useState<Job | null>(null);
+export default forwardRef<HiddenCardThumbnailRefreshHostHandle>(
+  function HiddenCardThumbnailRefreshHost(_props, ref) {
+    const queueRef = useRef<Job[]>([]);
+    const nextJobIdRef = useRef(1);
+    const currentJobRef = useRef<Job | null>(null);
+    const [currentJob, setCurrentJob] = useState<Job | null>(null);
 
-  const pumpQueue = () => {
-    if (currentJobRef.current) {
-      setCurrentJob(currentJobRef.current);
-      return;
-    }
+    const pumpQueue = () => {
+      if (currentJobRef.current) {
+        setCurrentJob(currentJobRef.current);
+        return;
+      }
 
-    const next = queueRef.current.shift() ?? null;
-    currentJobRef.current = next;
-    setCurrentJob(next);
-  };
+      const next = queueRef.current.shift() ?? null;
+      currentJobRef.current = next;
+      setCurrentJob(next);
+    };
 
-  const handleComplete = useCallback((jobId: number, blob: Blob | null) => {
-    const completedJob = currentJobRef.current;
-    if (!completedJob || completedJob.id !== jobId) {
-      return;
-    }
+    const handleComplete = useCallback((jobId: number, blob: Blob | null) => {
+      const completedJob = currentJobRef.current;
+      if (!completedJob || completedJob.id !== jobId) {
+        return;
+      }
 
-    completedJob.resolve(blob);
-    currentJobRef.current = null;
-    setCurrentJob((existing) => (existing?.id === jobId ? null : existing));
-  }, []);
+      completedJob.resolve(blob);
+      currentJobRef.current = null;
+      setCurrentJob((existing) => (existing?.id === jobId ? null : existing));
+    }, []);
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      renderThumbnail(card) {
-        return new Promise<Blob | null>((resolve) => {
-          queueRef.current.push({
-            id: nextJobIdRef.current,
-            card,
-            resolve,
+    useImperativeHandle(
+      ref,
+      () => ({
+        renderThumbnail(card) {
+          return new Promise<Blob | null>((resolve) => {
+            queueRef.current.push({
+              id: nextJobIdRef.current,
+              card,
+              resolve,
+            });
+            nextJobIdRef.current += 1;
+            pumpQueue();
           });
-          nextJobIdRef.current += 1;
-          pumpQueue();
-        });
-      },
-    }),
-    [],
-  );
+        },
+      }),
+      [],
+    );
 
-  useEffect(() => {
-    if (!currentJob && queueRef.current.length > 0) {
-      pumpQueue();
+    useEffect(() => {
+      if (!currentJob && queueRef.current.length > 0) {
+        pumpQueue();
+      }
+    }, [currentJob]);
+
+    if (!currentJob) {
+      return null;
     }
-  }, [currentJob]);
 
-  if (!currentJob) {
-    return null;
-  }
-
-  return <HiddenCardThumbnailRefreshJob key={currentJob.id} job={currentJob} onComplete={handleComplete} />;
-});
+    return (
+      <HiddenCardThumbnailRefreshJob
+        key={currentJob.id}
+        job={currentJob}
+        onComplete={handleComplete}
+      />
+    );
+  },
+);

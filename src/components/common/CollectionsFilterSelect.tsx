@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { Folder, LibrarySquare } from "lucide-react";
+import { useMemo } from "react";
 import Select, { type SingleValue, type StylesConfig } from "react-select";
 
 import styles from "@/app/page.module.css";
@@ -214,7 +214,7 @@ export default function CollectionsFilterSelect({
 
   const selected = useMemo(() => {
     if (!selectedValue) {
-      return allowEmptySelection ? null : options[0] ?? null;
+      return allowEmptySelection ? null : (options[0] ?? null);
     }
     if (selectedValue.type === "collection") {
       return options.find((option) => option.value === `collection:${selectedValue.id}`) ?? null;

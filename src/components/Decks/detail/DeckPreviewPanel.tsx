@@ -12,7 +12,6 @@ import { useDeckSetEntries } from "@/components/Decks/detail/context/DeckSetEntr
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-
 import type { TemplateId } from "@/types/templates";
 
 function resolveTemplateLabel(templateId?: string | null): string | null {
@@ -27,7 +26,10 @@ export default function DeckPreviewPanel() {
   const rightPanel = useDeckRightPanel();
 
   const orderedSelectedEntryIds = useMemo(
-    () => entries.entriesSorted.map((entry) => entry.id).filter((entryId) => rightPanel.selectedEntryIds.has(entryId)),
+    () =>
+      entries.entriesSorted
+        .map((entry) => entry.id)
+        .filter((entryId) => rightPanel.selectedEntryIds.has(entryId)),
     [entries.entriesSorted, rightPanel.selectedEntryIds],
   );
   const activeSelectedEntryId = useMemo(() => {
@@ -44,10 +46,10 @@ export default function DeckPreviewPanel() {
     ? orderedSelectedEntryIds.indexOf(activeSelectedEntryId)
     : -1;
   const selectedFrontCardId = activeSelectedEntryId
-    ? entries.entryFrontIdByEntryId.get(activeSelectedEntryId) ?? null
+    ? (entries.entryFrontIdByEntryId.get(activeSelectedEntryId) ?? null)
     : null;
   const selectedSet = selection.selectedSetId
-    ? selection.setById.get(selection.selectedSetId) ?? null
+    ? (selection.setById.get(selection.selectedSetId) ?? null)
     : null;
   const fallbackCardId = selectedSet?.backFaceId ?? null;
   const preferSetPreview = rightPanel.previewSelectionSource === "set";
@@ -69,11 +71,14 @@ export default function DeckPreviewPanel() {
   );
   const previewRecord = previewCardId ? (previewCardQuery.data ?? null) : null;
   const previewTitle =
-    previewRecord?.name?.trim() || previewRecord?.title?.trim() || previewSummary?.name?.trim() || null;
+    previewRecord?.name?.trim() ||
+    previewRecord?.title?.trim() ||
+    previewSummary?.name?.trim() ||
+    null;
   const previewTemplateLabel = resolveTemplateLabel(previewRecord?.templateId);
   const previewTemplate =
     previewRecord?.templateId != null
-      ? cardTemplatesById[previewRecord.templateId as TemplateId] ?? null
+      ? (cardTemplatesById[previewRecord.templateId as TemplateId] ?? null)
       : null;
   const previewCardData =
     previewRecord?.templateId != null
@@ -83,11 +88,7 @@ export default function DeckPreviewPanel() {
   useEffect(() => {
     if (activeSelectedEntryId === rightPanel.activePreviewEntryId) return;
     rightPanel.setActivePreviewEntryId(activeSelectedEntryId);
-  }, [
-    activeSelectedEntryId,
-    rightPanel.activePreviewEntryId,
-    rightPanel.setActivePreviewEntryId,
-  ]);
+  }, [activeSelectedEntryId, rightPanel.activePreviewEntryId, rightPanel.setActivePreviewEntryId]);
 
   const movePreview = (delta: number) => {
     if (orderedSelectedEntryIds.length <= 1 || activeSelectedEntryIndex < 0) return;

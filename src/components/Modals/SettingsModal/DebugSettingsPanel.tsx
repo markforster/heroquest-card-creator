@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react";
 
+import { apiClient } from "@/api/client";
+import { readApiConfig } from "@/api/config";
 import styles from "@/app/page.module.css";
 import { DangerNotice, SuccessNotice, WarningNotice } from "@/components/common/Notice";
 import SettingsGroup from "@/components/Modals/SettingsModal/SettingsGroup";
 import { useDebugVisuals } from "@/components/Providers/DebugVisualsContext";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiClient } from "@/api/client";
-import { readApiConfig } from "@/api/config";
+import {
+  getThumbnailJpegMigrationStatus,
+  subscribeThumbnailJpegMigration,
+} from "@/lib/db/migrations/thumbnail-jpeg-migration";
 import {
   getRemoteAssetHashIndexEnabled,
   getRemoteAssetThumbPrefetchEnabled,
@@ -16,10 +20,6 @@ import {
   setRemoteAssetThumbPrefetchEnabled,
   subscribeRemoteAssetFlags,
 } from "@/lib/remote-asset-flags";
-import {
-  getThumbnailJpegMigrationStatus,
-  subscribeThumbnailJpegMigration,
-} from "@/lib/thumbnail-jpeg-migration";
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes)) return "0 B";
@@ -82,9 +82,7 @@ export default function DebugSettingsPanel() {
     setClearError(null);
     try {
       const count = await apiClient.resetAssetClassificationAll(undefined);
-      setClearMessage(
-        t("label.assetClassificationCleared").replace("${count}", String(count)),
-      );
+      setClearMessage(t("label.assetClassificationCleared").replace("${count}", String(count)));
     } catch {
       setClearError(t("label.assetClassificationClearFailed"));
     } finally {
@@ -116,10 +114,10 @@ export default function DebugSettingsPanel() {
           <div className={styles.settingsPanelOption}>
             {thumbMigrationStatus.state === "running"
               ? "Thumbnail JPEG migration is running in the background."
-              : thumbMigrationStatus.message ??
+              : (thumbMigrationStatus.message ??
                 (thumbMigrationStatus.state === "done"
                   ? "Thumbnail JPEG migration complete."
-                  : "Thumbnail JPEG migration is idle.")}
+                  : "Thumbnail JPEG migration is idle."))}
           </div>
           {thumbMigrationStatus.total > 0 ? (
             <>
@@ -150,18 +148,13 @@ export default function DebugSettingsPanel() {
         </div>
       </SettingsGroup>
       {isRemoteMode ? (
-        <SettingsGroup
-          title="Remote Asset Fetch (Debug)"
-          className="d-flex flex-column gap-2"
-        >
+        <SettingsGroup title="Remote Asset Fetch (Debug)" className="d-flex flex-column gap-2">
           <label className={`${styles.settingsPanelToggle} d-inline-flex align-items-center gap-2`}>
             <input
               type="checkbox"
               className="form-check-input hq-checkbox"
               checked={isThumbPrefetchEnabled}
-              onChange={(event) =>
-                setRemoteAssetThumbPrefetchEnabled(event.target.checked)
-              }
+              onChange={(event) => setRemoteAssetThumbPrefetchEnabled(event.target.checked)}
             />
             Asset thumbnail prefetch (remote)
           </label>
@@ -170,9 +163,7 @@ export default function DebugSettingsPanel() {
               type="checkbox"
               className="form-check-input hq-checkbox"
               checked={isHashIndexEnabled}
-              onChange={(event) =>
-                setRemoteAssetHashIndexEnabled(event.target.checked)
-              }
+              onChange={(event) => setRemoteAssetHashIndexEnabled(event.target.checked)}
             />
             Asset hash index (remote)
           </label>
@@ -182,9 +173,7 @@ export default function DebugSettingsPanel() {
         title={t("actions.clearAssetClassification")}
         className="d-flex flex-column gap-3"
       >
-        <WarningNotice>
-          {t("warning.clearAssetClassificationDestructive")}
-        </WarningNotice>
+        <WarningNotice>{t("warning.clearAssetClassificationDestructive")}</WarningNotice>
         <div className="d-flex align-items-center gap-3 flex-wrap">
           <button
             type="button"

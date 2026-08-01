@@ -2,14 +2,14 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-import type { CSSProperties } from "react";
-
 import styles from "@/app/page.module.css";
 import avatarFile from "@/assets/avatar.jpeg";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
-import { useI18n } from "@/i18n/I18nProvider";
 import { embeddedImagesByFileName } from "@/generated/embeddedAssets";
+import { useI18n } from "@/i18n/I18nProvider";
+
+import type { CSSProperties } from "react";
 
 const CTA_SHIMMER_INTERVAL_MS = 8_000;
 const CTA_PULSE_INTERVAL_MS = 60_000;

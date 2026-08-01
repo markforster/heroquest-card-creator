@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
 
 import CollectionPdfExportSummaryModal from "@/components/Stockpile/pdf/CollectionPdfExportSummaryModal";
-
 import type { SlotPair } from "@/lib/pdf-export";
+
+import type { ReactNode } from "react";
 
 const mockCapturedExportRun = jest.fn();
 
@@ -11,13 +11,13 @@ jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) =>
       (
-        {
+        ({
           "actions.export": "Export",
           "actions.fromThisCollection": "from this collection",
           "heading.collections": "Collections",
           "label.cards": "Cards",
           "alert.selectCardToExport": "Select a card",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));
@@ -55,10 +55,10 @@ jest.mock("@/components/Export/PdfExportShellModal", () => ({
     topContent?: ReactNode;
   }) =>
     isOpen ? (
-        <div>
-          <div>{title}</div>
-          <div data-testid="shell-source-type">{sourceType}</div>
-          <div data-testid="shell-slot-pairs">{JSON.stringify(slotPairs)}</div>
+      <div>
+        <div>{title}</div>
+        <div data-testid="shell-source-type">{sourceType}</div>
+        <div data-testid="shell-slot-pairs">{JSON.stringify(slotPairs)}</div>
         <div data-testid="shell-mode-policy">{JSON.stringify(shellPolicy?.mode ?? null)}</div>
         <div data-testid="shell-duplex-policy">
           {JSON.stringify(shellPolicy?.duplexPreset ?? null)}
@@ -73,8 +73,9 @@ jest.mock("@/components/Export/PdfExportShellModal", () => ({
           {summaryContent?.columns[0]?.map((line) => line.text).join(" | ") ?? ""}
         </div>
         <div data-testid="shell-summary-secondary">
-          {summaryContent?.columns[1]?.map((line) => `${line.tone ?? "default"}:${line.text}`).join(" | ") ??
-            ""}
+          {summaryContent?.columns[1]
+            ?.map((line) => `${line.tone ?? "default"}:${line.text}`)
+            .join(" | ") ?? ""}
         </div>
         <div data-testid="shell-summary-notice">
           {summaryContent?.notice
@@ -82,9 +83,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => ({
             : ""}
         </div>
         <div data-testid="shell-top-content">{topContent}</div>
-        <div data-testid="shell-has-alignment-run">
-          {String(Boolean(buildAlignmentExportRun))}
-        </div>
+        <div data-testid="shell-has-alignment-run">{String(Boolean(buildAlignmentExportRun))}</div>
         <button
           type="button"
           onClick={async () => {
@@ -152,9 +151,7 @@ describe("CollectionPdfExportSummaryModal", () => {
       />,
     );
 
-    expect(screen.getByTestId("shell-summary-notice")).toHaveTextContent(
-      "blocked:Select a card",
-    );
+    expect(screen.getByTestId("shell-summary-notice")).toHaveTextContent("blocked:Select a card");
 
     fireEvent.click(screen.getByRole("button", { name: "Run export" }));
 

@@ -32,11 +32,9 @@ function buildMockLayout({
 
 describe("layoutCardTextToBounds", () => {
   it("shrinks and reflows when fit-to-bounds is enabled", () => {
-    const layout = jest.fn(
-      ({ fontSize = 20 }: { fontSize?: number }) => ({
-        ...buildMockLayout({ textRowCount: 3, fontSize }),
-      }),
-    );
+    const layout = jest.fn(({ fontSize = 20 }: { fontSize?: number }) => ({
+      ...buildMockLayout({ textRowCount: 3, fontSize }),
+    }));
 
     const result = layoutCardTextToBounds({
       layout,

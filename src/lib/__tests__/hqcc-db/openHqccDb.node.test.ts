@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-import { openHqccDb } from "@/lib/hqcc-db";
+import { openHqccDb } from "@/lib/db/hqcc-db";
 
 describe("openHqccDb (node)", () => {
   beforeEach(() => {

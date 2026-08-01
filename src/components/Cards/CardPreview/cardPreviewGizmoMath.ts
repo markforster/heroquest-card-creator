@@ -35,15 +35,20 @@ export function getArmLengthForScale({
   minScale: number;
   maxScale: number;
 }) {
-  const maxArmLength = clamp(Math.max(frameWidth, frameHeight) * 0.42, GIZMO_ARM_LENGTH_MIN, GIZMO_ARM_LENGTH_MAX);
+  const maxArmLength = clamp(
+    Math.max(frameWidth, frameHeight) * 0.42,
+    GIZMO_ARM_LENGTH_MIN,
+    GIZMO_ARM_LENGTH_MAX,
+  );
   if (!Number.isFinite(scale)) {
     return getArmBaseLengthForFrame(frameWidth, frameHeight);
   }
 
   const baseArmLength = getArmBaseLengthForFrame(frameWidth, frameHeight);
-  const clampedScale = Number.isFinite(minScale) && Number.isFinite(maxScale) && maxScale > minScale
-    ? clamp(scale, minScale, maxScale)
-    : Math.max(scale, 0);
+  const clampedScale =
+    Number.isFinite(minScale) && Number.isFinite(maxScale) && maxScale > minScale
+      ? clamp(scale, minScale, maxScale)
+      : Math.max(scale, 0);
 
   return clamp(baseArmLength * clampedScale, GIZMO_ARM_LENGTH_MIN, maxArmLength);
 }
@@ -181,10 +186,7 @@ export function getSnappedScale({
   return nearestRing;
 }
 
-export function getSnappedOffset(
-  offset: number,
-  increment: number = GIZMO_MOVE_SNAP_INCREMENT,
-) {
+export function getSnappedOffset(offset: number, increment: number = GIZMO_MOVE_SNAP_INCREMENT) {
   if (!Number.isFinite(offset) || !Number.isFinite(increment) || increment <= 0) {
     return roundStageValue(offset);
   }

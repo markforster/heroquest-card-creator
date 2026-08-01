@@ -31,8 +31,7 @@ import {
   isPairDeleteConfirmRequiredError,
   isPairInUseError,
   type PairUsageReport,
-} from "@/lib/decks-errors";
-import { previewDeletePair } from "@/lib/pairs-service";
+} from "@/lib/data/decks-errors";
 import type { CardFace } from "@/types/card-face";
 
 import CollapsibleGroup from "./CollapsibleGroup";
@@ -122,7 +121,8 @@ export default function PairingInspectorPanel({
   const { t } = useI18n();
   const fallbackTitle = t("label.untitledCard");
   const formatMessageWith = useMemo(
-    () => (key: string, vars: Record<string, string | number>) => formatMessage(t(key as never), vars),
+    () => (key: string, vars: Record<string, string | number>) =>
+      formatMessage(t(key as never), vars),
     [t],
   );
   const { requestRecenter } = usePreviewRenderer();
@@ -267,9 +267,7 @@ export default function PairingInspectorPanel({
             .then((pairs) => {
               if (!active) return;
               const frontIds = new Set(
-                pairs
-                  .map((pair) => pair.frontFaceId)
-                  .filter((id): id is string => Boolean(id)),
+                pairs.map((pair) => pair.frontFaceId).filter((id): id is string => Boolean(id)),
               );
               const matches = cards.filter((card) => frontIds.has(card.id));
               void loadFronts(matches);
@@ -336,7 +334,8 @@ export default function PairingInspectorPanel({
   }, [cardsById, effectiveFace, pairedBacks]);
 
   const hasPairedBacks = pairedBacks.length > 0;
-  const selectedFrontId = effectiveFace === "back" ? activeFrontId ?? null : activeCardId ?? null;
+  const selectedFrontId =
+    effectiveFace === "back" ? (activeFrontId ?? null) : (activeCardId ?? null);
   const showSaveFirstNotice = pairingDisabled;
   const showEmptyFrontNotice = !showSaveFirstNotice && effectiveFace === "front" && !hasPairedBacks;
   const showEmptyBackNotice =
@@ -396,10 +395,14 @@ export default function PairingInspectorPanel({
     return true;
   };
 
-  const buildPendingUnpairImpact = async (targets: UnpairTarget[]): Promise<PendingUnpairImpact> => {
+  const buildPendingUnpairImpact = async (
+    targets: UnpairTarget[],
+  ): Promise<PendingUnpairImpact> => {
     const usageRows: PairUsageReport["cascadePlan"]["usage"] = [];
     for (const target of targets) {
-      const report = await previewDeletePair(target.frontFaceId, target.backFaceId, {
+      const report = await apiClient.previewDeletePair({
+        frontFaceId: target.frontFaceId,
+        backFaceId: target.backFaceId,
         mode: "confirmable-cascade",
       });
       usageRows.push(...report.cascadePlan.usage);
@@ -414,7 +417,11 @@ export default function PairingInspectorPanel({
 
     const deckMap = new Map<
       string,
-      { deckId: string; deckTitle: string; locations: PendingUnpairImpact["decks"][number]["locations"] }
+      {
+        deckId: string;
+        deckTitle: string;
+        locations: PendingUnpairImpact["decks"][number]["locations"];
+      }
     >();
     usage.forEach((row) => {
       const current = deckMap.get(row.deckId) ?? {
@@ -422,7 +429,9 @@ export default function PairingInspectorPanel({
         deckTitle: row.deckTitle,
         locations: [],
       };
-      if (!current.locations.some((loc) => loc.groupId === row.groupId && loc.setId === row.setId)) {
+      if (
+        !current.locations.some((loc) => loc.groupId === row.groupId && loc.setId === row.setId)
+      ) {
         current.locations.push({
           groupId: row.groupId,
           groupTitle: row.groupTitle,
@@ -435,7 +444,9 @@ export default function PairingInspectorPanel({
 
     const message =
       targets.length === 1
-        ? formatMessageWith("warning.pairingLossSingle", { back: targets[0].backTitle || fallbackTitle })
+        ? formatMessageWith("warning.pairingLossSingle", {
+            back: targets[0].backTitle || fallbackTitle,
+          })
         : formatMessageWith("warning.pairingLossMultipleBacks", { backCount: targets.length });
 
     return {
@@ -663,10 +674,7 @@ export default function PairingInspectorPanel({
           </div>
         ) : null}
         {effectiveFace === "front" && pairedBacks.length > 0 ? (
-          <div
-            key={`pairing-groups-${frontViewToken ?? 0}`}
-            className={styles.pairingPanelGroups}
-          >
+          <div key={`pairing-groups-${frontViewToken ?? 0}`} className={styles.pairingPanelGroups}>
             {pairedBacks.map((backCard) => {
               const backTemplateThumb = cardTemplatesById[backCard.templateId]?.thumbnail;
               const groupFrontCards = pairedBackFrontsMap.get(backCard.id) ?? [];
@@ -716,45 +724,49 @@ export default function PairingInspectorPanel({
                           />
                         </button>
                       }
-                      right={<span className={styles.pairingPanelGroupControls} aria-hidden="true">
-                      <button
-                        type="button"
-                        className={`${styles.pairingPanelGroupUnpair} ${
-                          pairingDisabled ? styles.pairingPanelGroupUnpairDisabled : ""
-                        }`}
-                        disabled={pairingDisabled}
-                          title={
-                            pairingDisabled
-                              ? t("tooltip.saveBeforePairing")
-                              : t("tooltip.unpairBack")
-                          }
-                        onClick={async (event) => {
-                          event.stopPropagation();
-                          if (pairingDisabled) return;
-                          if (!activeCardId) return;
-                          await requestUnpairImpact([
-                            {
-                              frontFaceId: activeCardId,
-                              backFaceId: backCard.id,
-                              backTitle: getCardDisplayName(backCard, fallbackTitle),
-                            },
-                          ]);
-                        }}
-                      >
-                        <Unlink2 size={18} aria-hidden="true" />
-                      </button>
-                      <span className={styles.pairingPanelGroupChevron}>
-                        <ChevronDown size={18} className={styles.pairingPanelGroupChevronDown} />
-                        <ChevronUp size={18} className={styles.pairingPanelGroupChevronUp} />
-                      </span>
-                      </span>}
+                      right={
+                        <span className={styles.pairingPanelGroupControls} aria-hidden="true">
+                          <button
+                            type="button"
+                            className={`${styles.pairingPanelGroupUnpair} ${
+                              pairingDisabled ? styles.pairingPanelGroupUnpairDisabled : ""
+                            }`}
+                            disabled={pairingDisabled}
+                            title={
+                              pairingDisabled
+                                ? t("tooltip.saveBeforePairing")
+                                : t("tooltip.unpairBack")
+                            }
+                            onClick={async (event) => {
+                              event.stopPropagation();
+                              if (pairingDisabled) return;
+                              if (!activeCardId) return;
+                              await requestUnpairImpact([
+                                {
+                                  frontFaceId: activeCardId,
+                                  backFaceId: backCard.id,
+                                  backTitle: getCardDisplayName(backCard, fallbackTitle),
+                                },
+                              ]);
+                            }}
+                          >
+                            <Unlink2 size={18} aria-hidden="true" />
+                          </button>
+                          <span className={styles.pairingPanelGroupChevron}>
+                            <ChevronDown
+                              size={18}
+                              className={styles.pairingPanelGroupChevronDown}
+                            />
+                            <ChevronUp size={18} className={styles.pairingPanelGroupChevronUp} />
+                          </span>
+                        </span>
+                      }
                     />
                   }
                 >
                   <div className={styles.pairingPanelGroupGrid}>
                     {groupFrontCards.map((frontCard, index) => {
-                      const frontTemplateThumb =
-                        cardTemplatesById[frontCard.templateId]?.thumbnail;
+                      const frontTemplateThumb = cardTemplatesById[frontCard.templateId]?.thumbnail;
                       const isSelected = selectedFrontId === frontCard.id;
                       const isLoaded = Boolean(loadedThumbs[frontCard.id]);
                       return (
@@ -836,9 +848,7 @@ export default function PairingInspectorPanel({
         <div className={styles.pairingUsageList}>
           {pendingUnpairImpact?.usage.length ? (
             <>
-              <div>
-                {t("decks.pairUsage.body")}
-              </div>
+              <div>{t("decks.pairUsage.body")}</div>
               <div className={styles.pairingUsageDecks}>
                 {pendingUnpairImpact.decks.map((deck) => (
                   <div
@@ -889,9 +899,7 @@ export default function PairingInspectorPanel({
         onCancel={() => setPairUsagePrompt(null)}
       >
         <div className={styles.pairingUsageList}>
-          <div>
-            {t("decks.pairUsage.body")}
-          </div>
+          <div>{t("decks.pairUsage.body")}</div>
           <ul className={styles.pairingUsageItems}>
             {(pairUsagePrompt?.cascadePlan.usage ?? []).map((usage) => (
               <li key={`${usage.deckId}-${usage.setId}`}>
@@ -902,7 +910,7 @@ export default function PairingInspectorPanel({
         </div>
       </ConfirmModal>
       {hoveredCard && hoverAnchor && typeof document !== "undefined"
-          ? (() => {
+        ? (() => {
             const templateThumb = cardTemplatesById[hoveredCard.templateId]?.thumbnail;
             const popoverWidth = 120 + 16;
             const popoverHeight = 168 + 16;

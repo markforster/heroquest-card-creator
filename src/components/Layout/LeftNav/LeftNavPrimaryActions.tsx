@@ -30,8 +30,10 @@ export default function LeftNavPrimaryActions() {
     state: { selectedTemplateId, activeCardIdByTemplate },
   } = useCardEditor();
   const activeCardId = useActiveCardId({ selectedTemplateId, activeCardIdByTemplate });
-  const { currentCardName, currentCardThumbUrl, retryThumbnail } =
-    useActiveCardSummary(activeCardId, repairCurrentCardThumbnail);
+  const { currentCardName, currentCardThumbUrl, retryThumbnail } = useActiveCardSummary(
+    activeCardId,
+    repairCurrentCardThumbnail,
+  );
   const navigate = useNavigate();
 
   return (

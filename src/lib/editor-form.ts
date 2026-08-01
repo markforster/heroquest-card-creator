@@ -37,8 +37,7 @@ export function applyInspectorDefaults<T extends TemplateId>(
       : {}),
     ...(showTitleStyle
       ? {
-          titleStyle:
-            (data as { titleStyle?: "ribbon" | "plain" }).titleStyle ?? "ribbon",
+          titleStyle: (data as { titleStyle?: "ribbon" | "plain" }).titleStyle ?? "ribbon",
         }
       : {}),
   } as CardDataByTemplate[T];

@@ -5,9 +5,10 @@ import type { CardRecord } from "@/types/cards-db";
 import type { StatAsteriskFlags, StatValue } from "@/types/stats";
 import type { TemplateId } from "@/types/templates";
 
-function normalizeImageScale(
-  record: CardRecord & { templateId: TemplateId },
-): { imageScale?: number; imageScaleMode?: "absolute" | "relative" } {
+function normalizeImageScale(record: CardRecord & { templateId: TemplateId }): {
+  imageScale?: number;
+  imageScaleMode?: "absolute" | "relative";
+} {
   const bounds = getImageLayerBounds(record.templateId, "imageAssetId");
   return normalizeLegacyImageScale({
     imageScale: record.imageScale,
@@ -69,7 +70,9 @@ export function cardRecordToCardData<T extends TemplateId>(
       const data: CardDataByTemplate["monster"] = {
         ...base,
         movementSquares: record.monsterMovementSquares,
-        movementSquaresAsterisks: normalizeStatAsteriskFlags(record.monsterMovementSquaresAsterisks),
+        movementSquaresAsterisks: normalizeStatAsteriskFlags(
+          record.monsterMovementSquaresAsterisks,
+        ),
         attackDice: record.monsterAttackDice,
         attackDiceAsterisks: normalizeStatAsteriskFlags(record.monsterAttackDiceAsterisks),
         defendDice: record.monsterDefendDice,
@@ -240,12 +243,7 @@ function normalizeStatValueForSave(value?: StatValue): StatValue | undefined {
         string | undefined,
       ];
       if (splitFormat) {
-        return [
-          primary,
-          secondary,
-          splitFlag,
-          splitFormat as "slash" | "paren" | "paren-leading",
-        ];
+        return [primary, secondary, splitFlag, splitFormat as "slash" | "paren" | "paren-leading"];
       }
       return [primary, secondary, splitFlag];
     }

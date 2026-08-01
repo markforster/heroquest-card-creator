@@ -40,8 +40,7 @@ const canUseWorkers = (workerUri: string) => {
 
 export const configureZipJs = (useWebWorkers: boolean) => {
   const workerUri = resolveWorkerUri();
-  const allowWorkers =
-    !isFileProtocol() && useWebWorkers ? canUseWorkers(workerUri) : false;
+  const allowWorkers = !isFileProtocol() && useWebWorkers ? canUseWorkers(workerUri) : false;
   const mode: "worker" | "fallback" = allowWorkers ? "worker" : "fallback";
   if (configuredMode === mode) return;
 

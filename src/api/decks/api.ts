@@ -53,9 +53,7 @@ export const decksApi = makeApi([
     method: "get",
     path: "/decks/:deckId",
     alias: "getDeck",
-    parameters: [
-      { name: "deckId", type: "Path", schema: z.string() },
-    ],
+    parameters: [{ name: "deckId", type: "Path", schema: z.string() }],
     response: deckRecordSchema.nullable(),
   },
   {
@@ -72,18 +70,14 @@ export const decksApi = makeApi([
     method: "post",
     path: "/decks/:deckId/duplicate",
     alias: "duplicateDeck",
-    parameters: [
-      { name: "deckId", type: "Path", schema: z.string() },
-    ],
+    parameters: [{ name: "deckId", type: "Path", schema: z.string() }],
     response: deckRecordSchema.nullable(),
   },
   {
     method: "delete",
     path: "/decks/:deckId",
     alias: "deleteDeck",
-    parameters: [
-      { name: "deckId", type: "Path", schema: z.string() },
-    ],
+    parameters: [{ name: "deckId", type: "Path", schema: z.string() }],
     response: z.void(),
   },
 
@@ -91,9 +85,7 @@ export const decksApi = makeApi([
     method: "get",
     path: "/decks/:deckId/groups",
     alias: "listDeckGroups",
-    parameters: [
-      { name: "deckId", type: "Path", schema: z.string() },
-    ],
+    parameters: [{ name: "deckId", type: "Path", schema: z.string() }],
     response: z.array(deckGroupRecordSchema),
   },
   {
@@ -130,9 +122,7 @@ export const decksApi = makeApi([
     method: "delete",
     path: "/deckGroups/:groupId",
     alias: "deleteDeckGroup",
-    parameters: [
-      { name: "groupId", type: "Path", schema: z.string() },
-    ],
+    parameters: [{ name: "groupId", type: "Path", schema: z.string() }],
     response: z.void(),
   },
 
@@ -140,27 +130,21 @@ export const decksApi = makeApi([
     method: "get",
     path: "/decks/:deckId/sets",
     alias: "listDeckSets",
-    parameters: [
-      { name: "deckId", type: "Path", schema: z.string() },
-    ],
+    parameters: [{ name: "deckId", type: "Path", schema: z.string() }],
     response: z.array(deckSetRecordSchema),
   },
   {
     method: "post",
     path: "/deckSets",
     alias: "createDeckSet",
-    parameters: [
-      { name: "body", type: "Body", schema: deckSetCreateInputSchema },
-    ],
+    parameters: [{ name: "body", type: "Body", schema: deckSetCreateInputSchema }],
     response: deckSetRecordSchema,
   },
   {
     method: "get",
     path: "/deckSets/:setId",
     alias: "getDeckSet",
-    parameters: [
-      { name: "setId", type: "Path", schema: z.string() },
-    ],
+    parameters: [{ name: "setId", type: "Path", schema: z.string() }],
     response: deckSetRecordSchema.nullable(),
   },
   {
@@ -197,9 +181,7 @@ export const decksApi = makeApi([
     method: "delete",
     path: "/deckSets/:setId",
     alias: "deleteDeckSet",
-    parameters: [
-      { name: "setId", type: "Path", schema: z.string() },
-    ],
+    parameters: [{ name: "setId", type: "Path", schema: z.string() }],
     response: z.void(),
   },
 
@@ -207,9 +189,7 @@ export const decksApi = makeApi([
     method: "get",
     path: "/deckSets/:setId/entries",
     alias: "listDeckEntries",
-    parameters: [
-      { name: "setId", type: "Path", schema: z.string() },
-    ],
+    parameters: [{ name: "setId", type: "Path", schema: z.string() }],
     response: z.array(deckEntryRecordSchema),
   },
   {

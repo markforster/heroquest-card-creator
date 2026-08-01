@@ -2,12 +2,12 @@
 
 import { createPortal } from "react-dom";
 
+import type { CardRecord } from "@/api/cards";
 import styles from "@/app/page.module.css";
 import CardThumbnail from "@/components/common/CardThumbnail";
-import { cardTemplatesById } from "@/data/card-templates";
 import { ENABLE_CARD_THUMB_CACHE } from "@/config/flags";
+import { cardTemplatesById } from "@/data/card-templates";
 import { useCardThumbnailUrl } from "@/lib/card-thumbnail-cache";
-import type { CardRecord } from "@/api/cards";
 
 type StockpileTableThumbPopoverProps = {
   tableThumbAnchor: {
@@ -25,11 +25,15 @@ export default function StockpileTableThumbPopover({
   onMouseLeave,
   cardById,
 }: StockpileTableThumbPopoverProps) {
-  const hoveredCard = tableThumbAnchor ? cardById.get(tableThumbAnchor.id) ?? null : null;
-  const previewUrl = useCardThumbnailUrl(hoveredCard?.id ?? null, hoveredCard?.thumbnailBlob ?? null, {
-    enabled: Boolean(hoveredCard),
-    useCache: ENABLE_CARD_THUMB_CACHE,
-  });
+  const hoveredCard = tableThumbAnchor ? (cardById.get(tableThumbAnchor.id) ?? null) : null;
+  const previewUrl = useCardThumbnailUrl(
+    hoveredCard?.id ?? null,
+    hoveredCard?.thumbnailBlob ?? null,
+    {
+      enabled: Boolean(hoveredCard),
+      useCache: ENABLE_CARD_THUMB_CACHE,
+    },
+  );
   if (!tableThumbAnchor || typeof document === "undefined") return null;
   if (!hoveredCard) return null;
   const templateThumb = cardTemplatesById[hoveredCard.templateId]?.thumbnail ?? null;

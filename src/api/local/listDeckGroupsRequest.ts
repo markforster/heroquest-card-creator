@@ -1,8 +1,11 @@
-import { listGroups } from "@/lib/decks-service";
+import { listGroups } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local list-deck-groups endpoint through the IndexedDB-backed service layer.
+ */
 export const listDeckGroupsRequestPlugin: ZodiosPlugin = {
   name: "local-list-deck-groups",
   request: async (apiDefinitions, config) => {

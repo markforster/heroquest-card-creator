@@ -1,0 +1,32 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "HeroQuest Card Creator Data Service Layer",
+  "tsconfig": "tsconfig.json",
+  "entryPointStrategy": "expand",
+  "entryPoints": [
+    "src/api/local",
+    "src/lib/data",
+    "src/lib/backup/index.ts",
+    "src/lib/backup-formats.ts",
+    "src/lib/copyright-defaults.ts",
+    "src/lib/backup/backup-types.ts",
+    "src/types/card-data.ts",
+    "src/types/cards-db.ts",
+    "src/types/collections-db.ts",
+    "src/types/decks-db.ts",
+    "src/types/pairs-db.ts",
+    "src/types/templates.ts"
+  ],
+  "exclude": ["**/__tests__/**"],
+  "readme": "none",
+  "alwaysCreateEntryPointModule": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": false,
+  "cleanOutputDir": true,
+  "html": "artefacts/reports/data-service-typedoc/html",
+  "json": "artefacts/reports/data-service-typedoc/data-service.json",
+  "pretty": true,
+  "sort": ["source-order"],
+  "skipErrorChecking": true
+}

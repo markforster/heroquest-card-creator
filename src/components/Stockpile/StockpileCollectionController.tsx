@@ -1,14 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 
+import { apiClient } from "@/api/client";
 import type { CollectionRecord } from "@/api/collections";
+import { invalidateCollectionsQueries } from "@/api/queryInvalidation";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import StockpileCollectionModal from "@/components/Stockpile/StockpileCollectionModal";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiClient } from "@/api/client";
-import { invalidateCollectionsQueries } from "@/api/queryInvalidation";
 
 type StockpileCollectionControllerProps = {
   activeFilter:
@@ -79,7 +79,9 @@ export default function StockpileCollectionController({
       <StockpileCollectionModal
         isOpen={isOpen}
         mode={mode}
-        collectionId={mode === "edit" && activeFilter.type === "collection" ? activeFilter.id : null}
+        collectionId={
+          mode === "edit" && activeFilter.type === "collection" ? activeFilter.id : null
+        }
         collections={collections}
         onCreate={async (name, description) => {
           try {

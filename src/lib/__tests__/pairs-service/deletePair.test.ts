@@ -1,6 +1,5 @@
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { deletePair } from "@/lib/pairs-service";
-
+import { deletePair } from "@/lib/data/pairs-service";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   TEST_NOW,
   createDeckEntryRecord,
@@ -15,11 +14,11 @@ import {
 
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   getCard: jest.fn(async () => null),
 }));
 
@@ -45,7 +44,9 @@ describe("deletePair", () => {
 
   async function seedCascadeScenario() {
     const db = await openHqccDexieDb();
-    await db.pairs.put(createPairRecord({ id: "pair-1", frontFaceId: "front-1", backFaceId: "back-1" }));
+    await db.pairs.put(
+      createPairRecord({ id: "pair-1", frontFaceId: "front-1", backFaceId: "back-1" }),
+    );
     await db.decks.put(createDeckRecord());
     await db.deckGroups.put(createDeckGroupRecord());
     await db.deckSets.put(createDeckSetRecord());

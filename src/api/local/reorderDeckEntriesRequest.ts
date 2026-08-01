@@ -1,9 +1,12 @@
 import { deckEntryReorderInputSchema } from "@/api/decks";
-import { reorderEntries } from "@/lib/decks-service";
+import { reorderEntries } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local reorder-deck-entries endpoint through the IndexedDB-backed service layer.
+ */
 export const reorderDeckEntriesRequestPlugin: ZodiosPlugin = {
   name: "local-reorder-deck-entries",
   request: async (apiDefinitions, config) => {

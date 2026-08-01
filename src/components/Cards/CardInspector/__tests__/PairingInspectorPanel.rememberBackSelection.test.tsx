@@ -90,7 +90,9 @@ describe("PairingInspectorPanel remembered back selection", () => {
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation((message?: unknown) => {
       if (
         typeof message === "string" &&
-        message.includes("validateDOMNesting(...): <button> cannot appear as a descendant of <button>")
+        message.includes(
+          "validateDOMNesting(...): <button> cannot appear as a descendant of <button>",
+        )
       ) {
         return;
       }

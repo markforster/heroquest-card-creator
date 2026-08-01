@@ -1,9 +1,12 @@
 import { deckSetCreateInputSchema } from "@/api/decks";
-import { createSet } from "@/lib/decks-service";
+import { createSet } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local create-deck-set endpoint through the IndexedDB-backed service layer.
+ */
 export const createDeckSetRequestPlugin: ZodiosPlugin = {
   name: "local-create-deck-set",
   request: async (apiDefinitions, config) => {

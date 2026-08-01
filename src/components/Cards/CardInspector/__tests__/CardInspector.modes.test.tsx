@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
+import CardInspector from "@/components/Cards/CardInspector/CardInspector";
 import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
 
 const mockUseCardEditor = jest.fn();
@@ -49,8 +50,6 @@ jest.mock("@/components/Cards/CardInspector/DecksInspectorPanel", () => ({
   __esModule: true,
   default: () => <div>DECKS_PANEL</div>,
 }));
-
-import CardInspector from "@/components/Cards/CardInspector/CardInspector";
 
 const INSPECTOR_MODE_STORAGE_KEY = "hqcc.cards.inspectorMode";
 

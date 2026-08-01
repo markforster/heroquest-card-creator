@@ -7,6 +7,14 @@
       "node": { "extensions": [".js", ".jsx", ".ts", ".tsx"] }
     }
   },
+  "overrides": [
+    {
+      "files": ["*.js", "**/*.cjs", "bin/**/*.js", "scripts/**/*.js"],
+      "rules": {
+        "@typescript-eslint/no-require-imports": "off"
+      }
+    }
+  ],
   "rules": {
     "import/order": [
       "error",

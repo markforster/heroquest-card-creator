@@ -88,10 +88,7 @@ describe("card-thumbnail-cache", () => {
     retainCardThumbnail("card-1");
 
     for (let index = 2; index <= MAX_ENTRIES + 1; index += 1) {
-      getCachedCardThumbnailUrl(
-        `card-${index}`,
-        new Blob([String(index)], { type: "image/png" }),
-      );
+      getCachedCardThumbnailUrl(`card-${index}`, new Blob([String(index)], { type: "image/png" }));
     }
 
     expect(getCachedCardThumbnailUrl("card-1")).toBe(retainedUrl);
@@ -107,10 +104,7 @@ describe("card-thumbnail-cache", () => {
     retainCardThumbnail("card-1");
 
     for (let index = 2; index <= MAX_ENTRIES + 1; index += 1) {
-      getCachedCardThumbnailUrl(
-        `card-${index}`,
-        new Blob([String(index)], { type: "image/png" }),
-      );
+      getCachedCardThumbnailUrl(`card-${index}`, new Blob([String(index)], { type: "image/png" }));
     }
 
     releaseCardThumbnail("card-1");

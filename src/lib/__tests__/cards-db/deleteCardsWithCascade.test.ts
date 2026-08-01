@@ -1,6 +1,5 @@
-import { deleteCardsWithCascade, previewDeleteCardsImpact } from "@/lib/cards-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-
+import { deleteCardsWithCascade, previewDeleteCardsImpact } from "@/lib/data/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   TEST_NOW,
   createCardRecord,
@@ -19,11 +18,11 @@ import { seedNormalizedCard } from "@/lib/test-support/normalized-card-test-help
 const previewDeletePairsForFaces = jest.fn();
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/pairs-service", () => ({
+jest.mock("@/lib/data/pairs-service", () => ({
   previewDeletePairsForFaces: (...args: unknown[]) => previewDeletePairsForFaces(...args),
 }));
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
@@ -54,7 +53,14 @@ describe("deleteCardsWithCascade", () => {
     const db = await openHqccDexieDb();
     await db.deckGroups.put(createDeckGroupRecord({ id: "group-1", deckId: "deck-1" }));
     await db.decks.put(createDeckRecord({ id: "deck-1", title: "Hard Delete" }));
-    await db.deckSets.put(createDeckSetRecord({ id: "set-1", deckId: "deck-1", groupId: "group-1", backFaceId: "back-1" }));
+    await db.deckSets.put(
+      createDeckSetRecord({
+        id: "set-1",
+        deckId: "deck-1",
+        groupId: "group-1",
+        backFaceId: "back-1",
+      }),
+    );
     previewDeletePairsForFaces.mockResolvedValueOnce({
       frontFaceId: "__bulk__",
       backFaceId: "__bulk__",
@@ -69,13 +75,33 @@ describe("deleteCardsWithCascade", () => {
 
   it("removes dependent set and entries, removes now-empty group, and keeps deck", async () => {
     const db = await openHqccDexieDb();
-    await seedNormalizedCard(createCardRecord({ id: "back-1", face: "back", name: "Back One", nameLower: "back one" }));
-    await seedNormalizedCard(createCardRecord({ id: "front-1", face: "front", name: "Front One", nameLower: "front one" }));
-    await db.decks.put(createDeckRecord({ id: "deck-1", title: "Hard Delete", updatedAt: TEST_NOW }));
-    await db.deckGroups.put(createDeckGroupRecord({ id: "group-1", deckId: "deck-1", title: "New Group" }));
-    await db.deckSets.put(createDeckSetRecord({ id: "set-1", deckId: "deck-1", groupId: "group-1", title: "New Set", backFaceId: "back-1" }));
-    await db.deckEntries.put(createDeckEntryRecord({ id: "entry-1", deckId: "deck-1", setId: "set-1", pairId: "pair-1" }));
-    await db.pairs.put(createPairRecord({ id: "pair-1", frontFaceId: "front-1", backFaceId: "back-1" }));
+    await seedNormalizedCard(
+      createCardRecord({ id: "back-1", face: "back", name: "Back One", nameLower: "back one" }),
+    );
+    await seedNormalizedCard(
+      createCardRecord({ id: "front-1", face: "front", name: "Front One", nameLower: "front one" }),
+    );
+    await db.decks.put(
+      createDeckRecord({ id: "deck-1", title: "Hard Delete", updatedAt: TEST_NOW }),
+    );
+    await db.deckGroups.put(
+      createDeckGroupRecord({ id: "group-1", deckId: "deck-1", title: "New Group" }),
+    );
+    await db.deckSets.put(
+      createDeckSetRecord({
+        id: "set-1",
+        deckId: "deck-1",
+        groupId: "group-1",
+        title: "New Set",
+        backFaceId: "back-1",
+      }),
+    );
+    await db.deckEntries.put(
+      createDeckEntryRecord({ id: "entry-1", deckId: "deck-1", setId: "set-1", pairId: "pair-1" }),
+    );
+    await db.pairs.put(
+      createPairRecord({ id: "pair-1", frontFaceId: "front-1", backFaceId: "back-1" }),
+    );
     await db.collections.put(
       createCollectionRecord({
         id: "collection-1",

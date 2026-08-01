@@ -22,7 +22,11 @@ describe("cardRecordToCardData", () => {
 
     const data = cardRecordToCardData(record);
     const bounds = getImageLayerBounds("hero", "imageAssetId");
-    const containScale = computeContainScale(bounds, record.imageOriginalWidth, record.imageOriginalHeight);
+    const containScale = computeContainScale(
+      bounds,
+      record.imageOriginalWidth,
+      record.imageOriginalHeight,
+    );
 
     expect(data.imageScaleMode).toBe("relative");
     expect(data.imageScale).toBeCloseTo((record.imageScale ?? 1) / containScale, 6);

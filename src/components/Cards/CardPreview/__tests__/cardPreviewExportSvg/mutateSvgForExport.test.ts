@@ -1,6 +1,6 @@
-import { CARD_HEIGHT, CARD_WIDTH } from "@/components/Cards/CardPreview/consts";
 import { mutateSvgForExport } from "@/components/Cards/CardPreview/cardPreviewExportSvg";
 import { getCardPreviewStageLayout } from "@/components/Cards/CardPreview/cardPreviewStage";
+import { CARD_HEIGHT, CARD_WIDTH } from "@/components/Cards/CardPreview/consts";
 
 function createSvg() {
   return document.createElementNS("http://www.w3.org/2000/svg", "svg");

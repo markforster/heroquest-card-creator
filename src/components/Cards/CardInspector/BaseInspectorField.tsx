@@ -1,6 +1,5 @@
 "use client";
 
-
 import layoutStyles from "@/app/page.module.css";
 import {
   type EditorTargetId,
@@ -52,7 +51,7 @@ export default function BaseInspectorField({
   input,
   footer,
 }: BaseInspectorFieldProps) {
-  const isHovered = targetId ? useIsEditorTargetHovered(targetId) : false;
+  const isHovered = useIsEditorTargetHovered(targetId);
 
   return (
     <div
@@ -78,8 +77,7 @@ export default function BaseInspectorField({
               role="switch"
               {...toggleProps.inputProps}
               checked={
-                toggleProps.inputProps?.checked ??
-                (toggleProps.checked as boolean | undefined)
+                toggleProps.inputProps?.checked ?? (toggleProps.checked as boolean | undefined)
               }
               onChange={
                 toggleProps.inputProps?.onChange ??
@@ -92,9 +90,7 @@ export default function BaseInspectorField({
       </div>
       {headerExtras ? headerExtras : null}
       {input}
-      {error ? (
-        <div className="form-text text-danger">{error}</div>
-      ) : null}
+      {error ? <div className="form-text text-danger">{error}</div> : null}
       {footer ? footer : null}
     </div>
   );

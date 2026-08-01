@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { Bookmark, Download, Eye, Folder, Trash2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import styles from "@/app/page.module.css";
-import type { StockpileBottomToolbarProps } from "@/components/Stockpile/types";
 import StockpileToolbarSpacer from "@/components/Stockpile/StockpileToolbarSpacer";
+import type { StockpileBottomToolbarProps } from "@/components/Stockpile/types";
 import { useI18n } from "@/i18n/I18nProvider";
 
 function FolderBookmarkIcon() {
@@ -54,10 +54,7 @@ export default function StockpileBottomToolbar({
   return (
     <div className={styles.stockpileBottomToolbar}>
       <div className={styles.stockpileBottomToolbarSelection}>
-        <label
-          className="form-check form-check-inline mb-0"
-          title={t("tooltip.selectAllCards")}
-        >
+        <label className="form-check form-check-inline mb-0" title={t("tooltip.selectAllCards")}>
           <input
             ref={selectAllRef}
             className="form-check-input hq-checkbox"
@@ -97,7 +94,9 @@ export default function StockpileBottomToolbar({
           <span className={styles.stockpileBottomToolbarActionIcon}>
             <FolderBookmarkIcon />
           </span>
-          <span className={styles.stockpileBottomToolbarActionLabel}>{t("actions.addToCollection")}</span>
+          <span className={styles.stockpileBottomToolbarActionLabel}>
+            {t("actions.addToCollection")}
+          </span>
         </button>
         <button
           type="button"

@@ -160,7 +160,11 @@ export const runBulkExport = async ({
             name: card.monsterIconAssetName ?? null,
           });
         }
-        if (card.heroBackLogoMode === "custom" && card.heroBackLogoId && missingLogos.has(card.heroBackLogoId)) {
+        if (
+          card.heroBackLogoMode === "custom" &&
+          card.heroBackLogoId &&
+          missingLogos.has(card.heroBackLogoId)
+        ) {
           missingAssets.push({
             label: "logo",
             id: card.heroBackLogoId,
@@ -171,10 +175,7 @@ export const runBulkExport = async ({
           failures += 1;
           const titleLabel = card.title ?? card.name ?? "Untitled";
           const missingSummary = missingAssets
-            .map(
-              (asset) =>
-                `${asset.label} asset "${asset.name ?? "unknown"}" (id=${asset.id})`,
-            )
+            .map((asset) => `${asset.label} asset "${asset.name ?? "unknown"}" (id=${asset.id})`)
             .join(", ");
           logCardSkip(session, { reason: `Missing ${missingSummary}` });
           exportNotes.push(
@@ -185,11 +186,10 @@ export const runBulkExport = async ({
           continue;
         }
 
-        const now = () =>
-          typeof performance !== "undefined" ? performance.now() : Date.now();
+        const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
 
-        const assetIds = [card.imageAssetId, card.monsterIconAssetId].filter(
-          (id): id is string => Boolean(id),
+        const assetIds = [card.imageAssetId, card.monsterIconAssetId].filter((id): id is string =>
+          Boolean(id),
         );
         const heroBackLogoIds =
           card.heroBackLogoMode === "custom" && card.heroBackLogoId ? [card.heroBackLogoId] : [];

@@ -3,7 +3,7 @@
 import styles from "@/app/page.module.css";
 import ExportProfileSelect from "@/components/Export/ExportProfileSelect";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { ExportProfile } from "@/lib/export-profiles";
+import type { ExportProfile } from "@/lib/data/export-profiles";
 
 type ExportProfilesTopToolbarProps = {
   profiles: ExportProfile[];

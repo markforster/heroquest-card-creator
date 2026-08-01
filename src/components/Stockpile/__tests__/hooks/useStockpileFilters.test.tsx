@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 
-import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
 import type { CardRecord } from "@/api/cards";
+import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
 import type { CollectionRecord } from "@/types/collections-db";
 
 jest.mock("@/data/card-templates", () => ({
@@ -120,10 +120,38 @@ describe("useStockpileFilters", () => {
 
   it("supports sorting normal stockpile results by localized card type", () => {
     const cards = [
-      baseCard({ id: "a", templateId: "monster", name: "Zulu", nameLower: "zulu", updatedAt: 1, createdAt: 1 }),
-      baseCard({ id: "b", templateId: "hero", name: "Beta", nameLower: "beta", updatedAt: 2, createdAt: 9 }),
-      baseCard({ id: "c", templateId: "hero", name: "Alpha", nameLower: "alpha", updatedAt: 5, createdAt: 9 }),
-      baseCard({ id: "d", templateId: "hero-back", name: "Alpha", nameLower: "alpha", updatedAt: 3, createdAt: 4 }),
+      baseCard({
+        id: "a",
+        templateId: "monster",
+        name: "Zulu",
+        nameLower: "zulu",
+        updatedAt: 1,
+        createdAt: 1,
+      }),
+      baseCard({
+        id: "b",
+        templateId: "hero",
+        name: "Beta",
+        nameLower: "beta",
+        updatedAt: 2,
+        createdAt: 9,
+      }),
+      baseCard({
+        id: "c",
+        templateId: "hero",
+        name: "Alpha",
+        nameLower: "alpha",
+        updatedAt: 5,
+        createdAt: 9,
+      }),
+      baseCard({
+        id: "d",
+        templateId: "hero-back",
+        name: "Alpha",
+        nameLower: "alpha",
+        updatedAt: 3,
+        createdAt: 4,
+      }),
     ];
 
     const { result } = renderHook(() =>
@@ -152,7 +180,13 @@ describe("useStockpileFilters", () => {
       baseCard({ id: "a", templateId: "monster", name: "Zulu", nameLower: "zulu", updatedAt: 1 }),
       baseCard({ id: "b", templateId: "hero", name: "Beta", nameLower: "beta", updatedAt: 2 }),
       baseCard({ id: "c", templateId: "hero", name: "Alpha", nameLower: "alpha", updatedAt: 5 }),
-      baseCard({ id: "d", templateId: "labelled-back", name: "Back", nameLower: "back", updatedAt: 3 }),
+      baseCard({
+        id: "d",
+        templateId: "labelled-back",
+        name: "Back",
+        nameLower: "back",
+        updatedAt: 3,
+      }),
     ];
 
     const { result } = renderHook(() =>
@@ -184,10 +218,34 @@ describe("useStockpileFilters", () => {
 
   it("groups normal stockpile results by face with front first and keeps in-group sort order", () => {
     const cards = [
-      baseCard({ id: "front-a", templateId: "hero", name: "Alpha", nameLower: "alpha", updatedAt: 4 }),
-      baseCard({ id: "back-b", templateId: "hero-back", name: "Beta Back", nameLower: "beta back", updatedAt: 2 }),
-      baseCard({ id: "front-c", templateId: "monster", name: "Gamma", nameLower: "gamma", updatedAt: 1 }),
-      baseCard({ id: "back-a", templateId: "labelled-back", name: "Alpha Back", nameLower: "alpha back", updatedAt: 5 }),
+      baseCard({
+        id: "front-a",
+        templateId: "hero",
+        name: "Alpha",
+        nameLower: "alpha",
+        updatedAt: 4,
+      }),
+      baseCard({
+        id: "back-b",
+        templateId: "hero-back",
+        name: "Beta Back",
+        nameLower: "beta back",
+        updatedAt: 2,
+      }),
+      baseCard({
+        id: "front-c",
+        templateId: "monster",
+        name: "Gamma",
+        nameLower: "gamma",
+        updatedAt: 1,
+      }),
+      baseCard({
+        id: "back-a",
+        templateId: "labelled-back",
+        name: "Alpha Back",
+        nameLower: "alpha back",
+        updatedAt: 5,
+      }),
     ];
 
     const { result } = renderHook(() =>
@@ -210,8 +268,14 @@ describe("useStockpileFilters", () => {
 
     expect(result.current.groupedCards.map((group) => group.id)).toEqual(["front", "back"]);
     expect(result.current.groupedCards.map((group) => group.label)).toEqual(["Front", "Back"]);
-    expect(result.current.groupedCards[0]?.cards.map((card) => card.id)).toEqual(["front-a", "front-c"]);
-    expect(result.current.groupedCards[1]?.cards.map((card) => card.id)).toEqual(["back-a", "back-b"]);
+    expect(result.current.groupedCards[0]?.cards.map((card) => card.id)).toEqual([
+      "front-a",
+      "front-c",
+    ]);
+    expect(result.current.groupedCards[1]?.cards.map((card) => card.id)).toEqual([
+      "back-a",
+      "back-b",
+    ]);
   });
 
   it("returns recentCards sorted by lastViewedAt then updatedAt", () => {
@@ -259,9 +323,30 @@ describe("useStockpileFilters", () => {
 
   it("keeps recent results ordered by last viewed semantics even when sort mode changes", () => {
     const cards = [
-      baseCard({ id: "a", name: "Zulu", nameLower: "zulu", lastViewedAt: 100, updatedAt: 5, createdAt: 1 }),
-      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", lastViewedAt: 200, updatedAt: 1, createdAt: 2 }),
-      baseCard({ id: "c", name: "Beta", nameLower: "beta", lastViewedAt: 100, updatedAt: 10, createdAt: 3 }),
+      baseCard({
+        id: "a",
+        name: "Zulu",
+        nameLower: "zulu",
+        lastViewedAt: 100,
+        updatedAt: 5,
+        createdAt: 1,
+      }),
+      baseCard({
+        id: "b",
+        name: "Alpha",
+        nameLower: "alpha",
+        lastViewedAt: 200,
+        updatedAt: 1,
+        createdAt: 2,
+      }),
+      baseCard({
+        id: "c",
+        name: "Beta",
+        nameLower: "beta",
+        lastViewedAt: 100,
+        updatedAt: 10,
+        createdAt: 3,
+      }),
     ];
 
     const { result } = renderHook(() =>
@@ -470,9 +555,30 @@ describe("useStockpileFilters", () => {
 
   it("keeps recently deleted results ordered by deletedAt semantics even when sort mode changes", () => {
     const cards = [
-      baseCard({ id: "a", name: "Zulu", nameLower: "zulu", deletedAt: 100, updatedAt: 5, createdAt: 1 }),
-      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", deletedAt: 200, updatedAt: 1, createdAt: 2 }),
-      baseCard({ id: "c", name: "Beta", nameLower: "beta", deletedAt: 100, updatedAt: 10, createdAt: 3 }),
+      baseCard({
+        id: "a",
+        name: "Zulu",
+        nameLower: "zulu",
+        deletedAt: 100,
+        updatedAt: 5,
+        createdAt: 1,
+      }),
+      baseCard({
+        id: "b",
+        name: "Alpha",
+        nameLower: "alpha",
+        deletedAt: 200,
+        updatedAt: 1,
+        createdAt: 2,
+      }),
+      baseCard({
+        id: "c",
+        name: "Beta",
+        nameLower: "beta",
+        deletedAt: 100,
+        updatedAt: 10,
+        createdAt: 3,
+      }),
     ];
 
     const { result } = renderHook(() =>
@@ -495,9 +601,30 @@ describe("useStockpileFilters", () => {
 
   it("keeps pair mode ordering unchanged even when sort mode changes", () => {
     const cards = [
-      baseCard({ id: "a", name: "Zulu", nameLower: "zulu", updatedAt: 5, createdAt: 1, lastViewedAt: 100 }),
-      baseCard({ id: "b", name: "Alpha", nameLower: "alpha", updatedAt: 1, createdAt: 2, lastViewedAt: 200 }),
-      baseCard({ id: "c", name: "Beta", nameLower: "beta", updatedAt: 10, createdAt: 3, lastViewedAt: 100 }),
+      baseCard({
+        id: "a",
+        name: "Zulu",
+        nameLower: "zulu",
+        updatedAt: 5,
+        createdAt: 1,
+        lastViewedAt: 100,
+      }),
+      baseCard({
+        id: "b",
+        name: "Alpha",
+        nameLower: "alpha",
+        updatedAt: 1,
+        createdAt: 2,
+        lastViewedAt: 200,
+      }),
+      baseCard({
+        id: "c",
+        name: "Beta",
+        nameLower: "beta",
+        updatedAt: 10,
+        createdAt: 3,
+        lastViewedAt: 100,
+      }),
     ];
 
     const { result } = renderHook(() =>

@@ -2,8 +2,8 @@
 "use strict";
 
 const fs = require("fs");
-const path = require("path");
 const https = require("https");
+const path = require("path");
 
 const rootDir = path.join(__dirname, "..");
 const artefactsDir = path.join(rootDir, "artefacts");
@@ -65,7 +65,12 @@ function downloadFile(url, destination) {
 
     https
       .get(url, { headers }, (res) => {
-        if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        if (
+          res.statusCode &&
+          res.statusCode >= 300 &&
+          res.statusCode < 400 &&
+          res.headers.location
+        ) {
           downloadFile(res.headers.location, destination).then(resolve).catch(reject);
           return;
         }
@@ -116,7 +121,7 @@ function loadCache() {
   try {
     const raw = fs.readFileSync(cacheFile, "utf8");
     return JSON.parse(raw);
-  } catch (err) {
+  } catch {
     return null;
   }
 }

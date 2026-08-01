@@ -30,9 +30,10 @@ function frontmatterQuestionIds(markdown) {
 }
 
 function faqQuestionSections(markdown) {
-  return [...markdown.matchAll(/^## (.+)\s*\r?\n([\s\S]*?)(?=^## |(?![\s\S]))/gm)].map(
-    (match) => ({ question: match[1].trim(), body: match[2].trim() }),
-  );
+  return [...markdown.matchAll(/^## (.+)\s*\r?\n([\s\S]*?)(?=^## |(?![\s\S]))/gm)].map((match) => ({
+    question: match[1].trim(),
+    body: match[2].trim(),
+  }));
 }
 
 function unique(values) {
@@ -64,7 +65,8 @@ function validateLinks(files, errors) {
       const resolved = resolveMarkdownLink(file, href);
       if (!resolved) continue;
       const candidates = [resolved];
-      if (!path.extname(resolved)) candidates.push(`${resolved}.md`, path.join(resolved, "index.md"));
+      if (!path.extname(resolved))
+        candidates.push(`${resolved}.md`, path.join(resolved, "index.md"));
       if (!candidates.some((candidate) => fs.existsSync(candidate))) {
         errors.push(`Broken link in ${path.relative(docsRoot, file)}: ${href}`);
       }
@@ -75,11 +77,19 @@ function validateLinks(files, errors) {
 function main() {
   const errors = [];
   const files = listMarkdownFiles(docsRoot);
-  const faqFiles = files.filter((file) => path.relative(docsRoot, file).startsWith(`faq${path.sep}`));
-  const readerFiles = files.filter((file) => !path.relative(docsRoot, file).startsWith(`faq${path.sep}`));
+  const faqFiles = files.filter((file) =>
+    path.relative(docsRoot, file).startsWith(`faq${path.sep}`),
+  );
+  const readerFiles = files.filter(
+    (file) => !path.relative(docsRoot, file).startsWith(`faq${path.sep}`),
+  );
   const allCorpus = files.map((file) => fs.readFileSync(file, "utf8")).join("\n");
-  const readerSourceIds = unique(readerFiles.flatMap((file) => frontmatterQuestionIds(fs.readFileSync(file, "utf8"))));
-  const faqSourceRows = faqFiles.flatMap((file) => frontmatterQuestionIds(fs.readFileSync(file, "utf8")));
+  const readerSourceIds = unique(
+    readerFiles.flatMap((file) => frontmatterQuestionIds(fs.readFileSync(file, "utf8"))),
+  );
+  const faqSourceRows = faqFiles.flatMap((file) =>
+    frontmatterQuestionIds(fs.readFileSync(file, "utf8")),
+  );
   const faqSourceIds = unique(faqSourceRows);
   const expectedIds = Array.from(
     { length: 351 },
@@ -106,7 +116,8 @@ function main() {
   const unknownPublicIds = unique([...readerSourceIds, ...faqSourceIds]).filter(
     (id) => !expectedIdSet.has(id),
   );
-  if (unknownPublicIds.length) errors.push(`Unknown public question IDs: ${unknownPublicIds.join(", ")}`);
+  if (unknownPublicIds.length)
+    errors.push(`Unknown public question IDs: ${unknownPublicIds.join(", ")}`);
 
   if (faqSections.length !== faqSourceRows.length - 1) {
     errors.push(
@@ -144,7 +155,8 @@ function main() {
     "S14",
   ];
   for (const term of implementationTerms) {
-    if (allCorpus.toLowerCase().includes(term.toLowerCase())) errors.push(`Customer-facing content contains implementation term: ${term}`);
+    if (allCorpus.toLowerCase().includes(term.toLowerCase()))
+      errors.push(`Customer-facing content contains implementation term: ${term}`);
   }
 
   validateLinks(files, errors);

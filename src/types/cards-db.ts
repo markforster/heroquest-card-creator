@@ -3,8 +3,14 @@ import type { CardFace } from "./card-face";
 import type { StatAsteriskFlags, StatValue } from "./stats";
 import type { TemplateId } from "./templates";
 
+/**
+ * Saved-state lifecycle for a stored card record.
+ */
 export type CardStatus = "draft" | "saved" | "archived";
 
+/**
+ * Canonical persisted card record written to IndexedDB and exchanged through the local API.
+ */
 export interface CardRecord {
   id: string;
   templateId: TemplateId;

@@ -1,9 +1,10 @@
-import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { render, screen } from "@testing-library/react";
 
-import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
 import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
+import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
+
+import type { ReactNode } from "react";
 
 const mockUseStockpileData = jest.fn();
 const mockUseStockpileFilters = jest.fn();
@@ -63,11 +64,21 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
   }),
 }));
 
+jest.mock("@/components/Providers/CopyrightSettingsContext", () => ({
+  __esModule: true,
+  useCopyrightSettings: () => ({ getTemplateDefault: () => false }),
+}));
+
 jest.mock("@/components/Providers/EditorFormContext", () => ({
   __esModule: true,
   useEditorForm: () => ({
     resetWithSaved: jest.fn(),
   }),
+}));
+
+jest.mock("@/components/Providers/FooterTipContext", () => ({
+  __esModule: true,
+  useFooterTip: () => ({ setTip: jest.fn(), clearTip: jest.fn() }),
 }));
 
 jest.mock("@/components/Providers/MissingAssetsContext", () => ({
@@ -169,7 +180,11 @@ jest.mock("@/components/Stockpile/StockpileSidebar", () => ({
   }: {
     onFilterChange: (next: { type: "collection"; id: string }) => void;
   }) => (
-    <button type="button" data-testid="stockpile-sidebar" onClick={() => onFilterChange({ type: "collection", id: "collection-1" })}>
+    <button
+      type="button"
+      data-testid="stockpile-sidebar"
+      onClick={() => onFilterChange({ type: "collection", id: "collection-1" })}
+    >
       Open collection
     </button>
   ),

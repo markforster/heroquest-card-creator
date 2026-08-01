@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-import { apiClient } from "@/api/client";
 import type { CardStatus } from "@/api/cards";
+import { apiClient } from "@/api/client";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import type { TemplateId } from "@/types/templates";
 
@@ -135,17 +135,10 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
     const activeStatus = activeCardStatusByTemplate[selectedTemplateId];
     if (!activeId || activeStatus !== "saved") return;
 
-    apiClient
-      .touchCardLastViewed({}, { params: { id: activeId } })
-      .catch(() => {
-        // Ignore view updates; editor should not fail.
-      });
-  }, [
-    activeCardIdByTemplate,
-    activeCardStatusByTemplate,
-    isHydrated,
-    selectedTemplateId,
-  ]);
+    apiClient.touchCardLastViewed({}, { params: { id: activeId } }).catch(() => {
+      // Ignore view updates; editor should not fail.
+    });
+  }, [activeCardIdByTemplate, activeCardStatusByTemplate, isHydrated, selectedTemplateId]);
 
   const value = useMemo<CardEditorContextValue>(
     () => ({

@@ -48,8 +48,7 @@ export default function TemplatePicker({
         : -1;
       if (event.key === "ArrowRight") {
         event.preventDefault();
-        const nextIndex =
-          currentIndex < 0 ? 0 : (currentIndex + 1) % templateIds.length;
+        const nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % templateIds.length;
         setPendingTemplateId(templateIds[nextIndex]);
         return;
       }
@@ -75,12 +74,7 @@ export default function TemplatePicker({
   }, [isOpen, pendingTemplateId, templateIds, applySelection]);
 
   return (
-    <ModalShell
-      isOpen={isOpen}
-      onClose={onClose}
-      title={t("heading.chooseTemplate")}
-      keepMounted
-    >
+    <ModalShell isOpen={isOpen} onClose={onClose} title={t("heading.chooseTemplate")} keepMounted>
       <TemplatesList
         selectedId={pendingTemplateId as TemplateId | null}
         onSelect={(id) => {

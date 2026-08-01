@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import styles from "@/app/page.module.css";
 import type { CollectionRecord } from "@/api/collections";
+import styles from "@/app/page.module.css";
 import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -73,7 +73,10 @@ export default function CollectionsMembershipModal({
             <span className="visually-hidden">{t("actions.close")}</span>✕
           </button>
         </div>
-        <div className={styles.inspectorCollectionsModalBody} data-testid="collections-membership-modal">
+        <div
+          className={styles.inspectorCollectionsModalBody}
+          data-testid="collections-membership-modal"
+        >
           <CollectionsMembershipTree
             collections={collections}
             membershipSet={draftMembershipIds}

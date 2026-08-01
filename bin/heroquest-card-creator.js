@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 "use strict";
 
-const http = require("http");
-const fs = require("fs");
-const os = require("os");
-const net = require("net");
-const path = require("path");
 const { spawn } = require("child_process");
+const fs = require("fs");
+const http = require("http");
+const net = require("net");
+const os = require("os");
+const path = require("path");
+
+const chalk = require("chalk");
 const mime = require("mime");
 const yaml = require("yaml");
-const chalk = require("chalk");
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 3000;
@@ -68,7 +69,7 @@ function printHelp() {
       "  -p, --port <number>   Port to serve on (default 3000; auto-picks a free port if needed)",
       "  -h, --help            Show this help",
       "",
-    ].join("\n")
+    ].join("\n"),
   );
 }
 
@@ -136,6 +137,7 @@ function createServer(rootDir) {
       res.setHeader("Content-Type", contentType);
       fs.createReadStream(filePath).pipe(res);
     } catch (error) {
+      console.error("[heroquest-card-creator] Request failed:", error);
       res.statusCode = 500;
       res.end("Internal Server Error");
     }
@@ -159,7 +161,7 @@ function loadInfo() {
       return null;
     }
     return parsed;
-  } catch (error) {
+  } catch {
     console.warn("[heroquest-card-creator] Failed to read info file. It will be recreated.");
     return null;
   }
@@ -171,7 +173,10 @@ function saveInfo(port, existing) {
   fs.mkdirSync(dir, { recursive: true });
 
   const previousPorts = Array.isArray(existing?.ports) ? existing.ports : [];
-  const nextPorts = [port, ...previousPorts.filter((value) => value !== port)].slice(0, HISTORY_LIMIT);
+  const nextPorts = [port, ...previousPorts.filter((value) => value !== port)].slice(
+    0,
+    HISTORY_LIMIT,
+  );
 
   const payload = {
     lastPort: port,
@@ -181,9 +186,9 @@ function saveInfo(port, existing) {
 
   try {
     fs.writeFileSync(infoPath, yaml.stringify(payload), "utf8");
-  } catch (error) {
+  } catch {
     console.warn(
-      "[heroquest-card-creator] Warning: Failed to write ~/.hqcc/info.yml; port history will not be saved."
+      "[heroquest-card-creator] Warning: Failed to write ~/.hqcc/info.yml; port history will not be saved.",
     );
   }
 
@@ -213,7 +218,7 @@ function openBrowser(url) {
     const child = spawn(command, args, { stdio: "ignore", detached: true });
     child.unref();
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -239,7 +244,9 @@ async function promptOpenBrowser(url) {
 
   const opened = openBrowser(url);
   if (!opened) {
-    console.warn("[heroquest-card-creator] Unable to open browser automatically. Open the URL manually.");
+    console.warn(
+      "[heroquest-card-creator] Unable to open browser automatically. Open the URL manually.",
+    );
   }
 }
 
@@ -386,7 +393,7 @@ async function resolvePort({ portSpecified, requestedPort, info }) {
     if (!isInteractive()) {
       const suggested = await findFreePort();
       throw new Error(
-        `Port ${requestedPort} is already in use. Try -p ${suggested} or another free port.`
+        `Port ${requestedPort} is already in use. Try -p ${suggested} or another free port.`,
       );
     }
 
@@ -435,7 +442,7 @@ async function resolvePort({ portSpecified, requestedPort, info }) {
     if (lastPort) {
       const suggestedPort = await findFreePort();
       console.warn(
-        `You last ran on port ${lastPort}, but it is currently in use. If you switch ports, you will not see the library saved on port ${lastPort}.`
+        `You last ran on port ${lastPort}, but it is currently in use. If you switch ports, you will not see the library saved on port ${lastPort}.`,
       );
       const choice = await promptForPort({
         defaultPort: suggestedPort,
@@ -507,15 +514,15 @@ function warnOnNewPort(port, info) {
 
   if (historyPorts.length === 0) {
     console.warn(
-      "[heroquest-card-creator] Note: Browser storage (IndexedDB/localStorage) is tied to the origin. Using a new port means you won’t see libraries saved on other ports."
+      "[heroquest-card-creator] Note: Browser storage (IndexedDB/localStorage) is tied to the origin. Using a new port means you won’t see libraries saved on other ports.",
     );
     return;
   }
 
   console.warn(
     `[heroquest-card-creator] Note: Browser storage (IndexedDB/localStorage) is tied to the origin. Using a new port means you won’t see libraries saved on other ports. Known ports: ${historyPorts.join(
-      ", "
-    )}.`
+      ", ",
+    )}.`,
   );
 }
 
@@ -531,7 +538,9 @@ async function main() {
   const rootDir = path.resolve(__dirname, "..", "out");
 
   if (!fs.existsSync(rootDir)) {
-    console.error("[heroquest-card-creator] out/ directory not found. Run `npm run build` before packaging.");
+    console.error(
+      "[heroquest-card-creator] out/ directory not found. Run `npm run build` before packaging.",
+    );
     process.exit(1);
   }
 
@@ -551,7 +560,7 @@ async function main() {
   server.on("error", (error) => {
     if (error.code === "EADDRINUSE") {
       console.error(
-        `[heroquest-card-creator] Port ${port} is already in use. Try a different port with -p.`
+        `[heroquest-card-creator] Port ${port} is already in use. Try a different port with -p.`,
       );
     } else {
       console.error("[heroquest-card-creator] Server error:", error);

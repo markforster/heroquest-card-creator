@@ -2,7 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 
 import PdfExportConfigForm from "@/components/Export/PdfExportConfigForm";
-
 import type { PrintConfig } from "@/lib/pdf-export";
 
 jest.mock("@/components/common/FormSelect", () => ({
@@ -40,7 +39,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) =>
       (
-        {
+        ({
           "decks.pdf.mode": "Mode",
           "decks.pdf.mode.fronts": "Fronts only",
           "decks.pdf.mode.frontBack": "Front + back",
@@ -60,12 +59,13 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "decks.pdf.duplex.helpTitle": "How duplex presets work",
           "decks.pdf.duplex.help.normal": "Print backs in the same slot position as fronts.",
           "decks.pdf.duplex.help.mirrorX": "Flip back positions left-to-right across the sheet.",
-          "decks.pdf.duplex.help.rotate180": "Rotate backs 180 degrees in their current slot positions.",
+          "decks.pdf.duplex.help.rotate180":
+            "Rotate backs 180 degrees in their current slot positions.",
           "decks.pdf.duplex.help.mirrorXRotate180":
             "Flip back positions left-to-right and rotate them 180 degrees.",
           "decks.pdf.cardSize": "Card size",
           "label.moreInfo": "More info",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));
@@ -178,7 +178,9 @@ describe("PdfExportConfigForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "More info" }));
 
     expect(screen.getByText("How duplex presets work")).toBeInTheDocument();
-    expect(screen.getByText("Print backs in the same slot position as fronts.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Print backs in the same slot position as fronts."),
+    ).toBeInTheDocument();
 
     fireEvent.keyDown(window, { key: "Escape" });
 

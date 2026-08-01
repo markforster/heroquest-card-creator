@@ -12,7 +12,7 @@ if (!fs.existsSync(outDir)) {
 
 if (!fs.existsSync(indexHtml)) {
   console.error(
-    "[verify-out] out/index.html not found. Ensure `next.config.mjs` uses `output: \"export\"` and build succeeds."
+    '[verify-out] out/index.html not found. Ensure `next.config.mjs` uses `output: "export"` and build succeeds.',
   );
   process.exit(1);
 }

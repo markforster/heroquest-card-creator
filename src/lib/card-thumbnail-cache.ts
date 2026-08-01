@@ -61,10 +61,7 @@ function evictIfNeeded() {
   }
 }
 
-export function getCachedCardThumbnailUrl(
-  cardId: string,
-  blob?: Blob | null,
-): string | null {
+export function getCachedCardThumbnailUrl(cardId: string, blob?: Blob | null): string | null {
   if (!cardId) return null;
   const existing = cache.get(cardId);
   if (existing) {
@@ -107,9 +104,7 @@ export async function getCardThumbnailUrl(cardId: string): Promise<string | null
         // Ignore read failures; retry below.
       }
       if (attempt < RETRY_DELAYS_MS.length) {
-        await new Promise<void>((resolve) =>
-          window.setTimeout(resolve, RETRY_DELAYS_MS[attempt]),
-        );
+        await new Promise<void>((resolve) => window.setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
       }
     }
     return null;
@@ -332,10 +327,7 @@ export function releaseCardThumbnailUrl(cardId: string): void {
   releaseCardThumbnail(cardId);
 }
 
-export function getLegacyCardThumbnailUrl(
-  cardId: string,
-  blob?: Blob | null,
-): string | null {
+export function getLegacyCardThumbnailUrl(cardId: string, blob?: Blob | null): string | null {
   if (!cardId || !blob) return null;
   const safeBlob = cloneBlob(blob);
   return URL.createObjectURL(safeBlob);

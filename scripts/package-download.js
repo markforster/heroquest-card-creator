@@ -1,8 +1,9 @@
 "use strict";
 
+const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const { execSync } = require("child_process");
+
 const matter = require("gray-matter");
 const { marked } = require("marked");
 
@@ -187,7 +188,9 @@ async function generateReadmePdf(markdownSource, outputPath) {
 
 async function main() {
   if (!fs.existsSync(outDir)) {
-    console.error("[package-download] out/ directory not found. Run `next export` before packaging.");
+    console.error(
+      "[package-download] out/ directory not found. Run `next export` before packaging.",
+    );
     process.exit(1);
   }
 
@@ -243,7 +246,7 @@ async function main() {
   }
 
   const launchers = ["start-server.sh", "start-server.command", "start-server.bat"].map((file) =>
-    path.join(rootDir, file)
+    path.join(rootDir, file),
   );
   launchers.forEach((source) => {
     if (!fs.existsSync(source)) {

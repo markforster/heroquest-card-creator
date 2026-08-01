@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import SystemSettingsPanel from "@/components/Modals/SettingsModal/SystemSettingsPanel";
-import { I18nProvider } from "@/i18n/I18nProvider";
 import { LANGUAGE_STORAGE_KEY } from "@/i18n/getInitialLanguage";
+import { I18nProvider } from "@/i18n/I18nProvider";
 
 jest.mock("@/version", () => ({
   APP_VERSION: "0.0.0-test",
@@ -12,10 +12,11 @@ const getDbEstimateStatus = jest.fn();
 const runFullDbEstimate = jest.fn();
 const subscribeDbEstimateStatus = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   getDbEstimateStatus: () => getDbEstimateStatus(),
   runFullDbEstimate: () => runFullDbEstimate(),
-  subscribeDbEstimateStatus: (listener: (status: unknown) => void) => subscribeDbEstimateStatus(listener),
+  subscribeDbEstimateStatus: (listener: (status: unknown) => void) =>
+    subscribeDbEstimateStatus(listener),
 }));
 
 type StorageEstimate = {
@@ -70,7 +71,9 @@ describe("SystemSettingsPanel (UI)", () => {
     expect(screen.getByLabelText("Estimated total browser app usage")).toBeInTheDocument();
     expect(screen.getByText("Other browser/app storage: 1.0 KB")).toBeInTheDocument();
     expect(screen.queryByText("Assets: 0 B")).not.toBeInTheDocument();
-    expect(screen.queryByText(/Estimated library size: Not yet calculated/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Estimated library size: Not yet calculated/i),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/Records scanned:/i)).not.toBeInTheDocument();
   });
 

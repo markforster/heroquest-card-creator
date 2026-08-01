@@ -2,12 +2,12 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useEffect } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 
-import CardPreview from "@/components/Cards/CardPreview";
 import {
   EDITOR_TARGET_IDS,
   EditorTargetsProvider,
   useEditorTargets,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import CardPreview from "@/components/Cards/CardPreview";
 
 jest.mock("@/components/BlueprintRenderer", () => ({
   __esModule: true,
@@ -141,7 +141,9 @@ describe("CardPreview editor overlay stage probe", () => {
   });
 
   it("does not render an image frame when no target is selected", async () => {
-    const { container } = render(<CardPreview templateId="hero" templateName="Hero" cardData={{ title: "Hero" }} />);
+    const { container } = render(
+      <CardPreview templateId="hero" templateName="Hero" cardData={{ title: "Hero" }} />,
+    );
 
     await act(async () => {
       await Promise.resolve();
@@ -152,7 +154,7 @@ describe("CardPreview editor overlay stage probe", () => {
 
   it("renders a preview-only image frame when image.main is selected", async () => {
     const { container } = render(
-        <EditorTargetsProvider>
+      <EditorTargetsProvider>
         <SelectTarget targetId={EDITOR_TARGET_IDS.imageMain} />
         <SelectedTargetProbe />
         <PreviewFormHarness
@@ -198,7 +200,7 @@ describe("CardPreview editor overlay stage probe", () => {
 
   it("extends the transform arm as image scale increases", async () => {
     const { container: smallContainer } = render(
-        <EditorTargetsProvider>
+      <EditorTargetsProvider>
         <SelectTarget targetId={EDITOR_TARGET_IDS.imageMain} />
         <PreviewFormHarness
           defaultValues={{
@@ -227,7 +229,7 @@ describe("CardPreview editor overlay stage probe", () => {
     );
 
     const { container: largeContainer } = render(
-        <EditorTargetsProvider>
+      <EditorTargetsProvider>
         <SelectTarget targetId={EDITOR_TARGET_IDS.imageMain} />
         <PreviewFormHarness
           defaultValues={{

@@ -1,8 +1,8 @@
 import Dexie from "dexie";
-import { IDBDatabase, IDBFactory, IDBKeyRange } from "fake-indexeddb";
+import { IDBFactory, IDBKeyRange } from "fake-indexeddb";
 
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { getCard } from "@/lib/cards-db";
+import { getCard } from "@/lib/data/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 const originalIndexedDbDescriptor = Object.getOwnPropertyDescriptor(window, "indexedDB");
 const originalIdbKeyRangeDescriptor = Object.getOwnPropertyDescriptor(window, "IDBKeyRange");
@@ -214,7 +214,9 @@ describe("cards normalized migration", () => {
         scaleMode: "relative",
       }),
     );
-    expect(await db.cardMonsterStatsComponents.get("monster-1:hq.2021.stats.monster.primary")).toEqual(
+    expect(
+      await db.cardMonsterStatsComponents.get("monster-1:hq.2021.stats.monster.primary"),
+    ).toEqual(
       expect.objectContaining({
         movementSquares: 8,
         attackDice: 2,

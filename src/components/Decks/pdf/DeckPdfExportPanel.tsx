@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 
 import styles from "@/app/page.module.css";
-import FormSelect from "@/components/common/FormSelect";
 import CardThumbnail from "@/components/common/CardThumbnail";
+import FormSelect from "@/components/common/FormSelect";
 import type {
   DeckPdfExportSummary,
   DeckPdfSetMeta,

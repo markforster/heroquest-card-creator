@@ -111,17 +111,13 @@ export default function AssetsInspectorActions({
   const minScaleByWidth =
     requiredWidth > 0 && asset.width > 0 ? Math.ceil((requiredWidth / asset.width) * 100) : 10;
   const minScaleByHeight =
-    requiredHeight > 0 && asset.height > 0
-      ? Math.ceil((requiredHeight / asset.height) * 100)
-      : 10;
+    requiredHeight > 0 && asset.height > 0 ? Math.ceil((requiredHeight / asset.height) * 100) : 10;
   const recommendedMinScalePercent =
     requiredWidth > 0 && requiredHeight > 0
       ? Math.min(100, Math.max(10, Math.max(minScaleByWidth, minScaleByHeight)))
       : 10;
   const canShowResizeWarning =
-    requiredWidth > 0 &&
-    requiredHeight > 0 &&
-    optimizeScalePercent < recommendedMinScalePercent;
+    requiredWidth > 0 && requiredHeight > 0 && optimizeScalePercent < recommendedMinScalePercent;
   const pendingMismatch = pendingReplace
     ? pendingReplace.width !== asset.width || pendingReplace.height !== asset.height
     : false;

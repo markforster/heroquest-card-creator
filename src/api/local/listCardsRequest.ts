@@ -1,9 +1,9 @@
 import { listCardsFilterSchema } from "@/api/cards";
-import { listCards } from "@/lib/cards-db";
+import { listCards } from "@/lib/data/cards-db";
+import type { CardRecord } from "@/types/cards-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
-import type { CardRecord } from "@/types/cards-db";
 
 function toListCardsFilter(params?: Record<string, unknown>) {
   const parsed = listCardsFilterSchema.safeParse(params ?? {});
@@ -11,10 +11,14 @@ function toListCardsFilter(params?: Record<string, unknown>) {
 }
 
 function stripCardThumbnail(card: CardRecord): Omit<CardRecord, "thumbnailBlob"> {
-  const { thumbnailBlob: _thumbnailBlob, ...rest } = card;
+  const { thumbnailBlob, ...rest } = card;
+  void thumbnailBlob;
   return rest;
 }
 
+/**
+ * Serves the local list-cards endpoint, including query normalization and thumbnail stripping.
+ */
 export const listCardsRequestPlugin: ZodiosPlugin = {
   name: "local-list-cards",
   request: async (apiDefinitions, config) => {

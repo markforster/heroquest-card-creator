@@ -2,11 +2,11 @@ const openHqccDexieDb = jest.fn();
 const estimateIndexedDbSize = jest.fn();
 const estimateRecordBytes = jest.fn();
 
-jest.mock("@/lib/hqcc-dexie", () => ({
+jest.mock("@/lib/db/hqcc-dexie", () => ({
   openHqccDexieDb: () => openHqccDexieDb(),
 }));
 
-jest.mock("@/lib/indexeddb-size-estimate", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-estimate", () => ({
   estimateIndexedDbSize: (...args: unknown[]) => estimateIndexedDbSize(...args),
   estimateRecordBytes: (...args: unknown[]) => estimateRecordBytes(...args),
 }));
@@ -14,6 +14,7 @@ jest.mock("@/lib/indexeddb-size-estimate", () => ({
 type StoreRecord = Record<string, unknown> & { id: string };
 type StoreTable = {
   get: jest.Mock<Promise<StoreRecord | undefined>, [string]>;
+  where: jest.Mock;
 };
 
 type DexieTableMap = {
@@ -26,15 +27,29 @@ type DexieTableMap = {
   deckGroups: StoreTable;
   deckSets: StoreTable;
   deckEntries: StoreTable;
+  cardsBase: StoreTable;
+  cardThumbnails: StoreTable;
+  cardSlotLinks: StoreTable;
+  cardBackgroundComponents: StoreTable;
+  cardBorderComponents: StoreTable;
+  cardTitleComponents: StoreTable;
+  cardTextComponents: StoreTable;
+  cardCopyrightComponents: StoreTable;
+  cardImageComponents: StoreTable;
+  cardIconComponents: StoreTable;
+  cardHeroStatsComponents: StoreTable;
+  cardMonsterStatsComponents: StoreTable;
 };
 
-type TrackerModule = typeof import("@/lib/indexeddb-size-tracker");
+type TrackerModule = typeof import("@/lib/db/maintenance/indexeddb-size-tracker");
 
 const QUEUE_KEY = "hqcc.dbEstimate.queue.v1";
 const TOTALS_KEY = "hqcc.dbEstimate.totals.v1";
 const RECORD_SIZES_KEY = "hqcc.dbEstimate.recordSizes.v1";
 
-function createFakeDb(recordsByStore: Partial<Record<keyof DexieTableMap, StoreRecord[]>> = {}): DexieTableMap {
+function createFakeDb(
+  recordsByStore: Partial<Record<keyof DexieTableMap, StoreRecord[]>> = {},
+): DexieTableMap {
   const createTable = (records: StoreRecord[] = []): StoreTable => {
     const state = new Map(records.map((record) => [record.id, { ...record }]));
     return {
@@ -42,6 +57,11 @@ function createFakeDb(recordsByStore: Partial<Record<keyof DexieTableMap, StoreR
         const record = state.get(id);
         return record ? { ...record } : undefined;
       }),
+      where: jest.fn(() => ({
+        equals: jest.fn(() => ({
+          toArray: jest.fn(async () => []),
+        })),
+      })),
     };
   };
 
@@ -55,12 +75,24 @@ function createFakeDb(recordsByStore: Partial<Record<keyof DexieTableMap, StoreR
     deckGroups: createTable(recordsByStore.deckGroups),
     deckSets: createTable(recordsByStore.deckSets),
     deckEntries: createTable(recordsByStore.deckEntries),
+    cardsBase: createTable(recordsByStore.cards),
+    cardThumbnails: createTable(),
+    cardSlotLinks: createTable(),
+    cardBackgroundComponents: createTable(),
+    cardBorderComponents: createTable(),
+    cardTitleComponents: createTable(),
+    cardTextComponents: createTable(),
+    cardCopyrightComponents: createTable(),
+    cardImageComponents: createTable(),
+    cardIconComponents: createTable(),
+    cardHeroStatsComponents: createTable(),
+    cardMonsterStatsComponents: createTable(),
   };
 }
 
 async function loadTrackerModule(): Promise<TrackerModule> {
   jest.resetModules();
-  return import("@/lib/indexeddb-size-tracker");
+  return import("@/lib/db/maintenance/indexeddb-size-tracker");
 }
 
 describe("processDbEstimateQueue", () => {
@@ -87,7 +119,10 @@ describe("processDbEstimateQueue", () => {
   });
 
   it("processes queued records through the mapped Dexie table and updates totals", async () => {
-    window.localStorage.setItem(QUEUE_KEY, JSON.stringify([{ store: "settings", id: "defaultCopyright" }]));
+    window.localStorage.setItem(
+      QUEUE_KEY,
+      JSON.stringify([{ store: "settings", id: "defaultCopyright" }]),
+    );
 
     const db = createFakeDb({
       settings: [{ id: "defaultCopyright", value: "Copyright", updatedAt: 1, schemaVersion: 1 }],
@@ -215,7 +250,10 @@ describe("processDbEstimateQueue", () => {
   });
 
   it("does not start duplicate processing while a run is already in flight", async () => {
-    window.localStorage.setItem(QUEUE_KEY, JSON.stringify([{ store: "collections", id: "collection-1" }]));
+    window.localStorage.setItem(
+      QUEUE_KEY,
+      JSON.stringify([{ store: "collections", id: "collection-1" }]),
+    );
 
     const control: { releaseGet?: () => void } = {};
     const db = createFakeDb();
@@ -251,7 +289,7 @@ describe("processDbEstimateQueue", () => {
   it("waits while paused and resumes queued processing when unpaused", async () => {
     window.localStorage.setItem(QUEUE_KEY, JSON.stringify([{ store: "decks", id: "deck-1" }]));
 
-    const requestIdleCallbackMock = jest.fn((_callback: IdleRequestCallback) => 1);
+    const requestIdleCallbackMock = jest.fn(() => 1);
     globalThis.requestIdleCallback = requestIdleCallbackMock as typeof requestIdleCallback;
 
     const db = createFakeDb({
@@ -297,7 +335,7 @@ describe("processDbEstimateQueue", () => {
   });
 
   it("keeps queue entries deduped before processing starts", async () => {
-    const requestIdleCallbackMock = jest.fn((_callback: IdleRequestCallback) => 1);
+    const requestIdleCallbackMock = jest.fn(() => 1);
     globalThis.requestIdleCallback = requestIdleCallbackMock as typeof requestIdleCallback;
 
     const tracker = await loadTrackerModule();

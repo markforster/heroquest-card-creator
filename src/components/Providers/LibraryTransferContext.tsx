@@ -1,13 +1,18 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useRef, useState } from "react";
 
+import { readApiConfig } from "@/api/config";
+import { exportLibrary, importLibrary } from "@/api/library/client";
 import styles from "@/app/page.module.css";
 import BackupProgressOverlay from "@/components/BackupProgressOverlay";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
+import {
+  useLocalStorageRehydrate,
+  useLocalStorageValue,
+} from "@/components/Providers/LocalStorageProvider";
 import { useI18n } from "@/i18n/I18nProvider";
-import { readApiConfig } from "@/api/config";
-import { createBackupHqcc, importBackupHqcc, importBackupJson } from "@/lib/backup";
 import {
   BACKUP_FORMAT_STORAGE_KEY,
   DEFAULT_BACKUP_FORMAT,
@@ -15,14 +20,12 @@ import {
   type BackupContainerFormat,
 } from "@/lib/backup-formats";
 import { invalidateCardThumbnail } from "@/lib/card-thumbnail-cache";
-import { EXPORT_SETTINGS_STORAGE_KEYS } from "@/lib/export-settings";
-import { clearDbEstimateCache, setDbEstimatePaused } from "@/lib/indexeddb-size-tracker";
-import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 import {
-  useLocalStorageRehydrate,
-  useLocalStorageValue,
-} from "@/components/Providers/LocalStorageProvider";
-import { useQueryClient } from "@tanstack/react-query";
+  clearDbEstimateCache,
+  setDbEstimatePaused,
+} from "@/lib/db/maintenance/indexeddb-size-tracker";
+import { EXPORT_SETTINGS_STORAGE_KEYS } from "@/lib/export-settings";
+import { openDownloadsFolderIfTauri } from "@/lib/tauri";
 
 import type { ChangeEvent, ReactNode } from "react";
 
@@ -140,12 +143,41 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
       deckGroupsCount: number;
       deckSetsCount: number;
       deckEntriesCount: number;
-    }>(
-      (resolve, reject) => {
-        let settled = false;
-        let pollTimer: number | null = null;
+    }>((resolve, reject) => {
+      let settled = false;
+      let pollTimer: number | null = null;
 
-        const finish = (result: {
+      const finish = (result: {
+        cardsCount: number;
+        assetsCount: number;
+        collectionsCount: number;
+        decksCount: number;
+        deckGroupsCount: number;
+        deckSetsCount: number;
+        deckEntriesCount: number;
+      }) => {
+        if (settled) return;
+        settled = true;
+        if (pollTimer) {
+          window.clearInterval(pollTimer);
+        }
+        resolve(result);
+      };
+
+      const fail = (message?: string) => {
+        if (settled) return;
+        settled = true;
+        if (pollTimer) {
+          window.clearInterval(pollTimer);
+        }
+        reject(new Error(message || t("alert.importFailed")));
+      };
+
+      const handleJobUpdate = (job: {
+        status?: string;
+        progress?: number;
+        message?: string;
+        result?: {
           cardsCount: number;
           assetsCount: number;
           collectionsCount: number;
@@ -153,100 +185,43 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
           deckGroupsCount: number;
           deckSetsCount: number;
           deckEntriesCount: number;
-        }) => {
-          if (settled) return;
-          settled = true;
-          if (pollTimer) {
-            window.clearInterval(pollTimer);
-          }
-          resolve(result);
         };
+      }) => {
+        const progress = typeof job.progress === "number" ? job.progress : 0;
+        setBackupProgressCurrent(progress);
+        setBackupProgressStatus(resolveImportStatus(job.status));
+        setBackupSecondaryLabel(null);
+        setBackupSecondaryPercent(null);
 
-        const fail = (message?: string) => {
-          if (settled) return;
-          settled = true;
-          if (pollTimer) {
-            window.clearInterval(pollTimer);
-          }
-          reject(new Error(message || t("alert.importFailed")));
-        };
+        if (job.status === "complete") {
+          finish(
+            job.result ?? {
+              cardsCount: 0,
+              assetsCount: 0,
+              collectionsCount: 0,
+              decksCount: 0,
+              deckGroupsCount: 0,
+              deckSetsCount: 0,
+              deckEntriesCount: 0,
+            },
+          );
+        } else if (job.status === "error") {
+          fail(job.message);
+        }
+      };
 
-        const handleJobUpdate = (job: {
-          status?: string;
-          progress?: number;
-          message?: string;
-          result?: {
-            cardsCount: number;
-            assetsCount: number;
-            collectionsCount: number;
-            decksCount: number;
-            deckGroupsCount: number;
-            deckSetsCount: number;
-            deckEntriesCount: number;
-          };
-        }) => {
-          const progress = typeof job.progress === "number" ? job.progress : 0;
-          setBackupProgressCurrent(progress);
-          setBackupProgressStatus(resolveImportStatus(job.status));
-          setBackupSecondaryLabel(null);
-          setBackupSecondaryPercent(null);
-
-          if (job.status === "complete") {
-            finish(
-              job.result ?? {
-                cardsCount: 0,
-                assetsCount: 0,
-                collectionsCount: 0,
-                decksCount: 0,
-                deckGroupsCount: 0,
-                deckSetsCount: 0,
-                deckEntriesCount: 0,
-              },
-            );
-          } else if (job.status === "error") {
-            fail(job.message);
-          }
-        };
-
-        const startPolling = () => {
-          if (pollTimer) return;
-          pollTimer = window.setInterval(async () => {
-            try {
-              const res = await fetch(
-                new URL(
-                  `/library/import/${jobId}`,
-                  apiConfig.baseUrl ?? window.location.origin,
-                ).toString(),
-              );
-              if (!res.ok) return;
-              const job = (await res.json()) as {
-                status?: string;
-                progress?: number;
-                message?: string;
-                result?: {
-                  cardsCount: number;
-                  assetsCount: number;
-                  collectionsCount: number;
-                  decksCount: number;
-                  deckGroupsCount: number;
-                  deckSetsCount: number;
-                  deckEntriesCount: number;
-                };
-              };
-              handleJobUpdate(job);
-            } catch {
-              // ignore polling errors
-            }
-          }, 1000);
-        };
-
-        const ws = new WebSocket(resolveWsUrl(apiConfig.baseUrl ?? window.location.origin));
-        ws.addEventListener("open", () => {
-          ws.send(JSON.stringify({ type: "subscribe", jobId }));
-        });
-        ws.addEventListener("message", (event) => {
+      const startPolling = () => {
+        if (pollTimer) return;
+        pollTimer = window.setInterval(async () => {
           try {
-            const data = JSON.parse(event.data as string) as {
+            const res = await fetch(
+              new URL(
+                `/library/import/${jobId}`,
+                apiConfig.baseUrl ?? window.location.origin,
+              ).toString(),
+            );
+            if (!res.ok) return;
+            const job = (await res.json()) as {
               status?: string;
               progress?: number;
               message?: string;
@@ -260,22 +235,48 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
                 deckEntriesCount: number;
               };
             };
-            handleJobUpdate(data);
+            handleJobUpdate(job);
           } catch {
-            // ignore parse errors
+            // ignore polling errors
           }
-        });
-        ws.addEventListener("error", () => {
-          ws.close();
+        }, 1000);
+      };
+
+      const ws = new WebSocket(resolveWsUrl(apiConfig.baseUrl ?? window.location.origin));
+      ws.addEventListener("open", () => {
+        ws.send(JSON.stringify({ type: "subscribe", jobId }));
+      });
+      ws.addEventListener("message", (event) => {
+        try {
+          const data = JSON.parse(event.data as string) as {
+            status?: string;
+            progress?: number;
+            message?: string;
+            result?: {
+              cardsCount: number;
+              assetsCount: number;
+              collectionsCount: number;
+              decksCount: number;
+              deckGroupsCount: number;
+              deckSetsCount: number;
+              deckEntriesCount: number;
+            };
+          };
+          handleJobUpdate(data);
+        } catch {
+          // ignore parse errors
+        }
+      });
+      ws.addEventListener("error", () => {
+        ws.close();
+        startPolling();
+      });
+      ws.addEventListener("close", () => {
+        if (!settled) {
           startPolling();
-        });
-        ws.addEventListener("close", () => {
-          if (!settled) {
-            startPolling();
-          }
-        });
-      },
-    );
+        }
+      });
+    });
   };
 
   const resolveImportErrorMessage = (message: string) => {
@@ -312,7 +313,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
     setBackupSecondaryPercent(null);
     backupSecondaryModeRef.current = null;
     try {
-      const { blob, fileName } = await createBackupHqcc({
+      const { blob, fileName } = await exportLibrary({
         format: backupFormat,
         onProgress: (current, total) => {
           setBackupProgressCurrent(current);
@@ -432,61 +433,34 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
         }
         result = await runRemoteImport(file);
       } else {
-        result = useZip
-          ? await importBackupHqcc(file, {
-              onProgress: (current, total) => {
-                setBackupProgressCurrent(current);
-                setBackupProgressTotal(total);
-                setBackupProgressStatus(t("status.importingData"));
-                setBackupSecondaryLabel(null);
-                setBackupSecondaryPercent(null);
-              },
-              onStatus: (phase) => {
-                setBackupProgressStatus(
-                  phase === "processing" ? t("status.importingData") : t("status.preparing"),
-                );
-                if (phase === "processing") {
-                  setBackupSecondaryLabel(null);
-                  setBackupSecondaryPercent(null);
-                } else {
-                  setBackupSecondaryLabel(t("status.preparing"));
-                  setBackupSecondaryPercent(null);
-                }
-              },
-            })
-          : useJson
-            ? await importBackupJson(file, {
-                onProgress: (current, total) => {
-                  setBackupProgressCurrent(current);
-                  setBackupProgressTotal(total);
-                  setBackupProgressStatus(t("status.importingData"));
-                  setBackupSecondaryLabel(null);
-                  setBackupSecondaryPercent(null);
-                },
-                onStatus: (phase) => {
-                  setBackupProgressStatus(
-                    phase === "processing" ? t("status.importingData") : t("status.preparing"),
-                  );
-                  if (phase === "processing") {
-                    setBackupSecondaryLabel(null);
-                    setBackupSecondaryPercent(null);
-                  } else {
-                    setBackupSecondaryLabel(t("status.preparing"));
-                    setBackupSecondaryPercent(null);
-                  }
-                },
-              })
-            : await (async () => {
-                throw new Error(t("alert.unsupportedBackupFile"));
-              })();
+        if (!useZip && !useJson) {
+          throw new Error(t("alert.unsupportedBackupFile"));
+        }
+        result = await importLibrary(file, {
+          onProgress: (current, total) => {
+            setBackupProgressCurrent(current);
+            setBackupProgressTotal(total);
+            setBackupProgressStatus(t("status.importingData"));
+            setBackupSecondaryLabel(null);
+            setBackupSecondaryPercent(null);
+          },
+          onStatus: (phase) => {
+            setBackupProgressStatus(
+              phase === "processing" ? t("status.importingData") : t("status.preparing"),
+            );
+            if (phase === "processing") {
+              setBackupSecondaryLabel(null);
+              setBackupSecondaryPercent(null);
+            } else {
+              setBackupSecondaryLabel(t("status.preparing"));
+              setBackupSecondaryPercent(null);
+            }
+          },
+        });
       }
       await new Promise((resolve) => setTimeout(resolve, 250));
       const exportSettingKeys = Object.values(EXPORT_SETTINGS_STORAGE_KEYS);
-      rehydrateLocalStorage([
-        "hqcc.activeCards.v1",
-        "hqcc.statLabels",
-        ...exportSettingKeys,
-      ]);
+      rehydrateLocalStorage(["hqcc.activeCards.v1", "hqcc.statLabels", ...exportSettingKeys]);
       invalidateCardThumbnail();
       queryClient.clear();
       if (typeof window !== "undefined") {
@@ -594,8 +568,12 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
                   onChange={() => setBackupFormat("legacy-zip-json")}
                 />
                 <span>
-                  <span className={styles.exportFormatLabel}>{t("label.backupFormatStandard")}</span>
-                  <span className={styles.exportFormatHint}>{t("helper.backupFormatStandard")}</span>
+                  <span className={styles.exportFormatLabel}>
+                    {t("label.backupFormatStandard")}
+                  </span>
+                  <span className={styles.exportFormatHint}>
+                    {t("helper.backupFormatStandard")}
+                  </span>
                 </span>
               </label>
             </div>

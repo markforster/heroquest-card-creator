@@ -188,13 +188,25 @@ export default function StockpileCardsTable({
         />
       </div>
       <div className={styles.stockpileTableBody} role="rowgroup">
-        {DEBUG_DISABLE_STOCKPILE_TABLE_ITEMS ? null : groups.length > 0 ? (
-          groups.map((group) => (
-            <div key={group.id} className={styles.stockpileTableGroup} role="rowgroup">
-              <div className={styles.stockpileTableGroupHeader} role="row">
-                <div className={styles.stockpileTableGroupHeaderText}>{group.label}</div>
-              </div>
-              {group.cards.map((card) => (
+        {DEBUG_DISABLE_STOCKPILE_TABLE_ITEMS
+          ? null
+          : groups.length > 0
+            ? groups.map((group) => (
+                <div key={group.id} className={styles.stockpileTableGroup} role="rowgroup">
+                  <div className={styles.stockpileTableGroupHeader} role="row">
+                    <div className={styles.stockpileTableGroupHeaderText}>{group.label}</div>
+                  </div>
+                  {group.cards.map((card) => (
+                    <StockpileCardsTableRow
+                      key={card.id}
+                      card={card}
+                      actions={actions}
+                      dragEnabled={dragEnabled}
+                    />
+                  ))}
+                </div>
+              ))
+            : items.map((card) => (
                 <StockpileCardsTableRow
                   key={card.id}
                   card={card}
@@ -202,18 +214,6 @@ export default function StockpileCardsTable({
                   dragEnabled={dragEnabled}
                 />
               ))}
-            </div>
-          ))
-        ) : (
-          items.map((card) => (
-            <StockpileCardsTableRow
-              key={card.id}
-              card={card}
-              actions={actions}
-              dragEnabled={dragEnabled}
-            />
-          ))
-        )}
       </div>
     </div>
   );

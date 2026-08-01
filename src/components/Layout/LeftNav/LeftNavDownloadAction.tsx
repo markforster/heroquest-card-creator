@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
 import { MonitorDown } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/page.module.css";
 import { useDownloadCtaGlow } from "@/components/Layout/LeftNav/useDownloadCtaGlow";

@@ -70,9 +70,9 @@ describe("AppearanceSettingsPanel", () => {
 
     fireEvent.click(fixedWidthToggles[0]);
 
-    expect(window.localStorage.getItem(TYPOGRAPHY_NUMERIC_STORAGE_KEYS.titleFixedWidthNumerals)).toBe(
-      "0",
-    );
+    expect(
+      window.localStorage.getItem(TYPOGRAPHY_NUMERIC_STORAGE_KEYS.titleFixedWidthNumerals),
+    ).toBe("0");
     expect(fixedWidthToggles[0]).not.toBeChecked();
   });
 });

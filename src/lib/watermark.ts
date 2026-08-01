@@ -1,6 +1,11 @@
 "use client";
 
-import { CARD_CLIP_INSET, CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "@/components/Cards/CardPreview/consts";
+import {
+  CARD_CLIP_INSET,
+  CARD_CORNER_RADIUS,
+  CARD_HEIGHT,
+  CARD_WIDTH,
+} from "@/components/Cards/CardPreview/consts";
 import { cardTemplatesById } from "@/data/card-templates";
 import type { TemplateId } from "@/types/templates";
 
@@ -24,11 +29,7 @@ export function shouldApplyWatermark(templateId?: TemplateId): boolean {
   return Boolean(cardTemplatesById[templateId]);
 }
 
-export function resolveWatermarkColor(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-): string {
+export function resolveWatermarkColor(ctx: CanvasRenderingContext2D, x: number, y: number): string {
   const { width, height } = ctx.canvas;
   const startX = Math.max(0, x - 1);
   const startY = Math.max(0, y - 1);

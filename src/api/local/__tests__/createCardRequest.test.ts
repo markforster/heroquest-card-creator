@@ -1,6 +1,6 @@
 const createCard = jest.fn();
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   createCard: (...args: unknown[]) => createCard(...args),
 }));
 
@@ -24,19 +24,24 @@ describe("createCardRequestPlugin", () => {
       title: "Hero",
     });
 
-    const resolved = await createCardRequestPlugin.request?.(
-      [],
-      {
-        data: {
-          templateId: "hero",
-          status: "saved",
-          name: "Hero",
-          duplicateFromCardId: "source-card",
-        },
-      } as never,
-    );
-    const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
-    const response = await adapter?.();
+    const request = createCardRequestPlugin.request;
+    if (!request) {
+      throw new Error("Expected createCardRequestPlugin.request");
+    }
+
+    const resolved = await request([], {
+      data: {
+        templateId: "hero",
+        status: "saved",
+        name: "Hero",
+        duplicateFromCardId: "source-card",
+      },
+    } as never);
+    if (typeof resolved.adapter !== "function") {
+      throw new Error("Expected createCardRequestPlugin to provide an adapter");
+    }
+
+    const response = await resolved.adapter({} as never);
 
     expect(response?.status).toBe(200);
     expect(response?.data).toEqual(

@@ -4,6 +4,7 @@ import {
   DEFAULT_PDF_PRINT_CONFIG,
   EXPORT_SETTINGS_STORAGE_KEYS,
   getExportSettings,
+  restoreExportSettingKeys,
   setExportSettings,
 } from "@/lib/export-settings";
 
@@ -19,7 +20,7 @@ describe("export-settings pdf defaults", () => {
     expect(settings.roundedCorners).toBe(DEFAULT_EXPORT_ROUNDED_CORNERS);
   });
 
-  it("persists and restores pdf settings", () => {
+  it("persists supported pdf settings and normalizes edge-to-edge spacing", () => {
     const next = {
       ...getExportSettings(),
       pdf: {
@@ -36,7 +37,11 @@ describe("export-settings pdf defaults", () => {
     setExportSettings(next);
 
     const loaded = getExportSettings();
-    expect(loaded.pdf).toEqual(next.pdf);
+    expect(loaded.pdf).toEqual({
+      ...next.pdf,
+      marginsMm: { top: 0, right: 0, bottom: 0, left: 0 },
+      gapMm: { x: 0, y: 0 },
+    });
     expect(window.localStorage.getItem(EXPORT_SETTINGS_STORAGE_KEYS.pdfPaper)).toBe("Letter");
     expect(window.localStorage.getItem(EXPORT_SETTINGS_STORAGE_KEYS.pdfMode)).toBe("frontsOnly");
   });
@@ -86,9 +91,7 @@ describe("export-settings pdf defaults", () => {
 
     setExportSettings(next);
 
-    expect(window.localStorage.getItem(EXPORT_SETTINGS_STORAGE_KEYS.cutMarksStyle)).toBe(
-      "dotted",
-    );
+    expect(window.localStorage.getItem(EXPORT_SETTINGS_STORAGE_KEYS.cutMarksStyle)).toBe("dotted");
     expect(getExportSettings().cutMarks.style).toBe("dotted");
   });
 
@@ -96,6 +99,30 @@ describe("export-settings pdf defaults", () => {
     window.localStorage.setItem(EXPORT_SETTINGS_STORAGE_KEYS.cutMarksStyle, "solid");
 
     expect(getExportSettings().cutMarks.style).toBe("dashed");
+  });
+
+  it("restores only string setting values", () => {
+    restoreExportSettingKeys({
+      [EXPORT_SETTINGS_STORAGE_KEYS.pdfPaper]: "Letter",
+      [EXPORT_SETTINGS_STORAGE_KEYS.pdfMode]: null,
+      [EXPORT_SETTINGS_STORAGE_KEYS.bleedPx]: undefined,
+    });
+
+    expect(window.localStorage.getItem(EXPORT_SETTINGS_STORAGE_KEYS.pdfPaper)).toBe("Letter");
+    expect(window.localStorage.getItem(EXPORT_SETTINGS_STORAGE_KEYS.pdfMode)).toBeNull();
+    expect(window.localStorage.getItem(EXPORT_SETTINGS_STORAGE_KEYS.bleedPx)).toBeNull();
+  });
+
+  it("ignores storage failures while restoring settings", () => {
+    const setItem = jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+
+    expect(() =>
+      restoreExportSettingKeys({ [EXPORT_SETTINGS_STORAGE_KEYS.pdfPaper]: "A4" }),
+    ).not.toThrow();
+
+    setItem.mockRestore();
   });
 
   it("persists and restores long-dashed cut mark style", () => {

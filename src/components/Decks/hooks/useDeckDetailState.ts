@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { DeckGroupRecord, DeckSetRecord } from "@/api/decks";
 
 export function useDeckDetailState(_deckId: string | null) {
+  void _deckId;
   const [isDeleteDeckOpen, setIsDeleteDeckOpen] = useState(false);
   const [isDeleteSetOpen, setIsDeleteSetOpen] = useState(false);
   const [isDeleteGroupOpen, setIsDeleteGroupOpen] = useState(false);

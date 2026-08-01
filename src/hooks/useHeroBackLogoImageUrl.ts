@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { getHeroBackLogoObjectUrl } from "@/lib/hero-back-logos-db";
+import { getHeroBackLogoObjectUrl } from "@/api/heroBackLogos/client";
 
 export type HeroBackLogoImageStatus = "idle" | "loading" | "ready" | "missing";
 
@@ -22,9 +22,7 @@ async function loadObjectUrlImageDimensions(
   return { width: img.naturalWidth, height: img.naturalHeight };
 }
 
-export function useHeroBackLogoImageUrl(
-  logoId?: string,
-): {
+export function useHeroBackLogoImageUrl(logoId?: string): {
   url: string | null;
   status: HeroBackLogoImageStatus;
   width: number | null;

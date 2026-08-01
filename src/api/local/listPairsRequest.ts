@@ -1,8 +1,11 @@
-import { listAllPairs, listPairsForFace } from "@/lib/pairs-service";
+import { listAllPairs, listPairsForFace } from "@/lib/data/pairs-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local list-pairs endpoint, optionally narrowing results to a single face id.
+ */
 export const listPairsRequestPlugin: ZodiosPlugin = {
   name: "local-list-pairs",
   request: async (apiDefinitions, config) => {

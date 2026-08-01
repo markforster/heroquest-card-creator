@@ -1,10 +1,9 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-import AssetsRoutePanels from "@/components/Assets/AssetsRoutePanels";
-import { I18nProvider } from "@/i18n/I18nProvider";
-
 import type { AssetRecord } from "@/api/assets";
 import type { CardRecord } from "@/api/cards";
+import AssetsRoutePanels from "@/components/Assets/AssetsRoutePanels";
+import { I18nProvider } from "@/i18n/I18nProvider";
 
 const mockNavigate = jest.fn();
 const mockSaveCurrentCard = jest.fn();
@@ -12,6 +11,8 @@ const mockRequestRecenter = jest.fn();
 const mockUseFormState = jest.fn();
 const mockListCards = jest.fn();
 const mockGetCard = jest.fn();
+const mockRunWithUnsavedChangesGuard = jest.fn();
+const mockBypassNextNavigation = jest.fn();
 
 const selectedAsset: AssetRecord = {
   id: "asset-1",
@@ -50,16 +51,25 @@ jest.mock("react-hook-form", () => ({
   useFormState: () => mockUseFormState(),
 }));
 
-jest.mock("@/components/Assets/AssetsMainPanel", () => ({
-  __esModule: true,
-  default: ({ onSelectionChange }: { onSelectionChange?: (assets: AssetRecord[]) => void }) => {
-    const { useEffect } = require("react");
+jest.mock("@/components/Assets/AssetsMainPanel", () => {
+  const { useEffect } = jest.requireActual<typeof import("react")>("react");
+
+  function MockAssetsMainPanel({
+    onSelectionChange,
+  }: {
+    onSelectionChange?: (assets: AssetRecord[]) => void;
+  }) {
     useEffect(() => {
       onSelectionChange?.([selectedAsset]);
     }, [onSelectionChange]);
     return <div>Assets Main Panel</div>;
-  },
-}));
+  }
+
+  return {
+    __esModule: true,
+    default: MockAssetsMainPanel,
+  };
+});
 
 jest.mock("@/components/common/ModalShell", () => ({
   __esModule: true,
@@ -71,7 +81,13 @@ jest.mock("@/components/common/ModalShell", () => ({
     isOpen: boolean;
     children: React.ReactNode;
     footer?: React.ReactNode;
-  }) => (isOpen ? <div>{children}{footer}</div> : null),
+  }) =>
+    isOpen ? (
+      <div>
+        {children}
+        {footer}
+      </div>
+    ) : null,
 }));
 
 jest.mock("@/components/Modals/ConfirmModal", () => ({
@@ -117,6 +133,13 @@ jest.mock("@/components/Providers/AssetKindBackfillProvider", () => ({
     enqueueAsset: jest.fn(),
     cancelAsset: jest.fn(),
     setIsActive: jest.fn(),
+  }),
+}));
+
+jest.mock("@/components/App/UnsavedChangesGuardContext", () => ({
+  useUnsavedChangesGuardControls: () => ({
+    bypassNextNavigation: mockBypassNextNavigation,
+    runWithUnsavedChangesGuard: (...args: unknown[]) => mockRunWithUnsavedChangesGuard(...args),
   }),
 }));
 
@@ -176,6 +199,9 @@ describe("AssetsRoutePanels usage popover (UI)", () => {
     mockGetCard.mockResolvedValue(null);
     mockNavigate.mockReset();
     mockRequestRecenter.mockReset();
+    mockRunWithUnsavedChangesGuard.mockReset();
+    mockBypassNextNavigation.mockReset();
+    mockRunWithUnsavedChangesGuard.mockReturnValue(false);
     jest.useFakeTimers();
     Object.defineProperty(window, "matchMedia", {
       writable: true,
@@ -202,7 +228,9 @@ describe("AssetsRoutePanels usage popover (UI)", () => {
 
     await screen.findByText("Used on cards");
     await waitFor(() => {
-      expect(screen.getByText((content) => content.replace(/\s+/g, " ").trim() === "0 Cards")).toBeInTheDocument();
+      expect(
+        screen.getByText((content) => content.replace(/\s+/g, " ").trim() === "0 Cards"),
+      ).toBeInTheDocument();
     });
 
     expect(screen.queryByRole("button", { name: "0 Cards" })).not.toBeInTheDocument();
@@ -301,12 +329,15 @@ describe("AssetsRoutePanels usage popover (UI)", () => {
     const linkedCardButton = await screen.findByRole("button", { name: "Chaos Warrior" });
     fireEvent.click(linkedCardButton);
 
-    expect(await screen.findByText("Save before viewing?")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(mockRunWithUnsavedChangesGuard).toHaveBeenCalledTimes(1);
+    });
+    const guardedAction = mockRunWithUnsavedChangesGuard.mock.calls[0]?.[0] as
+      | (() => Promise<void>)
+      | undefined;
+    await guardedAction?.();
 
     await waitFor(() => {
-      expect(mockSaveCurrentCard).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith("/cards/card-9");
     });
   });

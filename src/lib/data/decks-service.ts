@@ -1,0 +1,35 @@
+"use client";
+
+export {
+  getDeck,
+  getDeckUsageForBackFaceIds,
+  getDeckUsageForPair,
+  getGroup,
+  getSet,
+  listCardDeckMembership,
+  listDecks,
+  listEntriesForSet,
+  listGroups,
+  listSets,
+  validatePairEntry,
+} from "@/lib/data/decks-queries";
+export {
+  addFrontsToSet,
+  cascadeDeleteDeckDataForBackFaceIds,
+  createDeck,
+  createGroup,
+  createSet,
+  deleteDeck,
+  deleteGroup,
+  deleteSet,
+  duplicateDeck,
+  rebuildSetBack,
+  removeEntries,
+  reorderEntries,
+  reorderGroups,
+  reorderSets,
+  updateDeck,
+  updateEntryCount,
+  updateGroup,
+  updateSet,
+} from "@/lib/data/decks-mutations";

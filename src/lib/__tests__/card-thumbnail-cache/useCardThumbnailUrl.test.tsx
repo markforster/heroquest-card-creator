@@ -18,10 +18,7 @@ jest.mock("@/api/client", () => ({
 function churnCache(iterations: number) {
   let index = MAX_ENTRIES + 2;
   for (let count = 0; count < iterations; count += 1) {
-    getCachedCardThumbnailUrl(
-      `card-${index}`,
-      new Blob([String(index)], { type: "image/png" }),
-    );
+    getCachedCardThumbnailUrl(`card-${index}`, new Blob([String(index)], { type: "image/png" }));
     index += 1;
   }
 }
@@ -66,7 +63,9 @@ describe("useCardThumbnailUrl", () => {
   });
 
   it("retains a cache-backed card thumbnail while mounted and releases it on unmount", async () => {
-    (apiClient.getCardThumbnail as jest.Mock).mockResolvedValue(new Blob(["a"], { type: "image/png" }));
+    (apiClient.getCardThumbnail as jest.Mock).mockResolvedValue(
+      new Blob(["a"], { type: "image/png" }),
+    );
 
     const { result, unmount } = renderHook(() =>
       useCardThumbnailUrl("card-1", null, { enabled: true, useCache: true }),
@@ -78,10 +77,7 @@ describe("useCardThumbnailUrl", () => {
     const retainedUrl = result.current;
 
     for (let index = 2; index <= MAX_ENTRIES + 1; index += 1) {
-      getCachedCardThumbnailUrl(
-        `card-${index}`,
-        new Blob([String(index)], { type: "image/png" }),
-      );
+      getCachedCardThumbnailUrl(`card-${index}`, new Blob([String(index)], { type: "image/png" }));
     }
 
     expect(getCachedCardThumbnailUrl("card-1")).toBe("blob:thumb-1");
@@ -117,10 +113,7 @@ describe("useCardThumbnailUrl", () => {
     });
 
     for (let index = 3; index <= MAX_ENTRIES + 2; index += 1) {
-      getCachedCardThumbnailUrl(
-        `card-${index}`,
-        new Blob([String(index)], { type: "image/png" }),
-      );
+      getCachedCardThumbnailUrl(`card-${index}`, new Blob([String(index)], { type: "image/png" }));
     }
 
     expect(getCachedCardThumbnailUrl("card-1")).toBeNull();
@@ -139,10 +132,7 @@ describe("useCardThumbnailUrl", () => {
     });
 
     for (let index = 2; index <= MAX_ENTRIES + 1; index += 1) {
-      getCachedCardThumbnailUrl(
-        `card-${index}`,
-        new Blob([String(index)], { type: "image/png" }),
-      );
+      getCachedCardThumbnailUrl(`card-${index}`, new Blob([String(index)], { type: "image/png" }));
     }
 
     expect(getCachedCardThumbnailUrl("card-1")).toBeNull();
@@ -151,7 +141,9 @@ describe("useCardThumbnailUrl", () => {
   });
 
   it("releases retained ownership when disabled", async () => {
-    (apiClient.getCardThumbnail as jest.Mock).mockResolvedValue(new Blob(["a"], { type: "image/png" }));
+    (apiClient.getCardThumbnail as jest.Mock).mockResolvedValue(
+      new Blob(["a"], { type: "image/png" }),
+    );
 
     const { result, rerender } = renderHook(
       ({ enabled }: { enabled: boolean }) =>
@@ -178,7 +170,9 @@ describe("useCardThumbnailUrl", () => {
   });
 
   it("releases retained ownership when the card id becomes null", async () => {
-    (apiClient.getCardThumbnail as jest.Mock).mockResolvedValue(new Blob(["a"], { type: "image/png" }));
+    (apiClient.getCardThumbnail as jest.Mock).mockResolvedValue(
+      new Blob(["a"], { type: "image/png" }),
+    );
     const initialProps: { cardId: string | null } = { cardId: "card-1" };
 
     const { result, rerender } = renderHook(
@@ -229,7 +223,9 @@ describe("useCardThumbnailUrl", () => {
   });
 
   it("does not refetch when a different card id is invalidated", async () => {
-    (apiClient.getCardThumbnail as jest.Mock).mockResolvedValue(new Blob(["a"], { type: "image/png" }));
+    (apiClient.getCardThumbnail as jest.Mock).mockResolvedValue(
+      new Blob(["a"], { type: "image/png" }),
+    );
 
     const { result } = renderHook(() =>
       useCardThumbnailUrl("card-1", null, { enabled: true, useCache: true }),

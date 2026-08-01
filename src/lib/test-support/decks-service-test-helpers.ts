@@ -2,12 +2,7 @@ import Dexie from "dexie";
 import { IDBFactory, IDBKeyRange } from "fake-indexeddb";
 
 import type { CardRecord } from "@/types/cards-db";
-import type {
-  DeckEntryRecord,
-  DeckGroupRecord,
-  DeckRecord,
-  DeckSetRecord,
-} from "@/types/decks-db";
+import type { DeckEntryRecord, DeckGroupRecord, DeckRecord, DeckSetRecord } from "@/types/decks-db";
 import type { PairRecord } from "@/types/pairs-db";
 
 const originalIndexedDbDescriptor = Object.getOwnPropertyDescriptor(window, "indexedDB");
@@ -102,9 +97,7 @@ export function createDeckRecord(overrides: Partial<DeckRecord> = {}): DeckRecor
   };
 }
 
-export function createDeckGroupRecord(
-  overrides: Partial<DeckGroupRecord> = {},
-): DeckGroupRecord {
+export function createDeckGroupRecord(overrides: Partial<DeckGroupRecord> = {}): DeckGroupRecord {
   return {
     id: "group-1",
     deckId: "deck-1",
@@ -133,9 +126,7 @@ export function createDeckSetRecord(overrides: Partial<DeckSetRecord> = {}): Dec
   };
 }
 
-export function createDeckEntryRecord(
-  overrides: Partial<DeckEntryRecord> = {},
-): DeckEntryRecord {
+export function createDeckEntryRecord(overrides: Partial<DeckEntryRecord> = {}): DeckEntryRecord {
   return {
     id: "entry-1",
     deckId: "deck-1",

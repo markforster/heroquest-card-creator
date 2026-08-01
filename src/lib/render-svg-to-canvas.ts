@@ -8,9 +8,9 @@ import {
   guessOriginalFileName,
   readBlobAsDataUrl,
 } from "@/lib/card-preview";
+import { getHeroBackLogoBlob } from "@/lib/data/hero-back-logos-db";
 import { getSvgImageHref, insertSvgStyle, setSvgImageHref } from "@/lib/dom";
 import { logAssetInlineById } from "@/lib/export-logging";
-import { getHeroBackLogoBlob } from "@/lib/hero-back-logos-db";
 import type { RenderSvgToCanvasOptions } from "@/lib/render-svg-to-canvas.types";
 import { now } from "@/lib/time";
 

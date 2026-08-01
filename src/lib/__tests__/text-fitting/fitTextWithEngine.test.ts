@@ -25,7 +25,10 @@ describe("fitTextWithEngine stat heading hyphen support", () => {
   });
 
   it("falls back deterministically for long single-token headings with no breakpoints", () => {
-    const result = fitTextWithEngine("statHeading", "Verteidigungswürfel", { width: 110, height: 120 });
+    const result = fitTextWithEngine("statHeading", "Verteidigungswürfel", {
+      width: 110,
+      height: 120,
+    });
 
     expect(result.layout.strategyUsed).toBe("hyphenate");
     expect(result.layout.lines.length).toBeGreaterThan(1);

@@ -15,8 +15,8 @@ jest.mock("@/components/Decks/CardFan", () => ({
   },
 }));
 
-import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
+import DeckFanByDeckId from "@/components/Decks/DeckFanByDeckId";
 
 describe("DeckFanByDeckId", () => {
   beforeEach(() => {

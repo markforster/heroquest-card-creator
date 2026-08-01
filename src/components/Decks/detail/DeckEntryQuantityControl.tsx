@@ -36,11 +36,7 @@ export default function DeckEntryQuantityControl({
       >
         -
       </button>
-      <div
-        className={styles.deckEntryCountValue}
-        aria-label={quantityLabel}
-        title={quantityLabel}
-      >
+      <div className={styles.deckEntryCountValue} aria-label={quantityLabel} title={quantityLabel}>
         {count}
       </div>
       <button

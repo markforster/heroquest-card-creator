@@ -1,11 +1,11 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
-
-import PdfExportShellModal from "@/components/Export/PdfExportShellModal";
 
 import type { ExportOptionsFormState } from "@/components/Export/ExportOptionsForm";
+import PdfExportShellModal from "@/components/Export/PdfExportShellModal";
 import type { PdfExportAlignmentRun, PdfExportRun } from "@/components/Export/PdfExportShellModal";
 import type { PrintConfig, SlotPair } from "@/lib/pdf-export";
+
+import type { ReactNode } from "react";
 
 const mockGetCard = jest.fn();
 const mockComputeLayoutPlan = jest.fn();
@@ -63,7 +63,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) =>
       (
-        {
+        ({
           "status.exportingImages": "Exporting images",
           "status.finalizing": "Finalizing",
           "alert.exportImagesFailed": "Export failed",
@@ -98,7 +98,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "label.cutMarkStyleTicks": "Ticks",
           "decks.pdf.errors.layoutCapacity": "Layout capacity error",
           "decks.pdf.errors.noSheets": "No sheets",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));
@@ -189,7 +189,9 @@ jest.mock("@/components/Export/PdfExportConfigForm", () => ({
   }) => (
     <div data-testid="pdf-config-form">
       <div data-testid="pdf-config-hidden-mode">{String(Boolean(hiddenFields?.mode))}</div>
-      <div data-testid="pdf-config-hidden-duplex">{String(Boolean(hiddenFields?.duplexPreset))}</div>
+      <div data-testid="pdf-config-hidden-duplex">
+        {String(Boolean(hiddenFields?.duplexPreset))}
+      </div>
       <button
         type="button"
         onClick={() =>
@@ -209,11 +211,7 @@ jest.mock("@/components/Export/PdfExportConfigForm", () => ({
 
 jest.mock("@/components/Export/ExportOptionsForm", () => ({
   __esModule: true,
-  default: ({
-    onChange,
-  }: {
-    onChange: (next: Partial<ExportOptionsFormState>) => void;
-  }) => (
+  default: ({ onChange }: { onChange: (next: Partial<ExportOptionsFormState>) => void }) => (
     <div data-testid="bleed-options-form">
       <button
         type="button"
@@ -258,11 +256,16 @@ jest.mock("@/components/Export/PdfExportProgressModal", () => ({
     ) : null,
 }));
 
+jest.mock("@/components/Export/pdfExportFaceRendering", () => ({
+  renderPdfCardFacePngBytes: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
+  renderPdfPlaceholderFacePngBytes: jest.fn().mockResolvedValue(new Uint8Array([4, 5, 6])),
+}));
+
 jest.mock("@/components/Cards/CardPreview", () => {
-  const React = require("react");
+  const React = jest.requireActual<typeof import("react")>("react");
   return {
     __esModule: true,
-    default: React.forwardRef((_props: unknown, ref: React.Ref<unknown>) => {
+    default: React.forwardRef(function MockCardPreview(_props: unknown, ref: React.Ref<unknown>) {
       React.useImperativeHandle(ref, () => ({
         waitForBackgroundLoaded: jest.fn().mockResolvedValue(undefined),
         syncCopyrightContrast: jest.fn().mockResolvedValue(undefined),
@@ -342,18 +345,6 @@ jest.mock("@/lib/pdf-export", () => ({
   composePrintComposition: (...args: unknown[]) => mockComposePrintComposition(...args),
   renderPdf: (...args: unknown[]) => mockRenderPdf(...args),
 }));
-
-const config: PrintConfig = {
-  paper: "Letter",
-  orientation: "portrait",
-  marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
-  gapMm: { x: 0.5, y: 0.5 },
-  cardMm: { width: 63.5, height: 88.9 },
-  mode: "frontsOnly",
-  bleedMode: "bakedInImage",
-  bleedMm: 3,
-  duplexPreset: "normal",
-};
 
 const slotPairs: SlotPair[] = [{ slotId: "slot-1", frontId: "front-1", backId: null }];
 
@@ -498,10 +489,7 @@ describe("PdfExportShellModal", () => {
         buildExportRun={jest.fn()}
         buildAlignmentExportRun={jest.fn()}
         summaryContent={{
-          columns: [
-            [{ text: "Primary line" }],
-            [{ text: "Secondary line", tone: "muted" }],
-          ],
+          columns: [[{ text: "Primary line" }], [{ text: "Secondary line", tone: "muted" }]],
           notice: { text: "Nothing available", tone: "blocked" },
         }}
         topContent={(state) => <div>Mode: {state.effectiveConfig.mode}</div>}
@@ -663,7 +651,11 @@ describe("PdfExportShellModal", () => {
 
   it("renders normal export faces inside the shell for real cards and placeholders", async () => {
     mockRenderPdf.mockImplementation(
-      async ({ renderFacePngBytes }: { renderFacePngBytes: (faceId: string) => Promise<Uint8Array | null> }) => {
+      async ({
+        renderFacePngBytes,
+      }: {
+        renderFacePngBytes: (faceId: string) => Promise<Uint8Array | null>;
+      }) => {
         await renderFacePngBytes("front-1");
         await renderFacePngBytes("placeholder-1");
         await renderFacePngBytes("missing-placeholder");
@@ -701,7 +693,9 @@ describe("PdfExportShellModal", () => {
     await waitFor(() => {
       expect(mockGetCard).toHaveBeenCalledWith({ params: { id: "front-1" } });
     });
-    expect(mockGetCard).toHaveBeenCalledWith({ params: { id: "missing-placeholder" } });
+    await waitFor(() => {
+      expect(mockGetCard).toHaveBeenCalledWith({ params: { id: "missing-placeholder" } });
+    });
   });
 
   it("applies forced mode and duplex values over export settings defaults", async () => {
@@ -879,7 +873,13 @@ describe("PdfExportShellModal", () => {
   it("shows progress and supports cancel during export", async () => {
     let resolveRender: ((value: { status: "cancelled" }) => void) | null = null;
     mockRenderPdf.mockImplementation(
-      ({ shouldCancel, onProgress }: { shouldCancel: () => boolean; onProgress?: (progress: { completedFaces: number; totalFaces: number }) => void }) =>
+      ({
+        shouldCancel,
+        onProgress,
+      }: {
+        shouldCancel: () => boolean;
+        onProgress?: (progress: { completedFaces: number; totalFaces: number }) => void;
+      }) =>
         new Promise((resolve) => {
           onProgress?.({ completedFaces: 1, totalFaces: 1 });
           resolveRender = () => resolve({ status: shouldCancel() ? "cancelled" : "cancelled" });

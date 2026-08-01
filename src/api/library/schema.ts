@@ -2,6 +2,10 @@ import { z } from "zod";
 
 import { blobSchema } from "@/api/shared";
 
+export const libraryExportQuerySchema = z.object({
+  format: z.enum(["legacy-zip-json", "compact-zip-v1"]).optional(),
+});
+
 export const libraryImportInputSchema = z.object({
   file: blobSchema,
   fileName: z.string(),

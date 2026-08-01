@@ -1,8 +1,9 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import styles from "@/app/page.module.css";
-import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
 import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
+import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
 const mockTrack = jest.fn();
@@ -40,6 +41,11 @@ jest.mock("@/components/Export/hooks/useBulkCardExport", () => ({
   }),
 }));
 
+jest.mock("@/components/Export/PdfExportShellModal", () => ({
+  __esModule: true,
+  default: () => null,
+}));
+
 jest.mock("@/components/Modals/ConfirmModal", () => ({
   __esModule: true,
   default: () => null,
@@ -63,11 +69,21 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
   }),
 }));
 
+jest.mock("@/components/Providers/CopyrightSettingsContext", () => ({
+  __esModule: true,
+  useCopyrightSettings: () => ({ getTemplateDefault: () => false }),
+}));
+
 jest.mock("@/components/Providers/EditorFormContext", () => ({
   __esModule: true,
   useEditorForm: () => ({
     resetWithSaved: mockResetWithSaved,
   }),
+}));
+
+jest.mock("@/components/Providers/FooterTipContext", () => ({
+  __esModule: true,
+  useFooterTip: () => ({ setTip: jest.fn(), clearTip: jest.fn() }),
 }));
 
 jest.mock("@/components/Providers/MissingAssetsContext", () => ({
@@ -154,12 +170,17 @@ jest.mock("react-router-dom", () => ({
 }));
 
 function renderPanel() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <LocalStorageProvider>
-      <I18nProvider>
-        <StockpilePanelContent isOpen onClose={() => {}} frame="panel" />
-      </I18nProvider>
-    </LocalStorageProvider>,
+    <QueryClientProvider client={queryClient}>
+      <LocalStorageProvider>
+        <I18nProvider>
+          <StockpilePanelContent isOpen onClose={() => {}} frame="panel" />
+        </I18nProvider>
+      </LocalStorageProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -242,9 +263,9 @@ describe("StockpilePanelContent filters panel collapse (UI)", () => {
     });
 
     expect(window.localStorage.getItem("hqcc.stockpile.filtersPanelOpen")).toBe("0");
-    expect(
-      container.querySelector(`.${styles.stockpileRightPanel}`)?.className,
-    ).toContain(styles.stockpileRightPanelCollapsed);
+    expect(container.querySelector(`.${styles.stockpileRightPanel}`)?.className).toContain(
+      styles.stockpileRightPanelCollapsed,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Expand collections panel" }));
 
@@ -255,8 +276,8 @@ describe("StockpilePanelContent filters panel collapse (UI)", () => {
     });
 
     expect(window.localStorage.getItem("hqcc.stockpile.filtersPanelOpen")).toBe("1");
-    expect(
-      container.querySelector(`.${styles.stockpileRightPanel}`)?.className,
-    ).not.toContain(styles.stockpileRightPanelCollapsed);
+    expect(container.querySelector(`.${styles.stockpileRightPanel}`)?.className).not.toContain(
+      styles.stockpileRightPanelCollapsed,
+    );
   });
 });

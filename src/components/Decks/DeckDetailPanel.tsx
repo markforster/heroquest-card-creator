@@ -4,6 +4,8 @@ import { useMemo } from "react";
 
 import styles from "@/app/page.module.css";
 import type { RouteShortcutHandlers } from "@/components/App/RouteShellCapabilitiesContext";
+import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
+import { orderDeckPreviewCandidateIds } from "@/components/Decks/deck-preview";
 import { DeckDetailSelectionProvider } from "@/components/Decks/detail/context/DeckDetailSelectionContext";
 import {
   DeckRightPanelProvider,
@@ -13,8 +15,6 @@ import { DeckSetEntriesProvider } from "@/components/Decks/detail/context/DeckSe
 import DeckBacksPanel from "@/components/Decks/detail/DeckBacksPanel";
 import DeckDetailHeader from "@/components/Decks/detail/DeckDetailHeader";
 import DeckDetailModals from "@/components/Decks/detail/DeckDetailModals";
-import { DEFAULT_DECK_FAN_PREVIEW_COUNT } from "@/components/Decks/deck-fan.constants";
-import { orderDeckPreviewCandidateIds } from "@/components/Decks/deck-preview";
 import type { DeckDetailSelectionModel } from "@/components/Decks/hooks/useDeckDetailSelectionModel";
 import { useDeckHeaderModel } from "@/components/Decks/hooks/useDeckHeaderModel";
 import type { DeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
@@ -25,6 +25,7 @@ import type {
   DeckDetailModalActions,
   DeckDetailModalState,
 } from "@/components/Decks/types/deck-detail";
+
 import DeckGroupsBoardController, {
   DeckEntriesBoardController,
   DeckMockDndProvider,
@@ -91,7 +92,6 @@ function DeckDetailPanelContent({
   keySetId,
   actions,
   drag,
-  dndProps,
   modalState,
   modalActions,
   selectionModel,
@@ -133,7 +133,9 @@ function DeckDetailPanelContent({
     entries: entriesModel,
   });
   const deckPreviewCardIds = useMemo(() => {
-    const orderedGroups = [...selectionModel.orderedGroups].sort((a, b) => a.sortIndex - b.sortIndex);
+    const orderedGroups = [...selectionModel.orderedGroups].sort(
+      (a, b) => a.sortIndex - b.sortIndex,
+    );
     const setsByGroup = new Map<string, typeof selectionModel.sets>();
     selectionModel.sets.forEach((set) => {
       const list = setsByGroup.get(set.groupId) ?? [];
@@ -141,7 +143,10 @@ function DeckDetailPanelContent({
       setsByGroup.set(set.groupId, list);
     });
     setsByGroup.forEach((list, groupId) => {
-      setsByGroup.set(groupId, [...list].sort((a, b) => a.sortIndex - b.sortIndex));
+      setsByGroup.set(
+        groupId,
+        [...list].sort((a, b) => a.sortIndex - b.sortIndex),
+      );
     });
     const orderedSets = orderedGroups.flatMap((group) => setsByGroup.get(group.id) ?? []);
 
@@ -193,7 +198,9 @@ function DeckDetailPanelContent({
               </section>
               <aside
                 className={`${styles.rightPanel} ${styles.decksRightPanel} ${
-                  isRightPanelVisible ? styles.decksRightPanelExpanded : styles.decksRightPanelCollapsed
+                  isRightPanelVisible
+                    ? styles.decksRightPanelExpanded
+                    : styles.decksRightPanelCollapsed
                 }`}
               >
                 <DeckBacksPanel

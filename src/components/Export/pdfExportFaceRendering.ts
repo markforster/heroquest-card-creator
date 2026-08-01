@@ -10,10 +10,7 @@ import { cardRecordToCardData } from "@/lib/card-record-mapper";
 import { buildAssetCache, buildHeroBackLogoCache } from "@/lib/export-assets-cache";
 import type { PrintConfig } from "@/lib/pdf-export";
 
-import type {
-  PdfExportPlaceholderSpec,
-  PdfExportShellState,
-} from "./PdfExportShellModal";
+import type { PdfExportPlaceholderSpec, PdfExportShellState } from "./PdfExportShellModal";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 
 type CardRecord = Awaited<ReturnType<typeof import("@/api/client").apiClient.getCard>>;
@@ -31,10 +28,7 @@ function applyBleedToCanvas(
   configForRun: PrintConfig,
   shellState: PdfExportShellState,
 ): HTMLCanvasElement {
-  if (
-    shellState.resolvedBleedOptions.bleedPx <= 0 ||
-    configForRun.bleedMode !== "bakedInImage"
-  ) {
+  if (shellState.resolvedBleedOptions.bleedPx <= 0 || configForRun.bleedMode !== "bakedInImage") {
     return base;
   }
 
@@ -119,7 +113,11 @@ export async function renderPdfCardFacePngBytes({
   const { cache } = await buildAssetCache(assetIds);
   const { cache: heroBackLogoCache } = await buildHeroBackLogoCache(heroBackLogoIds);
   if (assetIds.length > 0 || heroBackLogoIds.length > 0) {
-    await waitForAssetElements(() => previewRef.current?.getSvgElement(), assetIds, heroBackLogoIds);
+    await waitForAssetElements(
+      () => previewRef.current?.getSvgElement(),
+      assetIds,
+      heroBackLogoIds,
+    );
   }
 
   const blob = await previewRef.current?.renderToPngBlob({

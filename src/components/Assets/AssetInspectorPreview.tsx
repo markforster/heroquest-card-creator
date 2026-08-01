@@ -88,10 +88,7 @@ export default function AssetInspectorPreview({
     const start = idleStartRef.current ?? timestamp;
     const duration = idleDurationRef.current || 3000;
     const progress = Math.min(1, (timestamp - start) / duration);
-    const ease =
-      progress < 0.5
-        ? 2 * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+    const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
     const target = idleTargetRef.current ?? { x: 0, y: 0 };
     const from = idleFromRef.current ?? { x: 0, y: 0 };
     const nextX = from.x + (target.x - from.x) * ease;

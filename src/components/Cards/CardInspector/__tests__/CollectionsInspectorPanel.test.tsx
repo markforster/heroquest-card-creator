@@ -211,7 +211,9 @@ describe("CollectionsInspectorPanel", () => {
 
     expect(await screen.findByText("Bosses")).toBeInTheDocument();
     expect(screen.queryByText("Quest Set")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Remove from collection: Bosses" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Remove from collection: Bosses" }),
+    ).toBeInTheDocument();
     const addButton = screen.getByRole("button", { name: "Add to collection" });
     expect(addButton).toBeInTheDocument();
     expect(addButton).toHaveTextContent("");
@@ -387,7 +389,9 @@ describe("CollectionsInspectorPanel", () => {
     fireEvent.click(modalQueries.getByRole("button", { name: "Arcane" }));
     expect(modalQueries.getByText("Quest 1")).toBeInTheDocument();
 
-    fireEvent.click(modalQueries.getByRole("button", { name: "Add to collection: Quests/Arcane/Quest 1" }));
+    fireEvent.click(
+      modalQueries.getByRole("button", { name: "Add to collection: Quests/Arcane/Quest 1" }),
+    );
 
     expect(modalQueries.getByRole("button", { name: "Arcane" })).toBeInTheDocument();
     expect(modalQueries.getByText("Quest 1")).toBeInTheDocument();
@@ -408,25 +412,24 @@ describe("CollectionsInspectorPanel", () => {
         activeCardStatusByTemplate: { hero: "saved" },
       },
     });
-    mockListCollections
-      .mockResolvedValueOnce([
-        {
-          id: "col-1",
-          name: "Quest Set",
-          cardIds: [],
-          createdAt: 1,
-          updatedAt: 1,
-          schemaVersion: 1,
-        },
-        {
-          id: "col-2",
-          name: "Bosses",
-          cardIds: ["card-1"],
-          createdAt: 1,
-          updatedAt: 1,
-          schemaVersion: 1,
-        },
-      ]);
+    mockListCollections.mockResolvedValueOnce([
+      {
+        id: "col-1",
+        name: "Quest Set",
+        cardIds: [],
+        createdAt: 1,
+        updatedAt: 1,
+        schemaVersion: 1,
+      },
+      {
+        id: "col-2",
+        name: "Bosses",
+        cardIds: ["card-1"],
+        createdAt: 1,
+        updatedAt: 1,
+        schemaVersion: 1,
+      },
+    ]);
 
     const { container } = render(<CollectionsInspectorPanel />);
 

@@ -1,16 +1,15 @@
-import { createCard, getCard, getCardThumbnail } from "@/lib/cards-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import type { CollectionRecord } from "@/types/collections-db";
-
+import { createCard, getCard, getCardThumbnail } from "@/lib/data/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   deleteDb,
   installFakeIndexedDb,
   restoreIndexedDb,
 } from "@/lib/test-support/cards-db-test-helpers";
+import type { CollectionRecord } from "@/types/collections-db";
 
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
@@ -210,7 +209,9 @@ describe("createCard", () => {
     });
 
     const db = await openHqccDexieDb();
-    await expect(db.cardIconComponents.get(`${created.id}:hq.2021.icon.monster.primary`)).resolves.toEqual(
+    await expect(
+      db.cardIconComponents.get(`${created.id}:hq.2021.icon.monster.primary`),
+    ).resolves.toEqual(
       expect.objectContaining({
         assetId: "icon-1",
       }),

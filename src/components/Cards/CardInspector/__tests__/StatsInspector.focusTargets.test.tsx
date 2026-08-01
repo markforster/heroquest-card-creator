@@ -20,13 +20,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
   }),
 }));
 
-function FocusRequester({
-  targetId,
-  label,
-}: {
-  targetId: string;
-  label: string;
-}) {
+function FocusRequester({ targetId, label }: { targetId: string; label: string }) {
   const { requestFocusTarget } = useEditorTargets();
 
   return (
@@ -75,10 +69,7 @@ function MonsterHarness() {
     <EditorTargetsProvider>
       <FormProvider {...form}>
         <FocusRequester targetId={EDITOR_TARGET_IDS.statsMonster} label="monster-group" />
-        <FocusRequester
-          targetId={MONSTER_STAT_TARGET_IDS.movementSquares}
-          label="monster-move"
-        />
+        <FocusRequester targetId={MONSTER_STAT_TARGET_IDS.movementSquares} label="monster-move" />
         <FocusRequester targetId={MONSTER_STAT_TARGET_IDS.attackDice} label="monster-attack" />
         <FocusRequester targetId={MONSTER_STAT_TARGET_IDS.defendDice} label="monster-defend" />
         <FocusRequester targetId={MONSTER_STAT_TARGET_IDS.bodyPoints} label="monster-body" />

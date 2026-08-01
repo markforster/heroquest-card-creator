@@ -1,9 +1,12 @@
 import { setBorderSwatchesInputSchema } from "@/api/settings";
-import { setBorderSwatches } from "@/lib/settings-db";
+import { setBorderSwatches } from "@/lib/data/settings-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local set-border-swatches endpoint through the IndexedDB-backed service layer.
+ */
 export const setBorderSwatchesRequestPlugin: ZodiosPlugin = {
   name: "local-set-border-swatches",
   request: async (apiDefinitions, config) => {

@@ -2,7 +2,6 @@ import type { TemplateId } from "@/types/templates";
 
 import type { MouseEvent } from "react";
 
-
 export type StockpileCardThumb = {
   id: string;
   thumbnailBlob: Blob | null;

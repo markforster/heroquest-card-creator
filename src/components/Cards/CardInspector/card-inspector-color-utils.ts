@@ -11,10 +11,7 @@ export function normalizeHexValue(value: string | undefined): string | null {
   return formatHexColor(parsed, { alphaMode: "preserve", case: "upper" });
 }
 
-export function isTransparentColor(
-  value: string | undefined,
-  transparentValue: string,
-): boolean {
+export function isTransparentColor(value: string | undefined, transparentValue: string): boolean {
   if (!value) return false;
   if (value.trim().toLowerCase() === transparentValue.toLowerCase()) return true;
   return isTransparentHex(value);

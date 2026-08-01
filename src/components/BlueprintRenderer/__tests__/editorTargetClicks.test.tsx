@@ -149,13 +149,15 @@ describe("BlueprintRenderer SVG focus targets", () => {
         <BlueprintRenderer
           templateId="hero"
           templateName="Hero"
-          cardData={{
-            title: "Sir Ragnar",
-            description: "Body text",
-            imageAssetId: "art-1",
-            copyright: "Hero Copyright",
-            showCopyright: true,
-          } as never}
+          cardData={
+            {
+              title: "Sir Ragnar",
+              description: "Body text",
+              imageAssetId: "art-1",
+              copyright: "Hero Copyright",
+              showCopyright: true,
+            } as never
+          }
         />
       </svg>,
     );
@@ -193,11 +195,13 @@ describe("BlueprintRenderer SVG focus targets", () => {
         <BlueprintRenderer
           templateId="hero"
           templateName="Hero"
-          cardData={{
-            title: "",
-            description: "Body text",
-            imageAssetId: "art-1",
-          } as never}
+          cardData={
+            {
+              title: "",
+              description: "Body text",
+              imageAssetId: "art-1",
+            } as never
+          }
         />
       </svg>,
     );
@@ -223,13 +227,15 @@ describe("BlueprintRenderer SVG focus targets", () => {
         <BlueprintRenderer
           templateId="labelled-back"
           templateName="Labelled Back"
-          cardData={{
-            title: "",
-            description: "Back text",
-            imageAssetId: "art-5",
-            titlePlacement: "top",
-            showTitle: true,
-          } as never}
+          cardData={
+            {
+              title: "",
+              description: "Back text",
+              imageAssetId: "art-5",
+              titlePlacement: "top",
+              showTitle: true,
+            } as never
+          }
         />
       </svg>,
     );
@@ -245,20 +251,20 @@ describe("BlueprintRenderer SVG focus targets", () => {
         <BlueprintRenderer
           templateId="hero"
           templateName="Hero"
-          cardData={{
-            title: "",
-            description: "Body text",
-            imageAssetId: "art-1",
-            showTitle: false,
-          } as never}
+          cardData={
+            {
+              title: "",
+              description: "Body text",
+              imageAssetId: "art-1",
+              showTitle: false,
+            } as never
+          }
         />
       </svg>,
     );
 
     expect(container.querySelector(`[data-hqcc-edit="${EDITOR_TARGET_IDS.title}"]`)).toBeNull();
-    expect(
-      container.querySelector(`[data-hqcc-hit-area="${EDITOR_TARGET_IDS.title}"]`),
-    ).toBeNull();
+    expect(container.querySelector(`[data-hqcc-hit-area="${EDITOR_TARGET_IDS.title}"]`)).toBeNull();
   });
 
   it("requests focus for the Hero Back logo hit area", () => {
@@ -267,10 +273,12 @@ describe("BlueprintRenderer SVG focus targets", () => {
         <BlueprintRenderer
           templateId="hero-back"
           templateName="Hero Back"
-          cardData={{
-            description: "Body text",
-            showCopyright: false,
-          } as never}
+          cardData={
+            {
+              description: "Body text",
+              showCopyright: false,
+            } as never
+          }
         />
       </svg>,
     );
@@ -342,11 +350,13 @@ describe("BlueprintRenderer SVG focus targets", () => {
         <BlueprintRenderer
           templateId="logo-back"
           templateName="Logo Back"
-          cardData={{
-            heroBackLogoMode: "custom",
-            heroBackLogoId: "logo-1",
-            heroBackLogoName: "Custom Logo",
-          } as never}
+          cardData={
+            {
+              heroBackLogoMode: "custom",
+              heroBackLogoId: "logo-1",
+              heroBackLogoName: "Custom Logo",
+            } as never
+          }
         />
       </svg>,
     );
@@ -370,7 +380,7 @@ describe("BlueprintRenderer SVG focus targets", () => {
       </svg>,
     );
     expect(container.querySelector('image[data-template-asset="hero-back-logo"]')).toBeNull();
-    expect(container.querySelector('image[data-user-hero-back-logo-id]')).toBeNull();
+    expect(container.querySelector("image[data-user-hero-back-logo-id]")).toBeNull();
   });
 
   it("requests focus for individual hero stat cell targets and keeps panel fallback", () => {
@@ -379,12 +389,14 @@ describe("BlueprintRenderer SVG focus targets", () => {
         <BlueprintRenderer
           templateId="hero"
           templateName="Hero"
-          cardData={{
-            title: "Sir Ragnar",
-            description: "Body text",
-            imageAssetId: "art-1",
-            showCopyright: false,
-          } as never}
+          cardData={
+            {
+              title: "Sir Ragnar",
+              description: "Body text",
+              imageAssetId: "art-1",
+              showCopyright: false,
+            } as never
+          }
         />
       </svg>,
     );
@@ -418,21 +430,21 @@ describe("BlueprintRenderer SVG focus targets", () => {
         <BlueprintRenderer
           templateId="monster"
           templateName="Monster"
-          cardData={{
-            title: "Fimir",
-            description: "Rules text",
-            imageAssetId: "art-2",
-            iconAssetId: "icon-1",
-            copyright: "Monster Copyright",
-            showCopyright: true,
-          } as never}
+          cardData={
+            {
+              title: "Fimir",
+              description: "Rules text",
+              imageAssetId: "art-2",
+              iconAssetId: "icon-1",
+              copyright: "Monster Copyright",
+              showCopyright: true,
+            } as never
+          }
         />
       </svg>,
     );
 
-    const iconTarget = container.querySelector(
-      `[data-hqcc-edit="${EDITOR_TARGET_IDS.imageIcon}"]`,
-    );
+    const iconTarget = container.querySelector(`[data-hqcc-edit="${EDITOR_TARGET_IDS.imageIcon}"]`);
     const statsTarget = container.querySelector(
       `[data-hqcc-edit="${EDITOR_TARGET_IDS.statsMonster}"]`,
     );
@@ -451,22 +463,20 @@ describe("BlueprintRenderer SVG focus targets", () => {
         <BlueprintRenderer
           templateId="monster"
           templateName="Monster"
-          cardData={{
-            title: "Fimir",
-            description: "Rules text",
-            imageAssetId: "art-2",
-            showCopyright: false,
-          } as never}
+          cardData={
+            {
+              title: "Fimir",
+              description: "Rules text",
+              imageAssetId: "art-2",
+              showCopyright: false,
+            } as never
+          }
         />
       </svg>,
     );
 
-    expect(
-      container.querySelector(`[data-hqcc-edit="${EDITOR_TARGET_IDS.imageIcon}"]`),
-    ).toBeNull();
-    expect(
-      container.querySelector(`[data-hqcc-edit="${EDITOR_TARGET_IDS.copyright}"]`),
-    ).toBeNull();
+    expect(container.querySelector(`[data-hqcc-edit="${EDITOR_TARGET_IDS.imageIcon}"]`)).toBeNull();
+    expect(container.querySelector(`[data-hqcc-edit="${EDITOR_TARGET_IDS.copyright}"]`)).toBeNull();
   });
 
   it("requests focus for individual monster stat cell targets and keeps panel fallback", () => {
@@ -475,12 +485,14 @@ describe("BlueprintRenderer SVG focus targets", () => {
         <BlueprintRenderer
           templateId="monster"
           templateName="Monster"
-          cardData={{
-            title: "Fimir",
-            description: "Rules text",
-            imageAssetId: "art-2",
-            showCopyright: false,
-          } as never}
+          cardData={
+            {
+              title: "Fimir",
+              description: "Rules text",
+              imageAssetId: "art-2",
+              showCopyright: false,
+            } as never
+          }
         />
       </svg>,
     );
@@ -507,9 +519,7 @@ describe("BlueprintRenderer SVG focus targets", () => {
     expect(mockRequestFocusTarget).toHaveBeenCalledWith(
       EDITOR_TARGET_IDS.statsMonsterMovementSquares,
     );
-    expect(mockRequestFocusTarget).toHaveBeenCalledWith(
-      EDITOR_TARGET_IDS.statsMonsterBodyPoints,
-    );
+    expect(mockRequestFocusTarget).toHaveBeenCalledWith(EDITOR_TARGET_IDS.statsMonsterBodyPoints);
   });
 
   it("requests focus for labelled-back image and title hit areas in both placements", () => {
@@ -518,13 +528,15 @@ describe("BlueprintRenderer SVG focus targets", () => {
         <BlueprintRenderer
           templateId="labelled-back"
           templateName="Labelled Back"
-          cardData={{
-            title: "Lore Card",
-            description: "Back text",
-            imageAssetId: "art-5",
-            titlePlacement: "bottom",
-            showTitle: true,
-          } as never}
+          cardData={
+            {
+              title: "Lore Card",
+              description: "Back text",
+              imageAssetId: "art-5",
+              titlePlacement: "bottom",
+              showTitle: true,
+            } as never
+          }
         />
       </svg>,
     );
@@ -550,13 +562,15 @@ describe("BlueprintRenderer SVG focus targets", () => {
         <BlueprintRenderer
           templateId="labelled-back"
           templateName="Labelled Back"
-          cardData={{
-            title: "Lore Card",
-            description: "Back text",
-            imageAssetId: "art-5",
-            titlePlacement: "top",
-            showTitle: true,
-          } as never}
+          cardData={
+            {
+              title: "Lore Card",
+              description: "Back text",
+              imageAssetId: "art-5",
+              titlePlacement: "top",
+              showTitle: true,
+            } as never
+          }
         />
       </svg>,
     );
@@ -589,9 +603,7 @@ describe("BlueprintRenderer SVG focus targets", () => {
       </svg>,
     );
 
-    const hitArea = container.querySelector(
-      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.textMain}"]`,
-    );
+    const hitArea = container.querySelector(`[data-hqcc-hit-area="${EDITOR_TARGET_IDS.textMain}"]`);
     expect(hitArea).toHaveAttribute("x", "45");
     expect(hitArea).toHaveAttribute("y", "55");
     expect(hitArea).toHaveAttribute("width", "660");

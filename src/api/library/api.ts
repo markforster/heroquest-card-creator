@@ -1,6 +1,7 @@
 import { makeApi } from "@zodios/core";
 
 import {
+  libraryExportQuerySchema,
   libraryExportResultSchema,
   libraryImportInputSchema,
   libraryImportResultSchema,
@@ -11,6 +12,13 @@ export const libraryApi = makeApi([
     method: "get",
     path: "/library/export",
     alias: "exportLibrary",
+    parameters: [
+      {
+        name: "format",
+        type: "Query",
+        schema: libraryExportQuerySchema.shape.format,
+      },
+    ],
     response: libraryExportResultSchema,
   },
   {

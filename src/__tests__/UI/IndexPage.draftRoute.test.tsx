@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import IndexPage from "@/app/page";
@@ -30,6 +31,14 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
   __esModule: true,
   CardEditorProvider: ({ children }: { children: React.ReactNode }) => children,
   useCardEditor: () => mockCardEditorContext,
+}));
+
+jest.mock("@/components/Providers/CopyrightSettingsContext", () => ({
+  __esModule: true,
+  useCopyrightSettings: () => ({
+    getTemplateDefault: () => false,
+    isReady: true,
+  }),
 }));
 
 jest.mock("@/api/client", () => ({
@@ -72,6 +81,12 @@ jest.mock("@/components/Providers/DebugVisualsContext", () => ({
 jest.mock("@/components/Providers/PreviewRendererContext", () => ({
   __esModule: true,
   PreviewRendererProvider: ({ children }: { children: React.ReactNode }) => children,
+  usePreviewRenderer: () => ({
+    previewRenderer: "svg",
+    rotationMode: "flat",
+    setRotationMode: jest.fn(),
+    togglePreviewRenderer: jest.fn(),
+  }),
 }));
 jest.mock("@/components/Providers/WebglPreviewSettingsContext", () => ({
   __esModule: true,
@@ -83,6 +98,7 @@ jest.mock("@/components/Providers/ThemeProvider", () => ({
 }));
 jest.mock("@/components/Providers/ExportSettingsContext", () => ({
   __esModule: true,
+  useExportProfilesState: () => ({ profiles: [], defaultProfile: null }),
   useExportSettingsState: () => ({
     settings: {
       bleed: { enabled: false, bleedPx: 0, askBeforeExport: false },
@@ -108,6 +124,13 @@ jest.mock("@/components/Providers/LibraryTransferContext", () => ({
 jest.mock("@/components/Providers/AppActionsContext", () => ({
   __esModule: true,
   AppActionsProvider: ({ children }: { children: React.ReactNode }) => children,
+  useAppActions: () => ({
+    isAssetsOpen: false,
+    isRecentOpen: false,
+    isSettingsOpen: false,
+    isStockpileOpen: false,
+    isTemplatePickerOpen: false,
+  }),
 }));
 jest.mock("@/components/Providers/EditorSaveContext", () => ({
   __esModule: true,
@@ -184,9 +207,11 @@ jest.mock("@/components/Cards/CardEditor/CardPreviewContainer", () => ({
 jest.mock("@/components/Cards/CardInspector/CardInspector", () => ({
   __esModule: true,
   default: function MockCardInspector() {
-    const { useFormContext } = jest.requireActual("react-hook-form") as typeof import("react-hook-form");
+    const { useFormContext } = jest.requireActual(
+      "react-hook-form",
+    ) as typeof import("react-hook-form");
     const { register } = useFormContext();
-    return <input aria-label="Title" {...register("title")} />;
+    return <input aria-label="Name" {...register("name")} />;
   },
 }));
 jest.mock("@/components/Cards/CardInspector/TemplateChooser", () => ({
@@ -228,15 +253,15 @@ jest.mock("@/lib/export-assets-cache", () => ({
   __esModule: true,
   buildMissingAssetsReport: jest.fn().mockResolvedValue([]),
 }));
-jest.mock("@/lib/thumbnail-jpeg-migration", () => ({
+jest.mock("@/lib/db/migrations/thumbnail-jpeg-migration", () => ({
   __esModule: true,
   startThumbnailJpegMigration: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("@/lib/decks-service", () => ({
+jest.mock("@/lib/db/maintenance/repair-orphan-deck-entries", () => ({
   __esModule: true,
   repairOrphanDeckEntries: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   __esModule: true,
   clearDbEstimateCache: jest.fn(),
   runFullDbEstimate: jest.fn().mockResolvedValue(undefined),
@@ -273,10 +298,13 @@ describe("IndexPage draft route", () => {
   });
 
   it("does not attempt saved-card DB load on /cards/new", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
-      <EditorFormProvider>
-        <IndexPage />
-      </EditorFormProvider>,
+      <QueryClientProvider client={queryClient}>
+        <EditorFormProvider>
+          <IndexPage />
+        </EditorFormProvider>
+      </QueryClientProvider>,
     );
 
     await waitFor(() => {
@@ -298,10 +326,13 @@ describe("IndexPage draft route", () => {
       data: {},
     });
 
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
-      <EditorFormProvider>
-        <IndexPage />
-      </EditorFormProvider>,
+      <QueryClientProvider client={queryClient}>
+        <EditorFormProvider>
+          <IndexPage />
+        </EditorFormProvider>
+      </QueryClientProvider>,
     );
 
     const inputs = screen.getAllByRole("textbox");

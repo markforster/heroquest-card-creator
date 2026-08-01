@@ -235,9 +235,9 @@ export default function ReleaseNotesContent() {
       >
         <DocParagraph>
           This release is a big step forward for the day-to-day card-making workflow. Rather than
-          introducing one single giant subsystem, v0.8.0 improves the parts of the app you spend
-          the most time in: the card editor is more interactive, the stockpile is calmer and easier
-          to browse, card content is more expressive, and Help is now a real built-in part of the
+          introducing one single giant subsystem, v0.8.0 improves the parts of the app you spend the
+          most time in: the card editor is more interactive, the stockpile is calmer and easier to
+          browse, card content is more expressive, and Help is now a real built-in part of the
           product instead of something scattered across notes and videos.
         </DocParagraph>
         <DocParagraph className={docStyles.docParagraphSpaced}>
@@ -248,8 +248,8 @@ export default function ReleaseNotesContent() {
           showing what is selected, what is interactive, and when a preview is still loading.
         </DocParagraph>
         <DocParagraph className={docStyles.docParagraphSpaced}>
-          v0.8.0 also broadens what kinds of cards and text the app can handle. Rules cards and
-          Logo Back cards are now first-class templates, body text has richer scaling and structure
+          v0.8.0 also broadens what kinds of cards and text the app can handle. Rules cards and Logo
+          Back cards are now first-class templates, body text has richer scaling and structure
           options, hero and monster defaults are closer to the printed cards, and smaller but very
           practical improvements such as stat asterisk markers, copyright defaults, and emoji or
           inline-dice insertion make authoring more flexible without turning the editor into a
@@ -291,8 +291,8 @@ export default function ReleaseNotesContent() {
             official-looking custom cards.
           </li>
           <li>
-            A full public help centre with in-app Help that can use the live site when available
-            and fall back to built-in guidance when it is not.
+            A full public help centre with in-app Help that can use the live site when available and
+            fall back to built-in guidance when it is not.
           </li>
         </DocList>
         <DocParagraph className={docStyles.docParagraphSpaced}>

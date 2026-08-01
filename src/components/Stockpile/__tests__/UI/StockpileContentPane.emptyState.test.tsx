@@ -1,9 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import StockpileContentPane from "@/components/Stockpile/StockpileContentPane";
-import { I18nProvider } from "@/i18n/I18nProvider";
-
 import type { StockpileCardActions } from "@/components/Stockpile/types";
+import { I18nProvider } from "@/i18n/I18nProvider";
 
 jest.mock("@/components/Stockpile/StockpileCardsGrid", () => ({
   __esModule: true,
@@ -116,7 +115,9 @@ describe("StockpileContentPane empty state (UI)", () => {
 
     expect(screen.getByRole("button", { name: "Import library" })).toBeEnabled();
     expect(screen.getByText("To load the sample library into this app:")).toBeInTheDocument();
-    expect(screen.getByText("Click Download sample library and save the .hqcc file.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Click Download sample library and save the .hqcc file."),
+    ).toBeInTheDocument();
     expect(screen.getByText("Click Import library.")).toBeInTheDocument();
     expect(screen.getByText("Select the downloaded .hqcc file when prompted.")).toBeInTheDocument();
     expect(screen.getByText("Confirm the import to load the sample cards.")).toBeInTheDocument();
@@ -170,7 +171,9 @@ describe("StockpileContentPane empty state (UI)", () => {
       hasActiveNarrowing: true,
     });
 
-    expect(screen.queryByRole("heading", { name: "Your card library is empty" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Your card library is empty" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("No cards found.")).toBeInTheDocument();
   });
 
@@ -180,7 +183,9 @@ describe("StockpileContentPane empty state (UI)", () => {
     });
 
     expect(container.querySelector(".stockpileLoadingState .spinner")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Your card library is empty" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Your card library is empty" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("No saved cards yet.")).not.toBeInTheDocument();
     expect(screen.queryByText("No cards found.")).not.toBeInTheDocument();
   });
@@ -190,7 +195,9 @@ describe("StockpileContentPane empty state (UI)", () => {
       frame: "modal",
     });
 
-    expect(screen.queryByRole("heading", { name: "Your card library is empty" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Your card library is empty" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("No saved cards yet.")).toBeInTheDocument();
   });
 });

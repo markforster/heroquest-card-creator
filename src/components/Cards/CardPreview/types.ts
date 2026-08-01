@@ -1,6 +1,5 @@
 "use client";
 
-
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 

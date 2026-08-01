@@ -4,7 +4,6 @@ import { useId } from "react";
 
 import styles from "@/app/page.module.css";
 import { getInlineDiceSvgUrl } from "@/lib/inline-dice";
-
 import type { InlineDiceConfiguratorState } from "@/lib/inline-dice";
 
 type BodyTextDicePreviewProps = {
@@ -12,10 +11,7 @@ type BodyTextDicePreviewProps = {
   size?: "small" | "large" | "inline";
 };
 
-export default function BodyTextDicePreview({
-  config,
-  size = "small",
-}: BodyTextDicePreviewProps) {
+export default function BodyTextDicePreview({ config, size = "small" }: BodyTextDicePreviewProps) {
   const rawId = useId();
   const maskId = `body-text-dice-mask-${rawId.replace(/[:]/g, "")}`;
   const src = getInlineDiceSvgUrl(config.type, config.faceOrValue);
@@ -31,12 +27,7 @@ export default function BodyTextDicePreview({
       }}
       aria-hidden="true"
     >
-      <svg
-        className={styles.bodyTextDiceImage}
-        viewBox="0 0 48 48"
-        role="img"
-        aria-hidden="true"
-      >
+      <svg className={styles.bodyTextDiceImage} viewBox="0 0 48 48" role="img" aria-hidden="true">
         <rect
           x="2"
           y="2"

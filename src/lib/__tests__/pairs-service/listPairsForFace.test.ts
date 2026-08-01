@@ -1,6 +1,5 @@
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { listPairsForFace } from "@/lib/pairs-service";
-
+import { listPairsForFace } from "@/lib/data/pairs-service";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createPairRecord,
   deleteDb,
@@ -8,7 +7,7 @@ import {
   restoreIndexedDb,
 } from "@/lib/test-support/pairs-service-test-helpers";
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   getCard: jest.fn(async () => null),
 }));
 
@@ -47,7 +46,9 @@ describe("listPairsForFace", () => {
 
   it("returns an empty array when no stored pairs match", async () => {
     const db = await openHqccDexieDb();
-    await db.pairs.put(createPairRecord({ id: "pair-1", frontFaceId: "front-1", backFaceId: "back-1" }));
+    await db.pairs.put(
+      createPairRecord({ id: "pair-1", frontFaceId: "front-1", backFaceId: "back-1" }),
+    );
 
     await expect(listPairsForFace("missing-face")).resolves.toEqual([]);
   });

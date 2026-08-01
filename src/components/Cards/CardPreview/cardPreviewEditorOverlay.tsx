@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useFormContext } from "react-hook-form";
+
+import { resolveImageLayerOverlayGeometry } from "@/components/BlueprintRenderer/blueprintRendererImageGeometry";
 import {
   EDITOR_TARGET_IDS,
   useOptionalEditorTargets,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import { resolveImageLayerOverlayGeometry } from "@/components/BlueprintRenderer/blueprintRendererImageGeometry";
 import { ENABLE_EDITOR_TARGET_INTERACTIONS } from "@/config/flags";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
@@ -17,11 +20,7 @@ import {
 import { clamp } from "@/lib/math";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { useFormContext } from "react-hook-form";
 
-import { resolveMonsterIconOverlayGeometry } from "./cardPreviewIconGeometry";
-import { CARD_HEIGHT, CARD_WIDTH, getCardPreviewStageLayout } from "./cardPreviewStage";
 import {
   GIZMO_ARM_LENGTH_MAX,
   GIZMO_CENTER_HANDLE_INNER_RADIUS,
@@ -46,7 +45,9 @@ import {
   roundStageValue,
   type ScaleSnapRing,
 } from "./cardPreviewGizmoMath";
+import { resolveMonsterIconOverlayGeometry } from "./cardPreviewIconGeometry";
 import { getStagePointFromClientCoordinates } from "./cardPreviewPointer";
+import { CARD_HEIGHT, CARD_WIDTH, getCardPreviewStageLayout } from "./cardPreviewStage";
 
 type CardPreviewEditorOverlayProps = {
   templateId?: TemplateId;
@@ -157,10 +158,13 @@ type DragState =
       maxScale: number;
     };
 
-export default function CardPreviewEditorOverlay({
-  templateId,
-  cardData,
-}: CardPreviewEditorOverlayProps) {
+export default function CardPreviewEditorOverlay(props: CardPreviewEditorOverlayProps) {
+  if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return null;
+
+  return <EnabledCardPreviewEditorOverlay {...props} />;
+}
+
+function EnabledCardPreviewEditorOverlay({ templateId, cardData }: CardPreviewEditorOverlayProps) {
   const form = useFormContext() as ReturnType<typeof useFormContext> | null;
   const editorTargets = useOptionalEditorTargets();
   const overlayId = useId().replace(/:/g, "");
@@ -177,10 +181,6 @@ export default function CardPreviewEditorOverlay({
   const { width: iconImageWidth, height: iconImageHeight } = useAssetImageUrl(
     selectedTargetId === EDITOR_TARGET_IDS.imageIcon ? iconAssetId : undefined,
   );
-
-  if (!ENABLE_EDITOR_TARGET_INTERACTIONS) {
-    return null;
-  }
 
   const blueprint = templateId ? blueprintsByTemplateId[templateId] : undefined;
   const imageLayer = blueprint?.layers.find((layer) => {

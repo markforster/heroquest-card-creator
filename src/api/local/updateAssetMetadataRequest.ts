@@ -1,8 +1,11 @@
-import { updateAssetMeta } from "@/lib/assets-db";
+import { updateAssetMeta } from "@/lib/data/assets-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local update-asset-metadata endpoint through the IndexedDB-backed service layer.
+ */
 export const updateAssetMetadataRequestPlugin: ZodiosPlugin = {
   name: "local-update-asset-metadata",
   request: async (apiDefinitions, config) => {

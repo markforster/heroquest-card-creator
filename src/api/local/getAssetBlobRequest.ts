@@ -1,8 +1,11 @@
-import { getAssetBlob } from "@/lib/assets-db";
+import { getAssetBlob } from "@/lib/data/assets-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local get-asset-blob endpoint through the IndexedDB-backed service layer.
+ */
 export const getAssetBlobRequestPlugin: ZodiosPlugin = {
   name: "local-get-asset-blob",
   request: async (apiDefinitions, config) => {

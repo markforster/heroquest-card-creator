@@ -1,6 +1,7 @@
+import { Blob as NodeBlob } from "buffer";
+
 import { addPngTextChunk } from "@/lib/png-metadata";
 import { APP_VERSION } from "@/version";
-import { Blob as NodeBlob } from "buffer";
 
 const ONE_BY_ONE_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9Fq6QAAAAASUVORK5CYII=";
@@ -8,12 +9,7 @@ const ONE_BY_ONE_PNG_BASE64 =
 const decodePng = () => new Uint8Array(Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
 
 const readChunkType = (buffer: Uint8Array, offset: number) =>
-  String.fromCharCode(
-    buffer[offset],
-    buffer[offset + 1],
-    buffer[offset + 2],
-    buffer[offset + 3],
-  );
+  String.fromCharCode(buffer[offset], buffer[offset + 1], buffer[offset + 2], buffer[offset + 3]);
 
 describe("addPngTextChunk", () => {
   const OriginalBlob = globalThis.Blob;

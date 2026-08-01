@@ -37,10 +37,7 @@ export function useDeckRightPanelModel() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(
-        RIGHT_PANEL_VISIBLE_STORAGE_KEY,
-        isRightPanelVisible ? "1" : "0",
-      );
+      window.localStorage.setItem(RIGHT_PANEL_VISIBLE_STORAGE_KEY, isRightPanelVisible ? "1" : "0");
     } catch {
       // Ignore persistence errors for UI preference state.
     }
@@ -50,18 +47,14 @@ export function useDeckRightPanelModel() {
     enabled: isRightPanelVisible,
     staleTime: 60_000,
   });
-  const cardsQuery = useListCards(
-    undefined,
-    {
-      enabled: isRightPanelVisible,
-      staleTime: 0,
-      refetchOnMount: "always",
-    },
-  );
+  const cardsQuery = useListCards(undefined, {
+    enabled: isRightPanelVisible,
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
 
   const rightPanelEmptyLabel = useMemo(
-    () =>
-      rightPanelFaceMode === "front" ? t("empty.noCardsFound") : t("empty.noBackCards"),
+    () => (rightPanelFaceMode === "front" ? t("empty.noCardsFound") : t("empty.noBackCards")),
     [rightPanelFaceMode, t],
   );
 

@@ -13,6 +13,13 @@ jest.mock("@/components/Providers/PreviewCanvasContext", () => ({
   }),
 }));
 
+jest.mock("@/components/Cards/CardEditor/EditorTargetsContext", () => ({
+  EDITOR_TARGET_IDS: { title: "title" },
+  useInspectorTargetRegistration: () => jest.fn(),
+  useIsEditorTargetHovered: () => false,
+  useSecondaryTargetActionRegistration: jest.fn(),
+}));
+
 jest.mock("@/hooks/useSmartSwatches", () => ({
   useSmartSwatches: () => ({
     smartGroups: [],

@@ -23,6 +23,7 @@ import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";
 import { useTypographyNumericSettings } from "@/lib/typography-settings";
+
 import type { CSSProperties } from "react";
 
 type RibbonTitleProps = {

@@ -2,14 +2,14 @@ import { Blob as NodeBlob } from "buffer";
 
 const openHqccDexieDb = jest.fn();
 
-jest.mock("@/lib/hqcc-dexie", () => ({
+jest.mock("@/lib/db/hqcc-dexie", () => ({
   openHqccDexieDb: () => openHqccDexieDb(),
 }));
 
 import {
   getThumbnailJpegMigrationStatus,
   startThumbnailJpegMigration,
-} from "@/lib/thumbnail-jpeg-migration";
+} from "@/lib/db/migrations/thumbnail-jpeg-migration";
 import { createSavedCardRecord } from "@/lib/test-support/decks-service-test-helpers";
 
 const originalCreateImageBitmap = globalThis.createImageBitmap;
@@ -85,7 +85,7 @@ describe("startThumbnailJpegMigration", () => {
     globalThis.Blob = NodeBlob as unknown as typeof Blob;
     convertedBlob = createJpegBlob(10);
     openHqccDexieDb.mockReset();
-    createImageBitmapMock = jest.fn(async (_blob: Blob) => ({
+    createImageBitmapMock = jest.fn(async () => ({
       width: 20,
       height: 10,
       close: jest.fn(),
@@ -158,7 +158,9 @@ describe("startThumbnailJpegMigration", () => {
       }),
     );
     expect(window.localStorage.getItem("hqcc.migrations.thumbnailJpeg.v1")).toBe("done");
-    expect(dispatchEventSpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: "hqcc-cards-updated" }));
+    expect(dispatchEventSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hqcc-cards-updated" }),
+    );
   });
 
   it("exits early when already marked done and no PNG thumbnails remain", async () => {
@@ -181,7 +183,9 @@ describe("startThumbnailJpegMigration", () => {
       }),
     );
     expect(createImageBitmapMock).not.toHaveBeenCalled();
-    expect(dispatchEventSpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: "hqcc-cards-updated" }));
+    expect(dispatchEventSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hqcc-cards-updated" }),
+    );
   });
 
   it("reruns when the done flag exists but PNG thumbnails still remain", async () => {
@@ -211,7 +215,9 @@ describe("startThumbnailJpegMigration", () => {
         skipped: 0,
       }),
     );
-    expect(dispatchEventSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "hqcc-cards-updated" }));
+    expect(dispatchEventSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hqcc-cards-updated" }),
+    );
   });
 
   it("skips cards when the converted blob is not smaller", async () => {

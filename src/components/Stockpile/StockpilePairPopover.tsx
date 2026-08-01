@@ -2,12 +2,12 @@
 
 import { createPortal } from "react-dom";
 
+import type { CardRecord } from "@/api/cards";
 import styles from "@/app/page.module.css";
+import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
 import { resolveEffectiveFace } from "@/lib/card-face";
-import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
-import type { CardRecord } from "@/api/cards";
 
 type StockpilePairPopoverProps = {
   hoveredPairCardId: string | null;
@@ -78,7 +78,9 @@ export default function StockpilePairPopover({
     >
       {isHoveredBack ? (
         hoveredPairedFronts.length ? (
-          <div className={isGridPopover ? styles.cardsPairStackGrid : styles.cardsPairStackGridSingle}>
+          <div
+            className={isGridPopover ? styles.cardsPairStackGrid : styles.cardsPairStackGridSingle}
+          >
             {hoveredPairedFronts
               .slice(0, isGridPopover ? hoveredPairedFronts.length : 1)
               .map((paired) => {

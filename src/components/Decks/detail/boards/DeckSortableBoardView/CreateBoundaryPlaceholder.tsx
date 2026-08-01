@@ -24,20 +24,14 @@ export function CreateBoundaryPlaceholder({
       aria-hidden={!visible}
     >
       <span
-        className={[
-          styles.createBoundaryLine,
-          visible ? styles.createBoundaryLineVisible : "",
-        ]
+        className={[styles.createBoundaryLine, visible ? styles.createBoundaryLineVisible : ""]
           .filter(Boolean)
           .join(" ")}
         aria-hidden="true"
       />
       <button
         type="button"
-        className={[
-          styles.createBoundaryButton,
-          visible ? styles.createBoundaryButtonVisible : "",
-        ]
+        className={[styles.createBoundaryButton, visible ? styles.createBoundaryButtonVisible : ""]
           .filter(Boolean)
           .join(" ")}
         onClick={() => onCreate(index)}

@@ -1,8 +1,4 @@
-import {
-  hasStatAsterisk,
-  normalizeStatAsteriskFlags,
-  setStatAsterisk,
-} from "@/lib/stat-asterisks";
+import { hasStatAsterisk, normalizeStatAsteriskFlags, setStatAsterisk } from "@/lib/stat-asterisks";
 
 describe("stat asterisk helpers", () => {
   it("drops empty flag arrays", () => {

@@ -1,25 +1,32 @@
 import { parseAppDistribution } from "@/lib/app-distribution";
-import { UPDATE_STORAGE_KEYS } from "@/lib/update-check/constants";
-import { isRemoteVersionNewer } from "@/lib/update-check/version";
-
 import type { AppDistribution } from "@/lib/app-distribution";
+import { UPDATE_STORAGE_KEYS } from "@/lib/update-check/constants";
 import type { StoredUpdateState, UpdateSource } from "@/lib/update-check/types";
+import { isRemoteVersionNewer } from "@/lib/update-check/version";
 
 export function readStoredUpdateState(): StoredUpdateState | null {
   if (typeof window === "undefined") return null;
 
   try {
-    const distribution = parseAppDistribution(window.localStorage.getItem(UPDATE_STORAGE_KEYS.distribution));
+    const distribution = parseAppDistribution(
+      window.localStorage.getItem(UPDATE_STORAGE_KEYS.distribution),
+    );
     const lastSuccessfulCheckAt = Number(
       window.localStorage.getItem(UPDATE_STORAGE_KEYS.lastSuccessfulCheckAt),
     );
-    const latestRemoteVersion = window.localStorage.getItem(UPDATE_STORAGE_KEYS.latestRemoteVersion);
+    const latestRemoteVersion = window.localStorage.getItem(
+      UPDATE_STORAGE_KEYS.latestRemoteVersion,
+    );
     const isUpdateAvailable = window.localStorage.getItem(UPDATE_STORAGE_KEYS.available) === "1";
     const rawSource = window.localStorage.getItem(UPDATE_STORAGE_KEYS.source);
     const source: UpdateSource | null =
       rawSource === "github" || rawSource === "npm" ? rawSource : null;
 
-    if (distribution === "unknown" || !Number.isFinite(lastSuccessfulCheckAt) || lastSuccessfulCheckAt <= 0) {
+    if (
+      distribution === "unknown" ||
+      !Number.isFinite(lastSuccessfulCheckAt) ||
+      lastSuccessfulCheckAt <= 0
+    ) {
       return null;
     }
 
@@ -45,7 +52,10 @@ export function writeStoredUpdateState(state: StoredUpdateState): void {
       String(state.lastSuccessfulCheckAt),
     );
     if (state.latestRemoteVersion) {
-      window.localStorage.setItem(UPDATE_STORAGE_KEYS.latestRemoteVersion, state.latestRemoteVersion);
+      window.localStorage.setItem(
+        UPDATE_STORAGE_KEYS.latestRemoteVersion,
+        state.latestRemoteVersion,
+      );
     } else {
       window.localStorage.removeItem(UPDATE_STORAGE_KEYS.latestRemoteVersion);
     }

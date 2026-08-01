@@ -1,10 +1,9 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 
+import type { AssetRecord } from "@/api/assets";
 import AssetsPanelContent from "@/components/Assets/AssetsPanelContent";
 import { I18nProvider } from "@/i18n/I18nProvider";
-
-import type { AssetRecord } from "@/api/assets";
 import type { UploadScanReport } from "@/types/asset-duplicates";
 
 const mockUseListAssets = jest.fn();
@@ -204,35 +203,41 @@ describe("AssetsPanelContent recent uploads (UI)", () => {
     mockListAssets.mockImplementation(async () => assetStore);
     mockGetImageDimensions.mockResolvedValue({ width: 320, height: 240 });
     mockGenerateId.mockImplementation(() => `generated-${createdAtCounter++}`);
-    mockScanFiles.mockImplementation(async (files: File[], onProgress?: (completed: number, total: number) => void) => {
-      onProgress?.(files.length, files.length);
-      return buildScanReport(files);
-    });
-    mockAddAsset.mockImplementation(async (payload: {
-      id: string;
-      name: string;
-      mimeType: string;
-      width: number;
-      height: number;
-    }) => {
-      assetStore = [
-        ...assetStore,
-        {
-          id: payload.id,
-          name: payload.name,
-          mimeType: payload.mimeType,
-          width: payload.width,
-          height: payload.height,
-          createdAt: createdAtCounter++,
-        },
-      ];
-      existingNamesStore.add(payload.name);
-    });
-    mockUpdateAssetMetadata.mockImplementation(async ({ patch }: { patch: Partial<AssetRecord> }, options: { params: { id: string } }) => {
-      assetStore = assetStore.map((asset) =>
-        asset.id === options.params.id ? { ...asset, ...patch } : asset,
-      );
-    });
+    mockScanFiles.mockImplementation(
+      async (files: File[], onProgress?: (completed: number, total: number) => void) => {
+        onProgress?.(files.length, files.length);
+        return buildScanReport(files);
+      },
+    );
+    mockAddAsset.mockImplementation(
+      async (payload: {
+        id: string;
+        name: string;
+        mimeType: string;
+        width: number;
+        height: number;
+      }) => {
+        assetStore = [
+          ...assetStore,
+          {
+            id: payload.id,
+            name: payload.name,
+            mimeType: payload.mimeType,
+            width: payload.width,
+            height: payload.height,
+            createdAt: createdAtCounter++,
+          },
+        ];
+        existingNamesStore.add(payload.name);
+      },
+    );
+    mockUpdateAssetMetadata.mockImplementation(
+      async ({ patch }: { patch: Partial<AssetRecord> }, options: { params: { id: string } }) => {
+        assetStore = assetStore.map((asset) =>
+          asset.id === options.params.id ? { ...asset, ...patch } : asset,
+        );
+      },
+    );
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
       value: jest.fn(),
@@ -660,12 +665,7 @@ describe("AssetsPanelContent recent uploads (UI)", () => {
     fireEvent.click(getAssetTile(container, "bravo"), { shiftKey: true });
     fireEvent.click(getAssetTile(container, "delta"), { shiftKey: true });
 
-    expect(getSelectedAssetTitles(container)).toEqual([
-      "bravo",
-      "charlie",
-      "delta",
-      "echo",
-    ]);
+    expect(getSelectedAssetTitles(container)).toEqual(["bravo", "charlie", "delta", "echo"]);
     expect(screen.getByRole("button", { name: "Delete (4)" })).toBeEnabled();
   });
 
@@ -690,11 +690,7 @@ describe("AssetsPanelContent recent uploads (UI)", () => {
     fireEvent.click(getAssetTile(container, "fresh-upload"));
     fireEvent.click(getAssetTile(container, "bravo"), { shiftKey: true });
 
-    expect(getSelectedAssetTitles(container)).toEqual([
-      "alpha",
-      "bravo",
-      "fresh-upload",
-    ]);
+    expect(getSelectedAssetTitles(container)).toEqual(["alpha", "bravo", "fresh-upload"]);
     expect(screen.getByRole("button", { name: "Delete (3)" })).toBeEnabled();
   });
 });

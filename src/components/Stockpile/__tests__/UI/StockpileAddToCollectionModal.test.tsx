@@ -26,7 +26,8 @@ jest.mock("react-select", () => {
           id={props.inputId}
           value={selectedValue}
           onChange={(event) => {
-            const next = props.options.find((option) => option.value === event.target.value) ?? null;
+            const next =
+              props.options.find((option) => option.value === event.target.value) ?? null;
             props.onChange(next);
           }}
         >

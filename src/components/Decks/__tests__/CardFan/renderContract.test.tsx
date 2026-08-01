@@ -78,12 +78,8 @@ describe("CardFan render contract", () => {
   });
 
   it("scales corner radius by variant size", () => {
-    const { container: xsContainer } = render(
-      <CardFan cardIds={["card-xs"]} variant="xs" />,
-    );
-    const { container: lgContainer } = render(
-      <CardFan cardIds={["card-lg"]} variant="lg" />,
-    );
+    const { container: xsContainer } = render(<CardFan cardIds={["card-xs"]} variant="xs" />);
+    const { container: lgContainer } = render(<CardFan cardIds={["card-lg"]} variant="lg" />);
 
     const xsClipRect = xsContainer.querySelector("clipPath rect");
     const lgClipRect = lgContainer.querySelector("clipPath rect");
@@ -120,7 +116,13 @@ describe("CardFan render contract", () => {
     expect(selectedRect?.getAttribute("rx")).toBe(clipRadius);
 
     const { container: emptyContainer } = render(
-      <CardFan cardIds={[]} variant="sm" maxCount={1} showPlaceholdersWhenEmpty emptyPlaceholderVariant="deck-empty" />,
+      <CardFan
+        cardIds={[]}
+        variant="sm"
+        maxCount={1}
+        showPlaceholdersWhenEmpty
+        emptyPlaceholderVariant="deck-empty"
+      />,
     );
     const emptyRect = emptyContainer.querySelector(".cardFanEmptyDeckPlaceholderSvg");
     expect(emptyRect?.getAttribute("rx")).toBe(clipRadius);

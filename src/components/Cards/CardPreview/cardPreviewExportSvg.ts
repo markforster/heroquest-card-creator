@@ -2,8 +2,8 @@
 
 import { setExportBackgroundFit, setExportClip } from "@/lib/bleed-export";
 
-import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
 import { getCardPreviewStageLayout } from "./cardPreviewStage";
+import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
 
 import type { CardPreviewProps } from "./types";
 
@@ -62,9 +62,9 @@ function applyExportImageClip(svg: SVGSVGElement) {
 
 function zeroTreasureBorderOffsetsForExport(svg: SVGSVGElement) {
   svg
-    .querySelectorAll<SVGImageElement | SVGFEImageElement>(
-      '[data-template-asset="border-mask"], [data-template-asset="border-texture"]',
-    )
+    .querySelectorAll<
+      SVGImageElement | SVGFEImageElement
+    >('[data-template-asset="border-mask"], [data-template-asset="border-texture"]')
     .forEach((node) => {
       node.setAttribute("x", "0");
       node.setAttribute("y", "0");

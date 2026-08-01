@@ -38,10 +38,7 @@ export default function IconButton({
       title={title}
       ref={buttonRef}
     >
-      <Icon
-        className={`${styles.icon} ${iconOnly ? "" : styles.iconLeft}`}
-        aria-hidden="true"
-      />
+      <Icon className={`${styles.icon} ${iconOnly ? "" : styles.iconLeft}`} aria-hidden="true" />
       {children}
     </button>
   );

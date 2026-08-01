@@ -19,10 +19,7 @@ export function normalizeStatAsteriskFlags(
   return [primary, true];
 }
 
-export function hasStatAsterisk(
-  flags: StatAsteriskFlags | undefined,
-  index: 0 | 1,
-): boolean {
+export function hasStatAsterisk(flags: StatAsteriskFlags | undefined, index: 0 | 1): boolean {
   return flags?.[index] === true;
 }
 

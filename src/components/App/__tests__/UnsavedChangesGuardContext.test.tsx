@@ -1,11 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import {
-  Link,
-  Outlet,
-  RouterProvider,
-  createMemoryRouter,
-  useNavigate,
-} from "react-router-dom";
+import { Link, Outlet, RouterProvider, createMemoryRouter, useNavigate } from "react-router-dom";
 
 import {
   UnsavedChangesGuardProvider,

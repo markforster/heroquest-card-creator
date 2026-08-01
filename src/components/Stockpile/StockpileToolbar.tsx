@@ -40,18 +40,10 @@ export default function StockpileToolbar({
   collectionsToggleLabel,
   search,
   onSearchChange,
-  templateFilter,
-  onTemplateFilterChange,
   filterValue,
   onFilterValueChange,
   filterOptions,
-  filterLabel,
-  totalCount,
-  faceCounts,
-  typeCounts,
   isPairMode,
-  isPairBacks,
-  isPairFronts,
   showUnpairedOnly,
   onShowUnpairedOnlyChange,
   showMissingArtworkOnly,
@@ -63,8 +55,7 @@ export default function StockpileToolbar({
   const { t } = useI18n();
   const { missingArtworkIds } = useMissingAssets();
   const showMissingArtworkToggle = ENABLE_MISSING_ASSET_CHECKS && missingArtworkIds.size > 0;
-  const hasLeftControls =
-    showSearchAndFilterControls || (!isPairMode && showUnpairedToggle);
+  const hasLeftControls = showSearchAndFilterControls || (!isPairMode && showUnpairedToggle);
   const hasRightControls = (!isPairMode && showMissingArtworkToggle) || isPairMode;
 
   if (!hasLeftControls && !hasRightControls) {

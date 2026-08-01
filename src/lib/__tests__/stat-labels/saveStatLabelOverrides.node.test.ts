@@ -9,4 +9,3 @@ describe("saveStatLabelOverrides (node)", () => {
     expect(() => saveStatLabelOverrides(DEFAULT_STAT_LABELS)).not.toThrow();
   });
 });
-

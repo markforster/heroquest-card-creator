@@ -68,30 +68,32 @@ jest.mock("@/components/Cards/CardPreview", () => {
 
   return {
     __esModule: true,
-    default: forwardRef<CardPreviewHandle, { cardData?: { name?: string } }>(function MockCardPreview(
-      props,
-      ref,
-    ) {
-      const localId = useMemo(() => {
-        instanceId += 1;
-        mountedInstanceIds.push(instanceId);
-        return instanceId;
-      }, []);
-      const svgRef = useRef<SVGSVGElement | null>(null);
+    default: forwardRef<CardPreviewHandle, { cardData?: { name?: string } }>(
+      function MockCardPreview(props, ref) {
+        const localId = useMemo(() => {
+          instanceId += 1;
+          mountedInstanceIds.push(instanceId);
+          return instanceId;
+        }, []);
+        const svgRef = useRef<SVGSVGElement | null>(null);
 
-      useImperativeHandle(ref, () => ({
-        renderToJpegBlob: (...args: Parameters<NonNullable<CardPreviewHandle["renderToJpegBlob"]>>) =>
-          renderToJpegBlobMock(localId, props.cardData?.name, ...args),
-        waitForBackgroundLoaded: (...args: Parameters<NonNullable<CardPreviewHandle["waitForBackgroundLoaded"]>>) =>
-          waitForBackgroundLoadedMock(localId, ...args),
-        syncCopyrightContrast: (...args: Parameters<NonNullable<CardPreviewHandle["syncCopyrightContrast"]>>) =>
-          syncCopyrightContrastMock(localId, ...args),
-        getSvgElement: (...args: Parameters<NonNullable<CardPreviewHandle["getSvgElement"]>>) =>
-          getSvgElementMock(localId, ...args) ?? svgRef.current,
-      }));
+        useImperativeHandle(ref, () => ({
+          renderToJpegBlob: (
+            ...args: Parameters<NonNullable<CardPreviewHandle["renderToJpegBlob"]>>
+          ) => renderToJpegBlobMock(localId, props.cardData?.name, ...args),
+          waitForBackgroundLoaded: (
+            ...args: Parameters<NonNullable<CardPreviewHandle["waitForBackgroundLoaded"]>>
+          ) => waitForBackgroundLoadedMock(localId, ...args),
+          syncCopyrightContrast: (
+            ...args: Parameters<NonNullable<CardPreviewHandle["syncCopyrightContrast"]>>
+          ) => syncCopyrightContrastMock(localId, ...args),
+          getSvgElement: (...args: Parameters<NonNullable<CardPreviewHandle["getSvgElement"]>>) =>
+            getSvgElementMock(localId, ...args) ?? svgRef.current,
+        }));
 
-      return <svg ref={svgRef} data-testid={`mock-preview-${localId}`} />;
-    }),
+        return <svg ref={svgRef} data-testid={`mock-preview-${localId}`} />;
+      },
+    ),
   };
 });
 
@@ -126,7 +128,9 @@ describe("HiddenCardThumbnailRefreshHost", () => {
   });
 
   it("uses an isolated preview instance for each sequential thumbnail render", async () => {
-    const hostRef: { current: { renderThumbnail: (card: CardRecord) => Promise<Blob | null> } | null } = {
+    const hostRef: {
+      current: { renderThumbnail: (card: CardRecord) => Promise<Blob | null> } | null;
+    } = {
       current: null,
     };
 

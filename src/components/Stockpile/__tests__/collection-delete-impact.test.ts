@@ -37,4 +37,3 @@ describe("getDeleteCollectionImpact", () => {
     expect(impact).toBeNull();
   });
 });
-

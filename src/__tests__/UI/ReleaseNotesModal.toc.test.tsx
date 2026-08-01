@@ -135,7 +135,9 @@ describe("ReleaseNotesModal TOC", () => {
 
     expect(screen.getByRole("heading", { name: "Update 25/07/2026 (v0.8.0)" })).toBeInTheDocument();
     expect(
-      screen.getByText(/New Rules and Logo Back templates, plus more authentic Rules parchment and layout tuning\./i),
+      screen.getByText(
+        /New Rules and Logo Back templates, plus more authentic Rules parchment and layout tuning\./i,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "v0.8.0" })).toHaveAttribute(
       "href",

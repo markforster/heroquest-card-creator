@@ -1,18 +1,20 @@
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { getCard, updateCard } from "@/lib/cards-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-
+import { getCard, updateCard } from "@/lib/data/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createCardRecord,
   deleteDb,
   installFakeIndexedDb,
   restoreIndexedDb,
 } from "@/lib/test-support/cards-db-test-helpers";
-import { seedNormalizedCard, seedNormalizedThumbnail } from "@/lib/test-support/normalized-card-test-helpers";
+import {
+  seedNormalizedCard,
+  seedNormalizedThumbnail,
+} from "@/lib/test-support/normalized-card-test-helpers";
 
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
@@ -39,14 +41,26 @@ describe("updateCard", () => {
     jest.spyOn(Date, "now").mockReturnValue(200);
     const db = await openHqccDexieDb();
     await seedNormalizedCard(
-      createCardRecord({ id: "c1", createdAt: 100, updatedAt: 100, name: "Old Name", nameLower: "old name" }),
+      createCardRecord({
+        id: "c1",
+        createdAt: 100,
+        updatedAt: 100,
+        name: "Old Name",
+        nameLower: "old name",
+      }),
     );
 
     const next = await updateCard("c1", { title: "New title" });
 
     expect(next).toEqual(
       expect.objectContaining({
-        ...createCardRecord({ id: "c1", createdAt: 100, updatedAt: 100, name: "Old Name", nameLower: "old name" }),
+        ...createCardRecord({
+          id: "c1",
+          createdAt: 100,
+          updatedAt: 100,
+          name: "Old Name",
+          nameLower: "old name",
+        }),
         title: "New title",
         updatedAt: 200,
       }),
@@ -62,7 +76,9 @@ describe("updateCard", () => {
   });
 
   it("recomputes nameLower when patch.name is provided", async () => {
-    await seedNormalizedCard(createCardRecord({ id: "c1", name: "Old Name", nameLower: "old name" }));
+    await seedNormalizedCard(
+      createCardRecord({ id: "c1", name: "Old Name", nameLower: "old name" }),
+    );
 
     const next = await updateCard("c1", { name: "NEW NAME" });
     expect(next?.nameLower).toBe("new name");

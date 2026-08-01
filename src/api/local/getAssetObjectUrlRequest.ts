@@ -1,8 +1,11 @@
-import { getAssetObjectUrl } from "@/lib/assets-db";
+import { getAssetObjectUrl } from "@/lib/data/assets-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local get-asset-object-url endpoint through the IndexedDB-backed service layer.
+ */
 export const getAssetObjectUrlRequestPlugin: ZodiosPlugin = {
   name: "local-get-asset-object-url",
   request: async (apiDefinitions, config) => {

@@ -72,10 +72,7 @@ export default function CardPreviewContainer({
     ? activeCardIdByTemplate[selectedTemplateId as TemplateId]
     : undefined;
   const noPairingLabel = t("label.webglNoPairing");
-  const effectiveFace = resolveEffectiveFace(
-    cardData?.face,
-    template?.defaultFace ?? "front",
-  );
+  const effectiveFace = resolveEffectiveFace(cardData?.face, template?.defaultFace ?? "front");
   const assetIds = useMemo(() => collectCardAssetIds(cardData), [cardData]);
   const heroBackLogoIds = useMemo(() => collectCardHeroBackLogoIds(cardData), [cardData]);
 

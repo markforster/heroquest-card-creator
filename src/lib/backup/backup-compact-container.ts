@@ -29,10 +29,7 @@ export function getIdTail(id: string, length: number): string {
 
 export function buildObfuscatedBlobRef(type: "asset" | "thumb", id: string): string {
   const tail = getIdTail(id, COMPACT_BLOB_ID_TAIL_LENGTH);
-  const code = fnv1aHex(`${type}|${tail}|${COMPACT_BLOB_SALT}`).slice(
-    0,
-    COMPACT_BLOB_CODE_LENGTH,
-  );
+  const code = fnv1aHex(`${type}|${tail}|${COMPACT_BLOB_SALT}`).slice(0, COMPACT_BLOB_CODE_LENGTH);
   return `${COMPACT_BLOB_DIR}/${code}-${id}`;
 }
 
