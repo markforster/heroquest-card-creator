@@ -41,6 +41,10 @@ jest.mock("@/components/Stockpile/StockpileMissingAssetsModal", () => () => null
 jest.mock("@/components/Cards/CardPreview", () => () => null);
 jest.mock("@/components/Decks/pdf/DeckPdfExportModal", () => () => null);
 jest.mock("@/components/Providers/ExportSettingsContext", () => ({
+  useExportProfilesState: () => ({
+    profiles: [],
+    defaultProfile: null,
+  }),
   useExportSettingsState: () => ({
     settings: {
       bleed: { enabled: false, bleedPx: 0, askBeforeExport: false },

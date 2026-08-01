@@ -11,6 +11,8 @@ const mockRequestRecenter = jest.fn();
 const mockUseFormState = jest.fn();
 const mockListCards = jest.fn();
 const mockGetCard = jest.fn();
+const mockRunWithUnsavedChangesGuard = jest.fn();
+const mockBypassNextNavigation = jest.fn();
 
 const selectedAsset: AssetRecord = {
   id: "asset-1",
@@ -134,6 +136,13 @@ jest.mock("@/components/Providers/AssetKindBackfillProvider", () => ({
   }),
 }));
 
+jest.mock("@/components/App/UnsavedChangesGuardContext", () => ({
+  useUnsavedChangesGuardControls: () => ({
+    bypassNextNavigation: mockBypassNextNavigation,
+    runWithUnsavedChangesGuard: (...args: unknown[]) => mockRunWithUnsavedChangesGuard(...args),
+  }),
+}));
+
 jest.mock("@/components/Providers/CardEditorContext", () => ({
   useCardEditor: () => ({
     state: {
@@ -190,6 +199,9 @@ describe("AssetsRoutePanels usage popover (UI)", () => {
     mockGetCard.mockResolvedValue(null);
     mockNavigate.mockReset();
     mockRequestRecenter.mockReset();
+    mockRunWithUnsavedChangesGuard.mockReset();
+    mockBypassNextNavigation.mockReset();
+    mockRunWithUnsavedChangesGuard.mockReturnValue(false);
     jest.useFakeTimers();
     Object.defineProperty(window, "matchMedia", {
       writable: true,
@@ -317,12 +329,15 @@ describe("AssetsRoutePanels usage popover (UI)", () => {
     const linkedCardButton = await screen.findByRole("button", { name: "Chaos Warrior" });
     fireEvent.click(linkedCardButton);
 
-    expect(await screen.findByText("Save before viewing?")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(mockRunWithUnsavedChangesGuard).toHaveBeenCalledTimes(1);
+    });
+    const guardedAction = mockRunWithUnsavedChangesGuard.mock.calls[0]?.[0] as
+      | (() => Promise<void>)
+      | undefined;
+    await guardedAction?.();
 
     await waitFor(() => {
-      expect(mockSaveCurrentCard).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith("/cards/card-9");
     });
   });

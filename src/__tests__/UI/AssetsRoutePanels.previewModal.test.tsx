@@ -160,7 +160,7 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
   });
 
   it("opens the zoom modal from the inspector preview and reuses the loaded preview url", async () => {
-    const { container } = renderSubject();
+    renderSubject();
 
     const trigger = await screen.findByRole("button", { name: "Preview: goblin" });
     expect(trigger).toHaveClass("assetsInspectorPreviewButtonInteractive");
@@ -170,7 +170,7 @@ describe("AssetsRoutePanels preview modal (UI)", () => {
     expect(await screen.findByText("Preview: goblin")).toBeInTheDocument();
     expect(screen.getAllByAltText("goblin.png")).toHaveLength(2);
     expect(mockGetAssetObjectUrl).toHaveBeenCalledTimes(1);
-    expect(container.getElementsByClassName("assetsPreviewModalPopover")).toHaveLength(1);
+    expect(document.getElementsByClassName("assetsPreviewModalPopover")).toHaveLength(1);
   });
 
   it("closes the zoom modal on Escape", async () => {

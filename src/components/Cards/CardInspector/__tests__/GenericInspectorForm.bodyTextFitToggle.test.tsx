@@ -41,6 +41,11 @@ jest.mock("@/components/Cards/CardInspector/ImageField", () => ({
   default: () => <div>IMAGE_FIELD</div>,
 }));
 
+jest.mock("@/components/Cards/CardInspector/HeroBackLogoField", () => ({
+  __esModule: true,
+  default: () => <div>HERO_BACK_LOGO_FIELD</div>,
+}));
+
 jest.mock("@/components/Cards/CardInspector/BorderColorField", () => ({
   __esModule: true,
   default: () => <div>BORDER_COLOR</div>,

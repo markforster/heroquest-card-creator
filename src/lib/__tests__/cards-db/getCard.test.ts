@@ -207,6 +207,7 @@ describe("getCard", () => {
     expect(slots.map((slot) => slot.slotId).sort()).toEqual([
       blueprintIds.hq_2021_background_base,
       blueprintIds.hq_2021_text_body,
+      blueprintIds.hq_2021_text_copyright,
     ]);
 
     await expect(getCard("rules-1")).resolves.toEqual(

@@ -71,6 +71,11 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
   }),
 }));
 
+jest.mock("@/components/Providers/CopyrightSettingsContext", () => ({
+  __esModule: true,
+  useCopyrightSettings: () => ({ getTemplateDefault: () => false }),
+}));
+
 jest.mock("@/components/Providers/EditorFormContext", () => ({
   __esModule: true,
   useEditorForm: () => ({

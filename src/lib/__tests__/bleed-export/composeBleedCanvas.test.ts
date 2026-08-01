@@ -1,5 +1,11 @@
 import { CARD_HEIGHT, CARD_WIDTH } from "@/components/Cards/CardPreview/consts";
-import { composeBleedCanvas } from "@/lib/bleed-export";
+import {
+  cloneSvgForBleed,
+  composeBleedCanvas,
+  setExportBackgroundFit,
+  stripToBackgroundOnly,
+  stripToBleedSource,
+} from "@/lib/bleed-export";
 
 type MockCanvas = {
   width: number;
@@ -145,5 +151,56 @@ describe("composeBleedCanvas", () => {
     expect(outputCtxB.drawImage.mock.calls.length).toBe(1);
 
     createSpy.mockRestore();
+  });
+});
+
+describe("bleed SVG preparation", () => {
+  const parseSvg = (content: string) => {
+    const host = document.createElement("div");
+    host.innerHTML = `<svg>${content}</svg>`;
+    return host.querySelector("svg") as SVGSVGElement;
+  };
+
+  it("removes clipping definitions and attributes", () => {
+    const svg = parseSvg(
+      '<defs><clipPath id="clip"><rect /></clipPath></defs><g clip-path="url(#clip)"><rect /></g>',
+    );
+
+    cloneSvgForBleed(svg);
+
+    expect(svg.querySelector("clipPath")).toBeNull();
+    expect(svg.querySelector("g")?.hasAttribute("clip-path")).toBe(false);
+  });
+
+  it("sets the background image fit mode", () => {
+    const svg = parseSvg('<image data-card-background="true" />');
+
+    setExportBackgroundFit(svg, "slice");
+
+    expect(svg.querySelector("image")?.getAttribute("preserveAspectRatio")).toBe("xMidYMid slice");
+  });
+
+  it("retains only the background ancestry and definitions", () => {
+    const svg = parseSvg(
+      '<defs><linearGradient id="g" /></defs><g id="background"><image data-card-background="true" /></g><text>remove</text>',
+    );
+
+    stripToBackgroundOnly(svg);
+
+    expect(svg.querySelector("#background")).not.toBeNull();
+    expect(svg.querySelector("defs")).not.toBeNull();
+    expect(svg.querySelector("text")).toBeNull();
+  });
+
+  it("retains background and user artwork for the bleed source", () => {
+    const svg = parseSvg(
+      '<g id="background"><image data-card-background="true" /></g><g id="art"><image data-user-asset-id="asset-1" /></g><text>remove</text>',
+    );
+
+    stripToBleedSource(svg);
+
+    expect(svg.querySelector("#background")).not.toBeNull();
+    expect(svg.querySelector("#art")).not.toBeNull();
+    expect(svg.querySelector("text")).toBeNull();
   });
 });

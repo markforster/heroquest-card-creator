@@ -63,12 +63,21 @@ jest.mock("@/components/Decks/detail/context/DeckDetailSelectionContext", () => 
 }));
 
 jest.mock("@/components/Decks/detail/context/DeckRightPanelContext", () => ({
-  useDeckRightPanel: () => ({
-    backCards: [
-      { id: "back-1", name: "Back Card Alpha" },
-      { id: "back-2", name: "Back Card Beta" },
-    ],
-  }),
+  useDeckRightPanel: () => {
+    const React = jest.requireActual<typeof import("react")>("react");
+    const [selectedEntryIds, setSelectedEntryIds] = React.useState<Set<string>>(new Set());
+
+    return {
+      backCards: [
+        { id: "back-1", name: "Back Card Alpha" },
+        { id: "back-2", name: "Back Card Beta" },
+      ],
+      selectedEntryIds,
+      setSelectedEntryIds,
+      setActivePreviewEntryId: jest.fn(),
+      setPreviewSelectionSource: jest.fn(),
+    };
+  },
 }));
 
 jest.mock("@/lib/card-thumbnail-cache", () => ({
@@ -218,6 +227,7 @@ describe("DeckEntriesBoardController recover paired modal", () => {
     mockUpdateEntryCount.mockReset();
     mockRemoveEntry.mockReset();
     mockReorderEntries.mockReset();
+    mockDeletePair.mockReset();
     mockDeletePair.mockReset();
     mockUseCardThumbnailUrl.mockReset();
     registeredDropHandler = null;
@@ -398,11 +408,16 @@ describe("DeckEntriesBoardController recover paired modal", () => {
       "src/components/Decks/detail/DeckGroupsSection2.module.css",
     );
     const css = readFileSync(cssPath, "utf8");
+    const normalizedCss = css.replace(/\s+/g, " ");
 
-    expect(css).toContain(":has(.removeSelectedButton:hover) .setCardSelected .setThumb");
-    expect(css).toContain(":has(.removeSelectedButton:focus-visible) .setCardSelected .setThumb");
-    expect(css).toContain(":has(.removeSelectedButton:hover) .setCard:not(.setCardSelected)");
-    expect(css).toContain(
+    expect(normalizedCss).toContain(":has(.removeSelectedButton:hover) .setCardSelected .setThumb");
+    expect(normalizedCss).toContain(
+      ":has(.removeSelectedButton:focus-visible) .setCardSelected .setThumb",
+    );
+    expect(normalizedCss).toContain(
+      ":has(.removeSelectedButton:hover) .setCard:not(.setCardSelected)",
+    );
+    expect(normalizedCss).toContain(
       ":has(.removeSelectedButton:focus-visible) .setCard:not(.setCardSelected)",
     );
     expect(css).toContain(".setCardBottomToolbar");

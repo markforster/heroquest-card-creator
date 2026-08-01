@@ -179,7 +179,7 @@ function GroupTextLayer({
         align={align}
         debug={debug}
         fitToBounds={fitToBounds}
-        showOverflowWarning={!suppressPreviewOnlyWarnings}
+        showOverflowWarning={fitToBounds && !suppressPreviewOnlyWarnings ? true : undefined}
       />
     </Layer>
   );

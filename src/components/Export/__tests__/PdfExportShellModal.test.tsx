@@ -256,6 +256,11 @@ jest.mock("@/components/Export/PdfExportProgressModal", () => ({
     ) : null,
 }));
 
+jest.mock("@/components/Export/pdfExportFaceRendering", () => ({
+  renderPdfCardFacePngBytes: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
+  renderPdfPlaceholderFacePngBytes: jest.fn().mockResolvedValue(new Uint8Array([4, 5, 6])),
+}));
+
 jest.mock("@/components/Cards/CardPreview", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   return {
@@ -688,7 +693,9 @@ describe("PdfExportShellModal", () => {
     await waitFor(() => {
       expect(mockGetCard).toHaveBeenCalledWith({ params: { id: "front-1" } });
     });
-    expect(mockGetCard).toHaveBeenCalledWith({ params: { id: "missing-placeholder" } });
+    await waitFor(() => {
+      expect(mockGetCard).toHaveBeenCalledWith({ params: { id: "missing-placeholder" } });
+    });
   });
 
   it("applies forced mode and duplex values over export settings defaults", async () => {

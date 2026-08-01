@@ -64,11 +64,21 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
   }),
 }));
 
+jest.mock("@/components/Providers/CopyrightSettingsContext", () => ({
+  __esModule: true,
+  useCopyrightSettings: () => ({ getTemplateDefault: () => false }),
+}));
+
 jest.mock("@/components/Providers/EditorFormContext", () => ({
   __esModule: true,
   useEditorForm: () => ({
     resetWithSaved: jest.fn(),
   }),
+}));
+
+jest.mock("@/components/Providers/FooterTipContext", () => ({
+  __esModule: true,
+  useFooterTip: () => ({ setTip: jest.fn(), clearTip: jest.fn() }),
 }));
 
 jest.mock("@/components/Providers/MissingAssetsContext", () => ({

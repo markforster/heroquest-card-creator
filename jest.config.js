@@ -9,12 +9,15 @@ const createJestConfig = nextJest({
 /** @type {import('jest').Config} */
 const customJestConfig = {
   testEnvironment: "jest-environment-jsdom",
+  testMatch: ["**/?(*.)+(spec|test).[jt]s?(x)"],
+  testPathIgnorePatterns: ["/node_modules/", "<rootDir>/tools/"],
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   watchman: false,
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "\\.svg\\?url$": "<rootDir>/__mocks__/fileMock.js",
     "\\.(svg)$": "<rootDir>/__mocks__/svgrMock.tsx",
+    "^emoji-picker-react/dist/data/emojis-.*$": "<rootDir>/__mocks__/emojiDataMock.js",
     "^next/link$": "<rootDir>/__mocks__/nextLinkMock.tsx",
   },
   transformIgnorePatterns: [

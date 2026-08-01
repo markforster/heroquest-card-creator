@@ -14,6 +14,7 @@ jest.mock("@/lib/db/maintenance/indexeddb-size-estimate", () => ({
 type StoreRecord = Record<string, unknown> & { id: string };
 type StoreTable = {
   get: jest.Mock<Promise<StoreRecord | undefined>, [string]>;
+  where: jest.Mock;
 };
 
 type DexieTableMap = {
@@ -26,6 +27,18 @@ type DexieTableMap = {
   deckGroups: StoreTable;
   deckSets: StoreTable;
   deckEntries: StoreTable;
+  cardsBase: StoreTable;
+  cardThumbnails: StoreTable;
+  cardSlotLinks: StoreTable;
+  cardBackgroundComponents: StoreTable;
+  cardBorderComponents: StoreTable;
+  cardTitleComponents: StoreTable;
+  cardTextComponents: StoreTable;
+  cardCopyrightComponents: StoreTable;
+  cardImageComponents: StoreTable;
+  cardIconComponents: StoreTable;
+  cardHeroStatsComponents: StoreTable;
+  cardMonsterStatsComponents: StoreTable;
 };
 
 type TrackerModule = typeof import("@/lib/db/maintenance/indexeddb-size-tracker");
@@ -44,6 +57,11 @@ function createFakeDb(
         const record = state.get(id);
         return record ? { ...record } : undefined;
       }),
+      where: jest.fn(() => ({
+        equals: jest.fn(() => ({
+          toArray: jest.fn(async () => []),
+        })),
+      })),
     };
   };
 
@@ -57,6 +75,18 @@ function createFakeDb(
     deckGroups: createTable(recordsByStore.deckGroups),
     deckSets: createTable(recordsByStore.deckSets),
     deckEntries: createTable(recordsByStore.deckEntries),
+    cardsBase: createTable(recordsByStore.cards),
+    cardThumbnails: createTable(),
+    cardSlotLinks: createTable(),
+    cardBackgroundComponents: createTable(),
+    cardBorderComponents: createTable(),
+    cardTitleComponents: createTable(),
+    cardTextComponents: createTable(),
+    cardCopyrightComponents: createTable(),
+    cardImageComponents: createTable(),
+    cardIconComponents: createTable(),
+    cardHeroStatsComponents: createTable(),
+    cardMonsterStatsComponents: createTable(),
   };
 }
 

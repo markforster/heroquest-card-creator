@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import styles from "@/app/page.module.css";
@@ -40,6 +41,11 @@ jest.mock("@/components/Export/hooks/useBulkCardExport", () => ({
   }),
 }));
 
+jest.mock("@/components/Export/PdfExportShellModal", () => ({
+  __esModule: true,
+  default: () => null,
+}));
+
 jest.mock("@/components/Modals/ConfirmModal", () => ({
   __esModule: true,
   default: () => null,
@@ -63,11 +69,21 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
   }),
 }));
 
+jest.mock("@/components/Providers/CopyrightSettingsContext", () => ({
+  __esModule: true,
+  useCopyrightSettings: () => ({ getTemplateDefault: () => false }),
+}));
+
 jest.mock("@/components/Providers/EditorFormContext", () => ({
   __esModule: true,
   useEditorForm: () => ({
     resetWithSaved: mockResetWithSaved,
   }),
+}));
+
+jest.mock("@/components/Providers/FooterTipContext", () => ({
+  __esModule: true,
+  useFooterTip: () => ({ setTip: jest.fn(), clearTip: jest.fn() }),
 }));
 
 jest.mock("@/components/Providers/MissingAssetsContext", () => ({
@@ -154,12 +170,17 @@ jest.mock("react-router-dom", () => ({
 }));
 
 function renderPanel() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <LocalStorageProvider>
-      <I18nProvider>
-        <StockpilePanelContent isOpen onClose={() => {}} frame="panel" />
-      </I18nProvider>
-    </LocalStorageProvider>,
+    <QueryClientProvider client={queryClient}>
+      <LocalStorageProvider>
+        <I18nProvider>
+          <StockpilePanelContent isOpen onClose={() => {}} frame="panel" />
+        </I18nProvider>
+      </LocalStorageProvider>
+    </QueryClientProvider>,
   );
 }
 

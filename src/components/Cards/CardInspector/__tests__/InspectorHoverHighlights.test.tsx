@@ -59,6 +59,10 @@ jest.mock("@/components/Providers/CopyrightSettingsContext", () => ({
   }),
 }));
 
+jest.mock("@/components/Providers/ThemeProvider", () => ({
+  useTheme: () => ({ theme: "light" }),
+}));
+
 jest.mock("@/components/common/ModalShell", () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,

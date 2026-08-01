@@ -287,8 +287,7 @@ export function TextLayer({
       : false;
   const allowBodyTextFitToBounds =
     textKey === "description" ? supportsBlueprintTextFitToBounds(layer) : false;
-  const showOverflowWarning =
-    !suppressPreviewOnlyWarnings && layer.props?.textLayoutMode === "fixed-bounds";
+  const showOverflowWarning = !suppressPreviewOnlyWarnings && allowBodyTextFitToBounds;
   const fill = bodyTextColor ?? layerFill;
   const letterSpacingEm =
     typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;

@@ -16,6 +16,13 @@ jest.mock("@/components/Assets", () => ({
   AssetsModal: () => null,
 }));
 
+jest.mock("@/components/Cards/CardEditor/EditorTargetsContext", () => ({
+  EDITOR_TARGET_IDS: { imageMain: "image-main" },
+  useInspectorTargetRegistration: () => jest.fn(),
+  useIsEditorTargetHovered: () => false,
+  useSecondaryTargetActionRegistration: jest.fn(),
+}));
+
 jest.mock("@/api/client", () => ({
   apiClient: {
     listAssets: jest.fn(async () => []),

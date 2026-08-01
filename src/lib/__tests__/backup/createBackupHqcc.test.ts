@@ -7,6 +7,7 @@ jest.mock("@/api/client", () => ({
     listDecks: jest.fn(),
     getBorderSwatches: jest.fn(),
     getDefaultCopyright: jest.fn(),
+    getCopyrightTemplateDefaults: jest.fn(),
   },
 }));
 
@@ -52,6 +53,7 @@ describe("createBackupHqcc", () => {
     mockedApiClient.listDecks.mockReset();
     mockedApiClient.getBorderSwatches.mockReset();
     mockedApiClient.getDefaultCopyright.mockReset();
+    mockedApiClient.getCopyrightTemplateDefaults.mockReset();
     mockedListHeroBackLogosWithBlobs.mockReset();
     createZipBlobWithProgress.mockReset();
 
@@ -62,6 +64,7 @@ describe("createBackupHqcc", () => {
     mockedApiClient.listDecks.mockResolvedValue([]);
     mockedApiClient.getBorderSwatches.mockResolvedValue([]);
     mockedApiClient.getDefaultCopyright.mockResolvedValue("");
+    mockedApiClient.getCopyrightTemplateDefaults.mockResolvedValue({});
     mockedListHeroBackLogosWithBlobs.mockResolvedValue([]);
     createZipBlobWithProgress.mockResolvedValue(new Blob(["zip"], { type: "application/zip" }));
 
