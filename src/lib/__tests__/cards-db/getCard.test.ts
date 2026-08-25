@@ -196,6 +196,7 @@ describe("getCard", () => {
       name: "Turn Summary",
       face: "front",
       description: "**Movement**\nMove around the board.",
+      backgroundTint: "#efe2bf",
       bodyTextColor: "#22170f",
       bodyTextFitToBounds: true,
     });
@@ -216,6 +217,7 @@ describe("getCard", () => {
         name: "Turn Summary",
         face: "front",
         description: "**Movement**\nMove around the board.",
+        backgroundTint: "#efe2bf",
         bodyTextColor: "#22170f",
         bodyTextFitToBounds: true,
         schemaVersion: 2,

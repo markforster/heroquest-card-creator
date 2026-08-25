@@ -123,6 +123,7 @@ describe("cardRecordToCardData", () => {
       schemaVersion: 2,
       face: "front",
       description: "**Movement**\nMove around the board.",
+      backgroundTint: "#efe2bf",
       bodyTextColor: "#22170f",
       bodyTextFitToBounds: true,
     };
@@ -132,6 +133,7 @@ describe("cardRecordToCardData", () => {
         name: "Turn Summary",
         face: "front",
         description: "**Movement**\nMove around the board.",
+        backgroundTint: "#efe2bf",
         bodyTextColor: "#22170f",
         bodyTextFitToBounds: true,
       }),

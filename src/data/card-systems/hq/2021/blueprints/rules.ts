@@ -23,6 +23,7 @@ export const RULES_BLUEPRINT: Blueprint = {
       id: blueprintIds.hq_2021_background_base,
       type: layerTypes.background,
       source: "template",
+      tintKey: "backgroundTint",
     },
     {
       id: blueprintIds.hq_2021_text_body,
